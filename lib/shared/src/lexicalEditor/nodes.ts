@@ -9,6 +9,7 @@ import type {
     ContextItemCurrentRepository,
     ContextItemCurrentSelection,
     ContextItemFile,
+    ContextItemMode,
     ContextItemOpenCtx,
     ContextItemOpenLink,
     ContextItemRepository,
@@ -49,6 +50,7 @@ export type SerializedContextItem = {
     | Omit<ContextItemCurrentRepository, 'uri' | 'content' | 'source'>
     | Omit<ContextItemCurrentDirectory, 'uri' | 'content' | 'source'>
     | Omit<ContextItemCurrentOpenTabs, 'uri' | 'content' | 'source'>
+    | Omit<ContextItemMode, 'uri' | 'content' | 'source'>
 )
 
 export type SerializedTemplateInput = {
@@ -333,6 +335,9 @@ export function contextItemMentionNodeDisplayText(contextItem: SerializedContext
 
         case 'current-open-tabs':
             return 'currently open tabs'
+
+        case 'mode':
+            return contextItem.mode
     }
 
     // @ts-ignore

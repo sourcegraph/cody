@@ -90,7 +90,7 @@ function getIntentOptions({
             title: 'Edit Code',
             icon: Pencil,
             intent: 'edit',
-            hidden: true,
+            hidden: false,
         },
         {
             title: 'Insert Code',

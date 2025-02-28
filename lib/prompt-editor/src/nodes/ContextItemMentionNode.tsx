@@ -152,16 +152,28 @@ function iconForContextItem(contextItem: SerializedContextItem): React.Component
     strokeWidth?: string | number
     className?: string
 }> {
-    const providerUri =
-        contextItem.type === 'file'
-            ? FILE_CONTEXT_MENTION_PROVIDER.id
-            : contextItem.type === 'symbol'
-              ? SYMBOL_CONTEXT_MENTION_PROVIDER.id
-              : contextItem.type === 'repository' || contextItem.type === 'tree'
-                ? REMOTE_REPOSITORY_PROVIDER_URI
-                : contextItem.type === 'openctx'
-                  ? contextItem.providerUri
-                  : 'unknown'
+    let providerUri: string
+    switch (contextItem.type) {
+        case 'file':
+            providerUri = FILE_CONTEXT_MENTION_PROVIDER.id
+            break
+        case 'symbol':
+            providerUri = SYMBOL_CONTEXT_MENTION_PROVIDER.id
+            break
+        case 'repository':
+        case 'tree':
+            providerUri = REMOTE_REPOSITORY_PROVIDER_URI
+            break
+        case 'openctx':
+            providerUri = contextItem.providerUri
+            break
+
+        case 'mode':
+            providerUri = contextItem.mode
+            break
+        default:
+            providerUri = 'unknown'
+    }
     return iconForProvider[providerUri] ?? AtSignIcon
 }
 

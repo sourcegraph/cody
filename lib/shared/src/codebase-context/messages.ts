@@ -1,5 +1,6 @@
 import type { URI } from 'vscode-uri'
 
+import type { ChatMessage } from '../chat/transcript/messages'
 import type { RangeData } from '../common/range'
 import type { Message } from '../sourcegraph-api'
 import type { Range } from '../sourcegraph-api/graphql/client'
@@ -141,7 +142,17 @@ export type ContextItem =
     | ContextItemCurrentRepository
     | ContextItemCurrentDirectory
     | ContextItemCurrentOpenTabs
+    | ContextItemMode
 
+/**
+ * A context item that represents a mode.
+ */
+export interface ContextItemMode extends ContextItemCommon {
+    type: 'mode'
+    mode: NonNullable<ChatMessage['intent']>
+    title: string
+    description?: string
+}
 /**
  * Context items to show by default in the chat input, or as suggestions in the chat UI.
  */
