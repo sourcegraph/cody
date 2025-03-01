@@ -69,7 +69,9 @@ export const HistoryTabWithData: React.FC<{
     const [isDeleteAllActive, setIsDeleteAllActive] = useState<boolean>(false)
 
     const onDeleteButtonClick = useCallback(
-        (id: string) => {
+        (e: React.MouseEvent | React.KeyboardEvent, id: string) => {
+            e.preventDefault()
+            e.stopPropagation()
             vscodeAPI.postMessage({
                 command: 'command',
                 id: 'cody.chat.history.clear',
@@ -143,7 +145,7 @@ export const HistoryTabWithData: React.FC<{
             className="tw-flex tw-flex-col tw-h-full tw-py-4 tw-bg-transparent tw-px-2"
             disablePointerSelection={true}
         >
-            <header className="tw-inline-flex tw-mt-4 tw-px-0">
+            <header className="tw-inline-flex tw-mt-4 tw-px-4 tw-gap-4">
                 <Button
                     variant="secondary"
                     className="tw-bg-popover tw-border tw-border-border !tw-justify-between"
@@ -181,8 +183,8 @@ export const HistoryTabWithData: React.FC<{
                             size="sm"
                             aria-label="Delete all chats"
                             className="tw-text-white tw-bg-red-800 hover:tw-bg-red-900 focus:tw-ring-4 focus:tw-outline-none focus:tw-ring-red-200 tw-font-medium tw-rounded-lg tw-text-xs tw-px-3 tw-py-1.5 tw-me-2 tw-text-center tw-inline-flex tw-items-center dark:tw-bg-red-600 dark:hover:tw-bg-red-700 dark:focus:tw-ring-red-800"
-                            onClick={() => {
-                                onDeleteButtonClick('clear-all-no-confirm')
+                            onClick={e => {
+                                onDeleteButtonClick(e, 'clear-all-no-confirm')
                                 setIsDeleteAllActive(false)
                             }}
                         >
@@ -216,36 +218,28 @@ export const HistoryTabWithData: React.FC<{
                         const lastMessage =
                             interactions[interactions.length - 1]?.humanMessage?.text?.trim()
                         return (
-                            <div key={id} className={`tw-flex tw-p-1 ${styles.historyRow}`}>
-                                <CommandItem
-                                    key={id}
-                                    className={`tw-text-left tw-truncate tw-w-full tw-rounded-md tw-text-sm ${styles.historyItem} tw-max-w-[calc(100%-2rem)] tw-overflow-hidden`}
-                                    onSelect={() =>
-                                        vscodeAPI.postMessage({
-                                            command: 'restoreHistory',
-                                            chatID: id,
-                                        })
-                                    }
-                                >
-                                    <span className="tw-truncate tw-w-full">
-                                        {chatTitle || lastMessage}
-                                    </span>
-                                </CommandItem>
+                            <CommandItem
+                                key={id}
+                                className={`tw-text-left tw-truncate tw-w-full tw-rounded-md tw-text-sm ${styles.historyItem} tw-overflow-hidden tw-text-sidebar-foreground`}
+                                onSelect={() =>
+                                    vscodeAPI.postMessage({
+                                        command: 'restoreHistory',
+                                        chatID: id,
+                                    })
+                                }
+                            >
+                                <span className="tw-truncate tw-w-full">{chatTitle || lastMessage}</span>
                                 <Button
-                                    variant="ghost"
+                                    variant="outline"
                                     title="Delete chat history"
                                     aria-label="delete-history-button"
-                                    className={`${styles.historyDeleteBtn}`}
-                                    onClick={() => onDeleteButtonClick(id)}
-                                    onKeyDown={() => onDeleteButtonClick(id)}
+                                    className={styles.deleteButton}
+                                    onClick={e => onDeleteButtonClick(e, id)}
+                                    onKeyDown={e => onDeleteButtonClick(e, id)}
                                 >
-                                    <TrashIcon
-                                        className="tw-w-8 tw-h-8 tw-opacity-80"
-                                        size={16}
-                                        strokeWidth="1.25"
-                                    />
+                                    <TrashIcon className="tw-w-8 tw-h-8" size={16} strokeWidth="1.25" />
                                 </Button>
-                            </div>
+                            </CommandItem>
                         )
                     })}
                 </div>

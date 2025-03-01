@@ -6,3 +6,14 @@ h4 {
     display: flex;
     flex-direction: row;
 }
+
+.delete-button {
+    opacity: 0;
+    height: 98%;
+    padding: 0 !important;
+    background: none;
+}
+
+.history-item:hover .delete-button {
+    opacity: 1;
+}
