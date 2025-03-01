@@ -1,12 +1,9 @@
 import type { Action, ChatMessage, Model } from '@sourcegraph/cody-shared'
-import { useExtensionAPI } from '@sourcegraph/prompt-editor'
 import clsx from 'clsx'
 import { type FunctionComponent, useCallback, useState } from 'react'
 import type { UserAccountInfo } from '../../../../../../Chat'
-import { ModelSelectField } from '../../../../../../components/modelSelectField/ModelSelectField'
 import { PromptSelectField } from '../../../../../../components/promptSelectField/PromptSelectField'
 import { useActionSelect } from '../../../../../../prompts/PromptsTab'
-import { useClientConfig } from '../../../../../../utils/useClientConfig'
 import { useOmniBox } from '../../../../../../utils/useOmniBox'
 import { ModeSelectorField } from './ModeSelectorButton'
 import { SubmitButton, type SubmitButtonState } from './SubmitButton'
@@ -91,19 +88,13 @@ export const Toolbar: FunctionComponent<{
             data-testid="chat-editor-toolbar"
         >
             <div className="tw-flex tw-items-center">
-                <PromptSelectFieldToolbarItem focusEditor={focusEditor} className="tw-ml-1 tw-mr-1" />
-                <ModelSelectFieldToolbarItem
-                    models={models}
-                    userInfo={userInfo}
-                    focusEditor={focusEditor}
-                    className="tw-mr-1"
-                />
                 <ModeSelectorField
                     className={className}
                     omniBoxEnabled={omniBoxEnabled}
                     intent={selectedIntent}
                     manuallySelectIntent={onSelectedIntentChange}
                 />
+                <PromptSelectFieldToolbarItem focusEditor={focusEditor} className="tw-ml-1 tw-mr-1" />
             </div>
             <div className="tw-flex-1 tw-flex tw-justify-end">
                 <SubmitButton
@@ -132,41 +123,4 @@ const PromptSelectFieldToolbarItem: FunctionComponent<{
     )
 
     return <PromptSelectField onSelect={onSelect} onCloseByEscape={focusEditor} className={className} />
-}
-
-const ModelSelectFieldToolbarItem: FunctionComponent<{
-    models: Model[]
-    userInfo: UserAccountInfo
-    focusEditor?: () => void
-    className?: string
-}> = ({ userInfo, focusEditor, className, models }) => {
-    const clientConfig = useClientConfig()
-    const serverSentModelsEnabled = !!clientConfig?.modelsAPIEnabled
-
-    const api = useExtensionAPI()
-
-    const onModelSelect = useCallback(
-        (model: Model) => {
-            api.setChatModel(model.id).subscribe({
-                error: error => console.error('setChatModel:', error),
-            })
-            focusEditor?.()
-        },
-        [api.setChatModel, focusEditor]
-    )
-
-    return (
-        !!models?.length &&
-        (userInfo.isDotComUser || serverSentModelsEnabled) && (
-            <ModelSelectField
-                models={models}
-                onModelSelect={onModelSelect}
-                serverSentModelsEnabled={serverSentModelsEnabled}
-                userInfo={userInfo}
-                onCloseByEscape={focusEditor}
-                className={className}
-                data-testid="chat-model-selector"
-            />
-        )
-    )
 }

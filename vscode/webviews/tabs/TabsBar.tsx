@@ -7,16 +7,24 @@ import {
     DownloadIcon,
     HistoryIcon,
     type LucideProps,
-    MessageSquarePlusIcon,
     MessagesSquareIcon,
+    PlusIcon,
     Trash2Icon,
 } from 'lucide-react'
 import { getVSCodeAPI } from '../utils/VSCodeApi'
 import { View } from './types'
 
-import { type AuthenticatedAuthStatus, CodyIDE, isDefined } from '@sourcegraph/cody-shared'
-import { type FC, Fragment, forwardRef, memo, useCallback, useMemo, useState } from 'react'
-import { Kbd } from '../components/Kbd'
+import { type AuthenticatedAuthStatus, CodyIDE, type Model, isDefined } from '@sourcegraph/cody-shared'
+import {
+    type FC,
+    Fragment,
+    type FunctionComponent,
+    forwardRef,
+    memo,
+    useCallback,
+    useMemo,
+    useState,
+} from 'react'
 import { Tooltip, TooltipContent, TooltipTrigger } from '../components/shadcn/ui/tooltip'
 import { useConfig } from '../utils/useConfig'
 
@@ -24,12 +32,16 @@ import { useExtensionAPI } from '@sourcegraph/prompt-editor'
 import { isEqual } from 'lodash'
 import type { UserAccountInfo } from '../Chat'
 import { downloadChatHistory } from '../chat/downloadChatHistory'
+import { Kbd } from '../components/Kbd'
 import { UserMenu } from '../components/UserMenu'
+import { ModelSelectField } from '../components/modelSelectField/ModelSelectField'
 import { Button } from '../components/shadcn/ui/button'
+import { useClientConfig } from '../utils/useClientConfig'
 import styles from './TabsBar.module.css'
 import { getCreateNewChatCommand } from './utils'
 
 interface TabsBarProps {
+    models?: Model[]
     user: UserAccountInfo
     currentView: View
     setView: (view: View) => void
@@ -64,18 +76,27 @@ interface TabConfig {
     Icon: IconComponent
     view: View
     title: string
+    tooltip?: React.ReactNode
     command?: string
     changesView?: boolean
     subActions?: TabSubAction[]
 }
 
 export const TabsBar = memo<TabsBarProps>(props => {
-    const { currentView, setView, user, endpointHistory } = props
+    const { currentView, setView, user, endpointHistory, models } = props
     const { isCodyProUser, IDE } = user
-    const tabItems = useTabs({ user })
     const {
         config: { webviewType, multipleWebviewsEnabled, allowEndpointChange },
     } = useConfig()
+
+    const newChatCommand = getCreateNewChatCommand({
+        IDE,
+        webviewType,
+        multipleWebviewsEnabled,
+    })
+
+    const tabItems = useTabs({ user }, newChatCommand)
+
     const currentViewSubActions = tabItems.find(tab => tab.view === currentView)?.subActions ?? []
 
     const handleClick = useCallback(
@@ -112,46 +133,23 @@ export const TabsBar = memo<TabsBarProps>(props => {
         <div className={clsx(styles.tabsRoot, { [styles.tabsRootCodyWeb]: IDE === CodyIDE.Web })}>
             <Tabs.List aria-label="cody-webview" className={styles.tabsContainer}>
                 <div className={styles.tabs}>
-                    {tabItems.map(({ Icon, view, command, title, changesView }) => (
-                        <Tabs.Trigger key={view} value={view} asChild={true}>
-                            <TabButton
-                                Icon={Icon}
-                                view={view}
-                                title={title}
-                                IDE={IDE}
-                                isActive={currentView === view}
-                                onClick={() => handleClick(view, command, changesView)}
-                                data-testid={`tab-${view}`}
-                            />
-                        </Tabs.Trigger>
-                    ))}
+                    <ModelSelectFieldToolbarItem models={models} userInfo={user} className="tw-mr-1" />
 
                     <div className="tw-flex tw-ml-auto">
-                        <TabButton
-                            prominent
-                            Icon={MessageSquarePlusIcon}
-                            title="New Chat"
-                            IDE={IDE}
-                            alwaysShowTitle={true}
-                            tooltipExtra={
-                                <>
-                                    {IDE === CodyIDE.VSCode && (
-                                        <Kbd macOS="shift+opt+l" linuxAndWindows="shift+alt+l" />
-                                    )}
-                                </>
-                            }
-                            view={View.Chat}
-                            onClick={() =>
-                                handleSubActionClick({
-                                    changesView: View.Chat,
-                                    command: getCreateNewChatCommand({
-                                        IDE,
-                                        webviewType,
-                                        multipleWebviewsEnabled,
-                                    }),
-                                })
-                            }
-                        />
+                        {tabItems.map(({ Icon, view, command, title, changesView, tooltip }) => (
+                            <Tabs.Trigger key={view} value={view} asChild={true}>
+                                <TabButton
+                                    Icon={Icon}
+                                    view={view}
+                                    title={title}
+                                    IDE={IDE}
+                                    isActive={currentView === view}
+                                    onClick={() => handleClick(view, command, changesView)}
+                                    data-testid={`tab-${view}`}
+                                    tooltipExtra={tooltip}
+                                />
+                            </Tabs.Trigger>
+                        ))}
                         {IDE !== CodyIDE.Web && (
                             <UserMenu
                                 authStatus={user.user as AuthenticatedAuthStatus}
@@ -348,7 +346,7 @@ TabButton.displayName = 'TabButton'
  * Returns list of tabs and its sub-action buttons, used later as configuration for
  * tabs rendering in chat header.
  */
-function useTabs(input: Pick<TabsBarProps, 'user'>): TabConfig[] {
+function useTabs(input: Pick<TabsBarProps, 'user'>, newChatCommand: string): TabConfig[] {
     const IDE = input.user.IDE
 
     const extensionAPI = useExtensionAPI<'userHistory'>()
@@ -406,8 +404,59 @@ function useTabs(input: Pick<TabsBarProps, 'user'>): TabConfig[] {
                         Icon: BookTextIcon,
                         changesView: true,
                     },
+                    {
+                        title: 'New Chat',
+                        Icon: PlusIcon,
+                        command: newChatCommand,
+                        changesView: false,
+                        tooltip: (
+                            <>
+                                {IDE === CodyIDE.VSCode && (
+                                    <Kbd macOS="shift+opt+l" linuxAndWindows="shift+alt+l" />
+                                )}
+                            </>
+                        ),
+                    },
                 ] as (TabConfig | null)[]
             ).filter(isDefined),
-        [IDE, extensionAPI]
+        [IDE, extensionAPI, newChatCommand]
+    )
+}
+
+const ModelSelectFieldToolbarItem: FunctionComponent<{
+    models?: Model[]
+    userInfo: UserAccountInfo
+    className?: string
+}> = ({ userInfo, className, models }) => {
+    const clientConfig = useClientConfig()
+    const serverSentModelsEnabled = !!clientConfig?.modelsAPIEnabled
+
+    const api = useExtensionAPI()
+
+    const onModelSelect = useCallback(
+        (model: Model) => {
+            api.setChatModel(model.id).subscribe({
+                error: error => console.error('setChatModel:', error),
+            })
+        },
+        [api.setChatModel]
+    )
+
+    if (!models) {
+        return null
+    }
+
+    return (
+        !!models?.length &&
+        (userInfo.isDotComUser || serverSentModelsEnabled) && (
+            <ModelSelectField
+                models={models}
+                onModelSelect={onModelSelect}
+                serverSentModelsEnabled={serverSentModelsEnabled}
+                userInfo={userInfo}
+                className={className}
+                data-testid="chat-model-selector"
+            />
+        )
     )
 }

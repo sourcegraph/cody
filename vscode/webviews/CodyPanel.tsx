@@ -121,6 +121,7 @@ export const CodyPanel: FunctionComponent<CodyPanelProps> = ({
                 {/* Hide tab bar in editor chat panels. */}
                 {config.webviewType !== 'editor' && (
                     <TabsBar
+                        models={chatModels}
                         user={user}
                         currentView={view}
                         setView={setView}
