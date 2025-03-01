@@ -360,15 +360,7 @@ function reportAuthTelemetryEvent(authStatus: AuthStatus): void {
     } else {
         eventValue = 'disconnected'
     }
-    telemetryRecorder.recordEvent('cody.auth', eventValue, {
-        billingMetadata:
-            eventValue === 'connected'
-                ? {
-                      product: 'cody',
-                      category: 'billable',
-                  }
-                : undefined,
-    })
+    telemetryRecorder.recordEvent('cody.auth', eventValue)
 }
 function toCredentialsOnlyNormalized(
     config: ResolvedConfiguration | ResolvedConfigurationCredentialsOnly
