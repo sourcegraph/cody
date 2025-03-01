@@ -2,7 +2,7 @@ import type { ChatMessage } from '@sourcegraph/cody-shared'
 import { CodyIDE } from '@sourcegraph/cody-shared'
 import { BetweenHorizonalEnd, InfoIcon, MessageSquare, Pencil, Search } from 'lucide-react'
 import type { FC } from 'react'
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useMemo } from 'react'
 import { Kbd } from '../../../../../../components/Kbd'
 import { Badge } from '../../../../../../components/shadcn/ui/badge'
 import { Command, CommandItem, CommandList } from '../../../../../../components/shadcn/ui/command'
@@ -10,7 +10,7 @@ import { ToolbarPopoverItem } from '../../../../../../components/shadcn/ui/toolb
 import { cn } from '../../../../../../components/shadcn/utils'
 import { useConfig } from '../../../../../../utils/useConfig'
 
-enum IntentEnum {
+export enum IntentEnum {
     Chat = 'Chat',
     Search = 'Search',
     Edit = 'Edit',
@@ -18,7 +18,7 @@ enum IntentEnum {
 }
 
 // Mapping between ChatMessage intent and IntentEnum for faster lookups
-const INTENT_MAPPING: Record<string, IntentEnum> = {
+export const INTENT_MAPPING: Record<string, IntentEnum> = {
     chat: IntentEnum.Chat,
     search: IntentEnum.Search,
     edit: IntentEnum.Edit,
@@ -102,11 +102,10 @@ function getIntentOptions({
 
 export const ModeSelectorField: React.FunctionComponent<{
     omniBoxEnabled: boolean
-    onClick: (intent?: ChatMessage['intent']) => void
-    detectedIntent?: ChatMessage['intent']
+    intent: ChatMessage['intent']
     className?: string
     manuallySelectIntent: (intent?: ChatMessage['intent']) => void
-}> = ({ className, omniBoxEnabled, onClick, manuallySelectIntent }) => {
+}> = ({ className, intent, omniBoxEnabled, manuallySelectIntent }) => {
     const {
         clientCapabilities: { agentIDE },
         isDotComUser,
@@ -122,27 +121,15 @@ export const ModeSelectorField: React.FunctionComponent<{
         [agentIDE, isDotComUser, omniBoxEnabled]
     )
 
-    const [selectedIntent, setSelectedIntent] = useState<IntentEnum>(IntentEnum.Chat)
-
-    // Optimized: replaced nested ternaries with direct mapping lookup
-    const onSelectedIntentChange = useCallback(
-        (intent: ChatMessage['intent']) => {
-            // Get the enum value from mapping or default to Chat
-            const displayedIntent = INTENT_MAPPING[intent || 'chat'] || IntentEnum.Chat
-            setSelectedIntent(displayedIntent)
-            manuallySelectIntent(intent)
-            onClick(intent)
-        },
-        [manuallySelectIntent, onClick]
-    )
+    const displayedIntent = INTENT_MAPPING[intent || 'chat'] || IntentEnum.Chat
 
     // Memoize the handler to avoid recreating on each render
     const handleItemClick = useCallback(
         (close: () => void) => (item: ChatMessage['intent']) => {
-            onSelectedIntentChange(item)
+            manuallySelectIntent(item)
             close()
         },
-        [onSelectedIntentChange]
+        [manuallySelectIntent]
     )
 
     return (
@@ -164,7 +151,7 @@ export const ModeSelectorField: React.FunctionComponent<{
                 },
             }}
         >
-            {selectedIntent.charAt(0).toUpperCase() + selectedIntent.slice(1)}
+            {displayedIntent}
         </ToolbarPopoverItem>
     )
 }

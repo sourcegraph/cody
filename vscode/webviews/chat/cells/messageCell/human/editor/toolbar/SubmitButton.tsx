@@ -9,16 +9,15 @@ export const SubmitButton: FC<{
     onClick: (intent?: ChatMessage['intent']) => void
     isEditorFocused?: boolean
     state?: SubmitButtonState
-    detectedIntent?: ChatMessage['intent']
-    manuallySelectIntent: (intent?: ChatMessage['intent']) => void
-}> = ({ onClick, state = 'submittable', detectedIntent, manuallySelectIntent }) => {
+    intent?: ChatMessage['intent']
+}> = ({ onClick, state = 'submittable', intent }) => {
     const inProgress = state === 'waitingResponseComplete'
 
     return (
         <div className="tw-flex">
             <button
                 type="submit"
-                onClick={() => onClick()}
+                onClick={() => onClick(intent)}
                 className={clsx(
                     'tw-px-6 tw-py-1',
                     'tw-rounded-full',

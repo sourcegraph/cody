@@ -1,12 +1,13 @@
 import type { Action, ChatMessage, Model } from '@sourcegraph/cody-shared'
 import { useExtensionAPI } from '@sourcegraph/prompt-editor'
 import clsx from 'clsx'
-import { type FunctionComponent, useCallback } from 'react'
+import { type FunctionComponent, useCallback, useState } from 'react'
 import type { UserAccountInfo } from '../../../../../../Chat'
 import { ModelSelectField } from '../../../../../../components/modelSelectField/ModelSelectField'
 import { PromptSelectField } from '../../../../../../components/promptSelectField/PromptSelectField'
 import { useActionSelect } from '../../../../../../prompts/PromptsTab'
 import { useClientConfig } from '../../../../../../utils/useClientConfig'
+import { useOmniBox } from '../../../../../../utils/useOmniBox'
 import { ModeSelectorField } from './ModeSelectorButton'
 import { SubmitButton, type SubmitButtonState } from './SubmitButton'
 
@@ -47,6 +48,9 @@ export const Toolbar: FunctionComponent<{
     intent,
     manuallySelectIntent,
 }) => {
+    const omniBoxEnabled = useOmniBox()
+
+    const [selectedIntent, setSelectedIntent] = useState<ChatMessage['intent']>('chat')
     /**
      * If the user clicks in a gap or on the toolbar outside of any of its buttons, report back to
      * parent via {@link onGapClick}.
@@ -62,7 +66,16 @@ export const Toolbar: FunctionComponent<{
         },
         [onGapClick]
     )
-    // const omniBoxEnabled = useOmniBox()
+
+    const onSelectedIntentChange = useCallback(
+        (intent: ChatMessage['intent']) => {
+            // Get the enum value from mapping or default to Chat
+            setSelectedIntent(intent)
+            manuallySelectIntent(intent)
+        },
+        [manuallySelectIntent]
+    )
+
     return (
         // biome-ignore lint/a11y/useKeyWithClickEvents: only relevant to click areas
         <menu
@@ -79,12 +92,17 @@ export const Toolbar: FunctionComponent<{
         >
             <div className="tw-flex tw-items-center">
                 <PromptSelectFieldToolbarItem focusEditor={focusEditor} className="tw-ml-1 tw-mr-1" />
+                <ModelSelectFieldToolbarItem
+                    models={models}
+                    userInfo={userInfo}
+                    focusEditor={focusEditor}
+                    className="tw-mr-1"
+                />
                 <ModeSelectorField
                     className={className}
-                    omniBoxEnabled={true}
-                    onClick={onSubmitClick}
-                    detectedIntent={intent}
-                    manuallySelectIntent={manuallySelectIntent}
+                    omniBoxEnabled={omniBoxEnabled}
+                    intent={selectedIntent}
+                    manuallySelectIntent={onSelectedIntentChange}
                 />
             </div>
             <div className="tw-flex-1 tw-flex tw-justify-end">
@@ -92,8 +110,7 @@ export const Toolbar: FunctionComponent<{
                     onClick={onSubmitClick}
                     isEditorFocused={isEditorFocused}
                     state={submitState}
-                    detectedIntent={intent}
-                    manuallySelectIntent={manuallySelectIntent}
+                    intent={selectedIntent}
                 />
             </div>
         </menu>
