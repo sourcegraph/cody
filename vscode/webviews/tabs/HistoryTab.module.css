@@ -12,6 +12,12 @@ h4 {
     height: 98%;
     padding: 0 !important;
     background: none;
+    transition: opacity 0.2s ease;
+}
+
+.deleting-button {
+    opacity: 0.5 !important;
+    pointer-events: none;
 }
 
 .history-item:hover .delete-button {
