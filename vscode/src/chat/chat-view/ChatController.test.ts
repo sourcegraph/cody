@@ -241,8 +241,9 @@ describe('ChatController', () => {
         // Make sure it was sent and the reply was received.
         await vi.runOnlyPendingTimersAsync()
 
-        // Called twince: once for custom title, once for the message
-        expect(mockChatClient.chat).toHaveBeenCalledTimes(2)
+        // Called once for the message.
+        // Chat title call is skipped due to input text less than 20 characters.
+        expect(mockChatClient.chat).toHaveBeenCalledTimes(1)
 
         // Create a snapshot of the custom title call
         expect(mockChatClient.chat.mock.calls[0][0]).toMatchInlineSnapshot(`
