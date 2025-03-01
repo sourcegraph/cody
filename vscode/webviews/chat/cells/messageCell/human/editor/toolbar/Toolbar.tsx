@@ -5,10 +5,9 @@ import { type FunctionComponent, useCallback } from 'react'
 import type { UserAccountInfo } from '../../../../../../Chat'
 import { ModelSelectField } from '../../../../../../components/modelSelectField/ModelSelectField'
 import { PromptSelectField } from '../../../../../../components/promptSelectField/PromptSelectField'
-import toolbarStyles from '../../../../../../components/shadcn/ui/toolbar.module.css'
 import { useActionSelect } from '../../../../../../prompts/PromptsTab'
 import { useClientConfig } from '../../../../../../utils/useClientConfig'
-import { AddContextButton } from './AddContextButton'
+import { ModeSelectorField } from './ModeSelectorButton'
 import { SubmitButton, type SubmitButtonState } from './SubmitButton'
 
 /**
@@ -38,7 +37,6 @@ export const Toolbar: FunctionComponent<{
 }> = ({
     userInfo,
     isEditorFocused,
-    onMentionClick,
     onSubmitClick,
     submitState,
     onGapClick,
@@ -64,7 +62,7 @@ export const Toolbar: FunctionComponent<{
         },
         [onGapClick]
     )
-
+    // const omniBoxEnabled = useOmniBox()
     return (
         // biome-ignore lint/a11y/useKeyWithClickEvents: only relevant to click areas
         <menu
@@ -80,19 +78,13 @@ export const Toolbar: FunctionComponent<{
             data-testid="chat-editor-toolbar"
         >
             <div className="tw-flex tw-items-center">
-                {/* Can't use tw-gap-1 because the popover creates an empty element when open. */}
-                {onMentionClick && (
-                    <AddContextButton
-                        onClick={onMentionClick}
-                        className={`tw-opacity-60 focus-visible:tw-opacity-100 hover:tw-opacity-100 tw-mr-2 tw-gap-0.5 ${toolbarStyles.button} ${toolbarStyles.buttonSmallIcon}`}
-                    />
-                )}
                 <PromptSelectFieldToolbarItem focusEditor={focusEditor} className="tw-ml-1 tw-mr-1" />
-                <ModelSelectFieldToolbarItem
-                    models={models}
-                    userInfo={userInfo}
-                    focusEditor={focusEditor}
-                    className="tw-mr-1"
+                <ModeSelectorField
+                    className={className}
+                    omniBoxEnabled={true}
+                    onClick={onSubmitClick}
+                    detectedIntent={intent}
+                    manuallySelectIntent={manuallySelectIntent}
                 />
             </div>
             <div className="tw-flex-1 tw-flex tw-justify-end">
