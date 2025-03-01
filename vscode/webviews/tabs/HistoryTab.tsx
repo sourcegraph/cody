@@ -47,7 +47,7 @@ export const HistoryTab: React.FC<HistoryTabProps> = ({
     }
 
     return (
-        <div className="tw-flex tw-overflow-auto tw-h-full tw-w-full">
+        <div className="tw-flex tw-overflow-hidden tw-h-full tw-w-full">
             {!chats ? (
                 <LoadingDots />
             ) : (
@@ -142,7 +142,7 @@ export const HistoryTabWithData: React.FC<{
             tabIndex={0}
             shouldFilter={false}
             defaultValue="empty"
-            className="tw-flex tw-flex-col tw-h-full tw-py-4 tw-bg-transparent tw-px-2"
+            className="tw-flex tw-flex-col tw-h-full tw-py-4 tw-bg-transparent tw-px-2 tw-mb-4 tw-overscroll-auto"
             disablePointerSelection={true}
         >
             <header className="tw-inline-flex tw-mt-4 tw-px-4 tw-gap-4">
@@ -201,7 +201,7 @@ export const HistoryTabWithData: React.FC<{
                     </div>
                 </div>
             )}
-            <CommandList className="tw-flex-1">
+            <CommandList>
                 <CommandInput
                     value={searchText}
                     onValueChange={setSearchText}
@@ -210,39 +210,38 @@ export const HistoryTabWithData: React.FC<{
                     className="tw-m-[0.5rem] !tw-p-[0.5rem] tw-rounded tw-bg-input-background tw-text-input-foreground focus:tw-shadow-[0_0_0_0.125rem_var(--vscode-focusBorder)]"
                     disabled={chats.length === 0}
                 />
-                <div className="tw-flex-1 tw-overflow-y-auto tw-m-2">
-                    {paginatedChats.map(chat => {
-                        const id = chat.lastInteractionTimestamp
-                        const interactions = chat.interactions
-                        const chatTitle = chat.chatTitle
-                        const lastMessage =
-                            interactions[interactions.length - 1]?.humanMessage?.text?.trim()
-                        return (
-                            <CommandItem
-                                key={id}
-                                className={`tw-text-left tw-truncate tw-w-full tw-rounded-md tw-text-sm ${styles.historyItem} tw-overflow-hidden tw-text-sidebar-foreground`}
-                                onSelect={() =>
-                                    vscodeAPI.postMessage({
-                                        command: 'restoreHistory',
-                                        chatID: id,
-                                    })
-                                }
+            </CommandList>
+            <CommandList className="tw-flex-1 tw-overflow-y-auto tw-m-2">
+                {paginatedChats.map(chat => {
+                    const id = chat.lastInteractionTimestamp
+                    const interactions = chat.interactions
+                    const chatTitle = chat.chatTitle
+                    const lastMessage = interactions[interactions.length - 1]?.humanMessage?.text?.trim()
+                    return (
+                        <CommandItem
+                            key={id}
+                            className={`tw-text-left tw-truncate tw-w-full tw-rounded-md tw-text-sm ${styles.historyItem} tw-overflow-hidden tw-text-sidebar-foreground`}
+                            onSelect={() =>
+                                vscodeAPI.postMessage({
+                                    command: 'restoreHistory',
+                                    chatID: id,
+                                })
+                            }
+                        >
+                            <span className="tw-truncate tw-w-full">{chatTitle || lastMessage}</span>
+                            <Button
+                                variant="outline"
+                                title="Delete chat history"
+                                aria-label="delete-history-button"
+                                className={styles.deleteButton}
+                                onClick={e => onDeleteButtonClick(e, id)}
+                                onKeyDown={e => onDeleteButtonClick(e, id)}
                             >
-                                <span className="tw-truncate tw-w-full">{chatTitle || lastMessage}</span>
-                                <Button
-                                    variant="outline"
-                                    title="Delete chat history"
-                                    aria-label="delete-history-button"
-                                    className={styles.deleteButton}
-                                    onClick={e => onDeleteButtonClick(e, id)}
-                                    onKeyDown={e => onDeleteButtonClick(e, id)}
-                                >
-                                    <TrashIcon className="tw-w-8 tw-h-8" size={16} strokeWidth="1.25" />
-                                </Button>
-                            </CommandItem>
-                        )
-                    })}
-                </div>
+                                <TrashIcon className="tw-w-8 tw-h-8" size={16} strokeWidth="1.25" />
+                            </Button>
+                        </CommandItem>
+                    )
+                })}
             </CommandList>
             <footer className="tw-my-4 tw-border-muted-foreground tw-inline-flex tw-items-center tw-w-full tw-justify-center tw-gap-4">
                 <Button
