@@ -30,10 +30,19 @@ function parseJSON<T>(data: string): T | Error {
     }
 }
 
+export interface CompletionFunctionData {
+    id: string
+    function: {
+        name: string
+        arguments: string
+    }
+}
+
 export interface CompletionData {
     completion?: string
     deltaText?: string
     delta_thinking?: string
+    delta_tool_calls?: CompletionFunctionData[]
     stopReason?: string
 }
 
@@ -63,10 +72,15 @@ function parseEventData(
             // Internally, don't handle delta text yet and there's limited value
             // in passing around deltas anyways so we concatenate them here.
             const completion = builder.nextCompletion(data.completion, data.deltaText)
+            const toolCalls = builder.nextToolCalls(data.delta_tool_calls)
             return {
                 type: eventType,
                 completion,
                 stopReason: data.stopReason,
+                content: {
+                    text: completion,
+                    tools: toolCalls,
+                },
             }
         }
         case 'error': {

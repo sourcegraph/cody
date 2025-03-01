@@ -26,6 +26,48 @@ export function initializeEditSourceControl(context: vscode.ExtensionContext): v
     )
     editHistoryGroup = editSourceControl.createResourceGroup('history', 'Edit History')
     editHistoryGroup.hideWhenEmpty = true
+
+    // Register proper listeners for SCM and text changes
+    // 1. Listen for source control resource state changes (when user discards in SCM UI)
+    const disposableScm = vscode.window.onDidChangeActiveTextEditor(editor => {
+        if (!editor) return
+
+        // Check if any history items exist for the current file
+        const uri = editor.document.uri
+
+        // When file changes, check if there's a diff between content and any history items
+        // If content changed and matches original, user may have discarded changes
+        setTimeout(async () => {
+            try {
+                const historyItem = historyStore.get(uri.toString())
+                if (historyItem) {
+                    const currentContent = editor.document.getText()
+                    // If current file content matches the history item's original content
+                    // it likely means changes were discarded
+                    if (currentContent === historyItem.content) {
+                        historyStore.delete(uri.toString())
+                        updateEditHistoryGroup()
+                    }
+                }
+            } catch (error) {
+                // Ignore errors here
+            }
+        }, 200) // Small delay to ensure content is updated
+    })
+
+    // 2. Register direct SCM discard command listener
+    const disposableDiscard = vscode.commands.registerCommand(
+        'cody.discardHistoryItem',
+        (resource: EditHistoryResourceState) => {
+            if (resource?.uri) {
+                historyStore.delete(resource.uri.toString())
+                updateEditHistoryGroup()
+            }
+        }
+    )
+
+    context.subscriptions.push(disposableScm, disposableDiscard)
+
     editSourceControl.quickDiffProvider = {
         provideOriginalResource: async (uri: vscode.Uri): Promise<vscode.Uri | null> => {
             const historyItem = historyStore.get(uri.toString())
@@ -65,10 +107,23 @@ export function initializeEditSourceControl(context: vscode.ExtensionContext): v
             'cody.editHistory.revert',
             async (resource: EditHistoryResourceState) => {
                 if (resource) {
-                    deleteEditHistoryItem(
+                    await deleteEditHistoryItem(
                         resource.uri,
                         resource.content,
                         new Date(resource.timestamp).toLocaleString()
+                    )
+                }
+            }
+        ),
+        // Add context menu command for discarding history items
+        vscode.commands.registerCommand(
+            'cody.editHistory.discard',
+            async (resource: EditHistoryResourceState) => {
+                if (resource?.uri) {
+                    historyStore.delete(resource.uri.toString())
+                    updateEditHistoryGroup()
+                    vscode.window.showInformationMessage(
+                        `Discarded history item for ${displayPath(resource.uri)}`
                     )
                 }
             }
@@ -189,9 +244,9 @@ export const editTool = {
                 throw new Error('Parameter `old_str` is required for command: str_replace')
             }
             // Read file content once
-            const fileContent = await readFile(uri)
+            const content = await readFile(uri)
             // Check for occurrences efficiently
-            const parts = fileContent.split(oldStr)
+            const parts = content.split(oldStr)
             const occurrences = parts.length - 1
             if (occurrences === 0) {
                 throw new Error(
@@ -205,28 +260,28 @@ export const editTool = {
                     `No replacement was performed. Multiple occurrences of old_str \`${oldStr}\` found. Please ensure it is unique.`
                 )
             }
+            const timestamp = Date.now()
             // Store history before modifying the file
             historyStore.set(uri.toString(), {
                 uri,
-                content: fileContent,
-                timestamp: Date.now(),
+                content,
+                timestamp,
             })
             updateEditHistoryGroup()
             // Perform replacement and write file in one operation
-            const newFileContent = parts.join(newStr || '')
-            await writeFile(uri, newFileContent)
+            const newContent = parts.join(newStr || '')
+            await writeFile(uri, newContent)
             // Open document
             const document = await vscode.workspace.openTextDocument(uri)
             await vscode.window.showTextDocument(document)
             // Create snippet once
-            const snippet =
-                newFileContent.length > 200 ? newFileContent.substring(0, 200) + '...' : newFileContent
+            const snippet = newContent.length > 200 ? newContent.substring(0, 200) + '...' : newContent
             const output = [getContentTemplate(displayName, snippet)]
             // Check diagnostics
-            const problems = vscode.languages.getDiagnostics(uri)
-            if (problems.length > 0) {
+            const fileProblems = vscode.languages.getDiagnostics(uri)
+            if (fileProblems.length > 0) {
                 output.push(
-                    `[WARNING] Errors detected - action required: ${problems
+                    `[WARNING] Errors detected - action required: ${fileProblems
                         .map(d => d.message)
                         .join('\n')}`
                 )
@@ -241,6 +296,9 @@ export const editTool = {
                         .join('\n')}`
                 )
             }
+            const historyUri = uri.with({ scheme: 'cody-checkpoint' })
+            const title = `History: ${displayPath(uri)} (${new Date(timestamp).toLocaleString()})`
+            await vscode.commands.executeCommand('vscode.diff', historyUri, uri, title)
             return output.join('\n')
         }
 
@@ -317,6 +375,13 @@ function updateEditHistoryGroup() {
                 strikeThrough: false,
                 tooltip: `Edited on ${new Date(item.timestamp).toLocaleString()}`,
                 iconPath: new vscode.ThemeIcon('history'),
+                // Add discard button that uses our custom command
+                light: {
+                    iconPath: new vscode.ThemeIcon('discard'),
+                },
+                dark: {
+                    iconPath: new vscode.ThemeIcon('discard'),
+                },
             },
             command: {
                 command: 'cody.editHistory.showDiff',

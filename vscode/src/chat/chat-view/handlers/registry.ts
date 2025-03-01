@@ -6,6 +6,7 @@ import { AgenticHandler } from './AgenticHandler'
 import { ChatHandler } from './ChatHandler'
 import { DeepCodyHandler } from './DeepCodyHandler'
 import { EditHandler } from './EditHandler'
+import { GatewayHandler } from './GatewayHandler'
 import { SearchHandler } from './SearchHandler'
 import { ExperimentalToolHandler } from './ToolHandler'
 import type { AgentHandler, AgentTools } from './interfaces'
@@ -64,11 +65,17 @@ function getAgentPrototype(modelId: string, tools: AgentTools): AgentHandler | u
     const minion = config?.experimentalMinionAnthropicKey
     const anthropic = config?.devModels?.find(m => m.provider.includes('anthropic'))?.apiKey ?? minion
     const gemini = config?.devModels?.find(m => m.provider.includes('google'))?.apiKey
-    if (modelId.includes('sonnet') && anthropic) {
+    // Requests are sent to the Anthropic API directly
+    if (modelId.includes('7-sonnet') && anthropic) {
         return new AgenticHandler(modelId, contextRetriever, editor, chatClient, anthropic)
     }
+    // Requests are sent to the Google API directly
     if (modelId.includes('gemini') && gemini) {
         return new AgenticGeminiHandler(modelId, contextRetriever, editor, chatClient, gemini)
+    }
+    // NOTE: WIP - uses the Sourcegraph API with tools
+    if (modelId.includes('7-sonnet') || modelId.includes('4o')) {
+        return new GatewayHandler(modelId, contextRetriever, editor, chatClient)
     }
     return undefined
 }

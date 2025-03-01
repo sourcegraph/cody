@@ -48,7 +48,7 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
     protected readonly MAX_TURN = 20
     private readonly anthropic
     protected tools: AgentTool[] = []
-    private messages: MessageParam[] = []
+    private static sessions = new Map<string, MessageParam[]>()
 
     constructor(
         protected readonly modelId: string,
@@ -72,6 +72,8 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
         const { requestID, inputText, mentions, editorState, chatBuilder, signal, span } = req
         if (signal.aborted) return // Early abort check
 
+        const messages = AgenticHandler.sessions.get(chatBuilder.sessionID) ?? []
+
         this.tools = await AgentToolGroup.getToolsByVersion(this.contextRetriever, span)
 
         const contextResult = await this.computeAgenticContext(
@@ -88,7 +90,7 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
         if (contextResult.contextItems) {
             const contextItems = getUniqueContextItems(contextResult.contextItems)
             chatBuilder.setLastMessageContext(contextItems)
-            this.messages.push(
+            messages.push(
                 {
                     role: 'user',
                     content: convertContextItemToInlineMessage(contextItems),
@@ -139,7 +141,7 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
             return false // Continue processing
         }
 
-        this.messages.push({ role: 'user', content: inputText.toString() })
+        messages.push({ role: 'user', content: inputText.toString() })
 
         const streamProcessor = async (): Promise<ToolCall[]> => {
             const toolCalls: ToolCall[] = []
@@ -149,7 +151,7 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
                         {
                             tools: this.tools.map(tool => tool.spec),
                             max_tokens: 8000,
-                            messages: this.messages,
+                            messages,
                             system: AgenticHandler.SYSTEM_PROMPT,
                             stream: true,
                             ...(this.modelId.includes('3-7')
@@ -184,7 +186,7 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
                     .on('error', error => reject(error))
                     .on('abort', error => reject(error))
                     .on('finalMessage', ({ role, content }: MessageParam) => {
-                        this.messages.push({ role, content })
+                        messages.push({ role, content })
                     })
             })
         }
@@ -194,7 +196,6 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
                 if (!signal.aborted) throw new Error(`Stream processing failed: ${error}`) // Prevent double error posting on abort
                 return []
             })
-            // typewriter.close() // Close typewriter after each turn
 
             if (signal.aborted) return // Abort check after stream processing
 
@@ -219,7 +220,7 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
                 }
             }
 
-            this.messages.push({ role: 'user', content: toolResults })
+            messages.push({ role: 'user', content: toolResults })
             this.turnCount++
         }
 

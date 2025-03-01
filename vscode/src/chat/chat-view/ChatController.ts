@@ -1284,10 +1284,14 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         chatModel?: ChatModel
     ): Promise<void> {
         return tracer.startActiveSpan('chat.setCustomChatTitle', async (span): Promise<void> => {
+            // If the input text is less than 8 words, do not generate a custom title.
+            if (inputText.split(' ').length < 5) {
+                return
+            }
             // Get the currently available models with speed tag.
             const speeds = modelsService.getModelsByTag(ModelTag.Speed)
             // Use the latest Gemini flash model or the first speedy model as the default.
-            const model = (speeds.find(m => m.id.includes('flash')) || speeds?.[0])?.id ?? chatModel
+            const model = (speeds.find(m => m.id.includes('flash-lite')) || speeds?.[0])?.id ?? chatModel
             const messages = this.chatBuilder.getMessages()
             // Returns early if this is not the first message or if this is a testing session.
             if (messages.length > 1 || !this.isAutoChatTitleEnabled || !model || isAgentTesting) {

@@ -12,6 +12,8 @@ import { getCorpusContextItemsForEditorState } from '../initialContext'
 import type { AgentTool } from './AgentToolGroup'
 import { type CodeSearchInput, CodeSearchSchema, validateWithZod } from './schema'
 
+const CONTEXT_TEMPLATE = '```{{FILENAME}}\n{{CONTENT}}\n```'
+
 export async function getCodebaseSearchTool(
     contextRetriever: Pick<ContextRetriever, 'retrieveContext' | 'computeDidYouMean'>,
     span: Span
@@ -38,11 +40,17 @@ export async function getCodebaseSearchTool(
                 undefined,
                 true
             )
-            return (
-                context
-                    .map(item => `\`\`\`${displayPath(item.uri)}\n${item.content ?? ''}\n\`\`\``)
-                    .join('\n') || ''
-            )
+            return context
+                .map(({ uri, content }) => {
+                    if (!content?.length) return ''
+                    const remote = !uri.scheme.startsWith('file') && uri.path?.split('/-/blob/')?.pop()
+                    const displayName = remote || displayPath(uri)
+                    return CONTEXT_TEMPLATE.replace('{{FILENAME}}', displayName).replace(
+                        '{{CONTENT}}',
+                        content
+                    )
+                })
+                .join('\n')
         },
     } satisfies AgentTool
 

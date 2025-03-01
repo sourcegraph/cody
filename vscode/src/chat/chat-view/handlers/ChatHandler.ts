@@ -236,7 +236,7 @@ export class ChatHandler implements AgentHandler {
         )
     }
 
-    private async buildPrompt(
+    public async buildPrompt(
         prompter: DefaultPrompter,
         chatBuilder: ChatBuilder,
         abortSignal: AbortSignal,

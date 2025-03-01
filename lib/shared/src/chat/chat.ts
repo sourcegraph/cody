@@ -38,32 +38,23 @@ export class ChatClient {
             await firstValueFrom(authStatus),
         ])
 
-        if (isError(versions)) {
-            throw versions
-        }
-
         if (!authStatus_.authenticated) {
             throw new Error('not authenticated')
         }
-
-        // Only check the API version if it's a claude-3 model. Claude-3 models are being deprecated already,
-        // but old sg instances might still have them.
-        if (params.model?.includes('claude-3') && versions instanceof Error) {
+        if (isError(versions)) {
+            throw versions
+        }
+        if (!versions) {
             throw new Error('unable to determine Cody API version')
         }
-
-        const useApiV1 =
-            params.model?.includes('claude-3') && !(versions instanceof Error) && versions.codyAPIVersion
-        const isLastMessageFromHuman = messages.length > 0 && messages.at(-1)!.speaker === 'human'
+        // Q: (bee) are we checking for new instances of Cody API version that support old claude 3 models?
+        const useApiV1 = versions.codyAPIVersion >= 2 && params.model?.includes('anthropic/claude-3')
 
         const isFireworks =
             params?.model?.startsWith('fireworks/') || params?.model?.startsWith('fireworks::')
-        const augmentedMessages =
-            isFireworks || useApiV1
-                ? sanitizeMessages(messages)
-                : isLastMessageFromHuman
-                  ? messages.concat([{ speaker: 'assistant' }])
-                  : messages
+        const augmentedMessages = isFireworks || useApiV1 ? sanitizeMessages(messages) : messages
+        // Old claude models require an empty assistant message at the end of the messages array?
+        if (useApiV1) augmentedMessages.push({ speaker: 'assistant' })
 
         // We only want to send up the speaker and prompt text, regardless of whatever other fields
         // might be on the messages objects (`file`, `displayText`, `contextFiles`, etc.).
@@ -88,7 +79,7 @@ export class ChatClient {
         return this.completions.stream(
             completionParams,
             {
-                apiVersion: useApiV1 ? versions.codyAPIVersion : 0,
+                apiVersion: versions.codyAPIVersion,
                 interactionId: interactionId,
                 customHeaders,
             },

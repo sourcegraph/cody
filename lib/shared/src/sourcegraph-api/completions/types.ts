@@ -5,8 +5,18 @@ interface DoneEvent {
     type: 'done'
 }
 
+export interface ToolsCalled {
+    id: string
+    name: string
+    args: unknown
+}
+
 interface CompletionEvent extends CompletionResponse {
     type: 'completion'
+    content?: {
+        text: string
+        tools?: ToolsCalled[] | undefined
+    }
 }
 
 interface ErrorEvent {
@@ -42,6 +52,7 @@ export interface CompletionResponse {
     completion: string
     thinking?: string
     stopReason?: string
+    tools?: ToolsCalled[]
 }
 
 export interface CompletionParameters {
@@ -69,7 +80,7 @@ export interface SerializedCompletionParameters extends Omit<CompletionParameter
 }
 
 export interface CompletionCallbacks {
-    onChange: (text: string) => void
+    onChange: (text: string, content?: { text: string; tools?: ToolsCalled[] }) => void
     onComplete: () => void
     onError: (error: Error, statusCode?: number) => void
 }
@@ -78,13 +89,18 @@ export interface CompletionCallbacks {
  * Values for the completion generator that represent the progress of a streaming completion.
  *
  * - `change`: Called when new text is received. The `text` is the full text, not just the new text
- *   since the last `change` value.
+ *   since the last `change` value. Additionally, may include a `content` object with `delta_tool_calls`
+ *   for tool invocation events.
  * - `complete`: Only called when a stream successfully completes. If an error is encountered, this
  *   is never called.
  * - `error`: Only called when a stream fails or encounters an error. This should be assumed to be
  *   a "complete" event, and no other callbacks will be called afterwards.
  */
 export type CompletionGeneratorValue =
-    | { type: 'change'; text: string }
+    | {
+          type: 'change'
+          text: string
+          content?: { text: string; tools?: ToolsCalled[] }
+      }
     | { type: 'complete' }
     | { type: 'error'; error: Error; statusCode?: number }
