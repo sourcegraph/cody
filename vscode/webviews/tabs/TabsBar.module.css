@@ -29,7 +29,7 @@
     flex-shrink: 0;
     gap: 2px;
     width: 100%;
-    padding: 0 8px;
+    padding: 0 8px 0 16px;
     border-bottom: 1px solid var(--vscode-dropdown-border);
 
     & > * {
@@ -54,7 +54,7 @@
 }
 
 .tab-action-label {
-    display: inline;
+    display: none;
 }
 
 /*

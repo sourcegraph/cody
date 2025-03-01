@@ -147,6 +147,7 @@ export const TabsBar = memo<TabsBarProps>(props => {
                                     onClick={() => handleClick(view, command, changesView)}
                                     data-testid={`tab-${view}`}
                                     tooltipExtra={tooltip}
+                                    alwaysShowTitle={false}
                                 />
                             </Tabs.Trigger>
                         ))}
@@ -454,7 +455,7 @@ const ModelSelectFieldToolbarItem: FunctionComponent<{
                 onModelSelect={onModelSelect}
                 serverSentModelsEnabled={serverSentModelsEnabled}
                 userInfo={userInfo}
-                className={className}
+                className={clsx('tw-pl-2', className)}
                 data-testid="chat-model-selector"
             />
         )
