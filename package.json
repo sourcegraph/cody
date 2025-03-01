@@ -49,7 +49,7 @@
     "@types/react": "18.2.79",
     "@types/react-dom": "18.2.25",
     "@vitejs/plugin-react": "^4.2.1",
-    "esbuild": "^0.18.20",
+    "esbuild": "^0.25.0",
     "fs-extra": "^11.2.0",
     "happy-dom": "^14.3.10",
     "jsdom": "^22.1.0",
