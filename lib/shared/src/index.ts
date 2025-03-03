@@ -112,6 +112,7 @@ export {
     type ContextItemCurrentRepository,
     type ContextItemCurrentDirectory,
     type ContextItemCurrentOpenTabs,
+    type ContextItemMode,
     FILE_RANGE_TOOLTIP_LABEL,
     GENERAL_HELP_LABEL,
     IGNORED_FILE_WARNING_LABEL,
@@ -385,6 +386,8 @@ export {
     CODE_SEARCH_PROVIDER_URI,
     currentOpenCtxController,
     RULES_PROVIDER_URI,
+    EDIT_MODE_PROVIDER_URI,
+    SEARCH_MODE_PROVIDER_URI,
 } from './context/openctx/api'
 export * from './context/openctx/context'
 export * from './lexicalEditor/editorState'
