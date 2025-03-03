@@ -41,7 +41,7 @@ export interface LegacyCompletionRenderOutput {
 export interface CompletionRenderOutput {
     type: 'completion'
     inlineCompletionItems: vscode.InlineCompletionItem[]
-    updatedDecorationInfo: DecorationInfo
+    updatedDecorationInfo: null
     updatedPrediction: string
 }
 
@@ -106,7 +106,7 @@ export class AutoEditsRenderOutput {
                 type: 'completion',
                 inlineCompletionItems: completions.inlineCompletionItems,
                 updatedPrediction: completions.updatedPrediction,
-                updatedDecorationInfo: completions.updatedDecorationInfo,
+                updatedDecorationInfo: null,
             }
         }
 
