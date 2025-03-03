@@ -1,6 +1,6 @@
 import type { ChatMessage } from '@sourcegraph/cody-shared'
 import { CodyIDE } from '@sourcegraph/cody-shared'
-import { BetweenHorizonalEnd, InfoIcon, MessageSquare, Pencil, Search } from 'lucide-react'
+import { BetweenHorizonalEnd, Brain, InfoIcon, MessageSquare, Pencil, Search } from 'lucide-react'
 import type { FC } from 'react'
 import { useCallback, useMemo } from 'react'
 import { Kbd } from '../../../../../../components/Kbd'
@@ -28,14 +28,15 @@ export const INTENT_MAPPING: Record<string, IntentEnum> = {
 interface IntentOption {
     title: string | React.ReactElement
     icon: React.FC<{ className?: string }>
-    intent: ChatMessage['intent']
+    intent: NonNullable<ChatMessage['intent']>
     shortcut?: React.ReactNode
     hidden?: boolean
     disabled?: boolean
+    agent?: string
 }
 
-const defaultIntent: IntentOption = {
-    title: 'Run as chat',
+const chatIntent: IntentOption = {
+    title: 'Chat',
     icon: MessageSquare,
     intent: 'chat',
     shortcut: <Kbd macOS="return" linuxAndWindows="return" />,
@@ -57,10 +58,10 @@ const SEARCH_SHORTCUT = (
 )
 
 // Optimization: memoize search title to avoid recreation
-const SEARCH_TITLE = (
+const BADGE_TITLE = (title: string, status = 'Beta') => (
     <span className="tw-inline-flex tw-items-center tw-gap-4">
-        <span>Run as search</span>
-        <Badge>Beta</Badge>
+        <span>{title}</span>
+        <Badge>{status}</Badge>
     </span>
 )
 
@@ -74,24 +75,33 @@ function getIntentOptions({
     omniBoxEnabled: boolean
 }): IntentOption[] {
     return [
-        defaultIntent,
+        chatIntent,
         {
-            title: SEARCH_TITLE,
+            title: BADGE_TITLE('Search'),
             icon: Search,
             intent: 'search',
             hidden: !omniBoxEnabled,
             disabled: isDotComUser,
             shortcut: isDotComUser ? ENTERPRISE_BADGE : SEARCH_SHORTCUT,
         },
+        // NOTE (bee): Agentic mode is not yet implemented
         {
-            title: 'Edit Code',
+            title: BADGE_TITLE('Agentic', 'Experimental'),
+            icon: Brain,
+            intent: 'chat',
+            // TODO: Implement agentic mode
+            hidden: true,
+            agent: 'deep-cody',
+        },
+        {
+            title: BADGE_TITLE('Edit Code', 'Experimental'),
             icon: Pencil,
             intent: 'edit',
-            hidden: true,
+            hidden: !omniBoxEnabled,
             disabled: isCodyWeb,
         },
         {
-            title: 'Insert Code',
+            title: BADGE_TITLE('Insert Code', 'Experimental'),
             icon: BetweenHorizonalEnd,
             intent: 'insert',
             hidden: true,
@@ -121,7 +131,7 @@ export const ModeSelectorField: React.FunctionComponent<{
         [agentIDE, isDotComUser, omniBoxEnabled]
     )
 
-    const displayedIntent = INTENT_MAPPING[intent || 'chat'] || IntentEnum.Chat
+    const currentIntent = INTENT_MAPPING[intent || 'chat'] || IntentEnum.Chat
 
     // Memoize the handler to avoid recreating on each render
     const handleItemClick = useCallback(
@@ -151,7 +161,7 @@ export const ModeSelectorField: React.FunctionComponent<{
                 },
             }}
         >
-            {displayedIntent}
+            {currentIntent}
         </ToolbarPopoverItem>
     )
 }
@@ -159,33 +169,23 @@ export const ModeSelectorField: React.FunctionComponent<{
 export const ModeList: FC<{
     onClick: (intent?: ChatMessage['intent']) => void
     intentOptions: IntentOption[]
-}> = ({ onClick, intentOptions }) => {
-    // Create a memoized handler for each item to prevent unnecessary recreations
-    const createItemHandler = useCallback(
-        (intent: ChatMessage['intent']) => () => {
-            onClick(intent)
-        },
-        [onClick]
-    )
-
-    return (
-        <Command>
-            <CommandList className="tw-p-2">
-                {intentOptions.map(option => (
-                    <CommandItem
-                        key={option.intent || 'auto'}
-                        onSelect={createItemHandler(option.intent)}
-                        disabled={option.disabled}
-                        className="tw-flex tw-text-left tw-justify-between tw-rounded-sm tw-cursor-pointer tw-px-4"
-                    >
-                        <div className="tw-flex tw-gap-4">
-                            <option.icon className="tw-size-8 tw-mt-1" />
-                            {option.title}
-                        </div>
-                        {option.shortcut && <div className="tw-flex tw-gap-2">{option.shortcut}</div>}
-                    </CommandItem>
-                ))}
-            </CommandList>
-        </Command>
-    )
-}
+}> = ({ onClick, intentOptions }) => (
+    <Command>
+        <CommandList className="tw-p-2">
+            {intentOptions.map(option => (
+                <CommandItem
+                    key={option.intent || 'auto'}
+                    onSelect={() => onClick(option.intent)}
+                    disabled={option.disabled}
+                    className="tw-flex tw-text-left tw-justify-between tw-rounded-sm tw-cursor-pointer tw-px-4"
+                >
+                    <div className="tw-flex tw-gap-4">
+                        <option.icon className="tw-size-8 tw-mt-1" />
+                        {option.title}
+                    </div>
+                    {option.shortcut && <div className="tw-flex tw-gap-2">{option.shortcut}</div>}
+                </CommandItem>
+            ))}
+        </CommandList>
+    </Command>
+)
