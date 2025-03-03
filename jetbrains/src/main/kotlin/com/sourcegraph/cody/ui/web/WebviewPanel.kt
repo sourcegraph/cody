@@ -31,7 +31,6 @@ internal class WebviewPanelManager(private val project: Project) {
           FileEditorManager.getInstance(project).updateFilePresentation(file)
         }
       }
-      // TODO: Add icon support.
     }
   }
 
