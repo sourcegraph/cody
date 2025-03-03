@@ -13,6 +13,7 @@ import java.awt.Component
 import java.net.URLEncoder
 import java.util.concurrent.CompletableFuture
 import kotlin.math.max
+import kotlin.math.min
 
 class CodyErrorSubmitter : ErrorReportSubmitter() {
   private val DOTS = "..."
@@ -76,29 +77,58 @@ class CodyErrorSubmitter : ErrorReportSubmitter() {
     return result
   }
 
+  // Ideally we want to include full info and stacktrace, but if that is not possible.
+  // We try to fit full additional info first, and then trim stacktrace. If at lest minimal
+  // stacktrace doesn't fit, we trim additional info so minimal stacktrace will fit.
   private fun trimLogs(throwableText: String?, additionalInfo: String?, maxLength: Int): String {
-    val formattedLogs = encode(formatLogs(throwableText, additionalInfo))
-    return if (formattedLogs.length > maxLength) {
-      formattedLogs.take(maxLength - DOTS.length) + DOTS
-    } else {
-      formattedLogs
-    }
+    val newLine = encode("\n")
+    val realMaxLength = maxLength - newLine.length
+
+    val minimalStacktrace =
+        prepareStacktrace(throwableText, contextLines = 2, maxLength = realMaxLength)
+    val maximalInfo = formatAttribute("Additional info", additionalInfo)
+
+    val adjustedInfoLength =
+        max(0, min(maximalInfo.length, realMaxLength - minimalStacktrace.length))
+    val adjustedInfo = maximalInfo.take(adjustedInfoLength)
+
+    val adjustedStacktraceLength = realMaxLength - adjustedInfoLength
+    val adjustedStacktrace =
+        prepareStacktrace(throwableText, contextLines = 50, maxLength = adjustedStacktraceLength)
+
+    return listOf(adjustedInfo, adjustedStacktrace).joinToString(newLine)
   }
 
-  private fun formatLogs(throwableText: String?, additionalInfo: String?) =
-      formatAttributes("Stacktrace" to throwableText, "Additional info" to additionalInfo)
+  private fun prepareStacktrace(throwableText: String?, contextLines: Int, maxLength: Int): String {
+    val stacktraceLines = throwableText?.lines()
+    if (stacktraceLines.isNullOrEmpty()) return ""
+
+    val codyLineIndex = stacktraceLines.indexOfFirst { it.contains("com.sourcegraph") }
+
+    val content =
+        if (codyLineIndex != -1) {
+          val startIndex = max(0, codyLineIndex - contextLines)
+          val endIndex = min(stacktraceLines.size, codyLineIndex + contextLines + 1)
+          stacktraceLines.subList(startIndex, endIndex).joinToString("\n")
+        } else {
+          stacktraceLines.take(contextLines).joinToString("\n")
+        }
+
+    val formattedContent = formatAttribute("Stacktrace", content)
+    return if (formattedContent.length > maxLength) {
+      prepareStacktrace(content, contextLines - 1, maxLength)
+    } else {
+      formattedContent
+    }
+  }
 
   private fun trimPostfix(text: String, maxLength: Int): String {
     return if (text.length > maxLength) text.take(maxLength - DOTS.length) + DOTS else text
   }
 
-  private fun formatAttributes(vararg pairs: Pair<String, String?>) =
-      pairs
-          .flatMap { (key, value) -> value?.let { listOf(formatAttribute(key, it)) } ?: listOf() }
-          .joinToString("\n")
-
-  private fun formatAttribute(label: String, text: String) =
-      if (text.lines().size != 1) "$label:\n```text\n$text\n```" else "$label: ```$text```"
+  private fun formatAttribute(label: String, text: String?): String {
+    return if (text.isNullOrBlank()) "" else encode("$label:\n```text\n$text\n```")
+  }
 
   private fun encode(text: String) = URLEncoder.encode(text, "UTF-8")
 

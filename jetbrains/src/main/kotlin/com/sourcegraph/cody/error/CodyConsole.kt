@@ -21,6 +21,8 @@ class CodyConsole(project: Project) {
 
   fun addMessage(message: DebugMessage) {
     runInEdt {
+      if (toolWindow?.isDisposed != false) return@runInEdt
+
       val messageText = "${message.channel}: ${message.message}\n"
       if (message.level == "error" || message.level == "warn") {
         content?.let { toolWindow?.contentManager?.setSelectedContent(it) }
@@ -43,9 +45,12 @@ class CodyConsole(project: Project) {
 
   init {
     runInEdt {
-      val factory = toolWindow?.contentManager?.factory
-      content = factory?.createContent(consoleView.component, "Cody Console", true)
-      content?.let { toolWindow?.contentManager?.addContent(it) }
+      if (toolWindow?.isDisposed != false) return@runInEdt
+      val factory = toolWindow.contentManager.factory
+      content =
+          factory
+              .createContent(consoleView.component, "Cody Console", true)
+              .also(toolWindow.contentManager::addContent)
     }
   }
 
