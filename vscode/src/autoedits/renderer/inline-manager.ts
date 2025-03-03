@@ -2,6 +2,7 @@ import type * as vscode from 'vscode'
 
 import { isFileURI } from '@sourcegraph/cody-shared'
 
+import { areSameUriDocs } from '../utils'
 import { AutoEditsDefaultRendererManager, type AutoEditsRendererManager } from './manager'
 import type { AutoEditRenderOutput, GetRenderOutputArgs } from './render-output'
 
@@ -50,16 +51,39 @@ export class AutoEditsInlineRendererManager
         }
     }
 
-    // TODO: Revist this as now the inline manager also renders decorations
+    public hasInlineCompletionItems(): boolean {
+        if (!this.activeRequest) {
+            return false
+        }
+        return ['completion', 'completion-with-decorations'].includes(
+            this.activeRequest.renderOutput.type
+        )
+    }
+
     protected async onDidChangeTextEditorSelection(
         event: vscode.TextEditorSelectionChangeEvent
     ): Promise<void> {
-        // If the cursor moved in any file, we assume it's a user action and
-        // dismiss the active edit. This is because parts of the edit might be
-        // rendered as inline completion ghost text, which is hidden by default
-        // whenever the cursor moves.
-        if (isFileURI(event.textEditor.document.uri)) {
+        if (this.hasInlineCompletionItems() && isFileURI(event.textEditor.document.uri)) {
+            // We are showing a completion, possibly alongisde decorations. The dismissal of the completion will
+            // automatically be handled by VS Code. We must match that behaviour for the decorations,
+            // otherwise we will end up with a scenario where the decorations of a suggestion are preserved,
+            // whilst the completion has already been dismissed.
+            // If the cursor moved in any file, we assume it's a user action and
+            // dismiss the active edit.
             this.rejectActiveEdit()
+        }
+
+        if (
+            this.hasInlineDecorationOnly() &&
+            this.activeRequest &&
+            areSameUriDocs(event.textEditor.document, this.activeRequest?.document)
+        ) {
+            // We are only showing decorations. We can handle this entirely ourselves.
+            // We will only dismiss the suggestion if the user moves the cursor outside of the target range.
+            const currentSelectionRange = event.selections.at(-1)
+            if (!currentSelectionRange?.intersection(this.activeRequest.codeToReplaceData.range)) {
+                this.rejectActiveEdit()
+            }
         }
     }
 }

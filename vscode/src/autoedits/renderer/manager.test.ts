@@ -13,7 +13,7 @@ import { AutoEditsDefaultRendererManager } from '../renderer/manager'
 
 import { DefaultDecorator } from './decorators/default-decorator'
 import type { TryMakeInlineCompletionsArgs } from './manager'
-import type { AutoEditRenderOutput, CompletionRenderOutput } from './render-output'
+import type { CompletionRenderOutput } from './render-output'
 
 describe('AutoEditsDefaultRendererManager', () => {
     const getAutoeditRendererManagerArgs = (
@@ -75,10 +75,10 @@ describe('AutoEditsDefaultRendererManager', () => {
                 function greet() { console.log("Hello") }
             `
             const args = getAutoeditRendererManagerArgs(documentText, prediction)
-            const result = manager.getRenderOutput(args) as AutoEditRenderOutput
+            const result = manager.getRenderOutput(args) as CompletionRenderOutput
             expect(result).toBeDefined()
             assertInlineCompletionItems(
-                result.completions,
+                result.inlineCompletionItems,
                 dedent`
                 console.log(a, b, c)
             `
@@ -105,7 +105,7 @@ describe('AutoEditsDefaultRendererManager', () => {
             const result = manager.getRenderOutput(args) as CompletionRenderOutput
             expect(result).toBeDefined()
             assertInlineCompletionItems(
-                result.completions,
+                result.inlineCompletionItems,
                 dedent`
                 console.log(a, b, c)
                 const d = 10
@@ -132,7 +132,7 @@ describe('AutoEditsDefaultRendererManager', () => {
             const result = manager.getRenderOutput(args) as CompletionRenderOutput
             expect(result).toBeDefined()
             assertInlineCompletionItems(
-                result.completions,
+                result.inlineCompletionItems,
                 dedent`
                 console.log(a, b, c)
             `

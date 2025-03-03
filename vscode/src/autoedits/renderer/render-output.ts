@@ -33,23 +33,21 @@ interface NoCompletionRenderOutput {
  */
 export interface LegacyCompletionRenderOutput {
     type: 'legacy-completion'
-    completions: vscode.InlineCompletionItem[]
-    // TODO: Was this just null to signal that it was not possible to render a completion?
-    // Did this have any other effects, e.g. telemetry
+    inlineCompletionItems: vscode.InlineCompletionItem[]
     updatedDecorationInfo: null
     updatedPrediction: string
 }
 
-interface CompletionRenderOutput {
+export interface CompletionRenderOutput {
     type: 'completion'
-    completions: vscode.InlineCompletionItem[]
+    inlineCompletionItems: vscode.InlineCompletionItem[]
     updatedDecorationInfo: DecorationInfo
     updatedPrediction: string
 }
 
 interface CompletionWithDecorationsRenderOutput {
     type: 'completion-with-decorations'
-    completions: vscode.InlineCompletionItem[]
+    inlineCompletionItems: vscode.InlineCompletionItem[]
     decorations: AutoEditDecorations
     updatedDecorationInfo: DecorationInfo
     updatedPrediction: string
@@ -106,7 +104,7 @@ export class AutoEditsRenderOutput {
             // We can render the entire suggestion as a completion.
             return {
                 type: 'completion',
-                completions: completions.inlineCompletionItems,
+                inlineCompletionItems: completions.inlineCompletionItems,
                 updatedPrediction: completions.updatedPrediction,
                 updatedDecorationInfo: completions.updatedDecorationInfo,
             }
@@ -124,7 +122,7 @@ export class AutoEditsRenderOutput {
         if (renderWithDecorations) {
             return {
                 type: 'completion-with-decorations',
-                completions: completions.inlineCompletionItems,
+                inlineCompletionItems: completions.inlineCompletionItems,
                 decorations: {
                     ...this.getInlineDecorations(completions.updatedDecorationInfo),
                     // No need to show insertion marker when only using inline decorations

@@ -155,7 +155,12 @@ export class AutoEditsDefaultRendererManager
     protected get activeRequest() {
         if (this.activeRequestId) {
             const request = autoeditAnalyticsLogger.getRequest(this.activeRequestId)
-            if (request && 'decorationInfo' in request && this.decorator) {
+            if (
+                request &&
+                'renderOutput' in request &&
+                request.renderOutput.type !== 'none' &&
+                this.decorator
+            ) {
                 return request
             }
         }
@@ -167,7 +172,13 @@ export class AutoEditsDefaultRendererManager
     }
 
     public hasInlineDecorationOnly(): boolean {
-        return !this.activeRequest?.inlineCompletionItems
+        if (!this.activeRequest) {
+            return false
+        }
+
+        return ['decorations', 'image', 'legacy-decorations'].includes(
+            this.activeRequest.renderOutput.type
+        )
     }
 
     public async handleDidShowSuggestion(requestId: AutoeditRequestID): Promise<void> {
@@ -199,7 +210,7 @@ export class AutoEditsDefaultRendererManager
                     document: invokedDocument,
                     position: invokedPosition,
                     docContext,
-                    inlineCompletionItems,
+                    renderOutput,
                 } = this.activeRequest
 
                 const { activeTextEditor } = vscode.window
@@ -209,6 +220,8 @@ export class AutoEditsDefaultRendererManager
                     return
                 }
 
+                const inlineCompletionItems =
+                    'inlineCompletionItems' in renderOutput ? renderOutput.inlineCompletionItems : []
                 // If a completion is rendered as an inline completion item we have to
                 // manually check if the visibility context for the item is still valid and
                 // it's still present in the document.
@@ -349,9 +362,6 @@ export class AutoEditsDefaultRendererManager
             )
 
             if (autocompleteInlineResponse.trimEnd().length === 0) {
-                // TODO: Is this correct? We handle this by not suggesting anything to the user
-                // and logging "emptyPredictionAfterInlineCompletionExtraction".
-                // Should we not attempt to render this with decorations?
                 return { type: 'none' }
             }
 
@@ -377,7 +387,7 @@ export class AutoEditsDefaultRendererManager
             })
             return {
                 type: 'legacy-completion',
-                completions: [inlineCompletionItem],
+                inlineCompletionItems: [inlineCompletionItem],
                 updatedDecorationInfo: null,
                 updatedPrediction,
             }

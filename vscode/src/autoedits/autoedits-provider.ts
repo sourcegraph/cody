@@ -370,7 +370,6 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                 codeToReplaceData,
             })
 
-            // TODO: Provide renderOutput.node for non legacy method
             if (renderOutput.type === 'none') {
                 autoeditsOutputChannelLogger.logDebugIfVerbose(
                     'provideInlineCompletionItems',
@@ -402,13 +401,13 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
             // We need to ensure all the relevant metadata can be retrieved from `requestId` only.
             autoeditAnalyticsLogger.markAsPostProcessed({
                 requestId,
+                renderOutput,
                 prediction:
                     'updatedPrediction' in renderOutput ? renderOutput.updatedPrediction : prediction,
                 decorationInfo:
                     'updatedDecorationInfo' in renderOutput
                         ? renderOutput.updatedDecorationInfo
                         : decorationInfo,
-                inlineCompletionItems: 'completions' in renderOutput ? renderOutput.completions : null,
             })
 
             if (!isRunningInsideAgent()) {
@@ -430,7 +429,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
             // The data structure returned to the agent's from the `autoedits/execute` calls.
             // Note: this is subject to change later once we start working on the agent API.
             const result: AutoeditsResult = {
-                items: 'completions' in renderOutput ? renderOutput.completions : [],
+                items: 'inlineCompletionItems' in renderOutput ? renderOutput.inlineCompletionItems : [],
                 requestId,
                 prediction,
                 decorationInfo,
