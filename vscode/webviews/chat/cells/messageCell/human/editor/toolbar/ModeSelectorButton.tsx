@@ -2,7 +2,7 @@ import type { ChatMessage } from '@sourcegraph/cody-shared'
 import { CodyIDE } from '@sourcegraph/cody-shared'
 import { BetweenHorizonalEnd, Brain, InfoIcon, MessageSquare, Pencil, Search } from 'lucide-react'
 import type { FC } from 'react'
-import { useCallback, useMemo } from 'react'
+import { useCallback, useEffect, useMemo } from 'react'
 import { Kbd } from '../../../../../../components/Kbd'
 import { Badge } from '../../../../../../components/shadcn/ui/badge'
 import { Command, CommandItem, CommandList } from '../../../../../../components/shadcn/ui/command'
@@ -142,13 +142,40 @@ export const ModeSelectorField: React.FunctionComponent<{
         [manuallySelectIntent]
     )
 
+    // Handle keyboard shortcut to cycle through intent options
+    const handleKeyDown = useCallback(
+        (event: KeyboardEvent) => {
+            // Check for ⌘. (Command+Period on macOS, Ctrl+Period on other platforms)
+            if ((event.metaKey || event.ctrlKey) && event.key === '.') {
+                event.preventDefault()
+                // Find the current index and select the next intent option
+                const currentIndex = intentOptions.findIndex(option => option.intent === intent)
+                const nextIndex = (currentIndex + 1) % intentOptions.length
+                manuallySelectIntent(intentOptions[nextIndex].intent)
+            }
+        },
+        [intent, intentOptions, manuallySelectIntent]
+    )
+
+    // Add event listener for keyboard shortcut
+    useEffect(() => {
+        document.addEventListener('keydown', handleKeyDown)
+        return () => {
+            document.removeEventListener('keydown', handleKeyDown)
+        }
+    }, [handleKeyDown])
+
     return (
         <ToolbarPopoverItem
             role="combobox"
             iconEnd="chevron"
             className={cn('tw-justify-between', className)}
-            tooltip="Select a mode"
-            aria-label="Select mode"
+            tooltip={
+                <>
+                    Switch mode (<Kbd macOS="⌘." linuxAndWindows="Ctrl." />)
+                </>
+            }
+            aria-label="switch-mode"
             popoverContent={close => (
                 <div className="tw-flex tw-flex-col tw-max-h-[500px] tw-overflow-auto">
                     <ModeList onClick={handleItemClick(close)} intentOptions={intentOptions} />

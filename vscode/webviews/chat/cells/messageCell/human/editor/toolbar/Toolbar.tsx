@@ -101,7 +101,7 @@ export const Toolbar: FunctionComponent<{
                 <ModeSelectorField
                     className={className}
                     omniBoxEnabled={omniBoxEnabled}
-                    intent={selectedIntent}
+                    intent={intent || selectedIntent}
                     manuallySelectIntent={onSelectedIntentChange}
                 />
             </div>
