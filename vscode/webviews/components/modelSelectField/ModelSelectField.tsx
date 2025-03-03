@@ -2,7 +2,17 @@ import { type Model, ModelTag, isCodyProModel } from '@sourcegraph/cody-shared'
 import { DeepCodyAgentID, ToolCodyModelName } from '@sourcegraph/cody-shared/src/models/client'
 import { clsx } from 'clsx'
 import { BookOpenIcon, BrainIcon, BuildingIcon, ExternalLinkIcon } from 'lucide-react'
-import { type FunctionComponent, type ReactNode, useCallback, useMemo } from 'react'
+import {
+    type FunctionComponent,
+    type ReactNode,
+    forwardRef,
+    useCallback,
+    useEffect,
+    useImperativeHandle,
+    useMemo,
+    useRef,
+    useState,
+} from 'react'
 import type { UserAccountInfo } from '../../Chat'
 import { getVSCodeAPI } from '../../utils/VSCodeApi'
 import { useTelemetryRecorder } from '../../utils/telemetry'
@@ -24,231 +34,253 @@ interface SelectListOption {
     disabled?: boolean
 }
 
-export const ModelSelectField: React.FunctionComponent<{
+export interface ModelSelectFieldHandle {
+    openDropdown: () => void
+}
+
+export interface ModelSelectFieldProps {
     models: Model[]
     onModelSelect: (model: Model) => void
     serverSentModelsEnabled: boolean
-
     userInfo: Pick<UserAccountInfo, 'isCodyProUser' | 'isDotComUser'>
-
     onCloseByEscape?: () => void
     className?: string
-
-    /** For storybooks only. */
     __storybook__open?: boolean
-}> = ({
-    models,
-    onModelSelect: parentOnModelSelect,
-    serverSentModelsEnabled,
-    userInfo,
-    onCloseByEscape,
-    className,
-    __storybook__open,
-}) => {
-    const telemetryRecorder = useTelemetryRecorder()
+    openDropdownRef?: (openFn: () => void) => void
+}
 
-    // The first model is the always the default.
-    const selectedModel = models[0]
+export const ModelSelectField = forwardRef<ModelSelectFieldHandle, ModelSelectFieldProps>(
+    (
+        {
+            models,
+            onModelSelect: parentOnModelSelect,
+            serverSentModelsEnabled,
+            userInfo,
+            onCloseByEscape,
+            className,
+            __storybook__open,
+            openDropdownRef,
+        },
+        ref
+    ) => {
+        const telemetryRecorder = useTelemetryRecorder()
+        const popoverControlRef = useRef<{ open: () => void } | null>(null)
 
-    const isCodyProUser = userInfo.isDotComUser && userInfo.isCodyProUser
-    const isEnterpriseUser = !userInfo.isDotComUser
-    const showCodyProBadge = !isEnterpriseUser && !isCodyProUser
+        // Expose the openDropdown method via ref
+        useImperativeHandle(
+            ref,
+            () => ({
+                openDropdown: () => popoverControlRef.current?.open(),
+            }),
+            []
+        )
 
-    const onModelSelect = useCallback(
-        (model: Model): void => {
-            if (selectedModel.id !== model.id) {
-                telemetryRecorder.recordEvent('cody.modelSelector', 'select', {
-                    metadata: {
-                        modelIsCodyProOnly: isCodyProModel(model) ? 1 : 0,
-                        isCodyProUser: isCodyProUser ? 1 : 0,
-                    },
-                    privateMetadata: {
-                        modelId: model.id,
-                        modelProvider: model.provider,
-                        modelTitle: model.title,
-                    },
-                    billingMetadata: {
-                        product: 'cody',
-                        category: 'billable',
-                    },
-                })
+        useEffect(() => {
+            if (popoverControlRef.current && openDropdownRef) {
+                openDropdownRef(() => popoverControlRef.current?.open())
             }
-            if (showCodyProBadge && isCodyProModel(model)) {
-                getVSCodeAPI().postMessage({
-                    command: 'links',
-                    value: 'https://sourcegraph.com/cody/subscription',
-                })
+        }, [openDropdownRef])
+
+        // The first model is the always the default.
+        const selectedModel = models[0]
+
+        const isCodyProUser = userInfo.isDotComUser && userInfo.isCodyProUser
+        const isEnterpriseUser = !userInfo.isDotComUser
+        const showCodyProBadge = !isEnterpriseUser && !isCodyProUser
+
+        const onModelSelect = useCallback(
+            (model: Model): void => {
+                if (selectedModel.id !== model.id) {
+                    telemetryRecorder.recordEvent('cody.modelSelector', 'select', {
+                        metadata: {
+                            modelIsCodyProOnly: isCodyProModel(model) ? 1 : 0,
+                            isCodyProUser: isCodyProUser ? 1 : 0,
+                        },
+                        privateMetadata: {
+                            modelId: model.id,
+                            modelProvider: model.provider,
+                            modelTitle: model.title,
+                        },
+                        billingMetadata: {
+                            product: 'cody',
+                            category: 'billable',
+                        },
+                    })
+                }
+                if (showCodyProBadge && isCodyProModel(model)) {
+                    getVSCodeAPI().postMessage({
+                        command: 'links',
+                        value: 'https://sourcegraph.com/cody/subscription',
+                    })
+                    return
+                }
+                parentOnModelSelect(model)
+            },
+            [
+                selectedModel,
+                telemetryRecorder.recordEvent,
+                showCodyProBadge,
+                parentOnModelSelect,
+                isCodyProUser,
+            ]
+        )
+
+        // Readonly if they are an enterprise user that does not support server-sent models
+        const readOnly = !(userInfo.isDotComUser || serverSentModelsEnabled)
+
+        const onOpenChange = useCallback(
+            (open: boolean): void => {
+                if (open) {
+                    // Trigger only when dropdown is about to be opened.
+                    telemetryRecorder.recordEvent('cody.modelSelector', 'open', {
+                        metadata: {
+                            isCodyProUser: isCodyProUser ? 1 : 0,
+                            totalModels: models.length,
+                        },
+                        billingMetadata: {
+                            product: 'cody',
+                            category: 'billable',
+                        },
+                    })
+                }
+            },
+            [telemetryRecorder.recordEvent, isCodyProUser, models.length]
+        )
+
+        const options = useMemo<SelectListOption[]>(
+            () =>
+                models.map(m => {
+                    const availability = modelAvailability(userInfo, serverSentModelsEnabled, m)
+                    return {
+                        value: m.id,
+                        title: (
+                            <ModelTitleWithIcon
+                                model={m}
+                                showIcon={true}
+                                showProvider={true}
+                                modelAvailability={availability}
+                            />
+                        ),
+                        // needs-cody-pro models should be clickable (not disabled) so the user can
+                        // be taken to the upgrade page.
+                        disabled: !['available', 'needs-cody-pro'].includes(availability),
+                        group: getModelDropDownUIGroup(m),
+                        tooltip: getTooltip(m, availability),
+                    } satisfies SelectListOption
+                }),
+            [models, userInfo, serverSentModelsEnabled]
+        )
+        const optionsByGroup: { group: string; options: SelectListOption[] }[] = useMemo(() => {
+            return optionByGroup(options)
+        }, [options])
+
+        const onChange = useCallback(
+            (value: string | undefined) => {
+                onModelSelect(models.find(m => m.id === value)!)
+            },
+            [onModelSelect, models]
+        )
+
+        const onKeyDown = useCallback(
+            (event: React.KeyboardEvent<HTMLDivElement>) => {
+                if (event.key === 'Escape') {
+                    onCloseByEscape?.()
+                }
+            },
+            [onCloseByEscape]
+        )
+
+        if (!models.length || models.length < 1) {
+            return null
+        }
+
+        const value = selectedModel.id
+
+        // Add a focus tracking state
+        const [isFocused, setIsFocused] = useState(false)
+
+        // Handle keyboard events when component is focused
+        const handleKeyDown = useCallback((event: KeyboardEvent) => {
+            console.log('Key pressed:', event.key, 'Meta:', event.metaKey, 'Alt:', event.altKey)
+
+            const isMac = navigator.platform.includes('Mac')
+            const modKey = isMac ? event.metaKey : event.ctrlKey
+
+            if (modKey && event.altKey && event.key === '/') {
+                console.log('SHORTCUT TRIGGERED!')
+                event.preventDefault()
+                popoverControlRef.current?.open()
+            }
+        }, [])
+
+        // Attach event handler when focused
+        useEffect(() => {
+            if (!isFocused) {
+                console.log('Not focused, not attaching shortcut')
                 return
             }
-            parentOnModelSelect(model)
-        },
-        [
-            selectedModel,
-            telemetryRecorder.recordEvent,
-            showCodyProBadge,
-            parentOnModelSelect,
-            isCodyProUser,
-        ]
-    )
+            console.log('Attaching keyboard shortcut handler')
 
-    // Readonly if they are an enterprise user that does not support server-sent models
-    const readOnly = !(userInfo.isDotComUser || serverSentModelsEnabled)
+            window.addEventListener('keydown', handleKeyDown)
+            return () => window.removeEventListener('keydown', handleKeyDown)
+        }, [isFocused, handleKeyDown])
 
-    const onOpenChange = useCallback(
-        (open: boolean): void => {
-            if (open) {
-                // Trigger only when dropdown is about to be opened.
-                telemetryRecorder.recordEvent('cody.modelSelector', 'open', {
-                    metadata: {
-                        isCodyProUser: isCodyProUser ? 1 : 0,
-                        totalModels: models.length,
-                    },
-                    billingMetadata: {
-                        product: 'cody',
-                        category: 'billable',
-                    },
-                })
-            }
-        },
-        [telemetryRecorder.recordEvent, isCodyProUser, models.length]
-    )
-
-    const options = useMemo<SelectListOption[]>(
-        () =>
-            models.map(m => {
-                const availability = modelAvailability(userInfo, serverSentModelsEnabled, m)
-                return {
-                    value: m.id,
-                    title: (
-                        <ModelTitleWithIcon
-                            model={m}
-                            showIcon={true}
-                            showProvider={true}
-                            modelAvailability={availability}
-                        />
-                    ),
-                    // needs-cody-pro models should be clickable (not disabled) so the user can
-                    // be taken to the upgrade page.
-                    disabled: !['available', 'needs-cody-pro'].includes(availability),
-                    group: getModelDropDownUIGroup(m),
-                    tooltip: getTooltip(m, availability),
-                } satisfies SelectListOption
-            }),
-        [models, userInfo, serverSentModelsEnabled]
-    )
-    const optionsByGroup: { group: string; options: SelectListOption[] }[] = useMemo(() => {
-        return optionByGroup(options)
-    }, [options])
-
-    const onChange = useCallback(
-        (value: string | undefined) => {
-            onModelSelect(models.find(m => m.id === value)!)
-        },
-        [onModelSelect, models]
-    )
-
-    const onKeyDown = useCallback(
-        (event: React.KeyboardEvent<HTMLDivElement>) => {
-            if (event.key === 'Escape') {
-                onCloseByEscape?.()
-            }
-        },
-        [onCloseByEscape]
-    )
-
-    if (!models.length || models.length < 1) {
-        return null
-    }
-
-    const value = selectedModel.id
-    return (
-        <ToolbarPopoverItem
-            role="combobox"
-            data-testid="chat-model-selector"
-            iconEnd={readOnly ? undefined : 'chevron'}
-            className={cn('tw-justify-between', className)}
-            disabled={readOnly}
-            __storybook__open={__storybook__open}
-            tooltip={readOnly ? undefined : 'Select a model'}
-            aria-label="Select a model or an agent"
-            popoverContent={close => (
-                <Command
-                    loop={true}
-                    defaultValue={value}
-                    tabIndex={0}
-                    className={`focus:tw-outline-none ${styles.chatModelPopover}`}
-                    data-testid="chat-model-popover"
-                >
-                    <CommandList
-                        className="model-selector-popover tw-max-h-[80vh] tw-overflow-y-auto"
-                        data-testid="chat-model-popover-option"
+        // Add onFocus handler to your component
+        const onFocus = () => setIsFocused(true)
+        const onBlur = () => setIsFocused(false)
+        return (
+            <ToolbarPopoverItem
+                role="combobox"
+                data-testid="chat-model-selector"
+                iconEnd={readOnly ? undefined : 'chevron'}
+                className={cn('tw-justify-between', className)}
+                disabled={readOnly}
+                __storybook__open={__storybook__open}
+                tooltip={readOnly ? undefined : 'Select a model (⌘⌥/)'}
+                aria-label="Select a model or an agent"
+                popoverContent={close => (
+                    <Command
+                        loop={true}
+                        defaultValue={value}
+                        tabIndex={0}
+                        className={`focus:tw-outline-none ${styles.chatModelPopover}`}
+                        data-testid="chat-model-popover"
                     >
-                        {optionsByGroup.map(({ group, options }) => (
-                            <CommandGroup heading={group} key={group}>
-                                {options.map(option => (
-                                    <CommandItem
-                                        data-testid="chat-model-popover-option"
-                                        key={option.value}
-                                        value={option.value}
-                                        onSelect={currentValue => {
-                                            onChange(currentValue)
-                                            close()
-                                        }}
-                                        disabled={option.disabled}
-                                        tooltip={option.tooltip}
-                                    >
-                                        {option.title}
-                                    </CommandItem>
-                                ))}
-                            </CommandGroup>
-                        ))}
-                        <CommandGroup>
-                            <CommandLink
-                                href="https://sourcegraph.com/docs/cody/clients/install-vscode#supported-llm-models"
-                                target="_blank"
-                                rel="noreferrer"
-                                className={styles.modelTitleWithIcon}
-                            >
-                                <span className={styles.modelIcon}>
-                                    {/* wider than normal to fit in with provider icons */}
-                                    <BookOpenIcon size={16} strokeWidth={2} />{' '}
-                                </span>
-                                <span className={styles.modelName}>Documentation</span>
-                                <span className={styles.rightIcon}>
-                                    <ExternalLinkIcon
-                                        size={16}
-                                        strokeWidth={1.25}
-                                        className="tw-opacity-80"
-                                    />
-                                </span>
-                            </CommandLink>
-                        </CommandGroup>
-                        {userInfo.isDotComUser && (
+                        <CommandList
+                            className="model-selector-popover tw-max-h-[80vh] tw-overflow-y-auto"
+                            data-testid="chat-model-popover-option"
+                        >
+                            {optionsByGroup.map(({ group, options }) => (
+                                <CommandGroup heading={group} key={group}>
+                                    {options.map(option => (
+                                        <CommandItem
+                                            data-testid="chat-model-popover-option"
+                                            key={option.value}
+                                            value={option.value}
+                                            onSelect={currentValue => {
+                                                onChange(currentValue)
+                                                close()
+                                            }}
+                                            disabled={option.disabled}
+                                            tooltip={option.tooltip}
+                                        >
+                                            {option.title}
+                                        </CommandItem>
+                                    ))}
+                                </CommandGroup>
+                            ))}
                             <CommandGroup>
                                 <CommandLink
-                                    key="enterprise-model-options"
-                                    href={ENTERPRISE_MODEL_DOCS_PAGE}
+                                    href="https://sourcegraph.com/docs/cody/clients/install-vscode#supported-llm-models"
                                     target="_blank"
                                     rel="noreferrer"
-                                    onSelect={() => {
-                                        telemetryRecorder.recordEvent(
-                                            'cody.modelSelector',
-                                            'clickEnterpriseModelOption',
-                                            {
-                                                billingMetadata: {
-                                                    product: 'cody',
-                                                    category: 'billable',
-                                                },
-                                            }
-                                        )
-                                    }}
                                     className={styles.modelTitleWithIcon}
                                 >
                                     <span className={styles.modelIcon}>
                                         {/* wider than normal to fit in with provider icons */}
-                                        <BuildingIcon size={16} strokeWidth={2} />{' '}
+                                        <BookOpenIcon size={16} strokeWidth={2} />{' '}
                                     </span>
-                                    <span className={styles.modelName}>Enterprise Model Options</span>
+                                    <span className={styles.modelName}>Documentation</span>
                                     <span className={styles.rightIcon}>
                                         <ExternalLinkIcon
                                             size={16}
@@ -258,26 +290,69 @@ export const ModelSelectField: React.FunctionComponent<{
                                     </span>
                                 </CommandLink>
                             </CommandGroup>
-                        )}
-                    </CommandList>
-                </Command>
-            )}
-            popoverRootProps={{ onOpenChange }}
-            popoverContentProps={{
-                className: 'tw-min-w-[325px] tw-w-[unset] tw-max-w-[90%] !tw-p-0',
-                onKeyDown: onKeyDown,
-                onCloseAutoFocus: event => {
-                    // Prevent the popover trigger from stealing focus after the user selects an
-                    // item. We want the focus to return to the editor.
-                    event.preventDefault()
-                },
-            }}
-        >
-            {value !== undefined ? options.find(option => option.value === value)?.title : 'Select...'}
-        </ToolbarPopoverItem>
-    )
-}
-
+                            {userInfo.isDotComUser && (
+                                <CommandGroup>
+                                    <CommandLink
+                                        key="enterprise-model-options"
+                                        href={ENTERPRISE_MODEL_DOCS_PAGE}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        onSelect={() => {
+                                            telemetryRecorder.recordEvent(
+                                                'cody.modelSelector',
+                                                'clickEnterpriseModelOption',
+                                                {
+                                                    billingMetadata: {
+                                                        product: 'cody',
+                                                        category: 'billable',
+                                                    },
+                                                }
+                                            )
+                                        }}
+                                        className={styles.modelTitleWithIcon}
+                                    >
+                                        <span className={styles.modelIcon}>
+                                            {/* wider than normal to fit in with provider icons */}
+                                            <BuildingIcon size={16} strokeWidth={2} />{' '}
+                                        </span>
+                                        <span className={styles.modelName}>
+                                            Enterprise Model Options
+                                        </span>
+                                        <span className={styles.rightIcon}>
+                                            <ExternalLinkIcon
+                                                size={16}
+                                                strokeWidth={1.25}
+                                                className="tw-opacity-80"
+                                            />
+                                        </span>
+                                    </CommandLink>
+                                </CommandGroup>
+                            )}
+                        </CommandList>
+                    </Command>
+                )}
+                popoverRootProps={{ onOpenChange }}
+                popoverContentProps={{
+                    className: 'tw-min-w-[325px] tw-w-[unset] tw-max-w-[90%] !tw-p-0',
+                    onKeyDown: onKeyDown,
+                    onCloseAutoFocus: event => {
+                        // Prevent the popover trigger from stealing focus after the user selects an
+                        // item. We want the focus to return to the editor.
+                        event.preventDefault()
+                    },
+                }}
+                ref={popoverControlRef}
+                onFocus={onFocus}
+                onBlur={onBlur}
+            >
+                {value !== undefined
+                    ? options.find(option => option.value === value)?.title
+                    : 'Select...'}
+            </ToolbarPopoverItem>
+        )
+    }
+)
+ModelSelectField.displayName = 'ModelSelectField'
 const ENTERPRISE_MODEL_DOCS_PAGE =
     'https://sourcegraph.com/docs/cody/clients/enable-cody-enterprise?utm_source=cody.modelSelector'
 

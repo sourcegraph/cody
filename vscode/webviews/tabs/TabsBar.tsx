@@ -22,7 +22,9 @@ import {
     forwardRef,
     memo,
     useCallback,
+    useEffect,
     useMemo,
+    useRef,
     useState,
 } from 'react'
 import { Tooltip, TooltipContent, TooltipTrigger } from '../components/shadcn/ui/tooltip'
@@ -34,7 +36,10 @@ import type { UserAccountInfo } from '../Chat'
 import { downloadChatHistory } from '../chat/downloadChatHistory'
 import { Kbd } from '../components/Kbd'
 import { UserMenu } from '../components/UserMenu'
-import { ModelSelectField } from '../components/modelSelectField/ModelSelectField'
+import {
+    ModelSelectField,
+    type ModelSelectFieldHandle,
+} from '../components/modelSelectField/ModelSelectField'
 import { Button } from '../components/shadcn/ui/button'
 import { useClientConfig } from '../utils/useClientConfig'
 import styles from './TabsBar.module.css'
@@ -89,6 +94,57 @@ export const TabsBar = memo<TabsBarProps>(props => {
         config: { webviewType, multipleWebviewsEnabled, allowEndpointChange },
     } = useConfig()
 
+    const [isWebviewFocused, setIsWebviewFocused] = useState(false)
+    const modelSelectorRef = useRef<ModelSelectFieldHandle>(null)
+
+    // Track focus state of the webview container
+    useEffect(() => {
+        const container = document.querySelector('.tabs-container') // Use appropriate selector
+
+        const handleFocus = () => setIsWebviewFocused(true)
+        const handleBlur = () => setIsWebviewFocused(false)
+
+        if (container) {
+            container.addEventListener('focusin', handleFocus)
+            container.addEventListener('focusout', handleBlur)
+
+            // Initial focus check
+            setIsWebviewFocused(container.contains(document.activeElement))
+        }
+
+        return () => {
+            if (container) {
+                container.removeEventListener('focusin', handleFocus)
+                container.removeEventListener('focusout', handleBlur)
+            }
+        }
+    }, [])
+
+    // Add keyboard shortcut handler
+    useEffect(() => {
+        const handleKeyDown = (event: KeyboardEvent) => {
+            if (!isWebviewFocused) {
+                return
+            }
+            // Command+Option+/ on macOS, Ctrl+Alt+/ on Windows/Linux
+            const isMac = navigator.platform.includes('Mac')
+            const modKey = isMac ? event.metaKey : event.ctrlKey
+
+            if (modKey && event.altKey && event.key === '/') {
+                console.log('checkpoint for julia')
+                event.preventDefault()
+                event.stopPropagation()
+                modelSelectorRef.current?.openDropdown()
+            }
+        }
+
+        window.addEventListener('keydown', handleKeyDown)
+
+        return () => {
+            window.removeEventListener('keydown', handleKeyDown)
+        }
+    }, [isWebviewFocused])
+
     const newChatCommand = getCreateNewChatCommand({
         IDE,
         webviewType,
@@ -129,11 +185,55 @@ export const TabsBar = memo<TabsBarProps>(props => {
         [setView]
     )
 
+    const [openModelDropdown] = useState<(() => void) | null>(null)
+
+    useEffect(() => {
+        const handleMessage = (event: MessageEvent) => {
+            const message = event.data
+            if (message.type === 'openModelSelector' && openModelDropdown) {
+                openModelDropdown()
+            }
+        }
+
+        window.addEventListener('message', handleMessage)
+        return () => window.removeEventListener('message', handleMessage)
+    }, [openModelDropdown])
+
+    const openModelDropdownRef = useRef<(() => void) | null>(null)
+
+    const setOpenModelDropdownRef = useCallback((fn: () => void) => {
+        openModelDropdownRef.current = fn
+    }, [])
+
+    useEffect(() => {
+        const handleMessage = (event: MessageEvent) => {
+            if (
+                event.data?.type === 'rpc/response' &&
+                event.data?.message?.data?.type === 'clientAction' &&
+                event.data?.message?.data?.openModelSelector === true
+            ) {
+                if (openModelDropdownRef.current) {
+                    openModelDropdownRef.current()
+                } else {
+                }
+            }
+        }
+
+        window.addEventListener('message', handleMessage)
+        return () => window.removeEventListener('message', handleMessage)
+    }, [])
+
     return (
         <div className={clsx(styles.tabsRoot, { [styles.tabsRootCodyWeb]: IDE === CodyIDE.Web })}>
             <Tabs.List aria-label="cody-webview" className={styles.tabsContainer}>
                 <div className={styles.tabs}>
-                    <ModelSelectFieldToolbarItem models={models} userInfo={user} className="tw-mr-1" />
+                    <ModelSelectFieldToolbarItem
+                        models={models}
+                        userInfo={user}
+                        className="tw-mr-1"
+                        modelSelectorRef={modelSelectorRef}
+                        openDropdownRef={setOpenModelDropdownRef}
+                    />
 
                     <div className="tw-flex tw-ml-auto">
                         {tabItems.map(({ Icon, view, command, title, changesView, tooltip }) => (
@@ -418,7 +518,6 @@ function useTabs(input: Pick<TabsBarProps, 'user'>, newChatCommand: string): Tab
                         Icon: BookTextIcon,
                         changesView: true,
                     },
-
                 ] as (TabConfig | null)[]
             ).filter(isDefined),
         [IDE, extensionAPI, newChatCommand]
@@ -429,7 +528,9 @@ const ModelSelectFieldToolbarItem: FunctionComponent<{
     models?: Model[]
     userInfo: UserAccountInfo
     className?: string
-}> = ({ userInfo, className, models }) => {
+    modelSelectorRef?: React.RefObject<ModelSelectFieldHandle>
+    openDropdownRef?: (openFn: () => void) => void
+}> = ({ userInfo, className, models, modelSelectorRef, openDropdownRef }) => {
     const clientConfig = useClientConfig()
     const serverSentModelsEnabled = !!clientConfig?.modelsAPIEnabled
 
@@ -458,6 +559,8 @@ const ModelSelectFieldToolbarItem: FunctionComponent<{
                 userInfo={userInfo}
                 className={clsx('tw-pl-2', className)}
                 data-testid="chat-model-selector"
+                ref={modelSelectorRef}
+                openDropdownRef={openDropdownRef}
             />
         )
     )

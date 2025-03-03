@@ -204,6 +204,7 @@ export type ExtensionMessage =
           setLastHumanInputIntent?: ChatMessage['intent'] | null | undefined
           smartApplyResult?: SmartApplyResult | undefined | null
           submitHumanInput?: boolean | undefined | null
+          openModelSelector?: boolean | undefined | null
           setPromptAsInput?:
               | { text: string; mode?: PromptMode | undefined | null; autoSubmit: boolean }
               | undefined

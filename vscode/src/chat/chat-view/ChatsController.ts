@@ -154,6 +154,12 @@ export class ChatsController implements vscode.Disposable {
             vscode.commands.registerCommand('cody.chat.signIn', () =>
                 vscode.commands.executeCommand('cody.chat.focus')
             ),
+            vscode.commands.registerCommand('cody.openModelSelector', () => {
+                this.panel.clientBroadcast.next({
+                    type: 'clientAction',
+                    openModelSelector: true,
+                })
+            }),
             vscode.commands.registerCommand('cody.chat.newPanel', async args => {
                 localStorage.setLastUsedChatModality('sidebar')
                 const isVisible = this.panel.isVisible()
