@@ -17,6 +17,8 @@ data class SerializedChatMessage(
   val agent: String? = null,
   val processes: List<ProcessingStep>? = null,
   val subMessages: List<SubMessage>? = null,
+  val content: List<MessagePart>? = null,
+  val base64Image: String? = null,
 ) {
 
   enum class SpeakerEnum {
