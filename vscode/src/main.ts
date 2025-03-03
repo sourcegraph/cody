@@ -755,8 +755,7 @@ function registerAutoEdits(
                                 authStatus,
                                 chatClient,
                                 autoeditFeatureFlagEnabled,
-                                // todo remove hard coded value
-                                autoeditInlineRenderingEnabled: true,
+                                autoeditInlineRenderingEnabled,
                                 fixupController,
                                 statusBar,
                             })

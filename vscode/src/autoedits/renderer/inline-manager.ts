@@ -60,6 +60,17 @@ export class AutoEditsInlineRendererManager
         )
     }
 
+    public hasInlineDecorations(): boolean {
+        if (!this.activeRequest) {
+            return false
+        }
+
+        return (
+            this.activeRequest.renderOutput.type === 'completion-with-decorations' ||
+            this.hasInlineDecorationOnly()
+        )
+    }
+
     protected async onDidChangeTextEditorSelection(
         event: vscode.TextEditorSelectionChangeEvent
     ): Promise<void> {

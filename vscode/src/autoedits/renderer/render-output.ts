@@ -313,7 +313,6 @@ export class AutoEditsRenderOutput {
         // Client capabiliies === image: 'unified'
         const diffMode = 'additions'
         const { diff, target } = makeVisualDiff(decorationInfo, diffMode, document)
-        console.log('got visual diff and target', diff, target)
         const { dark, light, pixelRatio } = generateSuggestionAsImage({
             diff,
             lang: document.languageId,

@@ -181,6 +181,12 @@ export class AutoEditsDefaultRendererManager
         )
     }
 
+    public hasInlineDecorations(): boolean {
+        // Fall through to hasInlineDecorationOnly, the default manager does not support cases
+        // where decorations can be rendered alongside completions.
+        return this.hasInlineDecorationOnly()
+    }
+
     public async handleDidShowSuggestion(requestId: AutoeditRequestID): Promise<void> {
         await this.rejectActiveEdit()
 
@@ -287,7 +293,7 @@ export class AutoEditsDefaultRendererManager
         const editor = vscode.window.activeTextEditor
         const { activeRequest, decorator } = this
         // Compute this variable before the `handleDidHideSuggestion` call which removes the active request.
-        const hasInlineDecorationOnly = this.hasInlineDecorationOnly()
+        const hasInlineDecorations = this.hasInlineDecorations()
 
         if (
             !editor ||
@@ -300,13 +306,17 @@ export class AutoEditsDefaultRendererManager
         await this.handleDidHideSuggestion(decorator)
         autoeditAnalyticsLogger.markAsAccepted(activeRequest.requestId)
 
-        // We rely on the native VS Code functionality for accepting inline completions items.
-        // There's no need to manually edit the document.
-        if (hasInlineDecorationOnly) {
-            await editor.edit(editBuilder => {
-                editBuilder.replace(activeRequest.codeToReplaceData.range, activeRequest.prediction)
-            })
+        if (!hasInlineDecorations) {
+            // We rely on the native VS Code functionality for accepting pure inline completions items.
+            return
         }
+
+        // For other cases we must perform the edit ourselves. This includes cases where we have mixed
+        // completions and inline decorations. In those cases, we do the full edit and ignore the completion
+        // acceptance mechanism.
+        await editor.edit(editBuilder => {
+            editBuilder.replace(activeRequest.codeToReplaceData.range, activeRequest.prediction)
+        })
     }
 
     protected async rejectActiveEdit(): Promise<void> {
