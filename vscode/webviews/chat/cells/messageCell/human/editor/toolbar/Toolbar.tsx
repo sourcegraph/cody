@@ -106,7 +106,7 @@ export const Toolbar: FunctionComponent<{
                 {onMediaUpload && isImageUploadEnabled && (
                     <MediaUploadButton
                         onMediaUpload={onMediaUpload}
-                        model={models?.[0]}
+                        isEditorFocused={isEditorFocused}
                         submitState={submitState}
                         className={`tw-opacity-60 focus-visible:tw-opacity-100 hover:tw-opacity-100 tw-mr-2 tw-gap-0.5 ${toolbarStyles.button} ${toolbarStyles.buttonSmallIcon}`}
                     />

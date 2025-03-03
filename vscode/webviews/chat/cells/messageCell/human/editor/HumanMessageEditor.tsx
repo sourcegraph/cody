@@ -158,16 +158,6 @@ export const HumanMessageEditor: FunctionComponent<{
         [submitState, parentOnSubmit, onStop, telemetryRecorder.recordEvent, isFirstMessage, isSent]
     )
 
-    const onMediaUpload = useCallback((mediaContextItem: ContextItemMedia) => {
-        if (!editorRef.current) {
-            throw new Error('No editorRef')
-        }
-        const editor = editorRef.current
-        // Add the media context item as a mention at the start of the editor.
-        editor.upsertMentions([mediaContextItem], 'after')
-        editor.setFocus(true)
-    }, [])
-
     const omniBoxEnabled = useOmniBox()
     const {
         isDotComUser,
@@ -436,6 +426,17 @@ export const HumanMessageEditor: FunctionComponent<{
 
     // TODO: Finish implementing "current repo not indexed" handling for v2 editor
     const Editor = experimentalPromptEditorEnabled ? PromptEditorV2 : PromptEditor
+
+    const onMediaUpload = useCallback(
+        (media: ContextItemMedia) => {
+            // Add the media context item as a mention chip in the editor.
+            const editor = editorRef?.current
+            if (editor && focused) {
+                editor.upsertMentions([media], 'after')
+            }
+        },
+        [focused]
+    )
 
     return (
         // biome-ignore lint/a11y/useKeyWithClickEvents: only relevant to click areas

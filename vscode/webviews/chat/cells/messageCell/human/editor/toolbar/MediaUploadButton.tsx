@@ -1,4 +1,4 @@
-import type { ContextItemMedia, Model } from '@sourcegraph/cody-shared'
+import type { ContextItemMedia } from '@sourcegraph/cody-shared'
 import { ImageIcon } from 'lucide-react'
 import type React from 'react'
 import { useCallback, useEffect, useRef, useState } from 'react'
@@ -18,13 +18,12 @@ interface UploadedImageInfo {
 
 export const MediaUploadButton: React.FC<{
     onMediaUpload: (mediaContextItem: ContextItemMedia) => void
-    model: Model
     submitState?: SubmitButtonState
     className?: string
-}> = ({ onMediaUpload, model, submitState, className }) => {
+    isEditorFocused?: boolean
+}> = ({ onMediaUpload, submitState, className }) => {
     const [uploadedImages, setUploadedImages] = useState<UploadedImageInfo[]>([])
     const [errorMessage, setErrorMessage] = useState<string | null>(null)
-    const [isDragging, setIsDragging] = useState<boolean>(false)
     const submitBtnState = useRef<SubmitButtonState | undefined>(submitState)
 
     const fileInputRef = useRef<HTMLInputElement>(null)
@@ -67,7 +66,7 @@ export const MediaUploadButton: React.FC<{
         // Validate file type
         if (!ALLOWED_MIME_TYPES.includes(file.type)) {
             setErrorMessage(
-                `Unsupported file type ${file.type}. Please upload one of the following: PNG, JPEG, WEBP, HEIC, or HEIF.`
+                `Unsupported file type ${file.type}. Supported types: PNG, JPEG, WEBP, HEIC, or HEIF.`
             )
             return
         }
@@ -76,7 +75,9 @@ export const MediaUploadButton: React.FC<{
         setErrorMessage(null)
 
         // Generate a filename with timestamp if file has no name
-        const filename = file.name || `image-${Date.now()}.png`
+        const hasValidFileName = (name?: string) => name && !name?.startsWith('image.')
+        const getFileName = () => `image-${Date.now()}.png`
+        const filename = hasValidFileName(file.name) ? file.name : getFileName()
         const imageId = `img-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`
 
         // Process the file
@@ -114,9 +115,10 @@ export const MediaUploadButton: React.FC<{
             const items = event.clipboardData?.items
             if (!items) return
 
+            // Filter out non-image files
             for (const item of Array.from(items)) {
                 // Check if item is an image
-                if (item.type.startsWith('image/')) {
+                if (item?.kind === 'file' && item?.type?.match('^image/')) {
                     const file = item.getAsFile()
                     if (file) {
                         processImageFile(file)
@@ -136,54 +138,41 @@ export const MediaUploadButton: React.FC<{
 
     // Setup drag and drop handlers
     useEffect(() => {
-        const dropZone = dropZoneRef.current
-        if (!dropZone) return
-
         const handleDragOver = (event: DragEvent) => {
             event.preventDefault()
             event.stopPropagation()
-            setIsDragging(true)
-        }
-
-        const handleDragLeave = (event: DragEvent) => {
-            event.preventDefault()
-            event.stopPropagation()
-            setIsDragging(false)
         }
 
         const handleDrop = (event: DragEvent) => {
             event.preventDefault()
             event.stopPropagation()
-            setIsDragging(false)
 
-            if (event.dataTransfer?.items) {
-                // Use DataTransferItemList interface
-                for (const item of Array.from(event.dataTransfer.items)) {
-                    if (item.kind === 'file' && item.type.startsWith('image/')) {
-                        const file = item.getAsFile()
-                        if (file) {
-                            processImageFile(file)
-                        }
-                    }
-                }
-            } else if (event.dataTransfer?.files) {
-                // Use DataTransfer interface
-                for (const file of Array.from(event.dataTransfer.files)) {
-                    if (file.type.startsWith('image/')) {
-                        processImageFile(file)
-                    }
+            const files = []
+            // Use DataTransferItemList interface
+            if (event.dataTransfer?.items?.length) {
+                files.push(
+                    ...Array.from(event.dataTransfer.items)
+                        .filter(item => item?.kind === 'file' && item?.type?.match('^image/'))
+                        .map(item => item.getAsFile())
+                )
+            }
+
+            if (event.dataTransfer?.files?.length) {
+                files.push(...Array.from(event.dataTransfer.files))
+            }
+
+            for (const file of files) {
+                if (file) {
+                    processImageFile(file)
                 }
             }
         }
 
         // Add event listeners to the document
         document.addEventListener('dragover', handleDragOver)
-        document.addEventListener('dragleave', handleDragLeave)
         document.addEventListener('drop', handleDrop)
-
         return () => {
             document.removeEventListener('dragover', handleDragOver)
-            document.removeEventListener('dragleave', handleDragLeave)
             document.removeEventListener('drop', handleDrop)
         }
     }, [processImageFile])
@@ -216,24 +205,13 @@ export const MediaUploadButton: React.FC<{
 
     return (
         <div className="tw-inline-flex">
-            {/* Invisible drop zone overlay when dragging */}
-            {isDragging && (
-                <div
-                    className="tw-fixed tw-inset-0 tw-z-50 tw-bg-primary/20 tw-flex tw-items-center tw-justify-center"
-                    style={{ pointerEvents: 'none' }}
-                >
-                    <div className="tw-bg-white tw-rounded-lg tw-p-8 tw-shadow-lg tw-text-center">
-                        <p className="tw-text-lg tw-font-medium">Drop images here</p>
-                    </div>
-                </div>
-            )}
             <div ref={dropZoneRef} className="tw-inline-flex">
                 <Tooltip delayDuration={0}>
                     <TooltipTrigger asChild>
                         <Button
                             variant="ghost"
                             size="none"
-                            aria-label="Upload images (drag, select, or paste with Cmd+V)"
+                            aria-label="Upload images"
                             ref={buttonRef}
                             className={className}
                         >
