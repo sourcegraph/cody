@@ -63,6 +63,7 @@ plugins {
   id("org.jetbrains.intellij.platform") version "2.2.1"
   id("org.jetbrains.changelog") version "2.2.1"
   id("com.diffplug.spotless") version "7.0.2"
+  id("io.sentry.jvm.gradle") version "5.2.0"
 }
 
 val platformVersion: String by project
