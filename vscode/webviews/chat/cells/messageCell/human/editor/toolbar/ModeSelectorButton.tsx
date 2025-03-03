@@ -1,9 +1,8 @@
 import type { ChatMessage } from '@sourcegraph/cody-shared'
 import { CodyIDE, isMacOS } from '@sourcegraph/cody-shared'
-import { BetweenHorizonalEnd, Brain, InfoIcon, MessageSquare, Pencil, Search } from 'lucide-react'
+import { BetweenHorizonalEnd, MessageSquare, Pencil, Search } from 'lucide-react'
 import type { FC } from 'react'
 import { useCallback, useEffect, useMemo } from 'react'
-import { Kbd } from '../../../../../../components/Kbd'
 import { Badge } from '../../../../../../components/shadcn/ui/badge'
 import { Command, CommandItem, CommandList } from '../../../../../../components/shadcn/ui/command'
 import { ToolbarPopoverItem } from '../../../../../../components/shadcn/ui/toolbar'
@@ -28,10 +27,10 @@ export const INTENT_MAPPING: Record<string, IntentEnum> = {
 }
 
 interface IntentOption {
-    title: string | React.ReactElement
+    title: string
     icon: React.FC<{ className?: string }>
     intent: NonNullable<ChatMessage['intent']>
-    shortcut?: React.ReactNode
+    badge?: string
     hidden?: boolean
     disabled?: boolean
     agent?: string
@@ -41,31 +40,7 @@ const chatIntent: IntentOption = {
     title: 'Chat',
     icon: MessageSquare,
     intent: 'chat',
-    shortcut: <Kbd macOS="return" linuxAndWindows="return" />,
 }
-
-// Memoize the enterprise badge and keyboard shortcuts to avoid recreating React elements
-const ENTERPRISE_BADGE = (
-    <Badge>
-        Enterprise <InfoIcon className="tw-size-4 tw-ml-1" />
-    </Badge>
-)
-
-const SEARCH_SHORTCUT = (
-    <>
-        <Kbd macOS="cmd" linuxAndWindows="ctrl" />
-        <Kbd macOS="opt" linuxAndWindows="alt" />
-        <Kbd macOS="return" linuxAndWindows="return" />
-    </>
-)
-
-// Optimization: memoize search title to avoid recreation
-const BADGE_TITLE = (title: string, status = 'Beta') => (
-    <span className="tw-inline-flex tw-items-center tw-gap-4">
-        <span>{title}</span>
-        <Badge>{status}</Badge>
-    </span>
-)
 
 function getIntentOptions({
     isCodyWeb,
@@ -79,31 +54,24 @@ function getIntentOptions({
     return [
         chatIntent,
         {
-            title: BADGE_TITLE('Search'),
+            title: 'Search',
+            badge: isDotComUser ? 'Enterprise' : 'Beta',
             icon: Search,
             intent: 'search',
             hidden: !omniBoxEnabled,
             disabled: isDotComUser,
-            shortcut: isDotComUser ? ENTERPRISE_BADGE : SEARCH_SHORTCUT,
-        },
-        // NOTE (bee): Agentic mode is not yet implemented
-        {
-            title: BADGE_TITLE('Agentic', 'Experimental'),
-            icon: Brain,
-            intent: 'chat',
-            // TODO: Implement agentic mode
-            hidden: true,
-            agent: 'deep-cody',
         },
         {
-            title: BADGE_TITLE('Edit Code', 'Experimental'),
+            title: 'Edit Code',
+            badge: 'Experimental',
             icon: Pencil,
             intent: 'edit',
-            hidden: !omniBoxEnabled,
+            hidden: true,
             disabled: isCodyWeb,
         },
         {
-            title: BADGE_TITLE('Insert Code', 'Experimental'),
+            title: 'Insert Code',
+            badge: 'Experimental',
             icon: BetweenHorizonalEnd,
             intent: 'insert',
             hidden: true,
@@ -180,7 +148,7 @@ export const ModeSelectorField: React.FunctionComponent<{
                 </div>
             )}
             popoverContentProps={{
-                className: 'tw-min-w-[200px] tw-w-[75vw] tw-max-w-[300px] !tw-p-0',
+                className: 'tw-min-w-[200px] tw-w-[30vw] tw-max-w-[300px] !tw-p-0',
                 onCloseAutoFocus: event => {
                     event.preventDefault()
                 },
@@ -208,7 +176,7 @@ export const ModeList: FC<{
                         <option.icon className="tw-size-8 tw-mt-1" />
                         {option.title}
                     </div>
-                    {option.shortcut && <div className="tw-flex tw-gap-2">{option.shortcut}</div>}
+                    {option.badge && <Badge>{option.badge}</Badge>}
                 </CommandItem>
             ))}
         </CommandList>
