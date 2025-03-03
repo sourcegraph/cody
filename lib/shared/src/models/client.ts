@@ -53,11 +53,7 @@ const AGENTIC_CHAT_GEMINI_MODEL: ServerModel = createAgenticModel(
 )
 
 // Pre-define this array to avoid recreation on each function call
-const AgenticChatModels: ServerModel[] = [
-    AGENTIC_CHAT_ANTHROPIC_MODEL,
-    AGENTIC_CHAT_GEMINI_MODEL,
-    TOOL_CODY_MODEL,
-]
+const AgenticChatModels: ServerModel[] = [AGENTIC_CHAT_ANTHROPIC_MODEL, AGENTIC_CHAT_GEMINI_MODEL]
 
 function getDeepCodyServerModel(): ServerModel {
     return {
@@ -108,8 +104,10 @@ export function getExperimentalClientModels(
 
     // Add tool cody models if enabled
     if (isToolCodyEnabled) {
-        clientSideModels.push(...AgenticChatModels)
+        clientSideModels.push(TOOL_CODY_MODEL)
     }
+
+    clientSideModels.push(...AgenticChatModels)
 
     return clientSideModels
 }
