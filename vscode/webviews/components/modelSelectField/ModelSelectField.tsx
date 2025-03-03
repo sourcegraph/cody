@@ -11,7 +11,6 @@ import {
     useImperativeHandle,
     useMemo,
     useRef,
-    useState,
 } from 'react'
 import type { UserAccountInfo } from '../../Chat'
 import { getVSCodeAPI } from '../../utils/VSCodeApi'
@@ -195,39 +194,6 @@ export const ModelSelectField = forwardRef<ModelSelectFieldHandle, ModelSelectFi
         }
 
         const value = selectedModel.id
-
-        // Add a focus tracking state
-        const [isFocused, setIsFocused] = useState(false)
-
-        // Handle keyboard events when component is focused
-        const handleKeyDown = useCallback((event: KeyboardEvent) => {
-            console.log('Key pressed:', event.key, 'Meta:', event.metaKey, 'Alt:', event.altKey)
-
-            const isMac = navigator.platform.includes('Mac')
-            const modKey = isMac ? event.metaKey : event.ctrlKey
-
-            if (modKey && event.altKey && event.key === '/') {
-                console.log('SHORTCUT TRIGGERED!')
-                event.preventDefault()
-                popoverControlRef.current?.open()
-            }
-        }, [])
-
-        // Attach event handler when focused
-        useEffect(() => {
-            if (!isFocused) {
-                console.log('Not focused, not attaching shortcut')
-                return
-            }
-            console.log('Attaching keyboard shortcut handler')
-
-            window.addEventListener('keydown', handleKeyDown)
-            return () => window.removeEventListener('keydown', handleKeyDown)
-        }, [isFocused, handleKeyDown])
-
-        // Add onFocus handler to your component
-        const onFocus = () => setIsFocused(true)
-        const onBlur = () => setIsFocused(false)
         return (
             <ToolbarPopoverItem
                 role="combobox"
@@ -342,8 +308,6 @@ export const ModelSelectField = forwardRef<ModelSelectFieldHandle, ModelSelectFi
                     },
                 }}
                 ref={popoverControlRef}
-                onFocus={onFocus}
-                onBlur={onBlur}
             >
                 {value !== undefined
                     ? options.find(option => option.value === value)?.title

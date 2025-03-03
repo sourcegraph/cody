@@ -94,56 +94,7 @@ export const TabsBar = memo<TabsBarProps>(props => {
         config: { webviewType, multipleWebviewsEnabled, allowEndpointChange },
     } = useConfig()
 
-    const [isWebviewFocused, setIsWebviewFocused] = useState(false)
     const modelSelectorRef = useRef<ModelSelectFieldHandle>(null)
-
-    // Track focus state of the webview container
-    useEffect(() => {
-        const container = document.querySelector('.tabs-container') // Use appropriate selector
-
-        const handleFocus = () => setIsWebviewFocused(true)
-        const handleBlur = () => setIsWebviewFocused(false)
-
-        if (container) {
-            container.addEventListener('focusin', handleFocus)
-            container.addEventListener('focusout', handleBlur)
-
-            // Initial focus check
-            setIsWebviewFocused(container.contains(document.activeElement))
-        }
-
-        return () => {
-            if (container) {
-                container.removeEventListener('focusin', handleFocus)
-                container.removeEventListener('focusout', handleBlur)
-            }
-        }
-    }, [])
-
-    // Add keyboard shortcut handler
-    useEffect(() => {
-        const handleKeyDown = (event: KeyboardEvent) => {
-            if (!isWebviewFocused) {
-                return
-            }
-            // Command+Option+/ on macOS, Ctrl+Alt+/ on Windows/Linux
-            const isMac = navigator.platform.includes('Mac')
-            const modKey = isMac ? event.metaKey : event.ctrlKey
-
-            if (modKey && event.altKey && event.key === '/') {
-                console.log('checkpoint for julia')
-                event.preventDefault()
-                event.stopPropagation()
-                modelSelectorRef.current?.openDropdown()
-            }
-        }
-
-        window.addEventListener('keydown', handleKeyDown)
-
-        return () => {
-            window.removeEventListener('keydown', handleKeyDown)
-        }
-    }, [isWebviewFocused])
 
     const newChatCommand = getCreateNewChatCommand({
         IDE,

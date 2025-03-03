@@ -118,9 +118,6 @@ export const ToolbarPopoverItem = forwardRef<
         children,
     } = props
     const [isOpen, setIsOpen] = useState(defaultOpen)
-    useImperativeHandle(ref, () => ({
-        open: () => setIsOpen(true),
-    }))
 
     const onButtonClick = useCallback(() => {
         setIsOpen(isOpen => !isOpen)
