@@ -320,12 +320,14 @@ export class AutoEditsDefaultRendererManager
     }
 
     protected async rejectActiveEdit(): Promise<void> {
-        if (this.decorator) {
+        const { activeRequest, decorator } = this
+
+        if (decorator) {
             await this.handleDidHideSuggestion(this.decorator)
         }
 
-        if (this.activeRequest) {
-            autoeditAnalyticsLogger.markAsRejected(this.activeRequest.requestId)
+        if (activeRequest) {
+            autoeditAnalyticsLogger.markAsRejected(activeRequest.requestId)
         }
     }
 
