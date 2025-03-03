@@ -1,5 +1,5 @@
 import * as vscode from 'vscode'
-import { zodToAnthropicSchema } from '../chat-view/handlers/AgenticHandler'
+import { zodToAnthropicSchema } from '../chat-view/handlers/AgenticAnthropicHandler'
 import { type GetDiagnosticInput, GetDiagnosticSchema, validateWithZod } from './schema'
 import { getWorkspaceFile } from './utils'
 

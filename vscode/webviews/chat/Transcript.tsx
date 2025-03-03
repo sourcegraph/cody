@@ -257,11 +257,6 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
     const [manuallySelectedIntent, setManuallySelectedIntent] =
         useState<ChatMessage['intent']>(undefined)
 
-    // biome-ignore lint/correctness/useExhaustiveDependencies: need to reset manually selected intent when the human message changes
-    useEffect(() => {
-        setManuallySelectedIntent(undefined)
-    }, [humanMessage])
-
     const { activeChatContext, setActiveChatContext } = props
     const humanEditorRef = useRef<PromptEditorRefAPI | null>(null)
     const lastEditorRef = useContext(LastEditorContext)

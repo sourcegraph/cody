@@ -26,7 +26,7 @@ import { RestClient } from '../sourcegraph-api/rest/client'
 import type { UserProductSubscription } from '../sourcegraph-api/userProductSubscription'
 import { CHAT_INPUT_TOKEN_BUDGET } from '../token/constants'
 import { isError } from '../utils'
-import { TOOL_CODY_MODEL, ToolCodyModelName, getExperimentalClientModelByFeatureFlag } from './client'
+import { getExperimentalClientModels } from './client'
 import { type Model, type ServerModel, createModel, createModelFromServerModel } from './model'
 import type {
     DefaultsAndUserPreferencesForEndpoint,
@@ -253,17 +253,11 @@ export function syncModels({
                                                     haikuModel
                                                 ) {
                                                     clientModels.push(
-                                                        getExperimentalClientModelByFeatureFlag(
-                                                            FeatureFlag.DeepCody
-                                                        )!
+                                                        ...getExperimentalClientModels(
+                                                            [FeatureFlag.DeepCody],
+                                                            isToolCodyEnabled
+                                                        )
                                                     )
-                                                }
-
-                                                const hasToolCody = data.primaryModels.some(m =>
-                                                    m.id.includes(ToolCodyModelName)
-                                                )
-                                                if (!hasToolCody && isToolCodyEnabled) {
-                                                    clientModels.push(TOOL_CODY_MODEL)
                                                 }
 
                                                 // Add the client models to the list of models.

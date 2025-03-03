@@ -1,4 +1,4 @@
-import { zodToAnthropicSchema } from '../chat-view/handlers/AgenticHandler'
+import { zodToAnthropicSchema } from '../chat-view/handlers/AgenticAnthropicHandler'
 import { type GetFileInput, GetFileSchema, validateWithZod } from './schema'
 import { getWorkspaceFile } from './utils'
 

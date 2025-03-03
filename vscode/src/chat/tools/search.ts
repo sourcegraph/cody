@@ -7,7 +7,7 @@ import {
     pendingOperation,
 } from '@sourcegraph/cody-shared'
 import { type ContextRetriever, toStructuredMentions } from '../chat-view/ContextRetriever'
-import { zodToAnthropicSchema } from '../chat-view/handlers/AgenticHandler'
+import { zodToAnthropicSchema } from '../chat-view/handlers/AgenticAnthropicHandler'
 import { getCorpusContextItemsForEditorState } from '../initialContext'
 import type { AgentTool } from './AgentToolGroup'
 import { type CodeSearchInput, CodeSearchSchema, validateWithZod } from './schema'

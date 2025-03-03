@@ -1,81 +1,106 @@
 import Anthropic from '@anthropic-ai/sdk'
-import { DeepCodyAgentID, ToolCodyModelRef } from '@sourcegraph/cody-shared/src/models/client'
+import {
+    AgenticChatVersion,
+    DeepCodyAgentID,
+    ToolCodyModelRef,
+} from '@sourcegraph/cody-shared/src/models/client'
+import * as vscode from 'vscode'
 import { getConfiguration } from '../../../configuration'
+import { AgenticAnthropicHandler } from './AgenticAnthropicHandler'
 import { AgenticGeminiHandler } from './AgenticGeminiHandler'
 import { AgenticHandler } from './AgenticHandler'
 import { ChatHandler } from './ChatHandler'
 import { DeepCodyHandler } from './DeepCodyHandler'
 import { EditHandler } from './EditHandler'
-import { GatewayHandler } from './GatewayHandler'
 import { SearchHandler } from './SearchHandler'
 import { ExperimentalToolHandler } from './ToolHandler'
 import type { AgentHandler, AgentTools } from './interfaces'
 
 /**
- * The agentRegistry registers agent handlers under IDs which can then be invoked
- * at query time to retrieve the appropriate handler for a user request.
+ * The AGENT_REGISTRY maps agent IDs to their handler factory functions
  */
-const agentRegistry = new Map<string, (id: string, tools: AgentTools) => AgentHandler>()
+const AGENT_REGISTRY = new Map<string, (id: string, tools: AgentTools) => AgentHandler>([
+    ['search', (_id, _tools) => new SearchHandler()],
+    ['edit', (_id, { contextRetriever, editor }) => new EditHandler('edit', contextRetriever, editor)],
+    [
+        'insert',
+        (_id, { contextRetriever, editor }) => new EditHandler('insert', contextRetriever, editor),
+    ],
+    [
+        ToolCodyModelRef,
+        (_id, _tools) => {
+            const config = getConfiguration()
+            return new ExperimentalToolHandler(
+                new Anthropic({
+                    apiKey: config.experimentalMinionAnthropicKey,
+                })
+            )
+        },
+    ],
+])
 
-function registerAgent(id: string, ctr: (id: string, tools: AgentTools) => AgentHandler) {
-    agentRegistry.set(id, ctr)
+/**
+ * Gets an agent handler for the specified agent and model ID
+ */
+export function getAgent(agent: string, modelId: string, tools: AgentTools): AgentHandler {
+    // First check prototype agents
+    const prototypeAgent = getAgentPrototype(agent, modelId, tools)
+    if (prototypeAgent) {
+        return prototypeAgent
+    }
+
+    // Use registered agent or fall back to basic chat handler
+    const handlerFactory = AGENT_REGISTRY.get(agent)
+    if (handlerFactory) {
+        return handlerFactory(agent, tools)
+    }
+
+    // Default to basic chat handler for unknown agents
+    const { contextRetriever, editor, chatClient } = tools
+    return new ChatHandler(contextRetriever, editor, chatClient)
 }
 
-export function getAgent(id: string, modelId: string, tools: AgentTools): AgentHandler {
-    // NOTE: WIP
-    const agenticChat = getAgentPrototype(modelId, tools)
-    if (agenticChat) {
-        return agenticChat
+/**
+ * Handles WIP prototype agents
+ */
+function getAgentPrototype(agent: string, modelId: string, tools: AgentTools): AgentHandler | undefined {
+    const { contextRetriever, editor, chatClient } = tools
+
+    // Handle Deep Cody agent
+    if (agent === DeepCodyAgentID) {
+        return new DeepCodyHandler(contextRetriever, editor, chatClient)
     }
 
-    const { contextRetriever, editor, chatClient } = tools
-    if (id === DeepCodyAgentID) {
-        return new DeepCodyHandler(modelId, contextRetriever, editor, chatClient)
+    if (agent !== 'agentic') {
+        return undefined
     }
-    if (agentRegistry.has(id)) {
-        return agentRegistry.get(id)!(id, tools)
+
+    // Handle agentic models
+    const config = getConfiguration()
+    const isAgenticModel = modelId.includes(AgenticChatVersion)
+
+    // Check for Anthropic models
+    if (isAgenticModel && modelId.startsWith('anthropic')) {
+        const apiKey = config?.devModels?.find(m => m.provider.includes('anthropic'))?.apiKey
+        if (apiKey) {
+            return new AgenticAnthropicHandler(contextRetriever, editor, chatClient, apiKey)
+        }
+        showMissionkeyError()
     }
-    // If id is not found, assume it's a base model
-    return new ChatHandler(modelId, contextRetriever, editor, chatClient)
+
+    // Check for Gemini models
+    if (isAgenticModel && modelId.startsWith('google')) {
+        const apiKey = config?.devModels?.find(m => m.provider.includes('google'))?.apiKey
+        if (apiKey) {
+            return new AgenticGeminiHandler(contextRetriever, editor, chatClient, apiKey)
+        }
+        showMissionkeyError()
+    }
+
+    // Default to gateway handler for other agentic requests
+    return new AgenticHandler(contextRetriever, editor, chatClient)
 }
 
-registerAgent('search', (_id: string, _tools: AgentTools) => new SearchHandler())
-registerAgent(
-    'edit',
-    (_id: string, { contextRetriever, editor }: AgentTools) =>
-        new EditHandler('edit', contextRetriever, editor)
-)
-registerAgent(
-    'insert',
-    (_id: string, { contextRetriever, editor }: AgentTools) =>
-        new EditHandler('insert', contextRetriever, editor)
-)
-registerAgent(ToolCodyModelRef, (_id: string) => {
-    const config = getConfiguration()
-    const anthropicAPI = new Anthropic({
-        apiKey: config.experimentalMinionAnthropicKey,
-    })
-    return new ExperimentalToolHandler(anthropicAPI)
-})
-
-// NOTE: WIP - prototypes
-function getAgentPrototype(modelId: string, tools: AgentTools): AgentHandler | undefined {
-    const { contextRetriever, editor, chatClient } = tools
-    const config = getConfiguration()
-    const minion = config?.experimentalMinionAnthropicKey
-    const anthropic = config?.devModels?.find(m => m.provider.includes('anthropic'))?.apiKey ?? minion
-    const gemini = config?.devModels?.find(m => m.provider.includes('google'))?.apiKey
-    // Requests are sent to the Anthropic API directly
-    if (modelId.includes('7-sonnet') && anthropic) {
-        return new AgenticHandler(modelId, contextRetriever, editor, chatClient, anthropic)
-    }
-    // Requests are sent to the Google API directly
-    if (modelId.includes('gemini') && gemini) {
-        return new AgenticGeminiHandler(modelId, contextRetriever, editor, chatClient, gemini)
-    }
-    // NOTE: WIP - uses the Sourcegraph API with tools
-    if (modelId.includes('7-sonnet') || modelId.includes('4o')) {
-        return new GatewayHandler(modelId, contextRetriever, editor, chatClient)
-    }
-    return undefined
+function showMissionkeyError(): void {
+    vscode.window.showErrorMessage('No API key found. Falling back to gateway handler.')
 }

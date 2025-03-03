@@ -4,7 +4,7 @@ import { getToolBlock } from '../../tools/schema'
 import { convertContextItemToInlineMessage } from '../../tools/utils'
 import type { ChatControllerOptions } from '../ChatController'
 import type { ContextRetriever } from '../ContextRetriever'
-import { AgenticHandler } from './AgenticHandler'
+import { AgenticAnthropicHandler } from './AgenticAnthropicHandler'
 import type { AgentHandler, AgentHandlerDelegate, AgentRequest } from './interfaces'
 
 interface ToolCall {
@@ -34,22 +34,23 @@ interface GeminiMessage {
     }[]
 }
 
-export class AgenticGeminiHandler extends AgenticHandler implements AgentHandler {
+export class AgenticGeminiHandler extends AgenticAnthropicHandler implements AgentHandler {
+    protected defaultModelId = 'gemini-2.0-flash'
+
     constructor(
-        protected readonly modelId: string,
         contextRetriever: Pick<ContextRetriever, 'retrieveContext' | 'computeDidYouMean'>,
         editor: ChatControllerOptions['editor'],
         protected readonly chatClient: ChatControllerOptions['chatClient'],
         private readonly GEMINI_API_KEY = ''
     ) {
-        super(modelId, contextRetriever, editor, chatClient, GEMINI_API_KEY)
+        super(contextRetriever, editor, chatClient, GEMINI_API_KEY)
     }
 
     private static sessionID: string | undefined
     private static messages: GeminiMessage[] = [] // Gemini message format is different from Anthropic's
 
     public async handle(req: AgentRequest, delegate: AgentHandlerDelegate): Promise<void> {
-        const { requestID, inputText, mentions, editorState, chatBuilder, signal, span } = req
+        const { requestID, inputText, mentions, editorState, chatBuilder, signal, span, model } = req
         // TODO: FIX
         if (chatBuilder.sessionID !== AgenticGeminiHandler.sessionID) {
             AgenticGeminiHandler.sessionID = chatBuilder.sessionID
@@ -79,7 +80,7 @@ export class AgenticGeminiHandler extends AgenticHandler implements AgentHandler
         AgenticGeminiHandler.messages.push({ role: 'model', parts: [{ text: 'Reviewed!' }] })
         delegate.postMessageInProgress({
             speaker: 'assistant',
-            model: this.modelId,
+            model,
         })
 
         const typewriter = new Typewriter({
@@ -87,7 +88,7 @@ export class AgenticGeminiHandler extends AgenticHandler implements AgentHandler
                 delegate.postMessageInProgress({
                     speaker: 'assistant',
                     text: PromptString.unsafe_fromLLMResponse(content),
-                    model: this.modelId,
+                    model,
                 }),
             close: delegate.postDone,
             error: error => {
@@ -130,7 +131,7 @@ export class AgenticGeminiHandler extends AgenticHandler implements AgentHandler
             logDebug('AgenticGeminiHandler', 'Request sent', { verbose: geminiRequestBody }) // ADD THIS LOGGING
 
             const response = await fetch(
-                `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${this.GEMINI_API_KEY}`,
+                `https://generativelanguage.googleapis.com/v1beta/models/${this.defaultModelId}:generateContent?key=${this.GEMINI_API_KEY}`,
                 {
                     method: 'POST',
                     headers: {

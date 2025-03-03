@@ -16,6 +16,7 @@ import {
     Pencil,
     Play,
     Search,
+    Sparkles,
     Square,
 } from 'lucide-react'
 import type { FC, FunctionComponent, KeyboardEventHandler, PropsWithChildren } from 'react'
@@ -52,6 +53,11 @@ function getIntentOptions({
             icon: MessageSquare,
             intent: 'chat',
             shortcut: <Kbd macOS="return" linuxAndWindows="return" />,
+        },
+        {
+            title: 'Agentic chat',
+            icon: Sparkles,
+            intent: 'agentic',
         },
     ]
 

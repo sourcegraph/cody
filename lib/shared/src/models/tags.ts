@@ -5,6 +5,7 @@
  */
 export enum ModelTag {
     // UI Groups
+    Agentic = 'agentic',
     Power = 'power',
     Speed = 'speed',
     Balanced = 'balanced',

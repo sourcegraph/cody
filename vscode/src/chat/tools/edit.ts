@@ -1,6 +1,6 @@
 import { displayPath, logDebug } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
-import { zodToAnthropicSchema } from '../chat-view/handlers/AgenticHandler'
+import { zodToAnthropicSchema } from '../chat-view/handlers/AgenticAnthropicHandler'
 import { getDiagnosticsDiff } from './diagnostic'
 import { type EditToolInput, EditToolSchema, validateWithZod } from './schema'
 
@@ -275,30 +275,29 @@ export const editTool = {
             const document = await vscode.workspace.openTextDocument(uri)
             await vscode.window.showTextDocument(document)
             // Create snippet once
-            const snippet = newContent.length > 200 ? newContent.substring(0, 200) + '...' : newContent
-            const output = [getContentTemplate(displayName, snippet)]
+            const output = []
             // Check diagnostics
             const fileProblems = vscode.languages.getDiagnostics(uri)
             if (fileProblems.length > 0) {
-                output.push(
-                    `[WARNING] Errors detected - action required: ${fileProblems
-                        .map(d => d.message)
-                        .join('\n')}`
-                )
-                return output.join('\n')
+                output.push(`[ERROR - Action required] ${fileProblems.map(d => d.message).join('\n')}`)
             }
+
             const currentDiagnostics = vscode.languages.getDiagnostics()
             const diff = getDiagnosticsDiff(diagnosticsOnStart, currentDiagnostics)
             if (diff.length > 0) {
                 output.push(
-                    `[WARNING] Errors detected - action required: ${diff
+                    `[ERROR - Action required] ${diff
                         .map(d => d[1].map(diag => diag.message).join('\n'))
                         .join('\n')}`
                 )
             }
+
+            output.push(getContentTemplate(displayName, newContent))
+
             const historyUri = uri.with({ scheme: 'cody-checkpoint' })
             const title = `History: ${displayPath(uri)} (${new Date(timestamp).toLocaleString()})`
             await vscode.commands.executeCommand('vscode.diff', historyUri, uri, title)
+
             return output.join('\n')
         }
 

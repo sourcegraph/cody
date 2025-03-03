@@ -655,6 +655,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         command?: DefaultChatCommands
         manuallySelectedIntent?: ChatMessage['intent'] | undefined | null
         traceparent?: string | undefined | null
+        model?: ChatModel | undefined | null
     }): Promise<void> {
         return context.with(extractContextFromTraceparent(traceparent), () => {
             return tracer.startActiveSpan('chat.handleUserMessage', async (span): Promise<void> => {
@@ -671,10 +672,12 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     firstResultFromOperation(ChatBuilder.resolvedModelForChat(this.chatBuilder))
                 )
                 this.chatBuilder.setSelectedModel(model)
-                let selectedAgent = model?.includes(DeepCodyAgentID) ? DeepCodyAgentID : undefined
-                if (model?.includes(ToolCodyModelName)) {
-                    selectedAgent = ToolCodyModelRef
-                }
+                const modelObj = model ? modelsService.getModelByID(model) : undefined
+                const selectedAgent = modelObj?.tags.includes(ModelTag.Agentic)
+                    ? modelObj.id
+                    : manuallySelectedIntent === 'agentic' && modelObj?.tags.includes(ModelTag.Tools)
+                      ? 'agentic'
+                      : undefined
 
                 this.chatBuilder.addHumanMessage({
                     text: inputText,
@@ -698,6 +701,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                         source,
                         command,
                         manuallySelectedIntent,
+                        model,
                     },
                     span
                 )
@@ -715,27 +719,25 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             source,
             command,
             manuallySelectedIntent,
+            model,
         }: Parameters<typeof this.handleUserMessage>[0],
         span: Span
     ): Promise<void> {
-        span.addEvent('ChatController.sendChat')
-        signal.throwIfAborted()
-
-        // Use default model if no model is selected.
-        const model =
-            this.chatBuilder.selectedModel ??
-            (await wrapInActiveSpan('chat.resolveModel', () =>
-                firstResultFromOperation(ChatBuilder.resolvedModelForChat(this.chatBuilder))
-            ))
         if (!model) {
             throw new Error('No model selected, and no default chat model is available')
         }
+        span.addEvent('ChatController.sendChat')
+        signal.throwIfAborted()
 
         this.chatBuilder.setSelectedModel(model)
-        let chatAgent = model.includes(DeepCodyAgentID) ? DeepCodyAgentID : undefined
-        if (model.includes(ToolCodyModelName)) {
-            chatAgent = ToolCodyModelRef
-        }
+
+        const chatAgent = model.includes(DeepCodyAgentID)
+            ? DeepCodyAgentID
+            : model.includes(ToolCodyModelName)
+              ? ToolCodyModelRef
+              : manuallySelectedIntent === 'agentic' || model.includes('agentic')
+                ? 'agentic'
+                : undefined
 
         const recorder = await OmniboxTelemetry.create({
             requestID,
@@ -754,7 +756,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
 
         this.postEmptyMessageInProgress(model)
 
-        const agentName = ['search', 'edit', 'insert'].includes(manuallySelectedIntent ?? '')
+        const agentName = ['search', 'edit', 'insert', 'agentic'].includes(manuallySelectedIntent ?? '')
             ? (manuallySelectedIntent as string)
             : chatAgent ?? 'chat'
         const agent = getAgent(agentName, model, {
@@ -780,6 +782,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     chatBuilder: this.chatBuilder,
                     span,
                     recorder,
+                    model,
                 },
                 {
                     postError: (error: Error, type?: MessageErrorType): void => {

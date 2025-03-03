@@ -1,6 +1,6 @@
 import { spawn } from 'node:child_process'
 import * as vscode from 'vscode'
-import { zodToAnthropicSchema } from '../chat-view/handlers/AgenticHandler'
+import { zodToAnthropicSchema } from '../chat-view/handlers/AgenticAnthropicHandler'
 import { type RunTerminalCommandInput, RunTerminalCommandSchema, validateWithZod } from './schema'
 
 interface CommandOptions {

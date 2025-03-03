@@ -46,6 +46,7 @@ export type ModelCategory =
     | ModelTag.Balanced
     | ModelTag.Speed
     | 'accuracy'
+    | ModelTag.Agentic
     | ModelTag.Other
 export type ModelStatus =
     | ModelTag.Experimental

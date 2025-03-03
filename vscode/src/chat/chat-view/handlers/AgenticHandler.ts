@@ -1,80 +1,74 @@
-import Anthropic from '@anthropic-ai/sdk'
-import type { ContentBlock, MessageParam, Tool, ToolResultBlockParam } from '@anthropic-ai/sdk/resources'
 import {
     CodyIDE,
+    type Message,
     PromptString,
-    Typewriter,
+    type ToolsCalled,
     clientCapabilities,
-    isAbortErrorOrSocketHangUp,
     logDebug,
 } from '@sourcegraph/cody-shared'
-import type { z } from 'zod'
-import zodToJsonSchema from 'zod-to-json-schema'
 import { getOSArch } from '../../../os'
 import { getUniqueContextItems } from '../../../prompt-builder/unique-context'
+import { getCategorizedMentions } from '../../../prompt-builder/utils'
 import { type AgentTool, AgentToolGroup } from '../../tools/AgentToolGroup'
-import { getToolBlock } from '../../tools/schema'
 import { convertContextItemToInlineMessage, getCurrentFileName } from '../../tools/utils'
 import type { ChatControllerOptions } from '../ChatController'
 import type { ContextRetriever } from '../ContextRetriever'
+import { DefaultPrompter } from '../prompt'
 import { ChatHandler } from './ChatHandler'
 import type { AgentHandler, AgentHandlerDelegate, AgentRequest } from './interfaces'
 
-interface ToolCall {
-    id: string
-    name: string
-    input: any
-}
-
-// Function to convert Zod schema to Anthropic-compatible InputSchema
-export function zodToAnthropicSchema(schema: z.ZodObject<any>): Tool.InputSchema {
-    return zodToJsonSchema(schema) as Tool.InputSchema
-}
-
-const defaultParams = {
-    '3.5': { model: 'claude-3-5-sonnet-latest' },
-    '3.7': {
-        model: 'claude-3-7-sonnet-latest',
-        thinking: {
-            type: 'enabled',
-            budget_tokens: 2000,
-        },
-    },
-}
-
+// Gateway
 export class AgenticHandler extends ChatHandler implements AgentHandler {
-    private static SYSTEM_PROMPT = ''
+    public static SYSTEM_PROMPT = ''
     protected turnCount = 0
     protected readonly MAX_TURN = 20
-    private readonly anthropic
     protected tools: AgentTool[] = []
-    private static sessions = new Map<string, MessageParam[]>()
 
     constructor(
-        protected readonly modelId: string,
         contextRetriever: Pick<ContextRetriever, 'retrieveContext' | 'computeDidYouMean'>,
         editor: ChatControllerOptions['editor'],
-        protected readonly chatClient: ChatControllerOptions['chatClient'],
-        apiKey: string
+        protected readonly chatClient: ChatControllerOptions['chatClient']
     ) {
-        super(modelId, contextRetriever, editor, chatClient)
-        this.anthropic = new Anthropic({ apiKey })
-        this.modelId = modelId.includes('7-sonnet')
-            ? 'claude-3-7-sonnet-latest'
-            : 'claude-3-5-sonnet-latest'
-
-        if (AgenticHandler.SYSTEM_PROMPT === '') {
-            AgenticHandler.SYSTEM_PROMPT = getClaudeSystemPrompt()
-        }
+        super(contextRetriever, editor, chatClient)
     }
 
     public async handle(req: AgentRequest, delegate: AgentHandlerDelegate): Promise<void> {
-        const { requestID, inputText, mentions, editorState, chatBuilder, signal, span } = req
+        if (!AgenticHandler.SYSTEM_PROMPT) {
+            AgenticHandler.SYSTEM_PROMPT = getClaudeSystemPrompt(!req.model.includes('7-sonnet'))
+        }
+        try {
+            await this._handle(req, delegate)
+        } catch (error) {
+            logDebug('AgenticHandler', 'Error in handle', { verbose: error })
+            delegate.postDone()
+        }
+    }
+
+    private async _handle(req: AgentRequest, delegate: AgentHandlerDelegate): Promise<void> {
+        const {
+            requestID,
+            signal,
+            inputText,
+            mentions,
+            span,
+            editorState,
+            chatBuilder,
+            recorder,
+            model,
+        } = req
+
         if (signal.aborted) return // Early abort check
 
-        const messages = AgenticHandler.sessions.get(chatBuilder.sessionID) ?? []
-
-        this.tools = await AgentToolGroup.getToolsByVersion(this.contextRetriever, span)
+        const system = AgenticHandler.SYSTEM_PROMPT
+        this.tools = await AgentToolGroup.getToolsByVersion(this.contextRetriever, span) // Convert our tools to the format expected by Sourcegraph API
+        const tools = this.tools.map(tool => ({
+            type: 'function',
+            function: {
+                name: tool.spec.name,
+                description: tool.spec.description,
+                parameters: tool.spec.input_schema,
+            },
+        }))
 
         const contextResult = await this.computeAgenticContext(
             requestID,
@@ -86,148 +80,167 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
         )
 
         if (contextResult.error) delegate.postError(contextResult.error, 'transcript')
-        if (signal.aborted) return // Abort check after context
-        if (contextResult.contextItems) {
-            const contextItems = getUniqueContextItems(contextResult.contextItems)
-            chatBuilder.setLastMessageContext(contextItems)
-            messages.push(
-                {
-                    role: 'user',
-                    content: convertContextItemToInlineMessage(contextItems),
-                },
-                { role: 'assistant', content: 'Reviewed!' }
-            )
+        const contextItems = getUniqueContextItems(contextResult.contextItems || [])
+        if (contextItems.length) {
+            const groupedContext = convertContextItemToInlineMessage(contextItems)
+            if (groupedContext.length) {
+                chatBuilder.setLastMessageContext(contextItems)
+            }
         }
 
+        if (signal.aborted) return // Abort check after context
         delegate.postMessageInProgress({
             speaker: 'assistant',
-            model: this.modelId,
+            model,
         })
 
-        const typewriter = new Typewriter({
-            update: content =>
-                delegate.postMessageInProgress({
-                    speaker: 'assistant',
-                    text: PromptString.unsafe_fromLLMResponse(content),
-                    model: this.modelId,
-                }),
-            close: delegate.postDone,
-            error: error => {
-                delegate.postError(error, 'transcript')
-                delegate.postDone()
-                if (isAbortErrorOrSocketHangUp(error)) signal.throwIfAborted()
-            },
-        })
+        const streamProcessor = async (): Promise<ToolsCalled[]> => {
+            const toolCalls = new Map<string, ToolsCalled>()
 
-        const streamContent: string[] = []
-        const postUpdate = () => typewriter.update(streamContent.join(''))
+            // Create a new prompter for each turn
+            const { explicitMentions, implicitMentions } = getCategorizedMentions(contextItems)
+            const prompter = new DefaultPrompter(explicitMentions, implicitMentions, false)
+            const { prompt } = await this.buildPrompt(prompter, chatBuilder, signal, 8)
+            recorder.recordChatQuestionExecuted(contextItems, { addMetadata: true, current: span })
 
-        const processContentBlock = (contentBlock: ContentBlock, toolCalls: ToolCall[]) => {
-            if (signal.aborted) return true // Check abort signal within content block processing
-
-            switch (contentBlock.type) {
-                case 'thinking':
-                    streamContent.push('</think>')
-                    break
-                case 'tool_use':
-                    toolCalls.push({
-                        id: contentBlock.id,
-                        name: contentBlock.name,
-                        input: contentBlock.input,
-                    })
-                    streamContent.push(getToolBlock(contentBlock))
-                    break
+            // Prepare messages for the API call
+            const params = {
+                maxTokensToSample: 4000,
+                messages: prompt,
+                system,
+                tools,
+                stream: true,
+                model,
             }
-            return false // Continue processing
+
+            const stream = await this.chatClient.chat(prompt, params, signal)
+
+            logDebug('AgenticHandler', 'Request sent', { verbose: params })
+
+            const streamContent = { text: `Turn ${this.turnCount + 1}` }
+            for await (const message of stream) {
+                switch (message.type) {
+                    case 'change': {
+                        streamContent.text = message.text
+                        delegate.postMessageInProgress({
+                            speaker: 'assistant',
+                            text: PromptString.unsafe_fromLLMResponse(streamContent.text),
+                            model,
+                        })
+                        // Process any tool calls that came with this message
+                        if (message.content?.tools?.length) {
+                            for (const toolCall of message.content.tools) {
+                                // We need to track and combine partial tool calls
+                                const existingCall = toolCalls.get(toolCall.id)
+                                if (!existingCall) {
+                                    streamContent.text += `\n\nCalling ${toolCall.name}\n\n`
+                                }
+                                // Update existing tool call arguments
+                                toolCalls.set(toolCall.id, toolCall)
+                                if (existingCall?.args !== toolCall?.args) {
+                                    delegate.postMessageInProgress({
+                                        speaker: 'assistant',
+                                        text: PromptString.unsafe_fromLLMResponse(streamContent.text),
+                                        model,
+                                    })
+                                    break
+                                }
+                            }
+                        }
+                        break
+                    }
+                    case 'complete':
+                        break
+                    case 'error':
+                        logDebug('AgenticHandler', 'Error in streamModelResponse', {
+                            verbose: message.error,
+                        })
+                        throw new Error(
+                            message.error instanceof Error ? message.error.message : message.error
+                        )
+                }
+            }
+            const assistantAnswer = {
+                speaker: 'assistant',
+                text: PromptString.unsafe_fromLLMResponse(streamContent.text),
+            } satisfies Message
+            streamContent.text += `\n\nTurn ${this.turnCount + 1} has completed.\n\n`
+            delegate.postMessageInProgress({
+                ...assistantAnswer,
+                model,
+            })
+            chatBuilder.addBotMessage(assistantAnswer, model)
+
+            return Array.from(toolCalls.values())
         }
 
-        messages.push({ role: 'user', content: inputText.toString() })
-
-        const streamProcessor = async (): Promise<ToolCall[]> => {
-            const toolCalls: ToolCall[] = []
-            return new Promise((resolve, reject) => {
-                this.anthropic.messages
-                    .stream(
-                        {
-                            tools: this.tools.map(tool => tool.spec),
-                            max_tokens: 8000,
-                            messages,
-                            system: AgenticHandler.SYSTEM_PROMPT,
-                            stream: true,
-                            ...(this.modelId.includes('3-7')
-                                ? defaultParams['3.7']
-                                : defaultParams['3.5']),
-                        },
-                        {
-                            headers: {
-                                'anthropic-dangerous-direct-browser-access': 'true',
-                            },
-                        }
-                    )
-                    .on('text', (textDelta, textSnapshot) => {
-                        streamContent.push(textDelta)
-                        postUpdate()
-                    })
-                    .on('thinking', thinking => {
-                        // Keep thinking events if needed for UI
-                        streamContent.push(thinking)
-                        postUpdate()
-                    })
-                    .on('contentBlock', (contentBlock: ContentBlock) => {
-                        if (processContentBlock(contentBlock, toolCalls)) return
-                    })
-                    .on('streamEvent', e => {
-                        if (e.type === 'content_block_start' && e.content_block?.type === 'thinking') {
-                            streamContent.push('<think>')
-                        }
-                        postUpdate()
-                    })
-                    .on('end', () => resolve(toolCalls))
-                    .on('error', error => reject(error))
-                    .on('abort', error => reject(error))
-                    .on('finalMessage', ({ role, content }: MessageParam) => {
-                        messages.push({ role, content })
-                    })
-            })
+        if (this.turnCount >= this.MAX_TURN) {
+            delegate.postError(
+                new Error(
+                    'The conversation has been ended due to reaching the maximum number of turns.'
+                ),
+                'transcript'
+            )
         }
 
         while (this.turnCount < this.MAX_TURN) {
             const currentToolCalls = await streamProcessor().catch(error => {
-                if (!signal.aborted) throw new Error(`Stream processing failed: ${error}`) // Prevent double error posting on abort
+                logDebug('AgenticHandler', 'Error in stream', { verbose: error })
+                // Prevent double error posting on abort
+                if (!signal.aborted) delegate.postError(error, 'transcript')
+                // Treat stream error as no tool calls to avoid infinite loop, and allow graceful exit.
                 return []
             })
-
-            if (signal.aborted) return // Abort check after stream processing
+            // Abort check before each turn
+            signal.throwIfAborted()
 
             if (currentToolCalls.length === 0) break
 
-            const toolResults: ToolResultBlockParam[] = []
+            const toolResults: any[] = []
             for (const toolCall of currentToolCalls) {
+                signal.throwIfAborted() // Abort check before each tool invocation
                 const tool = this.tools.find(t => t.spec.name === toolCall.name)
                 if (!tool) continue
+
                 try {
-                    const output = await tool.invoke(toolCall.input)
-                    toolResults.push({ type: 'tool_result', tool_use_id: toolCall.id, content: output })
-                } catch (error) {
-                    logDebug('AgenticHandler', `Failed to invoke ${toolCall.name}`, { verbose: error })
+                    // Parse the args if they're a string
+                    const parsedArgs =
+                        typeof toolCall.args === 'string' ? JSON.parse(toolCall.args) : toolCall.args
+
+                    const output = await tool.invoke(parsedArgs)
+
                     toolResults.push({
                         type: 'tool_result',
-                        tool_use_id: toolCall.id,
+                        id: toolCall.id,
+                        name: toolCall.name,
+                        content: output,
+                    })
+                } catch (error) {
+                    logDebug('AgenticHandler', `Failed to invoke ${toolCall.name}`, {
+                        verbose: error,
+                    })
+                    toolResults.push({
+                        type: 'tool_result',
+                        name: toolCall.name,
+                        id: toolCall.id,
                         content: String(error),
-                    }) // Ensure content is always string
-                    // Treat stream error as no tool calls to avoid infinite loop, and allow graceful exit.
+                    })
                     break
                 }
             }
 
-            messages.push({ role: 'user', content: toolResults })
+            chatBuilder.addHumanMessage({
+                text: PromptString.unsafe_fromLLMResponse(
+                    JSON.stringify(toolResults) || 'No tool results'
+                ),
+                agent: 'deep-cody',
+                model,
+            })
+
             this.turnCount++
         }
 
-        if (this.turnCount >= this.MAX_TURN) {
-            console.warn('Max agent turns reached.') // Use warn for non-critical issue
-        }
-        typewriter.close() // Ensure typewriter is closed after max turns or normal exit.
+        delegate.postDone() // Ensure connection is closed after max turns or normal exit.
     }
 }
 
