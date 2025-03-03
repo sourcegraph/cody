@@ -64,6 +64,28 @@ export interface ClientCapabilities {
     completions?: 'none' | undefined | null
 
     /**
+     * If the client supports decorations to render auto-edit suggestions.
+     * - 'none': the client does not support auto-edit decorations.
+     * - 'deletions': the client can display deletions, it can mark existing text as deleted (e.g. add a red background color).
+     * - 'insertions-and-deletions': the client can display insertions and deletions, it can mark existing text as deleted, and show
+     *   new insertions (e.g. display ghost text within a line)
+     */
+    autoEditDecorationSuggestions?: 'none' | 'deletions' | 'insertions-and-deletions' | undefined | null
+
+    /**
+     * If the client supports images to render auto-edit suggestions.
+     * - 'none': the client does not support auto-edit images.
+     * - 'enabled': the client can display images for auto-edit suggestions.
+     *
+     * Note: If this is set to 'enabled' the behaviour will differ depending on if `autoEditDecorationSuggestions` is also set.
+     * If `autoEditDecorationSuggestions` is set to 'none', the image will be generated to show a unified diff, showing the complete auto-edit suggestion.
+     * If `autoEditDecorationSuggestions` is set to 'deletions', the image will be generated to show a diff with only additions.
+     * If `autoEditDecorationSuggestions` is set to 'insertions-and-deletions', the image will be generated to show a diff with only additions. However for simple changes we may
+     * decide to skip showing an image and show the diff with only decorations instead.
+     */
+    autoEditImageSuggestions?: 'none' | 'enabled'
+
+    /**
      * When 'streaming', handles 'chat/updateMessageInProgress' streaming notifications.
      */
     chat?: 'none' | 'streaming' | undefined | null

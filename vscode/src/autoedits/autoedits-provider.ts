@@ -31,7 +31,7 @@ import type { DecorationInfo } from './renderer/decorators/base'
 import { DefaultDecorator } from './renderer/decorators/default-decorator'
 import { InlineDiffDecorator } from './renderer/decorators/inline-diff-decorator'
 import { getDecorationInfo } from './renderer/diff-utils'
-import { initImageSuggestionService } from './renderer/image-gen'
+import { type GeneratedImageSuggestion, initImageSuggestionService } from './renderer/image-gen'
 import { AutoEditsInlineRendererManager } from './renderer/inline-manager'
 import { AutoEditsDefaultRendererManager, type AutoEditsRendererManager } from './renderer/manager'
 import {
@@ -47,12 +47,40 @@ export const AUTOEDIT_CONTEXT_FETCHING_DEBOUNCE_INTERVAL = 25
 const RESET_SUGGESTION_ON_CURSOR_CHANGE_AFTER_INTERVAL_MS = 60 * 1000
 const ON_SELECTION_CHANGE_DEFAULT_DEBOUNCE_INTERVAL_MS = 15
 
-export interface AutoeditsResult extends vscode.InlineCompletionList {
+interface InsertionResult extends vscode.InlineCompletionList {
+    type: 'completion'
     requestId: AutoeditRequestID
     prediction: string
+}
+
+interface EditResult extends vscode.InlineCompletionList {
+    type: 'edit'
+    requestId: AutoeditRequestID
+    prediction: string
+    range: vscode.Range
+    /**
+     * If the suggestion is an image, this will contain the image data.
+     * This depends on `clientCapabilities.autoEditImageSuggestions` being enabled.
+     */
+    imageData: {
+        // The image to render
+        image: GeneratedImageSuggestion
+        // The position to render the image in the document.
+        position: { line: number; column: number }
+    } | null
+    /**
+     * The original code that we predicted on.
+     * This should be used, alongside `range` to valide that the suggestion is still valid.
+     * This is important to mitigate against possible desync issues when running through the Agent.
+     * If this `original` code is no longer valid at the same `range`, the client should discard the suggestion.
+     */
+    original: string
+
     /** temporary data structure, will need to update before integrating with the agent API */
     decorationInfo: DecorationInfo
 }
+
+export type AutoeditsResult = InsertionResult | EditResult
 
 /**
  * Provides inline completions and auto-edit functionality.
@@ -428,16 +456,25 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                 await this.rendererManager.renderInlineDecorations(decorationInfo)
             }
 
-            // The data structure returned to the agent's from the `autoedits/execute` calls.
-            // Note: this is subject to change later once we start working on the agent API.
-            const result: AutoeditsResult = {
-                items: 'inlineCompletionItems' in renderOutput ? renderOutput.inlineCompletionItems : [],
-                requestId,
-                prediction,
-                decorationInfo,
+            if (renderOutput.type === 'completion') {
+                return {
+                    type: 'completion',
+                    items: renderOutput.inlineCompletionItems,
+                    requestId,
+                    prediction,
+                }
             }
 
-            return result
+            return {
+                type: 'edit',
+                items: [],
+                requestId,
+                prediction,
+                original: codeToReplaceData.codeToRewrite,
+                range: codeToReplaceData.range,
+                decorationInfo,
+                imageData: renderOutput.type === 'image' ? renderOutput.imageData : null,
+            }
         } catch (error) {
             const errorToReport =
                 error instanceof Error

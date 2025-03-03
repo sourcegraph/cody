@@ -31,7 +31,6 @@ import type * as vscode from 'vscode'
 //     at Object.<anonymous> (/snapshot/dist/agent.js)
 //     at Module._compile (pkg/prelude/bootstrap.js:1926:22)
 // </VERY IMPORTANT>
-import type { InlineCompletionItemProvider } from '../../vscode/src/completions/inline-completion-item-provider'
 import type { API, GitExtension, Repository } from '../../vscode/src/repository/builtinGitExtension'
 import { AgentEventEmitter as EventEmitter } from '../../vscode/src/testutils/AgentEventEmitter'
 import { emptyEvent } from '../../vscode/src/testutils/emptyEvent'
@@ -56,6 +55,7 @@ import {
 import { emptyDisposable } from '../../vscode/src/testutils/emptyDisposable'
 
 import open from 'open'
+import type { AutoeditsProvider } from '../../vscode/src/autoedits/autoedits-provider'
 import { AgentDiagnostics } from './AgentDiagnostics'
 import { AgentQuickPick } from './AgentQuickPick'
 import { AgentTabGroups } from './AgentTabGroups'
@@ -1144,12 +1144,12 @@ const removeCodeLensProvider = new EventEmitter<vscode.CodeLensProvider>()
 export const onDidRegisterNewCodeLensProvider = newCodeLensProvider.event
 export const onDidUnregisterNewCodeLensProvider = removeCodeLensProvider.event
 
-let latestCompletionProvider: InlineCompletionItemProvider | undefined
-let resolveFirstCompletionProvider: (provider: InlineCompletionItemProvider) => void = () => {}
-const firstCompletionProvider = new Promise<InlineCompletionItemProvider>(resolve => {
+let latestCompletionProvider: AutoeditsProvider | undefined
+let resolveFirstCompletionProvider: (provider: AutoeditsProvider) => void = () => {}
+const firstCompletionProvider = new Promise<AutoeditsProvider>(resolve => {
     resolveFirstCompletionProvider = resolve
 })
-export function completionProvider(): Promise<InlineCompletionItemProvider> {
+export function completionProvider(): Promise<AutoeditsProvider> {
     if (latestCompletionProvider) {
         return Promise.resolve(latestCompletionProvider)
     }

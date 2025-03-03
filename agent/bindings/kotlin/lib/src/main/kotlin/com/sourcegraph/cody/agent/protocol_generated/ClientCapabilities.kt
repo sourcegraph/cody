@@ -6,6 +6,8 @@ import com.google.gson.annotations.SerializedName;
 data class ClientCapabilities(
   val authentication: AuthenticationEnum? = null, // Oneof: enabled, none
   val completions: CompletionsEnum? = null, // Oneof: none
+  val autoEditDecorationSuggestions: AutoEditDecorationSuggestionsEnum? = null, // Oneof: none, deletions, insertions-and-deletions
+  val autoEditImageSuggestions: AutoEditImageSuggestionsEnum? = null, // Oneof: none, enabled
   val chat: ChatEnum? = null, // Oneof: none, streaming
   val git: GitEnum? = null, // Oneof: none, enabled
   val progressBars: ProgressBarsEnum? = null, // Oneof: none, enabled
@@ -34,6 +36,17 @@ data class ClientCapabilities(
 
   enum class CompletionsEnum {
     @SerializedName("none") None,
+  }
+
+  enum class AutoEditDecorationSuggestionsEnum {
+    @SerializedName("none") None,
+    @SerializedName("deletions") Deletions,
+    @SerializedName("insertions-and-deletions") `Insertions-and-deletions`,
+  }
+
+  enum class AutoEditImageSuggestionsEnum {
+    @SerializedName("none") None,
+    @SerializedName("enabled") Enabled,
   }
 
   enum class ChatEnum {

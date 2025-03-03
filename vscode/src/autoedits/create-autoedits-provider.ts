@@ -96,9 +96,19 @@ export function createAutoEditsProvider({
             const enabledRendererInSettings = vscode.workspace
                 .getConfiguration()
                 .get<'default' | 'inline'>('cody.experimental.autoedit.renderer', 'default')
+
+            /**
+             * Render inline when any of the following is true:
+             * 1. Feature flag is enabled
+             * 2. Setting is enabled
+             * 3. Running inside agent - The default renderer logic is not suitable to use inside agent.
+             */
+            const shouldRenderInline =
+                autoeditInlineRenderingEnabled ||
+                enabledRendererInSettings === 'inline' ||
+                isRunningInsideAgent()
             const provider = new AutoeditsProvider(chatClient, fixupController, statusBar, {
-                shouldRenderInline:
-                    autoeditInlineRenderingEnabled || enabledRendererInSettings === 'inline',
+                shouldRenderInline,
             })
             return [
                 vscode.commands.registerCommand('cody.command.autoedit-manual-trigger', async () => {

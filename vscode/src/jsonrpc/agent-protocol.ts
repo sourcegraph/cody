@@ -14,6 +14,8 @@ import type {
 import type { TelemetryEventMarketingTrackingInput } from '@sourcegraph/telemetry'
 
 import type { AuthError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
+import type { DecorationInfo } from '../autoedits/renderer/decorators/base'
+import type { GeneratedImageSuggestion } from '../autoedits/renderer/image-gen'
 import type { ExtensionMessage, WebviewMessage } from '../chat/protocol'
 import type { CompletionBookkeepingEvent, CompletionItemID } from '../completions/analytics-logger'
 import type { FixupTaskID } from '../non-stop/FixupTask'
@@ -516,18 +518,47 @@ export interface ChatExportResult {
     chatID: string
     transcript: SerializedChatTranscript
 }
-export interface AutocompleteResult {
-    items: AutocompleteItem[]
-
-    /** completionEvent is not deprecated because it's used by non-editor clients like cody-bench that need access to book-keeping data to evaluate results. */
-    completionEvent?: CompletionBookkeepingEvent | undefined | null
-}
 
 export interface AutocompleteItem {
     id: string
     insertText: string
     range: Range
 }
+
+interface AutocompleteCompletionResult {
+    items: AutocompleteItem[]
+
+    /** completionEvent is not deprecated because it's used by non-editor clients like cody-bench that need access to book-keeping data to evaluate results. */
+    completionEvent?: CompletionBookkeepingEvent | undefined | null
+}
+
+interface AutocompleteEditResult {
+    id: string
+    replacementText: string
+    range: vscode.Range
+    /**
+     * The original text that the suggestion was generated from.
+     * This should be used, alongside `range` to valide that the suggestion is still valid.
+     * This is important to mitigate against possible desync issues when running through the Agent.
+     * If this `original` code is no longer valid at the same `range`, the client should discard the suggestion.
+     */
+    originalText: string
+    /**
+     * If the suggestion is an image, this will contain the image data.
+     * This depends on `clientCapabilities.autoEditImageSuggestions` being enabled.
+     */
+    imageData: {
+        // The image to render
+        image: GeneratedImageSuggestion
+        // The position to render the image in the document.
+        position: { line: number; column: number }
+    } | null
+
+    /** temporary data structure, will need to update before integrating with the agent API */
+    decorationInfo: DecorationInfo
+}
+
+export type AutocompleteResult = AutocompleteCompletionResult | AutocompleteEditResult
 
 export interface ClientInfo {
     name: string
