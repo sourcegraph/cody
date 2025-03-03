@@ -251,7 +251,7 @@ export const MediaUploadButton: React.FC<{
                             <div className="tw-text-center">
                                 <div>Upload images (PNG, JPEG, WEBP, HEIC, HEIF)</div>
                                 <div className="tw-text-sm tw-opacity-75 tw-mt-1">
-                                    Drag & drop, paste Cmd+V, or click to select
+                                    Copy and paste, or click to select
                                 </div>
                                 <div className="tw-text-sm tw-font-medium tw-text-primary tw-mt-2">
                                     Multiple images supported!
