@@ -357,6 +357,19 @@ function useTabs(input: Pick<TabsBarProps, 'user'>, newChatCommand: string): Tab
             (
                 [
                     {
+                        title: 'New Chat',
+                        Icon: PlusIcon,
+                        command: newChatCommand,
+                        changesView: false,
+                        tooltip: (
+                            <>
+                                {IDE === CodyIDE.VSCode && (
+                                    <Kbd macOS="shift+opt+l" linuxAndWindows="shift+alt+l" />
+                                )}
+                            </>
+                        ),
+                    },
+                    {
                         view: View.Chat,
                         title: 'Chat',
                         Icon: MessagesSquareIcon,
@@ -405,19 +418,7 @@ function useTabs(input: Pick<TabsBarProps, 'user'>, newChatCommand: string): Tab
                         Icon: BookTextIcon,
                         changesView: true,
                     },
-                    {
-                        title: 'New Chat',
-                        Icon: PlusIcon,
-                        command: newChatCommand,
-                        changesView: false,
-                        tooltip: (
-                            <>
-                                {IDE === CodyIDE.VSCode && (
-                                    <Kbd macOS="shift+opt+l" linuxAndWindows="shift+alt+l" />
-                                )}
-                            </>
-                        ),
-                    },
+
                 ] as (TabConfig | null)[]
             ).filter(isDefined),
         [IDE, extensionAPI, newChatCommand]
