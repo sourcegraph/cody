@@ -58,7 +58,7 @@ class DocumentCodeTest : CodyIntegrationTextFixture() {
         EditUndoCodeVisionProvider.command)
 
     // Make sure a doc comment was inserted.
-    assertTrue(hasJavadocComment(myFixture.editor.document.text))
+    assertTrue(hasJavadocComment(editor.document.text))
 
     runAndWaitForCleanState(EditUndoAction.ID)
   }
@@ -69,21 +69,17 @@ class DocumentCodeTest : CodyIntegrationTextFixture() {
     assertNotNull("Lens group should be displayed", codeLenses.isNotEmpty())
 
     runAndWaitForCleanState(EditAcceptAction.ID)
-    assertThat(myFixture.editor.document.text, containsString("*/\n    public void foo() {"))
+    assertThat(editor.document.text, containsString("*/\n    public void foo() {"))
   }
 
   @Test
   fun testUndo() {
-    val originalDocument = myFixture.editor.document.text
+    val originalDocument = editor.document.text
     val codeLenses = runAndWaitForLenses(DocumentCodeAction.ID, EditUndoAction.ID)
     assertNotNull("Lens group should be displayed", codeLenses.isNotEmpty())
-    assertNotSame(
-        "Expected document to be changed", originalDocument, myFixture.editor.document.text)
+    assertNotSame("Expected document to be changed", originalDocument, editor.document.text)
 
     runAndWaitForCleanState(EditUndoAction.ID)
-    assertEquals(
-        "Expected document changes to be reverted",
-        originalDocument,
-        myFixture.editor.document.text)
+    assertEquals("Expected document changes to be reverted", originalDocument, editor.document.text)
   }
 }
