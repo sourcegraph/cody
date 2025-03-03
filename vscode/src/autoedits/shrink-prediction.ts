@@ -18,6 +18,10 @@ export function shrinkPredictionUntilSuffix({
 
     const newLineChar = getNewLineChar(codeToRewrite)
     const suffix = suffixInArea + suffixAfterArea
+    if (suffix.length === 0) {
+        // No suffix to shrink to
+        return prediction
+    }
 
     // Remove the last empty line from the prediction because it always ends
     // with an extra empty line. This extra line is technically the first line

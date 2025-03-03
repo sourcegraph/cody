@@ -31,6 +31,7 @@ import type { DecorationInfo } from './renderer/decorators/base'
 import { DefaultDecorator } from './renderer/decorators/default-decorator'
 import { InlineDiffDecorator } from './renderer/decorators/inline-diff-decorator'
 import { getDecorationInfo } from './renderer/diff-utils'
+import { initImageSuggestionService } from './renderer/image-gen'
 import { AutoEditsInlineRendererManager } from './renderer/inline-manager'
 import { AutoEditsDefaultRendererManager, type AutoEditsRendererManager } from './renderer/manager'
 import {
@@ -68,14 +69,6 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
     public readonly rendererManager: AutoEditsRendererManager
     private readonly modelAdapter: AutoeditsModelAdapter
 
-    /**
-     * Default: Current supported renderer
-     * Inline: Experimental renderer that uses inline decorations to show additions
-     */
-    private readonly enabledRenderer = vscode.workspace
-        .getConfiguration()
-        .get<'default' | 'inline'>('cody.experimental.autoedit.renderer', 'default')
-
     private readonly promptStrategy = new ShortTermPromptStrategy()
     public readonly filterPrediction = new FilterPredictionBasedOnRecentEdits()
     private readonly contextMixer = new ContextMixer({
@@ -89,8 +82,11 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
         chatClient: ChatClient,
         fixupController: FixupController,
         statusBar: CodyStatusBar,
-        options: { shouldRenderImage: boolean }
+        options: { shouldRenderInline: boolean }
     ) {
+        // Initialise the canvas renderer for image generation.
+        initImageSuggestionService()
+
         autoeditsOutputChannelLogger.logDebug('Constructor', 'Constructing AutoEditsProvider')
         this.modelAdapter = createAutoeditsModelAdapter({
             providerName: autoeditsProviderConfig.provider,
@@ -98,17 +94,15 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
             chatClient: chatClient,
         })
 
-        this.rendererManager =
-            this.enabledRenderer === 'inline'
-                ? new AutoEditsInlineRendererManager(
-                      editor => new InlineDiffDecorator(editor),
-                      fixupController
-                  )
-                : new AutoEditsDefaultRendererManager(
-                      (editor: vscode.TextEditor) =>
-                          new DefaultDecorator(editor, { shouldRenderImage: options.shouldRenderImage }),
-                      fixupController
-                  )
+        this.rendererManager = options.shouldRenderInline
+            ? new AutoEditsInlineRendererManager(
+                  editor => new InlineDiffDecorator(editor),
+                  fixupController
+              )
+            : new AutoEditsDefaultRendererManager(
+                  editor => new DefaultDecorator(editor),
+                  fixupController
+              )
 
         this.onSelectionChangeDebounced = debounce(
             (event: vscode.TextEditorSelectionChangeEvent) => this.onSelectionChange(event),
@@ -366,18 +360,17 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                 return null
             }
 
-            const { inlineCompletionItems, updatedDecorationInfo, updatedPrediction } =
-                this.rendererManager.tryMakeInlineCompletions({
-                    requestId,
-                    prediction,
-                    codeToReplaceData,
-                    document,
-                    position,
-                    docContext,
-                    decorationInfo,
-                })
+            const renderOutput = this.rendererManager.getRenderOutput({
+                requestId,
+                prediction,
+                document,
+                position,
+                docContext,
+                decorationInfo,
+                codeToReplaceData,
+            })
 
-            if (inlineCompletionItems === null && updatedDecorationInfo === null) {
+            if (renderOutput.type === 'none') {
                 autoeditsOutputChannelLogger.logDebugIfVerbose(
                     'provideInlineCompletionItems',
                     'no suggestion to render'
@@ -408,9 +401,13 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
             // We need to ensure all the relevant metadata can be retrieved from `requestId` only.
             autoeditAnalyticsLogger.markAsPostProcessed({
                 requestId,
-                prediction: updatedPrediction,
-                decorationInfo: updatedDecorationInfo,
-                inlineCompletionItems,
+                renderOutput,
+                prediction:
+                    'updatedPrediction' in renderOutput ? renderOutput.updatedPrediction : prediction,
+                decorationInfo:
+                    'updatedDecorationInfo' in renderOutput
+                        ? renderOutput.updatedDecorationInfo
+                        : decorationInfo,
             })
 
             if (!isRunningInsideAgent()) {
@@ -420,14 +417,19 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                 await this.unstable_handleDidShowCompletionItem(requestId)
             }
 
-            if (updatedDecorationInfo) {
-                await this.rendererManager.renderInlineDecorations(updatedDecorationInfo)
+            if ('decorations' in renderOutput) {
+                await this.rendererManager.renderInlineDecorations(
+                    decorationInfo,
+                    renderOutput.decorations
+                )
+            } else if (renderOutput.type === 'legacy-decorations') {
+                await this.rendererManager.renderInlineDecorations(decorationInfo)
             }
 
             // The data structure returned to the agent's from the `autoedits/execute` calls.
             // Note: this is subject to change later once we start working on the agent API.
             const result: AutoeditsResult = {
-                items: inlineCompletionItems || [],
+                items: 'inlineCompletionItems' in renderOutput ? renderOutput.inlineCompletionItems : [],
                 requestId,
                 prediction,
                 decorationInfo,

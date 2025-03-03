@@ -213,6 +213,19 @@ describe('shrinkPredictionUntilSuffix', () => {
         const result = shrinkPredictionUntilSuffix({ prediction, codeToReplaceData })
         expect(result).toBe(withoutLastLines(prediction, 3))
     })
+
+    it('correctly handles when there is no remaining suffix', () => {
+        const codeToReplaceData = getCodeToReplaceForShrinkPrediction`line1█
+            line2
+        `
+
+        const prediction = dedent`line1 changed
+            line2
+        `
+
+        const result = shrinkPredictionUntilSuffix({ prediction, codeToReplaceData })
+        expect(result).toBe(prediction)
+    })
 })
 
 function getCodeToReplaceForShrinkPrediction(
