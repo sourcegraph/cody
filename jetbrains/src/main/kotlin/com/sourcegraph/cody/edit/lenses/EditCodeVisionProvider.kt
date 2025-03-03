@@ -91,7 +91,9 @@ abstract class EditCodeVisionProvider(private val metadata: EditCodeVisionProvid
             else {
               val richText = getActionRichText(cmd)
               val icon = cmd.title.icons.firstOrNull()?.value?.let { getIcon(it) }
-              val textRange = CodyEditorUtil.getTextRange(editor.document, codeLens.range)
+              val textRange =
+                  CodyEditorUtil.getTextRange(editor.document, codeLens.range)
+                      ?: return@mapNotNull null
               val onClick = { event: MouseEvent?, editor: Editor ->
                 triggerAction(cmd, event, editor)
               }

@@ -190,14 +190,18 @@ class CodyAgentClient(private val project: Project, private val webview: NativeW
 
   @JsonNotification("window/didChangeContext")
   fun window_didChangeContext(params: Window_DidChangeContextParams) {
-    if (params.key == "cody.activated") {
-      CodyAuthService.getInstance(project).setActivated(params.value?.toBoolean() ?: false)
-      CodyStatusService.resetApplication(project)
-    }
-    if (params.key == "cody.serverEndpoint") {
-      val endpoint = params.value ?: return
-      CodyAuthService.getInstance(project).setEndpoint(SourcegraphServerPath(endpoint))
-      CodyStatusService.resetApplication(project)
+    runInEdt {
+      if (project.isDisposed) return@runInEdt
+
+      if (params.key == "cody.activated") {
+        CodyAuthService.getInstance(project).setActivated(params.value?.toBoolean() ?: false)
+        CodyStatusService.resetApplication(project)
+      }
+      if (params.key == "cody.serverEndpoint") {
+        val endpoint = params.value ?: return@runInEdt
+        CodyAuthService.getInstance(project).setEndpoint(SourcegraphServerPath(endpoint))
+        CodyStatusService.resetApplication(project)
+      }
     }
   }
 

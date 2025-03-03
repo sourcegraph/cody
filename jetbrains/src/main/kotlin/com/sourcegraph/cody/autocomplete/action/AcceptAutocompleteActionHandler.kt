@@ -27,7 +27,7 @@ class AcceptAutocompleteActionHandler : AutocompleteActionHandler() {
 
     private fun applyInsertText(editor: Editor, caret: Caret, completionItem: AutocompleteItem) {
       val document = editor.document
-      val range = CodyEditorUtil.getTextRange(document, completionItem.range)
+      val range = CodyEditorUtil.getTextRange(document, completionItem.range) ?: return
       document.replaceString(range.startOffset, range.endOffset, completionItem.insertText)
       caret.moveToOffset(range.startOffset + completionItem.insertText.length)
       editor.scrollingModel.scrollToCaret(ScrollType.MAKE_VISIBLE)

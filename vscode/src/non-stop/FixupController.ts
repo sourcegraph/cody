@@ -2,8 +2,10 @@ import * as vscode from 'vscode'
 
 import {
     type ContextItem,
+    DEFAULT_EVENT_SOURCE,
     type EditModel,
     type EventSource,
+    EventSourceTelemetryMetadataMapping,
     type PromptString,
     type Rule,
     currentAuthStatus,
@@ -11,30 +13,26 @@ import {
     telemetryRecorder,
 } from '@sourcegraph/cody-shared'
 
+import type { SmartApplyResult } from '../chat/protocol'
+import { PersistenceTracker } from '../common/persistence-tracker'
+import { lines } from '../completions/text-processing'
 import { executeEdit } from '../edit/execute'
+import { type QuickPickInput, getInput } from '../edit/input/get-input'
 import {
     type EditIntent,
     EditIntentTelemetryMetadataMapping,
     type EditMode,
     EditModeTelemetryMetadataMapping,
 } from '../edit/types'
-import { logDebug } from '../output-channel-logger'
-import { splitSafeMetadata } from '../services/telemetry-v2'
-import { countCode } from '../services/utils/code-count'
-
-import {
-    DEFAULT_EVENT_SOURCE,
-    EventSourceTelemetryMetadataMapping,
-} from '@sourcegraph/cody-shared/src/chat/transcript/messages'
-import type { SmartApplyResult } from '../chat/protocol'
-import { PersistenceTracker } from '../common/persistence-tracker'
-import { lines } from '../completions/text-processing'
-import { type QuickPickInput, getInput } from '../edit/input/get-input'
 import { isStreamedIntent } from '../edit/utils/edit-intent'
 import { getOverriddenModelForIntent } from '../edit/utils/edit-models'
 import type { ExtensionClient } from '../extension-client'
 import { isRunningInsideAgent } from '../jsonrpc/isRunningInsideAgent'
+import { logDebug } from '../output-channel-logger'
 import { charactersLogger } from '../services/CharactersLogger'
+import { splitSafeMetadata } from '../services/telemetry-v2'
+import { countCode } from '../services/utils/code-count'
+
 import { FixupDocumentEditObserver } from './FixupDocumentEditObserver'
 import type { FixupFile } from './FixupFile'
 import { FixupFileObserver } from './FixupFileObserver'
@@ -46,6 +44,22 @@ import { trackRejection } from './rejection-tracker'
 import type { FixupActor, FixupFileCollection, FixupTextChanged } from './roles'
 import { CodyTaskState } from './state'
 import { expandRangeToInsertedText, getMinimumDistanceToRangeBoundary } from './utils'
+
+export interface CreateTaskOptions {
+    document: vscode.TextDocument
+    instruction: PromptString
+    userContextFiles: ContextItem[]
+    selectionRange: vscode.Range
+    intent: EditIntent
+    mode: EditMode
+    model: EditModel
+    rules: Rule[] | null
+    source?: EventSource
+    destinationFile?: vscode.Uri
+    insertionPoint?: vscode.Position
+    telemetryMetadata?: FixupTelemetryMetadata
+    taskId?: FixupTaskID
+}
 
 // This class acts as the factory for Fixup Tasks and handles communication between the Tree View and editor
 export class FixupController
@@ -464,20 +478,20 @@ export class FixupController
             return null
         }
 
-        const task = this.createTask(
+        const task = this.createTask({
             document,
-            input.instruction,
-            input.userContextFiles,
-            input.range,
-            input.intent,
-            input.mode,
-            input.model,
-            input.rules,
+            instruction: input.instruction,
+            userContextFiles: input.userContextFiles,
+            selectionRange: input.range,
+            intent: input.intent,
+            mode: input.mode,
+            model: input.model,
+            rules: input.rules,
             source,
-            undefined,
-            undefined,
-            telemetryMetadata
-        )
+            destinationFile: undefined,
+            insertionPoint: undefined,
+            telemetryMetadata,
+        })
 
         // Return focus to the editor
         const editor = await vscode.window.showTextDocument(document)
@@ -489,21 +503,25 @@ export class FixupController
         return task
     }
 
-    public async createTask(
-        document: vscode.TextDocument,
-        instruction: PromptString,
-        userContextFiles: ContextItem[],
-        selectionRange: vscode.Range,
-        intent: EditIntent,
-        mode: EditMode,
-        model: EditModel,
-        rules: Rule[] | null,
-        source?: EventSource,
-        destinationFile?: vscode.Uri,
-        insertionPoint?: vscode.Position,
-        telemetryMetadata?: FixupTelemetryMetadata,
-        taskId?: FixupTaskID
-    ): Promise<FixupTask> {
+    public startDecorator(task: FixupTask) {
+        this.decorator.didCreateTask(task)
+    }
+
+    public createTask({
+        document,
+        instruction,
+        userContextFiles,
+        selectionRange,
+        intent,
+        mode,
+        model,
+        rules,
+        source,
+        destinationFile,
+        insertionPoint,
+        telemetryMetadata,
+        taskId,
+    }: CreateTaskOptions): FixupTask {
         const authStatus = currentAuthStatus()
         const overriddenModel = getOverriddenModelForIntent(intent, model, authStatus)
         const fixupFile = this.files.forUri(document.uri)
@@ -524,7 +542,7 @@ export class FixupController
             taskId
         )
         this.tasks.set(task.id, task)
-        this.decorator.didCreateTask(task)
+
         return task
     }
 

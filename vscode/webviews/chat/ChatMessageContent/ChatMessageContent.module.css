@@ -1,12 +1,46 @@
+.wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
 .buttons-container {
     display: flex;
-    flex-wrap: wrap;
     align-items: center;
-    padding: 4px;
+    justify-content: space-between;
+    padding: 8px;
+    border: 1px solid var(--vscode-editor-foreground);
+    border-radius: 4px;
+    background: transparent;
+}
+
+.buttons-container-transparent {
+    composes: buttons-container;
+    border: none;
+    padding: 4px 0;
+}
+
+.leftInfo {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--vscode-descriptionForeground);
+}
+
+.stats {
+    color: var(--vscode-descriptionForeground);
 }
 
 .buttons {
     display: flex;
+    align-items: center;
+    width: 100%;
+    justify-content: space-between;
+}
+
+.actionButtons {
+    display: flex;
+    gap: 0.25rem;
 }
 .button {
     display: flex;
@@ -30,6 +64,16 @@
 
 .button .icon-container {
     margin-right: 0.25rem
+}
+
+.addition {
+    color: #3fb950;
+    font-weight: bold;
+}
+
+.deletion {
+    color: #f85149;
+    font-weight: bold;
 }
 
 .copy-button,
@@ -70,6 +114,13 @@
 
 .metadata-container > :not(:last-child) {
     margin-right: 0.25rem;
+}
+
+.fileNameContainer {
+    font-size: 12px;
+    color: var(--vscode-descriptionForeground);
+    display: flex;
+    align-items: center;
 }
 
 .attribution-container {

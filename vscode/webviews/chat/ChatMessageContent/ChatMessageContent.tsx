@@ -1,9 +1,11 @@
-import { type Guardrails, type PromptString, isError } from '@sourcegraph/cody-shared'
+import { clsx } from 'clsx'
+import { LRUCache } from 'lru-cache'
+import { LoaderIcon, MinusIcon, PlusIcon } from 'lucide-react'
 import type React from 'react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
-import { clsx } from 'clsx'
-import { LoaderIcon, MinusIcon, PlusIcon } from 'lucide-react'
+import type { Guardrails, PromptString } from '@sourcegraph/cody-shared'
+
 import type { FixupTaskID } from '../../../src/non-stop/FixupTask'
 import { CodyTaskState } from '../../../src/non-stop/state'
 import { type ClientActionListener, useClientActionListener } from '../../client/clientState'
@@ -11,15 +13,20 @@ import { MarkdownFromCody } from '../../components/MarkdownFromCody'
 import { useConfig } from '../../utils/useConfig'
 import type { PriorHumanMessageInfo } from '../cells/messageCell/assistant/AssistantMessageCell'
 import styles from './ChatMessageContent.module.css'
-import { GuardrailsStatusController } from './GuardRailStatusController'
 import { createButtons, createButtonsExperimentalUI } from './create-buttons'
-import { extractThinkContent, getCodeBlockId, getFileName } from './utils'
+import { extractThinkContent, getCodeBlockId } from './utils'
 
 export interface CodeBlockActionsProps {
     copyButtonOnSubmit: (text: string, event?: 'Keydown' | 'Button') => void
     insertButtonOnSubmit: (text: string, newFile?: boolean) => void
     smartApply: {
-        onSubmit: (id: string, text: string, instruction?: PromptString, fileName?: string) => void
+        onSubmit: (params: {
+            id: string
+            text: string
+            isPrefetch?: boolean
+            instruction?: PromptString
+            fileName?: string
+        }) => void
         onAccept: (id: string) => void
         onReject: (id: string) => void
     }
@@ -39,6 +46,8 @@ interface ChatMessageContentProps {
     guardrails?: Guardrails
     className?: string
 }
+
+const prefetchedEdits = new LRUCache<string, true>({ max: 100 })
 
 /**
  * A component presenting the content of a chat message.
@@ -65,13 +74,13 @@ export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps
 
         return {
             ...smartApply,
-            onSubmit(id, text, instruction, fileName) {
+            onSubmit(params) {
                 // We intercept the `onSubmit` to mark this task as working as early as we can.
                 // In reality, this will happen once we determine the task selection and _then_ start the task.
                 // The user does not need to be aware of this, for their purposes this is a single operation.
                 // We can re-use the `Working` state to simplify our UI logic.
-                setSmartApplyStates(prev => ({ ...prev, [id]: CodyTaskState.Working }))
-                return smartApply.onSubmit(id, text, instruction, fileName)
+                setSmartApplyStates(prev => ({ ...prev, [params.id]: CodyTaskState.Working }))
+                return smartApply.onSubmit(params)
             },
         }
     }, [smartApply])
@@ -128,6 +137,35 @@ export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps
                 if (smartApplyEnabled) {
                     const smartApplyId = getCodeBlockId(preText, fileName)
                     const smartApplyState = smartApplyStates[smartApplyId]
+
+                    // Since we iterate over `<pre>` elements, we're already inside a code block.
+                    // When we start rendering text outside the code block—meaning new characters
+                    // appear after the closing backticks—we should prefetch the smart apply response.
+                    //
+                    // To avoid redundant prefetching, we track processed code blocks in `prefetchedEdits`.
+                    const areWeAlreadyOutsideTheCodeBlock = !displayMarkdown.endsWith('```')
+
+                    // Side-effect: prefetch smart apply data if possible to reduce the final latency.
+                    // TODO: use a better heuristic to determine if the code block is complete.
+                    // TODO: extract this call into a separate `useEffect` call to avoid redundant calls
+                    // which currently happen.
+                    if (
+                        codeBlockName !== 'command' &&
+                        (!isMessageLoading || areWeAlreadyOutsideTheCodeBlock) &&
+                        // Ensure that we prefetch once per each suggested code block.
+                        !prefetchedEdits.has(smartApplyId)
+                    ) {
+                        prefetchedEdits.set(smartApplyId, true)
+
+                        smartApply?.onSubmit({
+                            id: smartApplyId,
+                            text: preText,
+                            isPrefetch: true,
+                            instruction: humanMessage?.text,
+                            fileName: codeBlockName,
+                        })
+                    }
+
                     buttons = createButtonsExperimentalUI(
                         preText,
                         humanMessage,
@@ -137,7 +175,9 @@ export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps
                         config.config.hasEditCapability ? insertButtonOnSubmit : undefined,
                         smartApplyInterceptor,
                         smartApplyId,
-                        smartApplyState
+                        smartApplyState,
+                        guardrails,
+                        isMessageLoading
                     )
                 } else {
                     buttons = createButtons(
@@ -147,50 +187,23 @@ export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps
                     )
                 }
 
-                const metadataContainer = document.createElement('div')
-                metadataContainer.classList.add(styles.metadataContainer)
-                buttons.append(metadataContainer)
+                const parent = preElement.parentNode
+                if (!parent) return
 
-                if (guardrails) {
-                    const container = document.createElement('div')
-                    container.classList.add(styles.attributionContainer)
-                    metadataContainer.append(container)
+                // Get the preview container and actions container
+                const previewContainer = buttons.querySelector(`[data-container-type="preview"]`)
+                const actionsContainer = buttons.querySelector(`[data-container-type="actions"]`)
+                if (!previewContainer || !actionsContainer) return
 
-                    if (!isMessageLoading) {
-                        const g = new GuardrailsStatusController(container)
-                        g.setPending()
+                // Insert the preview container right before this code block
+                parent.insertBefore(previewContainer, preElement)
 
-                        guardrails
-                            .searchAttribution(preText)
-                            .then(attribution => {
-                                if (isError(attribution)) {
-                                    g.setUnavailable(attribution)
-                                } else if (attribution.repositories.length === 0) {
-                                    g.setSuccess()
-                                } else {
-                                    g.setFailure(
-                                        attribution.repositories.map(r => r.name),
-                                        attribution.limitHit
-                                    )
-                                }
-                            })
-                            .catch(error => {
-                                g.setUnavailable(error)
-                                return
-                            })
-                    }
+                // Add the actions container right after this code block
+                if (preElement.nextSibling) {
+                    parent.insertBefore(actionsContainer, preElement.nextSibling)
+                } else {
+                    parent.appendChild(actionsContainer)
                 }
-
-                if (fileName) {
-                    const fileNameContainer = document.createElement('div')
-                    fileNameContainer.className = styles.fileNameContainer
-                    fileNameContainer.textContent = getFileName(fileName)
-                    fileNameContainer.title = fileName
-                    metadataContainer.append(fileNameContainer)
-                }
-
-                // Insert the buttons after the pre using insertBefore() because there is no insertAfter()
-                preElement.parentNode.insertBefore(buttons, preElement.nextSibling)
             }
         }
     }, [

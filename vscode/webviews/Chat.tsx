@@ -1,26 +1,28 @@
+import type { Context } from '@opentelemetry/api'
 import type React from 'react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
-import type {
-    AuthenticatedAuthStatus,
-    ChatMessage,
-    Guardrails,
-    Model,
-    PromptString,
+import {
+    type AuthenticatedAuthStatus,
+    type ChatMessage,
+    CodyIDE,
+    type Guardrails,
+    type Model,
+    type PromptString,
 } from '@sourcegraph/cody-shared'
-import { CodyIDE } from '@sourcegraph/cody-shared'
-import { Transcript, focusLastHumanMessageEditor } from './chat/Transcript'
-import type { VSCodeWrapper } from './utils/VSCodeApi'
 
-import type { Context } from '@opentelemetry/api'
-import styles from './Chat.module.css'
+import { Transcript, focusLastHumanMessageEditor } from './chat/Transcript'
 import { WelcomeMessage } from './chat/components/WelcomeMessage'
 import { WelcomeNotice } from './chat/components/WelcomeNotice'
 import { ScrollDown } from './components/ScrollDown'
 import type { View } from './tabs'
+import type { VSCodeWrapper } from './utils/VSCodeApi'
 import { SpanManager } from './utils/spanManager'
 import { getTraceparentFromSpanContext } from './utils/telemetry'
 import { useUserAccountInfo } from './utils/useConfig'
+
+import styles from './Chat.module.css'
+
 interface ChatboxProps {
     chatEnabled: boolean
     messageInProgress: ChatMessage | null
@@ -96,33 +98,44 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             return
         }
 
-        return {
-            onSubmit: (
-                id: string,
-                text: string,
-                instruction?: PromptString,
-                fileName?: string
-            ): void => {
-                const spanManager = new SpanManager('cody-webview')
-                const span = spanManager.startSpan('smartApplySubmit', {
-                    attributes: {
-                        sampled: true,
-                        'smartApply.id': id,
-                    },
-                })
-                const traceparent = getTraceparentFromSpanContext(span.spanContext())
+        function onSubmit({
+            id,
+            text,
+            instruction,
+            fileName,
+            isPrefetch,
+        }: {
+            id: string
+            text: string
+            isPrefetch?: boolean
+            instruction?: PromptString
+            fileName?: string
+        }) {
+            const command = isPrefetch ? 'smartApplyPrefetch' : 'smartApplySubmit'
 
-                vscodeAPI.postMessage({
-                    command: 'smartApplySubmit',
-                    id,
-                    instruction: instruction?.toString(),
-                    // remove the additional /n added by the text area at the end of the text
-                    code: text.replace(/\n$/, ''),
-                    fileName,
-                    traceparent,
-                })
-                span.end()
-            },
+            const spanManager = new SpanManager('cody-webview')
+            const span = spanManager.startSpan(command, {
+                attributes: {
+                    sampled: true,
+                    'smartApply.id': id,
+                },
+            })
+            const traceparent = getTraceparentFromSpanContext(span.spanContext())
+
+            vscodeAPI.postMessage({
+                command,
+                id,
+                instruction: instruction?.toString(),
+                // remove the additional /n added by the text area at the end of the text
+                code: text.replace(/\n$/, ''),
+                fileName,
+                traceparent,
+            })
+            span.end()
+        }
+
+        return {
+            onSubmit,
             onAccept: (id: string) => {
                 vscodeAPI.postMessage({
                     command: 'smartApplyAccept',

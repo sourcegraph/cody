@@ -10,6 +10,7 @@ import com.sourcegraph.cody.agent.CodyAgentService
 import com.sourcegraph.cody.agent.protocol_generated.CodeActions_ProvideParams
 import com.sourcegraph.cody.agent.protocol_generated.CodeActions_TriggerParams
 import com.sourcegraph.cody.agent.protocol_generated.ProtocolCodeAction
+import com.sourcegraph.cody.agent.protocol_generated.ProtocolDiagnostic
 import com.sourcegraph.cody.agent.protocol_generated.ProtocolLocation
 import com.sourcegraph.cody.edit.actions.EditCodeAction
 
@@ -22,6 +23,10 @@ class CodeActionQuickFix(private val params: CodeActionQuickFixParams) :
     IntentionAction, HintAction, PriorityAction {
   companion object {
     const val FAMILY_NAME = "Cody Code Action"
+  }
+
+  public fun getDiagnostics(): List<ProtocolDiagnostic>? {
+    return params.action.diagnostics
   }
 
   override fun getPriority(): PriorityAction.Priority {
