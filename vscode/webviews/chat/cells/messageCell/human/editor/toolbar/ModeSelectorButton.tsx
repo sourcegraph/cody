@@ -1,5 +1,5 @@
 import type { ChatMessage } from '@sourcegraph/cody-shared'
-import { CodyIDE } from '@sourcegraph/cody-shared'
+import { CodyIDE, isMacOS } from '@sourcegraph/cody-shared'
 import { BetweenHorizonalEnd, Brain, InfoIcon, MessageSquare, Pencil, Search } from 'lucide-react'
 import type { FC } from 'react'
 import { useCallback, useEffect, useMemo } from 'react'
@@ -9,6 +9,8 @@ import { Command, CommandItem, CommandList } from '../../../../../../components/
 import { ToolbarPopoverItem } from '../../../../../../components/shadcn/ui/toolbar'
 import { cn } from '../../../../../../components/shadcn/utils'
 import { useConfig } from '../../../../../../utils/useConfig'
+
+const isMac = isMacOS()
 
 export enum IntentEnum {
     Chat = 'Chat',
@@ -170,11 +172,7 @@ export const ModeSelectorField: React.FunctionComponent<{
             role="combobox"
             iconEnd="chevron"
             className={cn('tw-justify-between', className)}
-            tooltip={
-                <>
-                    Switch mode (<Kbd macOS="⌘." linuxAndWindows="Ctrl." />)
-                </>
-            }
+            tooltip={`Switch mode (${isMac ? '⌘ .' : 'Ctrl .'})`}
             aria-label="switch-mode"
             popoverContent={close => (
                 <div className="tw-flex tw-flex-col tw-max-h-[500px] tw-overflow-auto">
