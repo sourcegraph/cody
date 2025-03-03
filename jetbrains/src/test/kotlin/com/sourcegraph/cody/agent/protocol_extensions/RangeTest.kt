@@ -14,18 +14,19 @@ class RangeTest : BasePlatformTestCase() {
 
     val result = range.toOffsetRange(document)
 
-    assertEquals(0, result.first)
-    assertEquals(5, result.second)
+    assertNotNull(result)
+    assertEquals(0, result?.first)
+    assertEquals(5, result?.second)
   }
 
   fun `test toOffsetRange handles start position outside document`() {
     val document = createDocument("Hello")
-    val range = Range(Position(2, 0), Position(0, 3))
+    val range = Range(Position(0, -1), Position(0, 3))
 
     val result = range.toOffsetRange(document)
 
-    assertEquals(0, result.first)
-    assertEquals(3, result.second)
+    assertEquals(0, result?.first)
+    assertEquals(3, result?.second)
   }
 
   fun `test toOffsetRange handles end position outside document`() {
@@ -34,8 +35,9 @@ class RangeTest : BasePlatformTestCase() {
 
     val result = range.toOffsetRange(document)
 
-    assertEquals(2, result.first)
-    assertEquals(5, result.second)
+    assertNotNull(result)
+    assertEquals(2, result?.first)
+    assertEquals(5, result?.second)
   }
 
   fun `test toOffsetRange handles both positions outside document`() {
@@ -44,8 +46,9 @@ class RangeTest : BasePlatformTestCase() {
 
     val result = range.toOffsetRange(document)
 
-    assertEquals(0, result.first)
-    assertEquals(5, result.second)
+    assertNotNull(result)
+    assertEquals(0, result?.first)
+    assertEquals(5, result?.second)
   }
 
   fun `test toOffsetRange handles empty document`() {
@@ -54,14 +57,17 @@ class RangeTest : BasePlatformTestCase() {
 
     val result = range.toOffsetRange(document)
 
-    assertEquals(0, result.first)
-    assertEquals(0, result.second)
+    assertNotNull(result)
+    assertEquals(0, result?.first)
+    assertEquals(0, result?.second)
   }
 
-  fun `test toOffsetRange throws if start position is greater than end position`() {
+  fun `test toOffsetRange return null if start position is greater than end position`() {
     val document = createDocument("Hello")
     val range = Range(Position(0, 4), Position(0, 2))
 
-    assertThrows(IllegalArgumentException::class.java) { range.toOffsetRange(document) }
+    val result = range.toOffsetRange(document)
+
+    assertNull(result)
   }
 }

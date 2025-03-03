@@ -776,7 +776,9 @@ export const promptInput = setup({
                 'mentionsMenu.provider.set': {
                     actions: {
                         type: 'assignMentionsMenu',
-                        params: ({ event }) => ({ parent: event.provider }),
+                        // Reset items to an empty list so that we do not show previous/old items when a new provider
+                        // is selected.
+                        params: ({ event }) => ({ parent: event.provider, items: [] }),
                     },
                     target: '.loading',
                 },

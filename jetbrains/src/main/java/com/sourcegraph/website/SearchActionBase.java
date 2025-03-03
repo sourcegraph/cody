@@ -1,6 +1,7 @@
 package com.sourcegraph.website;
 
 import com.intellij.openapi.actionSystem.AnActionEvent;
+import com.intellij.openapi.actionSystem.PlatformDataKeys;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.editor.Caret;
 import com.intellij.openapi.editor.Document;
@@ -13,7 +14,6 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.sourcegraph.common.BrowserOpener;
 import com.sourcegraph.common.ui.DumbAwareEDTAction;
 import com.sourcegraph.find.SourcegraphVirtualFile;
-import com.sourcegraph.utils.CodyEditorUtil;
 import com.sourcegraph.vcs.RepoInfo;
 import com.sourcegraph.vcs.RepoUtil;
 import com.sourcegraph.vcs.VCSType;
@@ -26,13 +26,13 @@ public abstract class SearchActionBase extends DumbAwareEDTAction {
   public void actionPerformedMode(@NotNull AnActionEvent event, @NotNull Scope scope) {
     final Project project = event.getProject();
 
-    String selectedText = getSelectedText(project);
-
-    if (selectedText == null || selectedText.length() == 0) {
+    Editor editor = event.getData(PlatformDataKeys.EDITOR);
+    if (editor == null) {
       return;
     }
-    Editor editor = CodyEditorUtil.getFirstSelectedEditor(project);
-    if (editor == null) {
+    String selectedText = getSelectedText(editor);
+
+    if (selectedText == null || selectedText.isEmpty()) {
       return;
     }
 
@@ -79,38 +79,23 @@ public abstract class SearchActionBase extends DumbAwareEDTAction {
 
   @Override
   public void update(@NotNull AnActionEvent event) {
-    final Project project = event.getProject();
-    if (project == null) {
+    Editor editor = event.getData(PlatformDataKeys.EDITOR);
+    if (editor == null) {
       return;
     }
-    // This must run on EDT (Event Dispatch Thread) because it interacts with the editor.
-    ApplicationManager.getApplication()
-        .invokeLater(
-            () -> {
-              try {
-                String selectedText = getSelectedText(project);
-                event
-                    .getPresentation()
-                    .setEnabled(selectedText != null && selectedText.length() > 0);
-              } catch (Exception exception) {
-                Logger logger = Logger.getLogger(SearchActionBase.class.getName());
-                logger.log(Level.WARNING, "Problem while getting selected text", exception);
-                event.getPresentation().setEnabled(false);
-              }
-            });
+
+    try {
+      String selectedText = getSelectedText(editor);
+      event.getPresentation().setEnabled(selectedText != null && !selectedText.isEmpty());
+    } catch (Exception exception) {
+      Logger logger = Logger.getLogger(SearchActionBase.class.getName());
+      logger.log(Level.WARNING, "Problem while getting selected text", exception);
+      event.getPresentation().setEnabled(false);
+    }
   }
 
   @Nullable
-  private String getSelectedText(@Nullable Project project) {
-    if (project == null) {
-      return null;
-    }
-
-    Editor editor = CodyEditorUtil.getFirstSelectedEditor(project);
-    if (editor == null) {
-      return null;
-    }
-
+  private String getSelectedText(Editor editor) {
     Document currentDocument = editor.getDocument();
     VirtualFile currentFile = FileDocumentManager.getInstance().getFile(currentDocument);
     if (currentFile == null) {
@@ -119,7 +104,7 @@ public abstract class SearchActionBase extends DumbAwareEDTAction {
 
     SelectionModel selectionModel = editor.getSelectionModel();
     String selectedText = selectionModel.getSelectedText();
-    if (selectedText != null && !selectedText.equals("")) {
+    if (selectedText != null && !selectedText.isEmpty()) {
       return selectedText;
     }
 
@@ -130,6 +115,6 @@ public abstract class SearchActionBase extends DumbAwareEDTAction {
             .getText(new TextRange(caret.getVisualLineStart(), caret.getVisualLineEnd()))
             .trim();
 
-    return !selectedText.equals("") ? selectedText : null;
+    return !selectedText.isEmpty() ? selectedText : null;
   }
 }

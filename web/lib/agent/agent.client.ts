@@ -9,7 +9,7 @@ import {
 } from 'vscode-jsonrpc/browser'
 
 // TODO(sqs): dedupe with agentClient.ts in [experimental Cody CLI](https://github.com/sourcegraph/cody/pull/3418)
-interface AgentClient {
+export interface AgentClient {
     serverInfo: ServerInfo
     rpc: MessageConnection
     dispose(): void
@@ -21,7 +21,6 @@ interface AgentClientOptions {
     createAgentWorker: () => Worker
     telemetryClientName?: string
     customHeaders?: Record<string, string>
-    repository?: string
     debug?: boolean
     trace?: boolean
 }
@@ -31,7 +30,6 @@ export async function createAgentClient({
     accessToken,
     createAgentWorker,
     customHeaders,
-    repository,
     telemetryClientName,
     debug = true,
     trace = false,
@@ -70,9 +68,9 @@ export async function createAgentClient({
     const serverInfo: ServerInfo = await rpc.sendRequest('initialize', {
         name: process.env.CODY_WEB_DEMO_STANDALONE_MODE === 'true' ? 'standalone-web' : 'web',
         version: '0.0.1',
-        // Empty root URI leads to openctx configuration resolution failure, any non-empty
-        // mock value (Cody Web doesn't really use any workspace related features)
-        workspaceRootUri: `repo:${repository ?? ''}`,
+        // This is not used in cody web. Instead we trigger `workspaceFolder/didChange` to notify
+        // the agent about the current workspace.
+        workspaceRootUri: '',
         capabilities: {
             edit: 'none',
             completions: 'none',

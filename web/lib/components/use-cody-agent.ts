@@ -1,20 +1,9 @@
-import { forceHydration, hydrateAfterPostMessage, isErrorLike } from '@sourcegraph/cody-shared'
+import { forceHydration, hydrateAfterPostMessage } from '@sourcegraph/cody-shared'
 import type { ExtensionMessage } from 'cody-ai/src/chat/protocol'
 import { type VSCodeWrapper, setVSCodeWrapper } from 'cody-ai/webviews/utils/VSCodeApi'
-import {
-    type DependencyList,
-    type EffectCallback,
-    type MutableRefObject,
-    useCallback,
-    useEffect,
-    useMemo,
-    useRef,
-    useState,
-} from 'react'
-import type { MessageConnection } from 'vscode-jsonrpc/browser'
+import { type MutableRefObject, useEffect, useState } from 'react'
 import { URI } from 'vscode-uri'
-import { createAgentClient } from '../agent/agent.client'
-import type { InitialContext } from '../types'
+import { type AgentClient, createAgentClient } from '../agent/agent.client'
 
 /**
  * List of events that bypass active panel ID check in the listeners.
@@ -27,184 +16,164 @@ import type { InitialContext } from '../types'
  */
 const GLOBAL_MESSAGE_TYPES: Array<ExtensionMessage['type']> = ['rpc/response']
 
-interface AgentClient {
-    rpc: MessageConnection
-    dispose(): void
+const GLOBAL_AGENT_SHUTDOWN_TIMER = 10 * 60 * 1000 // 10 minutes
+
+export interface CodyWebAgent {
+    client: AgentClient
+    vscodeAPI: VSCodeWrapper
+    createNewChat: () => Promise<void>
 }
 
-interface UseCodyWebAgentInput {
+let globalAgentRefCounter = 0
+let globalAgentShutdownTimer: number | undefined
+let globalAgent: Promise<CodyWebAgent> | undefined
+
+export interface UseCodyWebAgentInput {
     serverEndpoint: string
     accessToken: string | null
-    createAgentWorker: () => Worker
     telemetryClientName?: string
-    initialContext?: InitialContext
     customHeaders?: Record<string, string>
-    repository?: string
+    createAgentWorker: () => Worker
 }
 
-interface UseCodyWebAgentResult {
-    client: AgentClient | Error | null
-    vscodeAPI: VSCodeWrapper | null
+// Cody agent is instantiated the first time a cody web component is initialized.
+// To preserve resources we are automatically shutting down the agent when it hasn't
+// been referenced for GLOBAL_AGENT_SHUTDOWN_TIMER.
+
+function retainGlobalAgent(): void {
+    window.clearTimeout(globalAgentShutdownTimer)
+    globalAgentRefCounter += 1
+}
+
+function releaseGlobalAgent() {
+    if (globalAgentRefCounter > 0) {
+        globalAgentRefCounter -= 1
+    }
+
+    if (globalAgentRefCounter === 0) {
+        globalAgentShutdownTimer = window.setTimeout(() => {
+            if (globalAgentRefCounter === 0) {
+                globalAgent?.then(agent => agent.client.dispose())
+                globalAgent = undefined
+            }
+        }, GLOBAL_AGENT_SHUTDOWN_TIMER)
+    }
 }
 
 /**
- * Creates Cody Web Agent instance and automatically creates a new chat.
+ * Creates or reuses a cody agent instance. To improve performance we share a single cody agent
+ * instance across multiple invocations of cody web.
+ */
+export function useCodyWebAgent(input: UseCodyWebAgentInput): CodyWebAgent | Error | null {
+    const [agent, setAgent] = useState<CodyWebAgent | Error | null>(null)
+
+    // Create global agent here so that we
+    if (!globalAgent) {
+        globalAgent = createCodyAgent(input)
+    }
+
+    useEffect(() => {
+        globalAgent?.then(setAgent, setAgent)
+        retainGlobalAgent()
+        return releaseGlobalAgent
+    }, [])
+
+    return agent
+}
+
+/**
+ * Creates Cody Web Agent instance.
  * Uses cody web-worker agent under the hood with json rpc as a connection between
  * main and web-worker threads, see agent.client.ts for more details
  */
-export function useCodyWebAgent(input: UseCodyWebAgentInput): UseCodyWebAgentResult {
-    const {
-        serverEndpoint,
-        accessToken,
-        telemetryClientName,
-        customHeaders,
-        repository,
-        createAgentWorker,
-    } = input
+async function createCodyAgent(input: UseCodyWebAgentInput): Promise<CodyWebAgent> {
+    const { serverEndpoint, accessToken, telemetryClientName, customHeaders, createAgentWorker } = input
 
-    const activeWebviewPanelIDRef = useRef<string>('')
-    const [client, setClient] = useState<AgentClient | Error | null>(null)
+    const activeWebviewPanelIDRef = { current: '' }
 
-    useEffectOnce(() => {
-        createAgentClient({
+    try {
+        const client = await createAgentClient({
             customHeaders,
             telemetryClientName,
-            createAgentWorker,
             serverEndpoint: serverEndpoint,
             accessToken: accessToken ?? '',
-            repository,
+            createAgentWorker,
         })
-            .then(setClient)
-            .catch(error => {
-                console.error('Cody Web Agent creation failed', error)
-                setClient(() => error as Error)
+
+        // Special override for chat creating for Cody Web, otherwise the create new chat doesn't work
+        // TODO: Move this special logic to the Cody Web agent handle "chat/web/new"
+        const createNewChat = async () => {
+            const { panelId, chatId } = await client.rpc.sendRequest<{
+                panelId: string
+                chatId: string
+            }>('chat/web/new', null)
+
+            activeWebviewPanelIDRef.current = panelId
+
+            await client.rpc.sendRequest('webview/receiveMessage', {
+                id: activeWebviewPanelIDRef.current,
+                message: { chatID: chatId, command: 'restoreHistory' },
             })
-    }, [accessToken, serverEndpoint, createAgentWorker, customHeaders, telemetryClientName])
-
-    // Special override for chat creating for Cody Web, otherwise the create new chat doesn't work
-    // TODO: Move this special logic to the Cody Web agent handle "chat/web/new"
-    const createNewChat = useCallback(async (agent: AgentClient | Error | null) => {
-        if (!agent || isErrorLike(agent)) {
-            return
         }
 
-        const { panelId, chatId } = await agent.rpc.sendRequest<{
-            panelId: string
-            chatId: string
-        }>('chat/web/new', null)
-
-        activeWebviewPanelIDRef.current = panelId
-
-        await agent.rpc.sendRequest('webview/receiveMessage', {
-            id: activeWebviewPanelIDRef.current,
-            message: { chatID: chatId, command: 'restoreHistory' },
-        })
-    }, [])
-
-    const isInitRef = useRef(false)
-    const vscodeAPI = useVSCodeAPI({ activeWebviewPanelIDRef, createNewChat, client })
-
-    // Always create new chat when Cody Web is opened for the first time
-    useEffect(() => {
-        // Skip panel creation if it already happened before
-        // React in dev mode run all effect twice so it's important here to
-        // run it only one first time to avoid panel ID mismatch in cody agent
-        if (isInitRef.current || !client || isErrorLike(client)) {
-            return
-        }
-
-        void createNewChat(client)
-        isInitRef.current = true
-    }, [client, createNewChat])
-
-    return { client, vscodeAPI }
-}
-
-interface useVSCodeAPIInput {
-    client: AgentClient | Error | null
-    activeWebviewPanelIDRef: MutableRefObject<string>
-    createNewChat: (client: AgentClient | Error | null) => Promise<void>
-}
-
-function useVSCodeAPI(input: useVSCodeAPIInput): VSCodeWrapper | null {
-    const { client, activeWebviewPanelIDRef, createNewChat } = input
-
-    const onMessageCallbacksRef = useRef<((message: ExtensionMessage) => void)[]>([])
-
-    return useMemo<VSCodeWrapper | null>(() => {
-        if (!client) {
-            return null
-        }
-        if (!isErrorLike(client)) {
-            client.rpc.onNotification(
-                'webview/postMessage',
-                ({ id, message }: { id: string; message: ExtensionMessage }) => {
-                    if (
-                        activeWebviewPanelIDRef.current === id ||
-                        GLOBAL_MESSAGE_TYPES.includes(message.type)
-                    ) {
-                        for (const callback of onMessageCallbacksRef.current) {
-                            callback(hydrateAfterPostMessage(message, uri => URI.from(uri as any)))
-                        }
-                    }
-                }
-            )
-        }
-
-        const vscodeAPI: VSCodeWrapper = {
-            postMessage: message => {
-                if (!isErrorLike(client)) {
-                    // Special override for Cody Web
-                    if (message.command === 'command' && message.id === 'cody.chat.new') {
-                        void createNewChat(client)
-                        return
-                    }
-                    void client.rpc.sendRequest('webview/receiveMessage', {
-                        id: activeWebviewPanelIDRef.current,
-                        message: forceHydration(message),
-                    })
-                }
-            },
-            onMessage: callback => {
-                if (!isErrorLike(client)) {
-                    onMessageCallbacksRef.current.push(callback)
-                    return () => {
-                        // Remove callback from onMessageCallbacks
-                        const index = onMessageCallbacksRef.current.indexOf(callback)
-                        if (index >= 0) {
-                            onMessageCallbacksRef.current.splice(index, 1)
-                        }
-                    }
-                }
-                return () => {}
-            },
-            getState: () => {
-                throw new Error('not implemented')
-            },
-            setState: () => {
-                throw new Error('not implemented')
-            },
-        }
-
+        const vscodeAPI = createVSCodeAPI({ activeWebviewPanelIDRef, createNewChat, client: client })
         // Runtime sync side effect, ensure that later any cody UI
         // components will have access to the mocked/synthetic VSCode API
         setVSCodeWrapper(vscodeAPI)
-        return vscodeAPI
-    }, [client, createNewChat, activeWebviewPanelIDRef])
+        return { vscodeAPI, createNewChat, client }
+    } catch (error) {
+        console.error('Cody Web Agent creation failed', error)
+        throw error
+    }
 }
 
-function useEffectOnce(effect: EffectCallback, deps?: DependencyList) {
-    const isInitRef = useRef(false)
+function createVSCodeAPI(input: {
+    client: AgentClient
+    activeWebviewPanelIDRef: MutableRefObject<string>
+    createNewChat: () => Promise<void>
+}): VSCodeWrapper {
+    const { client, activeWebviewPanelIDRef, createNewChat } = input
+    const onMessageCallbacks: ((message: ExtensionMessage) => void)[] = []
 
-    // biome-ignore lint/correctness/useExhaustiveDependencies: effect will never be changed without deps change
-    useEffect(() => {
-        if (isInitRef.current) {
-            return
+    client.rpc.onNotification(
+        'webview/postMessage',
+        ({ id, message }: { id: string; message: ExtensionMessage }) => {
+            if (activeWebviewPanelIDRef.current === id || GLOBAL_MESSAGE_TYPES.includes(message.type)) {
+                for (const callback of onMessageCallbacks) {
+                    callback(hydrateAfterPostMessage(message, uri => URI.from(uri as any)))
+                }
+            }
         }
+    )
 
-        const result = effect()
-
-        isInitRef.current = true
-        return result
-    }, deps)
+    const vscodeAPI: VSCodeWrapper = {
+        postMessage: message => {
+            // Special override for Cody Web
+            if (message.command === 'command' && message.id === 'cody.chat.new') {
+                void createNewChat()
+                return
+            }
+            void client.rpc.sendRequest('webview/receiveMessage', {
+                id: activeWebviewPanelIDRef.current,
+                message: forceHydration(message),
+            })
+        },
+        onMessage: callback => {
+            onMessageCallbacks.push(callback)
+            return () => {
+                // Remove callback from onMessageCallbacks
+                const index = onMessageCallbacks.indexOf(callback)
+                if (index >= 0) {
+                    onMessageCallbacks.splice(index, 1)
+                }
+            }
+        },
+        getState: () => {
+            throw new Error('not implemented')
+        },
+        setState: () => {
+            throw new Error('not implemented')
+        },
+    }
+    return vscodeAPI
 }

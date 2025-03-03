@@ -60,6 +60,14 @@ export class AutoEditsInlineRendererManager
             decorationInfo,
         })
 
+        if (insertText.length === 0) {
+            return {
+                inlineCompletionItems: null,
+                updatedDecorationInfo: decorationInfo,
+                updatedPrediction: prediction,
+            }
+        }
+
         // The current line suffix should not require any char removals to render the completion.
         const isSuffixMatch = completionMatchesSuffix(insertText, docContext.currentLineSuffix)
 
@@ -171,6 +179,9 @@ export function getCompletionText({
     const candidates = [...decorationInfo.modifiedLines, ...decorationInfo.addedLines]
 
     let currentLine = cursorPosition.line
+    const currentUnchangedLine = decorationInfo.unchangedLines.find(
+        c => c.originalLineNumber === currentLine
+    )
     const lines = []
 
     // We cannot render disjoint new line with the inline completion item ghost text because
@@ -179,12 +190,15 @@ export function getCompletionText({
     while (true) {
         let candidateText: string | undefined = undefined
         let candidate: AddedLineInfo | ModifiedLineInfo | UnchangedLineInfo | undefined =
-            candidates.find(c => c.modifiedLineNumber === currentLine)
+            candidates.find(
+                c =>
+                    (c.type === 'modified' ? c.originalLineNumber : c.modifiedLineNumber) === currentLine
+            )
 
         // In cases when the current line is unchanged but there are added lines right after it
         // we can keep all the text from the current line.
         if (!candidate && currentLine === cursorPosition.line) {
-            candidate = decorationInfo.unchangedLines.find(c => c.originalLineNumber === currentLine)
+            candidate = currentUnchangedLine
         }
 
         // If no changes are found on the current candidate line, it means we reached the end of inserted
@@ -266,6 +280,11 @@ export function getCompletionText({
         }
 
         break
+    }
+
+    // If the only line to render is the current unchanged line, we don't need to render anything.
+    if (lines.length === 1 && lines[0] === currentUnchangedLine?.text.slice(cursorPosition.character)) {
+        lines.pop()
     }
 
     return {

@@ -280,7 +280,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     inputText: PromptString.unsafe_fromUserQuery(message.text),
                     mentions: message.contextItems ?? [],
                     editorState: message.editorState as SerializedPromptEditorState,
-                    signal: await this.startNewSubmitOrEditOperation(),
+                    signal: this.startNewSubmitOrEditOperation(),
                     source: 'chat',
                     manuallySelectedIntent: message.manuallySelectedIntent,
                     traceparent: message.traceparent,
@@ -288,7 +288,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 break
             }
             case 'edit': {
-                await this.cancelSubmitOrEditOperation()
+                this.cancelSubmitOrEditOperation()
 
                 await this.handleEdit({
                     requestID: uuid.v4(),
@@ -316,24 +316,30 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             case 'copy':
                 await handleCopiedCode(message.text, message.eventType === 'Button')
                 break
+            case 'smartApplyPrefetch':
             case 'smartApplySubmit':
-                await handleSmartApply(
-                    message.id,
-                    message.code,
-                    currentAuthStatus(),
-                    message.instruction,
-                    message.fileName,
-                    message.traceparent
-                )
+                await handleSmartApply({
+                    id: message.id,
+                    code: message.code,
+                    authStatus: currentAuthStatus(),
+                    instruction: message.instruction || '',
+                    fileUri: message.fileName,
+                    traceparent: message.traceparent || undefined,
+                    isPrefetch: message.command === 'smartApplyPrefetch',
+                })
                 break
             case 'trace-export':
                 TraceSender.send(message.traceSpanEncodedJson)
                 break
             case 'smartApplyAccept':
-                await vscode.commands.executeCommand('cody.fixup.codelens.accept', message.id)
+                await vscode.commands.executeCommand('cody.command.smart-apply.accept', {
+                    taskId: message.id,
+                })
                 break
             case 'smartApplyReject':
-                await vscode.commands.executeCommand('cody.fixup.codelens.undo', message.id)
+                await vscode.commands.executeCommand('cody.command.smart-apply.reject', {
+                    taskId: message.id,
+                })
                 break
             case 'openURI':
                 vscode.commands.executeCommand('vscode.open', message.uri, {
@@ -660,12 +666,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     `traceId: ${span.spanContext().traceId}`
                 )
 
-                if (inputText.match(/^\/reset$/)) {
-                    span.addEvent('clearAndRestartSession')
-                    span.end()
-                    return this.clearAndRestartSession()
-                }
-
                 // Set selected agent to deep-cody for Deep Cody model.
                 const model = await wrapInActiveSpan('chat.resolveModel', () =>
                     firstResultFromOperation(ChatBuilder.resolvedModelForChat(this.chatBuilder))
@@ -719,6 +719,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         span: Span
     ): Promise<void> {
         span.addEvent('ChatController.sendChat')
+        signal.throwIfAborted()
 
         // Use default model if no model is selected.
         const model =
@@ -832,9 +833,12 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                         return confirmation
                     },
                     postDone: (op?: { abort: boolean }): void => {
-                        if (op?.abort) {
-                            this.handleAbort()
-                            return
+                        // Mark the end of the span for chat.handleUserMessage here, as we do not await
+                        // the entire stream of chat messages being sent to the webview.
+                        // The span is concluded when the stream is complete.
+                        span.end()
+                        if (op?.abort || signal.aborted) {
+                            throw new Error('aborted')
                         }
 
                         // HACK(beyang): This conditional preserves the behavior from when
@@ -861,12 +865,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                                 model
                             )
                         }
-
-                        // Mark the end of the span for chat.handleUserMessage here, as we do not await
-                        // the entire stream of chat messages being sent to the webview.
-                        // The span is concluded when the stream is complete.
-                        span.end()
-                        this.saveSession()
                         this.postViewTranscript()
                     },
                 }
@@ -875,6 +873,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             // This ensures that the span for chat.handleUserMessage is ended even if the operation fails
             span.end()
             if (isAbortErrorOrSocketHangUp(error as Error)) {
+                this.postViewTranscript()
                 return
             }
             if (isRateLimitError(error) || isContextWindowLimitError(error)) {
@@ -970,13 +969,9 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         return this.submitOrEditOperation.signal
     }
 
-    private cancelSubmitOrEditOperation(): Promise<void> {
-        if (this.submitOrEditOperation) {
-            this.submitOrEditOperation.abort()
-            this.submitOrEditOperation = undefined
-        }
-
-        return this.saveSession()
+    private cancelSubmitOrEditOperation(): void {
+        this.submitOrEditOperation?.abort()
+        this.submitOrEditOperation = undefined
     }
 
     private async reevaluateSearchWithSelectedFilters({
@@ -1129,8 +1124,8 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         }
     }
 
-    private async handleAbort(): Promise<void> {
-        await this.cancelSubmitOrEditOperation()
+    private handleAbort(): void {
+        this.cancelSubmitOrEditOperation()
         // Notify the webview there is no message in progress.
         this.postViewTranscript()
         telemetryRecorder.recordEvent('cody.sidebar.abortButton', 'clicked', {
@@ -1453,13 +1448,15 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
      * to local storage before proceeding.
      */
     private async saveSession(): Promise<void> {
-        const authStatus = currentAuthStatus()
-        if (authStatus.authenticated) {
+        try {
+            const authStatus = currentAuthStatus()
             // Only try to save if authenticated because otherwise we wouldn't be showing a chat.
             const chat = this.chatBuilder.toSerializedChatTranscript()
-            if (chat) {
+            if (chat && authStatus.authenticated) {
                 await chatHistory.saveChat(authStatus, chat)
             }
+        } catch (error) {
+            logDebug('ChatController', 'Failed')
         }
     }
 
@@ -1486,12 +1483,13 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         })
     }
 
-    public async clearAndRestartSession(chatMessages?: ChatMessage[]): Promise<void> {
+    public clearAndRestartSession(chatMessages?: ChatMessage[]): void {
         this.cancelSubmitOrEditOperation()
-        void this.saveSession()
-
-        this.chatBuilder = new ChatBuilder(this.chatBuilder.selectedModel, undefined, chatMessages)
-        this.postViewTranscript()
+        // Only clear the session if session is not empty.
+        if (!this.chatBuilder?.isEmpty()) {
+            this.chatBuilder = new ChatBuilder(this.chatBuilder.selectedModel, undefined, chatMessages)
+            this.postViewTranscript()
+        }
     }
 
     // #endregion

@@ -247,7 +247,8 @@ class CodyAutocompleteManager {
 
     val project = editor.project
     val defaultItem = items.firstOrNull() ?: return
-    val range = getTextRange(editor.document, defaultItem.range)
+    val range = getTextRange(editor.document, defaultItem.range) ?: return
+
     val originalText = editor.document.getText(range)
 
     val formattedCompletionText =
