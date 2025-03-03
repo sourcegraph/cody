@@ -480,8 +480,8 @@ importers:
   vscode:
     dependencies:
       '@anthropic-ai/sdk':
-        specifier: ^0.33.1
-        version: 0.33.1
+        specifier: ^0.37.0
+        version: 0.37.0
       '@openctx/provider-linear-issues':
         specifier: ^0.0.9
         version: 0.0.9
@@ -737,6 +737,9 @@ importers:
       wink-nlp-utils:
         specifier: ^2.1.0
         version: 2.1.0
+      zod-to-json-schema:
+        specifier: ^3.24.3
+        version: 3.24.3(zod@3.23.8)
     devDependencies:
       7zip-min:
         specifier: ^1.4.5
@@ -1085,8 +1088,8 @@ packages:
       - encoding
     dev: false
 
-  /@anthropic-ai/sdk@0.33.1:
-    resolution: {integrity: sha512-VrlbxiAdVRGuKP2UQlCnsShDHJKWepzvfRCkZMpU+oaUdKLpOfmylLMRojGrAgebV+kDtPjewCVP0laHXg+vsA==}
+  /@anthropic-ai/sdk@0.37.0:
+    resolution: {integrity: sha512-tHjX2YbkUBwEgg0JZU3EFSSAQPoK4qQR/NFYa8Vtzd5UAyXzZksCw2In69Rml4R/TyHPBfRYaLK35XiOe33pjw==}
     dependencies:
       '@types/node': 18.19.31
       '@types/node-fetch': 2.6.4
@@ -17769,6 +17772,14 @@ packages:
     engines: {node: '>=10'}
     dev: true
 
+  /zod-to-json-schema@3.24.3(zod@3.23.8):
+    resolution: {integrity: sha512-HIAfWdYIt1sssHfYZFCXp4rU1w2r8hVVXYIlmoa0r0gABLs5di3RCqPU5DDROogVz1pAdYBaz7HK5n9pSUNs3A==}
+    peerDependencies:
+      zod: ^3.24.1
+    dependencies:
+      zod: 3.23.8
+    dev: false
+
   /zod-validation-error@3.3.0(zod@3.23.8):
     resolution: {integrity: sha512-Syib9oumw1NTqEv4LT0e6U83Td9aVRk9iTXPUQr1otyV1PuXQKOvOwhMNqZIq5hluzHP2pMgnOmHEo7kPdI2mw==}
     engines: {node: '>=18.0.0'}
@@ -17780,7 +17791,6 @@ packages:
 
   /zod@3.23.8:
     resolution: {integrity: sha512-XBx9AXhXktjUqnepgTiE5flcKIYWi/rme0Eaj+5Y0lftuGBq+jyRu/md4WnuxqgP1ubdpNCsYEYPxrzVHD8d6g==}
-    dev: true
 
   /zwitch@2.0.4:
     resolution: {integrity: sha512-bXE4cR/kVZhKZX/RjPEflHaKVhUVl85noU3v6b8apfQEc1x4A+zBxjZ4lN8LqGd6WZ3dl98pY4o717VFmoPp+A==}
