@@ -148,7 +148,7 @@ export const ModeSelectorField: React.FunctionComponent<{
     const handleKeyDown = useCallback(
         (event: KeyboardEvent) => {
             // Check for ⌘. (Command+Period on macOS, Ctrl+Period on other platforms)
-            if ((event.metaKey || event.ctrlKey) && event.key === '.') {
+            if ((isMac ? event.metaKey : event.ctrlKey) && event.key === '.') {
                 event.preventDefault()
                 // Find the current index and select the next intent option
                 const currentIndex = intentOptions.findIndex(option => option.intent === intent)
@@ -172,7 +172,7 @@ export const ModeSelectorField: React.FunctionComponent<{
             role="combobox"
             iconEnd="chevron"
             className={cn('tw-justify-between', className)}
-            tooltip={`Switch mode (${isMac ? '⌘ .' : 'Ctrl .'})`}
+            tooltip={`Switch mode (${isMac ? '⌘.' : 'Ctrl.'})`}
             aria-label="switch-mode"
             popoverContent={close => (
                 <div className="tw-flex tw-flex-col tw-max-h-[500px] tw-overflow-auto">
