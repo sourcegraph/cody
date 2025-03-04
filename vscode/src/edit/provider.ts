@@ -30,11 +30,14 @@ import { logError } from '../output-channel-logger'
 import { splitSafeMetadata } from '../services/telemetry-v2'
 import { countCode } from '../services/utils/code-count'
 import { resolveRelativeOrAbsoluteUri } from '../services/utils/edit-create-file'
-import { DefaultModelParameterProvider, type ModelParameterProvider } from './adapters/base'
+import type { ModelParameterProvider } from './adapters/base'
+import { DefaultModelParameterProvider } from './adapters/default'
+import { SmartApplyCustomModelParameterProvider } from './adapters/smart-apply-custom'
 import type { EditManagerOptions } from './edit-manager'
 import { responseTransformer } from './output/response-transformer'
-import { DefaultEditPromptBuilder } from './prompt'
-import { PROMPT_TOPICS } from './prompt/constants'
+import { DefaultEditPromptBuilder } from './prompt/builder/default'
+import { SmartApplyCustomEditPromptBuilder } from './prompt/builder/smart-apply-custom'
+import { PROMPT_TOPICS, SMART_APPLY_MODEL_IDENTIFIERS } from './prompt/constants'
 import type { EditPromptBuilder } from './prompt/type'
 import { EditIntentTelemetryMetadataMapping, EditModeTelemetryMetadataMapping } from './types'
 import { isStreamedIntent } from './utils/edit-intent'
@@ -79,8 +82,16 @@ export class EditProvider {
     private cache = new LRUCache<string, StreamSession>({ max: 20 })
 
     constructor(public config: EditProviderOptions) {
-        this.promptBuilder = new DefaultEditPromptBuilder()
-        this.modelParameterProvider = new DefaultModelParameterProvider()
+        if (
+            this.config.task.intent === 'smartApply' &&
+            Object.values(SMART_APPLY_MODEL_IDENTIFIERS).includes(this.config.task.model)
+        ) {
+            this.modelParameterProvider = new SmartApplyCustomModelParameterProvider()
+            this.promptBuilder = new SmartApplyCustomEditPromptBuilder()
+        } else {
+            this.modelParameterProvider = new DefaultModelParameterProvider()
+            this.promptBuilder = new DefaultEditPromptBuilder()
+        }
     }
 
     /**

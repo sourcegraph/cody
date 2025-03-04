@@ -70,6 +70,10 @@ export interface CompletionParameters {
         type: 'content'
         content: string
     }
+    // Rewrite and adaptive speculation is used by fireworks which improves performance for sparse rewrite tasks.
+    // https://docs.fireworks.ai/guides/predicted-outputs#using-predicted-outputs
+    rewriteSpeculation?: boolean
+    adaptiveSpeculation?: boolean
 }
 
 export interface SerializedCompletionParameters extends Omit<CompletionParameters, 'messages'> {

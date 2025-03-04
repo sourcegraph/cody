@@ -13,14 +13,14 @@ import {
     modelsService,
     ps,
 } from '@sourcegraph/cody-shared'
-import type { EditIntent } from '../types'
-import type { BuildInteractionOptions, BuiltInteraction, EditPromptBuilder } from './type'
+import type { EditIntent } from '../../types'
+import type { BuildInteractionOptions, BuiltInteraction, EditPromptBuilder } from '../type'
 
-import { PromptBuilder } from '../../prompt-builder'
-import { getContext } from './context'
-import { claude } from './models/claude'
-import { openai } from './models/openai'
-import type { EditLLMInteraction, GetLLMInteractionOptions, LLMInteraction } from './type'
+import { PromptBuilder } from '../../../prompt-builder'
+import { getContext } from '../context'
+import { claude } from '../models/claude'
+import { openai } from '../models/openai'
+import type { EditLLMInteraction, GetLLMInteractionOptions, LLMInteraction } from '../type'
 
 const INTERACTION_PROVIDERS: Record<EditProvider, EditLLMInteraction> = {
     Anthropic: claude,
