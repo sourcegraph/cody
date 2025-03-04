@@ -97,8 +97,18 @@ export interface WebviewToExtensionAPI {
     /**
      * The current user's chat history in a lightweight format for display purposes.
      * Contains only the essential fields needed by the UI to improve performance.
+     * @deprecated Use paginatedUserHistory instead to only load the items you need
      */
     userHistory(): Observable<LightweightUserHistory | null>
+    
+    /**
+     * Retrieves a paginated portion of user's chat history in a lightweight format.
+     * Provides better performance than userHistory() by only loading what's needed.
+     * @param page Page number (1-based)
+     * @param pageSize Number of items per page
+     * @param searchTerm Optional search term to filter chats
+     */
+    paginatedUserHistory(page: number, pageSize: number, searchTerm?: string): Observable<PaginatedHistoryResult>
 
     /**
      * The current user's product subscription information (Cody Free/Pro).

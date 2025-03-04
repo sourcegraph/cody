@@ -199,6 +199,22 @@ export interface LightweightChatTranscript {
 }
 
 /**
+ * Result type for paginated chat history requests.
+ */
+export interface PaginatedHistoryResult {
+    /** The items for the requested page */
+    items: LightweightChatTranscript[]
+    /** Total number of items matching the request criteria */
+    totalCount: number
+    /** Current page number (1-based) */
+    currentPage: number
+    /** Page size used for this request */
+    pageSize: number
+    /** Whether there are more pages available */
+    hasNextPage: boolean
+}
+
+/**
  * We need to specific a default event source as some commands can be
  * executed directly through VS Code where we cannot provide a custom source.
  * For example: Commands executed through the command palette, right-click menu or through keyboard shortcuts.

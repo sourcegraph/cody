@@ -1670,6 +1670,8 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     transcript: () =>
                         this.chatBuilder.changes.pipe(map(chat => chat.getDehydratedMessages())),
                     userHistory: () => chatHistory.changes,
+                    paginatedUserHistory: (page, pageSize, searchTerm) => 
+                        chatHistory.paginatedChanges(page, pageSize, searchTerm),
                     userProductSubscription: () =>
                         userProductSubscription.pipe(
                             map(value => (value === pendingOperation ? null : value))

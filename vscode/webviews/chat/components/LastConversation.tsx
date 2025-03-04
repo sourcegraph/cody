@@ -4,7 +4,7 @@ import type { FunctionComponent } from 'react'
 import { useMemo } from 'react'
 import { getRelativeChatPeriod } from '../../../src/common/time-date'
 import { Button } from '../../components/shadcn/ui/button'
-import { useUserHistory } from '../../components/useUserHistory'
+import { usePaginatedHistory } from '../../components/useUserHistory'
 import { View } from '../../tabs/types'
 import { getVSCodeAPI } from '../../utils/VSCodeApi'
 
@@ -14,19 +14,15 @@ interface LastConversationProps {
 }
 
 export const LastConversation: FunctionComponent<LastConversationProps> = ({ setView, IDE }) => {
-    const userHistory = useUserHistory()
+    // Use the paginated history hook with page 1 and pageSize 1 to get only the most recent chat
+    const { value: paginatedHistory } = usePaginatedHistory(1, 1)
 
     const lastChat = useMemo(() => {
-        if (!userHistory?.value?.chat) {
+        if (!paginatedHistory?.items?.length) {
             return null
         }
-        const chats = Object.values(userHistory.value.chat).sort(
-            (a, b) =>
-                new Date(b.lastInteractionTimestamp).getTime() -
-                new Date(a.lastInteractionTimestamp).getTime()
-        )
-        return chats[0] || null
-    }, [userHistory])
+        return paginatedHistory.items[0]
+    }, [paginatedHistory])
 
     if (!lastChat) {
         return null

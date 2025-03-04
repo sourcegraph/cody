@@ -78,6 +78,9 @@ export type {
     ChatMessageSearch,
     ProcessingStep,
     LightweightUserHistory,
+    LightweightChatHistory,
+    LightweightChatTranscript,
+    PaginatedHistoryResult,
 } from './chat/transcript/messages'
 export { ProcessType } from './chat/transcript/messages'
 export {

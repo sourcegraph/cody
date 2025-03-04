@@ -10,7 +10,7 @@ import { LoadingDots } from '../chat/components/LoadingDots'
 import { downloadChatHistory } from '../chat/downloadChatHistory'
 import { Button } from '../components/shadcn/ui/button'
 import { Command, CommandInput, CommandItem, CommandList } from '../components/shadcn/ui/command'
-import { useUserHistory } from '../components/useUserHistory'
+import { usePaginatedHistory, useUserHistory } from '../components/useUserHistory'
 import { type VSCodeWrapper, getVSCodeAPI } from '../utils/VSCodeApi'
 import styles from './HistoryTab.module.css'
 import { View } from './types'
@@ -32,12 +32,13 @@ export const HistoryTab: React.FC<HistoryTabProps> = ({
     setView,
 }) => {
     const vscodeAPI = getVSCodeAPI()
-    const { value: result, error } = useUserHistory()
-
-    const chats = useMemo(() => {
-        const history = result ? Object.values(result.chat) : result
-        return history
-    }, [result])
+    // Initial page settings for paginated loading
+    const [searchText, setSearchText] = useState('')
+    const [currentPage, setCurrentPage] = useState(1)
+    const pageSize = HISTORY_ITEMS_PER_PAGE
+    
+    // Load only the items we need for the current page
+    const { value: paginatedResult, error } = usePaginatedHistory(currentPage, pageSize, searchText)
 
     const handleStartNewChat = () => {
         vscodeAPI.postMessage({
@@ -49,11 +50,15 @@ export const HistoryTab: React.FC<HistoryTabProps> = ({
 
     return (
         <div className="tw-flex tw-overflow-hidden tw-h-full tw-w-full">
-            {error || !chats ? (
+            {error || !paginatedResult ? (
                 <LoadingDots />
             ) : (
                 <HistoryTabWithData
-                    chats={chats}
+                    paginatedHistory={paginatedResult}
+                    currentPage={currentPage}
+                    setCurrentPage={setCurrentPage}
+                    searchText={searchText}
+                    setSearchText={setSearchText}
                     handleStartNewChat={handleStartNewChat}
                     vscodeAPI={vscodeAPI}
                 />
@@ -63,10 +68,14 @@ export const HistoryTab: React.FC<HistoryTabProps> = ({
 }
 
 export const HistoryTabWithData: React.FC<{
-    chats: LightweightUserHistory['chat'][string][]
+    paginatedHistory: PaginatedHistoryResult
+    currentPage: number
+    setCurrentPage: (page: number | ((prev: number) => number)) => void
+    searchText: string
+    setSearchText: (text: string) => void
     handleStartNewChat: () => void
     vscodeAPI: VSCodeWrapper
-}> = ({ chats, handleStartNewChat, vscodeAPI }) => {
+}> = ({ paginatedHistory, currentPage, setCurrentPage, searchText, setSearchText, handleStartNewChat, vscodeAPI }) => {
     const [isDeleteAllActive, setIsDeleteAllActive] = useState<boolean>(false)
 
     const [deletingChatIds, setDeletingChatIds] = useState<Set<string>>(new Set())
@@ -103,36 +112,17 @@ export const HistoryTabWithData: React.FC<{
         [vscodeAPI]
     )
 
-    //add history search
-    const [searchText, setSearchText] = useState('')
-    const [currentPage, setCurrentPage] = useState(1)
+    // Get the paginated items and filter out any items that are being deleted
+    const filteredItems = useMemo(() => {
+        return paginatedHistory.items.filter(
+            chat => !deletingChatIds.has(chat.lastInteractionTimestamp)
+        )
+    }, [paginatedHistory.items, deletingChatIds])
+    
+    // Calculate total pages based on the total count from the paginated results
+    const totalPages = Math.ceil(paginatedHistory.totalCount / HISTORY_ITEMS_PER_PAGE)
 
-    const filteredChats = useMemo(() => {
-        const filtered = chats
-        const searchTerm = searchText.trim().toLowerCase()
-
-        // First filter by search term if provided
-        let searchFiltered = filtered
-        if (searchTerm) {
-            searchFiltered = filtered.filter(chat => {
-                const titleText = chat.chatTitle?.toLowerCase()
-                const messageText = chat.lastHumanMessageText?.toLowerCase()
-
-                return titleText?.includes(searchTerm) || messageText?.includes(searchTerm)
-            })
-        }
-
-        // Then filter out any items that are being deleted for a smoother UX
-        return searchFiltered.filter(chat => !deletingChatIds.has(chat.lastInteractionTimestamp))
-    }, [chats, searchText, deletingChatIds])
-
-    const totalPages = Math.ceil(filteredChats.length / HISTORY_ITEMS_PER_PAGE)
-    const paginatedChats = filteredChats.slice(
-        (currentPage - 1) * HISTORY_ITEMS_PER_PAGE,
-        currentPage * HISTORY_ITEMS_PER_PAGE
-    )
-
-    if (!filteredChats.length && !searchText) {
+    if (!filteredItems.length && !searchText) {
         return (
             <div className="tw-flex tw-flex-col tw-items-center tw-p-6">
                 <HistoryIcon size={20} strokeWidth={1.25} className="tw-mb-5 tw-text-muted-foreground" />
@@ -235,11 +225,11 @@ export const HistoryTabWithData: React.FC<{
                     placeholder="Search..."
                     autoFocus={true}
                     className="tw-m-[0.5rem] !tw-p-[0.5rem] tw-rounded tw-bg-input-background tw-text-input-foreground focus:tw-shadow-[0_0_0_0.125rem_var(--vscode-focusBorder)]"
-                    disabled={chats.length === 0}
+                    disabled={paginatedHistory.totalCount === 0}
                 />
             </CommandList>
             <CommandList className="tw-flex-1 tw-overflow-y-auto tw-m-2">
-                {paginatedChats.map(chat => {
+                {filteredItems.map(chat => {
                     const id = chat.lastInteractionTimestamp
                     const chatTitle = chat.chatTitle
                     const lastMessage = chat.lastHumanMessageText?.trim()
