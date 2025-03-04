@@ -1,0 +1,55 @@
+@import '@vscode/codicons/dist/codicon';
+@import url(../utils/highlight.css);
+@import url(../components/shadcn/shadcn.css);
+@import url(../themes/index.css);
+
+/* Import Tailwind directives */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* VS Code specific overrides for Tailwind */
+:root {
+    color-scheme: light dark;
+}
+
+/* VS Code theme-specific styling */
+body[data-vscode-theme-kind="vscode-dark"] .tw-bg-white {
+    background-color: var(--vscode-sideBar-background) !important;
+}
+
+body[data-vscode-theme-kind="vscode-dark"] .tw-text-gray-500,
+body[data-vscode-theme-kind="vscode-dark"] .tw-text-gray-800 {
+    color: var(--vscode-sideBar-foreground) !important;
+}
+
+/* Base font and styling from original */
+@font-face {
+    font-family: cody-icons;
+    font-display: block;
+    src: url('../../resources/cody-icons.woff') format('woff');
+}
+
+:root {
+    /* Our syntax highlighter expects a dark code background color, regardless of the VS Code color theme. */
+    --code-background: #222222;
+    --code-foreground: #ffffff;
+}
+
+#root {
+    height: 100%;
+    margin: 0 auto;
+    font-family: var(--vscode-font-family);
+    color: var(--vscode-sideBar-foreground);
+    background-color: var(--vscode-sideBar-background);
+    /* Override VS Code Webview Toolkit elements */
+    --border-width: none;
+}
+
+html,
+body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    background-color: var(--vscode-sideBar-background);
+}

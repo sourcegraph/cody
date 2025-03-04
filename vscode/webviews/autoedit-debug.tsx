@@ -1,3 +1,4 @@
+import './autoedit-debug/autoedit-debug.css'
 import { useEffect, useState } from 'react'
 import { createRoot } from 'react-dom/client'
 
@@ -7,6 +8,7 @@ import type {
 } from '../src/autoedits/debug-panel/debug-protocol'
 import type { AutoeditRequestDebugState } from '../src/autoedits/debug-panel/debug-store'
 
+import { AutoeditDebugPanel } from './autoedit-debug/AutoeditDebugPanel'
 import { getVSCodeAPI } from './utils/VSCodeApi'
 
 /**
@@ -84,8 +86,7 @@ function App() {
 
     return (
         <div className="tw-h-full tw-w-full tw-p-4">
-            <h1>Auto-Edit Debug Panel </h1>
-            <p>We have {entries.length} entries</p>
+            <AutoeditDebugPanel entries={entries} />
         </div>
     )
 }
