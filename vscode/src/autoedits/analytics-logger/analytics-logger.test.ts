@@ -17,13 +17,13 @@ import type { AutoeditModelOptions } from '../adapters/base'
 import { getCodeToReplaceData } from '../prompt/prompt-utils'
 import { getDecorationInfo } from '../renderer/diff-utils'
 
+import { AutoeditAnalyticsLogger } from './analytics-logger'
 import {
-    AutoeditAnalyticsLogger,
     type AutoeditRequestID,
     autoeditDiscardReason,
     autoeditSource,
     autoeditTriggerKind,
-} from './analytics-logger'
+} from './types'
 
 describe('AutoeditAnalyticsLogger', () => {
     let autoeditLogger: AutoeditAnalyticsLogger
