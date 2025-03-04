@@ -75,11 +75,17 @@ export const Toolbar: FunctionComponent<{
         [onGapClick]
     )
 
+    /**
+     * Image upload is enabled if the user is not on Sourcegraph.com,
+     * or is using a BYOK model with vision tag.
+     */
     const isImageUploadEnabled = useMemo(() => {
-        const model = models?.[0]
-        const ok = model?.tags?.includes(ModelTag.EarlyAccess) || model?.tags?.includes(ModelTag.BYOK)
-        return model?.tags?.includes(ModelTag.Vision) && ok
-    }, [models?.[0]])
+        const isDotCom = userInfo?.isDotComUser
+        const selectedModel = models?.[0]
+        const isBYOK = selectedModel?.tags?.includes(ModelTag.BYOK)
+        const isVision = selectedModel?.tags?.includes(ModelTag.Vision)
+        return (!isDotCom || isBYOK) && isVision
+    }, [userInfo?.isDotComUser, models?.[0]])
 
     return (
         // biome-ignore lint/a11y/useKeyWithClickEvents: only relevant to click areas
