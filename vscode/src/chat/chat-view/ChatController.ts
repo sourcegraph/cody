@@ -681,7 +681,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     intent: manuallySelectedIntent,
                     agent: selectedAgent,
                 })
-                this.setCustomChatTitle(requestID, inputText, signal, model)
+                this.setCustomChatTitle(requestID, inputText, signal)
                 this.postViewTranscript({ speaker: 'assistant' })
 
                 await this.saveSession()
@@ -1270,11 +1270,13 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
     private async setCustomChatTitle(
         requestID: string,
         inputText: PromptString,
-        signal: AbortSignal,
-        chatModel?: ChatModel
+        signal: AbortSignal
     ): Promise<void> {
         return tracer.startActiveSpan('chat.setCustomChatTitle', async (span): Promise<void> => {
-            // NOTE: Only generates a custom title if the input text is long enough (starts w/ 10 chars).
+            // NOTE: Only generates a custom title if the input text is long enough.
+            // We are asking the LLM to generate a title with about 10 words, so 10 words * 2 chars/word = 20 chars
+            // would be a reasonable threshold to start generating a custom title. This is a heuristic and
+            // can be adjusted as needed.
             if (inputText.length < 20) {
                 return
             }
