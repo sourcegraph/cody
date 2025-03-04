@@ -22,10 +22,11 @@ import { splitSafeMetadata } from '../../services/telemetry-v2'
 import type { AutoeditsPrompt, ModelResponse } from '../adapters/base'
 import { autoeditsOutputChannelLogger } from '../output-channel-logger'
 import type { CodeToReplaceData } from '../prompt/prompt-utils'
-import type { DecorationInfo } from '../renderer/decorators/base'
 import { getDecorationStats } from '../renderer/diff-utils'
 
 import { autoeditDebugStore } from '../debug-panel/debug-store'
+
+import type { AutoeditDiff } from '../renderer/decorators/base'
 import type { AutoEditRenderOutput } from '../renderer/render-output'
 import { autoeditIdRegistry } from './suggestion-id-registry'
 import {
@@ -197,7 +198,7 @@ export class AutoeditAnalyticsLogger {
     }: {
         requestId: AutoeditRequestID
         prediction: string
-        decorationInfo: DecorationInfo | null
+        decorationInfo: AutoeditDiff | null
         renderOutput: AutoEditRenderOutput
     }) {
         this.tryTransitionTo(requestId, 'postProcessed', request => {

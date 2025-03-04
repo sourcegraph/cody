@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 
 import { Position, Range } from '../../testutils/mocks'
 
-import type { DecorationInfo } from './decorators/base'
+import type { AutoeditDiff } from './decorators/base'
 import { getDecorationInfo, getDecorationStats } from './diff-utils'
 
 describe('getDecorationInfo', () => {
@@ -17,7 +17,7 @@ describe('getDecorationInfo', () => {
 
                 const decorationInfo = getDecorationInfo(originalText, modifiedText)
 
-                const expected: DecorationInfo = {
+                const expected: AutoeditDiff = {
                     addedLines: [],
                     removedLines: [],
                     modifiedLines: [
@@ -73,7 +73,7 @@ describe('getDecorationInfo', () => {
 
                 const decorationInfo = getDecorationInfo(originalText, modifiedText)
 
-                const expected: DecorationInfo = {
+                const expected: AutoeditDiff = {
                     addedLines: [
                         {
                             id: expect.any(String),
@@ -111,7 +111,7 @@ describe('getDecorationInfo', () => {
 
                 const decorationInfo = getDecorationInfo(originalText, modifiedText)
 
-                const expected: DecorationInfo = {
+                const expected: AutoeditDiff = {
                     addedLines: [],
                     removedLines: [
                         {
@@ -149,7 +149,7 @@ describe('getDecorationInfo', () => {
 
                 const decorationInfo = getDecorationInfo(originalText, modifiedText)
 
-                const expected: DecorationInfo = {
+                const expected: AutoeditDiff = {
                     addedLines: [],
                     removedLines: [],
                     modifiedLines: [
@@ -229,7 +229,7 @@ describe('getDecorationInfo', () => {
 
                 const decorationInfo = getDecorationInfo(originalText, modifiedText)
 
-                const expected: DecorationInfo = {
+                const expected: AutoeditDiff = {
                     addedLines: [],
                     removedLines: [],
                     modifiedLines: [],
@@ -253,7 +253,7 @@ describe('getDecorationInfo', () => {
 
                 const decorationInfo = getDecorationInfo(originalText, modifiedText)
 
-                const expected: DecorationInfo = {
+                const expected: AutoeditDiff = {
                     addedLines: [
                         {
                             id: expect.any(String),
@@ -378,7 +378,7 @@ describe('getDecorationInfo', () => {
 
                 const decorationInfo = getDecorationInfo(originalText, modifiedText)
 
-                const expected: DecorationInfo = {
+                const expected: AutoeditDiff = {
                     addedLines: [],
                     removedLines: [],
                     modifiedLines: [
@@ -467,7 +467,7 @@ describe('getDecorationInfo', () => {
 
                 const decorationInfo = getDecorationInfo(originalText, modifiedText)
 
-                const expected: DecorationInfo = {
+                const expected: AutoeditDiff = {
                     addedLines: [
                         {
                             id: expect.any(String),
@@ -514,7 +514,7 @@ describe('getDecorationInfo', () => {
 
                 const decorationInfo = getDecorationInfo(originalText, modifiedText)
 
-                const expected: DecorationInfo = {
+                const expected: AutoeditDiff = {
                     addedLines: [],
                     removedLines: [
                         {
@@ -561,7 +561,7 @@ describe('getDecorationInfo', () => {
 
                 const decorationInfo = getDecorationInfo(originalText, modifiedText)
 
-                const expected: DecorationInfo = {
+                const expected: AutoeditDiff = {
                     addedLines: [],
                     removedLines: [],
                     modifiedLines: [
@@ -657,7 +657,7 @@ describe('getDecorationInfo', () => {
 
                 const decorationInfo = getDecorationInfo(originalText, modifiedText)
 
-                const expected: DecorationInfo = {
+                const expected: AutoeditDiff = {
                     addedLines: [],
                     removedLines: [],
                     modifiedLines: [
@@ -726,7 +726,7 @@ describe('getDecorationInfo', () => {
 
                 const decorationInfo = getDecorationInfo(originalText, modifiedText)
 
-                const expected: DecorationInfo = {
+                const expected: AutoeditDiff = {
                     addedLines: [
                         {
                             id: expect.any(String),

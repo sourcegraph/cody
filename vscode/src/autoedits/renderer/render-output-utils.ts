@@ -2,12 +2,7 @@ import type * as vscode from 'vscode'
 
 import { getNewLineChar } from '../../completions/text-processing'
 
-import type {
-    AddedLineInfo,
-    DecorationInfo,
-    ModifiedLineInfo,
-    UnchangedLineInfo,
-} from './decorators/base'
+import type { AddedLineInfo, AutoeditDiff, ModifiedLineInfo, UnchangedLineInfo } from './decorators/base'
 
 /**
  * Extracts text from the prediction that we can be rendered as a part of the
@@ -54,7 +49,7 @@ export function getCompletionText({
 }: {
     prediction: string
     cursorPosition: vscode.Position
-    decorationInfo: DecorationInfo
+    decorationInfo: AutoeditDiff
 }): {
     insertText: string
     usedChangeIds: Set<string>

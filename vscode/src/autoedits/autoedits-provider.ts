@@ -27,7 +27,7 @@ import { FilterPredictionBasedOnRecentEdits } from './filter-prediction-edits'
 import { autoeditsOutputChannelLogger } from './output-channel-logger'
 import { type CodeToReplaceData, getCodeToReplaceData } from './prompt/prompt-utils'
 import { ShortTermPromptStrategy } from './prompt/short-term-diff-prompt-strategy'
-import type { DecorationInfo } from './renderer/decorators/base'
+import type { AutoeditDiff } from './renderer/decorators/base'
 import { DefaultDecorator } from './renderer/decorators/default-decorator'
 import { InlineDiffDecorator } from './renderer/decorators/inline-diff-decorator'
 import { getDecorationInfo } from './renderer/diff-utils'
@@ -77,7 +77,7 @@ interface EditResult extends vscode.InlineCompletionList {
     original: string
 
     /** temporary data structure, will need to update before integrating with the agent API */
-    decorationInfo: DecorationInfo
+    decorationInfo: AutoeditDiff
 }
 
 export type AutoeditsResult = InsertionResult | EditResult
@@ -556,7 +556,7 @@ export function getDecorationInfoFromPrediction(
     document: vscode.TextDocument,
     prediction: string,
     codeToReplaceData: CodeToReplaceData
-): DecorationInfo {
+): AutoeditDiff {
     const currentFileText = document.getText()
     const predictedFileText =
         currentFileText.slice(0, document.offsetAt(codeToReplaceData.range.start)) +
