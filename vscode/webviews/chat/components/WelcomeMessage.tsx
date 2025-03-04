@@ -4,6 +4,7 @@ import { PromptList } from '../../components/promptList/PromptList'
 import { useActionSelect } from '../../prompts/PromptsTab'
 import type { View } from '../../tabs'
 import { PromptMigrationWidget } from './../../components/promptsMigration/PromptsMigration'
+import { LastConversation } from './LastConversation'
 
 const localStorageKey = 'chat.welcome-message-dismissed'
 
@@ -41,6 +42,9 @@ export const WelcomeMessage: FunctionComponent<WelcomeMessageProps> = ({
                     telemetryLocation="WelcomeAreaPrompts"
                     onSelect={item => runAction(item, setView)}
                 />
+            </div>
+            <div className="tw-mt-auto tw-w-full tw-mb-4 tw-pb-2">
+                <LastConversation setView={setView} />
             </div>
         </div>
     )

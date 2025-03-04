@@ -21,21 +21,28 @@ type Story = StoryObj<typeof HistoryTabWithData>
 
 export const Empty: Story = {
     args: {
+        paginatedHistory: { items: [], totalCount: 0, currentPage: 0, pageSize: 0, hasNextPage: false },
         vscodeAPI: dummyVSCodeAPI,
-        chats: [],
+        handleStartNewChat: () => {},
     },
 }
 
 export const SingleDay: Story = {
     args: {
-        chats: [
-            {
-                id: '1',
-                lastInteractionTimestamp: new Date().toISOString(),
-                lastHumanMessageText: 'How do I use React hooks?',
-                chatTitle: 'React Hooks Usage'
-            },
-        ],
+        paginatedHistory: {
+            items: [
+                {
+                    id: '1',
+                    lastInteractionTimestamp: new Date().toISOString(),
+                    lastHumanMessageText: 'How do I use React hooks?',
+                    chatTitle: 'React Hooks Usage',
+                },
+            ],
+            totalCount: 2,
+            currentPage: 0,
+            pageSize: 2,
+            hasNextPage: false,
+        },
         vscodeAPI: dummyVSCodeAPI,
         handleStartNewChat: () => {},
     },
@@ -43,20 +50,26 @@ export const SingleDay: Story = {
 
 export const MultiDay: Story = {
     args: {
-        chats: [
-            {
-                id: '1',
-                lastInteractionTimestamp: new Date(Date.now() - 86400000).toISOString(), // Yesterday
-                lastHumanMessageText: 'What is a JavaScript closure?',
-                chatTitle: 'JavaScript Closures'
-            },
-            {
-                id: '2',
-                lastInteractionTimestamp: new Date().toISOString(),
-                lastHumanMessageText: 'Help me with React hooks',
-                chatTitle: 'React Hooks Help'
-            },
-        ],
+        paginatedHistory: {
+            items: [
+                {
+                    id: '1',
+                    lastInteractionTimestamp: new Date(Date.now() - 86400000).toISOString(), // Yesterday
+                    lastHumanMessageText: 'What is a JavaScript closure?',
+                    chatTitle: 'JavaScript Closures',
+                },
+                {
+                    id: '2',
+                    lastInteractionTimestamp: new Date().toISOString(),
+                    lastHumanMessageText: 'Help me with React hooks',
+                    chatTitle: 'React Hooks Help',
+                },
+            ],
+            totalCount: 2,
+            currentPage: 0,
+            pageSize: 2,
+            hasNextPage: false,
+        },
         vscodeAPI: dummyVSCodeAPI,
         handleStartNewChat: () => {},
     },
@@ -64,7 +77,13 @@ export const MultiDay: Story = {
 
 export const Paginated: Story = {
     args: {
-        chats: getMockedChatData(50),
+        paginatedHistory: {
+            items: getMockedChatData(50),
+            totalCount: 50,
+            currentPage: 0,
+            pageSize: 50,
+            hasNextPage: false,
+        },
         vscodeAPI: dummyVSCodeAPI,
         handleStartNewChat: () => {},
     },
@@ -81,7 +100,7 @@ function getMockedChatData(items: number): LightweightUserHistory['chat'][string
             id: String(i),
             lastHumanMessageText: humanMessageText,
             lastInteractionTimestamp: new Date(lastTimestamp).toISOString(),
-            chatTitle: i % 2 === 0 ? `Chat about topic ${i}` : undefined
+            chatTitle: i % 2 === 0 ? `Chat about topic ${i}` : undefined,
         })
     }
 

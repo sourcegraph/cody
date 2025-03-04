@@ -2,7 +2,6 @@ import {
     type AccountKeyedChatHistory,
     type AuthStatus,
     type AuthenticatedAuthStatus,
-    type LightweightChatTranscript,
     type LightweightUserHistory,
     type PaginatedHistoryResult,
     type SerializedChatTranscript,
@@ -75,6 +74,8 @@ class ChatHistoryManager implements vscode.Disposable {
                 chatTitle: chat.chatTitle || firstHumanMessageText,
                 lastInteractionTimestamp: chat.lastInteractionTimestamp,
                 lastHumanMessageText,
+                model: lastInteraction.assistantMessage?.model,
+                intent: lastInteraction.humanMessage?.intent,
             }
         }
 
@@ -88,11 +89,11 @@ class ChatHistoryManager implements vscode.Disposable {
         const chatHistory = this.getLocalHistory(authStatus)
         return chatHistory?.chat ? chatHistory.chat[sessionID] : null
     }
-    
+
     /**
      * Gets a paginated portion of the chat history in lightweight format.
      * Supports searching with an optional search term.
-     * @param authStatus Authentication status 
+     * @param authStatus Authentication status
      * @param page Page number (1-based)
      * @param pageSize Number of items per page
      * @param searchTerm Optional search term to filter chats
@@ -111,43 +112,42 @@ class ChatHistoryManager implements vscode.Disposable {
                 totalCount: 0,
                 currentPage: page,
                 pageSize: pageSize,
-                hasNextPage: false
+                hasNextPage: false,
             }
         }
-        
+
         // Convert map to array and sort by timestamp (newest first)
         let items = Object.values(history.chat).sort((a, b) => {
-            return new Date(b.lastInteractionTimestamp).getTime() - 
-                   new Date(a.lastInteractionTimestamp).getTime()
+            return (
+                new Date(b.lastInteractionTimestamp).getTime() -
+                new Date(a.lastInteractionTimestamp).getTime()
+            )
         })
-        
+
         // Apply search filter if provided
         if (searchTerm && searchTerm.trim() !== '') {
             const term = searchTerm.trim().toLowerCase()
             items = items.filter(chat => {
                 const titleText = chat.chatTitle?.toLowerCase()
                 const messageText = chat.lastHumanMessageText?.toLowerCase()
-                
-                return (
-                    (titleText && titleText.includes(term)) ||
-                    (messageText && messageText.includes(term))
-                )
+
+                return titleText?.includes(term) || messageText?.includes(term)
             })
         }
-        
+
         // Calculate pagination
         const totalCount = items.length
         const startIndex = (page - 1) * pageSize
         const endIndex = Math.min(startIndex + pageSize, totalCount)
         const pageItems = items.slice(startIndex, endIndex)
         const hasNextPage = endIndex < totalCount
-        
+
         return {
             items: pageItems,
             totalCount,
             currentPage: page,
             pageSize,
-            hasNextPage
+            hasNextPage,
         }
     }
 
@@ -216,11 +216,11 @@ class ChatHistoryManager implements vscode.Disposable {
     ).pipe(
         map(([authStatus]) => (authStatus.authenticated ? this.getLightweightHistory(authStatus) : null))
     )
-        
+
     /**
      * Returns an Observable that emits a paginated portion of chat history.
      * This provides better performance by only loading the items needed for the current view.
-     * 
+     *
      * @param page Page number (1-based)
      * @param pageSize Number of items per page
      * @param searchTerm Optional search term to filter chats
@@ -230,7 +230,7 @@ class ChatHistoryManager implements vscode.Disposable {
         pageSize: number,
         searchTerm?: string
     ): Observable<PaginatedHistoryResult> {
-        return combineLatest([
+        return combineLatest(
             authStatus.pipe(
                 map(
                     (
@@ -249,7 +249,7 @@ class ChatHistoryManager implements vscode.Disposable {
                 distinctUntilChanged()
             ),
             this.changeNotifications.pipe(startWith(undefined))
-        ]).pipe(
+        ).pipe(
             map(([authStatus]) => {
                 if (!authStatus.authenticated) {
                     return {
@@ -257,10 +257,10 @@ class ChatHistoryManager implements vscode.Disposable {
                         totalCount: 0,
                         currentPage: page,
                         pageSize: pageSize,
-                        hasNextPage: false
+                        hasNextPage: false,
                     }
                 }
-                
+
                 return this.getPaginatedHistory(authStatus, page, pageSize, searchTerm)
             })
         )

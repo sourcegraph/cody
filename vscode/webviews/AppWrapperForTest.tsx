@@ -139,6 +139,14 @@ export const AppWrapperForTest: FunctionComponent<{ children: ReactNode }> = ({ 
                                 },
                             },
                         }),
+                    paginatedUserHistory: () =>
+                        Observable.of({
+                            items: [],
+                            totalCount: 0,
+                            currentPage: 1,
+                            pageSize: 20,
+                            hasNextPage: false,
+                        }),
                     userProductSubscription: () => Observable.of(null),
                 },
             } satisfies Wrapper<ComponentProps<typeof ExtensionAPIProviderForTestsOnly>['value']>,

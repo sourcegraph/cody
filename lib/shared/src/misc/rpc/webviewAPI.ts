@@ -1,7 +1,11 @@
 import { type Observable, map } from 'observable-fns'
 import type { AuthStatus, ModelsData, ResolvedConfiguration, UserProductSubscription } from '../..'
 import type { SerializedPromptEditorState } from '../..'
-import type { ChatMessage, LightweightUserHistory } from '../../chat/transcript/messages'
+import type {
+    ChatMessage,
+    LightweightUserHistory,
+    PaginatedHistoryResult,
+} from '../../chat/transcript/messages'
 import type { ContextItem, DefaultContext } from '../../codebase-context/messages'
 import type { CodyCommand } from '../../commands/types'
 import type { FeatureFlag } from '../../experimentation/FeatureFlagProvider'
@@ -100,7 +104,7 @@ export interface WebviewToExtensionAPI {
      * @deprecated Use paginatedUserHistory instead to only load the items you need
      */
     userHistory(): Observable<LightweightUserHistory | null>
-    
+
     /**
      * Retrieves a paginated portion of user's chat history in a lightweight format.
      * Provides better performance than userHistory() by only loading what's needed.
@@ -108,7 +112,11 @@ export interface WebviewToExtensionAPI {
      * @param pageSize Number of items per page
      * @param searchTerm Optional search term to filter chats
      */
-    paginatedUserHistory(page: number, pageSize: number, searchTerm?: string): Observable<PaginatedHistoryResult>
+    paginatedUserHistory(
+        page: number,
+        pageSize: number,
+        searchTerm?: string
+    ): Observable<PaginatedHistoryResult>
 
     /**
      * The current user's product subscription information (Cody Free/Pro).
@@ -161,6 +169,7 @@ export function createExtensionAPI(
         authStatus: proxyExtensionAPI(messageAPI, 'authStatus'),
         transcript: proxyExtensionAPI(messageAPI, 'transcript'),
         userHistory: proxyExtensionAPI(messageAPI, 'userHistory'),
+        paginatedUserHistory: proxyExtensionAPI(messageAPI, 'paginatedUserHistory'),
         userProductSubscription: proxyExtensionAPI(messageAPI, 'userProductSubscription'),
         repos: proxyExtensionAPI(messageAPI, 'repos'),
     }

@@ -16,7 +16,17 @@ describe('HistoryTabWithData', () => {
             <HistoryTabWithData
                 vscodeAPI={dummyVSCodeAPI}
                 handleStartNewChat={handleStartNewChat}
-                chats={emptyChats}
+                paginatedHistory={{
+                    items: emptyChats,
+                    totalCount: emptyChats.length,
+                    currentPage: 1,
+                    pageSize: 10,
+                    hasNextPage: false,
+                }}
+                currentPage={1}
+                setCurrentPage={vi.fn()}
+                searchText=""
+                setSearchText={vi.fn()}
             />,
             {
                 wrapper: AppWrapperForTest,

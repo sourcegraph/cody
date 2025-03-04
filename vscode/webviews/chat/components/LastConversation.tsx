@@ -1,19 +1,18 @@
-import type { CodyIDE } from '@sourcegraph/cody-shared'
-import { HistoryIcon } from 'lucide-react'
+import { ArrowRightIcon, HistoryIcon } from 'lucide-react'
 import type { FunctionComponent } from 'react'
 import { useMemo } from 'react'
 import { getRelativeChatPeriod } from '../../../src/common/time-date'
 import { Button } from '../../components/shadcn/ui/button'
+import { Card, CardContent } from '../../components/shadcn/ui/card'
 import { usePaginatedHistory } from '../../components/useUserHistory'
 import { View } from '../../tabs/types'
 import { getVSCodeAPI } from '../../utils/VSCodeApi'
 
 interface LastConversationProps {
     setView: (view: View) => void
-    IDE: CodyIDE
 }
 
-export const LastConversation: FunctionComponent<LastConversationProps> = ({ setView, IDE }) => {
+export const LastConversation: FunctionComponent<LastConversationProps> = ({ setView }) => {
     // Use the paginated history hook with page 1 and pageSize 1 to get only the most recent chat
     const { value: paginatedHistory } = usePaginatedHistory(1, 1)
 
@@ -29,31 +28,50 @@ export const LastConversation: FunctionComponent<LastConversationProps> = ({ set
     }
 
     const lastMessage = lastChat.lastHumanMessageText || ''
-    const displayText = lastChat.chatTitle?.trim() || lastMessage
-    const truncatedText = displayText.length > 50 ? displayText.slice(0, 47) + '...' : displayText
+    const displayTitle = lastChat.chatTitle?.trim() || lastMessage
     const timePeriod = getRelativeChatPeriod(new Date(lastChat.lastInteractionTimestamp))
 
-    const handleClick = () => {
+    const handleChatClick = (chatID: string) => {
         getVSCodeAPI().postMessage({
             command: 'restoreHistory',
-            chatID: lastChat.lastInteractionTimestamp,
+            chatID,
         })
         setView(View.Chat)
     }
 
+    const handleViewAllClick = () => {
+        setView(View.History)
+    }
+
     return (
-        <Button
-            variant="outline"
-            className="tw-w-full tw-flex tw-items-center tw-gap-2 tw-px-3 tw-py-2 tw-text-left tw-border-gray-500/20 dark:tw-border-gray-600/40"
-            onClick={handleClick}
-        >
-            <HistoryIcon size={16} className="tw-text-foreground/80" />
-            <div className="tw-flex-1 tw-min-w-0">
-                <div className="tw-text-sm tw-font-medium tw-text-foreground/80 tw-truncate">
-                    {truncatedText}
-                </div>
-                <div className="tw-text-xs tw-text-foreground/60">{timePeriod}</div>
+        <div>
+            <div className="tw-mb-4 tw-flex tw-items-center tw-justify-end">
+                <Button variant="ghost" size="sm" className="tw-pl-2" onClick={handleViewAllClick}>
+                    View all
+                    <ArrowRightIcon size={14} className="tw-ml-2 tw-h-4 tw-w-4" />
+                </Button>
             </div>
-        </Button>
+            <Card
+                className="tw-overflow-hidden tw-transition-all hover:tw-bg-muted/5 tw-cursor-pointer"
+                onClick={() => handleChatClick(lastChat.lastInteractionTimestamp)}
+            >
+                <CardContent className="tw-p-4">
+                    <div className="tw-flex tw-items-start tw-gap-5">
+                        <div className="tw-flex-1 tw-space-y-1">
+                            <div className="tw-flex tw-items-center tw-justify-between tw-gap-6">
+                                <h3 className="tw-font-normal">{displayTitle}</h3>
+                                <div className="tw-flex tw-items-center tw-text-xs tw-text-muted-foreground">
+                                    <HistoryIcon size={12} className="tw-mr-1" />
+                                    {timePeriod}
+                                </div>
+                            </div>
+                            <p className="tw-line-clamp-1 tw-text-sm tw-text-muted-foreground">
+                                {lastChat.model}
+                            </p>
+                        </div>
+                    </div>
+                </CardContent>
+            </Card>
+        </div>
     )
 }

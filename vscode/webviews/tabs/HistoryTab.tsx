@@ -1,16 +1,16 @@
 'use client'
 
-import type { CodyIDE, LightweightUserHistory } from '@sourcegraph/cody-shared'
+import type { CodyIDE, PaginatedHistoryResult } from '@sourcegraph/cody-shared'
 import { useExtensionAPI } from '@sourcegraph/prompt-editor'
 import { DownloadIcon, HistoryIcon, MessageSquarePlusIcon, Trash2Icon, TrashIcon } from 'lucide-react'
 import type React from 'react'
-import { useCallback, useMemo, useState } from 'react'
+import { memo, useCallback, useMemo, useState } from 'react'
 import type { WebviewType } from '../../src/chat/protocol'
 import { LoadingDots } from '../chat/components/LoadingDots'
 import { downloadChatHistory } from '../chat/downloadChatHistory'
 import { Button } from '../components/shadcn/ui/button'
 import { Command, CommandInput, CommandItem, CommandList } from '../components/shadcn/ui/command'
-import { usePaginatedHistory, useUserHistory } from '../components/useUserHistory'
+import { usePaginatedHistory } from '../components/useUserHistory'
 import { type VSCodeWrapper, getVSCodeAPI } from '../utils/VSCodeApi'
 import styles from './HistoryTab.module.css'
 import { View } from './types'
@@ -36,7 +36,7 @@ export const HistoryTab: React.FC<HistoryTabProps> = ({
     const [searchText, setSearchText] = useState('')
     const [currentPage, setCurrentPage] = useState(1)
     const pageSize = HISTORY_ITEMS_PER_PAGE
-    
+
     // Load only the items we need for the current page
     const { value: paginatedResult, error } = usePaginatedHistory(currentPage, pageSize, searchText)
 
@@ -67,6 +67,53 @@ export const HistoryTab: React.FC<HistoryTabProps> = ({
     )
 }
 
+// Memoized individual history item for better performance
+const HistoryItem = memo(
+    ({
+        chat,
+        vscodeAPI,
+        onDeleteButtonClick,
+        historyItemClass,
+        deleteButtonClass,
+    }: {
+        chat: PaginatedHistoryResult['items'][0]
+        vscodeAPI: VSCodeWrapper
+        onDeleteButtonClick: (e: React.MouseEvent | React.KeyboardEvent, id: string) => void
+        historyItemClass: string
+        deleteButtonClass: string
+    }) => {
+        const id = chat.lastInteractionTimestamp
+        const chatTitle = chat.chatTitle
+        const lastMessage = chat.lastHumanMessageText?.trim()
+
+        return (
+            <CommandItem
+                key={id}
+                title={chat.model}
+                className={`tw-text-left tw-truncate tw-w-full tw-rounded-md tw-text-sm ${historyItemClass} tw-overflow-hidden tw-text-sidebar-foreground`}
+                onSelect={() =>
+                    vscodeAPI.postMessage({
+                        command: 'restoreHistory',
+                        chatID: id,
+                    })
+                }
+            >
+                <span className="tw-truncate tw-w-full">{chatTitle || lastMessage}</span>
+                <Button
+                    variant="outline"
+                    title="Delete chat history"
+                    aria-label="delete-history-button"
+                    className={deleteButtonClass}
+                    onClick={e => onDeleteButtonClick(e, id)}
+                    onKeyDown={e => onDeleteButtonClick(e, id)}
+                >
+                    <TrashIcon className="tw-w-8 tw-h-8" size={16} strokeWidth="1.25" />
+                </Button>
+            </CommandItem>
+        )
+    }
+)
+
 export const HistoryTabWithData: React.FC<{
     paginatedHistory: PaginatedHistoryResult
     currentPage: number
@@ -75,7 +122,15 @@ export const HistoryTabWithData: React.FC<{
     setSearchText: (text: string) => void
     handleStartNewChat: () => void
     vscodeAPI: VSCodeWrapper
-}> = ({ paginatedHistory, currentPage, setCurrentPage, searchText, setSearchText, handleStartNewChat, vscodeAPI }) => {
+}> = ({
+    paginatedHistory,
+    currentPage,
+    setCurrentPage,
+    searchText,
+    setSearchText,
+    handleStartNewChat,
+    vscodeAPI,
+}) => {
     const [isDeleteAllActive, setIsDeleteAllActive] = useState<boolean>(false)
 
     const [deletingChatIds, setDeletingChatIds] = useState<Set<string>>(new Set())
@@ -98,27 +153,19 @@ export const HistoryTabWithData: React.FC<{
                 id: 'cody.chat.history.clear',
                 arg: id,
             })
-
-            // Optimistically remove chat from the local state after a short delay
-            // This improves perceived performance while the actual deletion happens
-            setTimeout(() => {
-                setDeletingChatIds(prev => {
-                    const newSet = new Set(prev)
-                    newSet.delete(id)
-                    return newSet
-                })
-            }, 1000)
         },
         [vscodeAPI]
     )
 
     // Get the paginated items and filter out any items that are being deleted
+    // Use a simple array filter instead of converting to a new array each time
     const filteredItems = useMemo(() => {
-        return paginatedHistory.items.filter(
-            chat => !deletingChatIds.has(chat.lastInteractionTimestamp)
-        )
+        if (deletingChatIds.size === 0) {
+            return paginatedHistory.items
+        }
+        return paginatedHistory.items.filter(chat => !deletingChatIds.has(chat.lastInteractionTimestamp))
     }, [paginatedHistory.items, deletingChatIds])
-    
+
     // Calculate total pages based on the total count from the paginated results
     const totalPages = Math.ceil(paginatedHistory.totalCount / HISTORY_ITEMS_PER_PAGE)
 
@@ -229,35 +276,24 @@ export const HistoryTabWithData: React.FC<{
                 />
             </CommandList>
             <CommandList className="tw-flex-1 tw-overflow-y-auto tw-m-2">
+                {/* Use memoized components to optimize rendering */}
                 {filteredItems.map(chat => {
                     const id = chat.lastInteractionTimestamp
-                    const chatTitle = chat.chatTitle
-                    const lastMessage = chat.lastHumanMessageText?.trim()
-                    // We're already filtering out deleted chats in filteredChats
+
+                    // Skip rendering if the item is in deletingChatIds
+                    if (deletingChatIds.has(id)) {
+                        return null
+                    }
 
                     return (
-                        <CommandItem
+                        <HistoryItem
                             key={id}
-                            className={`tw-text-left tw-truncate tw-w-full tw-rounded-md tw-text-sm ${styles.historyItem} tw-overflow-hidden tw-text-sidebar-foreground`}
-                            onSelect={() =>
-                                vscodeAPI.postMessage({
-                                    command: 'restoreHistory',
-                                    chatID: id,
-                                })
-                            }
-                        >
-                            <span className="tw-truncate tw-w-full">{chatTitle || lastMessage}</span>
-                            <Button
-                                variant="outline"
-                                title="Delete chat history"
-                                aria-label="delete-history-button"
-                                className={styles.deleteButton}
-                                onClick={e => onDeleteButtonClick(e, id)}
-                                onKeyDown={e => onDeleteButtonClick(e, id)}
-                            >
-                                <TrashIcon className="tw-w-8 tw-h-8" size={16} strokeWidth="1.25" />
-                            </Button>
-                        </CommandItem>
+                            chat={chat}
+                            vscodeAPI={vscodeAPI}
+                            onDeleteButtonClick={onDeleteButtonClick}
+                            historyItemClass={styles.historyItem}
+                            deleteButtonClass={styles.deleteButton}
+                        />
                     )
                 })}
             </CommandList>

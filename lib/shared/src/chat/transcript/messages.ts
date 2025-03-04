@@ -193,6 +193,8 @@ export interface LightweightChatHistory {
  */
 export interface LightweightChatTranscript {
     id: string
+    model?: string
+    intent?: ChatMessage['intent']
     chatTitle?: string
     lastInteractionTimestamp: string
     lastHumanMessageText?: string
