@@ -3,7 +3,7 @@ import { ChevronLeft, ChevronRight, X } from 'lucide-react'
 import type { FC } from 'react'
 import { useState } from 'react'
 
-import type { AutoeditRequestDebugState } from '../../../src/autoedits/debugging/debug-store'
+import type { AutoeditRequestDebugState } from '../../../src/autoedits/debug-panel/debug-store'
 import { Badge } from '../../components/shadcn/ui/badge'
 import { Button } from '../../components/shadcn/ui/button'
 

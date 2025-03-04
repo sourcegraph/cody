@@ -1,5 +1,5 @@
 import type { Phase } from '../../src/autoedits/analytics-logger/types'
-import type { AutoeditRequestDebugState } from '../../src/autoedits/debugging/debug-store'
+import type { AutoeditRequestDebugState } from '../../src/autoedits/debug-panel/debug-store'
 
 /**
  * Map of discard reason codes to human-readable messages

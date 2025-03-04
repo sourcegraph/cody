@@ -3,7 +3,7 @@ import type { FC } from 'react'
 import React from 'react'
 
 import type { Phase } from '../../../src/autoedits/analytics-logger/types'
-import type { AutoeditRequestDebugState } from '../../../src/autoedits/debugging/debug-store'
+import type { AutoeditRequestDebugState } from '../../../src/autoedits/debug-panel/debug-store'
 import { Badge } from '../../components/shadcn/ui/badge'
 import { AutoeditDataSDK } from '../autoedit-data-sdk'
 import { formatTime, type getDetailedTimingInfo, getStatusColor } from '../autoedit-ui-utils'

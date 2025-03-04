@@ -1,6 +1,6 @@
 import type { FC } from 'react'
 
-import type { AutoeditRequestDebugState } from '../../../src/autoedits/debugging/debug-store'
+import type { AutoeditRequestDebugState } from '../../../src/autoedits/debug-panel/debug-store'
 import { JsonViewer } from '../components/JsonViewer'
 
 export const NetworkRequestSection: FC<{

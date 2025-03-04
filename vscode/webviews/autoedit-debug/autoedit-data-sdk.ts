@@ -1,4 +1,4 @@
-import type { AutoeditRequestDebugState } from '../../src/autoedits/debugging/debug-store'
+import type { AutoeditRequestDebugState } from '../../src/autoedits/debug-panel/debug-store'
 import { DISCARD_REASONS, getDetailedTimingInfo } from './autoedit-ui-utils'
 
 export const extractAutoeditData = (entry: AutoeditRequestDebugState) => {

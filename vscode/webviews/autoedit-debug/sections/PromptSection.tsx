@@ -3,7 +3,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 
 import type { Message, SerializedChatMessage } from '@sourcegraph/cody-shared'
 import type { FireworksChatMessage } from '../../../src/autoedits/adapters/utils'
-import type { AutoeditRequestDebugState } from '../../../src/autoedits/debugging/debug-store'
+import type { AutoeditRequestDebugState } from '../../../src/autoedits/debug-panel/debug-store'
 import { getModelResponse } from '../autoedit-data-sdk'
 
 // Use a union type of the existing message types from the codebase

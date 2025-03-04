@@ -1,6 +1,6 @@
 import { type FC, useState } from 'react'
 
-import type { AutoeditRequestDebugState } from '../../src/autoedits/debugging/debug-store'
+import type { AutoeditRequestDebugState } from '../../src/autoedits/debug-panel/debug-store'
 
 import { AutoeditDetailView } from './components/AutoeditDetailView'
 import { AutoeditListItem } from './components/AutoeditListItem'
