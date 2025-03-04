@@ -440,7 +440,7 @@ export const HumanMessageEditor: FunctionComponent<{
                 <Toolbar
                     models={models}
                     userInfo={userInfo}
-                    isEditorFocused={isEditorFocused}
+                    isEditorFocused={focused}
                     omniBoxEnabled={omniBoxEnabled}
                     onSubmitClick={onSubmitClick}
                     manuallySelectIntent={manuallySelectIntent}

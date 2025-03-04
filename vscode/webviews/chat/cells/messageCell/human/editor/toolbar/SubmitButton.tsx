@@ -14,7 +14,11 @@ export const SubmitButton: FC<{
         <div className="tw-flex">
             <button
                 type="submit"
-                onClick={onClick}
+                onClick={e => {
+                    e.preventDefault()
+                    if (inProgress) return
+                    onClick()
+                }}
                 className={clsx(
                     'tw-px-6 tw-py-1',
                     'tw-rounded-full',

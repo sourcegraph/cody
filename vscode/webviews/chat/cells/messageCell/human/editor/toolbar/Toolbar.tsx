@@ -47,10 +47,10 @@ export const Toolbar: FunctionComponent<{
     onMediaUpload?: (mediaContextItem: ContextItemMedia) => void
 }> = ({
     userInfo,
+    isEditorFocused,
     onSubmitClick,
     submitState,
     onGapClick,
-    isEditorFocused,
     focusEditor,
     hidden,
     className,
@@ -89,8 +89,11 @@ export const Toolbar: FunctionComponent<{
         return (!isDotCom || isBYOK) && isVision
     }, [userInfo?.isDotComUser, models?.[0]])
 
+    if (models?.length < 2) {
+        return null
+    }
+
     return (
-        // biome-ignore lint/a11y/useKeyWithClickEvents: only relevant to click areas
         <menu
             role="toolbar"
             aria-hidden={hidden}
@@ -101,6 +104,7 @@ export const Toolbar: FunctionComponent<{
             )}
             onMouseDown={onMaybeGapClick}
             onClick={onMaybeGapClick}
+            onKeyDown={() => null}
             data-testid="chat-editor-toolbar"
         >
             <div className="tw-flex tw-items-center">

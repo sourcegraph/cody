@@ -213,7 +213,8 @@ export function transcriptToInteractionPairs(
                 index: pairs.length * 2,
                 speaker: 'human',
                 isUnsentFollowup: true,
-                intent: lastHumanMessage?.intent,
+                // If the last submitted message was a search, default to chat for the followup.
+                intent: lastHumanMessage?.intent === 'search' ? 'chat' : lastHumanMessage?.intent,
             },
             assistantMessage: null,
         })
