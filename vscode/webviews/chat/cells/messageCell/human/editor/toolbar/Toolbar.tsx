@@ -163,14 +163,12 @@ const ModelSelectFieldToolbarItem: FunctionComponent<{
 
     const onModelSelect = useCallback(
         (model: Model) => {
-            const subscription = extensionAPI.setChatModel(model.id).subscribe({
+            extensionAPI.setChatModel(model.id).subscribe({
                 error: error => console.error('setChatModel:', error),
             })
-            return () => {
-                subscription.unsubscribe()
-            }
+            focusEditor?.()
         },
-        [extensionAPI]
+        [extensionAPI.setChatModel, focusEditor]
     )
 
     return (
