@@ -2,7 +2,7 @@
  * The intent classification for the edit.
  * Manually determined depending on how the edit is triggered.
  */
-export type EditIntent = 'add' | 'edit' | 'fix' | 'doc' | 'test'
+export type EditIntent = 'add' | 'edit' | 'fix' | 'doc' | 'test' | 'smartApply'
 
 /**
  * Create a mapping of all source types to numerical values, so telemetry can be recorded on `metadata`.
@@ -13,6 +13,7 @@ export enum EditIntentTelemetryMetadataMapping {
     fix = 3,
     doc = 4,
     test = 5,
+    smartApply = 6,
 }
 
 /**

@@ -186,6 +186,7 @@ export class EditManager implements vscode.Disposable {
                 insertionPoint: configuration.insertionPoint,
                 telemetryMetadata,
                 taskId: configuration.id,
+                smartApplyMetadata: configuration.smartApplyMetadata,
             })
         }
 

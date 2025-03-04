@@ -24,6 +24,14 @@ export type FixupTelemetryMetadata = {
     [key: string]: unknown
 }
 
+/**
+ * Additional metadata only specific to Smart Apply Tasks.
+ */
+export interface SmartApplyAdditionalMetadata {
+    chatQuery: PromptString
+    replacementCodeBlock: PromptString
+}
+
 export class FixupTask {
     public state_: CodyTaskState = CodyTaskState.Idle
     public diff_: Edit[] | undefined
@@ -79,11 +87,14 @@ export class FixupTask {
         /* The position where the Edit should start. Defaults to the start of the selection range. */
         public insertionPoint: vscode.Position = selectionRange.start,
         public readonly telemetryMetadata: FixupTelemetryMetadata = {},
-        public readonly id: FixupTaskID = Date.now().toString(36).replaceAll(/\d+/g, '')
+        public readonly id: FixupTaskID = Date.now().toString(36).replaceAll(/\d+/g, ''),
+        public readonly smartApplyMetadata?: SmartApplyAdditionalMetadata
     ) {
         this.instruction = instruction.replace(/^\/(edit|fix)/, ps``).trim()
         this.selectionRange = this.getDefaultSelectionRange(selectionRange)
         this.originalRange = this.selectionRange
+        this.original = document.getText(this.originalRange)
+        this.smartApplyMetadata = smartApplyMetadata
     }
 
     /**

@@ -112,7 +112,8 @@ const getContextFromIntent = async ({
          * Fetch context from the users' selection, use any errors/warnings in said selection, and use context from current file.
          * Non-code files are not considered as including Markdown syntax seems to lead to more hallucinations and poorer output quality.
          */
-        case 'edit': {
+        case 'edit':
+        case 'smartApply': {
             const range = selectionRange
             const diagnostics = range ? editor.getActiveTextEditorDiagnosticsForRange(range) || [] : []
             const errorsAndWarnings = diagnostics.filter(
