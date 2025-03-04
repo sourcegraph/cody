@@ -2,7 +2,7 @@ import type * as vscode from 'vscode'
 
 import { getNewLineChar, lines } from '../completions/text-processing'
 
-import type { DecorationInfo } from './renderer/decorators/base'
+import type { AutoeditDiff } from './renderer/decorators/base'
 
 export function fixFirstLineIndentation(source: string, target: string): string {
     // Check the first line indentation of source string and replaces in target string.
@@ -48,7 +48,7 @@ export function isPredictedTextAlreadyInSuffix({
     suffix,
 }: {
     codeToRewrite: string
-    decorationInfo: DecorationInfo
+    decorationInfo: AutoeditDiff
     suffix: string
 }): boolean {
     if (addedLines.length === 0) {

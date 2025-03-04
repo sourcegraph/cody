@@ -25,7 +25,7 @@ import { autoeditsOutputChannelLogger } from '../output-channel-logger'
 import type { CodeToReplaceData } from '../prompt/prompt-utils'
 import { type DecorationStats, getDecorationStats } from '../renderer/diff-utils'
 
-import type { DecorationInfo } from '../renderer/decorators/base'
+import type { AutoeditDiff } from '../renderer/decorators/base'
 import type { AutoEditRenderOutput } from '../renderer/render-output'
 import { autoeditIdRegistry } from './suggestion-id-registry'
 
@@ -503,7 +503,7 @@ export class AutoeditAnalyticsLogger {
     }: {
         requestId: AutoeditRequestID
         prediction: string
-        decorationInfo: DecorationInfo | null
+        decorationInfo: AutoeditDiff | null
         renderOutput: AutoEditRenderOutput
     }) {
         this.tryTransitionTo(requestId, 'postProcessed', request => {

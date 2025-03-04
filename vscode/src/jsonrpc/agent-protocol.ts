@@ -14,8 +14,7 @@ import type {
 import type { TelemetryEventMarketingTrackingInput } from '@sourcegraph/telemetry'
 
 import type { AuthError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
-import type { DecorationInfo } from '../autoedits/renderer/decorators/base'
-import type { GeneratedImageSuggestion } from '../autoedits/renderer/image-gen'
+import type { AutoeditDiff } from '../autoedits/renderer/decorators/base'
 import type { ExtensionMessage, WebviewMessage } from '../chat/protocol'
 import type { CompletionBookkeepingEvent, CompletionItemID } from '../completions/analytics-logger'
 import type { FixupTaskID } from '../non-stop/FixupTask'
@@ -526,15 +525,58 @@ export interface AutocompleteItem {
 }
 
 interface AutocompleteCompletionResult {
+    type: 'completion'
     items: AutocompleteItem[]
 
     /** completionEvent is not deprecated because it's used by non-editor clients like cody-bench that need access to book-keeping data to evaluate results. */
     completionEvent?: CompletionBookkeepingEvent | undefined | null
 }
 
+/**
+ * An image-driven render mode. This will be used when the client is able to show an image in the editor.
+ * It can be enhanced if the client can also show deletions in the existing code (e.g. marking existing ranges in red)
+ */
+interface RenderModeImage {
+    /**
+     * The type of image that will be rendered.
+     * - image-unified: A unified diff showing both additions and deletions.
+     * - image-additions: A diff showing only additions.
+     *   The client is expected to show deletions with another method.
+     */
+    type: 'image-unified' | 'image-additions'
+    /**
+     * Diff information on the exact changes in the suggestion.
+     * This will typically be used when type is `image-additions`, as it will provide information on the
+     * deleted ranges that are not shown in the image.
+     */
+    diff: AutoeditDiff
+    image: {
+        /* Base64 encoded image suitable for rendering in dark editor themes */
+        dark: string
+        /* Base64 encoded image suitable for rendering in light editor themes */
+        light: string
+        /**
+         * The pixel ratio used to generate the image. Should be used to scale the image appropriately.
+         * Has a minimum value of 1.
+         */
+        pixelRatio: number
+    }
+}
+
+/**
+ * A custom render mode. This will be used when the client wants full control over presentation.
+ * The client will be responsible for determining how to render the suggestion.
+ */
+interface RenderModeCustom {
+    type: 'custom'
+    diff: AutoeditDiff
+}
+
 interface AutocompleteEditResult {
-    id: string
-    replacementText: string
+    type: 'edit'
+    /**
+     * The range in the document where this edit should be applied.
+     */
     range: vscode.Range
     /**
      * The original text that the suggestion was generated from.
@@ -544,18 +586,21 @@ interface AutocompleteEditResult {
      */
     originalText: string
     /**
-     * If the suggestion is an image, this will contain the image data.
-     * This depends on `clientCapabilities.autoEditImageSuggestions` being enabled.
+     * The new text that should replace the `originalText` in the `range`.
      */
-    imageData: {
-        // The image to render
-        image: GeneratedImageSuggestion
-        // The position to render the image in the document.
-        position: { line: number; column: number }
-    } | null
-
-    /** temporary data structure, will need to update before integrating with the agent API */
-    decorationInfo: DecorationInfo
+    replacementText: string
+    /**
+     * The method in which this suggestion should be rendered.
+     * This is determined from the `clientCapabilities` provided by the client.
+     */
+    render: RenderModeImage | RenderModeCustom
+    /**
+     * An empty list of autocompletion items.
+     * This is present to maintain compatibility for clients that do not yet support autoedit.
+     */
+    items: AutocompleteItem[]
+    /** completionEvent is not deprecated because it's used by non-editor clients like cody-bench that need access to book-keeping data to evaluate results. */
+    completionEvent?: CompletionBookkeepingEvent | undefined | null
 }
 
 export type AutocompleteResult = AutocompleteCompletionResult | AutocompleteEditResult

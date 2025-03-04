@@ -23,7 +23,7 @@ import {
 import type { FixupController } from '../../non-stop/FixupController'
 import { CodyTaskState } from '../../non-stop/state'
 import { autoeditsOutputChannelLogger } from '../output-channel-logger'
-import type { AutoEditDecorations, AutoEditsDecorator, DecorationInfo } from './decorators/base'
+import type { AutoEditDecorations, AutoEditsDecorator, AutoeditDiff } from './decorators/base'
 import {
     type AutoEditRenderOutput,
     AutoEditsRenderOutput,
@@ -37,7 +37,7 @@ export interface TryMakeInlineCompletionsArgs {
     document: vscode.TextDocument
     position: vscode.Position
     docContext: DocumentContext
-    decorationInfo: DecorationInfo
+    decorationInfo: AutoeditDiff
 }
 
 /**
@@ -57,7 +57,7 @@ export interface AutoEditsRendererManager extends vscode.Disposable {
         /**
          * @deprecated Use `decorations` instead.
          */
-        decorationInfo: DecorationInfo,
+        decorationInfo: AutoeditDiff,
         decorations?: AutoEditDecorations
     ): Promise<void>
 
@@ -332,7 +332,7 @@ export class AutoEditsDefaultRendererManager
     }
 
     public async renderInlineDecorations(
-        decorationInfo: DecorationInfo,
+        decorationInfo: AutoeditDiff,
         decorations?: AutoEditDecorations
     ): Promise<void> {
         if (!this.decorator) {

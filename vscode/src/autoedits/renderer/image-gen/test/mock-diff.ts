@@ -1,5 +1,5 @@
 import * as vscode from 'vscode'
-import type { DecorationInfo } from '../../decorators/base'
+import type { AutoeditDiff } from '../../decorators/base'
 
 interface MockDiffFixture {
     // Used for naming screenshots
@@ -8,7 +8,7 @@ interface MockDiffFixture {
     // Should match
     lang: string
     // Diff that will be visually rendered
-    diff: DecorationInfo
+    diff: AutoeditDiff
 }
 
 /**

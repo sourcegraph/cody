@@ -4,7 +4,7 @@ import * as vscode from 'vscode'
 
 import { getNewLineChar } from '../../completions/text-processing'
 
-import type { DecorationInfo, DecorationLineInfo, LineChange, ModifiedLineInfo } from './decorators/base'
+import type { AutoeditDiff, DecorationLineInfo, LineChange, ModifiedLineInfo } from './decorators/base'
 
 /**
  * Generates decoration information by computing the differences between two texts.
@@ -13,13 +13,13 @@ import type { DecorationInfo, DecorationLineInfo, LineChange, ModifiedLineInfo }
  * @param modifiedText The modified text content.
  * @returns Decoration information representing the differences.
  */
-export function getDecorationInfo(originalText: string, modifiedText: string): DecorationInfo {
+export function getDecorationInfo(originalText: string, modifiedText: string): AutoeditDiff {
     const originalLines = originalText.split(getNewLineChar(originalText))
     const modifiedLines = modifiedText.split(getNewLineChar(modifiedText))
 
     const lineInfos = computeDiffOperations(originalLines, modifiedLines)
 
-    const decorationInfo: DecorationInfo = {
+    const decorationInfo: AutoeditDiff = {
         modifiedLines: [],
         removedLines: [],
         addedLines: [],
@@ -459,7 +459,7 @@ export function getDecorationStats({
     removedLines,
     addedLines,
     unchangedLines,
-}: DecorationInfo): DecorationStats {
+}: AutoeditDiff): DecorationStats {
     const added = sumTextLengths(addedLines)
     const removed = sumTextLengths(removedLines)
     const unchanged = sumTextLengths(unchangedLines)
