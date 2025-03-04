@@ -56,6 +56,8 @@ interface Props extends KeyboardEventPluginProps {
     disabled?: boolean
 
     editorRef?: React.RefObject<PromptEditorRefAPI>
+
+    openExternalLink: (uri: string) => void
 }
 
 interface PromptEditorRefAPI {
@@ -105,6 +107,7 @@ export const PromptEditor: FunctionComponent<Props> = ({
     disabled,
     editorRef: ref,
     onEnterKey,
+    openExternalLink,
 }) => {
     // We use the interaction ID to differentiate between different
     // invocations of the mention-menu. That way upstream we don't trigger
@@ -170,6 +173,7 @@ export const PromptEditor: FunctionComponent<Props> = ({
         onFocusChange,
         onEnterKey,
         fetchMenuData,
+        openExternalLink,
     })
 
     const { show, items, selectedIndex, query, position: menuPosition, parent } = useMentionsMenu(input)
@@ -242,6 +246,7 @@ export const PromptEditor: FunctionComponent<Props> = ({
             if ('id' in item) {
                 return <MentionMenuProviderItemContent provider={item} />
             }
+            // TODO: Support item.badge
             return <MentionMenuContextItemContent item={item} query={parseMentionQuery(query, parent)} />
         },
         [query, parent]

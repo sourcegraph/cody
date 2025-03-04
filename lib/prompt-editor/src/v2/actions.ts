@@ -15,7 +15,12 @@ import {
 } from '@sourcegraph/cody-shared'
 import type { Node } from 'prosemirror-model'
 import { type EditorState, Selection, type Transaction } from 'prosemirror-state'
-import { type MenuItem, type MenuSelectionAPI, createMentionNode, schema } from './promptInput'
+import {
+    type MenuSelectionAPI as BaseMenuSelectionAPI,
+    type MenuItem,
+    createMentionNode,
+    schema,
+} from './promptInput'
 
 /**
  * Returns a {@link Transaction} to replace the current document with provided document.
@@ -181,6 +186,10 @@ export function getMentions(doc: Node): SerializedContextItem[] {
     return mentions
 }
 
+interface MenuSelectionAPI extends BaseMenuSelectionAPI {
+    openURI: (uri: string) => void
+}
+
 /**
  * The prompt editor supports different values as {@link MenuItem}s and different types have a
  * different effect on the editor value.
@@ -233,12 +242,12 @@ export function handleSelectMenuItem(item: MenuItem, api: MenuSelectionAPI) {
     if (item.type === 'open-link') {
         // "open-link" items are links to documentation, you can not commit them as mentions.
         api.deleteAtMention()
-        // TODO: Raise an event? Enqueue a task? to open the link.
+        api.openURI(item.uri.toString())
         return
     }
 
     // In all other cases we'll insert the selected item as a mention node.
-    api.replaceAtMentionValue(createMentionNode({ item: serializeContextItem(item) }))
+    api.replaceAtMention(createMentionNode({ item: serializeContextItem(item) }))
 }
 
 function insertMentions(
