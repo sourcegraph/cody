@@ -15,27 +15,14 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.jetbrains.rd.util.firstOrNull
 import com.sourcegraph.cody.agent.protocol.WebviewCreateWebviewPanelParams
 import com.sourcegraph.cody.agent.protocol_extensions.ProtocolTextDocumentExt
-import com.sourcegraph.cody.agent.protocol_generated.DebugMessage
-import com.sourcegraph.cody.agent.protocol_generated.DisplayCodeLensParams
-import com.sourcegraph.cody.agent.protocol_generated.Env_OpenExternalParams
-import com.sourcegraph.cody.agent.protocol_generated.Null
-import com.sourcegraph.cody.agent.protocol_generated.ProtocolTextDocument
-import com.sourcegraph.cody.agent.protocol_generated.SaveDialogOptionsParams
-import com.sourcegraph.cody.agent.protocol_generated.Secrets_DeleteParams
-import com.sourcegraph.cody.agent.protocol_generated.Secrets_GetParams
-import com.sourcegraph.cody.agent.protocol_generated.Secrets_StoreParams
-import com.sourcegraph.cody.agent.protocol_generated.ShowWindowMessageParams
-import com.sourcegraph.cody.agent.protocol_generated.TextDocumentEditParams
-import com.sourcegraph.cody.agent.protocol_generated.TextDocument_ShowParams
-import com.sourcegraph.cody.agent.protocol_generated.UntitledTextDocument
-import com.sourcegraph.cody.agent.protocol_generated.Window_DidChangeContextParams
-import com.sourcegraph.cody.agent.protocol_generated.WorkspaceEditParams
+import com.sourcegraph.cody.agent.protocol_generated.*
 import com.sourcegraph.cody.auth.CodyAuthService
 import com.sourcegraph.cody.auth.CodySecureStore
 import com.sourcegraph.cody.auth.SourcegraphServerPath
 import com.sourcegraph.cody.edit.EditService
 import com.sourcegraph.cody.edit.lenses.LensesService
 import com.sourcegraph.cody.error.CodyConsole
+import com.sourcegraph.cody.error.SentryService
 import com.sourcegraph.cody.ignore.IgnoreOracle
 import com.sourcegraph.cody.statusbar.CodyStatusService
 import com.sourcegraph.cody.ui.web.NativeWebviewProvider
@@ -202,6 +189,15 @@ class CodyAgentClient(private val project: Project, private val webview: NativeW
         CodyAuthService.getInstance(project).setEndpoint(SourcegraphServerPath(endpoint))
         CodyStatusService.resetApplication(project)
       }
+    }
+  }
+
+  @JsonNotification("authStatus/didUpdate")
+  fun authStatus_didUpdate(params: ProtocolAuthStatus) {
+    if (params is ProtocolAuthenticatedAuthStatus) {
+      SentryService.setUser(params.primaryEmail, params.username)
+    } else {
+      SentryService.setUser(null, null)
     }
   }
 

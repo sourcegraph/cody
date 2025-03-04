@@ -1054,6 +1054,22 @@ _commands?.registerCommand?.('setContext', (key, value) => {
     context.set(key, value)
     agent?.notify('window/didChangeContext', { key, value: value.toString() })
 })
+_commands?.registerCommand?.('authStatus.update', status => {
+    if (status == null) {
+        return
+    }
+    const authStatus = status.authenticated
+        ? {
+              status: 'authenticated',
+              ...status,
+          }
+        : {
+              status: 'unauthenticated',
+              ...status,
+          }
+
+    agent?.notify('authStatus/didUpdate', authStatus)
+})
 _commands?.registerCommand?.('vscode.executeFoldingRangeProvider', async uri => {
     const promises: vscode.FoldingRange[] = []
     const document = await _workspace.openTextDocument(uri)

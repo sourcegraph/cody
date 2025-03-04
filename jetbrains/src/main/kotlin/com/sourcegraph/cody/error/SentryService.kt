@@ -81,7 +81,7 @@ class SentryService {
       }
     }
 
-    fun setUser(email: String?, userName: String) {
+    fun setUser(email: String?, userName: String?) {
       val user =
           User().apply {
             this.email = email
