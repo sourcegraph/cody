@@ -143,22 +143,21 @@ export const TabsBar = memo<TabsBarProps>(props => {
     }, [])
 
     useEffect(() => {
-        const handleMessage = (event: MessageEvent) => {
-            if (
-                event.data?.type === 'rpc/response' &&
-                event.data?.message?.data?.type === 'clientAction' &&
-                event.data?.message?.data?.openModelSelector === true
-            ) {
-                if (openModelDropdownRef.current) {
+        function handleKeyDown(event: KeyboardEvent) {
+            if (event.altKey && event.metaKey && event.key === '÷') {
+                event.preventDefault()
+                event.stopPropagation()
+                if (openModelDropdownRef.current && currentView === View.Chat) {
                     openModelDropdownRef.current()
-                } else {
                 }
             }
         }
 
-        window.addEventListener('message', handleMessage)
-        return () => window.removeEventListener('message', handleMessage)
-    }, [])
+        window.addEventListener('keydown', handleKeyDown)
+        return () => {
+            window.removeEventListener('keydown', handleKeyDown)
+        }
+    }, [currentView])
 
     return (
         <div className={clsx(styles.tabsRoot, { [styles.tabsRootCodyWeb]: IDE === CodyIDE.Web })}>

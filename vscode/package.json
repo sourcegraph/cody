@@ -600,12 +600,7 @@
         "key": "alt+l",
         "when": "cody.activated"
       },
-      {
-        "command": "cody.openModelSelector",
-        "key": "ctrl+alt+/",
-        "mac": "cmd+alt+/",
-        "when": "cody.activated"
-      },
+
       {
         "command": "cody.mention.selection",
         "key": "alt+l",
