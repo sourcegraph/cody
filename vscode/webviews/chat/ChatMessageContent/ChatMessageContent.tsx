@@ -10,6 +10,7 @@ import type { FixupTaskID } from '../../../src/non-stop/FixupTask'
 import { CodyTaskState } from '../../../src/non-stop/state'
 import { type ClientActionListener, useClientActionListener } from '../../client/clientState'
 import { MarkdownFromCody } from '../../components/MarkdownFromCody'
+import { useLocalStorage } from '../../components/hooks'
 import { useConfig } from '../../utils/useConfig'
 import type { PriorHumanMessageInfo } from '../cells/messageCell/assistant/AssistantMessageCell'
 import styles from './ChatMessageContent.module.css'
@@ -222,7 +223,7 @@ export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps
         [displayMarkdown]
     )
 
-    const [isOpen, setIsOpen] = useState(true)
+    const [isOpen, setIsOpen] = useLocalStorage('cody.thinking-space.open', true)
 
     return (
         <div ref={rootRef} data-testid="chat-message-content">
@@ -230,7 +231,7 @@ export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps
                 <details
                     open={isOpen}
                     onToggle={e => setIsOpen((e.target as HTMLDetailsElement).open)}
-                    className="tw-container tw-mb-4 tw-border tw-border-gray-500/20 dark:tw-border-gray-600/40 tw-rounded-lg tw-overflow-hidden tw-backdrop-blur-sm"
+                    className="tw-container tw-mb-4 tw-border tw-border-gray-500/20 dark:tw-border-gray-600/40 tw-rounded-lg tw-overflow-hidden tw-backdrop-blur-sm tw-min-w-full"
                     title="Thinking & Reasoning Space"
                 >
                     <summary
