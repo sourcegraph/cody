@@ -232,12 +232,15 @@ export function syncModels({
                                                 }
 
                                                 // Enterprise instances with early access flag enabled
-                                                if (!isDotComUser && hasEarlyAccess) {
-                                                    data.primaryModels = data.primaryModels.map(m => ({
-                                                        ...m,
-                                                        tags: [...m.tags, ModelTag.EarlyAccess],
-                                                    }))
-                                                }
+                                                const isVisionSupported = !isDotComUser && hasEarlyAccess
+                                                data.primaryModels = data.primaryModels.map(m => ({
+                                                    ...m,
+                                                    // Gateway doesn't suppoort vision models for Google yet
+                                                    tags:
+                                                        isVisionSupported && m.provider !== 'google'
+                                                            ? m.tags
+                                                            : m.tags.filter(t => t !== ModelTag.Vision),
+                                                }))
 
                                                 const clientModels = []
 
