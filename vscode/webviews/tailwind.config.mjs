@@ -4,7 +4,12 @@ import plugin from 'tailwindcss/plugin'
 export default {
     content: {
         relative: true,
-        files: ['**/*.{ts,tsx}', '../../lib/**/**/*.{ts,tsx}'],
+        files: [
+            '**/*.{ts,tsx}',
+            '../../lib/**/**/*.{ts,tsx}',
+            'autoedit-debug/**/*.{ts,tsx}',
+            'autoedit-debug/**/*.css',
+        ],
     },
     prefix: 'tw-',
     theme: {
