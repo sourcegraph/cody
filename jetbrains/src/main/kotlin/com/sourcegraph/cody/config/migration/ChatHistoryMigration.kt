@@ -16,14 +16,14 @@ import com.sourcegraph.cody.history.state.MessageState
 // so historical chats can be viewed in the cody webview
 object ChatHistoryMigration {
   fun migrate(project: Project) {
-    CodyAgentService.withAgent(project) { agent ->
+    CodyAgentService.withServer(project) { server ->
       val chats =
           DeprecatedCodyAccountManager.getInstance().getAccounts().associateWith { account ->
             (HistoryService.getInstance(project).getChatHistoryFor(account.id) ?: listOf())
           }
       val history = toChatInput(chats)
 
-      agent.server.chat_import(Chat_ImportParams(history = history, merge = true)).get()
+      server.chat_import(Chat_ImportParams(history = history, merge = true)).get()
     }
   }
 

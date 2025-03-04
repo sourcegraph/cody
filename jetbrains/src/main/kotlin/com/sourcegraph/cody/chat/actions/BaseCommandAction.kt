@@ -48,8 +48,8 @@ abstract class BaseCommandAction : DumbAwareEDTAction() {
           .finishOnUiThread(ModalityState.nonModal()) {
             when (it) {
               Ignore_TestResult.PolicyEnum.Use -> {
-                CodyAgentService.withAgent(project) { agent ->
-                  agent.server.command_execute(
+                CodyAgentService.withServer(project) { server ->
+                  server.command_execute(
                       ExecuteCommandParams(
                           command =
                               when (myCommandId) {

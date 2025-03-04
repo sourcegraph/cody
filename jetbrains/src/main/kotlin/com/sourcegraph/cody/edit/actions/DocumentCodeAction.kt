@@ -7,9 +7,9 @@ import com.sourcegraph.cody.agent.protocol_generated.CustomEditCommandResult
 class DocumentCodeAction :
     BaseEditCodeAction({ editor ->
       editor.project?.let { project ->
-        CodyAgentService.withAgent(project) { agent ->
-          val customCommandResult = agent.server.commands_custom(Commands_CustomParams("doc")).get()
-          val result = customCommandResult as? CustomEditCommandResult ?: return@withAgent
+        CodyAgentService.withServer(project) { server ->
+          val customCommandResult = server.commands_custom(Commands_CustomParams("doc")).get()
+          val result = customCommandResult as? CustomEditCommandResult ?: return@withServer
           EditCodeAction.completedEditTasks[result.editResult.id] = result.editResult
         }
       }

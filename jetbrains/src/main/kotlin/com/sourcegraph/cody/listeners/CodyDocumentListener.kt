@@ -40,14 +40,14 @@ class CodyDocumentListener(val project: Project) : BulkAwareDocumentListener {
 
     ProtocolTextDocumentExt.fromEditorForDocumentEvent(editor, event)?.let { textDocument ->
       EditorChangesBus.documentChanged(project, textDocument)
-      CodyAgentService.withAgent(project) { agent ->
-        agent.server.textDocument_didChange(textDocument)
+      CodyAgentService.withServer(project) { server ->
+        server.textDocument_didChange(textDocument)
 
         // This notification must be sent after the above, see tracker comment for more
         // details.
         AcceptCodyAutocompleteAction.tracker.getAndSet(null)?.let { completionID ->
-          agent.server.autocomplete_completionAccepted(CompletionItemParams(completionID))
-          agent.server.autocomplete_clearLastCandidate(null)
+          server.autocomplete_completionAccepted(CompletionItemParams(completionID))
+          server.autocomplete_clearLastCandidate(null)
         }
       }
       val changeOffset = event.offset + event.newLength

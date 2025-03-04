@@ -48,8 +48,8 @@ open class CodyIntegrationTextFixture : BasePlatformTestCase(), LensListener {
     initCaretPosition()
 
     val done = CompletableFuture<Void>()
-    CodyAgentService.withAgent(project) { agent ->
-      agent.server.testing_awaitPendingPromises(null).thenAccept { done.complete(null) }
+    CodyAgentService.withServer(project) { server ->
+      server.testing_awaitPendingPromises(null).thenAccept { done.complete(null) }
     }
     done.get(ASYNC_WAIT_TIMEOUT_SECONDS, TimeUnit.SECONDS)
 
@@ -64,8 +64,8 @@ open class CodyIntegrationTextFixture : BasePlatformTestCase(), LensListener {
       runInEdt { WriteAction.run<RuntimeException> { myFixture.file.virtualFile.delete(this) } }
 
       val recordingsFuture = CompletableFuture<Void>()
-      CodyAgentService.withAgent(project) { agent ->
-        val errors = agent.server.testing_requestErrors(null).get()
+      CodyAgentService.withServer(project) { server ->
+        val errors = server.testing_requestErrors(null).get()
         // We extract polly.js errors to notify users about the missing recordings, if any
         val missingRecordings =
             errors.errors.filter { it.error?.contains("`recordIfMissing` is") == true }
@@ -145,8 +145,8 @@ open class CodyIntegrationTextFixture : BasePlatformTestCase(), LensListener {
 
   private fun isAuthenticated() {
     val authenticated = CompletableFuture<Boolean>()
-    CodyAgentService.withAgent(project) { agent ->
-      agent.server.extensionConfiguration_status(null).thenAccept { authStatus ->
+    CodyAgentService.withServer(project) { server ->
+      server.extensionConfiguration_status(null).thenAccept { authStatus ->
         authenticated.complete(authStatus is ProtocolAuthenticatedAuthStatus)
       }
     }

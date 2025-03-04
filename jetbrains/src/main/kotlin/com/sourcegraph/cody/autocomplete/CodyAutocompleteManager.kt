@@ -129,7 +129,7 @@ class CodyAutocompleteManager {
       return
     }
 
-    if (isTriggeredExplicitly) CodyAgentService.withAgentRestartIfNeeded(project) {}
+    if (isTriggeredExplicitly) CodyAgentService.withServerRestartIfNeeded(project) {}
 
     val isTriggeredImplicitly = !isTriggeredExplicitly
     if (!isCodyEnabled()) {
@@ -263,8 +263,8 @@ class CodyAutocompleteManager {
     if (formattedCompletionText.trim().isBlank()) return
 
     project?.let {
-      CodyAgentService.withAgent(project) { agent ->
-        agent.server.autocomplete_completionSuggested(CompletionItemParams(defaultItem.id))
+      CodyAgentService.withServer(project) { server ->
+        server.autocomplete_completionSuggested(CompletionItemParams(defaultItem.id))
       }
     }
 

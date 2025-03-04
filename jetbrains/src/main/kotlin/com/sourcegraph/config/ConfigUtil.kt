@@ -117,8 +117,8 @@ object ConfigUtil {
     val authHeaders = CompletableFuture<Map<String, String>>()
 
     if (isCodyEnabled()) {
-      CodyAgentService.withAgent(project) { agent ->
-        agent.server.internal_getAuthHeaders(endpoint.url).thenAccept { headers ->
+      CodyAgentService.withServer(project) { server ->
+        server.internal_getAuthHeaders(endpoint.url).thenAccept { headers ->
           authHeaders.complete(headers)
         }
       }

@@ -113,9 +113,9 @@ internal class WebviewViewManager(private val project: Project) {
       return@createWebviewView viewHost.viewDelegate
     }
 
-    CodyAgentService.withAgent(project) {
+    CodyAgentService.withServer(project) {
       // TODO: https://code.visualstudio.com/api/references/vscode-api#WebviewViewProvider
-      it.server.webview_resolveWebviewView(
+      it.webview_resolveWebviewView(
           Webview_ResolveWebviewViewParams(viewId = provider.id, webviewHandle = handle))
     }
   }

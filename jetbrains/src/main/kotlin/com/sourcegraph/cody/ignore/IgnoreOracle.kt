@@ -9,9 +9,9 @@ import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.project.Project
 import com.intellij.util.containers.SLRUMap
-import com.sourcegraph.cody.agent.CodyAgent
 import com.sourcegraph.cody.agent.CodyAgentService
 import com.sourcegraph.cody.agent.protocol_extensions.ProtocolTextDocumentExt
+import com.sourcegraph.cody.agent.protocol_generated.CodyAgentServer
 import com.sourcegraph.cody.agent.protocol_generated.Ignore_TestParams
 import com.sourcegraph.cody.agent.protocol_generated.Ignore_TestResult
 import com.sourcegraph.cody.statusbar.CodyStatusService
@@ -107,15 +107,18 @@ class IgnoreOracle(private val project: Project) {
       completable.complete(result.policy)
       return completable
     }
-    CodyAgentService.withAgent(project) { agent ->
-      policyForUri(uri, agent).thenAccept(completable::complete)
+    CodyAgentService.withServer(project) { server ->
+      policyForUri(uri, server).thenAccept(completable::complete)
     }
     return completable
   }
 
   /** Like `policyForUri(String)` but reuses the current thread and supplied Agent handle. */
-  fun policyForUri(uri: String, agent: CodyAgent): CompletableFuture<Ignore_TestResult.PolicyEnum> {
-    return agent.server.ignore_test(Ignore_TestParams(uri)).thenApply {
+  fun policyForUri(
+      uri: String,
+      server: CodyAgentServer
+  ): CompletableFuture<Ignore_TestResult.PolicyEnum> {
+    return server.ignore_test(Ignore_TestParams(uri)).thenApply {
       synchronized(cache) {
         cache.put(uri, CacheEntry(policy = it.policy, timestampMsec = System.currentTimeMillis()))
       }
