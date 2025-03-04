@@ -9,9 +9,9 @@
     align-items: center;
     justify-content: space-between;
     padding: calc(var(--spacing) * 0.5);
-    border: 1px solid var(--vscode-input-background);
     border-radius: 4px;
     background: transparent;
+    border-top: none;
 }
 
 .left-info {
