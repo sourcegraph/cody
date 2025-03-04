@@ -255,6 +255,5 @@ interface NoPromptsMigrationNeeded {
 }
 
 export interface ClientActionBroadcast {
-    type: 'open-recently-prompts' | 'clientAction'
-    openModelSelector?: boolean
+    type: 'open-recently-prompts'
 }
