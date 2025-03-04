@@ -210,7 +210,7 @@ export class SmartApplyManager implements vscode.Disposable {
                 instruction: ps`Ensuring that you do not duplicate code that is outside of the selection, apply the following change:
 ${replacementCode}`,
                 model,
-                intent: 'edit',
+                intent: 'smartApply',
             },
             source: 'chat',
         })

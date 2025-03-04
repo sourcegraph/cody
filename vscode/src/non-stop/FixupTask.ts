@@ -84,6 +84,7 @@ export class FixupTask {
         this.instruction = instruction.replace(/^\/(edit|fix)/, ps``).trim()
         this.selectionRange = this.getDefaultSelectionRange(selectionRange)
         this.originalRange = this.selectionRange
+        this.original = document.getText(this.originalRange)
     }
 
     /**
