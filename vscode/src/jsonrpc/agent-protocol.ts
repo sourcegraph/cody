@@ -536,7 +536,7 @@ interface AutocompleteCompletionResult {
  * An image-driven render mode. This will be used when the client is able to show an image in the editor.
  * It can be enhanced if the client can also show deletions in the existing code (e.g. marking existing ranges in red)
  */
-interface RenderModeImage {
+export interface RenderModeImage {
     /**
      * The type of image that will be rendered.
      * - image-unified: A unified diff showing both additions and deletions.
@@ -560,6 +560,10 @@ interface RenderModeImage {
          * Has a minimum value of 1.
          */
         pixelRatio: number
+        /**
+         * The position in which the image should be rendered in the editor.
+         */
+        position: { line: number; column: number }
     }
 }
 
@@ -567,7 +571,7 @@ interface RenderModeImage {
  * A custom render mode. This will be used when the client wants full control over presentation.
  * The client will be responsible for determining how to render the suggestion.
  */
-interface RenderModeCustom {
+export interface RenderModeCustom {
     type: 'custom'
     diff: DecorationInfo
 }
