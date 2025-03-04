@@ -296,10 +296,10 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
             autoeditAnalyticsLogger.markAsLoaded({
                 requestId,
                 prompt,
+                modelResponse: predictionResult,
                 payload: {
                     source: autoeditSource.network,
                     isFuzzyMatch: false,
-                    responseHeaders: predictionResult.responseHeaders,
                     prediction: initialPrediction,
                 },
             })
