@@ -113,7 +113,6 @@ export function createButtonsExperimentalUI(
     guardrails?: Guardrails,
     isMessageLoading?: boolean
 ): HTMLElement {
-    // Create button container 1 for file info
     const previewContainer = document.createElement('div')
     previewContainer.className = styles.buttonsContainer
     previewContainer.dataset.containerType = 'preview'
@@ -135,7 +134,6 @@ export function createButtonsExperimentalUI(
     }
     previewContainer.appendChild(leftInfo)
 
-    // Create button container 2 for action buttons
     const actionsContainer = document.createElement('div')
     actionsContainer.className = styles.buttonsContainer
     actionsContainer.dataset.containerType = 'actions'
