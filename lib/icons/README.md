@@ -40,3 +40,4 @@ cp font/cody-icons.woff ../../vscode/resources/cody-icons.woff
 ```
 
 2. Register the icons in `vscode/package.json` in the `icons` field.
+Hello World
