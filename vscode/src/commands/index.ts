@@ -86,12 +86,4 @@ export const CodyCommandMenuItems: MenuCommandAccessor[] = [
         keybinding: `${osIcon}⇧C`,
         contextValue: 'cody.sidebar.custom-commands',
     },
-    {
-        key: 'modelSelector',
-        description: 'Open Model Selector',
-        icon: 'gear',
-        command: { command: 'cody.openModelSelector' },
-        keybinding: `${osIcon}/`,
-        mode: 'ask',
-    },
 ]
