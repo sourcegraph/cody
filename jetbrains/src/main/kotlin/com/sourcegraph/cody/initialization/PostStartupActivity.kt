@@ -30,7 +30,7 @@ class PostStartupActivity : ProjectActivity {
   // deserves more investigation.
   override suspend fun execute(project: Project) {
     if (!ConfigUtil.isIntegrationTestModeEnabled() &&
-        !SentryService.isPluginToOldForSentryLogging()) {
+        !SentryService.isPluginTooOldForSentryLogging()) {
       SentryService.initialize()
     }
     VerifyJavaBootRuntimeVersion().runActivity(project)

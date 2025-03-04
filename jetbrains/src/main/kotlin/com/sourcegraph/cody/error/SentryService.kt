@@ -61,12 +61,23 @@ class SentryService {
       }
 
       val appInfo = ApplicationInfo.getInstance()
+      val properties = System.getProperties()
+      val javaVersion =
+          properties.getProperty(
+              "java.runtime.version", properties.getProperty("java.version", "unknown"))
+      val arch = properties.getProperty("os.arch", "")
       Sentry.configureScope {
         it.setTag("ideBuild", appInfo.build.toString())
         it.setTag("ideVersionName", appInfo.versionName)
         it.setTag("ideVersion", appInfo.fullVersion)
         it.setTag("system", SystemInfo.OS_NAME)
         it.setTag("systemVersion", SystemInfo.OS_VERSION)
+        it.setContexts(
+            "IDE Runtime",
+            object {
+              val fullVersion = javaVersion
+              val architecture = arch
+            })
       }
     }
 
@@ -79,7 +90,7 @@ class SentryService {
       Sentry.setUser(user)
     }
 
-    fun isPluginToOldForSentryLogging(): Boolean {
+    fun isPluginTooOldForSentryLogging(): Boolean {
       val now = Date()
       val releaseDate = ConfigUtil.getPluginReleaseDate() ?: now
       val releaseDateLocal = releaseDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate()
