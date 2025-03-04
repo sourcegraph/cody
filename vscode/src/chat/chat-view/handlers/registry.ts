@@ -20,7 +20,7 @@ function registerAgent(id: string, ctr: (id: string, tools: AgentTools) => Agent
 
 export function getAgent(id: string, modelId: string, tools: AgentTools): AgentHandler {
     const { contextRetriever, editor, chatClient } = tools
-    if (id === DeepCodyAgentID) {
+    if (id === 'agentic' || id === DeepCodyAgentID) {
         return new DeepCodyHandler(modelId, contextRetriever, editor, chatClient)
     }
     if (agentRegistry.has(id)) {

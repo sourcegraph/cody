@@ -655,6 +655,8 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         command?: DefaultChatCommands
         manuallySelectedIntent?: ChatMessage['intent'] | undefined | null
         traceparent?: string | undefined | null
+        model?: ChatModel
+        chatAgent?: string
     }): Promise<void> {
         return context.with(extractContextFromTraceparent(traceparent), () => {
             return tracer.startActiveSpan('chat.handleUserMessage', async (span): Promise<void> => {
@@ -671,10 +673,11 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     firstResultFromOperation(ChatBuilder.resolvedModelForChat(this.chatBuilder))
                 )
                 this.chatBuilder.setSelectedModel(model)
-                let selectedAgent = model?.includes(DeepCodyAgentID) ? DeepCodyAgentID : undefined
-                if (model?.includes(ToolCodyModelName)) {
-                    selectedAgent = ToolCodyModelRef
-                }
+                const selectedAgent = model?.includes(ToolCodyModelName)
+                    ? ToolCodyModelRef
+                    : manuallySelectedIntent === 'agentic'
+                      ? DeepCodyAgentID
+                      : undefined
 
                 this.chatBuilder.addHumanMessage({
                     text: inputText,
@@ -698,6 +701,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                         source,
                         command,
                         manuallySelectedIntent,
+                        model,
                     },
                     span
                 )
@@ -715,27 +719,16 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             source,
             command,
             manuallySelectedIntent,
+            model,
+            chatAgent,
         }: Parameters<typeof this.handleUserMessage>[0],
         span: Span
     ): Promise<void> {
-        span.addEvent('ChatController.sendChat')
-        signal.throwIfAborted()
-
-        // Use default model if no model is selected.
-        const model =
-            this.chatBuilder.selectedModel ??
-            (await wrapInActiveSpan('chat.resolveModel', () =>
-                firstResultFromOperation(ChatBuilder.resolvedModelForChat(this.chatBuilder))
-            ))
         if (!model) {
             throw new Error('No model selected, and no default chat model is available')
         }
-
-        this.chatBuilder.setSelectedModel(model)
-        let chatAgent = model.includes(DeepCodyAgentID) ? DeepCodyAgentID : undefined
-        if (model.includes(ToolCodyModelName)) {
-            chatAgent = ToolCodyModelRef
-        }
+        span.addEvent('ChatController.sendChat')
+        signal.throwIfAborted()
 
         const recorder = await OmniboxTelemetry.create({
             requestID,
@@ -749,25 +742,26 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         })
         recorder.recordChatQuestionSubmitted(mentions)
 
+        recorder.setIntentInfo({
+            userSpecifiedIntent: manuallySelectedIntent ?? 'chat',
+        })
+
         signal.throwIfAborted()
         this.chatBuilder.setLastMessageIntent(manuallySelectedIntent)
 
         this.postEmptyMessageInProgress(model)
 
-        const agentName = ['search', 'edit', 'insert'].includes(manuallySelectedIntent ?? '')
-            ? (manuallySelectedIntent as string)
-            : chatAgent ?? 'chat'
+        const knownIntentOptions = ['search', 'edit', 'insert', 'agentic']
+        const agentName =
+            chatAgent ?? knownIntentOptions.includes(manuallySelectedIntent ?? '')
+                ? (manuallySelectedIntent as string)
+                : model
         const agent = getAgent(agentName, model, {
             contextRetriever: this.contextRetriever,
             editor: this.editor,
             chatClient: this.chatClient,
         })
 
-        recorder.setIntentInfo({
-            userSpecifiedIntent: manuallySelectedIntent ?? 'chat',
-        })
-
-        this.postEmptyMessageInProgress(model)
         let messageInProgress: ChatMessage = { speaker: 'assistant', model }
         try {
             await agent.handle(
@@ -780,6 +774,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     chatBuilder: this.chatBuilder,
                     span,
                     recorder,
+                    model,
                 },
                 {
                     postError: (error: Error, type?: MessageErrorType): void => {
@@ -847,7 +842,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                         // how new messages are posted to the transcript.
                         if (
                             messageInProgress &&
-                            (['search', 'insert', 'edit'].includes(messageInProgress?.intent ?? '') ||
+                            (knownIntentOptions.includes(messageInProgress?.intent ?? '') ||
                                 messageInProgress?.search ||
                                 messageInProgress?.error)
                         ) {

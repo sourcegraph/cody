@@ -26,7 +26,7 @@ import { RestClient } from '../sourcegraph-api/rest/client'
 import type { UserProductSubscription } from '../sourcegraph-api/userProductSubscription'
 import { CHAT_INPUT_TOKEN_BUDGET } from '../token/constants'
 import { isError } from '../utils'
-import { TOOL_CODY_MODEL, ToolCodyModelName, getExperimentalClientModelByFeatureFlag } from './client'
+import { TOOL_CODY_MODEL, ToolCodyModelName } from './client'
 import { type Model, type ServerModel, createModel, createModelFromServerModel } from './model'
 import type {
     DefaultsAndUserPreferencesForEndpoint,
@@ -165,7 +165,7 @@ export function syncModels({
 
                                     if (serverModelsConfig) {
                                         // Remove deprecated models from the list, filter out waitlisted models for Enterprise.
-                                        const filteredModels = serverModelsConfig?.models.filter(
+                                        const filteredModels = serverModelsConfig.models.filter(
                                             m =>
                                                 m.status !== 'deprecated' &&
                                                 (isDotComUser || m.status !== 'waitlist')
@@ -198,19 +198,13 @@ export function syncModels({
                                         featureFlagProvider.evaluatedFeatureFlag(
                                             FeatureFlag.CodyEarlyAccess
                                         ),
-                                        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.DeepCody),
                                         featureFlagProvider.evaluatedFeatureFlag(
                                             FeatureFlag.CodyChatDefaultToClaude35Haiku
                                         ),
                                         enableToolCody
                                     ).pipe(
                                         switchMap(
-                                            ([
-                                                hasEarlyAccess,
-                                                hasAgenticChatFlag,
-                                                defaultToHaiku,
-                                                isToolCodyEnabled,
-                                            ]) => {
+                                            ([hasEarlyAccess, defaultToHaiku, isToolCodyEnabled]) => {
                                                 // TODO(sqs): remove waitlist from localStorage when user has access
                                                 if (isDotComUser && hasEarlyAccess) {
                                                     data.primaryModels = data.primaryModels.map(
@@ -244,31 +238,9 @@ export function syncModels({
 
                                                 const clientModels = []
 
-                                                // Handle agentic chat features
-                                                const isAgenticChatEnabled =
-                                                    hasAgenticChatFlag ||
-                                                    (isDotComUser && !isCodyFreeUser)
                                                 const haikuModel = data.primaryModels.find(m =>
                                                     m.id.includes('5-haiku')
                                                 )
-                                                const sonnetModel = data.primaryModels.find(m =>
-                                                    m.id.includes('5-sonnet')
-                                                )
-                                                const hasDeepCody = data.primaryModels.some(m =>
-                                                    m.id.includes('deep-cody')
-                                                )
-                                                if (
-                                                    !hasDeepCody &&
-                                                    isAgenticChatEnabled &&
-                                                    sonnetModel &&
-                                                    haikuModel
-                                                ) {
-                                                    clientModels.push(
-                                                        getExperimentalClientModelByFeatureFlag(
-                                                            FeatureFlag.DeepCody
-                                                        )!
-                                                    )
-                                                }
 
                                                 const hasToolCody = data.primaryModels.some(m =>
                                                     m.id.includes(ToolCodyModelName)

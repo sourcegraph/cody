@@ -47,6 +47,7 @@ export interface AgentRequest {
     signal: AbortSignal
     span: Span
     recorder: OmniboxTelemetry
+    model: string
 }
 
 export interface AgentHandler {

@@ -1,6 +1,7 @@
 import type { ChatMessage } from '@sourcegraph/cody-shared'
 import { isMacOS } from '@sourcegraph/cody-shared'
-import { BetweenHorizonalEnd, MessageSquare, Pencil, Search } from 'lucide-react'
+import { DeepCodyAgentID } from '@sourcegraph/cody-shared/src/models/client'
+import { BetweenHorizonalEnd, MessageSquare, Pencil, Search, Sparkle } from 'lucide-react'
 import type { FC } from 'react'
 import { useCallback, useEffect, useMemo } from 'react'
 import { Badge } from '../../../../../../components/shadcn/ui/badge'
@@ -16,6 +17,7 @@ export enum IntentEnum {
     Search = 'Search',
     Edit = 'Edit',
     Insert = 'Insert',
+    Agentic = 'Agentic',
 }
 
 // Mapping between ChatMessage intent and IntentEnum for faster lookups
@@ -24,6 +26,7 @@ export const INTENT_MAPPING: Record<string, IntentEnum> = {
     search: IntentEnum.Search,
     edit: IntentEnum.Edit,
     insert: IntentEnum.Insert,
+    agentic: IntentEnum.Agentic,
 }
 
 interface IntentOption {
@@ -60,6 +63,13 @@ function getIntentOptions({
             intent: 'search',
             hidden: !omniBoxEnabled,
             disabled: isDotComUser,
+        },
+        {
+            title: 'Agentic',
+            badge: 'Experimental',
+            icon: Sparkle,
+            intent: 'agentic',
+            agent: DeepCodyAgentID,
         },
         {
             title: 'Edit Code',
