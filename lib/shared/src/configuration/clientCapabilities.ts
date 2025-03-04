@@ -64,6 +64,20 @@ export interface ClientCapabilities {
     completions?: 'none' | undefined | null
 
     /**
+     * If `enabled` edit suggestions will be provided from `autocomplete/execute`
+     */
+    autoEdit?: 'none' | 'enabled' | undefined | null
+
+    /**
+     * The suggestion mode that the client supports for auto-edit suggestions.
+     * - 'image-unified': the client can render a unified diff image for the auto-edit suggestion.
+     * - 'image-insertions': the client can render an image showing only the insertions for the auto-edit suggestion.
+     *    it should provide another way of showing deletions.
+     * - 'custom': the client will be provided with a diff and can decide exactly how to render the suggestion.
+     */
+    autoEditSuggestionMode?: 'image-unified' | 'image-insertions' | 'custom' | undefined | null
+
+    /**
      * When 'streaming', handles 'chat/updateMessageInProgress' streaming notifications.
      */
     chat?: 'none' | 'streaming' | undefined | null

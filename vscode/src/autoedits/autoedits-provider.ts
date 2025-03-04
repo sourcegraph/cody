@@ -2,7 +2,12 @@ import { type DebouncedFunc, debounce } from 'lodash'
 import { Observable } from 'observable-fns'
 import * as vscode from 'vscode'
 
-import { type ChatClient, currentResolvedConfig, tokensToChars } from '@sourcegraph/cody-shared'
+import {
+    type ChatClient,
+    clientCapabilities,
+    currentResolvedConfig,
+    tokensToChars,
+} from '@sourcegraph/cody-shared'
 
 import { ContextRankingStrategy } from '../completions/context/completions-context-ranker'
 import { ContextMixer } from '../completions/context/context-mixer'
@@ -12,6 +17,7 @@ import { isRunningInsideAgent } from '../jsonrpc/isRunningInsideAgent'
 import type { FixupController } from '../non-stop/FixupController'
 import type { CodyStatusBar } from '../services/StatusBar'
 
+import type { RenderModeCustom, RenderModeImage } from '../jsonrpc/agent-protocol'
 import type { AutoeditsModelAdapter, AutoeditsPrompt } from './adapters/base'
 import { createAutoeditsModelAdapter } from './adapters/create-adapter'
 import {
@@ -38,6 +44,7 @@ import {
     extractAutoEditResponseFromCurrentDocumentCommentTemplate,
     shrinkReplacerTextToCodeToReplaceRange,
 } from './renderer/mock-renderer'
+import type { AutoEditRenderOutput } from './renderer/render-output'
 import { shrinkPredictionUntilSuffix } from './shrink-prediction'
 import { areSameUriDocs, isPredictedTextAlreadyInSuffix } from './utils'
 
@@ -47,12 +54,26 @@ export const AUTOEDIT_CONTEXT_FETCHING_DEBOUNCE_INTERVAL = 25
 const RESET_SUGGESTION_ON_CURSOR_CHANGE_AFTER_INTERVAL_MS = 60 * 1000
 const ON_SELECTION_CHANGE_DEFAULT_DEBOUNCE_INTERVAL_MS = 15
 
-export interface AutoeditsResult extends vscode.InlineCompletionList {
+interface CompletionResult extends vscode.InlineCompletionList {
+    type: 'completion'
     requestId: AutoeditRequestID
     prediction: string
-    /** temporary data structure, will need to update before integrating with the agent API */
-    decorationInfo: DecorationInfo
 }
+
+interface EditResult extends vscode.InlineCompletionList {
+    type: 'edit'
+    requestId: AutoeditRequestID
+    range: vscode.Range
+    originalText: string
+    replacementText: string
+    /**
+     * The method in which this suggestion should be rendered.
+     * This is determined from the `clientCapabilities` provided by the client.
+     */
+    render: RenderModeImage | RenderModeCustom
+}
+
+export type AutoeditsResult = CompletionResult | EditResult
 
 /**
  * Provides inline completions and auto-edit functionality.
@@ -360,15 +381,19 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                 return null
             }
 
-            const renderOutput = this.rendererManager.getRenderOutput({
-                requestId,
-                prediction,
-                document,
-                position,
-                docContext,
-                decorationInfo,
-                codeToReplaceData,
-            })
+            const capabilities = clientCapabilities()
+            const renderOutput = this.rendererManager.getRenderOutput(
+                {
+                    requestId,
+                    prediction,
+                    document,
+                    position,
+                    docContext,
+                    decorationInfo,
+                    codeToReplaceData,
+                },
+                capabilities
+            )
 
             if (renderOutput.type === 'none') {
                 autoeditsOutputChannelLogger.logDebugIfVerbose(
@@ -426,16 +451,29 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                 await this.rendererManager.renderInlineDecorations(decorationInfo)
             }
 
-            // The data structure returned to the agent's from the `autoedits/execute` calls.
-            // Note: this is subject to change later once we start working on the agent API.
-            const result: AutoeditsResult = {
-                items: 'inlineCompletionItems' in renderOutput ? renderOutput.inlineCompletionItems : [],
-                requestId,
-                prediction,
-                decorationInfo,
+            if (renderOutput.type === 'completion') {
+                return {
+                    type: 'completion',
+                    items: renderOutput.inlineCompletionItems,
+                    requestId,
+                    prediction,
+                }
             }
 
-            return result
+            if (capabilities.autoEdit !== 'enabled') {
+                // Cannot render an edit suggestion
+                return null
+            }
+
+            return {
+                type: 'edit',
+                items: [],
+                requestId,
+                originalText: codeToReplaceData.codeToRewrite,
+                range: codeToReplaceData.range,
+                replacementText: prediction,
+                render: this.getSuggestionForClient(renderOutput, decorationInfo),
+            }
         } catch (error) {
             const errorToReport =
                 error instanceof Error
@@ -446,6 +484,35 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
             return null
         } finally {
             stopLoading?.()
+        }
+    }
+
+    private getSuggestionForClient(
+        renderOutput: AutoEditRenderOutput,
+        decorationInfo: DecorationInfo
+    ): RenderModeImage | RenderModeCustom {
+        const suggestionMode = clientCapabilities().autoEditSuggestionMode
+        if (!suggestionMode || suggestionMode === 'custom') {
+            // Support custom renderers
+            return {
+                type: 'custom',
+                diff: decorationInfo,
+            }
+        }
+
+        // Support image renderers
+        const imageData = renderOutput.type === 'image' ? renderOutput.imageData : null
+        if (!imageData) {
+            throw new Error('Expected image data to be present in render output')
+        }
+
+        return {
+            type: suggestionMode === 'image-unified' ? 'image-unified' : 'image-additions',
+            image: {
+                ...imageData.image,
+                position: imageData.position,
+            },
+            diff: decorationInfo,
         }
     }
 
