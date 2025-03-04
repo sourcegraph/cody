@@ -1,4 +1,4 @@
-import type { VisualDiffLine } from '../decorated-diff/types'
+import type { VisualDiffLine } from '../visual-diff/types'
 
 export function getRangesToHighlight(line: VisualDiffLine): [number, number][] {
     switch (line.type) {

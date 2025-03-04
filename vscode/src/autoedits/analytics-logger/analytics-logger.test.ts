@@ -120,7 +120,7 @@ describe('AutoeditAnalyticsLogger', () => {
         autoeditLogger.markAsPostProcessed({
             requestId,
             prediction,
-            inlineCompletionItems: [],
+            renderOutput: { type: 'none' },
             decorationInfo: getDecorationInfo(prediction, prediction),
         })
         autoeditLogger.markAsSuggested(requestId)

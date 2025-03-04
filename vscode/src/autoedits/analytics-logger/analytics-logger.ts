@@ -23,9 +23,10 @@ import { splitSafeMetadata } from '../../services/telemetry-v2'
 import type { AutoeditsPrompt } from '../adapters/base'
 import { autoeditsOutputChannelLogger } from '../output-channel-logger'
 import type { CodeToReplaceData } from '../prompt/prompt-utils'
-import type { DecorationInfo } from '../renderer/decorators/base'
 import { type DecorationStats, getDecorationStats } from '../renderer/diff-utils'
 
+import type { DecorationInfo } from '../renderer/decorators/base'
+import type { AutoEditRenderOutput } from '../renderer/render-output'
 import { autoeditIdRegistry } from './suggestion-id-registry'
 
 /**
@@ -295,8 +296,7 @@ export interface PostProcessedState extends Omit<LoadedState, 'phase'> {
 
     /** Metadata required to show a suggestion based on `requestId` only. */
     prediction: string
-    decorationInfo: DecorationInfo | null
-    inlineCompletionItems: vscode.InlineCompletionItem[] | null
+    renderOutput: AutoEditRenderOutput
 
     payload: AutoeditPostProcessedMetadata
 }
@@ -498,26 +498,27 @@ export class AutoeditAnalyticsLogger {
     public markAsPostProcessed({
         requestId,
         decorationInfo,
-        inlineCompletionItems,
         prediction,
+        renderOutput,
     }: {
         requestId: AutoeditRequestID
         prediction: string
         decorationInfo: DecorationInfo | null
-        inlineCompletionItems: vscode.InlineCompletionItem[] | null
+        renderOutput: AutoEditRenderOutput
     }) {
         this.tryTransitionTo(requestId, 'postProcessed', request => {
-            const insertText = inlineCompletionItems?.length
-                ? (inlineCompletionItems[0].insertText as string).slice(
-                      request.docContext.currentLinePrefix.length
-                  )
+            const completion =
+                'inlineCompletionItems' in renderOutput
+                    ? renderOutput.inlineCompletionItems[0]
+                    : undefined
+            const insertText = completion
+                ? (completion.insertText as string).slice(request.docContext.currentLinePrefix.length)
                 : undefined
 
             return {
                 ...request,
                 prediction,
-                decorationInfo,
-                inlineCompletionItems,
+                renderOutput,
                 payload: {
                     ...request.payload,
                     decorationStats: decorationInfo ? getDecorationStats(decorationInfo) : undefined,
