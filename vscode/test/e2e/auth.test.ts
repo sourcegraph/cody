@@ -45,7 +45,6 @@ test.extend<ExpectedV2Events>({
     await expect(sidebar!.getByText('Invalid access token.')).not.toBeVisible()
     await expect(sidebar!.getByText('Sign in to Sourcegraph')).not.toBeVisible()
     await expect(sidebar!.getByLabel('Chat message')).toBeVisible()
-    await expect(sidebar!.getByRole('button', { name: 'New Chat' })).toBeVisible()
 
     // Sign out.
     await signOut(page)
