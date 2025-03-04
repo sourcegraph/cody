@@ -16,7 +16,6 @@ export const SubmitButton: FC<{
                 type="submit"
                 onClick={e => {
                     e.preventDefault()
-                    if (inProgress) return
                     onClick()
                 }}
                 className={clsx(

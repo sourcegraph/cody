@@ -82,13 +82,13 @@ function getIntentOptions({
 
 export const ModeSelectorField: React.FunctionComponent<{
     omniBoxEnabled: boolean
+    isDotComUser: boolean
     intent: ChatMessage['intent']
     className?: string
     manuallySelectIntent: (intent?: ChatMessage['intent']) => void
-}> = ({ className, intent, omniBoxEnabled, manuallySelectIntent }) => {
+}> = ({ isDotComUser, className, intent, omniBoxEnabled, manuallySelectIntent }) => {
     const {
         clientCapabilities: { edit },
-        isDotComUser,
     } = useConfig()
 
     const intentOptions = useMemo(
