@@ -465,7 +465,14 @@ describe('AutoeditsProvider', () => {
             const customGetModelResponse = async () => {
                 // Record the current fake timer time when getModelResponse is called
                 getModelResponseCalledAt = Date.now()
-                return { choices: [{ text: 'const x = 1\n' }] }
+                return {
+                    data: {
+                        choices: [{ text: 'const x = 1\n' }],
+                    },
+                    url: 'test-url.com/completions',
+                    requestHeaders: {},
+                    responseHeaders: {},
+                }
             }
 
             const startTime = Date.now()
@@ -489,7 +496,12 @@ describe('AutoeditsProvider', () => {
             let modelResponseCalled = false
             const customGetModelResponse = async () => {
                 modelResponseCalled = true
-                return { choices: [{ text: 'const x = 1\n' }] }
+                return {
+                    data: { choices: [{ text: 'const x = 1\n' }] },
+                    url: 'test-url.com/completions',
+                    requestHeaders: {},
+                    responseHeaders: {},
+                }
             }
 
             const tokenSource = new vscode.CancellationTokenSource()

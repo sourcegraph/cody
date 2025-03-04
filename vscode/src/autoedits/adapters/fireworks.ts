@@ -1,7 +1,7 @@
 import { autoeditsProviderConfig } from '../autoedits-config'
 import { autoeditsOutputChannelLogger } from '../output-channel-logger'
 
-import type { AutoeditModelOptions, AutoeditsModelAdapter } from './base'
+import type { AutoeditModelOptions, AutoeditsModelAdapter, ModelResponse } from './base'
 import {
     type FireworksCompatibleRequestParams,
     getMaxOutputTokensForAutoedits,
@@ -10,7 +10,7 @@ import {
 } from './utils'
 
 export class FireworksAdapter implements AutoeditsModelAdapter {
-    async getModelResponse(option: AutoeditModelOptions): Promise<string> {
+    async getModelResponse(option: AutoeditModelOptions): Promise<ModelResponse> {
         const body = this.getMessageBody(option)
         try {
             const apiKey = autoeditsProviderConfig.experimentalAutoeditsConfigOverride?.apiKey
@@ -22,11 +22,25 @@ export class FireworksAdapter implements AutoeditsModelAdapter {
                 )
                 throw new Error('No api key provided in the config override')
             }
-            const response = await getModelResponse(option.url, body, apiKey)
+            const { data, requestHeaders, responseHeaders, url } = await getModelResponse(
+                option.url,
+                body,
+                apiKey
+            )
+
+            let prediction: string
             if (option.isChatModel) {
-                return response.choices[0].message.content
+                prediction = data.choices[0].message.content
+            } else {
+                prediction = data.choices[0].text
             }
-            return response.choices[0].text
+
+            return {
+                prediction,
+                responseHeaders,
+                requestHeaders,
+                requestUrl: url,
+            }
         } catch (error) {
             autoeditsOutputChannelLogger.logError('getModelResponse', 'Error calling Fireworks API:', {
                 verbose: error,

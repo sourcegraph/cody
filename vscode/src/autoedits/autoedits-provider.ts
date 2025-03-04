@@ -12,7 +12,7 @@ import { isRunningInsideAgent } from '../jsonrpc/isRunningInsideAgent'
 import type { FixupController } from '../non-stop/FixupController'
 import type { CodyStatusBar } from '../services/StatusBar'
 
-import type { AutoeditsModelAdapter, AutoeditsPrompt } from './adapters/base'
+import type { AutoeditsModelAdapter, AutoeditsPrompt, ModelResponse } from './adapters/base'
 import { createAutoeditsModelAdapter } from './adapters/create-adapter'
 import {
     type AutoeditRequestID,
@@ -258,7 +258,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                 'provideInlineCompletionItems',
                 'Calculating prediction from getPrediction...'
             )
-            const initialPrediction = await this.getPrediction({
+            const predictionResult = await this.getPrediction({
                 document,
                 position,
                 prompt,
@@ -278,7 +278,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                 return null
             }
 
-            if (initialPrediction === undefined || initialPrediction.length === 0) {
+            if (!predictionResult || predictionResult.prediction.length === 0) {
                 autoeditsOutputChannelLogger.logDebugIfVerbose(
                     'provideInlineCompletionItems',
                     'received empty prediction'
@@ -291,13 +291,15 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                 return null
             }
 
+            const initialPrediction = predictionResult.prediction
+
             autoeditAnalyticsLogger.markAsLoaded({
                 requestId,
                 prompt,
                 payload: {
                     source: autoeditSource.network,
                     isFuzzyMatch: false,
-                    responseHeaders: {},
+                    responseHeaders: predictionResult.responseHeaders,
                     prediction: initialPrediction,
                 },
             })
@@ -440,6 +442,10 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                     ? error
                     : new Error(`provideInlineCompletionItems autoedit error: ${error}`)
 
+            if (process.env.NODE_ENV === 'development') {
+                console.error(errorToReport)
+            }
+
             autoeditAnalyticsLogger.logError(errorToReport)
             return null
         } finally {
@@ -466,7 +472,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
         position: vscode.Position
         codeToReplaceData: CodeToReplaceData
         prompt: AutoeditsPrompt
-    }): Promise<string | undefined> {
+    }): Promise<ModelResponse | undefined> {
         if (autoeditsProviderConfig.isMockResponseFromCurrentDocumentTemplateEnabled) {
             const responseMetadata = extractAutoEditResponseFromCurrentDocumentCommentTemplate(
                 document,
@@ -480,7 +486,11 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                 )
 
                 if (prediction) {
-                    return prediction
+                    return {
+                        prediction,
+                        responseHeaders: {},
+                        requestUrl: autoeditsProviderConfig.url,
+                    }
                 }
             }
         }
