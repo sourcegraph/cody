@@ -164,12 +164,11 @@ export const TabsBar = memo<TabsBarProps>(props => {
             window.removeEventListener('keyup', handleKeyUp)
         }
     }, [])
-    const isChatView = currentView === View.Chat || webviewType === 'editor'
     return (
         <div className={clsx(styles.tabsRoot, { [styles.tabsRootCodyWeb]: IDE === CodyIDE.Web })}>
             <Tabs.List aria-label="cody-webview" className={styles.tabsContainer}>
                 <div className={styles.tabs}>
-                    {isChatView && (
+                    {currentView === View.Chat && (
                         <ModelSelectFieldToolbarItem
                             models={models}
                             userInfo={user}
@@ -177,64 +176,68 @@ export const TabsBar = memo<TabsBarProps>(props => {
                             className="tw-mr-1"
                         />
                     )}
-                    <div className="tw-flex tw-ml-auto">
-                        {tabItems.map(({ Icon, view, command, title, changesView, tooltip }) => (
-                            <Tabs.Trigger key={view} value={view} asChild={true}>
-                                <TabButton
-                                    Icon={Icon}
-                                    view={view}
-                                    title={title}
+                    {webviewType !== 'editor' && (
+                        <div className="tw-flex tw-ml-auto">
+                            {tabItems.map(({ Icon, view, command, title, changesView, tooltip }) => (
+                                <Tabs.Trigger key={view} value={view} asChild={true}>
+                                    <TabButton
+                                        Icon={Icon}
+                                        view={view}
+                                        title={title}
+                                        IDE={IDE}
+                                        isActive={currentView === view}
+                                        onClick={() => handleClick(view, command, changesView)}
+                                        data-testid={`tab-${view}`}
+                                        tooltipExtra={tooltip}
+                                        alwaysShowTitle={false}
+                                    />
+                                </Tabs.Trigger>
+                            ))}
+                            {IDE !== CodyIDE.Web && (
+                                <UserMenu
+                                    authStatus={user.user as AuthenticatedAuthStatus}
+                                    isProUser={isCodyProUser}
+                                    endpointHistory={endpointHistory}
+                                    allowEndpointChange={allowEndpointChange}
+                                    className="!tw-opacity-100 tw-h-full"
+                                    isWorkspacesUpgradeCtaEnabled={props.isWorkspacesUpgradeCtaEnabled}
                                     IDE={IDE}
-                                    isActive={currentView === view}
-                                    onClick={() => handleClick(view, command, changesView)}
-                                    data-testid={`tab-${view}`}
-                                    tooltipExtra={tooltip}
-                                    alwaysShowTitle={false}
-                                />
-                            </Tabs.Trigger>
-                        ))}
-                        {IDE !== CodyIDE.Web && (
-                            <UserMenu
-                                authStatus={user.user as AuthenticatedAuthStatus}
-                                isProUser={isCodyProUser}
-                                endpointHistory={endpointHistory}
-                                allowEndpointChange={allowEndpointChange}
-                                className="!tw-opacity-100 tw-h-full"
-                                isWorkspacesUpgradeCtaEnabled={props.isWorkspacesUpgradeCtaEnabled}
-                                IDE={IDE}
-                            />
-                        )}
-                    </div>
-                </div>
-                <div className={styles.subTabs}>
-                    {currentViewSubActions.map(subAction => (
-                        <Fragment key={`${subAction.command}/${subAction.uri ?? ''}`}>
-                            {subAction.confirmation ? (
-                                <ActionButtonWithConfirmation
-                                    title={subAction.title}
-                                    Icon={subAction.Icon}
-                                    IDE={IDE}
-                                    alwaysShowTitle={true}
-                                    tooltipExtra={subAction.tooltipExtra}
-                                    dialogTitle={subAction.confirmation.title}
-                                    dialogDescription={subAction.confirmation.description}
-                                    dialogConfirmAction={subAction.confirmation.confirmationAction}
-                                    onConfirm={() => handleSubActionClick(subAction)}
-                                />
-                            ) : (
-                                <TabButton
-                                    Icon={subAction.Icon}
-                                    title={subAction.title}
-                                    IDE={IDE}
-                                    uri={subAction.uri}
-                                    alwaysShowTitle={true}
-                                    tooltipExtra={subAction.tooltipExtra}
-                                    onClick={() => handleSubActionClick(subAction)}
                                 />
                             )}
-                        </Fragment>
-                    ))}
+                        </div>
+                    )}
                 </div>
+                {webviewType !== 'editor' && (
+                    <div className={styles.subTabs}>
+                        {currentViewSubActions.map(subAction => (
+                            <Fragment key={`${subAction.command}/${subAction.uri ?? ''}`}>
+                                {subAction.confirmation ? (
+                                    <ActionButtonWithConfirmation
+                                        title={subAction.title}
+                                        Icon={subAction.Icon}
+                                        IDE={IDE}
+                                        alwaysShowTitle={true}
+                                        tooltipExtra={subAction.tooltipExtra}
+                                        dialogTitle={subAction.confirmation.title}
+                                        dialogDescription={subAction.confirmation.description}
+                                        dialogConfirmAction={subAction.confirmation.confirmationAction}
+                                        onConfirm={() => handleSubActionClick(subAction)}
+                                    />
+                                ) : (
+                                    <TabButton
+                                        Icon={subAction.Icon}
+                                        title={subAction.title}
+                                        IDE={IDE}
+                                        uri={subAction.uri}
+                                        alwaysShowTitle={true}
+                                        tooltipExtra={subAction.tooltipExtra}
+                                        onClick={() => handleSubActionClick(subAction)}
+                                    />
+                                )}
+                            </Fragment>
+                        ))}
+                    </div>
+                )}
             </Tabs.List>
         </div>
     )
