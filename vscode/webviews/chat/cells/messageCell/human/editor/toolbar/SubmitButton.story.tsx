@@ -9,7 +9,6 @@ const meta: Meta<typeof SubmitButton> = {
 
     args: {
         onClick: () => {},
-        isEditorFocused: true,
     },
 
     decorators: [VSCodeStandaloneComponent],

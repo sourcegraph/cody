@@ -79,7 +79,7 @@ describe('SourcegraphCompletionsAdapter', () => {
         adapter.client = { complete: mockComplete }
 
         const response = await adapter.getModelResponse(options)
-        expect(response).toBe('part1part2')
+        expect(response.prediction).toBe('part1part2')
     })
 
     it('handles errors correctly', async () => {

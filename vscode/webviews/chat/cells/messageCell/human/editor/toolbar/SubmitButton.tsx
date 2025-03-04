@@ -1,4 +1,3 @@
-import type { ChatMessage } from '@sourcegraph/cody-shared'
 import clsx from 'clsx'
 import { Play, Square } from 'lucide-react'
 import type { FC } from 'react'
@@ -6,18 +5,19 @@ import type { FC } from 'react'
 export type SubmitButtonState = 'submittable' | 'emptyEditorValue' | 'waitingResponseComplete'
 
 export const SubmitButton: FC<{
-    onClick: (intent?: ChatMessage['intent']) => void
-    isEditorFocused?: boolean
+    onClick: () => void
     state?: SubmitButtonState
-    intent?: ChatMessage['intent']
-}> = ({ onClick, state = 'submittable', intent }) => {
+}> = ({ onClick, state = 'submittable' }) => {
     const inProgress = state === 'waitingResponseComplete'
 
     return (
         <div className="tw-flex">
             <button
                 type="submit"
-                onClick={() => onClick(intent)}
+                onClick={e => {
+                    e.preventDefault()
+                    onClick()
+                }}
                 className={clsx(
                     'tw-px-6 tw-py-1',
                     'tw-rounded-full',

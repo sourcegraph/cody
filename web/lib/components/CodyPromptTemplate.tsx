@@ -81,6 +81,15 @@ export const CodyPromptTemplate: FunctionComponent<CodyPromptTemplateProps> = ({
 }) => {
     const agent = useCodyWebAgent(agentConfig)
 
+    useEffect(() => {
+        if (agent && !isErrorLike(agent)) {
+            // Without calling this function the at-mentions menu isn't properly populated.
+            // TODO(@fkling): Find a way to make at-mentions work without having to call this function,
+            // since it seems odd that we have to 'create a chat' if all we want to is to use the input.
+            agent.createNewChat()
+        }
+    }, [agent])
+
     if (isErrorLike(agent)) {
         return <p>Cody Web client agent error: {agent.message}</p>
     }

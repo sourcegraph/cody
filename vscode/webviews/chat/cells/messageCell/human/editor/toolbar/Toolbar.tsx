@@ -1,10 +1,18 @@
-import type { Action, ChatMessage, Model } from '@sourcegraph/cody-shared'
+import type { WebviewToExtensionAPI } from '@sourcegraph/cody-shared'
+import {
+    type Action,
+    type ChatMessage,
+    type ContextItemMedia,
+    type Model,
+    ModelTag,
+} from '@sourcegraph/cody-shared'
 import clsx from 'clsx'
-import { type FunctionComponent, useCallback, useState } from 'react'
+import { type FunctionComponent, useCallback, useMemo } from 'react'
 import type { UserAccountInfo } from '../../../../../../Chat'
 import { PromptSelectField } from '../../../../../../components/promptSelectField/PromptSelectField'
+import toolbarStyles from '../../../../../../components/shadcn/ui/toolbar.module.css'
 import { useActionSelect } from '../../../../../../prompts/PromptsTab'
-import { useOmniBox } from '../../../../../../utils/useOmniBox'
+import { MediaUploadButton } from './MediaUploadButton'
 import { ModeSelectorField } from './ModeSelectorButton'
 import { SubmitButton, type SubmitButtonState } from './SubmitButton'
 
@@ -17,8 +25,6 @@ export const Toolbar: FunctionComponent<{
 
     isEditorFocused: boolean
 
-    onMentionClick?: () => void
-
     onSubmitClick: (intent?: ChatMessage['intent']) => void
     submitState: SubmitButtonState
 
@@ -29,9 +35,14 @@ export const Toolbar: FunctionComponent<{
 
     hidden?: boolean
     className?: string
-    intent?: ChatMessage['intent']
 
+    intent?: ChatMessage['intent']
     manuallySelectIntent: (intent: ChatMessage['intent']) => void
+
+    extensionAPI: WebviewToExtensionAPI
+
+    omniBoxEnabled: boolean
+    onMediaUpload?: (mediaContextItem: ContextItemMedia) => void
 }> = ({
     userInfo,
     isEditorFocused,
@@ -44,10 +55,10 @@ export const Toolbar: FunctionComponent<{
     models,
     intent,
     manuallySelectIntent,
+    extensionAPI,
+    omniBoxEnabled,
+    onMediaUpload,
 }) => {
-    const omniBoxEnabled = useOmniBox()
-
-    const [selectedIntent, setSelectedIntent] = useState<ChatMessage['intent']>('chat')
     /**
      * If the user clicks in a gap or on the toolbar outside of any of its buttons, report back to
      * parent via {@link onGapClick}.
@@ -64,17 +75,23 @@ export const Toolbar: FunctionComponent<{
         [onGapClick]
     )
 
-    const onSelectedIntentChange = useCallback(
-        (intent: ChatMessage['intent']) => {
-            // Get the enum value from mapping or default to Chat
-            setSelectedIntent(intent)
-            manuallySelectIntent(intent)
-        },
-        [manuallySelectIntent]
-    )
+    /**
+     * Image upload is enabled if the user is not on Sourcegraph.com,
+     * or is using a BYOK model with vision tag.
+     */
+    const isImageUploadEnabled = useMemo(() => {
+        const isDotCom = userInfo?.isDotComUser
+        const selectedModel = models?.[0]
+        const isBYOK = selectedModel?.tags?.includes(ModelTag.BYOK)
+        const isVision = selectedModel?.tags?.includes(ModelTag.Vision)
+        return (!isDotCom || isBYOK) && isVision
+    }, [userInfo?.isDotComUser, models?.[0]])
+
+    if (models?.length < 2) {
+        return null
+    }
 
     return (
-        // biome-ignore lint/a11y/useKeyWithClickEvents: only relevant to click areas
         <menu
             role="toolbar"
             aria-hidden={hidden}
@@ -85,24 +102,31 @@ export const Toolbar: FunctionComponent<{
             )}
             onMouseDown={onMaybeGapClick}
             onClick={onMaybeGapClick}
+            onKeyDown={() => null}
             data-testid="chat-editor-toolbar"
         >
             <div className="tw-flex tw-items-center">
-                <ModeSelectorField
-                    className={className}
-                    omniBoxEnabled={omniBoxEnabled}
-                    intent={selectedIntent}
-                    manuallySelectIntent={onSelectedIntentChange}
-                />
+                {onMediaUpload && isImageUploadEnabled && (
+                    <MediaUploadButton
+                        onMediaUpload={onMediaUpload}
+                        isEditorFocused={isEditorFocused}
+                        submitState={submitState}
+                        className={`tw-opacity-60 focus-visible:tw-opacity-100 hover:tw-opacity-100 tw-mr-2 tw-gap-0.5 ${toolbarStyles.button} ${toolbarStyles.buttonSmallIcon}`}
+                    />
+                )}
                 <PromptSelectFieldToolbarItem focusEditor={focusEditor} className="tw-ml-1 tw-mr-1" />
+                {!userInfo?.isDotComUser && omniBoxEnabled && (
+                    <ModeSelectorField
+                        className={className}
+                        omniBoxEnabled={omniBoxEnabled}
+                        intent={intent}
+                        isDotComUser={userInfo?.isDotComUser}
+                        manuallySelectIntent={manuallySelectIntent}
+                    />
+                )}
             </div>
             <div className="tw-flex-1 tw-flex tw-justify-end">
-                <SubmitButton
-                    onClick={onSubmitClick}
-                    isEditorFocused={isEditorFocused}
-                    state={submitState}
-                    intent={selectedIntent}
-                />
+                <SubmitButton onClick={onSubmitClick} state={submitState} />
             </div>
         </menu>
     )

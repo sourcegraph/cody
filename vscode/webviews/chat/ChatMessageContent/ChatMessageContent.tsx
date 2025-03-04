@@ -126,10 +126,8 @@ export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps
                 // This allows us to intelligently apply code to the suitable file.
                 const codeElement = preElement.querySelectorAll('code')?.[0]
                 const fileName = codeElement?.getAttribute('data-file-path') || undefined
-                // Check if the code element has either 'language-bash' or 'language-shell' class
-                const isShellCommand =
-                    codeElement?.classList.contains('language-bash') ||
-                    codeElement?.classList.contains('language-shell')
+                // Check if the code element has either 'language-bash' class
+                const isShellCommand = codeElement?.classList.contains('language-bash')
                 const codeBlockName = isShellCommand ? 'command' : fileName
 
                 let buttons: HTMLElement
@@ -193,11 +191,12 @@ export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps
                 // Get the preview container and actions container
                 const previewContainer = buttons.querySelector(`[data-container-type="preview"]`)
                 const actionsContainer = buttons.querySelector(`[data-container-type="actions"]`)
-                if (!previewContainer || !actionsContainer) return
+                if (!actionsContainer) return
 
                 // Insert the preview container right before this code block
-                parent.insertBefore(previewContainer, preElement)
-
+                if (previewContainer) {
+                    parent.insertBefore(previewContainer, preElement)
+                }
                 // Add the actions container right after this code block
                 if (preElement.nextSibling) {
                     parent.insertBefore(actionsContainer, preElement.nextSibling)

@@ -153,7 +153,7 @@ function iconForContextItem(contextItem: SerializedContextItem): React.Component
     className?: string
 }> {
     const providerUri =
-        contextItem.type === 'file'
+        contextItem.type === 'file' || contextItem.type === 'media'
             ? FILE_CONTEXT_MENTION_PROVIDER.id
             : contextItem.type === 'symbol'
               ? SYMBOL_CONTEXT_MENTION_PROVIDER.id

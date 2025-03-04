@@ -672,16 +672,9 @@ describe('getDecorationInfo', () => {
                                 {
                                     id: expect.any(String),
                                     type: 'unchanged',
-                                    text: 'const',
-                                    originalRange: new Range(new Position(0, 0), new Position(0, 5)),
-                                    modifiedRange: new Range(new Position(0, 0), new Position(0, 5)),
-                                },
-                                {
-                                    id: expect.any(String),
-                                    type: 'unchanged',
-                                    text: ' ',
-                                    originalRange: new Range(new Position(0, 5), new Position(0, 6)),
-                                    modifiedRange: new Range(new Position(0, 5), new Position(0, 6)),
+                                    text: 'const ',
+                                    originalRange: new Range(new Position(0, 0), new Position(0, 6)),
+                                    modifiedRange: new Range(new Position(0, 0), new Position(0, 6)),
                                 },
                                 {
                                     id: expect.any(String),
@@ -700,23 +693,9 @@ describe('getDecorationInfo', () => {
                                 {
                                     id: expect.any(String),
                                     type: 'unchanged',
-                                    text: ' ',
-                                    originalRange: new Range(new Position(0, 11), new Position(0, 12)),
-                                    modifiedRange: new Range(new Position(0, 10), new Position(0, 11)),
-                                },
-                                {
-                                    id: expect.any(String),
-                                    type: 'unchanged',
-                                    text: '=',
-                                    originalRange: new Range(new Position(0, 12), new Position(0, 13)),
-                                    modifiedRange: new Range(new Position(0, 11), new Position(0, 12)),
-                                },
-                                {
-                                    id: expect.any(String),
-                                    type: 'unchanged',
-                                    text: ' ',
-                                    originalRange: new Range(new Position(0, 13), new Position(0, 14)),
-                                    modifiedRange: new Range(new Position(0, 12), new Position(0, 13)),
+                                    text: ' = ',
+                                    originalRange: new Range(new Position(0, 11), new Position(0, 14)),
+                                    modifiedRange: new Range(new Position(0, 10), new Position(0, 13)),
                                 },
                                 {
                                     id: expect.any(String),
