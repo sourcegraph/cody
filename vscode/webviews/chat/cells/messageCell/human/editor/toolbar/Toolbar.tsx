@@ -1,7 +1,13 @@
-import type { Action, ChatMessage, Model } from '@sourcegraph/cody-shared'
+import {
+    type Action,
+    type ChatMessage,
+    type ContextItemMedia,
+    type Model,
+    ModelTag,
+} from '@sourcegraph/cody-shared'
 import { useExtensionAPI } from '@sourcegraph/prompt-editor'
 import clsx from 'clsx'
-import { type FunctionComponent, useCallback } from 'react'
+import { type FunctionComponent, useCallback, useMemo } from 'react'
 import type { UserAccountInfo } from '../../../../../../Chat'
 import { ModelSelectField } from '../../../../../../components/modelSelectField/ModelSelectField'
 import { PromptSelectField } from '../../../../../../components/promptSelectField/PromptSelectField'
@@ -9,6 +15,7 @@ import toolbarStyles from '../../../../../../components/shadcn/ui/toolbar.module
 import { useActionSelect } from '../../../../../../prompts/PromptsTab'
 import { useClientConfig } from '../../../../../../utils/useClientConfig'
 import { AddContextButton } from './AddContextButton'
+import { MediaUploadButton } from './MediaUploadButton'
 import { SubmitButton, type SubmitButtonState } from './SubmitButton'
 
 /**
@@ -35,6 +42,8 @@ export const Toolbar: FunctionComponent<{
     intent?: ChatMessage['intent']
 
     manuallySelectIntent: (intent: ChatMessage['intent']) => void
+
+    onMediaUpload?: (mediaContextItem: ContextItemMedia) => void
 }> = ({
     userInfo,
     isEditorFocused,
@@ -48,6 +57,7 @@ export const Toolbar: FunctionComponent<{
     models,
     intent,
     manuallySelectIntent,
+    onMediaUpload,
 }) => {
     /**
      * If the user clicks in a gap or on the toolbar outside of any of its buttons, report back to
@@ -64,6 +74,12 @@ export const Toolbar: FunctionComponent<{
         },
         [onGapClick]
     )
+
+    const isImageUploadEnabled = useMemo(() => {
+        const model = models?.[0]
+        const ok = model?.tags?.includes(ModelTag.EarlyAccess) || model?.tags?.includes(ModelTag.BYOK)
+        return model?.tags?.includes(ModelTag.Vision) && ok
+    }, [models?.[0]])
 
     return (
         // biome-ignore lint/a11y/useKeyWithClickEvents: only relevant to click areas
@@ -84,6 +100,14 @@ export const Toolbar: FunctionComponent<{
                 {onMentionClick && (
                     <AddContextButton
                         onClick={onMentionClick}
+                        className={`tw-opacity-60 focus-visible:tw-opacity-100 hover:tw-opacity-100 tw-mr-2 tw-gap-0.5 ${toolbarStyles.button} ${toolbarStyles.buttonSmallIcon}`}
+                    />
+                )}
+                {onMediaUpload && isImageUploadEnabled && (
+                    <MediaUploadButton
+                        onMediaUpload={onMediaUpload}
+                        isEditorFocused={isEditorFocused}
+                        submitState={submitState}
                         className={`tw-opacity-60 focus-visible:tw-opacity-100 hover:tw-opacity-100 tw-mr-2 tw-gap-0.5 ${toolbarStyles.button} ${toolbarStyles.buttonSmallIcon}`}
                     />
                 )}
