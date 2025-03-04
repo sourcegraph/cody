@@ -202,7 +202,7 @@ export const ModelSelectField = forwardRef<ModelSelectFieldHandle, ModelSelectFi
                 className={cn('tw-justify-between', className)}
                 disabled={readOnly}
                 __storybook__open={__storybook__open}
-                tooltip={readOnly ? undefined : 'Select a model (⌘⌥/)'}
+                tooltip={readOnly ? undefined : 'Select a model (⌘+m)'}
                 aria-label="Select a model or an agent"
                 popoverContent={close => (
                     <Command

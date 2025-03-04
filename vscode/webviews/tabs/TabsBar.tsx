@@ -144,7 +144,7 @@ export const TabsBar = memo<TabsBarProps>(props => {
 
     useEffect(() => {
         function handleKeyDown(event: KeyboardEvent) {
-            if (event.altKey && event.metaKey && event.key === '÷') {
+            if (event.metaKey && event.key === 'm') {
                 event.preventDefault()
                 event.stopPropagation()
                 if (openModelDropdownRef.current && currentView === View.Chat) {
