@@ -1,6 +1,6 @@
 import * as vscode from 'vscode'
 
-import { type DocumentContext, tokensToChars } from '@sourcegraph/cody-shared'
+import { type ClientCapabilities, type DocumentContext, tokensToChars } from '@sourcegraph/cody-shared'
 
 import {
     completionMatchesSuffix,
@@ -46,7 +46,7 @@ export interface TryMakeInlineCompletionsArgs {
  * if the inline renderer implementation won't see dogfood blockers.
  */
 export interface AutoEditsRendererManager extends vscode.Disposable {
-    getRenderOutput(args: GetRenderOutputArgs): AutoEditRenderOutput
+    getRenderOutput(args: GetRenderOutputArgs, capabilities: ClientCapabilities): AutoEditRenderOutput
 
     handleDidShowSuggestion(requestId: AutoeditRequestID): Promise<void>
 
