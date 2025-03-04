@@ -15,11 +15,7 @@ interface NewChatCommandInput {
  * complexity about exact command that would be run.
  */
 export function getCreateNewChatCommand(options: NewChatCommandInput): string {
-    const { IDE, webviewType, multipleWebviewsEnabled } = options
+    const { IDE } = options
 
-    return IDE === CodyIDE.Web
-        ? 'cody.chat.new'
-        : webviewType === 'sidebar' || !multipleWebviewsEnabled
-          ? 'cody.chat.newPanel'
-          : 'cody.chat.newEditorPanel'
+    return IDE === CodyIDE.Web ? 'cody.chat.new' : 'cody.chat.newPanel'
 }
