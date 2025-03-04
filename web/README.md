@@ -22,3 +22,4 @@ IndexDB tables for http://localhost:5777 domain.
 - Go to the Sourcegraph repository and create a link with `pnpm link @sourcegraph/cody-web --global`
 - Run Sourcegraph `sg start` or `sg start web-standalone`
 
+Hello World
