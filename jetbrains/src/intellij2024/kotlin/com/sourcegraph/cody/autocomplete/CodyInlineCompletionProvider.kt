@@ -83,8 +83,8 @@ class CodyInlineCompletionProvider : InlineCompletionProvider {
                     null
                   } else {
 
-                    CodyAgentService.withAgent(project) { agent ->
-                      agent.server.completionSuggested(CompletionItemParams(it.id))
+                    CodyAgentService.withServer(project) { server ->
+                      server.completionSuggested(CompletionItemParams(it.id))
                     }
 
                     InlineCompletionGrayTextElement(completionText)

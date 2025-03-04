@@ -78,15 +78,15 @@ object Utils {
     notifyApplication(project, CodyStatus.AutocompleteInProgress)
 
     val resultOuter = CompletableFuture<AutocompleteResult?>()
-    CodyAgentService.withAgent(project) { agent ->
+    CodyAgentService.withServer(project) { server ->
       if (triggerKind == InlineCompletionTriggerKind.INVOKE &&
-          IgnoreOracle.getInstance(project).policyForUri(virtualFile.url, agent).get() !=
+          IgnoreOracle.getInstance(project).policyForUri(virtualFile.url, server).get() !=
               Ignore_TestResult.PolicyEnum.Use) {
         ActionInIgnoredFileNotification.maybeNotify(project)
         resetApplication(project)
         resultOuter.cancel(true)
       } else {
-        val completions = agent.server.autocomplete_execute(params)
+        val completions = server.autocomplete_execute(params)
 
         // Important: we have to `.cancel()` the original `CompletableFuture<T>` from lsp4j. As soon
         // as we use `thenAccept()` we get a new instance of `CompletableFuture<Void>` which does

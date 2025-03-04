@@ -33,8 +33,8 @@ class OpenCodySettingsEditorAction : DumbAwareEDTAction("Open Cody Settings Edit
   }
 
   private fun reloadSchemaAsync(project: Project) {
-    CodyAgentService.withAgentRestartIfNeeded(project) { agent ->
-      val settingsSchema = agent.server.extensionConfiguration_getSettingsSchema(null).get()
+    CodyAgentService.withServerRestartIfNeeded(project) { server ->
+      val settingsSchema = server.extensionConfiguration_getSettingsSchema(null).get()
 
       val schemaFile = ConfigUtil.getConfigDir(project).resolve("cody_settings.schema.json")
       schemaFile.write(settingsSchema)

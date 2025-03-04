@@ -9,8 +9,8 @@ class ExportChatsAction : DumbAwareEDTAction() {
 
   override fun actionPerformed(e: AnActionEvent) {
     val project = e.project ?: return
-    CodyAgentService.withAgent(project) { agent ->
-      agent.server.command_execute(ExecuteCommandParams("cody.chat.history.export", emptyList()))
+    CodyAgentService.withServer(project) { server ->
+      server.command_execute(ExecuteCommandParams("cody.chat.history.export", emptyList()))
     }
   }
 }

@@ -80,16 +80,14 @@ class CodyFixHighlightPass(val file: PsiFile, val editor: Editor) :
                 } else {
                   val result = CompletableFuture<List<CodeActionQuickFix>>()
 
-                  CodyAgentService.withAgentRestartIfNeeded(file.project) { agent ->
-                    agent.server
-                        .diagnostics_publish(Diagnostics_PublishParams(listOf(diagnostic)))
-                        .get()
+                  CodyAgentService.withServerRestartIfNeeded(file.project) { server ->
+                    server.diagnostics_publish(Diagnostics_PublishParams(listOf(diagnostic))).get()
 
                     val provideParam =
                         CodeActions_ProvideParams(
                             triggerKind = "Invoke", location = diagnostic.location)
                     val actions =
-                        agent.server.codeActions_provide(provideParam).get().codeActions.map {
+                        server.codeActions_provide(provideParam).get().codeActions.map {
                           CodeActionQuickFix(
                               CodeActionQuickFixParams(action = it, location = diagnostic.location))
                         }

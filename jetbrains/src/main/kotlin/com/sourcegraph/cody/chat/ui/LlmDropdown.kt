@@ -39,10 +39,11 @@ class LlmDropdown(
   }
 
   private fun updateModels() {
-    CodyAgentService.withAgent(project) { agent ->
-      val chatModels = agent.server.chat_models(Chat_ModelsParams(modelUsage.value))
+    CodyAgentService.withServer(project) { server ->
+      val chatModels = server.chat_models(Chat_ModelsParams(modelUsage.value))
       val models =
-          chatModels.completeOnTimeout(null, 10, TimeUnit.SECONDS).get()?.models ?: return@withAgent
+          chatModels.completeOnTimeout(null, 10, TimeUnit.SECONDS).get()?.models
+              ?: return@withServer
 
       invokeLater { updateModelsInUI(models) }
     }

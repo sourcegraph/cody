@@ -3,7 +3,6 @@ package com.sourcegraph.cody.config
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.wm.WindowManager
-import com.sourcegraph.cody.agent.CodyAgent
 import com.sourcegraph.cody.agent.CodyAgentService
 import com.sourcegraph.cody.agent.protocol_generated.Window_DidChangeFocusParams
 import java.awt.event.WindowAdapter
@@ -13,15 +12,15 @@ class CodyWindowAdapter(private val project: Project) : WindowAdapter() {
 
   override fun windowActivated(e: WindowEvent?) {
     super.windowActivated(e)
-    CodyAgentService.withAgent(project) { agent: CodyAgent ->
-      agent.server.window_didChangeFocus(Window_DidChangeFocusParams(true))
+    CodyAgentService.withServer(project) { server ->
+      server.window_didChangeFocus(Window_DidChangeFocusParams(true))
     }
   }
 
   override fun windowDeactivated(e: WindowEvent?) {
     super.windowDeactivated(e)
-    CodyAgentService.withAgent(project) { agent: CodyAgent ->
-      agent.server.window_didChangeFocus(Window_DidChangeFocusParams(false))
+    CodyAgentService.withServer(project) { server ->
+      server.window_didChangeFocus(Window_DidChangeFocusParams(false))
     }
   }
 

@@ -63,8 +63,8 @@ class IgnoreOverrideDialog(val project: Project) : DialogWrapper(project) {
 
   override fun doOKAction() {
     super.doOKAction()
-    CodyAgentService.withAgent(project) { agent ->
-      agent.server.testing_ignore_overridePolicy(
+    CodyAgentService.withServer(project) { server ->
+      server.testing_ignore_overridePolicy(
           if (IgnoreOverrideModel.enabled) {
             Gson().fromJson(IgnoreOverrideModel.policy, ContextFilters::class.java)
           } else {

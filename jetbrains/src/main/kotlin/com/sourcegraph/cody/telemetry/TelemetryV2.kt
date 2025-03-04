@@ -23,8 +23,8 @@ class TelemetryV2 {
       val newParameters =
           baseParameters.copy(metadata = baseParameters.metadata?.plus(versionParameters))
 
-      CodyAgentService.withAgent(project) { agent ->
-        agent.server.telemetry_recordEvent(
+      CodyAgentService.withServer(project) { server ->
+        server.telemetry_recordEvent(
             TelemetryEvent(feature = "cody.$feature", action = action, parameters = newParameters))
       }
     }

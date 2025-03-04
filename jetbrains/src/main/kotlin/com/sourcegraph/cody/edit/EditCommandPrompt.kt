@@ -403,7 +403,7 @@ class EditCommandPrompt(
         return
       }
 
-      CodyAgentService.withAgent(project) { agent ->
+      CodyAgentService.withServer(project) { server ->
         val result =
             if (previousEdit != null) {
               val params =
@@ -413,9 +413,9 @@ class EditCommandPrompt(
                       currentModel,
                       EditTask_RetryParams.ModeEnum.Edit,
                       previousEdit.selectionRange)
-              agent.server.editTask_retry(params).get()
+              server.editTask_retry(params).get()
             } else {
-              agent.server
+              server
                   .editCommands_code(
                       EditCommands_CodeParams(
                           instruction = text,

@@ -94,9 +94,9 @@ class CodeActionQuickFix(private val params: CodeActionQuickFixParams) :
     // There's no way of receiving a stable ID from the agent and after invoking an action
     // the ID is no longer valid, yet no re-highlighting has occurred. Therefore, we must
     // manually get a new ID from the agent and immediately invoke it
-    CodyAgentService.withAgent(project) { agent ->
+    CodyAgentService.withServer(project) { server ->
       val provideResponse =
-          agent.server
+          server
               .codeActions_provide(
                   CodeActions_ProvideParams(location = params.location, triggerKind = "Invoke"))
               .get()
@@ -109,7 +109,7 @@ class CodeActionQuickFix(private val params: CodeActionQuickFixParams) :
         throw Exception("Could not find action")
       }
       // TODO: Need to refactor agent to not return edit session for every action CODY-3125
-      val result = agent.server.codeActions_trigger(CodeActions_TriggerParams(id = action.id)).get()
+      val result = server.codeActions_trigger(CodeActions_TriggerParams(id = action.id)).get()
       EditCodeAction.completedEditTasks[result.id] = result
     }
   }

@@ -10,6 +10,7 @@ import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.project.Project
 import com.intellij.util.net.HttpConfigurable
+import com.sourcegraph.cody.agent.protocol_generated.CodyAgentServer
 import com.sourcegraph.cody.auth.SourcegraphServerPath
 import com.sourcegraph.cody.config.CodyApplicationSettings
 import com.sourcegraph.cody.listeners.CodyFileEditorListener
@@ -29,7 +30,7 @@ class CodyAgentService(private val project: Project) : Disposable {
 
   @Volatile private var codyAgent: CompletableFuture<CodyAgent> = CompletableFuture()
 
-  private val startupActions: MutableList<(CodyAgent) -> Unit> = mutableListOf()
+  private val startupActions: MutableList<(CodyAgentServer) -> Unit> = mutableListOf()
 
   private var previousProxyHost: String? = null
   private var previousProxyPort: Int? = null
@@ -49,9 +50,9 @@ class CodyAgentService(private val project: Project) : Disposable {
         },
         0,
         5000) // Check every 5 seconds
-    onStartup { agent ->
+    onStartup { server ->
       if (!project.isDisposed) {
-        CodyFileEditorListener.registerAllOpenedFiles(project, agent)
+        CodyFileEditorListener.registerAllOpenedFiles(project, server)
       }
     }
   }
@@ -69,7 +70,7 @@ class CodyAgentService(private val project: Project) : Disposable {
     }
   }
 
-  private fun onStartup(action: (CodyAgent) -> Unit) {
+  private fun onStartup(action: (CodyAgentServer) -> Unit) {
     synchronized(startupActions) { startupActions.add(action) }
   }
 
@@ -102,7 +103,7 @@ class CodyAgentService(private val project: Project) : Disposable {
           logger.error(msg)
           throw CodyAgentException(msg) // This will be caught by the catch blocks below
         } else {
-          synchronized(startupActions) { startupActions.forEach { action -> action(agent) } }
+          synchronized(startupActions) { startupActions.forEach { action -> action(agent.server) } }
           codyAgent.complete(agent)
           CodyStatusService.resetApplication(project)
         }
@@ -174,10 +175,10 @@ class CodyAgentService(private val project: Project) : Disposable {
     }
 
     @JvmStatic
-    private fun withAgent(
+    private fun withServer(
         project: Project,
         restartIfNeeded: Boolean,
-        callback: Consumer<CodyAgent>
+        callback: Consumer<CodyAgentServer>
     ) {
       if (CodyApplicationSettings.instance.isCodyEnabled) {
         if (project.isDisposed) return
@@ -188,7 +189,7 @@ class CodyAgentService(private val project: Project) : Disposable {
             val agent =
                 if (isReadyButNotFunctional && restartIfNeeded) instance.restartAgent()
                 else instance.codyAgent
-            callback.accept(agent.get())
+            callback.accept(agent.get().server)
             setAgentError(project, null)
           } catch (e: Exception) {
             logger.warn("Failed to execute call to agent", e)
@@ -202,12 +203,12 @@ class CodyAgentService(private val project: Project) : Disposable {
     }
 
     @JvmStatic
-    fun withAgent(project: Project, callback: Consumer<CodyAgent>) =
-        withAgent(project, restartIfNeeded = false, callback = callback)
+    fun withServer(project: Project, callback: Consumer<CodyAgentServer>) =
+        withServer(project, restartIfNeeded = false, callback = callback)
 
     @JvmStatic
-    fun withAgentRestartIfNeeded(project: Project, callback: Consumer<CodyAgent>) =
-        withAgent(project, restartIfNeeded = true, callback = callback)
+    fun withServerRestartIfNeeded(project: Project, callback: Consumer<CodyAgentServer>) =
+        withServer(project, restartIfNeeded = true, callback = callback)
 
     @JvmStatic
     fun isConnected(project: Project): Boolean {

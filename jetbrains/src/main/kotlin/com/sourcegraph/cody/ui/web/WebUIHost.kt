@@ -88,8 +88,8 @@ internal class WebUIHostImpl(
         action?.actionPerformed(AnActionEvent.createFromAnAction(action, null, "", dataContext))
       }
     } else {
-      CodyAgentService.withAgent(project) {
-        it.server.webview_receiveMessageStringEncoded(
+      CodyAgentService.withServer(project) {
+        it.webview_receiveMessageStringEncoded(
             Webview_ReceiveMessageStringEncodedParams(handle, stringEncodedJsonMessage))
       }
     }
@@ -126,16 +126,16 @@ internal class WebUIHostImpl(
             } ?: emptyList()
     if (_options.enableCommandUris == true ||
         (_options.enableCommandUris as List<*>).contains(commandName)) {
-      CodyAgentService.withAgent(project) {
-        it.server.command_execute(ExecuteCommandParams(commandName, arguments))
+      CodyAgentService.withServer(project) {
+        it.command_execute(ExecuteCommandParams(commandName, arguments))
       }
     }
   }
 
   override fun dispose() {
     // TODO: Consider cleaning up the view.
-    CodyAgentService.withAgent(project) {
-      it.server.webview_didDisposeNative(Webview_DidDisposeNativeParams(handle))
+    CodyAgentService.withServer(project) {
+      it.webview_didDisposeNative(Webview_DidDisposeNativeParams(handle))
     }
   }
 }
