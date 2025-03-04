@@ -583,6 +583,12 @@ export class Agent extends MessageHandler implements ExtensionClient {
             vscode_shim.onDidSaveTextDocument.fire(document)
         })
 
+        this.registerNotification('textDocument/didRename', params => {
+            const oldUri = vscode.Uri.parse(params.oldUri)
+            const newUri = vscode.Uri.parse(params.newUri)
+            vscode_shim.onDidRenameFiles.fire({ files: [{ oldUri, newUri }] })
+        })
+
         this.registerNotification('extensionConfiguration/didChange', config => {
             this.handleConfigChanges(config)
         })
