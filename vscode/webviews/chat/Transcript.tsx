@@ -213,7 +213,7 @@ export function transcriptToInteractionPairs(
                 index: pairs.length * 2,
                 speaker: 'human',
                 isUnsentFollowup: true,
-                intent: lastHumanMessage?.intent || 'chat',
+                intent: lastHumanMessage?.intent,
             },
             assistantMessage: null,
         })
@@ -305,7 +305,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
 
             const commonProps = {
                 editorValue,
-                manuallySelectedIntent: intentFromSubmit || manuallySelectedIntent || 'chat',
+                manuallySelectedIntent: intentFromSubmit || manuallySelectedIntent,
                 traceparent,
             }
 
