@@ -136,20 +136,18 @@ export const TabsBar = memo<TabsBarProps>(props => {
     // Set up keyboard event listener
     useEffect(() => {
         const handleKeyDown = (event: KeyboardEvent) => {
-            event.preventDefault()
-            event.stopPropagation()
             // Check for meta (Command on Mac)
             if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'm') {
-                // Open model dropdown
+                event.preventDefault()
+                event.stopPropagation()
                 modelSelectorRef?.current?.open()
             }
         }
 
         const handleKeyUp = (event: KeyboardEvent) => {
-            event.preventDefault()
-            event.stopPropagation()
             if (event.key === 'Escape') {
-                // Close model dropdown
+                event.preventDefault()
+                event.stopPropagation()
                 modelSelectorRef?.current?.close()
             }
         }
