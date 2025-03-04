@@ -177,6 +177,28 @@ export interface ChatHistory {
 }
 
 /**
+ * A lightweight version of UserLocalHistory that only contains essential data needed for UI display.
+ * Used to reduce the payload size sent to the webview.
+ */
+export interface LightweightUserHistory {
+    chat: LightweightChatHistory
+}
+
+export interface LightweightChatHistory {
+    [chatID: string]: LightweightChatTranscript
+}
+
+/**
+ * A lightweight version of SerializedChatTranscript that only contains essential data for display.
+ */
+export interface LightweightChatTranscript {
+    id: string
+    chatTitle?: string
+    lastInteractionTimestamp: string
+    lastHumanMessageText?: string
+}
+
+/**
  * We need to specific a default event source as some commands can be
  * executed directly through VS Code where we cannot provide a custom source.
  * For example: Commands executed through the command palette, right-click menu or through keyboard shortcuts.

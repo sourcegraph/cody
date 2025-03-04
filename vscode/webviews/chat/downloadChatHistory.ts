@@ -1,8 +1,4 @@
-import {
-    type SerializedChatTranscript,
-    type WebviewToExtensionAPI,
-    firstResultFromOperation,
-} from '@sourcegraph/cody-shared'
+import { type WebviewToExtensionAPI, firstResultFromOperation } from '@sourcegraph/cody-shared'
 
 /**
  * Use native browser download dialog to download chat history as a JSON file.
@@ -10,13 +6,7 @@ import {
 export async function downloadChatHistory(
     extensionAPI: Pick<WebviewToExtensionAPI, 'userHistory'>
 ): Promise<void> {
-    const userHistory = await firstResultFromOperation(extensionAPI.userHistory())
-    const chatHistory: SerializedChatTranscript[] | null = userHistory
-        ? Object.values(userHistory.chat)
-        : null
-    if (!chatHistory) {
-        return
-    }
+    const chatHistory = await firstResultFromOperation(extensionAPI.userHistory())
     const json = JSON.stringify(chatHistory, null, 2)
     const blob = new Blob([json], { type: 'application/json' })
     const url = URL.createObjectURL(blob)

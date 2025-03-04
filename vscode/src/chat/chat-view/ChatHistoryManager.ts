@@ -2,6 +2,7 @@ import {
     type AccountKeyedChatHistory,
     type AuthStatus,
     type AuthenticatedAuthStatus,
+    type LightweightUserHistory,
     type SerializedChatTranscript,
     type UnauthenticatedAuthStatus,
     type UserLocalHistory,
@@ -32,6 +33,50 @@ class ChatHistoryManager implements vscode.Disposable {
         authStatus: Pick<AuthenticatedAuthStatus, 'endpoint' | 'username'>
     ): UserLocalHistory | null {
         return localStorage.getChatHistory(authStatus)
+    }
+
+    /**
+     * Converts the full chat history to a lightweight version containing only the essential data
+     * needed for display in the UI.
+     */
+    public getLightweightHistory(
+        authStatus: Pick<AuthenticatedAuthStatus, 'endpoint' | 'username'>
+    ): LightweightUserHistory | null {
+        const fullHistory = this.getLocalHistory(authStatus)
+        if (!fullHistory) {
+            return null
+        }
+
+        const lightweightHistory: LightweightUserHistory = { chat: {} }
+
+        // Convert each chat to lightweight format
+        for (const [chatId, chat] of Object.entries(fullHistory.chat)) {
+            // Skip empty chats
+            if (!chat.interactions.length) {
+                continue
+            }
+
+            // Truncate the human message text if it's too long
+            const MAX_CHAT_TITLE_CHAR_LENGTH = 200
+            const truncate = (text?: string) =>
+                text ? text.slice(0, MAX_CHAT_TITLE_CHAR_LENGTH) + '...' : 'New Chat'
+
+            // Get the first human message text (for fallback title)
+            const firstInteraction = chat.interactions[0]
+            const firstHumanMessageText = truncate(firstInteraction.humanMessage.text)
+
+            const lastInteraction = chat.interactions[chat.interactions.length - 1]
+            const lastHumanMessageText = truncate(lastInteraction.humanMessage.text)
+
+            lightweightHistory.chat[chatId] = {
+                id: chat.id,
+                chatTitle: chat.chatTitle || firstHumanMessageText,
+                lastInteractionTimestamp: chat.lastInteractionTimestamp,
+                lastHumanMessageText,
+            }
+        }
+
+        return lightweightHistory
     }
 
     public getChat(
@@ -76,11 +121,43 @@ class ChatHistoryManager implements vscode.Disposable {
     }
 
     private changeNotifications = new Subject<void>()
-    public changes: Observable<UserLocalHistory | null> = combineLatest(
+
+    /**
+     * Observable that emits the lightweight version of user chat history whenever it changes.
+     * This is used to send minimal data to the webview to improve performance.
+     */
+    public changes: Observable<LightweightUserHistory | null> = combineLatest(
         authStatus.pipe(
             // Only need to rere-fetch the chat history when the endpoint or username changes for
             // authed users (i.e., when they switch to a different account), not when anything else
             // in the authStatus might change.
+            map(
+                (
+                    authStatus
+                ):
+                    | UnauthenticatedAuthStatus
+                    | Pick<AuthenticatedAuthStatus, 'authenticated' | 'endpoint' | 'username'> =>
+                    authStatus.authenticated
+                        ? {
+                              authenticated: authStatus.authenticated,
+                              endpoint: authStatus.endpoint,
+                              username: authStatus.username,
+                          }
+                        : authStatus
+            ),
+            distinctUntilChanged()
+        ),
+        this.changeNotifications.pipe(startWith(undefined))
+    ).pipe(
+        map(([authStatus]) => (authStatus.authenticated ? this.getLightweightHistory(authStatus) : null))
+    )
+
+    /**
+     * Original observable that emits the full user chat history (kept for backward compatibility)
+     * @deprecated Use changes instead which provides a lightweight version for better performance
+     */
+    public fullChanges: Observable<UserLocalHistory | null> = combineLatest(
+        authStatus.pipe(
             map(
                 (
                     authStatus

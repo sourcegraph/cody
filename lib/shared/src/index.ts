@@ -77,6 +77,7 @@ export type {
     ChatMessageWithSearch,
     ChatMessageSearch,
     ProcessingStep,
+    LightweightUserHistory,
 } from './chat/transcript/messages'
 export { ProcessType } from './chat/transcript/messages'
 export {

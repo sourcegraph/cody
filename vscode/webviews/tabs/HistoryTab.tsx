@@ -1,6 +1,6 @@
 'use client'
 
-import type { CodyIDE, UserLocalHistory } from '@sourcegraph/cody-shared'
+import type { CodyIDE, LightweightUserHistory } from '@sourcegraph/cody-shared'
 import { useExtensionAPI } from '@sourcegraph/prompt-editor'
 import { DownloadIcon, HistoryIcon, MessageSquarePlusIcon, Trash2Icon, TrashIcon } from 'lucide-react'
 import type React from 'react'
@@ -36,7 +36,7 @@ export const HistoryTab: React.FC<HistoryTabProps> = ({
 
     const chats = useMemo(() => {
         const history = result ? Object.values(result.chat) : result
-        return history?.filter(c => c.interactions.some(i => !!i.humanMessage?.text?.trim()))
+        return history
     }, [result])
 
     const handleStartNewChat = () => {
@@ -63,7 +63,7 @@ export const HistoryTab: React.FC<HistoryTabProps> = ({
 }
 
 export const HistoryTabWithData: React.FC<{
-    chats: UserLocalHistory['chat'][string][]
+    chats: LightweightUserHistory['chat'][string][]
     handleStartNewChat: () => void
     vscodeAPI: VSCodeWrapper
 }> = ({ chats, handleStartNewChat, vscodeAPI }) => {
@@ -108,17 +108,18 @@ export const HistoryTabWithData: React.FC<{
     const [currentPage, setCurrentPage] = useState(1)
 
     const filteredChats = useMemo(() => {
-        const filtered = chats?.filter(c => c.interactions.some(i => !!i.humanMessage?.text?.trim()))
+        const filtered = chats
         const searchTerm = searchText.trim().toLowerCase()
 
         // First filter by search term if provided
         let searchFiltered = filtered
         if (searchTerm) {
-            searchFiltered = filtered.filter(chat =>
-                chat.interactions.some(c =>
-                    c.humanMessage?.text?.trim()?.toLowerCase()?.includes(searchTerm)
-                )
-            )
+            searchFiltered = filtered.filter(chat => {
+                const titleText = chat.chatTitle?.toLowerCase()
+                const messageText = chat.lastHumanMessageText?.toLowerCase()
+
+                return titleText?.includes(searchTerm) || messageText?.includes(searchTerm)
+            })
         }
 
         // Then filter out any items that are being deleted for a smoother UX
@@ -240,9 +241,8 @@ export const HistoryTabWithData: React.FC<{
             <CommandList className="tw-flex-1 tw-overflow-y-auto tw-m-2">
                 {paginatedChats.map(chat => {
                     const id = chat.lastInteractionTimestamp
-                    const interactions = chat.interactions
                     const chatTitle = chat.chatTitle
-                    const lastMessage = interactions[interactions.length - 1]?.humanMessage?.text?.trim()
+                    const lastMessage = chat.lastHumanMessageText?.trim()
                     // We're already filtering out deleted chats in filteredChats
 
                     return (
