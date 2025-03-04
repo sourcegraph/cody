@@ -170,13 +170,14 @@ export const TabsBar = memo<TabsBarProps>(props => {
         <div className={clsx(styles.tabsRoot, { [styles.tabsRootCodyWeb]: IDE === CodyIDE.Web })}>
             <Tabs.List aria-label="cody-webview" className={styles.tabsContainer}>
                 <div className={styles.tabs}>
-                    <ModelSelectFieldToolbarItem
-                        models={models}
-                        userInfo={user}
-                        modelSelectorRef={modelSelectorRef}
-                        className="tw-mr-1"
-                    />
-
+                    {currentView === View.Chat && (
+                        <ModelSelectFieldToolbarItem
+                            models={models}
+                            userInfo={user}
+                            modelSelectorRef={modelSelectorRef}
+                            className="tw-mr-1"
+                        />
+                    )}
                     <div className="tw-flex tw-ml-auto">
                         {tabItems.map(({ Icon, view, command, title, changesView, tooltip }) => (
                             <Tabs.Trigger key={view} value={view} asChild={true}>
