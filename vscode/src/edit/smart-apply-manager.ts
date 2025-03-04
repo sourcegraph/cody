@@ -211,6 +211,10 @@ export class SmartApplyManager implements vscode.Disposable {
 ${replacementCode}`,
                 model,
                 intent: 'smartApply',
+                smartApplyMetadata: {
+                    chatQuery: configuration.instruction,
+                    replacementCodeBlock: replacementCode,
+                },
             },
             source: 'chat',
         })
