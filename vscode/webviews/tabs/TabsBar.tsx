@@ -33,7 +33,6 @@ import { useExtensionAPI } from '@sourcegraph/prompt-editor'
 import { isEqual } from 'lodash'
 import type { UserAccountInfo } from '../Chat'
 import { downloadChatHistory } from '../chat/downloadChatHistory'
-import { Kbd } from '../components/Kbd'
 import { UserMenu } from '../components/UserMenu'
 import { ModelSelectField } from '../components/modelSelectField/ModelSelectField'
 import { Button } from '../components/shadcn/ui/button'
@@ -142,6 +141,11 @@ export const TabsBar = memo<TabsBarProps>(props => {
                 event.stopPropagation()
                 modelSelectorRef?.current?.open()
             }
+            if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'n') {
+                event.stopPropagation()
+                event.preventDefault()
+                handleClick(View.Chat, newChatCommand, true)
+            }
         }
 
         const handleKeyUp = (event: KeyboardEvent) => {
@@ -161,7 +165,7 @@ export const TabsBar = memo<TabsBarProps>(props => {
             window.removeEventListener('keydown', handleKeyDown)
             window.removeEventListener('keyup', handleKeyUp)
         }
-    }, [])
+    }, [newChatCommand, handleClick])
     return (
         <div className={clsx(styles.tabsRoot, { [styles.tabsRootCodyWeb]: IDE === CodyIDE.Web })}>
             <Tabs.List aria-label="cody-webview" className={styles.tabsContainer}>
@@ -408,11 +412,7 @@ function useTabs(
                         Icon: PlusIcon,
                         command: currentView === View.Chat ? newChatCommand : null,
                         changesView: true,
-                        tooltip: (
-                            <>
-                                {IDE === CodyIDE.VSCode && <Kbd macOS="cmd+n" linuxAndWindows="cmd+n" />}
-                            </>
-                        ),
+                        tooltip: <>{'(cmd+n)'}</>,
                     },
                     {
                         view: View.History,
