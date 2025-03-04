@@ -1,5 +1,6 @@
 import {
     type ChatMessage,
+    type ContextItemMedia,
     FAST_CHAT_INPUT_TOKEN_BUDGET,
     type Model,
     ModelTag,
@@ -231,25 +232,6 @@ export const HumanMessageEditor: FunctionComponent<{
         [onGapClick]
     )
 
-    const onMentionClick = useCallback((): void => {
-        if (editorRef.current) {
-            editorRef.current.openAtMentionMenu()
-            const value = editorRef.current.getSerializedValue()
-            telemetryRecorder.recordEvent('cody.humanMessageEditor.toolbar.mention', 'click', {
-                metadata: {
-                    isFirstMessage: isFirstMessage ? 1 : 0,
-                    isEdit: isSent ? 1 : 0,
-                    messageLength: value.text.length,
-                    contextItems: value.contextItems.length,
-                },
-                billingMetadata: {
-                    product: 'cody',
-                    category: 'billable',
-                },
-            })
-        }
-    }, [telemetryRecorder.recordEvent, isFirstMessage, isSent])
-
     const extensionAPI = useExtensionAPI()
 
     // Set up the message listener so the extension can control the input field.
@@ -411,6 +393,17 @@ export const HumanMessageEditor: FunctionComponent<{
     // TODO: Finish implementing "current repo not indexed" handling for v2 editor
     const Editor = experimentalPromptEditorEnabled ? PromptEditorV2 : PromptEditor
 
+    const onMediaUpload = useCallback(
+        (media: ContextItemMedia) => {
+            // Add the media context item as a mention chip in the editor.
+            const editor = editorRef?.current
+            if (editor && focused) {
+                editor.upsertMentions([media], 'after')
+            }
+        },
+        [focused]
+    )
+
     return (
         // biome-ignore lint/a11y/useKeyWithClickEvents: only relevant to click areas
         <div
@@ -447,8 +440,8 @@ export const HumanMessageEditor: FunctionComponent<{
                 <Toolbar
                     models={models}
                     userInfo={userInfo}
+                    isEditorFocused={isEditorFocused}
                     omniBoxEnabled={omniBoxEnabled}
-                    onMentionClick={onMentionClick}
                     onSubmitClick={onSubmitClick}
                     manuallySelectIntent={manuallySelectIntent}
                     submitState={submitState}
@@ -458,6 +451,7 @@ export const HumanMessageEditor: FunctionComponent<{
                     className={styles.toolbar}
                     intent={intent}
                     extensionAPI={extensionAPI}
+                    onMediaUpload={onMediaUpload}
                 />
             )}
         </div>

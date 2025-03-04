@@ -337,12 +337,16 @@ function createCodeBlockActionButton(
     return button
 }
 
+function wrapTextWithResponsiveSpan(text: string): string {
+    return `<span class="tw-hidden xs:tw-block">${text}</span>`
+}
+
 function createCopyButton(
     preText: string,
     onCopy: CodeBlockActionsProps['copyButtonOnSubmit']
 ): HTMLElement {
     const button = document.createElement('button')
-    button.innerHTML = 'Copy'
+    button.innerHTML = wrapTextWithResponsiveSpan('Copy')
     button.className = styles.button
 
     const iconContainer = document.createElement('div')
@@ -353,7 +357,7 @@ function createCopyButton(
     button.addEventListener('click', () => {
         iconContainer.innerHTML = CheckCodeBlockIcon
         iconContainer.className = styles.iconContainer
-        button.innerHTML = 'Copied'
+        button.innerHTML = wrapTextWithResponsiveSpan('Copied')
         button.className = styles.button
         button.prepend(iconContainer)
 
@@ -363,7 +367,7 @@ function createCopyButton(
             // Reset the icon to the original.
             iconContainer.innerHTML = CopyCodeBlockIcon
             iconContainer.className = styles.iconContainer
-            button.innerHTML = 'Copy'
+            button.innerHTML = wrapTextWithResponsiveSpan('Copy')
             button.className = styles.button
             button.prepend(iconContainer)
         }, 5000)
@@ -387,7 +391,7 @@ function createApplyButton(
     button.className = styles.button
     switch (smartApplyState) {
         case 'Working': {
-            button.innerHTML = 'Applying'
+            button.innerHTML = wrapTextWithResponsiveSpan('Applying')
             button.disabled = true
 
             // Add Loading Icon
@@ -400,7 +404,7 @@ function createApplyButton(
         }
         case 'Applied':
         case 'Finished': {
-            button.innerHTML = 'Reapply'
+            button.innerHTML = wrapTextWithResponsiveSpan('Reapply')
 
             // Add Refresh Icon
             const iconContainer = document.createElement('div')
@@ -420,7 +424,7 @@ function createApplyButton(
             break
         }
         default: {
-            button.innerHTML = 'Apply'
+            button.innerHTML = wrapTextWithResponsiveSpan('Apply')
 
             // Add Sparkle Icon
             const iconContainer = document.createElement('div')
@@ -451,7 +455,7 @@ function createApplyButton(
 function createExecuteButton(command: string): HTMLElement {
     const button = document.createElement('button')
     button.className = styles.button
-    button.innerHTML = 'Execute'
+    button.innerHTML = wrapTextWithResponsiveSpan('Execute')
     button.title = 'Send command to Terminal'
     const iconContainer = document.createElement('div')
     iconContainer.className = styles.iconContainer

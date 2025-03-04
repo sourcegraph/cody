@@ -9,6 +9,9 @@ export default {
     prefix: 'tw-',
     theme: {
         extend: {
+            screens: {
+                xs: '348px',
+            },
             fontSize: {
                 lg: 'calc(var(--vscode-font-size) * 15 / 13)', // = 15px
                 md: 'var(--vscode-font-size)', // = 13px

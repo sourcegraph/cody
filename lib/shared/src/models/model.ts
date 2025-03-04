@@ -101,6 +101,10 @@ export function createModel({
         }
     }
 
+    if (clientSideConfig?.options?.categories?.includes(ModelTag.Vision)) {
+        tags.push(ModelTag.Vision)
+    }
+
     return {
         id,
         modelRef,
