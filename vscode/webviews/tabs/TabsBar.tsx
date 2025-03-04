@@ -7,8 +7,7 @@ import {
     DownloadIcon,
     HistoryIcon,
     type LucideProps,
-    MessagesSquareIcon,
-    SquarePen,
+    PlusIcon,
     Trash2Icon,
 } from 'lucide-react'
 import { getVSCodeAPI } from '../utils/VSCodeApi'
@@ -165,12 +164,12 @@ export const TabsBar = memo<TabsBarProps>(props => {
             window.removeEventListener('keyup', handleKeyUp)
         }
     }, [])
-
+    const isChatView = currentView === View.Chat || webviewType === 'editor'
     return (
         <div className={clsx(styles.tabsRoot, { [styles.tabsRootCodyWeb]: IDE === CodyIDE.Web })}>
             <Tabs.List aria-label="cody-webview" className={styles.tabsContainer}>
                 <div className={styles.tabs}>
-                    {currentView === View.Chat && (
+                    {isChatView && (
                         <ModelSelectFieldToolbarItem
                             models={models}
                             userInfo={user}
@@ -240,7 +239,6 @@ export const TabsBar = memo<TabsBarProps>(props => {
         </div>
     )
 }, isEqual)
-
 interface ActionButtonWithConfirmationProps {
     title: string
     Icon: IconComponent
@@ -406,7 +404,7 @@ function useTabs(
                     {
                         view: View.Chat,
                         title: currentView === View.Chat ? 'New Chat' : 'Chat',
-                        Icon: currentView === View.Chat ? SquarePen : MessagesSquareIcon,
+                        Icon: PlusIcon,
                         command: currentView === View.Chat ? newChatCommand : null,
                         changesView: true,
                         tooltip: (
