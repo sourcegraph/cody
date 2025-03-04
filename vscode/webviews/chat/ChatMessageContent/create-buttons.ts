@@ -34,7 +34,7 @@ export function createButtons(
 
     // Create container for action buttons
     const buttonContainer = document.createElement('div')
-    buttonContainer.className = styles.buttonsContainerTransparent
+    buttonContainer.className = styles.buttonsContainer
     buttonContainer.dataset.containerType = 'actions'
 
     // Create buttons container
@@ -115,7 +115,7 @@ export function createButtonsExperimentalUI(
 ): HTMLElement {
     // Create button container 1 for file info
     const buttonContainer1 = document.createElement('div')
-    buttonContainer1.className = styles.buttonsContainerTransparent
+    buttonContainer1.className = styles.buttonsContainer
     buttonContainer1.dataset.containerType = 'preview'
 
     let hasPreviewContent = false
@@ -137,7 +137,7 @@ export function createButtonsExperimentalUI(
 
     // Create button container 2 for action buttons
     const buttonContainer2 = document.createElement('div')
-    buttonContainer2.className = styles.buttonsContainerTransparent
+    buttonContainer2.className = styles.buttonsContainer
     buttonContainer2.dataset.containerType = 'actions'
 
     if (!copyButtonOnSubmit) {
