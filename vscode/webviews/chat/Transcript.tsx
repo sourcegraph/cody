@@ -197,7 +197,9 @@ export function transcriptToInteractionPairs(
         })
     }
 
-    const lastAssistantMessage = pairs[pairs.length - 1]?.assistantMessage
+    const lastMessage = pairs[pairs.length - 1]
+    const lastHumanMessage = lastMessage?.humanMessage
+    const lastAssistantMessage = lastMessage?.assistantMessage
     const isAborted = isAbortErrorOrSocketHangUp(lastAssistantMessage?.error)
     const shouldAddFollowup =
         lastAssistantMessage &&
@@ -211,6 +213,7 @@ export function transcriptToInteractionPairs(
                 index: pairs.length * 2,
                 speaker: 'human',
                 isUnsentFollowup: true,
+                intent: lastHumanMessage?.intent || 'chat',
             },
             assistantMessage: null,
         })
@@ -254,13 +257,6 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
         smartApplyEnabled,
         editorRef: parentEditorRef,
     } = props
-    const [manuallySelectedIntent, setManuallySelectedIntent] =
-        useState<ChatMessage['intent']>(undefined)
-
-    // biome-ignore lint/correctness/useExhaustiveDependencies: need to reset manually selected intent when the human message changes
-    useEffect(() => {
-        setManuallySelectedIntent(undefined)
-    }, [humanMessage])
 
     const { activeChatContext, setActiveChatContext } = props
     const humanEditorRef = useRef<PromptEditorRefAPI | null>(null)
@@ -268,6 +264,14 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
     useImperativeHandle(parentEditorRef, () => humanEditorRef.current)
 
     const usingToolCody = assistantMessage?.model?.includes(ToolCodyModelName)
+
+    // Start the intent value as the human message's intent, but allow it to be manually set.
+    const [manuallySelectedIntent, setManuallySelectedIntent] = useState<ChatMessage['intent']>(
+        humanMessage.intent
+    )
+    const onManuallySelectIntent = useCallback((intent: ChatMessage['intent']) => {
+        setManuallySelectedIntent(intent)
+    }, [])
 
     const onUserAction = useCallback(
         (action: 'edit' | 'submit', intentFromSubmit?: ChatMessage['intent']) => {
@@ -537,7 +541,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                 editorRef={humanEditorRef}
                 className={!isFirstInteraction && isLastInteraction ? 'tw-mt-auto' : ''}
                 intent={manuallySelectedIntent}
-                manuallySelectIntent={setManuallySelectedIntent}
+                manuallySelectIntent={onManuallySelectIntent}
             />
             {omniboxEnabled && assistantMessage?.didYouMeanQuery && (
                 <DidYouMeanNotice

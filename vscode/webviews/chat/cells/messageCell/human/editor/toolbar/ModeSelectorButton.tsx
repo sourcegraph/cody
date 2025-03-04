@@ -1,5 +1,5 @@
 import type { ChatMessage } from '@sourcegraph/cody-shared'
-import { CodyIDE, isMacOS } from '@sourcegraph/cody-shared'
+import { isMacOS } from '@sourcegraph/cody-shared'
 import { BetweenHorizonalEnd, MessageSquare, Pencil, Search } from 'lucide-react'
 import type { FC } from 'react'
 import { useCallback, useEffect, useMemo } from 'react'
@@ -43,11 +43,11 @@ const chatIntent: IntentOption = {
 }
 
 function getIntentOptions({
-    isCodyWeb,
+    isEditEnabled,
     isDotComUser,
     omniBoxEnabled,
 }: {
-    isCodyWeb: boolean
+    isEditEnabled: boolean
     isDotComUser: boolean
     omniBoxEnabled: boolean
 }): IntentOption[] {
@@ -67,7 +67,7 @@ function getIntentOptions({
             icon: Pencil,
             intent: 'edit',
             hidden: true,
-            disabled: isCodyWeb,
+            disabled: !isEditEnabled,
         },
         {
             title: 'Insert Code',
@@ -75,7 +75,7 @@ function getIntentOptions({
             icon: BetweenHorizonalEnd,
             intent: 'insert',
             hidden: true,
-            disabled: isCodyWeb,
+            disabled: !isEditEnabled,
         },
     ]
 }
@@ -87,21 +87,19 @@ export const ModeSelectorField: React.FunctionComponent<{
     manuallySelectIntent: (intent?: ChatMessage['intent']) => void
 }> = ({ className, intent, omniBoxEnabled, manuallySelectIntent }) => {
     const {
-        clientCapabilities: { agentIDE },
+        clientCapabilities: { edit },
         isDotComUser,
     } = useConfig()
 
     const intentOptions = useMemo(
         () =>
             getIntentOptions({
-                isCodyWeb: agentIDE === CodyIDE.Web,
+                isEditEnabled: edit !== 'none',
                 isDotComUser,
                 omniBoxEnabled,
             }).filter(option => !option.hidden),
-        [agentIDE, isDotComUser, omniBoxEnabled]
+        [edit, isDotComUser, omniBoxEnabled]
     )
-
-    const currentIntent = INTENT_MAPPING[intent || 'chat'] || IntentEnum.Chat
 
     // Memoize the handler to avoid recreating on each render
     const handleItemClick = useCallback(
@@ -119,7 +117,8 @@ export const ModeSelectorField: React.FunctionComponent<{
             if ((isMac ? event.metaKey : event.ctrlKey) && event.key === '.') {
                 event.preventDefault()
                 // Find the current index and select the next intent option
-                const currentIndex = intentOptions.findIndex(option => option.intent === intent)
+                const currentIntent = intent || 'chat'
+                const currentIndex = intentOptions.findIndex(option => option.intent === currentIntent)
                 const nextIndex = (currentIndex + 1) % intentOptions.length
                 manuallySelectIntent(intentOptions[nextIndex].intent)
             }
@@ -154,7 +153,7 @@ export const ModeSelectorField: React.FunctionComponent<{
                 },
             }}
         >
-            {currentIntent}
+            {INTENT_MAPPING[intent || 'chat'] || IntentEnum.Chat}
         </ToolbarPopoverItem>
     )
 }

@@ -159,7 +159,6 @@ export const HumanMessageEditor: FunctionComponent<{
 
     const omniBoxEnabled = useOmniBox()
     const {
-        isDotComUser,
         config: { experimentalPromptEditorEnabled },
     } = useConfig()
 
@@ -169,24 +168,10 @@ export const HumanMessageEditor: FunctionComponent<{
             if (!event || event.isComposing || isEmptyEditorValue || event.shiftKey) {
                 return
             }
-
             event.preventDefault()
-
-            if (!omniBoxEnabled || isDotComUser) {
-                onSubmitClick('chat')
-                return
-            }
-
-            // Submit search intent query when CMD + Options + Enter is pressed.
-            if ((event.metaKey || event.ctrlKey) && event.altKey) {
-                manuallySelectIntent('search')
-                onSubmitClick('search')
-                return
-            }
-
-            onSubmitClick('chat')
+            onSubmitClick()
         },
-        [isEmptyEditorValue, onSubmitClick, manuallySelectIntent, omniBoxEnabled, isDotComUser]
+        [isEmptyEditorValue, onSubmitClick]
     )
 
     const [isEditorFocused, setIsEditorFocused] = useState(false)
@@ -462,7 +447,7 @@ export const HumanMessageEditor: FunctionComponent<{
                 <Toolbar
                     models={models}
                     userInfo={userInfo}
-                    isEditorFocused={focused}
+                    omniBoxEnabled={omniBoxEnabled}
                     onMentionClick={onMentionClick}
                     onSubmitClick={onSubmitClick}
                     manuallySelectIntent={manuallySelectIntent}
@@ -472,6 +457,7 @@ export const HumanMessageEditor: FunctionComponent<{
                     hidden={!focused && isSent}
                     className={styles.toolbar}
                     intent={intent}
+                    extensionAPI={extensionAPI}
                 />
             )}
         </div>
