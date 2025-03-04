@@ -136,20 +136,6 @@ export const TabsBar = memo<TabsBarProps>(props => {
         [setView]
     )
 
-    const [openModelDropdown] = useState<(() => void) | null>(null)
-
-    useEffect(() => {
-        const handleMessage = (event: MessageEvent) => {
-            const message = event.data
-            if (message.type === 'openModelSelector' && openModelDropdown) {
-                openModelDropdown()
-            }
-        }
-
-        window.addEventListener('message', handleMessage)
-        return () => window.removeEventListener('message', handleMessage)
-    }, [openModelDropdown])
-
     const openModelDropdownRef = useRef<(() => void) | null>(null)
 
     const setOpenModelDropdownRef = useCallback((fn: () => void) => {
@@ -178,13 +164,15 @@ export const TabsBar = memo<TabsBarProps>(props => {
         <div className={clsx(styles.tabsRoot, { [styles.tabsRootCodyWeb]: IDE === CodyIDE.Web })}>
             <Tabs.List aria-label="cody-webview" className={styles.tabsContainer}>
                 <div className={styles.tabs}>
-                    <ModelSelectFieldToolbarItem
-                        models={models}
-                        userInfo={user}
-                        className="tw-mr-1"
-                        modelSelectorRef={modelSelectorRef}
-                        openDropdownRef={setOpenModelDropdownRef}
-                    />
+                    {currentView === View.Chat && (
+                        <ModelSelectFieldToolbarItem
+                            models={models}
+                            userInfo={user}
+                            className="tw-mr-1"
+                            modelSelectorRef={modelSelectorRef}
+                            openDropdownRef={setOpenModelDropdownRef}
+                        />
+                    )}
 
                     <div className="tw-flex tw-ml-auto">
                         {tabItems.map(({ Icon, view, command, title, changesView, tooltip }) => (
