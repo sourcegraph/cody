@@ -1,3 +1,4 @@
+import type { WebviewToExtensionAPI } from '@sourcegraph/cody-shared'
 import {
     type Action,
     type ChatMessage,
@@ -5,7 +6,6 @@ import {
     type Model,
     ModelTag,
 } from '@sourcegraph/cody-shared'
-import { useExtensionAPI } from '@sourcegraph/prompt-editor'
 import clsx from 'clsx'
 import { type FunctionComponent, useCallback, useMemo } from 'react'
 import type { UserAccountInfo } from '../../../../../../Chat'
@@ -14,8 +14,8 @@ import { PromptSelectField } from '../../../../../../components/promptSelectFiel
 import toolbarStyles from '../../../../../../components/shadcn/ui/toolbar.module.css'
 import { useActionSelect } from '../../../../../../prompts/PromptsTab'
 import { useClientConfig } from '../../../../../../utils/useClientConfig'
-import { AddContextButton } from './AddContextButton'
 import { MediaUploadButton } from './MediaUploadButton'
+import { ModeSelectorField } from './ModeSelectorButton'
 import { SubmitButton, type SubmitButtonState } from './SubmitButton'
 
 /**
@@ -27,8 +27,6 @@ export const Toolbar: FunctionComponent<{
 
     isEditorFocused: boolean
 
-    onMentionClick?: () => void
-
     onSubmitClick: (intent?: ChatMessage['intent']) => void
     submitState: SubmitButtonState
 
@@ -39,15 +37,17 @@ export const Toolbar: FunctionComponent<{
 
     hidden?: boolean
     className?: string
-    intent?: ChatMessage['intent']
 
+    intent?: ChatMessage['intent']
     manuallySelectIntent: (intent: ChatMessage['intent']) => void
 
+    extensionAPI: WebviewToExtensionAPI
+
+    omniBoxEnabled: boolean
     onMediaUpload?: (mediaContextItem: ContextItemMedia) => void
 }> = ({
     userInfo,
     isEditorFocused,
-    onMentionClick,
     onSubmitClick,
     submitState,
     onGapClick,
@@ -57,6 +57,8 @@ export const Toolbar: FunctionComponent<{
     models,
     intent,
     manuallySelectIntent,
+    extensionAPI,
+    omniBoxEnabled,
     onMediaUpload,
 }) => {
     /**
@@ -87,8 +89,11 @@ export const Toolbar: FunctionComponent<{
         return (!isDotCom || isBYOK) && isVision
     }, [userInfo?.isDotComUser, models?.[0]])
 
+    if (models?.length < 2) {
+        return null
+    }
+
     return (
-        // biome-ignore lint/a11y/useKeyWithClickEvents: only relevant to click areas
         <menu
             role="toolbar"
             aria-hidden={hidden}
@@ -99,16 +104,10 @@ export const Toolbar: FunctionComponent<{
             )}
             onMouseDown={onMaybeGapClick}
             onClick={onMaybeGapClick}
+            onKeyDown={() => null}
             data-testid="chat-editor-toolbar"
         >
             <div className="tw-flex tw-items-center">
-                {/* Can't use tw-gap-1 because the popover creates an empty element when open. */}
-                {onMentionClick && (
-                    <AddContextButton
-                        onClick={onMentionClick}
-                        className={`tw-opacity-60 focus-visible:tw-opacity-100 hover:tw-opacity-100 tw-mr-2 tw-gap-0.5 ${toolbarStyles.button} ${toolbarStyles.buttonSmallIcon}`}
-                    />
-                )}
                 {onMediaUpload && isImageUploadEnabled && (
                     <MediaUploadButton
                         onMediaUpload={onMediaUpload}
@@ -123,16 +122,20 @@ export const Toolbar: FunctionComponent<{
                     userInfo={userInfo}
                     focusEditor={focusEditor}
                     className="tw-mr-1"
+                    extensionAPI={extensionAPI}
                 />
+                {!userInfo?.isDotComUser && omniBoxEnabled && (
+                    <ModeSelectorField
+                        className={className}
+                        omniBoxEnabled={omniBoxEnabled}
+                        intent={intent}
+                        isDotComUser={userInfo?.isDotComUser}
+                        manuallySelectIntent={manuallySelectIntent}
+                    />
+                )}
             </div>
             <div className="tw-flex-1 tw-flex tw-justify-end">
-                <SubmitButton
-                    onClick={onSubmitClick}
-                    isEditorFocused={isEditorFocused}
-                    state={submitState}
-                    detectedIntent={intent}
-                    manuallySelectIntent={manuallySelectIntent}
-                />
+                <SubmitButton onClick={onSubmitClick} state={submitState} />
             </div>
         </menu>
     )
@@ -160,20 +163,19 @@ const ModelSelectFieldToolbarItem: FunctionComponent<{
     userInfo: UserAccountInfo
     focusEditor?: () => void
     className?: string
-}> = ({ userInfo, focusEditor, className, models }) => {
+    extensionAPI: WebviewToExtensionAPI
+}> = ({ userInfo, focusEditor, className, models, extensionAPI }) => {
     const clientConfig = useClientConfig()
     const serverSentModelsEnabled = !!clientConfig?.modelsAPIEnabled
 
-    const api = useExtensionAPI()
-
     const onModelSelect = useCallback(
         (model: Model) => {
-            api.setChatModel(model.id).subscribe({
+            extensionAPI.setChatModel(model.id).subscribe({
                 error: error => console.error('setChatModel:', error),
             })
             focusEditor?.()
         },
-        [api.setChatModel, focusEditor]
+        [extensionAPI.setChatModel, focusEditor]
     )
 
     return (

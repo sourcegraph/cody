@@ -160,7 +160,6 @@ export const HumanMessageEditor: FunctionComponent<{
 
     const omniBoxEnabled = useOmniBox()
     const {
-        isDotComUser,
         config: { experimentalPromptEditorEnabled },
     } = useConfig()
 
@@ -170,24 +169,10 @@ export const HumanMessageEditor: FunctionComponent<{
             if (!event || event.isComposing || isEmptyEditorValue || event.shiftKey) {
                 return
             }
-
             event.preventDefault()
-
-            if (!omniBoxEnabled || isDotComUser) {
-                onSubmitClick('chat')
-                return
-            }
-
-            // Submit search intent query when CMD + Options + Enter is pressed.
-            if ((event.metaKey || event.ctrlKey) && event.altKey) {
-                manuallySelectIntent('search')
-                onSubmitClick('search')
-                return
-            }
-
-            onSubmitClick('chat')
+            onSubmitClick()
         },
-        [isEmptyEditorValue, onSubmitClick, manuallySelectIntent, omniBoxEnabled, isDotComUser]
+        [isEmptyEditorValue, onSubmitClick]
     )
 
     const [isEditorFocused, setIsEditorFocused] = useState(false)
@@ -246,25 +231,6 @@ export const HumanMessageEditor: FunctionComponent<{
         },
         [onGapClick]
     )
-
-    const onMentionClick = useCallback((): void => {
-        if (editorRef.current) {
-            editorRef.current.openAtMentionMenu()
-            const value = editorRef.current.getSerializedValue()
-            telemetryRecorder.recordEvent('cody.humanMessageEditor.toolbar.mention', 'click', {
-                metadata: {
-                    isFirstMessage: isFirstMessage ? 1 : 0,
-                    isEdit: isSent ? 1 : 0,
-                    messageLength: value.text.length,
-                    contextItems: value.contextItems.length,
-                },
-                billingMetadata: {
-                    product: 'cody',
-                    category: 'billable',
-                },
-            })
-        }
-    }, [telemetryRecorder.recordEvent, isFirstMessage, isSent])
 
     const extensionAPI = useExtensionAPI()
 
@@ -475,7 +441,7 @@ export const HumanMessageEditor: FunctionComponent<{
                     models={models}
                     userInfo={userInfo}
                     isEditorFocused={focused}
-                    onMentionClick={onMentionClick}
+                    omniBoxEnabled={omniBoxEnabled}
                     onSubmitClick={onSubmitClick}
                     manuallySelectIntent={manuallySelectIntent}
                     submitState={submitState}
@@ -484,6 +450,7 @@ export const HumanMessageEditor: FunctionComponent<{
                     hidden={!focused && isSent}
                     className={styles.toolbar}
                     intent={intent}
+                    extensionAPI={extensionAPI}
                     onMediaUpload={onMediaUpload}
                 />
             )}

@@ -283,7 +283,6 @@ describe('PromptBuilder', () => {
             const assistantMessages = finalMessages.filter(
                 msg => msg.speaker === 'assistant' && msg.text?.toString() === 'Ok.'
             )
-            console.log(finalMessages)
             expect(assistantMessages.length).toBe(2) // One after each context
         })
 

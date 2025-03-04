@@ -9,7 +9,6 @@ const meta: Meta<typeof SubmitButton> = {
 
     args: {
         onClick: () => {},
-        isEditorFocused: true,
     },
 
     decorators: [VSCodeStandaloneComponent],
@@ -25,7 +24,6 @@ const meta: Meta<typeof SubmitButton> = {
                         state: args.state === 'submittable' ? 'waitingResponseComplete' : 'submittable',
                     })
                 }}
-                manuallySelectIntent={() => {}}
             />
         )
     },
