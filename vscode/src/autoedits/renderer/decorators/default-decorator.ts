@@ -6,7 +6,7 @@ import { isOnlyAddingTextForModifiedLines } from '../diff-utils'
 import { generateSuggestionAsImage } from '../image-gen'
 import { getEndColumnForLine } from '../image-gen/utils'
 import { makeVisualDiff } from '../image-gen/visual-diff'
-import type { AutoEditsDecorator, AutoeditDiff, ModifiedLineInfo } from './base'
+import type { AutoEditsDecorator, DecorationInfo, ModifiedLineInfo } from './base'
 import { cssPropertiesToString } from './utils'
 
 export interface DiffedTextDecorationRange {
@@ -108,7 +108,7 @@ export class DefaultDecorator implements AutoEditsDecorator {
      * 2. Removed lines: Show inline decoration with "red" marker indicating deletions
      * 3. Added lines: Show inline decoration with "green" marker indicating additions
      */
-    public setDecorations(decorationInfo: AutoeditDiff): void {
+    public setDecorations(decorationInfo: DecorationInfo): void {
         const { modifiedLines, removedLines, addedLines } = decorationInfo
 
         const removedLinesRanges = removedLines.map(line =>
@@ -123,7 +123,7 @@ export class DefaultDecorator implements AutoEditsDecorator {
         }
     }
 
-    private renderDiffDecorations(decorationInfo: AutoeditDiff): void {
+    private renderDiffDecorations(decorationInfo: DecorationInfo): void {
         if (!this.diffDecorationInfo) {
             this.diffDecorationInfo = this.getDiffDecorationsInfo(decorationInfo)
         }
@@ -139,7 +139,7 @@ export class DefaultDecorator implements AutoEditsDecorator {
         this.renderAddedLinesImageDecorations(decorationInfo)
     }
 
-    private getDiffDecorationsInfo(decorationInfo: AutoeditDiff): DiffDecorationInfo {
+    private getDiffDecorationsInfo(decorationInfo: DecorationInfo): DiffDecorationInfo {
         const { modifiedLines, addedLines, unchangedLines } = decorationInfo
 
         // Display the removed range decorations
@@ -214,7 +214,7 @@ export class DefaultDecorator implements AutoEditsDecorator {
         }
     }
 
-    private renderAddedLinesImageDecorations(decorationInfo: AutoeditDiff): void {
+    private renderAddedLinesImageDecorations(decorationInfo: DecorationInfo): void {
         // TODO: Diff mode will likely change depending on the environment.
         // This should be determined by client capabilities.
         // VS Code: 'additions'

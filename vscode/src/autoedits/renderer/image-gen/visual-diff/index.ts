@@ -1,12 +1,12 @@
 import type * as vscode from 'vscode'
-import type { AutoeditDiff } from '../../decorators/base'
+import type { DecorationInfo } from '../../decorators/base'
 import { isOnlyAddingTextForModifiedLines } from '../../diff-utils'
 import { getDiffTargetPosition } from '../utils'
 import { blockify } from './blockify'
 import type { DiffMode, VisualDiff, VisualDiffLine } from './types'
 
 export function makeVisualDiff(
-    decorationInfo: AutoeditDiff,
+    decorationInfo: DecorationInfo,
     mode: DiffMode,
     document: vscode.TextDocument
 ): {
@@ -31,7 +31,7 @@ export function makeVisualDiff(
  * Given a decoration info, this function will return a diff that is suitable for rendering.
  * It also supports transforming the diff into a unified diff.
  */
-export function prepareVisualDiff(decorationInfo: AutoeditDiff, mode: DiffMode): VisualDiff {
+export function prepareVisualDiff(decorationInfo: DecorationInfo, mode: DiffMode): VisualDiff {
     const sortedDiff = [
         ...decorationInfo.addedLines,
         ...decorationInfo.modifiedLines,

@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 import { generateSuggestionAsImage, initImageSuggestionService } from '..'
 import { document } from '../../../../completions/test-helpers'
 import { mockLocalStorage } from '../../../../services/LocalStorageProvider'
-import type { AutoeditDiff } from '../../decorators/base'
+import type { DecorationInfo } from '../../decorators/base'
 import { makeVisualDiff } from '../visual-diff'
 import type { DiffMode } from '../visual-diff/types'
 import { MIXED_ADDITIONS_AND_DELETIONS, MOCK_DIFFS } from './mock-diff'
@@ -11,7 +11,7 @@ import { MIXED_ADDITIONS_AND_DELETIONS, MOCK_DIFFS } from './mock-diff'
 expect.extend({ toMatchImageSnapshot })
 
 async function generateImageForTest(
-    decorations: AutoeditDiff,
+    decorations: DecorationInfo,
     lang: string,
     mode: DiffMode
 ): Promise<{ darkBuffer: Buffer; lightBuffer: Buffer }> {

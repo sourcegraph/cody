@@ -26,7 +26,7 @@ import { getDecorationStats } from '../renderer/diff-utils'
 
 import { autoeditDebugStore } from '../debug-panel/debug-store'
 
-import type { AutoeditDiff } from '../renderer/decorators/base'
+import type { DecorationInfo } from '../renderer/decorators/base'
 import type { AutoEditRenderOutput } from '../renderer/render-output'
 import { autoeditIdRegistry } from './suggestion-id-registry'
 import {
@@ -198,7 +198,7 @@ export class AutoeditAnalyticsLogger {
     }: {
         requestId: AutoeditRequestID
         prediction: string
-        decorationInfo: AutoeditDiff | null
+        decorationInfo: DecorationInfo | null
         renderOutput: AutoEditRenderOutput
     }) {
         this.tryTransitionTo(requestId, 'postProcessed', request => {

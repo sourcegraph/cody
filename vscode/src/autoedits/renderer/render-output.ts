@@ -5,7 +5,7 @@ import { shortenPromptForOutputChannel } from '../../completions/output-channel-
 import { isRunningInsideAgent } from '../../jsonrpc/isRunningInsideAgent'
 import type { AutoeditRequestID } from '../analytics-logger'
 import { autoeditsOutputChannelLogger } from '../output-channel-logger'
-import type { AutoEditDecorations, AutoeditDiff } from './decorators/base'
+import type { AutoEditDecorations, DecorationInfo } from './decorators/base'
 import { cssPropertiesToString } from './decorators/utils'
 import { isOnlyAddingTextForModifiedLines, isOnlyRemovingTextForModifiedLines } from './diff-utils'
 import type { GeneratedImageSuggestion } from './image-gen'
@@ -19,7 +19,7 @@ export interface GetRenderOutputArgs {
     prediction: string
     position: vscode.Position
     docContext: DocumentContext
-    decorationInfo: AutoeditDiff
+    decorationInfo: DecorationInfo
     codeToReplaceData: CodeToReplaceData
 }
 
@@ -50,7 +50,7 @@ interface CompletionWithDecorationsRenderOutput {
     type: 'completion-with-decorations'
     inlineCompletionItems: vscode.InlineCompletionItem[]
     decorations: AutoEditDecorations
-    updatedDecorationInfo: AutoeditDiff
+    updatedDecorationInfo: DecorationInfo
     updatedPrediction: string
 }
 
@@ -162,7 +162,7 @@ export class AutoEditsRenderOutput {
     }: GetRenderOutputArgs): {
         type: 'full' | 'partial'
         inlineCompletionItems: vscode.InlineCompletionItem[]
-        updatedDecorationInfo: AutoeditDiff
+        updatedDecorationInfo: DecorationInfo
         updatedPrediction: string
     } | null {
         const { insertText, usedChangeIds } = getCompletionText({
@@ -290,7 +290,7 @@ export class AutoEditsRenderOutput {
     }
 
     protected shouldRenderDecorations(
-        decorationInfo: AutoeditDiff,
+        decorationInfo: DecorationInfo,
         clientCapabilities: ClientCapabilities
     ): boolean {
         const canRenderDecorations = this.canRenderDecorations(
@@ -318,7 +318,7 @@ export class AutoEditsRenderOutput {
         return !includesComplexModifiedLines
     }
 
-    private hasComplexModifiedLines(modifiedLines: AutoeditDiff['modifiedLines']): boolean {
+    private hasComplexModifiedLines(modifiedLines: DecorationInfo['modifiedLines']): boolean {
         if (
             isOnlyAddingTextForModifiedLines(modifiedLines) ||
             isOnlyRemovingTextForModifiedLines(modifiedLines)
@@ -371,7 +371,7 @@ export class AutoEditsRenderOutput {
     }
 
     protected getInlineDecorations(
-        decorationInfo: AutoeditDiff
+        decorationInfo: DecorationInfo
     ): Omit<AutoEditDecorations, 'insertMarkerDecorations'> {
         const fullLineDeletionDecorations = decorationInfo.removedLines.map(
             ({ originalLineNumber, text }) => {
@@ -450,7 +450,7 @@ export class AutoEditsRenderOutput {
     }
 
     private createModifiedAdditionDecorations(
-        decorationInfo: AutoeditDiff
+        decorationInfo: DecorationInfo
     ): Omit<AutoEditDecorations, 'deletionDecorations' | 'insertMarkerDecorations'> {
         const { modifiedLines } = decorationInfo
         const decorations: vscode.DecorationOptions[] = []
@@ -502,7 +502,9 @@ export class AutoEditsRenderOutput {
         return { insertionDecorations: decorations }
     }
 
-    private createModifiedRemovedDecorations(decorationInfo: AutoeditDiff): vscode.DecorationOptions[] {
+    private createModifiedRemovedDecorations(
+        decorationInfo: DecorationInfo
+    ): vscode.DecorationOptions[] {
         const { modifiedLines } = decorationInfo
         const decorations: vscode.DecorationOptions[] = []
 
