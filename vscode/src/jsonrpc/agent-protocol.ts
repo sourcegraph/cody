@@ -14,7 +14,7 @@ import type {
 import type { TelemetryEventMarketingTrackingInput } from '@sourcegraph/telemetry'
 
 import type { AuthError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
-import type { AutoeditDiff } from '../autoedits/renderer/decorators/base'
+import type { DecorationInfo } from '../autoedits/renderer/decorators/base'
 import type { ExtensionMessage, WebviewMessage } from '../chat/protocol'
 import type { CompletionBookkeepingEvent, CompletionItemID } from '../completions/analytics-logger'
 import type { FixupTaskID } from '../non-stop/FixupTask'
@@ -549,7 +549,7 @@ interface RenderModeImage {
      * This will typically be used when type is `image-additions`, as it will provide information on the
      * deleted ranges that are not shown in the image.
      */
-    diff: AutoeditDiff
+    diff: DecorationInfo
     image: {
         /* Base64 encoded image suitable for rendering in dark editor themes */
         dark: string
@@ -569,7 +569,7 @@ interface RenderModeImage {
  */
 interface RenderModeCustom {
     type: 'custom'
-    diff: AutoeditDiff
+    diff: DecorationInfo
 }
 
 interface AutocompleteEditResult {

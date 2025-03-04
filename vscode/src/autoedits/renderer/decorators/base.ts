@@ -50,7 +50,7 @@ export interface AutoEditsDecorator extends vscode.Disposable {
          * @deprecated Decorations are pre-computed by the manager in `getRenderOutput`.
          * Use `decorations` instead.
          */
-        decorationInfo: AutoeditDiff,
+        decorationInfo: DecorationInfo,
         decorations?: AutoEditDecorations
     ): void
 }
@@ -102,7 +102,7 @@ export type LineChange = {
     text: string
 }
 
-export interface AutoeditDiff {
+export interface DecorationInfo {
     modifiedLines: ModifiedLineInfo[]
     removedLines: RemovedLineInfo[]
     addedLines: AddedLineInfo[]
