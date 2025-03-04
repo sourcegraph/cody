@@ -8,7 +8,7 @@ import {
     HistoryIcon,
     type LucideProps,
     MessagesSquareIcon,
-    PlusIcon,
+    SquarePen,
     Trash2Icon,
 } from 'lucide-react'
 import { getVSCodeAPI } from '../utils/VSCodeApi'
@@ -36,10 +36,7 @@ import type { UserAccountInfo } from '../Chat'
 import { downloadChatHistory } from '../chat/downloadChatHistory'
 import { Kbd } from '../components/Kbd'
 import { UserMenu } from '../components/UserMenu'
-import {
-    ModelSelectField,
-    type ModelSelectFieldHandle,
-} from '../components/modelSelectField/ModelSelectField'
+import { ModelSelectField } from '../components/modelSelectField/ModelSelectField'
 import { Button } from '../components/shadcn/ui/button'
 import { useClientConfig } from '../utils/useClientConfig'
 import styles from './TabsBar.module.css'
@@ -94,15 +91,13 @@ export const TabsBar = memo<TabsBarProps>(props => {
         config: { webviewType, multipleWebviewsEnabled, allowEndpointChange },
     } = useConfig()
 
-    const modelSelectorRef = useRef<ModelSelectFieldHandle>(null)
-
     const newChatCommand = getCreateNewChatCommand({
         IDE,
         webviewType,
         multipleWebviewsEnabled,
     })
 
-    const tabItems = useTabs({ user }, newChatCommand)
+    const tabItems = useTabs({ user }, newChatCommand, currentView)
 
     const currentViewSubActions = tabItems.find(tab => tab.view === currentView)?.subActions ?? []
 
@@ -136,42 +131,51 @@ export const TabsBar = memo<TabsBarProps>(props => {
         [setView]
     )
 
-    const openModelDropdownRef = useRef<(() => void) | null>(null)
+    // Create a ref to access the ModelSelectField methods
+    const modelSelectorRef = useRef<{ open: () => void; close: () => void }>(null)
 
-    const setOpenModelDropdownRef = useCallback((fn: () => void) => {
-        openModelDropdownRef.current = fn
-    }, [])
-
+    // Set up keyboard event listener
     useEffect(() => {
-        function handleKeyDown(event: KeyboardEvent) {
-            if (event.metaKey && event.key === 'm') {
-                event.preventDefault()
-                event.stopPropagation()
-                if (openModelDropdownRef.current && currentView === View.Chat) {
-                    openModelDropdownRef.current()
-                }
+        const handleKeyDown = (event: KeyboardEvent) => {
+            event.preventDefault()
+            event.stopPropagation()
+            // Check for meta (Command on Mac)
+            if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'm') {
+                // Open model dropdown
+                modelSelectorRef?.current?.open()
             }
         }
 
+        const handleKeyUp = (event: KeyboardEvent) => {
+            event.preventDefault()
+            event.stopPropagation()
+            if (event.key === 'Escape') {
+                // Close model dropdown
+                modelSelectorRef?.current?.close()
+            }
+        }
+
+        // Add global event listener
+        window.addEventListener('keyup', handleKeyUp)
         window.addEventListener('keydown', handleKeyDown)
+
+        // Clean up
         return () => {
             window.removeEventListener('keydown', handleKeyDown)
+            window.removeEventListener('keyup', handleKeyUp)
         }
-    }, [currentView])
+    }, [])
 
     return (
         <div className={clsx(styles.tabsRoot, { [styles.tabsRootCodyWeb]: IDE === CodyIDE.Web })}>
             <Tabs.List aria-label="cody-webview" className={styles.tabsContainer}>
                 <div className={styles.tabs}>
-                    {currentView === View.Chat && (
-                        <ModelSelectFieldToolbarItem
-                            models={models}
-                            userInfo={user}
-                            className="tw-mr-1"
-                            modelSelectorRef={modelSelectorRef}
-                            openDropdownRef={setOpenModelDropdownRef}
-                        />
-                    )}
+                    <ModelSelectFieldToolbarItem
+                        models={models}
+                        userInfo={user}
+                        modelSelectorRef={modelSelectorRef}
+                        className="tw-mr-1"
+                    />
 
                     <div className="tw-flex tw-ml-auto">
                         {tabItems.map(({ Icon, view, command, title, changesView, tooltip }) => (
@@ -385,7 +389,11 @@ TabButton.displayName = 'TabButton'
  * Returns list of tabs and its sub-action buttons, used later as configuration for
  * tabs rendering in chat header.
  */
-function useTabs(input: Pick<TabsBarProps, 'user'>, newChatCommand: string): TabConfig[] {
+function useTabs(
+    input: Pick<TabsBarProps, 'user'>,
+    newChatCommand: string,
+    currentView: View
+): TabConfig[] {
     const IDE = input.user.IDE
 
     const extensionAPI = useExtensionAPI<'userHistory'>()
@@ -395,23 +403,16 @@ function useTabs(input: Pick<TabsBarProps, 'user'>, newChatCommand: string): Tab
             (
                 [
                     {
-                        title: 'New Chat',
-                        Icon: PlusIcon,
-                        command: newChatCommand,
-                        changesView: false,
+                        view: View.Chat,
+                        title: currentView === View.Chat ? 'New Chat' : 'Chat',
+                        Icon: currentView === View.Chat ? SquarePen : MessagesSquareIcon,
+                        command: currentView === View.Chat ? newChatCommand : null,
+                        changesView: true,
                         tooltip: (
                             <>
-                                {IDE === CodyIDE.VSCode && (
-                                    <Kbd macOS="shift+opt+l" linuxAndWindows="shift+alt+l" />
-                                )}
+                                {IDE === CodyIDE.VSCode && <Kbd macOS="cmd+n" linuxAndWindows="cmd+n" />}
                             </>
                         ),
-                    },
-                    {
-                        view: View.Chat,
-                        title: 'Chat',
-                        Icon: MessagesSquareIcon,
-                        changesView: true,
                     },
                     {
                         view: View.History,
@@ -458,7 +459,7 @@ function useTabs(input: Pick<TabsBarProps, 'user'>, newChatCommand: string): Tab
                     },
                 ] as (TabConfig | null)[]
             ).filter(isDefined),
-        [IDE, extensionAPI, newChatCommand]
+        [IDE, extensionAPI, newChatCommand, currentView]
     )
 }
 
@@ -466,9 +467,8 @@ const ModelSelectFieldToolbarItem: FunctionComponent<{
     models?: Model[]
     userInfo: UserAccountInfo
     className?: string
-    modelSelectorRef?: React.RefObject<ModelSelectFieldHandle>
-    openDropdownRef?: (openFn: () => void) => void
-}> = ({ userInfo, className, models, modelSelectorRef, openDropdownRef }) => {
+    modelSelectorRef: React.RefObject<{ open: () => void; close: () => void }>
+}> = ({ userInfo, className, models, modelSelectorRef }) => {
     const clientConfig = useClientConfig()
     const serverSentModelsEnabled = !!clientConfig?.modelsAPIEnabled
 
@@ -497,8 +497,8 @@ const ModelSelectFieldToolbarItem: FunctionComponent<{
                 userInfo={userInfo}
                 className={clsx('tw-pl-2', className)}
                 data-testid="chat-model-selector"
-                ref={modelSelectorRef}
-                openDropdownRef={openDropdownRef}
+                modelSelectorRef={modelSelectorRef}
+                onCloseByEscape={() => modelSelectorRef?.current?.close()}
             />
         )
     )

@@ -134,6 +134,7 @@ export const ToolbarPopoverItem = forwardRef<
         ref,
         () => ({
             open: () => setIsOpen(true),
+            close: () => setIsOpen(false),
         }),
         []
     )
