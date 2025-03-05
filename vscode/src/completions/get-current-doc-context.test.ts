@@ -9,7 +9,7 @@ import { type WrappedParser, resetParsersCache } from '../tree-sitter/parser'
 
 import type { DocumentContext } from '@sourcegraph/cody-shared'
 import { getContextRange } from './doc-context-getters'
-import { getCurrentDocContext, insertIntoDocContext } from './get-current-doc-context'
+import { getCurrentDocContext, getPrefixWithCharLimit, getSuffixWithCharLimit, insertIntoDocContext } from './get-current-doc-context'
 import { documentAndPosition, initTreeSitterParser } from './test-helpers'
 
 function testGetCurrentDocContext(
@@ -740,5 +740,55 @@ describe('insertCompletionIntoDocContext', () => {
             position: { character: '    }, 2)'.length, line: repeatCount + 4 },
             positionWithoutInjectedCompletionText: docContext.position,
         })
+    })
+})
+
+describe('getPrefixWithCharLimit', () => {
+    it('returns all lines when total length is within limit', () => {
+        const prefixLines = ['line1', 'line2', 'line3']
+        const result = getPrefixWithCharLimit(prefixLines, 100)
+        expect(result).toBe('line1\nline2\nline3')
+    })
+
+    it('returns subset of lines from the end when total length exceeds limit', () => {
+        const prefixLines = ['line1', 'line2', 'very_long_line3']
+        const result = getPrefixWithCharLimit(prefixLines, 20)
+        expect(result).toBe('line2\nvery_long_line3')
+    })
+
+    it('returns only last line when limit is small', () => {
+        const prefixLines = ['line1', 'line2', 'line3']
+        const result = getPrefixWithCharLimit(prefixLines, 5)
+        expect(result).toBe('line3')
+    })
+
+    it('handles empty array', () => {
+        const result = getPrefixWithCharLimit([], 100)
+        expect(result).toBe('')
+    })
+})
+
+describe('getSuffixWithCharLimit', () => {
+    it('returns all lines when total length is within limit', () => {
+        const suffixLines = ['line1', 'line2', 'line3']
+        const result = getSuffixWithCharLimit(suffixLines, 100)
+        expect(result).toBe('line1\nline2\nline3')
+    })
+
+    it('returns subset of lines from the start when total length exceeds limit', () => {
+        const suffixLines = ['very_long_line1', 'line2', 'line3']
+        const result = getSuffixWithCharLimit(suffixLines, 20)
+        expect(result).toBe('very_long_line1\nline2')
+    })
+
+    it('returns only first line when limit is small', () => {
+        const suffixLines = ['line1', 'line2', 'line3']
+        const result = getSuffixWithCharLimit(suffixLines, 5)
+        expect(result).toBe('line1')
+    })
+
+    it('handles empty array', () => {
+        const result = getSuffixWithCharLimit([], 100)
+        expect(result).toBe('')
     })
 })
