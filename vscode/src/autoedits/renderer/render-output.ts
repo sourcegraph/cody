@@ -289,10 +289,19 @@ export class AutoEditsRenderOutput {
     protected getInlineDecorations(
         decorationInfo: DecorationInfo
     ): Omit<AutoEditDecorations, 'insertMarkerDecorations'> {
-        const fullLineDeletionDecorations = decorationInfo.removedLines.map(
+        const fullLineDeletionDecorations = decorationInfo.removedLines.flatMap(
             ({ originalLineNumber, text }) => {
+                const rangeWithoutLeadingWhitespace = text.trimStart().length
+                const removedCharacters = text.length - rangeWithoutLeadingWhitespace
                 const range = new vscode.Range(originalLineNumber, 0, originalLineNumber, text.length)
-                return this.createRemovedDecoration(range, text.length)
+                const strikeThruRange = new vscode.Range(
+                    originalLineNumber,
+                    removedCharacters,
+                    originalLineNumber,
+                    text.length
+                )
+                console.log(strikeThruRange)
+                return this.createRemovedDecoration(range, text.length, 'line-deleted')
             }
         )
         const partialLineDeletionDecorations = this.createModifiedRemovedDecorations(decorationInfo)
@@ -438,7 +447,11 @@ export class AutoEditsRenderOutput {
             for (const change of line.changes) {
                 if (change.type === 'delete') {
                     decorations.push(
-                        this.createRemovedDecoration(change.originalRange, change.text.length)
+                        ...this.createRemovedDecoration(
+                            change.originalRange,
+                            change.text.length,
+                            'line-modified'
+                        )
                     )
                 }
             }
@@ -471,16 +484,40 @@ export class AutoEditsRenderOutput {
      * A helper to create a removed text decoration for a given range and text length.
      * Both entire line removals and inline deletions use this logic.
      */
-    private createRemovedDecoration(range: vscode.Range, textLength: number): vscode.DecorationOptions {
-        return {
-            range,
-            renderOptions: {
-                before: {
-                    contentText: '\u00A0'.repeat(textLength),
-                    backgroundColor: 'rgba(255,0,0,0.3)', // red background for deletions
-                    margin: `0 -${textLength}ch 0 0`,
+    private createRemovedDecoration(
+        range: vscode.Range,
+        textLength: number,
+        type: 'line-deleted' | 'line-modified',
+        strikeThruRange?: vscode.Range
+    ): vscode.DecorationOptions[] {
+        const decorations: vscode.DecorationOptions[] = [
+            {
+                range,
+                renderOptions: {
+                    before: {
+                        contentText: '\u00A0'.repeat(textLength),
+                        backgroundColor: 'rgba(255,0,0,0.3)', // red background for deletions
+                        margin: `0 -${textLength}ch 0 0`,
+                        textDecoration: type === 'line-modified' ? 'line-through' : undefined,
+                    },
                 },
             },
+        ]
+
+        if (strikeThruRange) {
+            const length = strikeThruRange.end.character - strikeThruRange.start.character
+            decorations.push({
+                range: strikeThruRange,
+                renderOptions: {
+                    before: {
+                        contentText: '\u00A0'.repeat(length),
+                        margin: `0 -${length}ch 0 0`,
+                        textDecoration: 'line-through',
+                    },
+                },
+            })
         }
+
+        return decorations
     }
 }
