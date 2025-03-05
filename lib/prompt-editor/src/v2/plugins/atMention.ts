@@ -164,6 +164,27 @@ export function replaceAtMention(state: EditorState, replacement: Node): Transac
     }
     return state.tr
 }
+/**
+ *
+ * Removes the current at-mention if an at-mention is currently present.
+ * @param state The current editor state
+ * @param replacement The node to replace the at-mention with
+ * @returns The transaction that replaces the at-mention
+ */
+export function deleteAtMention(state: EditorState): Transaction {
+    const decoration = getDecoration(state)
+    if (decoration) {
+        const tr = disableAtMention(state.tr.deleteRange(decoration.from, decoration.to))
+
+        return (
+            tr
+                // Move selection after the space after the node
+                .setSelection(TextSelection.create(tr.doc, decoration.from))
+                .scrollIntoView()
+        )
+    }
+    return state.tr
+}
 
 /**
  * Returns whether an at-mention is currently present in the editor.
