@@ -1,5 +1,31 @@
-import type { PromptString, Rule } from '@sourcegraph/cody-shared'
+import type {
+    CompletionParameters,
+    EditModel,
+    Message,
+    PromptString,
+    Rule,
+} from '@sourcegraph/cody-shared'
 import type * as vscode from 'vscode'
+import type { VSCodeEditor } from '../../editor/vscode-editor'
+import type { FixupTask } from '../../non-stop/FixupTask'
+
+export interface BuildInteractionOptions {
+    model: EditModel
+    codyApiVersion: number
+    contextWindow: number
+    task: FixupTask
+    editor: VSCodeEditor
+}
+
+export interface BuiltInteraction extends Pick<CompletionParameters, 'stopSequences'> {
+    messages: Message[]
+    responseTopic: string
+    responsePrefix?: string
+}
+
+export interface EditPromptBuilder {
+    buildInteraction(options: BuildInteractionOptions): Promise<BuiltInteraction>
+}
 
 export interface LLMPrompt {
     system?: PromptString

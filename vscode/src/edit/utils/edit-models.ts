@@ -27,6 +27,7 @@ export function getOverriddenModelForIntent(
         case 'test':
         case 'add':
         case 'edit':
+        case 'smartApply':
             // Support all model usage for add and edit intents.
             return currentModel
     }
