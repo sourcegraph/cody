@@ -143,11 +143,6 @@ export const TabsBar = memo<TabsBarProps>(props => {
                     event.stopPropagation()
                     modelSelectorRef?.current?.open()
                 }
-                if (event.key.toLowerCase() === 'n') {
-                    event.preventDefault()
-                    event.stopPropagation()
-                    vscodeApi.postMessage({ command: 'chatSession', action: 'new' })
-                }
             }
         }
 
