@@ -220,14 +220,14 @@ export class DefaultDecorator implements AutoEditsDecorator {
         // VS Code: 'additions'
         // Client capabiliies === image: 'unified'
         const diffMode = 'additions'
-        const { diff, target } = makeVisualDiff(decorationInfo, diffMode, this.editor.document)
+        const { diff, position } = makeVisualDiff(decorationInfo, diffMode, this.editor.document)
         const { dark, light, pixelRatio } = generateSuggestionAsImage({
             diff,
             lang: this.editor.document.languageId,
             mode: diffMode,
         })
         const startLineEndColumn = getEndColumnForLine(
-            this.editor.document.lineAt(target.line),
+            this.editor.document.lineAt(position.line),
             this.editor.document
         )
 
@@ -235,7 +235,7 @@ export class DefaultDecorator implements AutoEditsDecorator {
         const decorationPadding = 4
         // The margin position where the decoration image should render.
         // Ensuring it does not conflict with the visibility of existing code.
-        const decorationMargin = target.offset - startLineEndColumn + decorationPadding
+        const decorationMargin = position.column - startLineEndColumn + decorationPadding
         const decorationStyle = cssPropertiesToString({
             // Absolutely position the suggested code so that the cursor does not jump there
             position: 'absolute',
@@ -253,9 +253,9 @@ export class DefaultDecorator implements AutoEditsDecorator {
         this.editor.setDecorations(this.addedLinesDecorationType, [
             {
                 range: new vscode.Range(
-                    target.line,
+                    position.line,
                     startLineEndColumn,
-                    target.line,
+                    position.line,
                     startLineEndColumn
                 ),
                 renderOptions: {
@@ -279,7 +279,7 @@ export class DefaultDecorator implements AutoEditsDecorator {
         ])
         this.editor.setDecorations(this.insertMarkerDecorationType, [
             {
-                range: new vscode.Range(target.line, 0, target.line, startLineEndColumn),
+                range: new vscode.Range(position.line, 0, position.line, startLineEndColumn),
             },
         ])
     }

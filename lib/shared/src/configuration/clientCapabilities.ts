@@ -64,6 +64,33 @@ export interface ClientCapabilities {
     completions?: 'none' | undefined | null
 
     /**
+     * If `enabled` edit suggestions will be provided from `autocomplete/execute`
+     */
+    autoEdit?: 'none' | 'enabled' | undefined | null
+
+    /**
+     * The text decorations that the client supports when rendering auto-edit suggestions.
+     * - 'none': the client does not support rendering decorations.
+     * - 'insertions-only': the client can render decorations for insertions only, similar to completions.
+     * - 'deletions-only': the client can render decorations for deletions only.
+     * - 'insertions-and-deletions': the client can render decorations for both insertions and deletions.
+     *
+     * Note: This capability can impact `autoEditImageSuggestions`. If the client does not support rendering deletions,
+     * then an unified diff will be generated for the image.
+     */
+    autoEditTextDecorations?: 'none' | 'insertions-only' | 'deletions-only' | 'insertions-and-deletions'
+
+    /**
+     * The image decorations that the client supports for auto-edit suggestions.
+     * - 'none': the client does not support rendering image decorations.
+     * - 'enabled': the client can render image decorations for auto-edit suggestions.
+     *
+     * Note: The image will differ slightly depending on the `autoEditTextDecorations` capability. If the client
+     * does not support rendering deletions, then an unified diff will be generated for the image.
+     */
+    autoEditImageDecorations?: 'none' | 'enabled'
+
+    /**
      * When 'streaming', handles 'chat/updateMessageInProgress' streaming notifications.
      */
     chat?: 'none' | 'streaming' | undefined | null

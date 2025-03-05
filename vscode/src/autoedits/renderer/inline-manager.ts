@@ -2,7 +2,10 @@ import type * as vscode from 'vscode'
 
 import { isFileURI } from '@sourcegraph/cody-shared'
 
+import type { AutoeditClientCapabilities } from '../autoedits-provider'
 import { areSameUriDocs } from '../utils'
+import { generateSuggestionAsImage } from './image-gen'
+import { makeVisualDiff } from './image-gen/visual-diff'
 import { AutoEditsDefaultRendererManager, type AutoEditsRendererManager } from './manager'
 import type { AutoEditRenderOutput, GetRenderOutputArgs } from './render-output'
 
@@ -17,13 +20,19 @@ export class AutoEditsInlineRendererManager
     extends AutoEditsDefaultRendererManager
     implements AutoEditsRendererManager
 {
-    public getRenderOutput(args: GetRenderOutputArgs): AutoEditRenderOutput {
-        const completionsWithDecorations = this.getCompletionsWithPossibleDecorationsRenderOutput(args)
+    public getRenderOutput(
+        args: GetRenderOutputArgs,
+        capabilities: AutoeditClientCapabilities
+    ): AutoEditRenderOutput {
+        const completionsWithDecorations = this.getCompletionsWithPossibleDecorationsRenderOutput(
+            args,
+            capabilities
+        )
         if (completionsWithDecorations) {
             return completionsWithDecorations
         }
 
-        if (this.shouldRenderDecorations(args.decorationInfo)) {
+        if (this.shouldRenderTextDecorations(args.decorationInfo, capabilities)) {
             return {
                 type: 'decorations',
                 decorations: {
@@ -34,12 +43,21 @@ export class AutoEditsInlineRendererManager
             }
         }
 
+        const diffMode = this.getImageDiffMode(capabilities)
+        const { diff, position } = makeVisualDiff(args.decorationInfo, diffMode, args.document)
+        const image = generateSuggestionAsImage({
+            diff,
+            lang: args.document.languageId,
+            mode: diffMode,
+        })
+
         // We have determined that the diff requires rendering as an image for the optimal user experience.
         // Additions are entirely represented with the image, and deletions are shown as decorations.
         const { deletionDecorations } = this.getInlineDecorations(args.decorationInfo)
         const { insertionDecorations, insertMarkerDecorations } = this.createModifiedImageDecorations(
-            args.document,
-            args.decorationInfo
+            image,
+            position,
+            args.document
         )
         return {
             type: 'image',
@@ -47,6 +65,10 @@ export class AutoEditsInlineRendererManager
                 insertionDecorations,
                 insertMarkerDecorations,
                 deletionDecorations,
+            },
+            imageData: {
+                ...image,
+                position,
             },
         }
     }
