@@ -22,7 +22,6 @@ import type { CodyStatusBar } from '../services/StatusBar'
 import { AutoeditsProvider } from './autoedits-provider'
 import { AutoeditDebugPanel } from './debug-panel/debug-panel'
 import { autoeditsOutputChannelLogger } from './output-channel-logger'
-import { initImageSuggestionService } from './renderer/image-gen'
 
 const AUTOEDITS_NON_ELIGIBILITY_MESSAGES = {
     ONLY_VSCODE_SUPPORT: 'Auto-edit is currently only supported in VS Code.',
@@ -52,7 +51,7 @@ interface AutoeditsItemProviderArgs {
     authStatus: AuthStatus
     chatClient: ChatClient
     autoeditFeatureFlagEnabled: boolean
-    autoeditImageRenderingEnabled: boolean
+    autoeditInlineRenderingEnabled: boolean
     fixupController: FixupController
     statusBar: CodyStatusBar
     context: vscode.ExtensionContext
@@ -63,7 +62,7 @@ export function createAutoEditsProvider({
     authStatus,
     chatClient,
     autoeditFeatureFlagEnabled,
-    autoeditImageRenderingEnabled,
+    autoeditInlineRenderingEnabled,
     fixupController,
     statusBar,
     context,
@@ -94,14 +93,12 @@ export function createAutoEditsProvider({
                 return []
             }
 
-            if (autoeditImageRenderingEnabled) {
-                // Initialise the canvas renderer for image generation.
-                // TODO: Consider moving this if we decide to enable this by default.
-                initImageSuggestionService()
-            }
-
+            const enabledRendererInSettings = vscode.workspace
+                .getConfiguration()
+                .get<'default' | 'inline'>('cody.experimental.autoedit.renderer', 'default')
             const provider = new AutoeditsProvider(chatClient, fixupController, statusBar, {
-                shouldRenderImage: autoeditImageRenderingEnabled,
+                shouldRenderInline:
+                    autoeditInlineRenderingEnabled || enabledRendererInSettings === 'inline',
             })
             return [
                 vscode.commands.registerCommand('cody.command.autoedit-manual-trigger', async () => {

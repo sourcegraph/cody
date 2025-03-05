@@ -6,8 +6,8 @@ import type { ContextSummary } from '../../completions/context/context-mixer'
 import type { CodeGenEventMetadata } from '../../services/CharactersLogger'
 import type { ModelResponse } from '../adapters/base'
 import type { CodeToReplaceData } from '../prompt/prompt-utils'
-import type { DecorationInfo } from '../renderer/decorators/base'
 import type { DecorationStats } from '../renderer/diff-utils'
+import type { AutoEditRenderOutput } from '../renderer/render-output'
 
 /**
  * This file implements a state machine to manage the lifecycle of an autoedit request.
@@ -237,12 +237,7 @@ export interface PostProcessedState extends Omit<LoadedState, 'phase' | 'payload
 
     /** Metadata required to show a suggestion based on `requestId` only. */
     prediction: string
-    /**
-     * The decoration info after the post-processing of the suggestion.
-     * Won't include insertions rendered as inline completions.
-     */
-    decorationInfo: DecorationInfo | null
-    inlineCompletionItems: vscode.InlineCompletionItem[] | null
+    renderOutput: AutoEditRenderOutput
 
     payload: LoadedState['payload'] & {
         /** The number of added, modified, removed lines and characters from suggestion. */

@@ -9,11 +9,9 @@ import {
 import clsx from 'clsx'
 import { type FunctionComponent, useCallback, useMemo } from 'react'
 import type { UserAccountInfo } from '../../../../../../Chat'
-import { ModelSelectField } from '../../../../../../components/modelSelectField/ModelSelectField'
 import { PromptSelectField } from '../../../../../../components/promptSelectField/PromptSelectField'
 import toolbarStyles from '../../../../../../components/shadcn/ui/toolbar.module.css'
 import { useActionSelect } from '../../../../../../prompts/PromptsTab'
-import { useClientConfig } from '../../../../../../utils/useClientConfig'
 import { MediaUploadButton } from './MediaUploadButton'
 import { ModeSelectorField } from './ModeSelectorButton'
 import { SubmitButton, type SubmitButtonState } from './SubmitButton'
@@ -117,13 +115,6 @@ export const Toolbar: FunctionComponent<{
                     />
                 )}
                 <PromptSelectFieldToolbarItem focusEditor={focusEditor} className="tw-ml-1 tw-mr-1" />
-                <ModelSelectFieldToolbarItem
-                    models={models}
-                    userInfo={userInfo}
-                    focusEditor={focusEditor}
-                    className="tw-mr-1"
-                    extensionAPI={extensionAPI}
-                />
                 <ModeSelectorField
                     className={className}
                     omniBoxEnabled={omniBoxEnabled}
@@ -155,40 +146,4 @@ const PromptSelectFieldToolbarItem: FunctionComponent<{
     )
 
     return <PromptSelectField onSelect={onSelect} onCloseByEscape={focusEditor} className={className} />
-}
-
-const ModelSelectFieldToolbarItem: FunctionComponent<{
-    models: Model[]
-    userInfo: UserAccountInfo
-    focusEditor?: () => void
-    className?: string
-    extensionAPI: WebviewToExtensionAPI
-}> = ({ userInfo, focusEditor, className, models, extensionAPI }) => {
-    const clientConfig = useClientConfig()
-    const serverSentModelsEnabled = !!clientConfig?.modelsAPIEnabled
-
-    const onModelSelect = useCallback(
-        (model: Model) => {
-            extensionAPI.setChatModel(model.id).subscribe({
-                error: error => console.error('setChatModel:', error),
-            })
-            focusEditor?.()
-        },
-        [extensionAPI.setChatModel, focusEditor]
-    )
-
-    return (
-        !!models?.length &&
-        (userInfo.isDotComUser || serverSentModelsEnabled) && (
-            <ModelSelectField
-                models={models}
-                onModelSelect={onModelSelect}
-                serverSentModelsEnabled={serverSentModelsEnabled}
-                userInfo={userInfo}
-                onCloseByEscape={focusEditor}
-                className={className}
-                data-testid="chat-model-selector"
-            />
-        )
-    )
 }
