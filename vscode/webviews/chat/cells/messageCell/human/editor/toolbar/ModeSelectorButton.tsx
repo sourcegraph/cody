@@ -48,12 +48,12 @@ function getIntentOptions({
     isEditEnabled,
     isDotComUser,
     omniBoxEnabled,
-    experimentalAgenticChatEnabled,
+    agenticChatEnabled,
 }: {
     isEditEnabled: boolean
     isDotComUser: boolean
     omniBoxEnabled: boolean
-    experimentalAgenticChatEnabled: boolean
+    agenticChatEnabled: boolean
 }): IntentOption[] {
     return [
         chatIntent,
@@ -67,11 +67,11 @@ function getIntentOptions({
         },
         {
             title: 'Agentic',
-            badge: 'Experimental',
+            badge: agenticChatEnabled ? 'Experimental' : 'Pro',
             icon: Sparkle,
             intent: 'agentic',
-            hidden: !experimentalAgenticChatEnabled,
-            disabled: !experimentalAgenticChatEnabled,
+            hidden: !isDotComUser && !agenticChatEnabled,
+            disabled: !agenticChatEnabled,
         },
         {
             title: 'Edit Code',
@@ -95,10 +95,11 @@ function getIntentOptions({
 export const ModeSelectorField: React.FunctionComponent<{
     omniBoxEnabled: boolean
     isDotComUser: boolean
+    isCodyProUser: boolean
     intent: ChatMessage['intent']
     className?: string
     manuallySelectIntent: (intent?: ChatMessage['intent']) => void
-}> = ({ isDotComUser, className, intent, omniBoxEnabled, manuallySelectIntent }) => {
+}> = ({ isDotComUser, isCodyProUser, className, intent, omniBoxEnabled, manuallySelectIntent }) => {
     const {
         clientCapabilities: { edit },
         config: { experimentalAgenticChatEnabled },
@@ -110,9 +111,9 @@ export const ModeSelectorField: React.FunctionComponent<{
                 isEditEnabled: edit !== 'none',
                 isDotComUser,
                 omniBoxEnabled,
-                experimentalAgenticChatEnabled,
+                agenticChatEnabled: isCodyProUser || experimentalAgenticChatEnabled,
             }).filter(option => !option.hidden),
-        [edit, isDotComUser, omniBoxEnabled, experimentalAgenticChatEnabled]
+        [edit, isDotComUser, isCodyProUser, omniBoxEnabled, experimentalAgenticChatEnabled]
     )
 
     // Memoize the handler to avoid recreating on each render

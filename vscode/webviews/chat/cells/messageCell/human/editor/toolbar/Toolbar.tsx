@@ -124,15 +124,14 @@ export const Toolbar: FunctionComponent<{
                     className="tw-mr-1"
                     extensionAPI={extensionAPI}
                 />
-                {!userInfo?.isDotComUser && omniBoxEnabled && (
-                    <ModeSelectorField
-                        className={className}
-                        omniBoxEnabled={omniBoxEnabled}
-                        intent={intent}
-                        isDotComUser={userInfo?.isDotComUser}
-                        manuallySelectIntent={manuallySelectIntent}
-                    />
-                )}
+                <ModeSelectorField
+                    className={className}
+                    omniBoxEnabled={omniBoxEnabled}
+                    intent={intent}
+                    isDotComUser={userInfo?.isDotComUser}
+                    isCodyProUser={userInfo?.isCodyProUser}
+                    manuallySelectIntent={manuallySelectIntent}
+                />
             </div>
             <div className="tw-flex-1 tw-flex tw-justify-end">
                 <SubmitButton onClick={onSubmitClick} state={submitState} />
