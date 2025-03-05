@@ -1,6 +1,6 @@
 import * as vscode from 'vscode'
 
-import { type ClientCapabilities, type DocumentContext, tokensToChars } from '@sourcegraph/cody-shared'
+import { type DocumentContext, tokensToChars } from '@sourcegraph/cody-shared'
 
 import {
     completionMatchesSuffix,
@@ -22,6 +22,8 @@ import {
 
 import type { FixupController } from '../../non-stop/FixupController'
 import { CodyTaskState } from '../../non-stop/state'
+import { AutoeditCompletionItem } from '../autoedit-completion-item'
+import { AutoeditClientCapabilities } from '../autoedits-provider'
 import { autoeditsOutputChannelLogger } from '../output-channel-logger'
 import type { AutoEditDecorations, AutoEditsDecorator, DecorationInfo } from './decorators/base'
 import {
@@ -46,7 +48,10 @@ export interface TryMakeInlineCompletionsArgs {
  * if the inline renderer implementation won't see dogfood blockers.
  */
 export interface AutoEditsRendererManager extends vscode.Disposable {
-    getRenderOutput(args: GetRenderOutputArgs, capabilities: ClientCapabilities): AutoEditRenderOutput
+    getRenderOutput(
+        args: GetRenderOutputArgs,
+        capabilities: AutoeditClientCapabilities
+    ): AutoEditRenderOutput
 
     handleDidShowSuggestion(requestId: AutoeditRequestID): Promise<void>
 
@@ -343,14 +348,17 @@ export class AutoEditsDefaultRendererManager
         await vscode.commands.executeCommand('setContext', 'cody.supersuggest.active', true)
     }
 
-    public getRenderOutput({
-        requestId,
-        prediction,
-        codeToReplaceData,
-        document,
-        position,
-        docContext,
-    }: GetRenderOutputArgs): AutoEditRenderOutput {
+    public getRenderOutput(
+        {
+            requestId,
+            prediction,
+            codeToReplaceData,
+            document,
+            position,
+            docContext,
+        }: GetRenderOutputArgs,
+        capabilities: AutoeditClientCapabilities
+    ): AutoEditRenderOutput {
         const updatedPrediction = adjustPredictionIfInlineCompletionPossible(
             prediction,
             codeToReplaceData.codeToRewritePrefix,
@@ -378,13 +386,13 @@ export class AutoEditsDefaultRendererManager
             }
 
             const insertText = docContext.currentLinePrefix + autocompleteInlineResponse
-            const inlineCompletionItem = new vscode.InlineCompletionItem(
+            const inlineCompletionItem = new AutoeditCompletionItem({
                 insertText,
-                new vscode.Range(
+                range: new vscode.Range(
                     document.lineAt(position).range.start,
                     document.lineAt(position).range.end
                 ),
-                {
+                command: {
                     title: 'Autoedit accepted',
                     command: 'cody.supersuggest.accept',
                     arguments: [
@@ -392,8 +400,8 @@ export class AutoEditsDefaultRendererManager
                             requestId,
                         },
                     ],
-                }
-            )
+                },
+            })
             autoeditsOutputChannelLogger.logDebug('tryMakeInlineCompletions', 'insert text', {
                 verbose: insertText,
             })

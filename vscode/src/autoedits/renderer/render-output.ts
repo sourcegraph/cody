@@ -1,9 +1,11 @@
-import type { ClientCapabilities, CodeToReplaceData, DocumentContext } from '@sourcegraph/cody-shared'
+import type { CodeToReplaceData, DocumentContext } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 import { completionMatchesSuffix } from '../../completions/is-completion-visible'
 import { shortenPromptForOutputChannel } from '../../completions/output-channel-logger'
 import { isRunningInsideAgent } from '../../jsonrpc/isRunningInsideAgent'
 import type { AutoeditRequestID } from '../analytics-logger'
+import { AutoeditCompletionItem } from '../autoedit-completion-item'
+import { AutoeditClientCapabilities } from '../autoedits-provider'
 import { autoeditsOutputChannelLogger } from '../output-channel-logger'
 import type { AutoEditDecorations, DecorationInfo } from './decorators/base'
 import { cssPropertiesToString } from './decorators/utils'
@@ -34,21 +36,21 @@ interface NoCompletionRenderOutput {
  */
 export interface LegacyCompletionRenderOutput {
     type: 'legacy-completion'
-    inlineCompletionItems: vscode.InlineCompletionItem[]
+    inlineCompletionItems: AutoeditCompletionItem[]
     updatedDecorationInfo: null
     updatedPrediction: string
 }
 
 export interface CompletionRenderOutput {
     type: 'completion'
-    inlineCompletionItems: vscode.InlineCompletionItem[]
+    inlineCompletionItems: AutoeditCompletionItem[]
     updatedDecorationInfo: null
     updatedPrediction: string
 }
 
 interface CompletionWithDecorationsRenderOutput {
     type: 'completion-with-decorations'
-    inlineCompletionItems: vscode.InlineCompletionItem[]
+    inlineCompletionItems: AutoeditCompletionItem[]
     decorations: AutoEditDecorations
     updatedDecorationInfo: DecorationInfo
     updatedPrediction: string
@@ -78,9 +80,8 @@ interface ImageRenderOutput {
      * We will provide this image data directly so the client can still show the suggestion.
      */
     imageData: {
-        image: GeneratedImageSuggestion
         position: { line: number; column: number }
-    }
+    } & GeneratedImageSuggestion
 }
 
 export type AutoEditRenderOutput =
@@ -103,7 +104,7 @@ export type AutoEditRenderOutput =
 export class AutoEditsRenderOutput {
     protected getCompletionsWithPossibleDecorationsRenderOutput(
         args: GetRenderOutputArgs,
-        clientCapabilities: ClientCapabilities
+        capabilities: AutoeditClientCapabilities
     ): CompletionRenderOutput | CompletionWithDecorationsRenderOutput | null {
         const completions = this.tryMakeInlineCompletions(args)
         if (!completions) {
@@ -133,7 +134,7 @@ export class AutoEditsRenderOutput {
         // a confusing UX when rendering a mix of completion insertion text and decoration insertion text.
         const renderWithDecorations =
             isOnlyRemovingTextForModifiedLines(completions.updatedDecorationInfo.modifiedLines) &&
-            this.shouldRenderDecorations(completions.updatedDecorationInfo, clientCapabilities)
+            this.shouldRenderTextDecorations(completions.updatedDecorationInfo, capabilities)
 
         if (renderWithDecorations) {
             return {
@@ -161,7 +162,7 @@ export class AutoEditsRenderOutput {
         decorationInfo,
     }: GetRenderOutputArgs): {
         type: 'full' | 'partial'
-        inlineCompletionItems: vscode.InlineCompletionItem[]
+        inlineCompletionItems: AutoeditCompletionItem[]
         updatedDecorationInfo: DecorationInfo
         updatedPrediction: string
     } | null {
@@ -184,13 +185,13 @@ export class AutoEditsRenderOutput {
 
         const completionText = docContext.currentLinePrefix + insertText
         const inlineCompletionItems = [
-            new vscode.InlineCompletionItem(
-                completionText,
-                new vscode.Range(
+            new AutoeditCompletionItem({
+                insertText: completionText,
+                range: new vscode.Range(
                     document.lineAt(position).range.start,
                     document.lineAt(position).range.end
                 ),
-                {
+                command: {
                     title: 'Autoedit accepted',
                     command: 'cody.supersuggest.accept',
                     arguments: [
@@ -198,8 +199,8 @@ export class AutoEditsRenderOutput {
                             requestId,
                         },
                     ],
-                }
-            ),
+                },
+            }),
         ]
 
         autoeditsOutputChannelLogger.logDebugIfVerbose(
@@ -238,8 +239,8 @@ export class AutoEditsRenderOutput {
         }
     }
 
-    protected canRenderDecorations(
-        decorationCapabilities: ClientCapabilities['autoEditDecorationSuggestions']
+    protected canRenderTextDecorations(
+        decorationCapabilities: AutoeditClientCapabilities['autoEditTextDecorations']
     ): boolean {
         const inAgent = isRunningInsideAgent()
         if (!inAgent) {
@@ -247,8 +248,8 @@ export class AutoEditsRenderOutput {
             return true
         }
 
-        if (decorationCapabilities && decorationCapabilities === 'none') {
-            // Client has explicitly disabled decorations
+        if (!decorationCapabilities || decorationCapabilities === 'none') {
+            // No information provided, or client has explicitly disabled decorations
             return false
         }
 
@@ -256,7 +257,7 @@ export class AutoEditsRenderOutput {
     }
 
     protected canRenderImages(
-        imageCapabilities: ClientCapabilities['autoEditImageSuggestions']
+        imageCapabilities: AutoeditClientCapabilities['autoEditImageDecorations']
     ): boolean {
         const inAgent = isRunningInsideAgent()
         if (!inAgent) {
@@ -264,51 +265,71 @@ export class AutoEditsRenderOutput {
             return true
         }
 
-        if (imageCapabilities && imageCapabilities === 'none') {
-            // Client has explicitly disabled images
+        if (!imageCapabilities || imageCapabilities === 'none') {
+            // No information provided, or client has explicitly disabled decorations
             return false
         }
 
         return true
     }
 
-    protected getImageDiffMode(clientCapabilities: ClientCapabilities): DiffMode {
-        const { autoEditDecorationSuggestions } = clientCapabilities
+    protected getImageDiffMode(clientCapabilities: AutoeditClientCapabilities): DiffMode {
+        const { autoEditTextDecorations } = clientCapabilities
         const inAgent = isRunningInsideAgent()
         if (!inAgent) {
             // VS Code can render deletions as decorations, so we only want to show additions in the image
             return 'additions'
         }
 
-        if (!autoEditDecorationSuggestions || autoEditDecorationSuggestions === 'none') {
-            // We cannot render deletions as decorations. We must show the entire unified diff in the image.
-            // No capabilities provided, default to unified diff
+        if (
+            !this.canRenderTextDecorations(autoEditTextDecorations) ||
+            autoEditTextDecorations === 'insertions-only'
+        ) {
+            // We cannot render decorations, or we cannot show deletions as decorations.
+            // Either way, this means we must ensure that the entire diff is shown in the image.
             return 'unified'
         }
 
         return 'additions'
     }
 
-    protected shouldRenderDecorations(
+    protected shouldRenderTextDecorations(
         decorationInfo: DecorationInfo,
-        clientCapabilities: ClientCapabilities
+        clientCapabilities: AutoeditClientCapabilities
     ): boolean {
-        const canRenderDecorations = this.canRenderDecorations(
-            clientCapabilities.autoEditDecorationSuggestions
+        const canRenderTextDecorations = this.canRenderTextDecorations(
+            clientCapabilities.autoEditTextDecorations
         )
-        if (!canRenderDecorations) {
+        if (!canRenderTextDecorations) {
             return false
         }
 
-        const canRenderImages = this.canRenderImages(clientCapabilities.autoEditImageSuggestions)
+        const canRenderImages = this.canRenderImages(clientCapabilities.autoEditImageDecorations)
         if (!canRenderImages) {
             // If we cannot render images, we should always render decorations
-            // TODO: We need to differentiate between insertions and deletions here.
             return true
         }
 
         if (decorationInfo.addedLines.length > 0) {
             // It is difficult to show added lines with decorations, as we cannot inject new lines.
+            return false
+        }
+
+        const hasDeletions =
+            decorationInfo.removedLines.length > 0 ||
+            !isOnlyAddingTextForModifiedLines(decorationInfo.modifiedLines)
+        if (clientCapabilities.autoEditTextDecorations === 'insertions-only' && hasDeletions) {
+            // We have deletions to show, but the client only supports insertions with text decorations.
+            // We should render an image instead.
+            return false
+        }
+
+        const hasInsertions =
+            decorationInfo.addedLines.length > 0 ||
+            !isOnlyRemovingTextForModifiedLines(decorationInfo.modifiedLines)
+        if (clientCapabilities.autoEditTextDecorations === 'deletions-only' && hasInsertions) {
+            // We have insertions to show, but the client only supports deletions with text decorations.
+            // We should render an image instead.
             return false
         }
 

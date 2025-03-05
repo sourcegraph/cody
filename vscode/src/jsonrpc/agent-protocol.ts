@@ -14,7 +14,6 @@ import type {
 import type { TelemetryEventMarketingTrackingInput } from '@sourcegraph/telemetry'
 
 import type { AuthError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
-import type { DecorationInfo } from '../autoedits/renderer/decorators/base'
 import type { ExtensionMessage, WebviewMessage } from '../chat/protocol'
 import type { CompletionBookkeepingEvent, CompletionItemID } from '../completions/analytics-logger'
 import type { FixupTaskID } from '../non-stop/FixupTask'
@@ -532,48 +531,26 @@ interface AutocompleteCompletionResult {
     completionEvent?: CompletionBookkeepingEvent | undefined | null
 }
 
-/**
- * An image-driven render mode. This will be used when the client is able to show an image in the editor.
- * It can be enhanced if the client can also show deletions in the existing code (e.g. marking existing ranges in red)
- */
-export interface RenderModeImage {
-    /**
-     * The type of image that will be rendered.
-     * - image-unified: A unified diff showing both additions and deletions.
-     * - image-additions: A diff showing only additions.
-     *   The client is expected to show deletions with another method.
-     */
-    type: 'image-unified' | 'image-additions'
-    /**
-     * Diff information on the exact changes in the suggestion.
-     * This will typically be used when type is `image-additions`, as it will provide information on the
-     * deleted ranges that are not shown in the image.
-     */
-    diff: DecorationInfo
-    image: {
-        /* Base64 encoded image suitable for rendering in dark editor themes */
-        dark: string
-        /* Base64 encoded image suitable for rendering in light editor themes */
-        light: string
-        /**
-         * The pixel ratio used to generate the image. Should be used to scale the image appropriately.
-         * Has a minimum value of 1.
-         */
-        pixelRatio: number
-        /**
-         * The position in which the image should be rendered in the editor.
-         */
-        position: { line: number; column: number }
-    }
+export interface AutoeditTextDecoration {
+    type: 'insert' | 'delete'
+    range: vscode.Range
+    text?: string
 }
 
-/**
- * A custom render mode. This will be used when the client wants full control over presentation.
- * The client will be responsible for determining how to render the suggestion.
- */
-export interface RenderModeCustom {
-    type: 'custom'
-    diff: DecorationInfo
+export interface AutoeditImageDecoration {
+    /* Base64 encoded image suitable for rendering in dark editor themes */
+    dark: string
+    /* Base64 encoded image suitable for rendering in light editor themes */
+    light: string
+    /**
+     * The pixel ratio used to generate the image. Should be used to scale the image appropriately.
+     * Has a minimum value of 1.
+     */
+    pixelRatio: number
+    /**
+     * The position in which the image should be rendered in the editor.
+     */
+    position: { line: number; column: number }
 }
 
 interface AutocompleteEditResult {
@@ -592,12 +569,23 @@ interface AutocompleteEditResult {
     /**
      * The new text that should replace the `originalText` in the `range`.
      */
-    replacementText: string
+    prediction: string
     /**
      * The method in which this suggestion should be rendered.
      * This is determined from the `clientCapabilities` provided by the client.
      */
-    render: RenderModeImage | RenderModeCustom
+    decorations: {
+        /**
+         * Text decorations that should be shown in the editor.
+         * Deletions will typically be existing text painted red.
+         * Insertions will be new text added temporarily to the document, styled like a completion
+         */
+        text: AutoeditTextDecoration[] | null
+        /**
+         * Image decoration that should be shown in the editor.
+         */
+        image: AutoeditImageDecoration | null
+    }
     /**
      * An empty list of autocompletion items.
      * This is present to maintain compatibility for clients that do not yet support autoedit.

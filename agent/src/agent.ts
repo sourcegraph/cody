@@ -56,7 +56,6 @@ import { chatHistory } from '../../vscode/src/chat/chat-view/ChatHistoryManager'
 import type { ExtensionMessage, WebviewMessage } from '../../vscode/src/chat/protocol'
 import { executeExplainCommand, executeSmellCommand } from '../../vscode/src/commands/execute'
 import type { CodyCommandArgs } from '../../vscode/src/commands/types'
-import type { CompletionItemID } from '../../vscode/src/completions/analytics-logger'
 import { loadTscRetriever } from '../../vscode/src/completions/context/retrievers/tsc/load-tsc-retriever'
 import { supportedTscLanguages } from '../../vscode/src/completions/context/retrievers/tsc/supportedTscLanguages'
 import { type ExecuteEditArguments, executeEdit } from '../../vscode/src/edit/execute'
@@ -900,14 +899,14 @@ export class Agent extends MessageHandler implements ExtensionClient {
         this.registerAuthenticatedRequest('testing/autocomplete/completionEvent', async params => {
             const provider = await vscode_shim.completionProvider()
 
-            return provider.getTestingCompletionEvent(params.completionID as CompletionItemID)
+            return provider.getTestingCompletionEvent(params.completionID as any)
         })
 
         this.registerAuthenticatedRequest('autocomplete/execute', async (params, token) => {
             const provider = await vscode_shim.completionProvider()
             if (!provider) {
                 logError('Agent', 'autocomplete/execute', 'Completion provider is not initialized')
-                return { items: [] }
+                return { type: 'completion' as const, items: [] as AutocompleteItem[] }
             }
             const uri =
                 typeof params.uri === 'string'
@@ -923,7 +922,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
                         params
                     )}. To fix this problem, set the 'uri' property.`
                 )
-                return { items: [] }
+                return { type: 'completion' as const, items: [] as AutocompleteItem[] }
             }
             const document = this.workspace.getDocument(uri)
             if (!document) {
@@ -934,7 +933,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
                     params.uri,
                     [...this.workspace.allUris()]
                 )
-                return { items: [] }
+                return { type: 'completion' as const, items: [] as AutocompleteItem[] }
             }
 
             try {
@@ -965,14 +964,33 @@ export class Agent extends MessageHandler implements ExtensionClient {
                     token
                 )
 
+                if (!result) {
+                    return { type: 'completion' as const, items: [] }
+                }
+
+                if (result.type === 'edit') {
+                    return {
+                        ...result,
+                        type: 'edit' as const,
+                        items: [],
+                    }
+                }
+
                 const items: AutocompleteItem[] =
-                    result?.items.flatMap(({ insertText, range, id }) =>
-                        typeof insertText === 'string' && range !== undefined
+                    result?.items.flatMap(item => {
+                        const insertText = item.insertText
+                        const range = item.range
+                        // TODO: We should surface an id from auto-edit
+                        const id = 'id' in item ? (item.id as string) : uuid.v4()
+                        return typeof insertText === 'string' && range !== undefined
                             ? [{ id, insertText, range }]
                             : []
-                    ) ?? []
-
-                return { items, completionEvent: result?.completionEvent }
+                    }) ?? []
+                return {
+                    type: 'completion' as const,
+                    items,
+                    completionEvent: result.completionEvent,
+                }
             } catch (error) {
                 if (isRateLimitError(error)) {
                     throw error
@@ -988,12 +1006,12 @@ export class Agent extends MessageHandler implements ExtensionClient {
 
         this.registerNotification('autocomplete/completionAccepted', async ({ completionID }) => {
             const provider = await vscode_shim.completionProvider()
-            await provider.handleDidAcceptCompletionItem(completionID as CompletionItemID)
+            await provider.handleDidAcceptCompletionItem(completionID as any)
         })
 
         this.registerNotification('autocomplete/completionSuggested', async ({ completionID }) => {
             const provider = await vscode_shim.completionProvider()
-            provider.unstable_handleDidShowCompletionItem(completionID as CompletionItemID)
+            provider.unstable_handleDidShowCompletionItem(completionID as any)
         })
 
         this.registerAuthenticatedRequest(
@@ -1015,7 +1033,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
 
         this.registerAuthenticatedRequest('testing/autocomplete/providerConfig', async () => {
             const provider = await vscode_shim.completionProvider()
-            return provider.config.provider
+            return 'config' in provider ? provider.config.provider : null
         })
 
         this.registerAuthenticatedRequest('graphql/getRepoIds', async ({ names, first }) => {

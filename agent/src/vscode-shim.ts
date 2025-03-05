@@ -56,6 +56,7 @@ import { emptyDisposable } from '../../vscode/src/testutils/emptyDisposable'
 
 import open from 'open'
 import type { AutoeditsProvider } from '../../vscode/src/autoedits/autoedits-provider'
+import { InlineCompletionItemProvider } from '../../vscode/src/completions/inline-completion-item-provider'
 import { AgentDiagnostics } from './AgentDiagnostics'
 import { AgentQuickPick } from './AgentQuickPick'
 import { AgentTabGroups } from './AgentTabGroups'
@@ -1144,12 +1145,13 @@ const removeCodeLensProvider = new EventEmitter<vscode.CodeLensProvider>()
 export const onDidRegisterNewCodeLensProvider = newCodeLensProvider.event
 export const onDidUnregisterNewCodeLensProvider = removeCodeLensProvider.event
 
-let latestCompletionProvider: AutoeditsProvider | undefined
-let resolveFirstCompletionProvider: (provider: AutoeditsProvider) => void = () => {}
-const firstCompletionProvider = new Promise<AutoeditsProvider>(resolve => {
+type CompletionProvider = InlineCompletionItemProvider | AutoeditsProvider
+let latestCompletionProvider: CompletionProvider | undefined
+let resolveFirstCompletionProvider: (provider: CompletionProvider) => void = () => {}
+const firstCompletionProvider = new Promise<CompletionProvider>(resolve => {
     resolveFirstCompletionProvider = resolve
 })
-export function completionProvider(): Promise<AutoeditsProvider> {
+export function completionProvider(): Promise<CompletionProvider> {
     if (latestCompletionProvider) {
         return Promise.resolve(latestCompletionProvider)
     }

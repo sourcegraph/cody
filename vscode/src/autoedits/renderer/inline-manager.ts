@@ -1,7 +1,8 @@
 import type * as vscode from 'vscode'
 
-import { clientCapabilities, isFileURI } from '@sourcegraph/cody-shared'
+import { isFileURI } from '@sourcegraph/cody-shared'
 
+import { AutoeditClientCapabilities } from '../autoedits-provider'
 import { areSameUriDocs } from '../utils'
 import { generateSuggestionAsImage } from './image-gen'
 import { makeVisualDiff } from './image-gen/visual-diff'
@@ -19,8 +20,10 @@ export class AutoEditsInlineRendererManager
     extends AutoEditsDefaultRendererManager
     implements AutoEditsRendererManager
 {
-    public getRenderOutput(args: GetRenderOutputArgs): AutoEditRenderOutput {
-        const capabilities = clientCapabilities()
+    public getRenderOutput(
+        args: GetRenderOutputArgs,
+        capabilities: AutoeditClientCapabilities
+    ): AutoEditRenderOutput {
         const completionsWithDecorations = this.getCompletionsWithPossibleDecorationsRenderOutput(
             args,
             capabilities
@@ -29,7 +32,7 @@ export class AutoEditsInlineRendererManager
             return completionsWithDecorations
         }
 
-        if (this.shouldRenderDecorations(args.decorationInfo, capabilities)) {
+        if (this.shouldRenderTextDecorations(args.decorationInfo, capabilities)) {
             return {
                 type: 'decorations',
                 decorations: {
@@ -64,7 +67,7 @@ export class AutoEditsInlineRendererManager
                 deletionDecorations,
             },
             imageData: {
-                image,
+                ...image,
                 position,
             },
         }

@@ -75,7 +75,7 @@ describe('AutoEditsDefaultRendererManager', () => {
                 function greet() { console.log("Hello") }
             `
             const args = getAutoeditRendererManagerArgs(documentText, prediction)
-            const result = manager.getRenderOutput(args) as CompletionRenderOutput
+            const result = manager.getRenderOutput(args, {}) as CompletionRenderOutput
             expect(result).toBeDefined()
             assertInlineCompletionItems(
                 result.inlineCompletionItems,
@@ -102,7 +102,7 @@ describe('AutoEditsDefaultRendererManager', () => {
                 function greet() { console.log("Hello") }
             `
             const args = getAutoeditRendererManagerArgs(documentText, prediction)
-            const result = manager.getRenderOutput(args) as CompletionRenderOutput
+            const result = manager.getRenderOutput(args, {}) as CompletionRenderOutput
             expect(result).toBeDefined()
             assertInlineCompletionItems(
                 result.inlineCompletionItems,
@@ -129,7 +129,7 @@ describe('AutoEditsDefaultRendererManager', () => {
                 function greet() { console.log("Hello") }
             `
             const args = getAutoeditRendererManagerArgs(documentText, prediction)
-            const result = manager.getRenderOutput(args) as CompletionRenderOutput
+            const result = manager.getRenderOutput(args, {}) as CompletionRenderOutput
             expect(result).toBeDefined()
             assertInlineCompletionItems(
                 result.inlineCompletionItems,

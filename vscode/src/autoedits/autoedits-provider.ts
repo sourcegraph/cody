@@ -4,6 +4,7 @@ import * as vscode from 'vscode'
 
 import {
     type ChatClient,
+    type ClientCapabilities,
     clientCapabilities,
     currentResolvedConfig,
     tokensToChars,
@@ -17,7 +18,8 @@ import { isRunningInsideAgent } from '../jsonrpc/isRunningInsideAgent'
 import type { FixupController } from '../non-stop/FixupController'
 import type { CodyStatusBar } from '../services/StatusBar'
 
-import type { RenderModeCustom, RenderModeImage } from '../jsonrpc/agent-protocol'
+import { CompletionBookkeepingEvent } from '../completions/analytics-logger'
+import type { AutoeditImageDecoration, AutoeditTextDecoration } from '../jsonrpc/agent-protocol'
 import type { AutoeditsModelAdapter, AutoeditsPrompt, ModelResponse } from './adapters/base'
 import { createAutoeditsModelAdapter } from './adapters/create-adapter'
 import {
@@ -28,6 +30,7 @@ import {
     autoeditTriggerKind,
     getTimeNowInMillis,
 } from './analytics-logger'
+import type { AutoeditCompletionItem } from './autoedit-completion-item'
 import { autoeditsProviderConfig } from './autoedits-config'
 import { FilterPredictionBasedOnRecentEdits } from './filter-prediction-edits'
 import { autoeditsOutputChannelLogger } from './output-channel-logger'
@@ -56,24 +59,40 @@ const ON_SELECTION_CHANGE_DEFAULT_DEBOUNCE_INTERVAL_MS = 15
 
 interface CompletionResult extends vscode.InlineCompletionList {
     type: 'completion'
+    items: AutoeditCompletionItem[]
     requestId: AutoeditRequestID
     prediction: string
+    /** @deprecated */
+    completionEvent?: CompletionBookkeepingEvent
 }
 
 interface EditResult extends vscode.InlineCompletionList {
     type: 'edit'
+    items: AutoeditCompletionItem[]
     requestId: AutoeditRequestID
     range: vscode.Range
     originalText: string
-    replacementText: string
-    /**
-     * The method in which this suggestion should be rendered.
-     * This is determined from the `clientCapabilities` provided by the client.
-     */
-    render: RenderModeImage | RenderModeCustom
+    prediction: string
+    decorations: {
+        /**
+         * Text decorations that should be shown in the editor.
+         * Deletions will typically be existing text painted red.
+         * Insertions will be new text added temporarily to the document, styled like a completion
+         */
+        text: AutoeditTextDecoration[] | null
+        /**
+         * Image decoration that should be shown in the editor.
+         */
+        image: AutoeditImageDecoration | null
+    }
 }
 
 export type AutoeditsResult = CompletionResult | EditResult
+
+export type AutoeditClientCapabilities = Pick<
+    ClientCapabilities,
+    'autoEdit' | 'autoEditTextDecorations' | 'autoEditImageDecorations'
+>
 
 /**
  * Provides inline completions and auto-edit functionality.
@@ -98,6 +117,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
         dataCollectionEnabled: false,
     })
     private readonly statusBar: CodyStatusBar
+    private readonly capabilities: AutoeditClientCapabilities
 
     constructor(
         chatClient: ChatClient,
@@ -105,6 +125,8 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
         statusBar: CodyStatusBar,
         options: { shouldRenderInline: boolean }
     ) {
+        this.capabilities = this.getClientCapabilities()
+
         // Initialise the canvas renderer for image generation.
         initImageSuggestionService()
 
@@ -140,6 +162,25 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
         )
 
         this.statusBar = statusBar
+    }
+
+    private getClientCapabilities(): AutoeditClientCapabilities {
+        const inAgent = isRunningInsideAgent()
+        if (!inAgent) {
+            // We are running inside VS Code, we can be confident that we have all the capabilities
+            return {
+                autoEdit: 'enabled',
+                autoEditImageDecorations: 'enabled',
+                autoEditTextDecorations: 'insertions-and-deletions',
+            }
+        }
+
+        const capabilitiesFromClient = clientCapabilities()
+        return {
+            autoEdit: capabilitiesFromClient.autoEdit,
+            autoEditImageDecorations: capabilitiesFromClient.autoEditImageDecorations,
+            autoEditTextDecorations: capabilitiesFromClient.autoEditTextDecorations,
+        }
     }
 
     private onDidChangeTextDocument(event: vscode.TextDocumentChangeEvent): void {
@@ -383,7 +424,6 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                 return null
             }
 
-            const capabilities = clientCapabilities()
             const renderOutput = this.rendererManager.getRenderOutput(
                 {
                     requestId,
@@ -394,7 +434,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                     decorationInfo,
                     codeToReplaceData,
                 },
-                capabilities
+                this.capabilities
             )
 
             if (renderOutput.type === 'none') {
@@ -462,7 +502,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                 }
             }
 
-            if (capabilities.autoEdit !== 'enabled') {
+            if (this.capabilities.autoEdit !== 'enabled') {
                 // Cannot render an edit suggestion
                 return null
             }
@@ -473,8 +513,11 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                 requestId,
                 originalText: codeToReplaceData.codeToRewrite,
                 range: codeToReplaceData.range,
-                replacementText: prediction,
-                render: this.getSuggestionForClient(renderOutput, decorationInfo),
+                prediction,
+                decorations: {
+                    image: 'imageData' in renderOutput ? renderOutput.imageData : null,
+                    text: this.getTextDecorationsForClient(renderOutput),
+                },
             }
         } catch (error) {
             const errorToReport =
@@ -493,32 +536,61 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
         }
     }
 
-    private getSuggestionForClient(
-        renderOutput: AutoEditRenderOutput,
-        decorationInfo: DecorationInfo
-    ): RenderModeImage | RenderModeCustom {
-        const suggestionMode = clientCapabilities().autoEditSuggestionMode
-        if (!suggestionMode || suggestionMode === 'custom') {
-            // Support custom renderers
-            return {
-                type: 'custom',
-                diff: decorationInfo,
+    private getTextDecorationsForClient(
+        renderOutput: AutoEditRenderOutput
+    ): AutoeditTextDecoration[] | null {
+        const decorations = 'decorations' in renderOutput ? renderOutput.decorations : null
+        if (!decorations) {
+            return null
+        }
+
+        // Handle based on client capabilities
+        switch (this.capabilities.autoEditTextDecorations) {
+            case 'none':
+                return null
+            case 'insertions-only':
+                if (decorations.insertionDecorations.length === 0) {
+                    return null
+                }
+                return decorations.insertionDecorations.map(decoration => ({
+                    type: 'insert',
+                    range: decoration.range,
+                    text: decoration.renderOptions?.before?.contentText || '',
+                }))
+            case 'deletions-only':
+                if (decorations.deletionDecorations.length === 0) {
+                    return null
+                }
+                return decorations.deletionDecorations.map(decoration => ({
+                    type: 'delete',
+                    range: decoration.range,
+                }))
+            case 'insertions-and-deletions': {
+                const output: AutoeditTextDecoration[] = []
+                if (decorations.insertionDecorations.length > 0) {
+                    output.push(
+                        ...decorations.insertionDecorations.map(decoration => ({
+                            type: 'insert' as const,
+                            range: decoration.range,
+                            text: decoration.renderOptions?.before?.contentText || '',
+                        }))
+                    )
+                }
+                if (decorations.deletionDecorations.length > 0) {
+                    output.push(
+                        ...decorations.deletionDecorations.map(decoration => ({
+                            type: 'delete' as const,
+                            range: decoration.range,
+                        }))
+                    )
+                }
+                if (output.length === 0) {
+                    return null
+                }
+                return output.sort((a, b) => a.range.start.compareTo(b.range.start))
             }
-        }
-
-        // Support image renderers
-        const imageData = renderOutput.type === 'image' ? renderOutput.imageData : null
-        if (!imageData) {
-            throw new Error('Expected image data to be present in render output')
-        }
-
-        return {
-            type: suggestionMode === 'image-unified' ? 'image-unified' : 'image-additions',
-            image: {
-                ...imageData.image,
-                position: imageData.position,
-            },
-            diff: decorationInfo,
+            default:
+                return null
         }
     }
 
@@ -572,6 +644,45 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
             userId: (await currentResolvedConfig()).clientState.anonymousUserID,
             isChatModel: autoeditsProviderConfig.isChatModel,
         })
+    }
+
+    /**
+     * noop method for Agent compability with `InlineCompletionItemProvider`.
+     * See: vscode/src/completions/inline-completion-item-provider.ts
+     */
+    public getTestingCompletionEvent(requestId: AutoeditRequestID): undefined {
+        console.warn('getTestingCompletionEvent is not implemented in AutoeditsProvider')
+    }
+
+    /**
+     * noop method for Agent compability with `InlineCompletionItemProvider`.
+     * See: vscode/src/completions/inline-completion-item-provider.ts
+     */
+    public async manuallyTriggerCompletion(): Promise<void> {
+        console.warn('manuallyTriggerCompletion is not implemented in AutoeditsProvider')
+    }
+
+    /**
+     * noop method for Agent compability with `InlineCompletionItemProvider`.
+     * See: vscode/src/completions/inline-completion-item-provider.ts
+     */
+    public clearLastCandidate(): void {
+        console.warn('clearLastCandidate is not implemented in AutoeditsProvider')
+    }
+
+    /**
+     * noop method for Agent compability with `InlineCompletionItemProvider`.
+     * See: vscode/src/completions/inline-completion-item-provider.ts
+     */
+    public testing_completionSuggestedPromise: undefined
+    public testing_setCompletionVisibilityDelay(delay: number): void {}
+
+    /**
+     * noop method for Agent compability with `InlineCompletionItemProvider`.
+     * See: vscode/src/completions/inline-completion-item-provider.ts
+     */
+    public async handleDidAcceptCompletionItem(requestId: AutoeditRequestID): Promise<void> {
+        console.warn('handleDidAcceptCompletionItem is not implemented in AutoeditsProvider')
     }
 
     public dispose(): void {
