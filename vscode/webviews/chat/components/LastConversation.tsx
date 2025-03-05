@@ -54,18 +54,21 @@ export const LastConversation: FunctionComponent<LastConversationProps> = ({ set
     }
 
     return (
-        <Button
-            variant="outline"
-            className="tw-w-full tw-flex tw-items-center tw-gap-2 tw-px-3 tw-py-2 tw-text-left tw-border-gray-500/20 dark:tw-border-gray-600/40"
-            onClick={handleClick}
-        >
-            <HistoryIcon size={16} className="tw-text-foreground/80" />
-            <div className="tw-flex-1 tw-min-w-0">
-                <div className="tw-text-sm tw-font-medium tw-text-foreground/80 tw-truncate">
-                    {truncatedText}
+        <div>
+            <div className="tw-text-muted-foreground tw-text-base tw-mb-2 tw-px-1">Last Conversation</div>
+            <Button
+                variant="secondary"
+                className="tw-w-full tw-flex tw-items-center tw-gap-2 tw-px-4 tw-py-3 tw-mb-8 tw-text-left tw-bg-[var(--vscode-dropdown-background)]"
+                onClick={handleClick}
+            >
+                <HistoryIcon size={20} className="_prompt--icon_1lclp_18" />
+                <div className="tw-flex tw-flex-1 tw-min-w-0 tw-items-center tw-justify-between">
+                    <div>
+                        <strong className="_prompt--name_1lclp_1">{truncatedText}</strong>
+                    </div>
+                    <span className="_prompt--description_1lclp_18 tw-ml-4 tw-text-xs">{timePeriod}</span>
                 </div>
-                <div className="tw-text-xs tw-text-foreground/60">{timePeriod}</div>
-            </div>
-        </Button>
+            </Button>
+        </div>
     )
 }
