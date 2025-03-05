@@ -6,8 +6,9 @@ import com.google.gson.annotations.SerializedName;
 data class ClientCapabilities(
   val authentication: AuthenticationEnum? = null, // Oneof: enabled, none
   val completions: CompletionsEnum? = null, // Oneof: none
-  val autoEditDecorationSuggestions: AutoEditDecorationSuggestionsEnum? = null, // Oneof: none, deletions, insertions-and-deletions
-  val autoEditImageSuggestions: AutoEditImageSuggestionsEnum? = null, // Oneof: none, enabled
+  val autoEdit: AutoEditEnum? = null, // Oneof: none, enabled
+  val autoEditTextDecorations: AutoEditTextDecorationsEnum? = null, // Oneof: none, insertions-only, deletions-only, insertions-and-deletions
+  val autoEditImageDecorations: AutoEditImageDecorationsEnum? = null, // Oneof: none, enabled
   val chat: ChatEnum? = null, // Oneof: none, streaming
   val git: GitEnum? = null, // Oneof: none, enabled
   val progressBars: ProgressBarsEnum? = null, // Oneof: none, enabled
@@ -38,13 +39,19 @@ data class ClientCapabilities(
     @SerializedName("none") None,
   }
 
-  enum class AutoEditDecorationSuggestionsEnum {
+  enum class AutoEditEnum {
     @SerializedName("none") None,
-    @SerializedName("deletions") Deletions,
+    @SerializedName("enabled") Enabled,
+  }
+
+  enum class AutoEditTextDecorationsEnum {
+    @SerializedName("none") None,
+    @SerializedName("insertions-only") `Insertions-only`,
+    @SerializedName("deletions-only") `Deletions-only`,
     @SerializedName("insertions-and-deletions") `Insertions-and-deletions`,
   }
 
-  enum class AutoEditImageSuggestionsEnum {
+  enum class AutoEditImageDecorationsEnum {
     @SerializedName("none") None,
     @SerializedName("enabled") Enabled,
   }

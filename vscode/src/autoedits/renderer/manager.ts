@@ -23,7 +23,7 @@ import {
 import type { FixupController } from '../../non-stop/FixupController'
 import { CodyTaskState } from '../../non-stop/state'
 import { AutoeditCompletionItem } from '../autoedit-completion-item'
-import { AutoeditClientCapabilities } from '../autoedits-provider'
+import type { AutoeditClientCapabilities } from '../autoedits-provider'
 import { autoeditsOutputChannelLogger } from '../output-channel-logger'
 import type { AutoEditDecorations, AutoEditsDecorator, DecorationInfo } from './decorators/base'
 import {

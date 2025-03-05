@@ -2,7 +2,7 @@ import type * as vscode from 'vscode'
 
 import { isFileURI } from '@sourcegraph/cody-shared'
 
-import { AutoeditClientCapabilities } from '../autoedits-provider'
+import type { AutoeditClientCapabilities } from '../autoedits-provider'
 import { areSameUriDocs } from '../utils'
 import { generateSuggestionAsImage } from './image-gen'
 import { makeVisualDiff } from './image-gen/visual-diff'

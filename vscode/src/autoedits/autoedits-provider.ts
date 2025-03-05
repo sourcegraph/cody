@@ -18,7 +18,7 @@ import { isRunningInsideAgent } from '../jsonrpc/isRunningInsideAgent'
 import type { FixupController } from '../non-stop/FixupController'
 import type { CodyStatusBar } from '../services/StatusBar'
 
-import { CompletionBookkeepingEvent } from '../completions/analytics-logger'
+import type { CompletionBookkeepingEvent } from '../completions/analytics-logger'
 import type { AutoeditImageDecoration, AutoeditTextDecoration } from '../jsonrpc/agent-protocol'
 import type { AutoeditsModelAdapter, AutoeditsPrompt, ModelResponse } from './adapters/base'
 import { createAutoeditsModelAdapter } from './adapters/create-adapter'

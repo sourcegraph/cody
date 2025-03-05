@@ -5,7 +5,7 @@ import { shortenPromptForOutputChannel } from '../../completions/output-channel-
 import { isRunningInsideAgent } from '../../jsonrpc/isRunningInsideAgent'
 import type { AutoeditRequestID } from '../analytics-logger'
 import { AutoeditCompletionItem } from '../autoedit-completion-item'
-import { AutoeditClientCapabilities } from '../autoedits-provider'
+import type { AutoeditClientCapabilities } from '../autoedits-provider'
 import { autoeditsOutputChannelLogger } from '../output-channel-logger'
 import type { AutoEditDecorations, DecorationInfo } from './decorators/base'
 import { cssPropertiesToString } from './decorators/utils'

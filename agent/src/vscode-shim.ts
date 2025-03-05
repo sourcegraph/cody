@@ -56,7 +56,7 @@ import { emptyDisposable } from '../../vscode/src/testutils/emptyDisposable'
 
 import open from 'open'
 import type { AutoeditsProvider } from '../../vscode/src/autoedits/autoedits-provider'
-import { InlineCompletionItemProvider } from '../../vscode/src/completions/inline-completion-item-provider'
+import type { InlineCompletionItemProvider } from '../../vscode/src/completions/inline-completion-item-provider'
 import { AgentDiagnostics } from './AgentDiagnostics'
 import { AgentQuickPick } from './AgentQuickPick'
 import { AgentTabGroups } from './AgentTabGroups'
