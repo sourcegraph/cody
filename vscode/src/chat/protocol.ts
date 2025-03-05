@@ -270,6 +270,7 @@ export interface ConfigurationSubsetForWebview
     endpointHistory?: string[] | undefined | null
     allowEndpointChange: boolean
     experimentalPromptEditorEnabled: boolean
+    experimentalAgenticChatEnabled: boolean
 }
 
 /**

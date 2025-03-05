@@ -1,6 +1,7 @@
 import type { Span } from '@opentelemetry/api'
 import type {
     ChatMessage,
+    ChatModel,
     ContextItem,
     ProcessingStep,
     PromptString,
@@ -47,6 +48,7 @@ export interface AgentRequest {
     signal: AbortSignal
     span: Span
     recorder: OmniboxTelemetry
+    model: ChatModel
 }
 
 export interface AgentHandler {

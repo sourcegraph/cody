@@ -534,11 +534,8 @@ describe('syncModels', () => {
         vi.spyOn(modelsService, 'modelsChanges', 'get').mockReturnValue(Observable.of(result))
 
         // Check if Deep Cody model is in the primary models list.
-        expect(result.primaryModels.some(model => model.id.includes('deep-cody'))).toBe(true)
-
-        // Deep Cody should not replace the default chat / edit model.
-        expect(result.preferences.defaults.chat?.includes('deep-cody')).toBe(false)
-        expect(result.preferences.defaults.edit?.includes('deep-cody')).toBe(false)
+        // NOTE: Deep Cody has been removed from the model list and should not be present in the primary models list.
+        expect(result.primaryModels.some(model => model.id.includes('deep-cody'))).toBe(false)
 
         // preference should not be affected and remains unchanged as this is handled in a later step.
         expect(result.preferences.selected.chat).toBe(undefined)
