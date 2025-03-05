@@ -25,6 +25,7 @@ import type { CodeToReplaceData } from '../prompt/prompt-utils'
 import type { DecorationInfo } from '../renderer/decorators/base'
 import { getDecorationStats } from '../renderer/diff-utils'
 
+import { autoeditDebugStore } from '../debug-panel/debug-store'
 import { autoeditIdRegistry } from './suggestion-id-registry'
 import {
     type AcceptedState,
@@ -357,6 +358,9 @@ export class AutoeditAnalyticsLogger {
             ...patch(currentRequest),
             phase: nextPhase,
         } as PhaseStates[P]
+
+        // Integrate auto-edit analytics logger with the auto-edit debug panel.
+        autoeditDebugStore.addAutoeditRequestDebugState(updatedRequest)
 
         this.activeRequests.set(requestId, updatedRequest)
 
