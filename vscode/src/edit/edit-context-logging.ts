@@ -12,7 +12,7 @@ import type * as vscode from 'vscode'
 import { gitMetadataForCurrentEditor } from '../repository/git-metadata-for-editor'
 import { GitHubDotComRepoMetadata } from '../repository/githubRepoMetadata'
 import { splitSafeMetadata } from '../services/telemetry-v2'
-import type { SmartApplySelectionType } from './prompt/smart-apply'
+import type { SmartApplySelectionType } from './prompt/smart-apply/selection'
 
 const MAX_LOGGING_PAYLOAD_SIZE_BYTES = 1024 * 1024 // 1 MB
 
