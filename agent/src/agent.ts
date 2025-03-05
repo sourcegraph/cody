@@ -586,6 +586,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
         this.registerNotification('textDocument/didRename', params => {
             const oldUri = vscode.Uri.parse(params.oldUri)
             const newUri = vscode.Uri.parse(params.newUri)
+            this.workspace.renameDocument(oldUri, newUri)
             vscode_shim.onDidRenameFiles.fire({ files: [{ oldUri, newUri }] })
         })
 
