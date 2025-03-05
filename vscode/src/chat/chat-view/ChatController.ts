@@ -731,7 +731,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
 
         this.chatBuilder.setSelectedModel(model)
 
-        function setChatAgent(
+        function getChatAgent(
             model: string,
             manuallySelectedIntent: string | null | undefined
         ): string | undefined {
@@ -748,7 +748,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             return undefined
         }
 
-        const chatAgent = setChatAgent(model, manuallySelectedIntent)
+        const chatAgent = getChatAgent(model, manuallySelectedIntent)
 
         const recorder = await OmniboxTelemetry.create({
             requestID,
