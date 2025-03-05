@@ -12,10 +12,14 @@ import {
 import {
     getPrefixWithCharLimit,
     getSuffixWithCharLimit,
-} from '../../../completions/get-current-doc-context'
-import { lines } from '../../../completions/text-processing'
-import { SMART_APPLY_CUSTOM_PROMPT_TOPICS } from '../constants'
-import type { BuildInteractionOptions, BuiltInteraction, EditPromptBuilder } from '../type'
+} from '../../../../completions/get-current-doc-context'
+import { lines } from '../../../../completions/text-processing'
+import { SMART_APPLY_CUSTOM_PROMPT_TOPICS } from '../../../../edit/prompt/constants'
+import type {
+    BuildInteractionOptions,
+    BuiltInteraction,
+    EditPromptBuilder,
+} from '../../../../edit/prompt/type'
 
 // https://huggingface.co/Qwen/Qwen2.5-Coder-32B-Instruct
 const CUSTOM_MODEL_DEFAULTS = {

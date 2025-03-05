@@ -2,7 +2,7 @@ import { type PromptString, ps } from '@sourcegraph/cody-shared'
 import dedent from 'dedent'
 import { describe, expect, it } from 'vitest'
 import * as vscode from 'vscode'
-import { document } from '../../../completions/test-helpers'
+import { document } from '../../../../completions/test-helpers'
 import {
     getCurrentTokenCount,
     getInstructionPromptWithCharLimit,
