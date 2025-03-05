@@ -21,8 +21,6 @@ import type { BuildInteractionOptions, BuiltInteraction, EditPromptBuilder } fro
 const CUSTOM_MODEL_DEFAULTS = {
     STOP_SEQUENCES: ['<|im_start|>', '<|im_end|>', '<|endoftext|>'],
     MAX_INSTRUCTION_TOKENS: 500,
-    // Actual supported context window is 128k tokens, but we limit it to 8k as per current behaviour.
-    MAX_TOKEN_COUNT: 8_000,
 }
 
 function getTagsExplanationPrompt(): PromptString {
@@ -154,7 +152,7 @@ export async function getCurrentTokenCount(promptList: PromptString[]): Promise<
 }
 
 export class SmartApplyCustomEditPromptBuilder implements EditPromptBuilder {
-    async buildInteraction({ task }: BuildInteractionOptions): Promise<BuiltInteraction> {
+    async buildInteraction({ task, contextWindow }: BuildInteractionOptions): Promise<BuiltInteraction> {
         if (task.intent !== 'smartApply') {
             throw new Error(
                 'SmartApplyCustomEditPromptBuilder: Smart apply custom prompt builder should only be used for smart apply tasks'
@@ -182,10 +180,7 @@ export class SmartApplyCustomEditPromptBuilder implements EditPromptBuilder {
             chatQuery,
             Math.max(
                 0,
-                Math.min(
-                    CUSTOM_MODEL_DEFAULTS.MAX_INSTRUCTION_TOKENS,
-                    CUSTOM_MODEL_DEFAULTS.MAX_TOKEN_COUNT - currentTokenCount
-                )
+                Math.min(CUSTOM_MODEL_DEFAULTS.MAX_INSTRUCTION_TOKENS, contextWindow - currentTokenCount)
             )
         )
         currentTokenCount += charsToTokens(chatQueryWithTokenLimit.length)
@@ -200,7 +195,7 @@ export class SmartApplyCustomEditPromptBuilder implements EditPromptBuilder {
             document,
             prefixRange,
             suffixRange,
-            Math.max(0, CUSTOM_MODEL_DEFAULTS.MAX_TOKEN_COUNT - currentTokenCount)
+            Math.max(0, contextWindow - currentTokenCount)
         )
 
         const userPrompt = getUserPrompt(
