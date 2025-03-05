@@ -85,6 +85,7 @@ interface TabConfig {
 export const TabsBar = memo<TabsBarProps>(props => {
     const { currentView, setView, user, endpointHistory, models } = props
     const { isCodyProUser, IDE } = user
+    const vscodeApi = getVSCodeAPI()
     const {
         config: { webviewType, multipleWebviewsEnabled, allowEndpointChange },
     } = useConfig()
@@ -135,16 +136,18 @@ export const TabsBar = memo<TabsBarProps>(props => {
     // Set up keyboard event listener
     useEffect(() => {
         const handleKeyDown = (event: KeyboardEvent) => {
-            // Check for meta (Command on Mac)
-            if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'm') {
-                event.preventDefault()
-                event.stopPropagation()
-                modelSelectorRef?.current?.open()
-            }
-            if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'n') {
-                event.stopPropagation()
-                event.preventDefault()
-                handleClick(View.Chat, newChatCommand, true)
+            if (event.metaKey) {
+                // Open model dropdown
+                if (event.key.toLowerCase() === 'm') {
+                    event.preventDefault()
+                    event.stopPropagation()
+                    modelSelectorRef?.current?.open()
+                }
+                if (event.key.toLowerCase() === 'n') {
+                    event.preventDefault()
+                    event.stopPropagation()
+                    vscodeApi.postMessage({ command: 'chatSession', action: 'new' })
+                }
             }
         }
 
@@ -165,7 +168,7 @@ export const TabsBar = memo<TabsBarProps>(props => {
             window.removeEventListener('keydown', handleKeyDown)
             window.removeEventListener('keyup', handleKeyUp)
         }
-    }, [newChatCommand, handleClick])
+    }, [vscodeApi])
     return (
         <div className={clsx(styles.tabsRoot, { [styles.tabsRootCodyWeb]: IDE === CodyIDE.Web })}>
             <Tabs.List aria-label="cody-webview" className={styles.tabsContainer}>
@@ -412,7 +415,7 @@ function useTabs(
                         Icon: PlusIcon,
                         command: currentView === View.Chat ? newChatCommand : null,
                         changesView: true,
-                        tooltip: <>{'(cmd+n)'}</>,
+                        tooltip: <>{'(⌘N)'}</>,
                     },
                     {
                         view: View.History,
