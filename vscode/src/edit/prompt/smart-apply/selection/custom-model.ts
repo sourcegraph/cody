@@ -2,13 +2,12 @@ import {
     type CompletionParameters,
     type EditModel,
     type Message,
-    type ModelContextWindow,
     PromptString,
     TokenCounterUtils,
-    modelsService,
     psDedent,
 } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
+import { getSelectionFromModel } from '../selection'
 import { getInstructionPromptWithCharLimit } from '../utils'
 import {
     LLM_PARAMETERS,
@@ -18,7 +17,8 @@ import {
     type SmartApplySelectionProvider,
 } from './base'
 
-export const SMART_APPLY_INSTRUCTION_TOKEN_LIMIT = 500
+const SMART_APPLY_INSTRUCTION_TOKEN_LIMIT = 500
+const FULL_FILE_REWRITE_TOKEN_TOKEN_LIMIT = 12000
 
 const DEFAULT_SELECTION_PROMPT = {
     system: psDedent`
@@ -44,31 +44,50 @@ const DEFAULT_SELECTION_PROMPT = {
 }
 
 export class CustomModelSelectionProvider implements SmartApplySelectionProvider {
-    private model: EditModel
-    private contextWindow: ModelContextWindow
-    private replacement: string
-
-    constructor(model: EditModel, contextWindow: ModelContextWindow, replacement: string) {
-        this.model = model
-        this.contextWindow = contextWindow
-        this.replacement = replacement
-    }
-
-    async getPrompt({
+    public async getSelectedText({
         instruction,
         replacement,
         document,
         model,
-    }: SelectionPromptProviderArgs): Promise<SelectionPromptProviderResult> {
+        chatClient,
+        contextWindow,
+    }: SelectionPromptProviderArgs): Promise<string> {
         const documentRange = new vscode.Range(0, 0, document.lineCount - 1, 0)
         const documentText = PromptString.fromDocumentText(document, documentRange)
         const tokenCount = await TokenCounterUtils.countPromptString(documentText)
 
-        const contextWindow = modelsService.getContextWindowByID(model)
         if (tokenCount > contextWindow.input) {
             throw new Error("The amount of text in this document exceeds Cody's current capacity.")
         }
+        if (tokenCount < FULL_FILE_REWRITE_TOKEN_TOKEN_LIMIT) {
+            return 'ENTIRE_FILE'
+        }
+        const { prefix, messages } = await this.getPrompt(
+            instruction,
+            replacement,
+            document,
+            documentText
+        )
+        const completionParameters = this.getLLMCompletionsParameters(
+            model,
+            contextWindow.output,
+            replacement.toString()
+        )
+        const selectedText = await getSelectionFromModel(
+            chatClient,
+            prefix,
+            messages,
+            completionParameters
+        )
+        return selectedText
+    }
 
+    private async getPrompt(
+        instruction: PromptString,
+        replacement: PromptString,
+        document: vscode.TextDocument,
+        fileContent: PromptString
+    ): Promise<SelectionPromptProviderResult> {
         const instructionPromptWithLimit = getInstructionPromptWithCharLimit(
             instruction,
             SMART_APPLY_INSTRUCTION_TOKEN_LIMIT
@@ -78,7 +97,7 @@ export class CustomModelSelectionProvider implements SmartApplySelectionProvider
         const userPrompt = DEFAULT_SELECTION_PROMPT.instruction
             .replaceAll('{instruction}', instructionPromptWithLimit)
             .replaceAll('{incomingText}', replacement)
-            .replaceAll('{fileContents}', documentText)
+            .replaceAll('{fileContents}', fileContent)
             .replaceAll('{filePath}', PromptString.fromDisplayPath(document.uri))
 
         const prompt: Message[] = [
@@ -91,16 +110,20 @@ export class CustomModelSelectionProvider implements SmartApplySelectionProvider
         }
     }
 
-    getLLMCompletionsParameters(): CompletionParameters {
+    getLLMCompletionsParameters(
+        model: EditModel,
+        outputTokens: number,
+        replacement: string
+    ): CompletionParameters {
         return {
-            model: this.model,
+            model,
             stopSequences: LLM_PARAMETERS.stopSequences,
-            maxTokensToSample: this.contextWindow.output,
+            maxTokensToSample: outputTokens,
             temperature: 0.1,
             stream: true,
             prediction: {
                 type: 'content',
-                content: this.replacement,
+                content: replacement,
             },
             rewriteSpeculation: true,
             adaptiveSpeculation: true,

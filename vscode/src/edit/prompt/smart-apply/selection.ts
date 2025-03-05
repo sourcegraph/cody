@@ -1,7 +1,9 @@
 import {
     BotResponseMultiplexer,
     type ChatClient,
+    type CompletionParameters,
     type EditModel,
+    type Message,
     type PromptString,
     modelsService,
 } from '@sourcegraph/cody-shared'
@@ -15,14 +17,11 @@ import { SMART_APPLY_TOPICS, type SmartApplySelectionProvider } from './selectio
 import { CustomModelSelectionProvider } from './selection/custom-model'
 import { DefaultSelectionProvider } from './selection/default'
 
-async function promptModelForOriginalCode(
-    selectionProvider: SmartApplySelectionProvider,
-    instruction: PromptString,
-    replacement: PromptString,
-    document: vscode.TextDocument,
-    model: EditModel,
+export async function getSelectionFromModel(
     client: ChatClient,
-    codyApiVersion: number
+    prefix: string,
+    messages: Message[],
+    params: CompletionParameters
 ): Promise<string> {
     const multiplexer = new BotResponseMultiplexer()
 
@@ -37,14 +36,6 @@ async function promptModelForOriginalCode(
     })
 
     const abortController = new AbortController()
-    const { prefix, messages } = await selectionProvider.getPrompt({
-        instruction,
-        replacement,
-        document,
-        model,
-        codyApiVersion,
-    })
-    const params = selectionProvider.getLLMCompletionsParameters()
     const stream = await client.chat(messages, params, abortController.signal)
 
     let textConsumed = 0
@@ -86,15 +77,11 @@ interface SmartApplySelection {
     range: vscode.Range
 }
 
-function getSmartApplySelectionProvider(
-    model: string,
-    replacement: PromptString
-): SmartApplySelectionProvider {
-    const contextWindow = modelsService.getContextWindowByID(model)
+function getSmartApplySelectionProvider(model: EditModel): SmartApplySelectionProvider {
     if (Object.values(SMART_APPLY_MODEL_IDENTIFIERS).includes(model)) {
-        return new CustomModelSelectionProvider(model, contextWindow, replacement.toString())
+        return new CustomModelSelectionProvider()
     }
-    return new DefaultSelectionProvider(model, contextWindow)
+    return new DefaultSelectionProvider()
 }
 
 export async function getSmartApplySelection({
@@ -115,17 +102,18 @@ export async function getSmartApplySelection({
     codyApiVersion: number
 }): Promise<SmartApplySelection | null> {
     let originalCode: string
-    const selectionProvider = getSmartApplySelectionProvider(model, replacement)
+    const selectionProvider = getSmartApplySelectionProvider(model)
+    const contextWindow = modelsService.getContextWindowByID(model)
     try {
-        originalCode = await promptModelForOriginalCode(
-            selectionProvider,
+        originalCode = await selectionProvider.getSelectedText({
             instruction,
             replacement,
             document,
             model,
+            contextWindow,
             chatClient,
-            codyApiVersion
-        )
+            codyApiVersion,
+        })
     } catch (error: unknown) {
         // We erred when asking the LLM to produce the original code.
         // Surface this error back to the user

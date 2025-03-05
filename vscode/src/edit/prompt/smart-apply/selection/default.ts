@@ -6,11 +6,11 @@ import {
     PromptString,
     TokenCounterUtils,
     getSimplePreamble,
-    modelsService,
     psDedent,
 } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 import { PromptBuilder } from '../../../../prompt-builder'
+import { getSelectionFromModel } from '../selection'
 import {
     LLM_PARAMETERS,
     SMART_APPLY_TOPICS,
@@ -52,29 +52,51 @@ const DEFAULT_SELECTION_PROMPT = {
 }
 
 export class DefaultSelectionProvider implements SmartApplySelectionProvider {
-    private model: EditModel
-    private contextWindow: ModelContextWindow
-
-    constructor(model: EditModel, contextWindow: ModelContextWindow) {
-        this.model = model
-        this.contextWindow = contextWindow
-    }
-
-    async getPrompt({
+    public async getSelectedText({
         instruction,
         replacement,
         document,
         model,
+        chatClient,
         codyApiVersion,
-    }: SelectionPromptProviderArgs): Promise<SelectionPromptProviderResult> {
+        contextWindow,
+    }: SelectionPromptProviderArgs): Promise<string> {
         const documentRange = new vscode.Range(0, 0, document.lineCount - 1, 0)
         const documentText = PromptString.fromDocumentText(document, documentRange)
         const tokenCount = await TokenCounterUtils.countPromptString(documentText)
-        const contextWindow = modelsService.getContextWindowByID(model)
+
         if (tokenCount > contextWindow.input) {
             throw new Error("The amount of text in this document exceeds Cody's current capacity.")
         }
 
+        const { prefix, messages } = await this.getPrompt(
+            instruction,
+            replacement,
+            document,
+            model,
+            codyApiVersion,
+            documentText,
+            contextWindow
+        )
+        const completionParameters = this.getLLMCompletionsParameters(model, contextWindow.output)
+        const selectedText = await getSelectionFromModel(
+            chatClient,
+            prefix,
+            messages,
+            completionParameters
+        )
+        return selectedText
+    }
+
+    private async getPrompt(
+        instruction: PromptString,
+        replacement: PromptString,
+        document: vscode.TextDocument,
+        model: EditModel,
+        codyApiVersion: number,
+        fileContent: PromptString,
+        contextWindow: ModelContextWindow
+    ): Promise<SelectionPromptProviderResult> {
         const promptBuilder = await PromptBuilder.create(contextWindow)
         const preamble = getSimplePreamble(
             model,
@@ -87,7 +109,7 @@ export class DefaultSelectionProvider implements SmartApplySelectionProvider {
         const text = DEFAULT_SELECTION_PROMPT.instruction
             .replaceAll('{instruction}', instruction)
             .replaceAll('{incomingText}', replacement)
-            .replaceAll('{fileContents}', documentText)
+            .replaceAll('{fileContents}', fileContent)
             .replaceAll('{filePath}', PromptString.fromDisplayPath(document.uri))
 
         const transcript: ChatMessage[] = [{ speaker: 'human', text }]
@@ -101,11 +123,11 @@ export class DefaultSelectionProvider implements SmartApplySelectionProvider {
         }
     }
 
-    getLLMCompletionsParameters(): CompletionParameters {
+    private getLLMCompletionsParameters(model: EditModel, outputTokens: number): CompletionParameters {
         return {
-            model: this.model,
+            model,
             stopSequences: LLM_PARAMETERS.stopSequences,
-            maxTokensToSample: this.contextWindow.output,
+            maxTokensToSample: outputTokens,
         } as CompletionParameters
     }
 }
