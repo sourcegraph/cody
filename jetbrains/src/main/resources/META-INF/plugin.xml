@@ -76,7 +76,7 @@
                 factoryClass="com.sourcegraph.cody.CodyToolWindowFactory"/>
 
         <errorHandler
-                implementation="com.sourcegraph.cody.error.CodyErrorSubmitter"/>
+                implementation="com.sourcegraph.cody.error.SentryErrorSubmitter"/>
 
         <!-- status bar widgets -->
         <statusBarWidgetFactory order="first" id="cody.internalsStatusBarWidget"
