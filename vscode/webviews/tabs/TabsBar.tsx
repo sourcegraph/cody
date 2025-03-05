@@ -2,14 +2,7 @@ import * as Dialog from '@radix-ui/react-dialog'
 import * as Tabs from '@radix-ui/react-tabs'
 
 import clsx from 'clsx'
-import {
-    BookTextIcon,
-    DownloadIcon,
-    HistoryIcon,
-    type LucideProps,
-    PlusIcon,
-    Trash2Icon,
-} from 'lucide-react'
+import { BookTextIcon, HistoryIcon, type LucideProps, PlusIcon } from 'lucide-react'
 import { getVSCodeAPI } from '../utils/VSCodeApi'
 import { View } from './types'
 
@@ -32,7 +25,6 @@ import { useConfig } from '../utils/useConfig'
 import { useExtensionAPI } from '@sourcegraph/prompt-editor'
 import { isEqual } from 'lodash'
 import type { UserAccountInfo } from '../Chat'
-import { downloadChatHistory } from '../chat/downloadChatHistory'
 import { UserMenu } from '../components/UserMenu'
 import { ModelSelectField } from '../components/modelSelectField/ModelSelectField'
 import { Button } from '../components/shadcn/ui/button'
@@ -95,7 +87,7 @@ export const TabsBar = memo<TabsBarProps>(props => {
         multipleWebviewsEnabled,
     })
 
-    const tabItems = useTabs({ user }, newChatCommand, currentView)
+    const tabItems = useTabs(newChatCommand, currentView)
 
     const currentViewSubActions = tabItems.find(tab => tab.view === currentView)?.subActions ?? []
 
@@ -390,15 +382,7 @@ TabButton.displayName = 'TabButton'
  * Returns list of tabs and its sub-action buttons, used later as configuration for
  * tabs rendering in chat header.
  */
-function useTabs(
-    input: Pick<TabsBarProps, 'user'>,
-    newChatCommand: string,
-    currentView: View
-): TabConfig[] {
-    const IDE = input.user.IDE
-
-    const extensionAPI = useExtensionAPI<'userHistory'>()
-
+function useTabs(newChatCommand: string, currentView: View): TabConfig[] {
     return useMemo<TabConfig[]>(
         () =>
             (
@@ -415,37 +399,6 @@ function useTabs(
                         view: View.History,
                         title: 'History',
                         Icon: HistoryIcon,
-                        subActions: [
-                            {
-                                title: 'Export',
-                                Icon: DownloadIcon,
-                                command: 'cody.chat.history.export',
-                                callback: () => downloadChatHistory(extensionAPI),
-                            },
-                            {
-                                title: 'Delete all',
-                                Icon: Trash2Icon,
-                                command: 'cody.chat.history.clear',
-
-                                // Show Cody Chat UI confirmation modal with this message only for
-                                // Cody Web. All other IDE either implements their own native confirmation UI
-                                // or don't have confirmation UI at all.
-                                confirmation:
-                                    IDE === CodyIDE.Web
-                                        ? {
-                                              title: 'Are you sure you want to delete all of your chats?',
-                                              description:
-                                                  'You will not be able to recover them once deleted.',
-                                              confirmationAction: 'Delete all chats',
-                                          }
-                                        : undefined,
-
-                                // We don't have a way to request user confirmation in Cody Agent
-                                // (vscode.window.showWarningMessage is overridable there), so bypass
-                                // confirmation in cody agent and use confirmation UI above.
-                                arg: IDE === CodyIDE.VSCode ? undefined : 'clear-all-no-confirm',
-                            },
-                        ].filter(isDefined),
                         changesView: true,
                     },
                     {
@@ -456,7 +409,7 @@ function useTabs(
                     },
                 ] as (TabConfig | null)[]
             ).filter(isDefined),
-        [IDE, extensionAPI, newChatCommand, currentView]
+        [newChatCommand, currentView]
     )
 }
 
@@ -480,12 +433,11 @@ const ModelSelectFieldToolbarItem: FunctionComponent<{
         [api.setChatModel]
     )
 
-    if (!models) {
+    if (!models?.length) {
         return null
     }
 
     return (
-        !!models?.length &&
         (userInfo.isDotComUser || serverSentModelsEnabled) && (
             <ModelSelectField
                 models={models}
