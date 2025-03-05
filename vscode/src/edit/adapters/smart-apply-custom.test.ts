@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { SmartApplyCustomModelParameterProvider } from './smart-apply-custom'
 import type { ModelParametersInput } from './base'
+import { SmartApplyCustomModelParameterProvider } from './smart-apply-custom'
 
 describe('SmartApplyCustomModelParameterProvider', () => {
     const provider = new SmartApplyCustomModelParameterProvider()

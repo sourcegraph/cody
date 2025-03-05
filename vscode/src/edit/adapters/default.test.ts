@@ -1,7 +1,7 @@
-import { describe, expect, it, vi } from 'vitest'
 import { modelsService } from '@sourcegraph/cody-shared'
-import { DefaultModelParameterProvider } from './default'
+import { describe, expect, it, vi } from 'vitest'
 import type { ModelParametersInput } from './base'
+import { DefaultModelParameterProvider } from './default'
 
 describe('DefaultModelParameterProvider', () => {
     const provider = new DefaultModelParameterProvider()

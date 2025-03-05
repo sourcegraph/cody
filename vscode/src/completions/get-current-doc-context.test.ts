@@ -9,7 +9,12 @@ import { type WrappedParser, resetParsersCache } from '../tree-sitter/parser'
 
 import type { DocumentContext } from '@sourcegraph/cody-shared'
 import { getContextRange } from './doc-context-getters'
-import { getCurrentDocContext, getPrefixWithCharLimit, getSuffixWithCharLimit, insertIntoDocContext } from './get-current-doc-context'
+import {
+    getCurrentDocContext,
+    getPrefixWithCharLimit,
+    getSuffixWithCharLimit,
+    insertIntoDocContext,
+} from './get-current-doc-context'
 import { documentAndPosition, initTreeSitterParser } from './test-helpers'
 
 function testGetCurrentDocContext(
