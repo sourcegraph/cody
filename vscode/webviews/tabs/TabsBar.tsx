@@ -85,7 +85,6 @@ interface TabConfig {
 export const TabsBar = memo<TabsBarProps>(props => {
     const { currentView, setView, user, endpointHistory, models } = props
     const { isCodyProUser, IDE } = user
-    const vscodeApi = getVSCodeAPI()
     const {
         config: { webviewType, multipleWebviewsEnabled, allowEndpointChange },
     } = useConfig()
@@ -163,7 +162,7 @@ export const TabsBar = memo<TabsBarProps>(props => {
             window.removeEventListener('keydown', handleKeyDown)
             window.removeEventListener('keyup', handleKeyUp)
         }
-    }, [vscodeApi])
+    }, [])
     return (
         <div className={clsx(styles.tabsRoot, { [styles.tabsRootCodyWeb]: IDE === CodyIDE.Web })}>
             <Tabs.List aria-label="cody-webview" className={styles.tabsContainer}>

@@ -93,7 +93,7 @@ export const ToolbarButton = forwardRef<HTMLButtonElement, ToolbarButtonProps>(
 ToolbarButton.displayName = 'ToolbarButton'
 
 export const ToolbarPopoverItem = forwardRef<
-    { open: () => void },
+    { open: () => void; close: () => void },
     PropsWithChildren<
         ButtonHTMLAttributes<HTMLButtonElement> &
             Omit<Pick<ToolbarButtonProps, 'iconStart' | 'tooltip'>, 'iconEnd'> & {
