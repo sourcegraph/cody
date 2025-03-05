@@ -731,13 +731,24 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
 
         this.chatBuilder.setSelectedModel(model)
 
-        const chatAgent = model.includes(DeepCodyAgentID)
-            ? DeepCodyAgentID
-            : model.includes(ToolCodyModelName)
-              ? ToolCodyModelRef
-              : manuallySelectedIntent === 'agentic' || model.includes('agentic')
-                ? 'agentic'
-                : undefined
+        function getChatAgent(
+            model: string,
+            manuallySelectedIntent: string | null | undefined
+        ): string | undefined {
+            if (model.includes(DeepCodyAgentID)) {
+                return DeepCodyAgentID
+            }
+            if (model.includes(ToolCodyModelName)) {
+                return ToolCodyModelRef
+            }
+            const AGENTIC_KEYWORD = 'agentic'
+            if (manuallySelectedIntent === AGENTIC_KEYWORD || model.includes(AGENTIC_KEYWORD)) {
+                return AGENTIC_KEYWORD
+            }
+            return undefined
+        }
+
+        const chatAgent = getChatAgent(model, manuallySelectedIntent)
 
         const recorder = await OmniboxTelemetry.create({
             requestID,
@@ -756,9 +767,19 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
 
         this.postEmptyMessageInProgress(model)
 
-        const agentName = ['search', 'edit', 'insert', 'agentic'].includes(manuallySelectedIntent ?? '')
-            ? (manuallySelectedIntent as string)
-            : chatAgent ?? 'chat'
+        function getAgentName(
+            manuallySelectedIntent: ChatMessage['intent'] | undefined | null,
+            chatAgent: string | undefined
+        ): string {
+            const selectedIntentOrEmptyString = manuallySelectedIntent ?? ''
+            if (['search', 'edit', 'insert', 'agentic'].includes(selectedIntentOrEmptyString)) {
+                return manuallySelectedIntent as string
+            }
+            return chatAgent ?? 'chat'
+        }
+
+        const agentName = getAgentName(manuallySelectedIntent, chatAgent)
+
         const agent = getAgent(agentName, model, {
             contextRetriever: this.contextRetriever,
             editor: this.editor,

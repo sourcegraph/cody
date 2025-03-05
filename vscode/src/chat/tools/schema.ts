@@ -76,12 +76,13 @@ export function getToolBlock(contentBlock: ToolUseBlockParam): string {
                       ? 'Creating'
                       : 'Editing'
             } File`,
-            text: `File: ${input.path}
-            ${input.old_str ? `Old: "${input.old_str}"\nNew: "${input.new_str}"` : ''}`,
+            text: `Editing File: ${input.path}\n${
+                input.old_str ? `Old: "${input.old_str}"\nNew: "${input.new_str}"` : ''
+            }`,
         }),
         get_diagnostic: (input: GetDiagnosticInput) => ({
             title: 'Scanning Diagnostics',
-            text: `File: ${input.name}`,
+            text: `Getting Diagnostics for: ${input.name}`,
         }),
         code_search: (input: CodeSearchInput) => ({
             title: 'Searching Codebase',
@@ -89,11 +90,11 @@ export function getToolBlock(contentBlock: ToolUseBlockParam): string {
         }),
         get_file: (input: GetFileInput) => ({
             title: 'Retrieving File',
-            text: `File: ${input.name}`,
+            text: `Retrieving File: ${input.name}`,
         }),
         run_terminal_command: (input: RunTerminalCommandInput) => ({
-            title: 'Executing Terminal_Command',
-            text: `Command: ${input.command}`,
+            title: 'Executing Terminal Command',
+            text: `Executing Command: ${input.command}`,
         }),
     }
 

@@ -282,7 +282,7 @@ export class ChatHandler implements AgentHandler {
         }
     }
 
-    // TODO: Maybe we should replace computerContext with computeAgenticContext?
+    // TODO: Maybe we should replace computeContext with computeAgenticContext?
     public async computeAgenticContext(
         requestID: string,
         { text, mentions }: HumanInput,
