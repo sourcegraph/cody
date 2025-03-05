@@ -12,6 +12,7 @@
     container-name: tabs-container;
     isolation: isolate;
     z-index: 2;
+    padding-top: 8px;
 }
 
 .tabs-container {
