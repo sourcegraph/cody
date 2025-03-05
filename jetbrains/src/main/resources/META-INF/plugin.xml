@@ -399,6 +399,12 @@
                         description="Enable offScreen rendering in webview">
                     <override-text place="GoToAction" text="Cody: Enable OffScreen Rendering"/>
                 </action>
+                <action id="cody.openWebviewDevToolsAction"
+                        class="com.sourcegraph.cody.OpenWebviewDevToolsAction"
+                        text="Open DevTools"
+                        description="Open DevTools to debug Cody webview">
+                    <override-text place="GoToAction" text="Cody: Open DevTools"/>
+                </action>
             </group>
         </group>
 
