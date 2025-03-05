@@ -731,7 +731,10 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
 
         this.chatBuilder.setSelectedModel(model)
 
-        function setChatAgent(model: string, manuallySelectedIntent: string | null | undefined): string | undefined {
+        function setChatAgent(
+            model: string,
+            manuallySelectedIntent: string | null | undefined
+        ): string | undefined {
             if (model.includes(DeepCodyAgentID)) {
                 return DeepCodyAgentID
             }
@@ -764,9 +767,19 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
 
         this.postEmptyMessageInProgress(model)
 
-        const agentName = ['search', 'edit', 'insert', 'agentic'].includes(manuallySelectedIntent ?? '')
-            ? (manuallySelectedIntent as string)
-            : chatAgent ?? 'chat'
+        function getAgentName(
+            manuallySelectedIntent: ChatMessage['intent'] | undefined | null,
+            chatAgent: string | undefined
+        ): string {
+            const selectedIntentOrEmptyString = manuallySelectedIntent ?? ''
+            if (['search', 'edit', 'insert', 'agentic'].includes(selectedIntentOrEmptyString)) {
+                return manuallySelectedIntent as string
+            }
+            return chatAgent ?? 'chat'
+        }
+
+        const agentName = getAgentName(manuallySelectedIntent, chatAgent)
+
         const agent = getAgent(agentName, model, {
             contextRetriever: this.contextRetriever,
             editor: this.editor,
