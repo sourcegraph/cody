@@ -79,7 +79,6 @@ export const CodyPanel: FunctionComponent<CodyPanelProps> = ({
     const externalAPI = useExternalAPI()
     const api = useExtensionAPI()
     const { value: chatModels } = useObservable(useMemo(() => api.chatModels(), [api.chatModels]))
-    const isPromptsV2Enabled = useFeatureFlag(FeatureFlag.CodyPromptsV2)
     // workspace upgrade eligibility should be that the flag is set, is on dotcom and only has one account. This prevents enterprise customers that are logged into multiple endpoints from seeing the CTA
     const isWorkspacesUpgradeCtaEnabled =
         useFeatureFlag(FeatureFlag.SourcegraphTeamsUpgradeCTA) &&
@@ -142,7 +141,6 @@ export const CodyPanel: FunctionComponent<CodyPanelProps> = ({
                             showWelcomeMessage={showWelcomeMessage}
                             scrollableParent={tabContainerRef.current}
                             smartApplyEnabled={smartApplyEnabled}
-                            isPromptsV2Enabled={isPromptsV2Enabled}
                             setView={setView}
                             isWorkspacesUpgradeCtaEnabled={isWorkspacesUpgradeCtaEnabled}
                         />
@@ -156,11 +154,7 @@ export const CodyPanel: FunctionComponent<CodyPanelProps> = ({
                         />
                     )}
                     {view === View.Prompts && (
-                        <PromptsTab
-                            IDE={clientCapabilities.agentIDE}
-                            setView={setView}
-                            isPromptsV2Enabled={isPromptsV2Enabled}
-                        />
+                        <PromptsTab IDE={clientCapabilities.agentIDE} setView={setView}/>
                     )}
                     {view === View.Settings && <SettingsTab />}
                 </TabContainer>

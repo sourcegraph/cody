@@ -15,15 +15,14 @@ import styles from './PromptsTab.module.css'
 export const PromptsTab: React.FC<{
     IDE: CodyIDE
     setView: (view: View) => void
-    isPromptsV2Enabled?: boolean
-}> = ({ IDE, setView, isPromptsV2Enabled }) => {
+}> = ({ IDE, setView }) => {
     const runAction = useActionSelect()
 
     const [promptsFilter, setPromptsFilter] = useState<PromptsFilterArgs>({})
 
     return (
         <div className="tw-overflow-auto tw-h-full tw-flex tw-flex-col">
-            {isPromptsV2Enabled && IDE !== CodyIDE.Web && (
+            {IDE !== CodyIDE.Web && (
                 <PromptMigrationWidget dismissible={false} className={styles.promptMigrationWidget} />
             )}
             <PromptsFilter promptFilters={promptsFilter} setPromptFilters={setPromptsFilter} />
