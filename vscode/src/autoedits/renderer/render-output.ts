@@ -291,17 +291,16 @@ export class AutoEditsRenderOutput {
     ): Omit<AutoEditDecorations, 'insertMarkerDecorations'> {
         const fullLineDeletionDecorations = decorationInfo.removedLines.flatMap(
             ({ originalLineNumber, text }) => {
-                const rangeWithoutLeadingWhitespace = text.trimStart().length
-                const removedCharacters = text.length - rangeWithoutLeadingWhitespace
                 const range = new vscode.Range(originalLineNumber, 0, originalLineNumber, text.length)
-                const strikeThruRange = new vscode.Range(
-                    originalLineNumber,
-                    removedCharacters,
-                    originalLineNumber,
-                    text.length
+                const trimmedText = text.trim()
+                const startOffset = text.indexOf(trimmedText)
+                // We trim trailing whitespace before/after the change for the strikethrough
+                // as it makes it more visually appealing
+                const strikeThrough = new vscode.Range(
+                    range.start.translate(0, startOffset),
+                    range.start.translate(0, startOffset + trimmedText.length)
                 )
-                console.log(strikeThruRange)
-                return this.createRemovedDecoration(range, text.length, 'line-deleted')
+                return this.createRemovedDecoration(range, text.length, strikeThrough)
             }
         )
         const partialLineDeletionDecorations = this.createModifiedRemovedDecorations(decorationInfo)
@@ -446,11 +445,19 @@ export class AutoEditsRenderOutput {
         for (const line of modifiedLines) {
             for (const change of line.changes) {
                 if (change.type === 'delete') {
+                    const trimmedText = change.text.trim()
+                    const startOffset = change.text.indexOf(trimmedText)
+                    // We trim trailing whitespace before/after the change for the strikethrough
+                    // as it makes it more visually appealing
+                    const strikeThrough = new vscode.Range(
+                        change.originalRange.start.translate(0, startOffset),
+                        change.originalRange.start.translate(0, startOffset + trimmedText.length)
+                    )
                     decorations.push(
                         ...this.createRemovedDecoration(
                             change.originalRange,
                             change.text.length,
-                            'line-modified'
+                            strikeThrough
                         )
                     )
                 }
@@ -487,10 +494,10 @@ export class AutoEditsRenderOutput {
     private createRemovedDecoration(
         range: vscode.Range,
         textLength: number,
-        type: 'line-deleted' | 'line-modified',
-        strikeThruRange?: vscode.Range
+        strikeThrough: vscode.Range
     ): vscode.DecorationOptions[] {
-        const decorations: vscode.DecorationOptions[] = [
+        const strikeThroughLength = strikeThrough.end.character - strikeThrough.start.character
+        return [
             {
                 range,
                 renderOptions: {
@@ -498,26 +505,19 @@ export class AutoEditsRenderOutput {
                         contentText: '\u00A0'.repeat(textLength),
                         backgroundColor: 'rgba(255,0,0,0.3)', // red background for deletions
                         margin: `0 -${textLength}ch 0 0`,
-                        textDecoration: type === 'line-modified' ? 'line-through' : undefined,
+                    },
+                },
+            },
+            {
+                range: strikeThrough,
+                renderOptions: {
+                    before: {
+                        contentText: '\u00A0'.repeat(strikeThroughLength),
+                        margin: `0 -${strikeThroughLength}ch 0 0`,
+                        textDecoration: 'line-through',
                     },
                 },
             },
         ]
-
-        if (strikeThruRange) {
-            const length = strikeThruRange.end.character - strikeThruRange.start.character
-            decorations.push({
-                range: strikeThruRange,
-                renderOptions: {
-                    before: {
-                        contentText: '\u00A0'.repeat(length),
-                        margin: `0 -${length}ch 0 0`,
-                        textDecoration: 'line-through',
-                    },
-                },
-            })
-        }
-
-        return decorations
     }
 }
