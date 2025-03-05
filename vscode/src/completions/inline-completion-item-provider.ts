@@ -618,6 +618,7 @@ export class InlineCompletionItemProvider
 
                 // return `CompletionEvent` telemetry data to the agent command `autocomplete/execute`.
                 const autocompleteResult: AutocompleteResult = {
+                    type: 'completion',
                     logId: result.logId,
                     items: visibleItems,
                     completionEvent: CompletionAnalyticsLogger.getCompletionEvent(result.logId),

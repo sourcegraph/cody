@@ -1031,10 +1031,11 @@ export class Agent extends MessageHandler implements ExtensionClient {
             }
         )
 
-        this.registerAuthenticatedRequest('testing/autocomplete/providerConfig', async () => {
-            const provider = await vscode_shim.completionProvider()
-            return 'config' in provider ? provider.config.provider : null
-        })
+        // TODO: Re-add this
+        // this.registerAuthenticatedRequest('testing/autocomplete/providerConfig', async () => {
+        //     const provider = await vscode_shim.completionProvider()
+        //     return 'config' in provider ? provider.config.provider : null
+        // })
 
         this.registerAuthenticatedRequest('graphql/getRepoIds', async ({ names, first }) => {
             const repos = await graphqlClient.getRepoIds(names, first)
