@@ -731,13 +731,21 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
 
         this.chatBuilder.setSelectedModel(model)
 
-        const chatAgent = model.includes(DeepCodyAgentID)
-            ? DeepCodyAgentID
-            : model.includes(ToolCodyModelName)
-              ? ToolCodyModelRef
-              : manuallySelectedIntent === 'agentic' || model.includes('agentic')
-                ? 'agentic'
-                : undefined
+        function setChatAgent(model: string, manuallySelectedIntent: string | null | undefined): string | undefined {
+            if (model.includes(DeepCodyAgentID)) {
+                return DeepCodyAgentID
+            }
+            if (model.includes(ToolCodyModelName)) {
+                return ToolCodyModelRef
+            }
+            const AGENTIC_KEYWORD = 'agentic'
+            if (manuallySelectedIntent === AGENTIC_KEYWORD || model.includes(AGENTIC_KEYWORD)) {
+                return AGENTIC_KEYWORD
+            }
+            return undefined
+        }
+
+        const chatAgent = setChatAgent(model, manuallySelectedIntent)
 
         const recorder = await OmniboxTelemetry.create({
             requestID,
