@@ -50,6 +50,7 @@ describe('CodyGatewayAdapter', () => {
         // Mock successful response
         mockFetch.mockResolvedValueOnce({
             status: 200,
+            headers: new Headers(),
             json: () => Promise.resolve({ choices: [{ message: { content: 'response' } }] }),
         })
 
@@ -90,6 +91,7 @@ describe('CodyGatewayAdapter', () => {
 
         mockFetch.mockResolvedValueOnce({
             status: 200,
+            headers: new Headers(),
             json: () => Promise.resolve({ choices: [{ text: 'response' }] }),
         })
 
@@ -116,6 +118,7 @@ describe('CodyGatewayAdapter', () => {
     it('handles error responses correctly', async () => {
         mockFetch.mockResolvedValueOnce({
             status: 400,
+            headers: new Headers(),
             text: () => Promise.resolve('Bad Request'),
         })
 

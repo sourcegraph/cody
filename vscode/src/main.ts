@@ -53,6 +53,7 @@ import {
     tokenCallbackHandler,
 } from './auth/auth'
 import { createAutoEditsProvider } from './autoedits/create-autoedits-provider'
+import { autoeditDebugStore } from './autoedits/debug-panel/debug-store'
 import { autoeditsOutputChannelLogger } from './autoedits/output-channel-logger'
 import { registerAutoEditTestRenderCommand } from './autoedits/renderer/mock-renderer'
 import type { MessageProviderOptions } from './chat/MessageProvider'
@@ -86,7 +87,8 @@ import { createInlineCompletionItemProvider } from './completions/create-inline-
 import { getConfiguration } from './configuration'
 import { observeOpenCtxController } from './context/openctx'
 import { logGlobalStateEmissions } from './dev/helpers'
-import { EditManager } from './edit/manager'
+import { EditManager } from './edit/edit-manager'
+import { SmartApplyManager } from './edit/smart-apply-manager'
 import { manageDisplayPathEnvInfoForExtension } from './editor/displayPathEnvInfo'
 import { VSCodeEditor } from './editor/vscode-editor'
 import type { PlatformContext } from './extension.common'
@@ -270,17 +272,12 @@ const register = async (
     )
     const fixupController = new FixupController(platform.extensionClient)
     const ghostHintDecorator = new GhostHintDecorator({ fixupController })
-    const editManager = new EditManager({
-        controller: fixupController,
-        chat: chatClient,
-        editor,
-        ghostHintDecorator,
-        extensionClient: platform.extensionClient,
-    })
+    const editManager = new EditManager({ chatClient, editor, fixupController })
+    const smartApplyManager = new SmartApplyManager({ editManager, chatClient })
 
     CodyToolProvider.initialize(contextRetriever)
 
-    disposables.push(chatsController, ghostHintDecorator, editManager)
+    disposables.push(chatsController, ghostHintDecorator, editManager, smartApplyManager)
 
     const statusBar = CodyStatusBar.init()
     disposables.push(statusBar)
@@ -296,7 +293,7 @@ const register = async (
     registerAutocomplete(platform, statusBar, disposables)
     const tutorialSetup = tryRegisterTutorial(context, disposables)
 
-    await registerCodyCommands(statusBar, chatClient, fixupController, disposables)
+    await registerCodyCommands({ statusBar, chatClient, fixupController, disposables, context })
     registerAuthCommands(disposables)
     registerChatCommands(disposables)
     disposables.push(...registerSidebarCommands())
@@ -417,12 +414,19 @@ async function registerOtherCommands(disposables: vscode.Disposable[]) {
     )
 }
 
-async function registerCodyCommands(
-    statusBar: CodyStatusBar,
-    chatClient: ChatClient,
-    fixupController: FixupController,
+async function registerCodyCommands({
+    statusBar,
+    chatClient,
+    fixupController,
+    disposables,
+    context,
+}: {
+    statusBar: CodyStatusBar
+    chatClient: ChatClient
+    fixupController: FixupController
     disposables: vscode.Disposable[]
-): Promise<void> {
+    context: vscode.ExtensionContext
+}): Promise<void> {
     // Execute Cody Commands and Cody Custom Commands
     const executeCommand = (
         commandKey: DefaultCodyCommands | string,
@@ -466,7 +470,7 @@ async function registerCodyCommands(
     )
 
     // Initialize autoedit provider if experimental feature is enabled
-    registerAutoEdits(chatClient, fixupController, statusBar, disposables)
+    registerAutoEdits({ chatClient, fixupController, statusBar, disposables, context })
 
     // Initialize autoedit tester
     disposables.push(
@@ -719,13 +723,21 @@ async function tryRegisterTutorial(
     }
 }
 
-function registerAutoEdits(
-    chatClient: ChatClient,
-    fixupController: FixupController,
-    statusBar: CodyStatusBar,
+function registerAutoEdits({
+    chatClient,
+    fixupController,
+    statusBar,
+    disposables,
+    context,
+}: {
+    chatClient: ChatClient
+    fixupController: FixupController
+    statusBar: CodyStatusBar
     disposables: vscode.Disposable[]
-): void {
+    context: vscode.ExtensionContext
+}): void {
     disposables.push(
+        autoeditDebugStore,
         subscriptionDisposable(
             combineLatest(
                 resolvedConfig,
@@ -733,7 +745,7 @@ function registerAutoEdits(
                 featureFlagProvider.evaluatedFeatureFlag(
                     FeatureFlag.CodyAutoEditExperimentEnabledFeatureFlag
                 ),
-                featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyAutoEditImageRendering)
+                featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyAutoEditInlineRendering)
             )
                 .pipe(
                     distinctUntilChanged((a, b) => {
@@ -748,16 +760,17 @@ function registerAutoEdits(
                             config,
                             authStatus,
                             autoeditFeatureFlagEnabled,
-                            autoeditImageRenderingEnabled,
+                            autoeditInlineRenderingEnabled,
                         ]) => {
                             return createAutoEditsProvider({
                                 config,
                                 authStatus,
                                 chatClient,
                                 autoeditFeatureFlagEnabled,
-                                autoeditImageRenderingEnabled,
+                                autoeditInlineRenderingEnabled,
                                 fixupController,
                                 statusBar,
+                                context,
                             })
                         }
                     ),

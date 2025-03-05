@@ -58,11 +58,12 @@ export enum FeatureFlag {
 
     CodySmartApplyExperimentEnabledFeatureFlag = 'cody-smart-apply-experiment-enabled-flag',
     CodySmartApplyExperimentVariant1 = 'cody-smart-apply-experiment-variant-1',
+    CodySmartApplyPrefetching = 'cody-smart-apply-prefetching',
 
     CodyAutoEditExperimentEnabledFeatureFlag = 'cody-autoedit-experiment-enabled-flag',
 
-    // Enables image-based rendering of autoedit suggestions
-    CodyAutoEditImageRendering = 'cody-autoedit-image-rendering',
+    // Enables inline rendering of autoedit suggestions
+    CodyAutoEditInlineRendering = 'cody-autoedit-inline-rendering',
 
     // Enables gpt-4o-mini as a default Edit model
     CodyEditDefaultToGpt4oMini = 'cody-edit-default-to-gpt-4o-mini',

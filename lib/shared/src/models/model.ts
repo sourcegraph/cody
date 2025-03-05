@@ -101,6 +101,10 @@ export function createModel({
         }
     }
 
+    if (clientSideConfig?.options?.categories?.includes(ModelTag.Vision)) {
+        tags.push(ModelTag.Vision)
+    }
+
     return {
         id,
         modelRef,
@@ -143,6 +147,11 @@ export function createModelFromServerModel({
         input: maxInputTokens,
         output: maxOutputTokens,
     }
+    const usage = capabilities.flatMap(capabilityToUsage)
+    // NOTE: Model with reasoning enabled should only be used for chat.
+    if (capabilities.includes('reasoning') && usage.includes(ModelUsage.Edit)) {
+        usage.splice(usage.indexOf(ModelUsage.Edit), 1)
+    }
     // Use Extended Context Window
     if (maxInputTokens === EXTENDED_CHAT_INPUT_TOKEN_BUDGET + EXTENDED_USER_CONTEXT_TOKEN_BUDGET) {
         _contextWindow.input = EXTENDED_CHAT_INPUT_TOKEN_BUDGET
@@ -151,7 +160,7 @@ export function createModelFromServerModel({
     return createModel({
         id: modelRef,
         modelRef: ref,
-        usage: capabilities.flatMap(capabilityToUsage),
+        usage,
         contextWindow: _contextWindow,
         clientSideConfig,
         tags: getServerModelTags(capabilities, category, status, tier),
@@ -164,11 +173,11 @@ function capabilityToUsage(capability: ModelCapability): ModelUsage[] {
     switch (capability) {
         case 'autocomplete':
             return [ModelUsage.Autocomplete]
-        case 'edit':
-            return [ModelUsage.Edit]
         case 'chat':
             return [ModelUsage.Chat]
         // unknown capability should be handled as tags.
+        case 'edit':
+            return [ModelUsage.Edit]
         default:
             return []
     }

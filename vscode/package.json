@@ -3,7 +3,7 @@
   "name": "cody-ai",
   "private": true,
   "displayName": "Cody: AI Code Assistant",
-  "version": "1.70.1",
+  "version": "1.72.0",
   "publisher": "sourcegraph",
   "license": "Apache-2.0",
   "icon": "resources/sourcegraph.png",
@@ -53,7 +53,7 @@
     "vscode:prepublish": "pnpm -s run build",
     "vscode:uninstall": "node ./dist/post-uninstall.js",
     "test:unit:tree-sitter-queries": "vitest ./src/tree-sitter/query-tests/*.test.ts",
-    "github-changelog": "ts-node-transpile-only ./scripts/github-changelog.ts",
+    "release-notes": "ts-node-transpile-only ./scripts/release-notes.ts",
     "measure-bundle-size": "cross-env LOG_BUNDLE_SIZE=true ts-node-transpile-only ./scripts/measure-bundle-size.ts"
   },
   "categories": ["AI", "Chat", "Programming Languages", "Machine Learning", "Snippets", "Education"],
@@ -270,6 +270,14 @@
         "category": "Cody",
         "group": "Cody",
         "icon": "$(feedback)"
+      },
+      {
+        "command": "cody.command.autoedit.open-debug-panel",
+        "title": "Debug Auto-Edit",
+        "category": "Cody",
+        "group": "Cody",
+        "icon": "$(debug)",
+        "enablement": "cody.activated"
       },
       {
         "command": "cody.command.explain-output",
@@ -582,6 +590,12 @@
         "command": "cody.command.autoedit-manual-trigger",
         "title": "Autoedits Manual Trigger",
         "enablement": "cody.activated && config.cody.suggestions.mode == 'auto-edit (Experimental)'"
+      },
+      {
+        "command": "cody.command.autoedit.open-debug-panel",
+        "category": "Cody",
+        "title": "Debug Auto-Edit",
+        "enablement": "cody.activated"
       }
     ],
     "keybindings": [
@@ -600,6 +614,7 @@
         "key": "alt+l",
         "when": "cody.activated"
       },
+
       {
         "command": "cody.mention.selection",
         "key": "alt+l",
@@ -607,8 +622,13 @@
       },
       {
         "command": "cody.chat.new",
-        "key": "shift+alt+/",
+        "key": "cmd+n",
         "when": "cody.activated && !editorTextFocus"
+      },
+      {
+        "command": "-workbench.action.files.newUntitledFile",
+        "key": "cmd+n",
+        "when": "cody.activated && (view == cody.chat || activeWebviewPanelId == cody.editorPanel)"
       },
       {
         "command": "cody.tutorial.chat",
@@ -721,6 +741,10 @@
     ],
     "menus": {
       "commandPalette": [
+        {
+          "command": "cody.command.autoedit.open-debug-panel",
+          "when": "cody.activated"
+        },
         {
           "command": "cody.command.edit-code",
           "when": "cody.activated && editorIsOpen"
@@ -1052,8 +1076,11 @@
           "order": 99,
           "type": "string",
           "enum": ["all", "off"],
-          "enumDescriptions": ["Sends usage data and errors.", "Disables all extension telemetry."],
-          "markdownDescription": "Controls the telemetry about Cody usage and errors. See [Cody usage and privacy notice](https://about.sourcegraph.com/terms/cody-notice).",
+          "enumDescriptions": [
+            "Sends usage data and errors.",
+            "[Enterprise-only] Disables all extension telemetry."
+          ],
+          "markdownDescription": "Controls the telemetry about Cody usage and errors for users connected to Enterprise instances. This setting only takes effect for Sourcegraph Enterprise users. For users connected to sourcegraph.com, this option is always enabled. See [Cody usage and privacy notice](https://about.sourcegraph.com/terms/cody-notice).",
           "default": "all"
         },
         "cody.autocomplete.advanced.provider": {

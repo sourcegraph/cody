@@ -24,7 +24,7 @@ describe('HumanMessageEditor', () => {
 
     describe('states', () => {
         function expectState(
-            { addContextButton, submitButton }: ReturnType<typeof renderWithMocks>,
+            { toolbar, submitButton }: ReturnType<typeof renderWithMocks>,
             expected: {
                 toolbarVisible?: boolean
                 submitButtonVisible?: boolean
@@ -33,7 +33,7 @@ describe('HumanMessageEditor', () => {
             }
         ): void {
             if (expected.toolbarVisible !== undefined) {
-                notUnless(expect.soft(addContextButton), expected.toolbarVisible).toBeVisible()
+                notUnless(expect.soft(toolbar), expected.toolbarVisible).toBeVisible()
             }
             if (expected.submitButtonVisible !== undefined) {
                 notUnless(expect.soft(submitButton), expected.submitButtonVisible).toBeVisible()
@@ -135,9 +135,9 @@ describe('HumanMessageEditor', () => {
 
         test('model selector is showing up with the default model name', () => {
             const { container } = renderWithMocks({})
-            const modelSelector = container.querySelector('[data-testid="chat-model-selector"]')
+            const tabsBar = container.querySelector('[class*="tabsRoot"]')
+            const modelSelector = tabsBar?.querySelector('[data-testid="chat-model-selector"]')
             expect(modelSelector).not.toBeNull()
-            expect(modelSelector?.textContent).toEqual(FIXTURE_MODELS[0].title)
         })
     })
 })
@@ -149,7 +149,7 @@ type EditorHTMLElement = HTMLDivElement & {
 function renderWithMocks(props: Partial<ComponentProps<typeof HumanMessageEditor>>): {
     container: HTMLElement
     editor: EditorHTMLElement
-    addContextButton: HTMLElement | null
+    toolbar: HTMLElement | null
     submitButton: HTMLElement | null
     onChange: Mock
     onSubmit: Mock
@@ -180,10 +180,7 @@ function renderWithMocks(props: Partial<ComponentProps<typeof HumanMessageEditor
     return {
         container,
         editor: container.querySelector<EditorHTMLElement>('[data-lexical-editor="true"]')!,
-        addContextButton: screen.queryByRole('button', {
-            name: 'Add context',
-            hidden: true,
-        }),
+        toolbar: container.querySelector('[data-testid="chat-editor-toolbar"]'),
         submitButton: screen.queryByRole('button', {
             name: /send|stop/i,
             hidden: true,

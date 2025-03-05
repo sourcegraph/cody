@@ -4,6 +4,7 @@ import {
     inputTextWithoutContextChipsFromPromptEditorState,
 } from '@sourcegraph/cody-shared'
 import { executeCodyCommand } from '../../../commands/CommandsController'
+import { diffInChat } from '../../diff'
 import type { ChatControllerOptions } from '../ChatController'
 import type { ContextRetriever } from '../ContextRetriever'
 import { computeContextAlternatives } from './ChatHandler'
@@ -29,6 +30,7 @@ export class EditHandler implements AgentHandler {
         }: AgentRequest,
         delegate: AgentHandlerDelegate
     ): Promise<void> {
+        chatBuilder.setLastMessageIntent('edit')
         const contextAlternatives = await computeContextAlternatives(
             this.contextRetriever,
             this.editor,
@@ -68,52 +70,15 @@ export class EditHandler implements AgentHandler {
             return
         }
 
-        const task = result.task
-
-        let responseMessage = `Here is the response for the ${task.intent} instruction:\n`
-
-        if (!task.diff && task.replacement) {
-            task.diff = [
-                {
-                    type: 'insertion',
-                    text: task.replacement,
-                    range: task.originalRange,
-                },
-            ]
-        }
-
-        task.diff?.map(diff => {
-            responseMessage += '\n```diff\n'
-            if (diff.type === 'deletion') {
-                responseMessage += task.document
-                    .getText(diff.range)
-                    .split('\n')
-                    .map(line => `- ${line}`)
-                    .join('\n')
-            }
-            if (diff.type === 'decoratedReplacement') {
-                responseMessage += diff.oldText
-                    .split('\n')
-                    .map(line => `- ${line}`)
-                    .join('\n')
-                responseMessage += diff.text
-                    .split('\n')
-                    .map(line => `+ ${line}`)
-                    .join('\n')
-            }
-            if (diff.type === 'insertion') {
-                responseMessage += diff.text
-                    .split('\n')
-                    .map(line => `+ ${line}`)
-                    .join('\n')
-            }
-            responseMessage += '\n```'
-        })
+        const { diff, replacement, document, originalRange } = result.task
+        const diffs = diff ?? [{ type: 'insertion', text: replacement ?? '', range: originalRange }]
+        const message = diffInChat(diffs, document, { showFullFile: false })
 
         delegate.postMessageInProgress({
             speaker: 'assistant',
-            text: PromptString.unsafe_fromLLMResponse(responseMessage),
+            text: PromptString.unsafe_fromLLMResponse(message),
         })
+
         delegate.postDone()
     }
 }

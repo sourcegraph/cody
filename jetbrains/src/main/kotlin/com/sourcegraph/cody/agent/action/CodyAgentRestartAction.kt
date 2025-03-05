@@ -9,7 +9,7 @@ import com.sourcegraph.common.ui.DumbAwareEDTAction
 class CodyAgentRestartAction : DumbAwareEDTAction("Restart Cody") {
   override fun actionPerformed(event: AnActionEvent) {
     event.project?.let { project ->
-      CodyAgentService.getInstance(project).restartAgent(project)
+      CodyAgentService.getInstance(project).restartAgent()
       NotificationsManager.getNotificationsManager()
           .getNotificationsOfType(CodyConnectionTimeoutExceptionNotification::class.java, project)
           .forEach { it.expire() }

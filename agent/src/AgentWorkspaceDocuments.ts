@@ -40,7 +40,6 @@ export class AgentWorkspaceDocuments implements vscode_shim.WorkspaceDocuments {
         { document: AgentTextDocument; editor: AgentTextEditor }
     > = new Map()
 
-    public workspaceRootUri: vscode.Uri | undefined
     public activeDocumentFilePath: vscode.Uri | null = null
 
     private doPanic = this.params?.doPanic ? { doPanic: this.params.doPanic } : undefined

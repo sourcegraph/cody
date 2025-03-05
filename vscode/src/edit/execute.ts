@@ -9,7 +9,12 @@ import type {
     Rule,
 } from '@sourcegraph/cody-shared'
 
-import type { FixupTask, FixupTaskID, FixupTelemetryMetadata } from '../non-stop/FixupTask'
+import type {
+    FixupTask,
+    FixupTaskID,
+    FixupTelemetryMetadata,
+    SmartApplyAdditionalMetadata,
+} from '../non-stop/FixupTask'
 import type { EditIntent, EditMode } from './types'
 
 export interface ExecuteEditArguments {
@@ -50,14 +55,23 @@ export interface ExecuteEditArguments {
         // The file to write the edit to. If not provided, the edit will be applied to the current file.
         destinationFile?: vscode.Uri
         insertionPoint?: vscode.Position
+        /**
+         * Additional metadata only specific to Smart Apply Tasks.
+         */
+        smartApplyMetadata?: SmartApplyAdditionalMetadata
     }
     source?: EventSource
     telemetryMetadata?: FixupTelemetryMetadata
 }
 
 /**
+ * Used by the agent API.
+ */
+export type ExecuteEditResult = FixupTask | undefined
+
+/**
  * Wrapper around the `edit-code` command that can be used anywhere but with better type-safety.
  */
-export const executeEdit = async (args: ExecuteEditArguments): Promise<FixupTask | undefined> => {
-    return vscode.commands.executeCommand<FixupTask | undefined>('cody.command.edit-code', args)
+export const executeEdit = async (args: ExecuteEditArguments): Promise<ExecuteEditResult> => {
+    return vscode.commands.executeCommand<ExecuteEditResult>('cody.command.edit-code', args)
 }

@@ -4,6 +4,7 @@ import com.intellij.codeInsight.inline.completion.*
 import com.intellij.codeInsight.inline.completion.elements.InlineCompletionGrayTextElement
 import com.intellij.codeInsight.inline.completion.suggestion.InlineCompletionSingleSuggestion
 import com.intellij.codeInsight.inline.completion.suggestion.InlineCompletionSuggestion
+import com.intellij.codeWithMe.ClientId
 import com.intellij.openapi.application.ApplicationInfo
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.ReadAction
@@ -66,7 +67,8 @@ class CodyInlineCompletionProvider : InlineCompletionProvider {
           .firstNotNullOfOrNull {
             WriteCommandAction.runWriteCommandAction<InlineCompletionGrayTextElement?>(
                 editor.project) {
-                  val range = getTextRange(editor.document, it.range)
+                  val range =
+                      getTextRange(editor.document, it.range) ?: return@runWriteCommandAction null
                   val originalText = editor.document.getText(range)
 
                   val formattedCompletionText: String =
@@ -148,7 +150,7 @@ class CodyInlineCompletionProvider : InlineCompletionProvider {
 
   private fun isEnabled(): Boolean {
     val ideVersion = ApplicationInfo.getInstance().build.baselineVersion
-    val isRemoteDev = ClientSessionsManager.getAppSession()?.isRemote ?: false
+    val isRemoteDev = ClientSessionsManager.getAppSession(ClientId.current)?.isRemote ?: false
     return ideVersion >= 233 &&
         isRemoteDev &&
         ConfigUtil.isCodyEnabled() &&

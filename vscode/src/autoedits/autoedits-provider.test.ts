@@ -24,10 +24,12 @@ import {
 
 import { ContextMixer } from '../completions/context/context-mixer'
 
+import { mockLocalStorage } from '../services/LocalStorageProvider'
 import {
     AUTOEDIT_CONTEXT_FETCHING_DEBOUNCE_INTERVAL,
     AUTOEDIT_TOTAL_DEBOUNCE_INTERVAL,
 } from './autoedits-provider'
+import { initImageSuggestionService } from './renderer/image-gen'
 import { AUTOEDIT_VISIBLE_DELAY_MS } from './renderer/manager'
 import { autoeditResultFor } from './test-helpers'
 
@@ -37,6 +39,14 @@ describe('AutoeditsProvider', () => {
     let acceptSuggestionCommand: () => Promise<void>
     let rejectSuggestionCommand: () => Promise<void>
     let executedCommands: unknown[] = []
+
+    let localStorageData: { [key: string]: unknown } = {}
+    mockLocalStorage({
+        get: (key: string) => localStorageData[key] || [], // Return empty array as default
+        update: (key: string, value: unknown) => {
+            localStorageData[key] = value
+        },
+    } as any)
 
     beforeAll(() => {
         vi.useFakeTimers()
@@ -73,11 +83,13 @@ describe('AutoeditsProvider', () => {
         mockAuthStatus()
     })
 
-    beforeEach(() => {
+    beforeEach(async () => {
+        await initImageSuggestionService()
         stableIdCounter = 0
         executedCommands = []
         recordSpy = vi.spyOn(telemetryRecorder, 'recordEvent')
         vi.spyOn(uuid, 'v4').mockImplementation(() => `stable-id-for-tests-${++stableIdCounter}`)
+        localStorageData = {}
     })
 
     afterEach(() => {
@@ -465,7 +477,14 @@ describe('AutoeditsProvider', () => {
             const customGetModelResponse = async () => {
                 // Record the current fake timer time when getModelResponse is called
                 getModelResponseCalledAt = Date.now()
-                return { choices: [{ text: 'const x = 1\n' }] }
+                return {
+                    data: {
+                        choices: [{ text: 'const x = 1\n' }],
+                    },
+                    url: 'test-url.com/completions',
+                    requestHeaders: {},
+                    responseHeaders: {},
+                }
             }
 
             const startTime = Date.now()
@@ -489,7 +508,12 @@ describe('AutoeditsProvider', () => {
             let modelResponseCalled = false
             const customGetModelResponse = async () => {
                 modelResponseCalled = true
-                return { choices: [{ text: 'const x = 1\n' }] }
+                return {
+                    data: { choices: [{ text: 'const x = 1\n' }] },
+                    url: 'test-url.com/completions',
+                    requestHeaders: {},
+                    responseHeaders: {},
+                }
             }
 
             const tokenSource = new vscode.CancellationTokenSource()

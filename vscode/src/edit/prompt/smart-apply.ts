@@ -173,22 +173,30 @@ function getFullRangeofDocument(document: vscode.TextDocument): vscode.Range {
     return range
 }
 
-export type SmartSelectionType = 'insert' | 'selection' | 'entire-file'
+export type SmartApplySelectionType = 'insert' | 'selection' | 'entire-file'
 
-interface SmartSelection {
-    type: SmartSelectionType
+interface SmartApplySelection {
+    type: SmartApplySelectionType
     range: vscode.Range
 }
 
-export async function getSmartApplySelection(
-    id: FixupTaskID,
-    instruction: PromptString,
-    replacement: PromptString,
-    document: vscode.TextDocument,
-    model: EditModel,
-    client: ChatClient,
+export async function getSmartApplySelection({
+    id,
+    instruction,
+    replacement,
+    document,
+    model,
+    chatClient,
+    codyApiVersion,
+}: {
+    id: FixupTaskID
+    instruction: PromptString
+    replacement: PromptString
+    document: vscode.TextDocument
+    model: EditModel
+    chatClient: ChatClient
     codyApiVersion: number
-): Promise<SmartSelection | null> {
+}): Promise<SmartApplySelection | null> {
     let originalCode: string
     try {
         originalCode = await promptModelForOriginalCode(
@@ -196,7 +204,7 @@ export async function getSmartApplySelection(
             replacement,
             document,
             model,
-            client,
+            chatClient,
             codyApiVersion
         )
     } catch (error: unknown) {

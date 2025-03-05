@@ -1,9 +1,9 @@
 import type { EmulatedCanvas2D } from 'canvaskit-wasm'
 import { canvasKit, fontCache } from '.'
-import type { DiffMode } from '..'
-import type { VisualDiff, VisualDiffLine } from '../decorated-diff/types'
 import { DEFAULT_HIGHLIGHT_COLORS } from '../highlight/constants'
 import type { SYNTAX_HIGHLIGHT_THEME } from '../highlight/types'
+import type { VisualDiff, VisualDiffLine } from '../visual-diff/types'
+import type { DiffMode } from '../visual-diff/types'
 import { type RenderConfig, type UserProvidedRenderConfig, getRenderConfig } from './render-config'
 import type { RenderContext } from './types'
 import { getRangesToHighlight } from './utils'
@@ -74,11 +74,12 @@ function drawDiffColors(
     ctx: CanvasRenderingContext2D,
     line: VisualDiffLine,
     position: { x: number; y: number },
+    theme: SYNTAX_HIGHLIGHT_THEME,
     mode: DiffMode,
     config: RenderConfig
 ): void {
     const isRemoval = line.type === 'removed' || line.type === 'modified-removed'
-    const diffColors = isRemoval ? config.diffColors.removed : config.diffColors.inserted
+    const diffColors = isRemoval ? config.diffColors[theme].removed : config.diffColors[theme].inserted
 
     // For unified diffs, we want to ensure that changed lines also have a background color
     if (mode === 'unified' && line.type !== 'unchanged') {
@@ -165,7 +166,7 @@ export function drawDecorationsToCanvas(
         const position = { x: config.padding.x, y: yPos }
 
         // Paint any background diff colors first, we will render the text over the top
-        drawDiffColors(ctx, line, position, mode, config)
+        drawDiffColors(ctx, line, position, theme, mode, config)
 
         // Draw the text, this may or may not be syntax highlighted depending on language support
         drawText(ctx, line, position, theme, config)

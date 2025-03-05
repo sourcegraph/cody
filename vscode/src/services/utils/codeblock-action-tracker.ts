@@ -16,7 +16,7 @@ import {
     telemetryRecorder,
 } from '@sourcegraph/cody-shared'
 import { doesFileExist } from '../../commands/utils/workspace-files'
-import { executeSmartApply } from '../../edit/smart-apply'
+import { executePrefetchSmartApply, executeSmartApply } from '../../edit/smart-apply'
 import { getEditor } from '../../editor/active-editor'
 import type { VSCodeEditor } from '../../editor/vscode-editor'
 import { isRunningInsideAgent } from '../../jsonrpc/isRunningInsideAgent'
@@ -181,20 +181,34 @@ async function getSmartApplyModel(authStatus: AuthStatus): Promise<EditModel | u
     return smartApplyModel
 }
 
-export async function handleSmartApply(
-    id: string,
-    code: string,
-    authStatus: AuthStatus,
-    instruction?: string | null,
-    fileUri?: string | null,
+export async function handleSmartApply({
+    id,
+    code,
+    authStatus,
+    instruction,
+    fileUri,
+    traceparent,
+    isPrefetch,
+}: {
+    id: string
+    code: string
+    authStatus: AuthStatus
+    instruction?: string | null
+    fileUri?: string | null
     traceparent?: string | undefined | null
-): Promise<void> {
+    isPrefetch: boolean
+}): Promise<void> {
     const activeEditor = getEditor()?.active
     const workspaceUri = vscode.workspace.workspaceFolders?.[0].uri
     const uri = await resolveRelativeOrAbsoluteUri(workspaceUri, fileUri, activeEditor?.document?.uri)
 
+    // TODO: move this logic to the smart apply manager
     const isNewFile = uri && !(await doesFileExist(uri))
     if (isNewFile) {
+        if (isPrefetch) {
+            return
+        }
+
         const workspaceEditor = new vscode.WorkspaceEdit()
         workspaceEditor.createFile(uri, { ignoreIfExists: false })
         await vscode.workspace.applyEdit(workspaceEditor)
@@ -203,6 +217,23 @@ export async function handleSmartApply(
     const document = uri ? await vscode.workspace.openTextDocument(uri) : activeEditor?.document
     if (!document) {
         throw new Error('No editor found to insert text')
+    }
+
+    if (isPrefetch) {
+        executePrefetchSmartApply({
+            configuration: {
+                id,
+                document,
+                instruction: PromptString.unsafe_fromUserQuery(instruction || ''),
+                model: await getSmartApplyModel(authStatus),
+                replacement: code,
+                isNewFile,
+                traceparent,
+            },
+            source: 'chat',
+        })
+
+        return
     }
 
     const visibleEditor = vscode.window.visibleTextEditors.find(

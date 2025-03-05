@@ -197,7 +197,9 @@ export function transcriptToInteractionPairs(
         })
     }
 
-    const lastAssistantMessage = pairs[pairs.length - 1]?.assistantMessage
+    const lastMessage = pairs[pairs.length - 1]
+    const lastHumanMessage = lastMessage?.humanMessage
+    const lastAssistantMessage = lastMessage?.assistantMessage
     const isAborted = isAbortErrorOrSocketHangUp(lastAssistantMessage?.error)
     const shouldAddFollowup =
         lastAssistantMessage &&
@@ -211,6 +213,8 @@ export function transcriptToInteractionPairs(
                 index: pairs.length * 2,
                 speaker: 'human',
                 isUnsentFollowup: true,
+                // If the last submitted message was a search, default to chat for the followup.
+                intent: lastHumanMessage?.intent === 'search' ? 'chat' : lastHumanMessage?.intent,
             },
             assistantMessage: null,
         })
@@ -254,13 +258,10 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
         smartApplyEnabled,
         editorRef: parentEditorRef,
     } = props
-    const [manuallySelectedIntent, setManuallySelectedIntent] =
-        useState<ChatMessage['intent']>(undefined)
-
-    // biome-ignore lint/correctness/useExhaustiveDependencies: need to reset manually selected intent when the human message changes
-    useEffect(() => {
-        setManuallySelectedIntent(undefined)
-    }, [humanMessage])
+    // Start the intent value as the human message's intent, but allow it to be manually set.
+    const [manuallySelectedIntent, setManuallySelectedIntent] = useState<ChatMessage['intent']>(
+        humanMessage.intent
+    )
 
     const { activeChatContext, setActiveChatContext } = props
     const humanEditorRef = useRef<PromptEditorRefAPI | null>(null)
@@ -301,7 +302,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
 
             const commonProps = {
                 editorValue,
-                manuallySelectedIntent: intentFromSubmit || manuallySelectedIntent || 'chat',
+                manuallySelectedIntent: intentFromSubmit || manuallySelectedIntent,
                 traceparent,
             }
 

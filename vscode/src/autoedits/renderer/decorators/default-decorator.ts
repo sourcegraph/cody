@@ -2,11 +2,11 @@ import * as vscode from 'vscode'
 
 import { GHOST_TEXT_COLOR } from '../../../commands/GhostHintDecorator'
 
-import { getEditorInsertSpaces, getEditorTabSize } from '@sourcegraph/cody-shared'
 import { isOnlyAddingTextForModifiedLines } from '../diff-utils'
 import { generateSuggestionAsImage } from '../image-gen'
+import { getEndColumnForLine } from '../image-gen/utils'
+import { makeVisualDiff } from '../image-gen/visual-diff'
 import type { AutoEditsDecorator, DecorationInfo, ModifiedLineInfo } from './base'
-import { UNICODE_SPACE, blockify } from './blockify'
 import { cssPropertiesToString } from './utils'
 
 export interface DiffedTextDecorationRange {
@@ -30,10 +30,6 @@ export interface AddedLinesDecorationInfo {
 interface DiffDecorationAddedLinesInfo {
     /** Information about lines that have been added */
     addedLinesDecorationInfo: AddedLinesDecorationInfo[]
-    /** Starting line number for the decoration */
-    startLine: number
-    /** Column position for the replacement text */
-    replacerCol: number
 }
 
 /**
@@ -46,15 +42,9 @@ interface DiffDecorationInfo {
     addedLinesInfo?: DiffDecorationAddedLinesInfo
 }
 
-interface DefaultDecoratorOptions {
-    /** Experimentally render added lines as images in the editor */
-    shouldRenderImage?: boolean
-}
-
 export class DefaultDecorator implements AutoEditsDecorator {
     private readonly decorationTypes: vscode.TextEditorDecorationType[]
     private readonly editor: vscode.TextEditor
-    private readonly options: DefaultDecoratorOptions
 
     // Decoration types
     private readonly removedTextDecorationType: vscode.TextEditorDecorationType
@@ -68,9 +58,8 @@ export class DefaultDecorator implements AutoEditsDecorator {
      */
     private diffDecorationInfo: DiffDecorationInfo | undefined
 
-    constructor(editor: vscode.TextEditor, options: DefaultDecoratorOptions = {}) {
+    constructor(editor: vscode.TextEditor) {
         this.editor = editor
-        this.options = options
 
         // Initialize decoration types
         this.removedTextDecorationType = vscode.window.createTextEditorDecorationType({
@@ -104,29 +93,6 @@ export class DefaultDecorator implements AutoEditsDecorator {
             this.addedLinesDecorationType,
             this.insertMarkerDecorationType,
         ]
-    }
-
-    public canRenderDecoration(decorationInfo: DecorationInfo): boolean {
-        if (this.options.shouldRenderImage) {
-            // Image decorations can expand beyond the editor boundaries, so we can always render them.
-            return true
-        }
-
-        if (!this.diffDecorationInfo) {
-            this.diffDecorationInfo = this.getDiffDecorationsInfo(decorationInfo)
-        }
-
-        const { addedLinesInfo } = this.diffDecorationInfo
-        if (addedLinesInfo) {
-            // Check if there are enough lines in the editor to render the diff decorations
-            if (
-                addedLinesInfo.startLine + addedLinesInfo.addedLinesDecorationInfo.length >
-                this.editor.document.lineCount
-            ) {
-                return false
-            }
-        }
-        return true
     }
 
     private clearDecorations(): void {
@@ -170,21 +136,7 @@ export class DefaultDecorator implements AutoEditsDecorator {
         if (!addedLinesInfo) {
             return
         }
-
-        if (this.options.shouldRenderImage) {
-            this.renderAddedLinesImageDecorations(
-                decorationInfo,
-                addedLinesInfo.startLine,
-                addedLinesInfo.replacerCol
-            )
-            return
-        }
-
-        this.renderAddedLinesDecorations(
-            addedLinesInfo.addedLinesDecorationInfo,
-            addedLinesInfo.startLine,
-            addedLinesInfo.replacerCol
-        )
+        this.renderAddedLinesImageDecorations(decorationInfo)
     }
 
     private getDiffDecorationsInfo(decorationInfo: DecorationInfo): DiffDecorationInfo {
@@ -253,143 +205,37 @@ export class DefaultDecorator implements AutoEditsDecorator {
         if (addedLinesInfo.length === 0) {
             return { removedRangesInfo: removedRanges }
         }
-        const oldLines = addedLinesInfo
-            .filter(info => info.afterLine < this.editor.document.lineCount)
-            .map(info => this.editor.document.lineAt(info.afterLine))
-
-        const replacerCol = Math.max(...oldLines.map(line => this.getEndColumn(line)))
-        const startLine = Math.min(...oldLines.map(line => line.lineNumber))
 
         return {
             removedRangesInfo: removedRanges,
             addedLinesInfo: {
                 addedLinesDecorationInfo: addedLinesInfo,
-                startLine,
-                replacerCol,
             },
         }
     }
 
-    private getEndColumn(line: vscode.TextLine): number {
-        const insertSpaces = getEditorInsertSpaces(
-            this.editor.document.uri,
-            vscode.workspace,
-            vscode.window
-        )
-        if (insertSpaces) {
-            // We can reliably use the range position for files using space characters
-            return line.range.end.character
-        }
-
-        // For files using tab-based indentation, we need special handling.
-        // VSCode's Range API doesn't account for tab display width
-        // We need to:
-        // 1. Convert tabs to spaces based on editor tab size
-        // 2. Calculate the visual width including both indentation and content
-        const tabSize = getEditorTabSize(this.editor.document.uri, vscode.workspace, vscode.window)
-        const tabAsSpace = UNICODE_SPACE.repeat(tabSize)
-        const firstNonWhitespaceCharacterIndex = line.firstNonWhitespaceCharacterIndex
-        const indentationText = line.text.substring(0, firstNonWhitespaceCharacterIndex)
-        const spaceAdjustedEndCharacter =
-            indentationText.replaceAll(/\t/g, tabAsSpace).length +
-            (line.text.length - firstNonWhitespaceCharacterIndex)
-
-        return spaceAdjustedEndCharacter
-    }
-
-    private renderAddedLinesDecorations(
-        addedLinesInfo: AddedLinesDecorationInfo[],
-        startLine: number,
-        replacerCol: number
-    ): void {
-        // Blockify the added lines so they are suitable to be rendered together as a VS Code decoration
-        const blockifiedAddedLines = blockify(this.editor.document, addedLinesInfo)
-
-        const replacerDecorations: vscode.DecorationOptions[] = []
-        for (let i = 0; i < blockifiedAddedLines.length; i++) {
-            const j = i + startLine
-            const line = this.editor.document.lineAt(j)
-            const lineReplacerCol = this.getEndColumn(line)
-            const decoration = blockifiedAddedLines[i]
-            const decorationStyle = cssPropertiesToString({
-                // Absolutely position the suggested code so that the cursor does not jump there
-                position: 'absolute',
-                // Due the the absolute position, the decoration may interfere with other decorations (e.g. GitLens)
-                // Apply a background blur to avoid interference
-                'backdrop-filter': 'blur(5px)',
-            })
-
-            if (replacerCol >= lineReplacerCol) {
-                replacerDecorations.push({
-                    range: new vscode.Range(j, line.range.end.character, j, line.range.end.character),
-                    renderOptions: {
-                        // Show the suggested code but keep it positioned absolute to ensure
-                        // the cursor does not jump there.
-                        before: {
-                            contentText: UNICODE_SPACE.repeat(3) + decoration.lineText,
-                            margin: `0 0 0 ${replacerCol - lineReplacerCol}ch`,
-                            textDecoration: `none;${decorationStyle}`,
-                        },
-                        // Create an empty HTML element with the width required to show the suggested code.
-                        // Required to make the viewport scrollable to view the suggestion if it's outside.
-                        after: {
-                            contentText:
-                                UNICODE_SPACE.repeat(3) +
-                                decoration.lineText.replace(/\S/g, UNICODE_SPACE),
-                            margin: `0 0 0 ${replacerCol - lineReplacerCol}ch`,
-                        },
-                    },
-                })
-            } else {
-                replacerDecorations.push({
-                    range: new vscode.Range(j, replacerCol, j, replacerCol),
-                    renderOptions: {
-                        before: {
-                            contentText: UNICODE_SPACE + decoration.lineText,
-                            textDecoration: `none;${decorationStyle}`,
-                        },
-                        after: {
-                            contentText:
-                                UNICODE_SPACE.repeat(3) +
-                                decoration.lineText.replace(/\S/g, UNICODE_SPACE),
-                        },
-                    },
-                })
-            }
-        }
-
-        const startLineLength = this.editor.document.lineAt(startLine).range.end.character
-        this.editor.setDecorations(this.insertMarkerDecorationType, [
-            {
-                range: new vscode.Range(startLine, 0, startLine, startLineLength),
-            },
-        ])
-        this.editor.setDecorations(this.addedLinesDecorationType, replacerDecorations)
-    }
-
-    private renderAddedLinesImageDecorations(
-        decorationInfo: DecorationInfo,
-        startLine: number,
-        replacerCol: number
-    ): void {
+    private renderAddedLinesImageDecorations(decorationInfo: DecorationInfo): void {
         // TODO: Diff mode will likely change depending on the environment.
         // This should be determined by client capabilities.
         // VS Code: 'additions'
         // Client capabiliies === image: 'unified'
         const diffMode = 'additions'
+        const { diff, target } = makeVisualDiff(decorationInfo, diffMode, this.editor.document)
         const { dark, light, pixelRatio } = generateSuggestionAsImage({
-            decorations: decorationInfo,
+            diff,
             lang: this.editor.document.languageId,
             mode: diffMode,
-            document: this.editor.document,
         })
-        const startLineEndColumn = this.getEndColumn(this.editor.document.lineAt(startLine))
+        const startLineEndColumn = getEndColumnForLine(
+            this.editor.document.lineAt(target.line),
+            this.editor.document
+        )
 
         // The padding in which to offset the decoration image away from neighbouring code
         const decorationPadding = 4
         // The margin position where the decoration image should render.
         // Ensuring it does not conflict with the visibility of existing code.
-        const decorationMargin = replacerCol - startLineEndColumn + decorationPadding
+        const decorationMargin = target.offset - startLineEndColumn + decorationPadding
         const decorationStyle = cssPropertiesToString({
             // Absolutely position the suggested code so that the cursor does not jump there
             position: 'absolute',
@@ -406,7 +252,12 @@ export class DefaultDecorator implements AutoEditsDecorator {
 
         this.editor.setDecorations(this.addedLinesDecorationType, [
             {
-                range: new vscode.Range(startLine, startLineEndColumn, startLine, startLineEndColumn),
+                range: new vscode.Range(
+                    target.line,
+                    startLineEndColumn,
+                    target.line,
+                    startLineEndColumn
+                ),
                 renderOptions: {
                     before: {
                         color: new vscode.ThemeColor('editorSuggestWidget.foreground'),
@@ -428,7 +279,7 @@ export class DefaultDecorator implements AutoEditsDecorator {
         ])
         this.editor.setDecorations(this.insertMarkerDecorationType, [
             {
-                range: new vscode.Range(startLine, 0, startLine, startLineEndColumn),
+                range: new vscode.Range(target.line, 0, target.line, startLineEndColumn),
             },
         ])
     }

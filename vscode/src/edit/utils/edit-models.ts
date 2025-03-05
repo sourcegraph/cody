@@ -19,13 +19,15 @@ export function getOverriddenModelForIntent(
             // TODO: Make the model usage more visible to users outside of the normal edit flow. This means
             // we could let the user provide any model they want for `fix`.
             // Issue: https://github.com/sourcegraph/cody/issues/3512
-            return 'anthropic/claude-3-5-sonnet-20240620'
+            return 'anthropic::2024-10-22::claude-3-5-sonnet-latest'
         case 'doc':
             // Doc is a case where we can sacrifice LLM performance for improved latency and get comparable results.
-            return 'anthropic/claude-3-haiku-20240307'
+            return 'anthropic::2024-10-22::claude-3-5-haiku-latest'
+
         case 'test':
         case 'add':
         case 'edit':
+        case 'smartApply':
             // Support all model usage for add and edit intents.
             return currentModel
     }

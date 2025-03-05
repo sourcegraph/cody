@@ -174,8 +174,7 @@ export class ChatHandler implements AgentHandler {
                         break
                     }
                     case 'error': {
-                        typewriter.close()
-                        typewriter.stop(message.error)
+                        throw message.error
                     }
                 }
             }
@@ -321,7 +320,12 @@ export async function computeContextAlternatives(
 
     const resolvedExplicitMentionsPromise = resolveContextItems(
         editor,
-        [structuredMentions.symbols, structuredMentions.files, structuredMentions.openCtx].flat(),
+        [
+            structuredMentions.symbols,
+            structuredMentions.files,
+            structuredMentions.openCtx,
+            structuredMentions.mediaFiles,
+        ].flat(),
         text,
         signal
     )

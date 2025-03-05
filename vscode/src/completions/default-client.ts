@@ -87,6 +87,12 @@ class DefaultCodeCompletionsClient implements CodeCompletionsClient {
                     throw recordErrorToSpan(span, error)
                 }
 
+                // Convert Headers to Record<string, string> for requestHeaders
+                const requestHeaders: Record<string, string> = {}
+                headers.forEach((value, key) => {
+                    requestHeaders[key] = value
+                })
+
                 // We enable streaming only for Node environments right now because it's hard to make
                 // the polyfilled fetch API work the same as it does in the browser.
                 //
@@ -165,7 +171,12 @@ class DefaultCodeCompletionsClient implements CodeCompletionsClient {
 
                 const result: CompletionResponseWithMetaData = {
                     completionResponse: undefined,
-                    metadata: { response },
+                    metadata: {
+                        response,
+                        requestHeaders,
+                        requestUrl: url.toString(),
+                        requestBody: serializedParams,
+                    },
                 }
 
                 try {

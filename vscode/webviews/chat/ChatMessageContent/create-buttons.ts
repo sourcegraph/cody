@@ -1,3 +1,4 @@
+import { type Guardrails, isError } from '@sourcegraph/cody-shared'
 import type { FixupTaskID } from '../../../src/non-stop/FixupTask'
 import { CodyTaskState } from '../../../src/non-stop/state'
 import {
@@ -17,21 +18,26 @@ import type { Config } from '../../utils/useConfig'
 import type { PriorHumanMessageInfo } from '../cells/messageCell/assistant/AssistantMessageCell'
 import type { CodeBlockActionsProps } from './ChatMessageContent'
 import styles from './ChatMessageContent.module.css'
+import { GuardrailsStatusController } from './GuardRailStatusController'
+import { getFileName } from './utils'
 
 export function createButtons(
     preText: string,
     copyButtonOnSubmit?: CodeBlockActionsProps['copyButtonOnSubmit'],
     insertButtonOnSubmit?: CodeBlockActionsProps['insertButtonOnSubmit']
 ): HTMLElement {
-    const container = document.createElement('div')
-    container.className = styles.buttonsContainer
-
     if (!copyButtonOnSubmit) {
-        return container
+        const emptyContainer = document.createElement('div')
+        emptyContainer.dataset.containerType = 'buttons'
+        return emptyContainer
     }
 
-    // The container will contain the buttons and the <pre> element with the code.
-    // This allows us to position the buttons independent of the code.
+    // Create container for action buttons
+    const buttonContainer = document.createElement('div')
+    buttonContainer.className = styles.buttonsContainer
+    buttonContainer.dataset.containerType = 'actions'
+
+    // Create buttons container
     const buttons = document.createElement('div')
     buttons.className = styles.buttons
 
@@ -72,9 +78,26 @@ export function createButtons(
         )
     }
 
-    container.append(buttons)
+    buttonContainer.appendChild(buttons)
 
+    // Return a container with both preview and action containers
+    const container = document.createElement('div')
+    container.dataset.containerType = 'buttons'
+    container.appendChild(buttonContainer)
     return container
+}
+
+function getLineChanges(text: string): { additions: number; deletions: number } {
+    const lines = text?.split('\n') ?? []
+    let additions = 0
+    let deletions = 0
+
+    for (const line of lines) {
+        if (line?.startsWith('+')) additions++
+        if (line?.startsWith('-')) deletions++
+    }
+
+    return { additions, deletions }
 }
 
 export function createButtonsExperimentalUI(
@@ -86,24 +109,106 @@ export function createButtonsExperimentalUI(
     insertButtonOnSubmit?: CodeBlockActionsProps['insertButtonOnSubmit'],
     smartApply?: CodeBlockActionsProps['smartApply'],
     smartApplyId?: string,
-    smartApplyState?: CodyTaskState
+    smartApplyState?: CodyTaskState,
+    guardrails?: Guardrails,
+    isMessageLoading?: boolean
 ): HTMLElement {
-    const container = document.createElement('div')
-    container.className = styles.buttonsContainer
+    const previewContainer = document.createElement('div')
+    previewContainer.className = styles.buttonsContainer
+    previewContainer.dataset.containerType = 'preview'
+
+    let hasPreviewContent = false
+    let previewElement = null
+
+    const leftInfo = document.createElement('div')
+    if (humanMessage?.intent === 'edit') {
+        const { additions, deletions } = getLineChanges(preText)
+        if (additions >= 0 || deletions >= 0) {
+            const stats = document.createElement('span')
+            stats.innerHTML = `<span class="${styles.addition}">+${additions}</span>, <span class="${styles.deletion}">-${deletions}</span>`
+            stats.className = styles.stats
+            leftInfo.appendChild(stats)
+            previewElement = previewContainer
+            hasPreviewContent = true
+        }
+    }
+    previewContainer.appendChild(leftInfo)
+
+    const actionsContainer = document.createElement('div')
+    actionsContainer.className = styles.buttonsContainer
+    actionsContainer.dataset.containerType = 'actions'
+
     if (!copyButtonOnSubmit) {
-        return container
+        const buttonsContainer = document.createElement('div')
+        buttonsContainer.dataset.containerType = 'buttons'
+        buttonsContainer.append(previewContainer, actionsContainer)
+        if (hasPreviewContent && previewElement) {
+            buttonsContainer.prepend(previewContainer)
+        }
+        return buttonsContainer
     }
 
     const buttons = document.createElement('div')
     buttons.className = styles.buttons
 
+    // Create container for action buttons to keep them grouped
+    const actionButtons = document.createElement('div')
+    actionButtons.className = styles.actionButtons
+    buttons.appendChild(actionButtons)
+
+    // Create metadata container for guardrails and filename
+    const metadataContainer = document.createElement('div')
+    metadataContainer.className = styles.metadataContainer
+
+    // Add guardrails if needed
+    if (guardrails) {
+        const container = document.createElement('div')
+        container.classList.add(styles.attributionContainer)
+        metadataContainer.append(container)
+
+        if (!isMessageLoading) {
+            const g = new GuardrailsStatusController(container)
+            g.setPending()
+
+            guardrails
+                .searchAttribution(preText)
+                .then(attribution => {
+                    if (isError(attribution)) {
+                        g.setUnavailable(attribution)
+                    } else if (attribution.repositories.length === 0) {
+                        g.setSuccess()
+                    } else {
+                        g.setFailure(
+                            attribution.repositories.map(r => r.name),
+                            attribution.limitHit
+                        )
+                    }
+                })
+                .catch(error => {
+                    g.setUnavailable(error)
+                    return
+                })
+        }
+    }
+
+    // Add filename if present
+    if (codeBlockName && codeBlockName !== 'command') {
+        const fileNameContainer = document.createElement('div')
+        fileNameContainer.className = styles.fileNameContainer
+        fileNameContainer.textContent = getFileName(codeBlockName)
+        fileNameContainer.title = codeBlockName
+        metadataContainer.append(fileNameContainer)
+    }
+
+    buttons.appendChild(metadataContainer)
+
     if (smartApply && smartApplyState === CodyTaskState.Applied && smartApplyId) {
         const acceptButton = createAcceptButton(smartApplyId, smartApply)
         const rejectButton = createRejectButton(smartApplyId, smartApply)
-        buttons.append(acceptButton, rejectButton)
+        actionButtons.append(acceptButton, rejectButton)
     } else {
         const copyButton = createCopyButton(preText, copyButtonOnSubmit)
-        buttons.append(copyButton)
+        actionButtons.append(copyButton)
 
         if (smartApply && smartApplyId) {
             // Execute button is only available in VS Code.
@@ -120,7 +225,7 @@ export function createButtonsExperimentalUI(
                           codeBlockName
                       )
             smartButton.title = isExecutable ? 'Execute in Terminal' : 'Apply in Editor'
-            buttons.append(smartButton)
+            actionButtons.append(smartButton)
         }
 
         if (config.clientCapabilities.isVSCode) {
@@ -129,17 +234,21 @@ export function createButtonsExperimentalUI(
             // TODO: A dropdown would be useful for other clients too, we should consider building
             // a generic web-based dropdown component that can be used by any client.
             const actionsDropdown = createActionsDropdown(preText)
-            buttons.append(actionsDropdown)
+            actionButtons.append(actionsDropdown)
         } else {
             const insertButton = createInsertButton(preText, insertButtonOnSubmit)
             const saveButton = createSaveButton(preText, insertButtonOnSubmit)
-            buttons.append(insertButton, saveButton)
+            actionButtons.append(insertButton, saveButton)
         }
     }
 
-    container.append(buttons)
+    actionsContainer.appendChild(buttons)
 
-    return container
+    // Return a container with both preview and action containers
+    const buttonsContainer = document.createElement('div')
+    buttonsContainer.dataset.containerType = 'buttons'
+    buttonsContainer.append(previewContainer, actionsContainer)
+    return buttonsContainer
 }
 
 function createInsertButton(
@@ -226,12 +335,16 @@ function createCodeBlockActionButton(
     return button
 }
 
+function wrapTextWithResponsiveSpan(text: string): string {
+    return `<span class="tw-hidden xs:tw-block">${text}</span>`
+}
+
 function createCopyButton(
     preText: string,
     onCopy: CodeBlockActionsProps['copyButtonOnSubmit']
 ): HTMLElement {
     const button = document.createElement('button')
-    button.innerHTML = 'Copy'
+    button.innerHTML = wrapTextWithResponsiveSpan('Copy')
     button.className = styles.button
 
     const iconContainer = document.createElement('div')
@@ -242,7 +355,7 @@ function createCopyButton(
     button.addEventListener('click', () => {
         iconContainer.innerHTML = CheckCodeBlockIcon
         iconContainer.className = styles.iconContainer
-        button.innerHTML = 'Copied'
+        button.innerHTML = wrapTextWithResponsiveSpan('Copied')
         button.className = styles.button
         button.prepend(iconContainer)
 
@@ -252,7 +365,7 @@ function createCopyButton(
             // Reset the icon to the original.
             iconContainer.innerHTML = CopyCodeBlockIcon
             iconContainer.className = styles.iconContainer
-            button.innerHTML = 'Copy'
+            button.innerHTML = wrapTextWithResponsiveSpan('Copy')
             button.className = styles.button
             button.prepend(iconContainer)
         }, 5000)
@@ -276,7 +389,7 @@ function createApplyButton(
     button.className = styles.button
     switch (smartApplyState) {
         case 'Working': {
-            button.innerHTML = 'Applying'
+            button.innerHTML = wrapTextWithResponsiveSpan('Applying')
             button.disabled = true
 
             // Add Loading Icon
@@ -289,7 +402,7 @@ function createApplyButton(
         }
         case 'Applied':
         case 'Finished': {
-            button.innerHTML = 'Reapply'
+            button.innerHTML = wrapTextWithResponsiveSpan('Reapply')
 
             // Add Refresh Icon
             const iconContainer = document.createElement('div')
@@ -298,13 +411,18 @@ function createApplyButton(
             button.prepend(iconContainer)
 
             button.addEventListener('click', () =>
-                smartApply.onSubmit(smartApplyId, preText, humanMessage?.text, fileName)
+                smartApply.onSubmit({
+                    id: smartApplyId,
+                    text: preText,
+                    instruction: humanMessage?.text,
+                    fileName,
+                })
             )
 
             break
         }
         default: {
-            button.innerHTML = 'Apply'
+            button.innerHTML = wrapTextWithResponsiveSpan('Apply')
 
             // Add Sparkle Icon
             const iconContainer = document.createElement('div')
@@ -313,7 +431,12 @@ function createApplyButton(
             button.prepend(iconContainer)
 
             button.addEventListener('click', () =>
-                smartApply.onSubmit(smartApplyId, preText, humanMessage?.text, fileName)
+                smartApply.onSubmit({
+                    id: smartApplyId,
+                    text: preText,
+                    instruction: humanMessage?.text,
+                    fileName,
+                })
             )
         }
     }
@@ -330,7 +453,7 @@ function createApplyButton(
 function createExecuteButton(command: string): HTMLElement {
     const button = document.createElement('button')
     button.className = styles.button
-    button.innerHTML = 'Execute'
+    button.innerHTML = wrapTextWithResponsiveSpan('Execute')
     button.title = 'Send command to Terminal'
     const iconContainer = document.createElement('div')
     iconContainer.className = styles.iconContainer

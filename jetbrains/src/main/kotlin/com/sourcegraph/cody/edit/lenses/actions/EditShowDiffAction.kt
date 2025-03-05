@@ -16,7 +16,9 @@ class EditShowDiffAction :
           if (editTask != null) {
             val documentAfter = editor.document
             val documentBefore = EditorFactory.getInstance().createDocument(documentAfter.text)
-            val (startOffset, endOffset) = editTask.selectionRange.toOffsetRange(documentBefore)
+            val (startOffset, endOffset) =
+                editTask.selectionRange.toOffsetRange(documentBefore)
+                    ?: return@runWriteCommandAction
             documentBefore.replaceString(startOffset, endOffset, editTask.originalText ?: "")
             ShowDocumentDiffAction(documentBefore, documentAfter).actionPerformed(event)
           }

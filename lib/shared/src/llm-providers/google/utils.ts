@@ -1,26 +1,60 @@
-import type { GeminiChatMessage } from '.'
-import { contextFiltersProvider } from '../../cody-ignore/context-filters-provider'
-import type { Message } from '../../sourcegraph-api'
+import type { Content, InlineDataPart, Part } from '@google/generative-ai'
+import type { Message } from '../..'
+import { getMessageImageUrl } from '../completions-converter'
 
 /**
- * Constructs an array of `GeminiChatMessage` objects from an array of `Message` objects.
- *
- * Each `GeminiChatMessage` object has a `role` property set to either `'user'` or `'model'` based on the `speaker` property of the
- * corresponding `Message` object, and a `parts` property containing an array with a single `{ text: string }` object, where the
- * `text` property is set to the `text` property of the corresponding `Message` object.
- *
- * The resulting array of `GeminiChatMessage` objects excludes the last `GeminiChatMessage` object if its `role` is `'model'`.
- *
- * @param messages - An array of `Message` objects to be converted to `GeminiChatMessage` objects.
- * @returns An array of `GeminiChatMessage` objects.
+ * Constructs the messages array for the Gemini API, including handling InlineDataPart for media.
  */
-export async function constructGeminiChatMessages(messages: Message[]): Promise<GeminiChatMessage[]> {
-    return (
-        await Promise.all(
-            messages.map(async msg => ({
-                role: msg.speaker === 'human' ? 'user' : 'model',
-                parts: [{ text: (await msg.text?.toFilteredString(contextFiltersProvider)) ?? '' }],
-            }))
-        )
-    ).filter((_, i, arr) => i !== arr.length - 1 || arr[i].role !== 'model')
+export async function constructGeminiChatMessages(messages: Message[]): Promise<Content[]> {
+    const contents: Content[] = []
+
+    // Map speaker types to Gemini API roles
+    const roleMap: Record<string, 'user' | 'model' | 'system'> = {
+        human: 'user',
+        assistant: 'model',
+        system: 'system',
+    }
+
+    for (const message of messages) {
+        const role = roleMap[message.speaker] || 'user'
+        const parts: Part[] = []
+
+        // Skip if this would create consecutive messages from the same role
+        const lastContent = contents[contents.length - 1]
+        if (lastContent?.role === role) {
+            continue
+        }
+
+        // Process message content parts
+        if (message.content?.length) {
+            for (const part of message.content) {
+                if (part.type === 'text' && part.text?.length) {
+                    parts.push({ text: part.text })
+                }
+                const { data, mimeType } = getMessageImageUrl(part)
+                if (data && mimeType) {
+                    parts.push({
+                        inlineData: { mimeType, data: data.replace(/data:[^;]+;base64,/, '') },
+                    } satisfies InlineDataPart)
+                }
+            }
+        }
+
+        // Add message text if present
+        if (message.text?.length) {
+            parts.push({ text: message.text.toString() })
+        }
+
+        // Add content if there are parts
+        if (parts.length > 0) {
+            contents.push({ role, parts })
+        }
+    }
+
+    // Remove trailing model message if present
+    if (contents.length > 0 && contents[contents.length - 1].role === 'model') {
+        contents.pop()
+    }
+
+    return contents
 }

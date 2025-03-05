@@ -4,11 +4,19 @@ import plugin from 'tailwindcss/plugin'
 export default {
     content: {
         relative: true,
-        files: ['**/*.{ts,tsx}', '../../lib/**/**/*.{ts,tsx}'],
+        files: [
+            '**/*.{ts,tsx}',
+            '../../lib/**/**/*.{ts,tsx}',
+            'autoedit-debug/**/*.{ts,tsx}',
+            'autoedit-debug/**/*.css',
+        ],
     },
     prefix: 'tw-',
     theme: {
         extend: {
+            screens: {
+                xs: '348px',
+            },
             fontSize: {
                 lg: 'calc(var(--vscode-font-size) * 15 / 13)', // = 15px
                 md: 'var(--vscode-font-size)', // = 13px

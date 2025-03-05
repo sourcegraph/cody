@@ -48,12 +48,12 @@ class EditService(val project: Project) {
       edits.reversed().all { edit ->
         when (edit) {
           is ReplaceTextEdit -> {
-            val (startOffset, endOffset) = edit.range.toOffsetRange(document)
+            val (startOffset, endOffset) = edit.range.toOffsetRange(document) ?: return@all false
             document.replaceString(startOffset, endOffset, edit.value)
             true
           }
           is DeleteTextEdit -> {
-            val (startOffset, endOffset) = edit.range.toOffsetRange(document)
+            val (startOffset, endOffset) = edit.range.toOffsetRange(document) ?: return@all false
             document.deleteString(startOffset, endOffset)
             true
           }

@@ -1,11 +1,13 @@
-import type { ContextItem, Message } from '@sourcegraph/cody-shared'
+import type { ContextItem, ContextItemMedia, Message } from '@sourcegraph/cody-shared'
 import {
     type ChatMessage,
     ContextItemSource,
     contextFiltersProvider,
     displayPath,
+    featureFlagProvider,
     ps,
 } from '@sourcegraph/cody-shared'
+import { Observable } from 'observable-fns'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { URI } from 'vscode-uri'
 import { mockLocalStorage } from '../services/LocalStorageProvider'
@@ -13,6 +15,7 @@ import { PromptBuilder } from './index'
 
 describe('PromptBuilder', () => {
     beforeEach(() => {
+        mockLocalStorage()
         vi.spyOn(contextFiltersProvider, 'isUriIgnored').mockResolvedValue(false)
     })
 
@@ -168,6 +171,169 @@ describe('PromptBuilder', () => {
             size: 1,
             content: 'foo',
         }
+
+        it('should correctly add media context items to the final messages', async () => {
+            const builder = await PromptBuilder.create({ input: 100, output: 100 })
+            builder.tryAddToPrefix(preamble)
+            builder.tryAddMessages([...chatTranscript].reverse())
+
+            const imageItem: ContextItem = {
+                type: 'media',
+                uri: URI.file('/foo/image.png'),
+                size: 1,
+                content: 'image data',
+                data: 'data:image/png;base64,iVBORw0KGgoAAA==',
+                mimeType: 'image/png',
+                filename: 'image.png',
+                source: ContextItemSource.User,
+            }
+
+            const { added, ignored, limitReached } = await builder.tryAddContext('user', [imageItem])
+
+            // Verify the media item was added successfully
+            expect(limitReached).toBe(false)
+            expect(ignored).toEqual([])
+            expect(added).toEqual([imageItem])
+            expect(builder.contextItems).toEqual([imageItem])
+
+            // Build the final messages and check that the media content is included correctly
+            const finalMessages = builder.build()
+
+            // Find the media message
+            const mediaMessage = finalMessages.find(msg =>
+                msg.content?.some(part => part.type === 'image_url')
+            )
+
+            expect(mediaMessage).toBeDefined()
+            expect(mediaMessage?.speaker).toBe('human')
+            expect(mediaMessage?.text).toEqual(undefined)
+            expect(mediaMessage?.content).toEqual([
+                {
+                    type: 'image_url',
+                    image_url: { url: 'data:image/png;base64,iVBORw0KGgoAAA==' },
+                },
+            ])
+
+            // Verify that there's an assistant message after the media message
+            const assistantIndex =
+                finalMessages.findIndex(msg => msg.content?.some(part => part.type === 'image_url')) + 1
+            expect(finalMessages[assistantIndex].speaker).toBe('assistant')
+            expect(finalMessages[assistantIndex].text).toEqual(ps`Ok.`)
+        })
+
+        it('should handle multiple media context items correctly', async () => {
+            const builder = await PromptBuilder.create({ input: 100, output: 100 })
+            builder.tryAddToPrefix(preamble)
+            builder.tryAddMessages([...chatTranscript].reverse())
+
+            const imageItem1: ContextItemMedia = {
+                type: 'media',
+                uri: URI.file('/foo/image1.png'),
+                size: 1,
+                content: 'image data 1',
+                data: 'data:image/png;base64,iVBORw0KGgoAAA==',
+                mimeType: 'image/png',
+                filename: 'image1.png',
+                source: ContextItemSource.User,
+            }
+
+            const imageItem2: ContextItemMedia = {
+                type: 'media',
+                uri: URI.file('/foo/image2.jpg'),
+                size: 2,
+                content: 'image data 2',
+                data: 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQ==',
+                mimeType: 'image/jpeg',
+                filename: 'image2.jpg',
+                source: ContextItemSource.User,
+            }
+
+            const { added } = await builder.tryAddContext('user', [imageItem1, imageItem2])
+
+            // Verify both media items were added
+            expect(added).toEqual([imageItem1, imageItem2])
+            expect(builder.contextItems).toEqual([imageItem1, imageItem2])
+
+            // Build the final messages
+            const finalMessages = builder.build()
+
+            // Find the media messages
+            const mediaMessages = finalMessages.filter(msg =>
+                msg.content?.some(part => part.type === 'image_url')
+            )
+
+            // Verify we have both images in separate messages
+            expect(mediaMessages.length).toBe(2)
+
+            // First image (item 2 is the first image because we add by reverse order)
+            const firstImage = mediaMessages[0].content?.[0]
+            expect(firstImage?.type).toBe('image_url')
+            if (firstImage?.type === 'image_url') {
+                expect(firstImage.image_url.url).toBe('data:image/jpeg;base64,/9j/4AAQSkZJRgABAQ==')
+            }
+
+            // Second image
+            const secondImage = mediaMessages[1].content?.[0]
+            if (secondImage?.type === 'image_url') {
+                expect(secondImage.type).toBe('image_url')
+                expect(secondImage.image_url?.url).toEqual('data:image/png;base64,iVBORw0KGgoAAA==')
+            }
+
+            // Verify assistant messages are inserted correctly between images
+            const assistantMessages = finalMessages.filter(
+                msg => msg.speaker === 'assistant' && msg.text?.toString() === 'Ok.'
+            )
+            expect(assistantMessages.length).toBe(2) // One after each context
+        })
+
+        it('should skip token counting for media context items', async () => {
+            // Create a builder with very limited token budget
+            const builder = await PromptBuilder.create({ input: 10, output: 10 })
+            builder.tryAddToPrefix(preamble)
+            builder.tryAddMessages([...chatTranscript].reverse())
+
+            const imageItem: ContextItem = {
+                type: 'media',
+                uri: URI.file('/foo/large-image.png'),
+                // Large size that would normally exceed token limits
+                size: 1000000,
+                content: 'very large image data',
+                data: 'data:image/png;base64,iVBORw0KGgoAAA==',
+                mimeType: 'image/png',
+                filename: 'large-image.png',
+                source: ContextItemSource.User,
+            }
+
+            // A text file that would exceed token limits
+            const largeTextFile: ContextItem = {
+                type: 'file',
+                uri: URI.file('/foo/large-file.txt'),
+                size: 1000000,
+                content: 'This is a very large text file that should exceed token limits',
+                source: ContextItemSource.User,
+            }
+
+            // Add both items
+            const { added, ignored, limitReached } = await builder.tryAddContext('user', [
+                imageItem,
+                largeTextFile,
+            ])
+
+            // The image should be added regardless of size, but the text file should be ignored
+            expect(limitReached).toBe(true)
+            expect(ignored).toEqual([largeTextFile])
+            expect(added).toEqual([imageItem])
+            expect(builder.contextItems).toEqual([imageItem])
+
+            // Build final messages
+            const finalMessages = builder.build()
+
+            // Verify the image is in the final messages
+            const mediaMessage = finalMessages.find(msg =>
+                msg.content?.some(part => part.type === 'image_url')
+            )
+            expect(mediaMessage).toBeDefined()
+        })
 
         it('should not allow context prompt to exceed context window', async () => {
             const builder = await PromptBuilder.create({ input: 10, output: 100 })
@@ -383,6 +549,42 @@ describe('PromptBuilder', () => {
               Hi!
               Hi!"
             `)
+        })
+    })
+})
+
+describe('PromptBuilder', () => {
+    beforeEach(() => {
+        vi.spyOn(featureFlagProvider, 'evaluatedFeatureFlag').mockReturnValue(Observable.of(false))
+    })
+    describe('isCacheEnabled', () => {
+        it('handles disabled feature flag correctly', async () => {
+            const promptBuilder = await PromptBuilder.create({
+                input: 8192,
+                output: 4096,
+            })
+
+            // First access should trigger enrollment but still return feature flag value
+            expect(promptBuilder.isCacheEnabled).toBe(false)
+
+            // Second access should use cached value
+            expect(promptBuilder.isCacheEnabled).toBe(false)
+        })
+
+        it('respects feature flag value and tracks enrollment', async () => {
+            // Mock feature flag provider
+            vi.spyOn(featureFlagProvider, 'evaluatedFeatureFlag').mockReturnValue(Observable.of(true))
+            const promptBuilder = await PromptBuilder.create({
+                input: 8192,
+                output: 4096,
+            })
+
+            // First access should trigger enrollment but still return feature flag value
+            expect(promptBuilder.isCacheEnabled).toBe(true)
+
+            // Second access should use cached value
+            expect(promptBuilder.isCacheEnabled).toBe(true)
+            vi.spyOn(featureFlagProvider, 'evaluatedFeatureFlag').mockReturnValue(Observable.of(false))
         })
     })
 })

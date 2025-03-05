@@ -24,7 +24,15 @@ export interface Message {
     // mirrors what OpenAI and Anthropic expect
     text?: PromptString
     cacheEnabled?: boolean | null
+    content?: MessagePart[] | undefined | null
 }
+
+// content: string | Array<TextPart | ImagePart | FilePart>
+export type MessagePart =
+    | { type: 'text'; text: string } // natively supported by LLM
+    | { type: 'context_file'; uri: string; content?: string } // Cody extension
+    | { type: 'context_repo'; repoId: string } // Cody extension
+    | { type: 'image_url'; image_url: { url: string } } // natively supported by LLM
 
 export interface CompletionUsage {
     completion_tokens: number | null
@@ -62,6 +70,10 @@ export interface CompletionParameters {
         type: 'content'
         content: string
     }
+    // Rewrite and adaptive speculation is used by fireworks which improves performance for sparse rewrite tasks.
+    // https://docs.fireworks.ai/guides/predicted-outputs#using-predicted-outputs
+    rewriteSpeculation?: boolean
+    adaptiveSpeculation?: boolean
 }
 
 export interface SerializedCompletionParameters extends Omit<CompletionParameters, 'messages'> {
