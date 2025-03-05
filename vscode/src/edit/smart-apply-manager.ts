@@ -26,7 +26,7 @@ import {
     SMART_APPLY_FILE_DECORATION,
     type SmartApplySelectionType,
     getSmartApplySelection,
-} from './prompt/smart-apply'
+} from './prompt/smart-apply/selection'
 import type { SmartApplyArguments } from './smart-apply'
 
 type SmartApplyCacheEntry = Promise<null | {
