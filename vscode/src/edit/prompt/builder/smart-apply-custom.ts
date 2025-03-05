@@ -91,7 +91,10 @@ Here is the code changes which you need to apply to the code enclosed in the <${
 Please apply all the code changes suggested in the <${SMART_APPLY_CUSTOM_PROMPT_TOPICS.TARGET_CHANGES}></${SMART_APPLY_CUSTOM_PROMPT_TOPICS.TARGET_CHANGES}> into the <${SMART_APPLY_CUSTOM_PROMPT_TOPICS.CODE_TO_UPDATE}></${SMART_APPLY_CUSTOM_PROMPT_TOPICS.CODE_TO_UPDATE}> code to produce the updated code enclosed in the <${SMART_APPLY_CUSTOM_PROMPT_TOPICS.FINAL_CODE}></${SMART_APPLY_CUSTOM_PROMPT_TOPICS.FINAL_CODE}> tag.`
 }
 
-function getInstructionPromptWithCharLimit(instruction: PromptString, tokenLimit: number): PromptString {
+export function getInstructionPromptWithCharLimit(
+    instruction: PromptString,
+    tokenLimit: number
+): PromptString {
     const charLimit = tokensToChars(tokenLimit)
     if (instruction.length <= charLimit) {
         return instruction
@@ -102,7 +105,7 @@ function getInstructionPromptWithCharLimit(instruction: PromptString, tokenLimit
     return ps`${firstPart}...${lastPart}`
 }
 
-function getPrefixAndSuffixWithCharLimit(
+export function getPrefixAndSuffixWithCharLimit(
     document: vscode.TextDocument,
     prefixRange: vscode.Range,
     suffixRange: vscode.Range,
@@ -142,7 +145,7 @@ function getPrefixAndSuffixWithCharLimit(
     }
 }
 
-async function getCurrentTokenCount(promptList: PromptString[]): Promise<number> {
+export async function getCurrentTokenCount(promptList: PromptString[]): Promise<number> {
     let total = 0
     for (const prompt of promptList) {
         total += charsToTokens(prompt.length)
