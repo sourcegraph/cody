@@ -31,7 +31,7 @@ import type { AgentHandler, AgentHandlerDelegate, AgentRequest } from './interfa
 
 export class ChatHandler implements AgentHandler {
     constructor(
-        protected modelId: string,
+        protected handlerID: string,
         protected contextRetriever: Pick<ContextRetriever, 'retrieveContext' | 'computeDidYouMean'>,
         protected readonly editor: ChatControllerOptions['editor'],
         protected chatClient: ChatControllerOptions['chatClient']
@@ -47,6 +47,7 @@ export class ChatHandler implements AgentHandler {
             chatBuilder,
             recorder,
             span,
+            model,
         }: AgentRequest,
         delegate: AgentHandlerDelegate
     ): Promise<void> {
@@ -104,12 +105,12 @@ export class ChatHandler implements AgentHandler {
         // Send context to webview for display before sending the request.
         delegateWithDidYouMean.postMessageInProgress({
             speaker: 'assistant',
-            model: this.modelId,
+            model,
         })
         this.streamAssistantResponse(
             requestID,
             prompt,
-            this.modelId,
+            model,
             signal,
             chatBuilder,
             delegateWithDidYouMean
@@ -203,14 +204,14 @@ export class ChatHandler implements AgentHandler {
                     delegate.postMessageInProgress({
                         speaker: 'assistant',
                         text: PromptString.unsafe_fromLLMResponse(content),
-                        model: this.modelId,
+                        model,
                     })
                 },
                 close: content => {
                     delegate.postMessageInProgress({
                         speaker: 'assistant',
                         text: PromptString.unsafe_fromLLMResponse(content),
-                        model: this.modelId,
+                        model,
                     })
                     delegate.postDone()
                 },
@@ -221,7 +222,7 @@ export class ChatHandler implements AgentHandler {
                     delegate.postMessageInProgress({
                         speaker: 'assistant',
                         text: PromptString.unsafe_fromLLMResponse(partialResponse),
-                        model: this.modelId,
+                        model,
                     })
                     delegate.postDone()
                     if (isAbortErrorOrSocketHangUp(error)) {

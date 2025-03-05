@@ -30,12 +30,11 @@ describe('PromptMixin', () => {
             expected: 'Answer positively without apologizing.\n\nQuestion: Hello',
         },
         {
-            name: 'deep-cody agent message',
+            name: 'deep-cody agent message - no mixins',
             input: {
                 message: { speaker: 'human', text: ps`How to code?`, agent: 'deep-cody' },
             },
-            expected:
-                'Answer positively without apologizing. \n\nExplain your reasoning in detail for coding questions.\n\nQuestion: How to code?',
+            expected: 'How to code?',
         },
         {
             name: 'deep-cody agent message with custom mixin',

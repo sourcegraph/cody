@@ -1,4 +1,5 @@
 import Anthropic from '@anthropic-ai/sdk'
+import type { ChatMessage } from '@sourcegraph/cody-shared'
 import { DeepCodyAgentID, ToolCodyModelRef } from '@sourcegraph/cody-shared/src/models/client'
 import { getConfiguration } from '../../../configuration'
 import { ChatHandler } from './ChatHandler'
@@ -18,18 +19,20 @@ function registerAgent(id: string, ctr: (id: string, tools: AgentTools) => Agent
     agentRegistry.set(id, ctr)
 }
 
-export function getAgent(id: string, modelId: string, tools: AgentTools): AgentHandler {
+export function getAgent(id: string, tools: AgentTools): AgentHandler {
     const { contextRetriever, editor, chatClient } = tools
-    if (id === DeepCodyAgentID) {
-        return new DeepCodyHandler(modelId, contextRetriever, editor, chatClient)
-    }
     if (agentRegistry.has(id)) {
         return agentRegistry.get(id)!(id, tools)
     }
     // If id is not found, assume it's a base model
-    return new ChatHandler(modelId, contextRetriever, editor, chatClient)
+    return new ChatHandler(id, contextRetriever, editor, chatClient)
 }
 
+registerAgent(
+    DeepCodyAgentID,
+    (id: string, { contextRetriever, editor, chatClient }: AgentTools) =>
+        new DeepCodyHandler(id, contextRetriever, editor, chatClient)
+)
 registerAgent('search', (_id: string, _tools: AgentTools) => new SearchHandler())
 registerAgent(
     'edit',
@@ -48,3 +51,11 @@ registerAgent(ToolCodyModelRef, (_id: string) => {
     })
     return new ExperimentalToolHandler(anthropicAPI)
 })
+
+export function getAgentName(intent: ChatMessage['intent'], model?: string): string | undefined {
+    if (intent === 'agentic') {
+        return DeepCodyAgentID
+    }
+    // Uses the model name as the agent name for chat intents.
+    return (intent !== 'chat' && intent) || model
+}

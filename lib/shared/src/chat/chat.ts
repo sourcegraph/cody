@@ -1,7 +1,6 @@
 import { isError } from 'lodash'
 import { authStatus } from '../auth/authStatus'
 import { firstValueFrom } from '../misc/observable'
-import { modelsService } from '../models/modelsService'
 import type { Message } from '../sourcegraph-api'
 import type { SourcegraphCompletionsClient } from '../sourcegraph-api/completions/client'
 import type {
@@ -27,12 +26,6 @@ export class ChatClient {
         abortSignal?: AbortSignal,
         interactionId?: string
     ): Promise<AsyncGenerator<CompletionGeneratorValue>> {
-        // Replace internal models used for wrapper models with the actual model ID.
-        if (params.model?.includes('deep-cody')) {
-            const sonnetModel = modelsService.getAllModelsWithSubstring('sonnet')[0]
-            params.model = sonnetModel.id
-        }
-
         const [versions, authStatus_] = await Promise.all([
             currentSiteVersion(),
             await firstValueFrom(authStatus),

@@ -27,6 +27,7 @@ export class EditHandler implements AgentHandler {
             signal,
             chatBuilder,
             recorder,
+            model,
         }: AgentRequest,
         delegate: AgentHandlerDelegate
     ): Promise<void> {
@@ -77,6 +78,7 @@ export class EditHandler implements AgentHandler {
         delegate.postMessageInProgress({
             speaker: 'assistant',
             text: PromptString.unsafe_fromLLMResponse(message),
+            model,
         })
 
         delegate.postDone()
