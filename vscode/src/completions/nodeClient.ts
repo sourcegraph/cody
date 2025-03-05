@@ -192,19 +192,29 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                         })
 
                         res.on('error', e => handleError(e))
-                        res.on('end', () =>
-                            handleError(
+                        res.on('end', () => {
+                            const errorOptions = {
+                                url: url.toString(),
+                                status: statusCode,
+                                statusText: res.statusMessage ?? '',
+                            }
+                            let outputMessage = errorMessage
+
+                            if (statusCode === 403 && res.headers.server === 'cloudflare') {
+                                outputMessage = `Cloudflare has blocked this request. 
+                                This may be due to using a VPN or other non-trusted network deemed dangerous.
+                                Please try again without using such an network.
+                                Cloudflare Ray ID: ${res.headers['cf-ray']}`
+                                errorOptions.url = 'Sourcegraph'
+                            }
+                            return handleError(
                                 new NetworkError(
-                                    {
-                                        url: url.toString(),
-                                        status: statusCode,
-                                        statusText: res.statusMessage ?? '',
-                                    },
-                                    errorMessage,
+                                    errorOptions,
+                                    outputMessage,
                                     getActiveTraceAndSpanId()?.traceId
                                 )
                             )
-                        )
+                        })
                         return
                     }
 
