@@ -91,10 +91,8 @@ export class AutoeditDebugStore implements vscode.Disposable {
     }
 
     private calculateSideBySideDiff(state: AutoeditRequestState): DecorationInfo | undefined {
-        // TODO: remove @ts-ignore once all auto-edit debug panel changes are merged.
         return 'prediction' in state
-            ? // @ts-ignore
-              getDecorationInfo(state.codeToReplaceData.codeToRewrite, state.prediction, CHARACTER_REGEX)
+            ? getDecorationInfo(state.codeToReplaceData.codeToRewrite, state.prediction, CHARACTER_REGEX)
             : undefined
     }
 
