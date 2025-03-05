@@ -67,6 +67,7 @@ import { indentation } from './text-processing'
 import type { ProvideInlineCompletionItemsTracer, ProvideInlineCompletionsItemTraceData } from './tracer'
 
 interface AutocompleteResult extends vscode.InlineCompletionList {
+    type: 'completion'
     logId: CompletionLogID
     items: AutocompleteItem[]
     /** @deprecated */
