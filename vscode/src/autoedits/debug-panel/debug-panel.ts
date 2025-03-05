@@ -10,7 +10,7 @@ import { autoeditDebugStore } from './debug-store'
  */
 export class AutoeditDebugPanel {
     public static currentPanel: AutoeditDebugPanel | undefined
-    private static readonly viewType = 'codyAutoeditDebugPabel'
+    private static readonly viewType = 'codyAutoeditDebugPanel'
 
     private readonly panel: vscode.WebviewPanel
     private readonly extensionContext: vscode.ExtensionContext
@@ -69,25 +69,34 @@ export class AutoeditDebugPanel {
      * If the panel already exists, it will be revealed.
      */
     public static showPanel(extensionContext: vscode.ExtensionContext): void {
-        const column = vscode.window.activeTextEditor
-            ? vscode.window.activeTextEditor.viewColumn
-            : undefined
-
-        // If we already have a panel, show it
+        // Try to reveal existing panel if available
         if (AutoeditDebugPanel.currentPanel) {
-            AutoeditDebugPanel.currentPanel.panel.reveal(column)
-            return
+            try {
+                const viewColumn = AutoeditDebugPanel.currentPanel.panel.viewColumn
+                AutoeditDebugPanel.currentPanel.panel.reveal(viewColumn, false)
+                return
+            } catch (error) {
+                console.log('Error revealing panel:', error)
+                AutoeditDebugPanel.currentPanel = undefined
+            }
+        }
+
+        // Determine view column for a new panel
+        let viewColumn = vscode.ViewColumn.Beside
+
+        if (vscode.window.activeTextEditor?.viewColumn === vscode.ViewColumn.One) {
+            viewColumn = vscode.ViewColumn.Two
+        } else if (vscode.window.activeTextEditor?.viewColumn) {
+            viewColumn = vscode.window.activeTextEditor.viewColumn
         }
 
         // Create a new panel
         const panel = vscode.window.createWebviewPanel(
             AutoeditDebugPanel.viewType,
             'Cody Auto-Edit Debug Panel',
-            column || vscode.ViewColumn.One,
+            viewColumn,
             {
-                // Enable JavaScript in the webview
                 enableScripts: true,
-                // Restrict the webview to only load resources from the extension's directory
                 localResourceRoots: [vscode.Uri.joinPath(extensionContext.extensionUri, 'dist')],
             }
         )
