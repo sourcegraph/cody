@@ -18,6 +18,8 @@ const DEFAULT_CHAT_COMPLETION_PARAMETERS: Omit<ChatParameters, 'maxTokensToSampl
     topP: -1,
 }
 
+const claudeRegex = /claude-(\d+\.\d+)-/
+
 export class ChatClient {
     constructor(private completions: SourcegraphCompletionsClient) {}
 
@@ -52,49 +54,39 @@ export class ChatClient {
             throw new Error('unable to determine Cody API version')
         }
 
-        const useApiV1 =
-            params.model?.includes('claude-3') && !(versions instanceof Error) && versions.codyAPIVersion
-        const isLastMessageFromHuman = messages.length > 0 && messages.at(-1)!.speaker === 'human'
+        const requestParams = { apiVersion: versions.codyAPIVersion, interactionId, customHeaders: {} }
 
-        const isFireworks =
-            params?.model?.startsWith('fireworks/') || params?.model?.startsWith('fireworks::')
-        const augmentedMessages =
-            isFireworks || useApiV1
-                ? sanitizeMessages(messages)
-                : isLastMessageFromHuman
-                  ? messages.concat([{ speaker: 'assistant' }])
-                  : messages
+        const isFireworks = params?.model?.startsWith('fireworks')
+        // Enabled Fireworks tracing for Sourcegraph teammates.
+        // https://readme.fireworks.ai/docs/enabling-tracing
+        if (isFireworks && authStatus_.isFireworksTracingEnabled) {
+            requestParams.customHeaders = { 'X-Fireworks-Genie': 'true' }
+            messages = sanitizeMessages(messages)
+        }
 
-        // We only want to send up the speaker and prompt text, regardless of whatever other fields
-        // might be on the messages objects (`file`, `displayText`, `contextFiles`, etc.).
-        const messagesToSend = augmentedMessages.map(({ speaker, text, cacheEnabled, content }) => ({
-            text,
-            speaker,
-            cacheEnabled,
-            content,
-        }))
+        // Set api version to 0 (unversion) for Claude models older than 3.5.
+        // Example: claude-3-haiku or claude-2-sonnet or claude-2.1-instant v.s. claude-3-5-haiku or 3.5-haiku or 3-7-haiku
+        // Regex for matching old claude models by checking if the model digits are less than 3.5
+        const claudeVersionMatch = params.model?.match(claudeRegex)
+        if (claudeVersionMatch && Number.parseFloat(claudeVersionMatch[1]) < 3.5) {
+            requestParams.apiVersion = 0
+            messages = messages.concat([{ speaker: 'assistant' }])
+        }
 
         const completionParams = {
             ...DEFAULT_CHAT_COMPLETION_PARAMETERS,
             ...params,
-            messages: messagesToSend,
+            // We only want to send up the speaker and prompt text, regardless of whatever other fields
+            // might be on the messages objects (`file`, `displayText`, `contextFiles`, etc.).
+            messages: messages.map(({ speaker, text, cacheEnabled, content }) => ({
+                text,
+                speaker,
+                cacheEnabled,
+                content,
+            })),
         }
 
-        // Enabled Fireworks tracing for Sourcegraph teammates.
-        // https://readme.fireworks.ai/docs/enabling-tracing
-
-        const customHeaders: Record<string, string> =
-            isFireworks && authStatus_.isFireworksTracingEnabled ? { 'X-Fireworks-Genie': 'true' } : {}
-
-        return this.completions.stream(
-            completionParams,
-            {
-                apiVersion: useApiV1 ? versions.codyAPIVersion : 0,
-                interactionId: interactionId,
-                customHeaders,
-            },
-            abortSignal
-        )
+        return this.completions.stream(completionParams, requestParams, abortSignal)
     }
 }
 
