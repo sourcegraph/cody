@@ -62,7 +62,6 @@ import {
     skip,
     skipPendingOperation,
     startWith,
-    storeLastValue,
     subscriptionDisposable,
     telemetryRecorder,
     tracer,
@@ -682,7 +681,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     intent: manuallySelectedIntent,
                     agent: selectedAgent,
                 })
-                this.setCustomChatTitle(requestID, inputText, signal, model)
+                this.setCustomChatTitle(requestID, inputText, signal)
                 this.postViewTranscript({ speaker: 'assistant' })
 
                 await this.saveSession()
@@ -1265,27 +1264,29 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         }
     }
 
-    private isAutoChatTitleEnabled = storeLastValue(
-        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.ChatTitleAutoGeneration)
-    )
-
     /**
      * Sets the custom chat title based on the first message in the interaction.
      */
     private async setCustomChatTitle(
         requestID: string,
         inputText: PromptString,
-        signal: AbortSignal,
-        chatModel?: ChatModel
+        signal: AbortSignal
     ): Promise<void> {
         return tracer.startActiveSpan('chat.setCustomChatTitle', async (span): Promise<void> => {
+            // NOTE: Only generates a custom title if the input text is long enough.
+            // We are asking the LLM to generate a title with about 10 words, so 10 words * 2 chars/word = 20 chars
+            // would be a reasonable threshold to start generating a custom title. This is a heuristic and
+            // can be adjusted as needed.
+            if (inputText.length < 20) {
+                return
+            }
             // Get the currently available models with speed tag.
             const speeds = modelsService.getModelsByTag(ModelTag.Speed)
             // Use the latest Gemini flash model or the first speedy model as the default.
-            const model = (speeds.find(m => m.id.includes('flash')) || speeds?.[0])?.id ?? chatModel
+            const model = (speeds.find(m => m.id.includes('flash-lite')) || speeds?.[0])?.id
             const messages = this.chatBuilder.getMessages()
             // Returns early if this is not the first message or if this is a testing session.
-            if (messages.length > 1 || !this.isAutoChatTitleEnabled || !model || isAgentTesting) {
+            if (messages.length > 1 || !model || isAgentTesting) {
                 return
             }
             const prompt = ps`${getDefaultSystemPrompt()} Your task is to generate a concise title (in about 10 words without quotation) for <codyUserInput>${inputText}</codyUserInput>.
@@ -1319,7 +1320,8 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     traceId: span.spanContext().traceId,
                 },
                 metadata: {
-                    length: title.length,
+                    titleLength: title.length,
+                    inputLength: inputText.length,
                 },
                 billingMetadata: {
                     product: 'cody',

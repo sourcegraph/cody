@@ -2,6 +2,7 @@ import type { ContextItem } from '../../codebase-context/messages'
 import type { Message } from '../../sourcegraph-api'
 
 import type { SerializedChatTranscript } from '.'
+import type { MessagePart } from '../..'
 import type { PromptString } from '../../prompt/prompt-string'
 import type { NLSSearchDynamicFilter, NLSSearchResponse } from '../../sourcegraph-api/graphql/client'
 
@@ -141,6 +142,7 @@ export interface SerializedChatMessage {
     agent?: string | undefined | null
     processes?: ProcessingStep[] | undefined | null
     subMessages?: SubMessage[]
+    content?: MessagePart[] | undefined | null
 }
 
 export interface ChatError {
