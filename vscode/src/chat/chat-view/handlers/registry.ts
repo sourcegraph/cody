@@ -56,6 +56,5 @@ export function getAgentName(intent: ChatMessage['intent'], model?: string): str
     if (intent === 'agentic') {
         return DeepCodyAgentID
     }
-    // Uses the model name as the agent name for chat intents.
-    return (intent !== 'chat' && intent) || model
+    return (intent !== 'chat' && intent) || undefined
 }
