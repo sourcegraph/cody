@@ -10,6 +10,7 @@ import type { FixupTaskID } from '../../../src/non-stop/FixupTask'
 import { CodyTaskState } from '../../../src/non-stop/state'
 import { type ClientActionListener, useClientActionListener } from '../../client/clientState'
 import { MarkdownFromCody } from '../../components/MarkdownFromCody'
+import { useLocalStorage } from '../../components/hooks'
 import { useConfig } from '../../utils/useConfig'
 import type { PriorHumanMessageInfo } from '../cells/messageCell/assistant/AssistantMessageCell'
 import styles from './ChatMessageContent.module.css'
@@ -126,10 +127,8 @@ export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps
                 // This allows us to intelligently apply code to the suitable file.
                 const codeElement = preElement.querySelectorAll('code')?.[0]
                 const fileName = codeElement?.getAttribute('data-file-path') || undefined
-                // Check if the code element has either 'language-bash' or 'language-shell' class
-                const isShellCommand =
-                    codeElement?.classList.contains('language-bash') ||
-                    codeElement?.classList.contains('language-shell')
+                // Check if the code element has either 'language-bash' class
+                const isShellCommand = codeElement?.classList.contains('language-bash')
                 const codeBlockName = isShellCommand ? 'command' : fileName
 
                 let buttons: HTMLElement
@@ -193,11 +192,12 @@ export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps
                 // Get the preview container and actions container
                 const previewContainer = buttons.querySelector(`[data-container-type="preview"]`)
                 const actionsContainer = buttons.querySelector(`[data-container-type="actions"]`)
-                if (!previewContainer || !actionsContainer) return
+                if (!actionsContainer) return
 
                 // Insert the preview container right before this code block
-                parent.insertBefore(previewContainer, preElement)
-
+                if (previewContainer) {
+                    parent.insertBefore(previewContainer, preElement)
+                }
                 // Add the actions container right after this code block
                 if (preElement.nextSibling) {
                     parent.insertBefore(actionsContainer, preElement.nextSibling)
@@ -223,7 +223,7 @@ export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps
         [displayMarkdown]
     )
 
-    const [isOpen, setIsOpen] = useState(true)
+    const [isOpen, setIsOpen] = useLocalStorage('cody.thinking-space.open', true)
 
     return (
         <div ref={rootRef} data-testid="chat-message-content">
@@ -231,7 +231,7 @@ export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps
                 <details
                     open={isOpen}
                     onToggle={e => setIsOpen((e.target as HTMLDetailsElement).open)}
-                    className="tw-container tw-mb-4 tw-border tw-border-gray-500/20 dark:tw-border-gray-600/40 tw-rounded-lg tw-overflow-hidden tw-backdrop-blur-sm"
+                    className="tw-container tw-mb-4 tw-border tw-border-gray-500/20 dark:tw-border-gray-600/40 tw-rounded-lg tw-overflow-hidden tw-backdrop-blur-sm tw-min-w-full"
                     title="Thinking & Reasoning Space"
                 >
                     <summary

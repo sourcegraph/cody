@@ -18,7 +18,7 @@ interface BaseAutoeditsProviderConfig {
     isChatModel: boolean
 }
 
-interface AutoeditsProviderConfig extends BaseAutoeditsProviderConfig {
+export interface AutoeditsProviderConfig extends BaseAutoeditsProviderConfig {
     experimentalAutoeditsConfigOverride: AutoEditsModelConfig | undefined
     isMockResponseFromCurrentDocumentTemplateEnabled: boolean
 }

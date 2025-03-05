@@ -16,6 +16,23 @@ export interface FireworksCompatibleRequestParams {
     user?: string
 }
 
+export interface FireworksChatMessage {
+    role: string
+    content: PromptString
+}
+
+export interface FireworksChatModelRequestParams extends FireworksCompatibleRequestParams {
+    messages: FireworksChatMessage[]
+}
+
+export interface FireworksCompletionModelRequestParams extends FireworksCompatibleRequestParams {
+    prompt: PromptString
+}
+
+export type AutoeditsRequestBody =
+    | FireworksChatModelRequestParams
+    | FireworksCompletionModelRequestParams
+
 export function getMaxOutputTokensForAutoedits(codeToRewrite: string): number {
     const MAX_NEW_GENERATED_TOKENS = 512
     const codeToRewriteTokens = charsToTokens(codeToRewrite.length)
@@ -51,20 +68,33 @@ export async function getModelResponse(
     body: string,
     apiKey: string,
     customHeaders: Record<string, string> = {}
-): Promise<any> {
+): Promise<{
+    data: any
+    requestHeaders: Record<string, string>
+    responseHeaders: Record<string, string>
+    url: string
+}> {
+    const requestHeaders = {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${apiKey}`,
+        ...customHeaders,
+    }
     const response = await fetch(url, {
         method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${apiKey}`,
-            ...customHeaders,
-        },
+        headers: requestHeaders,
         body: body,
     })
     if (response.status !== 200) {
         const errorText = await response.text()
         throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`)
     }
+
+    // Extract headers into a plain object
+    const responseHeaders: Record<string, string> = {}
+    response.headers.forEach((value, key) => {
+        responseHeaders[key] = value
+    })
+
     const data = await response.json()
-    return data
+    return { data, requestHeaders, responseHeaders, url }
 }

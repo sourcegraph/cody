@@ -34,7 +34,7 @@ export function createButtons(
 
     // Create container for action buttons
     const buttonContainer = document.createElement('div')
-    buttonContainer.className = styles.buttonsContainerTransparent
+    buttonContainer.className = styles.buttonsContainer
     buttonContainer.dataset.containerType = 'actions'
 
     // Create buttons container
@@ -113,10 +113,9 @@ export function createButtonsExperimentalUI(
     guardrails?: Guardrails,
     isMessageLoading?: boolean
 ): HTMLElement {
-    // Create button container 1 for file info
-    const buttonContainer1 = document.createElement('div')
-    buttonContainer1.className = styles.buttonsContainerTransparent
-    buttonContainer1.dataset.containerType = 'preview'
+    const previewContainer = document.createElement('div')
+    previewContainer.className = styles.buttonsContainer
+    previewContainer.dataset.containerType = 'preview'
 
     let hasPreviewContent = false
     let previewElement = null
@@ -129,23 +128,22 @@ export function createButtonsExperimentalUI(
             stats.innerHTML = `<span class="${styles.addition}">+${additions}</span>, <span class="${styles.deletion}">-${deletions}</span>`
             stats.className = styles.stats
             leftInfo.appendChild(stats)
-            previewElement = buttonContainer1
+            previewElement = previewContainer
             hasPreviewContent = true
         }
     }
-    buttonContainer1.appendChild(leftInfo)
+    previewContainer.appendChild(leftInfo)
 
-    // Create button container 2 for action buttons
-    const buttonContainer2 = document.createElement('div')
-    buttonContainer2.className = styles.buttonsContainerTransparent
-    buttonContainer2.dataset.containerType = 'actions'
+    const actionsContainer = document.createElement('div')
+    actionsContainer.className = styles.buttonsContainer
+    actionsContainer.dataset.containerType = 'actions'
 
     if (!copyButtonOnSubmit) {
         const buttonsContainer = document.createElement('div')
         buttonsContainer.dataset.containerType = 'buttons'
-        buttonsContainer.append(buttonContainer1, buttonContainer2)
+        buttonsContainer.append(previewContainer, actionsContainer)
         if (hasPreviewContent && previewElement) {
-            buttonsContainer.prepend(buttonContainer1)
+            buttonsContainer.prepend(previewContainer)
         }
         return buttonsContainer
     }
@@ -161,15 +159,6 @@ export function createButtonsExperimentalUI(
     // Create metadata container for guardrails and filename
     const metadataContainer = document.createElement('div')
     metadataContainer.className = styles.metadataContainer
-
-    // Add filename if present
-    if (codeBlockName && codeBlockName !== 'command') {
-        const fileNameContainer = document.createElement('div')
-        fileNameContainer.className = styles.fileNameContainer
-        fileNameContainer.textContent = getFileName(codeBlockName)
-        fileNameContainer.title = codeBlockName
-        metadataContainer.append(fileNameContainer)
-    }
 
     // Add guardrails if needed
     if (guardrails) {
@@ -200,6 +189,15 @@ export function createButtonsExperimentalUI(
                     return
                 })
         }
+    }
+
+    // Add filename if present
+    if (codeBlockName && codeBlockName !== 'command') {
+        const fileNameContainer = document.createElement('div')
+        fileNameContainer.className = styles.fileNameContainer
+        fileNameContainer.textContent = getFileName(codeBlockName)
+        fileNameContainer.title = codeBlockName
+        metadataContainer.append(fileNameContainer)
     }
 
     buttons.appendChild(metadataContainer)
@@ -244,12 +242,12 @@ export function createButtonsExperimentalUI(
         }
     }
 
-    buttonContainer2.appendChild(buttons)
+    actionsContainer.appendChild(buttons)
 
     // Return a container with both preview and action containers
     const buttonsContainer = document.createElement('div')
     buttonsContainer.dataset.containerType = 'buttons'
-    buttonsContainer.append(buttonContainer1, buttonContainer2)
+    buttonsContainer.append(previewContainer, actionsContainer)
     return buttonsContainer
 }
 
@@ -337,12 +335,16 @@ function createCodeBlockActionButton(
     return button
 }
 
+function wrapTextWithResponsiveSpan(text: string): string {
+    return `<span class="tw-hidden xs:tw-block">${text}</span>`
+}
+
 function createCopyButton(
     preText: string,
     onCopy: CodeBlockActionsProps['copyButtonOnSubmit']
 ): HTMLElement {
     const button = document.createElement('button')
-    button.innerHTML = 'Copy'
+    button.innerHTML = wrapTextWithResponsiveSpan('Copy')
     button.className = styles.button
 
     const iconContainer = document.createElement('div')
@@ -353,7 +355,7 @@ function createCopyButton(
     button.addEventListener('click', () => {
         iconContainer.innerHTML = CheckCodeBlockIcon
         iconContainer.className = styles.iconContainer
-        button.innerHTML = 'Copied'
+        button.innerHTML = wrapTextWithResponsiveSpan('Copied')
         button.className = styles.button
         button.prepend(iconContainer)
 
@@ -363,7 +365,7 @@ function createCopyButton(
             // Reset the icon to the original.
             iconContainer.innerHTML = CopyCodeBlockIcon
             iconContainer.className = styles.iconContainer
-            button.innerHTML = 'Copy'
+            button.innerHTML = wrapTextWithResponsiveSpan('Copy')
             button.className = styles.button
             button.prepend(iconContainer)
         }, 5000)
@@ -387,7 +389,7 @@ function createApplyButton(
     button.className = styles.button
     switch (smartApplyState) {
         case 'Working': {
-            button.innerHTML = 'Applying'
+            button.innerHTML = wrapTextWithResponsiveSpan('Applying')
             button.disabled = true
 
             // Add Loading Icon
@@ -400,7 +402,7 @@ function createApplyButton(
         }
         case 'Applied':
         case 'Finished': {
-            button.innerHTML = 'Reapply'
+            button.innerHTML = wrapTextWithResponsiveSpan('Reapply')
 
             // Add Refresh Icon
             const iconContainer = document.createElement('div')
@@ -420,7 +422,7 @@ function createApplyButton(
             break
         }
         default: {
-            button.innerHTML = 'Apply'
+            button.innerHTML = wrapTextWithResponsiveSpan('Apply')
 
             // Add Sparkle Icon
             const iconContainer = document.createElement('div')
@@ -451,7 +453,7 @@ function createApplyButton(
 function createExecuteButton(command: string): HTMLElement {
     const button = document.createElement('button')
     button.className = styles.button
-    button.innerHTML = 'Execute'
+    button.innerHTML = wrapTextWithResponsiveSpan('Execute')
     button.title = 'Send command to Terminal'
     const iconContainer = document.createElement('div')
     iconContainer.className = styles.iconContainer

@@ -74,7 +74,8 @@ export class PromptBuilder {
 
     public build(): Message[] {
         if (this.contextItems.length > 0) {
-            this.buildContextMessages()
+            const contextMessages = this.buildContextMessages()
+            this.reverseMessages.push(...contextMessages)
         }
 
         return this.prefixMessages.concat([...this.reverseMessages].reverse())
@@ -84,36 +85,47 @@ export class PromptBuilder {
      * Create context messages for each context item, where
      * assistant messages come first because the transcript is in reversed order.
      */
-    private buildContextMessages(): void {
+    private buildContextMessages(): Message[] {
+        const contextMessages: Message[] = []
+
         if (this.isCacheEnabled) {
-            const messages = []
+            // Filter valid context items (ignoring 'media') and collect their texts.
+            const texts = this.contextItems.reduce<PromptString[]>((acc, item) => {
+                const msg = renderContextItem(item)
+                if (msg) {
+                    if (item.type === 'media') {
+                        contextMessages.push(ASSISTANT_MESSAGE, msg)
+                    }
+                    acc.push(msg.text)
+                }
+                return acc
+            }, [])
+
+            const groupedText = PromptString.join(texts, ps`\n\n`)
+            if (groupedText.length > 0) {
+                const groupedContextMessage: Message = {
+                    speaker: 'human',
+                    text: groupedText,
+                    cacheEnabled: true,
+                }
+                contextMessages.push(ASSISTANT_MESSAGE, groupedContextMessage)
+            }
+        } else {
+            // For each valid context item, include both ASSISTANT_MESSAGE and the message.
             for (const item of this.contextItems) {
-                const contextMessage = renderContextItem(item)
-                if (contextMessage) {
-                    messages.push(contextMessage)
+                const msg = renderContextItem(item)
+                if (msg) {
+                    contextMessages.push(ASSISTANT_MESSAGE, msg)
                 }
             }
-            // Group all context messages
-            const groupedText = PromptString.join(
-                messages.map(m => m.text),
-                ps`\n\n`
-            )
-            const groupedContextMessage = {
-                speaker: 'human',
-                text: groupedText,
-                cacheEnabled: true,
-            } as Message
-            const messagePair = [ASSISTANT_MESSAGE, groupedContextMessage]
-            messagePair && this.reverseMessages.push(...messagePair)
-            return
         }
-        for (const item of this.contextItems) {
-            // Create context messages for each context item, where
-            // assistant messages come first because the transcript is in reversed order.
-            const contextMessage = renderContextItem(item)
-            const messagePair = contextMessage && [ASSISTANT_MESSAGE, contextMessage]
-            messagePair && this.reverseMessages.push(...messagePair)
-        }
+
+        // Adjust each message: if 'content' exists and has length, set 'text' to undefined.
+        return contextMessages.map(msg => ({
+            ...msg,
+            // Remove the text value if content is present and has length.
+            text: msg?.content?.length ? undefined : msg.text,
+        }))
     }
 
     public tryAddToPrefix(messages: Message[]): boolean {
@@ -199,6 +211,12 @@ export class PromptBuilder {
 
             const contextMessage = renderContextItem(item)
             if (!contextMessage) {
+                continue
+            }
+
+            if (item.type === 'media') {
+                result.added.push(item)
+                this.contextItems.push(item)
                 continue
             }
 

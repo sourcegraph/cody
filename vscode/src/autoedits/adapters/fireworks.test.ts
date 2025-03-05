@@ -45,6 +45,7 @@ describe('FireworksAdapter', () => {
     it('sends correct request parameters for chat model', async () => {
         mockFetch.mockResolvedValueOnce({
             status: 200,
+            headers: new Headers(),
             json: () => Promise.resolve({ choices: [{ message: { content: 'response' } }] }),
         })
 
@@ -82,6 +83,7 @@ describe('FireworksAdapter', () => {
 
         mockFetch.mockResolvedValueOnce({
             status: 200,
+            headers: new Headers(),
             json: () => Promise.resolve({ choices: [{ text: 'response' }] }),
         })
 
@@ -108,6 +110,7 @@ describe('FireworksAdapter', () => {
     it('handles error responses correctly', async () => {
         mockFetch.mockResolvedValueOnce({
             status: 400,
+            headers: new Headers(),
             text: () => Promise.resolve('Bad Request'),
         })
 
@@ -118,11 +121,12 @@ describe('FireworksAdapter', () => {
         const expectedResponse = 'modified code'
         mockFetch.mockResolvedValueOnce({
             status: 200,
+            headers: new Headers(),
             json: () => Promise.resolve({ choices: [{ message: { content: expectedResponse } }] }),
         })
 
         const response = await adapter.getModelResponse(options)
-        expect(response).toBe(expectedResponse)
+        expect(response.prediction).toBe(expectedResponse)
     })
 
     it('returns correct response for completions model', async () => {
@@ -131,10 +135,11 @@ describe('FireworksAdapter', () => {
 
         mockFetch.mockResolvedValueOnce({
             status: 200,
+            headers: new Headers(),
             json: () => Promise.resolve({ choices: [{ text: expectedResponse }] }),
         })
 
         const response = await adapter.getModelResponse(nonChatOptions)
-        expect(response).toBe(expectedResponse)
+        expect(response.prediction).toBe(expectedResponse)
     })
 })

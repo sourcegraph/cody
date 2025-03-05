@@ -20,6 +20,7 @@ import type { FixupController } from '../non-stop/FixupController'
 
 import type { CodyStatusBar } from '../services/StatusBar'
 import { AutoeditsProvider } from './autoedits-provider'
+import { AutoeditDebugPanel } from './debug-panel/debug-panel'
 import { autoeditsOutputChannelLogger } from './output-channel-logger'
 
 const AUTOEDITS_NON_ELIGIBILITY_MESSAGES = {
@@ -53,6 +54,7 @@ interface AutoeditsItemProviderArgs {
     autoeditInlineRenderingEnabled: boolean
     fixupController: FixupController
     statusBar: CodyStatusBar
+    context: vscode.ExtensionContext
 }
 
 export function createAutoEditsProvider({
@@ -63,6 +65,7 @@ export function createAutoEditsProvider({
     autoeditInlineRenderingEnabled,
     fixupController,
     statusBar,
+    context,
 }: AutoeditsItemProviderArgs): Observable<void> {
     if (!configuration.experimentalAutoEditEnabled) {
         return NEVER
@@ -106,6 +109,9 @@ export function createAutoEditsProvider({
                     [{ scheme: 'file', language: '*' }, { notebookType: '*' }],
                     provider
                 ),
+                vscode.commands.registerCommand('cody.command.autoedit.open-debug-panel', () => {
+                    AutoeditDebugPanel.showPanel(context)
+                }),
                 provider,
             ]
         }),

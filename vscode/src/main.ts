@@ -53,6 +53,7 @@ import {
     tokenCallbackHandler,
 } from './auth/auth'
 import { createAutoEditsProvider } from './autoedits/create-autoedits-provider'
+import { autoeditDebugStore } from './autoedits/debug-panel/debug-store'
 import { autoeditsOutputChannelLogger } from './autoedits/output-channel-logger'
 import { registerAutoEditTestRenderCommand } from './autoedits/renderer/mock-renderer'
 import type { MessageProviderOptions } from './chat/MessageProvider'
@@ -292,7 +293,7 @@ const register = async (
     registerAutocomplete(platform, statusBar, disposables)
     const tutorialSetup = tryRegisterTutorial(context, disposables)
 
-    await registerCodyCommands(statusBar, chatClient, fixupController, disposables)
+    await registerCodyCommands({ statusBar, chatClient, fixupController, disposables, context })
     registerAuthCommands(disposables)
     registerChatCommands(disposables)
     disposables.push(...registerSidebarCommands())
@@ -413,12 +414,19 @@ async function registerOtherCommands(disposables: vscode.Disposable[]) {
     )
 }
 
-async function registerCodyCommands(
-    statusBar: CodyStatusBar,
-    chatClient: ChatClient,
-    fixupController: FixupController,
+async function registerCodyCommands({
+    statusBar,
+    chatClient,
+    fixupController,
+    disposables,
+    context,
+}: {
+    statusBar: CodyStatusBar
+    chatClient: ChatClient
+    fixupController: FixupController
     disposables: vscode.Disposable[]
-): Promise<void> {
+    context: vscode.ExtensionContext
+}): Promise<void> {
     // Execute Cody Commands and Cody Custom Commands
     const executeCommand = (
         commandKey: DefaultCodyCommands | string,
@@ -462,7 +470,7 @@ async function registerCodyCommands(
     )
 
     // Initialize autoedit provider if experimental feature is enabled
-    registerAutoEdits(chatClient, fixupController, statusBar, disposables)
+    registerAutoEdits({ chatClient, fixupController, statusBar, disposables, context })
 
     // Initialize autoedit tester
     disposables.push(
@@ -715,13 +723,21 @@ async function tryRegisterTutorial(
     }
 }
 
-function registerAutoEdits(
-    chatClient: ChatClient,
-    fixupController: FixupController,
-    statusBar: CodyStatusBar,
+function registerAutoEdits({
+    chatClient,
+    fixupController,
+    statusBar,
+    disposables,
+    context,
+}: {
+    chatClient: ChatClient
+    fixupController: FixupController
+    statusBar: CodyStatusBar
     disposables: vscode.Disposable[]
-): void {
+    context: vscode.ExtensionContext
+}): void {
     disposables.push(
+        autoeditDebugStore,
         subscriptionDisposable(
             combineLatest(
                 resolvedConfig,
@@ -754,6 +770,7 @@ function registerAutoEdits(
                                 autoeditInlineRenderingEnabled,
                                 fixupController,
                                 statusBar,
+                                context,
                             })
                         }
                     ),

@@ -2,7 +2,7 @@ import { LRUCache } from 'lru-cache'
 import * as uuid from 'uuid'
 
 import type { AutoeditsPrompt } from '../adapters/base'
-import type { AutoeditSuggestionID } from './analytics-logger'
+import type { AutoeditSuggestionID } from './types'
 
 /**
  * A specialized string type for the stable “suggestion key” in caches.

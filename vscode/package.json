@@ -272,6 +272,14 @@
         "icon": "$(feedback)"
       },
       {
+        "command": "cody.command.autoedit.open-debug-panel",
+        "title": "Debug Auto-Edit",
+        "category": "Cody",
+        "group": "Cody",
+        "icon": "$(debug)",
+        "enablement": "cody.activated"
+      },
+      {
         "command": "cody.command.explain-output",
         "title": "Ask Cody to Explain",
         "category": "Cody Command",
@@ -582,6 +590,12 @@
         "command": "cody.command.autoedit-manual-trigger",
         "title": "Autoedits Manual Trigger",
         "enablement": "cody.activated && config.cody.suggestions.mode == 'auto-edit (Experimental)'"
+      },
+      {
+        "command": "cody.command.autoedit.open-debug-panel",
+        "category": "Cody",
+        "title": "Debug Auto-Edit",
+        "enablement": "cody.activated"
       }
     ],
     "keybindings": [
@@ -721,6 +735,10 @@
     ],
     "menus": {
       "commandPalette": [
+        {
+          "command": "cody.command.autoedit.open-debug-panel",
+          "when": "cody.activated"
+        },
         {
           "command": "cody.command.edit-code",
           "when": "cody.activated && editorIsOpen"

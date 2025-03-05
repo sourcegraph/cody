@@ -1,6 +1,6 @@
 {
   "name": "@sourcegraph/cody",
-  "version": "5.5.15",
+  "version": "5.5.16",
   "description": "Cody CLI is the same technology that powers Cody in the IDE but available from the command-line.",
   "license": "Apache-2.0",
   "repository": {

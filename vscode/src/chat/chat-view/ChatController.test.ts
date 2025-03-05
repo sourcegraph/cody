@@ -103,7 +103,7 @@ describe('ChatController', () => {
         })
 
         // Call the method that would potentially create a new ChatBuilder
-        await chatController.clearAndRestartSession()
+        chatController.clearAndRestartSession()
 
         expect(postMessageSpy).not.toHaveBeenCalled()
 
@@ -174,12 +174,6 @@ describe('ChatController', () => {
             .mockImplementation(() => {})
         const addBotMessageSpy = vi.spyOn(chatController as any, 'addBotMessage')
 
-        mockChatClient.chat.mockReturnValue(
-            (async function* () {
-                yield { type: 'change', text: 'Test reply 1' }
-                yield { type: 'complete', text: 'Test reply 1' }
-            })() satisfies AsyncGenerator<CompletionGeneratorValue>
-        )
         mockContextRetriever.retrieveContext.mockResolvedValue([])
 
         // Send the first message in a new chat.
@@ -241,16 +235,30 @@ describe('ChatController', () => {
         // Make sure it was sent and the reply was received.
         await vi.runOnlyPendingTimersAsync()
 
-        // Called twince: once for custom title, once for the message
-        expect(mockChatClient.chat).toHaveBeenCalledTimes(2)
+        // Called once for the message.
+        // Chat title call is skipped due to input text less than 20 characters.
+        expect(mockChatClient.chat).toHaveBeenCalledTimes(1)
 
         // Create a snapshot of the custom title call
         expect(mockChatClient.chat.mock.calls[0][0]).toMatchInlineSnapshot(`
           [
             {
               "speaker": "human",
-              "text": "You are Cody, an AI coding assistant from Sourcegraph. Your task is to generate a concise title (in about 10 words without quotation) for <codyUserInput>Test input</codyUserInput>.
-                  RULE: Your response should only contain the concise title and nothing else.",
+              "text": "You are Cody, an AI coding assistant from Sourcegraph.If your answer contains fenced code blocks in Markdown, include the relevant full file path in the code block tag using this structure: \`\`\`$LANGUAGE:$FILEPATH\`\`\`
+          For executable terminal commands: enclose each command in individual "bash" language code block without comments and new lines inside.",
+            },
+            {
+              "speaker": "assistant",
+              "text": "I am Cody, an AI coding assistant from Sourcegraph.",
+            },
+            {
+              "agent": undefined,
+              "contextAlternatives": undefined,
+              "contextFiles": undefined,
+              "editorState": null,
+              "intent": undefined,
+              "speaker": "human",
+              "text": "Test input",
             },
           ]
         `)
@@ -318,7 +326,7 @@ describe('ChatController', () => {
 
         await vi.runOnlyPendingTimersAsync()
 
-        expect(mockChatClient.chat).toBeCalledTimes(3)
+        expect(mockChatClient.chat).toBeCalledTimes(2)
         expect(addBotMessageSpy).toBeCalled()
 
         expect(postMessageSpy.mock.calls.at(-1)?.at(0)).toStrictEqual<

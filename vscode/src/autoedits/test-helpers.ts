@@ -47,7 +47,12 @@ export async function autoeditResultFor(
             body: string,
             apiKey: string,
             customHeaders?: Record<string, string>
-        ) => Promise<unknown>
+        ) => Promise<{
+            data: any
+            requestHeaders: Record<string, string>
+            responseHeaders: Record<string, string>
+            url: string
+        }>
         isAutomaticTimersAdvancementDisabled?: boolean
     }
 ): Promise<{
@@ -63,11 +68,16 @@ export async function autoeditResultFor(
         vi.advanceTimersByTime(100)
 
         return {
-            choices: [
-                {
-                    text: prediction,
-                },
-            ],
+            data: {
+                choices: [
+                    {
+                        text: prediction,
+                    },
+                ],
+            },
+            requestHeaders: {},
+            responseHeaders: {},
+            url: 'test-url.com/completions',
         }
     }
 

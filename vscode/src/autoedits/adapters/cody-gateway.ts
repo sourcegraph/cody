@@ -2,27 +2,47 @@ import { currentResolvedConfig, dotcomTokenToGatewayToken } from '@sourcegraph/c
 
 import { autoeditsOutputChannelLogger } from '../output-channel-logger'
 
-import type { AutoeditModelOptions, AutoeditsModelAdapter } from './base'
+import type { AutoeditModelOptions, AutoeditsModelAdapter, ModelResponse } from './base'
 import {
+    type AutoeditsRequestBody,
+    type FireworksChatModelRequestParams,
     type FireworksCompatibleRequestParams,
+    type FireworksCompletionModelRequestParams,
     getMaxOutputTokensForAutoedits,
     getModelResponse,
     getOpenaiCompatibleChatPrompt,
 } from './utils'
 
 export class CodyGatewayAdapter implements AutoeditsModelAdapter {
-    public async getModelResponse(options: AutoeditModelOptions): Promise<string> {
+    public async getModelResponse(options: AutoeditModelOptions): Promise<ModelResponse> {
         const headers = {
             'X-Sourcegraph-Feature': 'code_completions',
         }
         const body = this.getMessageBody(options)
         try {
             const apiKey = await this.getApiKey()
-            const response = await getModelResponse(options.url, body, apiKey, headers)
+            const { data, requestHeaders, responseHeaders, url } = await getModelResponse(
+                options.url,
+                JSON.stringify(body),
+                apiKey,
+                headers
+            )
+
+            let prediction: string
             if (options.isChatModel) {
-                return response.choices[0].message.content
+                prediction = data.choices[0].message.content
+            } else {
+                prediction = data.choices[0].text
             }
-            return response.choices[0].text
+
+            return {
+                prediction,
+                responseHeaders,
+                requestHeaders,
+                requestBody: body,
+                requestUrl: url,
+                responseBody: data,
+            }
         } catch (error) {
             autoeditsOutputChannelLogger.logError('getModelResponse', 'Error calling Cody Gateway:', {
                 verbose: error,
@@ -46,9 +66,9 @@ export class CodyGatewayAdapter implements AutoeditsModelAdapter {
         return fastPathAccessToken
     }
 
-    private getMessageBody(options: AutoeditModelOptions): string {
+    private getMessageBody(options: AutoeditModelOptions): AutoeditsRequestBody {
         const maxTokens = getMaxOutputTokensForAutoedits(options.codeToRewrite)
-        const body: FireworksCompatibleRequestParams = {
+        const baseBody: FireworksCompatibleRequestParams = {
             stream: false,
             model: options.model,
             temperature: 0.1,
@@ -63,15 +83,20 @@ export class CodyGatewayAdapter implements AutoeditsModelAdapter {
             rewrite_speculation: true,
             user: options.userId || undefined,
         }
-        const request = options.isChatModel
-            ? {
-                  ...body,
-                  messages: getOpenaiCompatibleChatPrompt({
-                      systemMessage: options.prompt.systemMessage,
-                      userMessage: options.prompt.userMessage,
-                  }),
-              }
-            : { ...body, prompt: options.prompt.userMessage }
-        return JSON.stringify(request)
+
+        if (options.isChatModel) {
+            return {
+                ...baseBody,
+                messages: getOpenaiCompatibleChatPrompt({
+                    systemMessage: options.prompt.systemMessage,
+                    userMessage: options.prompt.userMessage,
+                }),
+            } as FireworksChatModelRequestParams
+        }
+
+        return {
+            ...baseBody,
+            prompt: options.prompt.userMessage,
+        } as FireworksCompletionModelRequestParams
     }
 }
