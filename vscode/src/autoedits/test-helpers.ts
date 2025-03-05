@@ -105,7 +105,7 @@ export async function autoeditResultFor(
     } as any as CodyStatusBar
     const provider =
         existingProvider ??
-        new AutoeditsProvider(chatClient, fixupController, mockStatusBar, { shouldRenderImage: false })
+        new AutoeditsProvider(chatClient, fixupController, mockStatusBar, { shouldRenderInline: true })
 
     let result: AutoeditsResult | null = null
 

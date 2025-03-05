@@ -536,3 +536,15 @@ export function isOnlyAddingTextForModifiedLines(modifiedLines: ModifiedLineInfo
     }
     return true
 }
+
+/**
+ * Checks if the only changes for modified lines are additions of text.
+ */
+export function isOnlyRemovingTextForModifiedLines(modifiedLines: ModifiedLineInfo[]): boolean {
+    for (const modifiedLine of modifiedLines) {
+        if (modifiedLine.changes.some(change => change.type === 'insert')) {
+            return false
+        }
+    }
+    return true
+}

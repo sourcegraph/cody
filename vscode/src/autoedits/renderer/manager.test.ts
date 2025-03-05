@@ -13,6 +13,7 @@ import { AutoEditsDefaultRendererManager } from '../renderer/manager'
 
 import { DefaultDecorator } from './decorators/default-decorator'
 import type { TryMakeInlineCompletionsArgs } from './manager'
+import type { CompletionRenderOutput } from './render-output'
 
 describe('AutoEditsDefaultRendererManager', () => {
     const getAutoeditRendererManagerArgs = (
@@ -74,10 +75,10 @@ describe('AutoEditsDefaultRendererManager', () => {
                 function greet() { console.log("Hello") }
             `
             const args = getAutoeditRendererManagerArgs(documentText, prediction)
-            const result = manager.tryMakeInlineCompletions(args)
+            const result = manager.getRenderOutput(args) as CompletionRenderOutput
             expect(result).toBeDefined()
             assertInlineCompletionItems(
-                result.inlineCompletionItems!,
+                result.inlineCompletionItems,
                 dedent`
                 console.log(a, b, c)
             `
@@ -101,10 +102,10 @@ describe('AutoEditsDefaultRendererManager', () => {
                 function greet() { console.log("Hello") }
             `
             const args = getAutoeditRendererManagerArgs(documentText, prediction)
-            const result = manager.tryMakeInlineCompletions(args)
+            const result = manager.getRenderOutput(args) as CompletionRenderOutput
             expect(result).toBeDefined()
             assertInlineCompletionItems(
-                result.inlineCompletionItems!,
+                result.inlineCompletionItems,
                 dedent`
                 console.log(a, b, c)
                 const d = 10
@@ -128,10 +129,10 @@ describe('AutoEditsDefaultRendererManager', () => {
                 function greet() { console.log("Hello") }
             `
             const args = getAutoeditRendererManagerArgs(documentText, prediction)
-            const result = manager.tryMakeInlineCompletions(args)
+            const result = manager.getRenderOutput(args) as CompletionRenderOutput
             expect(result).toBeDefined()
             assertInlineCompletionItems(
-                result.inlineCompletionItems!,
+                result.inlineCompletionItems,
                 dedent`
                 console.log(a, b, c)
             `

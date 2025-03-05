@@ -26,6 +26,7 @@ import type { DecorationInfo } from '../renderer/decorators/base'
 import { getDecorationStats } from '../renderer/diff-utils'
 
 import { autoeditDebugStore } from '../debug-panel/debug-store'
+import type { AutoEditRenderOutput } from '../renderer/render-output'
 import { autoeditIdRegistry } from './suggestion-id-registry'
 import {
     type AcceptedState,
@@ -191,27 +192,28 @@ export class AutoeditAnalyticsLogger {
     public markAsPostProcessed({
         requestId,
         decorationInfo,
-        inlineCompletionItems,
         prediction,
+        renderOutput,
     }: {
         requestId: AutoeditRequestID
         prediction: string
         decorationInfo: DecorationInfo | null
-        inlineCompletionItems: vscode.InlineCompletionItem[] | null
+        renderOutput: AutoEditRenderOutput
     }) {
         this.tryTransitionTo(requestId, 'postProcessed', request => {
-            const insertText = inlineCompletionItems?.length
-                ? (inlineCompletionItems[0].insertText as string).slice(
-                      request.docContext.currentLinePrefix.length
-                  )
+            const completion =
+                'inlineCompletionItems' in renderOutput
+                    ? renderOutput.inlineCompletionItems[0]
+                    : undefined
+            const insertText = completion
+                ? (completion.insertText as string).slice(request.docContext.currentLinePrefix.length)
                 : undefined
 
             return {
                 ...request,
                 postProcessedAt: getTimeNowInMillis(),
                 prediction,
-                decorationInfo,
-                inlineCompletionItems,
+                renderOutput,
                 payload: {
                     ...request.payload,
                     decorationStats: decorationInfo ? getDecorationStats(decorationInfo) : undefined,

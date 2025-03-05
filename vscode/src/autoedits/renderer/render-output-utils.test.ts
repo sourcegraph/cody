@@ -1,7 +1,7 @@
 import dedent from 'dedent'
 import { describe, expect, it } from 'vitest'
 
-import { getCompletionText } from './inline-manager'
+import { getCompletionText } from './render-output-utils'
 
 import { documentAndPosition } from '../../completions/test-helpers'
 import { getDecorationInfo } from './diff-utils'
