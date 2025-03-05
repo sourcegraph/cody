@@ -98,12 +98,6 @@ export enum FeatureFlag {
     CodyUnifiedPrompts = 'cody-unified-prompts',
     CodyDeepSeekChat = 'cody-deepseek-chat',
 
-    /**
-     * For internal use only. New Prompts UI and logic is behind this feature flag
-     * will be removed as soon as commands will be deprecated.
-     */
-    CodyPromptsV2 = 'prompt-creation-v2',
-
     // Enables Anthropic's prompt caching feature on messages for Cody Clients
     CodyPromptCachingOnMessages = 'cody-experimental-prompt-caching-on-messages',
 
