@@ -14,10 +14,7 @@ interface WelcomeMessageProps {
     isWorkspacesUpgradeCtaEnabled?: boolean
 }
 
-export const WelcomeMessage: FunctionComponent<WelcomeMessageProps> = ({
-    setView,
-    IDE,
-}) => {
+export const WelcomeMessage: FunctionComponent<WelcomeMessageProps> = ({ setView, IDE }) => {
     // Remove the old welcome message dismissal key that is no longer used.
     localStorage.removeItem(localStorageKey)
 

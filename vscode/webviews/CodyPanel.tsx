@@ -154,7 +154,7 @@ export const CodyPanel: FunctionComponent<CodyPanelProps> = ({
                         />
                     )}
                     {view === View.Prompts && (
-                        <PromptsTab IDE={clientCapabilities.agentIDE} setView={setView}/>
+                        <PromptsTab IDE={clientCapabilities.agentIDE} setView={setView} />
                     )}
                     {view === View.Settings && <SettingsTab />}
                 </TabContainer>

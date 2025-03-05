@@ -229,7 +229,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             />
             {transcript.length === 0 && showWelcomeMessage && (
                 <>
-                    <WelcomeMessage IDE={userInfo.IDE} setView={setView}/>
+                    <WelcomeMessage IDE={userInfo.IDE} setView={setView} />
                     {isWorkspacesUpgradeCtaEnabled && userInfo.IDE !== CodyIDE.Web && (
                         <div className="tw-absolute tw-bottom-0 tw-left-1/2 tw-transform tw--translate-x-1/2 tw-w-[95%] tw-z-1 tw-mb-4 tw-max-h-1/2">
                             <WelcomeNotice />
