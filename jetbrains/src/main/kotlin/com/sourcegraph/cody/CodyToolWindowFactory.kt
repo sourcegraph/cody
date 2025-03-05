@@ -23,7 +23,7 @@ class CodyToolWindowFactory : ToolWindowFactory, DumbAware {
       customCodySettings.addSeparator()
 
       if (isFeatureFlagEnabled("cody.feature.internals-menu")) {
-        customCodySettings.add(OpenWebviewDevToolsAction(this))
+        customCodySettings.add(OpenWebviewDevToolsAction())
       }
 
       toolWindow.setAdditionalGearActions(customCodySettings)

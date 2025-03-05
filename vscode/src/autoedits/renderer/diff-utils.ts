@@ -8,16 +8,21 @@ import type { DecorationInfo, DecorationLineInfo, LineChange, ModifiedLineInfo }
 
 /**
  * Generates decoration information by computing the differences between two texts.
- *
- * @param originalText The original text content.
- * @param modifiedText The modified text content.
- * @returns Decoration information representing the differences.
  */
-export function getDecorationInfo(originalText: string, modifiedText: string): DecorationInfo {
+export function getDecorationInfo(
+    originalText: string,
+    modifiedText: string,
+    /**
+     * Regex to split a line into chunks for fine-grained diffing.
+     * Required for the auto-edit debug panel to render the diff in a readable format.
+     * @default WORDS_AND_PUNCTUATION_REGEX
+     */
+    chunkRegex: RegExp = WORDS_AND_PUNCTUATION_REGEX
+): DecorationInfo {
     const originalLines = originalText.split(getNewLineChar(originalText))
     const modifiedLines = modifiedText.split(getNewLineChar(modifiedText))
 
-    const lineInfos = computeDiffOperations(originalLines, modifiedLines)
+    const lineInfos = computeDiffOperations(originalLines, modifiedLines, chunkRegex)
 
     const decorationInfo: DecorationInfo = {
         modifiedLines: [],
@@ -49,7 +54,11 @@ export function getDecorationInfo(originalText: string, modifiedText: string): D
 /**
  * Computes the diff operations between two arrays of lines.
  */
-function computeDiffOperations(originalLines: string[], modifiedLines: string[]): DecorationLineInfo[] {
+function computeDiffOperations(
+    originalLines: string[],
+    modifiedLines: string[],
+    chunkRegex: RegExp
+): DecorationLineInfo[] {
     // Compute the list of diff chunks between the original and modified lines.
     // Each diff chunk is a tuple representing the range of changes:
     // [originalStart, originalEnd, modifiedStart, modifiedEnd]
@@ -95,6 +104,7 @@ function computeDiffOperations(originalLines: string[], modifiedLines: string[])
                         modifiedLineNumber: modifiedStart + i,
                         originalText: originalLine,
                         modifiedText: modifiedLine,
+                        chunkRegex,
                     })
                 )
             } else {
@@ -158,14 +168,16 @@ function createModifiedLineInfo({
     modifiedLineNumber,
     originalText,
     modifiedText,
+    chunkRegex,
 }: {
     originalLineNumber: number
     modifiedLineNumber: number
     originalText: string
     modifiedText: string
+    chunkRegex: RegExp
 }): ModifiedLineInfo {
-    const oldChunks = splitLineIntoChunks(originalText)
-    const newChunks = splitLineIntoChunks(modifiedText)
+    const oldChunks = splitLineIntoChunks(originalText, chunkRegex)
+    const newChunks = splitLineIntoChunks(modifiedText, chunkRegex)
     const lineChanges = computeLineChanges({
         oldChunks,
         newChunks,
@@ -218,23 +230,40 @@ function computeLineChanges({
                 originalOffset += length
                 modifiedOffset += length
 
-                changes.push({
-                    id: uuid.v4(),
-                    type: 'unchanged',
-                    text: unchangedText,
-                    originalRange: new vscode.Range(
-                        originalLineNumber,
-                        startOriginal,
+                const previousChange = changes.at(-1)
+                if (previousChange?.type === 'unchanged') {
+                    previousChange.text += unchangedText
+                    previousChange.originalRange = new vscode.Range(
+                        previousChange.originalRange.start.line,
+                        previousChange.originalRange.start.character,
                         originalLineNumber,
                         originalOffset
-                    ),
-                    modifiedRange: new vscode.Range(
-                        modifiedLineNumber,
-                        startModified,
+                    )
+                    previousChange.modifiedRange = new vscode.Range(
+                        previousChange.modifiedRange.start.line,
+                        previousChange.modifiedRange.start.character,
                         modifiedLineNumber,
                         modifiedOffset
-                    ),
-                })
+                    )
+                } else {
+                    changes.push({
+                        id: uuid.v4(),
+                        type: 'unchanged',
+                        text: unchangedText,
+                        originalRange: new vscode.Range(
+                            originalLineNumber,
+                            startOriginal,
+                            originalLineNumber,
+                            originalOffset
+                        ),
+                        modifiedRange: new vscode.Range(
+                            modifiedLineNumber,
+                            startModified,
+                            modifiedLineNumber,
+                            modifiedOffset
+                        ),
+                    })
+                }
             }
             oldIndex++
             newIndex++
@@ -428,13 +457,14 @@ function computeLineChanges({
     return changes
 }
 
+// Split line into words, consecutive spaces and punctuation marks
+const WORDS_AND_PUNCTUATION_REGEX = /(\w+|\s+|\W)/g
+
 /**
  * Splits a line into chunks for fine-grained diffing.
- * Uses word boundaries, spaces and non-alphanumeric characters for splitting.
  */
-function splitLineIntoChunks(line: string): string[] {
-    // Split line into words, consecutive spaces and punctuation marks
-    return line.match(/(\w+|\s+|\W)/g) || []
+function splitLineIntoChunks(line: string, chunkRegex: RegExp): string[] {
+    return line.match(chunkRegex) || []
 }
 
 /**
