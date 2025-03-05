@@ -1,7 +1,8 @@
 import {
-    type CompletionParameters,
+    type ChatClient,
     type EditModel,
     type Message,
+    type ModelContextWindow,
     type PromptString,
     ps,
 } from '@sourcegraph/cody-shared'
@@ -12,7 +13,9 @@ export interface SelectionPromptProviderArgs {
     replacement: PromptString
     document: vscode.TextDocument
     model: EditModel
+    contextWindow: ModelContextWindow
     codyApiVersion: number
+    chatClient: ChatClient
 }
 
 export interface SelectionPromptProviderResult {
@@ -21,9 +24,7 @@ export interface SelectionPromptProviderResult {
 }
 
 export interface SmartApplySelectionProvider {
-    getPrompt(args: SelectionPromptProviderArgs): Promise<SelectionPromptProviderResult>
-
-    getLLMCompletionsParameters(): CompletionParameters
+    getSelectedText(args: SelectionPromptProviderArgs): Promise<string>
 }
 
 export const SMART_APPLY_TOPICS = {

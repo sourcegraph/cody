@@ -1,9 +1,11 @@
 import {
     type EditModel,
     FeatureFlag,
+    currentAuthStatus,
     displayPathWithoutWorkspaceFolderPrefix,
     featureFlagProvider,
     isDotComAuthed,
+    isS2,
     storeLastValue,
     telemetryRecorder,
 } from '@sourcegraph/cody-shared'
@@ -235,8 +237,9 @@ export function getEditLoggingContext(param: {
 }
 
 function shouldLogEditContextItem<T>(payload: T, isFeatureFlagEnabledForLogging: boolean): boolean {
-    // 🚨 SECURITY: included only for DotCom users and for users in the feature flag.
-    if (isDotComAuthed() && isFeatureFlagEnabledForLogging) {
+    // 🚨 SECURITY: included only for DotCom or S2 users and for users in the feature flag.
+    const authStatus = currentAuthStatus()
+    if ((isDotComAuthed() || isS2(authStatus)) && isFeatureFlagEnabledForLogging) {
         const payloadSize = calculatePayloadSizeInBytes(payload)
         return payloadSize !== undefined && payloadSize < MAX_LOGGING_PAYLOAD_SIZE_BYTES
     }
