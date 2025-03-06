@@ -92,7 +92,7 @@ log:
         send: 0
         ssl: -1
         wait: 209
-    - _id: 172576a36b3dd1b6469d09cb072ae97e
+    - _id: 09c89de444311cd46b44ba399e36c9c0
       _order: 0
       cache: {}
       request:
@@ -142,17 +142,17 @@ log:
             topP: -1
         queryString:
           - name: api-version
-            value: "2"
+            value: "8"
           - name: client-name
             value: jetbrains
           - name: client-version
             value: 6.0.0-SNAPSHOT
-        url: https://sourcegraph.sourcegraph.com/.api/completions/stream?api-version=2&client-name=jetbrains&client-version=6.0.0-SNAPSHOT
+        url: https://sourcegraph.sourcegraph.com/.api/completions/stream?api-version=8&client-name=jetbrains&client-version=6.0.0-SNAPSHOT
       response:
-        bodySize: 185
+        bodySize: 412
         content:
           mimeType: text/event-stream
-          size: 185
+          size: 412
           text: >+
             event: completion
 
@@ -166,7 +166,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Tue, 24 Dec 2024 01:23:09 GMT
+            value: Thu, 06 Mar 2025 02:26:53 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -190,13 +190,13 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1215
+        headersSize: 1411
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-12-24T01:23:08.799Z
-      time: 1029
+      startedDateTime: 2025-03-06T02:26:52.039Z
+      time: 1340
       timings:
         blocked: -1
         connect: -1
@@ -204,8 +204,8 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 1029
-    - _id: 820c56d277c7b94198495dbccdf71edd
+        wait: 1340
+    - _id: 5dcbf494e9fc3ab7a53f6123d3e27ef9
       _order: 0
       cache: {}
       request:
@@ -269,17 +269,17 @@ log:
             topP: -1
         queryString:
           - name: api-version
-            value: "2"
+            value: "8"
           - name: client-name
             value: jetbrains
           - name: client-version
             value: 6.0.0-SNAPSHOT
-        url: https://sourcegraph.sourcegraph.com/.api/completions/stream?api-version=2&client-name=jetbrains&client-version=6.0.0-SNAPSHOT
+        url: https://sourcegraph.sourcegraph.com/.api/completions/stream?api-version=8&client-name=jetbrains&client-version=6.0.0-SNAPSHOT
       response:
-        bodySize: 458
+        bodySize: 643
         content:
           mimeType: text/event-stream
-          size: 458
+          size: 643
           text: >+
             event: completion
 
@@ -293,7 +293,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Tue, 24 Dec 2024 01:23:12 GMT
+            value: Thu, 06 Mar 2025 02:26:56 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -317,13 +317,13 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1215
+        headersSize: 1411
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-12-24T01:23:11.527Z
-      time: 1087
+      startedDateTime: 2025-03-06T02:26:55.334Z
+      time: 1269
       timings:
         blocked: -1
         connect: -1
@@ -331,219 +331,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 1087
-    - _id: 4e18273d8ae5cff5662ebe8b0c813b4e
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 463
-        cookies: []
-        headers:
-          - name: accept-encoding
-            value: gzip;q=0
-          - name: authorization
-            value: token
-              REDACTED_1858aad0e1ff07ae26d4042086acb9da455866ad617afd2cb9ab9419e1be1104
-          - name: connection
-            value: keep-alive
-          - name: content-type
-            value: application/json
-          - name: user-agent
-            value: cody-cli/6.0.0-SNAPSHOT (Node.js v20.4.0)
-          - name: x-requested-with
-            value: cody-cli 6.0.0-SNAPSHOT
-          - name: host
-            value: sourcegraph.sourcegraph.com
-        headersSize: 497
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json
-          params: []
-          textJSON:
-            maxTokensToSample: 100
-            messages:
-              - speaker: human
-                text: >-
-                  You are Cody, an AI coding assistant from Sourcegraph. Your
-                  task is to generate a concise title (in about 10 words without
-                  quotation) for <codyUserInput>respond with "hello" and nothing
-                  else</codyUserInput>.
-                          RULE: Your response should only contain the concise title and nothing else.
-              - speaker: assistant
-            model: google::v1::gemini-1.5-flash
-            temperature: 0.2
-            topK: -1
-            topP: -1
-        queryString:
-          - name: client-name
-            value: jetbrains
-          - name: client-version
-            value: 6.0.0-SNAPSHOT
-        url: https://sourcegraph.sourcegraph.com/.api/completions/stream?client-name=jetbrains&client-version=6.0.0-SNAPSHOT
-      response:
-        bodySize: 170
-        content:
-          mimeType: text/event-stream
-          size: 170
-          text: >+
-            event: completion
-
-            data: {"completion":"Simple \"Hello\" Response Function\n","stopReason":"STOP"}
-
-
-            event: done
-
-            data: {}
-
-        cookies: []
-        headers:
-          - name: date
-            value: Fri, 21 Feb 2025 22:46:10 GMT
-          - name: content-type
-            value: text/event-stream
-          - name: transfer-encoding
-            value: chunked
-          - name: connection
-            value: keep-alive
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache
-          - name: vary
-            value: Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
-              Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1390
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2025-02-21T22:46:09.784Z
-      time: 1129
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 1129
-    - _id: 1a932680a38d2702c78d0d744e3cc0a6
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 485
-        cookies: []
-        headers:
-          - name: accept-encoding
-            value: gzip;q=0
-          - name: authorization
-            value: token
-              REDACTED_1858aad0e1ff07ae26d4042086acb9da455866ad617afd2cb9ab9419e1be1104
-          - name: connection
-            value: keep-alive
-          - name: content-type
-            value: application/json
-          - name: user-agent
-            value: cody-cli/6.0.0-SNAPSHOT (Node.js v20.4.0)
-          - name: x-requested-with
-            value: cody-cli 6.0.0-SNAPSHOT
-          - name: host
-            value: sourcegraph.sourcegraph.com
-        headersSize: 497
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json
-          params: []
-          textJSON:
-            maxTokensToSample: 100
-            messages:
-              - speaker: human
-                text: >-
-                  You are Cody, an AI coding assistant from Sourcegraph. Your
-                  task is to generate a concise title (in about 10 words without
-                  quotation) for <codyUserInput>implement a cow. Only print the
-                  code without any explanation.</codyUserInput>.
-                          RULE: Your response should only contain the concise title and nothing else.
-              - speaker: assistant
-            model: google::v1::gemini-1.5-flash
-            temperature: 0.2
-            topK: -1
-            topP: -1
-        queryString:
-          - name: client-name
-            value: jetbrains
-          - name: client-version
-            value: 6.0.0-SNAPSHOT
-        url: https://sourcegraph.sourcegraph.com/.api/completions/stream?client-name=jetbrains&client-version=6.0.0-SNAPSHOT
-      response:
-        bodySize: 162
-        content:
-          mimeType: text/event-stream
-          size: 162
-          text: >+
-            event: completion
-
-            data: {"completion":"Cow Implementation: Code Only\n","stopReason":"STOP"}
-
-
-            event: done
-
-            data: {}
-
-        cookies: []
-        headers:
-          - name: date
-            value: Fri, 21 Feb 2025 22:46:10 GMT
-          - name: content-type
-            value: text/event-stream
-          - name: transfer-encoding
-            value: chunked
-          - name: connection
-            value: keep-alive
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache
-          - name: vary
-            value: Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
-              Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1390
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2025-02-21T22:46:09.883Z
-      time: 958
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 958
+        wait: 1269
     - _id: 5d0e29776bf0857beffb22b778ce488b
       _order: 0
       cache: {}
