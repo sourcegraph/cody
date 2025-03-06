@@ -199,6 +199,13 @@ export class AgentWorkspaceDocuments implements vscode_shim.WorkspaceDocuments {
                 })
             )
             this.agentDocuments.set(newUri.toString(), { document: newDocument, editor })
+
+            // Update activeTextEditor if the renamed document was the active one
+            if (this.activeDocumentFilePath?.toString() === oldUri.toString()) {
+                // Create a new editor with the updated document
+                const updatedEditor = new AgentTextEditor(newDocument, { edit: this.params?.edit })
+                this.setActiveTextEditor(updatedEditor)
+            }
         }
     }
 
