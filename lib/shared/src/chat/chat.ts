@@ -48,28 +48,29 @@ export class ChatClient {
             throw new Error('not authenticated')
         }
 
-        // Only check the API version if it's a claude-3 model. Claude-3 models are being deprecated already,
-        // but old sg instances might still have them.
-        if (params.model?.includes('claude-3') && versions instanceof Error) {
-            throw new Error('unable to determine Cody API version')
+        const requestParams = {
+            apiVersion: versions.codyAPIVersion,
+            interactionId,
+            customHeaders: {},
         }
 
-        const requestParams = { apiVersion: versions.codyAPIVersion, interactionId, customHeaders: {} }
-
+        // TODO: We should probably do this check on prompt building instead of here?
+        const isClaude = params.model?.match(claudeRegex)?.[1]
         const isFireworks = params?.model?.startsWith('fireworks')
+
         // Enabled Fireworks tracing for Sourcegraph teammates.
         // https://readme.fireworks.ai/docs/enabling-tracing
         if (isFireworks && authStatus_.isFireworksTracingEnabled) {
             requestParams.customHeaders = { 'X-Fireworks-Genie': 'true' }
             messages = sanitizeMessages(messages)
+        } else if (isClaude && Number.parseFloat(isClaude) < 3.5) {
+            // Set api version to 0 (unversion) for Claude models older than 3.5.
+            // Example: claude-3-haiku or claude-2-sonnet or claude-2.1-instant v.s. claude-3-5-haiku or 3.5-haiku or 3-7-haiku
+            requestParams.apiVersion = 0
         }
 
-        // Set api version to 0 (unversion) for Claude models older than 3.5.
-        // Example: claude-3-haiku or claude-2-sonnet or claude-2.1-instant v.s. claude-3-5-haiku or 3.5-haiku or 3-7-haiku
-        // Regex for matching old claude models by checking if the model digits are less than 3.5
-        const claudeVersionMatch = params.model?.match(claudeRegex)
-        if (claudeVersionMatch && Number.parseFloat(claudeVersionMatch[1]) < 3.5) {
-            requestParams.apiVersion = 0
+        // Older models or API versions look for prepended assistant messages.
+        if (requestParams.apiVersion === 0 && messages.at(-1)?.speaker === 'human') {
             messages = messages.concat([{ speaker: 'assistant' }])
         }
 
