@@ -3,6 +3,8 @@ package com.sourcegraph.cody.error
 import com.intellij.openapi.application.ApplicationInfo
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.util.SystemInfo
+import com.intellij.ui.jcef.JBCefApp
+import com.jetbrains.cef.JCefAppConfig
 import com.sourcegraph.config.ConfigUtil
 import io.sentry.Sentry
 import io.sentry.SentryEvent
@@ -66,6 +68,7 @@ class SentryService {
           properties.getProperty(
               "java.runtime.version", properties.getProperty("java.version", "unknown"))
       val arch = properties.getProperty("os.arch", "")
+      val jcefVersion = getJcefVersion()
       Sentry.configureScope {
         it.setTag("ideBuild", appInfo.build.toString())
         it.setTag("ideVersionName", appInfo.versionName)
@@ -77,8 +80,21 @@ class SentryService {
             object {
               val fullVersion = javaVersion
               val architecture = arch
+              val jcefVersion = jcefVersion
             })
       }
+    }
+
+    private fun getJcefVersion(): String {
+      if (JBCefApp.isSupported()) {
+        return try {
+          val version = JCefAppConfig.getVersionDetails().cefVersion
+          "${version.major}.${version.api}.${version.patch}"
+        } catch (e: Exception) {
+          "unsupported"
+        }
+      }
+      return "unsupported"
     }
 
     fun setUser(email: String?, userName: String?) {
