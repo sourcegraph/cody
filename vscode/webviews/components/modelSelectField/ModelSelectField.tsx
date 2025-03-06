@@ -37,7 +37,7 @@ export const ModelSelectField: React.FunctionComponent<{
     /** For storybooks only. */
     __storybook__open?: boolean
 
-    modelSelectorRef?: React.RefObject<{ open: () => void; close: () => void }>
+    modelSelectorRef?: React.MutableRefObject<{ open: () => void; close: () => void } | null>
 }> = ({
     models,
     onModelSelect: parentOnModelSelect,

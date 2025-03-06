@@ -10,6 +10,7 @@ import {
     sidebarSignin,
 } from './common'
 import { executeCommandInPalette, test } from './helpers'
+import { SERVER_MODELS } from './utils/server-models'
 
 test.skip('chat keyboard shortcuts for sidebar chat', async ({ page, sidebar }) => {
     await page.bringToFront()
@@ -51,4 +52,24 @@ test.skip('re-opening chat adds selection', async ({ page, sidebar }) => {
     await selectLineRangeInEditorTab(page, 2, 4)
     await page.keyboard.press('Shift+Alt+l')
     await expect(chatInputMentions(lastChatInput)).toHaveText(/^buzz.ts:2-4$/)
+})
+
+test('keyboard shortcut cmd+M opens model selector', async ({ page, server, sidebar }) => {
+    server.setAvailableLLMs(SERVER_MODELS)
+    await sidebarSignin(page, sidebar)
+    const chatFrame = getChatSidebarPanel(page)
+
+    // Verify initial model selector state
+    const modelSelector = chatFrame.getByTestId('chat-model-selector')
+    await expect(modelSelector).toBeEnabled()
+    await expect(modelSelector).toHaveText(/^Opus/)
+
+    // Use keyboard shortcut and verify that the model selector dropdown is open
+    await page.keyboard.press('Meta+M')
+    const modelOptions = chatFrame.getByText('Balanced for power and speedOpusInstant')
+    await expect(modelOptions).toBeVisible()
+
+    // Select a different model
+    await modelOptions.getByRole('option', { name: 'Instant' }).click()
+    await expect(modelSelector).toHaveText(/^Instant/)
 })

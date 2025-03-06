@@ -2,7 +2,8 @@ import type { PopoverContentProps, PopoverProps } from '@radix-ui/react-popover'
 import { Slot } from '@radix-ui/react-slot'
 import { type VariantProps, cva } from 'class-variance-authority'
 import { ChevronDownIcon } from 'lucide-react'
-import React, {
+import type React from 'react'
+import {
     type ButtonHTMLAttributes,
     type ComponentType,
     type FunctionComponent,
@@ -12,6 +13,7 @@ import React, {
     forwardRef,
     useCallback,
     useEffect,
+    useImperativeHandle,
     useRef,
     useState,
 } from 'react'
@@ -92,6 +94,15 @@ export const ToolbarButton = forwardRef<HTMLButtonElement, ToolbarButtonProps>(
 )
 ToolbarButton.displayName = 'ToolbarButton'
 
+interface PopoverControlMethods {
+    open: () => void
+    close: () => void
+}
+
+interface MutableRefObject<T> {
+    current: T
+}
+
 export const ToolbarPopoverItem: FunctionComponent<
     PropsWithChildren<
         ButtonHTMLAttributes<HTMLButtonElement> &
@@ -103,11 +114,13 @@ export const ToolbarPopoverItem: FunctionComponent<
                 popoverRootProps?: Pick<PopoverProps, 'onOpenChange'>
                 popoverContentProps?: Omit<PopoverContentProps, 'align'>
                 __storybook__open?: boolean
-                controlRef?: React.RefObject<{ open: () => void; close: () => void }>
+                controlRef?: MutableRefObject<PopoverControlMethods | null>
             }
     >
 > = ({
     iconEnd = 'chevron',
+    iconStart,
+    tooltip,
     popoverContent,
     defaultOpen,
     onCloseByEscape,
@@ -130,7 +143,15 @@ export const ToolbarPopoverItem: FunctionComponent<
         }
     }, [__storybook__open])
 
-    // Create stable callback functions for open and close operations
+    useImperativeHandle(
+        controlRef,
+        () => ({
+            open: () => setIsOpen(true),
+            close: () => setIsOpen(false),
+        }),
+        []
+    )
+
     const popoverContentRef = useRef<HTMLDivElement>(null)
 
     const onOpenChange = useCallback(
@@ -155,19 +176,9 @@ export const ToolbarPopoverItem: FunctionComponent<
         [popoverRootProps?.onOpenChange]
     )
 
-    // Define the close function that we'll use for the popover content and pass to external refs
-    const close = useCallback(() => onOpenChange(false), [onOpenChange])
-
-    // Define the open function that we'll pass to external refs
-    const open = useCallback(() => onOpenChange(true), [onOpenChange])
-
-    // If an external ref is provided, update it to access our methods
-    useEffect(() => {
-        if (controlRef) {
-            // @ts-ignore - Assigning to current which is normally readonly
-            controlRef.current = { open, close }
-        }
-    }, [controlRef, open, close])
+    const close = useCallback(() => {
+        onOpenChange(false)
+    }, [onOpenChange])
 
     // After pressing Escape, return focus to the given component.
     const onKeyDownInPopoverContent = useCallback<KeyboardEventHandler<HTMLDivElement>>(
@@ -180,39 +191,19 @@ export const ToolbarPopoverItem: FunctionComponent<
         [onCloseByEscape, popoverContentProps?.onKeyDown]
     )
 
-    const finalIconEnd = iconEnd === null ? undefined : iconEnd
-
     return (
         <Popover open={isOpen} onOpenChange={onOpenChange} defaultOpen={defaultOpen}>
             <PopoverTrigger asChild={true}>
-                <span
-                    className={cn(buttonVariants({ variant: 'secondary' }), styles.button, {
-                        [styles.buttonSecondary]: true,
-                        [styles.buttonNoIconStart]: children && !props.iconStart,
-                        [styles.buttonNoIconEnd]: children && !finalIconEnd,
-                    })}
+                <ToolbarButton
+                    variant="secondary"
+                    iconEnd={iconEnd ?? undefined}
                     ref={anchorRef}
                     onClick={onButtonClick}
-                    role="button"
-                    tabIndex={0}
-                    onKeyDown={(e) => {
-                        if (e.key === 'Enter' || e.key === ' ') {
-                            e.preventDefault();
-                            onButtonClick();
-                        }
-                    }}
+                    tooltip={tooltip}
                     {...props}
                 >
-                    {props.iconStart && React.createElement(props.iconStart)}
                     {children}
-                    {finalIconEnd && (
-                        finalIconEnd === 'chevron' 
-                            ? <ChevronDownIcon /> 
-                            : typeof finalIconEnd !== 'string' 
-                                ? React.createElement(finalIconEnd) 
-                                : null
-                    )}
-                </span>
+                </ToolbarButton>
             </PopoverTrigger>
             <PopoverContent
                 align="start"
