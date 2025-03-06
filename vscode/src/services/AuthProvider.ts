@@ -175,16 +175,6 @@ class AuthProvider implements vscode.Disposable {
                 try {
                     this.lastEndpoint = authStatus.endpoint
                     vscode.commands.executeCommand('authStatus.update', authStatus)
-                    vscode.commands.executeCommand(
-                        'setContext',
-                        'cody.activated',
-                        authStatus.authenticated
-                    )
-                    vscode.commands.executeCommand(
-                        'setContext',
-                        'cody.serverEndpoint',
-                        authStatus.endpoint
-                    )
                 } catch (error) {
                     logError('AuthProvider', 'Unexpected error while setting context', error)
                 }
