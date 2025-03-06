@@ -1,7 +1,6 @@
 'use client'
 
-import type { CodyIDE, UserLocalHistory } from '@sourcegraph/cody-shared'
-import { useExtensionAPI } from '@sourcegraph/prompt-editor'
+import type { CodyIDE, UserLocalHistory, WebviewToExtensionAPI } from '@sourcegraph/cody-shared'
 import { DownloadIcon, HistoryIcon, MessageSquarePlusIcon, Trash2Icon, TrashIcon } from 'lucide-react'
 import type React from 'react'
 import { useCallback, useMemo, useState } from 'react'
@@ -21,6 +20,7 @@ interface HistoryTabProps {
     setView: (view: View) => void
     webviewType?: WebviewType | undefined | null
     multipleWebviewsEnabled?: boolean | undefined | null
+    extensionAPI: WebviewToExtensionAPI
 }
 
 const HISTORY_ITEMS_PER_PAGE = 20
@@ -30,6 +30,7 @@ export const HistoryTab: React.FC<HistoryTabProps> = ({
     webviewType,
     multipleWebviewsEnabled,
     setView,
+    extensionAPI,
 }) => {
     const vscodeAPI = getVSCodeAPI()
     const { value: result, error } = useUserHistory()
@@ -56,6 +57,7 @@ export const HistoryTab: React.FC<HistoryTabProps> = ({
                     chats={chats}
                     handleStartNewChat={handleStartNewChat}
                     vscodeAPI={vscodeAPI}
+                    extensionAPI={extensionAPI}
                 />
             )}
         </div>
@@ -66,7 +68,8 @@ export const HistoryTabWithData: React.FC<{
     chats: UserLocalHistory['chat'][string][]
     handleStartNewChat: () => void
     vscodeAPI: VSCodeWrapper
-}> = ({ chats, handleStartNewChat, vscodeAPI }) => {
+    extensionAPI: WebviewToExtensionAPI
+}> = ({ chats, handleStartNewChat, vscodeAPI, extensionAPI }) => {
     const [isDeleteAllActive, setIsDeleteAllActive] = useState<boolean>(false)
 
     const [deletingChatIds, setDeletingChatIds] = useState<Set<string>>(new Set())
@@ -102,6 +105,8 @@ export const HistoryTabWithData: React.FC<{
         },
         [vscodeAPI]
     )
+
+    const onExportClick = useCallback(() => downloadChatHistory(extensionAPI), [extensionAPI])
 
     //add history search
     const [searchText, setSearchText] = useState('')
@@ -175,7 +180,7 @@ export const HistoryTabWithData: React.FC<{
                 <Button
                     variant="secondary"
                     className="tw-bg-popover tw-border tw-border-border !tw-justify-between"
-                    onClick={() => downloadChatHistory(useExtensionAPI())}
+                    onClick={onExportClick}
                 >
                     <div className="tw-flex tw-items-center">
                         <DownloadIcon size={16} className="tw-mr-3" /> Export
