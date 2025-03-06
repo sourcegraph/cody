@@ -57,6 +57,7 @@ jobs:
         shell: bash
         id: pnpm-cache
       - name: Restore cache pnpm store
+        id: restore-pnpm-cache
         uses: actions/cache/restore@v4
         with:
           path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
@@ -64,10 +65,10 @@ jobs:
           restore-keys: ${{ runner.os }}-pnpm-store-
 
       - run: pnpm install
-        if: steps.cache-primes.outputs.cache-hit != 'true'
+        if: steps.restore-pnpm-cache.outputs.cache-hit != 'true'
 
       - name: Save cache pnpm store
-        if: steps.cache-primes.outputs.cache-hit != 'true'
+        if: steps.restore-pnpm-cache.outputs.cache-hit != 'true'
         uses: actions/cache/save@v4
         with:
           path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
