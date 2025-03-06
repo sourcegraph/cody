@@ -12,23 +12,16 @@ echo "Latest tag: $latest_tag"
 current_version=${latest_tag#agent-v}
 echo "Current version: $current_version"
 
-# Split the version into components
-IFS='.' read -r major minor patch <<< "$current_version"
+# Use pnpm to update the version (patch increment) in the agent directory
+echo "Incrementing patch version using pnpm..."
+(cd agent && pnpm version patch --no-git-tag-version)
 
-# Increment patch version
-new_patch=$((patch + 1))
-new_version="$major.$minor.$new_patch"
+# Get the new version from package.json using jq
+new_version=$(jq -r .version agent/package.json)
+
 new_tag="agent-v$new_version"
 echo "New version: $new_version"
 echo "New tag: $new_tag"
-
-# Update version in package.json
-sed -i '' "s/\"version\": \"[^\"]*\"/\"version\": \"$new_version\"/" agent/package.json
-echo "Updated version in package.json"
-
-# Print the updated version from package.json
-updated_version=$(grep -o '"version": "[^"]*"' agent/package.json | cut -d'"' -f4)
-echo "Version in package.json is now: $updated_version"
 
 # Create a new branch with the tag name
 git checkout -b "$new_tag"
