@@ -79,7 +79,6 @@ describe('CodyGatewayAdapter', () => {
                     type: 'content',
                     content: options.codeToRewrite,
                 },
-                rewrite_speculation: true,
                 user: options.userId,
                 messages: expect.any(Array),
             })
@@ -108,7 +107,6 @@ describe('CodyGatewayAdapter', () => {
                     type: 'content',
                     content: options.codeToRewrite,
                 },
-                rewrite_speculation: true,
                 user: options.userId,
                 prompt: nonChatOptions.prompt.userMessage.toString(),
             })

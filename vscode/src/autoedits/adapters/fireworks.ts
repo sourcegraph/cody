@@ -3,6 +3,7 @@ import { autoeditsOutputChannelLogger } from '../output-channel-logger'
 
 import type { AutoeditModelOptions, AutoeditsModelAdapter, ModelResponse } from './base'
 import {
+    type AutoeditsRequestBody,
     type FireworksCompatibleRequestParams,
     getMaxOutputTokensForAutoedits,
     getModelResponse,
@@ -11,7 +12,7 @@ import {
 
 export class FireworksAdapter implements AutoeditsModelAdapter {
     async getModelResponse(option: AutoeditModelOptions): Promise<ModelResponse> {
-        const body = this.getMessageBody(option)
+        const requestBody = this.getMessageBody(option)
         try {
             const apiKey = autoeditsProviderConfig.experimentalAutoeditsConfigOverride?.apiKey
 
@@ -24,7 +25,7 @@ export class FireworksAdapter implements AutoeditsModelAdapter {
             }
             const { data, requestHeaders, responseHeaders, url } = await getModelResponse(
                 option.url,
-                body,
+                JSON.stringify(requestBody),
                 apiKey
             )
 
@@ -39,7 +40,9 @@ export class FireworksAdapter implements AutoeditsModelAdapter {
                 prediction,
                 responseHeaders,
                 requestHeaders,
+                requestBody,
                 requestUrl: url,
+                responseBody: data,
             }
         } catch (error) {
             autoeditsOutputChannelLogger.logError('getModelResponse', 'Error calling Fireworks API:', {
@@ -49,9 +52,9 @@ export class FireworksAdapter implements AutoeditsModelAdapter {
         }
     }
 
-    private getMessageBody(options: AutoeditModelOptions): string {
+    private getMessageBody(options: AutoeditModelOptions): AutoeditsRequestBody {
         const maxTokens = getMaxOutputTokensForAutoedits(options.codeToRewrite)
-        const body: FireworksCompatibleRequestParams = {
+        const baseParams: FireworksCompatibleRequestParams = {
             stream: false,
             model: options.model,
             temperature: 0.1,
@@ -67,15 +70,20 @@ export class FireworksAdapter implements AutoeditsModelAdapter {
             },
             user: options.userId || undefined,
         }
-        const request = options.isChatModel
-            ? {
-                  ...body,
-                  messages: getOpenaiCompatibleChatPrompt({
-                      systemMessage: options.prompt.systemMessage,
-                      userMessage: options.prompt.userMessage,
-                  }),
-              }
-            : { ...body, prompt: options.prompt.userMessage }
-        return JSON.stringify(request)
+
+        if (options.isChatModel) {
+            return {
+                ...baseParams,
+                messages: getOpenaiCompatibleChatPrompt({
+                    systemMessage: options.prompt.systemMessage,
+                    userMessage: options.prompt.userMessage,
+                }),
+            }
+        }
+
+        return {
+            ...baseParams,
+            prompt: options.prompt.userMessage,
+        }
     }
 }
