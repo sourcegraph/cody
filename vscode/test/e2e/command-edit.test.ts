@@ -2,7 +2,7 @@ import { expect } from '@playwright/test'
 
 import * as mockServer from '../fixtures/mock-server'
 
-import { openFileInEditorTab, sidebarExplorer, sidebarSignin } from './common'
+import { sidebarExplorer, sidebarSignin } from './common'
 import {
     type DotcomUrlOverride,
     type ExpectedV2Events,
@@ -30,7 +30,7 @@ test.extend<ExpectedV2Events>({
         'cody.fixup.codeLens:undo',
         'cody.fixup.reverted:clicked',
     ],
-})('edit (fixup) task', async ({ page, sidebar, nap }) => {
+})('edit (fixup) task & model selection', async ({ page, sidebar, nap }) => {
     // Sign into Cody
     await sidebarSignin(page, sidebar)
 
@@ -45,6 +45,17 @@ test.extend<ExpectedV2Events>({
     // Open the Edit input
     await page.getByRole('button', { name: 'Cody Commands' }).click()
     await page.getByRole('option', { name: 'wand Edit code' }).click()
+
+    // Check the correct model item is auto-selected
+    await nap()
+    const modelItem = page.getByLabel('$(anthropic-logo) Claude 3.5 Sonnet').locator('a')
+    await nap()
+    expect(modelItem).toBeVisible()
+
+    // Open the model input and check it has the correct item selected
+    await modelItem.click()
+    const selectedModelItem = page.getByLabel('check   anthropic-logo  Claude 3.5 Sonnet, by Anthropic')
+    expect(selectedModelItem).toBeVisible()
 
     const inputBox = page.getByPlaceholder(/^Enter edit instructions \(type @ to include code/)
     const instruction = 'Replace apple with banana'
@@ -140,28 +151,4 @@ test('edit (fixup) input - range selection', async ({ page, sidebar }) => {
     expect(inputBox).toBeVisible()
     const updatedRangeItem = page.getByLabel('$(symbol-method) fizzbuzz')
     expect(updatedRangeItem).toBeVisible()
-})
-
-test('edit (fixup) input - model selection', async ({ page, nap, sidebar }) => {
-    // Sign into Cody
-    await sidebarSignin(page, sidebar)
-
-    // Open the Explorer view from the sidebar
-    await sidebarExplorer(page).click()
-    await openFileInEditorTab(page, 'buzz.ts')
-
-    // Open the Edit input
-    await page.getByRole('button', { name: 'Cody Commands' }).click()
-    await page.getByRole('option', { name: 'wand Edit code' }).click()
-
-    // Check the correct model item is auto-selected
-    await nap()
-    const modelItem = page.getByLabel('$(anthropic-logo) Claude 3.5 Sonnet').locator('a')
-    await nap()
-    expect(modelItem).toBeVisible()
-
-    // Open the model input and check it has the correct item selected
-    await modelItem.click()
-    const selectedModelItem = page.getByLabel('check   anthropic-logo  Claude 3.5 Sonnet, by Anthropic')
-    expect(selectedModelItem).toBeVisible()
 })
