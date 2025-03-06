@@ -26,7 +26,6 @@ import type { DecorationInfo } from '../renderer/decorators/base'
 import { getDecorationStats } from '../renderer/diff-utils'
 
 import { autoeditDebugStore } from '../debug-panel/debug-store'
-
 import type { AutoEditRenderOutput } from '../renderer/render-output'
 import { autoeditIdRegistry } from './suggestion-id-registry'
 import {

@@ -90,7 +90,6 @@ interface ImageRenderOutput {
  */
 interface CustomRenderOutput {
     type: 'custom'
-    decorations: AutoEditDecorations
 }
 
 export type AutoEditRenderOutput =
@@ -150,13 +149,7 @@ export class AutoEditsRenderOutput {
         }
 
         if (capabilities.autoEditAsideDiff === 'diff') {
-            return {
-                type: 'custom',
-                decorations: {
-                    insertMarkerDecorations: [],
-                    ...this.getInlineDecorations(args.decorationInfo),
-                },
-            }
+            return { type: 'custom' }
         }
 
         const diffMode =

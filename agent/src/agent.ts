@@ -977,15 +977,12 @@ export class Agent extends MessageHandler implements ExtensionClient {
                 }
 
                 const items: AutocompleteItem[] =
-                    result?.items.flatMap(item => {
-                        const insertText = item.insertText
-                        const range = item.range
-                        // TODO: We should surface an id from auto-edit
-                        const id = 'id' in item ? (item.id as string) : uuid.v4()
-                        return typeof insertText === 'string' && range !== undefined
+                    result?.items.flatMap(({ insertText, range, id }) =>
+                        typeof insertText === 'string' && range !== undefined
                             ? [{ id, insertText, range }]
                             : []
-                    }) ?? []
+                    ) ?? []
+
                 return {
                     type: 'completion' as const,
                     items,
