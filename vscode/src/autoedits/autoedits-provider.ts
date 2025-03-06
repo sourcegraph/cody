@@ -41,8 +41,8 @@ import { shrinkPredictionUntilSuffix } from './shrink-prediction'
 import { areSameUriDocs, isPredictedTextAlreadyInSuffix } from './utils'
 
 const AUTOEDIT_CONTEXT_STRATEGY = 'auto-edit'
-export const AUTOEDIT_TOTAL_DEBOUNCE_INTERVAL = 75
-export const AUTOEDIT_CONTEXT_FETCHING_DEBOUNCE_INTERVAL = 25
+export const AUTOEDIT_TOTAL_DEBOUNCE_INTERVAL = 20
+export const AUTOEDIT_CONTEXT_FETCHING_DEBOUNCE_INTERVAL = 10
 const RESET_SUGGESTION_ON_CURSOR_CHANGE_AFTER_INTERVAL_MS = 60 * 1000
 const ON_SELECTION_CHANGE_DEFAULT_DEBOUNCE_INTERVAL_MS = 15
 
