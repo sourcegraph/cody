@@ -53,14 +53,6 @@ jobs:
         with:
           node-version: ${{ matrix.node }}
       - uses: pnpm/action-setup@fe02b34f77f8bc703788d5817da081398fad5dd2 # SECURITY: pin third-party action hashes
-      - id: auth
-        uses: google-github-actions/auth@v2
-        # Skip auth if PR is from a fork
-        if: ${{ !github.event.pull_request.head.repo.fork }}
-        with:
-          workload_identity_provider: ${{ secrets.DATA_TEAM_PROVIDER_NAME }}
-          service_account: ${{ secrets.DATA_TEAM_SA_EMAIL }}
-      - uses: google-github-actions/setup-gcloud@v2
       - run: echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
         shell: bash
         id: pnpm-cache
