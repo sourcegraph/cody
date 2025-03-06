@@ -125,7 +125,7 @@ export function inferCodyApiVersion(version: string, isDotCom: boolean): CodyApi
 
     if (isDotCom || isLocalBuild) {
         // The most recent version is api-version=8, LatestSupportedCompletionsStreamAPIVersion
-        return 8
+        return LatestSupportedCompletionsStreamAPIVersion
     }
 
     // On Cloud deployments from main, the version identifier will use a format
