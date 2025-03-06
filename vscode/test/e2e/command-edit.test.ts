@@ -57,6 +57,9 @@ test.extend<ExpectedV2Events>({
     const selectedModelItem = page.getByLabel('check   anthropic-logo  Claude 3.5 Sonnet, by Anthropic')
     expect(selectedModelItem).toBeVisible()
 
+    // Back to the input box
+    await page.getByRole('button', { name: /Back.*/ }).click()
+
     const inputBox = page.getByPlaceholder(/^Enter edit instructions \(type @ to include code/)
     const instruction = 'Replace apple with banana'
     const inputTitle = /^Edit type.ts:(\d+).* with Cody$/
