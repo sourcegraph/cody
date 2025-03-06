@@ -30,7 +30,7 @@ test.extend<ExpectedV2Events>({
         'cody.fixup.codeLens:undo',
         'cody.fixup.reverted:clicked',
     ],
-})('edit (fixup) task & model selection', async ({ page, sidebar, nap }) => {
+})('edit (fixup) task', async ({ page, sidebar, nap }) => {
     // Sign into Cody
     await sidebarSignin(page, sidebar)
 
