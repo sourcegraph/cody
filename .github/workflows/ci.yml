@@ -56,13 +56,22 @@ jobs:
       - run: echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
         shell: bash
         id: pnpm-cache
-      - name: Cache pnpm store
-        uses: actions/cache@v4
+      - name: Restore cache pnpm store
+        uses: actions/cache/restore@v4
         with:
           path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
           key: ${{ runner.os }}-${{ matrix.node }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
           restore-keys: ${{ runner.os }}-${{ matrix.node }}-pnpm-store-
+
       - run: pnpm install
+        if: steps.cache-primes.outputs.cache-hit != 'true'
+
+      - name: Save cache pnpm store
+        if: steps.cache-primes.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+          key: ${{ runner.os }}-${{ matrix.node }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
       - run: pnpm build
       - run: pnpm run test:unit --run
         env:
