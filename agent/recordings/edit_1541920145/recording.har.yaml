@@ -429,11 +429,11 @@ log:
         send: 0
         ssl: -1
         wait: 2399
-    - _id: b2684f1c28500add6750fe635347e784
+    - _id: b09491600efcaea936949a563b9d589e
       _order: 0
       cache: {}
       request:
-        bodySize: 2132
+        bodySize: 2133
         cookies: []
         headers:
           - name: accept-encoding
@@ -446,7 +446,7 @@ log:
           - name: content-type
             value: application/json
           - name: traceparent
-            value: 00-a3c329e49728445809e61a7a97526a13-1e50d43ac736ae9f-01
+            value: 00-67980c42efe536794b47bd868a67dc5d-6d0aeb9a743312bc-01
           - name: user-agent
             value: edit/v1 (Node.js v20.4.0)
           - name: x-requested-with
@@ -520,7 +520,7 @@ log:
                   </INSTRUCTIONS7390>
               - speaker: assistant
                 text: <CODE5711>
-            model: anthropic/claude-3-opus-20240229
+            model: anthropic/claude-3-5-haiku-latest
             stopSequences:
               - </CODE5711>
             temperature: 0
@@ -535,10 +535,10 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=8&client-name=edit&client-version=v1
       response:
-        bodySize: 1155
+        bodySize: 1074
         content:
           mimeType: text/event-stream
-          size: 1155
+          size: 1074
           text: >+
             event: completion
 
@@ -552,7 +552,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 06 Mar 2025 02:27:01 GMT
+            value: Thu, 06 Mar 2025 04:16:54 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -581,8 +581,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-03-06T02:26:57.291Z
-      time: 3966
+      startedDateTime: 2025-03-06T04:16:52.031Z
+      time: 2293
       timings:
         blocked: -1
         connect: -1
@@ -590,7 +590,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 3966
+        wait: 2293
     - _id: f1b1cde4cd57488b7f0137954f0302f5
       _order: 0
       cache: {}

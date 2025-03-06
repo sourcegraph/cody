@@ -535,7 +535,7 @@ describe('Agent', () => {
     describe('Commands', () => {
         it('commands/explain', async () => {
             await client.openFile(animalUri)
-            const freshChatID = await setChatModel('anthropic::2024-10-22::claude-3-5-haiku-latest')
+            const freshChatID = await setChatModel()
             const id = await client.request('commands/explain', null)
 
             // Assert that the server is not using IDs between `chat/new` and
@@ -551,15 +551,16 @@ describe('Agent', () => {
                 expect.arrayContaining([
                     'cody.command.explain:executed',
                     'cody.chat-question:submitted',
+                    'cody.experiment.promptCachingOnMessages:enrolled',
                     'cody.chat-question:executed',
-                    'cody.chatResponse:noCode',
+                    'cody.chatResponse:hasCode',
                 ])
             )
         }, 30_000)
 
         it('commands/smell', async () => {
             await client.openFile(animalUri)
-            await setChatModel('anthropic::2024-10-22::claude-3-5-haiku-latest')
+            await setChatModel()
             const id = await client.request('commands/smell', null)
             const lastMessage = await client.firstNonEmptyTranscript(id)
 

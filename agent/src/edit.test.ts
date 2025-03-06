@@ -120,7 +120,7 @@ describe('Edit', { timeout: 5000 }, () => {
         await client.openFile(uri, { removeCursor: true })
         const task = await client.request('editCommands/code', {
             instruction: 'Convert this to use a switch statement',
-            model: 'anthropic/claude-3-opus-20240229',
+            model: 'anthropic/claude-3-5-haiku-latest',
         })
         await client.acceptEditTask(uri, task)
         expect(client.documentText(uri)).toMatchInlineSnapshot(
