@@ -118,14 +118,16 @@ export const CodyPanel: FunctionComponent<CodyPanelProps> = ({
                 className={styles.outerContainer}
             >
                 <Notices user={user} instanceNotices={instanceNotices} />
-                <TabsBar
-                    models={chatModels}
-                    user={user}
-                    currentView={view}
-                    setView={setView}
-                    endpointHistory={config.endpointHistory ?? []}
-                    isWorkspacesUpgradeCtaEnabled={isWorkspacesUpgradeCtaEnabled}
-                />
+                {/* Hide tab bar in editor chat panels. */}
+                {config.webviewType !== 'editor' && (
+                    <TabsBar
+                        user={user}
+                        currentView={view}
+                        setView={setView}
+                        endpointHistory={config.endpointHistory ?? []}
+                        isWorkspacesUpgradeCtaEnabled={isWorkspacesUpgradeCtaEnabled}
+                    />
+                )}
                 {errorMessages && <ErrorBanner errors={errorMessages} setErrors={setErrorMessages} />}
                 <TabContainer value={view} ref={tabContainerRef} data-scrollable>
                     {view === View.Chat && (
