@@ -65,7 +65,6 @@ jobs:
           restore-keys: ${{ runner.os }}-pnpm-store-
 
       - run: pnpm install
-        if: steps.restore-pnpm-cache.outputs.cache-hit != 'true'
 
       - name: Save cache pnpm store
         if: steps.restore-pnpm-cache.outputs.cache-hit != 'true'
@@ -103,7 +102,6 @@ jobs:
           key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
           restore-keys: ${{ runner.os }}-pnpm-store-
       - run: pnpm install
-        if: steps.restore-pnpm-cache.outputs.cache-hit != 'true'
 
       - name: Save cache pnpm store
         if: steps.restore-pnpm-cache.outputs.cache-hit != 'true'
@@ -163,7 +161,6 @@ jobs:
           key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
           restore-keys: ${{ runner.os }}-pnpm-store-
       - run: pnpm install
-        if: steps.restore-pnpm-cache.outputs.cache-hit != 'true'
 
       - name: Save cache pnpm store
         if: steps.restore-pnpm-cache.outputs.cache-hit != 'true'
@@ -220,7 +217,6 @@ jobs:
           key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
           restore-keys: ${{ runner.os }}-pnpm-store-
       - run: pnpm install
-        if: steps.restore-pnpm-cache.outputs.cache-hit != 'true'
 
       - name: Save cache pnpm store
         if: steps.restore-pnpm-cache.outputs.cache-hit != 'true'
