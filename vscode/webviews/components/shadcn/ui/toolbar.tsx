@@ -157,10 +157,10 @@ export const ToolbarPopoverItem: FunctionComponent<
 
     // Define the close function that we'll use for the popover content and pass to external refs
     const close = useCallback(() => onOpenChange(false), [onOpenChange])
-    
+
     // Define the open function that we'll pass to external refs
     const open = useCallback(() => onOpenChange(true), [onOpenChange])
-    
+
     // If an external ref is provided, update it to access our methods
     useEffect(() => {
         if (controlRef) {
