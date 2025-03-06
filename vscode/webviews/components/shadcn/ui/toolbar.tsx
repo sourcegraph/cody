@@ -2,7 +2,7 @@ import type { PopoverContentProps, PopoverProps } from '@radix-ui/react-popover'
 import { Slot } from '@radix-ui/react-slot'
 import { type VariantProps, cva } from 'class-variance-authority'
 import { ChevronDownIcon } from 'lucide-react'
-import {
+import React, {
     type ButtonHTMLAttributes,
     type ComponentType,
     type FunctionComponent,
@@ -185,15 +185,34 @@ export const ToolbarPopoverItem: FunctionComponent<
     return (
         <Popover open={isOpen} onOpenChange={onOpenChange} defaultOpen={defaultOpen}>
             <PopoverTrigger asChild={true}>
-                <ToolbarButton
-                    variant="secondary"
-                    iconEnd={finalIconEnd}
+                <span
+                    className={cn(buttonVariants({ variant: 'secondary' }), styles.button, {
+                        [styles.buttonSecondary]: true,
+                        [styles.buttonNoIconStart]: children && !props.iconStart,
+                        [styles.buttonNoIconEnd]: children && !finalIconEnd,
+                    })}
                     ref={anchorRef}
                     onClick={onButtonClick}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            onButtonClick();
+                        }
+                    }}
                     {...props}
                 >
+                    {props.iconStart && React.createElement(props.iconStart)}
                     {children}
-                </ToolbarButton>
+                    {finalIconEnd && (
+                        finalIconEnd === 'chevron' 
+                            ? <ChevronDownIcon /> 
+                            : typeof finalIconEnd !== 'string' 
+                                ? React.createElement(finalIconEnd) 
+                                : null
+                    )}
+                </span>
             </PopoverTrigger>
             <PopoverContent
                 align="start"

@@ -1,5 +1,6 @@
 import { FIXTURE_MODELS } from '@sourcegraph/cody-shared'
 import { render as render_ } from '@testing-library/react'
+import React from 'react'
 import { describe, expect, test, vi } from 'vitest'
 import { AppWrapperForTest } from '../AppWrapperForTest'
 import { FIXTURE_USER_ACCOUNT_INFO } from '../chat/fixtures'
@@ -38,6 +39,70 @@ vi.mock('../utils/useClientConfig', () => ({
     }),
 }))
 
+// Mock Tooltip components
+vi.mock('../components/shadcn/ui/tooltip', async () => {
+    const Tooltip = ({ children }: { children: React.ReactNode }) => <>{children}</>
+    
+    const TooltipTrigger = React.forwardRef<HTMLSpanElement, { 
+        children: React.ReactNode; 
+        asChild?: boolean;
+        [key: string]: any;
+    }>(({ children, asChild, ...props }, ref) => <span ref={ref}>{children}</span>)
+    
+    const TooltipContent = React.forwardRef<HTMLDivElement, {
+        children: React.ReactNode;
+        [key: string]: any;
+    }>(({ children, ...props }, ref) => <div ref={ref}>{children}</div>)
+    
+    const TooltipProvider = ({ children, disableHoverableContent, delayDuration }: { 
+        children: React.ReactNode;
+        disableHoverableContent?: boolean;
+        delayDuration?: number;
+    }) => <>{children}</>
+    
+    return {
+        Tooltip,
+        TooltipTrigger,
+        TooltipContent,
+        TooltipProvider,
+    }
+})
+
+// Mock Popover components
+vi.mock('../components/shadcn/ui/popover', () => {
+    const Popover = ({ children, open, onOpenChange, defaultOpen }: { 
+        children: React.ReactNode; 
+        open?: boolean; 
+        onOpenChange?: (open: boolean) => void; 
+        defaultOpen?: boolean 
+    }) => <>{children}</>
+    
+    const PopoverTrigger = React.forwardRef<HTMLSpanElement, {
+        children: React.ReactNode; 
+        asChild?: boolean;
+        [key: string]: any;
+    }>(({ children, asChild, ...props }, ref) => <span ref={ref}>{children}</span>)
+    
+    // Using forwardRef to avoid the warning about refs on function components
+    const PopoverContent = React.forwardRef<HTMLDivElement, {
+        children: React.ReactNode; 
+        align?: string; 
+        onKeyDown?: React.KeyboardEventHandler<HTMLDivElement>;
+        [key: string]: any;
+    }>(({ 
+        children, 
+        align, 
+        onKeyDown, 
+        ...props 
+    }, ref) => <div ref={ref}>{children}</div>)
+    
+    return {
+        Popover,
+        PopoverTrigger,
+        PopoverContent,
+    }
+})
+
 // Mock Radix UI's Tabs component if needed
 vi.mock('@radix-ui/react-tabs', () => {
     const TabsRoot = ({
@@ -51,10 +116,10 @@ vi.mock('@radix-ui/react-tabs', () => {
     const TabsList = ({ children }: { children: React.ReactNode }) => (
         <div data-testid="mocked-tabs-list">{children}</div>
     )
-    const TabsTrigger = ({ children, value }: { children: React.ReactNode; value: string }) => (
-        <button type="button" data-testid="mocked-tabs-trigger" data-value={value}>
+    const TabsTrigger = ({ children, value, asChild }: { children: React.ReactNode; value: string; asChild?: boolean }) => (
+        <div data-testid="mocked-tabs-trigger" data-value={value}>
             {children}
-        </button>
+        </div>
     )
     const TabsContent = ({ children, value }: { children: React.ReactNode; value: string }) => (
         <div data-testid="mocked-tabs-content" data-value={value}>
