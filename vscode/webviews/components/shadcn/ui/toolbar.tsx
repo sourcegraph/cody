@@ -5,13 +5,13 @@ import { ChevronDownIcon } from 'lucide-react'
 import {
     type ButtonHTMLAttributes,
     type ComponentType,
+    type FunctionComponent,
     type KeyboardEventHandler,
     type PropsWithChildren,
     type ReactNode,
     forwardRef,
     useCallback,
     useEffect,
-    useImperativeHandle,
     useRef,
     useState,
 } from 'react'
@@ -92,31 +92,32 @@ export const ToolbarButton = forwardRef<HTMLButtonElement, ToolbarButtonProps>(
 )
 ToolbarButton.displayName = 'ToolbarButton'
 
-export const ToolbarPopoverItem = forwardRef<
-    { open: () => void; close: () => void },
+export const ToolbarPopoverItem: FunctionComponent<
     PropsWithChildren<
         ButtonHTMLAttributes<HTMLButtonElement> &
-            Omit<Pick<ToolbarButtonProps, 'iconStart' | 'tooltip'>, 'iconEnd'> & {
-                iconEnd: ToolbarButtonProps['iconEnd'] | undefined
+            Pick<ToolbarButtonProps, 'iconStart' | 'tooltip'> & {
+                iconEnd: ToolbarButtonProps['iconEnd'] | null
                 popoverContent: (close: () => void) => React.ReactNode
                 defaultOpen?: boolean
                 onCloseByEscape?: () => void
                 popoverRootProps?: Pick<PopoverProps, 'onOpenChange'>
                 popoverContentProps?: Omit<PopoverContentProps, 'align'>
                 __storybook__open?: boolean
+                controlRef?: React.RefObject<{ open: () => void; close: () => void }>
             }
     >
->((props, ref) => {
-    const {
-        iconEnd = 'chevron',
-        popoverContent,
-        defaultOpen,
-        onCloseByEscape,
-        popoverRootProps,
-        popoverContentProps,
-        __storybook__open,
-        children,
-    } = props
+> = ({
+    iconEnd = 'chevron',
+    popoverContent,
+    defaultOpen,
+    onCloseByEscape,
+    popoverRootProps,
+    popoverContentProps,
+    __storybook__open,
+    children,
+    controlRef,
+    ...props
+}) => {
     const [isOpen, setIsOpen] = useState(defaultOpen)
 
     const onButtonClick = useCallback(() => {
@@ -129,16 +130,7 @@ export const ToolbarPopoverItem = forwardRef<
         }
     }, [__storybook__open])
 
-    // Expose the open method via ref
-    useImperativeHandle(
-        ref,
-        () => ({
-            open: () => setIsOpen(true),
-            close: () => setIsOpen(false),
-        }),
-        []
-    )
-
+    // Create stable callback functions for open and close operations
     const popoverContentRef = useRef<HTMLDivElement>(null)
 
     const onOpenChange = useCallback(
@@ -163,9 +155,19 @@ export const ToolbarPopoverItem = forwardRef<
         [popoverRootProps?.onOpenChange]
     )
 
-    const close = useCallback(() => {
-        onOpenChange(false)
-    }, [onOpenChange])
+    // Define the close function that we'll use for the popover content and pass to external refs
+    const close = useCallback(() => onOpenChange(false), [onOpenChange])
+    
+    // Define the open function that we'll pass to external refs
+    const open = useCallback(() => onOpenChange(true), [onOpenChange])
+    
+    // If an external ref is provided, update it to access our methods
+    useEffect(() => {
+        if (controlRef) {
+            // @ts-ignore - Assigning to current which is normally readonly
+            controlRef.current = { open, close }
+        }
+    }, [controlRef, open, close])
 
     // After pressing Escape, return focus to the given component.
     const onKeyDownInPopoverContent = useCallback<KeyboardEventHandler<HTMLDivElement>>(
@@ -179,7 +181,6 @@ export const ToolbarPopoverItem = forwardRef<
     )
 
     const finalIconEnd = iconEnd === null ? undefined : iconEnd
-    const { iconEnd: _, ...restProps } = props
 
     return (
         <Popover open={isOpen} onOpenChange={onOpenChange} defaultOpen={defaultOpen}>
@@ -189,7 +190,7 @@ export const ToolbarPopoverItem = forwardRef<
                     iconEnd={finalIconEnd}
                     ref={anchorRef}
                     onClick={onButtonClick}
-                    {...restProps}
+                    {...props}
                 >
                     {children}
                 </ToolbarButton>
@@ -204,5 +205,5 @@ export const ToolbarPopoverItem = forwardRef<
             </PopoverContent>
         </Popover>
     )
-})
+}
 ToolbarPopoverItem.displayName = 'ToolbarPopoverItem'

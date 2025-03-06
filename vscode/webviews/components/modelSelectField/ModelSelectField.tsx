@@ -178,7 +178,7 @@ export const ModelSelectField: React.FunctionComponent<{
             __storybook__open={__storybook__open}
             tooltip={readOnly ? undefined : 'Switch model (⌘M)'}
             aria-label="Select a model or an agent"
-            ref={modelSelectorRef}
+            controlRef={modelSelectorRef}
             popoverContent={close => (
                 <Command
                     loop={true}
