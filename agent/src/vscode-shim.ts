@@ -31,6 +31,8 @@ import type * as vscode from 'vscode'
 //     at Object.<anonymous> (/snapshot/dist/agent.js)
 //     at Module._compile (pkg/prelude/bootstrap.js:1926:22)
 // </VERY IMPORTANT>
+import type { AutoeditsProvider } from '../../vscode/src/autoedits/autoedits-provider'
+import type { InlineCompletionItemProvider } from '../../vscode/src/completions/inline-completion-item-provider'
 import type { API, GitExtension, Repository } from '../../vscode/src/repository/builtinGitExtension'
 import { AgentEventEmitter as EventEmitter } from '../../vscode/src/testutils/AgentEventEmitter'
 import { emptyEvent } from '../../vscode/src/testutils/emptyEvent'
@@ -55,8 +57,6 @@ import {
 import { emptyDisposable } from '../../vscode/src/testutils/emptyDisposable'
 
 import open from 'open'
-import type { AutoeditsProvider } from '../../vscode/src/autoedits/autoedits-provider'
-import type { InlineCompletionItemProvider } from '../../vscode/src/completions/inline-completion-item-provider'
 import { AgentDiagnostics } from './AgentDiagnostics'
 import { AgentQuickPick } from './AgentQuickPick'
 import { AgentTabGroups } from './AgentTabGroups'

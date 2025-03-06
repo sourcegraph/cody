@@ -14,6 +14,7 @@ import type {
 import type { TelemetryEventMarketingTrackingInput } from '@sourcegraph/telemetry'
 
 import type { AuthError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
+import type { DecorationInfo } from '../autoedits/renderer/decorators/base'
 import type { ExtensionMessage, WebviewMessage } from '../chat/protocol'
 import type { CompletionBookkeepingEvent, CompletionItemID } from '../completions/analytics-logger'
 import type { FixupTaskID } from '../non-stop/FixupTask'
@@ -531,12 +532,6 @@ interface AutocompleteCompletionResult {
     completionEvent?: CompletionBookkeepingEvent | undefined | null
 }
 
-export interface AutoeditTextDiffChange {
-    type: 'insert' | 'delete'
-    range: vscode.Range
-    text?: string
-}
-
 export interface AutoeditImageDiff {
     /* Base64 encoded image suitable for rendering in dark editor themes */
     dark: string
@@ -552,6 +547,14 @@ export interface AutoeditImageDiff {
      */
     position: { line: number; column: number }
 }
+
+export interface AutoeditChanges {
+    type: 'insert' | 'delete'
+    range: vscode.Range
+    text?: string
+}
+
+export type AutoeditTextDiff = DecorationInfo
 
 interface AutocompleteEditResult {
     type: 'edit'
@@ -571,20 +574,21 @@ interface AutocompleteEditResult {
      */
     prediction: string
     /**
-     * The method in which this suggestion should be rendered.
-     * This is determined from the `clientCapabilities` provided by the client.
+     * The method that should be used to render the suggestion.
      */
-    decorations: {
+    render: {
         /**
-         * Text decorations that should be shown in the editor.
+         * Changes that should be shown inline in the editor.
          * Deletions will typically be existing text painted red.
-         * Insertions will be new text added temporarily to the document, styled like a completion
+         * Insertions will be new text added temporarily to the document, styled like a completion.
+         * Affected by the clientCapability `autoEditInlineDiff`
          */
-        text: AutoeditTextDiffChange[] | null
+        inline: AutoeditChanges[] | null
         /**
-         * Image decoration that should be shown in the editor.
+         * Changes that should be shown alongside code in the editor.
+         * Affected by the clientCapability `autoEditAsideDiff`
          */
-        image: AutoeditImageDiff | null
+        aside: AutoeditImageDiff | AutoeditTextDiff | null
     }
     /**
      * An empty list of autocompletion items.

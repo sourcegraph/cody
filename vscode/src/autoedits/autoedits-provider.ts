@@ -19,7 +19,7 @@ import type { FixupController } from '../non-stop/FixupController'
 import type { CodyStatusBar } from '../services/StatusBar'
 
 import type { CompletionBookkeepingEvent } from '../completions/analytics-logger'
-import type { AutoeditImageDiff, AutoeditTextDiffChange } from '../jsonrpc/agent-protocol'
+import type { AutoeditChanges, AutoeditImageDiff, AutoeditTextDiff } from '../jsonrpc/agent-protocol'
 import type { AutoeditsModelAdapter, AutoeditsPrompt, ModelResponse } from './adapters/base'
 import { createAutoeditsModelAdapter } from './adapters/create-adapter'
 import {
@@ -62,7 +62,7 @@ interface CompletionResult extends vscode.InlineCompletionList {
     items: AutoeditCompletionItem[]
     requestId: AutoeditRequestID
     prediction: string
-    /** @deprecated */
+    /**@deprecated */
     completionEvent?: CompletionBookkeepingEvent
 }
 
@@ -73,17 +73,9 @@ interface EditResult extends vscode.InlineCompletionList {
     range: vscode.Range
     originalText: string
     prediction: string
-    decorations: {
-        /**
-         * Text decorations that should be shown in the editor.
-         * Deletions will typically be existing text painted red.
-         * Insertions will be new text added temporarily to the document, styled like a completion
-         */
-        text: AutoeditTextDiffChange[] | null
-        /**
-         * Image decoration that should be shown in the editor.
-         */
-        image: AutoeditImageDiff | null
+    render: {
+        inline: AutoeditChanges[] | null
+        aside: AutoeditImageDiff | AutoeditTextDiff | null
     }
 }
 
@@ -514,9 +506,14 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                 originalText: codeToReplaceData.codeToRewrite,
                 range: codeToReplaceData.range,
                 prediction,
-                decorations: {
-                    image: 'imageData' in renderOutput ? renderOutput.imageData : null,
-                    text: this.getTextDecorationsForClient(renderOutput),
+                render: {
+                    aside:
+                        renderOutput.type === 'image'
+                            ? renderOutput.imageData
+                            : renderOutput.type === 'custom'
+                              ? decorationInfo
+                              : null,
+                    inline: this.getTextDecorationsForClient(renderOutput),
                 },
             }
         } catch (error) {
@@ -536,9 +533,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
         }
     }
 
-    private getTextDecorationsForClient(
-        renderOutput: AutoEditRenderOutput
-    ): AutoeditTextDiffChange[] | null {
+    private getTextDecorationsForClient(renderOutput: AutoEditRenderOutput): AutoeditChanges[] | null {
         const decorations = 'decorations' in renderOutput ? renderOutput.decorations : null
         if (!decorations) {
             return null
@@ -566,7 +561,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                     range: decoration.range,
                 }))
             case 'insertions-and-deletions': {
-                const output: AutoeditTextDiffChange[] = []
+                const output: AutoeditChanges[] = []
                 if (decorations.insertionDecorations.length > 0) {
                     output.push(
                         ...decorations.insertionDecorations.map(decoration => ({

@@ -74,9 +74,6 @@ export interface ClientCapabilities {
      * - 'insertions-only': the client can render inline decorations for insertions only, similar to completions.
      * - 'deletions-only': the client can render inline decorations for deletions only.
      * - 'insertions-and-deletions': the client can render inline decorations for both insertions and deletions.
-     *
-     * Note: This capability can impact `autoEditImageSuggestions`. If the client does not support rendering deletions,
-     * then an unified diff will be generated for the image.
      */
     autoEditInlineDiff?: 'none' | 'insertions-only' | 'deletions-only' | 'insertions-and-deletions'
 
@@ -86,8 +83,9 @@ export interface ClientCapabilities {
      * - 'image': the client supports rendering an image showing the diff to the side.
      * - 'diff': the client has its own method of rendering a diff to the side.
      *
-     * Note: The image will differ slightly depending on the `autoEditTextDecorations` capability. If the client
-     * does not support rendering deletions, then an unified diff will be generated for the image.
+     * Note: If `image` is provided, the generated image will differ depending on the `autoEditTextDecorations` capability.
+     * This is because it is preferred that deletions are shown inline in the editor. If the client does not support rendering
+     * deletions inline, then an unified diff will be generated for the image.
      */
     autoEditAsideDiff?: 'none' | 'image' | 'diff'
 
