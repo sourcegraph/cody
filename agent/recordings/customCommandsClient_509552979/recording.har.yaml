@@ -92,7 +92,7 @@ log:
         send: 0
         ssl: -1
         wait: 140
-    - _id: 4bfefedb3f90faa353028c264eb49431
+    - _id: 3c19f6e582b3e4f27fdcf59570d4a27b
       _order: 0
       cache: {}
       request:
@@ -109,7 +109,7 @@ log:
           - name: content-type
             value: application/json
           - name: traceparent
-            value: 00-30b84f0ffd899933d4bb803353355cf4-39ba1f290aa65d5f-01
+            value: 00-19925221b6cc2a3458fa1defa7a4b893-ae4e30c4c923c1c7-01
           - name: user-agent
             value: customcommandsclient/v1 (Node.js v20.4.0)
           - name: x-requested-with
@@ -174,21 +174,21 @@ log:
             topP: -1
         queryString:
           - name: api-version
-            value: "2"
+            value: "8"
           - name: client-name
             value: customcommandsclient
           - name: client-version
             value: v1
-        url: https://sourcegraph.com/.api/completions/stream?api-version=2&client-name=customcommandsclient&client-version=v1
+        url: https://sourcegraph.com/.api/completions/stream?api-version=8&client-name=customcommandsclient&client-version=v1
       response:
-        bodySize: 385
+        bodySize: 609
         content:
           mimeType: text/event-stream
-          size: 385
+          size: 609
           text: >+
             event: completion
 
-            data: {"deltaText":"Here are all the files you've shared:\n• src/example1.ts  \n• src/example2.ts\n• src/example3.ts","stopReason":"end_turn"}
+            data: {"deltaText":"Here are the files you've shared:\n\n• src/example1.ts \n• src/example2.ts\n• src/example3.ts","stopReason":"end_turn"}
 
 
             event: done
@@ -198,7 +198,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Fri, 27 Dec 2024 20:37:45 GMT
+            value: Thu, 06 Mar 2025 02:26:55 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -222,13 +222,13 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1299
+        headersSize: 1320
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-12-27T20:37:42.816Z
-      time: 2505
+      startedDateTime: 2025-03-06T02:26:51.812Z
+      time: 3321
       timings:
         blocked: -1
         connect: -1
@@ -236,8 +236,8 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 2505
-    - _id: a7ca6c95372e671983c6e55fea1c3f54
+        wait: 3321
+    - _id: 9e72768f7994cfb84ae145fa281701e9
       _order: 0
       cache: {}
       request:
@@ -254,7 +254,7 @@ log:
           - name: content-type
             value: application/json
           - name: traceparent
-            value: 00-10dd43e450f5670e20697ac085a5bbea-562b7b8f4b1a58d3-01
+            value: 00-5bd40e9fb21908c806f779deebd3fcbe-47ffc9543c416037-01
           - name: user-agent
             value: customcommandsclient/v1 (Node.js v20.4.0)
           - name: x-requested-with
@@ -290,17 +290,17 @@ log:
             topP: -1
         queryString:
           - name: api-version
-            value: "2"
+            value: "8"
           - name: client-name
             value: customcommandsclient
           - name: client-version
             value: v1
-        url: https://sourcegraph.com/.api/completions/stream?api-version=2&client-name=customcommandsclient&client-version=v1
+        url: https://sourcegraph.com/.api/completions/stream?api-version=8&client-name=customcommandsclient&client-version=v1
       response:
-        bodySize: 117
+        bodySize: 301
         content:
           mimeType: text/event-stream
-          size: 117
+          size: 301
           text: |+
             event: completion
             data: {"deltaText":"no","stopReason":"end_turn"}
@@ -311,7 +311,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Fri, 27 Dec 2024 20:37:46 GMT
+            value: Thu, 06 Mar 2025 02:26:56 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -335,13 +335,13 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1299
+        headersSize: 1320
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-12-27T20:37:45.359Z
-      time: 808
+      startedDateTime: 2025-03-06T02:26:55.154Z
+      time: 1102
       timings:
         blocked: -1
         connect: -1
@@ -349,8 +349,8 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 808
-    - _id: 4b3a65cb083f2c0c16a80a7105baeeb3
+        wait: 1102
+    - _id: d5645b3130d2337b849d3f71f76875b0
       _order: 0
       cache: {}
       request:
@@ -367,7 +367,7 @@ log:
           - name: content-type
             value: application/json
           - name: traceparent
-            value: 00-f8aafe08143b0bb2b215a4bddb5936fa-b3d4dc52cfb7d927-01
+            value: 00-b418c8491efdf3448e4a98492072d161-3f14c9cdbd9192ce-01
           - name: user-agent
             value: customcommandsclient/v1 (Node.js v20.4.0)
           - name: x-requested-with
@@ -473,20 +473,20 @@ log:
             topP: -1
         queryString:
           - name: api-version
-            value: "2"
+            value: "8"
           - name: client-name
             value: customcommandsclient
           - name: client-version
             value: v1
-        url: https://sourcegraph.com/.api/completions/stream?api-version=2&client-name=customcommandsclient&client-version=v1
+        url: https://sourcegraph.com/.api/completions/stream?api-version=8&client-name=customcommandsclient&client-version=v1
       response:
-        bodySize: 116
+        bodySize: 300
         content:
           mimeType: text/event-stream
-          size: 116
+          size: 300
           text: |+
             event: completion
-            data: {"deltaText":"7","stopReason":"end_turn"}
+            data: {"deltaText":"6","stopReason":"end_turn"}
 
             event: done
             data: {}
@@ -494,7 +494,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Fri, 21 Feb 2025 22:46:11 GMT
+            value: Thu, 06 Mar 2025 02:26:57 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -518,13 +518,13 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1299
+        headersSize: 1320
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-02-21T22:46:09.511Z
-      time: 2457
+      startedDateTime: 2025-03-06T02:26:56.277Z
+      time: 1320
       timings:
         blocked: -1
         connect: -1
@@ -532,8 +532,8 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 2457
-    - _id: 6bf2501884491cd1c6f6f52c22eaba8f
+        wait: 1320
+    - _id: bae66576e73c6c98050a7cc623c9e0fe
       _order: 0
       cache: {}
       request:
@@ -550,7 +550,7 @@ log:
           - name: content-type
             value: application/json
           - name: traceparent
-            value: 00-e921341a329062630398c1b0bc5c251a-233a1f539fd750a0-01
+            value: 00-cc638c3674ce741e7da04f8a824f7916-ff6dba6963269ba9-01
           - name: user-agent
             value: customcommandsclient/v1 (Node.js v20.4.0)
           - name: x-requested-with
@@ -631,17 +631,17 @@ log:
             topP: -1
         queryString:
           - name: api-version
-            value: "2"
+            value: "8"
           - name: client-name
             value: customcommandsclient
           - name: client-version
             value: v1
-        url: https://sourcegraph.com/.api/completions/stream?api-version=2&client-name=customcommandsclient&client-version=v1
+        url: https://sourcegraph.com/.api/completions/stream?api-version=8&client-name=customcommandsclient&client-version=v1
       response:
-        bodySize: 170
+        bodySize: 354
         content:
           mimeType: text/event-stream
-          size: 170
+          size: 354
           text: |+
             event: completion
             data: {"deltaText":"// hello","stopReason":"stop_sequence"}
@@ -652,7 +652,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Fri, 21 Feb 2025 22:46:13 GMT
+            value: Thu, 06 Mar 2025 02:26:59 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -676,13 +676,13 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1299
+        headersSize: 1320
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-02-21T22:46:12.012Z
-      time: 1310
+      startedDateTime: 2025-03-06T02:26:57.610Z
+      time: 2201
       timings:
         blocked: -1
         connect: -1
@@ -690,8 +690,8 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 1310
-    - _id: 4a1005f2f803fcf7e22b9b3a2d322c6e
+        wait: 2201
+    - _id: 5bb5e266d9ce9dbf5aeb3c8911884447
       _order: 0
       cache: {}
       request:
@@ -708,7 +708,7 @@ log:
           - name: content-type
             value: application/json
           - name: traceparent
-            value: 00-fb5564ef4e5d5089f74fd084794e3380-82fdc0dc975831d5-01
+            value: 00-bd3a5ea47deb959b59430f33c7c32fc6-416018f64b7bd206-01
           - name: user-agent
             value: customcommandsclient/v1 (Node.js v20.4.0)
           - name: x-requested-with
@@ -799,21 +799,21 @@ log:
             topP: -1
         queryString:
           - name: api-version
-            value: "2"
+            value: "8"
           - name: client-name
             value: customcommandsclient
           - name: client-version
             value: v1
-        url: https://sourcegraph.com/.api/completions/stream?api-version=2&client-name=customcommandsclient&client-version=v1
+        url: https://sourcegraph.com/.api/completions/stream?api-version=8&client-name=customcommandsclient&client-version=v1
       response:
-        bodySize: 587
+        bodySize: 642
         content:
           mimeType: text/event-stream
-          size: 587
+          size: 642
           text: >+
             event: completion
 
-            data: {"deltaText":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string\n    isMammal: boolean\n    logAnimalName(): void\n}\n/* SELECTION_END */\n","stopReason":"stop_sequence"}
+            data: {"deltaText":"export interface Animal {\n    name: string\n    makeAnimalSound(): string\n    isMammal: boolean\n    logAnimalName(): void\n}","stopReason":"stop_sequence"}
 
 
             event: done
@@ -823,7 +823,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Fri, 21 Feb 2025 22:46:15 GMT
+            value: Thu, 06 Mar 2025 02:27:01 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -847,13 +847,13 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1299
+        headersSize: 1320
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-02-21T22:46:13.353Z
-      time: 2186
+      startedDateTime: 2025-03-06T02:26:59.834Z
+      time: 2007
       timings:
         blocked: -1
         connect: -1
@@ -861,7 +861,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 2186
+        wait: 2007
     - _id: f1b1cde4cd57488b7f0137954f0302f5
       _order: 0
       cache: {}
