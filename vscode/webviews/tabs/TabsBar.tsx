@@ -412,7 +412,7 @@ function useTabs(
                         tooltip: (
                             <>
                                 {IDE === CodyIDE.VSCode && (
-                                    <Kbd macOS="shift+opt+l" linuxAndWindows="shift+alt+l" />
+                                    <Kbd macOS="shift+opt+/" linuxAndWindows="shift+alt+l" />
                                 )}
                             </>
                         ),
