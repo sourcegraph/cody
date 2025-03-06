@@ -37,7 +37,7 @@ data class AutocompleteEditResult(
   val range: Range,
   val originalText: String,
   val prediction: String,
-  val decorations: DecorationsParams,
+  val render: RenderParams,
   val items: List<AutocompleteItem>,
   val completionEvent: CompletionBookkeepingEvent? = null,
 ) : AutocompleteResult() {

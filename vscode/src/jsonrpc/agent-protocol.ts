@@ -583,12 +583,17 @@ interface AutocompleteEditResult {
          * Insertions will be new text added temporarily to the document, styled like a completion.
          * Affected by the clientCapability `autoEditInlineDiff`
          */
-        inline: AutoeditChanges[] | null
+        inline: {
+            changes: AutoeditChanges[] | null
+        }
         /**
          * Changes that should be shown alongside code in the editor.
          * Affected by the clientCapability `autoEditAsideDiff`
          */
-        aside: AutoeditImageDiff | AutoeditTextDiff | null
+        aside: {
+            image: AutoeditImageDiff | null
+            diff: AutoeditTextDiff | null
+        }
     }
     /**
      * An empty list of autocompletion items.

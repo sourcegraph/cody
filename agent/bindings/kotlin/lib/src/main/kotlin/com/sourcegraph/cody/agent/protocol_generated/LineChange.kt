@@ -3,15 +3,18 @@ package com.sourcegraph.cody.agent.protocol_generated;
 
 import com.google.gson.annotations.SerializedName;
 
-data class AutoeditTextDecoration(
-  val type: TypeEnum, // Oneof: insert, delete
-  val range: Range,
-  val text: String? = null,
+data class LineChange(
+  val id: String,
+  val type: TypeEnum, // Oneof: insert, delete, unchanged
+  val originalRange: Range,
+  val modifiedRange: Range,
+  val text: String,
 ) {
 
   enum class TypeEnum {
     @SerializedName("insert") Insert,
     @SerializedName("delete") Delete,
+    @SerializedName("unchanged") Unchanged,
   }
 }
 

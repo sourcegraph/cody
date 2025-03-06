@@ -74,8 +74,13 @@ interface EditResult extends vscode.InlineCompletionList {
     originalText: string
     prediction: string
     render: {
-        inline: AutoeditChanges[] | null
-        aside: AutoeditImageDiff | AutoeditTextDiff | null
+        inline: {
+            changes: AutoeditChanges[] | null
+        }
+        aside: {
+            image: AutoeditImageDiff | null
+            diff: AutoeditTextDiff | null
+        }
     }
 }
 
@@ -507,13 +512,13 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                 range: codeToReplaceData.range,
                 prediction,
                 render: {
-                    aside:
-                        renderOutput.type === 'image'
-                            ? renderOutput.imageData
-                            : renderOutput.type === 'custom'
-                              ? decorationInfo
-                              : null,
-                    inline: this.getTextDecorationsForClient(renderOutput),
+                    inline: {
+                        changes: this.getTextDecorationsForClient(renderOutput),
+                    },
+                    aside: {
+                        image: renderOutput.type === 'image' ? renderOutput.imageData : null,
+                        diff: renderOutput.type === 'custom' ? decorationInfo : null,
+                    },
                 },
             }
         } catch (error) {

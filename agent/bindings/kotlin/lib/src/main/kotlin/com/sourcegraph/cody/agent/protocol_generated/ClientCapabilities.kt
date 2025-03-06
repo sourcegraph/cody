@@ -7,8 +7,8 @@ data class ClientCapabilities(
   val authentication: AuthenticationEnum? = null, // Oneof: enabled, none
   val completions: CompletionsEnum? = null, // Oneof: none
   val autoEdit: AutoEditEnum? = null, // Oneof: none, enabled
-  val autoEditTextDecorations: AutoEditTextDecorationsEnum? = null, // Oneof: none, insertions-only, deletions-only, insertions-and-deletions
-  val autoEditImageDecorations: AutoEditImageDecorationsEnum? = null, // Oneof: none, enabled
+  val autoEditInlineDiff: AutoEditInlineDiffEnum? = null, // Oneof: none, insertions-only, deletions-only, insertions-and-deletions
+  val autoEditAsideDiff: AutoEditAsideDiffEnum? = null, // Oneof: none, image, diff
   val chat: ChatEnum? = null, // Oneof: none, streaming
   val git: GitEnum? = null, // Oneof: none, enabled
   val progressBars: ProgressBarsEnum? = null, // Oneof: none, enabled
@@ -44,16 +44,17 @@ data class ClientCapabilities(
     @SerializedName("enabled") Enabled,
   }
 
-  enum class AutoEditTextDecorationsEnum {
+  enum class AutoEditInlineDiffEnum {
     @SerializedName("none") None,
     @SerializedName("insertions-only") `Insertions-only`,
     @SerializedName("deletions-only") `Deletions-only`,
     @SerializedName("insertions-and-deletions") `Insertions-and-deletions`,
   }
 
-  enum class AutoEditImageDecorationsEnum {
+  enum class AutoEditAsideDiffEnum {
     @SerializedName("none") None,
-    @SerializedName("enabled") Enabled,
+    @SerializedName("image") Image,
+    @SerializedName("diff") Diff,
   }
 
   enum class ChatEnum {
