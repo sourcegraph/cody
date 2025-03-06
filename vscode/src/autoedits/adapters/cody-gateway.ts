@@ -5,9 +5,7 @@ import { autoeditsOutputChannelLogger } from '../output-channel-logger'
 import type { AutoeditModelOptions, AutoeditsModelAdapter, ModelResponse } from './base'
 import {
     type AutoeditsRequestBody,
-    type FireworksChatModelRequestParams,
     type FireworksCompatibleRequestParams,
-    type FireworksCompletionModelRequestParams,
     getMaxOutputTokensForAutoedits,
     getModelResponse,
     getOpenaiCompatibleChatPrompt,
@@ -80,7 +78,6 @@ export class CodyGatewayAdapter implements AutoeditsModelAdapter {
                 type: 'content',
                 content: options.codeToRewrite,
             },
-            rewrite_speculation: true,
             user: options.userId || undefined,
         }
 
@@ -91,12 +88,12 @@ export class CodyGatewayAdapter implements AutoeditsModelAdapter {
                     systemMessage: options.prompt.systemMessage,
                     userMessage: options.prompt.userMessage,
                 }),
-            } as FireworksChatModelRequestParams
+            }
         }
 
         return {
             ...baseBody,
             prompt: options.prompt.userMessage,
-        } as FireworksCompletionModelRequestParams
+        }
     }
 }
