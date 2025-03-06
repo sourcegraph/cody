@@ -113,7 +113,10 @@ export function checkVersion({
     return (insider && isInsiderBuild) || semver.gte(currentVersion, minimumVersion)
 }
 
-type CodyApiVersion = 0 | 1 | 2
+// @link latestSupportedCompletionsStreamAPIVersion
+// Docs: https://sourcegraph.sourcegraph.com/search?q=context:global+latestSupportedCompletionsStreamAPIVersion
+type CodyApiVersion = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8
+export const LatestSupportedCompletionsStreamAPIVersion = 8
 
 /** @internal Exported for testing only. */
 export function inferCodyApiVersion(version: string, isDotCom: boolean): CodyApiVersion {
@@ -121,9 +124,8 @@ export function inferCodyApiVersion(version: string, isDotCom: boolean): CodyApi
     const isLocalBuild = parsedVersion === '0.0.0'
 
     if (isDotCom || isLocalBuild) {
-        // The most recent version is api-version=2, which was merged on 2024-09-11
-        // https://github.com/sourcegraph/sourcegraph/pull/470
-        return 2
+        // The most recent version is api-version=8, LatestSupportedCompletionsStreamAPIVersion
+        return LatestSupportedCompletionsStreamAPIVersion
     }
 
     // On Cloud deployments from main, the version identifier will use a format
@@ -132,17 +134,25 @@ export function inferCodyApiVersion(version: string, isDotCom: boolean): CodyApi
     // allowing us to selectively enable new API versions on instances like SG02
     // (that deploy frequently) without crashing on other Cloud deployments that
     // release less frequently.
-    const isCloudBuildFromMain = parsedVersion === null
-    if (isCloudBuildFromMain) {
+    if (parsedVersion === null) {
+        // api-version=2 was merged on 2024-09-11:
+        // https://github.com/sourcegraph/sourcegraph/pull/470
         const date = parseDateFromPreReleaseVersion(version)
         if (date && date >= new Date('2024-09-11')) {
-            return 2
+            return LatestSupportedCompletionsStreamAPIVersion
         }
         // It's safe to bump this up to api-version=2 after the 5.8 release
         return 1
     }
 
+    // 6.1.0+ is the first version to support api-version=8.
+    // https://github.com/sourcegraph/sourcegraph/pull/3507
+    if (semver.gte(parsedVersion, '6.1.0')) {
+        return 8
+    }
+
     // 5.8.0+ is the first version to support api-version=2.
+    // https://github.com/sourcegraph/sourcegraph/pull/470
     if (semver.gte(parsedVersion, '5.8.0')) {
         return 2
     }

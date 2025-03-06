@@ -94,7 +94,7 @@ log:
         send: 0
         ssl: -1
         wait: 211
-    - _id: 6dd423ade7a744ddf04a958027ad3ca5
+    - _id: 19415cc71acacd46afcef34a2c2fd509
       _order: 0
       cache: {}
       request:
@@ -111,7 +111,7 @@ log:
           - name: content-type
             value: application/json
           - name: traceparent
-            value: 00-9c08165c3bcc9a1a63cc7388f6d27d5d-c538ba24be8f067e-01
+            value: 00-1414abb2e73e5209d4ae024fe24151a3-2b550495366fbd64-01
           - name: user-agent
             value: fix/v1 (Node.js v20.4.0)
           - name: x-requested-with
@@ -191,17 +191,17 @@ log:
             topP: -1
         queryString:
           - name: api-version
-            value: "2"
+            value: "8"
           - name: client-name
             value: fix
           - name: client-version
             value: v1
-        url: https://sourcegraph.com/.api/completions/stream?api-version=2&client-name=fix&client-version=v1
+        url: https://sourcegraph.com/.api/completions/stream?api-version=8&client-name=fix&client-version=v1
       response:
-        bodySize: 270
+        bodySize: 497
         content:
           mimeType: text/event-stream
-          size: 270
+          size: 497
           text: >+
             event: completion
 
@@ -215,7 +215,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 03 Mar 2025 08:32:24 GMT
+            value: Thu, 06 Mar 2025 02:26:56 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -244,8 +244,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-03-03T08:32:22.092Z
-      time: 2006
+      startedDateTime: 2025-03-06T02:26:54.999Z
+      time: 1826
       timings:
         blocked: -1
         connect: -1
@@ -253,7 +253,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 2006
+        wait: 1826
     - _id: f1b1cde4cd57488b7f0137954f0302f5
       _order: 0
       cache: {}

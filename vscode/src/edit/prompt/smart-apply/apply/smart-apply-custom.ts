@@ -20,6 +20,7 @@ import type {
     BuiltInteraction,
     EditPromptBuilder,
 } from '../../../../edit/prompt/type'
+import { getInstructionPromptWithCharLimit } from '../utils'
 
 // https://huggingface.co/Qwen/Qwen2.5-Coder-32B-Instruct
 const CUSTOM_MODEL_DEFAULTS = {
@@ -91,20 +92,6 @@ Here is the code changes which you need to apply to the code enclosed in the <${
 <${SMART_APPLY_CUSTOM_PROMPT_TOPICS.TARGET_CHANGES}>${replacementCodeBlock}</${SMART_APPLY_CUSTOM_PROMPT_TOPICS.TARGET_CHANGES}>
 
 Please apply all the code changes suggested in the <${SMART_APPLY_CUSTOM_PROMPT_TOPICS.TARGET_CHANGES}></${SMART_APPLY_CUSTOM_PROMPT_TOPICS.TARGET_CHANGES}> into the <${SMART_APPLY_CUSTOM_PROMPT_TOPICS.CODE_TO_UPDATE}></${SMART_APPLY_CUSTOM_PROMPT_TOPICS.CODE_TO_UPDATE}> code to produce the updated code enclosed in the <${SMART_APPLY_CUSTOM_PROMPT_TOPICS.FINAL_CODE}></${SMART_APPLY_CUSTOM_PROMPT_TOPICS.FINAL_CODE}> tag.`
-}
-
-export function getInstructionPromptWithCharLimit(
-    instruction: PromptString,
-    tokenLimit: number
-): PromptString {
-    const charLimit = tokensToChars(tokenLimit)
-    if (instruction.length <= charLimit) {
-        return instruction
-    }
-    // First and the last content is importants, so we keep them and truncate the middle.
-    const firstPart = instruction.slice(0, charLimit / 2)
-    const lastPart = instruction.slice(-charLimit / 2)
-    return ps`${firstPart}...${lastPart}`
 }
 
 export function getPrefixAndSuffixWithCharLimit(

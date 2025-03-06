@@ -4,6 +4,133 @@ This is a log of all notable changes to Cody for VS Code.
 
 <!--- {/_ CHANGELOG_START _/} -->
 
+## 1.74.0
+
+### Features
+
+#### Auto-Edit
+
+- Improve unified diff output [#7158](https://github.com/sourcegraph/cody/pull/7158)
+- Add more test cases for image rendering [#7138](https://github.com/sourcegraph/cody/pull/7138)
+- Support unified diff and refactor diff format [#7000](https://github.com/sourcegraph/cody/pull/7000)
+- Decrease debounce interval [#7120](https://github.com/sourcegraph/cody/pull/7120)
+
+#### Chat
+
+- UI for diff preview in chat CODY-5139 [#7217](https://github.com/sourcegraph/cody/pull/7217)
+- generate custom chat titles on first message automatically [#7063](https://github.com/sourcegraph/cody/pull/7063)
+- Feat(commit message): commit message out of experimental stage [#7166](https://github.com/sourcegraph/cody/pull/7166)
+
+#### Context
+
+- Enable symf for Enterprise Starter [#7240](https://github.com/sourcegraph/cody/pull/7240)
+
+#### Smart-Apply
+
+- prefetch everything [#6768](https://github.com/sourcegraph/cody/pull/6768)
+
+#### Webview
+
+- add support for <think> tags in Chat Message [#6845](https://github.com/sourcegraph/cody/pull/6845)
+
+### Fix
+
+#### Auth
+
+- Extension authorizes Search even if Cody is disabled in site config [#7234](https://github.com/sourcegraph/cody/pull/7234)
+- Fix already disposed from CodyAuthService [#7244](https://github.com/sourcegraph/cody/pull/7244)
+- Handle customer proxy re-auth response by retrying, not prompting user for different token [#6652](https://github.com/sourcegraph/cody/pull/6652)
+- Enable credentials synchronization between Cody and Search extensions [#7123](https://github.com/sourcegraph/cody/pull/7123)
+
+#### Chat
+
+- Fix the filename container location in chat [#7263](https://github.com/sourcegraph/cody/pull/7263)
+- prompt caching feature flag enrollement [#7177](https://github.com/sourcegraph/cody/pull/7177)
+- remove current selection from initial mention [#7161](https://github.com/sourcegraph/cody/pull/7161)
+- Fix already disposed error from WebviewViewManager (closes #3040) [#7248](https://github.com/sourcegraph/cody/pull/7248)
+- Fix disposed errors from CodyConsole (closes #2893, closes #2885) [#7245](https://github.com/sourcegraph/cody/pull/7245)
+- Improve the UI of the thinking display [#7216](https://github.com/sourcegraph/cody/pull/7216)
+- Fix: Make @-button work in prompt editor v2 [#7195](https://github.com/sourcegraph/cody/pull/7195)
+- Fix(agentic chat): terminal and openCtx are not registered as tools [#7130](https://github.com/sourcegraph/cody/pull/7130)
+- Fix: prompt templates failed when pasting linebreaks [#7191](https://github.com/sourcegraph/cody/pull/7191)
+
+#### Editor
+
+- Fix range handling for editor selection content [#7128](https://github.com/sourcegraph/cody/pull/7128)
+- Fix threading issues in 'Ask Cody To Fix' feature, add caching [#7229](https://github.com/sourcegraph/cody/pull/7229)
+- Fix(Inline Edit): removes reasoning models from selector [#7238](https://github.com/sourcegraph/cody/pull/7238)
+- Fix: Mentions menu placement/behavior in prompt input v2 [#7194](https://github.com/sourcegraph/cody/pull/7194)
+
+#### Keybindings
+
+- simplify chat panel toggle behavior with opt+L [#7115](https://github.com/sourcegraph/cody/pull/7115)
+
+#### Smart-Apply
+
+- do not create new files on prefetching [#7270](https://github.com/sourcegraph/cody/pull/7270)
+- add insert events in the smart apply logging payload [#7197](https://github.com/sourcegraph/cody/pull/7197)
+- stripping of markdown code blocks [#7105](https://github.com/sourcegraph/cody/pull/7105)
+
+#### Ui
+
+- Consolidate the extension settings with the web view settings(SRCH-1649) [#7096](https://github.com/sourcegraph/cody/pull/7096)
+- Feat: Improve warm cody web startup time [#6947](https://github.com/sourcegraph/cody/pull/6947)
+- Simplify state machine implementation of prosemirror prompt input [#7154](https://github.com/sourcegraph/cody/pull/7154)
+- Unclickable links no longer display in Cody WelcomeMessage [#7102](https://github.com/sourcegraph/cody/pull/7102)
+- Remove mention of unlimited LLM usage [#7151](https://github.com/sourcegraph/cody/pull/7151)
+- Fix code search download [#7124](https://github.com/sourcegraph/cody/pull/7124)
+
+#### Vscode
+
+- Disable nightly extension in launch configurations [#7152](https://github.com/sourcegraph/cody/pull/7152)
+- Commit generation: prioritize Gemini Flash models [#7252](https://github.com/sourcegraph/cody/pull/7252)
+- Fix already disposed exception from withAgent [#7242](https://github.com/sourcegraph/cody/pull/7242)
+
+### Chore
+
+#### Auto-Edit
+
+- improve inline renderer `insertText` extraction [#7214](https://github.com/sourcegraph/cody/pull/7214)
+- Set background color for test images [#7139](https://github.com/sourcegraph/cody/pull/7139)
+
+#### Chat
+
+- Add the minus button to the thought process [#7222](https://github.com/sourcegraph/cody/pull/7222)
+
+#### Release
+
+- remove unreleased section [#7333](https://github.com/sourcegraph/cody/pull/7333)
+- improve release note generation [#7150](https://github.com/sourcegraph/cody/pull/7150)
+- fix new line rendering in changelog PRs [#7149](https://github.com/sourcegraph/cody/pull/7149)
+
+### Refactor
+
+#### Chat
+
+- Render think content as Markdown [#7215](https://github.com/sourcegraph/cody/pull/7215)
+
+#### Telemetry
+
+- opt-out option [#7205](https://github.com/sourcegraph/cody/pull/7205)
+
+### Reverts
+
+  There were no reverts for this release
+
+### Uncategorized
+
+#### Others
+
+- Java.lang.IllegalArgumentException: Invalid range specified [#7193](https://github.com/sourcegraph/cody/pull/7193)
+- NLS eval: add fork:yes archived:yes to eval query [#7170](https://github.com/sourcegraph/cody/pull/7170)
+- Fix API incompatibility issue in IJ 2025 [#7169](https://github.com/sourcegraph/cody/pull/7169)
+- Improve query rewrite for search context [#7164](https://github.com/sourcegraph/cody/pull/7164)
+- Update gradle and deps [#7163](https://github.com/sourcegraph/cody/pull/7163)
+- Fix inconsistent workspace handling in agent [#7160](https://github.com/sourcegraph/cody/pull/7160)
+- Handle case when VirtualFile is null [#7156](https://github.com/sourcegraph/cody/pull/7156)
+- Docs: prompt library at mentions [#7091](https://github.com/sourcegraph/cody/pull/7091)
+
+
 ## 1.72.0
 
 ### Features

@@ -551,8 +551,9 @@ describe('Agent', () => {
                 expect.arrayContaining([
                     'cody.command.explain:executed',
                     'cody.chat-question:submitted',
+                    'cody.experiment.promptCachingOnMessages:enrolled',
                     'cody.chat-question:executed',
-                    'cody.chatResponse:noCode',
+                    'cody.chatResponse:hasCode',
                 ])
             )
         }, 30_000)
@@ -570,6 +571,7 @@ describe('Agent', () => {
                 expect.arrayContaining([
                     'cody.command.smell:executed',
                     'cody.chat-question:submitted',
+                    'cody.experiment.promptCachingOnMessages:enrolled',
                     'cody.chat-question:executed',
                     'cody.chatResponse:hasCode',
                 ])
