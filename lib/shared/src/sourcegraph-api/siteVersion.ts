@@ -116,7 +116,7 @@ export function checkVersion({
 // @link latestSupportedCompletionsStreamAPIVersion
 // Docs: https://sourcegraph.sourcegraph.com/search?q=context:global+latestSupportedCompletionsStreamAPIVersion
 type CodyApiVersion = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8
-const latestSupportedCompletionsStreamAPIVersion = 8
+export const LatestSupportedCompletionsStreamAPIVersion = 8
 
 /** @internal Exported for testing only. */
 export function inferCodyApiVersion(version: string, isDotCom: boolean): CodyApiVersion {
@@ -124,7 +124,7 @@ export function inferCodyApiVersion(version: string, isDotCom: boolean): CodyApi
     const isLocalBuild = parsedVersion === '0.0.0'
 
     if (isDotCom || isLocalBuild) {
-        // The most recent version is api-version=8, latestSupportedCompletionsStreamAPIVersion
+        // The most recent version is api-version=8, LatestSupportedCompletionsStreamAPIVersion
         return 8
     }
 
@@ -139,7 +139,7 @@ export function inferCodyApiVersion(version: string, isDotCom: boolean): CodyApi
         // https://github.com/sourcegraph/sourcegraph/pull/470
         const date = parseDateFromPreReleaseVersion(version)
         if (date && date >= new Date('2024-09-11')) {
-            return latestSupportedCompletionsStreamAPIVersion
+            return LatestSupportedCompletionsStreamAPIVersion
         }
         // It's safe to bump this up to api-version=2 after the 5.8 release
         return 1

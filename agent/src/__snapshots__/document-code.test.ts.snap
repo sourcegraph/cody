@@ -7,7 +7,8 @@ export const TestLogger = {
         // Do some stuff
 
         /**
-         * Logs a standard message indicating log recording.
+         * Records a log entry by printing a default log message.
+         * 
          * @internal
          */
         function recordLog() {
@@ -22,9 +23,9 @@ export const TestLogger = {
 
 exports[`Document Code > commands/document (Kotlin class name) 1`] = `
 "/**
- * Represents a Hello class with a greeting method.
+ * Represents a class that provides a greeting message.
  *
- * @constructor Creates an instance of the Hello class.
+ * @return A string with a standard "Hello, world!" greeting.
  */
 class He/* CURSOR */llo {
     fun greeting(): String {
@@ -51,7 +52,7 @@ export class TestClass {
     constructor(private shouldGreet: boolean) {}
 
     /**
-         * Prints a greeting message if greeting is enabled.
+         * Performs a greeting by logging 'Hello World!' if greeting is enabled.
          */
     public functionName() {
         if (this.shouldGreet) {
@@ -100,9 +101,9 @@ exports[`Document Code > editCommands/document (basic function) 1`] = `
 "/**
  * Calculates the sum of two numbers.
  * 
- * @param a The first number to add
- * @param b The second number to add
- * @returns The sum of a and b
+ * @param a The first number to add.
+ * @param b The second number to add.
+ * @returns The sum of a and b.
  */
 export function sum(a: number, b: number): number {
     /* CURSOR */
