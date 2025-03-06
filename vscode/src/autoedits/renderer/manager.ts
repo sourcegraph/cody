@@ -357,7 +357,7 @@ export class AutoEditsDefaultRendererManager
             position,
             docContext,
         }: GetRenderOutputArgs,
-        capabilities: AutoeditClientCapabilities
+        capabilities?: AutoeditClientCapabilities
     ): AutoEditRenderOutput {
         const updatedPrediction = adjustPredictionIfInlineCompletionPossible(
             prediction,
