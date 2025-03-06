@@ -1,6 +1,5 @@
 import * as Dialog from '@radix-ui/react-dialog'
 import * as Tabs from '@radix-ui/react-tabs'
-
 import clsx from 'clsx'
 import {
     BookTextIcon,
@@ -10,6 +9,7 @@ import {
     PlusIcon,
     Trash2Icon,
 } from 'lucide-react'
+import { Kbd } from '../components/Kbd'
 import { getVSCodeAPI } from '../utils/VSCodeApi'
 import { View } from './types'
 
@@ -409,7 +409,13 @@ function useTabs(
                         Icon: PlusIcon,
                         command: currentView === View.Chat ? newChatCommand : null,
                         changesView: true,
-                        tooltip: <>{'(⌘N)'}</>,
+                        tooltip: (
+                            <>
+                                {IDE === CodyIDE.VSCode && (
+                                    <Kbd macOS="shift+opt+l" linuxAndWindows="shift+alt+l" />
+                                )}
+                            </>
+                        ),
                     },
                     {
                         view: View.History,
