@@ -69,26 +69,27 @@ export interface ClientCapabilities {
     autoEdit?: 'none' | 'enabled' | undefined | null
 
     /**
-     * The text decorations that the client supports when rendering auto-edit suggestions.
-     * - 'none': the client does not support rendering decorations.
-     * - 'insertions-only': the client can render decorations for insertions only, similar to completions.
-     * - 'deletions-only': the client can render decorations for deletions only.
-     * - 'insertions-and-deletions': the client can render decorations for both insertions and deletions.
+     * The inline diff decorations that the client supports when rendering auto-edit suggestions.
+     * - 'none': the client does not support rendering an inline diff.
+     * - 'insertions-only': the client can render inline decorations for insertions only, similar to completions.
+     * - 'deletions-only': the client can render inline decorations for deletions only.
+     * - 'insertions-and-deletions': the client can render inline decorations for both insertions and deletions.
      *
      * Note: This capability can impact `autoEditImageSuggestions`. If the client does not support rendering deletions,
      * then an unified diff will be generated for the image.
      */
-    autoEditTextDecorations?: 'none' | 'insertions-only' | 'deletions-only' | 'insertions-and-deletions'
+    autoEditInlineDiff?: 'none' | 'insertions-only' | 'deletions-only' | 'insertions-and-deletions'
 
     /**
-     * The image decorations that the client supports for auto-edit suggestions.
-     * - 'none': the client does not support rendering image decorations.
-     * - 'enabled': the client can render image decorations for auto-edit suggestions.
+     * The aside diff decorations that the client supports when rendering auto-edit suggestions.
+     * - 'none': the client does not support rendering diffs to the side
+     * - 'image': the client supports rendering an image showing the diff to the side.
+     * - 'diff': the client has its own method of rendering a diff to the side.
      *
      * Note: The image will differ slightly depending on the `autoEditTextDecorations` capability. If the client
      * does not support rendering deletions, then an unified diff will be generated for the image.
      */
-    autoEditImageDecorations?: 'none' | 'enabled'
+    autoEditAsideDiff?: 'none' | 'image' | 'diff'
 
     /**
      * When 'streaming', handles 'chat/updateMessageInProgress' streaming notifications.

@@ -531,13 +531,13 @@ interface AutocompleteCompletionResult {
     completionEvent?: CompletionBookkeepingEvent | undefined | null
 }
 
-export interface AutoeditTextDecoration {
+export interface AutoeditTextDiffChange {
     type: 'insert' | 'delete'
     range: vscode.Range
     text?: string
 }
 
-export interface AutoeditImageDecoration {
+export interface AutoeditImageDiff {
     /* Base64 encoded image suitable for rendering in dark editor themes */
     dark: string
     /* Base64 encoded image suitable for rendering in light editor themes */
@@ -580,11 +580,11 @@ interface AutocompleteEditResult {
          * Deletions will typically be existing text painted red.
          * Insertions will be new text added temporarily to the document, styled like a completion
          */
-        text: AutoeditTextDecoration[] | null
+        text: AutoeditTextDiffChange[] | null
         /**
          * Image decoration that should be shown in the editor.
          */
-        image: AutoeditImageDecoration | null
+        image: AutoeditImageDiff | null
     }
     /**
      * An empty list of autocompletion items.

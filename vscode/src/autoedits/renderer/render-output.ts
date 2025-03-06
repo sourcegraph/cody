@@ -10,9 +10,9 @@ import { autoeditsOutputChannelLogger } from '../output-channel-logger'
 import type { AutoEditDecorations, DecorationInfo } from './decorators/base'
 import { cssPropertiesToString } from './decorators/utils'
 import { isOnlyAddingTextForModifiedLines, isOnlyRemovingTextForModifiedLines } from './diff-utils'
-import type { GeneratedImageSuggestion } from './image-gen'
+import { type GeneratedImageSuggestion, generateSuggestionAsImage } from './image-gen'
 import { getEndColumnForLine } from './image-gen/utils'
-import type { DiffMode } from './image-gen/visual-diff/types'
+import { makeVisualDiff } from './image-gen/visual-diff'
 import { getCompletionText } from './render-output-utils'
 
 export interface GetRenderOutputArgs {
@@ -84,6 +84,15 @@ interface ImageRenderOutput {
     } & GeneratedImageSuggestion
 }
 
+/**
+ * This is an escape hatch to support clients that do not support images when rendering the diff to the side.
+ * This is used when the client has `autoEditAsideDiff` set to `diff`.
+ */
+interface CustomRenderOutput {
+    type: 'custom'
+    decorations: AutoEditDecorations
+}
+
 export type AutoEditRenderOutput =
     | NoCompletionRenderOutput
     | LegacyCompletionRenderOutput
@@ -92,6 +101,7 @@ export type AutoEditRenderOutput =
     | LegacyDecorationsRenderOutput
     | DecorationsRenderOutput
     | ImageRenderOutput
+    | CustomRenderOutput
 
 /**
  * Manages the rendering of an auto-edit suggestion in the editor.
@@ -102,6 +112,84 @@ export type AutoEditRenderOutput =
  * 4. As an image (adding/removing text in a complex diff where decorations are not desirable)
  */
 export class AutoEditsRenderOutput {
+    protected getInlineRenderOutput(
+        args: GetRenderOutputArgs,
+        capabilities: AutoeditClientCapabilities
+    ): AutoEditRenderOutput | null {
+        if (!capabilities.autoEditInlineDiff || capabilities.autoEditInlineDiff === 'none') {
+            // Inline diff rendering is disabled or not supported
+            return null
+        }
+
+        const canRenderAside =
+            capabilities.autoEditAsideDiff && capabilities.autoEditAsideDiff !== 'none'
+        const shouldRenderInline = this.shouldRenderInlineDiff(args.decorationInfo, capabilities)
+
+        if (!shouldRenderInline && canRenderAside) {
+            // We have determined this diff is not suitable to render inline, and we know we can render aside.
+            return null
+        }
+
+        return {
+            type: 'decorations',
+            decorations: {
+                ...this.getInlineDecorations(args.decorationInfo),
+                // No need to show insertion marker when only using inline decorations
+                insertMarkerDecorations: [],
+            },
+        }
+    }
+
+    protected getAsideRenderOutput(
+        args: GetRenderOutputArgs,
+        capabilities: AutoeditClientCapabilities
+    ): AutoEditRenderOutput | null {
+        if (!capabilities.autoEditAsideDiff || capabilities.autoEditAsideDiff === 'none') {
+            // Aside diff rendering is disabled or not supported
+            return null
+        }
+
+        if (capabilities.autoEditAsideDiff === 'diff') {
+            return {
+                type: 'custom',
+                decorations: {
+                    insertMarkerDecorations: [],
+                    ...this.getInlineDecorations(args.decorationInfo),
+                },
+            }
+        }
+
+        const diffMode =
+            capabilities.autoEditInlineDiff === 'deletions-only' ||
+            capabilities.autoEditInlineDiff === 'insertions-and-deletions'
+                ? 'additions'
+                : 'unified'
+        const { diff, position } = makeVisualDiff(args.decorationInfo, diffMode, args.document)
+        const image = generateSuggestionAsImage({
+            diff,
+            lang: args.document.languageId,
+            mode: diffMode,
+        })
+        const { deletionDecorations } = this.getInlineDecorations(args.decorationInfo)
+        const { insertionDecorations, insertMarkerDecorations } = this.createModifiedImageDecorations(
+            image,
+            position,
+            args.document
+        )
+        return {
+            type: 'image',
+            decorations: {
+                insertionDecorations,
+                deletionDecorations,
+                insertMarkerDecorations,
+            },
+            imageData: {
+                ...image,
+                position,
+            },
+        }
+    }
+
     protected getCompletionsWithPossibleDecorationsRenderOutput(
         args: GetRenderOutputArgs,
         capabilities: AutoeditClientCapabilities
@@ -134,7 +222,7 @@ export class AutoEditsRenderOutput {
         // a confusing UX when rendering a mix of completion insertion text and decoration insertion text.
         const renderWithDecorations =
             isOnlyRemovingTextForModifiedLines(completions.updatedDecorationInfo.modifiedLines) &&
-            this.shouldRenderTextDecorations(completions.updatedDecorationInfo, capabilities)
+            this.shouldRenderInlineDiff(completions.updatedDecorationInfo, capabilities)
 
         if (renderWithDecorations) {
             return {
@@ -239,77 +327,10 @@ export class AutoEditsRenderOutput {
         }
     }
 
-    protected canRenderTextDecorations(
-        decorationCapabilities: AutoeditClientCapabilities['autoEditTextDecorations']
-    ): boolean {
-        const inAgent = isRunningInsideAgent()
-        if (!inAgent) {
-            // VS Code can render decorations
-            return true
-        }
-
-        if (!decorationCapabilities || decorationCapabilities === 'none') {
-            // No information provided, or client has explicitly disabled decorations
-            return false
-        }
-
-        return true
-    }
-
-    protected canRenderImages(
-        imageCapabilities: AutoeditClientCapabilities['autoEditImageDecorations']
-    ): boolean {
-        const inAgent = isRunningInsideAgent()
-        if (!inAgent) {
-            // VS Code can render images
-            return true
-        }
-
-        if (!imageCapabilities || imageCapabilities === 'none') {
-            // No information provided, or client has explicitly disabled decorations
-            return false
-        }
-
-        return true
-    }
-
-    protected getImageDiffMode(clientCapabilities: AutoeditClientCapabilities): DiffMode {
-        const { autoEditTextDecorations } = clientCapabilities
-        const inAgent = isRunningInsideAgent()
-        if (!inAgent) {
-            // VS Code can render deletions as decorations, so we only want to show additions in the image
-            return 'additions'
-        }
-
-        if (
-            !this.canRenderTextDecorations(autoEditTextDecorations) ||
-            autoEditTextDecorations === 'insertions-only'
-        ) {
-            // We cannot render decorations, or we cannot show deletions as decorations.
-            // Either way, this means we must ensure that the entire diff is shown in the image.
-            return 'unified'
-        }
-
-        return 'additions'
-    }
-
-    protected shouldRenderTextDecorations(
+    protected shouldRenderInlineDiff(
         decorationInfo: DecorationInfo,
         clientCapabilities: AutoeditClientCapabilities
     ): boolean {
-        const canRenderTextDecorations = this.canRenderTextDecorations(
-            clientCapabilities.autoEditTextDecorations
-        )
-        if (!canRenderTextDecorations) {
-            return false
-        }
-
-        const canRenderImages = this.canRenderImages(clientCapabilities.autoEditImageDecorations)
-        if (!canRenderImages) {
-            // If we cannot render images, we should always render decorations
-            return true
-        }
-
         if (decorationInfo.addedLines.length > 0) {
             // It is difficult to show added lines with decorations, as we cannot inject new lines.
             return false
@@ -318,7 +339,7 @@ export class AutoEditsRenderOutput {
         const hasDeletions =
             decorationInfo.removedLines.length > 0 ||
             !isOnlyAddingTextForModifiedLines(decorationInfo.modifiedLines)
-        if (clientCapabilities.autoEditTextDecorations === 'insertions-only' && hasDeletions) {
+        if (clientCapabilities.autoEditInlineDiff === 'insertions-only' && hasDeletions) {
             // We have deletions to show, but the client only supports insertions with text decorations.
             // We should render an image instead.
             return false
@@ -327,7 +348,7 @@ export class AutoEditsRenderOutput {
         const hasInsertions =
             decorationInfo.addedLines.length > 0 ||
             !isOnlyRemovingTextForModifiedLines(decorationInfo.modifiedLines)
-        if (clientCapabilities.autoEditTextDecorations === 'deletions-only' && hasInsertions) {
+        if (clientCapabilities.autoEditInlineDiff === 'deletions-only' && hasInsertions) {
             // We have insertions to show, but the client only supports deletions with text decorations.
             // We should render an image instead.
             return false
@@ -391,7 +412,7 @@ export class AutoEditsRenderOutput {
         return false
     }
 
-    protected getInlineDecorations(
+    private getInlineDecorations(
         decorationInfo: DecorationInfo
     ): Omit<AutoEditDecorations, 'insertMarkerDecorations'> {
         const fullLineDeletionDecorations = decorationInfo.removedLines.map(
@@ -408,7 +429,7 @@ export class AutoEditsRenderOutput {
         }
     }
 
-    protected createModifiedImageDecorations(
+    private createModifiedImageDecorations(
         image: GeneratedImageSuggestion,
         position: { line: number; column: number },
         document: vscode.TextDocument

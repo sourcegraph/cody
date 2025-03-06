@@ -19,7 +19,7 @@ import type { FixupController } from '../non-stop/FixupController'
 import type { CodyStatusBar } from '../services/StatusBar'
 
 import type { CompletionBookkeepingEvent } from '../completions/analytics-logger'
-import type { AutoeditImageDecoration, AutoeditTextDecoration } from '../jsonrpc/agent-protocol'
+import type { AutoeditImageDiff, AutoeditTextDiffChange } from '../jsonrpc/agent-protocol'
 import type { AutoeditsModelAdapter, AutoeditsPrompt, ModelResponse } from './adapters/base'
 import { createAutoeditsModelAdapter } from './adapters/create-adapter'
 import {
@@ -79,11 +79,11 @@ interface EditResult extends vscode.InlineCompletionList {
          * Deletions will typically be existing text painted red.
          * Insertions will be new text added temporarily to the document, styled like a completion
          */
-        text: AutoeditTextDecoration[] | null
+        text: AutoeditTextDiffChange[] | null
         /**
          * Image decoration that should be shown in the editor.
          */
-        image: AutoeditImageDecoration | null
+        image: AutoeditImageDiff | null
     }
 }
 
@@ -91,7 +91,7 @@ export type AutoeditsResult = CompletionResult | EditResult
 
 export type AutoeditClientCapabilities = Pick<
     ClientCapabilities,
-    'autoEdit' | 'autoEditTextDecorations' | 'autoEditImageDecorations'
+    'autoEdit' | 'autoEditInlineDiff' | 'autoEditAsideDiff'
 >
 
 /**
@@ -167,19 +167,19 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
     private getClientCapabilities(): AutoeditClientCapabilities {
         const inAgent = isRunningInsideAgent()
         if (!inAgent) {
-            // We are running inside VS Code, we can be confident that we have all the capabilities
+            // We are running inside VS Code
             return {
                 autoEdit: 'enabled',
-                autoEditImageDecorations: 'enabled',
-                autoEditTextDecorations: 'insertions-and-deletions',
+                autoEditAsideDiff: 'image',
+                autoEditInlineDiff: 'insertions-and-deletions',
             }
         }
 
         const capabilitiesFromClient = clientCapabilities()
         return {
             autoEdit: capabilitiesFromClient.autoEdit,
-            autoEditImageDecorations: capabilitiesFromClient.autoEditImageDecorations,
-            autoEditTextDecorations: capabilitiesFromClient.autoEditTextDecorations,
+            autoEditAsideDiff: capabilitiesFromClient.autoEditAsideDiff,
+            autoEditInlineDiff: capabilitiesFromClient.autoEditInlineDiff,
         }
     }
 
@@ -538,14 +538,14 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
 
     private getTextDecorationsForClient(
         renderOutput: AutoEditRenderOutput
-    ): AutoeditTextDecoration[] | null {
+    ): AutoeditTextDiffChange[] | null {
         const decorations = 'decorations' in renderOutput ? renderOutput.decorations : null
         if (!decorations) {
             return null
         }
 
         // Handle based on client capabilities
-        switch (this.capabilities.autoEditTextDecorations) {
+        switch (this.capabilities.autoEditInlineDiff) {
             case 'none':
                 return null
             case 'insertions-only':
@@ -566,7 +566,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                     range: decoration.range,
                 }))
             case 'insertions-and-deletions': {
-                const output: AutoeditTextDecoration[] = []
+                const output: AutoeditTextDiffChange[] = []
                 if (decorations.insertionDecorations.length > 0) {
                     output.push(
                         ...decorations.insertionDecorations.map(decoration => ({
