@@ -206,7 +206,7 @@ export function isUserEligibleForAutoeditsFeature(
     productSubscription: UserProductSubscription | null
 ): AutoeditsUserEligibilityInfo {
     // Always enable auto-edit when testing
-    if (process.env.CODY_TESTING === 'true') {
+    if (process.env.CODY_TESTING === 'true' || process.env.NODE_ENV === 'test') {
         return { isUserEligible: true }
     }
 

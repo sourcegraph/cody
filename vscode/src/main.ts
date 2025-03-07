@@ -290,7 +290,14 @@ const register = async (
         })
     )
 
-    registerAutocomplete(platform, statusBar, disposables)
+    if (
+        clientCapabilities().isVSCode ||
+        !clientCapabilities().autoEdit ||
+        clientCapabilities().autoEdit === 'none'
+    ) {
+        // Register legacy autocomplete
+        registerAutocomplete(platform, statusBar, disposables)
+    }
     const tutorialSetup = tryRegisterTutorial(context, disposables)
 
     await registerCodyCommands({ statusBar, chatClient, fixupController, disposables, context })
@@ -469,16 +476,18 @@ async function registerCodyCommands({
         )
     )
 
-    // Initialize autoedit provider if experimental feature is enabled
-    registerAutoEdits({ chatClient, fixupController, statusBar, disposables, context })
+    if (clientCapabilities().isVSCode || clientCapabilities().autoEdit === 'enabled') {
+        // Initialize autoedit provider if experimental feature is enabled
+        registerAutoEdits({ chatClient, fixupController, statusBar, disposables, context })
 
-    // Initialize autoedit tester
-    disposables.push(
-        enableFeature(
-            ({ configuration }) => configuration.experimentalAutoEditRendererTesting !== false,
-            () => registerAutoEditTestRenderCommand()
+        // Initialize autoedit tester
+        disposables.push(
+            enableFeature(
+                ({ configuration }) => configuration.experimentalAutoEditRendererTesting !== false,
+                () => registerAutoEditTestRenderCommand()
+            )
         )
-    )
+    }
 
     disposables.push(
         subscriptionDisposable(
@@ -766,8 +775,8 @@ function registerAutoEdits({
                                 config,
                                 authStatus,
                                 chatClient,
-                                autoeditFeatureFlagEnabled,
-                                autoeditInlineRenderingEnabled,
+                                autoeditFeatureFlagEnabled: true,
+                                autoeditInlineRenderingEnabled: true,
                                 fixupController,
                                 statusBar,
                                 context,

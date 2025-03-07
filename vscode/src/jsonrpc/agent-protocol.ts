@@ -556,7 +556,7 @@ export interface AutoeditChanges {
 
 export type AutoeditTextDiff = DecorationInfo
 
-interface AutocompleteEditResult {
+export interface AutocompleteEditResult {
     type: 'edit'
     /**
      * The range in the document where this edit should be applied.
@@ -653,6 +653,7 @@ export interface ExtensionConfiguration {
 
     autocompleteAdvancedProvider?: string | undefined | null
     autocompleteAdvancedModel?: string | undefined | null
+    suggestionsMode?: 'autocomplete' | 'auto-edit (Experimental)' | 'off' | undefined | null
     debug?: boolean | undefined | null
     verboseDebug?: boolean | undefined | null
     telemetryClientName?: string | undefined | null

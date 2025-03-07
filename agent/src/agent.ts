@@ -1028,11 +1028,13 @@ export class Agent extends MessageHandler implements ExtensionClient {
             }
         )
 
-        // TODO: Re-add this
-        // this.registerAuthenticatedRequest('testing/autocomplete/providerConfig', async () => {
-        //     const provider = await vscode_shim.completionProvider()
-        //     return 'config' in provider ? provider.config.provider : null
-        // })
+        this.registerAuthenticatedRequest('testing/autocomplete/providerConfig', async () => {
+            const provider = await vscode_shim.completionProvider()
+            if (!('config' in provider)) {
+                throw new Error('TODO: Fix')
+            }
+            return provider.config.provider
+        })
 
         this.registerAuthenticatedRequest('graphql/getRepoIds', async ({ names, first }) => {
             const repos = await graphqlClient.getRepoIds(names, first)
