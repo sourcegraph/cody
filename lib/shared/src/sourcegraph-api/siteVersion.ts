@@ -35,10 +35,11 @@ export function getLatestSupportedCompletionsStreamAPIVersion(): number {
     return _LatestCodyAPIVersion
 }
 
+// We will infer the Cody API version based on the site version if the version is not set
 export function setLatestCodyAPIVersion(version?: number): void {
-    // Set the latest Cody API version to the given version,
-    // or minimum version if not provided
-    _LatestCodyAPIVersion = version || DefaultMinimumAPIVersion
+    if (version !== undefined) {
+        _LatestCodyAPIVersion = version
+    }
 }
 
 /**
@@ -99,13 +100,14 @@ export async function currentSiteVersion(): Promise<SiteAndCodyAPIVersions | Err
     }
 
     // Reset the latest Cody API version if the user is not authenticated
-    if (!authStatus.authenticated) {
+    const isDotComUser = isDotCom(authStatus)
+    if (!authStatus.authenticated && !isDotComUser) {
         setLatestCodyAPIVersion(0)
     }
 
     return {
         siteVersion,
-        codyAPIVersion: inferCodyApiVersion(siteVersion, isDotCom(authStatus)),
+        codyAPIVersion: inferCodyApiVersion(siteVersion, isDotComUser),
     }
 }
 
@@ -153,14 +155,14 @@ export function serverSupportsPromptCaching(): boolean {
 
 /** @internal Exported for testing only. */
 export function inferCodyApiVersion(version: string, isDotCom: boolean): CodyApiVersion {
-    // Use the latest version if it has been set
-    if (_LatestCodyAPIVersion) {
-        return _LatestCodyAPIVersion
-    }
-
     if (isDotCom || version === LOCAL_BUILD_VERSION_NUMBER) {
         // Fast path for dotcom or local dev
         return LastKnownCodyAPIVersion
+    }
+
+    // Use the latest version if it has been set
+    if (_LatestCodyAPIVersion) {
+        return _LatestCodyAPIVersion
     }
 
     const parsedVersion = semver.valid(version)
@@ -184,6 +186,8 @@ export function inferCodyApiVersion(version: string, isDotCom: boolean): CodyApi
             return 8
         }
     }
+
+    console.log(version, parsedVersion, 'inferCodyApiVersion')
 
     // Use minimum version for all other cases instead of 0
     return DefaultMinimumAPIVersion

@@ -1,13 +1,14 @@
 import { describe, expect, test } from 'vitest'
 import {
+    DefaultMinimumAPIVersion,
     getLatestSupportedCompletionsStreamAPIVersion,
     inferCodyApiVersion,
     setLatestCodyAPIVersion,
 } from './siteVersion'
 
 describe('inferCodyApiVersion', () => {
-    test('returns API version 0 for a legacy instance', () => {
-        expect(inferCodyApiVersion('5.2.0', false)).toBe(0)
+    test('returns API version 1 for a legacy instance', () => {
+        expect(inferCodyApiVersion('5.2.0', false)).toBe(1)
     })
 
     test('returns API version 1 for older versions', () => {
@@ -17,10 +18,11 @@ describe('inferCodyApiVersion', () => {
         expect(inferCodyApiVersion('5.7.0', false)).toBe(1)
     })
 
-    test('returns API version 2 for newer versions', () => {
-        expect(inferCodyApiVersion('5.8.0', false)).toBe(2)
-        expect(inferCodyApiVersion('5.9.0', false)).toBe(2)
-        expect(inferCodyApiVersion('5.10.1', false)).toBe(2)
+    test('returns DefaultMinimumAPIVersion for newer versions when latest not set', () => {
+        setLatestCodyAPIVersion(undefined)
+        expect(inferCodyApiVersion('5.8.0', false)).toBe(DefaultMinimumAPIVersion)
+        expect(inferCodyApiVersion('5.9.0', false)).toBe(DefaultMinimumAPIVersion)
+        expect(inferCodyApiVersion('5.10.1', false)).toBe(DefaultMinimumAPIVersion)
     })
 
     test('returns latestCodyClientConfig for dotcom', () => {
