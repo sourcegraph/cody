@@ -62,7 +62,6 @@ type AutoeditEventAction =
 
 const AUTOEDIT_EVENT_BILLING_CATEGORY: Partial<Record<AutoeditEventAction, BillingCategory>> = {
     accepted: 'core',
-    discarded: 'billable',
     suggested: 'billable',
 }
 
@@ -447,9 +446,17 @@ export class AutoeditAnalyticsLogger {
         >
     }): void {
         autoeditsOutputChannelLogger.logDebug('writeAutoeditEvent', action, ...logDebugArgs)
-        telemetryRecorder.recordEvent('cody.autoedit', action, telemetryParams)
+        telemetryRecorder.recordEvent('cody.autoedit', action, {
+            ...telemetryParams,
+            billingMetadata:
+                action === 'accepted' || action === 'suggested'
+                    ? {
+                          product: 'cody',
+                          category: action === 'accepted' ? 'core' : 'billable',
+                      }
+                    : undefined,
+        })
     }
-
     /**
      * Rate-limited error logging, capturing exceptions with Sentry and grouping repeated logs.
      */
