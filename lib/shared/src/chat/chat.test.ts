@@ -57,25 +57,26 @@ describe('sanitizeMessages', () => {
 })
 
 describe('buildChatRequestParams', () => {
-    it('apiVersion should be set based on codyAPIVersion', () => {
+    // Keeps default codyAPIVersion as apiVersion for any model.
+    // Model name should not affect the apiVersion where we
+    // used to alter the apiVersion based on the model name.
+    it.each([
+        { model: 'claude-2-sonnet', description: 'claude 2 models' },
+        { model: 'claude-2-sonnet', description: 'claude 3 models' },
+        { model: 'claude-3-5-sonnet', description: 'claude 3.5 models' },
+        { model: '1234', description: 'invalid model' },
+        { model: 'gemini', description: 'random model' },
+        { model: '', description: 'empty model' },
+        { model: undefined, description: 'undefined model' },
+    ])('keeps codyAPIVersion as apiVersion for $description', ({ model }) => {
+        const serverSentApiVersion = 10000
         const result = buildChatRequestParams({
-            model: 'claude-2-sonnet',
-            codyAPIVersion: 8,
+            model,
+            codyAPIVersion: serverSentApiVersion,
             isFireworksTracingEnabled: false,
         })
 
-        expect(result.apiVersion).toBe(8)
-        expect(result.customHeaders).toEqual({})
-    })
-
-    it('keeps default codyAPIVersion as apiVersion for any model', () => {
-        const result = buildChatRequestParams({
-            model: 'claude-3-5-sonnet',
-            codyAPIVersion: 8,
-            isFireworksTracingEnabled: false,
-        })
-
-        expect(result.apiVersion).toBe(8)
+        expect(result.apiVersion).toBe(serverSentApiVersion)
         expect(result.customHeaders).toEqual({})
     })
 
