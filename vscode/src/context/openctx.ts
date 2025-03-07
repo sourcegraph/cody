@@ -219,7 +219,7 @@ function getCodyWebOpenCtxProviders(): Observable<ImportedProviderConfiguration[
             {
                 settings: true,
                 providerUri: RemoteRepositorySearch.providerUri,
-                provider: createRemoteRepositoryProvider('Repositories'),
+                provider: createRemoteRepositoryProvider('Repository search'),
             },
             {
                 settings: true,

@@ -260,10 +260,10 @@ export function getCorpusContextItemsForEditorState(): Observable<
                                 authStatus
                             )
                         ),
-                        title: 'Current Remote Repository',
+                        title: 'Search current repository',
                         description: repo.name,
                         source: items.length > 0 ? ContextItemSource.Unified : ContextItemSource.Initial,
-                        icon: 'git-folder',
+                        icon: 'search',
                     })
                 }
                 // CTA to index repositories should only show for Enterprise customers, see CODY-5017 & CODY-4676
@@ -271,7 +271,7 @@ export function getCorpusContextItemsForEditorState(): Observable<
                     if (!clientCapabilities().isCodyWeb) {
                         items.push({
                             type: 'open-link',
-                            title: 'Current Remote Repository',
+                            title: 'Search current repository',
                             badge: 'Not yet available',
                             content: null,
                             uri: URI.parse(
