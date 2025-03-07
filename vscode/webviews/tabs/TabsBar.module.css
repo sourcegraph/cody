@@ -12,7 +12,6 @@
     container-name: tabs-container;
     isolation: isolate;
     z-index: 2;
-    padding-top: 8px;
 }
 
 .tabs-container {
@@ -30,7 +29,7 @@
     flex-shrink: 0;
     gap: 2px;
     width: 100%;
-    padding: 0 8px 0 16px;
+    padding: 0 8px;
     border-bottom: 1px solid var(--vscode-dropdown-border);
 
     & > * {
@@ -55,7 +54,7 @@
 }
 
 .tab-action-label {
-    display: none;
+    display: inline;
 }
 
 /*
