@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+
+set -e -o pipefail -u
+
+eval "./jetbrains/scripts/pre-build-checks/prohibit-svg-color-display-p3"
