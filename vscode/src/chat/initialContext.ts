@@ -260,7 +260,7 @@ export function getCorpusContextItemsForEditorState(): Observable<
                                 authStatus
                             )
                         ),
-                        title: 'Search current repository',
+                        title: 'Current repository search',
                         description: repo.name,
                         source: items.length > 0 ? ContextItemSource.Unified : ContextItemSource.Initial,
                         icon: 'search',
@@ -271,14 +271,14 @@ export function getCorpusContextItemsForEditorState(): Observable<
                     if (!clientCapabilities().isCodyWeb) {
                         items.push({
                             type: 'open-link',
-                            title: 'Search current repository',
+                            title: 'Current repository search',
                             badge: 'Not yet available',
                             content: null,
                             uri: URI.parse(
                                 'https://sourcegraph.com/docs/cody/prompts-guide#indexing-your-repositories-for-context'
                             ),
                             name: '',
-                            icon: 'folder',
+                            icon: 'search',
                         })
                     }
                 }
