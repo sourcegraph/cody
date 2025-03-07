@@ -346,6 +346,7 @@ describe('AutoeditsProvider', () => {
         const errorPayload = recordSpy.mock.calls[0].at(2)
         expect(errorPayload).toMatchInlineSnapshot(`
           {
+            "billingMetadata": undefined,
             "metadata": {
               "count": 1,
             },
