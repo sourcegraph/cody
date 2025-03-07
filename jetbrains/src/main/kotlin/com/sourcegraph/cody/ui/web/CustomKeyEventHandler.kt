@@ -1,49 +1,57 @@
 package com.sourcegraph.cody.ui.web
 
+import com.intellij.openapi.diagnostic.Logger
 import org.cef.browser.CefBrowser
 import org.cef.handler.CefKeyboardHandler
-import org.cef.misc.BoolRef
 import org.cef.handler.CefKeyboardHandler.CefKeyEvent
+import org.cef.misc.BoolRef
+import org.cef.misc.EventFlags.EVENTFLAG_SHIFT_DOWN
 import java.awt.event.KeyEvent
 
 class CustomKeyEventHandler : CefKeyboardHandler {
-//    override fun onPreKeyEvent(browser: CefBrowser?, event: CefKeyboardHandler.CefKeyEvent?, p2: BoolRef?): Boolean {
-//        if (event?.windows_key_code == KeyEvent.VK_BACK_SPACE) {
-//            return false // Let the event pass through to the WebView
-//        }
-//        return false
-//    }
-    //    override fun onKeyEvent(browser: CefBrowser?, event: CefKeyboardHandler.CefKeyEvent?): Boolean {
-//        if (event != null && event.windows_key_code.equals(KeyEvent.VK_BACK_SPACE)) {
-//            return false // Let the event pass through to the WebView
-//        }
-//        return true
-//    }
+
+    val logger: Logger = Logger.getInstance(this.javaClass)
+
     override fun onPreKeyEvent(p0: CefBrowser?, p1: CefKeyboardHandler.CefKeyEvent?, p2: BoolRef?): Boolean {
         return true
     }
 
     override fun onKeyEvent(browser: CefBrowser?, event: CefKeyboardHandler.CefKeyEvent?): Boolean {
-        // Check if the event is not null
         event?.let {
-            // Check if it's a keypress event (not release)
-            if (it.type == CefKeyEvent.EventType.KEYEVENT_KEYUP) {
 
-                // Check if the key is Delete (typically keyCode 46)
-                if (it.windows_key_code == 46) {
-                    // Handle delete key press here
-                    println("Delete key was pressed!")
-                    // Return true to indicate we've handled this key
+            val isShiftPressed = (event.modifiers and EVENTFLAG_SHIFT_DOWN) != 0
+            println("Key event: type=${event?.type}, code=${event?.unmodified_character?.code}, winCode=${it.windows_key_code} modifiers=${event?.modifiers}, Shift=${isShiftPressed}")
 
-//                    browser?.executeJavaScript(
-////                        "document.dispatchEvent(new KeyboardEvent('keyup', {keyCode: 46}));",
-//                        "document.activeElement.dispatchEvent(new KeyboardEvent('keyup', {key: 'Delete', code: 'Delete'}));",
-//                        browser.url,
-//                        0
-//                    )
+           // if (it.unmodified_character.code == 0) return true; // no key pressed, only modifiers key changed
+
+            if (it.type == CefKeyEvent.EventType.KEYEVENT_KEYUP
+                 || it.type == CefKeyEvent.EventType.KEYEVENT_RAWKEYDOWN)
+                 {
+
+                if (it.unmodified_character.code == KeyEvent.VK_BACK_SPACE) {
+                    logger.warn("Backspace key was pressed!")
+                    return true
+                }
+
+                if (it.windows_key_code == KeyEvent.VK_ENTER && isShiftPressed) {
+                    logger.warn("Shift+Enter key was pressed!")
 
                     browser?.executeJavaScript("""
+                      document.activeElement.dispatchEvent(new KeyboardEvent('keydown', {key: 'Enter', code: 'Enter', shiftKey: true, bubbles: true}));
+                      document.activeElement.dispatchEvent(new KeyboardEvent('keypress', {key: 'Enter', code: 'Enter', shiftKey: true, bubbles: true}));
+                      document.activeElement.dispatchEvent(new KeyboardEvent('keyup', {key: 'Enter', code: 'Enter', shiftKey: true, bubbles: true}));
+                    """,
+                        browser.url, 0)
 
+                    return true
+                }
+
+                // Check if the key is Delete (typically keyCode 46)
+                if (it.unmodified_character.code == KeyEvent.VK_DELETE) {
+                    // Handle delete key press here
+                    println("Delete key was pressed!")
+
+                    browser?.executeJavaScript("""
                       document.activeElement.dispatchEvent(new KeyboardEvent('keydown', {key: 'Delete', code: 'Delete', bubbles: true}));
                       document.activeElement.dispatchEvent(new KeyboardEvent('keypress', {key: 'Delete', code: 'Delete', bubbles: true}));
                       document.activeElement.dispatchEvent(new KeyboardEvent('keyup', {key: 'Delete', code: 'Delete', bubbles: true}));
@@ -58,5 +66,4 @@ class CustomKeyEventHandler : CefKeyboardHandler {
         // Return false to let other keys be processed normally
         return false
     }
-
 }
