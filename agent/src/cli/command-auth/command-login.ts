@@ -72,11 +72,7 @@ export const loginCommand = new Command('login')
                 process.exit(1)
             }
             if (!account?.userInfo.username) {
-                errorSpinner(
-                    spinner,
-                    new Error(`failed to authenticate with credentials ${JSON.stringify(options)}`),
-                    options
-                )
+                errorSpinner(spinner, new Error('failed to authenticate'), options)
                 process.exit(1)
             }
             spinner.succeed(
@@ -123,7 +119,7 @@ async function loginAction(
             : await captureAccessTokenViaBrowserRedirect(serverEndpoint, spinner)
     const client = SourcegraphGraphQLAPIClient.withStaticConfig({
         configuration: { telemetryLevel: 'agent' },
-        auth: { credentials: { token: options.accessToken }, serverEndpoint: serverEndpoint },
+        auth: { credentials: { token }, serverEndpoint: serverEndpoint },
         clientState: { anonymousUserID: null },
     })
     const userInfo = await client.getCurrentUserInfo()
