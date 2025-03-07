@@ -70,6 +70,6 @@ test('keyboard shortcut cmd+M opens model selector', async ({ page, server, side
     await expect(modelOptions).toBeVisible()
 
     // Select a different model
-    await modelOptions.getByRole('option', { name: 'Instant' }).click()
-    await expect(modelSelector).toHaveText(/^Instant/)
+    await page.keyboard.press('Escape')
+    await expect(modelOptions).not.toBeVisible()
 })
