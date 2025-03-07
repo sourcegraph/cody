@@ -32,6 +32,8 @@ open class BaseEditCodeAction(runAction: (Editor) -> Unit) :
 
   override fun update(event: AnActionEvent) {
     super.update(event)
+    println(
+        "BaseEditCodeAction.update event.presentation.isVisible: ${event.presentation.isVisible}, event.presentation.isEnabled: ${event.presentation.isEnabled}")
 
     val project = event.project ?: return
     val (isEnabled, description) =
@@ -55,6 +57,7 @@ open class BaseEditCodeAction(runAction: (Editor) -> Unit) :
       }
     }
 
+    println("isEnabled: $isEnabled, description: $description")
     event.presentation.description = description
     event.presentation.isEnabled = isEnabled
   }
