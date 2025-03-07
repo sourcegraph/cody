@@ -2,7 +2,7 @@
 
 set -e -o pipefail -u
 
-svg_files_with_illegal_color=$(git grep -Po 'display-p3' -- '*.svg')
+svg_files_with_illegal_color=$(git grep -Po 'display-p3' -- './jetbrains/*.svg')
 
 exit_code=0
 for svg_file in $svg_files_with_illegal_color; do
