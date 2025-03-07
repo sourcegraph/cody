@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set -e -o pipefail -u
+set -o pipefail -u
 
 svg_files_with_illegal_color=$(git grep -Po 'display-p3' -- './jetbrains/*.svg')
 
