@@ -57,18 +57,18 @@ describe('sanitizeMessages', () => {
 })
 
 describe('buildChatRequestParams', () => {
-    it('sets apiVersion to 0 for Claude models older than 3.5', () => {
+    it('apiVersion should be set based on codyAPIVersion', () => {
         const result = buildChatRequestParams({
             model: 'claude-2-sonnet',
             codyAPIVersion: 8,
             isFireworksTracingEnabled: false,
         })
 
-        expect(result.apiVersion).toBe(0)
+        expect(result.apiVersion).toBe(8)
         expect(result.customHeaders).toEqual({})
     })
 
-    it('keeps default apiVersion for Claude models 3.5 or newer', () => {
+    it('keeps default codyAPIVersion as apiVersion for any model', () => {
         const result = buildChatRequestParams({
             model: 'claude-3-5-sonnet',
             codyAPIVersion: 8,
@@ -153,7 +153,7 @@ describe('ChatClient.chat', () => {
             expect.objectContaining({
                 messages: [
                     { speaker: 'human', text: hello, cacheEnabled: undefined, content: undefined },
-                    { speaker: 'assistant', text: hiThere },
+                    { speaker: 'assistant', text: hiThere, cacheEnabled: undefined, content: undefined },
                 ],
                 maxTokensToSample: 2000,
                 model: 'anthropic/claude-3-sonnet',
@@ -162,7 +162,7 @@ describe('ChatClient.chat', () => {
                 topP: -1,
             }),
             expect.objectContaining({
-                apiVersion: 0,
+                apiVersion: 8,
                 customHeaders: {},
                 interactionId: undefined,
             }),
@@ -184,9 +184,7 @@ describe('ChatClient.chat', () => {
         await expect(chatClient.chat(messages, params)).rejects.toThrow('not authenticated')
     })
 
-    it('appends empty assistant message for older API versions when last message is human', async () => {
-        vi.spyOn(graphqlClient, 'getSiteVersion').mockResolvedValue('1.2.3')
-
+    it('last message must be from human', async () => {
         const messages: Message[] = [
             { speaker: 'human', text: hello },
             { speaker: 'assistant', text: hiThere },
@@ -206,7 +204,6 @@ describe('ChatClient.chat', () => {
                     { speaker: 'human', text: hello },
                     { speaker: 'assistant', text: hiThere },
                     { speaker: 'human', text: followUpQuestion },
-                    { speaker: 'assistant' },
                 ],
             }),
             expect.any(Object),
