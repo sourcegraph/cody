@@ -4,6 +4,7 @@ import { type FireworksCodeCompletionParams, addClientInfoParams, getSerializedP
 import { currentResolvedConfig } from '../../configuration/resolver'
 import { useCustomChatClient } from '../../llm-providers'
 import { recordErrorToSpan } from '../../tracing'
+import { ClientErrorsTransformer } from './clientErrors'
 
 import type {
     CompletionCallbacks,
@@ -64,7 +65,8 @@ export abstract class SourcegraphCompletionsClient {
                     break
                 }
                 case 'error': {
-                    const error = new Error(event.error)
+                    const simplifiedErrorMessage = ClientErrorsTransformer.transform(event.error)
+                    const error = new Error(simplifiedErrorMessage)
                     if (span) {
                         recordErrorToSpan(span, error)
                     }
