@@ -1,5 +1,9 @@
 import { describe, expect, test } from 'vitest'
-import { LatestSupportedCompletionsStreamAPIVersion, inferCodyApiVersion } from './siteVersion'
+import {
+    getLatestSupportedCompletionsStreamAPIVersion,
+    inferCodyApiVersion,
+    setLatestCodyAPIVersion,
+} from './siteVersion'
 
 describe('inferCodyApiVersion', () => {
     test('returns API version 0 for a legacy instance', () => {
@@ -19,7 +23,14 @@ describe('inferCodyApiVersion', () => {
         expect(inferCodyApiVersion('5.10.1', false)).toBe(2)
     })
 
-    test('returns API version 8 for dotcom', () => {
-        expect(inferCodyApiVersion('1.2.3', true)).toBe(LatestSupportedCompletionsStreamAPIVersion)
+    test('returns latestCodyClientConfig for dotcom', () => {
+        expect(inferCodyApiVersion('1.2.3', true)).toBe(8)
+    })
+
+    test('returns latestCodyClientConfig for local dev', () => {
+        const mockCodyAPIVersion = 1000
+        setLatestCodyAPIVersion(mockCodyAPIVersion)
+        const serverSideReturnedVersion = getLatestSupportedCompletionsStreamAPIVersion()
+        expect(inferCodyApiVersion('0.0.0+dev', false)).toBe(serverSideReturnedVersion)
     })
 })
