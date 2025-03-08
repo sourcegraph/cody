@@ -408,6 +408,7 @@ function useTabs(
                         Icon: PlusIcon,
                         command: currentView === View.Chat ? newChatCommand : null,
                         changesView: true,
+                        tooltip: <>{'(⇧⌥/)'}</>,
                     },
                     {
                         view: View.History,
