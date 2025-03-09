@@ -2,11 +2,9 @@ import type { PopoverContentProps, PopoverProps } from '@radix-ui/react-popover'
 import { Slot } from '@radix-ui/react-slot'
 import { type VariantProps, cva } from 'class-variance-authority'
 import { ChevronDownIcon } from 'lucide-react'
-import type React from 'react'
 import {
     type ButtonHTMLAttributes,
     type ComponentType,
-    type FunctionComponent,
     type KeyboardEventHandler,
     type PropsWithChildren,
     type ReactNode,
@@ -94,43 +92,31 @@ export const ToolbarButton = forwardRef<HTMLButtonElement, ToolbarButtonProps>(
 )
 ToolbarButton.displayName = 'ToolbarButton'
 
-interface PopoverControlMethods {
-    open: () => void
-    close: () => void
-}
-
-interface MutableRefObject<T> {
-    current: T
-}
-
-export const ToolbarPopoverItem: FunctionComponent<
+export const ToolbarPopoverItem = forwardRef<
+    { open: () => void; close: () => void },
     PropsWithChildren<
         ButtonHTMLAttributes<HTMLButtonElement> &
-            Pick<ToolbarButtonProps, 'iconStart' | 'tooltip'> & {
-                iconEnd: ToolbarButtonProps['iconEnd'] | null
+            Omit<Pick<ToolbarButtonProps, 'iconStart' | 'tooltip'>, 'iconEnd'> & {
+                iconEnd: ToolbarButtonProps['iconEnd'] | undefined
                 popoverContent: (close: () => void) => React.ReactNode
                 defaultOpen?: boolean
                 onCloseByEscape?: () => void
                 popoverRootProps?: Pick<PopoverProps, 'onOpenChange'>
                 popoverContentProps?: Omit<PopoverContentProps, 'align'>
                 __storybook__open?: boolean
-                controlRef?: MutableRefObject<PopoverControlMethods | null>
             }
     >
-> = ({
-    iconEnd = 'chevron',
-    iconStart,
-    tooltip,
-    popoverContent,
-    defaultOpen,
-    onCloseByEscape,
-    popoverRootProps,
-    popoverContentProps,
-    __storybook__open,
-    children,
-    controlRef,
-    ...props
-}) => {
+>((props, ref) => {
+    const {
+        iconEnd = 'chevron',
+        popoverContent,
+        defaultOpen,
+        onCloseByEscape,
+        popoverRootProps,
+        popoverContentProps,
+        __storybook__open,
+        children,
+    } = props
     const [isOpen, setIsOpen] = useState(defaultOpen)
 
     const onButtonClick = useCallback(() => {
@@ -143,8 +129,9 @@ export const ToolbarPopoverItem: FunctionComponent<
         }
     }, [__storybook__open])
 
+    // Expose the open method via ref
     useImperativeHandle(
-        controlRef,
+        ref,
         () => ({
             open: () => setIsOpen(true),
             close: () => setIsOpen(false),
@@ -191,16 +178,18 @@ export const ToolbarPopoverItem: FunctionComponent<
         [onCloseByEscape, popoverContentProps?.onKeyDown]
     )
 
+    const finalIconEnd = iconEnd === null ? undefined : iconEnd
+    const { iconEnd: _, ...restProps } = props
+
     return (
         <Popover open={isOpen} onOpenChange={onOpenChange} defaultOpen={defaultOpen}>
             <PopoverTrigger asChild={true}>
                 <ToolbarButton
                     variant="secondary"
-                    iconEnd={iconEnd ?? undefined}
+                    iconEnd={finalIconEnd}
                     ref={anchorRef}
                     onClick={onButtonClick}
-                    tooltip={tooltip}
-                    {...props}
+                    {...restProps}
                 >
                     {children}
                 </ToolbarButton>
@@ -215,5 +204,5 @@ export const ToolbarPopoverItem: FunctionComponent<
             </PopoverContent>
         </Popover>
     )
-}
+})
 ToolbarPopoverItem.displayName = 'ToolbarPopoverItem'

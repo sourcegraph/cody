@@ -622,8 +622,13 @@
       },
       {
         "command": "cody.chat.new",
-        "key": "shift+alt+/",
+        "key": "cmd+n",
         "when": "cody.activated && !editorTextFocus"
+      },
+      {
+        "command": "-workbench.action.files.newUntitledFile",
+        "key": "cmd+n",
+        "when": "cody.activated && (view == cody.chat || activeWebviewPanelId == cody.editorPanel)"
       },
       {
         "command": "cody.tutorial.chat",
