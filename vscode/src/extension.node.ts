@@ -10,7 +10,7 @@ import { logDebug, logError } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 import { startTokenReceiver } from './auth/token-receiver'
 import { CommandsProvider } from './commands/services/provider'
-import { SourcegraphNodeCompletionsClient } from './completions/nodeClient'
+import { AnthropicCompletionsClient } from './completions/anthropicClient'
 import type { ExtensionApi } from './extension-api'
 import { type ExtensionClient, defaultVSCodeExtensionClient } from './extension-client'
 import { activate as activateCommon } from './extension.common'
@@ -45,7 +45,10 @@ export function activate(
     return activateCommon(context, {
         initializeNetworkAgent: DelegatingAgent.initialize,
         initializeNoxideLib: isNoxideLibEnabled ? loadNoxideLib : undefined,
-        createCompletionsClient: (...args) => new SourcegraphNodeCompletionsClient(...args),
+        createCompletionsClient: () =>
+            new AnthropicCompletionsClient({
+                apiKey: vscode.workspace.getConfiguration().get('cody.experimental.minion.anthropicKey') || '',
+            }),
         createCommandsProvider: () => new CommandsProvider(),
         createSymfRunner: isSymfEnabled ? (...args) => new SymfRunner(...args) : undefined,
         createSentryService: (...args) => new NodeSentryService(...args),
