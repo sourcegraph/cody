@@ -7,7 +7,7 @@ import {
     ModelTag,
 } from '@sourcegraph/cody-shared'
 import clsx from 'clsx'
-import { type FunctionComponent, useCallback, useMemo } from 'react'
+import { type FunctionComponent, useCallback, useEffect, useMemo, useRef } from 'react'
 import type { UserAccountInfo } from '../../../../../../Chat'
 import { ModelSelectField } from '../../../../../../components/modelSelectField/ModelSelectField'
 import { PromptSelectField } from '../../../../../../components/promptSelectField/PromptSelectField'
@@ -89,6 +89,27 @@ export const Toolbar: FunctionComponent<{
         return (!isDotCom || isBYOK) && isVision
     }, [userInfo?.isDotComUser, models?.[0]])
 
+    const modelSelectorRef = useRef<{ open: () => void; close: () => void } | null>(null)
+
+    // Set up keyboard event listener
+    useEffect(() => {
+        const handleKeyboardShortcuts = (event: KeyboardEvent) => {
+            // Model selector (⌘+M)
+            if (event.metaKey && event.key.toLowerCase() === 'm') {
+                event.preventDefault()
+                modelSelectorRef?.current?.open()
+            }
+
+            // Close dropdowns on Escape
+            else if (event.key === 'Escape') {
+                modelSelectorRef?.current?.close()
+            }
+        }
+
+        window.addEventListener('keydown', handleKeyboardShortcuts)
+        return () => window.removeEventListener('keydown', handleKeyboardShortcuts)
+    }, [])
+
     if (models?.length < 2) {
         return null
     }
@@ -130,6 +151,7 @@ export const Toolbar: FunctionComponent<{
                     models={models}
                     userInfo={userInfo}
                     focusEditor={focusEditor}
+                    modelSelectorRef={modelSelectorRef}
                     className="tw-mr-1"
                     extensionAPI={extensionAPI}
                 />
@@ -164,7 +186,8 @@ const ModelSelectFieldToolbarItem: FunctionComponent<{
     focusEditor?: () => void
     className?: string
     extensionAPI: WebviewToExtensionAPI
-}> = ({ userInfo, focusEditor, className, models, extensionAPI }) => {
+    modelSelectorRef: React.MutableRefObject<{ open: () => void; close: () => void } | null>
+}> = ({ userInfo, focusEditor, className, models, extensionAPI, modelSelectorRef }) => {
     const clientConfig = useClientConfig()
     const serverSentModelsEnabled = !!clientConfig?.modelsAPIEnabled
 
@@ -186,9 +209,10 @@ const ModelSelectFieldToolbarItem: FunctionComponent<{
                 onModelSelect={onModelSelect}
                 serverSentModelsEnabled={serverSentModelsEnabled}
                 userInfo={userInfo}
-                onCloseByEscape={focusEditor}
                 className={className}
                 data-testid="chat-model-selector"
+                modelSelectorRef={modelSelectorRef}
+                onCloseByEscape={() => modelSelectorRef?.current?.close()}
             />
         )
     )

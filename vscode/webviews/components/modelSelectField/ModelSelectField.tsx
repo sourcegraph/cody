@@ -36,6 +36,7 @@ export const ModelSelectField: React.FunctionComponent<{
 
     /** For storybooks only. */
     __storybook__open?: boolean
+    modelSelectorRef?: React.MutableRefObject<{ open: () => void; close: () => void } | null>
 }> = ({
     models,
     onModelSelect: parentOnModelSelect,
@@ -44,6 +45,7 @@ export const ModelSelectField: React.FunctionComponent<{
     onCloseByEscape,
     className,
     __storybook__open,
+    modelSelectorRef,
 }) => {
     const telemetryRecorder = useTelemetryRecorder()
 
@@ -171,6 +173,7 @@ export const ModelSelectField: React.FunctionComponent<{
             __storybook__open={__storybook__open}
             tooltip={readOnly ? undefined : 'Select a model (⌘+M)'}
             aria-label="Select a model or an agent"
+            controlRef={modelSelectorRef}
             popoverContent={close => (
                 <Command
                     loop={true}
