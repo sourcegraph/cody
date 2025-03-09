@@ -175,6 +175,7 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
 
                     if (statusCode >= 400) {
                         if (statusCode === 403 && res.headers.server === 'cloudflare') {
+                            const traceId = getActiveTraceAndSpanId()?.traceId
                             const errorOptions = {
                                 url: 'Sourcegraph',
                                 status: statusCode,
@@ -183,18 +184,12 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                             const outputMessage = `Cloudflare has blocked this request. 
                             This may be due to using a VPN or other non-trusted network deemed dangerous.
                             Please try again without using such an network.
-                            Cloudflare Ray ID: ${res.headers['cf-ray']}`
+                            Cloudflare Ray ID: ${res.headers['cf-ray']}. (Sourcegraph Error ID: ${traceId})`
 
                             // Destroy the response to prevent further data events
                             res.destroy()
 
-                            return handleError(
-                                new NetworkError(
-                                    errorOptions,
-                                    outputMessage,
-                                    getActiveTraceAndSpanId()?.traceId
-                                )
-                            )
+                            return handleError(new NetworkError(errorOptions, outputMessage, traceId))
                         }
                         // For failed requests, we just want to read the entire body and
                         // ultimately return it to the error callback.
@@ -215,8 +210,14 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
 
                         res.on('error', e => handleError(e))
                         res.on('end', () => {
+                            const isSourcegraph = url.toString().includes('sourcegraph')
+                            const traceId = getActiveTraceAndSpanId()?.traceId || ''
+                            const enhancedErrorMessage =
+                                traceId && !errorMessage.includes(traceId)
+                                    ? errorMessage + ` (Sourcegraph Error ID: ${traceId})`
+                                    : errorMessage
                             const errorOptions = {
-                                url: url.toString(),
+                                url: isSourcegraph ? 'Sourcegraph' : url.toString(),
                                 status: statusCode,
                                 statusText: res.statusMessage ?? '',
                             }
@@ -224,7 +225,7 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                             return handleError(
                                 new NetworkError(
                                     errorOptions,
-                                    errorMessage,
+                                    enhancedErrorMessage,
                                     getActiveTraceAndSpanId()?.traceId
                                 )
                             )
