@@ -65,7 +65,14 @@ export abstract class SourcegraphCompletionsClient {
                     break
                 }
                 case 'error': {
-                    const simplifiedErrorMessage = ClientErrorsTransformer.transform(event.error)
+                    let traceId: string | undefined = undefined
+                    if (span) {
+                        traceId = span.spanContext().traceId
+                    }
+                    const simplifiedErrorMessage = ClientErrorsTransformer.transform(
+                        event.error,
+                        traceId
+                    )
                     const error = new Error(simplifiedErrorMessage)
                     if (span) {
                         recordErrorToSpan(span, error)
