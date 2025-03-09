@@ -117,13 +117,6 @@ export const Toolbar: FunctionComponent<{
                     />
                 )}
                 <PromptSelectFieldToolbarItem focusEditor={focusEditor} className="tw-ml-1 tw-mr-1" />
-                <ModelSelectFieldToolbarItem
-                    models={models}
-                    userInfo={userInfo}
-                    focusEditor={focusEditor}
-                    className="tw-mr-1"
-                    extensionAPI={extensionAPI}
-                />
                 {!userInfo?.isDotComUser && omniBoxEnabled && (
                     <ModeSelectorField
                         className={className}
@@ -133,6 +126,13 @@ export const Toolbar: FunctionComponent<{
                         manuallySelectIntent={manuallySelectIntent}
                     />
                 )}
+                <ModelSelectFieldToolbarItem
+                    models={models}
+                    userInfo={userInfo}
+                    focusEditor={focusEditor}
+                    className="tw-mr-1"
+                    extensionAPI={extensionAPI}
+                />
             </div>
             <div className="tw-flex-1 tw-flex tw-justify-end">
                 <SubmitButton onClick={onSubmitClick} state={submitState} />
