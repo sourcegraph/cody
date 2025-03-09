@@ -35,6 +35,34 @@ describe('Transcript', () => {
         expectCells([{ message: '' }])
     })
 
+    test('renders with provided models', () => {
+        const { container } = render(
+            <Transcript
+                {...PROPS}
+                transcript={[
+                    { speaker: 'human', text: ps`Hello` },
+                    { speaker: 'assistant', text: ps`Hi` },
+                ]}
+            />
+        )
+
+        // Check if the model selector is rendered
+        const modelSelector = container.querySelector('[data-testid="chat-model-selector"]')
+        expect(modelSelector).not.toBeNull()
+        expect(modelSelector?.textContent).toEqual(FIXTURE_MODELS[0].title)
+
+        // Open the menu on click
+        fireEvent.click(modelSelector!)
+        const modelPopover = container?.querySelectorAll('[data-testid="chat-model-popover"]')[0]
+        const modelMenu = modelPopover!.querySelector('[data-testid="chat-model-popover-option"]')
+        const modelOptions = modelMenu!.querySelectorAll('[data-testid="chat-model-popover-option"]')
+        expect(modelOptions).toHaveLength(FIXTURE_MODELS.length)
+
+        // Check if the model titles are correct
+        const modelTitles = Array.from(modelOptions!).map(option => option.textContent)
+        expect(modelTitles.some(title => title === FIXTURE_MODELS[0].title)).toBe(true)
+    })
+
     test('interaction without context', () => {
         render(
             <Transcript

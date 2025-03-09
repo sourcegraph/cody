@@ -12,7 +12,7 @@ test('allows multiple enterprise models when server-sent models is enabled', asy
     await sidebarSignin(page, sidebar, { enableNotifications: true })
     // Open chat.
     const [chatFrame] = await createEmptyChatPanel(page)
-    let modelSelect = chatFrame.getByTestId('chat-model-selector')
+    let modelSelect = chatFrame.getByRole('combobox', { name: 'Select a model' }).last()
 
     // First model in the server list should be selected as default
     await expect(modelSelect).toBeEnabled()
@@ -31,7 +31,7 @@ test('allows multiple enterprise models when server-sent models is enabled', asy
     await chatTab.getByRole('button', { name: /^Close/ }).click()
 
     const [newChatFrame] = await createEmptyChatPanel(page)
-    modelSelect = newChatFrame.getByTestId('chat-model-selector')
+    modelSelect = newChatFrame.getByRole('combobox', { name: 'Select a model' }).last()
 
     // First model in the server list should be selected as default
     await expect(modelSelect).toBeEnabled()
