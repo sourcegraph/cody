@@ -155,8 +155,12 @@ export function serverSupportsPromptCaching(): boolean {
 
 /** @internal Exported for testing only. */
 export function inferCodyApiVersion(version: string, isDotCom: boolean): CodyApiVersion {
+    // Fast path for dotcom or local dev
     if (isDotCom || version === LOCAL_BUILD_VERSION_NUMBER) {
-        // Fast path for dotcom or local dev
+        // Use the latest version if it has been set and is greater than the last known version
+        if (_LatestCodyAPIVersion && _LatestCodyAPIVersion >= LastKnownCodyAPIVersion) {
+            return _LatestCodyAPIVersion
+        }
         return LastKnownCodyAPIVersion
     }
 

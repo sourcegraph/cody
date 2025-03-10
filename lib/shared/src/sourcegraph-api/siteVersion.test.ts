@@ -26,7 +26,7 @@ describe('inferCodyApiVersion', () => {
     })
 
     test('returns latestCodyClientConfig for dotcom', () => {
-        expect(inferCodyApiVersion('1.2.3', true)).toBe(8)
+        expect(inferCodyApiVersion('314951_2025-03-07_6.1-abeeb1a5e10d', true)).toBe(8)
     })
 
     test('returns latestCodyClientConfig for local dev', () => {
