@@ -49,7 +49,9 @@ describe('rewrite-query', () => {
         expect(expanded).toMatchInlineSnapshot(`"Where is authentication router defined?"`)
     )
 
-    check(ps`scan tokens in C++`, expanded => expect(expanded).toMatchInlineSnapshot(`"scan tokens in C++"`))
+    check(ps`scan tokens in C++`, expanded =>
+        expect(expanded).toMatchInlineSnapshot(`"scan tokens in C++"`)
+    )
 
     check(ps`parse file with tree-sitter`, expanded =>
         expect(expanded).toMatchInlineSnapshot(`"parse file with tree-sitter"`)
@@ -69,7 +71,8 @@ describe('rewrite-query', () => {
 
 \tmu       sync.RWMute
 `,
-        expanded => expect(expanded).toMatchInlineSnapshot(`
+        expanded =>
+            expect(expanded).toMatchInlineSnapshot(`
           "type Zoekt struct {
           	Client zoekt.Searcher
 
@@ -100,7 +103,8 @@ describe('rewrite-query', () => {
 
     check(
         ps`parse file with tree-sitter. follow these rules:\n*use the Google Go style guide\n*panic if parsing fails`,
-        expanded => expect(expanded).toMatchInlineSnapshot(`
+        expanded =>
+            expect(expanded).toMatchInlineSnapshot(`
           "parse file with tree-sitter. follow these rules:
           *use the Google Go style guide
           *panic if parsing fails"
