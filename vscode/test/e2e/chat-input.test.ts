@@ -76,6 +76,7 @@ test.extend<ExpectedV2Events>({
     // streaming its response.
     await firstChatInput.fill('delay')
     await firstChatInput.press('Enter')
+    await page.waitForTimeout(400)
     await expect(lastChatInput).toBeFocused()
 
     // Make sure the chat input box does not steal focus from the editor when editor
