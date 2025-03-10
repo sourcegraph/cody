@@ -64,7 +64,7 @@ const handleMissingTraceIdTransform: ErrorTransformer = (error, traceId) => {
 
 const handleContextDeadlineTransform: ErrorTransformer = error => {
     if (error.includes('context deadline exceeded')) {
-        return error + '. The response took too long to reply. Try again with a smaller context.'
+        return 'Context deadline exceeded. Try again with a smaller context.'
     }
     return undefined
 }
