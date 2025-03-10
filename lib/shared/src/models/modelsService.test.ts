@@ -427,7 +427,7 @@ describe('modelsService', () => {
 
         beforeEach(() => {
             mockAuthStatus(freeUserAuthStatus)
-            vi.spyOn(featureFlagProvider, 'evaluatedFeatureFlag').mockReturnValue(Observable.of(true))
+            vi.spyOn(featureFlagProvider, 'evaluateFeatureFlag').mockReturnValue(Observable.of(true))
             vi.spyOn(userProductSubscriptionModule, 'userProductSubscription', 'get').mockReturnValue(
                 Observable.of(codyProSub)
             )

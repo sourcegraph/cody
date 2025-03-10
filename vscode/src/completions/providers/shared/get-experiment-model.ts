@@ -28,11 +28,11 @@ export function getDotComExperimentModel({
     }
 
     return combineLatest(
-        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyAutocompleteStarCoderHybrid),
-        featureFlagProvider.evaluatedFeatureFlag(
+        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteStarCoderHybrid),
+        featureFlagProvider.evaluateFeatureFlag(
             FeatureFlag.CodyAutocompleteFIMModelExperimentBaseFeatureFlag
         ),
-        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyAutocompleteDeepseekV2LiteBase)
+        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteDeepseekV2LiteBase)
     ).pipe(
         switchMap(([starCoderHybrid, fimModelExperimentFlag, deepseekV2LiteBase]) => {
             // We run fine tuning experiment for VSC client only.
@@ -72,8 +72,8 @@ export function getDotComExperimentModel({
  */
 function resolveFIMModelExperimentFromFeatureFlags(): ReturnType<typeof getDotComExperimentModel> {
     return combineLatest(
-        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyAutocompleteFIMModelExperimentControl),
-        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyAutocompleteFIMModelExperimentVariant1)
+        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteFIMModelExperimentControl),
+        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteFIMModelExperimentVariant1)
     ).pipe(
         map(([fimModelControl]) => {
             if (fimModelControl) {

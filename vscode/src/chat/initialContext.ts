@@ -50,7 +50,7 @@ export function observeDefaultContext({
         getCurrentFileOrSelection({ chatBuilder }).pipe(distinctUntilChanged()),
         getCorpusContextItemsForEditorState().pipe(distinctUntilChanged()),
         getOpenCtxContextItems().pipe(distinctUntilChanged()),
-        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.NoDefaultRepoChip)
+        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.NoDefaultRepoChip)
     ).pipe(
         debounceTime(50),
         map(

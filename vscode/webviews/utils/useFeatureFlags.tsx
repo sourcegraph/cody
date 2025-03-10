@@ -9,6 +9,6 @@ import { useMemo } from 'react'
  * is not stale. Otherwise `undefined` (which callers should usually treat as `false`).
  */
 export function useFeatureFlag(flag: FeatureFlag): boolean | undefined {
-    const evaluatedFeatureFlag = useExtensionAPI().evaluatedFeatureFlag
+    const evaluatedFeatureFlag = useExtensionAPI().evaluateFeatureFlag
     return useObservable(useMemo(() => evaluatedFeatureFlag(flag), [evaluatedFeatureFlag, flag])).value
 }

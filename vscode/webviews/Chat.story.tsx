@@ -52,7 +52,7 @@ export const EmptyWithPromptLibraryUnsupported: StoryObj<typeof meta> = {
                     prompts: [],
                     commands: FIXTURE_COMMANDS,
                 }),
-                evaluatedFeatureFlag: _flag => Observable.of(true),
+                evaluateFeatureFlag: _flag => Observable.of(true),
             }}
         >
             <Chat {...args} />
@@ -70,7 +70,7 @@ export const EmptyWithNoPrompts: StoryObj<typeof meta> = {
                     prompts: [],
                     commands: FIXTURE_COMMANDS,
                 }),
-                evaluatedFeatureFlag: _flag => Observable.of(true),
+                evaluateFeatureFlag: _flag => Observable.of(true),
             }}
         >
             <Chat {...args} />

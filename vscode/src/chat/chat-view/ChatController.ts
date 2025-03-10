@@ -543,7 +543,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
     private async getConfigForWebview(): Promise<ConfigurationSubsetForWebview & LocalEnv> {
         const { configuration, auth } = await currentResolvedConfig()
         const experimentalPromptEditorEnabled = await firstValueFrom(
-            featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyExperimentalPromptEditor)
+            featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyExperimentalPromptEditor)
         )
         const sidebarViewOnly = this.extensionClient.capabilities?.webviewNativeConfig?.view === 'single'
         const isEditorViewType = this.webviewPanelOrView?.viewType === 'cody.editorPanel'
@@ -1271,7 +1271,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
     }
 
     private isAutoChatTitleEnabled = storeLastValue(
-        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.ChatTitleAutoGeneration)
+        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.ChatTitleAutoGeneration)
     )
 
     /**
@@ -1615,7 +1615,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                         })
                     },
                     clientActionBroadcast: () => this.clientBroadcast,
-                    evaluatedFeatureFlag: flag => featureFlagProvider.evaluatedFeatureFlag(flag),
+                    evaluateFeatureFlag: flag => featureFlagProvider.evaluateFeatureFlag(flag),
                     hydratePromptMessage: (promptText, initialContext) =>
                         promiseFactoryToObservable(() =>
                             hydratePromptText(promptText, initialContext ?? [])

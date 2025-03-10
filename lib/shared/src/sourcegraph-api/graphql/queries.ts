@@ -517,6 +517,15 @@ export const EVALUATE_FEATURE_FLAG_QUERY = `
     }
 `
 
+export const EVALUATE_FEATURE_FLAGS_QUERY = `
+    query EvaluateFeatureFlags($flagNames: [String!]!) {
+        evaluateFeatureFlags(flagNames: $flagNames) {
+            name
+            value
+        }
+    }
+`
+
 export const PACKAGE_LIST_QUERY = `
     query Packages($kind: PackageRepoReferenceKind!, $name: String!, $first: Int!, $after: String) {
         packageRepoReferences(kind: $kind, name: $name, first: $first, after: $after) {

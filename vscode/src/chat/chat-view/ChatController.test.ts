@@ -47,7 +47,7 @@ describe('ChatController', () => {
     }
     const mockGuardrails: Guardrails = {} as any
 
-    vi.spyOn(featureFlagProviderModule.featureFlagProvider, 'evaluatedFeatureFlag').mockReturnValue(
+    vi.spyOn(featureFlagProviderModule.featureFlagProvider, 'evaluateFeatureFlag').mockReturnValue(
         Observable.of(true)
     )
 

@@ -391,7 +391,7 @@ describe('PromptBuilder', () => {
 
 describe('PromptBuilder', () => {
     beforeEach(() => {
-        vi.spyOn(featureFlagProvider, 'evaluatedFeatureFlag').mockReturnValue(Observable.of(false))
+        vi.spyOn(featureFlagProvider, 'evaluateFeatureFlag').mockReturnValue(Observable.of(false))
     })
     describe('isCacheEnabled', () => {
         it('handles disabled feature flag correctly', async () => {
@@ -409,7 +409,7 @@ describe('PromptBuilder', () => {
 
         it('respects feature flag value and tracks enrollment', async () => {
             // Mock feature flag provider
-            vi.spyOn(featureFlagProvider, 'evaluatedFeatureFlag').mockReturnValue(Observable.of(true))
+            vi.spyOn(featureFlagProvider, 'evaluateFeatureFlag').mockReturnValue(Observable.of(true))
             const promptBuilder = await PromptBuilder.create({
                 input: 8192,
                 output: 4096,
@@ -420,7 +420,7 @@ describe('PromptBuilder', () => {
 
             // Second access should use cached value
             expect(promptBuilder.isCacheEnabled).toBe(true)
-            vi.spyOn(featureFlagProvider, 'evaluatedFeatureFlag').mockReturnValue(Observable.of(false))
+            vi.spyOn(featureFlagProvider, 'evaluateFeatureFlag').mockReturnValue(Observable.of(false))
         })
     })
 })

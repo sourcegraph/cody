@@ -33,7 +33,7 @@ export class AutoEditOnboarding implements vscode.Disposable {
     private readonly MIN_TIME_DIFF_AUTO_EDITS_BETWEEN_NOTIFICATIONS_MS = 60 * 60 * 1000 // 1 hour
 
     private featureFlagAutoEditExperimental = storeLastValue(
-        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyAutoEditExperimentEnabledFeatureFlag)
+        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutoEditExperimentEnabledFeatureFlag)
     )
 
     public async showAutoEditOnboardingIfEligible(): Promise<void> {

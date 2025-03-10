@@ -145,8 +145,8 @@ function getSmartApplyExperimentModel(): Observable<EditModel | undefined> {
     const haikuModel: EditModel = 'anthropic::2024-10-22::claude-3-5-haiku-latest'
 
     return combineLatest(
-        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodySmartApplyExperimentEnabledFeatureFlag),
-        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodySmartApplyExperimentVariant1)
+        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodySmartApplyExperimentEnabledFeatureFlag),
+        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodySmartApplyExperimentVariant1)
     ).pipe(
         switchMap(([isExperimentEnabled, isVariant1Enabled]) => {
             // We run fine tuning experiment for VSC client only.
