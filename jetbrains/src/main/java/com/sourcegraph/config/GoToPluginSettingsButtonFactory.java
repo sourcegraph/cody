@@ -27,9 +27,7 @@ public class GoToPluginSettingsButtonFactory {
           @Override
           public void actionPerformed(@NotNull AnActionEvent e) {
             new OpenCodySettingsEditorAction()
-                .actionPerformed(
-                    AnActionEvent.createFromDataContext(
-                        "", e.getPresentation(), SimpleDataContext.getProjectContext(project)));
+                .actionPerformed(e.withDataContext(SimpleDataContext.getProjectContext(project)));
           }
         };
 
