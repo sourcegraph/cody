@@ -8,10 +8,13 @@ import {
     type EventSource,
     FeatureFlag,
     PromptString,
+    type SiteAndCodyAPIVersions,
     currentSiteVersion,
     extractContextFromTraceparent,
     featureFlagProvider,
     ps,
+    siteVersion,
+    skipPendingOperation,
     subscriptionDisposable,
     telemetryRecorder,
     wrapInActiveSpan,
@@ -39,8 +42,8 @@ export class SmartApplyManager implements vscode.Disposable {
 
     private isPrefetchingEnabled = false
     private smartApplyContextLogger: SmartApplyContextLogger
-
     private cache = new LRUCache<string, SmartApplyCacheEntry>({ max: 20 })
+    private siteVersion: SiteAndCodyAPIVersions | null = null
 
     constructor(
         private options: {
@@ -92,6 +95,14 @@ export class SmartApplyManager implements vscode.Disposable {
                     .subscribe(isPrefetchingEnabled => {
                         this.isPrefetchingEnabled = Boolean(isPrefetchingEnabled)
                     })
+            )
+        )
+
+        this.disposables.push(
+            subscriptionDisposable(
+                siteVersion.pipe(skipPendingOperation()).subscribe(version => {
+                    this.siteVersion = version
+                })
             )
         )
 
@@ -167,7 +178,7 @@ export class SmartApplyManager implements vscode.Disposable {
         model: string
     ): SmartApplyCacheEntry {
         const { id, instruction, document, replacement } = configuration
-        const versions = await currentSiteVersion()
+        const versions = this.siteVersion ?? (await currentSiteVersion())
         if (isError(versions)) {
             throw new Error('Unable to determine site version', versions)
         }
