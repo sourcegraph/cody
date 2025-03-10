@@ -1,6 +1,6 @@
 package com.sourcegraph.cody.agent.protocol_extensions
 
-import com.sourcegraph.cody.Icons
+import com.sourcegraph.Icons
 import com.sourcegraph.cody.agent.protocol_generated.Model
 import javax.swing.Icon
 
