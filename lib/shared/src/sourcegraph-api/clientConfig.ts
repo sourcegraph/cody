@@ -21,6 +21,7 @@ import {
 import { isError } from '../utils'
 import { isAbortError } from './errors'
 import { type CodyConfigFeatures, type GraphQLAPIClientConfig, graphqlClient } from './graphql/client'
+import { setLatestCodyAPIVersion } from './siteVersion'
 
 export interface CodyNotice {
     key: string
@@ -309,7 +310,7 @@ export class ClientConfigSingleton {
                 if (isError(clientConfig)) {
                     throw clientConfig
                 }
-                latestCodyClientConfig = clientConfig
+                setLatestCodyAPIVersion(clientConfig?.latestSupportedCompletionsStreamAPIVersion)
                 return clientConfig
             })
     }
@@ -321,13 +322,4 @@ export class ClientConfigSingleton {
     ): Promise<CodyClientConfig | undefined> {
         return this.fetchConfigEndpoint(signal, config)
     }
-}
-// It's really complicated to access CodyClientConfig from functions like utils.ts
-let latestCodyClientConfig: CodyClientConfig | undefined
-
-export function serverSupportsPromptCaching(): boolean {
-    return (
-        latestCodyClientConfig?.latestSupportedCompletionsStreamAPIVersion !== undefined &&
-        latestCodyClientConfig?.latestSupportedCompletionsStreamAPIVersion >= 7
-    )
 }

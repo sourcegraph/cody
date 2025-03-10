@@ -96,11 +96,11 @@ log:
         send: 0
         ssl: -1
         wait: 263
-    - _id: edba6fdce29106c1d12db3f58a4b76f1
+    - _id: 0a43146219b6258b26a74374de371701
       _order: 0
       cache: {}
       request:
-        bodySize: 589
+        bodySize: 565
         cookies: []
         headers:
           - name: accept-encoding
@@ -113,14 +113,14 @@ log:
           - name: content-type
             value: application/json
           - name: traceparent
-            value: 00-d6d2d96697b8424aae4b45de31e3ee10-88918f1ae67af4eb-01
+            value: 00-3e407523853d8c958471d67e369e8c6f-3c9ff6790bbced37-01
           - name: user-agent
             value: auth/v1 (Node.js v20.4.0)
           - name: x-requested-with
             value: auth v1
           - name: host
             value: sourcegraph.com
-        headersSize: 494
+        headersSize: 508
         httpVersion: HTTP/1.1
         method: POST
         postData:
@@ -139,26 +139,27 @@ log:
                   For executable terminal commands: enclose each command in individual "bash" language code block without comments and new lines inside.
               - speaker: human
                 text: hello after reauthentication
-              - speaker: assistant
             model: anthropic::2023-06-01::claude-3-haiku
             temperature: 0
             topK: -1
             topP: -1
         queryString:
+          - name: api-version
+            value: "8"
           - name: client-name
             value: auth
           - name: client-version
             value: v1
-        url: https://sourcegraph.com/.api/completions/stream?client-name=auth&client-version=v1
+        url: https://sourcegraph.com/.api/completions/stream?api-version=8&client-name=auth&client-version=v1
       response:
-        bodySize: 516
+        bodySize: 675
         content:
           mimeType: text/event-stream
-          size: 516
+          size: 675
           text: >+
             event: completion
 
-            data: {"completion":"Hello, I'm Cody, an AI coding assistant from Sourcegraph. How can I assist you today?","stopReason":"end_turn"}
+            data: {"deltaText":"Hello! I'm Cody, an AI coding assistant from Sourcegraph. How can I assist you today?","stopReason":"end_turn"}
 
 
             event: done
@@ -168,7 +169,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 06 Mar 2025 02:26:53 GMT
+            value: Fri, 07 Mar 2025 18:53:54 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -197,8 +198,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-03-06T02:26:52.607Z
-      time: 1074
+      startedDateTime: 2025-03-07T18:53:53.460Z
+      time: 1015
       timings:
         blocked: -1
         connect: -1
@@ -206,7 +207,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 1074
+        wait: 1015
     - _id: f1b1cde4cd57488b7f0137954f0302f5
       _order: 0
       cache: {}
@@ -1445,7 +1446,7 @@ log:
         send: 0
         ssl: -1
         wait: 270
-    - _id: 680091d251a65b1b087c0770b7196208
+    - _id: 3dafbb77ca8dc69a025c3163d2c3d3cd
       _order: 0
       cache: {}
       request:
@@ -1462,7 +1463,7 @@ log:
           - name: content-type
             value: application/json
           - name: traceparent
-            value: 00-b388adfe036c99b7cc2ca6f978ed636f-26054c64c2d9a1a5-01
+            value: 00-2bcf39ce1caf1ba2b75dc50028e94306-9cc86739d1ea7e96-01
           - name: user-agent
             value: auth/v1 (Node.js v20.4.0)
           - name: x-requested-with
@@ -1497,21 +1498,21 @@ log:
             topP: -1
         queryString:
           - name: api-version
-            value: "8"
+            value: "6"
           - name: client-name
             value: auth
           - name: client-version
             value: v1
-        url: https://sourcegraph.sourcegraph.com/.api/completions/stream?api-version=8&client-name=auth&client-version=v1
+        url: https://sourcegraph.sourcegraph.com/.api/completions/stream?api-version=6&client-name=auth&client-version=v1
       response:
-        bodySize: 609
+        bodySize: 650
         content:
           mimeType: text/event-stream
-          size: 609
+          size: 650
           text: >+
             event: completion
 
-            data: {"deltaText":"Hi there! Welcome back with your switched account. I'm ready to help you with any coding or technical questions you have. Let's work together!","stopReason":"end_turn"}
+            data: {"deltaText":"Hi! Welcome back! I'm Cody and I'm ready to help you with any coding or technical questions you have. Let me know what you'd like to work on!","stopReason":"end_turn"}
 
 
             event: done
@@ -1521,7 +1522,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 06 Mar 2025 02:27:06 GMT
+            value: Fri, 07 Mar 2025 16:54:24 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -1550,8 +1551,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-03-06T02:27:04.712Z
-      time: 1424
+      startedDateTime: 2025-03-07T16:54:22.842Z
+      time: 1439
       timings:
         blocked: -1
         connect: -1
@@ -1559,7 +1560,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 1424
+        wait: 1439
     - _id: 5d0e29776bf0857beffb22b778ce488b
       _order: 0
       cache: {}

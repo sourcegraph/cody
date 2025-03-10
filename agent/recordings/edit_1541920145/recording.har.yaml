@@ -109,7 +109,7 @@ log:
           - name: content-type
             value: application/json
           - name: traceparent
-            value: 00-dc75d15c79869475fa3104bf72a067e2-9dcb4b77e4e96656-01
+            value: 00-61d5da54597e5e683adb3c045ea59e7a-ff69a075c3ac1d71-01
           - name: user-agent
             value: edit/v1 (Node.js v20.4.0)
           - name: x-requested-with
@@ -187,10 +187,10 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=8&client-name=edit&client-version=v1
       response:
-        bodySize: 547
+        bodySize: 505
         content:
           mimeType: text/event-stream
-          size: 547
+          size: 505
           text: >+
             event: completion
 
@@ -204,7 +204,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 06 Mar 2025 02:26:54 GMT
+            value: Fri, 07 Mar 2025 18:53:56 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -233,8 +233,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-03-06T02:26:51.865Z
-      time: 2910
+      startedDateTime: 2025-03-07T18:53:54.286Z
+      time: 1794
       timings:
         blocked: -1
         connect: -1
@@ -242,7 +242,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 2910
+        wait: 1794
     - _id: 53cd3b836acbf7d04ccd11784dc90794
       _order: 0
       cache: {}
@@ -260,7 +260,7 @@ log:
           - name: content-type
             value: application/json
           - name: traceparent
-            value: 00-a802e1186c63cedc28a72bd94344080f-67363a558fd9ffe7-01
+            value: 00-dca0074f8bf927c4ad594bf4b105512f-d1ab90c823b5171a-01
           - name: user-agent
             value: edit/v1 (Node.js v20.4.0)
           - name: x-requested-with
@@ -373,10 +373,10 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=8&client-name=edit&client-version=v1
       response:
-        bodySize: 989
+        bodySize: 1073
         content:
           mimeType: text/event-stream
-          size: 989
+          size: 1073
           text: >+
             event: completion
 
@@ -390,7 +390,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 06 Mar 2025 02:26:57 GMT
+            value: Fri, 07 Mar 2025 18:53:58 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -419,8 +419,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-03-06T02:26:54.871Z
-      time: 2399
+      startedDateTime: 2025-03-07T18:53:56.176Z
+      time: 2224
       timings:
         blocked: -1
         connect: -1
@@ -428,7 +428,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 2399
+        wait: 2224
     - _id: b09491600efcaea936949a563b9d589e
       _order: 0
       cache: {}
@@ -446,7 +446,7 @@ log:
           - name: content-type
             value: application/json
           - name: traceparent
-            value: 00-67980c42efe536794b47bd868a67dc5d-6d0aeb9a743312bc-01
+            value: 00-fda075464797ff4a27e3af3b4b901057-d86dd9686765ea93-01
           - name: user-agent
             value: edit/v1 (Node.js v20.4.0)
           - name: x-requested-with
@@ -535,14 +535,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=8&client-name=edit&client-version=v1
       response:
-        bodySize: 1074
+        bodySize: 1036
         content:
           mimeType: text/event-stream
-          size: 1074
+          size: 1036
           text: >+
             event: completion
 
-            data: {"deltaText":"export function trickyLogic(a: number, b: number): number {\n    switch (true) {\n        case a === 0:\n            return 1\n        case b === 2:\n            return 1\n        default:\n            return a - b\n    }\n}","stopReason":"stop_sequence"}
+            data: {"deltaText":"\nexport function trickyLogic(a: number, b: number): number {\n    switch (true) {\n        case a === 0:\n            return 1\n        case b === 2:\n            return 1\n        default:\n            return a - b\n    }\n}\n","stopReason":"stop_sequence"}
 
 
             event: done
@@ -552,7 +552,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 06 Mar 2025 04:16:54 GMT
+            value: Fri, 07 Mar 2025 18:54:01 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -581,8 +581,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-03-06T04:16:52.031Z
-      time: 2293
+      startedDateTime: 2025-03-07T18:53:58.421Z
+      time: 2640
       timings:
         blocked: -1
         connect: -1
@@ -590,7 +590,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 2293
+        wait: 2640
     - _id: f1b1cde4cd57488b7f0137954f0302f5
       _order: 0
       cache: {}

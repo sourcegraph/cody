@@ -11,7 +11,7 @@ stdout: |+
 
 
 
-  \`\`\`typescript:animal.ts
+  \`\`\`typescript:cow.ts
   class Cow implements StrangeAnimal {
       makesSound(): 'coo' | 'moo' {
           return 'moo'
@@ -34,7 +34,7 @@ stdout: |+
 
 
 
-  \`\`\`typescript:animal.ts
+  \`\`\`typescript:cow.ts
   class Cow implements StrangeAnimal {
       makesSound(): 'coo' | 'moo' {
           return 'moo'
@@ -57,7 +57,7 @@ stdout: |+
 
 
 
-  \`\`\`typescript:animal.ts
+  \`\`\`typescript:cow.ts
   class Cow implements StrangeAnimal {
       makesSound(): 'coo' | 'moo' {
           return 'moo'

@@ -92,7 +92,7 @@ log:
         send: 0
         ssl: -1
         wait: 209
-    - _id: 09c89de444311cd46b44ba399e36c9c0
+    - _id: 4e52072fd4d5cc0c7a19fd3fee1136b6
       _order: 0
       cache: {}
       request:
@@ -142,17 +142,17 @@ log:
             topP: -1
         queryString:
           - name: api-version
-            value: "8"
+            value: "5"
           - name: client-name
             value: jetbrains
           - name: client-version
             value: 6.0.0-SNAPSHOT
-        url: https://sourcegraph.sourcegraph.com/.api/completions/stream?api-version=8&client-name=jetbrains&client-version=6.0.0-SNAPSHOT
+        url: https://sourcegraph.sourcegraph.com/.api/completions/stream?api-version=5&client-name=jetbrains&client-version=6.0.0-SNAPSHOT
       response:
-        bodySize: 412
+        bodySize: 370
         content:
           mimeType: text/event-stream
-          size: 412
+          size: 370
           text: >+
             event: completion
 
@@ -166,7 +166,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 06 Mar 2025 02:26:53 GMT
+            value: Fri, 07 Mar 2025 16:54:28 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -195,8 +195,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-03-06T02:26:52.039Z
-      time: 1340
+      startedDateTime: 2025-03-07T16:54:27.857Z
+      time: 883
       timings:
         blocked: -1
         connect: -1
@@ -204,8 +204,8 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 1340
-    - _id: 5dcbf494e9fc3ab7a53f6123d3e27ef9
+        wait: 883
+    - _id: df1ab905e321e4e90193f857f73d629d
       _order: 0
       cache: {}
       request:
@@ -269,21 +269,21 @@ log:
             topP: -1
         queryString:
           - name: api-version
-            value: "8"
+            value: "5"
           - name: client-name
             value: jetbrains
           - name: client-version
             value: 6.0.0-SNAPSHOT
-        url: https://sourcegraph.sourcegraph.com/.api/completions/stream?api-version=8&client-name=jetbrains&client-version=6.0.0-SNAPSHOT
+        url: https://sourcegraph.sourcegraph.com/.api/completions/stream?api-version=5&client-name=jetbrains&client-version=6.0.0-SNAPSHOT
       response:
-        bodySize: 643
+        bodySize: 640
         content:
           mimeType: text/event-stream
-          size: 643
+          size: 640
           text: >+
             event: completion
 
-            data: {"deltaText":"```typescript:animal.ts\nclass Cow implements StrangeAnimal {\n    makesSound(): 'coo' | 'moo' {\n        return 'moo'\n    }\n}\n```","stopReason":"end_turn"}
+            data: {"deltaText":"```typescript:cow.ts\nclass Cow implements StrangeAnimal {\n    makesSound(): 'coo' | 'moo' {\n        return 'moo'\n    }\n}\n```","stopReason":"end_turn"}
 
 
             event: done
@@ -293,7 +293,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 06 Mar 2025 02:26:56 GMT
+            value: Fri, 07 Mar 2025 16:54:32 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -322,8 +322,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-03-06T02:26:55.334Z
-      time: 1269
+      startedDateTime: 2025-03-07T16:54:31.527Z
+      time: 1559
       timings:
         blocked: -1
         connect: -1
@@ -331,7 +331,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 1269
+        wait: 1559
     - _id: 5d0e29776bf0857beffb22b778ce488b
       _order: 0
       cache: {}

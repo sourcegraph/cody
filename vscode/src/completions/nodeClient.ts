@@ -43,9 +43,7 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
         const { apiVersion, interactionId } = requestParams
 
         const url = new URL(await this.completionsEndpoint())
-        if (apiVersion >= 1) {
-            url.searchParams.append('api-version', '' + apiVersion)
-        }
+        url.searchParams.append('api-version', '' + apiVersion)
         addClientInfoParams(url.searchParams)
 
         return tracer.startActiveSpan(`POST ${url.toString()}`, async span => {

@@ -134,7 +134,8 @@ describe('Edit', { timeout: 5000 }, () => {
                   default:
                       return a - b
               }
-          }"
+          }
+          "
         `,
             explainPollyError
         )

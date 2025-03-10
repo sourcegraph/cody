@@ -1,5 +1,5 @@
 import { type SerializedChatMessage, contextFiltersProvider } from '../..'
-import { serverSupportsPromptCaching } from '../clientConfig'
+import { serverSupportsPromptCaching } from '../siteVersion'
 import type { CompletionParameters, Message, SerializedCompletionParameters } from './types'
 
 /**
