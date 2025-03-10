@@ -10,9 +10,12 @@ import {
     NetworkError,
     RateLimitError,
     SourcegraphCompletionsClient,
+    addAuthHeaders,
     addClientInfoParams,
     addCodyClientIdentificationHeaders,
+    currentResolvedConfig,
     getActiveTraceAndSpanId,
+    getAuthHeaders,
     getTraceparentHeaders,
     globalAgentRef,
     isCustomAuthChallengeResponse,
@@ -37,7 +40,7 @@ export class AnthropicCompletionsClient extends SourcegraphCompletionsClient {
     }
 
     protected async completionsEndpoint(): Promise<string> {
-        return this.options.apiEndpoint || 'https://api.anthropic.com/v1/messages'
+        return this.options.apiEndpoint || 'http://localhost:8080/v1/messages:stream'
     }
 
     /**
@@ -144,15 +147,28 @@ export class AnthropicCompletionsClient extends SourcegraphCompletionsClient {
             // Text which has not been decoded as a server-sent event (SSE)
             let bufferText = ''
 
+            const { auth, configuration } = await currentResolvedConfig()
             const headers = new Headers({
                 'Content-Type': 'application/json',
                 'X-API-Key': this.options.apiKey,
                 'Anthropic-Version': '2023-06-01',
                 'Anthropic-Beta': 'messages-2023-12-15',
+                ...configuration?.customHeaders,
+                ...requestParams.customHeaders,
                 ...getTraceparentHeaders(),
                 Connection: 'keep-alive',
             })
             addCodyClientIdentificationHeaders(headers)
+
+            try {
+                // HACK(beyang): getAuthHeaders checks for consistency between auth.serverEndpoint and url.host
+                // but Anthropic's API endpoint is not consistent with the serverEndpoint
+                await addAuthHeaders(auth, headers, new URL(auth.serverEndpoint))
+            } catch (error: any) {
+                log?.onError(error.message, error)
+                onErrorOnce(error)
+                return
+            }
 
             const request = requestFn(
                 url,
@@ -389,15 +405,19 @@ export class AnthropicCompletionsClient extends SourcegraphCompletionsClient {
                     system: systemPrompt,
                 }
 
+                const { auth, configuration } = await currentResolvedConfig()
                 const headers = new Headers({
                     'Content-Type': 'application/json',
                     'X-API-Key': this.options.apiKey,
                     'Anthropic-Version': '2023-06-01',
                     'Anthropic-Beta': 'messages-2023-12-15',
+                    ...configuration?.customHeaders,
+                    ..._requestParams.customHeaders,
                     ...getTraceparentHeaders(),
                 })
 
                 addCodyClientIdentificationHeaders(headers)
+                await addAuthHeaders(auth, headers, url)
 
                 const response = await fetch(url.toString(), {
                     method: 'POST',
