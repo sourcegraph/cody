@@ -24,7 +24,6 @@ import { AutoeditDebugPanel } from './debug-panel/debug-panel'
 import { autoeditsOutputChannelLogger } from './output-channel-logger'
 
 const AUTOEDITS_NON_ELIGIBILITY_MESSAGES = {
-    ONLY_VSCODE_SUPPORT: 'Auto-edit is currently only supported in VS Code.',
     PRO_USER_ONLY: 'Auto-edit requires Cody Pro subscription.',
     FEATURE_FLAG_NOT_ELIGIBLE:
         'Auto-edit is an experimental feature and currently not enabled for your account. Please check back later.',
