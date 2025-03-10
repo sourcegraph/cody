@@ -18,9 +18,10 @@ class EditCodeAction :
 
   override fun update(event: AnActionEvent) {
     super.update(event)
-    event.presentation.isEnabledAndVisible =
-        event.presentation.isEnabledAndVisible &&
-            (event.project?.let { !EditCommandPrompt.isVisible(it) } ?: true)
+    val eventEnabled = event.presentation.isEnabled
+    val popupVisible = event.project?.let { EditCommandPrompt.isVisible(it) } === true
+    // If the popup is visible, we let it handle the keybinding for the action.
+    event.presentation.isEnabled = eventEnabled && !popupVisible
   }
 
   companion object {
