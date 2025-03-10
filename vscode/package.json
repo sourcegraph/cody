@@ -614,7 +614,6 @@
         "key": "alt+l",
         "when": "cody.activated"
       },
-
       {
         "command": "cody.mention.selection",
         "key": "alt+l",
