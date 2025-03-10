@@ -17,6 +17,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.TextRange
 import com.intellij.util.concurrency.annotations.RequiresReadLock
 import com.sourcegraph.cody.agent.CodyAgentService
+import com.sourcegraph.cody.agent.protocol_generated.AutocompleteCompletionResult
 import com.sourcegraph.cody.agent.protocol_generated.AutocompleteResult
 import com.sourcegraph.cody.agent.protocol_generated.CompletionItemParams
 import com.sourcegraph.cody.statusbar.CodyStatusService.Companion.resetApplication
@@ -60,7 +61,8 @@ class CodyInlineCompletionProvider : InlineCompletionProvider {
     val completions =
         fetchCompletions(project, editor, triggerKind, cancellationToken, lookupString)
             .completeOnTimeout(null, 1, TimeUnit.SECONDS)
-            .get() ?: return InlineCompletionSuggestion.Empty
+            .get()
+            .let { it as? AutocompleteCompletionResult } ?: return InlineCompletionSuggestion.Empty
 
     return InlineCompletionSingleSuggestion.build {
       completions.items
