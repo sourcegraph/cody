@@ -46,18 +46,18 @@ describe('rewrite-query', () => {
     }
 
     check(ps`Where is authentication router defined?`, expanded =>
-        expect(expanded).toMatchInlineSnapshot(`"Where is authentication router defined?"`)
+        expect(expanded).toMatchInlineSnapshot(`"authentication router"`)
     )
 
-    check(ps`scan tokens in C++`, expanded =>
-        expect(expanded).toMatchInlineSnapshot(`"scan tokens in C++"`)
-    )
+    check(ps`scan tokens in C++`, expanded => expect(expanded).toMatchInlineSnapshot(`"token scan C++"`))
 
     check(ps`parse file with tree-sitter`, expanded =>
-        expect(expanded).toMatchInlineSnapshot(`"parse file with tree-sitter"`)
+        expect(expanded).toMatchInlineSnapshot(`"tree-sitter parse"`)
     )
 
-    check(ps`type Zoekt struct {`, expanded => expect(expanded).toMatchInlineSnapshot(`"struct zoekt"`))
+    check(ps`type Zoekt struct {`, expanded =>
+        expect(expanded).toMatchInlineSnapshot(`"type Zoekt struct"`)
+    )
 
     check(
         ps`type Zoekt struct {
@@ -69,25 +69,28 @@ describe('rewrite-query', () => {
 
 \tmu       sync.RWMute
 `,
-        expanded => expect(expanded).toMatchInlineSnapshot(`"cache client sync zoekt"`)
+        expanded => expect(expanded).toMatchInlineSnapshot(`"type Zoekt struct"`)
     )
 
     check(ps`C'est ou la logique pour recloner les dépôts?`, expanded =>
-        expect(expanded).toMatchInlineSnapshot(`"clone logic repository"`)
+        expect(expanded).toMatchInlineSnapshot(`"reclone repository"`)
     )
 
     check(ps`Wie kann ich eine neue Datenbankmigration definieren?`, expanded =>
-        expect(expanded).toMatchInlineSnapshot(`"database definition migration new"`)
+        expect(expanded).toMatchInlineSnapshot(`"database migration create"`)
     )
 
     check(
         ps`Explain how the context window limit is calculated. how much budget is given to @-mentions vs. search context?`,
-        expanded => expect(expanded).toMatchInlineSnapshot(`"budget context mentions search window"`)
+        expanded =>
+            expect(expanded).toMatchInlineSnapshot(
+                `"context window limit calculation @-mentions search context"`
+            )
     )
 
     check(
         ps`parse file with tree-sitter. follow these rules:\n*use the Google Go style guide\n*panic if parsing fails`,
-        expanded => expect(expanded).toMatchInlineSnapshot(`"go guide panic parse style tree-sitter"`)
+        expanded => expect(expanded).toMatchInlineSnapshot(`"tree-sitter parsing error handling"`)
     )
 
     afterAll(async () => {

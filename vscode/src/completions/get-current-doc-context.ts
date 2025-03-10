@@ -84,17 +84,7 @@ export function getCurrentDocContext(params: GetCurrentDocContextParams): Docume
     const prefixLines = lines(completePrefixWithContextCompletion)
     const suffixLines = lines(completeSuffix)
     const prefix = getPrefix({ offset, maxPrefixLength, prefixLines })
-
-    let totalSuffix = 0
-    let endLine = 0
-    for (let i = 0; i < suffixLines.length; i++) {
-        if (totalSuffix + suffixLines[i].length > maxSuffixLength) {
-            break
-        }
-        endLine = i + 1
-        totalSuffix += suffixLines[i].length
-    }
-    const suffix = suffixLines.slice(0, endLine).join('\n')
+    const suffix = getSuffixWithCharLimit(suffixLines, maxSuffixLength)
 
     return getDerivedDocContext({
         maxPrefixLength,
@@ -119,24 +109,36 @@ interface GetPrefixParams {
 
 function getPrefix(params: GetPrefixParams): string {
     const { offset, maxPrefixLength, prefixLines } = params
-
-    let prefix: string
     if (offset > maxPrefixLength) {
-        let total = 0
-        let startLine = prefixLines.length
-        for (let i = prefixLines.length - 1; i >= 0; i--) {
-            if (total + prefixLines[i].length > maxPrefixLength) {
-                break
-            }
-            startLine = i
-            total += prefixLines[i].length
-        }
-        prefix = prefixLines.slice(startLine).join('\n')
-    } else {
-        prefix = prefixLines.join('\n')
+        return getPrefixWithCharLimit(prefixLines, maxPrefixLength)
     }
+    return prefixLines.join('\n')
+}
 
-    return prefix
+export function getPrefixWithCharLimit(prefixLines: string[], maxPrefixLength: number): string {
+    let total = 0
+    let startLine = prefixLines.length
+    for (let i = prefixLines.length - 1; i >= 0; i--) {
+        if (total + prefixLines[i].length > maxPrefixLength) {
+            break
+        }
+        startLine = i
+        total += prefixLines[i].length
+    }
+    return prefixLines.slice(startLine).join('\n')
+}
+
+export function getSuffixWithCharLimit(suffixLines: string[], maxSuffixLength: number): string {
+    let totalSuffix = 0
+    let endLine = 0
+    for (let i = 0; i < suffixLines.length; i++) {
+        if (totalSuffix + suffixLines[i].length > maxSuffixLength) {
+            break
+        }
+        endLine = i + 1
+        totalSuffix += suffixLines[i].length
+    }
+    return suffixLines.slice(0, endLine).join('\n')
 }
 
 interface GetDerivedDocContextParams {

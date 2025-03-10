@@ -48,7 +48,10 @@ export const remoteReposForAllWorkspaceFolders: Observable<
 ).pipe(
     switchMapReplayOperation(
         ([workspaceFolders]): Observable<RemoteRepo[] | typeof pendingOperation> => {
-            if (!workspaceFolders) {
+            // combineLatest won't complete/emit if the argument is an empty list.
+            // In order to ensure that functions like firstValueFrom work correctly,
+            // we have to return early here.
+            if (!workspaceFolders || workspaceFolders.length === 0) {
                 return Observable.of([])
             }
 

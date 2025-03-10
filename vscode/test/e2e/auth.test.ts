@@ -45,7 +45,7 @@ test.extend<ExpectedV2Events>({
     await expect(sidebar!.getByText('Invalid access token.')).not.toBeVisible()
     await expect(sidebar!.getByText('Sign in to Sourcegraph')).not.toBeVisible()
     await expect(sidebar!.getByLabel('Chat message')).toBeVisible()
-    await expect(sidebar!.getByRole('button', { name: 'New Chat' })).toBeVisible()
+    await expect(sidebar!.getByTestId('tab-chat')).toBeVisible()
 
     // Sign out.
     await signOut(page)
@@ -71,6 +71,7 @@ test
         ],
     })('test enterprise customers cannot log into dotcomUrl', async ({ page, sidebar }) => {
     await sidebarSignin(page, sidebar, { skipAssertions: true })
+    await expectSignInPage(page)
     await expect(
         page
             .frameLocator('iframe')
@@ -78,8 +79,6 @@ test
             .frameLocator('iframe[title="Chat"]')
             .getByText('Based on your email address')
     ).toBeVisible()
-
-    await expectSignInPage(page)
 })
 
 const refetchInterval = 500
@@ -104,7 +103,7 @@ test
     async ({ page, sidebar, server }) => {
         await sidebarSignin(page, sidebar, { skipAssertions: true })
         await server.setUserShouldUseEnterprise(true)
-
+        await expectSignInPage(page)
         await expect(
             page
                 .frameLocator('iframe')
@@ -114,8 +113,6 @@ test
         ).toBeVisible({
             timeout: refetchInterval * 10,
         })
-
-        await expectSignInPage(page)
     }
 )
 
@@ -152,7 +149,7 @@ test.extend<ExpectedV2Events>({
         await expect(sidebar!.getByLabel('Chat message')).toBeVisible()
 
         // Open the User Dropdown menu
-        await expect(sidebar!.getByRole('button', { name: 'New Chat' })).toBeVisible()
+        await expect(sidebar!.getByTestId('tab-chat')).toBeVisible()
         await sidebar!.getByLabel('Account Menu Button').click({ delay: 2000 })
 
         const codeWebview = sidebar!.getByLabel('cody-webview')

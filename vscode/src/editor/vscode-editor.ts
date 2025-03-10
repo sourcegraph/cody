@@ -77,10 +77,11 @@ export class VSCodeEditor implements Editor {
         if (selectionRange) {
             const startLine = selectionRange?.start?.line
             let endLine = selectionRange?.end?.line
+            const endChar = selectionRange?.end?.character
             if (startLine === endLine) {
                 endLine++
             }
-            range = new vscode.Range(startLine, 0, endLine, 0)
+            range = new vscode.Range(startLine, 0, endLine, endChar)
         }
 
         const doc = await vscode.workspace.openTextDocument(fileUri)

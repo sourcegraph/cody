@@ -22,4 +22,9 @@ export default defineProjectWithDefaults(__dirname, {
     resolve: {
         alias: { vscode: shimDirectory() },
     },
+    test: {
+        env: {
+            CODY_SHIM_TESTING: 'true',
+        },
+    },
 })

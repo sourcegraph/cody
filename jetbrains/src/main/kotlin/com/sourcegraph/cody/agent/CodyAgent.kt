@@ -10,12 +10,9 @@ import com.intellij.util.net.HttpConfigurable
 import com.intellij.util.system.CpuArch
 import com.sourcegraph.cody.agent.protocol.*
 import com.sourcegraph.cody.agent.protocol_extensions.ProtocolTextDocumentExt
-import com.sourcegraph.cody.agent.protocol_generated.ClientCapabilities
-import com.sourcegraph.cody.agent.protocol_generated.ClientInfo
-import com.sourcegraph.cody.agent.protocol_generated.CodyAgentServer
-import com.sourcegraph.cody.agent.protocol_generated.ProtocolTypeAdapters
-import com.sourcegraph.cody.agent.protocol_generated.WebviewNativeConfig
+import com.sourcegraph.cody.agent.protocol_generated.*
 import com.sourcegraph.cody.auth.SourcegraphServerPath
+import com.sourcegraph.cody.error.SentryService
 import com.sourcegraph.cody.ui.web.WebUIServiceWebviewProvider
 import com.sourcegraph.cody.vscode.CancellationToken
 import com.sourcegraph.config.ConfigUtil
@@ -99,7 +96,9 @@ private constructor(
     private val logger = Logger.getInstance(CodyAgent::class.java)
     private val PLUGIN_ID = PluginId.getId("com.sourcegraph.jetbrains")
     private const val DEFAULT_AGENT_DEBUG_PORT = 3113 // Also defined in agent/src/cli/jsonrpc.ts
-
+    private val globalState =
+        if (ConfigUtil.isIntegrationTestModeEnabled()) ClientCapabilities.GlobalStateEnum.Stateless
+        else ClientCapabilities.GlobalStateEnum.`Server-managed`
     @JvmField val executorService: ExecutorService = Executors.newCachedThreadPool()
 
     enum class Debuggability {
@@ -150,7 +149,7 @@ private constructor(
                               untitledDocuments = ClientCapabilities.UntitledDocumentsEnum.Enabled,
                               codeActions = ClientCapabilities.CodeActionsEnum.Enabled,
                               shell = ClientCapabilities.ShellEnum.Enabled,
-                              globalState = ClientCapabilities.GlobalStateEnum.`Server-managed`,
+                              globalState = globalState,
                               secrets = ClientCapabilities.SecretsEnum.`Client-managed`,
                               webview = ClientCapabilities.WebviewEnum.Native,
                               webviewNativeConfig =
@@ -169,6 +168,9 @@ private constructor(
               .thenApply { info ->
                 logger.warn("Connected to Cody agent " + info.name)
                 server.initialized(null)
+                if (info.authStatus is ProtocolAuthenticatedAuthStatus) {
+                  SentryService.setUser(info.authStatus.primaryEmail, info.authStatus.username)
+                }
                 CodyAgent(client, server, launcher, conn, listeningToJsonRpc)
               }
         } catch (e: Exception) {

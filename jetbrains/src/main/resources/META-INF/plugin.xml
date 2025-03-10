@@ -26,6 +26,8 @@
         <applicationService
                 serviceImplementation="com.sourcegraph.config.CodyApplicationService"/>
 
+        <fileIconProvider implementation="com.sourcegraph.cody.chat.ChatIconProvider"/>
+
         <projectConfigurable
                 parentId="tools"
                 instance="com.sourcegraph.cody.config.ui.SourcegraphConfigurable"
@@ -74,7 +76,7 @@
                 factoryClass="com.sourcegraph.cody.CodyToolWindowFactory"/>
 
         <errorHandler
-                implementation="com.sourcegraph.cody.error.CodyErrorSubmitter"/>
+                implementation="com.sourcegraph.cody.error.SentryErrorSubmitter"/>
 
         <!-- status bar widgets -->
         <statusBarWidgetFactory order="first" id="cody.internalsStatusBarWidget"
@@ -396,6 +398,12 @@
                         text="Enable OffScreen Rendering"
                         description="Enable offScreen rendering in webview">
                     <override-text place="GoToAction" text="Cody: Enable OffScreen Rendering"/>
+                </action>
+                <action id="cody.openWebviewDevToolsAction"
+                        class="com.sourcegraph.cody.OpenWebviewDevToolsAction"
+                        text="Open DevTools"
+                        description="Open DevTools to debug Cody webview">
+                    <override-text place="GoToAction" text="Cody: Open DevTools"/>
                 </action>
             </group>
         </group>

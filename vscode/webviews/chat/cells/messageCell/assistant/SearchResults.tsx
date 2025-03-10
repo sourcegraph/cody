@@ -245,7 +245,7 @@ export const SearchResults = ({
                                     </div>
                                 </div>
                                 <div className="tw-flex tw-items-center tw-gap-6 tw-px-4 md:tw-px-2">
-                                    {showFiltersButton && (
+                                    {showFiltersButton && !showFiltersSidebar && (
                                         <>
                                             <Button
                                                 onClick={() => {

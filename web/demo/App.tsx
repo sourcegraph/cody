@@ -3,7 +3,6 @@ import { CodyWebChat, type InitialContext } from '../lib'
 
 // @ts-ignore
 import AgentWorker from '../lib/agent/agent.worker.ts?worker'
-
 const CREATE_AGENT_WORKER = (): Worker => new AgentWorker() as Worker
 
 // Include highlights styles for demo purpose, clients like
@@ -36,17 +35,17 @@ const INITIAL_CONTEXT: InitialContext = {
     isDirectory: true,
 }
 
+const agentConfig = {
+    accessToken,
+    serverEndpoint,
+    telemetryClientName: 'codydemo.testing',
+    createAgentWorker: CREATE_AGENT_WORKER,
+}
+
 export const App: FC = () => {
     return (
         <div className={styles.root}>
-            <CodyWebChat
-                accessToken={accessToken}
-                serverEndpoint={serverEndpoint}
-                createAgentWorker={CREATE_AGENT_WORKER}
-                telemetryClientName="codydemo.testing"
-                initialContext={INITIAL_CONTEXT}
-                viewType="sidebar"
-            />
+            <CodyWebChat agentConfig={agentConfig} initialContext={INITIAL_CONTEXT} viewType="sidebar" />
         </div>
     )
 }

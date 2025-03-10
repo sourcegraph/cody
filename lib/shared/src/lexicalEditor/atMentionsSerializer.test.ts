@@ -271,6 +271,333 @@ describe('atMentionsSerializer', () => {
         })
     })
 
+    it('can deal with linebreaks and tabs', () => {
+        const input = {
+            text: "test\n\n  test2\n\ntest3\n\ntype PostInitCallbacks struct {\n\t// Sync must be called before application exit, such as via defer.\n\t//\n\t// Note: The error from sync is suppressed since this is usually called as a\n\t// defer in func main. In that case there isn't a reasonable way to handle the\n\t// error. As such this function signature doesn't return an error.\n\tSync func()\n\n\t// Update should be called to change sink configuration, e.g. via\n\t// conf.Watch. Note that sinks not created upon initialization will\n\t// not be created post-initialization. Is a no-op if no sinks are enabled.\n\tUpdate func(SinksConfigGetter) func()\n}",
+            contextItems: [],
+            editorState: {
+                v: 'lexical-v0',
+                minReaderV: 'lexical-v0',
+                lexicalEditorState: {
+                    root: {
+                        children: [
+                            {
+                                children: [
+                                    {
+                                        detail: 0,
+                                        format: 0,
+                                        mode: 'normal',
+                                        style: '',
+                                        text: 'test',
+                                        type: 'text',
+                                        version: 1,
+                                    },
+                                ],
+                                direction: 'ltr',
+                                format: '',
+                                indent: 0,
+                                type: 'paragraph',
+                                version: 1,
+                                textFormat: 0,
+                                textStyle: '',
+                            },
+                            {
+                                children: [
+                                    {
+                                        detail: 0,
+                                        format: 0,
+                                        mode: 'normal',
+                                        style: '',
+                                        text: '  test2',
+                                        type: 'text',
+                                        version: 1,
+                                    },
+                                ],
+                                direction: 'ltr',
+                                format: '',
+                                indent: 0,
+                                type: 'paragraph',
+                                version: 1,
+                                textFormat: 0,
+                                textStyle: '',
+                            },
+                            {
+                                children: [
+                                    {
+                                        detail: 0,
+                                        format: 0,
+                                        mode: 'normal',
+                                        style: '',
+                                        text: 'test3',
+                                        type: 'text',
+                                        version: 1,
+                                    },
+                                ],
+                                direction: 'ltr',
+                                format: '',
+                                indent: 0,
+                                type: 'paragraph',
+                                version: 1,
+                                textFormat: 0,
+                                textStyle: '',
+                            },
+                            {
+                                children: [
+                                    {
+                                        detail: 0,
+                                        format: 0,
+                                        mode: 'normal',
+                                        style: '',
+                                        text: 'type PostInitCallbacks struct {',
+                                        type: 'text',
+                                        version: 1,
+                                    },
+                                    { type: 'linebreak', version: 1 },
+                                    {
+                                        detail: 2,
+                                        format: 0,
+                                        mode: 'normal',
+                                        style: '',
+                                        text: '\t',
+                                        type: 'tab',
+                                        version: 1,
+                                    },
+                                    {
+                                        detail: 0,
+                                        format: 0,
+                                        mode: 'normal',
+                                        style: '',
+                                        text: '// Sync must be called before application exit, such as via defer.',
+                                        type: 'text',
+                                        version: 1,
+                                    },
+                                    { type: 'linebreak', version: 1 },
+                                    {
+                                        detail: 2,
+                                        format: 0,
+                                        mode: 'normal',
+                                        style: '',
+                                        text: '\t',
+                                        type: 'tab',
+                                        version: 1,
+                                    },
+                                    {
+                                        detail: 0,
+                                        format: 0,
+                                        mode: 'normal',
+                                        style: '',
+                                        text: '//',
+                                        type: 'text',
+                                        version: 1,
+                                    },
+                                    { type: 'linebreak', version: 1 },
+                                    {
+                                        detail: 2,
+                                        format: 0,
+                                        mode: 'normal',
+                                        style: '',
+                                        text: '\t',
+                                        type: 'tab',
+                                        version: 1,
+                                    },
+                                    {
+                                        detail: 0,
+                                        format: 0,
+                                        mode: 'normal',
+                                        style: '',
+                                        text: '// Note: The error from sync is suppressed since this is usually called as a',
+                                        type: 'text',
+                                        version: 1,
+                                    },
+                                    { type: 'linebreak', version: 1 },
+                                    {
+                                        detail: 2,
+                                        format: 0,
+                                        mode: 'normal',
+                                        style: '',
+                                        text: '\t',
+                                        type: 'tab',
+                                        version: 1,
+                                    },
+                                    {
+                                        detail: 0,
+                                        format: 0,
+                                        mode: 'normal',
+                                        style: '',
+                                        text: "// defer in func main. In that case there isn't a reasonable way to handle the",
+                                        type: 'text',
+                                        version: 1,
+                                    },
+                                    { type: 'linebreak', version: 1 },
+                                    {
+                                        detail: 2,
+                                        format: 0,
+                                        mode: 'normal',
+                                        style: '',
+                                        text: '\t',
+                                        type: 'tab',
+                                        version: 1,
+                                    },
+                                    {
+                                        detail: 0,
+                                        format: 0,
+                                        mode: 'normal',
+                                        style: '',
+                                        text: "// error. As such this function signature doesn't return an error.",
+                                        type: 'text',
+                                        version: 1,
+                                    },
+                                    { type: 'linebreak', version: 1 },
+                                    {
+                                        detail: 2,
+                                        format: 0,
+                                        mode: 'normal',
+                                        style: '',
+                                        text: '\t',
+                                        type: 'tab',
+                                        version: 1,
+                                    },
+                                    {
+                                        detail: 0,
+                                        format: 0,
+                                        mode: 'normal',
+                                        style: '',
+                                        text: 'Sync func()',
+                                        type: 'text',
+                                        version: 1,
+                                    },
+                                    { type: 'linebreak', version: 1 },
+                                    { type: 'linebreak', version: 1 },
+                                    {
+                                        detail: 2,
+                                        format: 0,
+                                        mode: 'normal',
+                                        style: '',
+                                        text: '\t',
+                                        type: 'tab',
+                                        version: 1,
+                                    },
+                                    {
+                                        detail: 0,
+                                        format: 0,
+                                        mode: 'normal',
+                                        style: '',
+                                        text: '// Update should be called to change sink configuration, e.g. via',
+                                        type: 'text',
+                                        version: 1,
+                                    },
+                                    { type: 'linebreak', version: 1 },
+                                    {
+                                        detail: 2,
+                                        format: 0,
+                                        mode: 'normal',
+                                        style: '',
+                                        text: '\t',
+                                        type: 'tab',
+                                        version: 1,
+                                    },
+                                    {
+                                        detail: 0,
+                                        format: 0,
+                                        mode: 'normal',
+                                        style: '',
+                                        text: '// conf.Watch. Note that sinks not created upon initialization will',
+                                        type: 'text',
+                                        version: 1,
+                                    },
+                                    { type: 'linebreak', version: 1 },
+                                    {
+                                        detail: 2,
+                                        format: 0,
+                                        mode: 'normal',
+                                        style: '',
+                                        text: '\t',
+                                        type: 'tab',
+                                        version: 1,
+                                    },
+                                    {
+                                        detail: 0,
+                                        format: 0,
+                                        mode: 'normal',
+                                        style: '',
+                                        text: '// not be created post-initialization. Is a no-op if no sinks are enabled.',
+                                        type: 'text',
+                                        version: 1,
+                                    },
+                                    { type: 'linebreak', version: 1 },
+                                    {
+                                        detail: 2,
+                                        format: 0,
+                                        mode: 'normal',
+                                        style: '',
+                                        text: '\t',
+                                        type: 'tab',
+                                        version: 1,
+                                    },
+                                    {
+                                        detail: 0,
+                                        format: 0,
+                                        mode: 'normal',
+                                        style: '',
+                                        text: 'Update func(SinksConfigGetter) func()',
+                                        type: 'text',
+                                        version: 1,
+                                    },
+                                    { type: 'linebreak', version: 1 },
+                                    {
+                                        detail: 0,
+                                        format: 0,
+                                        mode: 'normal',
+                                        style: '',
+                                        text: '}',
+                                        type: 'text',
+                                        version: 1,
+                                    },
+                                ],
+                                direction: 'ltr',
+                                format: 'start',
+                                indent: 0,
+                                type: 'paragraph',
+                                version: 1,
+                                textFormat: 0,
+                                textStyle: '',
+                            },
+                        ],
+                        direction: 'ltr',
+                        format: '',
+                        indent: 0,
+                        type: 'root',
+                        version: 1,
+                    },
+                },
+            },
+        }
+
+        const serialized = serialize(input as SerializedPromptEditorValue)
+        expect(serialized).toBe(`test
+  test2
+test3
+type PostInitCallbacks struct {
+\t// Sync must be called before application exit, such as via defer.
+\t//
+\t// Note: The error from sync is suppressed since this is usually called as a
+\t// defer in func main. In that case there isn't a reasonable way to handle the
+\t// error. As such this function signature doesn't return an error.
+\tSync func()
+
+\t// Update should be called to change sink configuration, e.g. via
+\t// conf.Watch. Note that sinks not created upon initialization will
+\t// not be created post-initialization. Is a no-op if no sinks are enabled.
+\tUpdate func(SinksConfigGetter) func()
+}`)
+
+        const deserialized = deserialize(serialized)
+        expect(deserialized).toBeDefined()
+
+        const serializedAgain = serialize(deserialized!)
+        expect(serializedAgain).toBe(serialized)
+    })
+
     describe('various deserialization edge cases', () => {
         it('leading newlines', () => {
             const s =

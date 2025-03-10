@@ -13,3 +13,5 @@ export function getChatPanelTitle(lastHumanText?: string, truncateTitle = true):
     // truncate title that is too long
     return text.length > 25 ? `${text.slice(0, 25).trim()}...` : text
 }
+
+export const isAgentTesting = process.env.CODY_SHIM_TESTING === 'true'

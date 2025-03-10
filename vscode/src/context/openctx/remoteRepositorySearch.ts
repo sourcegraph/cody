@@ -16,7 +16,7 @@ export function createRemoteRepositoryProvider(customTitle?: string): OpenCtxPro
         providerUri: REMOTE_REPOSITORY_PROVIDER_URI,
 
         meta() {
-            return { name: customTitle ?? 'Remote Repositories', mentions: {} }
+            return { name: customTitle ?? 'Repository search', mentions: {} }
         },
 
         async mentions({ query }) {

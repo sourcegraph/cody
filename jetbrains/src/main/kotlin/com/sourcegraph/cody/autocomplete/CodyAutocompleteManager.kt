@@ -247,7 +247,8 @@ class CodyAutocompleteManager {
 
     val project = editor.project
     val defaultItem = items.firstOrNull() ?: return
-    val range = getTextRange(editor.document, defaultItem.range)
+    val range = getTextRange(editor.document, defaultItem.range) ?: return
+
     val originalText = editor.document.getText(range)
 
     val formattedCompletionText =
@@ -281,7 +282,7 @@ class CodyAutocompleteManager {
                 completionText, items, editor, AutocompleteRendererType.INLINE)
         inlay =
             inlayModel.addInlineElement(
-                cursorOffset + inlayOffset, /* relatesToPrecedingText = */ true, renderer)
+                cursorOffset + inlayOffset, /* relatesToPrecedingText= */ true, renderer)
       }
     }
     val lines = formattedCompletionText.lines()

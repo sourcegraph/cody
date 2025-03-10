@@ -149,7 +149,7 @@ function _displayPath(
  * Fixes the path separators for Windows paths. This makes it possible to write cross-platform
  * tests.
  */
-function fixPathSep(fsPath: string, isWindows: boolean, scheme: string): string {
+export function fixPathSep(fsPath: string, isWindows: boolean, scheme: string): string {
     return isWindows && scheme === 'file' ? fsPath.replaceAll('/', '\\') : fsPath
 }
 

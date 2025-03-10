@@ -18,7 +18,7 @@ import {
     currentOpenCtxController,
     currentResolvedConfig,
     displayPath,
-    firstValueFrom,
+    firstResultFromOperation,
     graphqlClient,
     isAbortError,
     isDefined,
@@ -319,8 +319,8 @@ async function createContextFileFromUri(
     symbolName?: string
 ): Promise<ContextItem[]> {
     const range = toRangeData(selectionRange)
-    const repoNames = await firstValueFrom(repoNameResolver.getRepoNamesContainingUri(uri))
-    const repoName: string = Array.isArray(repoNames) ? repoNames[0] : repoNames.toString()
+    const repoNames = await firstResultFromOperation(repoNameResolver.getRepoNamesContainingUri(uri))
+    const repoName: string | undefined = repoNames[0]
 
     return [
         type === 'file'
@@ -409,6 +409,21 @@ async function resolveContextItem(
     input: PromptString,
     signal?: AbortSignal
 ): Promise<ContextItemWithContent[]> {
+    // Handle media items first as they need special treatment
+    if (item.type === 'media') {
+        // For media items, the data is already base64 encoded
+        return [
+            {
+                ...item,
+                content: item.data || '', // Use existing content or empty string
+                // Make sure data and mimeType are preserved for Gemini API
+                data: item.data, // Base64 encoded file content
+                mimeType: item.mimeType, // MIME type of the media
+                size: item.size ?? 0, // Size might already be set, otherwise default to 0
+            },
+        ]
+    }
+
     const resolvedItems: ContextItemWithContent[] = item.provider
         ? await resolveContextMentionProviderContextItem(item, input, signal)
         : item.type === 'file' || item.type === 'symbol'

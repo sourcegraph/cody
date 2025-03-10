@@ -67,19 +67,29 @@ export class RepoNameResolver {
                     return Observable.of([])
                 }
 
-                return combineLatest(
-                    ...remoteUrls.map(remoteUrl => this.getRepoNameCached(remoteUrl))
-                ).pipe(
-                    map(repoNames =>
-                        repoNames.includes(pendingOperation)
-                            ? pendingOperation
-                            : (
-                                  repoNames as Exclude<
-                                      (typeof repoNames)[number],
-                                      typeof pendingOperation
-                                  >[]
-                              ).filter(isDefined)
-                    )
+                const remoteUrlsAndRepoNames = remoteUrls.map(url =>
+                    this.getRepoNameCached(url).map(repoName => [url, repoName] as const)
+                )
+                return combineLatest(...remoteUrlsAndRepoNames).pipe(
+                    map(remoteUrlsAndRepoNames => {
+                        const repoNames: string[] = []
+                        for (const [url, repoName] of remoteUrlsAndRepoNames) {
+                            if (repoName === pendingOperation) {
+                                return pendingOperation
+                            }
+                            // If we didn't get a repoName (means the repo is local only, not on instance),
+                            // use the git clone URL as the repo name.
+                            if (!repoName) {
+                                const convertedName = convertGitCloneURLToCodebaseName(url)
+                                if (convertedName) {
+                                    repoNames.push(convertedName)
+                                }
+                            } else {
+                                repoNames.push(repoName)
+                            }
+                        }
+                        return repoNames
+                    })
                 )
             }),
             map(value => {

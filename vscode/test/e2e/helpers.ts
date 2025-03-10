@@ -14,7 +14,10 @@ import {
     expect as baseExpect,
 } from '@playwright/test'
 import type { RepoListResponse } from '@sourcegraph/cody-shared'
-import type { RepositoryIdResponse } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
+import type {
+    RepositoryIdResponse,
+    RepositoryIdsResponse,
+} from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
 import type { TelemetryEventInput } from '@sourcegraph/telemetry'
 import { resolveCliArgsFromVSCodeExecutablePath } from '@vscode/test-electron'
 import { _electron as electron } from 'playwright'
@@ -645,6 +648,16 @@ export function mockEnterpriseRepoMapping(server: MockServer, repoName: string):
         } satisfies RepositoryIdResponse,
     })
     server.onGraphQl('ResolveRepoName').replyJson({ data: { repository: { name: repoName } } })
+}
+
+export function mockEnterpriseRepoIdMapping(server: MockServer, repoName?: string): void {
+    server.onGraphQl('Repositories').replyJson({
+        data: {
+            repositories: {
+                nodes: repoName ? [{ id: 'WOOZL', name: repoName }] : [],
+            },
+        } satisfies RepositoryIdsResponse,
+    })
 }
 
 const STABILIZED_NUMBER_VALUE_FOR_SNAPSHOT = 9999

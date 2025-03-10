@@ -10,18 +10,17 @@ import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.ide.CopyPasteManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Splitter;
+import com.intellij.openapi.util.Disposer;
 import com.intellij.ui.OnePixelSplitter;
 import com.intellij.ui.PopupBorder;
 import com.intellij.ui.jcef.JBCefApp;
 import com.intellij.util.ui.JBUI;
 import com.intellij.util.ui.components.BorderLayoutPanel;
 import com.sourcegraph.Icons;
+import com.sourcegraph.cody.auth.CodyAuthService;
 import com.sourcegraph.common.NotificationGroups;
 import com.sourcegraph.common.ui.DumbAwareEDTAction;
-import com.sourcegraph.find.browser.BrowserAndLoadingPanel;
-import com.sourcegraph.find.browser.JSToJavaBridgeRequestHandler;
-import com.sourcegraph.find.browser.JavaToJSBridge;
-import com.sourcegraph.find.browser.SourcegraphJBCefBrowser;
+import com.sourcegraph.find.browser.*;
 import java.awt.*;
 import java.awt.datatransfer.StringSelection;
 import java.util.Date;
@@ -35,6 +34,7 @@ import org.jetbrains.annotations.Nullable;
  * href="https://sourcegraph.com/github.com/JetBrains/intellij-community/-/blob/platform/lang-impl/src/com/intellij/find/impl/FindPopupPanel.java">FindPopupPanel.java</a>
  */
 public class FindPopupPanel extends BorderLayoutPanel implements Disposable {
+  private final JavaToJSBridge javaToJSBridge;
   private final SourcegraphJBCefBrowser browser;
   private final PreviewPanel previewPanel;
   private final BrowserAndLoadingPanel browserAndLoadingPanel;
@@ -64,14 +64,24 @@ public class FindPopupPanel extends BorderLayoutPanel implements Disposable {
     browserAndLoadingPanel = new BrowserAndLoadingPanel(project);
     JSToJavaBridgeRequestHandler requestHandler =
         new JSToJavaBridgeRequestHandler(project, this, findService);
-    browser = JBCefApp.isSupported() ? new SourcegraphJBCefBrowser(requestHandler) : null;
+    String endpointUrl = CodyAuthService.getInstance(project).getEndpoint().getUrl();
+
+    browser =
+        JBCefApp.isSupported() ? new SourcegraphJBCefBrowser(requestHandler, endpointUrl) : null;
+
     if (browser == null) {
+      javaToJSBridge = null;
       showNoBrowserErrorNotification();
       Logger logger = Logger.getInstance(JSToJavaBridgeRequestHandler.class);
       logger.warn("JCEF browser is not supported!");
     } else {
+      String initJSCode = "window.initializeSourcegraph();";
+      JSToJavaBridge jsToJavaBridge = new JSToJavaBridge(browser, requestHandler, initJSCode);
+      javaToJSBridge = new JavaToJSBridge(browser);
+      Disposer.register(this, jsToJavaBridge);
       browserAndLoadingPanel.setBrowser(browser);
     }
+
     // The border is needed on macOS because without it, window and splitter resize don't work
     // because the JCEF
     // doesn't properly pass the mouse events to Swing.
@@ -139,7 +149,7 @@ public class FindPopupPanel extends BorderLayoutPanel implements Disposable {
 
   @Nullable
   public JavaToJSBridge getJavaToJSBridge() {
-    return browser != null ? browser.getJavaToJSBridge() : null;
+    return javaToJSBridge;
   }
 
   public BrowserAndLoadingPanel.ConnectionAndAuthState getConnectionAndAuthState() {

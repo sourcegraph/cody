@@ -72,4 +72,6 @@ interface CodyAgentClient {
   fun window_didChangeContext(params: Window_DidChangeContextParams)
   @JsonNotification("window/focusSidebar")
   fun window_focusSidebar(params: Null?)
+  @JsonNotification("authStatus/didUpdate")
+  fun authStatus_didUpdate(params: ProtocolAuthStatus)
 }

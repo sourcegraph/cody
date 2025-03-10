@@ -73,7 +73,7 @@ export type WebviewMessage =
     | ({ command: 'submit' } & WebviewSubmitMessage)
     | { command: 'restoreHistory'; chatID: string }
     | { command: 'links'; value: string }
-    | { command: 'openURI'; uri: Uri }
+    | { command: 'openURI'; uri: Uri; range?: RangeData | undefined | null }
     | {
           // Open a file from a Sourcegraph URL
           command: 'openRemoteFile'
@@ -102,12 +102,13 @@ export type WebviewMessage =
           text: string
       }
     | {
-          command: 'smartApplySubmit'
+          command: 'smartApplySubmit' | 'smartApplyPrefetch'
           id: FixupTaskID
           code: string
           instruction?: string | undefined | null
           fileName?: string | undefined | null
           traceparent?: string | undefined | null
+          isPrefetch?: boolean | undefined | null
       }
     | {
           command: 'trace-export'
@@ -124,7 +125,14 @@ export type WebviewMessage =
       }
     | {
           command: 'auth'
-          authKind: 'signin' | 'signout' | 'support' | 'callback' | 'simplified-onboarding' | 'switch'
+          authKind:
+              | 'signin'
+              | 'signout'
+              | 'support'
+              | 'callback'
+              | 'simplified-onboarding'
+              | 'switch'
+              | 'refresh'
           endpoint?: string | undefined | null
           value?: string | undefined | null
           authMethod?: AuthMethod | undefined | null
@@ -156,6 +164,7 @@ export type WebviewMessage =
           selectedFilters: NLSSearchDynamicFilter[]
       }
     | { command: 'action/confirmation'; id: string; response: boolean }
+    | { command: 'devicePixelRatio'; devicePixelRatio: number }
 
 export interface SmartApplyResult {
     taskId: FixupTaskID
@@ -260,6 +269,7 @@ export interface ConfigurationSubsetForWebview
     multipleWebviewsEnabled?: boolean | undefined | null
     endpointHistory?: string[] | undefined | null
     allowEndpointChange: boolean
+    experimentalPromptEditorEnabled: boolean
 }
 
 /**

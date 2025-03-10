@@ -11,15 +11,15 @@ const MAX_TRACE_RETAIN_MS = 60 * 1000 * 5 // 5 minutes
 export class CodyTraceExporterWeb extends OTLPTraceExporter {
     private isTracingEnabled: boolean
     private queuedSpans: Map<string, { span: ReadableSpan; enqueuedAt: number }> = new Map()
-    private clientPlatform: CodyIDE
-    private agentVersion?: string
+    private ide: CodyIDE
+    private codyExtensionVersion?: string
     private lastExpiryCheck = 0
 
     constructor({
         isTracingEnabled,
-        clientPlatform,
-        agentVersion,
-    }: { isTracingEnabled: boolean; clientPlatform: CodyIDE; agentVersion?: string }) {
+        ide,
+        codyExtensionVersion,
+    }: { isTracingEnabled: boolean; ide: CodyIDE; codyExtensionVersion?: string }) {
         super({
             httpAgentOptions: {
                 rejectUnauthorized: false,
@@ -29,8 +29,8 @@ export class CodyTraceExporterWeb extends OTLPTraceExporter {
             },
         })
         this.isTracingEnabled = isTracingEnabled
-        this.clientPlatform = clientPlatform
-        this.agentVersion = agentVersion
+        this.ide = ide
+        this.codyExtensionVersion = codyExtensionVersion
     }
 
     private removeExpiredSpans(now: number): void {
@@ -56,8 +56,8 @@ export class CodyTraceExporterWeb extends OTLPTraceExporter {
         // Include queued spans for re-evaluation
         const allSpans = [...spans, ...Array.from(this.queuedSpans.values()).map(q => q.span)]
         for (const span of allSpans) {
-            span.attributes.clientPlatform = this.clientPlatform
-            span.attributes.agentVersion = this.agentVersion
+            span.attributes.ide = this.ide
+            span.attributes.codyExtensionVersion = this.codyExtensionVersion
         }
 
         // Build span hierarchy map

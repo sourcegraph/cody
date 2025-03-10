@@ -1,7 +1,7 @@
 import {
     type ChatMessage,
+    type ContextItemMedia,
     FAST_CHAT_INPUT_TOKEN_BUDGET,
-    FeatureFlag,
     type Model,
     ModelTag,
     type SerializedPromptEditorState,
@@ -33,7 +33,6 @@ import { type ClientActionListener, useClientActionListener } from '../../../../
 import { promptModeToIntent } from '../../../../../prompts/PromptsTab'
 import { useTelemetryRecorder } from '../../../../../utils/telemetry'
 import { useConfig } from '../../../../../utils/useConfig'
-import { useFeatureFlag } from '../../../../../utils/useFeatureFlags'
 import { useLinkOpener } from '../../../../../utils/useLinkOpener'
 import { useOmniBox } from '../../../../../utils/useOmniBox'
 import styles from './HumanMessageEditor.module.css'
@@ -102,7 +101,7 @@ export const HumanMessageEditor: FunctionComponent<{
     const telemetryRecorder = useTelemetryRecorder()
 
     const editorRef = useRef<PromptEditorRefAPI>(null)
-    useImperativeHandle(parentEditorRef, (): PromptEditorRefAPI | null => editorRef.current, [])
+    useImperativeHandle(parentEditorRef, (): PromptEditorRefAPI | null => editorRef.current)
 
     // The only PromptEditor state we really need to track in our own state is whether it's empty.
     const [isEmptyEditorValue, setIsEmptyEditorValue] = useState(
@@ -123,9 +122,6 @@ export const HumanMessageEditor: FunctionComponent<{
         : isEmptyEditorValue
           ? 'emptyEditorValue'
           : 'submittable'
-
-    // TODO: Finish implementing "current repo not indexed" handling for v2 editor
-    const experimentalPromptEditorEnabled = useFeatureFlag(FeatureFlag.CodyExperimentalPromptEditor)
 
     const onSubmitClick = useCallback(
         (intent?: ChatMessage['intent'], forceSubmit?: boolean): void => {
@@ -163,7 +159,9 @@ export const HumanMessageEditor: FunctionComponent<{
     )
 
     const omniBoxEnabled = useOmniBox()
-    const { isDotComUser } = useConfig()
+    const {
+        config: { experimentalPromptEditorEnabled },
+    } = useConfig()
 
     const onEditorEnterKey = useCallback(
         (event: KeyboardEvent | null): void => {
@@ -171,24 +169,10 @@ export const HumanMessageEditor: FunctionComponent<{
             if (!event || event.isComposing || isEmptyEditorValue || event.shiftKey) {
                 return
             }
-
             event.preventDefault()
-
-            if (!omniBoxEnabled || isDotComUser) {
-                onSubmitClick('chat')
-                return
-            }
-
-            // Submit search intent query when CMD + Options + Enter is pressed.
-            if ((event.metaKey || event.ctrlKey) && event.altKey) {
-                manuallySelectIntent('search')
-                onSubmitClick('search')
-                return
-            }
-
-            onSubmitClick('chat')
+            onSubmitClick()
         },
-        [isEmptyEditorValue, onSubmitClick, manuallySelectIntent, omniBoxEnabled, isDotComUser]
+        [isEmptyEditorValue, onSubmitClick]
     )
 
     const [isEditorFocused, setIsEditorFocused] = useState(false)
@@ -247,31 +231,6 @@ export const HumanMessageEditor: FunctionComponent<{
         },
         [onGapClick]
     )
-
-    const onMentionClick = useCallback((): void => {
-        if (!editorRef.current) {
-            throw new Error('No editorRef')
-        }
-        if (editorRef.current.getSerializedValue().text.trim().endsWith('@')) {
-            editorRef.current.setFocus(true, { moveCursorToEnd: true })
-        } else {
-            editorRef.current.appendText('@')
-        }
-
-        const value = editorRef.current.getSerializedValue()
-        telemetryRecorder.recordEvent('cody.humanMessageEditor.toolbar.mention', 'click', {
-            metadata: {
-                isFirstMessage: isFirstMessage ? 1 : 0,
-                isEdit: isSent ? 1 : 0,
-                messageLength: value.text.length,
-                contextItems: value.contextItems.length,
-            },
-            billingMetadata: {
-                product: 'cody',
-                category: 'billable',
-            },
-        })
-    }, [telemetryRecorder.recordEvent, isFirstMessage, isSent])
 
     const extensionAPI = useExtensionAPI()
 
@@ -389,21 +348,27 @@ export const HumanMessageEditor: FunctionComponent<{
 
     const defaultContext = useDefaultContextForChat()
     useEffect(() => {
-        let { initialContext } = defaultContext
-        if (!isSent && isFirstMessage) {
-            const editor = editorRef.current
-            if (editor) {
-                // Don't show the initial codebase context if the model doesn't support streaming
-                // as including context result in longer processing time.
-                if (currentChatModel?.tags?.includes(ModelTag.StreamDisabled)) {
-                    initialContext = initialContext.filter(item => item.type !== 'tree')
-                }
-                // Remove documentation open-link items; they do not provide context.
-                const filteredItems = initialContext.filter(item => item.type !== 'open-link')
-                void editor.setInitialContextMentions(filteredItems)
-            }
+        if (isSent || !isFirstMessage || !editorRef?.current) {
+            return
         }
-    }, [defaultContext, isSent, isFirstMessage, currentChatModel])
+
+        // List of mention chips added to the first message.
+        const editor = editorRef.current
+
+        // Remove documentation open-link items; they do not provide context.
+        // Remove current selection to avoid crowding the input box. User can always add it back.
+        // Remove tree type if streaming is not supported.
+        const excludedTypes = new Set([
+            'open-link',
+            'current-selection',
+            ...(currentChatModel?.tags?.includes(ModelTag.StreamDisabled) ? ['tree'] : []),
+        ])
+
+        const filteredItems = defaultContext?.initialContext.filter(
+            item => !excludedTypes.has(item.type)
+        )
+        void editor.setInitialContextMentions(filteredItems)
+    }, [defaultContext?.initialContext, isSent, isFirstMessage, currentChatModel])
 
     const focusEditor = useCallback(() => editorRef.current?.setFocus(true), [])
 
@@ -426,6 +391,17 @@ export const HumanMessageEditor: FunctionComponent<{
     )
 
     const Editor = experimentalPromptEditorEnabled ? PromptEditorV2 : PromptEditor
+
+    const onMediaUpload = useCallback(
+        (media: ContextItemMedia) => {
+            // Add the media context item as a mention chip in the editor.
+            const editor = editorRef?.current
+            if (editor && focused) {
+                editor.upsertMentions([media], 'after')
+            }
+        },
+        [focused]
+    )
 
     return (
         // biome-ignore lint/a11y/useKeyWithClickEvents: only relevant to click areas
@@ -464,7 +440,7 @@ export const HumanMessageEditor: FunctionComponent<{
                     models={models}
                     userInfo={userInfo}
                     isEditorFocused={focused}
-                    onMentionClick={onMentionClick}
+                    omniBoxEnabled={omniBoxEnabled}
                     onSubmitClick={onSubmitClick}
                     manuallySelectIntent={manuallySelectIntent}
                     submitState={submitState}
@@ -473,6 +449,8 @@ export const HumanMessageEditor: FunctionComponent<{
                     hidden={!focused && isSent}
                     className={styles.toolbar}
                     intent={intent}
+                    extensionAPI={extensionAPI}
+                    onMediaUpload={onMediaUpload}
                 />
             )}
         </div>

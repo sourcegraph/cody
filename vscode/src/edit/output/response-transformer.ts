@@ -1,7 +1,11 @@
 import { decode } from 'he'
 import type * as vscode from 'vscode'
 import type { FixupTask } from '../../non-stop/FixupTask'
-import { PROMPT_TOPICS } from '../prompt/constants'
+import {
+    PROMPT_TOPICS,
+    SMART_APPLY_CUSTOM_PROMPT_TOPICS,
+    SMART_APPLY_MODEL_IDENTIFIERS,
+} from '../prompt/constants'
 import { matchIndentation } from './match-indentation'
 import { matchLanguage } from './match-language'
 
@@ -34,6 +38,53 @@ const LEADING_SPACES_AND_NEW_LINES = /^\s*\n/
 const LEADING_SPACES = /^[ ]+/
 
 /**
+ * Strips the text of any unnecessary content.
+ * This includes:
+ * 1. Prompt topics, e.g. <CODE511>. These are used by the LLM to wrap the output code.
+ * 2. Markdown code blocks, e.g. ```typescript. Most LLMs are trained to produce Markdown-suitable responses.
+ */
+function stripText(text: string, task: FixupTask): string {
+    const strippedText = text
+        // Strip specific XML tags referenced in the prompt, e.g. <CODE511>
+        .replaceAll(PROMPT_TOPIC_REGEX, '')
+
+    if (task.document.languageId === 'markdown') {
+        // Return this text as is, we do not want to strip Markdown blocks as they may be valuable
+        // in Markdown files
+        return strippedText
+    }
+
+    // Strip Markdown syntax for code blocks, e.g. ```typescript.
+    return strippedText.replaceAll(MARKDOWN_CODE_BLOCK_REGEX, block =>
+        block.replace(MARKDOWN_CODE_BLOCK_START, '').replace(MARKDOWN_CODE_BLOCK_END, '')
+    )
+}
+
+function extractSmartApplyCustomModelResponse(text: string, task: FixupTask): string {
+    if (
+        task.intent !== 'smartApply' ||
+        !Object.values(SMART_APPLY_MODEL_IDENTIFIERS).includes(task.model)
+    ) {
+        return text
+    }
+
+    const openingTag = `<${SMART_APPLY_CUSTOM_PROMPT_TOPICS.FINAL_CODE}>`
+    const closingTag = `</${SMART_APPLY_CUSTOM_PROMPT_TOPICS.FINAL_CODE}>`
+
+    const startsWithTag = text.trimStart().startsWith(openingTag)
+    const endsWithTag = text.trimEnd().endsWith(closingTag)
+
+    if (!startsWithTag || !endsWithTag) {
+        return text
+    }
+
+    // Only extract the code between the outermost tags
+    const startIndex = text.indexOf(openingTag) + openingTag.length
+    const endIndex = text.lastIndexOf(closingTag)
+    return text.slice(startIndex, endIndex)
+}
+
+/**
  * Given the LLM response for a FixupTask, transforms the response
  * to make it suitable to insert as code.
  * This is handling cases where the LLM response does not __only__ include code.
@@ -43,13 +94,8 @@ export function responseTransformer(
     task: FixupTask,
     isMessageInProgress: boolean
 ): string {
-    const strippedText = text
-        // Strip specific XML tags referenced in the prompt, e.g. <CODE511>
-        .replaceAll(PROMPT_TOPIC_REGEX, '')
-        // Strip Markdown syntax for code blocks, e.g. ```typescript.
-        .replaceAll(MARKDOWN_CODE_BLOCK_REGEX, block =>
-            block.replace(MARKDOWN_CODE_BLOCK_START, '').replace(MARKDOWN_CODE_BLOCK_END, '')
-        )
+    const updatedText = extractSmartApplyCustomModelResponse(text, task)
+    const strippedText = stripText(updatedText, task)
 
     // Trim leading spaces
     // - For `add` insertions, the LLM will attempt to continue the code from the position of the cursor, we handle the `insertionPoint`

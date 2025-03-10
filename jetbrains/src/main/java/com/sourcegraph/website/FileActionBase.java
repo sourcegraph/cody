@@ -2,16 +2,15 @@ package com.sourcegraph.website;
 
 import com.google.common.base.Strings;
 import com.intellij.openapi.actionSystem.AnActionEvent;
+import com.intellij.openapi.actionSystem.CommonDataKeys;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.editor.*;
-import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.sourcegraph.common.ErrorNotification;
 import com.sourcegraph.common.ui.DumbAwareEDTAction;
 import com.sourcegraph.find.PreviewContent;
 import com.sourcegraph.find.SourcegraphVirtualFile;
-import com.sourcegraph.utils.CodyEditorUtil;
 import com.sourcegraph.vcs.RepoInfo;
 import com.sourcegraph.vcs.RepoUtil;
 import com.sourcegraph.vcs.VCSType;
@@ -28,12 +27,11 @@ public abstract class FileActionBase extends DumbAwareEDTAction {
     if (project == null) {
       return;
     }
-    Editor editor = CodyEditorUtil.getFirstSelectedEditor(project);
+    Editor editor = event.getData(CommonDataKeys.EDITOR);
     if (editor == null) {
       return;
     }
-    Document currentDocument = editor.getDocument();
-    VirtualFile currentFile = FileDocumentManager.getInstance().getFile(currentDocument);
+    VirtualFile currentFile = event.getData(CommonDataKeys.VIRTUAL_FILE);
     if (currentFile == null) {
       return;
     }

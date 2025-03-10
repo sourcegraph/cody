@@ -14,7 +14,7 @@ export async function getContextFileFromTabs(): Promise<ContextItem[]> {
             // Get open tabs from the current editor
             const tabGroups = vscode.window.tabGroups.all
             const openTabs = tabGroups.flatMap(group =>
-                group.tabs.map(tab => tab.input)
+                group.tabs.map(tab => tab.input).filter(Boolean)
             ) as vscode.TabInputText[]
 
             return (

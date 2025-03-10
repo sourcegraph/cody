@@ -88,8 +88,11 @@ export function isNetworkError(error: Error): error is NetworkError {
     return error instanceof NetworkError
 }
 
-export function isAuthError(error: unknown): boolean {
-    return error instanceof NetworkError && (error.status === 401 || error.status === 403)
+export function isAuthError(error: unknown): error is AuthError | NetworkError {
+    return (
+        (error instanceof NetworkError && (error.status === 401 || error.status === 403)) ||
+        error instanceof AuthError
+    )
 }
 
 export class AbortError extends Error {
@@ -136,11 +139,92 @@ export function isNetworkLikeError(error: Error): boolean {
     )
 }
 
-export class ExternalProviderAuthError extends Error {
-    // Added to make TypeScript understand that ExternalProviderAuthError is not the same as Error.
-    public readonly isExternalProviderAuthError = true
+export class AuthError extends Error {
+    public title: string
+    public content: string
+    public showTryAgain = false
+
+    constructor(title: string, content: string) {
+        super(`${title}: ${content}`)
+        this.content = content
+        this.title = title
+    }
 }
 
-export function isExternalProviderAuthError(error: unknown): error is ExternalProviderAuthError {
-    return error instanceof ExternalProviderAuthError
+/**
+ * An error representing the condition where the endpoint is not available due to lack of network
+ * connectivity, server downtime, or other configuration issues *unrelated to* the validity of the
+ * credentials.
+ */
+export class AvailabilityError extends AuthError {
+    constructor() {
+        super('Network Error', 'Sourcegraph is unreachable')
+        this.showTryAgain = true
+    }
+}
+
+export class InvalidAccessTokenError extends AuthError {
+    constructor() {
+        super('Invalid Access Token', 'The access token is invalid or has expired')
+    }
+}
+
+export class EnterpriseUserDotComError extends AuthError {
+    constructor(enterprise: string) {
+        super(
+            'Enterprise User Authentication Error',
+            'Based on your email address we think you may be an employee of ' +
+                `${enterprise}. To get access to all your features please sign ` +
+                "in through your organization's enterprise instance instead. If you need assistance " +
+                'please contact your Sourcegraph admin.'
+        )
+    }
+}
+
+export class AuthConfigError extends AuthError {
+    constructor(message: string) {
+        super('Auth Config Error', message)
+    }
+}
+
+export class ExternalAuthProviderError extends AuthError {
+    constructor(message: string) {
+        super('External Auth Provider Error', message)
+    }
+}
+
+/**
+ * An error indicating that the user needs to complete an authentication challenge.
+ */
+export class NeedsAuthChallengeError extends AuthError {
+    constructor() {
+        // See
+        // https://linear.app/sourcegraph/issue/CODY-4695/handle-customer-proxy-re-auth-response-by-retrying-not-prompting-user
+        // for an explanation of this message. If you need to change it to something more general,
+        // consult the customers mentioned in that issue.
+        super(
+            'Tap Your YubiKey to Authenticate',
+            `Your device's authentication expired and must be renewed to access Sourcegraph on your organization's network.`
+        )
+    }
+}
+
+export function isExternalProviderAuthError(error: unknown): error is ExternalAuthProviderError {
+    return error instanceof ExternalAuthProviderError
+}
+
+export function isNeedsAuthChallengeError(error: unknown): error is NeedsAuthChallengeError {
+    return error instanceof NeedsAuthChallengeError
+}
+
+export function isAvailabilityError(error: unknown): error is AvailabilityError {
+    return error instanceof AvailabilityError
+}
+
+export function isInvalidAccessTokenError(error: unknown): error is InvalidAccessTokenError {
+    return error instanceof InvalidAccessTokenError
+}
+
+export function isEnterpriseUserDotComError(error: unknown): error is EnterpriseUserDotComError {
+    return error instanceof EnterpriseUserDotComError
 }

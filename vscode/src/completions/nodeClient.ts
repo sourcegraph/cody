@@ -10,6 +10,7 @@ import {
     type CompletionParameters,
     type CompletionRequestParameters,
     type CompletionResponse,
+    NeedsAuthChallengeError,
     NetworkError,
     RateLimitError,
     SourcegraphCompletionsClient,
@@ -21,6 +22,7 @@ import {
     getSerializedParams,
     getTraceparentHeaders,
     globalAgentRef,
+    isCustomAuthChallengeResponse,
     isError,
     logError,
     onAbort,
@@ -165,9 +167,15 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                         }
                     }
 
-                    // For failed requests, we just want to read the entire body and
-                    // ultimately return it to the error callback.
+                    // Handle custom auth challenges.
+                    if (isCustomAuthChallengeResponse(res)) {
+                        handleError(new NeedsAuthChallengeError())
+                        return
+                    }
+
                     if (statusCode >= 400) {
+                        // For failed requests, we just want to read the entire body and
+                        // ultimately return it to the error callback.
                         // Bytes which have not been decoded as UTF-8 text
                         let bufferBin = Buffer.of()
                         // Text which has not been decoded as a server-sent event (SSE)

@@ -3,6 +3,7 @@ import type { Span } from '@opentelemetry/api'
 import {
     type ContextItem,
     type ContextItemFile,
+    type ContextItemMedia,
     type ContextItemOpenCtx,
     type ContextItemRepository,
     ContextItemSource,
@@ -32,6 +33,7 @@ interface StructuredMentions {
     files: ContextItemFile[]
     symbols: ContextItemSymbol[]
     openCtx: ContextItemOpenCtx[]
+    mediaFiles: ContextItemMedia[]
 }
 
 export function toStructuredMentions(mentions: ContextItem[]): StructuredMentions {
@@ -40,6 +42,7 @@ export function toStructuredMentions(mentions: ContextItem[]): StructuredMention
     const files: ContextItemFile[] = []
     const symbols: ContextItemSymbol[] = []
     const openCtx: ContextItemOpenCtx[] = []
+    const mediaFiles: ContextItemMedia[] = []
     for (const mention of mentions) {
         // Update source type to user to indicate that this is a user-added item.
         mention.source = mention.source ?? ContextItemSource.User
@@ -56,12 +59,15 @@ export function toStructuredMentions(mentions: ContextItem[]): StructuredMention
             case 'symbol':
                 symbols.push(mention)
                 break
+            case 'media':
+                mediaFiles.push(mention)
+                break
             case 'openctx':
                 openCtx.push(mention)
                 break
         }
     }
-    return { repos, trees, files, symbols, openCtx }
+    return { repos, trees, files, symbols, openCtx, mediaFiles }
 }
 
 /**

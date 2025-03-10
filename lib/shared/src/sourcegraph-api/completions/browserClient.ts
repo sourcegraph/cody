@@ -6,6 +6,7 @@ import { isError } from '../../utils'
 import { addClientInfoParams, addCodyClientIdentificationHeaders } from '../client-name-version'
 import { addAuthHeaders } from '../utils'
 
+import { verifyResponseCode } from '../graphql/client'
 import { CompletionsResponseBuilder } from './CompletionsResponseBuilder'
 import { type CompletionRequestParameters, SourcegraphCompletionsClient } from './client'
 import { parseCompletionJSON } from './parse'
@@ -68,18 +69,7 @@ export class SourcegraphBrowserCompletionsClient extends SourcegraphCompletionsC
             openWhenHidden: isRunningInWebWorker, // otherwise tries to call document.addEventListener
             async onopen(response) {
                 if (!response.ok && response.headers.get('content-type') !== 'text/event-stream') {
-                    let errorMessage: null | string = null
-                    try {
-                        errorMessage = await response.text()
-                    } catch (error) {
-                        // We show the generic error message in this case
-                        console.error(error)
-                    }
-                    const error = new Error(
-                        errorMessage === null || errorMessage.length === 0
-                            ? `Request failed with status code ${response.status}`
-                            : errorMessage
-                    )
+                    const error = await verifyResponseCode(response).catch(err => err)
                     cb.onError(error, response.status)
                     abort.abort()
                     return
@@ -142,6 +132,7 @@ export class SourcegraphBrowserCompletionsClient extends SourcegraphCompletionsC
         const { url, serializedParams } = await this.prepareRequest(params, requestParams)
         const headersInstance = new Headers({
             'Content-Type': 'application/json; charset=utf-8',
+            Accept: 'text/event-stream',
             ...configuration.customHeaders,
             ...requestParams.customHeaders,
         })
@@ -158,15 +149,7 @@ export class SourcegraphBrowserCompletionsClient extends SourcegraphCompletionsC
                 headers: headersInstance,
                 body: JSON.stringify(serializedParams),
                 signal,
-            })
-            if (!response.ok) {
-                const errorMessage = await response.text()
-                throw new Error(
-                    errorMessage.length === 0
-                        ? `Request failed with status code ${response.status}`
-                        : errorMessage
-                )
-            }
+            }).then(verifyResponseCode)
             const data = (await response.json()) as CompletionResponse
             if (data?.completion) {
                 cb.onChange(data.completion)

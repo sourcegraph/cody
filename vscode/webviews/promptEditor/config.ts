@@ -25,6 +25,7 @@ export const promptEditorConfig: PromptEditorConfig = {
             getVSCodeAPI().postMessage({
                 command: 'openURI',
                 uri,
+                range: contextItem.range,
             })
         }
     },

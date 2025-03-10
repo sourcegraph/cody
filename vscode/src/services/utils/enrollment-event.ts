@@ -36,6 +36,8 @@ function getFeatureFlagEventName(key: FeatureFlag): string {
             return 'interactiveTutorial'
         case FeatureFlag.DeepCody:
             return 'deepCody'
+        case FeatureFlag.CodyPromptCachingOnMessages:
+            return 'promptCachingOnMessages'
         default:
             return 'UnregisteredFeature'
     }

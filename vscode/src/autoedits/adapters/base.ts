@@ -1,7 +1,28 @@
-import type { PromptString } from '@sourcegraph/cody-shared'
+import type { CodeCompletionsParams, PromptString } from '@sourcegraph/cody-shared'
+import type { AutoeditsRequestBody } from './utils'
+
+export interface ModelResponse {
+    prediction: string
+    /** URL used to make the request to the model API */
+    requestUrl: string
+    /** Response headers received from the model API */
+    responseHeaders: Record<string, string>
+    /** Optional request headers sent to the model API */
+    requestHeaders?: Record<string, string>
+    /**
+     * Optional request body sent to the model API
+     * TODO: update to proper types from different adapters.
+     */
+    requestBody?: AutoeditsRequestBody | CodeCompletionsParams
+    /**
+     * Optional full response body received from the model API
+     * This is propagated to the analytics logger for debugging purposes
+     */
+    responseBody?: any
+}
 
 export interface AutoeditsModelAdapter {
-    getModelResponse(args: AutoeditModelOptions): Promise<string>
+    getModelResponse(args: AutoeditModelOptions): Promise<ModelResponse>
 }
 
 /**

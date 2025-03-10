@@ -53,6 +53,7 @@ const ALLOWED_ELEMENTS = [
     'h5',
     'h6',
     'br',
+    'think',
 ]
 
 function defaultUrlProcessor(url: string): string {
@@ -81,16 +82,37 @@ const URL_PROCESSORS: Partial<Record<CodyIDE, UrlTransform>> = {
     [CodyIDE.VSCode]: wrapLinksWithCodyOpenCommand,
 }
 
-export const MarkdownFromCody: FunctionComponent<{ className?: string; children: string }> = ({
-    className,
-    children,
-}) => {
+/**
+ * Transforms the children string by wrapping it in one extra backtick if we find '```markdown'.
+ * This is used to preserve the formatting of Markdown code blocks within the Markdown content.
+ * Such cases happen when you ask Cody to create a Markdown file or when you load a history chat
+ * that contains replies for creating Markdown files.
+ *
+ * @param children - The string to transform.
+ * @returns The transformed string.
+ */
+const childrenTransform = (children: string): string => {
+    if (children.indexOf('```markdown') === -1) {
+        return children
+    }
+    children = children.replace('```markdown', '````markdown')
+    const lastIdx = children.lastIndexOf('```')
+
+    // Replace the last three backticks with four backticks
+    return children.slice(0, lastIdx) + '````' + children.slice(lastIdx + 3)
+}
+
+export const MarkdownFromCody: FunctionComponent<{
+    className?: string
+    children: string
+}> = ({ className, children }) => {
     const clientType = useConfig().clientCapabilities.agentIDE
     const urlTransform = useMemo(() => URL_PROCESSORS[clientType] ?? defaultUrlProcessor, [clientType])
+    const chatReplyTransformed = childrenTransform(children)
 
     return (
         <Markdown className={className} {...markdownPluginProps()} urlTransform={urlTransform}>
-            {children}
+            {chatReplyTransformed}
         </Markdown>
     )
 }

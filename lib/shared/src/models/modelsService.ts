@@ -57,7 +57,8 @@ export type ModelStatus =
     | ModelTag.Deprecated
     | ModelTag.Internal
 export type ModelTier = ModelTag.Free | ModelTag.Pro | ModelTag.Enterprise
-export type ModelCapability = 'chat' | 'autocomplete' | 'edit' | 'vision'
+/** Must match types on github.com/sourcegraph/sourcegraph/-/blob/internal/modelconfig/types/model.go */
+export type ModelCapability = 'chat' | 'autocomplete' | 'edit' | 'vision' | 'reasoning' | 'tools'
 
 export interface ContextWindow {
     maxInputTokens: number
@@ -612,6 +613,10 @@ export class ModelsService {
                 : `No models found for substring ${modelSubstring}.`
         const modelsList = this.models.map(m => m.id).join(', ')
         throw new Error(`${errorMessage} Available models: ${modelsList}`)
+    }
+
+    public getModelsByTag(tag: ModelTag): Model[] {
+        return this.models.filter(m => m.tags.includes(tag))
     }
 
     public isStreamDisabled(modelID: string): boolean {

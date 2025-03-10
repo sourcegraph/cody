@@ -46,7 +46,7 @@
 }
 
 button > .model-title-with-icon .model-name {
-    font-weight: normal;
+    font-weight: 600;
 }
 
 button > .model-title-with-icon .model-icon,

@@ -1,14 +1,19 @@
 import {
     type ChatMessage,
     type ContextItem,
+    FeatureFlag,
     type Message,
     type ModelContextWindow,
+    PromptString,
     TokenCounter,
     contextFiltersProvider,
+    featureFlagProvider,
     ps,
+    storeLastValue,
 } from '@sourcegraph/cody-shared'
 import type { ContextTokenUsageType } from '@sourcegraph/cody-shared/src/token'
 import { sortContextItemsIfInTest } from '../chat/chat-view/agentContextSorting'
+import { logFirstEnrollmentEvent } from '../services/utils/enrollment-event'
 import { getUniqueContextItems, isUniqueContextItem } from './unique-context'
 import { getContextItemTokenUsageType, renderContextItem } from './utils'
 
@@ -16,6 +21,11 @@ interface PromptBuilderContextResult {
     limitReached: boolean
     ignored: ContextItem[]
     added: ContextItem[]
+}
+
+interface PromptCachingSetting {
+    featureFlag?: boolean
+    isEnrolled?: boolean
 }
 
 const ASSISTANT_MESSAGE = { speaker: 'assistant', text: ps`Ok.` } as Message
@@ -43,22 +53,79 @@ export class PromptBuilder {
 
     private constructor(private readonly tokenCounter: TokenCounter) {}
 
+    private readonly hasCacheFeatureFlag = storeLastValue(
+        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyPromptCachingOnMessages)
+    )
+    private readonly _isCacheEnabled: PromptCachingSetting = {
+        featureFlag: false,
+        isEnrolled: false,
+    }
+
+    public get isCacheEnabled(): boolean {
+        const isFlagEnabled = Boolean(this.hasCacheFeatureFlag?.value?.last ?? false)
+        if (!this._isCacheEnabled.isEnrolled) {
+            this._isCacheEnabled.isEnrolled = logFirstEnrollmentEvent(
+                FeatureFlag.CodyPromptCachingOnMessages,
+                isFlagEnabled
+            )
+        }
+        return isFlagEnabled
+    }
+
     public build(): Message[] {
         if (this.contextItems.length > 0) {
-            this.buildContextMessages()
+            const contextMessages = this.buildContextMessages()
+            this.reverseMessages.push(...contextMessages)
         }
 
         return this.prefixMessages.concat([...this.reverseMessages].reverse())
     }
 
-    private buildContextMessages(): void {
-        for (const item of this.contextItems) {
-            // Create context messages for each context item, where
-            // assistant messages come first because the transcript is in reversed order.
-            const contextMessage = renderContextItem(item)
-            const messagePair = contextMessage && [ASSISTANT_MESSAGE, contextMessage]
-            messagePair && this.reverseMessages.push(...messagePair)
+    /**
+     * Create context messages for each context item, where
+     * assistant messages come first because the transcript is in reversed order.
+     */
+    private buildContextMessages(): Message[] {
+        const contextMessages: Message[] = []
+
+        if (this.isCacheEnabled) {
+            // Filter valid context items (ignoring 'media') and collect their texts.
+            const texts = this.contextItems.reduce<PromptString[]>((acc, item) => {
+                const msg = renderContextItem(item)
+                if (msg) {
+                    if (item.type === 'media') {
+                        contextMessages.push(ASSISTANT_MESSAGE, msg)
+                    }
+                    acc.push(msg.text)
+                }
+                return acc
+            }, [])
+
+            const groupedText = PromptString.join(texts, ps`\n\n`)
+            if (groupedText.length > 0) {
+                const groupedContextMessage: Message = {
+                    speaker: 'human',
+                    text: groupedText,
+                    cacheEnabled: true,
+                }
+                contextMessages.push(ASSISTANT_MESSAGE, groupedContextMessage)
+            }
+        } else {
+            // For each valid context item, include both ASSISTANT_MESSAGE and the message.
+            for (const item of this.contextItems) {
+                const msg = renderContextItem(item)
+                if (msg) {
+                    contextMessages.push(ASSISTANT_MESSAGE, msg)
+                }
+            }
         }
+
+        // Adjust each message: if 'content' exists and has length, set 'text' to undefined.
+        return contextMessages.map(msg => ({
+            ...msg,
+            // Remove the text value if content is present and has length.
+            text: msg?.content?.length ? undefined : msg.text,
+        }))
     }
 
     public tryAddToPrefix(messages: Message[]): boolean {
@@ -144,6 +211,12 @@ export class PromptBuilder {
 
             const contextMessage = renderContextItem(item)
             if (!contextMessage) {
+                continue
+            }
+
+            if (item.type === 'media') {
+                result.added.push(item)
+                this.contextItems.push(item)
                 continue
             }
 

@@ -45,6 +45,8 @@ jobs:
           pushd jetbrains
           scip-java index --build-tool=gradle
           popd > /dev/null
+        env:
+          GITHUB_TOKEN: ${{ secrets.PRIVATE_SG_ACCESS_TOKEN }}
 
       - name: Install src
         run: yarn global add @sourcegraph/src

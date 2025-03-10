@@ -18,6 +18,9 @@ const meta: Meta<typeof PromptEditor> = {
         initialEditorState: undefined,
         onChange: () => {},
         editorClassName: styles.editor,
+        openExternalLink(uri) {
+            console.log('openExternalLink', uri)
+        },
     } satisfies React.ComponentProps<typeof PromptEditor>,
 
     decorators: [VSCodeStandaloneComponent],

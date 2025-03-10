@@ -31,13 +31,10 @@ export async function getContextFileFromUri(
 
             // if the range is the full file, remove our range specifier so it
             // renders nicely in the UI
-            const fullRange = new vscode.Range(
-                0,
-                0,
-                doc.lineCount,
-                doc.lineAt(doc.lineCount - 1).text.length
+            const fullRange = doc.validateRange(
+                new vscode.Range(doc.positionAt(0), doc.positionAt(doc.getText().length - 1))
             )
-            if (range?.contains(fullRange)) {
+            if (range?.isEqual(fullRange)) {
                 range = undefined
             }
 

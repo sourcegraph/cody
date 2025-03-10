@@ -165,7 +165,7 @@ internal class WebUIProxy(private val host: WebUIHost, private val browser: JBCe
                 suggestedName: String?,
                 callback: CefBeforeDownloadCallback?
             ) {
-              callback?.Continue(/* downloadPath = */ "", /* showDialog = */ true)
+              callback?.Continue(/* downloadPath= */ "", /* showDialog= */ true)
             }
 
             override fun onDownloadUpdated(
@@ -416,7 +416,7 @@ private class ExtensionRequestHandler(
     logger.warn("Browser render process terminated: ${status?.name}")
     ProjectManager.getInstance().openProjects.forEach { project ->
       TelemetryV2.sendTelemetryEvent(project, "cody.webview.request", "renderProcessTerminated")
-      CodyAgentService.getInstance(project).restartAgent(project)
+      CodyAgentService.getInstance(project).restartAgent()
     }
   }
 }

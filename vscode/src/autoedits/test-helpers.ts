@@ -12,9 +12,9 @@ import type { CodyStatusBar } from '../services/StatusBar'
 import * as adapters from './adapters/utils'
 import { autoeditTriggerKind } from './analytics-logger'
 import {
+    AUTOEDIT_TOTAL_DEBOUNCE_INTERVAL,
     AutoeditsProvider,
     type AutoeditsResult,
-    INLINE_COMPLETION_DEFAULT_DEBOUNCE_INTERVAL_MS,
 } from './autoedits-provider'
 
 /**
@@ -35,6 +35,7 @@ export async function autoeditResultFor(
         token,
         provider: existingProvider,
         getModelResponse,
+        isAutomaticTimersAdvancementDisabled = false,
     }: {
         prediction: string
         /** provide to reuse an existing provider instance */
@@ -46,10 +47,17 @@ export async function autoeditResultFor(
             body: string,
             apiKey: string,
             customHeaders?: Record<string, string>
-        ) => Promise<unknown>
+        ) => Promise<{
+            data: any
+            requestHeaders: Record<string, string>
+            responseHeaders: Record<string, string>
+            url: string
+        }>
+        isAutomaticTimersAdvancementDisabled?: boolean
     }
 ): Promise<{
     result: AutoeditsResult | null
+    promiseResult: Promise<AutoeditsResult | null>
     document: vscode.TextDocument
     position: vscode.Position
     provider: AutoeditsProvider
@@ -60,11 +68,16 @@ export async function autoeditResultFor(
         vi.advanceTimersByTime(100)
 
         return {
-            choices: [
-                {
-                    text: prediction,
-                },
-            ],
+            data: {
+                choices: [
+                    {
+                        text: prediction,
+                    },
+                ],
+            },
+            requestHeaders: {},
+            responseHeaders: {},
+            url: 'test-url.com/completions',
         }
     }
 
@@ -92,18 +105,21 @@ export async function autoeditResultFor(
     } as any as CodyStatusBar
     const provider =
         existingProvider ??
-        new AutoeditsProvider(chatClient, fixupController, mockStatusBar, { shouldRenderImage: false })
+        new AutoeditsProvider(chatClient, fixupController, mockStatusBar, { shouldRenderInline: true })
 
     let result: AutoeditsResult | null = null
 
-    provider
+    const promiseResult = provider
         .provideInlineCompletionItems(document, position, inlineCompletionContext, token)
         .then(res => {
             result = res
+            return result
         })
 
-    // Advance time by the default debounce interval.
-    await vi.advanceTimersByTimeAsync(INLINE_COMPLETION_DEFAULT_DEBOUNCE_INTERVAL_MS)
+    if (!isAutomaticTimersAdvancementDisabled) {
+        // Advance time by the default debounce interval.
+        await vi.advanceTimersByTimeAsync(AUTOEDIT_TOTAL_DEBOUNCE_INTERVAL)
+    }
 
-    return { result, document, position, provider, editBuilder }
+    return { result, promiseResult, document, position, provider, editBuilder }
 }

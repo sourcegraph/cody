@@ -28,6 +28,9 @@ test.extend<ExpectedV2Events>({
 })('Generate Unit Test Command (Edit)', async ({ page, sidebar, server }) => {
     server.onGraphQl('SiteProductVersion').replyJson({
         data: { site: { productVersion: '5.9.0' } },
+        capabilities: {
+            edit: 'enabled',
+        },
     })
 
     // Sign into Cody
@@ -66,6 +69,9 @@ test.extend<ExpectedV2Events>({
 })('Document Command (Edit)', async ({ page, sidebar, server }) => {
     server.onGraphQl('SiteProductVersion').replyJson({
         data: { site: { productVersion: '5.9.0' } },
+        capabilities: {
+            edit: 'enabled',
+        },
     })
 
     // Sign into Cody
@@ -111,6 +117,9 @@ test.extend<ExpectedV2Events>({
 })('Explain Command from Prompts Tab', async ({ page, sidebar, server }) => {
     server.onGraphQl('SiteProductVersion').replyJson({
         data: { site: { productVersion: '5.9.0' } },
+        capabilities: {
+            edit: 'enabled',
+        },
     })
 
     // Sign into Cody

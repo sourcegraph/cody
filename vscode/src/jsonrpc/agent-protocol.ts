@@ -1,7 +1,6 @@
 import type * as vscode from 'vscode'
 
 import type {
-    AuthenticationError,
     ClientCapabilities,
     CodyCommand,
     ContextFilters,
@@ -14,6 +13,7 @@ import type {
 } from '@sourcegraph/cody-shared'
 import type { TelemetryEventMarketingTrackingInput } from '@sourcegraph/telemetry'
 
+import type { AuthError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
 import type { ExtensionMessage, WebviewMessage } from '../chat/protocol'
 import type { CompletionBookkeepingEvent, CompletionItemID } from '../completions/analytics-logger'
 import type { FixupTaskID } from '../non-stop/FixupTask'
@@ -279,6 +279,8 @@ export type ClientRequests = {
     // Called after the extension has been uninstalled by a user action.
     // Attempts to wipe out any state that the extension has stored.
     'extension/reset': [null, null]
+
+    'internal/getAuthHeaders': [string, Record<string, string>]
 }
 
 // ================
@@ -453,6 +455,9 @@ export type ServerNotifications = {
     'window/didChangeContext': [{ key: string; value?: string | undefined | null }]
     // Client should move the focus to the sidebar.
     'window/focusSidebar': [null]
+
+    // Update about current authentication status.
+    'authStatus/didUpdate': [ProtocolAuthStatus]
 }
 
 export interface WebviewCreateWebviewPanelOptions {
@@ -677,7 +682,7 @@ export interface ProtocolUnauthenticatedAuthStatus {
     status: 'unauthenticated'
     authenticated: boolean
     endpoint: string
-    error?: AuthenticationError | null | undefined
+    error?: AuthError | null | undefined
     pendingValidation: boolean
 }
 

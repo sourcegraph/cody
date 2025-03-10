@@ -13,7 +13,9 @@ fun Position(line: Int, character: Int): Position {
 }
 
 fun Position.isOutsideOfDocument(document: Document): Boolean {
-  return line < 0 || line > document.lineCount
+  return line < 0 ||
+      line > document.lineCount ||
+      (character < 0 || character > document.getLineEndOffset(line.toInt()))
 }
 
 fun Position.getRealLine(document: Document): Int {

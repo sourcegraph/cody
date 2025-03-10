@@ -19,6 +19,7 @@ import {
     modelsService,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
+import { isError } from 'lodash'
 import { resolveContextItems } from '../../../editor/utils/editor-context'
 import { getCategorizedMentions } from '../../../prompt-builder/utils'
 import { ChatBuilder } from '../ChatBuilder'
@@ -78,8 +79,9 @@ export class ChatHandler implements AgentHandler {
         const prompter = new DefaultPrompter(explicitMentions, implicitMentions, false)
 
         const versions = await currentSiteVersion()
-        if (versions instanceof Error) {
-            throw new Error('unable to determine site version')
+        if (isError(versions)) {
+            delegate.postError(versions, 'transcript')
+            return
         }
         const { prompt } = await this.buildPrompt(prompter, chatBuilder, signal, versions.codyAPIVersion)
 
@@ -172,8 +174,7 @@ export class ChatHandler implements AgentHandler {
                         break
                     }
                     case 'error': {
-                        typewriter.close()
-                        typewriter.stop(message.error)
+                        throw message.error
                     }
                 }
             }
@@ -319,7 +320,12 @@ export async function computeContextAlternatives(
 
     const resolvedExplicitMentionsPromise = resolveContextItems(
         editor,
-        [structuredMentions.symbols, structuredMentions.files, structuredMentions.openCtx].flat(),
+        [
+            structuredMentions.symbols,
+            structuredMentions.files,
+            structuredMentions.openCtx,
+            structuredMentions.mediaFiles,
+        ].flat(),
         text,
         signal
     )

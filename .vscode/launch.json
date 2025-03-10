@@ -9,10 +9,13 @@
       "preLaunchTask": "Build VS Code Extension (Desktop)",
       "args": [
         "--extensionDevelopmentPath=${workspaceRoot}/vscode",
-        "--disable-extension=github.copilot"
+        "--disable-extension=github.copilot",
+        "--disable-extension=sourcegraph.cody-testing",
       ],
       "sourceMaps": true,
-      "outFiles": ["${workspaceRoot}/vscode/dist/**/*.js"],
+      "outFiles": [
+        "${workspaceRoot}/vscode/dist/**/*.js"
+      ],
       "env": {
         "NODE_ENV": "development",
         "CODY_DEBUG_ENABLE": "true"
@@ -34,10 +37,12 @@
         "--user-data-dir=/tmp/vscode-cody-extension-dev-host",
         "--profile-temp",
         "--extensionDevelopmentPath=${workspaceRoot}/vscode",
-        "--disable-extension=github.copilot"
+        "--disable-extension=sourcegraph.cody-testing",
       ],
       "sourceMaps": true,
-      "outFiles": ["${workspaceRoot}/vscode/dist/**/*.js"],
+      "outFiles": [
+        "${workspaceRoot}/vscode/dist/**/*.js"
+      ],
       "env": {
         "NODE_ENV": "development",
         "CODY_PROFILE_TEMP": "true",
@@ -50,8 +55,16 @@
       "request": "launch",
       "preLaunchTask": "Build VS Code Extension (Web)",
       "runtimeExecutable": "pnpm",
-      "runtimeArgs": ["-C", "${workspaceFolder}/vscode", "run", "--silent", "_dev:vscode-test-web"],
-      "outFiles": ["${workspaceFolder}/vscode/dist/**/*.js"]
+      "runtimeArgs": [
+        "-C",
+        "${workspaceFolder}/vscode",
+        "run",
+        "--silent",
+        "_dev:vscode-test-web"
+      ],
+      "outFiles": [
+        "${workspaceFolder}/vscode/dist/**/*.js"
+      ]
     },
     {
       "name": "Launch VS Code Extension (Web Extension Host)",
@@ -59,14 +72,21 @@
       "debugWebWorkerHost": true,
       "request": "launch",
       "preLaunchTask": "Build VS Code Extension (Web)",
-      "outFiles": ["${workspaceFolder}/vscode/dist/**/*.js"],
-      "args": ["--extensionDevelopmentPath=${workspaceRoot}/vscode", "--extensionDevelopmentKind=web"]
+      "outFiles": [
+        "${workspaceFolder}/vscode/dist/**/*.js"
+      ],
+      "args": [
+        "--extensionDevelopmentPath=${workspaceRoot}/vscode",
+        "--extensionDevelopmentKind=web"
+      ]
     },
     {
       "name": "Attach to Agent",
       "port": 9229,
       "request": "attach",
-      "skipFiles": ["<node_internals>/**"],
+      "skipFiles": [
+        "<node_internals>/**"
+      ],
       "type": "node"
     },
     {
@@ -74,34 +94,56 @@
       "request": "launch",
       "name": "Launch Agent port 3113",
       "program": "${workspaceFolder}/agent/dist/index.js",
-      "runtimeArgs": ["--enable-source-maps", "--preserve-symlinks"],
-      "args": ["api", "jsonrpc-stdio"],
+      "runtimeArgs": [
+        "--enable-source-maps",
+        "--preserve-symlinks"
+      ],
+      "args": [
+        "api",
+        "jsonrpc-stdio"
+      ],
       "preLaunchTask": "Build Agent",
       "env": {
         "CODY_AGENT_DEBUG_REMOTE": "true",
         "CODY_AGENT_DEBUG_PORT": "3113"
       },
       "sourceMaps": true,
-      "skipFiles": ["<node_internals>/**"]
+      "skipFiles": [
+        "<node_internals>/**"
+      ]
     },
     {
       "type": "node",
       "request": "launch",
       "name": "Debug Current File with vitest",
       "autoAttachChildProcesses": true,
-      "skipFiles": ["<node_internals>/**", "**/node_modules/**"],
+      "skipFiles": [
+        "<node_internals>/**",
+        "**/node_modules/**"
+      ],
       "program": "${workspaceFolder}/node_modules/vitest/vitest.mjs",
       // ${relativeFile} will guarantee the "current" file, but fileBaseNameNoExtension
       // can be convenient because running with a file like "graph-section-observer.ts"
       // (the implementation, not the test) will run the correct tests.
-      "args": ["run", "${fileBasenameNoExtension}", "--disable-console-intercept", "--no-file-parallelism", "--no-isolate", "--testTimeout=86400", "--hookTimeout=86400"],
+      "args": [
+        "run",
+        "${fileBasenameNoExtension}",
+        "--disable-console-intercept",
+        "--no-file-parallelism",
+        "--no-isolate",
+        "--testTimeout=86400",
+        "--hookTimeout=86400"
+      ],
       "smartStep": true
     },
     {
       "name": "Cody E2Ev2 - Attach",
       "port": 33101,
       "request": "attach",
-      "skipFiles": ["<node_internals>/**", ".test/global/vscode-server/**"],
+      "skipFiles": [
+        "<node_internals>/**",
+        ".test/global/vscode-server/**"
+      ],
       "type": "node",
       "cwd": "${workspaceFolder}",
       "sourceMaps": true,
@@ -114,7 +156,10 @@
       "name": "Cody E2E - Build & Debug",
       "preLaunchTask": "Build VS Code Extension (Desktop)",
       "autoAttachChildProcesses": true,
-      "skipFiles": ["<node_internals>/**", ".test/global/vscode-server/**"],
+      "skipFiles": [
+        "<node_internals>/**",
+        ".test/global/vscode-server/**"
+      ],
       "program": "${workspaceFolder}/vscode/node_modules/playwright/cli.js",
       "env": {
         "VSCDEBUG": "1",
@@ -127,7 +172,14 @@
       //   "${workspaceRoot}/vscode/dist/**/*.js",
       //   "${workspaceRoot}/vscode/",
       // ],
-      "args": ["test", "-c", "${workspaceFolder}/vscode/playwright.v2.config.ts", "--timeout=0", "--workers=1", "--headed"],
+      "args": [
+        "test",
+        "-c",
+        "${workspaceFolder}/vscode/playwright.v2.config.ts",
+        "--timeout=0",
+        "--workers=1",
+        "--headed"
+      ],
       "smartStep": true,
       "outputCapture": "std",
     }

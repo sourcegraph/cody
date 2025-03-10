@@ -50,6 +50,7 @@ describe('CodyGatewayAdapter', () => {
         // Mock successful response
         mockFetch.mockResolvedValueOnce({
             status: 200,
+            headers: new Headers(),
             json: () => Promise.resolve({ choices: [{ message: { content: 'response' } }] }),
         })
 
@@ -78,7 +79,6 @@ describe('CodyGatewayAdapter', () => {
                     type: 'content',
                     content: options.codeToRewrite,
                 },
-                rewrite_speculation: true,
                 user: options.userId,
                 messages: expect.any(Array),
             })
@@ -90,6 +90,7 @@ describe('CodyGatewayAdapter', () => {
 
         mockFetch.mockResolvedValueOnce({
             status: 200,
+            headers: new Headers(),
             json: () => Promise.resolve({ choices: [{ text: 'response' }] }),
         })
 
@@ -106,7 +107,6 @@ describe('CodyGatewayAdapter', () => {
                     type: 'content',
                     content: options.codeToRewrite,
                 },
-                rewrite_speculation: true,
                 user: options.userId,
                 prompt: nonChatOptions.prompt.userMessage.toString(),
             })
@@ -116,6 +116,7 @@ describe('CodyGatewayAdapter', () => {
     it('handles error responses correctly', async () => {
         mockFetch.mockResolvedValueOnce({
             status: 400,
+            headers: new Headers(),
             text: () => Promise.resolve('Bad Request'),
         })
 

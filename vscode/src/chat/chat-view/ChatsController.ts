@@ -192,33 +192,7 @@ export class ChatsController implements vscode.Disposable {
                 }
             }),
 
-            vscode.commands.registerCommand(
-                'cody.chat.toggle',
-                async (ops: { editorFocus: boolean }) => {
-                    const modality = getNewChatLocation()
-
-                    if (ops.editorFocus) {
-                        if (modality === 'sidebar') {
-                            await vscode.commands.executeCommand('cody.chat.focus')
-                        } else {
-                            const editorView = this.activeEditor?.webviewPanelOrView
-                            if (editorView) {
-                                revealWebviewViewOrPanel(editorView)
-                            } else {
-                                vscode.commands.executeCommand('cody.chat.newEditorPanel')
-                            }
-                        }
-                    } else {
-                        if (modality === 'sidebar') {
-                            await vscode.commands.executeCommand(
-                                'workbench.action.focusActiveEditorGroup'
-                            )
-                        } else {
-                            await vscode.commands.executeCommand('workbench.action.navigateEditorGroups')
-                        }
-                    }
-                }
-            ),
+            vscode.commands.registerCommand('cody.chat.toggle', async () => this.toggleChatPanel()),
             vscode.commands.registerCommand('cody.chat.history.export', () => this.exportHistory()),
             vscode.commands.registerCommand('cody.chat.history.clear', arg => this.clearHistory(arg)),
             vscode.commands.registerCommand('cody.chat.history.delete', item => this.clearHistory(item)),
@@ -555,6 +529,22 @@ export class ChatsController implements vscode.Disposable {
 
         if (includePanel && chatID === this.panel?.sessionID && !options.skipSave) {
             this.panel.clearAndRestartSession()
+        }
+    }
+
+    private async toggleChatPanel(): Promise<void> {
+        if (this.activeEditor) {
+            const isVisible = this.activeEditor.webviewPanelOrView?.visible
+            const sessionID = this.activeEditor.sessionID
+            if (isVisible && sessionID) {
+                this.disposeChat(sessionID, true)
+            } else {
+                await this.getOrCreateEditorChatController(sessionID)
+            }
+        } else {
+            await vscode.commands.executeCommand(
+                this.panel.isVisible() ? 'workbench.action.toggleSidebarVisibility' : 'cody.chat.focus'
+            )
         }
     }
 

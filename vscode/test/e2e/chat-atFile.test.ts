@@ -20,6 +20,7 @@ import {
     type DotcomUrlOverride,
     type ExpectedV2Events,
     executeCommandInPalette,
+    mockEnterpriseRepoIdMapping,
     test,
     withPlatformSlashes,
 } from './helpers'
@@ -45,7 +46,9 @@ test
         // To exercise the "current directory" filename filtering without a git repository
         // for the workspace, simulate dotcom.
         dotcomUrl: mockServer.SERVER_URL,
-    })('@-mention file in chat', async ({ page, sidebar, workspaceDirectory }) => {
+    })('@-mention file in chat', async ({ page, sidebar, workspaceDirectory, server }) => {
+    mockEnterpriseRepoIdMapping(server)
+
     // This test requires that the window be focused in the OS window manager because it deals with
     // focus.
     await page.bringToFront()
@@ -307,7 +310,9 @@ test.extend<ExpectedV2Events>({
         'cody.chat-question:executed',
         'cody.chatResponse:noCode',
     ],
-})('@-mention symbol in chat', async ({ page, nap, sidebar }) => {
+})('@-mention symbol in chat', async ({ page, nap, sidebar, server }) => {
+    mockEnterpriseRepoIdMapping(server)
+
     await sidebarSignin(page, sidebar)
 
     // Open the buzz.ts file so that VS Code starts to populate symbols.
@@ -351,7 +356,7 @@ test.extend<ExpectedV2Events>({
 
     // @-file with the correct line range shows up in the chat view and it opens on click
     const contextCell = getContextCell(chatPanelFrame)
-    await expectContextCellCounts(contextCell, { files: 2 })
+    await expectContextCellCounts(contextCell, { files: 1 })
     await contextCell.hover()
     await openContextCell(contextCell)
     const chatContext = getContextCell(chatPanelFrame).last()
@@ -364,19 +369,21 @@ test.extend<ExpectedV2Events>({
 
 test.extend<ExpectedV2Events>({
     expectedV2Events: ['cody.addChatContext:clicked'],
-})('Add Selection to Cody Chat', async ({ page, sidebar }) => {
+})('Add Selection to Cody Chat', async ({ page, sidebar, server }) => {
+    mockEnterpriseRepoIdMapping(server)
+
     await sidebarSignin(page, sidebar)
 
     await openFileInEditorTab(page, 'buzz.ts')
     await selectLineRangeInEditorTab(page, 2, 5)
 
     const [, lastChatInput] = await createEmptyChatPanel(page)
-    await expect(chatInputMentions(lastChatInput)).toHaveText(['buzz.ts', 'buzz.ts:2-5'], {
+    await expect(chatInputMentions(lastChatInput)).toHaveText(['buzz.ts'], {
         timeout: 3_000,
     })
 
     await lastChatInput.press('x')
     await selectLineRangeInEditorTab(page, 7, 10)
     await executeCommandInPalette(page, 'Cody: Add Selection to Cody Chat')
-    await expect(chatInputMentions(lastChatInput)).toHaveText(['buzz.ts', 'buzz.ts:2-5', 'buzz.ts:7-10'])
+    await expect(chatInputMentions(lastChatInput)).toHaveText(['buzz.ts', 'buzz.ts:7-10'])
 })

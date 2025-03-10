@@ -19,7 +19,6 @@ test.beforeEach(() => {
 testGitWorkspace.extend<ExtraWorkspaceSettings>({
     extraWorkspaceSettings: {
         'cody.internal.unstable': true, // Needed for Cody Ignore
-        'cody.experimental.commitMessage': true,
     },
 })('use terminal output as context', async ({ page, sidebar }) => {
     await sidebarSignin(page, sidebar)

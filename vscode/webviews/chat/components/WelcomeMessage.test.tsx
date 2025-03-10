@@ -33,6 +33,7 @@ describe('WelcomeMessage', () => {
         vi.spyOn(useConfigModule, 'useConfig').mockReturnValue({
             clientCapabilities: {
                 isVSCode: true,
+                edit: 'enabled',
             } satisfies Partial<ClientCapabilitiesWithLegacyFields> as ClientCapabilitiesWithLegacyFields,
             authStatus: AUTH_STATUS_FIXTURE_AUTHED,
         } satisfies Partial<useConfigModule.Config> as useConfigModule.Config)
@@ -49,6 +50,7 @@ describe('WelcomeMessage', () => {
         vi.spyOn(useConfigModule, 'useConfig').mockReturnValue({
             clientCapabilities: {
                 isVSCode: false,
+                edit: 'enabled',
             } satisfies Partial<ClientCapabilitiesWithLegacyFields> as ClientCapabilitiesWithLegacyFields,
             authStatus: AUTH_STATUS_FIXTURE_AUTHED,
         } satisfies Partial<useConfigModule.Config> as useConfigModule.Config)

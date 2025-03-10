@@ -8,7 +8,13 @@ import {
     sidebarExplorer,
     sidebarSignin,
 } from './common'
-import { type DotcomUrlOverride, type ExpectedV2Events, executeCommandInPalette, test } from './helpers'
+import {
+    type DotcomUrlOverride,
+    type ExpectedV2Events,
+    executeCommandInPalette,
+    mockEnterpriseRepoIdMapping,
+    test,
+} from './helpers'
 
 test.extend<ExpectedV2Events>({
     expectedV2Events: [
@@ -22,7 +28,8 @@ test.extend<ExpectedV2Events>({
         'cody.chat-question:executed',
         'cody.chatResponse:hasCode',
     ],
-})('chat input focus', async ({ page, sidebar }) => {
+})('chat input focus', async ({ page, sidebar, server }) => {
+    mockEnterpriseRepoIdMapping(server)
     // This test requires that the window be focused in the OS window manager because it deals with
     // focus.
     await page.bringToFront()
@@ -195,7 +202,10 @@ test.extend<DotcomUrlOverride>({ dotcomUrl: mockServer.SERVER_URL }).extend<Expe
     const chatFrame = getChatSidebarPanel(page)
     const firstChatInput = getChatInputs(chatFrame).first()
 
-    const modelSelect = chatFrame.getByRole('combobox', { name: 'Select a model' }).last()
+    const chatTab = chatFrame.getByTestId('tab-chat')
+    await chatTab.click()
+
+    const modelSelect = chatFrame.getByTestId('chat-model-selector')
 
     await expect(modelSelect).toBeEnabled()
     await expect(modelSelect).toHaveText(/^Claude 3.5 Sonnet/)
@@ -208,7 +218,10 @@ test.extend<DotcomUrlOverride>({ dotcomUrl: mockServer.SERVER_URL }).extend<Expe
     await modelSelect.click()
     const modelChoices = chatFrame.getByRole('listbox', { name: 'Suggestions' })
     await modelChoices.getByRole('option', { name: 'Claude 3 Haiku' }).click()
+
     const lastChatInput = getChatInputs(chatFrame).last()
+    await lastChatInput.click()
+
     await expect(lastChatInput).toBeFocused()
     await expect(modelSelect).toHaveText(/^Claude 3 Haiku/)
     await lastChatInput.fill('to model2')

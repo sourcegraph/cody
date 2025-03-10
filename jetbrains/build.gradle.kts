@@ -1,4 +1,5 @@
 import com.jetbrains.plugin.structure.base.utils.isDirectory
+import java.net.HttpURLConnection
 import java.net.URL
 import java.nio.file.FileSystems
 import java.nio.file.FileVisitResult
@@ -58,10 +59,11 @@ val skippedFailureLevels =
 plugins {
   id("java")
   id("jvm-test-suite")
-  id("org.jetbrains.kotlin.jvm") version "2.0.21"
-  id("org.jetbrains.intellij.platform") version "2.1.0"
+  id("org.jetbrains.kotlin.jvm") version "2.1.10"
+  id("org.jetbrains.intellij.platform") version "2.2.1"
   id("org.jetbrains.changelog") version "2.2.1"
-  id("com.diffplug.spotless") version "6.25.0"
+  id("com.diffplug.spotless") version "7.0.2"
+  id("io.sentry.jvm.gradle") version "5.2.0"
 }
 
 val platformVersion: String by project
@@ -141,9 +143,9 @@ dependencies {
   implementation("org.eclipse.lsp4j:org.eclipse.lsp4j.jsonrpc:0.23.1")
   testImplementation("net.java.dev.jna:jna:5.10.0") // it is needed for integration tests
   testImplementation("org.awaitility:awaitility-kotlin:4.2.2")
-  testImplementation("org.junit.jupiter:junit-jupiter:5.11.3")
+  testImplementation("org.junit.jupiter:junit-jupiter:5.11.4")
   testImplementation("org.jetbrains.kotlin:kotlin-test-junit:2.0.21")
-  testImplementation("org.mockito:mockito-core:5.14.2")
+  testImplementation("org.mockito:mockito-core:5.13.0")
   testImplementation("org.mockito.kotlin:mockito-kotlin:5.4.0")
 }
 
@@ -188,8 +190,36 @@ fun download(url: String, output: File) {
     return
   }
   println("Downloading... $url")
-  assert(output.parentFile.mkdirs()) { output.parentFile }
-  Files.copy(URL(url).openStream(), output.toPath())
+
+  // Optional: Retrieve the GitHub token if needed for authorization
+  // (require sourcegraph/sourcegraph repo access)
+  val githubToken = System.getenv("GITHUB_TOKEN")
+  val connection = URL(url).openConnection() as HttpURLConnection
+  try {
+    if (!githubToken.isNullOrEmpty()) {
+      connection.setRequestProperty("Authorization", "Bearer $githubToken")
+    }
+
+    connection.requestMethod = "GET"
+    connection.setRequestProperty("Accept", "application/vnd.github+json")
+    connection.setRequestProperty("X-GitHub-Api-Version", "2022-11-28")
+
+    val responseCode = connection.responseCode
+    if (responseCode == HttpURLConnection.HTTP_OK) {
+      assert(output.parentFile.mkdirs()) { output.parentFile }
+      connection.inputStream.use { input ->
+        output.outputStream().use { outputStream -> input.copyTo(outputStream) }
+      }
+      println("Downloaded $output")
+    } else {
+      error("Failed to download ${url}. Response code: $responseCode")
+    }
+  } catch (e: Exception) {
+    e.printStackTrace()
+    error("Failed to download ${url}")
+  } finally {
+    connection.disconnect()
+  }
 }
 
 fun copyRecursively(input: File, output: File) {
@@ -319,10 +349,9 @@ val pnpmPath =
     }
 
 tasks {
-  val codeSearchCommit = "9d86a4f7d183e980acfe5d6b6468f06aaa0d8acf"
+  val codeSearchCommit = "048679a2e7f2a2d94a49c46bc972c954cb2b5bac"
   fun downloadCodeSearch(): File {
-    val url =
-        "https://github.com/sourcegraph/sourcegraph-public-snapshot/archive/$codeSearchCommit.zip"
+    val url = "https://api.github.com/repos/sourcegraph/sourcegraph/zipball/$codeSearchCommit"
     val destination = githubArchiveCache.resolve("$codeSearchCommit.zip")
     download(url, destination)
     return destination
@@ -332,7 +361,7 @@ tasks {
     val zip = downloadCodeSearch()
     val dir = githubArchiveCache.resolve("code-search")
     unzip(zip, dir, FileSystems.getDefault().getPathMatcher("glob:**.go"))
-    return dir.resolve("sourcegraph-public-snapshot-$codeSearchCommit")
+    return dir.resolve("sourcegraph-sourcegraph-$codeSearchCommit")
   }
 
   fun buildCodeSearch(): File? {
@@ -343,7 +372,9 @@ tasks {
       return destinationDir
     }
 
-    val sourcegraphDir = unzipCodeSearch()
+    val codeSearchDirOverride = System.getenv("CODE_SEARCH_DIR_OVERRIDE")
+    val sourcegraphDir: File =
+        if (codeSearchDirOverride != null) file(codeSearchDirOverride) else unzipCodeSearch()
     exec {
       workingDir(sourcegraphDir.toString())
       commandLine(*pnpmPath, "install", "--frozen-lockfile", "--fix-lockfile")

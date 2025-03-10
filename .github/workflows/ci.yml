@@ -64,13 +64,22 @@ jobs:
       - run: echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
         shell: bash
         id: pnpm-cache
-      - name: Cache pnpm store
-        uses: actions/cache@v4
+      - name: Restore cache pnpm store
+        id: restore-pnpm-cache
+        uses: actions/cache/restore@v4
         with:
           path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
-          key: ${{ runner.os }}-${{ matrix.node }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: ${{ runner.os }}-${{ matrix.node }}-pnpm-store-
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: ${{ runner.os }}-pnpm-store-
+
       - run: pnpm install
+
+      - name: Save cache pnpm store
+        if: steps.restore-pnpm-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
       - run: pnpm build
       - run: pnpm run test:unit --run
         env:
@@ -93,13 +102,21 @@ jobs:
       - run: echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
         shell: bash
         id: pnpm-cache
-      - name: Cache pnpm store
+      - name: Restore cache pnpm store
+        id: restore-pnpm-cache
         uses: actions/cache@v4
         with:
           path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
           key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
           restore-keys: ${{ runner.os }}-pnpm-store-
       - run: pnpm install
+
+      - name: Save cache pnpm store
+        if: steps.restore-pnpm-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
       - run: xvfb-run -a pnpm -C vscode run test:integration
         if: matrix.runner == 'ubuntu'
       - run: pnpm -C vscode run test:integration
@@ -144,13 +161,21 @@ jobs:
       - run: echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
         shell: bash
         id: pnpm-cache
-      - name: Cache pnpm store
+      - name: Restore cache pnpm store
+        id: restore-pnpm-cache
         uses: actions/cache@v4
         with:
           path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
           key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
           restore-keys: ${{ runner.os }}-pnpm-store-
       - run: pnpm install
+
+      - name: Save cache pnpm store
+        if: steps.restore-pnpm-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
       - run: GITHUB_REF=$BRANCH_NAME xvfb-run -a pnpm -C vscode run test:e2e --shard=${{ matrix.shard }}
         if: matrix.runner == 'ubuntu'
         env:
@@ -192,13 +217,21 @@ jobs:
       - run: echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
         shell: bash
         id: pnpm-cache
-      - name: Cache pnpm store
+      - name: Restore cache pnpm store
+        id: restore-pnpm-cache
         uses: actions/cache@v4
         with:
           path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
           key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
           restore-keys: ${{ runner.os }}-pnpm-store-
       - run: pnpm install
+
+      - name: Save cache pnpm store
+        if: steps.restore-pnpm-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
       # Run Biome and capture the output. If biome crashes, it still reports a
       # successful CI run (exit code 0) but that will ripple down to errors in
       # the Biome VS Code extension. This ensures that we don't accidentally

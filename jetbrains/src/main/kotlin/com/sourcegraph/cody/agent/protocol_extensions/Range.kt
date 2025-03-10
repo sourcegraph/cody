@@ -1,5 +1,6 @@
 package com.sourcegraph.cody.agent.protocol_extensions
 
+import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.editor.Document
 import com.sourcegraph.cody.agent.protocol_generated.Range
 
@@ -25,7 +26,14 @@ fun Range.toSearchRange(): RangePair = RangePair(start.line.plus(1), end.line)
  * @return A [RangeOffset] pair containing the start and end offsets of the range within the
  *   document.
  */
-fun Range.toOffsetRange(document: Document): RangeOffset {
+fun Range.toOffsetRange(document: Document): RangeOffset? {
+  if (start.line > end.line || (start.line == end.line && start.character > end.character)) {
+    val logger = Logger.getInstance(Range::class.java)
+    logger.warn(
+        "Invalid range: start position (${start.line},${start.character}) > end position (${end.line},${end.character})")
+    return null
+  }
+
   val startOffset = if (start.isOutsideOfDocument(document)) 0 else start.toOffsetOrZero(document)
   val endOffset =
       if (end.isOutsideOfDocument(document)) document.textLength else end.toOffsetOrZero(document)

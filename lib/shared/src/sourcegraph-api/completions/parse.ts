@@ -33,6 +33,7 @@ function parseJSON<T>(data: string): T | Error {
 export interface CompletionData {
     completion?: string
     deltaText?: string
+    delta_thinking?: string
     stopReason?: string
 }
 
@@ -56,6 +57,9 @@ function parseEventData(
             if (isError(data)) {
                 return data
             }
+            // Process the delta_thinking and deltaText separately.
+            // The thinking text will be added to the completion text.
+            builder.nextThinking(data.delta_thinking)
             // Internally, don't handle delta text yet and there's limited value
             // in passing around deltas anyways so we concatenate them here.
             const completion = builder.nextCompletion(data.completion, data.deltaText)

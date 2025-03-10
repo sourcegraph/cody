@@ -54,7 +54,7 @@ export {
 } from './models/utils'
 export { BotResponseMultiplexer } from './chat/bot-response-multiplexer'
 export { ChatClient } from './chat/chat'
-export { getSimplePreamble } from './chat/preamble'
+export { getDefaultSystemPrompt, getChatPreamble, getSimplePreamble } from './chat/preamble'
 export type {
     SerializedChatInteraction,
     SerializedChatTranscript,
@@ -63,6 +63,7 @@ export { serializeChatMessage } from './chat/transcript'
 export {
     errorToChatError,
     DEFAULT_EVENT_SOURCE,
+    EventSourceTelemetryMetadataMapping,
 } from './chat/transcript/messages'
 export type {
     AccountKeyedChatHistory,
@@ -111,6 +112,7 @@ export {
     type ContextItemCurrentRepository,
     type ContextItemCurrentDirectory,
     type ContextItemCurrentOpenTabs,
+    type ContextItemMedia,
     FILE_RANGE_TOOLTIP_LABEL,
     GENERAL_HELP_LABEL,
     IGNORED_FILE_WARNING_LABEL,
@@ -174,11 +176,13 @@ export type {
 } from './editor'
 export {
     displayPath,
+    displayPathWithLines,
     displayPathBasename,
     uriHasPrefix,
     displayPathDirname,
     displayPathWithoutWorkspaceFolderPrefix,
     setDisplayPathEnvInfo,
+    fixPathSep,
     type DisplayPathEnvInfo,
 } from './editor/displayPath'
 export { forceHydration, hydrateAfterPostMessage } from './editor/hydrateAfterPostMessage'
@@ -246,14 +250,26 @@ export {
 } from './sourcegraph-api/environments'
 export {
     AbortError,
+    AuthConfigError,
+    AuthError,
+    AvailabilityError,
+    EnterpriseUserDotComError,
+    ExternalAuthProviderError,
+    InvalidAccessTokenError,
+    NeedsAuthChallengeError,
     NetworkError,
     RateLimitError,
     TimeoutError,
     TracedError,
     isAbortError,
     isAbortErrorOrSocketHangUp,
-    isContextWindowLimitError,
     isAuthError,
+    isAvailabilityError,
+    isContextWindowLimitError,
+    isEnterpriseUserDotComError,
+    isExternalProviderAuthError,
+    isInvalidAccessTokenError,
+    isNeedsAuthChallengeError,
     isNetworkError,
     isNetworkLikeError,
     isRateLimitError,
@@ -285,6 +301,8 @@ export {
     type NLSSearchDynamicFilter,
     type NLSSearchDynamicFilterKind,
     type GraphQLAPIClientConfig,
+    setJSONAcceptContentTypeHeaders,
+    isCustomAuthChallengeResponse,
 } from './sourcegraph-api/graphql/client'
 export type {
     CodyLLMSiteConfiguration,

@@ -181,10 +181,10 @@ describe('vscode.workspace.findFiles', () => {
         const workspaceDocuments = new AgentWorkspaceDocuments()
         while (vscode.workspaceFolders.pop()) {
             // clear
-            // vscode.workspaceFolders will be reset by setWorkspaceDocuments.
+            // vscode.workspaceFolders will be reset by setLastOpenedWorkspaceFolder
         }
-        workspaceDocuments.workspaceRootUri = tmpdir
         vscode.setWorkspaceDocuments(workspaceDocuments)
+        vscode.setLastOpenedWorkspaceFolder(tmpdir)
         expect(vscode.workspaceFolders.length).toEqual(1)
         await fspromises.writeFile(path.join(tmpdir.fsPath, 'README.md'), '# Bananas are great')
         await fspromises.writeFile(path.join(tmpdir.fsPath, 'other.txt'), 'Other file')
@@ -431,5 +431,44 @@ describe('vscode.workspace.getConfiguration', () => {
         const configNoScope = vscode.workspace.getConfiguration('openctx')
         const configWithScope = vscode.workspace.getConfiguration('openctx', vscode.Uri.file('/test'))
         expect(configNoScope.get('providers')).toEqual(configWithScope.get('providers'))
+    })
+})
+
+describe('workspaces', () => {
+    const workspaces = [vscode.Uri.parse('file:///a'), vscode.Uri.parse('file:///b')]
+
+    const files = [
+        vscode.Uri.parse('file:///a/1/2'),
+        vscode.Uri.parse('file:///b/3/4'),
+        vscode.Uri.parse('file:///c/5/6'),
+    ]
+
+    beforeEach(() => {
+        setWorkspaceFolders([])
+    })
+
+    it('vscode.workspace.getRelativePath', () => {
+        // Single workspace -> w/o prefix by default
+        setWorkspaceFolders([workspaces[0]])
+        expect(vscode.workspace.asRelativePath(files[0])).toBe('1/2')
+        expect(vscode.workspace.asRelativePath(files[0], true)).toBe('a/1/2')
+
+        // Multiple workspaces -> w/ prefix by default
+        setWorkspaceFolders(workspaces)
+
+        expect(vscode.workspace.asRelativePath(files[0])).toBe('a/1/2')
+        expect(vscode.workspace.asRelativePath(files[0], false)).toBe('1/2')
+        expect(vscode.workspace.asRelativePath(files[1])).toBe('b/3/4')
+
+        // Path no in workspace -> returned as is
+        expect(vscode.workspace.asRelativePath(files[2])).toBe('file:///c/5/6')
+    })
+
+    it('vscode.workspace.getWorkspaceFolder', () => {
+        setWorkspaceFolders(workspaces)
+
+        expect(vscode.workspace.getWorkspaceFolder(files[0])?.uri).toBe(workspaces[0])
+        expect(vscode.workspace.getWorkspaceFolder(files[1])?.uri).toBe(workspaces[1])
+        expect(vscode.workspace.getWorkspaceFolder(files[2])?.uri).toBeUndefined()
     })
 })

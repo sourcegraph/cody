@@ -8,7 +8,7 @@ export async function isUriIgnoredByContextFilterWithNotification(
 ): Promise<IsIgnored> {
     const isIgnored = await contextFiltersProvider.isUriIgnored(uri)
     if (isIgnored) {
-        showCodyIgnoreNotification(feature, 'context-filter')
+        showCodyIgnoreNotification(feature, isIgnored)
     }
     return isIgnored
 }

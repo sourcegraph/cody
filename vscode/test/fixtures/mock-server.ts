@@ -265,6 +265,11 @@ export class MockServer {
 
             // Use a switch statement for faster response selection
             switch (true) {
+                case lastHumanMessageText.includes("<codyUserInput>"):
+                    // Return empty string for chat title generation request,
+                    // to confirm the original input is used when title is not generated.
+                    response = "";
+                    break;
                 case lastHumanMessageText.startsWith("Lorem ipsum"):
                     response = responses.lorem;
                     break;

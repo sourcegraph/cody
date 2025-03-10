@@ -17,13 +17,13 @@ import type { AutoeditModelOptions } from '../adapters/base'
 import { getCodeToReplaceData } from '../prompt/prompt-utils'
 import { getDecorationInfo } from '../renderer/diff-utils'
 
+import { AutoeditAnalyticsLogger } from './analytics-logger'
 import {
-    AutoeditAnalyticsLogger,
     type AutoeditRequestID,
     autoeditDiscardReason,
     autoeditSource,
     autoeditTriggerKind,
-} from './analytics-logger'
+} from './types'
 
 describe('AutoeditAnalyticsLogger', () => {
     let autoeditLogger: AutoeditAnalyticsLogger
@@ -109,18 +109,24 @@ describe('AutoeditAnalyticsLogger', () => {
         autoeditLogger.markAsLoaded({
             requestId,
             prompt: modelOptions.prompt,
+            modelResponse: {
+                prediction,
+                requestHeaders: {},
+                requestUrl: modelOptions.url,
+                responseHeaders: {},
+                responseBody: {},
+            },
             payload: {
                 prediction,
                 source: autoeditSource.network,
                 isFuzzyMatch: false,
-                responseHeaders: {},
             },
         })
 
         autoeditLogger.markAsPostProcessed({
             requestId,
             prediction,
-            inlineCompletionItems: [],
+            renderOutput: { type: 'none' },
             decorationInfo: getDecorationInfo(prediction, prediction),
         })
         autoeditLogger.markAsSuggested(requestId)
@@ -167,12 +173,9 @@ describe('AutoeditAnalyticsLogger', () => {
         expect(recordSpy).toHaveBeenCalledTimes(3)
         expect(recordSpy).toHaveBeenNthCalledWith(1, 'cody.autoedit', 'suggested', expect.any(Object))
         expect(recordSpy).toHaveBeenNthCalledWith(2, 'cody.autoedit', 'accepted', expect.any(Object))
-        expect(recordSpy).toHaveBeenNthCalledWith(
-            3,
-            'cody.autoedit',
-            'invalidTransitionToAccepted',
-            undefined
-        )
+        expect(recordSpy).toHaveBeenNthCalledWith(3, 'cody.autoedit', 'invalidTransitionToAccepted', {
+            billingMetadata: undefined,
+        })
 
         const suggestedEventPayload = recordSpy.mock.calls[0].at(2)
         expect(suggestedEventPayload).toMatchInlineSnapshot(`
@@ -313,10 +316,7 @@ describe('AutoeditAnalyticsLogger', () => {
         const discardedEventPayload = recordSpy.mock.calls[0].at(2)
         expect(discardedEventPayload).toMatchInlineSnapshot(`
           {
-            "billingMetadata": {
-              "category": "billable",
-              "product": "cody",
-            },
+            "billingMetadata": undefined,
             "interactionID": undefined,
             "metadata": {
               "discardReason": 2,
@@ -346,18 +346,12 @@ describe('AutoeditAnalyticsLogger', () => {
         autoeditLogger.markAsRejected(requestId)
 
         expect(recordSpy).toHaveBeenCalledTimes(2)
-        expect(recordSpy).toHaveBeenNthCalledWith(
-            1,
-            'cody.autoedit',
-            'invalidTransitionToSuggested',
-            undefined
-        )
-        expect(recordSpy).toHaveBeenNthCalledWith(
-            2,
-            'cody.autoedit',
-            'invalidTransitionToRejected',
-            undefined
-        )
+        expect(recordSpy).toHaveBeenNthCalledWith(1, 'cody.autoedit', 'invalidTransitionToSuggested', {
+            billingMetadata: undefined,
+        })
+        expect(recordSpy).toHaveBeenNthCalledWith(2, 'cody.autoedit', 'invalidTransitionToRejected', {
+            billingMetadata: undefined,
+        })
     })
 
     it('throttles repeated error logs, capturing the first occurrence immediately', () => {

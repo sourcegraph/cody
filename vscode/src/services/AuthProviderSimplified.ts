@@ -26,34 +26,15 @@ function openExternalAuthUrl(provider: AuthMethod, tokenReceiverUrl?: string): T
     // 1. Specific login page (GitHub, etc.) redirects to the new token page
     // 2. New token page redirects back to the extension with the new token
     const referralCode = getCodyAuthReferralCode(vscode.env.uriScheme)
-    const tokenReceiver = tokenReceiverUrl
-        ? `&tokenReceiverUrl=${encodeURIComponent(tokenReceiverUrl)}`
-        : ''
-
-    const newTokenUrl = `/user/settings/tokens/new/callback?requestFrom=${referralCode}${tokenReceiver}`
-    const site = new URL(newTokenUrl, DOTCOM_URL)
-    const genericLoginUrl = `${site}sign-in?returnTo=${newTokenUrl}`
-    const gitHubLoginUrl = `${site}.auth/openidconnect/login?prompt_auth=github&pc=sams&redirect=${newTokenUrl}`
-    const gitLabLoginUrl = `${site}.auth/openidconnect/login?prompt_auth=gitlab&pc=sams&redirect=${newTokenUrl}`
-    const googleLoginUrl = `${site}.auth/openidconnect/login?prompt_auth=google&pc=sams&redirect=${newTokenUrl}`
-
-    let uriSpec: string
-    switch (provider) {
-        case 'github':
-            uriSpec = gitHubLoginUrl
-            break
-        case 'gitlab':
-            uriSpec = gitLabLoginUrl
-            break
-        case 'google':
-            uriSpec = googleLoginUrl
-            break
-        default:
-            // This login form has links to other login methods, it is the best
-            // catch-all
-            uriSpec = genericLoginUrl
-            break
-    }
+    const tokenReceiver = tokenReceiverUrl ? `&tokenReceiverUrl=${tokenReceiverUrl}` : ''
+    const redirect = encodeURIComponent(
+        `/user/settings/tokens/new/callback?requestFrom=${referralCode}${tokenReceiver}`
+    )
+    const site = DOTCOM_URL.toString()
+    const uriSpec =
+        provider === 'github' || provider === 'gitlab' || provider === 'google'
+            ? `${site}.auth/openidconnect/login?prompt_auth=${provider}&pc=sams&redirect=${redirect}`
+            : `${site}sign-in?returnTo=${redirect}`
 
     // VScode Uri handling escapes ?, = in the redirect parameter. dotcom's
     // redirectTo handling does not unescape these. As a result we route

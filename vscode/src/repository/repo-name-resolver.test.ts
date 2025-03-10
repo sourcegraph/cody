@@ -24,7 +24,7 @@ describe('getRepoNamesContainingUri', () => {
         vi.resetAllMocks()
     })
 
-    function prepareEnterpriseMocks() {
+    function prepareEnterpriseMocks(resolvedValue: string | null) {
         const repoNameResolver = new RepoNameResolver()
         mockAuthStatus(AUTH_STATUS_FIXTURE_AUTHED)
         mockResolvedConfig({ auth: {} })
@@ -49,7 +49,7 @@ describe('getRepoNamesContainingUri', () => {
 
         const getRepoNameGraphQLMock = vi
             .spyOn(graphqlClient, 'getRepoName')
-            .mockResolvedValue('sourcegraph/cody')
+            .mockResolvedValue(resolvedValue)
 
         return {
             repoNameResolver,
@@ -58,7 +58,8 @@ describe('getRepoNamesContainingUri', () => {
         }
     }
     it('resolves the repo name using graphql for enterprise accounts', async () => {
-        const { repoNameResolver, fileUri, getRepoNameGraphQLMock } = prepareEnterpriseMocks()
+        const { repoNameResolver, fileUri, getRepoNameGraphQLMock } =
+            prepareEnterpriseMocks('sourcegraph/cody')
         const repoNames = await firstResultFromOperation(
             repoNameResolver.getRepoNamesContainingUri(fileUri)
         )
@@ -68,7 +69,8 @@ describe('getRepoNamesContainingUri', () => {
     })
 
     it('reuses cached API responses that are needed to resolve enterprise repo names', async () => {
-        const { repoNameResolver, fileUri, getRepoNameGraphQLMock } = prepareEnterpriseMocks()
+        const { repoNameResolver, fileUri, getRepoNameGraphQLMock } =
+            prepareEnterpriseMocks('sourcegraph/cody')
 
         const repoNames = await firstResultFromOperation(
             repoNameResolver.getRepoNamesContainingUri(fileUri)
@@ -111,6 +113,16 @@ describe('getRepoNamesContainingUri', () => {
             await firstResultFromOperation(repoNameResolver.getRepoNamesContainingUri(fileUri))
         ).toEqual(['github.com/sourcegraph/cody'])
         expect(getRepoNameGraphQLMock).not.toBeCalled()
+    })
+
+    it('resolves the repo name using local conversion function if no value found on server', async () => {
+        const { repoNameResolver, fileUri, getRepoNameGraphQLMock } = prepareEnterpriseMocks(null)
+        const repoNames = await firstResultFromOperation(
+            repoNameResolver.getRepoNamesContainingUri(fileUri)
+        )
+
+        expect(repoNames).toEqual(['github.com/sourcegraph/cody'])
+        expect(getRepoNameGraphQLMock).toBeCalledTimes(1)
     })
 
     it('resolves the repo name repo: workspace folders if any', async () => {

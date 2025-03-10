@@ -5,7 +5,6 @@ import com.intellij.ide.scratch.ScratchRootType
 import com.intellij.injected.editor.EditorWindow
 import com.intellij.lang.Language
 import com.intellij.lang.LanguageUtil
-import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.editor.Document
@@ -13,11 +12,7 @@ import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.EditorKind
 import com.intellij.openapi.editor.ex.EditorEx
 import com.intellij.openapi.editor.impl.ImaginaryEditor
-import com.intellij.openapi.fileEditor.FileDocumentManager
-import com.intellij.openapi.fileEditor.FileEditor
-import com.intellij.openapi.fileEditor.FileEditorManager
-import com.intellij.openapi.fileEditor.OpenFileDescriptor
-import com.intellij.openapi.fileEditor.TextEditor
+import com.intellij.openapi.fileEditor.*
 import com.intellij.openapi.fileTypes.FileTypeRegistry
 import com.intellij.openapi.fileTypes.PlainTextLanguage
 import com.intellij.openapi.project.Project
@@ -61,8 +56,8 @@ object CodyEditorUtil {
   @JvmStatic val KEY_EDITOR_WANTS_AUTOCOMPLETE = Key.create<Boolean>("cody.editorWantsAutocomplete")
 
   @JvmStatic
-  fun getTextRange(document: Document, range: Range): TextRange {
-    val (start, end) = range.toOffsetRange(document)
+  fun getTextRange(document: Document, range: Range): TextRange? {
+    val (start, end) = range.toOffsetRange(document) ?: return null
     return TextRange.create(start, end)
   }
 
@@ -78,23 +73,13 @@ object CodyEditorUtil {
 
   @JvmStatic
   fun getSelectedEditors(project: Project): Array<out Editor> {
+    if (project.isDisposed) return emptyArray()
     return FileEditorManager.getInstance(project).selectedTextEditorWithRemotes
-  }
-
-  @JvmStatic
-  fun getFirstSelectedEditor(project: Project): Editor? {
-    return getSelectedEditors(project).firstOrNull()
   }
 
   @JvmStatic
   fun getEditorForDocument(document: Document): Editor? {
     return getAllOpenEditors().find { it.document == document }
-  }
-
-  @JvmStatic
-  fun getLanguageForFocusedEditor(e: AnActionEvent): Language? {
-    val project = e.project ?: return null
-    return getSelectedEditors(project).firstOrNull()?.let { getLanguage(it) }
   }
 
   @JvmStatic
@@ -145,6 +130,7 @@ object CodyEditorUtil {
   @JvmStatic
   fun getLanguage(editor: Editor): Language? {
     val project = editor.project ?: return null
+
     return CodyLanguageUtil.getLanguage(project, editor.document)
   }
 

@@ -2,9 +2,9 @@
 
 # <img src="https://storage.googleapis.com/sourcegraph-assets/cody/20230417/logomark-default.svg" width="26"> Cody
 
-**Code AI with codebase context**
+**AI coding agent with the best codebase understanding**
 
-Cody is an AI coding assistant that uses the latest LLMs and codebase context to help you understand, write, and fix code faster.
+Cody is an AI coding agent that uses the latest LLMs and codebase context to help you understand, write, and fix code faster.
 
 [Docs](https://sourcegraph.com/docs/cody) • [cody.dev](https://about.sourcegraph.com/cody?utm_source=github.com&utm_medium=referral)
 
@@ -17,7 +17,7 @@ Cody is an AI coding assistant that uses the latest LLMs and codebase context to
 
 ## Get started
 
-[⭐ **Install Cody from the VS Code Marketplace**](https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai) or the [JetBrains Marketplace](https://plugins.jetbrains.com/plugin/9682-cody-ai-by-sourcegraph), then check out the [demos](#demos) to see what you can do.
+[⭐ **Install Cody from the VS Code Marketplace**](https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai) or the [JetBrains Marketplace](https://plugins.jetbrains.com/plugin/9682-cody-ai-by-sourcegraph), then check out the [demo](#demo) to see what you can do.
 
 _&mdash; or &mdash;_
 

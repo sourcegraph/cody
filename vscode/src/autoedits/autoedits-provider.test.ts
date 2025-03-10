@@ -22,6 +22,14 @@ import {
     telemetryRecorder,
 } from '@sourcegraph/cody-shared'
 
+import { ContextMixer } from '../completions/context/context-mixer'
+
+import { mockLocalStorage } from '../services/LocalStorageProvider'
+import {
+    AUTOEDIT_CONTEXT_FETCHING_DEBOUNCE_INTERVAL,
+    AUTOEDIT_TOTAL_DEBOUNCE_INTERVAL,
+} from './autoedits-provider'
+import { initImageSuggestionService } from './renderer/image-gen'
 import { AUTOEDIT_VISIBLE_DELAY_MS } from './renderer/manager'
 import { autoeditResultFor } from './test-helpers'
 
@@ -31,6 +39,14 @@ describe('AutoeditsProvider', () => {
     let acceptSuggestionCommand: () => Promise<void>
     let rejectSuggestionCommand: () => Promise<void>
     let executedCommands: unknown[] = []
+
+    let localStorageData: { [key: string]: unknown } = {}
+    mockLocalStorage({
+        get: (key: string) => localStorageData[key] || [], // Return empty array as default
+        update: (key: string, value: unknown) => {
+            localStorageData[key] = value
+        },
+    } as any)
 
     beforeAll(() => {
         vi.useFakeTimers()
@@ -67,11 +83,13 @@ describe('AutoeditsProvider', () => {
         mockAuthStatus()
     })
 
-    beforeEach(() => {
+    beforeEach(async () => {
+        await initImageSuggestionService()
         stableIdCounter = 0
         executedCommands = []
         recordSpy = vi.spyOn(telemetryRecorder, 'recordEvent')
         vi.spyOn(uuid, 'v4').mockImplementation(() => `stable-id-for-tests-${++stableIdCounter}`)
+        localStorageData = {}
     })
 
     afterEach(() => {
@@ -119,7 +137,7 @@ describe('AutoeditsProvider', () => {
               "isPartiallyOutsideOfVisibleRanges": 1,
               "isRead": 1,
               "isSelectionStale": 1,
-              "latency": 100,
+              "latency": 175,
               "noActiveTextEditor": 0,
               "otherCompletionProviderEnabled": 0,
               "outsideOfActiveEditor": 1,
@@ -181,7 +199,7 @@ describe('AutoeditsProvider', () => {
               "isPartiallyOutsideOfVisibleRanges": 1,
               "isRead": 1,
               "isSelectionStale": 1,
-              "latency": 100,
+              "latency": 175,
               "noActiveTextEditor": 0,
               "otherCompletionProviderEnabled": 0,
               "outsideOfActiveEditor": 1,
@@ -253,7 +271,7 @@ describe('AutoeditsProvider', () => {
               "isAccepted": 0,
               "isFuzzyMatch": 0,
               "isRead": 0,
-              "latency": 100,
+              "latency": 175,
               "otherCompletionProviderEnabled": 0,
               "recordsPrivateMetadataTranscript": 1,
               "source": 1,
@@ -328,6 +346,7 @@ describe('AutoeditsProvider', () => {
         const errorPayload = recordSpy.mock.calls[0].at(2)
         expect(errorPayload).toMatchInlineSnapshot(`
           {
+            "billingMetadata": undefined,
             "metadata": {
               "count": 1,
             },
@@ -451,5 +470,76 @@ describe('AutoeditsProvider', () => {
 
         await acceptSuggestionCommand()
         expect(editBuilder.size).toBe(1)
+    })
+
+    describe('Debounce logic', () => {
+        it('waits for exactly AUTOEDIT_TOTAL_DEBOUNCE_INTERVAL before calling getPrediction', async () => {
+            let getModelResponseCalledAt: number | undefined
+            const customGetModelResponse = async () => {
+                // Record the current fake timer time when getModelResponse is called
+                getModelResponseCalledAt = Date.now()
+                return {
+                    data: {
+                        choices: [{ text: 'const x = 1\n' }],
+                    },
+                    url: 'test-url.com/completions',
+                    requestHeaders: {},
+                    responseHeaders: {},
+                }
+            }
+
+            const startTime = Date.now()
+            const { promiseResult } = await autoeditResultFor('const x = █\n', {
+                prediction: 'const x = 1\n',
+                getModelResponse: customGetModelResponse,
+                isAutomaticTimersAdvancementDisabled: true,
+            })
+
+            // Run all timers to get the result
+            await vi.runAllTimersAsync()
+            const result = await promiseResult
+
+            expect(result?.prediction).toBe('const x = 1\n')
+            expect(getModelResponseCalledAt).toBeDefined()
+            // Check that getModelResponse was called only after at least AUTOEDIT_TOTAL_DEBOUNCE_INTERVAL have elapsed
+            expect(getModelResponseCalledAt! - startTime).toBe(AUTOEDIT_TOTAL_DEBOUNCE_INTERVAL)
+        })
+
+        it('aborts the operation if cancellation occurs during the context fetching debounce interval', async () => {
+            let modelResponseCalled = false
+            const customGetModelResponse = async () => {
+                modelResponseCalled = true
+                return {
+                    data: { choices: [{ text: 'const x = 1\n' }] },
+                    url: 'test-url.com/completions',
+                    requestHeaders: {},
+                    responseHeaders: {},
+                }
+            }
+
+            const tokenSource = new vscode.CancellationTokenSource()
+            const getContextSpy = vi.spyOn(ContextMixer.prototype, 'getContext')
+
+            const { promiseResult } = await autoeditResultFor('const x = █\n', {
+                prediction: 'const x = 1\n',
+                token: tokenSource.token,
+                getModelResponse: customGetModelResponse,
+                isAutomaticTimersAdvancementDisabled: true,
+            })
+
+            // Wait for the context fetching to start
+            await vi.advanceTimersByTimeAsync(AUTOEDIT_CONTEXT_FETCHING_DEBOUNCE_INTERVAL)
+            expect(getContextSpy).toHaveBeenCalled()
+
+            // Cancel the auto-edit request
+            tokenSource.cancel()
+
+            // Wait for the debounce period to complete to get the result
+            await vi.advanceTimersByTimeAsync(AUTOEDIT_TOTAL_DEBOUNCE_INTERVAL)
+            const result = await promiseResult
+
+            expect(result).toBeNull()
+            expect(modelResponseCalled).toBe(false)
+        })
     })
 })

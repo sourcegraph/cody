@@ -42,6 +42,18 @@ export type CompletionResponseWithMetaData = {
          * extract metadata required for analytics in one place.
          */
         response?: BrowserOrNodeResponse
+        /**
+         * Optional request headers sent to the model API
+         */
+        requestHeaders?: Record<string, string>
+        /**
+         * URL used to make the request to the model API
+         */
+        requestUrl?: string
+        /**
+         * Optional request body sent to the model API
+         */
+        requestBody?: any
     }
 }
 

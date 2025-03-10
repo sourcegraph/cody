@@ -14,7 +14,7 @@ fun Editor.testing_selectSubstring(substring: String) {
   TestCase.assertEquals(this.selectionModel.selectedText, substring)
 }
 
-fun Editor.testing_substring(range: Range): String {
-  val (start, end) = range.toOffsetRange(document)
+fun Editor.testing_substring(range: Range): String? {
+  val (start, end) = range.toOffsetRange(document) ?: return null
   return this.document.text.substring(start, end)
 }
