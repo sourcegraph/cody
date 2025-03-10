@@ -16,12 +16,12 @@ import com.sourcegraph.cody.config.CodyApplicationSettings
 import com.sourcegraph.cody.sidebar.WebTheme
 import com.sourcegraph.cody.telemetry.TelemetryV2
 import com.sourcegraph.common.BrowserOpener
-import com.sourcegraph.config.ConfigUtil
 import java.awt.Component
 import java.awt.KeyEventDispatcher
 import java.awt.KeyboardFocusManager
 import java.awt.datatransfer.StringSelection
 import java.awt.event.KeyEvent
+import java.awt.event.KeyEvent.KEY_LOCATION_UNKNOWN
 import java.io.IOException
 import java.net.URI
 import java.nio.ByteBuffer
@@ -111,53 +111,35 @@ internal class WebUIProxy(private val host: WebUIHost, private val browser: JBCe
           },
           browser.cefBrowser)
 
-      val productCode = ConfigUtil.getIntellijProductCode()
-      if (productCode == 14L) // Rider
-       setupKeyModifiersHandler(browser.cefBrowser)
+      setupKeyModifiersHandler(browser.cefBrowser)
     }
 
-    // HACK: Special global handler, currently only registered for Rider, for which Backspace,
-    // Delete, Enter, and Shift+Enter
-    // are not working properly in the CEF instance. This is probably a bug only seen in the CEF and
-    // Rider. Even when there are
-    // no shortcuts defined for these keys in the current keymap, press events still aren't
-    // forwarded to the CEF instance somehow.
     private fun setupKeyModifiersHandler(browser: CefBrowser) {
       KeyboardFocusManager.getCurrentKeyboardFocusManager()
           .addKeyEventDispatcher(
               object : KeyEventDispatcher {
                 override fun dispatchKeyEvent(event: KeyEvent): Boolean {
                   try {
+                    // About 30% faster than `browser.uiComponent.hasFocus()`
+                    if (event.keyLocation == KEY_LOCATION_UNKNOWN ||
+                        event.component.javaClass.name != "com.intellij.ui.jcef.JBCefOsrComponent")
+                        return false
 
-                    if (event.id != KeyEvent.KEY_RELEASED)
-                        return false // process an event only on when key is released
+                    // Change location to KEY_LOCATION_UNKNOWN to prevent recursive handling
+                    val newEvent =
+                        KeyEvent(
+                            event.component,
+                            event.id,
+                            event.`when`,
+                            event.modifiers,
+                            event.keyCode,
+                            event.keyChar,
+                            KEY_LOCATION_UNKNOWN)
 
-                    val isCefComponent =
-                        event.component.javaClass.name ==
-                            "com.intellij.ui.jcef.JBCefOsrComponent" // about 30% faster than
-                    // `browser.uiComponent.hasFocus()`
-                    if (!isCefComponent) return false
-
-                    val keyDescription = KeyEvent.getKeyText(event.keyCode)
-                    val isShiftDown = event.isShiftDown
-                    if (event.keyCode == KeyEvent.VK_ENTER ||
-                        event.keyCode == KeyEvent.VK_DELETE ||
-                        event.keyCode == KeyEvent.VK_BACK_SPACE) {
-
-                      val javaScript =
-                          """
-                                    document.activeElement.dispatchEvent(new KeyboardEvent('keydown', {key: '$keyDescription', code: '$keyDescription', shiftKey: $isShiftDown, bubbles: true}));
-                                    document.activeElement.dispatchEvent(new KeyboardEvent('keypress', {key: '$keyDescription', code: '$keyDescription', shiftKey: $isShiftDown, bubbles: true}));
-                                    document.activeElement.dispatchEvent(new KeyboardEvent('keyup', {key: '$keyDescription', code: '$keyDescription', shiftKey: $isShiftDown, bubbles: true}));
-                                  """
-                      browser.executeJavaScript(javaScript, browser.url, 0)
-
-                      return true
-                    }
-                    return false
+                    browser.uiComponent.dispatchEvent(newEvent)
+                    return true
                   } catch (e: Exception) {
                     logger.error("Handling modifier keys failed.", e)
-
                     return false
                   }
                 }
