@@ -19,7 +19,7 @@ import {
 import * as vscode from 'vscode'
 import { PromptBuilder } from '../../prompt-builder'
 import type { API, GitExtension, InputBox, Repository } from '../../repository/builtinGitExtension'
-import { getContextFilesFromGitApi as getContext } from '../context/git-api'
+import { getContextFilesFromGitApi } from '../context/git-api'
 import { COMMIT_COMMAND_PROMPTS } from './prompts'
 
 export class CodySourceControl implements vscode.Disposable {
@@ -176,7 +176,7 @@ export class CodySourceControl implements vscode.Disposable {
             const { prompt, ignoredContext } = await this.buildPrompt(
                 contextWindow,
                 getSimplePreamble(model, 1, 'Default', COMMIT_COMMAND_PROMPTS.intro),
-                await getContext(repository, commitTemplate).catch(() => [])
+                await getContextFilesFromGitApi(repository, commitTemplate).catch(() => [])
             ).catch(error => {
                 sourceControlInputbox.value = `${error}`
                 throw new Error()
