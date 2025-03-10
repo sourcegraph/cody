@@ -1,9 +1,9 @@
 package com.sourcegraph.cody.statusbar
 
 import com.intellij.util.ui.PresentableEnum
-import com.sourcegraph.Icons
 import com.sourcegraph.cody.agent.CodyAgentService
 import com.sourcegraph.common.CodyBundle
+import com.sourcegraph.common.Icons
 import javax.swing.Icon
 
 interface WithIcon {

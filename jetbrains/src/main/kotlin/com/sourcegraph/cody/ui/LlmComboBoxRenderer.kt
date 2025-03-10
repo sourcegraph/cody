@@ -2,12 +2,12 @@ package com.sourcegraph.cody.ui
 
 import com.intellij.ui.CellRendererPanel
 import com.intellij.util.ui.JBUI
-import com.sourcegraph.Icons
 import com.sourcegraph.cody.agent.protocol_extensions.displayName
 import com.sourcegraph.cody.agent.protocol_extensions.getIcon
 import com.sourcegraph.cody.agent.protocol_generated.ModelAvailabilityStatus
 import com.sourcegraph.cody.chat.ui.LlmDropdown
 import com.sourcegraph.cody.edit.EditCommandPrompt
+import com.sourcegraph.common.Icons
 import java.awt.BorderLayout
 import java.awt.Component
 import javax.swing.BorderFactory

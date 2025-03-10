@@ -6,7 +6,7 @@ import com.intellij.notification.Notifications
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.ide.CopyPasteManager
 import com.intellij.openapi.project.Project
-import com.sourcegraph.Icons
+import com.sourcegraph.common.Icons
 import com.sourcegraph.common.ui.SimpleDumbAwareEDTAction
 import java.awt.datatransfer.StringSelection
 import java.net.URI

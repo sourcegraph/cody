@@ -8,11 +8,11 @@ import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.openapi.wm.ToolWindowManager;
-import com.sourcegraph.Icons;
 import com.sourcegraph.cody.CodyToolWindowFactory;
 import com.sourcegraph.cody.auth.CodyAuthService;
 import com.sourcegraph.cody.config.CodyApplicationSettings;
 import com.sourcegraph.cody.initialization.Activity;
+import com.sourcegraph.common.Icons;
 import com.sourcegraph.common.NotificationGroups;
 import com.sourcegraph.common.ui.DumbAwareEDTAction;
 import org.jetbrains.annotations.NotNull;
@@ -59,7 +59,7 @@ public class CodyAuthNotificationActivity implements Activity {
             CodyApplicationSettings.getInstance().setGetStartedNotificationDismissed(true);
           }
         };
-    notification.setIcon(Icons.CodyLogo);
+    notification.setIcon(Icons.INSTANCE.getCodyLogo());
     notification.addAction(openCodySidebar);
     notification.addAction(neverShowAgainAction);
     Notifications.Bus.notify(notification);

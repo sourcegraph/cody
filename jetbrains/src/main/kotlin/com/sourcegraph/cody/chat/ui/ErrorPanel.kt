@@ -2,8 +2,8 @@ package com.sourcegraph.cody.chat.ui
 
 import com.intellij.ui.SimpleTextAttributes
 import com.intellij.util.ui.JBUI
-import com.sourcegraph.Icons
 import com.sourcegraph.common.CodyBundle
+import com.sourcegraph.common.Icons
 import java.awt.GridBagConstraints
 import java.awt.GridBagLayout
 import javax.swing.JLabel

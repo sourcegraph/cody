@@ -5,7 +5,7 @@ import com.intellij.notification.NotificationType
 import com.intellij.notification.Notifications
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
-import com.sourcegraph.Icons
+import com.sourcegraph.common.Icons
 import com.sourcegraph.cody.agent.CodyAgentService
 import com.sourcegraph.cody.agent.protocol.ModelUsage
 import com.sourcegraph.cody.agent.protocol_extensions.isDeprecated

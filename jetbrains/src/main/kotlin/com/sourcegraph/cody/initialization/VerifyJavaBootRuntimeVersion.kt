@@ -9,7 +9,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.projectRoots.impl.jdkDownloader.RuntimeChooserCurrentItem
 import com.intellij.openapi.projectRoots.impl.jdkDownloader.RuntimeChooserUtil
 import com.intellij.openapi.projectRoots.impl.jdkDownloader.currentRuntime
-import com.sourcegraph.Icons
+import com.sourcegraph.common.Icons
 import com.sourcegraph.common.CodyBundle
 import com.sourcegraph.common.NotificationGroups
 

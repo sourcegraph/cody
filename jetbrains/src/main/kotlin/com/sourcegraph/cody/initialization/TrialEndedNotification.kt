@@ -7,7 +7,7 @@ import com.intellij.notification.NotificationType
 import com.intellij.notification.impl.NotificationFullContent
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.actionSystem.AnActionEvent
-import com.sourcegraph.Icons
+import com.sourcegraph.common.Icons
 import com.sourcegraph.common.BrowserOpener.openInBrowser
 import com.sourcegraph.common.CodyBundle
 import com.sourcegraph.common.NotificationGroups
