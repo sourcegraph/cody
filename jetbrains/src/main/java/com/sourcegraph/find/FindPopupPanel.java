@@ -93,7 +93,7 @@ public class FindPopupPanel extends BorderLayoutPanel implements Disposable {
     }
     browserContainerForOptionalBorder.add(browserAndLoadingPanel, BorderLayout.CENTER);
 
-    HeaderPanel headerPanel = new HeaderPanel();
+    HeaderPanel headerPanel = new HeaderPanel(project);
 
     BorderLayoutPanel topPanel = new BorderLayoutPanel();
     topPanel.add(headerPanel, BorderLayout.NORTH);
