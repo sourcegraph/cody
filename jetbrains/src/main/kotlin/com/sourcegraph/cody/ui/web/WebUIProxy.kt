@@ -117,9 +117,9 @@ internal class WebUIProxy(private val host: WebUIHost, private val browser: JBCe
 
     }
 
-      // HACK: special global handler, currently only registered for Rider, for which Backspace, Delete, Enter, and Shift+Enter
-      // are not working properly in the CEF instance. Probably this is some kind of bug  only seen in the CEF/Rider. Even when there is
-      // no shortcuts for those keys in th current keymap, still press events aren't forwarded to the CEF instance somehow.
+      // HACK: Special global handler, currently only registered for Rider, for which Backspace, Delete, Enter, and Shift+Enter
+      // are not working properly in the CEF instance. This is probably a bug only seen in the CEF and Rider. Even when there are
+      // no shortcuts defined for these keys in the current keymap, press events still aren't forwarded to the CEF instance somehow.
       private fun setupKeyModifiersHandler(browser: CefBrowser) {
           KeyboardFocusManager.getCurrentKeyboardFocusManager()
               .addKeyEventDispatcher(object : KeyEventDispatcher {
