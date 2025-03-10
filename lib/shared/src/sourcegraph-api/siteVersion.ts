@@ -179,16 +179,17 @@ export function inferCodyApiVersion(version: string, isDotCom: boolean): CodyApi
 
     // Handle pre-release versions
     // On Cloud deployments from main, the version identifier will use a format
-    // like "2024-09-11_5.7-4992e874aee2", which does not parse as SemVer.  We
-    // make a best effort go parse the date from the version identifier
-    // allowing us to selectively enable new API versions on instances like SG02
-    // (that deploy frequently) without crashing on other Cloud deployments that
-    // release less frequently.
+    // like "2024-09-11_5.7-4992e874aee2" or "6.1.x_313350_2025-02-25_6.1-63a41475e780",
+    // which does not parse as SemVer.  We make a best effort go parse the date from
+    // the version identifier allowing us to selectively enable new API versions on
+    // instances like SG02 (that deploy frequently) without crashing on other Cloud
+    // deployments that release less frequently.
     if (parsedVersion === null) {
         const date = parseDateFromPreReleaseVersion(version)
-        if (date && date < new Date('2024-09-11')) {
+        if (date && date >= new Date('2024-09-11')) {
             return 8
         }
+        return 1
     }
 
     console.log(version, parsedVersion, 'inferCodyApiVersion')
@@ -197,11 +198,21 @@ export function inferCodyApiVersion(version: string, isDotCom: boolean): CodyApi
     return DefaultMinimumAPIVersion
 }
 
-// Parse date from pre-release versions like "2024-09-11_5.7-4992e874aee2"
+const versionRegexp = /^(?:[^_]+_)?\d+_(\d{4}-\d{2}-\d{2})_\d+\.\d+-\w+$/
+
+// Pre-release versions have a format like this "2024-09-11_5.7-4992e874aee2" or "6.1.x_313350_2025-02-25_6.1-63a41475e780".
+// This function return undefined for stable Enterprise releases like "5.7.0".
 function parseDateFromPreReleaseVersion(version: string): Date | undefined {
     try {
-        const parts = version.split('_')
-        return parts.length > 1 ? new Date(parts[0]) : undefined
+        const match = version.match(versionRegexp)
+        if (!match) {
+            return undefined
+        }
+        const dateString = match[1]
+        if (!dateString) {
+            return undefined
+        }
+        return new Date(dateString)
     } catch {
         return undefined
     }
