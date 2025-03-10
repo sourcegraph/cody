@@ -319,20 +319,22 @@ const getContextInfo = (items?: ContextItem[], isFirst?: boolean) => {
 }
 
 const TEMPLATES = {
-    filter: 'filtered out by Cody Context Filters. Please contact your site admin for details',
-    token: 'was retrieved but not used because it exceeded the token limit. Learn more about token limits ',
+    filter: 'filtered out by Cody Context Filters. Please contact your site admin for details.',
+    token: {
+        singular:
+            'was retrieved but not used because it exceeds the token limit. Learn more about token limits ',
+        plural: 'were retrieved but not used because they exceed the token limit. Learn more about token limits ',
+    },
 } as const
 
 function generateExcludedInfo(token: number, filter: number): string[] {
     const multipleTokens = token > 1
     return [
         token > 0 &&
-            `${token} ${token === 1 ? 'item' : 'items'} ${
-                multipleTokens
-                    ? TEMPLATES.token.replace('was', 'were').replace('it', 'they')
-                    : TEMPLATES.token
+            `${token} ${pluralize('item', token)} ${
+                multipleTokens ? TEMPLATES.token.plural : TEMPLATES.token.singular
             }`,
-        filter > 0 && `${filter} ${filter === 1 ? 'item' : 'items'} ${TEMPLATES.filter}`,
+        filter > 0 && `${filter} ${pluralize('item', filter)} ${TEMPLATES.filter}`,
     ].filter(Boolean) as string[]
 }
 
@@ -341,10 +343,12 @@ const ExcludedContextWarning: React.FC<{ message: string }> = ({ message }) => (
         <i className="codicon codicon-warning" />
         <span>
             {message}
-            {message.includes(TEMPLATES.token.substring(50)) && (
-                <a href="https://sourcegraph.com/docs/cody/core-concepts/token-limits">here</a>
+            {(message.includes(TEMPLATES.token.singular) ||
+                message.includes(TEMPLATES.token.plural)) && (
+                <span>
+                    <a href="https://sourcegraph.com/docs/cody/core-concepts/token-limits">here</a>.
+                </span>
             )}
-            .
         </span>
     </div>
 )
