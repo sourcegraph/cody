@@ -98,6 +98,9 @@ export class AgentWorkspaceConfiguration implements vscode.WorkspaceConfiguratio
                     },
                     enabled: true,
                 },
+                suggestions: {
+                    mode: config?.suggestionsMode || 'autocomplete',
+                },
                 codebase: config?.codebase,
                 customHeaders: config?.customHeaders,
                 debug: { verbose: config?.verboseDebug ?? false },

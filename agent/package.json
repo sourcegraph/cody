@@ -30,7 +30,8 @@
     "dist/index.js.map",
     "dist/*.wasm",
     "dist/win-ca-roots.exe",
-    "dist/webviews/*"
+    "dist/webviews/*",
+    "dist/*.ttf"
   ],
   "peerDependencies": {
     "@inquirer/prompts": "^5.0.7",
@@ -65,6 +66,7 @@
     "@types/fast-json-stable-stringify": "^2.1.0",
     "@types/glob": "^8.0.0",
     "@types/google-protobuf": "3.15.12",
+    "@types/jest-image-snapshot": "^6.4.0",
     "@types/js-levenshtein": "^1.1.1",
     "@types/lodash": "^4.14.195",
     "@types/minimatch": "^5.1.2",
@@ -85,6 +87,7 @@
     "fast-myers-diff": "^3.2.0",
     "glob": "^7.2.3",
     "google-protobuf": "^3.21.2",
+    "jest-image-snapshot": "^6.4.0",
     "js-levenshtein": "^1.1.6",
     "lodash": "^4.17.21",
     "mac-ca": "^2.0.3",
