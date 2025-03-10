@@ -5,7 +5,6 @@ import com.intellij.notification.NotificationType
 import com.intellij.notification.Notifications
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.project.Project
-import com.sourcegraph.Icons
 import com.sourcegraph.common.ui.SimpleDumbAwareEDTAction
 
 object ErrorNotification {

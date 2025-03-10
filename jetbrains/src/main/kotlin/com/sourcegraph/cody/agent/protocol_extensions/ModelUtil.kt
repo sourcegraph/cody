@@ -1,7 +1,7 @@
 package com.sourcegraph.cody.agent.protocol_extensions
 
-import com.sourcegraph.Icons
 import com.sourcegraph.cody.agent.protocol_generated.Model
+import com.sourcegraph.common.Icons
 import javax.swing.Icon
 
 fun Model.getIcon(): Icon? =

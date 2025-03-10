@@ -20,7 +20,6 @@ import com.intellij.openapi.keymap.KeymapUtil
 import com.intellij.openapi.project.DumbAware
 import com.intellij.ui.JBColor
 import com.intellij.ui.SimpleTextAttributes
-import com.sourcegraph.Icons
 import com.sourcegraph.cody.agent.protocol_generated.ProtocolCommand
 import com.sourcegraph.cody.edit.lenses.actions.LensEditAction.Companion.TASK_ID_KEY
 import com.sourcegraph.cody.edit.lenses.providers.EditAcceptCodeVisionProvider
@@ -29,6 +28,7 @@ import com.sourcegraph.cody.edit.lenses.providers.EditDiffCodeVisionProvider
 import com.sourcegraph.cody.edit.lenses.providers.EditRetryCodeVisionProvider
 import com.sourcegraph.cody.edit.lenses.providers.EditUndoCodeVisionProvider
 import com.sourcegraph.cody.edit.lenses.providers.EditWorkingCodeVisionProvider
+import com.sourcegraph.common.Icons
 import com.sourcegraph.utils.CodyEditorUtil
 import java.awt.event.MouseEvent
 import javax.swing.Icon

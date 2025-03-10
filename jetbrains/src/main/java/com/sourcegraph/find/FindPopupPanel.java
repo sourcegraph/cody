@@ -16,8 +16,8 @@ import com.intellij.ui.PopupBorder;
 import com.intellij.ui.jcef.JBCefApp;
 import com.intellij.util.ui.JBUI;
 import com.intellij.util.ui.components.BorderLayoutPanel;
-import com.sourcegraph.Icons;
 import com.sourcegraph.cody.auth.CodyAuthService;
+import com.sourcegraph.common.Icons;
 import com.sourcegraph.common.NotificationGroups;
 import com.sourcegraph.common.ui.DumbAwareEDTAction;
 import com.sourcegraph.find.browser.*;
@@ -136,7 +136,7 @@ public class FindPopupPanel extends BorderLayoutPanel implements Disposable {
             notification.expire();
           }
         };
-    notification.setIcon(Icons.CodyLogo);
+    notification.setIcon(Icons.INSTANCE.getCodyLogo());
     notification.addAction(copyEmailAddressAction);
     notification.addAction(dismissAction);
     Notifications.Bus.notify(notification);

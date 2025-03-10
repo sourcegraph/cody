@@ -5,7 +5,7 @@ import com.intellij.notification.NotificationType
 import com.intellij.notification.impl.NotificationFullContent
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.project.Project
-import com.sourcegraph.Icons
+import com.sourcegraph.common.Icons
 import com.sourcegraph.cody.agent.protocol.RateLimitError
 import com.sourcegraph.cody.telemetry.TelemetryV2
 import com.sourcegraph.common.BrowserOpener.openInBrowser

@@ -7,12 +7,12 @@ import com.intellij.openapi.wm.ToolWindowManager
 import com.intellij.ui.components.JBLabel
 import com.intellij.util.concurrency.annotations.RequiresEdt
 import com.intellij.util.ui.UIUtil
-import com.sourcegraph.Icons
 import com.sourcegraph.cody.chat.ui.ErrorPanel
 import com.sourcegraph.cody.chat.ui.MissingJcefPanel
 import com.sourcegraph.cody.initialization.VerifyJavaBootRuntimeVersion.Companion.isCurrentRuntimeMissingJcef
 import com.sourcegraph.cody.ui.web.CodyToolWindowContentWebviewHost
 import com.sourcegraph.cody.ui.web.WebUIService
+import com.sourcegraph.common.Icons
 import java.awt.GridBagConstraints
 import java.awt.GridBagLayout
 import java.awt.GridLayout
