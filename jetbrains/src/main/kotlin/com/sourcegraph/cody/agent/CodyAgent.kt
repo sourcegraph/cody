@@ -140,6 +140,9 @@ private constructor(
                       capabilities =
                           ClientCapabilities(
                               authentication = ClientCapabilities.AuthenticationEnum.Enabled,
+                              autoEdit = ClientCapabilities.AutoEditEnum.Enabled,
+                              autoEditInlineDiff = ClientCapabilities.AutoEditInlineDiffEnum.None,
+                              autoEditAsideDiff = ClientCapabilities.AutoEditAsideDiffEnum.Image,
                               edit = ClientCapabilities.EditEnum.Enabled,
                               editWorkspace = ClientCapabilities.EditWorkspaceEnum.Enabled,
                               codeLenses = ClientCapabilities.CodeLensesEnum.Enabled,
