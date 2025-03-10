@@ -38,7 +38,7 @@ export const WelcomeMessage: FunctionComponent<WelcomeMessageProps> = ({ setView
                     onSelect={item => runAction(item, setView)}
                 />
             </div>
-            <div className="tw-mt-auto tw-w-full tw-mb-4 tw-pb-2">
+            <div className="tw-flex tw-flex-col tw-gap-4 tw-w-full tw-mt-auto">
                 <LastConversation setView={setView} IDE={IDE} />
             </div>{' '}
         </div>
