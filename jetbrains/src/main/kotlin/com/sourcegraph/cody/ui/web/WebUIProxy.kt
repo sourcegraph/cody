@@ -64,6 +64,8 @@ private const val MAIN_RESOURCE_URL = "${PSEUDO_HOST_URL_PREFIX}main-resource-no
 
 internal class WebUIProxy(private val host: WebUIHost, private val browser: JBCefBrowserBase) {
   companion object {
+    private val logger = Logger.getInstance(WebUIProxy::class.java)
+
     /**
      * TODO: Hopefully this can be removed when JetBrains will patch focus handler implementation
      *   https://youtrack.jetbrains.com/issue/IJPL-158952/Focus-issue-when-using-multiple-JCEF-instances
@@ -109,15 +111,16 @@ internal class WebUIProxy(private val host: WebUIHost, private val browser: JBCe
           },
           browser.cefBrowser)
 
-        //browser.jbCefClient.addKeyboardHandler(CustomKeyEventHandler(), browser.cefBrowser)
-
         val productCode =  ConfigUtil.getIntellijProductCode()
         if (productCode == 14L) // Rider
-            setupShiftEnterHandler(browser.cefBrowser)
+            setupKeyModifiersHandler(browser.cefBrowser)
 
     }
 
-      private fun setupShiftEnterHandler(browser: CefBrowser) {
+      // HACK: special global handler, currently only registered for Rider, for which Backspace, Delete, Enter, and Shift+Enter
+      // are not working properly in the CEF instance. Probably this is some kind of bug  only seen in the CEF/Rider. Even when there is
+      // no shortcuts for those keys in th current keymap, still press events aren't forwarded to the CEF instance somehow.
+      private fun setupKeyModifiersHandler(browser: CefBrowser) {
           KeyboardFocusManager.getCurrentKeyboardFocusManager()
               .addKeyEventDispatcher(object : KeyEventDispatcher {
                   override fun dispatchKeyEvent(event: KeyEvent): Boolean {
@@ -125,21 +128,10 @@ internal class WebUIProxy(private val host: WebUIHost, private val browser: JBCe
 
                           if (event.id != KeyEvent.KEY_RELEASED) return false // process an event only on when key is released
 
-                          val startTime = System.nanoTime()
-                          //val isFocused = browser.uiComponent.hasFocus()
-                          val isCefComponent = event.component.javaClass.name == "com.intellij.ui.jcef.JBCefOsrComponent"
-                          var stopTime = System.nanoTime()
-                          var measuredFocusTime = stopTime - startTime
-                          println("HasFocus query time: $measuredFocusTime ns")
+                          val isCefComponent = event.component.javaClass.name == "com.intellij.ui.jcef.JBCefOsrComponent" // about 30% faster than `browser.uiComponent.hasFocus()`
                           if (!isCefComponent) return false
 
-                          println("Key Handler, UI thread:${ApplicationManager.getApplication().isDispatchThread}")
-                          println("Custom global handler: ${event.toString()}")
-
-                          val modifiersDescription = KeyEvent.getModifiersExText(event.modifiersEx)
                           val keyDescription = KeyEvent.getKeyText(event.keyCode)
-                          println("[Global Handler] $modifiersDescription + $keyDescription pressed!")
-
                           val isShiftDown = event.isShiftDown
                           if (event.keyCode == KeyEvent.VK_ENTER ||
                               event.keyCode == KeyEvent.VK_DELETE ||
@@ -154,18 +146,12 @@ internal class WebUIProxy(private val host: WebUIHost, private val browser: JBCe
                                   """
                               browser.executeJavaScript(javaScript, browser.url, 0)
 
-                              val firstMeasuredFocusTime = measuredFocusTime
-                              stopTime = System.nanoTime()
-                              measuredFocusTime = stopTime - startTime
-
-                              println("Only Firing dispatch event: ${measuredFocusTime - firstMeasuredFocusTime} ns")
-                              println("All With Firing dispatch event: $measuredFocusTime ns")
-
                               return true
                           }
                           return false
                       } catch (e: Exception) {
-                          println("Error in dispatchKeyEvent: ${e.message}")
+                          logger.error("Handling modifier keys failed.", e)
+
                           return false
                       }
                   }
