@@ -623,7 +623,7 @@
       {
         "command": "cody.chat.new",
         "key": "shift+alt+/",
-        "when": "cody.activated && !editorTextFocus"
+        "when": "cody.activated"
       },
       {
         "command": "cody.tutorial.chat",
