@@ -4,12 +4,12 @@ import { TESTING_CREDENTIALS } from '../../vscode/src/testutils/testing-credenti
 import { TestClient } from './TestClient'
 import { TestWorkspace } from './TestWorkspace'
 
-// TODO: fix the flakiness and reenabled it back
-// https://linear.app/sourcegraph/issue/CODY-4546/fix-the-flaky-agentsrcunauthedteststs-and-reenabled-it-back
-describe.skip(
+describe(
     'Initializing the agent without credentials',
     {
         timeout: 5000,
+        // Repeat to find race conditions. Set to 0 when recording for faster execution.
+        repeats: process.env.CODY_RECORDING_MODE ? 0 : 10,
     },
     () => {
         const workspace = new TestWorkspace(path.join(__dirname, '__tests__', 'auth'))
@@ -35,17 +35,14 @@ describe.skip(
             expect(authStatus?.endpoint).toBe(TESTING_CREDENTIALS.dotcomUnauthed.serverEndpoint)
         })
 
-        it('starts up with default andpoint and credentials if they are present in the secure store', async () => {
+        // TODO: fix the flakiness and reenabled it back
+        // https://linear.app/sourcegraph/issue/CODY-4546/fix-the-flaky-agentsrcunauthedteststs-and-reenabled-it-back
+        it.skip('starts up with default endpoint and credentials if they are present in the secure store', async () => {
             const newClient = TestClient.create({
                 workspaceRootUri: workspace.rootUri,
                 name: 'unauthed',
                 credentials: TESTING_CREDENTIALS.dotcomUnauthed,
             })
-
-            newClient.secrets.store(
-                TESTING_CREDENTIALS.dotcom.serverEndpoint,
-                TESTING_CREDENTIALS.dotcom.token ?? 'invalid'
-            )
 
             await newClient.beforeAll({ serverEndpoint: undefined }, { expectAuthenticated: true })
             const authStatus = await newClient.request('extensionConfiguration/status', null)
