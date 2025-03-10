@@ -2,6 +2,7 @@ import { type Model, ModelTag, isCodyProModel } from '@sourcegraph/cody-shared'
 import { DeepCodyAgentID, ToolCodyModelName } from '@sourcegraph/cody-shared/src/models/client'
 import { clsx } from 'clsx'
 import { BookOpenIcon, BrainIcon, BuildingIcon, ExternalLinkIcon } from 'lucide-react'
+import { useEffect, useState } from 'react'
 import { type FunctionComponent, type ReactNode, useCallback, useMemo } from 'react'
 import type { UserAccountInfo } from '../../Chat'
 import { getVSCodeAPI } from '../../utils/VSCodeApi'
@@ -23,6 +24,8 @@ interface SelectListOption {
     group?: string
     disabled?: boolean
 }
+
+const ALLOWED_MODELS_WHEN_RATE_LIMITED = ['flash', 'gpt-4o-mini', 'flash-lite']
 
 export const ModelSelectField: React.FunctionComponent<{
     models: Model[]
@@ -56,6 +59,39 @@ export const ModelSelectField: React.FunctionComponent<{
     const isCodyProUser = userInfo.isDotComUser && userInfo.isCodyProUser
     const isEnterpriseUser = !userInfo.isDotComUser
     const showCodyProBadge = !isEnterpriseUser && !isCodyProUser
+    const [exceedRateLimit, setExceedRateLimit] = useState(false)
+
+    useEffect(() => {
+        const messageHandler = (event: { data: any }) => {
+            const message = event.data
+            if (message.type === 'rateLimit') {
+                // This does not set the rate limit state immediately but will
+                // cause the component to re-render with the new state
+                setExceedRateLimit(message.isRateLimited)
+
+                if (message.isRateLimited) {
+                    let fallbackModel = models.find(
+                        m =>
+                            m.id.includes('flash') ||
+                            m.modelRef?.toString().toLowerCase().includes('flash')
+                    )
+
+                    if (!fallbackModel) {
+                        fallbackModel = models.find(m =>
+                            ALLOWED_MODELS_WHEN_RATE_LIMITED.some(allowedId => m.id.includes(allowedId))
+                        )
+                    }
+
+                    // Switch to the fallback model if the current model is different
+                    if (fallbackModel && selectedModel.id !== fallbackModel.id) {
+                        parentOnModelSelect(fallbackModel)
+                    }
+                }
+            }
+        }
+        window.addEventListener('message', messageHandler)
+        return () => window.removeEventListener('message', messageHandler)
+    }, [models, selectedModel, parentOnModelSelect])
 
     const onModelSelect = useCallback(
         (model: Model): void => {
@@ -119,7 +155,12 @@ export const ModelSelectField: React.FunctionComponent<{
     const options = useMemo<SelectListOption[]>(
         () =>
             models.map(m => {
-                const availability = modelAvailability(userInfo, serverSentModelsEnabled, m)
+                const availability = modelAvailability(
+                    userInfo,
+                    serverSentModelsEnabled,
+                    m,
+                    exceedRateLimit
+                )
                 return {
                     value: m.id,
                     title: (
@@ -137,7 +178,7 @@ export const ModelSelectField: React.FunctionComponent<{
                     tooltip: getTooltip(m, availability),
                 } satisfies SelectListOption
             }),
-        [models, userInfo, serverSentModelsEnabled]
+        [models, userInfo, serverSentModelsEnabled, exceedRateLimit]
     )
     const optionsByGroup: { group: string; options: SelectListOption[] }[] = useMemo(() => {
         return optionByGroup(options)
@@ -191,6 +232,17 @@ export const ModelSelectField: React.FunctionComponent<{
                         className="model-selector-popover tw-max-h-[80vh] tw-overflow-y-auto"
                         data-testid="chat-model-popover-option"
                     >
+                        {exceedRateLimit && (
+                            <div
+                                className="tw-px-3 tw-py-2 tw-text-s tw-border-b"
+                                style={{
+                                    backgroundColor: 'var(--vscode-warning-background)',
+                                    color: 'var(--vscode-warning-foreground)',
+                                }}
+                            >
+                                Usage limit reached: Premium models disabled
+                            </div>
+                        )}
                         {optionsByGroup.map(({ group, options }) => (
                             <CommandGroup heading={group} key={group}>
                                 {options.map(option => (
@@ -290,13 +342,26 @@ ModelSelectField.displayName = 'ModelSelectField'
 const ENTERPRISE_MODEL_DOCS_PAGE =
     'https://sourcegraph.com/docs/cody/clients/enable-cody-enterprise?utm_source=cody.modelSelector'
 
-type ModelAvailability = 'available' | 'needs-cody-pro' | 'not-selectable-on-enterprise'
+type ModelAvailability =
+    | 'available'
+    | 'needs-cody-pro'
+    | 'not-selectable-on-enterprise'
+    | 'exceed-rate-limit'
 
 function modelAvailability(
     userInfo: Pick<UserAccountInfo, 'isCodyProUser' | 'isDotComUser'>,
     serverSentModelsEnabled: boolean,
-    model: Model
+    model: Model,
+    exceedRateLimit: boolean
 ): ModelAvailability {
+    if (exceedRateLimit) {
+        const isAllowedDuringRateLimit = ALLOWED_MODELS_WHEN_RATE_LIMITED.some(allowedModel =>
+            model.id.includes(allowedModel)
+        )
+        if (!isAllowedDuringRateLimit) {
+            return 'exceed-rate-limit'
+        }
+    }
     if (!userInfo.isDotComUser && !serverSentModelsEnabled) {
         return 'not-selectable-on-enterprise'
     }
@@ -327,6 +392,8 @@ function getTooltip(model: Model, availability: string): string {
             return 'Chat model set by your Sourcegraph Enterprise admin'
         case 'needs-cody-pro':
             return `Upgrade to Cody Pro to use ${model.title} by ${capitalizedProvider}`
+        case 'exceed-rate-limit':
+            return 'Rate limit exceeded'
         default:
             return `${model.title} by ${capitalizedProvider}`
     }

@@ -5,6 +5,7 @@ import {
     FIXTURE_MODEL,
     type Guardrails,
     PromptString,
+    RateLimitError,
     errorToChatError,
     graphqlClient,
     mockAuthStatus,
@@ -553,6 +554,57 @@ describe('ChatController', () => {
                 },
             ],
         })
+    })
+
+    test('sends rate limit message to webview when encountering rate limit error', async () => {
+        const postMessageSpy = vi
+            .spyOn(chatController as any, 'postMessage')
+            .mockImplementation(() => {})
+
+        mockContextRetriever.retrieveContext.mockResolvedValue([])
+
+        // Set up chat client to throw a rate limit error
+        const rateLimitError = new RateLimitError(
+            'chat messages and commands',
+            'Rate limit exceeded',
+            true, // upgradeIsAvailable
+            100, // limit
+            '3600' // retry after 1 hour
+        )
+
+        mockChatClient.chat.mockImplementation(() => {
+            return (async function* () {
+                yield { type: 'change', text: 'Starting to respond...' }
+                yield { type: 'error', error: rateLimitError }
+            })()
+        })
+
+        // Send a message that will trigger the rate limit error
+        await chatController.handleUserMessage({
+            requestID: 'rate-limit-test',
+            inputText: PromptString.unsafe_fromUserQuery('Test message that exceeds rate limit'),
+            mentions: [],
+            editorState: null,
+            signal: new AbortController().signal,
+            source: 'chat',
+        })
+
+        await vi.runOnlyPendingTimersAsync()
+
+        // Verify the rate limit message was sent to the webview
+        expect(postMessageSpy).toHaveBeenCalledWith({
+            type: 'rateLimit',
+            isRateLimited: true,
+        })
+
+        // Verify that the error is also shown in the transcript
+        const messages = chatController.getViewTranscript()
+        const lastMessage = messages[messages.length - 1]
+
+        expect(lastMessage.speaker).toBe('assistant')
+        expect(lastMessage.error).toBeDefined()
+        expect(lastMessage.error?.name).toBe('RateLimitError')
+        expect(lastMessage.error?.upgradeIsAvailable).toBe(true)
     })
 })
 

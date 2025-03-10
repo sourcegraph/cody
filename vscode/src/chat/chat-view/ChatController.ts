@@ -875,6 +875,12 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 this.postViewTranscript()
                 return
             }
+            if (isRateLimitError(error)) {
+                this.postMessage({
+                    type: 'rateLimit',
+                    isRateLimited: true,
+                })
+            }
             if (isRateLimitError(error) || isContextWindowLimitError(error)) {
                 this.postError(error, 'transcript')
             } else {
@@ -1335,6 +1341,12 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
      * Display error message in webview as part of the chat transcript, or as a system banner alongside the chat.
      */
     private postError(error: Error, type?: MessageErrorType): void {
+        if (isRateLimitError(error)) {
+            void this.postMessage({
+                type: 'rateLimit',
+                isRateLimited: true,
+            })
+        }
         logDebug('ChatController: postError', error.message)
         // Add error to transcript
         if (type === 'transcript') {

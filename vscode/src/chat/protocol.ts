@@ -196,6 +196,7 @@ export type ExtensionMessage =
       }
     | ({ type: 'transcript' } & ExtensionTranscriptMessage)
     | { type: 'view'; view: View }
+    | { type: 'rateLimit'; isRateLimited: boolean }
     | { type: 'errors'; errors: string }
     | {
           type: 'clientAction'
