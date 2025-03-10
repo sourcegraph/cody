@@ -11,6 +11,8 @@ import * as vscode from 'vscode'
 import { startTokenReceiver } from './auth/token-receiver'
 import { CommandsProvider } from './commands/services/provider'
 import { AnthropicCompletionsClient } from './completions/anthropicClient'
+import { SourcegraphNodeCompletionsClient } from './completions/nodeClient'
+import { RoutingCompletionsClient } from './completions/routingClient'
 import type { ExtensionApi } from './extension-api'
 import { type ExtensionClient, defaultVSCodeExtensionClient } from './extension-client'
 import { activate as activateCommon } from './extension.common'
@@ -45,9 +47,15 @@ export function activate(
     return activateCommon(context, {
         initializeNetworkAgent: DelegatingAgent.initialize,
         initializeNoxideLib: isNoxideLibEnabled ? loadNoxideLib : undefined,
-        createCompletionsClient: () =>
-            new AnthropicCompletionsClient({
-                apiKey: vscode.workspace.getConfiguration().get('cody.experimental.minion.anthropicKey') || '',
+        createCompletionsClient: (...args) =>
+            new RoutingCompletionsClient({
+                sourcegraphClient: new SourcegraphNodeCompletionsClient(...args),
+                anthropicClient: new AnthropicCompletionsClient({
+                    apiKey:
+                        vscode.workspace
+                            .getConfiguration()
+                            .get('cody.experimental.minion.anthropicKey') || '',
+                }),
             }),
         createCommandsProvider: () => new CommandsProvider(),
         createSymfRunner: isSymfEnabled ? (...args) => new SymfRunner(...args) : undefined,

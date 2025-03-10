@@ -15,7 +15,6 @@ import {
     addCodyClientIdentificationHeaders,
     currentResolvedConfig,
     getActiveTraceAndSpanId,
-    getAuthHeaders,
     getTraceparentHeaders,
     globalAgentRef,
     isCustomAuthChallengeResponse,
