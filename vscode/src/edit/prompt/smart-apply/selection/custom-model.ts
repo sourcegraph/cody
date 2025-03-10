@@ -44,6 +44,12 @@ const DEFAULT_SELECTION_PROMPT = {
 }
 
 export class CustomModelSelectionProvider implements SmartApplySelectionProvider {
+    private readonly shouldAlwaysUseEntireFile: boolean
+
+    constructor(config: { shouldAlwaysUseEntireFile: boolean }) {
+        this.shouldAlwaysUseEntireFile = config.shouldAlwaysUseEntireFile
+    }
+
     public async getSelectedText({
         instruction,
         replacement,
@@ -52,6 +58,10 @@ export class CustomModelSelectionProvider implements SmartApplySelectionProvider
         chatClient,
         contextWindow,
     }: SelectionPromptProviderArgs): Promise<string> {
+        if (this.shouldAlwaysUseEntireFile) {
+            return 'ENTIRE_FILE'
+        }
+
         const documentRange = new vscode.Range(0, 0, document.lineCount - 1, 0)
         const documentText = PromptString.fromDocumentText(document, documentRange)
         const tokenCount = await TokenCounterUtils.countPromptString(documentText)

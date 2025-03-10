@@ -20,7 +20,6 @@ import { doesFileExist } from '../../commands/utils/workspace-files'
 import { executePrefetchSmartApply, executeSmartApply } from '../../edit/smart-apply'
 import { getEditor } from '../../editor/active-editor'
 import type { VSCodeEditor } from '../../editor/vscode-editor'
-import { isRunningInsideAgent } from '../../jsonrpc/isRunningInsideAgent'
 
 import { SMART_APPLY_MODEL_IDENTIFIERS } from '../../edit/prompt/constants'
 import { countCode, matchCodeSnippets } from './code-count'
@@ -145,20 +144,26 @@ export async function handleCodeFromInsertAtCursor(text: string): Promise<void> 
 function getSmartApplyExperimentModel(
     defaultModel: EditModel | undefined
 ): Observable<EditModel | undefined> {
-    const customModel: EditModel = SMART_APPLY_MODEL_IDENTIFIERS.FireworksQwenCodeDefault
-
     return combineLatest(
         featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodySmartApplyExperimentEnabledFeatureFlag),
-        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodySmartApplyExperimentVariant1)
+        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodySmartApplyExperimentVariant1),
+        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodySmartApplyExperimentVariant2),
+        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodySmartApplyExperimentVariant3)
     ).pipe(
-        switchMap(([isExperimentEnabled, isVariant1Enabled]) => {
+        switchMap(([isExperimentEnabled, isVariant1Enabled, isVariant2Enabled, isVariant3Enabled]) => {
             // We run fine tuning experiment for VSC client only.
             // We disable for all agent clients like the JetBrains plugin.
-            if (isRunningInsideAgent() || !isExperimentEnabled) {
+            if (!isExperimentEnabled) {
                 return Observable.of(defaultModel)
             }
             if (isVariant1Enabled) {
-                return Observable.of(customModel)
+                return Observable.of(SMART_APPLY_MODEL_IDENTIFIERS.FireworksQwenCodeDefault)
+            }
+            if (isVariant2Enabled) {
+                return Observable.of(SMART_APPLY_MODEL_IDENTIFIERS.FireworksQwenCodeVariant2)
+            }
+            if (isVariant3Enabled) {
+                return Observable.of(SMART_APPLY_MODEL_IDENTIFIERS.FireworksQwenCodeVariant3)
             }
             return Observable.of(defaultModel)
         }),

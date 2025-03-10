@@ -13,7 +13,7 @@ import { isError } from '../utils'
 import { isDotCom } from './environments'
 import { graphqlClient } from './graphql'
 
-interface SiteAndCodyAPIVersions {
+export interface SiteAndCodyAPIVersions {
     siteVersion: string
     codyAPIVersion: CodyApiVersion
 }
