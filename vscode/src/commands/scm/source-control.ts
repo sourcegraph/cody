@@ -173,10 +173,11 @@ export class CodySourceControl implements vscode.Disposable {
             }
 
             const { id: model, contextWindow } = this.model
+            const context = await getContextFilesFromGitApi(repository, commitTemplate).catch(() => [])
             const { prompt, ignoredContext } = await this.buildPrompt(
                 contextWindow,
                 getSimplePreamble(model, 1, 'Default', COMMIT_COMMAND_PROMPTS.intro),
-                await getContextFilesFromGitApi(repository, commitTemplate).catch(() => [])
+                context
             ).catch(error => {
                 sourceControlInputbox.value = `${error}`
                 throw new Error()
