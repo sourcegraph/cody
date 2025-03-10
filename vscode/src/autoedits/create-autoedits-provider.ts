@@ -210,14 +210,6 @@ export function isUserEligibleForAutoeditsFeature(
         return { isUserEligible: true }
     }
 
-    // Editors other than vscode are not eligible for auto-edit
-    if (isRunningInsideAgent()) {
-        return {
-            isUserEligible: false,
-            nonEligibilityReason: AUTOEDITS_NON_ELIGIBILITY_MESSAGES.ONLY_VSCODE_SUPPORT,
-        }
-    }
-
     // Free users are not eligible for auto-edit
     if (isFreeUser(authStatus, productSubscription)) {
         return {
