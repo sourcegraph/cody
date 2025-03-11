@@ -30,8 +30,8 @@ import {
     schema,
 } from './promptInput'
 
-type PromptInputLogic = typeof promptInput
-type PromptInputActor = ActorRefFrom<PromptInputLogic>
+export type PromptInputLogic = typeof promptInput
+export type PromptInputActor = ActorRefFrom<PromptInputLogic>
 
 interface PromptEditorOptions {
     /**

@@ -1,6 +1,12 @@
 import type { MetaResult } from '@openctx/client'
 import { type Observable, map } from 'observable-fns'
-import { openctxController } from '../context/openctx/api'
+import {
+    GIT_OPENCTX_PROVIDER_URI,
+    RECENTLY_USED_PROVIDER_URI,
+    REMOTE_REPOSITORY_PROVIDER_URI,
+    WEB_PROVIDER_URI,
+    openctxController,
+} from '../context/openctx/api'
 import { distinctUntilChanged, switchMap } from '../misc/observable'
 
 /**
@@ -51,13 +57,39 @@ export const SYMBOL_CONTEXT_MENTION_PROVIDER: ContextMentionProviderMetadata & {
     emptyLabel: 'No symbols found',
 }
 
+/**
+ * Default order for context mention providers.
+ * Providers will be sorted based on their position in this array.
+ * Providers not in this list will be placed at the end.
+ */
+export const DEFAULT_PROVIDER_ORDER: ContextMentionProviderID[] = [
+    RECENTLY_USED_PROVIDER_URI,
+    REMOTE_REPOSITORY_PROVIDER_URI,
+    'file',
+    'symbol',
+    WEB_PROVIDER_URI,
+    GIT_OPENCTX_PROVIDER_URI,
+]
+
 export function mentionProvidersMetadata(options?: {
     disableProviders: ContextMentionProviderID[]
 }): Observable<ContextMentionProviderMetadata[]> {
     return openCtxMentionProviders().map(providers =>
-        [...[FILE_CONTEXT_MENTION_PROVIDER, SYMBOL_CONTEXT_MENTION_PROVIDER], ...providers].filter(
-            provider => !options?.disableProviders.includes(provider.id)
-        )
+        [...[FILE_CONTEXT_MENTION_PROVIDER, SYMBOL_CONTEXT_MENTION_PROVIDER], ...providers]
+            .filter(provider => !options?.disableProviders?.includes(provider.id))
+            .sort((a, b) => {
+                const indexA = DEFAULT_PROVIDER_ORDER.indexOf(a.id)
+                const indexB = DEFAULT_PROVIDER_ORDER.indexOf(b.id)
+
+                if (indexA >= 0 && indexB >= 0) {
+                    return indexA - indexB
+                }
+
+                if (indexA >= 0) return -1
+                if (indexB >= 0) return 1
+
+                return 0
+            })
     )
 }
 
