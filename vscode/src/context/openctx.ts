@@ -7,6 +7,7 @@ import {
     FeatureFlag,
     GIT_OPENCTX_PROVIDER_URI,
     type OpenCtxController,
+    RECENTLY_USED_PROVIDER_URI,
     RULES_PROVIDER_URI,
     WEB_PROVIDER_URI,
     authStatus,
@@ -38,6 +39,7 @@ import { logDebug } from '../output-channel-logger'
 import { createCodeSearchProvider } from './openctx/codeSearch'
 import { gitMentionsProvider } from './openctx/git'
 import LinearIssuesProvider from './openctx/linear-issues'
+import { createRecentlyUsedProvider } from './openctx/recentlyUsed'
 import RemoteDirectoryProvider, { createRemoteDirectoryProvider } from './openctx/remoteDirectorySearch'
 import RemoteFileProvider, { createRemoteFileProvider } from './openctx/remoteFileSearch'
 import RemoteRepositorySearch, { createRemoteRepositoryProvider } from './openctx/remoteRepositorySearch'
@@ -144,6 +146,11 @@ export function getOpenCtxProviders(
                     settings: true,
                     provider: createWebProvider(false),
                     providerUri: WEB_PROVIDER_URI,
+                },
+                {
+                    settings: true,
+                    provider: createRecentlyUsedProvider(),
+                    providerUri: RECENTLY_USED_PROVIDER_URI,
                 },
             ]
 

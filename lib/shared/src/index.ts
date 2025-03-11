@@ -392,9 +392,12 @@ export {
     WEB_PROVIDER_URI,
     GIT_OPENCTX_PROVIDER_URI,
     CODE_SEARCH_PROVIDER_URI,
+    GLOBAL_SEARCH_PROVIDER_URI,
+    RECENTLY_USED_PROVIDER_URI,
     currentOpenCtxController,
     RULES_PROVIDER_URI,
 } from './context/openctx/api'
+export * from './recentlyUsedCache'
 export * from './context/openctx/context'
 export * from './lexicalEditor/editorState'
 export * from './lexicalEditor/nodes'

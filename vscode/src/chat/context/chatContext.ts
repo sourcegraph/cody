@@ -5,6 +5,7 @@ import {
     type ContextItemRepository,
     type ContextMentionProviderID,
     FILE_CONTEXT_MENTION_PROVIDER,
+    GLOBAL_SEARCH_PROVIDER_URI,
     type MentionMenuData,
     type MentionQuery,
     REMOTE_REPOSITORY_PROVIDER_URI,
@@ -77,7 +78,7 @@ export function getMentionMenuData(options: {
         const queryLower = options.query.text.toLowerCase()
 
         const providers = (
-            options.query.provider === null
+            options.query.provider === null || options.query.provider === GLOBAL_SEARCH_PROVIDER_URI
                 ? mentionProvidersMetadata({ disableProviders: options.disableProviders })
                 : Observable.of([])
         ).pipe(map(providers => providers.filter(p => p.title.toLowerCase().includes(queryLower))))
@@ -116,12 +117,14 @@ export async function getChatContextItemsForMention(
     options: GetContextItemsOptions,
     _?: AbortSignal
 ): Promise<ContextItem[]> {
-    const MAX_RESULTS = 20
+    const MAX_RESULTS = 10
     const { mentionQuery, rangeFilter = true } = options
 
     switch (mentionQuery.provider) {
         case null:
-            return getOpenTabsContextFile()
+            return []
+        case GLOBAL_SEARCH_PROVIDER_URI:
+            return getGlobalSearchContextItems(mentionQuery, rangeFilter, MAX_RESULTS)
         case SYMBOL_CONTEXT_MENTION_PROVIDER.id:
             // It would be nice if the VS Code symbols API supports cancellation, but it doesn't
             return getSymbolContextFiles(
@@ -130,26 +133,7 @@ export async function getChatContextItemsForMention(
                 mentionQuery.contextRemoteRepositoriesNames
             )
         case FILE_CONTEXT_MENTION_PROVIDER.id: {
-            const files = mentionQuery.text
-                ? await getFileContextFiles({
-                      query: mentionQuery.text,
-                      range: mentionQuery.range,
-                      maxResults: MAX_RESULTS,
-                      repositoriesNames: mentionQuery.contextRemoteRepositoriesNames,
-                  })
-                : await getOpenTabsContextFile()
-
-            // If a range is provided, that means user is trying to mention a specific line range.
-            // We will get the content of the file for that range to display file size warning if needed.
-            if (mentionQuery.range && files.length > 0 && rangeFilter) {
-                const item = await getContextFileFromUri(
-                    files[0].uri,
-                    new vscode.Range(mentionQuery.range.start.line, 0, mentionQuery.range.end.line, 0)
-                )
-                return item ? [item] : []
-            }
-
-            return files
+            return getFileContextItems(mentionQuery, rangeFilter, MAX_RESULTS)
         }
 
         default: {
@@ -167,6 +151,164 @@ export async function getChatContextItemsForMention(
             )
         }
     }
+}
+
+const getFileContextItems = async (
+    mentionQuery: MentionQuery,
+    rangeFilter: boolean,
+    maxResults: number
+) => {
+    const files = mentionQuery.text
+        ? await getFileContextFiles({
+              query: mentionQuery.text,
+              range: mentionQuery.range,
+              maxResults,
+              repositoriesNames: mentionQuery.contextRemoteRepositoriesNames,
+          })
+        : await getOpenTabsContextFile()
+
+    // If a range is provided, that means user is trying to mention a specific line range.
+    // We will get the content of the file for that range to display file size warning if needed.
+    if (mentionQuery.range && files.length > 0 && rangeFilter) {
+        const item = await getContextFileFromUri(
+            files[0].uri,
+            new vscode.Range(mentionQuery.range.start.line, 0, mentionQuery.range.end.line, 0)
+        )
+        return item ? [item] : []
+    }
+
+    return files
+}
+
+const getRepositoryContextItems = async (mentionQuery: MentionQuery, maxResults: number) => {
+    return currentOpenCtxController()
+        .mentions(
+            {
+                query: mentionQuery.text,
+            },
+            {
+                providerUri: REMOTE_REPOSITORY_PROVIDER_URI,
+            }
+        )
+        .then(items => items.map(contextItemMentionFromOpenCtxItem))
+        .then(items =>
+            items
+                .sort(
+                    (a, b) =>
+                        getBestSearchMatch(a, mentionQuery.text) -
+                        getBestSearchMatch(b, mentionQuery.text)
+                )
+                .slice(0, maxResults)
+        )
+}
+
+export enum BestMatch {
+    Exact = 0,
+    StartsWith = 1,
+    Contains = 2,
+    NoMatch = 3,
+}
+
+const TypeMatchOrder: Record<BestMatch, Record<'file' | 'symbol' | 'repository', number>> = {
+    [BestMatch.Exact]: { repository: 0, file: 1, symbol: 2 },
+    [BestMatch.StartsWith]: { repository: 0, file: 1, symbol: 2 },
+    [BestMatch.Contains]: { file: 0, repository: 1, symbol: 2 },
+    [BestMatch.NoMatch]: { file: 0, repository: 1, symbol: 2 },
+}
+
+export const getBestSearchMatch = (item: ContextItem, query: string): BestMatch => {
+    const searchableValues: string[] = []
+    const normalizedQuery = query.toLowerCase().trim()
+
+    // Get all searchable values based on item type
+    if (item.title) {
+        searchableValues.push(item.title.toLowerCase())
+    }
+
+    // Add type-specific searchable values
+    switch (item.type) {
+        case 'file': {
+            searchableValues.push(item.uri.path.toLowerCase())
+            const basename = item.uri.path.split('/').pop()
+            if (basename) {
+                searchableValues.push(basename.toLowerCase())
+            }
+            break
+        }
+        case 'repository': {
+            searchableValues.push(item.repoName.toLowerCase())
+            const repoName = item.repoName.split('/').pop()
+            if (repoName) {
+                searchableValues.push(repoName.toLowerCase())
+            }
+            break
+        }
+        case 'symbol': {
+            searchableValues.push(item.symbolName.toLowerCase())
+            break
+        }
+    }
+
+    // Find the best match among all searchable values
+    let bestMatch = BestMatch.NoMatch
+    for (const value of searchableValues) {
+        if (value === normalizedQuery) {
+            return BestMatch.Exact // Exact match is best possible
+        }
+        if (value.startsWith(normalizedQuery)) {
+            bestMatch = Math.min(bestMatch, BestMatch.StartsWith)
+        }
+        if (value.includes(normalizedQuery)) {
+            bestMatch = Math.min(bestMatch, BestMatch.Contains)
+        }
+    }
+
+    return bestMatch
+}
+const sortByBestMatch = (a: ContextItem, b: ContextItem, mentionQuery: MentionQuery) => {
+    const matchA = getBestSearchMatch(a, mentionQuery.text)
+    const matchB = getBestSearchMatch(b, mentionQuery.text)
+    if (matchA !== matchB) {
+        return matchA - matchB
+    }
+
+    const typeOrder = TypeMatchOrder[matchA]
+    const typeA = typeOrder[a.type as keyof typeof typeOrder] ?? 3
+    const typeB = typeOrder[b.type as keyof typeof typeOrder] ?? 3
+
+    return typeA - typeB
+}
+
+const getGlobalSearchContextItems = async (
+    mentionQuery: MentionQuery,
+    rangeFilter: boolean,
+    maxResults: number // default 10
+) => {
+    const [fileContextItems, symbolContextItems, repositoryContextItems] = await Promise.all([
+        getFileContextItems(mentionQuery, rangeFilter, maxResults),
+        getSymbolContextFiles(
+            mentionQuery.text,
+            // at max 4 symbol results
+            Math.max(maxResults / 4, 3),
+            mentionQuery.contextRemoteRepositoriesNames
+        ),
+        getRepositoryContextItems(
+            mentionQuery,
+            // at max 4 repository results
+            Math.min(maxResults / 4, 3)
+        ),
+    ])
+
+    return [
+        ...[
+            ...fileContextItems
+                .sort((a, b) => sortByBestMatch(a, b, mentionQuery))
+                .slice(0, maxResults - symbolContextItems.length - repositoryContextItems.length),
+            ...repositoryContextItems,
+        ].sort((a, b) => sortByBestMatch(a, b, mentionQuery)),
+        // always keep symbol results at the last, sorted by best match
+        ...symbolContextItems.sort((a, b) => sortByBestMatch(a, b, mentionQuery)),
+    ]
 }
 
 const activeTextEditor: Observable<vscode.TextEditor | undefined> = fromVSCodeEvent(

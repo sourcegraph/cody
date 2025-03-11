@@ -6,10 +6,12 @@ import {
     FILE_RANGE_TOOLTIP_LABEL,
     NO_SYMBOL_MATCHES_HELP_LABEL,
     REMOTE_DIRECTORY_PROVIDER_URI,
+    REMOTE_FILE_PROVIDER_URI,
     SYMBOL_CONTEXT_MENTION_PROVIDER,
     type SerializedContextItem,
     type SerializedPromptEditorState,
     type SerializedPromptEditorValue,
+    getRecentlyUsedContextItems,
     parseMentionQuery,
 } from '@sourcegraph/cody-shared'
 import { clsx } from 'clsx'
@@ -92,6 +94,8 @@ interface PromptEditorRefAPI {
 
 const SUGGESTION_LIST_LENGTH_LIMIT = 20
 
+const hiddenProviders = [REMOTE_FILE_PROVIDER_URI, REMOTE_DIRECTORY_PROVIDER_URI]
+
 /**
  * The component for composing and editing prompts.
  */
@@ -145,19 +149,19 @@ export const PromptEditor: FunctionComponent<Props> = ({
                 ...parseMentionQuery(query, provider ?? null),
                 interactionID: interactionID.current,
                 contextRemoteRepositoriesNames: mentionSettings.remoteRepositoriesNames,
-            }).map(result => [
-                ...result.providers,
-                ...filteredInitialContextItems,
-                ...(result.items
-                    ?.filter(
-                        item =>
-                            !filteredInitialContextItems.some(initialItem =>
-                                areContextItemsEqual(item, initialItem)
-                            )
-                    )
-                    .slice(0, SUGGESTION_LIST_LENGTH_LIMIT)
-                    .map(item => ({ ...item, source: ContextItemSource.User })) ?? []),
-            ])
+            }).map(result => {
+                const items =
+                    result.items
+                        ?.slice(0, SUGGESTION_LIST_LENGTH_LIMIT)
+                        .map(item => ({ ...item, source: ContextItemSource.User })) ?? []
+
+                const recentlyUsedItems = provider ? [] : getRecentlyUsedContextItems(query).slice(0, 3)
+                const providers = provider
+                    ? []
+                    : result.providers.filter(provider => !hiddenProviders.includes(provider.id))
+
+                return [...filteredInitialContextItems, ...recentlyUsedItems, ...providers, ...items]
+            })
         },
         [mentionMenuData, mentionSettings, defaultContext]
     )
@@ -346,8 +350,4 @@ function normalizeEditorStateJSON(
     value: SerializedEditorState<SerializedLexicalNode>
 ): SerializedEditorState<SerializedLexicalNode> {
     return JSON.parse(JSON.stringify(value))
-}
-
-function areContextItemsEqual(a: ContextItem, b: ContextItem): boolean {
-    return a.type === b.type && a.uri.toString() === b.uri.toString()
 }

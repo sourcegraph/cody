@@ -8,6 +8,7 @@ import {
     type SerializedPromptEditorValue,
     deserializeContextItem,
     isAbortErrorOrSocketHangUp,
+    saveRecentlyUsedContextItems,
     serializedPromptEditorStateFromText,
 } from '@sourcegraph/cody-shared'
 import type { PromptEditorRefAPI } from '@sourcegraph/prompt-editor'
@@ -317,6 +318,8 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                 manuallySelectedIntent: intentFromSubmit || manuallySelectedIntent,
                 traceparent,
             }
+
+            saveRecentlyUsedContextItems(editorValue.contextItems.filter(item => item.source === 'user'))
 
             if (action === 'edit') {
                 // Remove search context chips from the next input so that the user cannot
