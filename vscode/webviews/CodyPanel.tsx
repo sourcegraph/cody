@@ -11,14 +11,16 @@ import {
 } from '@sourcegraph/cody-shared'
 import { useExtensionAPI, useObservable } from '@sourcegraph/prompt-editor'
 import type React from 'react'
-import { type FunctionComponent, useEffect, useMemo, useRef } from 'react'
+import { type FunctionComponent, useEffect, useMemo, useRef, useState } from 'react'
 import type { ConfigurationSubsetForWebview, LocalEnv } from '../src/chat/protocol'
 import styles from './App.module.css'
 import { Chat } from './Chat'
+import { ChatWithHistorySidebar } from './chat/components/ChatWithHistorySidebar'
 import { useClientActionDispatcher } from './client/clientState'
 import { Notices } from './components/Notices'
 import { StateDebugOverlay } from './components/StateDebugOverlay'
 import { TabContainer, TabRoot } from './components/shadcn/ui/tabs'
+import { ResponsiveTabsBar } from './chat/components/ResponsiveTabsBar'
 import { HistoryTab, PromptsTab, SettingsTab, TabsBar, View } from './tabs'
 import type { VSCodeWrapper } from './utils/VSCodeApi'
 import { useUserAccountInfo } from './utils/useConfig'
@@ -74,6 +76,28 @@ export const CodyPanel: FunctionComponent<CodyPanelProps> = ({
     onExtensionApiReady,
 }) => {
     const tabContainerRef = useRef<HTMLDivElement>(null)
+    const [isWideLayout, setIsWideLayout] = useState(true)
+    
+    // Set up ResizeObserver to monitor container size changes for responsive layout
+    useEffect(() => {
+        const root = document.documentElement
+        const checkWidth = () => {
+            const width = root.clientWidth
+            // We need 300px for the sidebar plus some reasonable space for the chat (at least 450px)
+            setIsWideLayout(width >= 750)
+        }
+        
+        // Check initially
+        checkWidth()
+        
+        // Set up ResizeObserver to monitor container size changes
+        const resizeObserver = new ResizeObserver(checkWidth)
+        resizeObserver.observe(root)
+        
+        return () => {
+            resizeObserver.disconnect()
+        }
+    }, [])
 
     const user = useUserAccountInfo()
     const externalAPI = useExternalAPI()
@@ -117,18 +141,19 @@ export const CodyPanel: FunctionComponent<CodyPanelProps> = ({
                 className={styles.outerContainer}
             >
                 <Notices user={user} instanceNotices={instanceNotices} />
-                <TabsBar
+                <ResponsiveTabsBar
                     models={chatModels}
                     user={user}
                     currentView={view}
                     setView={setView}
                     endpointHistory={config.endpointHistory ?? []}
                     isWorkspacesUpgradeCtaEnabled={isWorkspacesUpgradeCtaEnabled}
+                    hideHistoryTab={isWideLayout && view === View.Chat}
                 />
                 {errorMessages && <ErrorBanner errors={errorMessages} setErrors={setErrorMessages} />}
                 <TabContainer value={view} ref={tabContainerRef} data-scrollable>
                     {view === View.Chat && (
-                        <Chat
+                        <ChatWithHistorySidebar
                             chatEnabled={chatEnabled}
                             messageInProgress={messageInProgress}
                             transcript={transcript}
@@ -141,6 +166,10 @@ export const CodyPanel: FunctionComponent<CodyPanelProps> = ({
                             smartApplyEnabled={smartApplyEnabled}
                             setView={setView}
                             isWorkspacesUpgradeCtaEnabled={isWorkspacesUpgradeCtaEnabled}
+                            IDE={clientCapabilities.agentIDE}
+                            webviewType={config.webviewType}
+                            multipleWebviewsEnabled={config.multipleWebviewsEnabled}
+                            isWideLayout={isWideLayout}
                         />
                     )}
                     {view === View.History && (
