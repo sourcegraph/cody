@@ -25,6 +25,7 @@ import {
 import { ContextMixer } from '../completions/context/context-mixer'
 
 import { mockLocalStorage } from '../services/LocalStorageProvider'
+import { autoeditTriggerKind } from './analytics-logger'
 import {
     AUTOEDIT_CONTEXT_FETCHING_DEBOUNCE_INTERVAL,
     AUTOEDIT_TOTAL_DEBOUNCE_INTERVAL,
@@ -470,6 +471,21 @@ describe('AutoeditsProvider', () => {
 
         await acceptSuggestionCommand()
         expect(editBuilder.size).toBe(1)
+    })
+
+    it('does not trigger a suggestion if the user has selectedCompletionInfo', async () => {
+        const prediction = 'const x = 1\n'
+        const completionItem = { range: new vscode.Range(0, 0, 0, 5), text: 'beans' }
+        const { result } = await autoeditResultFor('const x = █\n', {
+            prediction,
+            inlineCompletionContext: {
+                triggerKind: autoeditTriggerKind.automatic,
+                selectedCompletionInfo: completionItem,
+            },
+        })
+        expect(result?.items).toStrictEqual([
+            { insertText: completionItem.text, range: completionItem.range },
+        ])
     })
 
     describe('Debounce logic', () => {
