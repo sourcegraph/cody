@@ -16,8 +16,10 @@ import {
 import { DeepCodyAgentID } from '@sourcegraph/cody-shared/src/models/client'
 import type { PromptEditorRefAPI } from '@sourcegraph/prompt-editor'
 import isEqual from 'lodash/isEqual'
+import { Copy } from 'lucide-react'
 import { type FunctionComponent, type RefObject, memo, useMemo } from 'react'
 import type { ApiPostMessage, UserAccountInfo } from '../../../../Chat'
+import { Button } from '../../../../components/shadcn/ui/button'
 import { useOmniBox } from '../../../../utils/useOmniBox'
 import {
     ChatMessageContent,
@@ -141,16 +143,31 @@ export const AssistantMessageCell: FunctionComponent<{
                     </>
                 }
                 footer={
-                    chatEnabled &&
-                    humanMessage && (
-                        <div className="tw-py-3 tw-flex tw-flex-col tw-gap-2">
+                    <div className="tw-py-3 tw-flex tw-flex-row tw-items-center tw-justify-between">
+                        <div>
                             {isAborted && (
-                                <div className="tw-text-sm tw-text-muted-foreground tw-mt-4">
+                                <div className="tw-text-sm tw-text-muted-foreground">
                                     Output stream stopped
                                 </div>
                             )}
                         </div>
-                    )
+                        <div className="tw-ml-auto">
+                            {!isLoading && (
+                                <Button
+                                    size="sm"
+                                    type="button"
+                                    variant="ghost"
+                                    className="tw-inline-flex tw-w-fit tw-rounded-md tw-text-sm tw-font-medium tw-transition tw-duration-150 tw-ease-in-out tw-transform tw-opacity-90"
+                                    onClick={e => {
+                                        e.preventDefault()
+                                        navigator.clipboard.writeText(displayMarkdown)
+                                    }}
+                                >
+                                    <Copy size={14} />
+                                </Button>
+                            )}
+                        </div>
+                    </div>
                 }
             />
         )
