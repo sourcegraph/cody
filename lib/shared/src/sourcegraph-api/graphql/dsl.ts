@@ -1,11 +1,12 @@
 // TODO:
-// Support labels like foo:
 // Support literal enum values, for example the V1 in codyContextFilters(version:V1)
 // Support ...on FileChunkContext {
 // Support types like [ID!]! which getCodyContext uses
 // Consider supporting mutations
 
 // A field with a primitive type or an anonymous object type.
+import semver from "semver";
+
 export interface ValueSpec<Name extends string, T> {
     kind: 'value',
     name: Name,
@@ -31,6 +32,8 @@ interface Constant<Name extends string, T> {
     value: T,
 }
 
+// A constant value. For an enum constant such as codyContextFilters(version:V1) use `constant('version', Symbol('V1'))`.
+// 🚨 SECURITY: Do not use untrusted input for symbol names. These are not escaped and could be used in query injection.
 export function constant<Name extends string, T>(name: Name, value: T): Constant<Name,T> {
     return {
         kind: 'constant',
@@ -43,7 +46,8 @@ export function constant<Name extends string, T>(name: Name, value: T): Constant
 interface Formal<Name extends string, T> {
     kind: 'formal',
     name: Name,
-    gqlType: 'Int!' | 'String'
+    // The GraphQL type to declare for this parameter. Feel free to extend this union.
+    gqlType: 'Int!' | 'String!' | 'String'
 }
 
 export const formal = {
@@ -54,11 +58,18 @@ export const formal = {
             gqlType: 'Int!'
         }
     },
-    string<Name extends string>(name: Name): Formal<Name,string> {
+    nullableString<Name extends string>(name: Name): Formal<Name,string | null> {
         return {
             kind: 'formal',
             name,
             gqlType: 'String'
+        }
+    },
+    string<Name extends string>(name: Name): Formal<Name,string> {
+        return {
+            kind: 'formal',
+            name,
+            gqlType: 'String!'
         }
     }
 }
@@ -97,13 +108,30 @@ export function labeled<Name extends string, F extends SomeUnlabeledField>(name:
     }
 }
 
+export interface VersionPredicate<F extends SomeField> {
+    kind: 'versionPredicate',
+    name: F['name'],
+    version: string,
+    field: F,
+}
+
+export function versionGte<F extends SomeField, Default extends RealizeField<F>>(version: string, defaultValue: Default, field: F): VersionPredicate<F> {
+    return {
+        kind: 'versionPredicate',
+        name: field.name,
+        version,
+        field,
+    }
+}
+
 // In general, don't use these; always use (or infer) specific types. SomeField and
 // SomeFields cut down stuttering the list of all field types. We can't use a parent type
 // and have ValueSpec extends FieldSpec, ObjectSpec extends FieldSpec, ... because such a parent
 // type is not closed: We need our handling to be exhaustive.
 type SomeFieldExceptArguments = ValueSpec<any,any> | ObjectSpec<any,any> | ArraySpec<any,any>
 type SomeUnlabeledField = SomeFieldExceptArguments | WithArguments<SomeFieldExceptArguments, any>
-type SomeField = SomeUnlabeledField | Labeled<any, SomeUnlabeledField>
+type SomeUnversionedField = SomeUnlabeledField | Labeled<any, SomeUnlabeledField>
+type SomeField = SomeUnversionedField | VersionPredicate<SomeUnversionedField>
 type SomeFields = SomeField[]
 
 // Creates a field spec. TypeScript does not have partial application of type parameters,
@@ -161,7 +189,9 @@ export type RealizeField<F extends SomeField> =
                 ? RealizeField<U>
                 : F extends Labeled<any,infer U>
                     ? RealizeField<U>
-                    : F extends ValueSpec<any, infer U> ? U : never
+                    : F extends VersionPredicate<infer U>
+                        ? RealizeField<U>
+                        : F extends ValueSpec<any, infer U> ? U : never
 
 // Collects the types of arguments.
 export type Arguments<F extends SomeField> =
@@ -173,9 +203,11 @@ export type Arguments<F extends SomeField> =
                 ? Arguments<G>
                 : F extends WithArguments<infer G, infer Args>
                     ? [...Args, ...Arguments<G>]
-                    : F extends ValueSpec<any, any>
-                        ? []
-                        : never
+                    : F extends VersionPredicate<infer G>
+                        ? Arguments<G>
+                        : F extends ValueSpec<any, any>
+                            ? []
+                            : never
 
 export type ArgumentsOfN<T extends SomeFields> =
     T extends [infer Head, ...infer Tail]
@@ -208,13 +240,14 @@ export function collectFormals<F extends SomeField>(field: F): Arguments<F> {
     switch (field.kind) {
         case 'args':
             return [...field.args.filter((arg: SomeArg) => arg.kind === 'formal'), ...collectFormals(field.field)] as Arguments<F>
-        case 'object':
         case 'array':
+        case 'object':
             return collectFormalList(field.fields) as Arguments<F>
+        case 'labeled':
+        case 'versionPredicate':
+            return collectFormals(field.field) as Arguments<F>
         case 'value':
             return [] as Arguments<F>
-        case 'labeled':
-            return collectFormals(field.field) as Arguments<F>
     }
 }
 
@@ -247,7 +280,7 @@ export function both<T extends SomeField, U extends SomeField>(a: T, b: U) {
     return [a, b]
 }
 
-function serializeField<T extends SomeField>(buffer: string[], formals: Formal<any,any>[], field: SomeField, parent: SomeField | undefined): void {
+function serializeField<T extends SomeField>(realVersion: string, buffer: string[], formals: Formal<any,any>[], field: SomeField, parent: SomeField | undefined): void {
     switch (field.kind) {
         case 'args':
             buffer.push(field.name, '(')
@@ -264,16 +297,16 @@ function serializeField<T extends SomeField>(buffer: string[], formals: Formal<a
                         buffer.push(renaming)
                         break
                     case 'constant':
-                        buffer.push(JSON.stringify(arg.value))
+                        buffer.push(typeof arg.value === 'symbol' ? arg.value.description : JSON.stringify(arg.value))
                         break
                 }
                 buffer.push(',')
             }
             buffer.push(')')
-            serializeField(buffer, formals, field.field, field)
+            serializeField(realVersion, buffer, formals, field.field, field)
             break
-        case 'object':
         case 'array':
+        case 'object':
             if (parent?.kind !== 'args') {
                 // We model objects and arrays as a typed name to keep the type parameters
                 // for field names and types together. GraphQL syntax puts arguments after
@@ -283,7 +316,7 @@ function serializeField<T extends SomeField>(buffer: string[], formals: Formal<a
             }
             buffer.push('{')
             field.fields.forEach((child: SomeField) => {
-                serializeField(buffer, formals, child, field)
+                serializeField(realVersion, buffer, formals, child, field)
                 buffer.push(',')
             })
             buffer.push('}')
@@ -294,11 +327,16 @@ function serializeField<T extends SomeField>(buffer: string[], formals: Formal<a
             }
             break
         case 'labeled':
-            if (parent?.kind === 'args') {
-                throw new Error('do not use args(labeled(...), ...) but instead use labeled(..., args(...))')
-            }
+            console.assert(parent?.kind !== 'args')  // The SomeXField types prevent this, but we rely on it here.
             buffer.push(field.name, ':')
-            serializeField(buffer, formals, field.field, field)
+            serializeField(realVersion, buffer, formals, field.field, field)
+            break
+        case 'versionPredicate':
+            console.assert(parent?.kind !== 'args')  // The SomeXField types prevent this, but we rely on it here.
+            if (realVersion && semver.lt(realVersion, field.version)) {
+                break
+            }
+            serializeField(realVersion, buffer, formals, field.field, field)
             break
         default:
             throw new Error('unreachable')
@@ -307,16 +345,17 @@ function serializeField<T extends SomeField>(buffer: string[], formals: Formal<a
 
 export type PreparedQuery<T extends SomeFields> = {
     query: T,
-    text: string,
+    text: string | null,
     formals: Formal<any,any>[],
+    defaults: {},
 }
 
 // Prepares a query by producing the textual serialization of the query.
-export function prepare<T extends SomeFields>(...query: T): PreparedQuery<T> {
+export function prepare<T extends SomeFields>(realVersion: string, ...query: T): PreparedQuery<T> {
     const buffer: string[] = []
     const formals: Formal<any,any>[] = []
     for (const field of query) {
-        serializeField(buffer, formals, field, undefined)
+        serializeField(realVersion, buffer, formals, field, undefined)
     }
 
     // Wrap the query in query (...args...) { ... }
@@ -329,11 +368,14 @@ export function prepare<T extends SomeFields>(...query: T): PreparedQuery<T> {
     buffer.unshift(...preamble)
     buffer.push('}')
 
+    const text = buffer.join('')
+
     return {
         query,
-        text: buffer.join(''),
+        text: text === 'query(){}' ? null : text,
         formals,
+        defaults: {},
     }
 }
 
-export const currentUserId = prepare(nested('currentUser', q.string('id')))
+export const currentUserId = prepare('0.0.0', nested('currentUser', q.string('id')))

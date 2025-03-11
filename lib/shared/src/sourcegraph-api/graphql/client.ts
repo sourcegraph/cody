@@ -861,7 +861,7 @@ export class SourcegraphGraphQLAPIClient {
 
     public async getCurrentUserId(signal?: AbortSignal): Promise<string | null | Error> {
         return this.fetchSourcegraphAPI<APIResponse<Realize<typeof currentUserId.query> | null>>(
-            currentUserId.text,
+            currentUserId.text!,
             {},
             signal
         ).then(response =>
