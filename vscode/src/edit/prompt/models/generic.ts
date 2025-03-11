@@ -171,3 +171,18 @@ export const buildGenericPrompt = (
             }
     }
 }
+
+interface GenericPrefix {
+    assistantText: PromptString
+    assistantPrefix: PromptString
+}
+
+export const getGenericPrefixes = (
+    proposedPrefix: GenericPrefix,
+    isReasoningModel?: boolean
+): GenericPrefix | undefined => {
+    if (isReasoningModel) {
+        return undefined
+    }
+    return proposedPrefix
+}
