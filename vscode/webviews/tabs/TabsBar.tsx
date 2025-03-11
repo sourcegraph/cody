@@ -133,6 +133,7 @@ export const TabsBar = memo<TabsBarProps>(props => {
                             IDE={IDE}
                             tooltipExtra={IDE === CodyIDE.VSCode && '(⇧⌥/)'}
                             view={View.Chat}
+                            data-testid="new-chat-button"
                             onClick={() =>
                                 handleSubActionClick({
                                     changesView: View.Chat,
