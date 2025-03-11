@@ -48,10 +48,10 @@ const RESET_SUGGESTION_ON_CURSOR_CHANGE_AFTER_INTERVAL_MS = 60 * 1000
 const ON_SELECTION_CHANGE_DEFAULT_DEBOUNCE_INTERVAL_MS = 15
 
 export interface AutoeditsResult extends vscode.InlineCompletionList {
-    requestId: AutoeditRequestID
+    requestId: AutoeditRequestID | null
     prediction: string
     /** temporary data structure, will need to update before integrating with the agent API */
-    decorationInfo: DecorationInfo
+    decorationInfo: DecorationInfo | null
 }
 
 /**
@@ -155,12 +155,19 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
         let stopLoading: (() => void) | undefined
 
         if (inlineCompletionContext.selectedCompletionInfo !== undefined) {
+            const { range, text } = inlineCompletionContext.selectedCompletionInfo
             // User has a currently selected item in the autocomplete widget.
-            // Right now we avoid suggesting auto-edits when this is the case, otherwise
-            // we may override the users' selection and make an undesirable change.
+            // Instead of attempting to suggest an auto-edit, just show the selected item
+            // as the completion. This is to avoid an undesirable edit conflicting with the acceptance
+            // of the item shown in the widget.
             // TODO: We should consider the optimal solution here, it may be better to show an
             // inline completion (not an edit) that includes the currently selected item.
-            return null
+            return {
+                requestId: null,
+                items: [{ insertText: text, range }],
+                prediction: text,
+                decorationInfo: null,
+            }
         }
 
         try {
