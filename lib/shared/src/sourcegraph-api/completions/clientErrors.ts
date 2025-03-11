@@ -60,6 +60,15 @@ const handleAUPTransform: ErrorTransformer = error => {
     return undefined
 }
 
+const handleCloudflareTransform: ErrorTransformer = error => {
+    if (error.includes('Sorry, you have been blocked')) {
+        return `Cloudflare has blocked this request.
+                This may be due to using a VPN or other non-trusted network deemed dangerous.
+                Please try again without using such a network.`
+    }
+    return undefined
+}
+
 const handleMissingTraceIdTransform: ErrorTransformer = (error, traceId) => {
     if (traceId && !error.includes('AUP') && !error.includes(traceId)) {
         return error + ` (Error ID: ${traceId})`
@@ -89,6 +98,7 @@ const handleMessageTransform: ErrorTransformer = error => {
 }
 
 ClientErrorsTransformer.register(handleAUPTransform)
+ClientErrorsTransformer.register(handleCloudflareTransform)
 ClientErrorsTransformer.register(handleMissingTraceIdTransform, ClientErrorsTransformer.PRIORITIES.LAST)
 ClientErrorsTransformer.register(handleContextDeadlineTransform)
 ClientErrorsTransformer.register(handleMessageTransform)
