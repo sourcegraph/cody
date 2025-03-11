@@ -192,7 +192,6 @@ export function inferCodyApiVersion(version: string, isDotCom: boolean): CodyApi
         return 1
     }
 
-    console.log(version, parsedVersion, 'inferCodyApiVersion')
 
     // Use minimum version for all other cases instead of 0
     return DefaultMinimumAPIVersion
