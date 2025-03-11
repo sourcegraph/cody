@@ -2,7 +2,7 @@ package com.sourcegraph.cody.statusbar
 
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.ui.Messages
-import com.sourcegraph.cody.Icons
+import com.sourcegraph.Icons
 import com.sourcegraph.cody.telemetry.TelemetryV2
 import com.sourcegraph.common.BrowserOpener
 import com.sourcegraph.common.ui.DumbAwareEDTAction

@@ -1,6 +1,5 @@
 import * as Dialog from '@radix-ui/react-dialog'
 import * as Tabs from '@radix-ui/react-tabs'
-
 import clsx from 'clsx'
 import {
     BookTextIcon,
@@ -130,7 +129,7 @@ export const TabsBar = memo<TabsBarProps>(props => {
     )
 
     // Create a ref to access the ModelSelectField methods
-    const modelSelectorRef = useRef<{ open: () => void; close: () => void }>(null)
+    const modelSelectorRef = useRef<{ open: () => void; close: () => void } | null>(null)
 
     // Set up keyboard event listener
     useEffect(() => {
@@ -409,7 +408,6 @@ function useTabs(
                         Icon: PlusIcon,
                         command: currentView === View.Chat ? newChatCommand : null,
                         changesView: true,
-                        tooltip: <>{'(⌘N)'}</>,
                     },
                     {
                         view: View.History,
@@ -464,7 +462,7 @@ const ModelSelectFieldToolbarItem: FunctionComponent<{
     models?: Model[]
     userInfo: UserAccountInfo
     className?: string
-    modelSelectorRef: React.RefObject<{ open: () => void; close: () => void }>
+    modelSelectorRef: React.MutableRefObject<{ open: () => void; close: () => void } | null>
 }> = ({ userInfo, className, models, modelSelectorRef }) => {
     const clientConfig = useClientConfig()
     const serverSentModelsEnabled = !!clientConfig?.modelsAPIEnabled

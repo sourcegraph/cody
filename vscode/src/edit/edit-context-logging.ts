@@ -1,9 +1,11 @@
 import {
     type EditModel,
     FeatureFlag,
+    currentAuthStatus,
     displayPathWithoutWorkspaceFolderPrefix,
     featureFlagProvider,
     isDotComAuthed,
+    isS2,
     storeLastValue,
     telemetryRecorder,
 } from '@sourcegraph/cody-shared'
@@ -12,7 +14,7 @@ import type * as vscode from 'vscode'
 import { gitMetadataForCurrentEditor } from '../repository/git-metadata-for-editor'
 import { GitHubDotComRepoMetadata } from '../repository/githubRepoMetadata'
 import { splitSafeMetadata } from '../services/telemetry-v2'
-import type { SmartApplySelectionType } from './prompt/smart-apply'
+import type { SmartApplySelectionType } from './prompt/smart-apply/selection'
 
 const MAX_LOGGING_PAYLOAD_SIZE_BYTES = 1024 * 1024 // 1 MB
 
@@ -235,8 +237,9 @@ export function getEditLoggingContext(param: {
 }
 
 function shouldLogEditContextItem<T>(payload: T, isFeatureFlagEnabledForLogging: boolean): boolean {
-    // 🚨 SECURITY: included only for DotCom users and for users in the feature flag.
-    if (isDotComAuthed() && isFeatureFlagEnabledForLogging) {
+    // 🚨 SECURITY: included only for DotCom or S2 users and for users in the feature flag.
+    const authStatus = currentAuthStatus()
+    if ((isDotComAuthed() || isS2(authStatus)) && isFeatureFlagEnabledForLogging) {
         const payloadSize = calculatePayloadSizeInBytes(payload)
         return payloadSize !== undefined && payloadSize < MAX_LOGGING_PAYLOAD_SIZE_BYTES
     }

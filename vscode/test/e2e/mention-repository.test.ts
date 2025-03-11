@@ -43,7 +43,7 @@ testWithGitRemote('@-mention repository', async ({ page, sidebar, server }) => {
 
     // Wait for the current user repo to be loaded before opening the mention menu.
     await expect(chatInputMentions(lastChatInput)).toHaveText([userRepo])
-    await openMentionsForProvider(chatFrame, lastChatInput, 'Remote Repositories')
+    await openMentionsForProvider(chatFrame, lastChatInput, 'Repository search', true)
     await expect(mentionMenuItems(chatFrame)).toHaveText(['a/b', 'c/d'])
     await selectMentionMenuItem(chatFrame, 'c/d')
     await expect(chatInputMentions(lastChatInput)).toHaveText([userRepo, 'codehost.example/c/d'])
