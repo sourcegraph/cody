@@ -3,6 +3,7 @@ package com.sourcegraph.cody.autocomplete
 import com.intellij.codeInsight.hint.HintManager
 import com.intellij.codeWithMe.ClientId
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.client.ClientSessionsManager
 import com.intellij.openapi.command.CommandProcessor
 import com.intellij.openapi.command.WriteCommandAction
@@ -38,6 +39,7 @@ import com.sourcegraph.cody.autocomplete.render.CodyAutocompleteBlockElementRend
 import com.sourcegraph.cody.autocomplete.render.CodyAutocompleteElementRenderer
 import com.sourcegraph.cody.autocomplete.render.CodyAutocompleteSingleLineRenderer
 import com.sourcegraph.cody.autocomplete.render.InlayModelUtil.getAllInlaysForEditor
+import com.sourcegraph.cody.autoedit.AutoEditManager
 import com.sourcegraph.cody.statusbar.CodyStatusService.Companion.resetApplication
 import com.sourcegraph.cody.vscode.CancellationToken
 import com.sourcegraph.cody.vscode.InlineCompletionTriggerKind
@@ -231,8 +233,9 @@ class CodyAutocompleteManager {
         }
       }
     } else if (result is AutocompleteEditResult) {
-      // todo: handle auto edits
-      println(result)
+      runInEdt {
+        editor.project?.getService(AutoEditManager::class.java)?.showAutoEdit(editor, result)
+      }
     }
   }
 

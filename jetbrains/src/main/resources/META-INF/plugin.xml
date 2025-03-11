@@ -17,6 +17,7 @@
     </depends>
 
     <extensions defaultExtensionNs="com.intellij">
+        <editorActionHandler action="EditorEscape" implementationClass="com.sourcegraph.cody.autoedit.EscapeHandler" id="templateEscape" order="before hide-hints" />
         <highlightingPassFactory implementation="com.sourcegraph.cody.inspections.CodyFixHighlightPassFactory"
                                  order="last"/>
         <projectService
