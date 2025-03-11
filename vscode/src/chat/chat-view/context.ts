@@ -3,14 +3,10 @@ import * as vscode from 'vscode'
 import {
     type ContextItem,
     ContextItemSource,
-    MAX_BYTES_PER_FILE,
     type PromptString,
     type Result,
-    TokenCounterUtils,
     isAbortError,
     isFileURI,
-    truncateTextNearestLine,
-    uriBasename,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
 import type { VSCodeEditor } from '../../editor/vscode-editor'
@@ -93,160 +89,6 @@ export async function searchSymf(
 
         return (await Promise.all(r0)).flat()
     })
-}
-
-const userAttentionRegexps: RegExp[] = [
-    /editor/,
-    /(open|current|this|entire)\s+file/,
-    /current(ly)?\s+open/,
-    /have\s+open/,
-]
-
-async function getVisibleEditorContext(editor: VSCodeEditor): Promise<ContextItem[]> {
-    return wrapInActiveSpan('chat.context.visibleEditorContext', async () => {
-        const visible = editor.getActiveTextEditorVisibleContent()
-        const fileUri = visible?.fileUri
-        if (!visible?.content.trim() || !fileUri) {
-            return []
-        }
-        return [
-            {
-                type: 'file',
-                content: visible.content,
-                uri: fileUri,
-                range: visible.range,
-                source: ContextItemSource.Priority,
-                size: await TokenCounterUtils.countTokens(visible.content),
-            },
-        ] satisfies ContextItem[]
-    })
-}
-
-export async function getPriorityContext(
-    text: PromptString,
-    editor: VSCodeEditor,
-    retrievedContext: ContextItem[]
-): Promise<ContextItem[]> {
-    return wrapInActiveSpan('chat.context.priority', async () => {
-        const priorityContext: ContextItem[] = []
-        if (needsUserAttentionContext(text)) {
-            // Query refers to current editor
-            priorityContext.push(...(await getVisibleEditorContext(editor)))
-        } else if (needsReadmeContext(editor, text)) {
-            // Query refers to project, so include the README
-            let containsREADME = false
-            for (const contextItem of retrievedContext) {
-                const basename = uriBasename(contextItem.uri)
-                if (
-                    basename.toLocaleLowerCase() === 'readme' ||
-                    basename.toLocaleLowerCase().startsWith('readme.')
-                ) {
-                    containsREADME = true
-                    break
-                }
-            }
-            if (!containsREADME) {
-                priorityContext.push(...(await getReadmeContext()))
-            }
-        }
-        return priorityContext
-    })
-}
-
-function needsUserAttentionContext(input: PromptString): boolean {
-    const inputLowerCase = input.toString().toLowerCase()
-    // If the input matches any of the `editorRegexps` we assume that we have to include
-    // the editor context (e.g., currently open file) to the overall message context.
-    for (const regexp of userAttentionRegexps) {
-        if (inputLowerCase.match(regexp)) {
-            return true
-        }
-    }
-    return false
-}
-
-function needsReadmeContext(editor: VSCodeEditor, input: PromptString): boolean {
-    const stringInput = input.toString().toLowerCase()
-    const question = extractQuestion(stringInput)
-    if (!question) {
-        return false
-    }
-
-    // split input into words, discarding spaces and punctuation
-    const words = stringInput.split(/\W+/).filter(w => w.length > 0)
-    const bagOfWords = Object.fromEntries(words.map(w => [w, true]))
-
-    let containsProjectSignifier = false
-    const workspaceName = vscode.workspace.workspaceFolders?.[0]?.name
-    if (workspaceName && stringInput.includes('@' + workspaceName)) {
-        containsProjectSignifier = true
-    } else {
-        const projectSignifiers = [
-            'project',
-            'repository',
-            'repo',
-            'library',
-            'package',
-            'module',
-            'codebase',
-        ]
-        for (const p of projectSignifiers) {
-            if (bagOfWords[p]) {
-                containsProjectSignifier = true
-                break
-            }
-        }
-    }
-
-    let containsQuestionIndicator = false
-    for (const q of ['what', 'how', 'describe', 'explain']) {
-        if (bagOfWords[q]) {
-            containsQuestionIndicator = true
-            break
-        }
-    }
-
-    return containsQuestionIndicator && containsProjectSignifier
-}
-async function getReadmeContext(): Promise<ContextItem[]> {
-    // global pattern for readme file
-    const readmeGlobalPattern = '{README,README.,readme.,Readm.}*'
-    const readmeUri = (await vscode.workspace.findFiles(readmeGlobalPattern, undefined, 1)).at(0)
-    if (!readmeUri?.path) {
-        return []
-    }
-    const readmeDoc = await vscode.workspace.openTextDocument(readmeUri)
-    const readmeText = readmeDoc.getText()
-    const { truncated: truncatedReadmeText, range } = truncateTextNearestLine(
-        readmeText,
-        MAX_BYTES_PER_FILE
-    )
-    if (truncatedReadmeText.length === 0) {
-        return []
-    }
-
-    return [
-        {
-            type: 'file',
-            uri: readmeUri,
-            content: truncatedReadmeText,
-            range,
-            source: ContextItemSource.Priority,
-            size: await TokenCounterUtils.countTokens(truncatedReadmeText),
-        },
-    ]
-}
-
-function extractQuestion(input: string): string | undefined {
-    input = input.trim()
-    const q = input.indexOf('?')
-    if (q !== -1) {
-        return input.slice(0, q + 1).trim()
-    }
-    if (input.length < 100) {
-        return input
-    }
-    return undefined
 }
 
 export async function retrieveContextGracefully<T>(

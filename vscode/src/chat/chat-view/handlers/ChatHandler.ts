@@ -25,7 +25,7 @@ import { getCategorizedMentions } from '../../../prompt-builder/utils'
 import { ChatBuilder } from '../ChatBuilder'
 import type { ChatControllerOptions } from '../ChatController'
 import { type ContextRetriever, toStructuredMentions } from '../ContextRetriever'
-import { type HumanInput, getPriorityContext } from '../context'
+import type { HumanInput } from '../context'
 import { DefaultPrompter, type PromptInfo } from '../prompt'
 import type { AgentHandler, AgentHandlerDelegate, AgentRequest } from './interfaces'
 
@@ -305,14 +305,8 @@ export async function computeContextAlternatives(
         signal,
         skipQueryRewrite
     )
-    const priorityContextPromise = skipQueryRewrite
-        ? Promise.resolve([])
-        : retrievedContextPromise
-              .then(p => getPriorityContext(text, editor, p))
-              .catch(() => getPriorityContext(text, editor, []))
     const openCtxContextPromise = getContextForChatMessage(text.toString(), signal)
-    const [priorityContext, retrievedContext, openCtxContext] = await Promise.all([
-        priorityContextPromise,
+    const [retrievedContext, openCtxContext] = await Promise.all([
         retrievedContextPromise.catch(e => {
             throw new Error(`Failed to retrieve search context: ${e}`)
         }),
@@ -337,7 +331,6 @@ export async function computeContextAlternatives(
             items: combineContext(
                 await resolvedExplicitMentionsPromise,
                 openCtxContext,
-                priorityContext,
                 retrievedContext
             ),
         },
@@ -350,8 +343,7 @@ export async function computeContextAlternatives(
 function combineContext(
     explicitMentions: ContextItem[],
     openCtxContext: ContextItemOpenCtx[],
-    priorityContext: ContextItem[],
     retrievedContext: ContextItem[]
 ): ContextItem[] {
-    return [explicitMentions, openCtxContext, priorityContext, retrievedContext].flat()
+    return [explicitMentions, openCtxContext, retrievedContext].flat()
 }
