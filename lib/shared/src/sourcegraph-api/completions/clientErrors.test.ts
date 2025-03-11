@@ -60,7 +60,8 @@ describe('ClientErrorsTransformer', () => {
 
         it('transforms context deadline exceeded error', () => {
             const errorMessage = 'Something went wrong: context deadline exceeded'
-            const simplifiedErrorMessage = 'Context deadline exceeded. Try again with a smaller context.'
+            const simplifiedErrorMessage =
+                'Context deadline exceeded. Please try again with a smaller context.'
             expect(ClientErrorsTransformer.transform(errorMessage)).toContain(simplifiedErrorMessage)
         })
 
