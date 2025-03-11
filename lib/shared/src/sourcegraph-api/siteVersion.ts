@@ -173,6 +173,9 @@ export function inferCodyApiVersion(version: string, isDotCom: boolean): CodyApi
 
     // 5.4.0+ supports api-version=1
     // 5.8.0+ supports api-version=2
+    if (parsedVersion && semver.gte(parsedVersion, '6.2.0')) {
+        return 8
+    }
     if (parsedVersion && semver.ltr(parsedVersion, '5.8.0')) {
         return 1
     }
@@ -186,12 +189,14 @@ export function inferCodyApiVersion(version: string, isDotCom: boolean): CodyApi
     // deployments that release less frequently.
     if (parsedVersion === null) {
         const date = parseDateFromPreReleaseVersion(version)
-        if (date && date >= new Date('2024-09-11')) {
+        if (date && date >= new Date('2025-03-11')) {
             return 8
+        }
+        if (date && date >= new Date('2024-09-11')) {
+            return 5
         }
         return 1
     }
-
 
     // Use minimum version for all other cases instead of 0
     return DefaultMinimumAPIVersion

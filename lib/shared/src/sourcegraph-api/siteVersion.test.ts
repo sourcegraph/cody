@@ -33,14 +33,12 @@ describe('inferCodyApiVersion', () => {
         // dotcom
         expect(inferCodyApiVersion('314951_2025-03-07_6.1-abeeb1a5e10d', true)).toBe(8)
 
-        // TODO: Erik believes these should return 8, but they don't do that anymore
-        // after https://github.com/sourcegraph/cody/pull/7365.
         expect(inferCodyApiVersion('6.1.0', false)).toBe(5)
-        expect(inferCodyApiVersion('6.2.0', false)).toBe(5)
+        expect(inferCodyApiVersion('6.2.0', false)).toBe(8)
         // branch deployment
-        expect(inferCodyApiVersion('6.1.x_313350_2025-02-25_6.1-63a41475e780', false)).toBe(8)
+        expect(inferCodyApiVersion('6.1.x_313350_2025-03-11_6.1-63a41475e780', false)).toBe(8)
         // main deployment
-        expect(inferCodyApiVersion('315302_2025-03-10_6.1-9994f058e2af', false)).toBe(8)
+        expect(inferCodyApiVersion('315302_2025-03-11_6.1-9994f058e2af', false)).toBe(8)
     })
 
     test('returns latestCodyClientConfig for local dev', () => {
