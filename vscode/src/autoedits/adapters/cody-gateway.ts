@@ -25,7 +25,8 @@ export class CodyGatewayAdapter implements AutoeditsModelAdapter {
                 options.url,
                 JSON.stringify(body),
                 apiKey,
-                headers
+                headers,
+                options.startTime
             )
 
             let prediction: string

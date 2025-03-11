@@ -19,6 +19,10 @@ export interface ModelResponse {
      * This is propagated to the analytics logger for debugging purposes
      */
     responseBody?: any
+    /**
+     * Optional timing information for the request
+     */
+    timingInfo?: any
 }
 
 export interface AutoeditsModelAdapter {
@@ -48,4 +52,5 @@ export interface AutoeditModelOptions {
     codeToRewrite: string
     userId: string | null
     isChatModel: boolean
+    startTime?: number
 }

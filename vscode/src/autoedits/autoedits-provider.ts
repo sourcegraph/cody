@@ -258,11 +258,13 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                 'provideInlineCompletionItems',
                 'Calculating prediction from getPrediction...'
             )
+            const predictionStartTime = performance.now()
             const predictionResult = await this.getPrediction({
                 document,
                 position,
                 prompt,
                 codeToReplaceData,
+                startTime: predictionStartTime,
             })
 
             if (abortSignal?.aborted) {
@@ -467,11 +469,13 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
         position,
         codeToReplaceData,
         prompt,
+        startTime,
     }: {
         document: vscode.TextDocument
         position: vscode.Position
         codeToReplaceData: CodeToReplaceData
         prompt: AutoeditsPrompt
+        startTime: number
     }): Promise<ModelResponse | undefined> {
         if (autoeditsProviderConfig.isMockResponseFromCurrentDocumentTemplateEnabled) {
             const responseMetadata = extractAutoEditResponseFromCurrentDocumentCommentTemplate(
@@ -502,6 +506,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
             codeToRewrite: codeToReplaceData.codeToRewrite,
             userId: (await currentResolvedConfig()).clientState.anonymousUserID,
             isChatModel: autoeditsProviderConfig.isChatModel,
+            startTime,
         })
     }
 

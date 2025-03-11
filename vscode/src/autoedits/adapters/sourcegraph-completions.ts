@@ -18,6 +18,7 @@ export class SourcegraphCompletionsAdapter implements AutoeditsModelAdapter {
 
     async getModelResponse(option: AutoeditModelOptions): Promise<ModelResponse> {
         try {
+            const startTime = option.startTime !== undefined ? option.startTime : performance.now()
             const maxTokens = getMaxOutputTokensForAutoedits(option.codeToRewrite)
             const messages: Message[] = getSourcegraphCompatibleChatPrompt({
                 systemMessage: option.prompt.systemMessage,
@@ -78,6 +79,14 @@ export class SourcegraphCompletionsAdapter implements AutoeditsModelAdapter {
                 }
             }
 
+            const endTime = performance.now()
+            const timingInfo = {
+                totalTime: endTime - startTime,
+                requestStart: startTime,
+                requestEnd: endTime,
+                note: 'Timing for Sourcegraph Completions adapter',
+            }
+
             return {
                 prediction,
                 responseHeaders,
@@ -85,6 +94,7 @@ export class SourcegraphCompletionsAdapter implements AutoeditsModelAdapter {
                 requestUrl,
                 requestBody,
                 responseBody,
+                timingInfo,
             }
         } catch (error) {
             autoeditsOutputChannelLogger.logError(

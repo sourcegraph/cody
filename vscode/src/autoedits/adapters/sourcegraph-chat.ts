@@ -8,6 +8,7 @@ export class SourcegraphChatAdapter implements AutoeditsModelAdapter {
 
     async getModelResponse(option: AutoeditModelOptions): Promise<ModelResponse> {
         try {
+            const startTime = option.startTime !== undefined ? option.startTime : performance.now()
             const maxTokens = getMaxOutputTokensForAutoedits(option.codeToRewrite)
             const messages: Message[] = getSourcegraphCompatibleChatPrompt({
                 systemMessage: option.prompt.systemMessage,
@@ -37,11 +38,20 @@ export class SourcegraphChatAdapter implements AutoeditsModelAdapter {
                 }
             }
 
+            const endTime = performance.now()
+            const timingInfo = {
+                totalTime: endTime - startTime,
+                requestStart: startTime,
+                requestEnd: endTime,
+                note: 'Timing for Sourcegraph Chat adapter',
+            }
+
             // For direct API calls without HTTP headers, we return an empty object
             return {
                 prediction: accumulated,
                 responseHeaders: {},
                 requestUrl: option.url,
+                timingInfo,
             }
         } catch (error) {
             autoeditsOutputChannelLogger.logError(

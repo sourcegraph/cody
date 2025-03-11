@@ -31,7 +31,9 @@ export class OpenAIAdapter implements AutoeditsModelAdapter {
                         type: 'text',
                     },
                 }),
-                apiKey
+                apiKey,
+                {},
+                options.startTime
             )
 
             return {

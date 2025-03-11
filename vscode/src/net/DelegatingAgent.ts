@@ -1,9 +1,12 @@
+import * as crypto from 'node:crypto'
+import { EventEmitter } from 'node:events'
 import * as fs from 'node:fs'
 import type { Agent } from 'node:http'
 import * as http from 'node:http'
 import * as https from 'node:https'
 import * as os from 'node:os'
 import * as path from 'node:path'
+import { performance } from 'node:perf_hooks'
 import type stream from 'node:stream'
 import * as tls from 'node:tls'
 import * as url from 'node:url'
@@ -31,9 +34,13 @@ import type { WritableDeep } from 'type-fest'
 import type * as vscode from 'vscode'
 import { getConfiguration } from '../configuration'
 import { CONFIG_KEY } from '../configuration-keys'
+import { NetworkTimingCollector, type RequestPhaseTimings } from './NetworkTiming'
 import { bypassVSCodeSymbol } from './net.patch'
 
 const TIMEOUT = 60_000
+
+// Add a new event emitter for network events
+export const networkEvents = new EventEmitter()
 
 export class DelegatingAgent extends AgentBase implements vscode.Disposable {
     [bypassVSCodeSymbol](): boolean {
@@ -47,6 +54,7 @@ export class DelegatingAgent extends AgentBase implements vscode.Disposable {
     private disposables: vscode.Disposable[] = []
     private latestConfig: ResolvedSettings | null = null // we need sync access for VSCode to work
     private agentCache: Map<string, AgentBase | http.Agent | https.Agent> = new Map()
+    private requestTimings = new Map<string, RequestPhaseTimings>()
 
     private constructor(private readonly ctx: { noxide?: Noxide | undefined }) {
         super()
@@ -127,13 +135,38 @@ export class DelegatingAgent extends AgentBase implements vscode.Disposable {
 
     async connect(
         req: http.ClientRequest & https.RequestOptions,
-        options: AgentConnectOpts & { _vscode?: { utils: number } }
+        options: AgentConnectOpts & { _vscode?: { utils: number }; agentOptions?: any }
     ): Promise<stream.Duplex | Agent> {
+        // console.log('connect')
         const config = this.latestConfig
         if (!config) {
             // This somehow means connect was called before we were initialized
             throw new Error('Connect called before agent was initialized')
         }
+
+        // Use provided request ID from fetch wrapper if available, otherwise generate a new one
+        const requestId = (options as any).headers?.['x-request-id']?.[0] || crypto.randomUUID()
+
+        // Start timing the request
+        const timing = NetworkTimingCollector.startTiming(
+            requestId,
+            `${options.secureEndpoint ? 'https' : 'http'}://${options.host}${
+                (options as any).path || '/'
+            }`,
+            req.method || 'GET'
+        )
+
+        // Set bypass info
+        timing.bypassedVSCode = config.bypassVSCode
+
+        // Store timing in the agent for access in callbacks
+        this.requestTimings.set(requestId, timing)
+
+        // Add timing to request object for access in other components
+        ;(req as any)._timingRequestId = requestId
+
+        // DNS resolution timing starts
+        timing.dnsLookupStart = performance.now()
 
         const reqOptions = {
             keepAlive: false, // <-- this CAN NOT be enabled safely due to needing considerable re-work of reliance on 'close' events etc.
@@ -224,6 +257,108 @@ export class DelegatingAgent extends AgentBase implements vscode.Disposable {
         if (agent !== cachedAgent) {
             this.agentCache.set(agentId, agent)
         }
+
+        // When we have the agent, emit event for DNS resolution completed
+        timing.dnsLookupEnd = performance.now()
+        timing.dnsLookupTime = timing.dnsLookupEnd - timing.dnsLookupStart
+        networkEvents.emit('dnsResolved', requestId, timing)
+
+        // Log agent type for debugging
+        // console.log('Agent type:', agent.constructor?.name, Object.getOwnPropertyNames(agent))
+
+        // Add instrumentation to agent
+        if (
+            (agent as any) instanceof http.Agent ||
+            (agent as any) instanceof https.Agent ||
+            (agent && typeof agent === 'object' && 'createConnection' in agent)
+        ) {
+            const originalCreateConnection = (agent as any).createConnection
+            if (originalCreateConnection && typeof originalCreateConnection === 'function') {
+                // console.log('Instrumenting createConnection method')
+                ;(agent as any).createConnection = function (
+                    options: any,
+                    callback: (...args: any[]) => void
+                ) {
+                    // console.log('CreateConnection was called with requestId:', requestId)
+                    const timing = NetworkTimingCollector.getTiming(requestId)
+                    if (timing) {
+                        timing.tcpConnectionStart = performance.now()
+                    }
+
+                    const socket = originalCreateConnection.call(this, options, (...args: any[]) => {
+                        console.log('Connection callback executed for requestId:', requestId)
+                        const timing = NetworkTimingCollector.getTiming(requestId)
+                        if (timing) {
+                            timing.tcpConnectionEnd = performance.now()
+                            timing.tcpConnectionTime =
+                                timing.tcpConnectionEnd - timing.tcpConnectionStart!
+                            networkEvents.emit('connected', requestId, timing)
+
+                            // For TLS connections
+                            if (options.secureEndpoint) {
+                                timing.tlsHandshakeStart = performance.now()
+                                socket.once('secureConnect', () => {
+                                    console.log('Socket secureConnect fired for requestId:', requestId)
+                                    if (timing) {
+                                        timing.tlsHandshakeEnd = performance.now()
+                                        timing.tlsHandshakeTime =
+                                            timing.tlsHandshakeEnd - timing.tlsHandshakeStart!
+                                        networkEvents.emit('tlsHandshakeCompleted', requestId, timing)
+                                    }
+                                })
+                            }
+
+                            // Track time to first byte
+                            timing.ttfbStart = performance.now()
+                            socket.once('data', () => {
+                                console.log('Socket data event fired for requestId:', requestId)
+                                if (timing) {
+                                    timing.ttfbEnd = performance.now()
+                                    timing.ttfbTime = timing.ttfbEnd - timing.ttfbStart!
+                                    networkEvents.emit('firstByte', requestId, timing)
+                                }
+                            })
+                        }
+                        callback(...args)
+                    })
+
+                    return socket
+                }
+            } else {
+                console.log('No createConnection method found on agent or it is not a function')
+            }
+        }
+
+        // Alternative approach: hook request callback
+        if (req && typeof req.once === 'function') {
+            // console.log('Adding socket event listener to request')
+            req.once('socket', (socket: any) => {
+                // console.log('Socket assigned to request:', requestId)
+                if (socket && timing) {
+                    // For TLS connections
+                    if (options.secureEndpoint) {
+                        timing.tlsHandshakeStart = performance.now()
+                        socket.once('secureConnect', () => {
+                            // console.log('Socket secureConnect fired via request hook:', requestId)
+                            timing.tlsHandshakeEnd = performance.now()
+                            timing.tlsHandshakeTime = timing.tlsHandshakeEnd - timing.tlsHandshakeStart!
+                            networkEvents.emit('tlsHandshakeCompleted', requestId, timing)
+                        })
+                    }
+
+                    // Track time to first byte
+                    timing.ttfbStart = performance.now()
+                    socket.once('data', () => {
+                        // console.log('Socket data event fired via request hook:', requestId)
+                        timing.ttfbEnd = performance.now()
+                        timing.ttfbTime = timing.ttfbEnd - timing.ttfbStart!
+                        networkEvents.emit('firstByte', requestId, timing)
+                    })
+                }
+            })
+        }
+
+        // Return the agent directly - this is the original behavior
         return agent
     }
 
@@ -336,6 +471,20 @@ export class DelegatingAgent extends AgentBase implements vscode.Disposable {
             logError('DelegatingProxy', 'Could not retrieve noxide CA certs', e)
         }
         return stringCerts
+    }
+
+    // Add method to get timing data
+    getRequestTiming(requestId: string): RequestPhaseTimings | undefined {
+        return this.requestTimings.get(requestId)
+    }
+
+    // Add method to finalize timing data
+    finalizeRequestTiming(requestId: string, statusCode?: number): RequestPhaseTimings | undefined {
+        const timing = NetworkTimingCollector.finalizeTiming(requestId, statusCode)
+        if (timing) {
+            this.requestTimings.delete(requestId)
+        }
+        return timing
     }
 }
 

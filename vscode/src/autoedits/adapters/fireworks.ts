@@ -25,7 +25,9 @@ export class FireworksAdapter implements AutoeditsModelAdapter {
             const { data, requestHeaders, responseHeaders, url } = await getModelResponse(
                 option.url,
                 body,
-                apiKey
+                apiKey,
+                {},
+                option.startTime
             )
 
             let prediction: string
