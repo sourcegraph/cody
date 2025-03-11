@@ -1,9 +1,13 @@
-// Limitations:
+// Caveats:
+// - The object iteration order of versioned fields (versionGte) is different depending on
+//   whether the predicate passed or failed.
 // - Does not support fragments (for example "... on FileChunkContext") yet.
 // - Only supports a subset of types for early configuration, for example, not [ID!]! which getCodyContext uses.
 // - Does not support mutations yet.
 
+import assert from 'node:assert'
 // A field with a primitive type or an anonymous object type.
+import _ from 'lodash'
 import semver from 'semver'
 
 export interface ValueSpec<Name extends string, T> {
@@ -329,10 +333,10 @@ function serializeField<T extends SomeField>(
     formals: Formal<any, any>[],
     defaults: DefaultValueSetter[],
     path: FieldPath
-): void {
+): boolean {
     const field = path.field
     switch (field.kind) {
-        case 'args':
+        case 'args': {
             buffer.push(field.name, '(')
             for (const arg of field.args) {
                 buffer.push(arg.name, ':')
@@ -358,8 +362,13 @@ function serializeField<T extends SomeField>(
                 buffer.push(',')
             }
             buffer.push(')')
-            serializeField(realVersion, buffer, formals, defaults, { field: field.field, parent: path })
-            break
+            const subExpr = serializeField(realVersion, buffer, formals, defaults, {
+                field: field.field,
+                parent: path,
+            })
+            assert(subExpr, 'arguments must modify some realized field expression')
+            return true
+        }
         case 'array':
         case 'object':
             if (path.parent?.field.kind !== 'args') {
@@ -371,29 +380,42 @@ function serializeField<T extends SomeField>(
             }
             buffer.push('{')
             for (const child of field.fields) {
-                serializeField(realVersion, buffer, formals, defaults, { field: child, parent: path })
-                buffer.push(',')
+                if (
+                    serializeField(realVersion, buffer, formals, defaults, {
+                        field: child,
+                        parent: path,
+                    })
+                ) {
+                    buffer.push(',')
+                }
             }
             buffer.push('}')
-            break
+            return true
         case 'value':
             if (path.parent?.field.kind !== 'args') {
                 buffer.push(field.name)
             }
-            break
-        case 'labeled':
+            return true
+        case 'labeled': {
             console.assert(path.parent?.field.kind !== 'args') // The SomeXField types prevent this, but we rely on it here.
             buffer.push(field.name, ':')
-            serializeField(realVersion, buffer, formals, defaults, { field: field.field, parent: path })
-            break
+            const subExpr = serializeField(realVersion, buffer, formals, defaults, {
+                field: field.field,
+                parent: path,
+            })
+            assert(subExpr, 'labeled fields must label some realized field expression')
+            return true
+        }
         case 'versionPredicate':
             console.assert(path.parent?.field.kind !== 'args') // The SomeXField types prevent this, but we rely on it here.
             if (realVersion && semver.lt(realVersion, field.version)) {
                 defaults.push({ path, value: field.defaultValue })
-                break
+                return false
             }
-            serializeField(realVersion, buffer, formals, defaults, { field: field.field, parent: path })
-            break
+            return serializeField(realVersion, buffer, formals, defaults, {
+                field: field.field,
+                parent: path,
+            })
         default:
             throw new Error('unreachable')
     }
@@ -410,18 +432,114 @@ export type PreparedQuery<T extends SomeFields> = {
     defaults: DefaultValueSetter[]
 }
 
+function pathEntriesTopDown(path: FieldPath): SomeField[] {
+    const result: SomeField[] = []
+    for (let step = path; step; step = step.parent) {
+        result.push(step.field)
+    }
+    result.reverse()
+    return result
+}
+
+// Converts a FieldPath into a list of property names. The list of property
+// names may be smaller than the path itself. For example, a version-predicate
+// labeled object field will have three steps--version predicate, label, object
+// --but only one property name (specified by the label.)
+function pathToPropertyNames(path: FieldPath): string[] {
+    const names: string[] = []
+    let labeled = false // this flag, if set, skips names until we have seen an actual object/array/etc.
+    for (const step of pathEntriesTopDown(path)) {
+        console.log(`considering path ${step.kind} ${step.name}`)
+        switch (step.kind) {
+            case 'args':
+                break
+            case 'array':
+            case 'object':
+            case 'value':
+                if (!labeled) {
+                    names.push(step.name)
+                }
+                labeled = false
+                break
+            case 'labeled':
+                if (!labeled) names.push(step.name)
+                labeled = true
+                break
+            case 'versionPredicate':
+                names.push(step.name)
+                break
+            default:
+                throw new Error('unreachable')
+        }
+    }
+    return names
+}
+
 // Visible for testing. Flattens a list of defaults into readable path name, value pairs.
 export function flattenDefaults(defaults: DefaultValueSetter[]): Record<string, any> {
     return Object.fromEntries(
-        defaults.map(d => {
-            const path = []
-            for (let e: FieldPath | undefined = d.path; e; e = e.parent) {
-                path.push(e.field.name)
-            }
-            path.reverse()
-            return [path.join('.'), d.value]
-        })
+        defaults.map(entry => [pathToPropertyNames(entry.path).join('.'), entry.value])
     )
+}
+
+// Applies default values for missing fields in the given object. Use `prepare`
+// to produce the defaults for a specific product version, then run a GraphQL
+// query and use `applyDefaults` to "update" the result with default values
+// for the missing fields. This mutates the object in place.
+export function applyDefaults(xs: any, defaults: DefaultValueSetter[]): any {
+    for (const entry of defaults) {
+        applyDefault(xs, pathEntriesTopDown(entry.path))
+    }
+    return xs
+}
+
+function applyDefault(xs: any, steps: SomeField[]): void {
+    let obj = xs
+    let labeled = false
+    for (const [i, step] of steps.entries()) {
+        switch (step.kind) {
+            case 'args':
+                break
+            case 'array': {
+                if (!labeled) {
+                    obj = obj[step.name]
+                }
+                labeled = false
+                assert(Array.isArray(obj), 'expected array')
+                const remaining = steps.slice(i + 1)
+                for (const arrayEntry of obj) {
+                    console.log(
+                        `XXX debug applying ${JSON.stringify(remaining)} to ${JSON.stringify(
+                            arrayEntry
+                        )}`
+                    )
+                    applyDefault(arrayEntry, remaining)
+                    console.log(`value is now ${JSON.stringify(arrayEntry)}`)
+                }
+                return
+            }
+            case 'object':
+                if (!labeled) {
+                    obj = obj[step.name]
+                }
+                labeled = false
+                break
+            // biome-ignore lint/suspicious/noFallthroughSwitchClause: fall through does not happen because assert(false, ...) does not return normally
+            case 'value':
+                assert(false, 'should not be reached because there is no default value to apply here')
+            case 'labeled':
+                obj = obj[step.name]
+                labeled = true
+                break
+            case 'versionPredicate':
+                // Version predicates are only present when we *failed* the version check.
+                assert(!labeled, 'labels must be bound more tightly than version predicates')
+                obj[step.name] = _.cloneDeep(step.defaultValue)
+                return
+            default:
+                throw new Error('unreachable')
+        }
+    }
 }
 
 // Prepares a query by producing the textual serialization of the query.

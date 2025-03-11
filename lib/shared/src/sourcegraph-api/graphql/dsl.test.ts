@@ -4,6 +4,7 @@ import {
     type Arguments,
     type Realize,
     type RealizeField,
+    applyDefaults,
     args,
     array,
     both,
@@ -169,6 +170,32 @@ describe('GraphQL DSL', () => {
         // Suppress warning about unused variables; we are testing the type checker.
         expect(result)
         expect(flattenDefaults(p.defaults)).toEqual({ promptTags: { nodes: [] } })
+    })
+
+    test('default values can be filled in', () => {
+        const query = args(
+            nested(
+                'promptTags',
+                array('nodes', versionGte('5.11.0', 'unknown', q.string('id')), q.string('name'))
+            ),
+            constant('first', 999)
+        )
+        const r = prepare('5.11.0', query)
+        expect(r.text).toBe('query(){promptTags(first:999,){nodes{id,name,},}}')
+        expect(flattenDefaults(r.defaults)).toStrictEqual({})
+        const p = prepare('5.10.0', query)
+        expect(p.text).toBe('query(){promptTags(first:999,){nodes{name,},}}')
+        expect(flattenDefaults(p.defaults)).toEqual({ 'promptTags.nodes.id': 'unknown' })
+        expect(
+            applyDefaults({ promptTags: { nodes: [{ name: 'foo' }, { name: 'bar' }] } }, p.defaults)
+        ).toEqual({
+            promptTags: {
+                nodes: [
+                    { id: 'unknown', name: 'foo' },
+                    { id: 'unknown', name: 'bar' },
+                ],
+            },
+        })
     })
 
     test('repository query', () => {
