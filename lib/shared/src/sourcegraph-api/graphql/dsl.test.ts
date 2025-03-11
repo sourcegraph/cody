@@ -10,6 +10,7 @@ import {
     collectFormalList,
     collectFormals,
     constant,
+    flattenDefaults,
     formal,
     labeled,
     nested,
@@ -20,11 +21,11 @@ import {
 
 describe('GraphQL DSL', () => {
     test('top-level arguments appear in formals', () => {
-        let test = args(nested('foo', q.string('baz')), formal.int('bar'))
-        let fs: Arguments<typeof test> = collectFormals(test) // [formal.int('bar')]
+        const test = args(nested('foo', q.string('baz')), formal.int('bar'))
+        const fs: Arguments<typeof test> = collectFormals(test) // [formal.int('bar')]
         expect(fs).toEqual([formal.int('bar')])
-        let as: ActualTypes<Arguments<typeof test>> = [7]
-        let result: Realize<typeof test.field.fields> = {
+        const as: ActualTypes<Arguments<typeof test>> = [7]
+        const result: Realize<typeof test.field.fields> = {
             baz: 'hello',
         }
         // suppress warning about unused results
@@ -32,11 +33,11 @@ describe('GraphQL DSL', () => {
     })
 
     test('nested arguments appear in formals', () => {
-        let test = nested('foo', nested('bar', args(q.string('baz'), formal.int('bar'))))
-        let fs: Arguments<typeof test> = collectFormals(test)
+        const test = nested('foo', nested('bar', args(q.string('baz'), formal.int('bar'))))
+        const fs: Arguments<typeof test> = collectFormals(test)
         expect(fs).toEqual([formal.int('bar')])
-        let as: ActualTypes<Arguments<typeof test>> = [7]
-        let result: Realize<typeof test.fields> = {
+        const as: ActualTypes<Arguments<typeof test>> = [7]
+        const result: Realize<typeof test.fields> = {
             bar: { baz: 'hello' },
         }
         // Suppress warning about unused variables; we are testing the type checker.
@@ -44,11 +45,11 @@ describe('GraphQL DSL', () => {
     })
 
     test('labels obliterate the intrinsic field name', () => {
-        let test = nested('foo', labeled('qux', nested('bar', q.boolean('baz'))))
-        let fs: Arguments<typeof test> = collectFormals(test)
+        const test = nested('foo', labeled('qux', nested('bar', q.boolean('baz'))))
+        const fs: Arguments<typeof test> = collectFormals(test)
         expect(fs).toEqual([])
-        let as: ActualTypes<Arguments<typeof test>> = []
-        let result: Realize<typeof test.fields> = {
+        const as: ActualTypes<Arguments<typeof test>> = []
+        const result: Realize<typeof test.fields> = {
             // Note, this field is the renamed qux and not bar.
             qux: { baz: false },
         }
@@ -57,17 +58,17 @@ describe('GraphQL DSL', () => {
     })
 
     test('constants can be mixed with variable arguments and primitive fields', () => {
-        let test = args(
+        const test = args(
             q.boolean('foo'),
             constant('bar', 7),
             formal.nullableString('baz'),
             constant('qux', false),
             formal.int('quux')
         )
-        let fs: Arguments<typeof test> = collectFormals(test)
+        const fs: Arguments<typeof test> = collectFormals(test)
         expect(fs.length).toEqual(2)
-        let as: ActualTypes<Arguments<typeof test>> = ['hello, world', 42]
-        let result: Realize<(typeof test)[]> = {
+        const as: ActualTypes<Arguments<typeof test>> = ['hello, world', 42]
+        const result: Realize<(typeof test)[]> = {
             foo: true,
         }
         // Suppress warning about unused variables; we are testing the type checker.
@@ -78,17 +79,17 @@ describe('GraphQL DSL', () => {
     })
 
     test('constants can be mixed with variable arguments and nested fields', () => {
-        let test = args(
+        const test = args(
             nested('foo', q.boolean('foobar')),
             constant('bar', 7),
             formal.nullableString('baz'),
             constant('qux', false),
             formal.int('quux')
         )
-        let fs: Arguments<typeof test> = collectFormals(test)
+        const fs: Arguments<typeof test> = collectFormals(test)
         expect(fs.length).toEqual(2)
-        let as: ActualTypes<Arguments<typeof test>> = ['hello, world', 42]
-        let result: Realize<(typeof test)[]> = {
+        const as: ActualTypes<Arguments<typeof test>> = ['hello, world', 42]
+        const result: Realize<(typeof test)[]> = {
             foo: { foobar: true },
         }
         // Suppress warning about unused variables; we are testing the type checker.
@@ -99,15 +100,15 @@ describe('GraphQL DSL', () => {
     })
 
     test('arguments can be nested', () => {
-        let test = args(
+        const test = args(
             array('foo', args(q.string('bar'), constant('b', false), formal.nullableString('a'))),
             formal.int('a'),
             formal.int('b')
         )
-        let fs: Arguments<typeof test> = collectFormals(test)
+        const fs: Arguments<typeof test> = collectFormals(test)
         expect(fs.length).toEqual(3)
-        let as: ActualTypes<Arguments<typeof test>> = [7, 42, 'baz']
-        let result: Realize<(typeof test)[]> = {
+        const as: ActualTypes<Arguments<typeof test>> = [7, 42, 'baz']
+        const result: Realize<(typeof test)[]> = {
             foo: [{ bar: 'hello' }, { bar: 'world' }],
         }
         // Suppress warning about unused variables; we are testing the type checker.
@@ -118,25 +119,25 @@ describe('GraphQL DSL', () => {
     })
 
     test('string constants are quoted', () => {
-        let test = args(q.string('foo'), constant('bar', 'hello, "world!"'))
+        const test = args(q.string('foo'), constant('bar', 'hello, "world!"'))
         expect(prepare('0.0.0', test).text).toEqual('query(){foo(bar:"hello, \\"world!\\"",)}')
     })
 
     test('queries can be combined', () => {
-        let repositories = args(
+        const repositories = args(
             array('repositories', q.string('id'), q.string('name')),
             formal.int('first'),
             formal.nullableString('after'),
             formal.nullableString('query')
         )
-        let userInfo = nested('currentUser', q.string('id'), q.boolean('siteAdmin'))
-        let merged = both(repositories, userInfo)
+        const userInfo = nested('currentUser', q.string('id'), q.boolean('siteAdmin'))
+        const merged = both(repositories, userInfo)
         expect(collectFormalList(merged)).toEqual([
             formal.int('first'),
             formal.nullableString('after'),
             formal.nullableString('query'),
         ])
-        let result: Realize<typeof merged> = {
+        const result: Realize<typeof merged> = {
             repositories: [
                 { id: 'foo', name: 'bar' },
                 { id: 'baz', name: 'quux' },
@@ -151,7 +152,7 @@ describe('GraphQL DSL', () => {
     })
 
     test('fields can be predicated on the site version', () => {
-        let versionQuery = versionGte(
+        const versionQuery = versionGte(
             '5.11.0',
             { nodes: [] },
             args(
@@ -161,17 +162,17 @@ describe('GraphQL DSL', () => {
         )
         const r = prepare('5.11.0', versionQuery)
         expect(r.text).toBe('query(){promptTags(first:999,){nodes{id,name,},}}')
-        expect(r.defaults).toStrictEqual({})
+        expect(flattenDefaults(r.defaults)).toStrictEqual({})
         const p = prepare('5.10.0', versionQuery)
         expect(p.text).toBeNull()
         const result: Realize<typeof p.query> = { promptTags: { nodes: [{ id: 'foo', name: 'bar' }] } }
         // Suppress warning about unused variables; we are testing the type checker.
         expect(result)
-        expect(p.defaults).toEqual({ promptTags: { nodes: [] } })
+        expect(flattenDefaults(p.defaults)).toEqual({ promptTags: { nodes: [] } })
     })
 
     test('repository query', () => {
-        let repositories = args(
+        const repositories = args(
             nested(
                 'repositories',
                 array('nodes', q.string('id'), q.string('name')),
@@ -183,18 +184,18 @@ describe('GraphQL DSL', () => {
         )
 
         type RepositoriesParams = Arguments<typeof repositories>
-        let fs: RepositoriesParams = collectFormals(repositories)
+        const fs: RepositoriesParams = collectFormals(repositories)
         expect(fs).toEqual([
             formal.int('first'),
             formal.nullableString('after'),
             formal.nullableString('query'),
             formal.nullableString('format'),
         ])
-        let as: ActualTypes<RepositoriesParams> = [7, 'foo', 'bar', 'hello']
+        const as: ActualTypes<RepositoriesParams> = [7, 'foo', 'bar', 'hello']
         // Suppress warning about unused variables; we are testing the type checker.
         expect(as)
 
-        let repositoriesResult: RealizeField<typeof repositories> = {
+        const repositoriesResult: RealizeField<typeof repositories> = {
             nodes: [
                 {
                     id: 'fuhtnesuoehtnueo',
