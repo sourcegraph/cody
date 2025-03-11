@@ -154,6 +154,15 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
     ): Promise<AutoeditsResult | null> {
         let stopLoading: (() => void) | undefined
 
+        if (inlineCompletionContext.selectedCompletionInfo !== undefined) {
+            // User has a currently selected item in the autocomplete widget.
+            // Right now we avoid suggesting auto-edits when this is the case, otherwise
+            // we may override the users' selection and make an undesirable change.
+            // TODO: We should consider the optimal solution here, it may be better to show an
+            // inline completion (not an edit) that includes the currently selected item.
+            return null
+        }
+
         try {
             const startedAt = getTimeNowInMillis()
             const controller = new AbortController()
