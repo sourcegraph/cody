@@ -16,7 +16,6 @@ import { View } from './types'
 
 import { type AuthenticatedAuthStatus, CodyIDE, isDefined } from '@sourcegraph/cody-shared'
 import { type FC, Fragment, forwardRef, memo, useCallback, useMemo, useState } from 'react'
-import { Kbd } from '../components/Kbd'
 import { Tooltip, TooltipContent, TooltipTrigger } from '../components/shadcn/ui/tooltip'
 import { useConfig } from '../utils/useConfig'
 
@@ -132,13 +131,7 @@ export const TabsBar = memo<TabsBarProps>(props => {
                             Icon={MessageSquarePlusIcon}
                             title="New Chat"
                             IDE={IDE}
-                            tooltipExtra={
-                                <>
-                                    {IDE === CodyIDE.VSCode && (
-                                        <Kbd macOS="shift+opt+l" linuxAndWindows="shift+alt+l" />
-                                    )}
-                                </>
-                            }
+                            tooltipExtra={IDE === CodyIDE.VSCode && '(⇧⌥/)'}
                             view={View.Chat}
                             onClick={() =>
                                 handleSubActionClick({
@@ -197,7 +190,6 @@ export const TabsBar = memo<TabsBarProps>(props => {
         </div>
     )
 }, isEqual)
-
 interface ActionButtonWithConfirmationProps {
     title: string
     Icon: IconComponent
