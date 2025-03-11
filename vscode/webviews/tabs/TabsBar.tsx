@@ -132,7 +132,6 @@ export const TabsBar = memo<TabsBarProps>(props => {
                             Icon={MessageSquarePlusIcon}
                             title="New Chat"
                             IDE={IDE}
-                            alwaysShowTitle={true}
                             tooltipExtra={
                                 <>
                                     {IDE === CodyIDE.VSCode && (

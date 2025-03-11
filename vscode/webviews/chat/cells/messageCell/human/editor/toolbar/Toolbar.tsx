@@ -5,6 +5,7 @@ import {
     type ContextItemMedia,
     type Model,
     ModelTag,
+    isMacOS,
 } from '@sourcegraph/cody-shared'
 import clsx from 'clsx'
 import { type FunctionComponent, useCallback, useEffect, useMemo, useRef } from 'react'
@@ -94,8 +95,9 @@ export const Toolbar: FunctionComponent<{
     // Set up keyboard event listener
     useEffect(() => {
         const handleKeyboardShortcuts = (event: KeyboardEvent) => {
-            // Model selector (⌘+M)
-            if (event.metaKey && event.key.toLowerCase() === 'm') {
+            // Model selector (⌘M on Mac, ctrl+M on other platforms)
+            // metaKey is set to cmd(⌘) on macOS, and windows key on other platforms
+            if ((isMacOS() ? event.metaKey : event.ctrlKey) && event.key.toLowerCase() === 'm') {
                 event.preventDefault()
                 modelSelectorRef?.current?.open()
             }
