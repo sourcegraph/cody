@@ -50,21 +50,40 @@ export namespace ClientErrorsTransformer {
 
 const handleAUPTransform: ErrorTransformer = error => {
     if (error.includes('AUP')) {
-        return error.split('"')[3]
+        // Get all strings between quotes
+        const matches = error.match(/"([^"]*)"/g)
+        if (matches && matches.length > 0) {
+            // Get the last quoted string and remove the quotes
+            return matches[matches.length - 1].replace(/"/g, '')
+        }
     }
     return undefined
 }
 
 const handleMissingTraceIdTransform: ErrorTransformer = (error, traceId) => {
     if (traceId && !error.includes('AUP') && !error.includes(traceId)) {
-        return error + ` (Sourcegraph error ID: ${traceId})`
+        return error + ` (Error ID: ${traceId})`
     }
     return undefined
 }
 
 const handleContextDeadlineTransform: ErrorTransformer = error => {
     if (error.includes('context deadline exceeded')) {
-        return 'Context deadline exceeded. Try again with a smaller context.'
+        return 'Context deadline exceeded. Please try again with a smaller context.'
+    }
+    return undefined
+}
+const handleMessageTransform: ErrorTransformer = error => {
+    // Check for specific patterns that indicate a JSON structure with error information
+    if (
+        (error.includes('Sourcegraph Cody Gateway:') || error.includes('"error":')) &&
+        error.includes('"message":')
+    ) {
+        // regex to extract the message from JSON-like structure
+        const match = error.match(/"message":\s*"([^"]+)"/)
+        if (match?.[1]) {
+            return match[1]
+        }
     }
     return undefined
 }
@@ -72,3 +91,4 @@ const handleContextDeadlineTransform: ErrorTransformer = error => {
 ClientErrorsTransformer.register(handleAUPTransform)
 ClientErrorsTransformer.register(handleMissingTraceIdTransform, ClientErrorsTransformer.PRIORITIES.LAST)
 ClientErrorsTransformer.register(handleContextDeadlineTransform)
+ClientErrorsTransformer.register(handleMessageTransform)
