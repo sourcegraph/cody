@@ -8,6 +8,7 @@ import {
     type GraphQLAPIClientConfig,
     type PickResolvedConfiguration,
     SourcegraphGraphQLAPIClient,
+    TODOstub,
     type UnauthenticatedAuthStatus,
     cenv,
     clientCapabilities,
@@ -23,7 +24,6 @@ import {
     isWorkspaceInstance,
     resolvedConfig,
     telemetryRecorder,
-    TODOstub,
 } from '@sourcegraph/cody-shared'
 import { resolveAuth } from '@sourcegraph/cody-shared/src/configuration/auth-resolver'
 import {

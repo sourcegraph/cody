@@ -226,7 +226,7 @@ export class ClientConfigSingleton {
                     omniBoxEnabled,
                     codeSearchEnabled: isError(codeSearchEnabled) ? true : codeSearchEnabled,
                 }
-/* TODO viewerSettings
+                /* TODO viewerSettings
                     // Don't fail the whole chat because of viewer setting (used only to show banners)
                     if (!isError(viewerSettings)) {
                         // Make sure that notice object will have all important field (notices come from
@@ -241,8 +241,8 @@ export class ClientConfigSingleton {
                         )
                     }
  */
-                    return config
-                })
+                return config
+            })
     }
 
     private async fetchClientConfigLegacy(signal?: AbortSignal): Promise<CodyClientConfig> {

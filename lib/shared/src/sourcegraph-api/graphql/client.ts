@@ -11,6 +11,7 @@ import omit from 'lodash/omit'
 import { Observable } from 'observable-fns'
 import semver from 'semver'
 import { dependentAbortController, onAbort } from '../../common/abortController'
+import { queryPieces } from '../../configuration/config'
 import { type PickResolvedConfiguration, resolvedConfig } from '../../configuration/resolver'
 import { logError } from '../../logger'
 import { distinctUntilChanged, firstValueFrom } from '../../misc/observable'
@@ -38,7 +39,6 @@ import {
     CURRENT_SITE_VERSION_QUERY,
     CURRENT_USER_CODY_PRO_ENABLED_QUERY,
     CURRENT_USER_CODY_SUBSCRIPTION_QUERY,
-    CURRENT_USER_INFO_QUERY,
     CURRENT_USER_ROLE_QUERY,
     DELETE_ACCESS_TOKEN_MUTATION,
     EVALUATE_FEATURE_FLAG_QUERY,
@@ -68,7 +68,7 @@ import {
 } from './queries'
 import { buildGraphQLUrl } from './url'
 
-import {currentUserId, Realize} from './dsl'
+import { type Realize, currentUserId, prepare } from './dsl'
 
 export type BrowserOrNodeResponse = Response | NodeResponse
 
@@ -76,7 +76,7 @@ export function isNodeResponse(response: BrowserOrNodeResponse): response is Nod
     return Boolean(response.body && !('getReader' in response.body))
 }
 
-interface APIResponse<T> {
+export interface APIResponse<T> {
     data?: T
     errors?: { message: string; path?: string[] }[]
 }
@@ -182,22 +182,6 @@ interface SiteHasCodyEnabledResponse {
 
 interface CurrentUserRoleResponse {
     currentUser: { id: string; siteAdmin: boolean } | null
-}
-
-interface CurrentUserInfoResponse {
-    currentUser: {
-        id: string
-        hasVerifiedEmail: boolean
-        displayName?: string
-        username: string
-        siteAdmin: boolean
-        avatarURL: string
-        codyProEnabled: boolean
-        primaryEmail?: { email: string } | null
-        organizations: {
-            nodes: { name: string; id: string }[]
-        }
-    } | null
 }
 
 export interface CodyConfigFeatures {
@@ -595,7 +579,6 @@ export interface CurrentUserInfo {
     hasVerifiedEmail: boolean
     username: string
     displayName?: string
-    siteAdmin: boolean
     avatarURL: string
     primaryEmail?: { email: string } | null
     organizations: {
@@ -864,9 +847,7 @@ export class SourcegraphGraphQLAPIClient {
             currentUserId.text!,
             {},
             signal
-        ).then(response =>
-            extractDataOrError(response, data => data?.currentUser.id || null)
-        )
+        ).then(response => extractDataOrError(response, data => data?.currentUser.id || null))
     }
 
     public async isCurrentUserSideAdmin(): Promise<
@@ -902,8 +883,9 @@ export class SourcegraphGraphQLAPIClient {
     }
 
     public async getCurrentUserInfo(signal?: AbortSignal): Promise<CurrentUserInfo | null | Error> {
-        return this.fetchSourcegraphAPI<APIResponse<CurrentUserInfoResponse>>(
-            CURRENT_USER_INFO_QUERY,
+        const prepared = prepare('0.0.0', queryPieces.currentUserInfo)
+        return this.fetchSourcegraphAPI<APIResponse<Realize<typeof prepared.query>>>(
+            prepared.text!,
             {},
             signal
         ).then(response =>

@@ -34,26 +34,6 @@ mutation DeleteAccessToken($token: String!) {
 }
 `
 
-export const CURRENT_USER_INFO_QUERY = `
-query CurrentUser {
-    currentUser {
-        id
-        hasVerifiedEmail
-        displayName
-        username
-        avatarURL
-        primaryEmail {
-            email
-        }
-        organizations {
-            nodes {
-                id
-                name
-            }
-        }
-    }
-}`
-
 export const CURRENT_SITE_VERSION_QUERY = `
 query SiteProductVersion {
     site {

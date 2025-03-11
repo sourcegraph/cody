@@ -29,7 +29,7 @@ export interface ArraySpec<Name extends string, T extends SomeFields> {
 }
 
 // A literal value. These are supplied as arguments.
-interface Constant<Name extends string, T> {
+export interface Constant<Name extends string, T> {
     kind: 'constant'
     name: Name
     value: T
@@ -434,7 +434,7 @@ export type PreparedQuery<T extends SomeFields> = {
 
 function pathEntriesTopDown(path: FieldPath): SomeField[] {
     const result: SomeField[] = []
-    for (let step = path; step; step = step.parent) {
+    for (let step: FieldPath | undefined = path; step; step = step.parent) {
         result.push(step.field)
     }
     result.reverse()
