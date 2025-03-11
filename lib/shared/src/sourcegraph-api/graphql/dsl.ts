@@ -1,8 +1,7 @@
-// TODO:
-// Support literal enum values, for example the V1 in codyContextFilters(version:V1)
-// Support ...on FileChunkContext {
-// Support types like [ID!]! which getCodyContext uses
-// Consider supporting mutations
+// Limitations:
+// - Does not support fragments (for example "... on FileChunkContext") yet.
+// - Only supports a subset of types for early configuration, for example, not [ID!]! which getCodyContext uses.
+// - Does not support mutations yet.
 
 // A field with a primitive type or an anonymous object type.
 import semver from 'semver'
@@ -278,31 +277,6 @@ export function collectFormalList<F extends SomeFields>(fields: F): ArgumentsOfN
     ) as ArgumentsOfN<F>
 }
 
-// Collects the types of default values.
-export type DefaultValues<F extends SomeField> = F extends ArraySpec<any, any>
-    ? DefaultValuesOfN<F['fields']>
-    : F extends ObjectSpec<any, any>
-      ? DefaultValuesOfN<F['fields']>
-      : F extends Labeled<any, infer G>
-        ? DefaultValues<G>
-        : F extends WithArguments<infer G, infer Args>
-          ? DefaultValues<G>
-          : F extends VersionPredicate<infer G>
-            ? [RealizeField<G>, ...DefaultValues<G>]
-            : F extends ValueSpec<any, any>
-              ? []
-              : never
-
-export type DefaultValuesOfN<T extends SomeFields> = T extends [infer Head, ...infer Tail]
-    ? // Head and Tail are always SomeField : SomeFields because T extends SomeFields
-      // but TypeScript seems unable to prove this, so we must reassure it.
-      Head extends SomeField
-        ? Tail extends SomeFields
-            ? [...DefaultValues<Head>, ...DefaultValuesOfN<Tail>]
-            : never
-        : never
-    : []
-
 // Our classic approach: Text with no typing:
 // query Repositories($first: Int!, $after: String, $query: String) {
 //     repositories(first: $first, after: $after, query: $query) {
@@ -332,11 +306,23 @@ interface FieldPath {
     parent: FieldPath | undefined
 }
 
+// Instructions to set a default value. We do enforce that default values match
+// the type of the fields they are replacing, but we do not prove that the types
+// are carried through to the final result. The exact set of defaults depends on
+// SiteProductVersion at runtime. We could use type indices to do this in a
+// typed way, but for now we simply build an untyped list of instructions to set
+// the default values at runtime and assert that the types are correct.
 interface DefaultValueSetter {
     path: FieldPath
     value: any
 }
 
+// Prepares a single field in a query. This depends on the runtime version of
+// the site (if known) and mutates its arguments to accumulate:
+// - query text (buffer)
+// - formal arguments (formals)
+// - default values (defaults) to apply given the product version
+// - the path to the field being serialized (path)
 function serializeField<T extends SomeField>(
     realVersion: string,
     buffer: string[],
@@ -403,7 +389,6 @@ function serializeField<T extends SomeField>(
         case 'versionPredicate':
             console.assert(path.parent?.field.kind !== 'args') // The SomeXField types prevent this, but we rely on it here.
             if (realVersion && semver.lt(realVersion, field.version)) {
-                // TODO: This needs to have the name one level deeper, presumably?
                 defaults.push({ path, value: field.defaultValue })
                 break
             }
@@ -415,9 +400,13 @@ function serializeField<T extends SomeField>(
 }
 
 export type PreparedQuery<T extends SomeFields> = {
+    // The abstract query that was prepared; use this for the type of the result for example Realize<typeof prepared.query>.
     query: T
+    // The yield of the query to send to the GraphQL endpoint.
     text: string | null
+    // The list of formal parameters to the query that need to be provided. Formals are alpha renamed to avoid collisions.
     formals: Formal<any, any>[]
+    // Pairs of property paths, values to set as defaults for fields missing in this product version.
     defaults: DefaultValueSetter[]
 }
 
