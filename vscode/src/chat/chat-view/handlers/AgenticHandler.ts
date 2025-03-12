@@ -8,7 +8,6 @@ import {
     logDebug,
     ps,
 } from '@sourcegraph/cody-shared'
-import vscode from 'vscode'
 import { getCategorizedMentions } from '../../../prompt-builder/utils'
 import type { ChatBuilder } from '../ChatBuilder'
 import type { ChatControllerOptions } from '../ChatController'
@@ -37,9 +36,6 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
     // Store tool execution state globally by conversation
     private static toolExecutionStates = new Map<string, Map<string, ToolContentPart>>()
 
-    // Output channel manager
-    private debugger: AgenticHandlerOutput = new AgenticHandlerOutput()
-
     constructor(
         contextRetriever: Pick<ContextRetriever, 'retrieveContext' | 'computeDidYouMean'>,
         editor: ChatControllerOptions['editor'],
@@ -52,9 +48,11 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
     public async handle(req: AgentRequest, delegate: AgentHandlerDelegate): Promise<void> {
         const sessionID = req.chatBuilder.sessionID
 
-        this.debugger.log(`Starting agent session ${sessionID}`, {
-            model: req.model,
-            inputLength: req.inputText.toString().length,
+        logDebug('AgenticHandler', `Starting agent session ${sessionID}`, {
+            verbose: {
+                model: req.model,
+                inputLength: req.inputText.toString().length,
+            },
         })
 
         try {
@@ -63,8 +61,8 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
             logDebug('AgenticHandler', 'Error in handle', { verbose: error })
 
             // Log the error to the output channel
-            this.debugger.log(`Error in agent session ${sessionID}`, {
-                error:
+            logDebug('AgenticHandler', `Error in agent session ${sessionID}`, {
+                verbose:
                     error instanceof Error
                         ? { message: error.message, stack: error.stack }
                         : String(error),
@@ -81,7 +79,7 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
             // Always ensure we call postDone to close the chat properly
             delegate.postDone()
 
-            this.debugger.log(`Ending agent session ${sessionID}`)
+            logDebug('AgenticHandler', `Ending agent session ${sessionID}`)
         }
     }
 
@@ -155,7 +153,7 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
                 signal,
                 model
             ).catch(error => {
-                this.debugger.log('Error in stream', error)
+                logDebug('AgenticHandler', 'Error in stream', { verbose: error })
                 if (!signal.aborted) {
                     delegate.postError(
                         error instanceof Error ? error : new Error(String(error)),
@@ -290,9 +288,11 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
         if (isNewToolCall) {
             toolStateMap.set(toolCall.id, toolCall)
 
-            this.debugger.log(`Tool requested: ${toolCall.function.name}`, {
-                toolId: toolCall.id,
-                args: toolCall.function.arguments, // This is most likely to be empty.
+            logDebug('AgenticHandler', `Tool requested: ${toolCall.function.name}`, {
+                verbose: {
+                    toolId: toolCall.id,
+                    args: toolCall.function.arguments, // This is most likely to be empty.
+                },
             })
         }
     }
@@ -347,7 +347,7 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
             const args = parseToolCallArgs(toolCall.function.arguments)
             const output = await tool.invoke(args)
 
-            this.debugger.log(`Tool invoked: ${toolCall.function.name}`, {
+            logDebug('AgenticHandler', `Tool invoked: ${toolCall.function.name}`, {
                 toolId: toolCall.id,
                 args: toolCall.function.arguments,
             })
@@ -371,7 +371,7 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
             }
         } catch (error) {
             // Log and handle errors
-            this.debugger.log(`Failed to invoke ${toolCall.function.name}`, { error })
+            logDebug('AgenticHandler', `Failed to invoke ${toolCall.function.name}`, { verbose: error })
 
             // Update tool state on error
             if (toolState) {
@@ -426,7 +426,7 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
                 model,
             })
         } catch (error) {
-            this.debugger.log(`Failed adding pending tool calls: ${error}`)
+            logDebug('AgenticHandler', 'Failed adding pending tool calls', { verbose: error })
         }
     }
 
@@ -442,7 +442,7 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
             chatBuilder.setLastMessageContext(contextFiles)
             chatBuilder.setLastMessageContent(toolResults)
         } catch (error) {
-            this.debugger.log(`Error updating tool results: ${error}`)
+            logDebug('AgenticHandler', 'Error updating tool results', { verbose: error })
         }
     }
 
@@ -451,47 +451,5 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
      */
     public static clearToolStateForSession(sessionID: string): void {
         AgenticHandler.toolExecutionStates.delete(sessionID)
-    }
-}
-
-/**
- * Manages the output channel for the AgenticHandler.
- */
-class AgenticHandlerOutput {
-    private static _outputChannel: vscode.OutputChannel | undefined
-
-    /**
-     * Get the output channel for debugging
-     */
-    public get outputChannel(): vscode.OutputChannel {
-        if (!AgenticHandlerOutput._outputChannel) {
-            AgenticHandlerOutput._outputChannel = vscode.window.createOutputChannel('Cody Agent', 'log')
-        }
-        return AgenticHandlerOutput._outputChannel
-    }
-
-    /**
-     * Log a message to the output channel
-     */
-    public log(message: string, data?: any): void {
-        const timestamp = new Date().toISOString()
-        const logMessage = `[${timestamp}] ${message}`
-
-        try {
-            this.outputChannel.appendLine(logMessage)
-            if (data) {
-                this.outputChannel.appendLine(JSON.stringify(data, null, 2))
-            }
-        } catch (error) {
-            console.error('Failed to log to output channel:', error)
-        }
-    }
-
-    public showOutputChannel(): void {
-        this.outputChannel.show(true)
-    }
-
-    public clearOutputChannel(): void {
-        this.outputChannel.clear()
     }
 }
