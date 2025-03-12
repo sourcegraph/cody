@@ -96,6 +96,7 @@ export class CompletionsResponseBuilder {
             const lastTool = this.toolCalled.get(this.lastToolCallId)
             if (lastTool) {
                 lastTool.function.arguments = ((lastTool.function.arguments as string) || '') + args
+                this.toolCalled.set(this.lastToolCallId, lastTool)
             }
         }
     }

@@ -7,7 +7,7 @@ interface DoneEvent {
 
 interface CompletionEvent extends CompletionResponse {
     type: 'completion'
-    content?: CompletionContentData[] | undefined | null
+    content?: CompletionContentData[] | undefined
 }
 
 export type CompletionContentData = ToolContentPart | TextContentPart
@@ -120,8 +120,6 @@ export interface CompletionParameters {
     // https://docs.fireworks.ai/guides/predicted-outputs#using-predicted-outputs
     rewriteSpeculation?: boolean
     adaptiveSpeculation?: boolean
-    // @added(Versions.V6_0)
-    tools?: FunctionTool[]
 }
 
 export interface SerializedCompletionParameters extends Omit<CompletionParameters, 'messages'> {
