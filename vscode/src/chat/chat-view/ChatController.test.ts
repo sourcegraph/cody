@@ -3,8 +3,8 @@ import {
     CLIENT_CAPABILITIES_FIXTURE,
     type CompletionGeneratorValue,
     FIXTURE_MODEL,
-    type Guardrails,
     PromptString,
+    type SourcegraphGuardrailsClient,
     errorToChatError,
     graphqlClient,
     mockAuthStatus,
@@ -45,7 +45,7 @@ describe('ChatController', () => {
     const mockExtensionClient: Pick<ExtensionClient, 'capabilities'> = {
         capabilities: {},
     }
-    const mockGuardrails: Guardrails = {} as any
+    const mockGuardrails: SourcegraphGuardrailsClient = {} as any
 
     vi.spyOn(featureFlagProviderModule.featureFlagProvider, 'evaluateFeatureFlag').mockReturnValue(
         Observable.of(true)

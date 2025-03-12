@@ -16,7 +16,6 @@ import {
     type DefaultChatCommands,
     type EventSource,
     FeatureFlag,
-    type Guardrails,
     ModelTag,
     ModelUsage,
     type NLSSearchDynamicFilter,
@@ -25,6 +24,7 @@ import {
     type SerializedChatInteraction,
     type SerializedChatTranscript,
     type SerializedPromptEditorState,
+    type SourcegraphGuardrailsClient,
     addMessageListenersForExtensionAPI,
     authStatus,
     cenv,
@@ -138,7 +138,7 @@ export interface ChatControllerOptions {
     contextRetriever: Pick<ContextRetriever, 'retrieveContext' | 'computeDidYouMean'>
     extensionClient: Pick<ExtensionClient, 'capabilities'>
     editor: VSCodeEditor
-    guardrails: Guardrails
+    guardrails: SourcegraphGuardrailsClient
     startTokenReceiver?: typeof startTokenReceiver
 }
 
@@ -183,7 +183,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
 
     private readonly editor: ChatControllerOptions['editor']
     private readonly extensionClient: ChatControllerOptions['extensionClient']
-    private readonly guardrails: Guardrails
+    private readonly guardrails: SourcegraphGuardrailsClient
 
     private readonly startTokenReceiver: typeof startTokenReceiver | undefined
 
@@ -559,6 +559,9 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         const webviewType = isEditorViewType && !sidebarViewOnly ? 'editor' : 'sidebar'
         const uiKindIsWeb = (cenv.CODY_OVERRIDE_UI_KIND ?? vscode.env.uiKind) === vscode.UIKind.Web
         const endpoints = localStorage.getEndpointHistory() ?? []
+        // TODO: Should have a more reliable way to get configuration than this
+        const attributionEnabled =
+            (await ClientConfigSingleton.getInstance().getConfig())?.attributionEnabled ?? false
 
         return {
             uiKindIsWeb,
@@ -574,6 +577,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             allowEndpointChange: configuration.overrideServerEndpoint === undefined,
             experimentalPromptEditorEnabled,
             experimentalAgenticChatEnabled,
+            attributionEnabled,
         }
     }
 

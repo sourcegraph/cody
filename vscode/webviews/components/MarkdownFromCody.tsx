@@ -2,10 +2,11 @@ import { CodyIDE } from '@sourcegraph/cody-shared'
 import type { ComponentProps, FunctionComponent } from 'react'
 import { useMemo } from 'react'
 import Markdown, { defaultUrlTransform } from 'react-markdown'
-import type { UrlTransform } from 'react-markdown/lib'
+import type { Components, UrlTransform } from 'react-markdown/lib'
 import rehypeHighlight, { type Options as RehypeHighlightOptions } from 'rehype-highlight'
 import rehypeSanitize, { type Options as RehypeSanitizeOptions, defaultSchema } from 'rehype-sanitize'
 import remarkGFM from 'remark-gfm'
+import type { Pluggable } from 'unified/lib'
 import { remarkAttachFilePathToCodeBlocks } from '../chat/extract-file-path'
 import { SYNTAX_HIGHLIGHTING_LANGUAGES } from '../utils/highlight'
 import { useConfig } from '../utils/useConfig'
@@ -104,24 +105,30 @@ const childrenTransform = (children: string): string => {
 
 export const MarkdownFromCody: FunctionComponent<{
     className?: string
+    prefixRemarkPlugins?: Pluggable[]
+    components?: Partial<Components>
     children: string
-}> = ({ className, children }) => {
+}> = ({ className, prefixRemarkPlugins, components, children }) => {
     const clientType = useConfig().clientCapabilities.agentIDE
     const urlTransform = useMemo(() => URL_PROCESSORS[clientType] ?? defaultUrlProcessor, [clientType])
     const chatReplyTransformed = childrenTransform(children)
 
     return (
-        <Markdown className={className} {...markdownPluginProps()} urlTransform={urlTransform}>
+        <Markdown
+            className={className}
+            {...markdownPluginProps(prefixRemarkPlugins ?? [])}
+            urlTransform={urlTransform}
+            components={components ?? {}}
+        >
             {chatReplyTransformed}
         </Markdown>
     )
 }
 
 let _markdownPluginProps: ReturnType<typeof markdownPluginProps> | undefined
-function markdownPluginProps(): Pick<
-    ComponentProps<typeof Markdown>,
-    'rehypePlugins' | 'remarkPlugins'
-> {
+function markdownPluginProps(
+    prefixRemarkPlugins: Pluggable[] = []
+): Pick<ComponentProps<typeof Markdown>, 'rehypePlugins' | 'remarkPlugins'> {
     if (_markdownPluginProps) {
         return _markdownPluginProps
     }
@@ -137,8 +144,11 @@ function markdownPluginProps(): Pick<
                         ...defaultSchema.attributes,
                         code: [
                             ...(defaultSchema.attributes?.code || []),
-                            // We use `data-file-path` to attach file path metadata to <code> blocks.
+                            // Allow various metadata attributes for code blocks
                             ['data-file-path'],
+                            ['data-is-code-complete'],
+                            ['data-language'],
+                            ['data-source-text'],
                             [
                                 'className',
                                 ...Object.keys(SYNTAX_HIGHLIGHTING_LANGUAGES).map(
@@ -169,7 +179,7 @@ function markdownPluginProps(): Pick<
                 } satisfies RehypeHighlightOptions & { ignoreMissing: boolean },
             ],
         ],
-        remarkPlugins: [remarkGFM, remarkAttachFilePathToCodeBlocks],
+        remarkPlugins: [...prefixRemarkPlugins, remarkGFM, remarkAttachFilePathToCodeBlocks],
     }
     return _markdownPluginProps
 }

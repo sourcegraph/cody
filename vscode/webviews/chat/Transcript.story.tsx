@@ -18,6 +18,7 @@ import { useArgs, useCallback, useEffect, useRef, useState } from '@storybook/pr
 import type { ComponentProps } from 'react'
 import { URI } from 'vscode-uri'
 import { VSCodeWebview } from '../storybook/VSCodeStoryDecorator'
+import { MockNoGuardrails } from '../utils/guardrails'
 import { __ContextCellStorybookContext } from './cells/contextCell/ContextCell'
 
 const meta: Meta<typeof Transcript> = {
@@ -44,6 +45,7 @@ const meta: Meta<typeof Transcript> = {
         setActiveChatContext: () => {},
         manuallySelectedIntent: null,
         setManuallySelectedIntent: () => {},
+        guardrails: new MockNoGuardrails(),
     } satisfies ComponentProps<typeof Transcript>,
 
     decorators: [
