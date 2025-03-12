@@ -1,4 +1,4 @@
-import { type AutocompleteContextSnippet, type PromptString, ps } from '@sourcegraph/cody-shared'
+import { type AutocompleteContextSnippet, PromptString, ps } from '@sourcegraph/cody-shared'
 
 import { groupConsecutiveItemsByPredicate } from '../../completions/context/retrievers/recent-user-actions/recent-edits-diff-helpers/utils'
 import { RetrieverIdentifier } from '../../completions/context/utils'
@@ -60,7 +60,7 @@ export class ShortTermPromptStrategy extends AutoeditsUserPromptStrategy {
 
         const currentFilePrompt = ps`${constants.CURRENT_FILE_INSTRUCTION}${fileWithMarkerPrompt}`
 
-        const finalPrompt = joinPromptsWithNewlineSeparator(
+        const promptParts = [
             getPromptWithNewline(constants.BASE_USER_PROMPT),
             getPromptWithNewline(jaccardSimilarityPrompt),
             getPromptWithNewline(longTermViewPrompt),
@@ -71,12 +71,15 @@ export class ShortTermPromptStrategy extends AutoeditsUserPromptStrategy {
             getPromptWithNewline(recentCopyPrompt),
             getPromptWithNewline(areaPrompt),
             getPromptWithNewline(shortTermEditsPrompt),
-            constants.FINAL_USER_PROMPT
-        )
+            constants.FINAL_USER_PROMPT,
+        ]
+
+        const finalPrompt = PromptString.join(promptParts, ps``)
 
         autoeditsOutputChannelLogger.logDebugIfVerbose('ShortTermPromptStrategy', 'getUserPrompt', {
             verbose: shortenPromptForOutputChannel(finalPrompt.toString(), []),
         })
+
         return finalPrompt
     }
 
