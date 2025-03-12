@@ -61,18 +61,18 @@ export async function getAllUnstagedFileChanges(gitRepo: Repository): Promise<st
         const rootPath = gitRepo.rootUri.fsPath
 
         // Get diff for tracked unstaged files
-        const trackedDiff = await gitRepo.diff(false) // false means unstaged changes
+        const trackedUnstagedDiff = await gitRepo.diff(false) // false means unstaged changes
 
-        // Get all untracked files
-        const untrackedFiles = await getUntrackedUnstagedFiles(gitRepo)
+        // Get all untracked unstaged files
+        const untrackedUnstagedFiles = await getUntrackedUnstagedFiles(gitRepo)
 
-        if (untrackedFiles.length === 0) {
-            return trackedDiff // If no untracked files, just return tracked changes
+        if (untrackedUnstagedFiles.length === 0) {
+            return trackedUnstagedDiff // If no untracked files, just return tracked changes
         }
 
         // Get diff for untracked files by comparing them with /dev/null
         const untrackedDiffs = await Promise.all(
-            untrackedFiles.map(async file => {
+            untrackedUnstagedFiles.map(async file => {
                 try {
                     // Get relative path from repo root
                     const relativePath = vscode.workspace.asRelativePath(file.uri, false)
