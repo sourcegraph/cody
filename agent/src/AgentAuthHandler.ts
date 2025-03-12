@@ -29,13 +29,13 @@ export class AgentAuthHandler {
             if (!callbackUri) {
                 throw new Error(url.toString() + ' is not a valid URL')
             }
-            this.startServer(url.toString())
+            this.startServer(url)
         } catch (error) {
             logDebug('AgentAuthHandler', `Invalid callback URL: ${error}`)
         }
     }
 
-    private startServer(callbackUri: string): void {
+    private startServer(callbackUri: URI): void {
         if (!this.tokenCallbackHandlers?.length) {
             logDebug('AgentAuthHandler', 'Token callback handler is not set.')
             return
@@ -115,20 +115,29 @@ export class AgentAuthHandler {
      *
      * @param callbackUri - The original callback URI to be updated.
      */
-    private redirectToEndpointLoginPage(callbackUri: string): void {
+    private redirectToEndpointLoginPage(callbackUri: URI): void {
         const uri = new URL(callbackUri)
-        const params = new URLSearchParams(decodeURIComponent(uri.search))
-        const requestFrom = params.get('requestFrom')
-        if (requestFrom) {
-            // Add the new parameter with the correct port number appended.
-            const newRequestFrom = `${requestFrom}-${this.port}`
-            params.set('requestFrom', newRequestFrom)
-            const redirect = params.get('redirect')
-            if (redirect) {
-                params.set('redirect', redirect.replace(requestFrom, newRequestFrom))
+        const decodedParams = new URLSearchParams(uri.search)
+        const redirectParam = decodedParams.get('redirect')
+
+        if (redirectParam) {
+            const redirectURL = new URL(redirectParam, uri.origin)
+            const requestFrom = redirectURL.searchParams.get('requestFrom')
+
+            if (requestFrom) {
+                redirectURL.searchParams.set('requestFrom', `${requestFrom}-${this.port}`)
+                decodedParams.set('redirect', `${redirectURL.pathname}?${redirectURL.searchParams}`)
+                uri.search = decodedParams.toString()
             }
-            uri.search = params.toString()
+        } else {
+            const params = new URLSearchParams(decodeURIComponent(uri.search))
+            const requestFrom = params.get('requestFrom')
+            if (requestFrom) {
+                params.set('requestFrom', `${requestFrom}-${this.port}`)
+                uri.search = params.toString()
+            }
         }
+
         open(uri.toString())
     }
 
