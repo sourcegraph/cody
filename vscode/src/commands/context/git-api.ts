@@ -163,7 +163,8 @@ export async function getContextFilesFromGitDiff(gitRepo: Repository): Promise<C
             diffOutput = await getAllUnstagedFileChanges(gitRepo)
         }
         logDebug('diffOutput', 'diffOutput', JSON.stringify(diffOutput))
-        const diffOutputByFiles = diffOutput.split(/diff --git a\/.+? b\//).filter(Boolean)
+        const diffOutputSplit = diffOutput.trim().split(/diff --git a\/.+? b\//)
+        const diffOutputByFiles = diffOutputSplit.filter(Boolean)
         logDebug('diffOutputByFiles', 'diffOutputByFiles', JSON.stringify(diffOutputByFiles))
         // Compare the diff files to the diff output to ensure they match,
         // if the numbers are different, we can't trust the diff output were split correctly.
