@@ -70,7 +70,7 @@ function getIntentOptions({
             badge: agenticChatEnabled ? 'Experimental' : 'Pro',
             icon: Sparkle,
             intent: 'agentic',
-            hidden: !isDotComUser && !agenticChatEnabled,
+            hidden: !agenticChatEnabled,
             disabled: !agenticChatEnabled,
         },
         {
@@ -99,7 +99,7 @@ export const ModeSelectorField: React.FunctionComponent<{
     intent: ChatMessage['intent']
     className?: string
     manuallySelectIntent: (intent?: ChatMessage['intent']) => void
-}> = ({ isDotComUser, isCodyProUser, className, intent, omniBoxEnabled, manuallySelectIntent }) => {
+}> = ({ isDotComUser, className, intent, omniBoxEnabled, manuallySelectIntent }) => {
     const {
         clientCapabilities: { edit },
         config: { experimentalAgenticChatEnabled },
@@ -111,9 +111,9 @@ export const ModeSelectorField: React.FunctionComponent<{
                 isEditEnabled: edit !== 'none',
                 isDotComUser,
                 omniBoxEnabled,
-                agenticChatEnabled: isCodyProUser || experimentalAgenticChatEnabled,
+                agenticChatEnabled: experimentalAgenticChatEnabled,
             }).filter(option => !option.hidden),
-        [edit, isDotComUser, isCodyProUser, omniBoxEnabled, experimentalAgenticChatEnabled]
+        [edit, isDotComUser, omniBoxEnabled, experimentalAgenticChatEnabled]
     )
 
     // Memoize the handler to avoid recreating on each render
