@@ -18,6 +18,7 @@ This is a log of all notable changes to Cody for VS Code.
 
 - removes feature flag requirement for title generation [#7291](https://github.com/sourcegraph/cody/pull/7291)
 - Add the latest conversation to the welcome page [#7227](https://github.com/sourcegraph/cody/pull/7227)
+- Add icon for Cody chat panel [#7285](https://github.com/sourcegraph/cody/pull/7285)
 
 #### Dev
 
@@ -31,6 +32,10 @@ This is a log of all notable changes to Cody for VS Code.
 #### Webview
 
 - Persist Thinking Space state using local storage [#7307](https://github.com/sourcegraph/cody/pull/7307)
+
+#### Edit
+
+- Use latest sonnet for fix and latest haiku-3-5 for doc intent [#7241](https://github.com/sourcegraph/cody/pull/7241)
 
 ### Fix
 
@@ -46,10 +51,23 @@ This is a log of all notable changes to Cody for VS Code.
 
 - Fix React warnings caused by relocating the model selector [#7366](https://github.com/sourcegraph/cody/pull/7366)
 - Fix the filename container location in chat [#7262](https://github.com/sourcegraph/cody/pull/7262)
+- Fix the apply and copy buttons render improperly when the sidebar width is narrow [#7299](https://github.com/sourcegraph/cody/pull/7299)
+- Fix: Fix at-mentions menu in prompt template [#7289](https://github.com/sourcegraph/cody/pull/7289)
+- Fix positioning of file-like chats in Recent Files [#7284](https://github.com/sourcegraph/cody/pull/7284)
+- Open / close Cody tool window on a shortcut (closes #2618) [#7282](https://github.com/sourcegraph/cody/pull/7282)
+- Fix "Open Selection in Sourcegraph Web" (closes #3037) [#7278](https://github.com/sourcegraph/cody/pull/7278)
+- Truncate full file paths from the left, not from the right [#7277](https://github.com/sourcegraph/cody/pull/7277)
+- Fix 'Open Chat' Action [#7273](https://github.com/sourcegraph/cody/pull/7273)
+- Fix missing tab tooltips [#7271](https://github.com/sourcegraph/cody/pull/7271)
+- Fix: Add support for open-link items to new prompt editor [#7268](https://github.com/sourcegraph/cody/pull/7268)
+- Fix assertion error from webview (closes #2845) [#7257](https://github.com/sourcegraph/cody/pull/7257)
+- Remove the /reset command [#7256](https://github.com/sourcegraph/cody/pull/7256)
 
 #### Client
 
 - API versioning [#7344](https://github.com/sourcegraph/cody/pull/7344)
+- Set Accept header to 'application/json' for GraphQL queries [#7312](https://github.com/sourcegraph/cody/pull/7312)
+- Fix token-receiver url generation logic [#7338](https://github.com/sourcegraph/cody/pull/7338)
 
 #### Dev
 
@@ -62,9 +80,6 @@ This is a log of all notable changes to Cody for VS Code.
 #### Webview
 
 - show copy button in web clients [#7310](https://github.com/sourcegraph/cody/pull/7310)
-
-#### Webviews
-
 - don't add aborted messages to new chat sessions [#7267](https://github.com/sourcegraph/cody/pull/7267)
 
 ### Chore
@@ -88,46 +103,25 @@ This is a log of all notable changes to Cody for VS Code.
 
 - Refactor the selection prompt to use a interface for custom model [#7337](https://github.com/sourcegraph/cody/pull/7337)
 
+#### Build
+
+- Agent recordings: Ensure tests are not in watch mode [#7309](https://github.com/sourcegraph/cody/pull/7309)
+- Allow to open devtools as action for an instant debugging caability [#7308](https://github.com/sourcegraph/cody/pull/7308)
+- Reporting errors to Sentry [#7298](https://github.com/sourcegraph/cody/pull/7298)
+- Bump cody web version in preparation for publishing [#7290](https://github.com/sourcegraph/cody/pull/7290)
+- Make sure relevant stacktrace part is included in error reports [#7280](https://github.com/sourcegraph/cody/pull/7280)
+
 ### Refactor
 
-#### Webview
+#### Chat
 
-- relocate model selector (CODY-5194) [#7322](https://github.com/sourcegraph/cody/pull/7322)
 - remove mention and add intent selector to toolbar [#7287](https://github.com/sourcegraph/cody/pull/7287)
+- Remove CodyPromptsV2 (and fix prompts migration layout) [#7336](https://github.com/sourcegraph/cody/pull/7336)
+- Clean up the "Ask Cody to Explain" functionality in terminal [#7254](https://github.com/sourcegraph/cody/pull/7254)
 
 ### Reverts
 
-  There were no reverts for this release
-
-### Uncategorized
-
-#### Others
-
-- Backport M76: feat(chat): Revert model selector and navigation behavior (CODY-5260) [#7408](https://github.com/sourcegraph/cody/pull/7408)
-- Changelog for 1.74.0 [#7352](https://github.com/sourcegraph/cody/pull/7352)
-- Fix token-receiver url generation logic [#7338](https://github.com/sourcegraph/cody/pull/7338)
-- Remove CodyPromptsV2 (and fix prompts migration layout) [#7336](https://github.com/sourcegraph/cody/pull/7336)
-- Set Accept header to 'application/json' for GraphQL queries [#7312](https://github.com/sourcegraph/cody/pull/7312)
-- Chore: agent recordings: Ensure tests are not in watch mode [#7309](https://github.com/sourcegraph/cody/pull/7309)
-- Allow to open devtools as action for an instant debugging caability [#7308](https://github.com/sourcegraph/cody/pull/7308)
-- Fix papercut: the apply and copy buttons render improperly when the sidebar width is narrow [#7299](https://github.com/sourcegraph/cody/pull/7299)
-- Reporting errors to Sentry [#7298](https://github.com/sourcegraph/cody/pull/7298)
-- Chore: Bump cody web version in preparation for publishing [#7290](https://github.com/sourcegraph/cody/pull/7290)
-- Fix: Fix at-mentions menu in prompt template [#7289](https://github.com/sourcegraph/cody/pull/7289)
-- Add icon for Cody chat panel [#7285](https://github.com/sourcegraph/cody/pull/7285)
-- Fix positioning of file-like chats in Recent Files [#7284](https://github.com/sourcegraph/cody/pull/7284)
-- Open / close Cody tool window on a shortcut (closes #2618) [#7282](https://github.com/sourcegraph/cody/pull/7282)
-- Make sure relevant stacktrace part is included in error reports [#7280](https://github.com/sourcegraph/cody/pull/7280)
-- Fix "Open Selection in Sourcegraph Web" (closes #3037) [#7278](https://github.com/sourcegraph/cody/pull/7278)
-- Truncate full file paths from the left, not from the right [#7277](https://github.com/sourcegraph/cody/pull/7277)
-- Fix 'Open Chat' Action [#7273](https://github.com/sourcegraph/cody/pull/7273)
-- Fix missing tab tooltips [#7271](https://github.com/sourcegraph/cody/pull/7271)
-- Fix: Add support for open-link items to new prompt editor [#7268](https://github.com/sourcegraph/cody/pull/7268)
-- Fix assertion error from webview (closes #2845) [#7257](https://github.com/sourcegraph/cody/pull/7257)
-- Remove the /reset command [#7256](https://github.com/sourcegraph/cody/pull/7256)
-- Clean up the "Ask Cody to Explain" functionality in terminal [#7254](https://github.com/sourcegraph/cody/pull/7254)
-- Change(commands): use latest sonnet for fix and latest haiku-3-5 for doc intent [#7241](https://github.com/sourcegraph/cody/pull/7241)
-
+There were no reverts for this release
 
 ## 1.74.0
 
@@ -240,7 +234,7 @@ This is a log of all notable changes to Cody for VS Code.
 
 ### Reverts
 
-  There were no reverts for this release
+There were no reverts for this release
 
 ### Uncategorized
 
@@ -254,7 +248,6 @@ This is a log of all notable changes to Cody for VS Code.
 - Fix inconsistent workspace handling in agent [#7160](https://github.com/sourcegraph/cody/pull/7160)
 - Handle case when VirtualFile is null [#7156](https://github.com/sourcegraph/cody/pull/7156)
 - Docs: prompt library at mentions [#7091](https://github.com/sourcegraph/cody/pull/7091)
-
 
 ## 1.72.0
 
