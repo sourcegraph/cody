@@ -49,6 +49,9 @@ export const AssistantMessageCell: FunctionComponent<{
     smartApplyEnabled?: boolean
     smartApply?: CodeBlockActionsProps['smartApply']
 
+    isThoughtProcessOpened?: boolean
+    setThoughtProcessOpened?: (open: boolean) => void
+
     postMessage?: ApiPostMessage
     guardrails?: Guardrails
     onSelectedFiltersUpdate: (filters: NLSSearchDynamicFilter[]) => void
@@ -69,6 +72,8 @@ export const AssistantMessageCell: FunctionComponent<{
         smartApplyEnabled,
         onSelectedFiltersUpdate,
         isLastSentInteraction: isLastInteraction,
+        isThoughtProcessOpened,
+        setThoughtProcessOpened,
     }) => {
         const displayMarkdown = useMemo(
             () => (message.text ? reformatBotMessageForChat(message.text).toString() : ''),
@@ -117,6 +122,8 @@ export const AssistantMessageCell: FunctionComponent<{
                                 humanMessage={humanMessage}
                                 smartApplyEnabled={smartApplyEnabled}
                                 smartApply={smartApply}
+                                isThoughtProcessOpened={!!isThoughtProcessOpened}
+                                setThoughtProcessOpened={setThoughtProcessOpened}
                             />
                         ) : (
                             isLoading &&

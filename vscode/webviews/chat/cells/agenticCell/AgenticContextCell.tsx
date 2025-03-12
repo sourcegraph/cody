@@ -34,6 +34,10 @@ export const AgenticContextCell: FunctionComponent<{
         : processes?.findLast(p => p.type !== 'tool' && p.type !== 'confirmation')?.title || 'reviewing'
     const statusClassName = hasError ? 'tw-text-yellow-600' : 'tw-text-muted-foreground'
 
+    if (!processes?.length) {
+        return null
+    }
+
     return (
         <div className="tw-flex tw-flex-col tw-justify-center tw-w-full tw-gap-2 tw-py-1">
             <Accordion
