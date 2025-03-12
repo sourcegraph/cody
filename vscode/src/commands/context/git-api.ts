@@ -98,7 +98,7 @@ export async function getAllUnstagedFileChanges(gitRepo: Repository): Promise<st
         )
 
         // Filter out empty diffs and combine all diffs
-        const allDiffs = [trackedDiff, ...untrackedDiffs.filter(diff => diff.trim().length > 0)]
+        const allDiffs = [trackedUnstagedDiff, ...untrackedDiffs.filter(diff => diff.trim().length > 0)]
         return allDiffs.join('\n')
     } catch (error) {
         logError('getAllUnstagedFileChanges', 'failed', { verbose: error })
