@@ -22,7 +22,7 @@ export interface CompletionFunctionCallsData {
     }
 }
 
-// Tool / function that can be called by the LLM
+// Tool function that can be called by the LLM
 export interface FunctionTool {
     type: 'function'
     function: {
