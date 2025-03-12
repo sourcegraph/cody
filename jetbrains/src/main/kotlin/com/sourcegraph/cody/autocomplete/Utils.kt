@@ -3,7 +3,6 @@ package com.sourcegraph.cody.autocomplete
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.editor.Editor
-import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.project.Project
 import com.sourcegraph.cody.agent.CodyAgentService
 import com.sourcegraph.cody.agent.protocol.ErrorCode
@@ -52,9 +51,7 @@ object Utils {
       startPosition = findLastCommonSuffixElementPosition(originalText, lookupString)
     }
 
-    val virtualFile =
-        FileDocumentManager.getInstance().getFile(editor.document)
-            ?: return CompletableFuture.completedFuture(null)
+    val virtualFile = editor.virtualFile ?: return CompletableFuture.completedFuture(null)
     val fileUri =
         ProtocolTextDocumentExt.fileUriFor(virtualFile)
             ?: return CompletableFuture.completedFuture(null)

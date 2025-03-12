@@ -6,7 +6,6 @@ import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.editor.Editor
-import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.project.Project
 import com.intellij.util.containers.SLRUMap
 import com.sourcegraph.cody.agent.CodyAgent
@@ -125,7 +124,7 @@ class IgnoreOracle(private val project: Project) {
 
   /** Like `policyForUri(String)` but fetches the uri from the passed Editor's Document. */
   fun policyForEditor(editor: Editor): Ignore_TestResult.PolicyEnum? {
-    val url = FileDocumentManager.getInstance().getFile(editor.document)?.url ?: return null
+    val url = editor.virtualFile?.url ?: return null
     val completable = policyForUri(url)
     return try {
       completable.get(policyAwaitTimeoutMs, TimeUnit.MILLISECONDS)

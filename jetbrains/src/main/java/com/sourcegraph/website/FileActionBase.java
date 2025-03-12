@@ -4,7 +4,6 @@ import com.google.common.base.Strings;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.editor.*;
-import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.sourcegraph.common.ErrorNotification;
@@ -32,8 +31,7 @@ public abstract class FileActionBase extends DumbAwareEDTAction {
     if (editor == null) {
       return;
     }
-    Document currentDocument = editor.getDocument();
-    VirtualFile currentFile = FileDocumentManager.getInstance().getFile(currentDocument);
+    VirtualFile currentFile = editor.getVirtualFile();
     if (currentFile == null) {
       return;
     }
