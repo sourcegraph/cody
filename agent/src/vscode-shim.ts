@@ -1128,7 +1128,9 @@ const _env: Partial<typeof vscode.env> = {
     },
     openExternal: (uri: vscode.Uri): Thenable<boolean> => {
         // Handle the case where the user is trying to authenticate with redirect URI.
-        if (uri.toString()?.includes('user/settings/tokens/new/callback?requestFrom')) {
+        if (
+            decodeURIComponent(uri.toString())?.includes('user/settings/tokens/new/callback?requestFrom')
+        ) {
             agent?.authenticationHandler?.handleCallback(uri)
             return Promise.resolve(true)
         }
