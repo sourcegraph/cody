@@ -13,19 +13,20 @@ sealed class MessagePart {
     val deserializer: JsonDeserializer<MessagePart> =
       JsonDeserializer { element: JsonElement, _: Type, context: JsonDeserializationContext ->
         when (element.getAsJsonObject().get("type").getAsString()) {
-          "text" -> context.deserialize<TextMessagePart>(element, TextMessagePart::class.java)
+          "text" -> context.deserialize<TextContentPart>(element, TextContentPart::class.java)
           "context_file" -> context.deserialize<ContextFileMessagePart>(element, ContextFileMessagePart::class.java)
           "context_repo" -> context.deserialize<ContextRepoMessagePart>(element, ContextRepoMessagePart::class.java)
           "image_url" -> context.deserialize<ImageUrlMessagePart>(element, ImageUrlMessagePart::class.java)
+          "function" -> context.deserialize<ToolContentPart>(element, ToolContentPart::class.java)
           else -> throw Exception("Unknown discriminator ${element}")
         }
       }
   }
 }
 
-data class TextMessagePart(
+data class TextContentPart(
   val type: TypeEnum, // Oneof: text
-  val text: String,
+  val text: String? = null,
 ) : MessagePart() {
 
   enum class TypeEnum {
@@ -61,6 +62,19 @@ data class ImageUrlMessagePart(
 
   enum class TypeEnum {
     @SerializedName("image_url") ImageUrl,
+  }
+}
+
+data class ToolContentPart(
+  val type: TypeEnum, // Oneof: function
+  val id: String? = null,
+  val function: FunctionParams,
+  val result: String? = null,
+  val status: String,
+) : MessagePart() {
+
+  enum class TypeEnum {
+    @SerializedName("function") Function,
   }
 }
 
