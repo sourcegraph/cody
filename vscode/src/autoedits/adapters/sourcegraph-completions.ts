@@ -4,8 +4,11 @@ import type {
     Message,
     ModelRefStr,
 } from '@sourcegraph/cody-shared'
+
 import { defaultCodeCompletionsClient } from '../../completions/default-client'
+import { forkSignal } from '../../completions/utils'
 import { autoeditsOutputChannelLogger } from '../output-channel-logger'
+
 import type { AutoeditModelOptions, AutoeditsModelAdapter, ModelResponse } from './base'
 import { getMaxOutputTokensForAutoedits, getSourcegraphCompatibleChatPrompt } from './utils'
 
@@ -16,35 +19,34 @@ export class SourcegraphCompletionsAdapter implements AutoeditsModelAdapter {
         this.client = defaultCodeCompletionsClient.instance!
     }
 
-    async getModelResponse(option: AutoeditModelOptions): Promise<ModelResponse> {
+    async getModelResponse(options: AutoeditModelOptions): Promise<ModelResponse> {
         try {
-            const maxTokens = getMaxOutputTokensForAutoedits(option.codeToRewrite)
+            const maxTokens = getMaxOutputTokensForAutoedits(options.codeToRewrite)
             const messages: Message[] = getSourcegraphCompatibleChatPrompt({
-                systemMessage: option.prompt.systemMessage,
-                userMessage: option.prompt.userMessage,
+                systemMessage: options.prompt.systemMessage,
+                userMessage: options.prompt.userMessage,
             })
             const requestBody: CodeCompletionsParams = {
                 timeoutMs: 5_000,
-                model: option.model as ModelRefStr,
+                model: options.model as ModelRefStr,
                 messages,
                 maxTokensToSample: maxTokens,
                 temperature: 0.1,
                 prediction: {
                     type: 'content',
-                    content: option.codeToRewrite,
+                    content: options.codeToRewrite,
                 },
             }
 
-            // Create an AbortController to pass to the client
-            const abortController = new AbortController()
-
+            const abortController = forkSignal(options.abortSignal)
             const completionResponseGenerator = await this.client.complete(requestBody, abortController)
 
             let prediction = ''
             let responseBody: any = null
             let responseHeaders: Record<string, string> = {}
             let requestHeaders: Record<string, string> = {}
-            let requestUrl = option.url
+            let requestUrl = options.url
+            let stopReason: string | undefined = undefined
 
             for await (const msg of completionResponseGenerator) {
                 const newText = msg.completionResponse?.completion
@@ -74,17 +76,30 @@ export class SourcegraphCompletionsAdapter implements AutoeditsModelAdapter {
                     // Store the full response body if available
                     if (msg.completionResponse) {
                         responseBody = msg.completionResponse
+                        stopReason = msg.completionResponse.stopReason
                     }
                 }
             }
 
-            return {
-                prediction,
+            const sharedResult = {
                 responseHeaders,
                 requestHeaders,
                 requestUrl,
                 requestBody,
                 responseBody,
+            }
+
+            if (stopReason === 'cody-request-aborted') {
+                return {
+                    ...sharedResult,
+                    type: 'aborted',
+                }
+            }
+
+            return {
+                ...sharedResult,
+                type: 'success',
+                prediction,
             }
         } catch (error) {
             autoeditsOutputChannelLogger.logError(

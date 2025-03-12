@@ -20,7 +20,7 @@ type V2TelemetryCodyApiVersion = 5
 // Any number greater than 4 is considered a valid Cody API version
 type CodyApiVersion = LegacyCodyApiVersion | number
 
-interface SiteAndCodyAPIVersions {
+export interface SiteAndCodyAPIVersions {
     siteVersion: string
     codyAPIVersion: CodyApiVersion
 }

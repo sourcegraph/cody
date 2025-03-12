@@ -65,6 +65,7 @@ describe('AutoeditAnalyticsLogger', () => {
         codeToRewrite: 'This is test code to rewrite',
         userId: 'test-user-id',
         isChatModel: false,
+        abortSignal: new AbortController().signal,
     }
 
     function getRequestStartMetadata(): Parameters<AutoeditAnalyticsLogger['createRequest']>[0] {
@@ -110,6 +111,7 @@ describe('AutoeditAnalyticsLogger', () => {
             requestId,
             prompt: modelOptions.prompt,
             modelResponse: {
+                type: 'success',
                 prediction,
                 requestHeaders: {},
                 requestUrl: modelOptions.url,

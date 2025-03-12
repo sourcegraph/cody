@@ -559,7 +559,11 @@ function outputChannel(name: string): vscode.LogOutputChannel {
             const formattedMessage = args.length
                 ? String(message).replace(/{(\d+)}/g, (match, num) => args[num]?.toString() ?? match)
                 : message
-            agent.notify('debug/message', { channel: name, message: formattedMessage, level })
+            agent.notify('debug/message', {
+                channel: name,
+                message: formattedMessage,
+                level,
+            })
         }
     }
     return {
@@ -1115,6 +1119,52 @@ function promisify(value: any): Promise<any> {
 
 export const commands = _commands as typeof vscode.commands
 
+// SCM namespace export
+export namespace scm {
+    /**
+     * The {@link SourceControlInputBox input box} for the last source control
+     * created by the extension.
+     *
+     * @deprecated Use SourceControl.inputBox instead
+     */
+    export const inputBox: vscode.SourceControlInputBox = {
+        value: '',
+        placeholder: '',
+        visible: true,
+        enabled: false,
+    }
+
+    /**
+     * Creates a new {@link SourceControl source control} instance.
+     *
+     * @param id An `id` for the source control. Something short, e.g.: `git`.
+     * @param label A human-readable string for the source control. E.g.: `Git`.
+     * @param rootUri An optional Uri of the root of the source control. E.g.: `Uri.parse(workspaceRoot)`.
+     * @return An instance of {@link SourceControl source control}.
+     */
+    export function createSourceControl(id: string, label: string, rootUri?: Uri): vscode.SourceControl {
+        return {
+            id,
+            label,
+            rootUri,
+            inputBox: inputBox,
+            count: undefined,
+            quickDiffProvider: undefined,
+            commitTemplate: undefined,
+            acceptInputCommand: undefined,
+            statusBarCommands: [],
+            createResourceGroup: () => ({
+                id: 'id',
+                label: 'label',
+                hideWhenEmpty: false,
+                dispose: () => {},
+                resourceStates: [],
+            }),
+            dispose: () => {},
+        }
+    }
+}
+
 const _env: Partial<typeof vscode.env> = {
     uriScheme: 'file',
     appName: undefined,
@@ -1128,7 +1178,9 @@ const _env: Partial<typeof vscode.env> = {
     },
     openExternal: (uri: vscode.Uri): Thenable<boolean> => {
         // Handle the case where the user is trying to authenticate with redirect URI.
-        if (uri.toString()?.includes('user/settings/tokens/new/callback?requestFrom')) {
+        if (
+            decodeURIComponent(uri.toString())?.includes('user/settings/tokens/new/callback?requestFrom')
+        ) {
             agent?.authenticationHandler?.handleCallback(uri)
             return Promise.resolve(true)
         }

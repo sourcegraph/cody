@@ -79,7 +79,7 @@ interface SmartApplySelection {
 
 function getSmartApplySelectionProvider(model: EditModel): SmartApplySelectionProvider {
     if (Object.values(SMART_APPLY_MODEL_IDENTIFIERS).includes(model)) {
-        return new CustomModelSelectionProvider()
+        return new CustomModelSelectionProvider({ shouldAlwaysUseEntireFile: true })
     }
     return new DefaultSelectionProvider()
 }

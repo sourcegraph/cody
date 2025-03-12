@@ -24,7 +24,7 @@ export class SourcegraphChatAdapter implements AutoeditsModelAdapter {
                         content: option.codeToRewrite,
                     },
                 },
-                new AbortController().signal
+                option.abortSignal
             )
 
             let accumulated = ''
@@ -39,9 +39,12 @@ export class SourcegraphChatAdapter implements AutoeditsModelAdapter {
 
             // For direct API calls without HTTP headers, we return an empty object
             return {
+                type: 'success',
                 prediction: accumulated,
                 responseHeaders: {},
+                responseBody: {},
                 requestUrl: option.url,
+                requestHeaders: {},
             }
         } catch (error) {
             autoeditsOutputChannelLogger.logError(
