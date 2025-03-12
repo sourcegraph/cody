@@ -49,6 +49,7 @@ import {
     isDotCom,
     isError,
     isRateLimitError,
+    isS2,
     logError,
     modelsService,
     pendingOperation,
@@ -545,9 +546,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         const experimentalPromptEditorEnabled = await firstValueFrom(
             featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyExperimentalPromptEditor)
         )
-        const experimentalAgenticChatEnabled = await firstValueFrom(
-            featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.DeepCody)
-        )
+        const experimentalAgenticChatEnabled = isS2(auth.serverEndpoint)
         const sidebarViewOnly = this.extensionClient.capabilities?.webviewNativeConfig?.view === 'single'
         const isEditorViewType = this.webviewPanelOrView?.viewType === 'cody.editorPanel'
         const webviewType = isEditorViewType && !sidebarViewOnly ? 'editor' : 'sidebar'
@@ -744,7 +743,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
 
         this.postEmptyMessageInProgress(model)
 
-        const agent = getAgent(chatAgent ?? model, {
+        const agent = getAgent(model, chatAgent ?? model, {
             contextRetriever: this.contextRetriever,
             editor: this.editor,
             chatClient: this.chatClient,

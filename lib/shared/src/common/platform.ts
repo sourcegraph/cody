@@ -31,3 +31,16 @@ export function isMacOS(): boolean {
 
     return false
 }
+
+export function getPlatform(): string {
+    const platform = process.platform
+    switch (platform) {
+        case 'darwin':
+            return 'macos'
+        case 'linux':
+            return 'linux'
+        default:
+            // fallback to the platform string
+            return platform?.startsWith('win') ? 'windows' : platform
+    }
+}

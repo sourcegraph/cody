@@ -26,7 +26,7 @@ import { RestClient } from '../sourcegraph-api/rest/client'
 import type { UserProductSubscription } from '../sourcegraph-api/userProductSubscription'
 import { CHAT_INPUT_TOKEN_BUDGET } from '../token/constants'
 import { isError } from '../utils'
-import { TOOL_CODY_MODEL, ToolCodyModelName } from './client'
+import { DEEP_CODY_MODEL, TOOL_CODY_MODEL } from './client'
 import { type Model, type ServerModel, createModel, createModelFromServerModel } from './model'
 import type {
     DefaultsAndUserPreferencesForEndpoint,
@@ -244,11 +244,32 @@ export function syncModels({
 
                                                 const clientModels = []
 
-                                                const hasToolCody = data.primaryModels.some(m =>
-                                                    m.id.includes(ToolCodyModelName)
+                                                // Handle agentic chat features
+                                                const isAgenticChatEnabled =
+                                                    hasAgenticChatFlag ||
+                                                    (isDotComUser && !isCodyFreeUser)
+                                                // Handle agentic chat features
+                                                const haikuModel = data.primaryModels.find(m =>
+                                                    m.id.includes('5-haiku')
                                                 )
-                                                if (!hasToolCody && isToolCodyEnabled) {
-                                                    clientModels.push(TOOL_CODY_MODEL)
+                                                const sonnetModel = data.primaryModels.find(m =>
+                                                    m.id.includes('5-sonnet')
+                                                )
+                                                const hasDeepCody = data.primaryModels.some(m =>
+                                                    m.id.includes('deep-cody')
+                                                )
+                                                if (
+                                                    !hasDeepCody &&
+                                                    isAgenticChatEnabled &&
+                                                    sonnetModel &&
+                                                    haikuModel
+                                                ) {
+                                                    // Add Deep Cody
+                                                    clientModels.push(DEEP_CODY_MODEL)
+                                                    // Add Tool Cody
+                                                    if (isToolCodyEnabled) {
+                                                        clientModels.push(TOOL_CODY_MODEL)
+                                                    }
                                                 }
 
                                                 // Add the client models to the list of models.
@@ -256,11 +277,6 @@ export function syncModels({
                                                     ...maybeAdjustContextWindows(clientModels).map(
                                                         createModelFromServerModel
                                                     )
-                                                )
-
-                                                // Handle agentic chat features
-                                                const haikuModel = data.primaryModels.find(m =>
-                                                    m.id.includes('5-haiku')
                                                 )
 
                                                 // Set the default model to Haiku for free users.
