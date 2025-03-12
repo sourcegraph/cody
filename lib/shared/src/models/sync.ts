@@ -100,10 +100,15 @@ export function syncModels({
                         customHeaders: config.configuration.customHeaders,
                         providerLimitPrompt: config.configuration.providerLimitPrompt,
                         devModels: config.configuration.devModels,
+                        experimentalLongInputContext: config.configuration.experimentalLongInputContext,
                     },
                     auth: config.auth,
                 }) satisfies PickResolvedConfiguration<{
-                    configuration: 'providerLimitPrompt' | 'customHeaders' | 'devModels'
+                    configuration:
+                        | 'providerLimitPrompt'
+                        | 'customHeaders'
+                        | 'devModels'
+                        | 'experimentalLongInputContext'
                     auth: true
                 }>
         ),
@@ -304,6 +309,7 @@ export function syncModels({
                                                 // TODO (umpox) Add configOverwrites.editModel for separate edit support
                                                 usage: [ModelUsage.Chat, ModelUsage.Edit],
                                                 contextWindow: getEnterpriseContextWindow(
+                                                    isDotComUser,
                                                     configOverwrites?.chatModel,
                                                     configOverwrites,
                                                     config.configuration

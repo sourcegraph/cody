@@ -52,7 +52,10 @@ describe('getEnterpriseContextWindow', () => {
         }
 
         expect(
-            getEnterpriseContextWindow(chatModel, configOverwrites, { providerLimitPrompt: undefined })
+            getEnterpriseContextWindow(chatModel, configOverwrites, {
+                providerLimitPrompt: undefined,
+                experimentalLongInputContext: false,
+            })
         ).toEqual({
             input: CHAT_INPUT_TOKEN_BUDGET,
             output: ANSWER_TOKENS,
@@ -69,6 +72,7 @@ describe('getEnterpriseContextWindow', () => {
         expect(
             getEnterpriseContextWindow(chatModel, configOverwritesWithSmartContext, {
                 providerLimitPrompt: undefined,
+                experimentalLongInputContext: false,
             })
         ).toEqual({
             input: EXTENDED_CHAT_INPUT_TOKEN_BUDGET,
@@ -109,7 +113,7 @@ describe('getEnterpriseContextWindow', () => {
             const contextWindow = getEnterpriseContextWindow(
                 chatModel,
                 { smartContextWindow: true },
-                { providerLimitPrompt: undefined }
+                { providerLimitPrompt: undefined, experimentalLongInputContext: false }
             )
             expect(contextWindow).toEqual(test)
         })

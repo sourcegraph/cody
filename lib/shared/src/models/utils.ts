@@ -75,23 +75,56 @@ export function toModelRefStr(modelRef: ModelRef): ModelRefStr {
  * @returns The context window for the given chat model and configuration overwrites.
  */
 export function getEnterpriseContextWindow(
+    isDotComUser: boolean,
     chatModel: string,
     configOverwrites: CodyLLMSiteConfiguration,
-    configuration: Pick<ClientConfiguration, 'providerLimitPrompt'>
+    configuration: Pick<ClientConfiguration, 'providerLimitPrompt' | 'experimentalLongInputContext'>
 ): ModelContextWindow {
     const { chatModelMaxTokens, smartContextWindow } = configOverwrites
+    const useExpandedContext = configuration.experimentalLongInputContext || false
     // Starts with the default context window.
     let contextWindow: ModelContextWindow = {
         input: chatModelMaxTokens ?? CHAT_INPUT_TOKEN_BUDGET,
         output: getEnterpriseOutputLimit(chatModel),
     }
-
+    if (useExpandedContext) {
+        contextWindow = {
+            input:
+                chatModel.toLowerCase().includes('claude') ||
+                chatModel.toLowerCase().includes('gemini') ||
+                chatModel.toLowerCase().match(/o\d/)
+                    ? 175000 // Claude, Gemini, OpenAI o series: 175k context
+                    : chatModel.toLowerCase().includes('gpt')
+                      ? 100000 // OpenAI gpt series: 100k context
+                      : CHAT_INPUT_TOKEN_BUDGET, // Default for all other models
+            output: getEnterpriseOutputLimit(chatModel),
+        }
+    }
     // Use extended context window for models that support smart context when enabled.
-    if (smartContextWindow && isModelWithExtendedContextWindowSupport(chatModel)) {
+    else if (smartContextWindow && isModelWithExtendedContextWindowSupport(chatModel)) {
         contextWindow = {
             input: EXTENDED_CHAT_INPUT_TOKEN_BUDGET,
             output: CHAT_OUTPUT_TOKEN_BUDGET,
             context: { user: EXTENDED_USER_CONTEXT_TOKEN_BUDGET },
+        }
+    }
+
+    // Apply output token adjustments for enterprise users
+    if (!isDotComUser) {
+        // Identify models with types.ModelCapabilityReasoning
+        // Doc: https://sourcegraph.sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/cmd/cody-gateway-config/dotcom_models.go?L78
+        const isReasoningModel =
+            chatModel.toLowerCase().includes('3-7-sonnet') ||
+            chatModel.toLowerCase().includes('o3-mini-high') ||
+            chatModel.toLowerCase().includes('o3-mini-medium') ||
+            chatModel.toLowerCase().match('o1')
+
+        if (isReasoningModel) {
+            // Double the output tokens for reasoning models
+            contextWindow.output *= 2
+        } else {
+            // Add 2k tokens to all other models' output
+            contextWindow.output += 2000
         }
     }
 

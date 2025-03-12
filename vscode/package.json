@@ -1047,6 +1047,11 @@
           "markdownDescription": "Enable OpenTelemetry tracing",
           "default": false
         },
+        "cody.experimental.longInputContext": {
+          "type": "boolean",
+          "default": false,
+          "markdownDescription": "Experimental: Use expanded context window for supported models\n\nWhen selected:\n\n* Claude + Gemini: 175k @mention context limit\n* OpenAI o series: 175k @mention context limit\n* OpenAI gpt series: 100k @mention context limit"
+        },
         "cody.experimental.minion.anthropicKey": {
           "order": 99,
           "type": "string",
