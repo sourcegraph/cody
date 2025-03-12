@@ -42,7 +42,8 @@ export function isS2(arg: Pick<AuthStatus, 'endpoint'> | undefined | string): bo
 export const DOTCOM_WORKSPACE_UPGRADE_URL = new URL('https://sourcegraph.com/cody/manage')
 
 const Workspaces_Host_Prod = '.sourcegraph.app'
-const Workspaces_Host_Dev = '.sourcegraphapp.test:3443'
+const Workspaces_Host_Dev = '.sourcegraphdev.app'
+const Workspaces_Host_Local = '.sourcegraphapp.test:3443'
 
 // 🚨 SECURITY: This is used to validate a set of URLs we will allow to be passed in
 //              to the editor in the URL handler.
@@ -56,7 +57,8 @@ export function isWorkspaceInstance(arg: Pick<AuthStatus, 'endpoint'> | undefine
     try {
         return (
             new URL(url).host.endsWith(Workspaces_Host_Prod) ||
-            new URL(url).host.endsWith(Workspaces_Host_Dev)
+            new URL(url).host.endsWith(Workspaces_Host_Dev) ||
+            new URL(url).host.endsWith(Workspaces_Host_Local)
         )
     } catch {
         return false
