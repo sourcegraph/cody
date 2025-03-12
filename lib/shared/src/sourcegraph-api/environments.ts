@@ -55,10 +55,11 @@ export function isWorkspaceInstance(arg: Pick<AuthStatus, 'endpoint'> | undefine
         return false
     }
     try {
+        const parsedUrl = new URL(url)
         return (
-            new URL(url).host.endsWith(Workspaces_Host_Prod) ||
-            new URL(url).host.endsWith(Workspaces_Host_Dev) ||
-            new URL(url).host.endsWith(Workspaces_Host_Local)
+            parsedUrl.host.endsWith(Workspaces_Host_Prod) ||
+            parsedUrl.host.endsWith(Workspaces_Host_Dev) ||
+            parsedUrl.host.endsWith(Workspaces_Host_Local)
         )
     } catch {
         return false
