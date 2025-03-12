@@ -4,6 +4,7 @@ import { clsx } from 'clsx'
 import { BookOpenIcon, BrainIcon, BuildingIcon, ExternalLinkIcon } from 'lucide-react'
 import { type FunctionComponent, type ReactNode, useCallback, useMemo } from 'react'
 import type { UserAccountInfo } from '../../Chat'
+import { Kbd } from '../../components/Kbd'
 import { getVSCodeAPI } from '../../utils/VSCodeApi'
 import { useTelemetryRecorder } from '../../utils/telemetry'
 import { chatModelIconComponent } from '../ChatModelIcon'
@@ -36,7 +37,6 @@ export const ModelSelectField: React.FunctionComponent<{
 
     /** For storybooks only. */
     __storybook__open?: boolean
-
     modelSelectorRef?: React.MutableRefObject<{ open: () => void; close: () => void } | null>
 }> = ({
     models,
@@ -152,11 +152,8 @@ export const ModelSelectField: React.FunctionComponent<{
 
     const onKeyDown = useCallback(
         (event: React.KeyboardEvent<HTMLDivElement>) => {
-            event.preventDefault()
-            event.stopPropagation()
             if (event.key === 'Escape') {
                 onCloseByEscape?.()
-                return
             }
         },
         [onCloseByEscape]
@@ -173,10 +170,15 @@ export const ModelSelectField: React.FunctionComponent<{
             data-testid="chat-model-selector"
             iconEnd={readOnly ? undefined : 'chevron'}
             className={cn('tw-justify-between', className)}
-            defaultOpen={false}
             disabled={readOnly}
             __storybook__open={__storybook__open}
-            tooltip={readOnly ? undefined : 'Switch model (⌘M)'}
+            tooltip={
+                readOnly ? undefined : (
+                    <span>
+                        Switch model <Kbd macOS="cmd+M" linuxAndWindows="ctrl+M" />
+                    </span>
+                )
+            }
             aria-label="Select a model or an agent"
             controlRef={modelSelectorRef}
             popoverContent={close => (
@@ -273,7 +275,7 @@ export const ModelSelectField: React.FunctionComponent<{
             popoverRootProps={{ onOpenChange }}
             popoverContentProps={{
                 className: 'tw-min-w-[325px] tw-w-[unset] tw-max-w-[90%] !tw-p-0',
-                onKeyDown,
+                onKeyDown: onKeyDown,
                 onCloseAutoFocus: event => {
                     // Prevent the popover trigger from stealing focus after the user selects an
                     // item. We want the focus to return to the editor.
@@ -286,7 +288,6 @@ export const ModelSelectField: React.FunctionComponent<{
     )
 }
 
-ModelSelectField.displayName = 'ModelSelectField'
 const ENTERPRISE_MODEL_DOCS_PAGE =
     'https://sourcegraph.com/docs/cody/clients/enable-cody-enterprise?utm_source=cody.modelSelector'
 

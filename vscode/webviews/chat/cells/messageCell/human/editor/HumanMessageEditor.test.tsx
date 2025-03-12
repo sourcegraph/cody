@@ -135,9 +135,9 @@ describe('HumanMessageEditor', () => {
 
         test('model selector is showing up with the default model name', () => {
             const { container } = renderWithMocks({})
-            const tabsBar = container.querySelector('[class*="tabsRoot"]')
-            const modelSelector = tabsBar?.querySelector('[data-testid="chat-model-selector"]')
+            const modelSelector = container.querySelector('[data-testid="chat-model-selector"]')
             expect(modelSelector).not.toBeNull()
+            expect(modelSelector?.textContent).toEqual(FIXTURE_MODELS[0].title)
         })
     })
 })
