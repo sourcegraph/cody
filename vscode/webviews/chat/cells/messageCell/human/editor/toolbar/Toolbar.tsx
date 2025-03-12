@@ -148,6 +148,14 @@ export const Toolbar: FunctionComponent<{
                     isCodyProUser={userInfo?.isCodyProUser}
                     manuallySelectIntent={manuallySelectIntent}
                 />
+                <ModelSelectFieldToolbarItem
+                    models={models}
+                    userInfo={userInfo}
+                    focusEditor={focusEditor}
+                    modelSelectorRef={modelSelectorRef}
+                    className="tw-mr-1"
+                    extensionAPI={extensionAPI}
+                />
             </div>
             <div className="tw-flex-1 tw-flex tw-justify-end">
                 <SubmitButton onClick={onSubmitClick} state={submitState} />
