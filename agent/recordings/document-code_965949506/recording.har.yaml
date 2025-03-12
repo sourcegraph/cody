@@ -111,7 +111,7 @@ log:
           - name: content-type
             value: application/json
           - name: traceparent
-            value: 00-4337ec66419cd1c6e4aebdcc8af8505f-65dc1af096fbcea9-01
+            value: 00-2add1cde333a4763fc5b2fcb1944cbac-adb3da59c7b33bb8-01
           - name: user-agent
             value: document-code/v1 (Node.js v20.4.0)
           - name: x-requested-with
@@ -190,14 +190,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=8&client-name=document-code&client-version=v1
       response:
-        bodySize: 1012
+        bodySize: 798
         content:
           mimeType: text/event-stream
-          size: 1012
+          size: 798
           text: >+
             event: completion
 
-            data: {"deltaText":"/**\n * Calculates the sum of two numbers.\n * \n * @param a The first number to add.\n * @param b The second number to add.\n * @returns The sum of a and b.\n */","stopReason":"stop_sequence"}
+            data: {"deltaText":"/**\n * Calculates the sum of two numbers.\n *\n * @param a The first number to add\n * @param b The second number to add\n * @returns The sum of a and b\n */","stopReason":"stop_sequence"}
 
 
             event: done
@@ -207,7 +207,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 06 Mar 2025 02:26:57 GMT
+            value: Fri, 07 Mar 2025 18:54:00 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -236,8 +236,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-03-06T02:26:55.543Z
-      time: 2085
+      startedDateTime: 2025-03-07T18:53:57.503Z
+      time: 2841
       timings:
         blocked: -1
         connect: -1
@@ -245,7 +245,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 2085
+        wait: 2841
     - _id: 7b7f92b0ba6cc7523b72e359aaeffb6a
       _order: 0
       cache: {}
@@ -263,7 +263,7 @@ log:
           - name: content-type
             value: application/json
           - name: traceparent
-            value: 00-2a3faf32b49c10717a6b67c911f90fbe-71b20836f5ba9933-01
+            value: 00-566ca9f7c5898576bd0c4e5dfe80250c-67bae57ea35145f8-01
           - name: user-agent
             value: document-code/v1 (Node.js v20.4.0)
           - name: x-requested-with
@@ -389,14 +389,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=8&client-name=document-code&client-version=v1
       response:
-        bodySize: 740
+        bodySize: 552
         content:
           mimeType: text/event-stream
-          size: 740
+          size: 552
           text: >+
             event: completion
 
-            data: {"deltaText":"\n    /**\n     * Performs a greeting by logging 'Hello World!' if greeting is enabled.\n     */\n","stopReason":"stop_sequence"}
+            data: {"deltaText":"\n    /**\n     * Prints a greeting message if shouldGreet is true.\n     */\n","stopReason":"stop_sequence"}
 
 
             event: done
@@ -406,7 +406,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 06 Mar 2025 02:27:00 GMT
+            value: Fri, 07 Mar 2025 18:54:02 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -435,8 +435,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-03-06T02:26:57.660Z
-      time: 2655
+      startedDateTime: 2025-03-07T18:54:00.377Z
+      time: 2150
       timings:
         blocked: -1
         connect: -1
@@ -444,7 +444,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 2655
+        wait: 2150
     - _id: f3912fbaa0e8e79e4e1c75e6d680466f
       _order: 0
       cache: {}
@@ -462,7 +462,7 @@ log:
           - name: content-type
             value: application/json
           - name: traceparent
-            value: 00-402d79cd8570d2e862bd234fba0c1abb-67e7b08ff75a472d-01
+            value: 00-565f79cae4f8afed12fe5740374cab82-faa342c9fdca6022-01
           - name: user-agent
             value: document-code/v1 (Node.js v20.4.0)
           - name: x-requested-with
@@ -563,14 +563,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=8&client-name=document-code&client-version=v1
       response:
-        bodySize: 642
+        bodySize: 640
         content:
           mimeType: text/event-stream
-          size: 642
+          size: 640
           text: >+
             event: completion
 
-            data: {"deltaText":"/**\n * Records a log entry by printing a default log message.\n * \n * @internal\n */","stopReason":"stop_sequence"}
+            data: {"deltaText":"\n/**\n * Logs a basic message indicating log recording.\n * Used internally by the TestLogger to track logging events.\n */\n","stopReason":"stop_sequence"}
 
 
             event: done
@@ -580,7 +580,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 06 Mar 2025 02:27:02 GMT
+            value: Fri, 07 Mar 2025 18:54:04 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -609,8 +609,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-03-06T02:27:00.333Z
-      time: 1844
+      startedDateTime: 2025-03-07T18:54:02.542Z
+      time: 1936
       timings:
         blocked: -1
         connect: -1
@@ -618,7 +618,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 1844
+        wait: 1936
     - _id: 0c25e67776fd7ac96655460834346659
       _order: 0
       cache: {}
@@ -636,7 +636,7 @@ log:
           - name: content-type
             value: application/json
           - name: traceparent
-            value: 00-0f5db200032a5e6ecc8893813ba229e8-5180e66ef03b7b91-01
+            value: 00-3875618b7a31fa49e9df67573cdaa35e-cba4cfc7fa00c1cd-01
           - name: user-agent
             value: document-code/v1 (Node.js v20.4.0)
           - name: x-requested-with
@@ -746,14 +746,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=8&client-name=document-code&client-version=v1
       response:
-        bodySize: 637
+        bodySize: 814
         content:
           mimeType: text/event-stream
-          size: 637
+          size: 814
           text: >+
             event: completion
 
-            data: {"deltaText":"/** Captures the current high-resolution timestamp for performance measurement */","stopReason":"stop_sequence"}
+            data: {"deltaText":"/**\n * Captures the current high-resolution timestamp for performance measurement.\n * Uses `performance.now()` to get a precise time value with microsecond precision.\n */","stopReason":"stop_sequence"}
 
 
             event: done
@@ -763,7 +763,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 06 Mar 2025 02:27:04 GMT
+            value: Fri, 07 Mar 2025 18:54:06 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -792,8 +792,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-03-06T02:27:02.195Z
-      time: 2462
+      startedDateTime: 2025-03-07T18:54:04.495Z
+      time: 2205
       timings:
         blocked: -1
         connect: -1
@@ -801,7 +801,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 2462
+        wait: 2205
     - _id: 5d56a4af3d7e4957137a3d4af3a8431c
       _order: 0
       cache: {}
@@ -819,7 +819,7 @@ log:
           - name: content-type
             value: application/json
           - name: traceparent
-            value: 00-001ee5c045ecdccd5bfb103cfa46afc8-b3c004fc20740412-01
+            value: 00-8903eef2b842695912692a46278cd91b-acde6cc2c53dd694-01
           - name: user-agent
             value: document-code/v1 (Node.js v20.4.0)
           - name: x-requested-with
@@ -900,14 +900,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=8&client-name=document-code&client-version=v1
       response:
-        bodySize: 774
+        bodySize: 802
         content:
           mimeType: text/event-stream
-          size: 774
+          size: 802
           text: >+
             event: completion
 
-            data: {"deltaText":"/**\n * Represents a class that provides a greeting message.\n *\n * @return A string with a standard \"Hello, world!\" greeting.\n */","stopReason":"stop_sequence"}
+            data: {"deltaText":"/**\n * Represents a simple greeting class that provides a method to generate a greeting message.\n *\n * @constructor Creates an instance of the Hello class\n */","stopReason":"stop_sequence"}
 
 
             event: done
@@ -917,7 +917,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 06 Mar 2025 02:27:06 GMT
+            value: Fri, 07 Mar 2025 18:54:08 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -946,8 +946,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-03-06T02:27:04.722Z
-      time: 1709
+      startedDateTime: 2025-03-07T18:54:06.767Z
+      time: 1974
       timings:
         blocked: -1
         connect: -1
@@ -955,7 +955,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 1709
+        wait: 1974
     - _id: f1b1cde4cd57488b7f0137954f0302f5
       _order: 0
       cache: {}

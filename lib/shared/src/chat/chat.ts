@@ -1,7 +1,6 @@
 import { isError } from 'lodash'
 import { authStatus } from '../auth/authStatus'
 import { firstValueFrom } from '../misc/observable'
-import { modelsService } from '../models/modelsService'
 import type { Message } from '../sourcegraph-api'
 import type { SourcegraphCompletionsClient } from '../sourcegraph-api/completions/client'
 import type {
@@ -27,12 +26,6 @@ export class ChatClient {
         abortSignal?: AbortSignal,
         interactionId?: string
     ): Promise<AsyncGenerator<CompletionGeneratorValue>> {
-        // Replace internal models used for wrapper models with the actual model ID.
-        if (params.model?.includes('deep-cody')) {
-            const sonnetModel = modelsService.getAllModelsWithSubstring('sonnet')[0]
-            params.model = sonnetModel.id
-        }
-
         const [versions, authStatus_] = await Promise.all([
             currentSiteVersion(),
             await firstValueFrom(authStatus),
@@ -131,12 +124,6 @@ export function sanitizeMessages(messages: Message[]): Message[] {
     return sanitizedMessages
 }
 
-// Check if model is Claude and extract version
-// It should capture the numbers between "claude-" and the "-" after the digits
-// It should take in the form of "claude-3.5-haiku" or "claude-3-5-haiku" or "claude-2-1-sonnet" or "claude-2.1-instant" or "claude-2-instant"
-// And then turn it into "3.5" or "3.5" or "2.1" or "2.1" or "2"
-const claudeRegex = /claude-([\d.-]+)-[^-]*$/
-
 /**
  * Builds the request parameters for the chat API.
  *
@@ -156,21 +143,10 @@ export function buildChatRequestParams({
 }): { apiVersion: number; interactionId?: string; customHeaders: Record<string, string> } {
     const requestParams = { apiVersion: codyAPIVersion, interactionId, customHeaders: {} }
 
-    const isClaude = model?.match(claudeRegex)
-    const claudeVersion = Number.parseFloat(isClaude?.[1]?.replace(/-/g, '.') ?? '3.5')
-    const isFireworks = model?.startsWith('fireworks')
-
     // Enabled Fireworks tracing for Sourcegraph teammates.
     // https://readme.fireworks.ai/docs/enabling-tracing
-    if (isFireworks && isFireworksTracingEnabled) {
+    if (model?.startsWith('fireworks') && isFireworksTracingEnabled) {
         requestParams.customHeaders = { 'X-Fireworks-Genie': 'true' }
-    }
-
-    // Set api version to 0 (unversion) for Claude models older than 3.5.
-    // E.g. claude-3-haiku or claude-2-sonnet or claude-2.1-instant v.s. claude-3-5-haiku or 3.5-haiku or 3-7-haiku
-    if (codyAPIVersion > 0 && claudeVersion < 3.5) {
-        // Set api version to 0 (unversion) for Claude models older than 3.5
-        requestParams.apiVersion = 0
     }
 
     return requestParams

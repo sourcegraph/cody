@@ -30,7 +30,8 @@
     "dist/index.js.map",
     "dist/*.wasm",
     "dist/win-ca-roots.exe",
-    "dist/webviews/*"
+    "dist/webviews/*",
+    "dist/*.node"
   ],
   "peerDependencies": {
     "@inquirer/prompts": "^5.0.7",

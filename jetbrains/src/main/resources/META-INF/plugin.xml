@@ -208,7 +208,7 @@
                 </action>
 
                 <action id="cody.command.Explain"
-                        icon="/icons/chat/chat_command.svg"
+                        icon="/icons/chat/chatCommand.svg"
                         class="com.sourcegraph.cody.chat.actions.ExplainCommand"
                         text="Explain Code"
                         description="Explains the selected code">
@@ -218,7 +218,7 @@
                 </action>
 
                 <action id="cody.command.Smell"
-                        icon="/icons/chat/chat_command.svg"
+                        icon="/icons/chat/chatCommand.svg"
                         class="com.sourcegraph.cody.chat.actions.SmellCommand"
                         text="Find Code Smells"
                         description="Finds code smells in the selected code">
@@ -231,7 +231,7 @@
             <group id="Cody.EditCode" popup="true" searchable="false" text="Edit Code"
                    description="Cody inline edit actions">
                 <action id="cody.testCodeAction"
-                        icon="/icons/edit/generate_test.svg"
+                        icon="/icons/edit/generateTest.svg"
                         class="com.sourcegraph.cody.edit.actions.TestCodeAction"
                         text="Generate Unit Tests"
                         description="Generates unit tests for the selected code">
@@ -241,7 +241,7 @@
                 </action>
 
                 <action id="cody.documentCodeAction"
-                        icon="/icons/edit/document_code.svg"
+                        icon="/icons/edit/documentCode.svg"
                         class="com.sourcegraph.cody.edit.actions.DocumentCodeAction"
                         text="Document Code"
                         description="Documents the selected code">
@@ -251,7 +251,7 @@
                 </action>
 
                 <action id="cody.editCodeAction"
-                        icon="/icons/edit/edit_code.svg"
+                        icon="/icons/edit/editCode.svg"
                         class="com.sourcegraph.cody.edit.actions.EditCodeAction"
                         description="Opens the Edit Code dialog"
                         text="Edit Code...">

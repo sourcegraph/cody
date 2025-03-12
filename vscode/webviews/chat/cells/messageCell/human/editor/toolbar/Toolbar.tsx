@@ -140,22 +140,13 @@ export const Toolbar: FunctionComponent<{
                     />
                 )}
                 <PromptSelectFieldToolbarItem focusEditor={focusEditor} className="tw-ml-1 tw-mr-1" />
-                {!userInfo?.isDotComUser && omniBoxEnabled && (
-                    <ModeSelectorField
-                        className={className}
-                        omniBoxEnabled={omniBoxEnabled}
-                        intent={intent}
-                        isDotComUser={userInfo?.isDotComUser}
-                        manuallySelectIntent={manuallySelectIntent}
-                    />
-                )}
-                <ModelSelectFieldToolbarItem
-                    models={models}
-                    userInfo={userInfo}
-                    focusEditor={focusEditor}
-                    modelSelectorRef={modelSelectorRef}
-                    className="tw-mr-1"
-                    extensionAPI={extensionAPI}
+                <ModeSelectorField
+                    className={className}
+                    omniBoxEnabled={omniBoxEnabled}
+                    intent={intent}
+                    isDotComUser={userInfo?.isDotComUser}
+                    isCodyProUser={userInfo?.isCodyProUser}
+                    manuallySelectIntent={manuallySelectIntent}
                 />
             </div>
             <div className="tw-flex-1 tw-flex tw-justify-end">

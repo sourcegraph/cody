@@ -291,9 +291,10 @@ export class MockServer {
             function handleDelayedResponse(res: express.Response): void {
                 const r1 = responses.chatWithSnippet;
                 const r2 = r1 + "\n\nDone";
-                res.write(`event: completion\ndata: {"completion": ${JSON.stringify(r1)}}\n\n`);
+                const propertyName = apiVersion <= 1 ? 'completion' : 'deltaText'
+                res.write(`event: completion\ndata: {"${propertyName}": ${JSON.stringify(r1)}}\n\n`);
                 setTimeout(() => {
-                    res.write(`event: completion\ndata: {"completion": ${JSON.stringify(r2)}}\n\n`);
+                    res.write(`event: completion\ndata: {"${propertyName}": ${JSON.stringify(r2)}}\n\n`);
                     res.write("event: done\ndata: {}\n\n");
                     res.end();
                 }, 400);

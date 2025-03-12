@@ -109,7 +109,7 @@ log:
           - name: content-type
             value: application/json
           - name: traceparent
-            value: 00-19925221b6cc2a3458fa1defa7a4b893-ae4e30c4c923c1c7-01
+            value: 00-166480b60e9cad09c3f81bb606c10b97-7fbdc7e694ed2334-01
           - name: user-agent
             value: customcommandsclient/v1 (Node.js v20.4.0)
           - name: x-requested-with
@@ -181,14 +181,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=8&client-name=customcommandsclient&client-version=v1
       response:
-        bodySize: 609
+        bodySize: 567
         content:
           mimeType: text/event-stream
-          size: 609
+          size: 567
           text: >+
             event: completion
 
-            data: {"deltaText":"Here are the files you've shared:\n\n• src/example1.ts \n• src/example2.ts\n• src/example3.ts","stopReason":"end_turn"}
+            data: {"deltaText":"Here are the files you've shared:\n\n• src/example1.ts\n• src/example2.ts \n• src/example3.ts","stopReason":"end_turn"}
 
 
             event: done
@@ -198,7 +198,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 06 Mar 2025 02:26:55 GMT
+            value: Fri, 07 Mar 2025 18:53:56 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -227,8 +227,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-03-06T02:26:51.812Z
-      time: 3321
+      startedDateTime: 2025-03-07T18:53:54.347Z
+      time: 1847
       timings:
         blocked: -1
         connect: -1
@@ -236,7 +236,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 3321
+        wait: 1847
     - _id: 9e72768f7994cfb84ae145fa281701e9
       _order: 0
       cache: {}
@@ -254,7 +254,7 @@ log:
           - name: content-type
             value: application/json
           - name: traceparent
-            value: 00-5bd40e9fb21908c806f779deebd3fcbe-47ffc9543c416037-01
+            value: 00-2f8fa4df8535e09e908b8c740fe43234-67414889acd49db0-01
           - name: user-agent
             value: customcommandsclient/v1 (Node.js v20.4.0)
           - name: x-requested-with
@@ -311,7 +311,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 06 Mar 2025 02:26:56 GMT
+            value: Fri, 07 Mar 2025 18:53:57 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -340,8 +340,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-03-06T02:26:55.154Z
-      time: 1102
+      startedDateTime: 2025-03-07T18:53:56.224Z
+      time: 1254
       timings:
         blocked: -1
         connect: -1
@@ -349,7 +349,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 1102
+        wait: 1254
     - _id: d5645b3130d2337b849d3f71f76875b0
       _order: 0
       cache: {}
@@ -367,7 +367,7 @@ log:
           - name: content-type
             value: application/json
           - name: traceparent
-            value: 00-b418c8491efdf3448e4a98492072d161-3f14c9cdbd9192ce-01
+            value: 00-1b0e1ea772edcf1ef1c54d30477d2f88-a3940be00a08f299-01
           - name: user-agent
             value: customcommandsclient/v1 (Node.js v20.4.0)
           - name: x-requested-with
@@ -494,7 +494,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 06 Mar 2025 02:26:57 GMT
+            value: Fri, 07 Mar 2025 18:53:58 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -523,8 +523,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-03-06T02:26:56.277Z
-      time: 1320
+      startedDateTime: 2025-03-07T18:53:57.496Z
+      time: 1312
       timings:
         blocked: -1
         connect: -1
@@ -532,7 +532,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 1320
+        wait: 1312
     - _id: bae66576e73c6c98050a7cc623c9e0fe
       _order: 0
       cache: {}
@@ -550,7 +550,7 @@ log:
           - name: content-type
             value: application/json
           - name: traceparent
-            value: 00-cc638c3674ce741e7da04f8a824f7916-ff6dba6963269ba9-01
+            value: 00-c75240714eb84ab9436af1959442d333-d5887c5acb160a76-01
           - name: user-agent
             value: customcommandsclient/v1 (Node.js v20.4.0)
           - name: x-requested-with
@@ -652,7 +652,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 06 Mar 2025 02:26:59 GMT
+            value: Fri, 07 Mar 2025 18:54:01 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -681,8 +681,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-03-06T02:26:57.610Z
-      time: 2201
+      startedDateTime: 2025-03-07T18:53:58.821Z
+      time: 2487
       timings:
         blocked: -1
         connect: -1
@@ -690,7 +690,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 2201
+        wait: 2487
     - _id: 5bb5e266d9ce9dbf5aeb3c8911884447
       _order: 0
       cache: {}
@@ -708,7 +708,7 @@ log:
           - name: content-type
             value: application/json
           - name: traceparent
-            value: 00-bd3a5ea47deb959b59430f33c7c32fc6-416018f64b7bd206-01
+            value: 00-587f68e6b04c01774ec8334db7f48892-354e7273c2b0359a-01
           - name: user-agent
             value: customcommandsclient/v1 (Node.js v20.4.0)
           - name: x-requested-with
@@ -806,14 +806,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=8&client-name=customcommandsclient&client-version=v1
       response:
-        bodySize: 642
+        bodySize: 730
         content:
           mimeType: text/event-stream
-          size: 642
+          size: 730
           text: >+
             event: completion
 
-            data: {"deltaText":"export interface Animal {\n    name: string\n    makeAnimalSound(): string\n    isMammal: boolean\n    logAnimalName(): void\n}","stopReason":"stop_sequence"}
+            data: {"deltaText":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string\n    isMammal: boolean\n    logAnimalName(): void\n}\n/* SELECTION_END */\n","stopReason":"stop_sequence"}
 
 
             event: done
@@ -823,7 +823,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 06 Mar 2025 02:27:01 GMT
+            value: Fri, 07 Mar 2025 18:54:03 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -852,8 +852,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-03-06T02:26:59.834Z
-      time: 2007
+      startedDateTime: 2025-03-07T18:54:01.328Z
+      time: 1804
       timings:
         blocked: -1
         connect: -1
@@ -861,7 +861,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 2007
+        wait: 1804
     - _id: f1b1cde4cd57488b7f0137954f0302f5
       _order: 0
       cache: {}
