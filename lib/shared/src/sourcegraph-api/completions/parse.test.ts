@@ -9,11 +9,13 @@ describe('parseEvents', () => {
             {
                 completion: 'Hello',
                 stopReason: undefined,
+                content: [],
                 type: 'completion',
             },
             {
                 completion: 'Hello, world!',
                 stopReason: undefined,
+                content: [],
                 type: 'completion',
             },
         ],

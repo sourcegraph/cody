@@ -4,6 +4,7 @@ import {
     type ChatMessage,
     type ChatModel,
     type ContextItem,
+    type MessagePart,
     type ModelContextWindow,
     type ProcessingStep,
     type RankedContext,
@@ -150,6 +151,16 @@ export class ChatBuilder {
             }
         })
 
+        this.changeNotifications.next()
+    }
+
+    public setLastMessageContent(content: MessagePart[]): void {
+        const lastMessage = this.messages.at(-1)
+        if (!lastMessage) {
+            throw new Error('no last message')
+        }
+
+        lastMessage.content = content
         this.changeNotifications.next()
     }
 

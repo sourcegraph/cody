@@ -31,7 +31,6 @@ import type { AgentHandler, AgentHandlerDelegate, AgentRequest } from './interfa
 
 export class ChatHandler implements AgentHandler {
     constructor(
-        protected handlerID: string,
         protected contextRetriever: Pick<ContextRetriever, 'retrieveContext' | 'computeDidYouMean'>,
         protected readonly editor: ChatControllerOptions['editor'],
         protected chatClient: ChatControllerOptions['chatClient']
@@ -234,7 +233,7 @@ export class ChatHandler implements AgentHandler {
         )
     }
 
-    private async buildPrompt(
+    public async buildPrompt(
         prompter: DefaultPrompter,
         chatBuilder: ChatBuilder,
         abortSignal: AbortSignal,
