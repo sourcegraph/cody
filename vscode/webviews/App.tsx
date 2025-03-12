@@ -4,9 +4,10 @@ import {
     type ChatMessage,
     type CodyClientConfig,
     type DefaultContext,
-    GuardrailsPost,
+    GuardrailsMode,
     PromptString,
     type TelemetryRecorder,
+    createGuardrailsImpl,
 } from '@sourcegraph/cody-shared'
 import type { AuthMethod } from '../src/chat/protocol'
 import styles from './App.module.css'
@@ -42,14 +43,19 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
 
     const dispatchClientAction = useClientActionDispatcher()
 
+    const attributionEnabled = clientConfig?.attributionEnabled ?? false
     const guardrails = useMemo(() => {
-        return new GuardrailsPost((snippet: string) => {
-            vscodeAPI.postMessage({
-                command: 'attribution-search',
-                snippet,
-            })
-        })
-    }, [vscodeAPI])
+        // TODO: We need to get the guardrails mode from site configuration here for enforced mode
+        return createGuardrailsImpl(
+            attributionEnabled ? GuardrailsMode.Enforced : GuardrailsMode.Off,
+            (snippet: string) => {
+                vscodeAPI.postMessage({
+                    command: 'attribution-search',
+                    snippet,
+                })
+            }
+        )
+    }, [vscodeAPI, attributionEnabled])
 
     useSuppressKeys()
 
@@ -206,14 +212,12 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                     configuration={config}
                     errorMessages={errorMessages}
                     setErrorMessages={setErrorMessages}
-                    attributionEnabled={clientConfig?.attributionEnabled ?? false}
                     chatEnabled={clientConfig?.chatEnabled ?? true}
                     instanceNotices={clientConfig?.notices ?? []}
                     messageInProgress={messageInProgress}
                     transcript={transcript}
                     vscodeAPI={vscodeAPI}
                     guardrails={guardrails}
-                    smartApplyEnabled={config.config.smartApply}
                 />
             )}
         </ComposedWrappers>

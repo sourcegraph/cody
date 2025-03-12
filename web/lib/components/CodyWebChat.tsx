@@ -17,9 +17,11 @@ import {
     type ContextItem,
     type ContextItemOpenCtx,
     ContextItemSource,
+    GuardrailsMode,
     PromptString,
     REMOTE_DIRECTORY_PROVIDER_URI,
     type WebviewToExtensionAPI,
+    createGuardrailsImpl,
     isErrorLike,
     setDisplayPathEnvInfo,
 } from '@sourcegraph/cody-shared'
@@ -369,7 +371,16 @@ const CodyWebPanel: FC<CodyWebPanelProps> = props => {
                             setView={handleViewChange}
                             errorMessages={errorMessages}
                             setErrorMessages={setErrorMessages}
-                            attributionEnabled={false}
+                            // TODO: This should not be a boolean but instead an enum to enable enforced mode.
+                            guardrails={createGuardrailsImpl(
+                                config.config.attributionEnabled
+                                    ? GuardrailsMode.Permissive
+                                    : GuardrailsMode.Off,
+                                () => {
+                                    // TODO: Implement guardrails for Cody Web.
+                                    throw new Error('NYI')
+                                }
+                            )}
                             configuration={config}
                             chatEnabled={true}
                             instanceNotices={clientConfig?.notices ?? []}

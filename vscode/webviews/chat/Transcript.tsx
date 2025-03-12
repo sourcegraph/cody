@@ -57,13 +57,12 @@ interface TranscriptProps {
     models: Model[]
     userInfo: UserAccountInfo
     messageInProgress: ChatMessage | null
-    guardrails?: Guardrails
+    guardrails: Guardrails
     postMessage?: ApiPostMessage
 
     copyButtonOnSubmit: CodeBlockActionsProps['copyButtonOnSubmit']
     insertButtonOnSubmit?: CodeBlockActionsProps['insertButtonOnSubmit']
     smartApply?: CodeBlockActionsProps['smartApply']
-    smartApplyEnabled?: boolean
 
     manuallySelectedIntent: ChatMessage['intent']
     setManuallySelectedIntent: (intent: ChatMessage['intent']) => void
@@ -83,7 +82,6 @@ export const Transcript: FC<TranscriptProps> = props => {
         copyButtonOnSubmit,
         insertButtonOnSubmit,
         smartApply,
-        smartApplyEnabled,
         manuallySelectedIntent,
         setManuallySelectedIntent,
     } = props
@@ -157,7 +155,6 @@ export const Transcript: FC<TranscriptProps> = props => {
                             messageInProgress && interactions.at(i - 1)?.assistantMessage?.isLoading
                         )}
                         smartApply={smartApply}
-                        smartApplyEnabled={smartApplyEnabled}
                         editorRef={i === interactions.length - 1 ? lastHumanEditorRef : undefined}
                         onAddToFollowupChat={onAddToFollowupChat}
                         manuallySelectedIntent={manuallySelectedIntent}
@@ -273,7 +270,6 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
         insertButtonOnSubmit,
         copyButtonOnSubmit,
         smartApply,
-        smartApplyEnabled,
         editorRef: parentEditorRef,
         manuallySelectedIntent,
         setManuallySelectedIntent,
@@ -399,6 +395,20 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
     useEffect(() => {
         setIsLoading(assistantMessage?.isLoading)
     }, [assistantMessage])
+
+    const humanMessageText = humanMessage.text
+    const smartApplyWithInstruction = useMemo(() => {
+        if (!smartApply) return undefined
+        return {
+            ...smartApply,
+            onSubmit(params: Parameters<typeof smartApply.onSubmit>[0]) {
+                return smartApply.onSubmit({
+                    ...params,
+                    instruction: params.instruction ?? humanMessageText,
+                })
+            },
+        }
+    }, [smartApply, humanMessageText])
 
     useEffect(() => {
         if (!assistantMessage) return
@@ -624,8 +634,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                         guardrails={guardrails}
                         humanMessage={humanMessageInfo}
                         isLoading={isLastSentInteraction && assistantMessage.isLoading}
-                        smartApply={smartApply}
-                        smartApplyEnabled={smartApplyEnabled && !agentToolCalls}
+                        smartApply={agentToolCalls ? undefined : smartApplyWithInstruction}
                         onSelectedFiltersUpdate={onSelectedFiltersUpdate}
                         isLastSentInteraction={isLastSentInteraction}
                         setThoughtProcessOpened={setThoughtProcessOpened}
