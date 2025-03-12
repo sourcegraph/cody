@@ -1,14 +1,53 @@
-import * as vscode from 'vscode'
-
 import {
     type ContextItem,
     ContextItemSource,
     TokenCounterUtils,
     displayPath,
 } from '@sourcegraph/cody-shared'
-import { logError } from '../../output-channel-logger'
+import * as vscode from 'vscode'
+import { logDebug, logError } from '../../output-channel-logger'
 import type { Repository } from '../../repository/builtinGitExtension'
 import { doesFileExist } from '../utils/workspace-files'
+
+import { exec } from 'node:child_process'
+import { promisify } from 'node:util'
+
+const execAsync = promisify(exec)
+
+/**
+ * Get untracked and unstaged files from a git repository.
+ *
+ * @param gitRepo - The git repository object.
+ * @returns A promise that resolves to an array of file objects representing untracked, unstaged files.
+ * @throws If there is an error retrieving the untracked files.
+ */
+export async function getUntrackedUnstagedFiles(gitRepo: Repository): Promise<{ uri: vscode.Uri }[]> {
+    try {
+        const rootPath = gitRepo.rootUri.fsPath
+
+        const { stdout } = await execAsync('git ls-files --others --exclude-standard', {
+            cwd: rootPath,
+        })
+
+        if (!stdout.trim()) {
+            return []
+        }
+
+        const untrackedFiles = stdout
+            .split('\n')
+            .filter(line => line.trim().length > 0)
+            .map(filePath => {
+                const fileUri = vscode.Uri.joinPath(gitRepo.rootUri, filePath.trim())
+                return { uri: fileUri }
+            })
+
+        return untrackedFiles
+    } catch (error) {
+        logError('getUntrackedUnstagedFiles', 'failed', { verbose: error })
+        // Return empty array instead of throwing to maintain graceful handling
+        return []
+    }
+}
 
 /**
  * Generates context files from the git diff and git log of a given repository.
@@ -43,12 +82,14 @@ export async function getContextFilesFromGitApi(
  */
 export async function getContextFilesFromGitDiff(gitRepo: Repository): Promise<ContextItem[]> {
     try {
-        // Get the list of files that currently have staged and unstaged changes.
-        const [stagedFiles, unstagedFiles] = await Promise.all([
+        // Get the list of files that currently have staged and tracked unstaged changes.
+        const [stagedFiles, trackedUnstagedFiles] = await Promise.all([
             gitRepo.diffIndexWithHEAD(),
             gitRepo.diffWithHEAD(),
         ])
 
+        const untrackedUnstagedFiles = await getUntrackedUnstagedFiles(gitRepo)
+        const unstagedFiles = [...trackedUnstagedFiles, ...untrackedUnstagedFiles]
         // Get the diff output for staged changes if there is any,
         // otherwise, get the diff output for unstaged changes.
         const hasStagedChanges = Boolean(stagedFiles?.length)
