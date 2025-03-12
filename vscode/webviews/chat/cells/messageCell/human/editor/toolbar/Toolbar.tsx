@@ -140,14 +140,15 @@ export const Toolbar: FunctionComponent<{
                     />
                 )}
                 <PromptSelectFieldToolbarItem focusEditor={focusEditor} className="tw-ml-1 tw-mr-1" />
-                <ModeSelectorField
-                    className={className}
-                    omniBoxEnabled={omniBoxEnabled}
-                    intent={intent}
-                    isDotComUser={userInfo?.isDotComUser}
-                    isCodyProUser={userInfo?.isCodyProUser}
-                    manuallySelectIntent={manuallySelectIntent}
-                />
+                {!userInfo?.isDotComUser && omniBoxEnabled && (
+                    <ModeSelectorField
+                        className={className}
+                        omniBoxEnabled={omniBoxEnabled}
+                        intent={intent}
+                        isDotComUser={userInfo?.isDotComUser}
+                        manuallySelectIntent={manuallySelectIntent}
+                    />
+                )}
                 <ModelSelectFieldToolbarItem
                     models={models}
                     userInfo={userInfo}
