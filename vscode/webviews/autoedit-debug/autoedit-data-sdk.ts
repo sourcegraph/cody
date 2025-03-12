@@ -1,4 +1,4 @@
-import { SuccessModelResponse } from '../../src/autoedits/adapters/base'
+import type { SuccessModelResponse } from '../../src/autoedits/adapters/base'
 import type { AutoeditRequestDebugState } from '../../src/autoedits/debug-panel/debug-store'
 import { DISCARD_REASONS, getDetailedTimingInfo } from './autoedit-ui-utils'
 
