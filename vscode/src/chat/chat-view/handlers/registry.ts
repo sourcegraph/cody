@@ -1,6 +1,10 @@
 import Anthropic from '@anthropic-ai/sdk'
 import type { ChatMessage } from '@sourcegraph/cody-shared'
-import { DeepCodyAgentID, ToolCodyModelRef } from '@sourcegraph/cody-shared/src/models/client'
+import {
+    DeepCodyAgentID,
+    DeepCodyModelRef,
+    ToolCodyModelRef,
+} from '@sourcegraph/cody-shared/src/models/client'
 import { getConfiguration } from '../../../configuration'
 import { AgenticHandler } from './AgenticHandler'
 import { ChatHandler } from './ChatHandler'
@@ -58,6 +62,9 @@ export function getAgent(model: string, agentName: string, tools: AgentTools): A
     return new ChatHandler(contextRetriever, editor, chatClient)
 }
 
-export function getAgentName(intent: ChatMessage['intent']): string | undefined {
+export function getAgentName(intent: ChatMessage['intent'], model?: string): string | undefined {
+    if (model === DeepCodyModelRef) {
+        return DeepCodyAgentID
+    }
     return (intent !== 'chat' && intent) || undefined
 }
