@@ -672,7 +672,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
 
                 this.chatBuilder.setSelectedModel(model)
 
-                const chatAgent = getAgentName(manuallySelectedIntent, model)
+                const chatAgent = getAgentName(manuallySelectedIntent)
 
                 this.chatBuilder.addHumanMessage({
                     text: inputText,
@@ -744,7 +744,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
 
         this.postEmptyMessageInProgress(model)
 
-        const agent = getAgent(chatAgent ?? model, {
+        const agent = getAgent(model, chatAgent ?? model, {
             contextRetriever: this.contextRetriever,
             editor: this.editor,
             chatClient: this.chatClient,

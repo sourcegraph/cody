@@ -153,6 +153,21 @@ export class PromptBuilder {
             if (humanMsg?.speaker !== 'human' || humanMsg?.speaker === assistantMsg?.speaker) {
                 throw new Error(`Invalid transcript order: expected human message at index ${i}`)
             }
+
+            // Process function results if any
+            if (humanMsg.content?.some(c => c.type === 'function')) {
+                const groupedToolResult = humanMsg.content
+                    .filter(c => c.type === 'function')
+                    .map(c => c.result)
+                    .join('\n')
+
+                humanMsg.text = (humanMsg.text || ps``).concat(
+                    PromptString.unsafe_fromLLMResponse(groupedToolResult || '')
+                )
+                humanMsg.content = undefined
+            }
+
+            // Check token limits
             const { succeeded: withinLimit } = this.tokenCounter.updateUsage('input', [
                 humanMsg,
                 assistantMsg,
