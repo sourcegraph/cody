@@ -29,12 +29,11 @@ interface ChatboxProps {
     transcript: ChatMessage[]
     models: Model[]
     vscodeAPI: Pick<VSCodeWrapper, 'postMessage' | 'onMessage'>
-    guardrails?: Guardrails
+    guardrails: Guardrails
     scrollableParent?: HTMLElement | null
     showWelcomeMessage?: boolean
     showIDESnippetActions?: boolean
     setView: (view: View) => void
-    smartApplyEnabled?: boolean
     isWorkspacesUpgradeCtaEnabled?: boolean
 }
 
@@ -51,7 +50,6 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     showWelcomeMessage = true,
     showIDESnippetActions = true,
     setView,
-    smartApplyEnabled,
     isWorkspacesUpgradeCtaEnabled,
 }) => {
     const transcriptRef = useRef(transcript)
@@ -65,7 +63,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     const copyButtonOnSubmit = useCallback(
         (text: string, eventType: 'Button' | 'Keydown' = 'Button') => {
             const op = 'copy'
-            // remove the additional /n added by the text area at the end of the text
+            // remove the additional newline added by the text area at the end of the text
 
             const code = eventType === 'Button' ? text.replace(/\n$/, '') : text
             // Log the event type and text to telemetry in chat view
@@ -230,7 +228,6 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                 chatEnabled={chatEnabled}
                 postMessage={postMessage}
                 guardrails={guardrails}
-                smartApplyEnabled={smartApplyEnabled}
                 manuallySelectedIntent={lastManuallySelectedIntent}
                 setManuallySelectedIntent={setLastManuallySelectedIntent}
             />

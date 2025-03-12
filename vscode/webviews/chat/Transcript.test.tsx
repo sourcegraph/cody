@@ -4,6 +4,7 @@ import type { ComponentProps } from 'react'
 import { describe, expect, test, vi } from 'vitest'
 import { URI } from 'vscode-uri'
 import { AppWrapperForTest } from '../AppWrapperForTest'
+import { MockNoGuardrails } from '../utils/guardrails'
 import { type Interaction, Transcript, transcriptToInteractionPairs } from './Transcript'
 import { FIXTURE_USER_ACCOUNT_INFO } from './fixtures'
 
@@ -18,6 +19,7 @@ const PROPS: Omit<ComponentProps<typeof Transcript>, 'transcript'> = {
     setActiveChatContext: () => {},
     manuallySelectedIntent: undefined,
     setManuallySelectedIntent: () => {},
+    guardrails: new MockNoGuardrails(),
 }
 
 vi.mock('../utils/VSCodeApi', () => ({

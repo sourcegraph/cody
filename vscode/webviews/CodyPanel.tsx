@@ -36,17 +36,15 @@ interface CodyPanelProps {
         userProductSubscription?: UserProductSubscription | null | undefined
     }
     errorMessages: string[]
-    attributionEnabled: boolean
     chatEnabled: boolean
     instanceNotices: CodyNotice[]
     messageInProgress: ChatMessage | null
     transcript: ChatMessage[]
     vscodeAPI: Pick<VSCodeWrapper, 'postMessage' | 'onMessage'>
     setErrorMessages: (errors: string[]) => void
-    guardrails?: Guardrails
+    guardrails: Guardrails
     showWelcomeMessage?: boolean
     showIDESnippetActions?: boolean
-    smartApplyEnabled?: boolean
     onExternalApiReady?: (api: CodyExternalApi) => void
     onExtensionApiReady?: (api: WebviewToExtensionAPI) => void
 }
@@ -60,18 +58,16 @@ export const CodyPanel: FunctionComponent<CodyPanelProps> = ({
     configuration: { config, clientCapabilities, isDotComUser },
     errorMessages,
     setErrorMessages,
-    attributionEnabled,
     chatEnabled,
     instanceNotices,
     messageInProgress,
     transcript,
     vscodeAPI,
-    guardrails,
     showIDESnippetActions,
     showWelcomeMessage,
-    smartApplyEnabled,
     onExternalApiReady,
     onExtensionApiReady,
+    guardrails,
 }) => {
     const tabContainerRef = useRef<HTMLDivElement>(null)
 
@@ -131,22 +127,19 @@ export const CodyPanel: FunctionComponent<CodyPanelProps> = ({
                 {errorMessages && <ErrorBanner errors={errorMessages} setErrors={setErrorMessages} />}
                 <TabContainer value={view} ref={tabContainerRef} data-scrollable>
                     {view === View.Chat && (
-                        <>
-                            <Chat
-                                chatEnabled={chatEnabled}
-                                messageInProgress={messageInProgress}
-                                transcript={transcript}
-                                models={chatModels || []}
-                                vscodeAPI={vscodeAPI}
-                                guardrails={attributionEnabled ? guardrails : undefined}
-                                showIDESnippetActions={showIDESnippetActions}
-                                showWelcomeMessage={showWelcomeMessage}
-                                scrollableParent={tabContainerRef.current}
-                                smartApplyEnabled={smartApplyEnabled}
-                                setView={setView}
-                                isWorkspacesUpgradeCtaEnabled={isWorkspacesUpgradeCtaEnabled}
-                            />
-                        </>
+                        <Chat
+                            chatEnabled={chatEnabled}
+                            messageInProgress={messageInProgress}
+                            transcript={transcript}
+                            models={chatModels || []}
+                            vscodeAPI={vscodeAPI}
+                            guardrails={guardrails}
+                            showIDESnippetActions={showIDESnippetActions}
+                            showWelcomeMessage={showWelcomeMessage}
+                            scrollableParent={tabContainerRef.current}
+                            setView={setView}
+                            isWorkspacesUpgradeCtaEnabled={isWorkspacesUpgradeCtaEnabled}
+                        />
                     )}
                     {view === View.History && (
                         <HistoryTab

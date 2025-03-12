@@ -6,8 +6,8 @@ import {
     CODY_PASSTHROUGH_VSCODE_OPEN_COMMAND_ID,
     type ChatClient,
     DEFAULT_EVENT_SOURCE,
-    type Guardrails,
     type PromptMode,
+    type SourcegraphGuardrailsClient,
     authStatus,
     currentAuthStatus,
     currentAuthStatusAuthed,
@@ -67,7 +67,7 @@ export class ChatsController implements vscode.Disposable {
         private options: Options,
         private chatClient: ChatClient,
         private readonly contextRetriever: ContextRetriever,
-        private readonly guardrails: Guardrails,
+        private readonly guardrails: SourcegraphGuardrailsClient,
         private readonly extensionClient: ExtensionClient
     ) {
         logDebug('ChatsController:constructor', 'init')

@@ -2,7 +2,6 @@ import type * as vscode from 'vscode'
 
 import {
     ChatClient,
-    type Guardrails,
     type SourcegraphCompletionsClient,
     SourcegraphGuardrailsClient,
 } from '@sourcegraph/cody-shared'
@@ -14,7 +13,7 @@ import type { SymfRunner } from './local-context/symf'
 interface ExternalServices {
     chatClient: ChatClient
     completionsClient: SourcegraphCompletionsClient
-    guardrails: Guardrails
+    guardrails: SourcegraphGuardrailsClient
     symfRunner: SymfRunner | undefined
     dispose(): void
 }

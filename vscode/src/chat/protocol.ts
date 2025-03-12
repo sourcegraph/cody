@@ -271,6 +271,8 @@ export interface ConfigurationSubsetForWebview
     allowEndpointChange: boolean
     experimentalPromptEditorEnabled: boolean
     experimentalAgenticChatEnabled: boolean
+    // TODO: This should not be just a boolean but an enum for permissive, enforced (why do people use booleans?)
+    attributionEnabled: boolean
 }
 
 /**
