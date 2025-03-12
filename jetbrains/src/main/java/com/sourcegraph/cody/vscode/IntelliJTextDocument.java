@@ -4,8 +4,8 @@ import com.intellij.lang.Language;
 import com.intellij.lang.LanguageUtil;
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.Editor;
-import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.vfs.VfsUtil;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.sourcegraph.cody.agent.protocol_generated.Position;
 import java.net.URI;
@@ -20,14 +20,13 @@ public class IntelliJTextDocument implements TextDocument {
 
   public IntelliJTextDocument(Editor editor, Project project) {
     this.editor = editor;
-    Document document = editor.getDocument();
-    this.file = FileDocumentManager.getInstance().getFile(document);
+    this.file = editor.getVirtualFile();
     this.language = LanguageUtil.getLanguageForPsi(project, file);
   }
 
   @Override
   public URI uri() {
-    return URI.create(file.getUrl());
+    return VfsUtil.toUri(file.getPath());
   }
 
   @Override

@@ -74,7 +74,7 @@ object ProtocolTextDocumentExt {
   @RequiresEdt
   fun fromEditorWithOffsetSelection(editor: Editor, event: CaretEvent): ProtocolTextDocument? {
     val caret = event.caret ?: return null
-    val file = FileDocumentManager.getInstance().getFile(editor.document) ?: return null
+    val file = editor.virtualFile ?: return null
     val start = editor.document.codyPosition(caret.offset)
     val selection = Range(start, start)
     val uri = fileUriFor(file) ?: return null
@@ -86,7 +86,7 @@ object ProtocolTextDocumentExt {
 
   @RequiresEdt
   fun fromEditorWithRangeSelection(editor: Editor, event: SelectionEvent): ProtocolTextDocument? {
-    val file = FileDocumentManager.getInstance().getFile(editor.document) ?: return null
+    val file = editor.virtualFile ?: return null
     val uri = fileUriFor(file) ?: return null
     val selection = editor.document.codyRange(event.newRange.startOffset, event.newRange.endOffset)
     return ProtocolTextDocument(
@@ -105,7 +105,7 @@ object ProtocolTextDocumentExt {
 
   @RequiresEdt
   fun fromEditorForDocumentEvent(editor: Editor, event: DocumentEvent): ProtocolTextDocument? {
-    val file = FileDocumentManager.getInstance().getFile(event.document) ?: return null
+    val file = editor.virtualFile ?: return null
     val uri = fileUriFor(file) ?: return null
     val selection = event.document.codyRange(editor.caretModel.offset, editor.caretModel.offset)
 
@@ -146,7 +146,7 @@ object ProtocolTextDocumentExt {
 
   @RequiresEdt
   fun fromEditor(editor: Editor): ProtocolTextDocument? {
-    val file = FileDocumentManager.getInstance().getFile(editor.document) ?: return null
+    val file = editor.virtualFile ?: return null
     return fromVirtualEditorFile(editor, file)
   }
 
