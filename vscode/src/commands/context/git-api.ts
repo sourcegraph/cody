@@ -150,7 +150,12 @@ export async function getContextFilesFromGitDiff(gitRepo: Repository): Promise<C
         // Get the diff output for staged changes if there is any,
         // otherwise, get the diff output for unstaged changes.
         const hasStagedChanges = Boolean(stagedFiles?.length)
-        const command = `git diff${hasStagedChanges ? ' --cached' : ''}`
+        let command = undefined
+        if (hasStagedChanges) {
+            command = 'git diff --cached'
+        } else {
+            command = 'git diff'
+        }
 
         // A list of file uris to use for comparison with the diff output.
         const diffFiles = hasStagedChanges ? stagedFiles : unstagedFiles
