@@ -17,28 +17,36 @@ export class OpenAIAdapter implements AutoeditsModelAdapter {
                 throw new Error('No api key provided in the config override')
             }
 
-            const { data, requestHeaders, responseHeaders, url } = await getModelResponse(
-                options.url,
-                JSON.stringify({
+            const response = await getModelResponse({
+                url: options.url,
+                body: {
                     model: options.model,
                     messages: getOpenaiCompatibleChatPrompt({
                         systemMessage: options.prompt.systemMessage,
                         userMessage: options.prompt.userMessage,
                     }),
-                    temperature: 0.5,
+                    temperature: 0.1,
                     max_tokens: 256,
                     response_format: {
                         type: 'text',
                     },
-                }),
-                apiKey
-            )
+                    stream: false,
+                    prediction: {
+                        type: 'content',
+                        content: options.codeToRewrite,
+                    },
+                },
+                apiKey,
+                abortSignal: options.abortSignal,
+            })
+
+            if (response.type === 'aborted') {
+                return response
+            }
 
             return {
-                prediction: data.choices[0].message.content,
-                responseHeaders,
-                requestHeaders,
-                requestUrl: url,
+                ...response,
+                prediction: response.responseBody.choices[0].message.content,
             }
         } catch (error) {
             autoeditsOutputChannelLogger.logError('getModelResponse', 'Error calling OpenAI API:', {

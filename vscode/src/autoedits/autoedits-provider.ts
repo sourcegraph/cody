@@ -273,9 +273,10 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                 position,
                 prompt,
                 codeToReplaceData,
+                abortSignal,
             })
 
-            if (abortSignal?.aborted) {
+            if (abortSignal?.aborted || predictionResult.type === 'aborted') {
                 autoeditsOutputChannelLogger.logDebugIfVerbose(
                     'provideInlineCompletionItems',
                     'client aborted after getPrediction'
@@ -288,7 +289,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                 return null
             }
 
-            if (!predictionResult || predictionResult.prediction.length === 0) {
+            if (predictionResult.prediction.length === 0) {
                 autoeditsOutputChannelLogger.logDebugIfVerbose(
                     'provideInlineCompletionItems',
                     'received empty prediction'
@@ -485,12 +486,14 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
         position,
         codeToReplaceData,
         prompt,
+        abortSignal,
     }: {
         document: vscode.TextDocument
         position: vscode.Position
         codeToReplaceData: CodeToReplaceData
         prompt: AutoeditsPrompt
-    }): Promise<ModelResponse | undefined> {
+        abortSignal: AbortSignal
+    }): Promise<ModelResponse> {
         if (autoeditsProviderConfig.isMockResponseFromCurrentDocumentTemplateEnabled) {
             const responseMetadata = extractAutoEditResponseFromCurrentDocumentCommentTemplate(
                 document,
@@ -505,8 +508,10 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
 
                 if (prediction) {
                     return {
+                        type: 'success',
                         prediction,
                         responseHeaders: {},
+                        responseBody: {},
                         requestUrl: autoeditsProviderConfig.url,
                     }
                 }
@@ -520,6 +525,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
             codeToRewrite: codeToReplaceData.codeToRewrite,
             userId: (await currentResolvedConfig()).clientState.anonymousUserID,
             isChatModel: autoeditsProviderConfig.isChatModel,
+            abortSignal,
         })
     }
 
