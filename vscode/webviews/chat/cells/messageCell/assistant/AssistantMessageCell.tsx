@@ -53,7 +53,7 @@ export const AssistantMessageCell: FunctionComponent<{
     setThoughtProcessOpened?: (open: boolean) => void
 
     postMessage?: ApiPostMessage
-    guardrails?: Guardrails
+    guardrails: Guardrails
     onSelectedFiltersUpdate: (filters: NLSSearchDynamicFilter[]) => void
     isLastSentInteraction: boolean
 }> = memo(
@@ -142,8 +142,12 @@ export const AssistantMessageCell: FunctionComponent<{
                         {message.subMessages?.length &&
                             message.subMessages.length > 0 &&
                             message.subMessages.map((piece, i) => (
-                                // biome-ignore lint/suspicious/noArrayIndexKey:
-                                <SubMessageCell key={`piece-${i}`} piece={piece} />
+                                <SubMessageCell
+                                    // biome-ignore lint/suspicious/noArrayIndexKey:
+                                    key={`piece-${i}`}
+                                    piece={piece}
+                                    guardrails={guardrails}
+                                />
                             ))}
                     </>
                 }

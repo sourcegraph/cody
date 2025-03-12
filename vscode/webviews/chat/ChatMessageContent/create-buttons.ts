@@ -1,4 +1,3 @@
-import { type Guardrails, isError } from '@sourcegraph/cody-shared'
 import type { FixupTaskID } from '../../../src/non-stop/FixupTask'
 import { CodyTaskState } from '../../../src/non-stop/state'
 import {
@@ -18,7 +17,6 @@ import type { Config } from '../../utils/useConfig'
 import type { PriorHumanMessageInfo } from '../cells/messageCell/assistant/AssistantMessageCell'
 import type { CodeBlockActionsProps } from './ChatMessageContent'
 import styles from './ChatMessageContent.module.css'
-import { GuardrailsStatusController } from './GuardRailStatusController'
 import { getFileName } from './utils'
 
 export function createButtons(
@@ -110,7 +108,6 @@ export function createButtonsExperimentalUI(
     smartApply?: CodeBlockActionsProps['smartApply'],
     smartApplyId?: string,
     smartApplyState?: CodyTaskState,
-    guardrails?: Guardrails,
     isMessageLoading?: boolean
 ): HTMLElement {
     const previewContainer = document.createElement('div')
@@ -156,40 +153,9 @@ export function createButtonsExperimentalUI(
     actionButtons.className = styles.actionButtons
     buttons.appendChild(actionButtons)
 
-    // Create metadata container for guardrails and filename
+    // Create metadata container for filename
     const metadataContainer = document.createElement('div')
     metadataContainer.className = styles.metadataContainer
-
-    // Add guardrails if needed
-    if (guardrails) {
-        const container = document.createElement('div')
-        container.classList.add(styles.attributionContainer)
-        metadataContainer.append(container)
-
-        if (!isMessageLoading) {
-            const g = new GuardrailsStatusController(container)
-            g.setPending()
-
-            guardrails
-                .searchAttribution(preText)
-                .then(attribution => {
-                    if (isError(attribution)) {
-                        g.setUnavailable(attribution)
-                    } else if (attribution.repositories.length === 0) {
-                        g.setSuccess()
-                    } else {
-                        g.setFailure(
-                            attribution.repositories.map(r => r.name),
-                            attribution.limitHit
-                        )
-                    }
-                })
-                .catch(error => {
-                    g.setUnavailable(error)
-                    return
-                })
-        }
-    }
 
     // Add filename if present
     if (codeBlockName && codeBlockName !== 'command') {

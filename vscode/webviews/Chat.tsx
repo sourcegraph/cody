@@ -29,7 +29,7 @@ interface ChatboxProps {
     transcript: ChatMessage[]
     models: Model[]
     vscodeAPI: Pick<VSCodeWrapper, 'postMessage' | 'onMessage'>
-    guardrails?: Guardrails
+    guardrails: Guardrails
     scrollableParent?: HTMLElement | null
     showWelcomeMessage?: boolean
     showIDESnippetActions?: boolean

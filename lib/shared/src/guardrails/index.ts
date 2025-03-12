@@ -1,23 +1,275 @@
+// Controls whether and how guardrails are enforced, and requests attribution
+// for code snippets.
+export interface Guardrails {
+    searchAttribution(snippet: string): Promise<Attribution | Error>
+    shouldHideCodeBeforeAttribution: boolean
+    needsAttribution(params: { code: string; language: string | undefined }): boolean
+}
+
+// Collects guardrails attribution results. Role interface used by the Webview
+// postMessage receiver to pass results to guardrails.
+export interface GuardrailsResultSink {
+    notifyAttributionSuccess(snippet: string, result: Attribution): void
+    notifyAttributionFailure(snippet: string, error: Error): void
+}
+
 export interface Attribution {
     limitHit: boolean
     repositories: RepositoryAttribution[]
 }
 
-interface RepositoryAttribution {
+export interface RepositoryAttribution {
     name: string
 }
 
-export interface Guardrails {
-    searchAttribution(snippet: string): Promise<Attribution | Error>
+// GuardrailsMode represents the different enforcement modes for guardrails
+export enum GuardrailsMode {
+    // Off mode: guardrails are disabled
+    Off = 'off',
+    // Permissive mode: show the code but with an icon indicating the Guardrails check result
+    Permissive = 'permissive',
+    // Enforced mode: do not display code until guardrails check passes
+    Enforced = 'enforced',
 }
 
-// GuardrailsPost implements Guardrails interface by synchronizing on message
-// passing between webview and extension process.
-export class GuardrailsPost implements Guardrails {
-    private currentRequests: Map<string, AttributionSearchSync> = new Map()
-    constructor(private postSnippet: (txt: string) => void) {}
+// GuardrailsCheckStatus represents the status of a guardrails check
+export enum GuardrailsCheckStatus {
+    // Check hasn't been initiated yet; still generating code
+    GeneratingCode = 'generating-code',
+    // Check is in progress
+    Checking = 'checking',
+    // Skipped: Guardrails is disabled or the code is a shell script
+    Skipped = 'skipped',
+    // Check completed successfully with no matches
+    Success = 'success',
+    // Check completed but found matches (potential license issues)
+    Failed = 'failed',
+    // Check failed due to API error
+    Error = 'error',
+}
 
-    public searchAttribution(snippet: string): Promise<Attribution> {
+// GuardrailsResult represents the result of a guardrails check
+export type GuardrailsResult =
+    | GuardrailsStatusIndeterminate
+    | GuardrailsStatusSuccess
+    | GuardrailsStatusFailed
+    | GuardrailsStatusError
+
+export interface GuardrailsStatusIndeterminate {
+    status: GuardrailsCheckStatus.GeneratingCode | GuardrailsCheckStatus.Checking
+}
+
+export interface GuardrailsStatusSuccess {
+    status: GuardrailsCheckStatus.Success | GuardrailsCheckStatus.Skipped
+}
+
+export interface GuardrailsStatusFailed {
+    status: GuardrailsCheckStatus.Failed
+    repositories: RepositoryAttribution[]
+}
+
+export interface GuardrailsStatusError {
+    status: GuardrailsCheckStatus.Error
+    error: Error
+}
+
+/**
+ * Get default guardrails configuration
+ */
+export function getGuardrailsConfig(): { mode: GuardrailsMode } {
+    return { mode: GuardrailsMode.Permissive }
+}
+
+/**
+ * GuardrailsMetricEvent represents a metric event for guardrails usage
+ */
+export interface GuardrailsMetricEvent {
+    // The type of action that triggered guardrails
+    action: 'chat' | 'edit' | 'autocomplete'
+    // The status of the guardrails check
+    status: GuardrailsCheckStatus
+    // The time it took to complete the check (in ms)
+    duration: number
+    // The guardrails mode being used
+    mode: GuardrailsMode
+    // Whether code was hidden due to enforced mode
+    wasCodeHidden: boolean
+    // Whether a respin was requested (if feature is available)
+    wasRespinRequested?: boolean
+    // Additional info for failed checks
+    attributionDetails?: {
+        // Number of repositories that matched
+        matchCount: number
+        // Whether the attribution limit was hit
+        limitHit: boolean
+    }
+}
+
+/**
+ * Record a metric for a guardrails check event
+ * This will be expanded later to connect to telemetry systems
+ */
+export function recordGuardrailsMetric(event: GuardrailsMetricEvent): void {
+    // In a future implementation, this would send telemetry data
+    // For now, we just log it to the console in development
+    if (process.env.NODE_ENV === 'development') {
+        console.log('Guardrails Metric:', event)
+    }
+}
+
+/**
+ * GuardrailsCheckManager manages the state of guardrails checks.
+ * It tracks both completed and in-progress checks to ensure that:
+ * 1. We don't run redundant attribution checks for the same code
+ * 2. Components can check if a code block is already being verified
+ * 3. UI remains consistent across component re-renders
+ */
+export class GuardrailsCheckManager {
+    // Track completed check results
+    private results = new Map<string, GuardrailsResult>()
+
+    // Track in-progress checks
+    private inProgress = new Map<string, Promise<GuardrailsResult>>()
+
+    /**
+     * Get the current check status for a code snippet
+     * @param code The code snippet to check
+     * @returns The current check result or undefined if never checked
+     */
+    public getCheckStatus(code: string): GuardrailsResult | undefined {
+        return this.results.get(code)
+    }
+
+    /**
+     * Check if the code is currently being verified
+     * @param code The code snippet to check
+     * @returns Whether a check is in progress
+     */
+    public isCheckInProgress(code: string): boolean {
+        return this.inProgress.has(code)
+    }
+
+    /**
+     * Register a check as in-progress and return the promise
+     * @param code The code snippet being checked
+     * @param checkPromise The promise representing the in-progress check
+     */
+    public registerCheck(
+        code: string,
+        checkPromise: Promise<GuardrailsResult>
+    ): Promise<GuardrailsResult> {
+        // Store the in-progress check
+        this.inProgress.set(code, checkPromise)
+
+        // When check completes, store the result and remove from in-progress
+        return checkPromise
+            .then(result => {
+                this.results.set(code, result)
+                this.inProgress.delete(code)
+                return result
+            })
+            .catch(error => {
+                // Handle errors by storing an error result
+                const errorResult: GuardrailsResult = {
+                    status: GuardrailsCheckStatus.Error,
+                    error,
+                }
+                this.results.set(code, errorResult)
+                this.inProgress.delete(code)
+                return errorResult
+            })
+    }
+
+    /**
+     * Get an existing check promise if one is in progress
+     * @param code The code snippet to check
+     * @returns The in-progress check promise or undefined
+     */
+    public getInProgressCheck(code: string): Promise<GuardrailsResult> | undefined {
+        return this.inProgress.get(code)
+    }
+
+    /**
+     * Remove a code snippet from both results and in-progress tracking
+     * @param code The code snippet to remove
+     */
+    public clearCheck(code: string): void {
+        this.results.delete(code)
+        this.inProgress.delete(code)
+    }
+
+    /**
+     * Clear all check results and in-progress checks
+     */
+    public clearAll(): void {
+        this.results.clear()
+        this.inProgress.clear()
+    }
+}
+
+/**
+ * Global singleton instance of GuardrailsCheckManager
+ */
+export const guardrailsCheckManager = new GuardrailsCheckManager()
+
+// Creates an implementation of Guardrails that operates in the specified mode.
+export function createGuardrailsImpl(
+    mode: GuardrailsMode,
+    postSnippet: (snippet: string) => void
+): Guardrails & GuardrailsResultSink {
+    if (mode === GuardrailsMode.Off) {
+        return new GuardrailsDisabled()
+    }
+    return new GuardrailsPost(mode, postSnippet)
+}
+
+// A stub implementation of Guardrails that does nothing. Used when guardrails
+// is not enabled, it permits all code to be shown immediately. For convenience
+// is a dead-letter box for Guardrails results.
+class GuardrailsDisabled implements Guardrails, GuardrailsResultSink {
+    shouldHideCodeBeforeAttribution = false
+
+    searchAttribution(snippet: string): Promise<Attribution> {
+        return Promise.resolve({ limitHit: false, repositories: [] })
+    }
+
+    needsAttribution(_: { code: string; language?: string }): boolean {
+        return false
+    }
+
+    notifyAttributionSuccess(snippet: string, result: Attribution): void {
+        console.warn('Guardrails is disabled but received attribution success result:', snippet, result)
+    }
+
+    notifyAttributionFailure(snippet: string, error: Error): void {
+        console.warn('Guardrails is disabled but received attribution failure result:', snippet, error)
+    }
+}
+
+function isShellLanguage(language: string | undefined): boolean {
+    return !!(language && ['shell', 'bash', 'sh'].includes(language))
+}
+
+// Implementation of Guardrails that posts snippets to the extension (and
+// through to the site) for attribution. Can be configured to hide code until
+// attribution is complete.
+class GuardrailsPost implements Guardrails, GuardrailsResultSink {
+    private currentRequests: Map<string, AttributionSearchSync> = new Map()
+    constructor(
+        private readonly mode: 'permissive' | 'enforced',
+        private postSnippet: (txt: string) => void
+    ) {}
+
+    get shouldHideCodeBeforeAttribution(): boolean {
+        return this.mode === 'enforced'
+    }
+
+    needsAttribution({ code, language }: { code: string; language?: string }): boolean {
+        // TODO: should this be *non-empty* lines, or include empty lines?
+        return code.split('\n').length >= 10 && !isShellLanguage(language)
+    }
+
+    searchAttribution(snippet: string): Promise<Attribution> {
         let request = this.currentRequests.get(snippet)
         if (request === undefined) {
             request = new AttributionSearchSync()
@@ -27,7 +279,7 @@ export class GuardrailsPost implements Guardrails {
         return request.promise
     }
 
-    public notifyAttributionSuccess(snippet: string, result: Attribution): void {
+    notifyAttributionSuccess(snippet: string, result: Attribution): void {
         const request = this.currentRequests.get(snippet)
         if (request !== undefined) {
             this.currentRequests.delete(snippet)
@@ -36,7 +288,7 @@ export class GuardrailsPost implements Guardrails {
         // Do nothing in case there the message is not for an ongoing request.
     }
 
-    public notifyAttributionFailure(snippet: string, error: Error): void {
+    notifyAttributionFailure(snippet: string, error: Error): void {
         const request = this.currentRequests.get(snippet)
         if (request !== undefined) {
             this.currentRequests.delete(snippet)
@@ -58,5 +310,40 @@ class AttributionSearchSync {
             this.resolve = resolve
             this.reject = reject
         })
+    }
+}
+
+// Utility function to convert Attribution to a tooltip message
+export function attributionToTooltip(repos: string[], limitHit: boolean): string {
+    const prefix = 'Guardrails check failed. Code found in'
+    if (repos.length === 1) {
+        return `${prefix} ${repos[0]}.`
+    }
+    const tooltip = `${prefix} ${repos.length} repositories: ${repos.join(', ')}`
+    return limitHit ? `${tooltip} or more...` : `${tooltip}.`
+}
+
+/**
+ * GuardrailsMetricEvent represents a metric event for guardrails usage
+ */
+export interface GuardrailsMetricEvent {
+    // The type of action that triggered guardrails
+    action: 'chat' | 'edit' | 'autocomplete'
+    // The status of the guardrails check
+    status: GuardrailsCheckStatus
+    // The time it took to complete the check (in ms)
+    duration: number
+    // The guardrails mode being used
+    mode: GuardrailsMode
+    // Whether code was hidden due to enforced mode
+    wasCodeHidden: boolean
+    // Whether a respin was requested (if feature is available)
+    wasRespinRequested?: boolean
+    // Additional info for failed checks
+    attributionDetails?: {
+        // Number of repositories that matched
+        matchCount: number
+        // Whether the attribution limit was hit
+        limitHit: boolean
     }
 }

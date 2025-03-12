@@ -57,7 +57,7 @@ interface TranscriptProps {
     models: Model[]
     userInfo: UserAccountInfo
     messageInProgress: ChatMessage | null
-    guardrails?: Guardrails
+    guardrails: Guardrails
     postMessage?: ApiPostMessage
 
     copyButtonOnSubmit: CodeBlockActionsProps['copyButtonOnSubmit']

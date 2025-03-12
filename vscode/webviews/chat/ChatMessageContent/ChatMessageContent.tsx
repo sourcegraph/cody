@@ -1,19 +1,19 @@
 import { clsx } from 'clsx'
 import { LRUCache } from 'lru-cache'
 import type React from 'react'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import type { Guardrails, PromptString } from '@sourcegraph/cody-shared'
-
 import type { FixupTaskID } from '../../../src/non-stop/FixupTask'
 import { CodyTaskState } from '../../../src/non-stop/state'
 import { type ClientActionListener, useClientActionListener } from '../../client/clientState'
-import { MarkdownFromCody } from '../../components/MarkdownFromCody'
 import { useConfig } from '../../utils/useConfig'
 import type { PriorHumanMessageInfo } from '../cells/messageCell/assistant/AssistantMessageCell'
 import styles from './ChatMessageContent.module.css'
 import { ThinkingCell } from './ThinkingCell'
-import { createButtons, createButtonsExperimentalUI } from './create-buttons'
+// TODO: Fix buttons
+// import { createButtons, createButtonsExperimentalUI } from './create-buttons'
+import { RichMarkdown } from '../../components/RichMarkdown'
 import { extractThinkContent, getCodeBlockId } from './utils'
 
 export interface CodeBlockActionsProps {
@@ -46,7 +46,7 @@ interface ChatMessageContentProps {
     isThoughtProcessOpened?: boolean
     setThoughtProcessOpened?: (open: boolean) => void
 
-    guardrails?: Guardrails
+    guardrails: Guardrails
     className?: string
 }
 
@@ -68,7 +68,6 @@ export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps
     isThoughtProcessOpened,
     setThoughtProcessOpened,
 }) => {
-    const rootRef = useRef<HTMLDivElement>(null)
     const config = useConfig()
 
     const [smartApplyStates, setSmartApplyStates] = useState<Record<FixupTaskID, CodyTaskState>>({})
@@ -89,13 +88,14 @@ export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps
             },
         }
     }, [smartApply])
+    console.log('TODO, use these', smartApplyStates, smartApplyInterceptor)
 
     useClientActionListener(
         // Always subscribe but listen only smart apply result events
         { isActive: true, selector: event => !!event.smartApplyResult },
         useCallback<ClientActionListener>(({ smartApplyResult }) => {
             if (smartApplyResult) {
-                setSmartApplyStates(prev => ({
+                setSmartApplyStates((prev: Record<FixupTaskID, CodyTaskState>) => ({
                     ...prev,
                     [smartApplyResult.taskId]: smartApplyResult.taskState,
                 }))
@@ -103,132 +103,104 @@ export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps
         }, [])
     )
 
-    // See SRCH-942: this `useEffect` is very large and any update to the
-    // dependencies triggers a network request to our guardrails server. Be very
-    // careful about adding more dependencies.  Ideally, we should refactor this
-    // `useEffect` into smaller blocks with more narrow dependencies.
-    // biome-ignore lint/correctness/useExhaustiveDependencies: needs to run when `displayMarkdown` changes or else the buttons won't show up.
+    // TODO: SmartApply should be a property of the code block, not at this
+    // level.
+
+    // Prefetch smart apply data for completed code blocks
+    // Note: This replaces the previous large useEffect for DOM manipulation
     useEffect(() => {
-        if (!rootRef.current) {
+        if (!smartApplyEnabled || !smartApply || isMessageLoading) {
             return
         }
 
-        const preElements = rootRef.current.querySelectorAll('pre')
-        if (!preElements?.length || !copyButtonOnSubmit) {
+        // TODO: This is an awful heuristic, think about it.
+        // Instead use the last regex match and see if the substring after it
+        // contains ```
+
+        // Only prefetch when code block is complete
+        // A good heuristic is to check if we're outside a code block
+        const isCodeBlockComplete = !displayMarkdown.endsWith('```')
+        if (!isCodeBlockComplete) {
             return
         }
 
-        const existingButtons = rootRef.current.querySelectorAll(`.${styles.buttonsContainer}`)
-        for (const existingButton of existingButtons) {
-            existingButton.remove()
-        }
+        // Find all code blocks in the markdown
+        const codeBlockRegex = /```([\w-]*)\n([\s\S]*?)```/g
 
-        for (const preElement of preElements) {
-            const preText = preElement.textContent
+        for (
+            let match = codeBlockRegex.exec(displayMarkdown);
+            match !== null;
+            match = codeBlockRegex.exec(displayMarkdown)
+        ) {
+            const [, language, code] = match
+            if (!code.trim()) continue
 
-            if (preText?.trim() && preElement.parentNode) {
-                // Extract the <code> element and attached `data-file-path` if present.
-                // This allows us to intelligently apply code to the suitable file.
-                const codeElement = preElement.querySelectorAll('code')?.[0]
-                const fileName = codeElement?.getAttribute('data-file-path') || undefined
-                // Check if the code element has either 'language-bash' class
-                const isShellCommand = codeElement?.classList.contains('language-bash')
-                const codeBlockName = isShellCommand ? 'command' : fileName
+            // Skip shell commands
+            // TODO: Share one definition of this.
+            const isShellCommand = language === 'bash' || language === 'sh'
+            if (isShellCommand) continue
 
-                let buttons: HTMLElement
+            // Generate ID for this code block
+            const smartApplyId = getCodeBlockId(code)
 
-                if (smartApplyEnabled) {
-                    const smartApplyId = getCodeBlockId(preText, fileName)
-                    const smartApplyState = smartApplyStates[smartApplyId]
-
-                    // Since we iterate over `<pre>` elements, we're already inside a code block.
-                    // When we start rendering text outside the code block—meaning new characters
-                    // appear after the closing backticks—we should prefetch the smart apply response.
-                    //
-                    // To avoid redundant prefetching, we track processed code blocks in `prefetchedEdits`.
-                    const areWeAlreadyOutsideTheCodeBlock = !displayMarkdown.endsWith('```')
-
-                    // Side-effect: prefetch smart apply data if possible to reduce the final latency.
-                    // TODO: use a better heuristic to determine if the code block is complete.
-                    // TODO: extract this call into a separate `useEffect` call to avoid redundant calls
-                    // which currently happen.
-                    if (
-                        codeBlockName !== 'command' &&
-                        (!isMessageLoading || areWeAlreadyOutsideTheCodeBlock) &&
-                        // Ensure that we prefetch once per each suggested code block.
-                        !prefetchedEdits.has(smartApplyId)
-                    ) {
-                        prefetchedEdits.set(smartApplyId, true)
-
-                        smartApply?.onSubmit({
-                            id: smartApplyId,
-                            text: preText,
-                            isPrefetch: true,
-                            instruction: humanMessage?.text,
-                            fileName: codeBlockName,
-                        })
-                    }
-
-                    buttons = createButtonsExperimentalUI(
-                        preText,
-                        humanMessage,
-                        config,
-                        codeBlockName,
-                        copyButtonOnSubmit,
-                        config.config.hasEditCapability ? insertButtonOnSubmit : undefined,
-                        smartApplyInterceptor,
-                        smartApplyId,
-                        smartApplyState,
-                        guardrails,
-                        isMessageLoading
-                    )
-                } else {
-                    buttons = createButtons(
-                        preText,
-                        copyButtonOnSubmit,
-                        config.config.hasEditCapability ? insertButtonOnSubmit : undefined
-                    )
-                }
-
-                const parent = preElement.parentNode
-                if (!parent) return
-
-                // Get the preview container and actions container
-                const previewContainer = buttons.querySelector(`[data-container-type="preview"]`)
-                const actionsContainer = buttons.querySelector(`[data-container-type="actions"]`)
-                if (!actionsContainer) return
-
-                // Insert the preview container right before this code block
-                if (previewContainer) {
-                    parent.insertBefore(previewContainer, preElement)
-                }
-                // Add the actions container right after this code block
-                if (preElement.nextSibling) {
-                    parent.insertBefore(actionsContainer, preElement.nextSibling)
-                } else {
-                    parent.appendChild(actionsContainer)
-                }
+            // Skip if we've already prefetched for this block
+            if (prefetchedEdits.has(smartApplyId)) {
+                continue
             }
+
+            // Mark as prefetched
+            prefetchedEdits.set(smartApplyId, true)
+
+            // Prefetch smart apply data
+            smartApply.onSubmit({
+                id: smartApplyId,
+                text: code,
+                isPrefetch: true,
+                instruction: humanMessage?.text,
+            })
         }
-    }, [
-        copyButtonOnSubmit,
-        insertButtonOnSubmit,
-        smartApplyEnabled,
-        guardrails,
-        displayMarkdown,
-        isMessageLoading,
-        humanMessage,
-        smartApplyInterceptor,
-        smartApplyStates,
-    ])
+    }, [smartApplyEnabled, smartApply, isMessageLoading, displayMarkdown, humanMessage])
 
     const { displayContent, thinkContent, isThinking } = useMemo(
         () => extractThinkContent(displayMarkdown),
         [displayMarkdown]
     )
 
+    // TODO: check that insertButtonOnSubmit is memoized
+    const onInsert = config.config.hasEditCapability ? insertButtonOnSubmit : undefined
+
+    const onExecute = useCallback((command: string) => {
+        // Execute command in terminal
+        const vscodeApi = (window as any).acquireVsCodeApi?.()
+        vscodeApi?.postMessage({
+            command: 'command',
+            id: 'cody.terminal.execute',
+            arg: command.trim(),
+        })
+    }, [])
+
+    // TODO: check that smartApply is memoized
+    const onSmartApply = useMemo(() => {
+        return smartApplyEnabled && smartApply
+            ? (code: string, fileName: string | undefined) => {
+                  const smartApplyId = getCodeBlockId(code, fileName)
+                  smartApply.onSubmit({
+                      id: smartApplyId,
+                      text: code,
+                      instruction: humanMessage?.text,
+                      fileName,
+                  })
+              }
+            : undefined
+    }, [smartApplyEnabled, smartApply, humanMessage])
+
+    const onCopy = useCallback(
+        (code: string) => copyButtonOnSubmit?.(code, 'Button'),
+        [copyButtonOnSubmit]
+    )
+
     return (
-        <div ref={rootRef} data-testid="chat-message-content">
+        <div data-testid="chat-message-content">
             {setThoughtProcessOpened && thinkContent.length > 0 && (
                 <ThinkingCell
                     isOpen={!!isThoughtProcessOpened}
@@ -237,9 +209,16 @@ export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps
                     thought={thinkContent}
                 />
             )}
-            <MarkdownFromCody className={clsx(styles.content, className)}>
-                {displayContent}
-            </MarkdownFromCody>
+            <RichMarkdown
+                markdown={displayContent}
+                isLoading={isMessageLoading}
+                guardrails={guardrails}
+                onCopy={onCopy}
+                onInsert={onInsert}
+                onExecute={onExecute}
+                onApply={onSmartApply}
+                className={clsx(styles.content, className)}
+            />
         </div>
     )
 }
