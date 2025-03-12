@@ -42,17 +42,7 @@ export async function autoeditResultFor(
         provider?: AutoeditsProvider
         inlineCompletionContext?: vscode.InlineCompletionContext
         token?: vscode.CancellationToken
-        getModelResponse?: (
-            url: string,
-            body: string,
-            apiKey: string,
-            customHeaders?: Record<string, string>
-        ) => Promise<{
-            data: any
-            requestHeaders: Record<string, string>
-            responseHeaders: Record<string, string>
-            url: string
-        }>
+        getModelResponse?: typeof adapters.getModelResponse
         isAutomaticTimersAdvancementDisabled?: boolean
     }
 ): Promise<{
@@ -63,12 +53,13 @@ export async function autoeditResultFor(
     provider: AutoeditsProvider
     editBuilder: WorkspaceEdit
 }> {
-    const getModelResponseMock = async (...args: unknown[]) => {
+    const getModelResponseMock: typeof adapters.getModelResponse = async () => {
         // Simulate response latency.
         vi.advanceTimersByTime(100)
 
         return {
-            data: {
+            type: 'success',
+            responseBody: {
                 choices: [
                     {
                         text: prediction,
@@ -77,8 +68,8 @@ export async function autoeditResultFor(
             },
             requestHeaders: {},
             responseHeaders: {},
-            url: 'test-url.com/completions',
-        }
+            requestUrl: 'test-url.com/completions',
+        } as const
     }
 
     // TODO: add a callback to verify `getModelResponse` arguments.
@@ -114,6 +105,10 @@ export async function autoeditResultFor(
         .then(res => {
             result = res
             return result
+        })
+        .catch(err => {
+            console.error(err)
+            return null
         })
 
     if (!isAutomaticTimersAdvancementDisabled) {

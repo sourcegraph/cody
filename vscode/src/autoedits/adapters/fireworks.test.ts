@@ -4,7 +4,7 @@ import { ps } from '@sourcegraph/cody-shared'
 
 import * as autoeditsConfig from '../autoedits-config'
 
-import type { AutoeditModelOptions } from './base'
+import type { AutoeditModelOptions, SuccessModelResponse } from './base'
 import { FireworksAdapter } from './fireworks'
 
 describe('FireworksAdapter', () => {
@@ -20,6 +20,7 @@ describe('FireworksAdapter', () => {
         codeToRewrite: 'const x = 1',
         userId: 'test-user',
         isChatModel: true,
+        abortSignal: new AbortController().signal,
     }
 
     const apiKey = 'test-api-key'
@@ -58,6 +59,7 @@ describe('FireworksAdapter', () => {
                 Authorization: `Bearer ${apiKey}`,
             },
             body: expect.stringContaining('"model":"accounts/fireworks/models/llama-v2-7b"'),
+            signal: expect.any(AbortSignal),
         })
 
         const requestBody = JSON.parse(mockFetch.mock.calls[0][1].body)
@@ -126,7 +128,7 @@ describe('FireworksAdapter', () => {
         })
 
         const response = await adapter.getModelResponse(options)
-        expect(response.prediction).toBe(expectedResponse)
+        expect((response as SuccessModelResponse).prediction).toBe(expectedResponse)
     })
 
     it('returns correct response for completions model', async () => {
@@ -140,6 +142,6 @@ describe('FireworksAdapter', () => {
         })
 
         const response = await adapter.getModelResponse(nonChatOptions)
-        expect(response.prediction).toBe(expectedResponse)
+        expect((response as SuccessModelResponse).prediction).toBe(expectedResponse)
     })
 })

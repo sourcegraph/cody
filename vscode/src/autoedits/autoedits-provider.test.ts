@@ -25,7 +25,7 @@ import {
 import { ContextMixer } from '../completions/context/context-mixer'
 
 import { mockLocalStorage } from '../services/LocalStorageProvider'
-import { autoeditTriggerKind } from './analytics-logger'
+import { autoeditAnalyticsLogger, autoeditTriggerKind } from './analytics-logger'
 import {
     AUTOEDIT_CONTEXT_FETCHING_DEBOUNCE_INTERVAL,
     AUTOEDIT_TOTAL_DEBOUNCE_INTERVAL,
@@ -495,13 +495,14 @@ describe('AutoeditsProvider', () => {
                 // Record the current fake timer time when getModelResponse is called
                 getModelResponseCalledAt = Date.now()
                 return {
-                    data: {
+                    type: 'success',
+                    responseBody: {
                         choices: [{ text: 'const x = 1\n' }],
                     },
-                    url: 'test-url.com/completions',
+                    requestUrl: 'test-url.com/completions',
                     requestHeaders: {},
                     responseHeaders: {},
-                }
+                } as const
             }
 
             const startTime = Date.now()
@@ -526,11 +527,12 @@ describe('AutoeditsProvider', () => {
             const customGetModelResponse = async () => {
                 modelResponseCalled = true
                 return {
-                    data: { choices: [{ text: 'const x = 1\n' }] },
-                    url: 'test-url.com/completions',
+                    type: 'success',
+                    responseBody: { choices: [{ text: 'const x = 1\n' }] },
+                    requestUrl: 'test-url.com/completions',
                     requestHeaders: {},
                     responseHeaders: {},
-                }
+                } as const
             }
 
             const tokenSource = new vscode.CancellationTokenSource()
@@ -556,6 +558,41 @@ describe('AutoeditsProvider', () => {
 
             expect(result).toBeNull()
             expect(modelResponseCalled).toBe(false)
+        })
+
+        it('the abort signal is propagated to the model request', async () => {
+            const tokenSource = new vscode.CancellationTokenSource()
+            const logErrorSpy = vi.spyOn(autoeditAnalyticsLogger, 'logError')
+
+            const { promiseResult } = await autoeditResultFor('const x = █\n', {
+                prediction: 'const x = 1\n',
+                token: tokenSource.token,
+                isAutomaticTimersAdvancementDisabled: true,
+                getModelResponse: async ({ abortSignal }) => {
+                    if (abortSignal.aborted) {
+                        throw new Error('aborted before the cancellation')
+                    }
+
+                    tokenSource.cancel()
+                    if (abortSignal.aborted) {
+                        throw new Error('aborted after the cancellation')
+                    }
+
+                    return {
+                        type: 'success',
+                        responseBody: { choices: [{ text: 'const x = 1\n' }] },
+                        requestUrl: 'test-url.com/completions',
+                        requestHeaders: {},
+                        responseHeaders: {},
+                    } as const
+                },
+            })
+
+            await vi.advanceTimersByTimeAsync(AUTOEDIT_TOTAL_DEBOUNCE_INTERVAL)
+
+            expect(logErrorSpy).toHaveBeenCalledTimes(1)
+            expect(logErrorSpy).toHaveBeenCalledWith(new Error('aborted after the cancellation'))
+            expect(promiseResult).resolves.toBeNull()
         })
     })
 })
