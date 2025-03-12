@@ -5,7 +5,7 @@ import {
     displayPath,
 } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
-import { logDebug, logError } from '../../output-channel-logger'
+import { logError } from '../../output-channel-logger'
 import type { Repository } from '../../repository/builtinGitExtension'
 import { doesFileExist } from '../utils/workspace-files'
 
@@ -167,10 +167,8 @@ export async function getContextFilesFromGitDiff(gitRepo: Repository): Promise<C
         } else {
             diffOutput = await getAllUnstagedFileChanges(gitRepo)
         }
-        logDebug('diffOutput', 'diffOutput', JSON.stringify(diffOutput))
         const diffOutputSplit = diffOutput.trim().split(/diff --git a\/.+? b\//)
         const diffOutputByFiles = diffOutputSplit.filter(Boolean)
-        logDebug('diffOutputByFiles', 'diffOutputByFiles', JSON.stringify(diffOutputByFiles))
         // Compare the diff files to the diff output to ensure they match,
         // if the numbers are different, we can't trust the diff output were split correctly.
         if (!diffFiles.length || !diffOutput || diffOutputByFiles.length !== diffFiles.length) {
