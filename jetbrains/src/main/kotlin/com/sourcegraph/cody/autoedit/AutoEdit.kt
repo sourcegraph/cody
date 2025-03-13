@@ -19,7 +19,6 @@ import com.intellij.util.ui.UIUtil
 import com.sourcegraph.Icons
 import com.sourcegraph.cody.agent.protocol_generated.AutocompleteEditResult
 import com.sourcegraph.config.ThemeUtil
-import java.awt.Component
 import java.awt.Font
 
 class AutoEdit(
@@ -36,63 +35,58 @@ class AutoEdit(
   fun showAutoEdit(): Boolean {
     ApplicationManager.getApplication().assertIsDispatchThread()
 
-    val component = deriveAutoEditAsideComponent(autocompleteEditResult)
-    val autoEditComponent = AutoEditComponent(component, advertiser)
-
-    val logicalPosition = editor.caretModel.logicalPosition
-    val position =
-        VisualPosition(
-            logicalPosition.line, logicalPosition.column) // Use LogicalPosition if needed
-
-    val balloon =
-        JBPopupFactory.getInstance()
-            .createBalloonBuilder(autoEditComponent)
-            .setCornerToPointerDistance(0)
-            .setFillColor(UIUtil.getPanelBackground())
-            .setBorderColor(UIUtil.getPanelBackground().darker())
-            .setBorderInsets(JBUI.emptyInsets())
-            .setCornerRadius(0)
-            .setLayer(Balloon.Layer.top)
-            .createBalloon()
-
-    balloon.show(
-        object : PositionTracker<Balloon>(editor.contentComponent) {
-          override fun recalculateLocation(balloon: Balloon): RelativePoint {
-            return RelativePoint(editor.contentComponent, editor.visualPositionToXY(position))
-          }
-        },
-        Balloon.Position.atRight)
-
-    if (!autoEditComponent.isVisible || !autoEditComponent.isShowing) {
-      hideAutoEdit()
-      return false
-    }
-
-    return true
-  }
-
-  private fun deriveAutoEditAsideComponent(
-      autocompleteEditResult: AutocompleteEditResult
-  ): Component {
     val image = autocompleteEditResult.render.aside.image
     if (image != null) {
+
       val img = if (ThemeUtil.isDarkTheme()) image.dark else image.light
-      return AutoEditHtmlPane().also {
-        it.text =
-            "<!DOCTYPE html>\n" +
-                "<html lang=\"en\">\n" +
-                "<head>\n" +
-                "  <meta charset=\"UTF-8\">\n" +
-                "  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n" +
-                "</head>\n" +
-                "<body>\n" +
-                "  <img src=\"$img\">\n" +
-                "</body>\n" +
-                "</html>"
+      val component =
+          AutoEditHtmlPane().also {
+            it.text =
+                "<!DOCTYPE html>\n" +
+                    "<html lang=\"en\">\n" +
+                    "<head>\n" +
+                    "  <meta charset=\"UTF-8\">\n" +
+                    "  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n" +
+                    "</head>\n" +
+                    "<body>\n" +
+                    "  <img src=\"$img\">\n" +
+                    "</body>\n" +
+                    "</html>"
+          }
+
+      val position = VisualPosition(image.position.line.toInt(), image.position.column.toInt())
+
+      val autoEditComponent = AutoEditComponent(component, advertiser)
+
+      val balloon =
+          JBPopupFactory.getInstance()
+              .createBalloonBuilder(autoEditComponent)
+              .setCornerToPointerDistance(0)
+              .setFillColor(UIUtil.getPanelBackground())
+              .setBorderColor(UIUtil.getPanelBackground().darker())
+              .setBorderInsets(JBUI.emptyInsets())
+              .setCornerRadius(0)
+              .setLayer(Balloon.Layer.top)
+              .createBalloon()
+
+      balloon.show(
+          object : PositionTracker<Balloon>(editor.contentComponent) {
+            override fun recalculateLocation(balloon: Balloon): RelativePoint {
+              return RelativePoint(editor.contentComponent, editor.visualPositionToXY(position))
+            }
+          },
+          Balloon.Position.atRight)
+
+      if (!autoEditComponent.isVisible || !autoEditComponent.isShowing) {
+        hideAutoEdit()
+        return false
       }
+
     } else {
       TODO("Not yet implemented")
     }
+
+    return true
   }
 
   fun hideAutoEdit() {
