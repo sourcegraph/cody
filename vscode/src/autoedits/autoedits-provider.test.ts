@@ -104,12 +104,16 @@ describe('AutoeditsProvider', () => {
     it('analytics events for the suggested -> accepted transition', async () => {
         const prediction = 'const x = 1\n'
         const { result } = await autoeditResultFor('const x = █', { prediction })
+        if (!result) {
+            throw new Error('Unable to retrieve result')
+        }
 
         // Wait for a timeout to mark a suggestion as read.
         await vi.advanceTimersByTimeAsync(100)
         await acceptSuggestionCommand()
 
-        expect(result?.prediction).toBe(prediction)
+        const [{ insertText }] = result.items
+        expect(insertText).toBe(prediction)
 
         expect(recordSpy).toHaveBeenCalledTimes(2)
         expect(recordSpy).toHaveBeenNthCalledWith(1, 'cody.autoedit', 'suggested', expect.any(Object))
@@ -243,12 +247,16 @@ describe('AutoeditsProvider', () => {
     it('analytics events for the suggested -> rejected transition', async () => {
         const prediction = 'const x = 1\n'
         const { result } = await autoeditResultFor('const x = █', { prediction })
+        if (!result) {
+            throw new Error('Unable to retrieve result')
+        }
 
         // The suggestion should not be marked as read.
         await vi.advanceTimersByTimeAsync(750 / 2)
         await rejectSuggestionCommand()
 
-        expect(result?.prediction).toBe(prediction)
+        const [{ insertText }] = result.items
+        expect(insertText).toBe(prediction)
 
         expect(recordSpy).toHaveBeenCalledTimes(1)
         expect(recordSpy).toHaveBeenNthCalledWith(1, 'cody.autoedit', 'suggested', expect.any(Object))
@@ -312,12 +320,16 @@ describe('AutoeditsProvider', () => {
     it('marks the suggestion as read after a certain timeout', async () => {
         const prediction = 'const x = 1\n'
         const { result } = await autoeditResultFor('const x = █', { prediction })
+        if (!result) {
+            throw new Error('Unable to retrieve result')
+        }
 
         // The suggestion should be marked as read.
         await vi.advanceTimersByTimeAsync(750)
         await rejectSuggestionCommand()
 
-        expect(result?.prediction).toBe(prediction)
+        const [{ insertText }] = result.items
+        expect(insertText).toBe(prediction)
 
         expect(recordSpy).toHaveBeenCalledTimes(1)
         expect(recordSpy).toHaveBeenNthCalledWith(1, 'cody.autoedit', 'suggested', expect.any(Object))
@@ -514,8 +526,11 @@ describe('AutoeditsProvider', () => {
             // Run all timers to get the result
             await vi.runAllTimersAsync()
             const result = await promiseResult
-
-            expect(result?.prediction).toBe('const x = 1\n')
+            if (!result) {
+                throw new Error('Unable to retrieve result')
+            }
+            const [{ insertText }] = result.items
+            expect(insertText).toBe('const x = 1\n')
             expect(getModelResponseCalledAt).toBeDefined()
             // Check that getModelResponse was called only after at least AUTOEDIT_TOTAL_DEBOUNCE_INTERVAL have elapsed
             expect(getModelResponseCalledAt! - startTime).toBe(AUTOEDIT_TOTAL_DEBOUNCE_INTERVAL)

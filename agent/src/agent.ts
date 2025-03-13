@@ -57,10 +57,7 @@ import { chatHistory } from '../../vscode/src/chat/chat-view/ChatHistoryManager'
 import type { ExtensionMessage, WebviewMessage } from '../../vscode/src/chat/protocol'
 import { executeExplainCommand, executeSmellCommand } from '../../vscode/src/commands/execute'
 import type { CodyCommandArgs } from '../../vscode/src/commands/types'
-import type {
-    CompletionBookkeepingEvent,
-    CompletionItemID,
-} from '../../vscode/src/completions/analytics-logger'
+import type { CompletionItemID } from '../../vscode/src/completions/analytics-logger'
 import { loadTscRetriever } from '../../vscode/src/completions/context/retrievers/tsc/load-tsc-retriever'
 import { supportedTscLanguages } from '../../vscode/src/completions/context/retrievers/tsc/supportedTscLanguages'
 import { type ExecuteEditArguments, executeEdit } from '../../vscode/src/edit/execute'
@@ -96,8 +93,6 @@ import {
 import { getLanguageForFileName } from './language'
 import type {
     AutocompleteCompletionItem,
-    AutocompleteEditItem,
-    AutocompleteItem,
     ClientInfo,
     CodyError,
     CustomCommandResult,
@@ -925,7 +920,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
             const provider = await vscode_shim.completionProvider()
             if (!provider) {
                 logError('Agent', 'autocomplete/execute', 'Completion provider is not initialized')
-                return { items: [] as AutocompleteItem[] }
+                return { items: [] }
             }
             const uri =
                 typeof params.uri === 'string'
@@ -941,7 +936,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
                         params
                     )}. To fix this problem, set the 'uri' property.`
                 )
-                return { items: [] as AutocompleteItem[] }
+                return { items: [] }
             }
             const document = this.workspace.getDocument(uri)
             if (!document) {
@@ -952,7 +947,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
                     params.uri,
                     [...this.workspace.allUris()]
                 )
-                return { items: [] as AutocompleteItem[] }
+                return { items: [] }
             }
 
             try {
@@ -989,46 +984,22 @@ export class Agent extends MessageHandler implements ExtensionClient {
 
                 // Check client capability for auto-edit support
                 const supportsAutoEdit = this.clientInfo?.capabilities?.autoEdit === 'enabled'
-
                 if (result.type === 'edit' && supportsAutoEdit) {
-                    // If we have an edit result and the client supports auto-edit
-                    // Create an AutocompleteEditItem with the same ID for all items
-                    const editItem: AutocompleteEditItem = {
-                        id: result.requestId || uuid.v4(),
-                        type: 'edit',
-                        range: result.range,
-                        originalText: result.originalText,
-                        prediction: result.prediction,
-                        render: result.render,
-                    }
-
-                    // Cast the completionEvent to ensure it matches the expected type
-                    return {
-                        items: [editItem],
-                        completionEvent:
-                            'completionEvent' in result
-                                ? (result.completionEvent as
-                                      | CompletionBookkeepingEvent
-                                      | null
-                                      | undefined)
-                                : undefined,
-                    }
+                    return { items: result.items, completionEvent: result.completionEvent }
                 }
 
                 if (result.type === 'edit') {
-                    // Client doesn't support auto-edit but we returned edits.
-                    // This shouldn't happen, but let's return empty items and log an
-                    // error.
+                    // We got an edit but the client doesn't support auto-edit.
+                    // This should never happen. Warn and return empty just in case.
                     console.error(
                         'Received auto-edits but client does not support them, returning empty items.'
                     )
                     return { items: [] }
                 }
 
-                console.log('returnign items')
-                // For completion results, convert to AutocompleteCompletionItem
+                // Client can only render completions, ensure we only provide completion items.
                 const items: AutocompleteCompletionItem[] =
-                    result?.items.flatMap(({ insertText, range, id }) =>
+                    result.items.flatMap(({ insertText, range, id }) =>
                         typeof insertText === 'string' && range !== undefined
                             ? [
                                   {

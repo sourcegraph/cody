@@ -189,7 +189,7 @@ describe('Autoedit', () => {
                 const result = await getAutoEditSuggestion(client, file, { line: 5, character: 0 })
 
                 // Prediction accurately reflects the edit that should be made.
-                expect(result.prediction).toMatchInlineSnapshot(`
+                expect(result.insertText).toMatchInlineSnapshot(`
                   "
                   export function sumAge(personA: Person, personB: Person): number {
                       return personA.age + personB.age
@@ -214,7 +214,7 @@ describe('Autoedit', () => {
                 // No need to check items array for an edit result
 
                 // Prediction accurately reflects the edit that should be made.
-                expect(result.prediction).toMatchInlineSnapshot(`
+                expect(result.insertText).toMatchInlineSnapshot(`
                   "export function sumAge(a: Person, b: Person): number {
                       return a.age + b.age
                   }
@@ -261,7 +261,7 @@ describe('Autoedit', () => {
                 const result = await getAutoEditSuggestion(client, file, { line: 5, character: 0 })
 
                 // Prediction accurately reflects the edit that should be made.
-                expect(result.prediction).toMatchInlineSnapshot(`
+                expect(result.insertText).toMatchInlineSnapshot(`
                   "
                   export function sumAge(personA: Person, personB: Person): number {
                       return personA.age + personB.age
@@ -295,7 +295,7 @@ describe('Autoedit', () => {
                 const result = await getAutoEditSuggestion(client, file, { line: 6, character: 52 })
 
                 // Prediction accurately reflects the edit that should be made.
-                expect(result.prediction).toMatchInlineSnapshot(`
+                expect(result.insertText).toMatchInlineSnapshot(`
                   "export function sumAge(a: Person, b: Person): number {
                       return a.age + b.age
                   }
@@ -353,7 +353,7 @@ describe('Autoedit', () => {
                 const result = await getAutoEditSuggestion(client, file, { line: 5, character: 0 })
 
                 // Prediction accurately reflects the edit that should be made.
-                expect(result.prediction).toMatchInlineSnapshot(`
+                expect(result.insertText).toMatchInlineSnapshot(`
                   "
                   export function sumAge(personA: Person, personB: Person): number {
                       return personA.age + personB.age
@@ -382,7 +382,7 @@ describe('Autoedit', () => {
                 const result = await getAutoEditSuggestion(client, file, { line: 6, character: 52 })
 
                 // Prediction accurately reflects the edit that should be made.
-                expect(result.prediction).toMatchInlineSnapshot(`
+                expect(result.insertText).toMatchInlineSnapshot(`
                   "export function sumAge(a: Person, b: Person): number {
                       return a.age + b.age
                   }
@@ -435,7 +435,7 @@ describe('Autoedit', () => {
                 const result = await getAutoEditSuggestion(client, file, { line: 5, character: 0 })
 
                 // Prediction accurately reflects the edit that should be made.
-                expect(result.prediction).toMatchInlineSnapshot(`
+                expect(result.insertText).toMatchInlineSnapshot(`
                   "
                   export function sumAge(personA: Person, personB: Person): number {
                       return personA.age + personB.age
@@ -464,7 +464,7 @@ describe('Autoedit', () => {
                 const result = await getAutoEditSuggestion(client, file, { line: 6, character: 52 })
 
                 // Prediction accurately reflects the edit that should be made.
-                expect(result.prediction).toMatchInlineSnapshot(`
+                expect(result.insertText).toMatchInlineSnapshot(`
                   "export function sumAge(a: Person, b: Person): number {
                       return a.age + b.age
                   }
@@ -517,10 +517,10 @@ describe('Autoedit', () => {
                 const result = await getAutoEditSuggestion(client, file, { line: 5, character: 0 })
 
                 // Prediction accurately reflects the edit that should be made.
-                expect(result.prediction).toMatchInlineSnapshot(`
+                expect(result.insertText).toMatchInlineSnapshot(`
                   "
-                  export function sumAge(humanA: Person, humanB: Person): number {
-                      return humanA.age + humanB.age
+                  export function sumAge(personA: Person, personB: Person): number {
+                      return personA.age + personB.age
                   }
                   "
                 `)
@@ -540,7 +540,7 @@ describe('Autoedit', () => {
                 const result = await getAutoEditSuggestion(client, file, { line: 6, character: 52 })
 
                 // Prediction accurately reflects the edit that should be made.
-                expect(result.prediction).toMatchInlineSnapshot(`
+                expect(result.insertText).toMatchInlineSnapshot(`
                   "export function sumAge(a: Person, b: Person): number {
                       return a.age + b.age
                   }

@@ -58,22 +58,12 @@ export const AUTOEDIT_CONTEXT_FETCHING_DEBOUNCE_INTERVAL = 10
 const RESET_SUGGESTION_ON_CURSOR_CHANGE_AFTER_INTERVAL_MS = 60 * 1000
 const ON_SELECTION_CHANGE_DEFAULT_DEBOUNCE_INTERVAL_MS = 15
 
-interface CompletionResult extends vscode.InlineCompletionList {
-    type: 'completion'
-    items: AutoeditCompletionItem[]
-    requestId: AutoeditRequestID | null
-    prediction: string
-    /**@deprecated */
-    completionEvent?: CompletionBookkeepingEvent
-}
-
-interface EditResult extends vscode.InlineCompletionList {
+interface AutoEditEditItem {
     type: 'edit'
-    items: AutoeditCompletionItem[]
-    requestId: AutoeditRequestID | null
+    id: AutoeditRequestID
     range: vscode.Range
     originalText: string
-    prediction: string
+    insertText: string
     render: {
         inline: {
             changes: AutoeditChanges[] | null
@@ -85,7 +75,19 @@ interface EditResult extends vscode.InlineCompletionList {
     }
 }
 
-export type AutoeditsResult = CompletionResult | EditResult
+interface AutoeditCompletionResult {
+    type: 'completion'
+    items: AutoeditCompletionItem[]
+    completionEvent?: CompletionBookkeepingEvent
+}
+
+interface AutoeditEditResult {
+    type: 'edit'
+    items: AutoEditEditItem[]
+    completionEvent?: CompletionBookkeepingEvent
+}
+
+export type AutoeditsResult = AutoeditCompletionResult | AutoeditEditResult
 
 export type AutoeditClientCapabilities = Pick<
     ClientCapabilities,
@@ -224,9 +226,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
             // inline completion (not an edit) that includes the currently selected item.
             return {
                 type: 'completion',
-                requestId: null,
                 items: [new AutoeditCompletionItem({ id: null, insertText: text, range })],
-                prediction: text,
             }
         }
 
@@ -509,12 +509,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
             }
 
             if (renderOutput.type === 'completion') {
-                return {
-                    type: 'completion',
-                    items: renderOutput.inlineCompletionItems,
-                    requestId,
-                    prediction,
-                }
+                return { type: 'completion', items: renderOutput.inlineCompletionItems }
             }
 
             if (this.capabilities.autoEdit !== 'enabled') {
@@ -524,20 +519,24 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
 
             return {
                 type: 'edit',
-                items: [],
-                requestId,
-                originalText: codeToReplaceData.codeToRewrite,
-                range: codeToReplaceData.range,
-                prediction,
-                render: {
-                    inline: {
-                        changes: this.getTextDecorationsForClient(renderOutput),
+                items: [
+                    {
+                        type: 'edit',
+                        id: requestId,
+                        originalText: codeToReplaceData.codeToRewrite,
+                        range: codeToReplaceData.range,
+                        insertText: prediction,
+                        render: {
+                            inline: {
+                                changes: this.getTextDecorationsForClient(renderOutput),
+                            },
+                            aside: {
+                                image: renderOutput.type === 'image' ? renderOutput.imageData : null,
+                                diff: renderOutput.type === 'custom' ? decorationInfo : null,
+                            },
+                        },
                     },
-                    aside: {
-                        image: renderOutput.type === 'image' ? renderOutput.imageData : null,
-                        diff: renderOutput.type === 'custom' ? decorationInfo : null,
-                    },
-                },
+                ],
             }
         } catch (error) {
             const errorToReport =

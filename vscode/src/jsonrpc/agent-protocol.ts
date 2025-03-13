@@ -527,18 +527,16 @@ export interface ChatExportResult {
 export interface AutocompleteItemBase {
     id: string
     range: Range
-    type: 'completion' | 'edit'
+    insertText: string
 }
 
 export interface AutocompleteCompletionItem extends AutocompleteItemBase {
     type: 'completion'
-    insertText: string
 }
 
 export interface AutocompleteEditItem extends AutocompleteItemBase {
     type: 'edit'
     originalText: string
-    prediction: string
     render: {
         inline: {
             changes: AutoeditChanges[] | null
