@@ -122,7 +122,7 @@ describe('maybeAdjustContextWindows', () => {
             } satisfies ServerModel,
         ]
 
-        const results = maybeAdjustContextWindows(testServerSideModels, false)
+        const results = maybeAdjustContextWindows(testServerSideModels, true)
         const mistralModelNamePrefixes = ['mistral', 'mixtral']
         for (const model of results) {
             let wantMaxInputTokens = defaultMaxInputTokens
@@ -144,7 +144,7 @@ describe('server sent models', async () => {
         status: 'stable',
         tier: 'enterprise' as ModelTier,
         contextWindow: {
-            maxInputTokens: 9000,
+            maxInputTokens: 45000,
             maxOutputTokens: 4000,
         },
     }
@@ -159,7 +159,7 @@ describe('server sent models', async () => {
         status: 'stable',
         tier: 'enterprise' as ModelTier,
         contextWindow: {
-            maxInputTokens: 9000,
+            maxInputTokens: 45000,
             maxOutputTokens: 4000,
         },
     }
@@ -220,7 +220,7 @@ describe('server sent models', async () => {
         expect(opus.id).toBe(serverOpus.modelRef)
         expect(opus.title).toBe(serverOpus.displayName)
         expect(opus.provider).toBe('anthropic')
-        expect(opus.contextWindow).toEqual({ input: 9000, output: 4000 })
+        expect(opus.contextWindow).toEqual({ context: { user: 30000 }, input: 15000, output: 4000 })
         expect(modelTier(opus)).toBe(ModelTag.Enterprise)
     })
 
@@ -639,5 +639,159 @@ describe('syncModels', () => {
             expect(result.preferences.defaults.chat?.includes('sonnet')).toBe(true)
             expect(result.primaryModels.some(model => model.id.includes('sonnet'))).toBe(true)
         })
+    })
+})
+
+describe('maybeAdjustContextWindows comprehensive context window adjustments', () => {
+    it('correctly applies all context window adjustments based on model type, tier and flags', () => {
+        const baseInputTokens = 175000
+        const baseGPTInputTokens = 100000
+        const baseOutputTokens = 8000
+        const baseReasoningOutputTokens = 32000
+
+        const testModels: ServerModel[] = [
+            // Claude models
+            {
+                modelRef: 'anthropic::v1::claude-3-opus',
+                displayName: 'Claude 3 Opus',
+                modelName: 'claude-3-opus',
+                capabilities: ['chat'],
+                category: ModelTag.Balanced,
+                status: 'stable',
+                tier: ModelTag.Pro, // Pro tier
+                contextWindow: {
+                    maxInputTokens: baseInputTokens,
+                    maxOutputTokens: baseOutputTokens,
+                },
+            },
+            // Claude with reasoning capability
+            {
+                modelRef: 'anthropic::v1::claude-3-opus-reasoning',
+                displayName: 'Claude 3 Opus with Reasoning',
+                modelName: 'claude-3-opus-reasoning',
+                capabilities: ['chat', 'reasoning'],
+                category: ModelTag.Balanced,
+                status: 'stable',
+                tier: ModelTag.Pro, // Pro tier
+                contextWindow: {
+                    maxInputTokens: baseInputTokens,
+                    maxOutputTokens: baseReasoningOutputTokens,
+                },
+            },
+            // Gemini model
+            {
+                modelRef: 'google::v1::gemini-1.5-pro',
+                displayName: 'Gemini 1.5 Pro',
+                modelName: 'gemini-1.5-pro',
+                capabilities: ['chat'],
+                category: ModelTag.Balanced,
+                status: 'stable',
+                tier: ModelTag.Pro, // Pro tier
+                contextWindow: {
+                    maxInputTokens: baseInputTokens,
+                    maxOutputTokens: baseOutputTokens,
+                },
+            },
+            // OpenAI o-series model
+            {
+                modelRef: 'openai::v1::o1-preview',
+                displayName: 'O1 Preview',
+                modelName: 'o1-preview',
+                capabilities: ['chat'],
+                category: ModelTag.Balanced,
+                status: 'stable',
+                tier: ModelTag.Pro, // Pro tier
+                contextWindow: {
+                    maxInputTokens: baseInputTokens,
+                    maxOutputTokens: baseOutputTokens,
+                },
+            },
+            // GPT model
+            {
+                modelRef: 'openai::v1::gpt-4-turbo',
+                displayName: 'GPT-4 Turbo',
+                modelName: 'gpt-4-turbo',
+                capabilities: ['chat'],
+                category: ModelTag.Balanced,
+                status: 'stable',
+                tier: ModelTag.Pro, // Pro tier
+                contextWindow: {
+                    maxInputTokens: baseGPTInputTokens,
+                    maxOutputTokens: baseOutputTokens,
+                },
+            },
+            // Enterprise tier models
+            {
+                modelRef: 'anthropic::v1::claude-3-enterprise',
+                displayName: 'Claude 3 Enterprise',
+                modelName: 'claude-3-enterprise',
+                capabilities: ['chat'],
+                category: ModelTag.Balanced,
+                status: 'stable',
+                tier: ModelTag.Enterprise, // Enterprise tier
+                contextWindow: {
+                    maxInputTokens: baseInputTokens,
+                    maxOutputTokens: baseOutputTokens,
+                },
+            },
+            // Enterprise tier model with reasoning
+            {
+                modelRef: 'anthropic::v1::claude-3-enterprise-reasoning',
+                displayName: 'Claude 3 Enterprise with Reasoning',
+                modelName: 'claude-3-enterprise-reasoning',
+                capabilities: ['chat', 'reasoning'],
+                category: ModelTag.Balanced,
+                status: 'stable',
+                tier: ModelTag.Enterprise, // Enterprise tier
+                contextWindow: {
+                    maxInputTokens: baseInputTokens,
+                    maxOutputTokens: baseReasoningOutputTokens,
+                },
+            },
+        ]
+
+        // Test case 1: DotCom user with Pro tier, long context window flag OFF
+        const results1 = maybeAdjustContextWindows(testModels, true, false)
+
+        const proRegularModel = results1.find(
+            m => m.tier === ModelTag.Pro && !m.capabilities.includes('reasoning')
+        )
+        expect(proRegularModel?.contextWindow.maxOutputTokens).toBe(6000)
+
+        const proReasoningModel = results1.find(
+            m => m.tier === ModelTag.Pro && m.capabilities.includes('reasoning')
+        )
+        expect(proReasoningModel?.contextWindow.maxOutputTokens).toBe(16000)
+
+        const claudeModel = results1.find(m => m.modelName.includes('claude'))
+        expect(claudeModel?.contextWindow.maxInputTokens).toBe(45000)
+
+        const gptModel = results1.find(m => m.modelName.includes('gpt'))
+        expect(gptModel?.contextWindow.maxInputTokens).toBe(7000)
+
+        // Test case 2: DotCom user with Pro tier, long context window flag ON
+        const results2 = maybeAdjustContextWindows(testModels, true, true)
+
+        const longClaudeModel = results2.find(m => m.modelName.includes('claude-3-opus'))
+        expect(longClaudeModel?.contextWindow.maxInputTokens).toBe(175000)
+
+        const geminiModel = results2.find(m => m.modelName.includes('gemini'))
+        expect(geminiModel?.contextWindow.maxInputTokens).toBe(175000)
+
+        const oSeriesModel = results2.find(m => m.modelName.includes('o1'))
+        expect(oSeriesModel?.contextWindow.maxInputTokens).toBe(175000)
+
+        const longGptModel = results2.find(m => m.modelName.includes('gpt'))
+        expect(longGptModel?.contextWindow.maxInputTokens).toBe(100000)
+
+        const enterpriseModel = results2.find(
+            m => m.tier === ModelTag.Enterprise && !m.capabilities.includes('reasoning')
+        )
+        expect(enterpriseModel?.contextWindow.maxOutputTokens).toBe(8000)
+
+        const enterpriseReasoningModel = results2.find(
+            m => m.tier === ModelTag.Enterprise && m.capabilities.includes('reasoning')
+        )
+        expect(enterpriseReasoningModel?.contextWindow.maxOutputTokens).toBe(32000)
     })
 })

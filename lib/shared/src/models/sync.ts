@@ -502,7 +502,7 @@ export const maybeAdjustContextWindows = (
             maxInputTokens = Math.round(model.contextWindow.maxInputTokens * 0.85)
         }
         if (!longContextWindowFlag) {
-            maxInputTokens = getInputContextLimit(model.modelRef)
+            maxInputTokens = getInputContextLimit(model.modelRef, maxInputTokens)
         }
         if (isDotComUser && model.tier === ModelTag.Pro) {
             if (model.capabilities.includes('reasoning')) {
@@ -528,11 +528,11 @@ export function defaultModelPreferencesFromServerModelsConfig(
     }
 }
 
-export function getInputContextLimit(chatModel: string): number {
+export function getInputContextLimit(chatModel: string, defaultValue: number): number {
     const longInputContextModels = ['claude', 'gemini', 'o1', 'o3', '4o']
     return longInputContextModels.some(model => chatModel.toLowerCase().includes(model))
         ? 45000
         : chatModel.toLowerCase().includes('gpt')
           ? 7000
-          : CHAT_INPUT_TOKEN_BUDGET
+          : defaultValue
 }
