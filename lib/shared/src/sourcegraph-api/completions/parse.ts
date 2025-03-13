@@ -1,7 +1,7 @@
 import { isError } from '../../utils'
 import type { CompletionsResponseBuilder } from './CompletionsResponseBuilder'
 
-import type { Event } from './types'
+import type { CompletionFunctionCallsData, Event } from './types'
 
 const EVENT_LINE_PREFIX = 'event: '
 const DATA_LINE_PREFIX = 'data: '
@@ -34,6 +34,7 @@ export interface CompletionData {
     completion?: string
     deltaText?: string
     delta_thinking?: string
+    delta_tool_calls?: CompletionFunctionCallsData[]
     stopReason?: string
 }
 
@@ -63,10 +64,13 @@ function parseEventData(
             // Internally, don't handle delta text yet and there's limited value
             // in passing around deltas anyways so we concatenate them here.
             const completion = builder.nextCompletion(data.completion, data.deltaText)
+            const toolCalls = builder.nextToolCalls(data.delta_tool_calls)
+
             return {
                 type: eventType,
                 completion,
                 stopReason: data.stopReason,
+                content: toolCalls,
             }
         }
         case 'error': {

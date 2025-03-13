@@ -52,15 +52,15 @@ import { shrinkPredictionUntilSuffix } from './shrink-prediction'
 import { areSameUriDocs, isPredictedTextAlreadyInSuffix } from './utils'
 
 const AUTOEDIT_CONTEXT_STRATEGY = 'auto-edit'
-export const AUTOEDIT_TOTAL_DEBOUNCE_INTERVAL = 75
-export const AUTOEDIT_CONTEXT_FETCHING_DEBOUNCE_INTERVAL = 25
+export const AUTOEDIT_TOTAL_DEBOUNCE_INTERVAL = 20
+export const AUTOEDIT_CONTEXT_FETCHING_DEBOUNCE_INTERVAL = 10
 const RESET_SUGGESTION_ON_CURSOR_CHANGE_AFTER_INTERVAL_MS = 60 * 1000
 const ON_SELECTION_CHANGE_DEFAULT_DEBOUNCE_INTERVAL_MS = 15
 
 interface CompletionResult extends vscode.InlineCompletionList {
     type: 'completion'
     items: AutoeditCompletionItem[]
-    requestId: AutoeditRequestID
+    requestId: AutoeditRequestID | null
     prediction: string
     /**@deprecated */
     completionEvent?: CompletionBookkeepingEvent
@@ -69,7 +69,7 @@ interface CompletionResult extends vscode.InlineCompletionList {
 interface EditResult extends vscode.InlineCompletionList {
     type: 'edit'
     items: AutoeditCompletionItem[]
-    requestId: AutoeditRequestID
+    requestId: AutoeditRequestID | null
     range: vscode.Range
     originalText: string
     prediction: string
@@ -213,6 +213,22 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
     ): Promise<AutoeditsResult | null> {
         let stopLoading: (() => void) | undefined
 
+        if (inlineCompletionContext.selectedCompletionInfo !== undefined) {
+            const { range, text } = inlineCompletionContext.selectedCompletionInfo
+            // User has a currently selected item in the autocomplete widget.
+            // Instead of attempting to suggest an auto-edit, just show the selected item
+            // as the completion. This is to avoid an undesirable edit conflicting with the acceptance
+            // of the item shown in the widget.
+            // TODO: We should consider the optimal solution here, it may be better to show an
+            // inline completion (not an edit) that includes the currently selected item.
+            return {
+                requestId: null,
+                items: [{ insertText: text, range }],
+                prediction: text,
+                decorationInfo: null,
+            }
+        }
+
         try {
             const startedAt = getTimeNowInMillis()
             const controller = new AbortController()
@@ -316,9 +332,10 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                 position,
                 prompt,
                 codeToReplaceData,
+                abortSignal,
             })
 
-            if (abortSignal?.aborted) {
+            if (abortSignal?.aborted || predictionResult.type === 'aborted') {
                 autoeditsOutputChannelLogger.logDebugIfVerbose(
                     'provideInlineCompletionItems',
                     'client aborted after getPrediction'
@@ -331,7 +348,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                 return null
             }
 
-            if (!predictionResult || predictionResult.prediction.length === 0) {
+            if (predictionResult.prediction.length === 0) {
                 autoeditsOutputChannelLogger.logDebugIfVerbose(
                     'provideInlineCompletionItems',
                     'received empty prediction'
@@ -608,12 +625,14 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
         position,
         codeToReplaceData,
         prompt,
+        abortSignal,
     }: {
         document: vscode.TextDocument
         position: vscode.Position
         codeToReplaceData: CodeToReplaceData
         prompt: AutoeditsPrompt
-    }): Promise<ModelResponse | undefined> {
+        abortSignal: AbortSignal
+    }): Promise<ModelResponse> {
         if (autoeditsProviderConfig.isMockResponseFromCurrentDocumentTemplateEnabled) {
             const responseMetadata = extractAutoEditResponseFromCurrentDocumentCommentTemplate(
                 document,
@@ -628,8 +647,10 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
 
                 if (prediction) {
                     return {
+                        type: 'success',
                         prediction,
                         responseHeaders: {},
+                        responseBody: {},
                         requestUrl: autoeditsProviderConfig.url,
                     }
                 }
@@ -643,6 +664,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
             codeToRewrite: codeToReplaceData.codeToRewrite,
             userId: (await currentResolvedConfig()).clientState.anonymousUserID,
             isChatModel: autoeditsProviderConfig.isChatModel,
+            abortSignal,
         })
     }
 

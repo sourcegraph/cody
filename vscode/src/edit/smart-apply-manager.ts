@@ -8,10 +8,13 @@ import {
     type EventSource,
     FeatureFlag,
     PromptString,
+    type SiteAndCodyAPIVersions,
     currentSiteVersion,
     extractContextFromTraceparent,
     featureFlagProvider,
     ps,
+    siteVersion,
+    skipPendingOperation,
     subscriptionDisposable,
     telemetryRecorder,
     wrapInActiveSpan,
@@ -26,7 +29,7 @@ import {
     SMART_APPLY_FILE_DECORATION,
     type SmartApplySelectionType,
     getSmartApplySelection,
-} from './prompt/smart-apply'
+} from './prompt/smart-apply/selection'
 import type { SmartApplyArguments } from './smart-apply'
 
 type SmartApplyCacheEntry = Promise<null | {
@@ -39,8 +42,8 @@ export class SmartApplyManager implements vscode.Disposable {
 
     private isPrefetchingEnabled = false
     private smartApplyContextLogger: SmartApplyContextLogger
-
     private cache = new LRUCache<string, SmartApplyCacheEntry>({ max: 20 })
+    private siteVersion: SiteAndCodyAPIVersions | null = null
 
     constructor(
         private options: {
@@ -96,6 +99,14 @@ export class SmartApplyManager implements vscode.Disposable {
         )
 
         this.disposables.push(
+            subscriptionDisposable(
+                siteVersion.pipe(skipPendingOperation()).subscribe(version => {
+                    this.siteVersion = version
+                })
+            )
+        )
+
+        this.disposables.push(
             smartApplyCommand,
             smartApplyAcceptCommand,
             smartApplyRejectCommand,
@@ -119,6 +130,7 @@ export class SmartApplyManager implements vscode.Disposable {
         const taskAndSelection = await this.getSmartApplyTask({
             configuration,
             model,
+            smartApplyStartTime: performance.now(),
             shouldUpdateCache: true,
         })
 
@@ -134,10 +146,12 @@ export class SmartApplyManager implements vscode.Disposable {
     private async getSmartApplyTask({
         configuration,
         model,
+        smartApplyStartTime,
         shouldUpdateCache,
     }: {
         configuration: SmartApplyArguments['configuration']
         model: string
+        smartApplyStartTime: number
         shouldUpdateCache: boolean
     }): SmartApplyCacheEntry {
         let inFlight = this.cache.get(configuration.id)
@@ -147,7 +161,7 @@ export class SmartApplyManager implements vscode.Disposable {
             // reusing it more than once.
             this.cache.delete(configuration.id)
         } else {
-            inFlight = this.fetchSmartApplyTask(configuration, model)
+            inFlight = this.fetchSmartApplyTask(configuration, model, smartApplyStartTime)
 
             if (shouldUpdateCache) {
                 this.cache.set(configuration.id, inFlight)
@@ -164,14 +178,14 @@ export class SmartApplyManager implements vscode.Disposable {
 
     private async fetchSmartApplyTask(
         configuration: SmartApplyArguments['configuration'],
-        model: string
+        model: string,
+        smartApplyStartTime: number
     ): SmartApplyCacheEntry {
         const { id, instruction, document, replacement } = configuration
-        const versions = await currentSiteVersion()
+        const versions = this.siteVersion ?? (await currentSiteVersion())
         if (isError(versions)) {
             throw new Error('Unable to determine site version', versions)
         }
-
         const replacementCode = PromptString.unsafe_fromLLMResponse(replacement)
 
         const selectionStartTime = performance.now()
@@ -210,7 +224,11 @@ export class SmartApplyManager implements vscode.Disposable {
                 instruction: ps`Ensuring that you do not duplicate code that is outside of the selection, apply the following change:
 ${replacementCode}`,
                 model,
-                intent: 'edit',
+                intent: 'smartApply',
+                smartApplyMetadata: {
+                    chatQuery: configuration.instruction,
+                    replacementCodeBlock: replacementCode,
+                },
             },
             source: 'chat',
         })
@@ -221,6 +239,8 @@ ${replacementCode}`,
 
         this.smartApplyContextLogger.recordSmartApplyBaseContext({
             taskId: task.id,
+            startedAt: smartApplyStartTime,
+            isPrefetched: this.isPrefetchingEnabled,
             model,
             userQuery: configuration.instruction.toString(),
             replacementCodeBlock: replacementCode.toString(),
@@ -242,6 +262,8 @@ ${replacementCode}`,
 
         return context.with(extractContextFromTraceparent(traceparent), async () => {
             await wrapInActiveSpan('edit.smart-apply', async span => {
+                const smartApplyStartTime = performance.now()
+
                 span.setAttribute('sampled', true)
                 span.setAttribute('continued', true)
 
@@ -277,6 +299,7 @@ ${replacementCode}`,
                 const taskAndSelection = await this.getSmartApplyTask({
                     configuration,
                     model,
+                    smartApplyStartTime,
                     shouldUpdateCache: false,
                 })
                 editor.setDecorations(SMART_APPLY_FILE_DECORATION, [])

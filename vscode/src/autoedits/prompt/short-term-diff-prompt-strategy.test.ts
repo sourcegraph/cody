@@ -1,5 +1,4 @@
 import { beforeEach } from 'node:test'
-import dedent from 'dedent'
 import { describe, expect, it, vi } from 'vitest'
 
 import {
@@ -194,196 +193,176 @@ describe('ShortTermPromptStrategy', () => {
         it('correct prompt rendering with context', () => {
             const userPromptData = getUserPromptData({ shouldIncludeContext: false })
             const prompt = strategy.getUserPrompt(userPromptData)
-            expect(prompt.toString()).toEqual(dedent`
-                Help me finish a coding change. In particular, you will see a series of snippets from current open files in my editor, files I have recently viewed, the file I am editing, then a history of my recent codebase changes, then current compiler and linter errors, content I copied from my codebase. You will then rewrite the <code_to_rewrite>, to match what you think I would do next in the codebase. Note: I might have stopped in the middle of typing.
+            expect(prompt.toString()).toMatchInlineSnapshot(`
+              "Help me finish a coding change. You will see snippets from current open files in my editor, files I have recently viewed, the file I am editing, then a history of my recent codebase changes, then current compiler and linter errors, content I copied from my codebase. You will then rewrite the <code_to_rewrite>, to match what you think I would do next in the codebase. Note: I might have stopped in the middle of typing.
+              The file currently open:(\`test.ts\`)
+              <file>
 
+              <<<AREA_AROUND_CODE_TO_REWRITE_WILL_BE_INSERTED_HERE>>>
 
+              </file>
+              <area_around_code_to_rewrite>
+              line 37
+              line 38
+              line 39
+              line 40
+              line 41
+              line 42
+              line 43
+              line 44
+              line 45
+              line 46
 
-                Here is the file that I am looking at (\`test.ts\`)
-                <file>
+              <code_to_rewrite>
+              line 47
+              line 48
+              line 49
+              line 50
+              line 51
+              line 52
+              line 53
 
-                <<<AREA_AROUND_CODE_TO_REWRITE_WILL_BE_INSERTED_HERE>>>
+              </code_to_rewrite>
+              line 54
+              line 55
+              line 56
+              line 57
+              line 58
+              line 59
+              line 60
+              line 61
+              line 62
+              line 63
+              line 64
 
-                </file>
-
-
-
-
-
-                <area_around_code_to_rewrite>
-                line 37
-                line 38
-                line 39
-                line 40
-                line 41
-                line 42
-                line 43
-                line 44
-                line 45
-                line 46
-
-                <code_to_rewrite>
-                line 47
-                line 48
-                line 49
-                line 50
-                line 51
-                line 52
-                line 53
-
-                </code_to_rewrite>
-                line 54
-                line 55
-                line 56
-                line 57
-                line 58
-                line 59
-                line 60
-                line 61
-                line 62
-                line 63
-                line 64
-
-                </area_around_code_to_rewrite>
-
-
-                Now, continue where I left off and finish my change by rewriting "code_to_rewrite":
+              </area_around_code_to_rewrite>
+              Continue where I left off and finish my change by rewriting "code_to_rewrite":"
             `)
         })
 
         it('correct prompt rendering with context', () => {
             const userPromptData = getUserPromptData({ shouldIncludeContext: true })
             const prompt = strategy.getUserPrompt(userPromptData)
-            expect(prompt.toString()).toEqual(dedent`
-                Help me finish a coding change. In particular, you will see a series of snippets from current open files in my editor, files I have recently viewed, the file I am editing, then a history of my recent codebase changes, then current compiler and linter errors, content I copied from my codebase. You will then rewrite the <code_to_rewrite>, to match what you think I would do next in the codebase. Note: I might have stopped in the middle of typing.
+            expect(prompt.toString()).toMatchInlineSnapshot(`
+              "Help me finish a coding change. You will see snippets from current open files in my editor, files I have recently viewed, the file I am editing, then a history of my recent codebase changes, then current compiler and linter errors, content I copied from my codebase. You will then rewrite the <code_to_rewrite>, to match what you think I would do next in the codebase. Note: I might have stopped in the middle of typing.
+              Code snippets I have extracted from open files in my code editor. Some may be irrelevant to the change:
+              <extracted_code_snippets>
+              <snippet>
+              (\`test1.ts\`)
 
-                Here are some snippets of code I have extracted from open files in my code editor. It's possible these aren't entirely relevant to my code change:
-                <extracted_code_snippets>
-                <snippet>
-                (\`test1.ts\`)
+              jaccard similarity context 1
+              </snippet>
+              <snippet>
+              (\`test2.ts\`)
 
-                jaccard similarity context 1
-                </snippet>
-                <snippet>
-                (\`test2.ts\`)
+              jaccard similarity context 2
+              </snippet>
+              </extracted_code_snippets>
+              Code snippets I have recently viewed, roughly from oldest to newest. Some may be irrelevant to the change:
+              <recently_viewed_snippets>
+              <snippet>
+              (\`test3.ts\`)
 
-                jaccard similarity context 2
-                </snippet>
-                </extracted_code_snippets>
+              view port context 4
+              </snippet>
+              <snippet>
+              (\`test2.ts\`)
 
-                Here are some snippets of code I have recently viewed, roughly from oldest to newest. It's possible these aren't entirely relevant to my code change:
-                <recently_viewed_snippets>
-                <snippet>
-                (\`test3.ts\`)
+              view port context 3
+              </snippet>
+              </recently_viewed_snippets>
+              The file currently open:(\`test.ts\`)
+              <file>
 
-                view port context 4
-                </snippet>
-                <snippet>
-                (\`test2.ts\`)
+              <<<AREA_AROUND_CODE_TO_REWRITE_WILL_BE_INSERTED_HERE>>>
 
-                view port context 3
-                </snippet>
-                </recently_viewed_snippets>
+              </file>
+              Code snippets just I viewed:
+              <recently_viewed_snippets>
+              <snippet>
+              (\`test1.ts\`)
 
-                Here is the file that I am looking at (\`test.ts\`)
-                <file>
+              view port context 2
+              </snippet>
+              <snippet>
+              (\`test0.ts\`)
 
-                <<<AREA_AROUND_CODE_TO_REWRITE_WILL_BE_INSERTED_HERE>>>
+              view port context 1
+              </snippet>
+              </recently_viewed_snippets>
+              My recent edits, from oldest to newest:
+              <diff_history>
+              test2.ts
+              recent edits context 5
+              test3.ts
+              recent edits context 4
+              then
+              recent edits context 3
+              test0.ts
+              recent edits context 2
+              </diff_history>
+              Linter errors from the code that you will rewrite:
+              <lint_errors>
+              (\`test1.ts\`)
 
-                </file>
+              diagnostics context 1
 
-                Here are some snippets of code I just looked at:
-                <recently_viewed_snippets>
-                <snippet>
-                (\`test1.ts\`)
+              diagnostics context 2
 
-                view port context 2
-                </snippet>
-                <snippet>
-                (\`test0.ts\`)
+              (\`test2.ts\`)
 
-                view port context 1
-                </snippet>
-                </recently_viewed_snippets>
+              diagnostics context 3
+              </lint_errors>
+              Recently copied code from the editor:
+              <recent_copy>
+              (\`test1.ts\`)
 
-                Here is my recent series of edits from oldest to newest.
-                <diff_history>
-                test2.ts
-                recent edits context 5
-                test3.ts
-                recent edits context 4
-                then
-                recent edits context 3
-                test0.ts
-                recent edits context 2
-                </diff_history>
+              recent copy context 1
 
-                Here are some linter errors from the code that you will rewrite.
-                <lint_errors>
-                (\`test1.ts\`)
+              (\`test2.ts\`)
 
-                diagnostics context 1
+              recent copy context 2
+              </recent_copy>
+              <area_around_code_to_rewrite>
+              line 37
+              line 38
+              line 39
+              line 40
+              line 41
+              line 42
+              line 43
+              line 44
+              line 45
+              line 46
 
-                diagnostics context 2
+              <code_to_rewrite>
+              line 47
+              line 48
+              line 49
+              line 50
+              line 51
+              line 52
+              line 53
 
-                (\`test2.ts\`)
+              </code_to_rewrite>
+              line 54
+              line 55
+              line 56
+              line 57
+              line 58
+              line 59
+              line 60
+              line 61
+              line 62
+              line 63
+              line 64
 
-                diagnostics context 3
-                </lint_errors>
-
-                Here is some recent code I copied from the editor.
-                <recent_copy>
-                (\`test1.ts\`)
-
-                recent copy context 1
-
-                (\`test2.ts\`)
-
-                recent copy context 2
-                </recent_copy>
-
-                <area_around_code_to_rewrite>
-                line 37
-                line 38
-                line 39
-                line 40
-                line 41
-                line 42
-                line 43
-                line 44
-                line 45
-                line 46
-
-                <code_to_rewrite>
-                line 47
-                line 48
-                line 49
-                line 50
-                line 51
-                line 52
-                line 53
-
-                </code_to_rewrite>
-                line 54
-                line 55
-                line 56
-                line 57
-                line 58
-                line 59
-                line 60
-                line 61
-                line 62
-                line 63
-                line 64
-
-                </area_around_code_to_rewrite>
-
-                <diff_history>
-                test0.ts
-                recent edits context 1
-                </diff_history>
-
-                Now, continue where I left off and finish my change by rewriting "code_to_rewrite":
+              </area_around_code_to_rewrite>
+              <diff_history>
+              test0.ts
+              recent edits context 1
+              </diff_history>
+              Continue where I left off and finish my change by rewriting "code_to_rewrite":"
             `)
         })
     })
@@ -427,35 +406,35 @@ describe('ShortTermPromptStrategy', () => {
                 getContextItem('const test3 = null', 120 * 1000, 'test3.ts'),
             ]
             const result = strategy.getRecentSnippetViewPrompt(snippet)
-            expect(result.shortTermViewPrompt.toString()).toBe(dedent`
-                Here are some snippets of code I just looked at:
-                <recently_viewed_snippets>
-                <snippet>
-                (\`test1.ts\`)
+            expect(result.shortTermViewPrompt.toString()).toMatchInlineSnapshot(`
+              "Code snippets just I viewed:
+              <recently_viewed_snippets>
+              <snippet>
+              (\`test1.ts\`)
 
-                const test1 = true
-                </snippet>
-                <snippet>
-                (\`test0.ts\`)
+              const test1 = true
+              </snippet>
+              <snippet>
+              (\`test0.ts\`)
 
-                const test0 = true
-                </snippet>
-                </recently_viewed_snippets>
+              const test0 = true
+              </snippet>
+              </recently_viewed_snippets>"
             `)
-            expect(result.longTermViewPrompt.toString()).toBe(dedent`
-                Here are some snippets of code I have recently viewed, roughly from oldest to newest. It's possible these aren't entirely relevant to my code change:
-                <recently_viewed_snippets>
-                <snippet>
-                (\`test3.ts\`)
+            expect(result.longTermViewPrompt.toString()).toMatchInlineSnapshot(`
+              "Code snippets I have recently viewed, roughly from oldest to newest. Some may be irrelevant to the change:
+              <recently_viewed_snippets>
+              <snippet>
+              (\`test3.ts\`)
 
-                const test3 = null
-                </snippet>
-                <snippet>
-                (\`test2.ts\`)
+              const test3 = null
+              </snippet>
+              <snippet>
+              (\`test2.ts\`)
 
-                const test2 = false
-                </snippet>
-                </recently_viewed_snippets>
+              const test2 = false
+              </snippet>
+              </recently_viewed_snippets>"
             `)
         })
     })
@@ -501,34 +480,34 @@ describe('ShortTermPromptStrategy', () => {
                 getContextItem('diff9', 'test0.ts'),
             ]
             const result = strategy.getRecentEditsPrompt(snippet)
-            expect(result.shortTermEditsPrompt.toString()).toBe(dedent`
-                <diff_history>
-                test0.ts
-                diff0
-                </diff_history>
+            expect(result.shortTermEditsPrompt.toString()).toMatchInlineSnapshot(`
+              "<diff_history>
+              test0.ts
+              diff0
+              </diff_history>"
             `)
-            expect(result.longTermEditsPrompt.toString()).toBe(dedent`
-                Here is my recent series of edits from oldest to newest.
-                <diff_history>
-                test0.ts
-                diff9
-                then
-                diff8
-                test2.ts
-                diff7
-                then
-                diff6
-                test1.ts
-                diff5
-                then
-                diff4
-                test0.ts
-                diff3
-                then
-                diff2
-                then
-                diff1
-                </diff_history>
+            expect(result.longTermEditsPrompt.toString()).toMatchInlineSnapshot(`
+              "My recent edits, from oldest to newest:
+              <diff_history>
+              test0.ts
+              diff9
+              then
+              diff8
+              test2.ts
+              diff7
+              then
+              diff6
+              test1.ts
+              diff5
+              then
+              diff4
+              test0.ts
+              diff3
+              then
+              diff2
+              then
+              diff1
+              </diff_history>"
             `)
         })
     })

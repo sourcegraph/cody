@@ -13,7 +13,6 @@ import {
     clientCapabilities,
     combineLatest,
     createDisposables,
-    debounceTime,
     distinctUntilChanged,
     featureFlagProvider,
     graphqlClient,
@@ -62,27 +61,11 @@ export function observeOpenCtxController(
             })),
             distinctUntilChanged()
         ),
-        authStatus.pipe(
-            distinctUntilChanged(),
-            debounceTime(0),
-            switchMap(auth =>
-                auth.authenticated
-                    ? promiseFactoryToObservable(signal =>
-                          graphqlClient.isValidSiteVersion(
-                              {
-                                  minimumVersion: '5.7.0',
-                              },
-                              signal
-                          )
-                      )
-                    : Observable.of(false)
-            )
-        ),
         promiseFactoryToObservable(
             async () => createOpenCtxController ?? (await import('@openctx/vscode-lib')).createController
         )
     ).pipe(
-        map(([{ experimentalNoodle }, isValidSiteVersion, createController]) => {
+        map(([{ experimentalNoodle }, createController]) => {
             try {
                 // Enable fetching of openctx configuration from Sourcegraph instance
                 const mergeConfiguration = experimentalNoodle
@@ -107,8 +90,7 @@ export function observeOpenCtxController(
                               ClientConfigSingleton.getInstance().changes.pipe(
                                   skipPendingOperation(),
                                   distinctUntilChanged()
-                              ),
-                              isValidSiteVersion
+                              )
                           ),
                     mergeConfiguration,
                 })
@@ -126,21 +108,36 @@ export function observeOpenCtxController(
 let openctxOutputChannel: vscode.OutputChannel | undefined
 
 export function getOpenCtxProviders(
-    authStatusChanges: Observable<Pick<AuthStatus, 'endpoint'>>,
-    clientConfigChanges: Observable<CodyClientConfig | undefined>,
-    isValidSiteVersion: boolean
+    authStatusChanges: Observable<Pick<AuthStatus, 'endpoint' | 'authenticated'>>,
+    clientConfigChanges: Observable<CodyClientConfig | undefined>
 ): Observable<ImportedProviderConfiguration[]> {
     return combineLatest(
         resolvedConfig.pipe(pluck('configuration'), distinctUntilChanged()),
         clientConfigChanges,
         authStatusChanges,
-        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.GitMentionProvider)
+        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.GitMentionProvider),
+        authStatusChanges.pipe(
+            map(auth => auth.authenticated),
+            switchMap(authenticated =>
+                authenticated
+                    ? promiseFactoryToObservable(signal =>
+                          graphqlClient.isValidSiteVersion(
+                              {
+                                  minimumVersion: '5.7.0',
+                              },
+                              signal
+                          )
+                      )
+                    : Observable.of(false)
+            )
+        )
     ).map(
-        ([config, clientConfig, authStatus, gitMentionProvider]: [
+        ([config, clientConfig, authStatus, gitMentionProvider, isValidSiteVersion]: [
             ClientConfiguration,
             CodyClientConfig | undefined,
             Pick<AuthStatus, 'endpoint'>,
             boolean | undefined,
+            boolean,
         ]) => {
             const providers: ImportedProviderConfiguration[] = [
                 {
@@ -219,7 +216,7 @@ function getCodyWebOpenCtxProviders(): Observable<ImportedProviderConfiguration[
             {
                 settings: true,
                 providerUri: RemoteRepositorySearch.providerUri,
-                provider: createRemoteRepositoryProvider('Repositories'),
+                provider: createRemoteRepositoryProvider('Repository search'),
             },
             {
                 settings: true,

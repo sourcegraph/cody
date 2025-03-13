@@ -11,12 +11,12 @@ import {
     MessagesSquareIcon,
     Trash2Icon,
 } from 'lucide-react'
+import { Kbd } from '../components/Kbd'
 import { getVSCodeAPI } from '../utils/VSCodeApi'
 import { View } from './types'
 
 import { type AuthenticatedAuthStatus, CodyIDE, isDefined } from '@sourcegraph/cody-shared'
 import { type FC, Fragment, forwardRef, memo, useCallback, useMemo, useState } from 'react'
-import { Kbd } from '../components/Kbd'
 import { Tooltip, TooltipContent, TooltipTrigger } from '../components/shadcn/ui/tooltip'
 import { useConfig } from '../utils/useConfig'
 
@@ -132,15 +132,13 @@ export const TabsBar = memo<TabsBarProps>(props => {
                             Icon={MessageSquarePlusIcon}
                             title="New Chat"
                             IDE={IDE}
-                            alwaysShowTitle={true}
                             tooltipExtra={
-                                <>
-                                    {IDE === CodyIDE.VSCode && (
-                                        <Kbd macOS="shift+opt+l" linuxAndWindows="shift+alt+l" />
-                                    )}
-                                </>
+                                IDE === CodyIDE.VSCode && (
+                                    <Kbd macOS="shift+opt+/" linuxAndWindows="shift+alt+/" />
+                                )
                             }
                             view={View.Chat}
+                            data-testid="new-chat-button"
                             onClick={() =>
                                 handleSubActionClick({
                                     changesView: View.Chat,
@@ -198,7 +196,6 @@ export const TabsBar = memo<TabsBarProps>(props => {
         </div>
     )
 }, isEqual)
-
 interface ActionButtonWithConfirmationProps {
     title: string
     Icon: IconComponent

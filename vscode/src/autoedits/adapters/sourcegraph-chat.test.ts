@@ -1,7 +1,7 @@
 import { ps } from '@sourcegraph/cody-shared'
 import type { ChatClient } from '@sourcegraph/cody-shared'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
-import type { AutoeditModelOptions } from './base'
+import type { AutoeditModelOptions, SuccessModelResponse } from './base'
 import { SourcegraphChatAdapter } from './sourcegraph-chat'
 import { getMaxOutputTokensForAutoedits } from './utils'
 
@@ -19,6 +19,7 @@ describe('SourcegraphChatAdapter', () => {
         codeToRewrite: 'const x = 1',
         userId: 'test-user',
         isChatModel: true,
+        abortSignal: new AbortController().signal,
     }
 
     beforeEach(() => {
@@ -84,7 +85,7 @@ describe('SourcegraphChatAdapter', () => {
         mockChatClient.chat = mockChat
 
         const response = await adapter.getModelResponse(options)
-        expect(response.prediction).toBe('part1part2')
+        expect((response as SuccessModelResponse).prediction).toBe('part1part2')
     })
 
     it('handles errors correctly', async () => {

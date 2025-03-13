@@ -36,7 +36,12 @@ import { countCode } from '../services/utils/code-count'
 import { FixupDocumentEditObserver } from './FixupDocumentEditObserver'
 import type { FixupFile } from './FixupFile'
 import { FixupFileObserver } from './FixupFileObserver'
-import { FixupTask, type FixupTaskID, type FixupTelemetryMetadata } from './FixupTask'
+import {
+    FixupTask,
+    type FixupTaskID,
+    type FixupTelemetryMetadata,
+    type SmartApplyAdditionalMetadata,
+} from './FixupTask'
 import { TERMINAL_EDIT_STATES } from './codelenses/constants'
 import { FixupDecorator } from './decorations/FixupDecorator'
 import { type Edit, computeDiff, makeDiffEditBuilderCompatible } from './line-diff'
@@ -59,6 +64,7 @@ export interface CreateTaskOptions {
     insertionPoint?: vscode.Position
     telemetryMetadata?: FixupTelemetryMetadata
     taskId?: FixupTaskID
+    smartApplyMetadata?: SmartApplyAdditionalMetadata
 }
 
 // This class acts as the factory for Fixup Tasks and handles communication between the Tree View and editor
@@ -460,7 +466,8 @@ export class FixupController
         rules: Rule[] | null,
         intent: EditIntent,
         source: EventSource,
-        telemetryMetadata?: FixupTelemetryMetadata
+        telemetryMetadata?: FixupTelemetryMetadata,
+        smartApplyMetadata?: SmartApplyAdditionalMetadata
     ): Promise<FixupTask | null> {
         const input = await getInput(
             document,
@@ -491,6 +498,7 @@ export class FixupController
             destinationFile: undefined,
             insertionPoint: undefined,
             telemetryMetadata,
+            smartApplyMetadata,
         })
 
         // Return focus to the editor
@@ -521,6 +529,7 @@ export class FixupController
         insertionPoint,
         telemetryMetadata,
         taskId,
+        smartApplyMetadata,
     }: CreateTaskOptions): FixupTask {
         const authStatus = currentAuthStatus()
         const overriddenModel = getOverriddenModelForIntent(intent, model, authStatus)
@@ -539,7 +548,8 @@ export class FixupController
             destinationFile,
             insertionPoint,
             telemetryMetadata,
-            taskId
+            taskId,
+            smartApplyMetadata
         )
         this.tasks.set(task.id, task)
 

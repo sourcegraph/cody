@@ -13,6 +13,7 @@ import com.sourcegraph.cody.config.CodyWindowAdapter
 import com.sourcegraph.cody.config.migration.SettingsMigration
 import com.sourcegraph.cody.config.notification.CodySettingChangeListener
 import com.sourcegraph.cody.config.ui.CheckUpdatesTask
+import com.sourcegraph.cody.error.SentryService
 import com.sourcegraph.cody.listeners.CodyCaretListener
 import com.sourcegraph.cody.listeners.CodyDocumentListener
 import com.sourcegraph.cody.listeners.CodyFocusChangeListener
@@ -28,6 +29,10 @@ class PostStartupActivity : ProjectActivity {
   // doing something wrong, which may be slowing down agent startup. Not fixing it now but this
   // deserves more investigation.
   override suspend fun execute(project: Project) {
+    if (!ConfigUtil.isIntegrationTestModeEnabled() &&
+        !SentryService.isPluginTooOldForSentryLogging()) {
+      SentryService.initialize()
+    }
     VerifyJavaBootRuntimeVersion().runActivity(project)
     SettingsMigration().runActivity(project)
     CodyWindowAdapter.addWindowFocusListener(project)

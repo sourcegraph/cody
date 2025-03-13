@@ -5,9 +5,9 @@ import { Utils } from 'vscode-uri'
 
 import {
     BotResponseMultiplexer,
-    type CompletionParameters,
     DEFAULT_EVENT_SOURCE,
     EventSourceTelemetryMetadataMapping,
+    type SiteAndCodyAPIVersions,
     Typewriter,
     currentAuthStatus,
     currentSiteVersion,
@@ -31,17 +31,22 @@ import { logError } from '../output-channel-logger'
 import { splitSafeMetadata } from '../services/telemetry-v2'
 import { countCode } from '../services/utils/code-count'
 import { resolveRelativeOrAbsoluteUri } from '../services/utils/edit-create-file'
-
+import type { ModelParameterProvider } from './adapters/base'
+import { DefaultModelParameterProvider } from './adapters/default'
+import { SmartApplyCustomModelParameterProvider } from './adapters/smart-apply-custom'
 import type { EditManagerOptions } from './edit-manager'
 import { responseTransformer } from './output/response-transformer'
-import { buildInteraction } from './prompt'
-import { PROMPT_TOPICS } from './prompt/constants'
+import { DefaultEditPromptBuilder } from './prompt'
+import { PROMPT_TOPICS, SMART_APPLY_MODEL_IDENTIFIERS } from './prompt/constants'
+import { SmartApplyCustomEditPromptBuilder } from './prompt/smart-apply/apply/smart-apply-custom'
+import type { EditPromptBuilder } from './prompt/type'
 import { EditIntentTelemetryMetadataMapping, EditModeTelemetryMetadataMapping } from './types'
 import { isStreamedIntent } from './utils/edit-intent'
 
 interface EditProviderOptions extends EditManagerOptions {
     task: FixupTask
     fixupController: FixupController
+    siteVersion: SiteAndCodyAPIVersions | null
 }
 
 /**
@@ -74,10 +79,24 @@ export interface StreamSession {
 export class EditProvider {
     private insertionQueue: { response: string; isMessageInProgress: boolean }[] = []
     private insertionInProgress = false
-
+    private promptBuilder: EditPromptBuilder
+    private modelParameterProvider: ModelParameterProvider
+    private siteVersion: SiteAndCodyAPIVersions | null = null
     private cache = new LRUCache<string, StreamSession>({ max: 20 })
 
-    constructor(public config: EditProviderOptions) {}
+    constructor(public config: EditProviderOptions) {
+        if (
+            this.config.task.intent === 'smartApply' &&
+            Object.values(SMART_APPLY_MODEL_IDENTIFIERS).includes(this.config.task.model)
+        ) {
+            this.modelParameterProvider = new SmartApplyCustomModelParameterProvider()
+            this.promptBuilder = new SmartApplyCustomEditPromptBuilder()
+        } else {
+            this.modelParameterProvider = new DefaultModelParameterProvider()
+            this.promptBuilder = new DefaultEditPromptBuilder()
+        }
+        this.siteVersion = this.config.siteVersion
+    }
 
     /**
      * Attempt to start streaming in "prefetch mode." If a stream is already
@@ -186,7 +205,7 @@ export class EditProvider {
             const editTimeToFirstTokenSpan = tracer.startSpan('cody.edit.provider.timeToFirstToken')
             const model = this.config.task.model
             const contextWindow = modelsService.getContextWindowByID(model)
-            const versions = await currentSiteVersion()
+            const versions = this.siteVersion ?? (await currentSiteVersion())
 
             if (isError(versions)) {
                 this.handleError(versions)
@@ -197,16 +216,18 @@ export class EditProvider {
                 stopSequences,
                 responseTopic,
                 responsePrefix = '',
-            } = await buildInteraction({
-                model,
-                codyApiVersion: versions.codyAPIVersion,
-                contextWindow: contextWindow.input,
-                task: this.config.task,
-                editor: this.config.editor,
-            }).catch(err => {
-                this.handleError(err)
-                throw err
-            })
+            } = await this.promptBuilder
+                .buildInteraction({
+                    model,
+                    codyApiVersion: versions.codyAPIVersion,
+                    contextWindow: contextWindow.input,
+                    task: this.config.task,
+                    editor: this.config.editor,
+                })
+                .catch(err => {
+                    this.handleError(err)
+                    throw err
+                })
 
             // This handles the partial text streaming
             const typewriter = new Typewriter({
@@ -271,25 +292,13 @@ export class EditProvider {
                 })
             }
 
-            const params = {
+            const params = this.modelParameterProvider.getModelParameters({
                 model,
                 stopSequences,
-                maxTokensToSample: contextWindow.output,
-            } as CompletionParameters
+                contextWindow,
+                task: this.config.task,
+            })
 
-            if (model.includes('gpt-4o')) {
-                // Use Predicted Output for gpt-4o models.
-                // https://platform.openai.com/docs/guides/predicted-outputs
-                params.prediction = {
-                    type: 'content',
-                    content: this.config.task.original,
-                }
-            }
-
-            // Set stream param only when the model is disabled for streaming.
-            if (modelsService.isStreamDisabled(model)) {
-                params.stream = false
-            }
             const stream = await this.config.chatClient.chat(
                 messages,
                 { ...params },

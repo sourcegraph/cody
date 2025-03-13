@@ -60,7 +60,7 @@ export abstract class SourcegraphCompletionsClient {
             switch (event.type) {
                 case 'completion': {
                     span?.addEvent('yield', { stopReason: event.stopReason })
-                    cb.onChange(event.completion)
+                    cb.onChange(event.completion, event.content)
                     break
                 }
                 case 'error': {
@@ -100,9 +100,7 @@ export abstract class SourcegraphCompletionsClient {
             headerParams['X-Sourcegraph-Interaction-ID'] = interactionId
         }
         const url = new URL(await this.completionsEndpoint())
-        if (apiVersion >= 1) {
-            url.searchParams.append('api-version', '' + apiVersion)
-        }
+        url.searchParams.append('api-version', '' + apiVersion)
         addClientInfoParams(url.searchParams)
         return { url, serializedParams, headerParams }
     }
@@ -149,8 +147,13 @@ export abstract class SourcegraphCompletionsClient {
             )
         }
         const callbacks: CompletionCallbacks = {
-            onChange(text) {
-                send({ type: 'change', text })
+            onChange(text, content) {
+                const value: CompletionGeneratorValue = { type: 'change', text }
+                // Include the content field if it exists (contains delta_tool_calls)
+                if (content) {
+                    value.content = content
+                }
+                send(value)
             },
             onComplete() {
                 send({ type: 'complete' })

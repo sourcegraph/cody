@@ -24,6 +24,7 @@ describe('CodyGatewayAdapter', () => {
         codeToRewrite: 'const x = 1',
         userId: 'test-user',
         isChatModel: true,
+        abortSignal: new AbortController().signal,
     }
 
     const mockFetch = vi.fn()
@@ -65,6 +66,7 @@ describe('CodyGatewayAdapter', () => {
                 'X-Sourcegraph-Feature': 'code_completions',
             },
             body: expect.stringContaining('"model":"anthropic/claude-2"'),
+            signal: expect.any(AbortSignal),
         })
 
         // Verify request body structure
@@ -79,7 +81,6 @@ describe('CodyGatewayAdapter', () => {
                     type: 'content',
                     content: options.codeToRewrite,
                 },
-                rewrite_speculation: true,
                 user: options.userId,
                 messages: expect.any(Array),
             })
@@ -108,7 +109,6 @@ describe('CodyGatewayAdapter', () => {
                     type: 'content',
                     content: options.codeToRewrite,
                 },
-                rewrite_speculation: true,
                 user: options.userId,
                 prompt: nonChatOptions.prompt.userMessage.toString(),
             })

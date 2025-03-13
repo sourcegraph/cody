@@ -65,6 +65,7 @@ describe('AutoeditAnalyticsLogger', () => {
         codeToRewrite: 'This is test code to rewrite',
         userId: 'test-user-id',
         isChatModel: false,
+        abortSignal: new AbortController().signal,
     }
 
     function getRequestStartMetadata(): Parameters<AutoeditAnalyticsLogger['createRequest']>[0] {
@@ -110,6 +111,7 @@ describe('AutoeditAnalyticsLogger', () => {
             requestId,
             prompt: modelOptions.prompt,
             modelResponse: {
+                type: 'success',
                 prediction,
                 requestHeaders: {},
                 requestUrl: modelOptions.url,
@@ -173,12 +175,9 @@ describe('AutoeditAnalyticsLogger', () => {
         expect(recordSpy).toHaveBeenCalledTimes(3)
         expect(recordSpy).toHaveBeenNthCalledWith(1, 'cody.autoedit', 'suggested', expect.any(Object))
         expect(recordSpy).toHaveBeenNthCalledWith(2, 'cody.autoedit', 'accepted', expect.any(Object))
-        expect(recordSpy).toHaveBeenNthCalledWith(
-            3,
-            'cody.autoedit',
-            'invalidTransitionToAccepted',
-            undefined
-        )
+        expect(recordSpy).toHaveBeenNthCalledWith(3, 'cody.autoedit', 'invalidTransitionToAccepted', {
+            billingMetadata: undefined,
+        })
 
         const suggestedEventPayload = recordSpy.mock.calls[0].at(2)
         expect(suggestedEventPayload).toMatchInlineSnapshot(`
@@ -319,10 +318,7 @@ describe('AutoeditAnalyticsLogger', () => {
         const discardedEventPayload = recordSpy.mock.calls[0].at(2)
         expect(discardedEventPayload).toMatchInlineSnapshot(`
           {
-            "billingMetadata": {
-              "category": "billable",
-              "product": "cody",
-            },
+            "billingMetadata": undefined,
             "interactionID": undefined,
             "metadata": {
               "discardReason": 2,
@@ -352,18 +348,12 @@ describe('AutoeditAnalyticsLogger', () => {
         autoeditLogger.markAsRejected(requestId)
 
         expect(recordSpy).toHaveBeenCalledTimes(2)
-        expect(recordSpy).toHaveBeenNthCalledWith(
-            1,
-            'cody.autoedit',
-            'invalidTransitionToSuggested',
-            undefined
-        )
-        expect(recordSpy).toHaveBeenNthCalledWith(
-            2,
-            'cody.autoedit',
-            'invalidTransitionToRejected',
-            undefined
-        )
+        expect(recordSpy).toHaveBeenNthCalledWith(1, 'cody.autoedit', 'invalidTransitionToSuggested', {
+            billingMetadata: undefined,
+        })
+        expect(recordSpy).toHaveBeenNthCalledWith(2, 'cody.autoedit', 'invalidTransitionToRejected', {
+            billingMetadata: undefined,
+        })
     })
 
     it('throttles repeated error logs, capturing the first occurrence immediately', () => {

@@ -10,12 +10,9 @@ import com.intellij.util.net.HttpConfigurable
 import com.intellij.util.system.CpuArch
 import com.sourcegraph.cody.agent.protocol.*
 import com.sourcegraph.cody.agent.protocol_extensions.ProtocolTextDocumentExt
-import com.sourcegraph.cody.agent.protocol_generated.ClientCapabilities
-import com.sourcegraph.cody.agent.protocol_generated.ClientInfo
-import com.sourcegraph.cody.agent.protocol_generated.CodyAgentServer
-import com.sourcegraph.cody.agent.protocol_generated.ProtocolTypeAdapters
-import com.sourcegraph.cody.agent.protocol_generated.WebviewNativeConfig
+import com.sourcegraph.cody.agent.protocol_generated.*
 import com.sourcegraph.cody.auth.SourcegraphServerPath
+import com.sourcegraph.cody.error.SentryService
 import com.sourcegraph.cody.ui.web.WebUIServiceWebviewProvider
 import com.sourcegraph.cody.vscode.CancellationToken
 import com.sourcegraph.config.ConfigUtil
@@ -171,6 +168,9 @@ private constructor(
               .thenApply { info ->
                 logger.warn("Connected to Cody agent " + info.name)
                 server.initialized(null)
+                if (info.authStatus is ProtocolAuthenticatedAuthStatus) {
+                  SentryService.setUser(info.authStatus.primaryEmail, info.authStatus.username)
+                }
                 CodyAgent(client, server, launcher, conn, listeningToJsonRpc)
               }
         } catch (e: Exception) {

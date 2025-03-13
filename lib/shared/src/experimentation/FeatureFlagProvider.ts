@@ -58,6 +58,8 @@ export enum FeatureFlag {
 
     CodySmartApplyExperimentEnabledFeatureFlag = 'cody-smart-apply-experiment-enabled-flag',
     CodySmartApplyExperimentVariant1 = 'cody-smart-apply-experiment-variant-1',
+    CodySmartApplyExperimentVariant2 = 'cody-smart-apply-experiment-variant-2',
+    CodySmartApplyExperimentVariant3 = 'cody-smart-apply-experiment-variant-3',
     CodySmartApplyPrefetching = 'cody-smart-apply-prefetching',
 
     CodyAutoEditExperimentEnabledFeatureFlag = 'cody-autoedit-experiment-enabled-flag',
@@ -97,12 +99,6 @@ export enum FeatureFlag {
      */
     CodyUnifiedPrompts = 'cody-unified-prompts',
     CodyDeepSeekChat = 'cody-deepseek-chat',
-
-    /**
-     * For internal use only. New Prompts UI and logic is behind this feature flag
-     * will be removed as soon as commands will be deprecated.
-     */
-    CodyPromptsV2 = 'prompt-creation-v2',
 
     // Enables Anthropic's prompt caching feature on messages for Cody Clients
     CodyPromptCachingOnMessages = 'cody-experimental-prompt-caching-on-messages',

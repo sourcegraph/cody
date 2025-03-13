@@ -12,6 +12,7 @@ import com.intellij.openapi.fileEditor.TextEditor
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ProjectManager
 import com.sourcegraph.cody.agent.CodyAgentService
+import com.sourcegraph.cody.agent.protocol_generated.Date
 import com.sourcegraph.cody.agent.protocol_generated.ExtensionConfiguration
 import com.sourcegraph.cody.auth.CodyAuthService
 import com.sourcegraph.cody.auth.CodySecureStore
@@ -189,6 +190,12 @@ object ConfigUtil {
     // Internal version
     val plugin = PluginManagerCore.getPlugin(PluginId.getId("com.sourcegraph.jetbrains"))
     return if (plugin != null) plugin.version else "unknown"
+  }
+
+  @JvmStatic
+  fun getPluginReleaseDate(): java.util.Date? {
+    val plugin = PluginManagerCore.getPlugin(PluginId.getId("com.sourcegraph.jetbrains"))
+    return plugin?.releaseDate
   }
 
   @JvmStatic fun isCodyEnabled(): Boolean = CodyApplicationSettings.instance.isCodyEnabled

@@ -1,16 +1,15 @@
 package com.sourcegraph.cody.edit
 
-import com.intellij.openapi.Disposable
 import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.CommonDataKeys
 import com.intellij.openapi.actionSystem.DataProvider
+import com.intellij.openapi.actionSystem.KeyboardShortcut
 import com.intellij.openapi.actionSystem.impl.SimpleDataContext
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.fileEditor.FileDocumentManager
-import com.intellij.openapi.keymap.KeymapManager
 import com.intellij.openapi.keymap.KeymapUtil
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.roots.ProjectRootManager
@@ -19,11 +18,11 @@ import com.intellij.openapi.ui.popup.JBPopupFactory
 import com.intellij.openapi.ui.popup.JBPopupListener
 import com.intellij.openapi.ui.popup.LightweightWindowEvent
 import com.intellij.openapi.util.Key
+import com.intellij.openapi.util.removeUserData
 import com.intellij.openapi.vfs.VfsUtilCore
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.ui.util.preferredHeight
 import com.intellij.util.concurrency.annotations.RequiresEdt
-import com.intellij.util.messages.MessageBusConnection
 import com.intellij.util.ui.JBUI
 import com.sourcegraph.cody.agent.CodyAgentService
 import com.sourcegraph.cody.agent.protocol.ModelUsage
@@ -43,8 +42,6 @@ import java.awt.Color
 import java.awt.Component
 import java.awt.Cursor
 import java.awt.Dimension
-import java.awt.event.KeyAdapter
-import java.awt.event.KeyEvent
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
 import javax.swing.BorderFactory
@@ -55,7 +52,6 @@ import javax.swing.JLabel
 import javax.swing.JList
 import javax.swing.JPanel
 import javax.swing.JScrollPane
-import javax.swing.KeyStroke
 import javax.swing.ListCellRenderer
 import javax.swing.event.CaretListener
 
@@ -65,7 +61,7 @@ class EditCommandPrompt(
     val editor: Editor,
     private val dialogTitle: String,
     private val previousEdit: EditTask? = null
-) : Disposable, DataProvider {
+) : DataProvider {
 
   private var popup: JBPopup? = null
 
@@ -73,15 +69,13 @@ class EditCommandPrompt(
 
   private val offset = editor.caretModel.primaryCaret.offset
 
-  private var connection: MessageBusConnection? = null
-
   private var model: String? = previousEdit?.model
 
   private val okButton =
       namedButton("ok-button").apply {
         text = "Edit Code"
         foreground = boldLabelColor()
-        addActionListener { performOKAction() }
+        addActionListener { popup?.closeOk(null) }
       }
 
   private val okButtonGroup =
@@ -90,17 +84,16 @@ class EditCommandPrompt(
         isOpaque = false
         background = textFieldBackground()
         layout = BoxLayout(this, BoxLayout.X_AXIS)
-        val activeKeymapShortcuts = KeymapUtil.getActiveKeymapShortcuts("cody.inlineEditEditCode")
         val shortcutLabel =
-            if (activeKeymapShortcuts.shortcuts.isNotEmpty()) {
+            editKeyStroke()?.let { keystroke ->
               namedLabel("ok-keyboard-shortcut-label")
                   .apply {
-                    text = KeymapUtil.getShortcutsText(activeKeymapShortcuts.shortcuts)
+                    text = KeymapUtil.getKeystrokeText(keystroke)
                     // Spacing between key shortcut and button.
                     border = BorderFactory.createEmptyBorder(0, 0, 0, 12)
                   }
                   .also(::add)
-            } else null
+            }
         add(okButton)
 
         this.addPropertyChangeListener { evt ->
@@ -119,7 +112,7 @@ class EditCommandPrompt(
         addMouseListener( // Make it work like ESC key if you click it.
             object : MouseAdapter() {
               override fun mouseClicked(e: MouseEvent) {
-                performCancelAction()
+                popup?.cancel(e)
               }
             })
       }
@@ -140,14 +133,6 @@ class EditCommandPrompt(
             foreground = boldLabelColor()
             background = textFieldBackground()
             border = BorderFactory.createLineBorder(mutedLabelColor(), 1, true)
-            addKeyListener(
-                object : KeyAdapter() {
-                  override fun keyPressed(e: KeyEvent) {
-                    if (e.keyCode == KeyEvent.VK_ESCAPE) {
-                      performCancelAction()
-                    }
-                  }
-                })
             renderer =
                 object : ListCellRenderer<ModelAvailabilityStatus> {
                   private val defaultRenderer = renderer
@@ -189,25 +174,6 @@ class EditCommandPrompt(
     historyLabel.isEnabled = historyManager.isHistoryAvailable()
   }
 
-  private val keyPressListener =
-      object : KeyAdapter() {
-        override fun keyPressed(e: KeyEvent) {
-          val keyStroke = KeyStroke.getKeyStrokeForEvent(e)
-          val action =
-              KeymapManager.getInstance()
-                  .activeKeymap
-                  .getActionIds(keyStroke)
-                  .map { ActionManager.getInstance().getAction(it) }
-                  .find { it is InlineEditPromptEditCodeAction }
-
-          action?.let {
-            performCancelAction()
-            val context = SimpleDataContext.getProjectContext(project)
-            val event = AnActionEvent.createFromAnAction(it, e, "", context)
-            it.actionPerformed(event)
-          }
-        }
-      }
   private val historyLabel =
       namedLabel("history-label").apply {
         text = "↑↓ for history"
@@ -220,7 +186,6 @@ class EditCommandPrompt(
   init {
     ApplicationManager.getApplication().assertIsDispatchThread()
 
-    connection = ApplicationManager.getApplication().messageBus.connect(this)
     project.putUserData(EDIT_COMMAND_PROMPT_KEY, this)
 
     setupTextField()
@@ -236,6 +201,7 @@ class EditCommandPrompt(
             .setMovable(true)
             .setResizable(true)
             .setRequestFocus(true)
+            .setCancelKeyEnabled(true)
             .setMinSize(Dimension(DEFAULT_TEXT_FIELD_WIDTH, DIALOG_MINIMUM_HEIGHT))
             .createPopup()
 
@@ -244,7 +210,22 @@ class EditCommandPrompt(
     popup?.addListener(
         object : JBPopupListener {
           override fun onClosed(event: LightweightWindowEvent) {
-            performCancelAction()
+            try {
+              if (event.isOk) {
+                lastPrompt = ""
+                val context = SimpleDataContext.getProjectContext(project)
+                val action = ActionManager.getInstance().getAction("cody.inlineEditEditCode")
+                val actionEvent = AnActionEvent.createFromAnAction(action, null, "", context)
+                action.actionPerformed(actionEvent)
+              } else {
+                lastPrompt = instructionsField.text
+              }
+            } finally {
+              if (popup === event.asPopup()) {
+                popup = null
+                project.removeUserData(EDIT_COMMAND_PROMPT_KEY)
+              }
+            }
           }
         })
   }
@@ -255,13 +236,22 @@ class EditCommandPrompt(
       add(createCenterPanel(), BorderLayout.CENTER)
       add(createBottomRow(), BorderLayout.SOUTH)
       isEnabled = true
+
+      editKeyStroke()?.let {
+        registerKeyboardAction(
+            { popup?.closeOk(null) }, it, JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT)
+      }
     }
   }
+
+  private fun editKeyStroke() =
+      (KeymapUtil.getActiveKeymapShortcuts("cody.inlineEditEditCode").shortcuts.firstOrNull()
+              as? KeyboardShortcut)
+          ?.firstKeyStroke
 
   @RequiresEdt
   private fun setupTextField() {
     instructionsField.addCaretListener(promptCaretListener)
-    instructionsField.addKeyListener(keyPressListener)
   }
 
   @RequiresEdt
@@ -272,20 +262,7 @@ class EditCommandPrompt(
   @RequiresEdt
   private fun checkForInterruptions() {
     if (editor.isDisposed || editor.isViewer || !editor.document.isWritable) {
-      performCancelAction()
-    }
-  }
-
-  private fun performCancelAction() {
-    try {
-      instructionsField.text?.let { lastPrompt = it }
-      connection?.disconnect()
-      connection = null
       popup?.cancel()
-    } catch (x: Exception) {
-      logger.warn("Error cancelling edit command prompt", x)
-    } finally {
-      dispose()
     }
   }
 
@@ -384,53 +361,47 @@ class EditCommandPrompt(
 
   @RequiresEdt
   fun performOKAction() {
-    try {
-      val text = instructionsField.text
-      if (text.isBlank()) {
-        performCancelAction()
-        return
-      }
-      historyManager.addPrompt(text)
-      if (editor.project == null) {
-        val msg = "Null project for new edit session"
-        logger.warn(msg)
-        return
-      }
+    val text = instructionsField.text
+    if (text.isBlank()) {
+      popup?.cancel()
+      return
+    }
+    historyManager.addPrompt(text)
+    if (editor.project == null) {
+      val msg = "Null project for new edit session"
+      logger.warn(msg)
+      return
+    }
 
-      val currentModel = model
-      if (currentModel == null) {
-        logger.warn("Model for new edit cannot be null")
-        return
-      }
+    val currentModel = model
+    if (currentModel == null) {
+      logger.warn("Model for new edit cannot be null")
+      return
+    }
 
-      CodyAgentService.withAgent(project) { agent ->
-        val result =
-            if (previousEdit != null) {
-              val params =
-                  EditTask_RetryParams(
-                      previousEdit.id,
-                      text,
-                      currentModel,
-                      EditTask_RetryParams.ModeEnum.Edit,
-                      previousEdit.selectionRange)
-              agent.server.editTask_retry(params).get()
-            } else {
-              agent.server
-                  .editCommands_code(
-                      EditCommands_CodeParams(
-                          instruction = text,
-                          model = currentModel,
-                          mode = EditCommands_CodeParams.ModeEnum.Edit))
-                  .get()
-            }
-        EditCodeAction.completedEditTasks[result.id] = result
-      }
-    } finally {
-      performCancelAction()
+    CodyAgentService.withAgent(project) { agent ->
+      val result =
+          if (previousEdit != null) {
+            val params =
+                EditTask_RetryParams(
+                    previousEdit.id,
+                    text,
+                    currentModel,
+                    EditTask_RetryParams.ModeEnum.Edit,
+                    previousEdit.selectionRange)
+            agent.server.editTask_retry(params).get()
+          } else {
+            agent.server
+                .editCommands_code(
+                    EditCommands_CodeParams(
+                        instruction = text,
+                        model = currentModel,
+                        mode = EditCommands_CodeParams.ModeEnum.Edit))
+                .get()
+          }
+      EditCodeAction.completedEditTasks[result.id] = result
     }
   }
-
-  override fun dispose() {}
 
   companion object {
     val EDIT_COMMAND_PROMPT_KEY: Key<EditCommandPrompt?> = Key.create("EDIT_COMMAND_PROMPT_KEY")
