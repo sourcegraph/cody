@@ -1,77 +1,69 @@
 package com.sourcegraph.cody.autoedit
 
-import com.intellij.codeInsight.hint.HintManagerImpl
-import com.intellij.codeInsight.lookup.impl.LookupCellRenderer
-import com.intellij.codeWithMe.ClientId
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.editor.Editor
-import com.intellij.openapi.editor.event.CaretEvent
-import com.intellij.openapi.editor.event.CaretListener
-import com.intellij.openapi.editor.event.DocumentEvent
-import com.intellij.openapi.editor.event.DocumentListener
-import com.intellij.openapi.editor.event.EditorMouseEvent
-import com.intellij.openapi.editor.event.EditorMouseListener
-import com.intellij.openapi.editor.event.SelectionEvent
-import com.intellij.openapi.editor.event.SelectionListener
+import com.intellij.openapi.editor.VisualPosition
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.ui.popup.Balloon
+import com.intellij.openapi.ui.popup.JBPopupFactory
 import com.intellij.openapi.util.Disposer
-import com.intellij.openapi.util.SystemInfoRt
-import com.intellij.ui.ComponentUtil
 import com.intellij.ui.RelativeFont
+import com.intellij.ui.awt.RelativePoint
 import com.intellij.util.ui.Advertiser
 import com.intellij.util.ui.JBUI
+import com.intellij.util.ui.PositionTracker
 import com.intellij.util.ui.StartupUiUtil.labelFont
 import com.intellij.util.ui.UIUtil
-import com.intellij.util.ui.accessibility.AccessibleContextUtil
-import com.intellij.util.ui.accessibility.ScreenReader
-import com.intellij.util.ui.update.Activatable
-import com.intellij.util.ui.update.UiNotifyConnector
 import com.sourcegraph.Icons
 import com.sourcegraph.cody.agent.protocol_generated.AutocompleteEditResult
+import com.sourcegraph.config.ThemeUtil
+import java.awt.Component
 import java.awt.Font
-import java.awt.event.ComponentAdapter
-import java.awt.event.ComponentEvent
-import java.awt.event.ComponentListener
 
 class AutoEdit(
     val project: Project,
     val editor: Editor,
-    val autocompleteEditResult: AutocompleteEditResult
+    private val autocompleteEditResult: AutocompleteEditResult
 ) : Disposable {
 
-  private val advertiser = NewUILookupAdvertiser()
-
-  private val myUi = AutoEditUi(this, advertiser)
-
-  private val myClientId: ClientId = ClientId.current
+  private val advertiser =
+      NewUILookupAdvertiser().also {
+        it.addAdvertisement("Auto Edit from Cody", Icons.SourcegraphLogo)
+      }
 
   fun showAutoEdit(): Boolean {
     ApplicationManager.getApplication().assertIsDispatchThread()
-    if (ApplicationManager.getApplication().isHeadlessEnvironment) return true
 
-    if (!UIUtil.isShowing(editor.contentComponent)) {
-      hideAutoEdit()
-      return false
-    }
+    val component = deriveAutoEditAsideComponent(autocompleteEditResult)
+    val autoEditComponent = AutoEditComponent(component, advertiser)
 
-    return doShowAutoEdit()
-  }
+    val logicalPosition = editor.caretModel.logicalPosition
+    val position =
+        VisualPosition(
+            logicalPosition.line, logicalPosition.column) // Use LogicalPosition if needed
 
-  private fun doShowAutoEdit(): Boolean {
-    if (ScreenReader.isActive()) {
-      myUi.wrapperPanel.mainPanel.isFocusable = true
-    }
-    try {
-      HintManagerImpl.getExternalComponent(editor).rootPane.layeredPane.add(myUi.wrapperPanel)
-      val p = myUi.calculatePosition().location
-      myUi.wrapperPanel.mainPanel.location = p
-    } catch (e: Exception) {
-      LOG.error(e)
-    }
+    val balloon =
+        JBPopupFactory.getInstance()
+            .createBalloonBuilder(autoEditComponent)
+            .setCornerToPointerDistance(0)
+            .setFillColor(UIUtil.getPanelBackground())
+            .setBorderColor(UIUtil.getPanelBackground().darker())
+            .setBorderInsets(JBUI.emptyInsets())
+            .setCornerRadius(0)
+            .setLayer(Balloon.Layer.top)
+            .createBalloon()
 
-    if (!myUi.wrapperPanel.isVisible || !myUi.wrapperPanel.isShowing) {
+    balloon.show(
+        object : PositionTracker<Balloon>(editor.contentComponent) {
+          override fun recalculateLocation(balloon: Balloon): RelativePoint {
+            return RelativePoint(editor.contentComponent, editor.visualPositionToXY(position))
+          }
+        },
+        Balloon.Position.atRight)
+
+    if (!autoEditComponent.isVisible || !autoEditComponent.isShowing) {
       hideAutoEdit()
       return false
     }
@@ -79,120 +71,44 @@ class AutoEdit(
     return true
   }
 
-  private fun addListeners() {
-    editor.document.addDocumentListener(
-        object : DocumentListener {
-          override fun documentChanged(e: DocumentEvent) {
-            if (canHide()) {
-              hideAutoEdit()
-            }
-          }
-        },
-        this)
-
-    val mouseListener: EditorMouseListener =
-        object : EditorMouseListener {
-          override fun mouseClicked(e: EditorMouseEvent) {
-            e.consume()
-            hideAutoEdit()
-          }
-        }
-
-    editor.caretModel.addCaretListener(
-        object : CaretListener {
-          override fun caretPositionChanged(e: CaretEvent) {
-            if (canHide()) {
-              hideAutoEdit()
-            }
-          }
-        },
-        this)
-    editor.selectionModel.addSelectionListener(
-        object : SelectionListener {
-          override fun selectionChanged(e: SelectionEvent) {
-            if (canHide()) {
-              hideAutoEdit()
-            }
-          }
-        },
-        this)
-    editor.addEditorMouseListener(mouseListener, this)
-
-    val editorComponent = editor.contentComponent
-    if (editorComponent.isShowing) {
-      Disposer.register(
-          this,
-          UiNotifyConnector.installOn(
-              editorComponent,
-              object : Activatable {
-                override fun hideNotify() {
-                  hideAutoEdit()
-                }
-              }))
-
-      val window = ComponentUtil.getWindow(editorComponent)
-      if (window != null) {
-        val windowListener: ComponentListener =
-            object : ComponentAdapter() {
-              override fun componentMoved(event: ComponentEvent) {
-                hideAutoEdit()
-              }
-            }
-
-        window.addComponentListener(windowListener)
-        Disposer.register(this) { window.removeComponentListener(windowListener) }
+  private fun deriveAutoEditAsideComponent(
+      autocompleteEditResult: AutocompleteEditResult
+  ): Component {
+    val image = autocompleteEditResult.render.aside.image
+    if (image != null) {
+      val img = if (ThemeUtil.isDarkTheme()) image.dark else image.light
+      return AutoEditHtmlPane().also {
+        it.text =
+            "<!DOCTYPE html>\n" +
+                "<html lang=\"en\">\n" +
+                "<head>\n" +
+                "  <meta charset=\"UTF-8\">\n" +
+                "  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n" +
+                "</head>\n" +
+                "<body>\n" +
+                "  <img src=\"$img\">\n" +
+                "</body>\n" +
+                "</html>"
       }
+    } else {
+      TODO("Not yet implemented")
     }
-  }
-
-  private fun canHide(): Boolean {
-    return ClientId.isCurrentlyUnderLocalId
   }
 
   fun hideAutoEdit() {
     ApplicationManager.getApplication().assertIsDispatchThread()
-
     doHide()
   }
 
   private fun doHide() {
-    if (myClientId != ClientId.current) {
-      LOG.error(ClientId.current.toString() + " tries to hide lookup of " + myClientId)
-    } else {
-      try {
-        Disposer.dispose(this)
-      } catch (e: Throwable) {
-        LOG.error(e)
-      }
+    try {
+      Disposer.dispose(this)
+    } catch (e: Throwable) {
+      LOG.error(e)
     }
   }
 
-  init {
-    myUi.wrapperPanel.mainPanel.isFocusable = false
-    myUi.wrapperPanel.mainPanel.border = null
-
-    // a new top level frame just got the focus. This is important to prevent screen readers
-    // from announcing the title of the top level frame when the list is shown (or hidden),
-    // as they usually do when a new top-level frame receives the focus.
-    // This is not relevant on Mac. This breaks JBR a11y on Mac.
-    if (SystemInfoRt.isWindows) {
-      AccessibleContextUtil.setParent(myUi.wrapperPanel, editor.contentComponent)
-    }
-
-    myUi.wrapperPanel.mainPanel.background = LookupCellRenderer.BACKGROUND_COLOR
-    advertiser.addAdvertisement("Auto Edit from Cody", Icons.SourcegraphLogo)
-
-    addListeners()
-  }
-
-  override fun dispose() {
-    ApplicationManager.getApplication().assertIsDispatchThread()
-
-    val layeredPane = HintManagerImpl.getExternalComponent(editor).rootPane.layeredPane
-    layeredPane.remove(myUi.wrapperPanel)
-    layeredPane.invalidate()
-    layeredPane.repaint()
-  }
+  override fun dispose() {}
 
   private class NewUILookupAdvertiser : Advertiser() {
     init {
