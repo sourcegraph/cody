@@ -24,7 +24,8 @@ class AutoEditManager(private val project: Project) {
     ApplicationManager.getApplication().assertIsDispatchThread()
 
     activeAutoEdit?.hideAutoEdit()
-    val autoEdit = AutoEdit(project, editor, result)
+    val autoEditImageDiff = result.render.aside.image ?: TODO("Not implemented yet")
+    val autoEdit = AutoEdit(project, editor, autoEditImageDiff)
 
     activeAutoEdit = autoEdit
     activeAutoEditEditor = editor
