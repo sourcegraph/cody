@@ -6,7 +6,12 @@ import { TESTING_CREDENTIALS } from '../../vscode/src/testutils/testing-credenti
 import { TestClient } from './TestClient'
 import { TestWorkspace } from './TestWorkspace'
 import { allClientCapabilitiesEnabled } from './allClientCapabilitiesEnabled'
-import type { AutocompleteEditResult, ExtensionConfiguration, Position } from './protocol-alias'
+import type {
+    AutocompleteEditItem,
+    AutocompleteResult,
+    ExtensionConfiguration,
+    Position,
+} from './protocol-alias'
 
 expect.extend({ toMatchImageSnapshot })
 
@@ -62,11 +67,15 @@ describe('Autoedit', () => {
                 triggerKind: 'Automatic',
             })
 
-            // The LLM provided with a completion result.
-            expect(result.type === 'completion')
+            console.log(result)
 
-            const texts = result.items.map(item => item.insertText)
+            // The LLM provided with a completion result.
             expect(result.items.length).toBeGreaterThan(0)
+            expect(result.items[0].type).toBe('completion')
+
+            const texts = result.items
+                .filter(item => item.type === 'completion')
+                .map(item => item.insertText)
             expect(texts).toMatchInlineSnapshot(
                 `
               [
@@ -93,10 +102,12 @@ describe('Autoedit', () => {
             })
 
             // The LLM provided with a completion result.
-            expect(result.type === 'completion')
-
-            const texts = result.items.map(item => item.insertText)
             expect(result.items.length).toBeGreaterThan(0)
+            expect(result.items[0].type).toBe('completion')
+
+            const texts = result.items
+                .filter(item => item.type === 'completion')
+                .map(item => item.insertText)
             expect(texts).toMatchSnapshot()
         }, 10_000)
     })
@@ -106,7 +117,7 @@ describe('Autoedit', () => {
             client: TestClient,
             uri: vscode.Uri,
             position: Position
-        ): Promise<AutocompleteEditResult> {
+        ): Promise<AutocompleteEditItem> {
             await client.openFile(uri)
 
             // Set a small visibility delay for testing purposes.
@@ -120,12 +131,16 @@ describe('Autoedit', () => {
                 uri: uri.toString(),
                 position,
                 triggerKind: 'Automatic',
-            })) as AutocompleteEditResult
+            })) as AutocompleteResult
 
-            // The LLM provided with an edit result.
-            expect(result.type === 'edit')
+            // Expect the result to have at least one item
+            expect(result.items.length).toBeGreaterThan(0)
 
-            return result
+            // Expect the first item to be an edit
+            const editItem = result.items[0] as AutocompleteEditItem
+            expect(editItem.type).toBe('edit')
+
+            return editItem
         }
 
         describe('client can only render inline diffs', () => {
@@ -179,7 +194,7 @@ describe('Autoedit', () => {
                 const file = workspace.file('src', 'sum-ages-complex-diff.ts')
                 const result = await getAutoEditSuggestion(client, file, { line: 6, character: 52 })
                 // No completions provided
-                expect(result.items.length).toBe(0)
+                // No need to check items array for an edit result
 
                 // Prediction accurately reflects the edit that should be made.
                 expect(result.prediction).toMatchInlineSnapshot(`
@@ -231,8 +246,8 @@ describe('Autoedit', () => {
                 // Prediction accurately reflects the edit that should be made.
                 expect(result.prediction).toMatchInlineSnapshot(`
                   "
-                  export function sumAge(humanA: Person, humanB: Person): number {
-                      return humanA.age + humanB.age
+                  export function sumAge(personA: Person, personB: Person): number {
+                      return personA.age + personB.age
                   }
                   "
                 `)
@@ -405,8 +420,8 @@ describe('Autoedit', () => {
                 // Prediction accurately reflects the edit that should be made.
                 expect(result.prediction).toMatchInlineSnapshot(`
                   "
-                  export function sumAge(humanA: Person, humanB: Person): number {
-                      return humanA.age + humanB.age
+                  export function sumAge(personA: Person, personB: Person): number {
+                      return personA.age + personB.age
                   }
                   "
                 `)

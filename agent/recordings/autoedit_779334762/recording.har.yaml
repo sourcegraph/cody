@@ -39,19 +39,19 @@ log:
         queryString: []
         url: https://sourcegraph.com/.api/client-config
       response:
-        bodySize: 235
+        bodySize: 224
         content:
           encoding: base64
           mimeType: text/plain; charset=utf-8
-          size: 235
-          text: "[\"H4sIAAAAAAAAAwAAAP//\",\"bI6xCsIwFEX3fkXo7AdItxIcuhUKOr+aJwby8kreDSri\
-            v7tUXDKfcw/33TnnXH/V8DplWhOHfnAolQ87uBOagCrUq2yJwe1lNah4FaEcrN0ASlw\
-            rouY/v1Gyn2BCBV4z+IlLzEEfzY5o4GTjPLUricCGpW6bFnDYX0fNtqAwyThPZy4WNf\
-            eDO3af7gsAAP//AwAj//GSFQEAAA==\"]"
+          size: 224
+          text: "[\"H4sIAAAAAAAAA2yOsQrCMBRF935F6OwHSLcSHLoVCjq/micG8vJK3g0q4r+7VFwyn3MP9\
+            90551x/1fA6ZVoTh35wKJUPO7gTmoAq1KtsicHtZTWoeBWhHKzdAEpcK6LmP79Rsp9g\
+            QgVeM/iJS8xBH82OaOBk4zy1K4nAhqVumxZw2F9HzbagMMk4T2cuFjX3gzt2n+4LAAD\
+            //wMAI//xkhUBAAA=\"]"
         cookies: []
         headers:
           - name: date
-            value: Thu, 13 Mar 2025 14:32:51 GMT
+            value: Thu, 13 Mar 2025 20:04:16 GMT
           - name: content-type
             value: text/plain; charset=utf-8
           - name: transfer-encoding
@@ -82,8 +82,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-03-13T14:32:50.785Z
-      time: 232
+      startedDateTime: 2025-03-13T20:04:16.579Z
+      time: 223
       timings:
         blocked: -1
         connect: -1
@@ -91,7 +91,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 232
+        wait: 223
     - _id: f1b1cde4cd57488b7f0137954f0302f5
       _order: 0
       cache: {}
@@ -149,7 +149,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 13 Mar 2025 14:32:52 GMT
+            value: Thu, 13 Mar 2025 20:04:17 GMT
           - name: content-type
             value: application/json
           - name: content-length
@@ -178,8 +178,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-03-13T14:32:52.000Z
-      time: 258
+      startedDateTime: 2025-03-13T20:04:17.528Z
+      time: 221
       timings:
         blocked: -1
         connect: -1
@@ -187,7 +187,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 258
+        wait: 221
     - _id: a376faab1c8a1993bb48c745757f0a4a
       _order: 0
       cache: {}
@@ -246,19 +246,29 @@ log:
             value: null
         url: https://sourcegraph.com/.api/graphql?CurrentSiteCodyLlmConfiguration
       response:
-        bodySize: 255
+        bodySize: 248
         content:
           encoding: base64
           mimeType: application/json
-          size: 255
+          size: 248
           text: "[\"H4sIAAAAAAAAA4TOTQ6CMBAF4LvMmmqDEA1btrLzAmM7QAN2SH+MhvTuBjYSNXH1ksmbL\
             28GjQGhmsGbQEsq1s/zuanZtqaLDoNhu957DA1rGqECz9Ep6hxO/V6NGDWJw64Unq2l\
             ANm72+DjwgNZD1VRSikzaNGH+g8lejRDhI/yxjqulOLbNNKy7xemiSZPNAjFmpy452I\
-            0gcQVPcHX78bOZXFKKaUXAAAA//8=\",\"AwAw4f3QGgEAAA==\"]"
+            0gcQVPcHX78bOZXFKKaUXAAAA//8DADDh/dAaAQAA\"]"
+          textDecoded:
+            data:
+              site:
+                codyLLMConfiguration:
+                  chatModel: sourcegraph/claude-3.5-sonnet
+                  chatModelMaxTokens: 45000
+                  completionModel: sourcegraph/deepseek-coder-v2-lite-base
+                  completionModelMaxTokens: 2048
+                  fastChatModel: sourcegraph/claude-3-haiku
+                  fastChatModelMaxTokens: 7000
         cookies: []
         headers:
           - name: date
-            value: Thu, 13 Mar 2025 14:32:51 GMT
+            value: Thu, 13 Mar 2025 20:04:17 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -289,8 +299,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-03-13T14:32:51.129Z
-      time: 457
+      startedDateTime: 2025-03-13T20:04:16.893Z
+      time: 398
       timings:
         blocked: -1
         connect: -1
@@ -298,7 +308,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 457
+        wait: 398
     - _id: 0484c4d780805faf3dd3ddabae814640
       _order: 0
       cache: {}
@@ -352,13 +362,14 @@ log:
             value: null
         url: https://sourcegraph.com/.api/graphql?CurrentSiteCodyLlmConfiguration
       response:
-        bodySize: 136
+        bodySize: 140
         content:
           encoding: base64
           mimeType: application/json
-          size: 136
-          text: "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqzixJBdHJ+SmVPj6+zvl5aZnppUWJJZn5eWD53MSiE\
-            uf8vJLUipLwzLyU/HIlK6WUzOLEpJzUFKXa2tpaAAAAAP//AwArMNn0TAAAAA==\"]"
+          size: 140
+          text: "[\"H4sIAAAAAAAAAwAAAP//qlZKSSxJVLKqVirOLEkF0cn5KZU+Pr7O+XlpmemlRYklmfl5Y\
+            PncxKIS5/y8ktSKkvDMvJT8ciUrpZTM4sSknNQUpdra2loAAAAA//8DACsw2fRMAAAA\
+            \"]"
           textDecoded:
             data:
               site:
@@ -367,7 +378,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 13 Mar 2025 14:32:51 GMT
+            value: Thu, 13 Mar 2025 20:04:17 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -398,8 +409,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-03-13T14:32:51.231Z
-      time: 542
+      startedDateTime: 2025-03-13T20:04:16.953Z
+      time: 337
       timings:
         blocked: -1
         connect: -1
@@ -407,7 +418,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 542
+        wait: 337
     - _id: e141c56e63809042300db9bf8551d492
       _order: 0
       cache: {}
@@ -476,7 +487,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 13 Mar 2025 14:32:51 GMT
+            value: Thu, 13 Mar 2025 20:04:17 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -507,8 +518,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-03-13T14:32:51.181Z
-      time: 424
+      startedDateTime: 2025-03-13T20:04:16.922Z
+      time: 334
       timings:
         blocked: -1
         connect: -1
@@ -516,7 +527,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 424
+        wait: 334
     - _id: 5b9030a4e18d1e000c71d6000a7cef6f
       _order: 0
       cache: {}
@@ -607,7 +618,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 13 Mar 2025 14:32:50 GMT
+            value: Thu, 13 Mar 2025 20:04:16 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -638,8 +649,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-03-13T14:32:50.413Z
-      time: 328
+      startedDateTime: 2025-03-13T20:04:16.309Z
+      time: 228
       timings:
         blocked: -1
         connect: -1
@@ -647,7 +658,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 328
+        wait: 228
     - _id: aef0c9fe7483280d9c05ac8e97e37571
       _order: 0
       cache: {}
@@ -726,7 +737,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 13 Mar 2025 14:32:51 GMT
+            value: Thu, 13 Mar 2025 20:04:17 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -757,8 +768,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-03-13T14:32:51.287Z
-      time: 748
+      startedDateTime: 2025-03-13T20:04:16.986Z
+      time: 405
       timings:
         blocked: -1
         connect: -1
@@ -766,7 +777,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 748
+        wait: 405
     - _id: 4504fab53d7cb602861f73dc2aa883d2
       _order: 0
       cache: {}
@@ -832,7 +843,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 13 Mar 2025 14:32:51 GMT
+            value: Thu, 13 Mar 2025 20:04:17 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -863,8 +874,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-03-13T14:32:51.076Z
-      time: 512
+      startedDateTime: 2025-03-13T20:04:16.860Z
+      time: 393
       timings:
         blocked: -1
         connect: -1
@@ -872,7 +883,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 512
+        wait: 393
     - _id: fd0fee4687419870bc82cba9d1023319
       _order: 0
       cache: {}
@@ -951,7 +962,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 13 Mar 2025 14:32:52 GMT
+            value: Thu, 13 Mar 2025 20:04:17 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -982,8 +993,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-03-13T14:32:51.968Z
-      time: 317
+      startedDateTime: 2025-03-13T20:04:17.497Z
+      time: 282
       timings:
         blocked: -1
         connect: -1
@@ -991,7 +1002,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 317
+        wait: 282
     - _id: fbb23499ae0eec5c2e188687b429531b
       _order: 0
       cache: {}
@@ -1054,21 +1065,21 @@ log:
             gH+bgY5+HUywgDvKZeolccJBrDRiwEw06tl8n24tvUyzAnkLAQoad3gArdGRDYz9mxs\
             jpDdDXmFcSW92vXkWbWXkfU5+G7q9fZjqSAhDHvKxp3w1IBYOkZ+OJT5MZhofIjETSs\
             9EH2QS9r4jiVGBWDrYnnm0WfWi09FVUfNTKtGz1m6dcLJAvX3tYm4lrjnQtil8OwS++\
-            OvpI6c2yIrP4IEcYf1a0qVZj1SityXHHbAvMDmt8WaXfluBGMZeOHdsE2wOzqFZSaxj\
-            Vakc44AA=\",\"Qh8SmyyINbTm0G2ArW+AKViWeZnSwZdnZh9U5irRLe17T3qbigS6W\
-            HYjln1eZV2eZLDAMWAP8hd88TAcYxYmIk5doWHyetEGXTwM31bymK9u5VsEqw0uo2H1\
-            uNarEDgYLI+jXG9g7O0H++VWJUASsgORhOyPJCH7MNnMAldX3lyrvNkxr/tz9iz8K9D\
-            6tEa/wmdONKw+bb6uqG1kjyCEKbYjh0yeCgbKp6SnuNuRfVE7sosjkZbnCMnMRkaikc\
-            BnXKOsH79+UxgVo05lP3sKZZuZkr5SsHqt6vhzpDphADGPA5ytN6kxTLHMbDRRwIJVp\
-            aUCWKXdAVOriV6rkW0qGjgSZh3j7a7z5oHl/QwtHIDH0kATuS6Nkdq4gO3StD6yZSv/\
-            rRyn9pxVV8dCo2OsoGdnLfDoaLIn7lRz52TfOMYOwc4Ox5wcHH2vy307NdaWzlvz31i\
-            k8ZhrsvjMf6NvKstt/63ucU//bUzi3ul5QxAeSXZu28YK2G+LwX5vYEyhPG3EjMPSXp\
-            +LxL0XNV8ViTWOYqj4BnLhTN9lFfP16mjfpw9r8ST1Z+KojnqyJjQRV2btt044k4X6c\
-            LUoVV4eLZ2vwOu/rnqCEEI/T36e/D8ALeTzLb5aAAA=\"]"
+            OvpI6c2yIrP4IEcYf1a0qVZj1SityXHHbAvMDmt8WaXfluBGMZeOHdsE2wOzqFZSaxg=\
+            \",\"1WpHOOAAQh8SmyyINbTm0G2ArW+AKViWeZnSwZdnZh9U5irRLe17T3qbigS6WH\
+            Yjln1eZV2eZLDAMWAP8hd88TAcYxYmIk5doWHyetEGXTwM31bymK9u5VsEqw0uo2H1u\
+            NarEDgYLI+jXG9g7O0H++VWJUASsgORhOyPJCH7MNnMAldX3lyrvNkxr/tz9iz8K9D6\
+            tEa/wmdONKw+bb6uqG1kjyCEKbYjh0yeCgbKp6SnuNuRfVE7sosjkZbnCMnMRkaikcB\
+            nXKOsH79+UxgVo05lP3sKZZuZkr5SsHqt6vhzpDphADGPA5ytN6kxTLHMbDRRwIJVpa\
+            UCWKXdAVOriV6rkW0qGjgSZh3j7a7z5oHl/QwtHIDH0kATuS6Nkdq4gO3StD6yZSv/r\
+            Ryn9pxVV8dCo2OsoGdnLfDoaLIn7lRz52TfOMYOwc4Ox5wcHH2vy307NdaWzlvz31ik\
+            8ZhrsvjMf6NvKstt/63ucU//bUzi3ul5QxAeSXZu28YK2G+LwX5vYEyhPG3EjMPSXp+\
+            LxL0XNV8ViTWOYqj4BnLhTN9lFfP16mjfpw9r8ST1Z+KojnqyJjQRV2btt044k4X6cL\
+            UoVV4eLZ2vwOu/rnqCEEI/T36e/D8ALeTzLb5aAAA=\"]"
         cookies: []
         headers:
           - name: date
-            value: Thu, 13 Mar 2025 14:32:52 GMT
+            value: Thu, 13 Mar 2025 20:04:18 GMT
           - name: content-type
             value: text/plain; charset=utf-8
           - name: transfer-encoding
@@ -1099,8 +1110,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-03-13T14:32:52.291Z
-      time: 296
+      startedDateTime: 2025-03-13T20:04:17.785Z
+      time: 274
       timings:
         blocked: -1
         connect: -1
@@ -1108,6 +1119,6 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 296
+        wait: 274
   pages: []
   version: "1.2"

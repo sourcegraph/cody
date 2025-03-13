@@ -521,19 +521,33 @@ export interface ChatExportResult {
     transcript: SerializedChatTranscript
 }
 
-export interface AutocompleteItem {
+export interface AutocompleteItemBase {
     id: string
-    insertText: string
     range: Range
+    type: 'completion' | 'edit'
 }
 
-interface AutocompleteCompletionResult {
+export interface AutocompleteCompletionItem extends AutocompleteItemBase {
     type: 'completion'
-    items: AutocompleteItem[]
-
-    /** completionEvent is not deprecated because it's used by non-editor clients like cody-bench that need access to book-keeping data to evaluate results. */
-    completionEvent?: CompletionBookkeepingEvent | undefined | null
+    insertText: string
 }
+
+export interface AutocompleteEditItem extends AutocompleteItemBase {
+    type: 'edit'
+    originalText: string
+    prediction: string
+    render: {
+        inline: {
+            changes: AutoeditChanges[] | null
+        }
+        aside: {
+            image: AutoeditImageDiff | null
+            diff: AutoeditTextDiff | null
+        }
+    }
+}
+
+export type AutocompleteItem = AutocompleteCompletionItem | AutocompleteEditItem
 
 export interface AutoeditImageDiff {
     /* Base64 encoded image suitable for rendering in dark editor themes */
@@ -559,55 +573,10 @@ export interface AutoeditChanges {
 
 export type AutoeditTextDiff = DecorationInfo
 
-export interface AutocompleteEditResult {
-    type: 'edit'
-    /**
-     * The range in the document where this edit should be applied.
-     */
-    range: vscode.Range
-    /**
-     * The original text that the suggestion was generated from.
-     * This should be used, alongside `range` to valide that the suggestion is still valid.
-     * This is important to mitigate against possible desync issues when running through the Agent.
-     * If this `original` code is no longer valid at the same `range`, the client should discard the suggestion.
-     */
-    originalText: string
-    /**
-     * The new text that should replace the `originalText` in the `range`.
-     */
-    prediction: string
-    /**
-     * The method that should be used to render the suggestion.
-     */
-    render: {
-        /**
-         * Changes that should be shown inline in the editor.
-         * Deletions will typically be existing text painted red.
-         * Insertions will be new text added temporarily to the document, styled like a completion.
-         * Affected by the clientCapability `autoEditInlineDiff`
-         */
-        inline: {
-            changes: AutoeditChanges[] | null
-        }
-        /**
-         * Changes that should be shown alongside code in the editor.
-         * Affected by the clientCapability `autoEditAsideDiff`
-         */
-        aside: {
-            image: AutoeditImageDiff | null
-            diff: AutoeditTextDiff | null
-        }
-    }
-    /**
-     * An empty list of autocompletion items.
-     * This is present to maintain compatibility for clients that do not yet support autoedit.
-     */
+export interface AutocompleteResult {
     items: AutocompleteItem[]
-    /** completionEvent is not deprecated because it's used by non-editor clients like cody-bench that need access to book-keeping data to evaluate results. */
     completionEvent?: CompletionBookkeepingEvent | undefined | null
 }
-
-export type AutocompleteResult = AutocompleteCompletionResult | AutocompleteEditResult
 
 export interface ClientInfo {
     name: string

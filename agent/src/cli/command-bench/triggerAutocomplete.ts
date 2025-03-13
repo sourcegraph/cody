@@ -85,7 +85,7 @@ export async function triggerAutocomplete(parameters: AutocompleteParameters): P
         )
         const newText = [
             modifiedDocument.getText(new vscode.Range(new vscode.Position(0, 0), start)),
-            item.insertText,
+            item.type === 'completion' ? item.insertText : '',
             modifiedDocument.getText(
                 new vscode.Range(end, new vscode.Position(modifiedDocument.lineCount, 0))
             ),
@@ -99,7 +99,10 @@ export async function triggerAutocomplete(parameters: AutocompleteParameters): P
         const resultTypechecks = await testTypecheck(testParameters)
         const patches: string[] = []
         let hasNonInsertPatch = false
-        for (const [sx, ex, text] of calcPatch(original, item.insertText)) {
+        for (const [sx, ex, text] of calcPatch(
+            original,
+            item.type === 'completion' ? item.insertText : ''
+        )) {
             if (sx !== ex) {
                 hasNonInsertPatch = true
                 continue
@@ -108,7 +111,7 @@ export async function triggerAutocomplete(parameters: AutocompleteParameters): P
         }
         if (hasNonInsertPatch) {
             document.pushItem({
-                resultText: item.insertText,
+                resultText: item.type === 'completion' ? item.insertText : '',
                 autocompleteKind,
                 range,
                 resultTypechecks,

@@ -537,7 +537,7 @@ export class TestClient extends MessageHandler {
 
     public async autocompleteText(params?: Partial<AutocompleteParams>): Promise<string[]> {
         const result = await this.autocomplete(params)
-        return result.items.map(item => item.insertText)
+        return result.items.filter(item => item.type === 'completion').map(item => item.insertText)
     }
     public autocomplete(params?: Partial<AutocompleteParams>): Promise<AutocompleteResult> {
         if (!this.workspace.activeDocumentFilePath) {
