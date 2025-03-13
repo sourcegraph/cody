@@ -230,7 +230,7 @@ export type ClientRequests = {
     // For testing purposes, returns the current autocomplete provider configuration.
     'testing/autocomplete/providerConfig': [
         null,
-        { id: string; legacyModel: string; configSource: string },
+        { id: string; legacyModel: string; configSource: string } | null | undefined,
     ]
 
     // Updates the extension configuration and returns the new

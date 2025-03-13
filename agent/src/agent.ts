@@ -56,6 +56,7 @@ import { chatHistory } from '../../vscode/src/chat/chat-view/ChatHistoryManager'
 import type { ExtensionMessage, WebviewMessage } from '../../vscode/src/chat/protocol'
 import { executeExplainCommand, executeSmellCommand } from '../../vscode/src/commands/execute'
 import type { CodyCommandArgs } from '../../vscode/src/commands/types'
+import { CompletionItemID } from '../../vscode/src/completions/analytics-logger'
 import { loadTscRetriever } from '../../vscode/src/completions/context/retrievers/tsc/load-tsc-retriever'
 import { supportedTscLanguages } from '../../vscode/src/completions/context/retrievers/tsc/supportedTscLanguages'
 import { type ExecuteEditArguments, executeEdit } from '../../vscode/src/edit/execute'
@@ -898,6 +899,9 @@ export class Agent extends MessageHandler implements ExtensionClient {
 
         this.registerAuthenticatedRequest('testing/autocomplete/completionEvent', async params => {
             const provider = await vscode_shim.completionProvider()
+            if (!provider.getTestingCompletionEvent) {
+                console.warn('Provider does not support getTestingCompletionEvent')
+            }
 
             return provider.getTestingCompletionEvent(params.completionID as any)
         })
@@ -1003,7 +1007,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
 
         this.registerNotification('autocomplete/completionAccepted', async ({ completionID }) => {
             const provider = await vscode_shim.completionProvider()
-            await provider.handleDidAcceptCompletionItem(completionID as any)
+            await provider.handleDidAcceptCompletionItem(completionID as CompletionItemID)
         })
 
         this.registerNotification('autocomplete/completionSuggested', async ({ completionID }) => {
@@ -1030,10 +1034,11 @@ export class Agent extends MessageHandler implements ExtensionClient {
 
         this.registerAuthenticatedRequest('testing/autocomplete/providerConfig', async () => {
             const provider = await vscode_shim.completionProvider()
-            if (!('config' in provider)) {
-                throw new Error('TODO: Fix')
+            if ('config' in provider) {
+                return provider.config.provider
             }
-            return provider.config.provider
+            // For autoedits provider which doesn't have config property, return null
+            return null
         })
 
         this.registerAuthenticatedRequest('graphql/getRepoIds', async ({ names, first }) => {
