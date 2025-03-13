@@ -267,6 +267,7 @@ export class AutoEditsRenderOutput {
         const completionText = docContext.currentLinePrefix + insertText
         const inlineCompletionItems = [
             new AutoeditCompletionItem({
+                id: requestId,
                 insertText: completionText,
                 range: new vscode.Range(
                     document.lineAt(position).range.start,

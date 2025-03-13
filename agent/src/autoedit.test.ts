@@ -66,8 +66,15 @@ describe('Autoedit', () => {
                 position: { line: 1, character: 4 },
                 triggerKind: 'Automatic',
             })
+            const completionID = result.items[0].id
 
-            console.log(result)
+            // Tell completion provider that the completion was shown to the user.
+            client.notify('autocomplete/completionSuggested', { completionID })
+
+            const completionEvent = await client.request('testing/autocomplete/autoeditEvent', {
+                completionID,
+            })
+            expect(completionEvent?.phase).toBe('suggested')
 
             // The LLM provided with a completion result.
             expect(result.items.length).toBeGreaterThan(0)
@@ -100,6 +107,16 @@ describe('Autoedit', () => {
                 position: { line: 1, character: 4 },
                 triggerKind: 'Automatic',
             })
+            const completionID = result.items[0].id
+
+            // Tell completion provider that the completion was shown to the user.
+            client.notify('autocomplete/completionSuggested', { completionID })
+            client.notify('autocomplete/completionAccepted', { completionID })
+
+            const completionEvent = await client.request('testing/autocomplete/autoeditEvent', {
+                completionID,
+            })
+            expect(completionEvent?.phase).toBe('accepted')
 
             // The LLM provided with a completion result.
             expect(result.items.length).toBeGreaterThan(0)

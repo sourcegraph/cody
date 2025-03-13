@@ -110,10 +110,9 @@ export function createAutoEditsProvider({
                 shouldRenderInline,
             })
             return [
-                vscode.commands.registerCommand('cody.command.autoedit-manual-trigger', async () => {
-                    await vscode.commands.executeCommand('editor.action.inlineSuggest.hide')
-                    await vscode.commands.executeCommand('editor.action.inlineSuggest.trigger')
-                }),
+                vscode.commands.registerCommand('cody.command.autoedit-manual-trigger', async () =>
+                    provider.manuallyTriggerCompletion()
+                ),
                 vscode.languages.registerInlineCompletionItemProvider(
                     [{ scheme: 'file', language: '*' }, { notebookType: '*' }],
                     provider

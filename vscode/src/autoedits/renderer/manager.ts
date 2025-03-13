@@ -9,6 +9,7 @@ import {
 } from '../../completions/is-completion-visible'
 import {
     type AutoeditRequestID,
+    type AutoeditRequestState,
     autoeditAnalyticsLogger,
     autoeditDiscardReason,
 } from '../analytics-logger'
@@ -20,6 +21,7 @@ import {
     extractInlineCompletionFromRewrittenCode,
 } from '../utils'
 
+import { isRunningInsideAgent } from '../../jsonrpc/isRunningInsideAgent'
 import type { FixupController } from '../../non-stop/FixupController'
 import { CodyTaskState } from '../../non-stop/state'
 import { AutoeditCompletionItem } from '../autoedit-completion-item'
@@ -55,6 +57,8 @@ export interface AutoEditsRendererManager extends vscode.Disposable {
 
     handleDidShowSuggestion(requestId: AutoeditRequestID): Promise<void>
 
+    handleDidAcceptCompletionItem(requestId: AutoeditRequestID): Promise<void>
+
     /**
      * Renders the prediction as inline decorations.
      */
@@ -75,6 +79,11 @@ export interface AutoEditsRendererManager extends vscode.Disposable {
      * Method for test harnesses to control the completion visibility delay.
      */
     testing_setCompletionVisibilityDelay(delay: number): void
+
+    /**
+     * Method for test harnesses to get a specific request.
+     */
+    testing_getTestingAutoeditEvent(id: AutoeditRequestID): AutoeditRequestState | undefined
 
     /**
      * Dismissed an active edit and frees resources.
@@ -297,6 +306,10 @@ export class AutoEditsDefaultRendererManager
         this.decorator = null
     }
 
+    public handleDidAcceptCompletionItem(requestId: AutoeditRequestID): Promise<void> {
+        return this.acceptActiveEdit()
+    }
+
     protected async acceptActiveEdit(): Promise<void> {
         const editor = vscode.window.activeTextEditor
         const { activeRequest, decorator } = this
@@ -313,6 +326,11 @@ export class AutoEditsDefaultRendererManager
 
         await this.handleDidHideSuggestion(decorator)
         autoeditAnalyticsLogger.markAsAccepted(activeRequest.requestId)
+
+        if (isRunningInsideAgent()) {
+            // We rely on the agent for accepting
+            return
+        }
 
         if (!hasInlineDecorations) {
             // We rely on the native VS Code functionality for accepting pure inline completions items.
@@ -390,6 +408,7 @@ export class AutoEditsDefaultRendererManager
 
             const insertText = docContext.currentLinePrefix + autocompleteInlineResponse
             const inlineCompletionItem = new AutoeditCompletionItem({
+                id: requestId,
                 insertText,
                 range: new vscode.Range(
                     document.lineAt(position).range.start,
@@ -451,6 +470,13 @@ export class AutoEditsDefaultRendererManager
      */
     public testing_setCompletionVisibilityDelay(delay: number): void {
         this.AUTOEDIT_VISIBLE_DELAY_MS = delay
+    }
+
+    /**
+     * Method for test harnesses to get the active request.
+     */
+    public testing_getTestingAutoeditEvent(id: AutoeditRequestID): AutoeditRequestState | undefined {
+        return autoeditAnalyticsLogger.getRequest(id)
     }
 
     public dispose(): void {

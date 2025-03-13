@@ -1,7 +1,9 @@
 import * as uuid from 'uuid'
 import * as vscode from 'vscode'
+import type { AutoeditRequestID } from './analytics-logger'
 
 interface AutoeditCompletionItemParams {
+    id: AutoeditRequestID | null
     insertText: string | vscode.SnippetString
     range: vscode.Range
     command?: vscode.Command
@@ -17,8 +19,8 @@ export class AutoeditCompletionItem extends vscode.InlineCompletionItem {
     public id: string
 
     constructor(params: AutoeditCompletionItemParams) {
-        const { insertText, range, command } = params
+        const { insertText, range, command, id } = params
         super(insertText, range, command)
-        this.id = uuid.v4()
+        this.id = id || uuid.v4()
     }
 }

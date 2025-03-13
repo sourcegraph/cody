@@ -52,6 +52,7 @@ import * as uuid from 'uuid'
 import type { MessageConnection } from 'vscode-jsonrpc'
 import type { CommandResult } from '../../vscode/src/CommandResult'
 import { formatURL } from '../../vscode/src/auth/auth'
+import type { AutoeditRequestID } from '../../vscode/src/autoedits/analytics-logger'
 import { chatHistory } from '../../vscode/src/chat/chat-view/ChatHistoryManager'
 import type { ExtensionMessage, WebviewMessage } from '../../vscode/src/chat/protocol'
 import { executeExplainCommand, executeSmellCommand } from '../../vscode/src/commands/execute'
@@ -904,11 +905,20 @@ export class Agent extends MessageHandler implements ExtensionClient {
 
         this.registerAuthenticatedRequest('testing/autocomplete/completionEvent', async params => {
             const provider = await vscode_shim.completionProvider()
-            if (!provider.getTestingCompletionEvent) {
+            if (!('getTestingCompletionEvent' in provider)) {
                 console.warn('Provider does not support getTestingCompletionEvent')
+                return null
             }
+            return provider.getTestingCompletionEvent(params.completionID as CompletionItemID)
+        })
 
-            return provider.getTestingCompletionEvent(params.completionID as any)
+        this.registerAuthenticatedRequest('testing/autocomplete/autoeditEvent', async params => {
+            const provider = await vscode_shim.completionProvider()
+            if (!('getTestingAutoeditEvent' in provider)) {
+                console.warn('Provider does not support getTestingAutoeditEvent')
+                return null
+            }
+            return provider.getTestingAutoeditEvent(params.completionID as AutoeditRequestID)
         })
 
         this.registerAuthenticatedRequest('autocomplete/execute', async (params, token) => {
@@ -1050,7 +1060,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
 
         this.registerNotification('autocomplete/completionAccepted', async ({ completionID }) => {
             const provider = await vscode_shim.completionProvider()
-            await provider.handleDidAcceptCompletionItem(completionID as CompletionItemID)
+            await provider.handleDidAcceptCompletionItem(completionID as any)
         })
 
         this.registerNotification('autocomplete/completionSuggested', async ({ completionID }) => {

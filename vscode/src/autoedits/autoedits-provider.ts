@@ -18,12 +18,13 @@ import { isRunningInsideAgent } from '../jsonrpc/isRunningInsideAgent'
 import type { FixupController } from '../non-stop/FixupController'
 import type { CodyStatusBar } from '../services/StatusBar'
 
-import type { CompletionBookkeepingEvent, CompletionItemID } from '../completions/analytics-logger'
+import type { CompletionBookkeepingEvent } from '../completions/analytics-logger'
 import type { AutoeditChanges, AutoeditImageDiff, AutoeditTextDiff } from '../jsonrpc/agent-protocol'
 import type { AutoeditsModelAdapter, AutoeditsPrompt, ModelResponse } from './adapters/base'
 import { createAutoeditsModelAdapter } from './adapters/create-adapter'
 import {
     type AutoeditRequestID,
+    type AutoeditRequestState,
     autoeditAnalyticsLogger,
     autoeditDiscardReason,
     autoeditSource,
@@ -224,7 +225,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
             return {
                 type: 'completion',
                 requestId: null,
-                items: [new AutoeditCompletionItem({ insertText: text, range })],
+                items: [new AutoeditCompletionItem({ id: null, insertText: text, range })],
                 prediction: text,
             }
         }
@@ -668,20 +669,13 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
         })
     }
 
-    /**
-     * noop method for Agent compability with `InlineCompletionItemProvider`.
-     * See: vscode/src/completions/inline-completion-item-provider.ts
-     */
-    public getTestingCompletionEvent(completionId: CompletionItemID): undefined {
-        console.warn('getTestingCompletionEvent is not implemented in AutoeditsProvider')
+    public async manuallyTriggerCompletion(): Promise<void> {
+        await vscode.commands.executeCommand('editor.action.inlineSuggest.hide')
+        await vscode.commands.executeCommand('editor.action.inlineSuggest.trigger')
     }
 
-    /**
-     * noop method for Agent compability with `InlineCompletionItemProvider`.
-     * See: vscode/src/completions/inline-completion-item-provider.ts
-     */
-    public async manuallyTriggerCompletion(): Promise<void> {
-        console.warn('manuallyTriggerCompletion is not implemented in AutoeditsProvider')
+    public getTestingAutoeditEvent(id: AutoeditRequestID): AutoeditRequestState | undefined {
+        return this.rendererManager.testing_getTestingAutoeditEvent(id)
     }
 
     /**
@@ -705,8 +699,8 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
      * noop method for Agent compability with `InlineCompletionItemProvider`.
      * See: vscode/src/completions/inline-completion-item-provider.ts
      */
-    public async handleDidAcceptCompletionItem(completionItemId: CompletionItemID): Promise<void> {
-        console.warn('handleDidAcceptCompletionItem is not implemented in AutoeditsProvider')
+    public async handleDidAcceptCompletionItem(id: AutoeditRequestID): Promise<void> {
+        return this.rendererManager.handleDidAcceptCompletionItem(id)
     }
 
     public dispose(): void {

@@ -14,6 +14,7 @@ import type {
 import type { TelemetryEventMarketingTrackingInput } from '@sourcegraph/telemetry'
 
 import type { AuthError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
+import type { AutoeditRequestState } from '../autoedits/analytics-logger'
 import type { DecorationInfo } from '../autoedits/renderer/decorators/base'
 import type { ExtensionMessage, WebviewMessage } from '../chat/protocol'
 import type { CompletionBookkeepingEvent, CompletionItemID } from '../completions/analytics-logger'
@@ -218,6 +219,8 @@ export type ClientRequests = {
         CompletionItemParams,
         CompletionBookkeepingEvent | undefined | null,
     ]
+
+    'testing/autocomplete/autoeditEvent': [CompletionItemParams, AutoeditRequestState | undefined | null]
 
     // For testing a short delay we give users for reading the completion
     // and deciding whether to accept it.
