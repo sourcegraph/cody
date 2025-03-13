@@ -24,7 +24,7 @@ import { getInstructionPromptWithCharLimit } from '../utils'
 
 // https://huggingface.co/Qwen/Qwen2.5-Coder-32B-Instruct
 const CUSTOM_MODEL_DEFAULTS = {
-    STOP_SEQUENCES: ['<|im_start|>', '<|im_end|>', '<|endoftext|>'],
+    STOP_SEQUENCES: [],
     MAX_INSTRUCTION_TOKENS: 500,
 }
 
@@ -199,7 +199,7 @@ export class SmartApplyCustomEditPromptBuilder implements EditPromptBuilder {
         )
 
         const messages: Message[] = [
-            { speaker: 'assistant', text: systemPrompt },
+            { speaker: 'system', text: systemPrompt },
             { speaker: 'human', text: userPrompt },
         ]
 
