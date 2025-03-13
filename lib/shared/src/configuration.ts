@@ -126,7 +126,6 @@ interface RawClientConfiguration {
     autocompleteExperimentalFireworksOptions?: ExperimentalFireworksConfig
 
     experimentalTracing: boolean
-    longInputContext: boolean
     experimentalSupercompletions: boolean
     experimentalAutoEditRendererTesting: boolean
     experimentalAutoEditConfigOverride: AutoEditsModelConfig | undefined

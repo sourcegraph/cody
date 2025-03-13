@@ -45,8 +45,6 @@ describe('getConfiguration', () => {
                         return true
                     case 'cody.experimental.tracing':
                         return true
-                    case 'cody.experimental.longInputContext':
-                        return true
                     case 'cody.debug.verbose':
                         return true
                     case 'cody.debug.filter':
@@ -177,7 +175,6 @@ describe('getConfiguration', () => {
             experimentalAutoEditRendererTesting: false,
             experimentalMinionAnthropicKey: undefined,
             experimentalTracing: true,
-            longInputContext: true,
             experimentalNoodle: false,
             experimentalNoxideEnabled: true,
             codeActions: true,

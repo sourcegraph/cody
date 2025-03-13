@@ -7,7 +7,7 @@ import {
     EXTENDED_CHAT_INPUT_TOKEN_BUDGET,
     EXTENDED_USER_CONTEXT_TOKEN_BUDGET,
 } from '../token/constants'
-import { getContextWindow, getModelInfo } from './utils'
+import { getEnterpriseContextWindow, getModelInfo } from './utils'
 
 describe('getModelInfo', () => {
     it('splits model ID and returns provider and title', () => {
@@ -43,7 +43,7 @@ describe('getModelInfo', () => {
     })
 })
 
-describe('getContextWindow', () => {
+describe('getEnterpriseContextWindow', () => {
     it('returns default context window for non-smart context models', () => {
         const chatModel = 'openai/gpt-3.5-turbo'
         const configOverwrites: CodyLLMSiteConfiguration = {
@@ -52,9 +52,8 @@ describe('getContextWindow', () => {
         }
 
         expect(
-            getContextWindow(true, chatModel, configOverwrites, {
+            getEnterpriseContextWindow(chatModel, configOverwrites, {
                 providerLimitPrompt: undefined,
-                longInputContext: false,
             })
         ).toEqual({
             input: CHAT_INPUT_TOKEN_BUDGET,
@@ -70,9 +69,8 @@ describe('getContextWindow', () => {
             smartContextWindow: true,
         }
         expect(
-            getContextWindow(true, chatModel, configOverwritesWithSmartContext, {
+            getEnterpriseContextWindow(chatModel, configOverwritesWithSmartContext, {
                 providerLimitPrompt: undefined,
-                longInputContext: false,
             })
         ).toEqual({
             input: EXTENDED_CHAT_INPUT_TOKEN_BUDGET,
@@ -110,11 +108,10 @@ describe('getContextWindow', () => {
             ['anthropic/claude-2.0', nonExtendedContextWindow],
             ['claude-2.0', nonExtendedContextWindow],
         ])('context window for model named %j', (chatModel, test) => {
-            const contextWindow = getContextWindow(
-                true,
+            const contextWindow = getEnterpriseContextWindow(
                 chatModel,
                 { smartContextWindow: true },
-                { providerLimitPrompt: undefined, longInputContext: false }
+                { providerLimitPrompt: undefined }
             )
             expect(contextWindow).toEqual(test)
         })

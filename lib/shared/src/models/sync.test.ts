@@ -122,7 +122,7 @@ describe('maybeAdjustContextWindows', () => {
             } satisfies ServerModel,
         ]
 
-        const results = maybeAdjustContextWindows(testServerSideModels)
+        const results = maybeAdjustContextWindows(testServerSideModels, false)
         const mistralModelNamePrefixes = ['mistral', 'mixtral']
         for (const model of results) {
             let wantMaxInputTokens = defaultMaxInputTokens

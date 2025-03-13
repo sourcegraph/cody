@@ -74,27 +74,20 @@ export function toModelRefStr(modelRef: ModelRef): ModelRefStr {
  * @param configOverwrites - The configuration overwrites to apply.
  * @returns The context window for the given chat model and configuration overwrites.
  */
-export function getContextWindow(
-    isDotComUser: boolean,
+export function getEnterpriseContextWindow(
     chatModel: string,
     configOverwrites: CodyLLMSiteConfiguration,
-    configuration: Pick<ClientConfiguration, 'providerLimitPrompt' | 'longInputContext'>
+    configuration: Pick<ClientConfiguration, 'providerLimitPrompt'>
 ): ModelContextWindow {
     const { chatModelMaxTokens, smartContextWindow } = configOverwrites
-    const useExpandedContext = Boolean(configuration.longInputContext)
     // Starts with the default context window.
     let contextWindow: ModelContextWindow = {
         input: chatModelMaxTokens ?? CHAT_INPUT_TOKEN_BUDGET,
         output: getEnterpriseOutputLimit(chatModel),
     }
-    if (useExpandedContext) {
-        contextWindow = {
-            input: modelSupportsLongContext(chatModel),
-            output: getEnterpriseOutputLimit(chatModel),
-        }
-    }
+
     // Use extended context window for models that support smart context when enabled.
-    else if (smartContextWindow && isModelWithExtendedContextWindowSupport(chatModel)) {
+    if (smartContextWindow && isModelWithExtendedContextWindowSupport(chatModel)) {
         contextWindow = {
             input: EXTENDED_CHAT_INPUT_TOKEN_BUDGET,
             output: CHAT_OUTPUT_TOKEN_BUDGET,
@@ -102,26 +95,9 @@ export function getContextWindow(
         }
     }
 
-    // Apply output token adjustments for enterprise users
-    // TODO[julia]: check whether the user is Pro tier or not
-    if (isDotComUser) {
-        // Identify models with types.ModelCapabilityReasoning
-        // Doc: https://sourcegraph.sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/cmd/cody-gateway-config/dotcom_models.go?L78
-        const isReasoningModel =
-            chatModel.toLowerCase().includes('3-7-sonnet') ||
-            chatModel.toLowerCase().includes('o3-mini-high') ||
-            chatModel.toLowerCase().includes('o3-mini-medium') ||
-            chatModel.toLowerCase().match('o1')
-
-        if (isReasoningModel) {
-            contextWindow.output /= 2
-        } else {
-            contextWindow.output -= 2000
-        }
-    }
-
     return applyLocalTokenLimitOverwrite(configuration, chatModel, contextWindow)
 }
+
 /**
  * Applies a local token limit overwrite to the given context window if configured.
  * If the configured limit is lower than the default, it will be applied to the input of the context window.
@@ -142,7 +118,7 @@ function applyLocalTokenLimitOverwrite(
 
     if (providerLimitPrompt) {
         logDebug(
-            'getContextWindow',
+            'getEnterpriseContextWindow',
             `Invalid token limit configured for ${chatModel}`,
             providerLimitPrompt
         )
@@ -183,16 +159,4 @@ function getEnterpriseOutputLimit(model?: string) {
         return CHAT_OUTPUT_TOKEN_BUDGET
     }
     return ANSWER_TOKENS
-}
-
-function modelSupportsLongContext(chatModel: string): number {
-    return chatModel.toLowerCase().includes('claude') ||
-        chatModel.toLowerCase().includes('gemini') ||
-        chatModel.toLowerCase().includes('o1') ||
-        chatModel.toLowerCase().includes('o3') ||
-        chatModel.toLowerCase().includes('4o')
-        ? 175000 // Claude, Gemini, OpenAI o series: 175k context
-        : chatModel.toLowerCase().includes('gpt')
-          ? 100000 // OpenAI gpt series: 100k context
-          : CHAT_INPUT_TOKEN_BUDGET // Default for all other models
 }
