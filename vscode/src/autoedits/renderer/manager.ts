@@ -72,12 +72,15 @@ export interface AutoEditsRendererManager extends vscode.Disposable {
     hasActiveEdit(): boolean
 
     /**
+     * Method for test harnesses to control the completion visibility delay.
+     */
+    testing_setCompletionVisibilityDelay(delay: number): void
+
+    /**
      * Dismissed an active edit and frees resources.
      */
     dispose(): void
 }
-
-export const AUTOEDIT_VISIBLE_DELAY_MS = 750
 
 export class AutoEditsDefaultRendererManager
     extends AutoEditsRenderOutput
@@ -277,7 +280,7 @@ export class AutoEditsDefaultRendererManager
                     autoeditAnalyticsLogger.markAsRead(requestId)
                 }
             }
-        }, AUTOEDIT_VISIBLE_DELAY_MS)
+        }, this.AUTOEDIT_VISIBLE_DELAY_MS)
     }
 
     protected async handleDidHideSuggestion(decorator: AutoEditsDecorator | null): Promise<void> {
@@ -437,6 +440,17 @@ export class AutoEditsDefaultRendererManager
         return existingFixupTasks.some(
             task => task.state === CodyTaskState.Applied && task.selectionRange.intersection(range)
         )
+    }
+
+    /**
+     * The amount of time before we consider an auto-edit to be "visible" to the user.
+     */
+    private AUTOEDIT_VISIBLE_DELAY_MS = 750
+    /**
+     * Method for test harnesses to control the completion visibility delay.
+     */
+    public testing_setCompletionVisibilityDelay(delay: number): void {
+        this.AUTOEDIT_VISIBLE_DELAY_MS = delay
     }
 
     public dispose(): void {

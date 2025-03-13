@@ -693,11 +693,13 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
     }
 
     /**
-     * noop method for Agent compability with `InlineCompletionItemProvider`.
+     * Method for agent integration tests to control the completion visibility delay.
      * See: vscode/src/completions/inline-completion-item-provider.ts
      */
     public testing_completionSuggestedPromise: undefined
-    public testing_setCompletionVisibilityDelay(delay: number): void {}
+    public testing_setCompletionVisibilityDelay(delay: number): void {
+        this.rendererManager.testing_setCompletionVisibilityDelay(delay)
+    }
 
     /**
      * noop method for Agent compability with `InlineCompletionItemProvider`.

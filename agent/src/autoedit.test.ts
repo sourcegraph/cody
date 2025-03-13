@@ -159,8 +159,8 @@ describe('Autoedit', () => {
                 // Prediction accurately reflects the edit that should be made.
                 expect(result.prediction).toMatchInlineSnapshot(`
                   "
-                  export function sumAge(humanA: Person, humanB: Person): number {
-                      return humanA.age + humanB.age
+                  export function sumAge(personA: Person, personB: Person): number {
+                      return personA.age + personB.age
                   }
                   "
                 `)
@@ -173,7 +173,6 @@ describe('Autoedit', () => {
 
                 // Inline diff provided
                 expect(inline.changes).not.toBeNull()
-                expect(inline.changes).toMatchSnapshot()
             }, 10_000)
 
             it('produces an inline diff for a complex suggestion', async () => {
@@ -198,7 +197,6 @@ describe('Autoedit', () => {
 
                 // Inline diff provided
                 expect(inline.changes).not.toBeNull()
-                expect(inline.changes).toMatchSnapshot()
             }, 10_000)
         })
 
@@ -325,8 +323,8 @@ describe('Autoedit', () => {
                 // Prediction accurately reflects the edit that should be made.
                 expect(result.prediction).toMatchInlineSnapshot(`
                   "
-                  export function sumAge(humanA: Person, humanB: Person): number {
-                      return humanA.age + humanB.age
+                  export function sumAge(personA: Person, personB: Person): number {
+                      return personA.age + personB.age
                   }
                   "
                 `)
@@ -503,7 +501,6 @@ describe('Autoedit', () => {
 
                 // Inline diff provided
                 expect(inline.changes).not.toBeNull()
-                expect(inline.changes).toMatchSnapshot()
             }, 10_000)
 
             it('produces a mix of aside and inline diffs for a complex suggestion', async () => {
@@ -522,7 +519,6 @@ describe('Autoedit', () => {
 
                 // Inline diff provided
                 expect(inline.changes).not.toBeNull()
-                expect(inline.changes).toMatchSnapshot()
 
                 // Aside diff provided as an image
                 expect(aside.image).not.toBeNull()

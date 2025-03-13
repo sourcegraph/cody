@@ -291,14 +291,7 @@ const register = async (
         })
     )
 
-    if (
-        clientCapabilities().isVSCode ||
-        !clientCapabilities().autoEdit ||
-        clientCapabilities().autoEdit === 'none'
-    ) {
-        // Register legacy autocomplete
-        registerAutocomplete(platform, statusBar, disposables)
-    }
+    registerAutocomplete(platform, statusBar, disposables)
     const tutorialSetup = tryRegisterTutorial(context, disposables)
 
     await registerCodyCommands({ statusBar, chatClient, fixupController, disposables, context })
@@ -479,18 +472,16 @@ async function registerCodyCommands({
         )
     )
 
-    if (clientCapabilities().isVSCode || clientCapabilities().autoEdit === 'enabled') {
-        // Initialize autoedit provider if experimental feature is enabled
-        registerAutoEdits({ chatClient, fixupController, statusBar, disposables, context })
+    // Initialize autoedit provider if experimental feature is enabled
+    registerAutoEdits({ chatClient, fixupController, statusBar, disposables, context })
 
-        // Initialize autoedit tester
-        disposables.push(
-            enableFeature(
-                ({ configuration }) => configuration.experimentalAutoEditRendererTesting !== false,
-                () => registerAutoEditTestRenderCommand()
-            )
+    // Initialize autoedit tester
+    disposables.push(
+        enableFeature(
+            ({ configuration }) => configuration.experimentalAutoEditRendererTesting !== false,
+            () => registerAutoEditTestRenderCommand()
         )
-    }
+    )
 
     disposables.push(
         subscriptionDisposable(
@@ -748,6 +739,14 @@ function registerAutoEdits({
     disposables: vscode.Disposable[]
     context: vscode.ExtensionContext
 }): void {
+    const { autoEdit } = clientCapabilities()
+    const autoEditDisabledForClient =
+        isRunningInsideAgent() && (autoEdit === undefined || autoEdit === 'none')
+    if (autoEditDisabledForClient) {
+        // Do not attempt to register autoedits for clients that have not opted in to use autoEdit.
+        return
+    }
+
     disposables.push(
         autoeditDebugStore,
         subscriptionDisposable(
@@ -804,6 +803,16 @@ function registerAutocomplete(
     statusBar: CodyStatusBar,
     disposables: vscode.Disposable[]
 ): void {
+    const autoEditEnabledForClient =
+        isRunningInsideAgent() && clientCapabilities().autoEdit === 'enabled'
+    if (autoEditEnabledForClient) {
+        // autoedit is a replacement for autocomplete for clients.
+        // We should not register both if the client has opted in for auto-edit.
+        // TODO: Eventually these should be consolidated so clients to not need to decide between
+        // autocomplete and autoedit.
+        return
+    }
+
     //@ts-ignore
     let statusBarLoader: undefined | (() => void) = statusBar.addLoader({
         title: 'Completion Provider is starting',

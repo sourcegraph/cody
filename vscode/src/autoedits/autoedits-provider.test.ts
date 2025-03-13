@@ -31,7 +31,6 @@ import {
     AUTOEDIT_TOTAL_DEBOUNCE_INTERVAL,
 } from './autoedits-provider'
 import { initImageSuggestionService } from './renderer/image-gen'
-import { AUTOEDIT_VISIBLE_DELAY_MS } from './renderer/manager'
 import { autoeditResultFor } from './test-helpers'
 
 describe('AutoeditsProvider', () => {
@@ -246,7 +245,7 @@ describe('AutoeditsProvider', () => {
         const { result } = await autoeditResultFor('const x = █', { prediction })
 
         // The suggestion should not be marked as read.
-        await vi.advanceTimersByTimeAsync(AUTOEDIT_VISIBLE_DELAY_MS / 2)
+        await vi.advanceTimersByTimeAsync(750 / 2)
         await rejectSuggestionCommand()
 
         expect(result?.prediction).toBe(prediction)
@@ -315,7 +314,7 @@ describe('AutoeditsProvider', () => {
         const { result } = await autoeditResultFor('const x = █', { prediction })
 
         // The suggestion should be marked as read.
-        await vi.advanceTimersByTimeAsync(AUTOEDIT_VISIBLE_DELAY_MS)
+        await vi.advanceTimersByTimeAsync(750)
         await rejectSuggestionCommand()
 
         expect(result?.prediction).toBe(prediction)
