@@ -260,7 +260,7 @@ export function getCorpusContextItemsForEditorState(): Observable<
                                 authStatus
                             )
                         ),
-                        title: 'Codebase',
+                        title: 'Current Codebase',
                         description: repo.name,
                         source: items.length > 0 ? ContextItemSource.Unified : ContextItemSource.Initial,
                         icon: 'search',
@@ -271,7 +271,7 @@ export function getCorpusContextItemsForEditorState(): Observable<
                     if (!clientCapabilities().isCodyWeb) {
                         items.push({
                             type: 'open-link',
-                            title: 'Codebase',
+                            title: 'Current Codebase',
                             badge: 'Not yet available',
                             content: null,
                             uri: URI.parse(
