@@ -82,8 +82,18 @@ const handleContextDeadlineTransform: ErrorTransformer = error => {
     }
     return undefined
 }
+
+const handleNetworkErrorTransform: ErrorTransformer = error => {
+    // Match the pattern from "Request to [url] failed with" format
+    // used by errors.ts NetworkError
+    const match = error.match(/Request to .+? failed with (.+)/i)
+    if (match?.[1]) {
+        return match[1].trim()
+    }
+    return undefined
+}
 const handleMessageTransform: ErrorTransformer = error => {
-    // Check for specific patterns that indicate a JSON structure with error information
+    // Check for patterns that indicate a JSON structure with error information
     if (
         (error.includes('Sourcegraph Cody Gateway:') || error.includes('"error":')) &&
         error.includes('"message":')
@@ -101,4 +111,5 @@ ClientErrorsTransformer.register(handleAUPTransform)
 ClientErrorsTransformer.register(handleCloudflareTransform)
 ClientErrorsTransformer.register(handleMissingTraceIdTransform, ClientErrorsTransformer.PRIORITIES.LAST)
 ClientErrorsTransformer.register(handleContextDeadlineTransform)
+ClientErrorsTransformer.register(handleNetworkErrorTransform)
 ClientErrorsTransformer.register(handleMessageTransform)

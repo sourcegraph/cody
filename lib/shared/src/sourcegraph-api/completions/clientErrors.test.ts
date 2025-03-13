@@ -65,6 +65,15 @@ describe('ClientErrorsTransformer', () => {
             expect(ClientErrorsTransformer.transform(errorMessage)).toContain(simplifiedErrorMessage)
         })
 
+        it('transforms network error', () => {
+            const errorMessage =
+                'Request to https://sourcegraph.com failed with 406 Not Acceptable: ' +
+                'Unsupported API Version (Please update your client'
+            const simplifiedErrorMessage =
+                '406 Not Acceptable: Unsupported API Version (Please update your client'
+            expect(ClientErrorsTransformer.transform(errorMessage)).toContain(simplifiedErrorMessage)
+        })
+
         it('transforms AUP error simple', () => {
             const errorMessage = 'Error with "AUP" "message" "Inappropriate content detected"'
             const simplifiedErrorMessage = 'Inappropriate content detected'
