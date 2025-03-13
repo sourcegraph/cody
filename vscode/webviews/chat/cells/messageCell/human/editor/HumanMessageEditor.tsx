@@ -161,6 +161,7 @@ export const HumanMessageEditor: FunctionComponent<{
     const omniBoxEnabled = useOmniBox()
     const {
         config: { experimentalPromptEditorEnabled },
+        authStatus,
     } = useConfig()
 
     const onEditorEnterKey = useCallback(
@@ -347,6 +348,7 @@ export const HumanMessageEditor: FunctionComponent<{
     const currentChatModel = useMemo(() => (models ? models[0] : undefined), [models, models?.[0]])
 
     const defaultContext = useDefaultContextForChat()
+
     useEffect(() => {
         if (isSent || !isFirstMessage || !editorRef?.current) {
             return
@@ -434,6 +436,7 @@ export const HumanMessageEditor: FunctionComponent<{
                 editorClassName={styles.editor}
                 contentEditableClassName={styles.editorContentEditable}
                 openExternalLink={openExternalLink}
+                authStatus={authStatus}
             />
             {!disabled && (
                 <Toolbar

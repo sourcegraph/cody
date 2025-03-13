@@ -44,6 +44,7 @@ import { ChatBuilder } from '../chat-view/ChatBuilder'
 const mentionMenuTelemetryCache = new LRUCache<string | number, Set<string | null>>({ max: 10 })
 
 export function getMentionMenuData(options: {
+    experimentalPromptEditor?: boolean
     disableProviders: ContextMentionProviderID[]
     query: MentionQuery
     chatBuilder: ChatBuilder
@@ -75,13 +76,14 @@ export function getMentionMenuData(options: {
             skipPendingOperation()
         )
 
-        const queryLower = options.query.text.toLowerCase()
-
-        const providers = (
+        const providers =
             options.query.provider === null || options.query.provider === GLOBAL_SEARCH_PROVIDER_URI
-                ? mentionProvidersMetadata({ disableProviders: options.disableProviders })
+                ? mentionProvidersMetadata({
+                      disableProviders: options.disableProviders,
+                      query: options.query.text,
+                      experimentalPromptEditor: options.experimentalPromptEditor,
+                  })
                 : Observable.of([])
-        ).pipe(map(providers => providers.filter(p => p.title.toLowerCase().includes(queryLower))))
 
         const results = combineLatest(providers, items).map(([providers, items]) => ({
             providers,

@@ -8,10 +8,10 @@ import {
     type SerializedPromptEditorValue,
     deserializeContextItem,
     isAbortErrorOrSocketHangUp,
-    saveRecentlyUsedContextItems,
+    saveFrequentlyUsedContextItems,
     serializedPromptEditorStateFromText,
 } from '@sourcegraph/cody-shared'
-import type { PromptEditorRefAPI } from '@sourcegraph/prompt-editor'
+import { type PromptEditorRefAPI, useDefaultContextForChat } from '@sourcegraph/prompt-editor'
 import { clsx } from 'clsx'
 import { isEqual } from 'lodash'
 import {
@@ -43,6 +43,7 @@ import { type Context, type Span, context, trace } from '@opentelemetry/api'
 import { DeepCodyAgentID, ToolCodyModelName } from '@sourcegraph/cody-shared/src/models/client'
 import { isCodeSearchContextItem } from '../../src/context/openctx/codeSearch'
 import { useLocalStorage } from '../components/hooks'
+import { useConfig } from '../utils/useConfig'
 import { AgenticContextCell } from './cells/agenticCell/AgenticContextCell'
 import ApprovalCell from './cells/agenticCell/ApprovalCell'
 import { ContextCell } from './cells/contextCell/ContextCell'
@@ -283,6 +284,17 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
 
     const usingToolCody = assistantMessage?.model?.includes(ToolCodyModelName)
 
+    const { authStatus } = useConfig()
+
+    const defaultContext = useDefaultContextForChat()
+    const codebases = useMemo(
+        () =>
+            defaultContext.corpusContext
+                .filter(item => item.type === 'repository')
+                .map(item => item.repoName),
+        [defaultContext]
+    )
+
     const onUserAction = useCallback(
         (action: 'edit' | 'submit', intentFromSubmit?: ChatMessage['intent']) => {
             // Start the span as soon as the user initiates the action
@@ -319,7 +331,13 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                 traceparent,
             }
 
-            saveRecentlyUsedContextItems(editorValue.contextItems.filter(item => item.source === 'user'))
+            if (authStatus.authenticated) {
+                saveFrequentlyUsedContextItems({
+                    items: editorValue.contextItems.filter(item => item.source === 'user'),
+                    authStatus,
+                    codebases,
+                })
+            }
 
             if (action === 'edit') {
                 // Remove search context chips from the next input so that the user cannot
@@ -348,6 +366,8 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
             isLastSentInteraction,
             lastEditorRef,
             manuallySelectedIntent,
+            authStatus,
+            codebases,
         ]
     )
 
