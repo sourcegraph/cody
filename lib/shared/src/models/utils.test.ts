@@ -7,7 +7,7 @@ import {
     EXTENDED_CHAT_INPUT_TOKEN_BUDGET,
     EXTENDED_USER_CONTEXT_TOKEN_BUDGET,
 } from '../token/constants'
-import { getEnterpriseContextWindow, getModelInfo } from './utils'
+import { getContextWindow, getModelInfo } from './utils'
 
 describe('getModelInfo', () => {
     it('splits model ID and returns provider and title', () => {
@@ -43,7 +43,7 @@ describe('getModelInfo', () => {
     })
 })
 
-describe('getEnterpriseContextWindow', () => {
+describe('getContextWindow', () => {
     it('returns default context window for non-smart context models', () => {
         const chatModel = 'openai/gpt-3.5-turbo'
         const configOverwrites: CodyLLMSiteConfiguration = {
@@ -52,9 +52,9 @@ describe('getEnterpriseContextWindow', () => {
         }
 
         expect(
-            getEnterpriseContextWindow(chatModel, configOverwrites, {
+            getContextWindow(true, chatModel, configOverwrites, {
                 providerLimitPrompt: undefined,
-                experimentalLongInputContext: false,
+                longInputContext: false,
             })
         ).toEqual({
             input: CHAT_INPUT_TOKEN_BUDGET,
@@ -70,9 +70,9 @@ describe('getEnterpriseContextWindow', () => {
             smartContextWindow: true,
         }
         expect(
-            getEnterpriseContextWindow(chatModel, configOverwritesWithSmartContext, {
+            getContextWindow(true, chatModel, configOverwritesWithSmartContext, {
                 providerLimitPrompt: undefined,
-                experimentalLongInputContext: false,
+                longInputContext: false,
             })
         ).toEqual({
             input: EXTENDED_CHAT_INPUT_TOKEN_BUDGET,
@@ -110,10 +110,11 @@ describe('getEnterpriseContextWindow', () => {
             ['anthropic/claude-2.0', nonExtendedContextWindow],
             ['claude-2.0', nonExtendedContextWindow],
         ])('context window for model named %j', (chatModel, test) => {
-            const contextWindow = getEnterpriseContextWindow(
+            const contextWindow = getContextWindow(
+                true,
                 chatModel,
                 { smartContextWindow: true },
-                { providerLimitPrompt: undefined, experimentalLongInputContext: false }
+                { providerLimitPrompt: undefined, longInputContext: false }
             )
             expect(contextWindow).toEqual(test)
         })

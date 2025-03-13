@@ -177,7 +177,7 @@ describe('getConfiguration', () => {
             experimentalAutoEditRendererTesting: false,
             experimentalMinionAnthropicKey: undefined,
             experimentalTracing: true,
-            experimentalLongInputContext: true,
+            longInputContext: true,
             experimentalNoodle: false,
             experimentalNoxideEnabled: true,
             codeActions: true,

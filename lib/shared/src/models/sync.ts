@@ -35,7 +35,7 @@ import type {
 } from './modelsService'
 import { ModelTag } from './tags'
 import { ModelUsage } from './types'
-import { getEnterpriseContextWindow } from './utils'
+import { getContextWindow } from './utils'
 
 const EMPTY_PREFERENCES: DefaultsAndUserPreferencesForEndpoint = { defaults: {}, selected: {} }
 
@@ -100,7 +100,7 @@ export function syncModels({
                         customHeaders: config.configuration.customHeaders,
                         providerLimitPrompt: config.configuration.providerLimitPrompt,
                         devModels: config.configuration.devModels,
-                        experimentalLongInputContext: config.configuration.experimentalLongInputContext,
+                        longInputContext: config.configuration.longInputContext,
                     },
                     auth: config.auth,
                 }) satisfies PickResolvedConfiguration<{
@@ -108,7 +108,7 @@ export function syncModels({
                         | 'providerLimitPrompt'
                         | 'customHeaders'
                         | 'devModels'
-                        | 'experimentalLongInputContext'
+                        | 'longInputContext'
                     auth: true
                 }>
         ),
@@ -308,7 +308,7 @@ export function syncModels({
                                                 id: configOverwrites.chatModel,
                                                 // TODO (umpox) Add configOverwrites.editModel for separate edit support
                                                 usage: [ModelUsage.Chat, ModelUsage.Edit],
-                                                contextWindow: getEnterpriseContextWindow(
+                                                contextWindow: getContextWindow(
                                                     isDotComUser,
                                                     configOverwrites?.chatModel,
                                                     configOverwrites,

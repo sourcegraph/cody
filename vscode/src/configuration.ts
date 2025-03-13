@@ -150,7 +150,7 @@ export function getConfiguration(
 
         experimentalTracing: getHiddenSetting('experimental.tracing', false),
 
-        experimentalLongInputContext: getHiddenSetting('experimental.longInputContext', false),
+        longInputContext: getHiddenSetting('experimental.longInputContext', false),
 
         experimentalSupercompletions: getHiddenSetting('experimental.supercompletions', false),
         experimentalAutoEditEnabled: codyAutoSuggestionsMode === CodyAutoSuggestionMode.Autoedit,
