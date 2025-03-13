@@ -9,7 +9,7 @@ import {
 } from '../../completions/is-completion-visible'
 import {
     type AutoeditRequestID,
-    type AutoeditRequestState,
+    Phase,
     autoeditAnalyticsLogger,
     autoeditDiscardReason,
 } from '../analytics-logger'
@@ -83,7 +83,7 @@ export interface AutoEditsRendererManager extends vscode.Disposable {
     /**
      * Method for test harnesses to get a specific request.
      */
-    testing_getTestingAutoeditEvent(id: AutoeditRequestID): AutoeditRequestState | undefined
+    testing_getTestingAutoeditEvent(id: AutoeditRequestID): Phase | undefined
 
     /**
      * Dismissed an active edit and frees resources.
@@ -475,8 +475,8 @@ export class AutoEditsDefaultRendererManager
     /**
      * Method for test harnesses to get the active request.
      */
-    public testing_getTestingAutoeditEvent(id: AutoeditRequestID): AutoeditRequestState | undefined {
-        return autoeditAnalyticsLogger.getRequest(id)
+    public testing_getTestingAutoeditEvent(id: AutoeditRequestID): Phase | undefined {
+        return autoeditAnalyticsLogger.getRequest(id)?.phase
     }
 
     public dispose(): void {

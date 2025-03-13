@@ -24,7 +24,7 @@ import type { AutoeditsModelAdapter, AutoeditsPrompt, ModelResponse } from './ad
 import { createAutoeditsModelAdapter } from './adapters/create-adapter'
 import {
     type AutoeditRequestID,
-    type AutoeditRequestState,
+    type Phase,
     autoeditAnalyticsLogger,
     autoeditDiscardReason,
     autoeditSource,
@@ -673,7 +673,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
         await vscode.commands.executeCommand('editor.action.inlineSuggest.trigger')
     }
 
-    public getTestingAutoeditEvent(id: AutoeditRequestID): AutoeditRequestState | undefined {
+    public getTestingAutoeditEvent(id: AutoeditRequestID): Phase | undefined {
         return this.rendererManager.testing_getTestingAutoeditEvent(id)
     }
 

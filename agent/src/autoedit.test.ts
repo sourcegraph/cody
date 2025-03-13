@@ -71,10 +71,10 @@ describe('Autoedit', () => {
             // Tell completion provider that the completion was shown to the user.
             client.notify('autocomplete/completionSuggested', { completionID })
 
-            const completionEvent = await client.request('testing/autocomplete/autoeditEvent', {
+            const autoEditPhase = await client.request('testing/autocomplete/autoeditEvent', {
                 completionID,
             })
-            expect(completionEvent?.phase).toBe('suggested')
+            expect(autoEditPhase).toBe('suggested')
 
             // The LLM provided with a completion result.
             expect(result.items.length).toBeGreaterThan(0)
@@ -113,10 +113,10 @@ describe('Autoedit', () => {
             client.notify('autocomplete/completionSuggested', { completionID })
             client.notify('autocomplete/completionAccepted', { completionID })
 
-            const completionEvent = await client.request('testing/autocomplete/autoeditEvent', {
+            const autoEditPhase = await client.request('testing/autocomplete/autoeditEvent', {
                 completionID,
             })
-            expect(completionEvent?.phase).toBe('accepted')
+            expect(autoEditPhase).toBe('accepted')
 
             // The LLM provided with a completion result.
             expect(result.items.length).toBeGreaterThan(0)
