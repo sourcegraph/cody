@@ -71,8 +71,6 @@ class DefaultCodeCompletionsClient implements CodeCompletionsClient {
                     ...getClientIdentificationHeaders(),
                 })
 
-                // Force HTTP connection reuse to reduce latency.
-                // c.f. https://github.com/microsoft/vscode/issues/173861
                 setJSONAcceptContentTypeHeaders(headers)
                 addCodyClientIdentificationHeaders(headers)
 

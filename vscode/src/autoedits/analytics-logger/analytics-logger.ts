@@ -19,7 +19,7 @@ import { charactersLogger } from '../../services/CharactersLogger'
 import { upstreamHealthProvider } from '../../services/UpstreamHealthProvider'
 import { captureException, shouldErrorBeReported } from '../../services/sentry/sentry'
 import { splitSafeMetadata } from '../../services/telemetry-v2'
-import type { AutoeditsPrompt, ModelResponse } from '../adapters/base'
+import type { AutoeditsPrompt, SuccessModelResponse } from '../adapters/base'
 import { autoeditsOutputChannelLogger } from '../output-channel-logger'
 import type { CodeToReplaceData } from '../prompt/prompt-utils'
 import type { DecorationInfo } from '../renderer/decorators/base'
@@ -160,7 +160,7 @@ export class AutoeditAnalyticsLogger {
         payload,
         modelResponse,
     }: {
-        modelResponse: ModelResponse
+        modelResponse: SuccessModelResponse
         requestId: AutoeditRequestID
         prompt: AutoeditsPrompt
         payload: Required<Pick<LoadedState['payload'], 'source' | 'isFuzzyMatch' | 'prediction'>>

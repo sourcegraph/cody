@@ -19,27 +19,28 @@ export class CodyGatewayAdapter implements AutoeditsModelAdapter {
         const body = this.getMessageBody(options)
         try {
             const apiKey = await this.getApiKey()
-            const { data, requestHeaders, responseHeaders, url } = await getModelResponse(
-                options.url,
-                JSON.stringify(body),
+            const response = await getModelResponse({
+                url: options.url,
+                body,
                 apiKey,
-                headers
-            )
+                customHeaders: headers,
+                abortSignal: options.abortSignal,
+            })
+
+            if (response.type === 'aborted') {
+                return response
+            }
 
             let prediction: string
             if (options.isChatModel) {
-                prediction = data.choices[0].message.content
+                prediction = response.responseBody.choices[0].message.content
             } else {
-                prediction = data.choices[0].text
+                prediction = response.responseBody.choices[0].text
             }
 
             return {
+                ...response,
                 prediction,
-                responseHeaders,
-                requestHeaders,
-                requestBody: body,
-                requestUrl: url,
-                responseBody: data,
             }
         } catch (error) {
             autoeditsOutputChannelLogger.logError('getModelResponse', 'Error calling Cody Gateway:', {

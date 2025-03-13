@@ -58,6 +58,8 @@ export enum FeatureFlag {
 
     CodySmartApplyExperimentEnabledFeatureFlag = 'cody-smart-apply-experiment-enabled-flag',
     CodySmartApplyExperimentVariant1 = 'cody-smart-apply-experiment-variant-1',
+    CodySmartApplyExperimentVariant2 = 'cody-smart-apply-experiment-variant-2',
+    CodySmartApplyExperimentVariant3 = 'cody-smart-apply-experiment-variant-3',
     CodySmartApplyPrefetching = 'cody-smart-apply-prefetching',
 
     CodyAutoEditExperimentEnabledFeatureFlag = 'cody-autoedit-experiment-enabled-flag',
