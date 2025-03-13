@@ -64,6 +64,7 @@ import {
     skipPendingOperation,
     startWith,
     subscriptionDisposable,
+    switchMap,
     telemetryRecorder,
     tracer,
     truncatePromptString,
@@ -1595,12 +1596,20 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 }),
                 {
                     mentionMenuData: query => {
-                        return getMentionMenuData({
-                            disableProviders:
-                                this.extensionClient.capabilities?.disabledMentionsProviders || [],
-                            query: query,
-                            chatBuilder: this.chatBuilder,
-                        })
+                        return featureFlagProvider
+                            .evaluatedFeatureFlag(FeatureFlag.CodyExperimentalPromptEditor)
+                            .pipe(
+                                switchMap((experimentalPromptEditor: boolean) =>
+                                    getMentionMenuData({
+                                        disableProviders:
+                                            this.extensionClient.capabilities
+                                                ?.disabledMentionsProviders || [],
+                                        query: query,
+                                        chatBuilder: this.chatBuilder,
+                                        experimentalPromptEditor,
+                                    })
+                                )
+                            )
                     },
                     clientActionBroadcast: () => this.clientBroadcast,
                     evaluatedFeatureFlag: flag => featureFlagProvider.evaluatedFeatureFlag(flag),
