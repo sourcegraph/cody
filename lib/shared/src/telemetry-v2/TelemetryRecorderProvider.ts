@@ -9,7 +9,6 @@ import {
 } from '@sourcegraph/telemetry'
 import { TimestampTelemetryProcessor } from '@sourcegraph/telemetry/dist/processors/timestamp'
 
-import type { CodyIDE } from '../configuration'
 import { GraphQLTelemetryExporter } from '../sourcegraph-api/telemetry/GraphQLTelemetryExporter'
 import { MockServerTelemetryExporter } from '../sourcegraph-api/telemetry/MockServerTelemetryExporter'
 
@@ -23,34 +22,6 @@ import {
     cachedUserProductSubscription,
 } from '../sourcegraph-api/userProductSubscription'
 import { getTier } from './cody-tier'
-
-export interface ExtensionDetails {
-    ide: CodyIDE
-
-    /**
-     * Platform name, possible values 'linux', 'macos', 'windows',
-     * (see vscode os.ts for Platform enum)
-     */
-    platform: string
-
-    /** Version number for the extension. */
-    version: string
-
-    /**
-     * If this is provided event recorder will use this name as a client name
-     * in telemetry events, primary is used for having different client name for
-     * CodyWeb in dotcom/enterprise instances.
-     *
-     * If it isn't provided we will fall back on ide+ideExtensionType client name
-     */
-    telemetryClientName: string | undefined
-
-    /**
-     * Architecture name, possible values 'arm64', 'aarch64', 'x86_64', 'x64', 'x86'
-     * (see vscode os.ts for Arch enum)
-     */
-    arch?: string
-}
 
 /**
  * TelemetryRecorderProvider is the default provider implementation. It sends
@@ -71,11 +42,19 @@ export class TelemetryRecorderProvider extends BaseTelemetryRecorderProvider<
     ) {
         const cap = clientCapabilities()
         const clientName = cap.telemetryClientName || `${cap.agentIDE}.Cody`
-
+        
+        // Get platform and arch from configuration
+        const platform = config.configuration.osPlatform
+        const arch = config.configuration.osArch
+        
+        // Format as platform-arch string (e.g., "macos-arm64")
+        const osString = platform && arch ? `${platform}-${arch}` : undefined
+        
         super(
             {
                 client: clientName,
                 clientVersion: cap.agentExtensionVersion,
+                os: osString, // Add OS information
             },
             process.env.CODY_TELEMETRY_EXPORTER === 'testing'
                 ? TESTING_TELEMETRY_EXPORTER.withAnonymousUserID(config.clientState.anonymousUserID)
@@ -162,10 +141,19 @@ export class MockServerTelemetryRecorderProvider extends BaseTelemetryRecorderPr
         config: PickResolvedConfiguration<{ configuration: true; clientState: 'anonymousUserID' }>
     ) {
         const cap = clientCapabilities()
+        
+        // Get platform and arch from configuration
+        const platform = config.configuration.osPlatform
+        const arch = config.configuration.osArch
+        
+        // Format as platform-arch string (e.g., "macos-arm64")
+        const osString = platform && arch ? `${platform}-${arch}` : undefined
+        
         super(
             {
                 client: `${cap.agentIDE}.Cody`,
                 clientVersion: cap.agentExtensionVersion,
+                os: osString, // Add OS information
             },
             new MockServerTelemetryExporter(config.clientState.anonymousUserID),
             [new ConfigurationMetadataProcessor()]

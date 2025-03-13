@@ -101,6 +101,10 @@ interface RawClientConfiguration {
     debugVerbose: boolean
     telemetryLevel: 'all' | 'off' | 'agent'
 
+    // OS information for telemetry
+    osPlatform?: string
+    osArch?: string
+    
     serverEndpoint?: string
     customHeaders?: Record<string, string>
     chatPreInstruction?: PromptString

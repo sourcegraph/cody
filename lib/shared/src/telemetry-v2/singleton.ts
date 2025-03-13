@@ -44,6 +44,9 @@ export function updateGlobalTelemetryInstances(
                 `recordEvent${updatedProvider.noOp ? ' (no-op)' : ''}: ${event.feature}/${event.action}`,
                 {
                     verbose: {
+                        source: event.source,
+                        client: event.source?.client,
+                        clientVersion: event.source?.clientVersion,
                         parameters: event.parameters,
                         timestamp: event.timestamp,
                     },
