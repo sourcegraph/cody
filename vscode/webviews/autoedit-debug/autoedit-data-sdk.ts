@@ -131,7 +131,7 @@ export const getPositionInfo = (entry: AutoeditRequestDebugState): string => {
         const line = entry.state.position.line !== undefined ? entry.state.position.line + 1 : '?'
         const character =
             entry.state.position.character !== undefined ? entry.state.position.character : '?'
-        return `Line ${line}:${character}`
+        return `${line}:${character}`
     }
     return ''
 }

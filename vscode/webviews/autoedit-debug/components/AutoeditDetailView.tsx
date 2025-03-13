@@ -10,6 +10,7 @@ import { Button } from '../../components/shadcn/ui/button'
 import { AutoeditDataSDK } from '../autoedit-data-sdk'
 import { getStatusColor } from '../autoedit-ui-utils'
 import { AutoeditsConfigSection } from '../sections/AutoeditsConfigSection'
+import { CodeToRewriteDataSection } from '../sections/CodeToRewriteDataSection'
 import { ContextInfoSection } from '../sections/ContextInfoSection'
 import { NetworkRequestSection, NetworkResponseSection } from '../sections/NetworkRequestSection'
 import { PromptSection } from '../sections/PromptSection'
@@ -142,6 +143,9 @@ export const AutoeditDetailView: FC<{
                         <TabButton value="prompt" activeTab={activeTab}>
                             Prompt
                         </TabButton>
+                        <TabButton value="code-to-rewrite-data" activeTab={activeTab}>
+                            Code To Rewrite Data
+                        </TabButton>
                         <TabButton value="context" activeTab={activeTab}>
                             Context
                         </TabButton>
@@ -180,6 +184,10 @@ export const AutoeditDetailView: FC<{
 
                     <TabsPrimitive.Content value="config" className="tw-space-y-8">
                         <AutoeditsConfigSection entry={entry} />
+                    </TabsPrimitive.Content>
+
+                    <TabsPrimitive.Content value="code-to-rewrite-data" className="tw-space-y-8">
+                        <CodeToRewriteDataSection entry={entry} />
                     </TabsPrimitive.Content>
                 </div>
             </TabsPrimitive.Root>
