@@ -488,11 +488,10 @@ async function fetchServerSideModels(
 export const maybeAdjustContextWindows = (
     models: ServerModel[],
     isDotComUser: boolean,
-    longContextWindowFlag = false
+    longContextWindowFlag?: boolean
 ): ServerModel[] =>
     models.map(model => {
         let maxInputTokens = model.contextWindow.maxInputTokens
-        let maxOutputTokens = model.contextWindow.maxOutputTokens
         if (/^mi(x|s)tral/.test(model.modelName)) {
             // Adjust the context window size for Mistral models because the OpenAI tokenizer undercounts tokens in English
             // compared to the Mistral tokenizer. Based on our observations, the OpenAI tokenizer usually undercounts by about 13%.
@@ -501,17 +500,25 @@ export const maybeAdjustContextWindows = (
             // of using a slightly smaller context window than what's available for those languages.
             maxInputTokens = Math.round(model.contextWindow.maxInputTokens * 0.85)
         }
-        if (!longContextWindowFlag) {
-            maxInputTokens = getInputContextLimit(model.modelRef, maxInputTokens)
-        }
-        if (isDotComUser && model.tier === ModelTag.Pro) {
-            if (model.capabilities.includes('reasoning')) {
-                maxOutputTokens /= 2
-            } else {
-                maxOutputTokens -= 2000
+
+        // longContextWindow feature flag for testing the new context windows
+        if (longContextWindowFlag !== undefined) {
+            let maxOutputTokens = model.contextWindow.maxOutputTokens
+            if (!longContextWindowFlag || model.tier === ModelTag.Free) {
+                maxInputTokens = 45000
+                maxOutputTokens = 4000
             }
+            if (isDotComUser && model.tier === ModelTag.Pro) {
+                if (model.capabilities.includes('reasoning')) {
+                    maxOutputTokens /= 2
+                } else {
+                    maxOutputTokens -= 2000
+                }
+            }
+            return { ...model, contextWindow: { maxInputTokens, maxOutputTokens } }
         }
-        return { ...model, contextWindow: { maxInputTokens, maxOutputTokens } }
+
+        return { ...model, contextWindow: { ...model.contextWindow, maxInputTokens } }
     })
 
 function deepClone<T>(value: T): T {
@@ -526,13 +533,4 @@ export function defaultModelPreferencesFromServerModelsConfig(
         chat: config.defaultModels.chat,
         edit: config.defaultModels.chat,
     }
-}
-
-export function getInputContextLimit(chatModel: string, defaultValue: number): number {
-    const longInputContextModels = ['claude', 'gemini', 'o1', 'o3', '4o']
-    return longInputContextModels.some(model => chatModel.toLowerCase().includes(model))
-        ? 45000
-        : chatModel.toLowerCase().includes('gpt')
-          ? 7000
-          : defaultValue
 }
