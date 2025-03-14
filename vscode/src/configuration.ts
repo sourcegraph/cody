@@ -14,6 +14,7 @@ import {
 import type { ChatModelProviderConfig } from '@sourcegraph/cody-shared/src/models/sync'
 import { CONFIG_KEY, type ConfigKeys } from './configuration-keys'
 import { localStorage } from './services/LocalStorageProvider'
+import { getOSArch } from './os'
 
 interface ConfigGetter {
     get<T>(section: (typeof CONFIG_KEY)[ConfigKeys], defaultValue?: T): T
@@ -25,6 +26,9 @@ interface ConfigGetter {
 export function getConfiguration(
     config: ConfigGetter = vscode.workspace.getConfiguration()
 ): ClientConfiguration {
+    // Get OS information
+    const { platform: osPlatform, arch: osArch } = getOSArch()
+
     function getHiddenSetting<T>(configKey: string, defaultValue?: T): T {
         return config.get<T>(`cody.${configKey}` as any, defaultValue)
     }
@@ -205,6 +209,9 @@ export function getConfiguration(
          */
         overrideAuthToken: getHiddenSetting<string | undefined>('override.authToken'),
         overrideServerEndpoint: getHiddenSetting<string | undefined>('override.serverEndpoint'),
+        // add platform and arch
+        osPlatform,
+        osArch,
     }
 }
 
