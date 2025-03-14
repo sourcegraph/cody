@@ -12,7 +12,6 @@ import {
     MessagesSquareIcon,
     Trash2Icon,
 } from 'lucide-react'
-import { Kbd } from '../components/Kbd'
 import { getVSCodeAPI } from '../utils/VSCodeApi'
 import { View } from './types'
 
@@ -133,12 +132,7 @@ export const TabsBar = memo<TabsBarProps>(props => {
                             Icon={showOpenInEditor ? ColumnsIcon : MessageSquarePlusIcon}
                             title={showOpenInEditor ? 'Open in Editor' : 'New Chat'}
                             IDE={IDE}
-                            tooltipExtra={
-                                !showOpenInEditor &&
-                                IDE === CodyIDE.VSCode && (
-                                    <Kbd macOS="shift+opt+/" linuxAndWindows="shift+alt+/" />
-                                )
-                            }
+                            tooltipExtra={IDE === CodyIDE.VSCode && '(⇧⌥/)'}
                             view={View.Chat}
                             data-testid="new-chat-button"
                             onClick={() =>

@@ -1,10 +1,10 @@
 import { type Model, ModelTag, isCodyProModel } from '@sourcegraph/cody-shared'
+import { isMacOS } from '@sourcegraph/cody-shared'
 import { DeepCodyAgentID, ToolCodyModelName } from '@sourcegraph/cody-shared/src/models/client'
 import { clsx } from 'clsx'
 import { BookOpenIcon, BrainIcon, BuildingIcon, ExternalLinkIcon } from 'lucide-react'
 import { type FunctionComponent, type ReactNode, useCallback, useMemo } from 'react'
 import type { UserAccountInfo } from '../../Chat'
-import { Kbd } from '../../components/Kbd'
 import { getVSCodeAPI } from '../../utils/VSCodeApi'
 import { useTelemetryRecorder } from '../../utils/telemetry'
 import { chatModelIconComponent } from '../ChatModelIcon'
@@ -172,13 +172,7 @@ export const ModelSelectField: React.FunctionComponent<{
             className={cn('tw-justify-between', className)}
             disabled={readOnly}
             __storybook__open={__storybook__open}
-            tooltip={
-                readOnly ? undefined : (
-                    <span>
-                        Switch model <Kbd macOS="cmd+M" linuxAndWindows="ctrl+M" />
-                    </span>
-                )
-            }
+            tooltip={readOnly ? undefined : isMacOS() ? 'Switch model (⌘M)' : 'Switch model (Ctrl+M)'}
             aria-label="Select a model or an agent"
             controlRef={modelSelectorRef}
             popoverContent={close => (
