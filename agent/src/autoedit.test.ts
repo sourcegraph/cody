@@ -170,6 +170,14 @@ describe('Autoedit', () => {
 
             // Tell completion provider that the completion was shown to the user.
             client.notify('autocomplete/completionSuggested', { completionID: id })
+
+            // Check the initial telemetry event, we haven't yet waited for the visibility timeout
+            // so we need to ensure this is only in the "suggested" state
+            const initialAutoEditEvent = await client.request('testing/autocomplete/autoeditEvent', {
+                completionID: id,
+            })
+            expect(initialAutoEditEvent?.phase).toBe('suggested')
+
             // Wait for the completion visibility timeout we use to ensure users read a completion.
             await client.request('testing/autocomplete/awaitPendingVisibilityTimeout', null)
 
