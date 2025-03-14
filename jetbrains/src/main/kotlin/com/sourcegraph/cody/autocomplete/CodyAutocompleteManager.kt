@@ -38,7 +38,7 @@ import com.sourcegraph.cody.autocomplete.render.CodyAutocompleteBlockElementRend
 import com.sourcegraph.cody.autocomplete.render.CodyAutocompleteElementRenderer
 import com.sourcegraph.cody.autocomplete.render.CodyAutocompleteSingleLineRenderer
 import com.sourcegraph.cody.autocomplete.render.InlayModelUtil.getAllInlaysForEditor
-import com.sourcegraph.cody.autoedit.AutoEditManager
+import com.sourcegraph.cody.autoedit.AutoeditManager
 import com.sourcegraph.cody.statusbar.CodyStatusService.Companion.resetApplication
 import com.sourcegraph.cody.vscode.CancellationToken
 import com.sourcegraph.cody.vscode.InlineCompletionTriggerKind
@@ -233,7 +233,7 @@ class CodyAutocompleteManager {
       if (listOfEdits.isNotEmpty()) {
         runInEdt {
           editor.project
-              ?.getService(AutoEditManager::class.java)
+              ?.getService(AutoeditManager::class.java)
               ?.showAutoEdit(editor, listOfEdits.first())
         }
       } else if (listOfCompletions.isNotEmpty()) {

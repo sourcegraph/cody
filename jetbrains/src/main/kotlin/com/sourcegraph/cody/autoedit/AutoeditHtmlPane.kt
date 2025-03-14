@@ -19,7 +19,7 @@ import javax.swing.text.EditorKit
  * class is not yet available for 2023.2. We can remove this class once we limit our support to
  * 2024.2+.
  */
-class AutoEditHtmlPane : JEditorPane(), Disposable {
+class AutoeditHtmlPane : JEditorPane(), Disposable {
 
   init {
     enableEvents(AWTEvent.KEY_EVENT_MASK)

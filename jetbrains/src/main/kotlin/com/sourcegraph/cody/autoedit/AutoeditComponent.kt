@@ -13,7 +13,7 @@ import javax.swing.JPanel
 import javax.swing.JScrollPane
 import javax.swing.ScrollPaneConstants
 
-class AutoEditComponent(
+class AutoeditComponent(
     contentComponent: Component,
     private val advertiser: Advertiser,
 ) : JPanel(BorderLayout()) {

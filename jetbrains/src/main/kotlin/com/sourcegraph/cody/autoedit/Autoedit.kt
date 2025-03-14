@@ -21,24 +21,24 @@ import com.sourcegraph.config.ThemeUtil
 import java.awt.Font
 import javax.swing.JComponent
 
-class AutoEdit(
+class Autoedit(
     val project: Project,
     val editor: Editor,
-    private val autoEditImageDiff: AutoeditImageDiff
+    private val autoeditImageDiff: AutoeditImageDiff
 ) : Disposable {
 
   private val balloon: Balloon
-  private val autoEditComponent: JComponent
+  private val autoeditComponent: JComponent
   private val advertiser =
       NewUILookupAdvertiser().also {
-        it.addAdvertisement("Auto Edit from Cody", Icons.SourcegraphLogo)
+        it.addAdvertisement("Autoedit from Cody", Icons.SourcegraphLogo)
       }
 
   init {
 
-    val img = if (ThemeUtil.isDarkTheme()) autoEditImageDiff.dark else autoEditImageDiff.light
-    autoEditComponent =
-        AutoEditHtmlPane().also {
+    val img = if (ThemeUtil.isDarkTheme()) autoeditImageDiff.dark else autoeditImageDiff.light
+    autoeditComponent =
+        AutoeditHtmlPane().also {
           it.text =
               "<!DOCTYPE html>\n" +
                   "<html lang=\"en\">\n" +
@@ -52,10 +52,10 @@ class AutoEdit(
                   "</html>"
         }
 
-    val autoEditComponent = AutoEditComponent(autoEditComponent, advertiser)
+    val autoeditComponent = AutoeditComponent(autoeditComponent, advertiser)
     balloon =
         JBPopupFactory.getInstance()
-            .createBalloonBuilder(autoEditComponent)
+            .createBalloonBuilder(autoeditComponent)
             .setCornerToPointerDistance(0)
             .setAnimationCycle(0)
             .setFillColor(UIUtil.getPanelBackground())
@@ -68,11 +68,11 @@ class AutoEdit(
     Disposer.register(this, balloon)
   }
 
-  fun showAutoEdit(): Boolean {
+  fun showAutoedit(): Boolean {
     ApplicationManager.getApplication().assertIsDispatchThread()
     val position =
         VisualPosition(
-            autoEditImageDiff.position.line.toInt(), autoEditImageDiff.position.column.toInt())
+            autoeditImageDiff.position.line.toInt(), autoeditImageDiff.position.column.toInt())
 
     balloon.show(
         object : PositionTracker<Balloon>(editor.contentComponent) {
@@ -82,15 +82,15 @@ class AutoEdit(
         },
         Balloon.Position.atRight)
 
-    if (!autoEditComponent.isVisible || !autoEditComponent.isShowing) {
-      hideAutoEdit()
+    if (!autoeditComponent.isVisible || !autoeditComponent.isShowing) {
+      hideAutoedit()
       return false
     }
 
     return true
   }
 
-  fun hideAutoEdit() {
+  fun hideAutoedit() {
     ApplicationManager.getApplication().assertIsDispatchThread()
     Disposer.dispose(this)
   }
