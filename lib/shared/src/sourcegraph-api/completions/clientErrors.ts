@@ -107,9 +107,40 @@ const handleMessageTransform: ErrorTransformer = error => {
     return undefined
 }
 
+const handleRateLimitTransform: ErrorTransformer = error => {
+    if (error.includes('exceeded the rate limit')) {
+        const match = error.match(/exceeded the rate limit of (\d+) requests. Retry after (.+)/)
+        if (match?.[2]) {
+            const retryAfter = match[2]
+            const retryDate = new Date(retryAfter)
+            const formattedDate = retryDate.toUTCString()
+            const simplifiedErrorMessage = `You have exceeded the rate limit of ${match[1]} requests. Retry after ${formattedDate}`
+            return simplifiedErrorMessage
+        }
+    }
+    return undefined
+}
+
+const handleFetchSubscriptionTransform: ErrorTransformer = error => {
+    if (error.includes('ENHANCE_YOUR_CALM')) {
+        return 'Error fetching subscription. Please try again later.'
+    }
+    return undefined
+}
+
+const handleOrganizationTokenLimit: ErrorTransformer = error => {
+    if (error.includes('This request would exceed your organization')) {
+        return 'Upstream service error.'
+    }
+    return undefined
+}
+
 ClientErrorsTransformer.register(handleAUPTransform)
 ClientErrorsTransformer.register(handleCloudflareTransform)
 ClientErrorsTransformer.register(handleMissingTraceIdTransform, ClientErrorsTransformer.PRIORITIES.LAST)
 ClientErrorsTransformer.register(handleContextDeadlineTransform)
+ClientErrorsTransformer.register(handleRateLimitTransform)
 ClientErrorsTransformer.register(handleNetworkErrorTransform)
+ClientErrorsTransformer.register(handleFetchSubscriptionTransform)
+ClientErrorsTransformer.register(handleOrganizationTokenLimit)
 ClientErrorsTransformer.register(handleMessageTransform)

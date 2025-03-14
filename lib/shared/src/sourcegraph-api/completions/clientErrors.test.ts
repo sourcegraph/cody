@@ -96,5 +96,56 @@ describe('ClientErrorsTransformer', () => {
                 'b6a46f9fe91c006a07d138c0da14b0e7'
             expect(ClientErrorsTransformer.transform(errorMessage)).toContain(simplifiedErrorMessage)
         })
+
+        it('transforms 400 unexpected 429', () => {
+            const errorMessage =
+                'Request to https://sourcegraph.com/.api/completions/stream?api-version=2&client-name=vscode&client-version=1.70.2 ' +
+                'failed with 400 Bad Request: status 400, reason fetching subscription from SSC: unexpected status code 429'
+            const simplifiedErrorMessage =
+                '400 Bad Request: status 400, reason fetching subscription from SSC: unexpected status code 429'
+            expect(ClientErrorsTransformer.transform(errorMessage)).toContain(simplifiedErrorMessage)
+        })
+        it('transforms ES rate limit', () => {
+            const errorMessage =
+                'Sourcegraph Cody Gateway: unexpected status code 429: you have exceeded the rate limit of 150 requests. Retry after 2025-02-16 03:04:52 +0000 UTC'
+            const simplifiedErrorMessage =
+                'You have exceeded the rate limit of 150 requests. Retry after Sun, 16 Feb 2025 03:04:52 GMT'
+            expect(ClientErrorsTransformer.transform(errorMessage)).toContain(simplifiedErrorMessage)
+        })
+
+        it('transforms 400 fetching subscription error', () => {
+            const errorMessage = `Request to https://sourcegraph.com/.api/completions/stream?api-
+                version=28client-name=jetbrains&client-version=7.66.0 failed with
+                400 Bad Request: status 400, reason fetching subscription from SSC:
+                calling SSC: Get
+                "https://accounts.sourcegraph.com/cody/api/rest/svc/subscription/019
+                4c3b6-6f79-74c8-960d-e4e738cf96cb": http2: server sent GOAWAY and
+                closed the connection; LastStreamID= 1497,
+                ErrCode=ENHANCE_YOUR_CALM, debug=`
+            const simplifiedErrorMessage = 'Error fetching subscription. Please try again later.'
+            expect(ClientErrorsTransformer.transform(errorMessage)).toContain(simplifiedErrorMessage)
+        })
+
+        it('transforms 400 non-empty content', () => {
+            const errorMessage = `Stream processing failed: Error: 400 {"type":"error", "error": 
+            ("type" "invalid_request_error" "message": "messages.0: all messages must have non-empty content except for the optional final assistant message")}`
+            const simplifiedErrorMessage =
+                'messages.0: all messages must have non-empty content except for the optional final assistant message'
+            expect(ClientErrorsTransformer.transform(errorMessage)).toContain(simplifiedErrorMessage)
+        })
+
+        it('transforms another specific error case', () => {
+            const errorMessage = `Request Failed: Sourcegraph Cody
+                Gateway: unexpected status code
+                503: ("type":"error", "error":
+                {"type": "rate_limit_error","message":"
+                This request would exceed your organization's rate limit of 1,000,000 input tokens per minute. For details, refer to:
+                https://docs.anthropic.com/en/api/r
+                ate-limits; see the response headers for current usage. Please reduce the prompt length or the maximum tokens requested, or try again later.
+                You may also contact sales at https://www.anthropic.com/contact-
+                sales to discuss your options for a rate limit increase."})`
+            const simplifiedErrorMessage = 'Upstream service error.'
+            expect(ClientErrorsTransformer.transform(errorMessage)).toContain(simplifiedErrorMessage)
+        })
     })
 })
