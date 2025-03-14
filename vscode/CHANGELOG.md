@@ -10,11 +10,6 @@ This is a log of all notable changes to Cody for VS Code.
 
 - Revert part of [#7344](https://github.com/sourcegraph/cody/pull/7344) to support Sourcegraph instances 6.1.0+ that do not support API version 8. (cfb30bbf41f31774fe2813d12740943d28a7da72)
 
-### Uncategorized
-
-#### Others
-
-- [Backport M76] Changelog for 1.76.0 [#7410](https://github.com/sourcegraph/cody/pull/7410)
 
 
 ## 1.76.0
