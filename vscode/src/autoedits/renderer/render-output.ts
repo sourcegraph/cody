@@ -7,7 +7,7 @@ import type { AutoeditRequestID } from '../analytics-logger'
 import { AutoeditCompletionItem } from '../autoedit-completion-item'
 import type { AutoeditClientCapabilities } from '../autoedits-provider'
 import { autoeditsOutputChannelLogger } from '../output-channel-logger'
-import type { AutoEditDecorations, DecorationInfo } from './decorators/base'
+import type { AutoEditDecoration, AutoEditDecorations, DecorationInfo } from './decorators/base'
 import { cssPropertiesToString } from './decorators/utils'
 import { isOnlyAddingTextForModifiedLines, isOnlyRemovingTextForModifiedLines } from './diff-utils'
 import { type GeneratedImageSuggestion, generateSuggestionAsImage } from './image-gen'
@@ -412,7 +412,7 @@ export class AutoEditsRenderOutput {
         const fullLineDeletionDecorations = decorationInfo.removedLines.map(
             ({ originalLineNumber, text }) => {
                 const range = new vscode.Range(originalLineNumber, 0, originalLineNumber, text.length)
-                return this.createRemovedDecoration(range, text.length)
+                return this.createRemovedDecoration(range, text)
             }
         )
         const partialLineDeletionDecorations = this.createModifiedRemovedDecorations(decorationInfo)
@@ -452,6 +452,7 @@ export class AutoEditsRenderOutput {
         return {
             insertionDecorations: [
                 {
+                    text: '',
                     range: new vscode.Range(
                         position.line,
                         startLineEndColumn,
@@ -479,6 +480,7 @@ export class AutoEditsRenderOutput {
             ],
             insertMarkerDecorations: [
                 {
+                    text: '',
                     range: new vscode.Range(position.line, 0, position.line, startLineEndColumn),
                 },
             ],
@@ -489,7 +491,7 @@ export class AutoEditsRenderOutput {
         decorationInfo: DecorationInfo
     ): Omit<AutoEditDecorations, 'deletionDecorations' | 'insertMarkerDecorations'> {
         const { modifiedLines } = decorationInfo
-        const decorations: vscode.DecorationOptions[] = []
+        const decorations: AutoEditDecoration[] = []
 
         for (const line of modifiedLines) {
             // TODO(valery): verify that we still need to merge consecutive insertions.
@@ -538,18 +540,14 @@ export class AutoEditsRenderOutput {
         return { insertionDecorations: decorations }
     }
 
-    private createModifiedRemovedDecorations(
-        decorationInfo: DecorationInfo
-    ): vscode.DecorationOptions[] {
+    private createModifiedRemovedDecorations(decorationInfo: DecorationInfo): AutoEditDecoration[] {
         const { modifiedLines } = decorationInfo
-        const decorations: vscode.DecorationOptions[] = []
+        const decorations: AutoEditDecoration[] = []
 
         for (const line of modifiedLines) {
             for (const change of line.changes) {
                 if (change.type === 'delete') {
-                    decorations.push(
-                        this.createRemovedDecoration(change.originalRange, change.text.length)
-                    )
+                    decorations.push(this.createRemovedDecoration(change.originalRange, change.text))
                 }
             }
         }
@@ -560,11 +558,9 @@ export class AutoEditsRenderOutput {
     /**
      * Create a ghost text decoration at the given position.
      */
-    private createGhostTextDecoration(
-        position: vscode.Position,
-        text: string
-    ): vscode.DecorationOptions {
+    private createGhostTextDecoration(position: vscode.Position, text: string): AutoEditDecoration {
         return {
+            text,
             range: new vscode.Range(position, position),
             renderOptions: {
                 before: {
@@ -581,14 +577,15 @@ export class AutoEditsRenderOutput {
      * A helper to create a removed text decoration for a given range and text length.
      * Both entire line removals and inline deletions use this logic.
      */
-    private createRemovedDecoration(range: vscode.Range, textLength: number): vscode.DecorationOptions {
+    private createRemovedDecoration(range: vscode.Range, text: string): AutoEditDecoration {
         return {
+            text,
             range,
             renderOptions: {
                 before: {
-                    contentText: '\u00A0'.repeat(textLength),
+                    contentText: '\u00A0'.repeat(text.length),
                     backgroundColor: 'rgba(255,0,0,0.3)', // red background for deletions
-                    margin: `0 -${textLength}ch 0 0`,
+                    margin: `0 -${text.length}ch 0 0`,
                 },
             },
         }

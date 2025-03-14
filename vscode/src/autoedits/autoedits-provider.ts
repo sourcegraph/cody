@@ -572,7 +572,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                 return decorations.insertionDecorations.map(decoration => ({
                     type: 'insert',
                     range: decoration.range,
-                    text: decoration.renderOptions?.before?.contentText || '',
+                    text: decoration.text,
                 }))
             case 'deletions-only':
                 if (decorations.deletionDecorations.length === 0) {
@@ -581,6 +581,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                 return decorations.deletionDecorations.map(decoration => ({
                     type: 'delete',
                     range: decoration.range,
+                    text: decoration.text,
                 }))
             case 'insertions-and-deletions': {
                 const output: AutoeditChanges[] = []
@@ -589,7 +590,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                         ...decorations.insertionDecorations.map(decoration => ({
                             type: 'insert' as const,
                             range: decoration.range,
-                            text: decoration.renderOptions?.before?.contentText || '',
+                            text: decoration.text,
                         }))
                     )
                 }
@@ -598,6 +599,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                         ...decorations.deletionDecorations.map(decoration => ({
                             type: 'delete' as const,
                             range: decoration.range,
+                            text: decoration.text,
                         }))
                     )
                 }
