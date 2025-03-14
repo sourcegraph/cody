@@ -46,8 +46,8 @@ export interface AutoEditsTokenLimit {
  * Used to configure the model provider for auto-edit functionality in the VS Code extension.
  */
 export interface AutoEditsModelConfig {
-    /** The provider service to use for auto-edit. Can be 'openai', 'fireworks', 'cody-gateway', or 'sourcegraph' */
-    provider: 'openai' | 'fireworks' | 'cody-gateway' | 'sourcegraph'
+    /** The provider service to use for auto-edit. Can be 'openai', 'fireworks', 'cody-gateway', 'sourcegraph', or 'inceptionlabs' */
+    provider: 'openai' | 'fireworks' | 'cody-gateway' | 'sourcegraph' | 'inceptionlabs'
     /** The specific model identifier to use for auto-edit */
     model: string
     /** The endpoint URL for the provider's API */

@@ -55,10 +55,10 @@ export class DefaultUserPromptStrategy extends AutoeditsUserPromptStrategy {
             getJaccardSimilarityPrompt
         )
 
-        const { fileWithMarkerPrompt, areaPrompt } = getCurrentFilePromptComponents(
+        const { fileWithMarkerPrompt, areaPrompt } = getCurrentFilePromptComponents({
             document,
-            codeToReplaceData
-        )
+            codeToReplaceDataRaw: codeToReplaceData,
+        })
 
         const currentFilePrompt = ps`${constants.CURRENT_FILE_INSTRUCTION}${fileWithMarkerPrompt}`
 

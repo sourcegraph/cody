@@ -64,10 +64,15 @@ export function getPromptForTheContextSource(
     return ps`${instructionPrompt}\n${prompt}`
 }
 
-export function getCurrentFilePromptComponents(
-    document: vscode.TextDocument,
+export function getCurrentFilePromptComponents({
+    document,
+    codeToReplaceDataRaw,
+    includeCursor,
+}: {
+    document: vscode.TextDocument
     codeToReplaceDataRaw: CodeToReplaceData
-): {
+    includeCursor?: boolean
+}): {
     fileWithMarkerPrompt: PromptString
     areaPrompt: PromptString
 } {
@@ -92,11 +97,15 @@ export function getCurrentFilePromptComponents(
         )
     )
 
+    const codeToRewrite = includeCursor
+        ? ps`${codeToReplaceData.codeToRewritePrefix}<CURSOR_IS_HERE>${codeToReplaceData.codeToRewriteSuffix}`
+        : codeToReplaceData.codeToRewrite
+
     const areaPrompt = joinPromptsWithNewlineSeparator(
         constants.AREA_FOR_CODE_MARKER_OPEN,
         codeToReplaceData.prefixInArea,
         constants.CODE_TO_REWRITE_TAG_OPEN,
-        codeToReplaceData.codeToRewrite,
+        codeToRewrite,
         constants.CODE_TO_REWRITE_TAG_CLOSE,
         codeToReplaceData.suffixInArea,
         constants.AREA_FOR_CODE_MARKER_CLOSE

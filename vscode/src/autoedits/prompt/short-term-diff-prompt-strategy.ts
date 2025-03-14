@@ -1,10 +1,12 @@
 import { type AutocompleteContextSnippet, PromptString, ps } from '@sourcegraph/cody-shared'
 
+import { shortenPromptForOutputChannel } from '../../../src/completions/output-channel-logger'
 import { groupConsecutiveItemsByPredicate } from '../../completions/context/retrievers/recent-user-actions/recent-edits-diff-helpers/utils'
 import { RetrieverIdentifier } from '../../completions/context/utils'
+import { inceptionlabsPrompt } from '../adapters/inceptionlabs'
+import { autoeditsProviderConfig } from '../autoedits-config'
 import { autoeditsOutputChannelLogger } from '../output-channel-logger'
 
-import { shortenPromptForOutputChannel } from '../../../src/completions/output-channel-logger'
 import { AutoeditsUserPromptStrategy, type UserPromptArgs } from './base'
 import * as constants from './constants'
 import {
@@ -24,7 +26,60 @@ import {
 export class ShortTermPromptStrategy extends AutoeditsUserPromptStrategy {
     private readonly SHORT_TERM_SNIPPET_VIEW_TIME_MS = 60 * 1000 // 1 minute
 
+    private getInceptionLabsUserPrompt({
+        context,
+        tokenBudget,
+        codeToReplaceData,
+        document,
+    }: UserPromptArgs): PromptString {
+        const contextItemMapping = getContextItemMappingWithTokenLimit(
+            context,
+            tokenBudget.contextSpecificTokenLimit
+        )
+        const { shortTermViewPrompt, longTermViewPrompt } = this.getRecentSnippetViewPrompt(
+            contextItemMapping.get(RetrieverIdentifier.RecentViewPortRetriever) || []
+        )
+        const { shortTermEditsPrompt, longTermEditsPrompt } = this.getRecentEditsPrompt(
+            contextItemMapping.get(RetrieverIdentifier.RecentEditsRetriever) || []
+        )
+        const lintErrorsPrompt = getPromptForTheContextSource(
+            contextItemMapping.get(RetrieverIdentifier.DiagnosticsRetriever) || [],
+            constants.LINT_ERRORS_INSTRUCTION,
+            getLintErrorsPrompt
+        )
+
+        const recentCopyPrompt = getPromptForTheContextSource(
+            contextItemMapping.get(RetrieverIdentifier.RecentCopyRetriever) || [],
+            constants.RECENT_COPY_INSTRUCTION,
+            getRecentCopyPrompt
+        )
+
+        const { areaPrompt } = getCurrentFilePromptComponents({
+            document,
+            codeToReplaceDataRaw: codeToReplaceData,
+            includeCursor: true,
+        })
+
+        const promptParts = [
+            getPromptWithNewline(inceptionlabsPrompt.start),
+            getPromptWithNewline(longTermViewPrompt),
+            getPromptWithNewline(shortTermViewPrompt),
+            getPromptWithNewline(lintErrorsPrompt),
+            getPromptWithNewline(recentCopyPrompt),
+            getPromptWithNewline(areaPrompt),
+            getPromptWithNewline(longTermEditsPrompt),
+            getPromptWithNewline(shortTermEditsPrompt),
+            getPromptWithNewline(inceptionlabsPrompt.end),
+        ]
+
+        return PromptString.join(promptParts, ps``)
+    }
+
     getUserPrompt({ context, tokenBudget, codeToReplaceData, document }: UserPromptArgs): PromptString {
+        if (autoeditsProviderConfig.provider === 'inceptionlabs') {
+            return this.getInceptionLabsUserPrompt({ context, tokenBudget, codeToReplaceData, document })
+        }
+
         const contextItemMapping = getContextItemMappingWithTokenLimit(
             context,
             tokenBudget.contextSpecificTokenLimit
@@ -53,10 +108,10 @@ export class ShortTermPromptStrategy extends AutoeditsUserPromptStrategy {
             getJaccardSimilarityPrompt
         )
 
-        const { fileWithMarkerPrompt, areaPrompt } = getCurrentFilePromptComponents(
+        const { fileWithMarkerPrompt, areaPrompt } = getCurrentFilePromptComponents({
             document,
-            codeToReplaceData
-        )
+            codeToReplaceDataRaw: codeToReplaceData,
+        })
 
         const currentFilePrompt = ps`${constants.CURRENT_FILE_INSTRUCTION}${fileWithMarkerPrompt}`
 
