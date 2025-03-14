@@ -1,4 +1,5 @@
-import { type Message, type PromptString, charsToTokens } from '@sourcegraph/cody-shared'
+import { type Message, type PromptString, charsToTokens, isAbortError } from '@sourcegraph/cody-shared'
+import type { AbortedModelResponse, ModelResponseShared, SuccessModelResponse } from './base'
 
 export interface FireworksCompatibleRequestParams {
     stream: boolean
@@ -63,38 +64,58 @@ export function getSourcegraphCompatibleChatPrompt(param: {
     return prompt
 }
 
-export async function getModelResponse(
-    url: string,
-    body: string,
-    apiKey: string,
-    customHeaders: Record<string, string> = {}
-): Promise<{
-    data: any
-    requestHeaders: Record<string, string>
-    responseHeaders: Record<string, string>
+export async function getModelResponse({
+    apiKey,
+    url,
+    body,
+    abortSignal,
+    customHeaders = {},
+}: {
+    apiKey: string
     url: string
-}> {
+    body: ModelResponseShared['requestBody']
+    abortSignal: AbortSignal
+    customHeaders?: Record<string, string>
+}): Promise<Omit<SuccessModelResponse, 'prediction'> | AbortedModelResponse> {
     const requestHeaders = {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${apiKey}`,
         ...customHeaders,
     }
-    const response = await fetch(url, {
-        method: 'POST',
-        headers: requestHeaders,
-        body: body,
-    })
-    if (response.status !== 200) {
-        const errorText = await response.text()
-        throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`)
+
+    const partialResult = {
+        requestHeaders,
+        requestUrl: url,
+        requestBody: body,
     }
 
-    // Extract headers into a plain object
-    const responseHeaders: Record<string, string> = {}
-    response.headers.forEach((value, key) => {
-        responseHeaders[key] = value
-    })
+    try {
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: requestHeaders,
+            body: JSON.stringify(body),
+            signal: abortSignal,
+        })
 
-    const data = await response.json()
-    return { data, requestHeaders, responseHeaders, url }
+        if (response.status !== 200) {
+            const errorText = await response.text()
+            throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`)
+        }
+
+        // Extract headers into a plain object
+        const responseHeaders: Record<string, string> = {}
+        response.headers.forEach((value, key) => {
+            responseHeaders[key] = value
+        })
+
+        const responseBody = await response.json()
+        return { ...partialResult, type: 'success', responseBody, responseHeaders }
+    } catch (error) {
+        if (isAbortError(error)) {
+            return { ...partialResult, type: 'aborted' }
+        }
+
+        // Propagate error the auto-edit provider
+        throw error
+    }
 }

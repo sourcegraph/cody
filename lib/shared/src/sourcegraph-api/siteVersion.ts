@@ -13,9 +13,33 @@ import { isError } from '../utils'
 import { isDotCom } from './environments'
 import { graphqlClient } from './graphql'
 
-interface SiteAndCodyAPIVersions {
+// @link latestSupportedCompletionsStreamAPIVersion
+// https://sourcegraph.sourcegraph.com/search?q=context:global+latestSupportedCompletionsStreamAPIVersion
+type LegacyCodyApiVersion = 1 | 2 | 3 | 4
+type V2TelemetryCodyApiVersion = 5
+// Any number greater than 4 is considered a valid Cody API version
+type CodyApiVersion = LegacyCodyApiVersion | number
+
+export interface SiteAndCodyAPIVersions {
     siteVersion: string
     codyAPIVersion: CodyApiVersion
+}
+
+// Default minimum API version
+export const DefaultMinimumAPIVersion: V2TelemetryCodyApiVersion = 5
+
+// Starts with 0 to indicate that the latest version has not been set
+let _LatestCodyAPIVersion: CodyApiVersion = 0
+
+export function getLatestSupportedCompletionsStreamAPIVersion(): number {
+    return _LatestCodyAPIVersion
+}
+
+// We will infer the Cody API version based on the site version if the version is not set
+export function setLatestCodyAPIVersion(version?: number): void {
+    if (version !== undefined) {
+        _LatestCodyAPIVersion = version
+    }
 }
 
 /**
@@ -39,8 +63,9 @@ export const siteVersion: Observable<SiteAndCodyAPIVersions | null | typeof pend
                 if (!authStatus.authenticated) {
                     return Observable.of(null)
                 }
+
                 return promiseFactoryToObservable(signal => graphqlClient.getSiteVersion(signal)).pipe(
-                    map((siteVersion): SiteAndCodyAPIVersions | null | typeof pendingOperation => {
+                    map((siteVersion): SiteAndCodyAPIVersions | null => {
                         if (isError(siteVersion)) {
                             logError(
                                 'siteVersion',
@@ -59,9 +84,8 @@ export const siteVersion: Observable<SiteAndCodyAPIVersions | null | typeof pend
         map(result => (isError(result) ? null : result)) // the operation catches its own errors, so errors will never get here
     )
 
-const authStatusAuthed: Observable<AuthStatus> = authStatus.filter(
-    authStatus => authStatus.authenticated
-)
+// Only emit when authenticated
+const authStatusAuthed: Observable<AuthStatus> = authStatus.filter(auth => auth.authenticated)
 
 /**
  * Get the current site version. If authentication is pending, it awaits successful authentication.
@@ -69,13 +93,21 @@ const authStatusAuthed: Observable<AuthStatus> = authStatus.filter(
 export async function currentSiteVersion(): Promise<SiteAndCodyAPIVersions | Error> {
     const authStatus = await firstResultFromOperation(authStatusAuthed)
     const siteVersion = await graphqlClient.getSiteVersion()
+
     if (isError(siteVersion)) {
         logError('siteVersion', `Failed to get site version from ${authStatus.endpoint}: ${siteVersion}`)
         return siteVersion
     }
+
+    // Reset the latest Cody API version if the user is not authenticated
+    const isDotComUser = isDotCom(authStatus)
+    if (!authStatus.authenticated && !isDotComUser) {
+        setLatestCodyAPIVersion(0)
+    }
+
     return {
         siteVersion,
-        codyAPIVersion: inferCodyApiVersion(siteVersion, isDotCom(authStatus)),
+        codyAPIVersion: inferCodyApiVersion(siteVersion, isDotComUser),
     }
 }
 
@@ -87,12 +119,13 @@ interface CheckVersionInput {
 
 export async function isValidVersion({ minimumVersion }: { minimumVersion: string }): Promise<boolean> {
     const currentVersion = await currentSiteVersion()
-
-    if (isError(currentVersion)) {
-        return false
-    }
-
-    return checkVersion({ minimumVersion, currentVersion: currentVersion.siteVersion })
+    return (
+        !isError(currentVersion) &&
+        checkVersion({
+            minimumVersion,
+            currentVersion: currentVersion.siteVersion,
+        })
+    )
 }
 
 /**
@@ -109,67 +142,77 @@ export function checkVersion({
     insider = true,
 }: CheckVersionInput): boolean {
     const isInsiderBuild = currentVersion.length > 12 || currentVersion.includes('dev')
-
     return (insider && isInsiderBuild) || semver.gte(currentVersion, minimumVersion)
 }
 
-// @link latestSupportedCompletionsStreamAPIVersion
-// Docs: https://sourcegraph.sourcegraph.com/search?q=context:global+latestSupportedCompletionsStreamAPIVersion
-type CodyApiVersion = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8
-export const LatestSupportedCompletionsStreamAPIVersion = 8
+const LastKnownCodyAPIVersion = 8
+const LOCAL_BUILD_VERSION_NUMBER = '0.0.0+dev'
+
+export function serverSupportsPromptCaching(): boolean {
+    // The first version that supports prompt caching
+    return _LatestCodyAPIVersion >= 7
+}
 
 /** @internal Exported for testing only. */
 export function inferCodyApiVersion(version: string, isDotCom: boolean): CodyApiVersion {
-    const parsedVersion = semver.valid(version)
-    const isLocalBuild = parsedVersion === '0.0.0'
-
-    if (isDotCom || isLocalBuild) {
-        // The most recent version is api-version=8, LatestSupportedCompletionsStreamAPIVersion
-        return LatestSupportedCompletionsStreamAPIVersion
-    }
-
-    // On Cloud deployments from main, the version identifier will use a format
-    // like "2024-09-11_5.7-4992e874aee2", which does not parse as SemVer.  We
-    // make a best effort go parse the date from the version identifier
-    // allowing us to selectively enable new API versions on instances like SG02
-    // (that deploy frequently) without crashing on other Cloud deployments that
-    // release less frequently.
-    if (parsedVersion === null) {
-        // api-version=2 was merged on 2024-09-11:
-        // https://github.com/sourcegraph/sourcegraph/pull/470
-        const date = parseDateFromPreReleaseVersion(version)
-        if (date && date >= new Date('2024-09-11')) {
-            return LatestSupportedCompletionsStreamAPIVersion
+    // Fast path for dotcom or local dev
+    if (isDotCom || version === LOCAL_BUILD_VERSION_NUMBER) {
+        // Use the latest version if it has been set and is greater than the last known version
+        if (_LatestCodyAPIVersion && _LatestCodyAPIVersion >= LastKnownCodyAPIVersion) {
+            return _LatestCodyAPIVersion
         }
-        // It's safe to bump this up to api-version=2 after the 5.8 release
-        return 1
+        return LastKnownCodyAPIVersion
     }
 
-    // 6.1.0+ is the first version to support api-version=8.
-    // https://github.com/sourcegraph/sourcegraph/pull/3507
-    if (semver.gte(parsedVersion, '6.1.0')) {
+    // Use the latest version if it has been set
+    if (_LatestCodyAPIVersion) {
+        return _LatestCodyAPIVersion
+    }
+
+    const parsedVersion = semver.valid(version)
+
+    // 5.4.0+ supports api-version=1
+    // 5.8.0+ supports api-version=2
+    if (parsedVersion && semver.gte(parsedVersion, '6.2.0')) {
         return 8
     }
-
-    // 5.8.0+ is the first version to support api-version=2.
-    // https://github.com/sourcegraph/sourcegraph/pull/470
-    if (semver.gte(parsedVersion, '5.8.0')) {
-        return 2
-    }
-
-    // 5.4.0+ is the first version to support api-version=1.
-    if (semver.gte(parsedVersion, '5.4.0')) {
+    if (parsedVersion && semver.ltr(parsedVersion, '5.8.0')) {
         return 1
     }
 
-    return 0 // zero refers to the legacy, unversioned, Cody API
+    // Handle pre-release versions
+    // On Cloud deployments from main, the version identifier will use a format
+    // like "2024-09-11_5.7-4992e874aee2" or "6.1.x_313350_2025-02-25_6.1-63a41475e780",
+    // which does not parse as SemVer.  We make a best effort go parse the date from
+    // the version identifier allowing us to selectively enable new API versions on
+    // instances like SG02 (that deploy frequently) without crashing on other Cloud
+    // deployments that release less frequently.
+    if (parsedVersion === null) {
+        const date = parseDateFromPreReleaseVersion(version)
+        if (date && date >= new Date('2025-03-11')) {
+            return 8
+        }
+        if (date && date >= new Date('2024-09-11')) {
+            return 5
+        }
+        return 1
+    }
+
+    // Use minimum version for all other cases instead of 0
+    return DefaultMinimumAPIVersion
 }
 
-// Pre-release versions have a format like this "2024-09-11_5.7-4992e874aee2".
+const versionRegexp = /^(?:[^_]+_)?\d+_(\d{4}-\d{2}-\d{2})_\d+\.\d+-\w+$/
+
+// Pre-release versions have a format like this "2024-09-11_5.7-4992e874aee2" or "6.1.x_313350_2025-02-25_6.1-63a41475e780".
 // This function return undefined for stable Enterprise releases like "5.7.0".
 function parseDateFromPreReleaseVersion(version: string): Date | undefined {
     try {
-        const dateString = version.split('_').at(1)
+        const match = version.match(versionRegexp)
+        if (!match) {
+            return undefined
+        }
+        const dateString = match[1]
         if (!dateString) {
             return undefined
         }

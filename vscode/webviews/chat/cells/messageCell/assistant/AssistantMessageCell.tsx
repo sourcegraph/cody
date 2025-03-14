@@ -49,6 +49,9 @@ export const AssistantMessageCell: FunctionComponent<{
     smartApplyEnabled?: boolean
     smartApply?: CodeBlockActionsProps['smartApply']
 
+    isThoughtProcessOpened?: boolean
+    setThoughtProcessOpened?: (open: boolean) => void
+
     postMessage?: ApiPostMessage
     guardrails?: Guardrails
     onSelectedFiltersUpdate: (filters: NLSSearchDynamicFilter[]) => void
@@ -69,6 +72,8 @@ export const AssistantMessageCell: FunctionComponent<{
         smartApplyEnabled,
         onSelectedFiltersUpdate,
         isLastSentInteraction: isLastInteraction,
+        isThoughtProcessOpened,
+        setThoughtProcessOpened,
     }) => {
         const displayMarkdown = useMemo(
             () => (message.text ? reformatBotMessageForChat(message.text).toString() : ''),
@@ -100,13 +105,13 @@ export const AssistantMessageCell: FunctionComponent<{
                                 />
                             )
                         ) : null}
-                        {omniboxEnabled && !isLoading && message.search && (
+                        {omniboxEnabled && !isLoading && message.search ? (
                             <SearchResults
                                 message={message as ChatMessageWithSearch}
                                 onSelectedFiltersUpdate={onSelectedFiltersUpdate}
                                 enableContextSelection={isLastInteraction}
                             />
-                        )}
+                        ) : null}
                         {!isSearchIntent && displayMarkdown ? (
                             <ChatMessageContent
                                 displayMarkdown={displayMarkdown}
@@ -117,6 +122,8 @@ export const AssistantMessageCell: FunctionComponent<{
                                 humanMessage={humanMessage}
                                 smartApplyEnabled={smartApplyEnabled}
                                 smartApply={smartApply}
+                                isThoughtProcessOpened={!!isThoughtProcessOpened}
+                                setThoughtProcessOpened={setThoughtProcessOpened}
                             />
                         ) : (
                             isLoading &&
@@ -141,16 +148,13 @@ export const AssistantMessageCell: FunctionComponent<{
                     </>
                 }
                 footer={
-                    chatEnabled &&
-                    humanMessage && (
+                    isAborted ? (
                         <div className="tw-py-3 tw-flex tw-flex-col tw-gap-2">
-                            {isAborted && (
-                                <div className="tw-text-sm tw-text-muted-foreground tw-mt-4">
-                                    Output stream stopped
-                                </div>
-                            )}
+                            <div className="tw-text-sm tw-text-muted-foreground tw-mt-4">
+                                Output stream stopped
+                            </div>
                         </div>
-                    )
+                    ) : null
                 }
             />
         )

@@ -12,7 +12,7 @@ export const BaseMessageCell: FunctionComponent<{
     className?: string
 }> = ({ cellAction, content, contentClassName, footer, className }) => (
     <Cell
-        header={<div className="tw-ml-auto">{cellAction}</div>}
+        header={cellAction && <div className="tw-ml-auto">{cellAction}</div>}
         containerClassName={className}
         contentClassName={contentClassName}
         data-testid="message"

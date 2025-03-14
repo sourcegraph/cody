@@ -17,12 +17,7 @@ import type { ChunkMatch, HighlightLineRange, MatchGroup, SearchMatch } from './
 
 import { FileMatchChildren } from './components/FileMatchChildren'
 import { RepoFileLink } from './components/RepoLink'
-import {
-    type ForwardReferenceExoticComponent,
-    formatRepositoryStarCount,
-    getRevision,
-    pluralize,
-} from './utils'
+import { type ForwardReferenceExoticComponent, formatRepositoryStarCount, getRevision } from './utils'
 
 import { CodyIDE } from '@sourcegraph/cody-shared'
 import type {
@@ -123,7 +118,6 @@ export const FileMatchSearchResult: FC<PropsWithChildren<FileMatchSearchResultPr
     const collapsedGroups = truncateGroups(expandedGroups, 1, 1)
     const expandedHighlightCount = countHighlightRanges(expandedGroups)
     const collapsedHighlightCount = countHighlightRanges(collapsedGroups)
-    const hiddenMatchesCount = expandedHighlightCount - collapsedHighlightCount
     const expandable = !showAllMatches && expandedHighlightCount > collapsedHighlightCount
 
     useEffect(() => setExpanded(allExpanded || defaultExpanded), [allExpanded, defaultExpanded])
@@ -276,13 +270,7 @@ export const FileMatchSearchResult: FC<PropsWithChildren<FileMatchSearchResultPr
                         onClick={toggleExpand}
                     >
                         <span className={styles.toggleMatchesButtonText}>
-                            {expanded
-                                ? 'Show less'
-                                : `Show ${hiddenMatchesCount} more ${pluralize(
-                                      'match',
-                                      hiddenMatchesCount,
-                                      'matches'
-                                  )}`}
+                            {expanded ? 'Show less' : 'Show more'}
                         </span>
                     </button>
                 )}

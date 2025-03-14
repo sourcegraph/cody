@@ -7,6 +7,7 @@ import {
     BotResponseMultiplexer,
     DEFAULT_EVENT_SOURCE,
     EventSourceTelemetryMetadataMapping,
+    type SiteAndCodyAPIVersions,
     Typewriter,
     currentAuthStatus,
     currentSiteVersion,
@@ -45,6 +46,7 @@ import { isStreamedIntent } from './utils/edit-intent'
 interface EditProviderOptions extends EditManagerOptions {
     task: FixupTask
     fixupController: FixupController
+    siteVersion: SiteAndCodyAPIVersions | null
 }
 
 /**
@@ -79,6 +81,7 @@ export class EditProvider {
     private insertionInProgress = false
     private promptBuilder: EditPromptBuilder
     private modelParameterProvider: ModelParameterProvider
+    private siteVersion: SiteAndCodyAPIVersions | null = null
     private cache = new LRUCache<string, StreamSession>({ max: 20 })
 
     constructor(public config: EditProviderOptions) {
@@ -92,6 +95,7 @@ export class EditProvider {
             this.modelParameterProvider = new DefaultModelParameterProvider()
             this.promptBuilder = new DefaultEditPromptBuilder()
         }
+        this.siteVersion = this.config.siteVersion
     }
 
     /**
@@ -201,7 +205,7 @@ export class EditProvider {
             const editTimeToFirstTokenSpan = tracer.startSpan('cody.edit.provider.timeToFirstToken')
             const model = this.config.task.model
             const contextWindow = modelsService.getContextWindowByID(model)
-            const versions = await currentSiteVersion()
+            const versions = this.siteVersion ?? (await currentSiteVersion())
 
             if (isError(versions)) {
                 this.handleError(versions)

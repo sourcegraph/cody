@@ -1,6 +1,6 @@
 import type { ChatMessage } from '@sourcegraph/cody-shared'
 import { isMacOS } from '@sourcegraph/cody-shared'
-import { BetweenHorizonalEnd, MessageSquare, Pencil, Search } from 'lucide-react'
+import { BetweenHorizonalEnd, MessageSquare, Pencil, Search, Sparkle } from 'lucide-react'
 import type { FC } from 'react'
 import { useCallback, useEffect, useMemo } from 'react'
 import { Badge } from '../../../../../../components/shadcn/ui/badge'
@@ -12,6 +12,7 @@ import { useConfig } from '../../../../../../utils/useConfig'
 const isMac = isMacOS()
 
 export enum IntentEnum {
+    Agentic = 'Agentic',
     Chat = 'Chat',
     Search = 'Search',
     Edit = 'Edit',
@@ -20,6 +21,7 @@ export enum IntentEnum {
 
 // Mapping between ChatMessage intent and IntentEnum for faster lookups
 export const INTENT_MAPPING: Record<string, IntentEnum> = {
+    agentic: IntentEnum.Agentic,
     chat: IntentEnum.Chat,
     search: IntentEnum.Search,
     edit: IntentEnum.Edit,
@@ -46,10 +48,12 @@ function getIntentOptions({
     isEditEnabled,
     isDotComUser,
     omniBoxEnabled,
+    agenticChatEnabled,
 }: {
     isEditEnabled: boolean
     isDotComUser: boolean
     omniBoxEnabled: boolean
+    agenticChatEnabled: boolean
 }): IntentOption[] {
     return [
         chatIntent,
@@ -60,6 +64,14 @@ function getIntentOptions({
             intent: 'search',
             hidden: !omniBoxEnabled,
             disabled: isDotComUser,
+        },
+        {
+            title: 'Agentic',
+            badge: agenticChatEnabled ? 'Experimental' : 'Pro',
+            icon: Sparkle,
+            intent: 'agentic',
+            hidden: !agenticChatEnabled,
+            disabled: !agenticChatEnabled,
         },
         {
             title: 'Edit Code',
@@ -83,12 +95,14 @@ function getIntentOptions({
 export const ModeSelectorField: React.FunctionComponent<{
     omniBoxEnabled: boolean
     isDotComUser: boolean
+    isCodyProUser: boolean
     intent: ChatMessage['intent']
     className?: string
     manuallySelectIntent: (intent?: ChatMessage['intent']) => void
 }> = ({ isDotComUser, className, intent, omniBoxEnabled, manuallySelectIntent }) => {
     const {
         clientCapabilities: { edit },
+        config: { experimentalAgenticChatEnabled },
     } = useConfig()
 
     const intentOptions = useMemo(
@@ -97,8 +111,9 @@ export const ModeSelectorField: React.FunctionComponent<{
                 isEditEnabled: edit !== 'none',
                 isDotComUser,
                 omniBoxEnabled,
+                agenticChatEnabled: experimentalAgenticChatEnabled,
             }).filter(option => !option.hidden),
-        [edit, isDotComUser, omniBoxEnabled]
+        [edit, isDotComUser, omniBoxEnabled, experimentalAgenticChatEnabled]
     )
 
     // Memoize the handler to avoid recreating on each render

@@ -27,7 +27,9 @@ interface RepoContext {
 }
 
 interface SmartApplyBaseContext extends RepoContext {
-    smartApplyModel: EditModel
+    startedAt: number
+    isPrefetched: boolean
+    model: EditModel
     userQuery: string
     replacementCodeBlock: string
     filePath: string
@@ -42,6 +44,7 @@ interface SmartApplySelectionContext extends SmartApplyBaseContext {
 
 interface SmartApplyFinalContext extends SmartApplySelectionContext {
     applyTimeMs: number
+    totalTimeMs: number
     applyTaskId?: string
 }
 
@@ -53,6 +56,27 @@ interface EditLoggingContext {
 }
 
 type SmartApplyLoggingState = SmartApplyBaseContext | SmartApplySelectionContext | SmartApplyFinalContext
+
+interface SmartApplyLoggingContext {
+    isPublic?: boolean
+    isPrefetched: boolean
+    model: EditModel
+    selectionType: SmartApplySelectionType
+    selectionRangeStart: number
+    selectionRangeEnd: number
+    selectionTimeMs: number
+    applyTimeMs: number
+    totalTimeMs: number
+    applyTaskId?: string
+    smartApplyContext?: {
+        repoName?: string
+        commit?: string
+        userQuery: string
+        replacementCodeBlock: string
+        filePath: string
+        fileContent: string
+    }
+}
 
 export class EditLoggingFeatureFlagManager implements vscode.Disposable {
     private featureFlagSmartApplyContextDataCollection = storeLastValue(
@@ -100,6 +124,8 @@ export class SmartApplyContextLogger {
      */
     public recordSmartApplyBaseContext({
         taskId,
+        startedAt,
+        isPrefetched,
         model,
         userQuery,
         replacementCodeBlock,
@@ -109,6 +135,8 @@ export class SmartApplyContextLogger {
         selectionTimeMs,
     }: {
         taskId: string
+        startedAt: number
+        isPrefetched: boolean
         model: EditModel
         userQuery: string
         replacementCodeBlock: string
@@ -122,7 +150,9 @@ export class SmartApplyContextLogger {
         const fileContent = document.getText()
 
         const context: SmartApplySelectionContext = {
-            smartApplyModel: model,
+            startedAt,
+            isPrefetched,
+            model,
             ...baseRepoContext,
             userQuery,
             replacementCodeBlock,
@@ -154,6 +184,7 @@ export class SmartApplyContextLogger {
             ...context,
             applyTimeMs,
             applyTaskId: taskId,
+            totalTimeMs: performance.now() - context.startedAt,
         })
     }
 
@@ -169,30 +200,53 @@ export class SmartApplyContextLogger {
                 recordsPrivateMetadataTranscript: 1,
             },
             privateMetadata: {
-                smartApplyContext: privateMetadata,
+                ...privateMetadata,
             },
             billingMetadata: { product: 'cody', category: 'billable' },
         })
     }
 
-    private getSmartApplyLoggingContext(taskId: string): SmartApplyFinalContext | undefined {
-        const context = this.activeContexts.get(taskId)
-        if (!context) {
+    private getSmartApplyLoggingContext(taskId: string): SmartApplyLoggingContext | undefined {
+        const context = this.activeContexts.get(taskId) as SmartApplyFinalContext | undefined
+        if (!context || typeof (context as SmartApplyFinalContext).applyTimeMs !== 'number') {
             return undefined
         }
+
+        const basePayload: SmartApplyLoggingContext = {
+            isPublic: context.isPublic,
+            isPrefetched: context.isPrefetched,
+            model: context.model,
+            selectionType: context.selectionType,
+            selectionTimeMs: context.selectionTimeMs,
+            applyTimeMs: context.applyTimeMs,
+            totalTimeMs: context.totalTimeMs,
+            applyTaskId: context.applyTaskId,
+            selectionRangeStart: context.selectionRange[0],
+            selectionRangeEnd: context.selectionRange[1],
+        }
+
+        const contextPayload = {
+            repoName: context.repoName,
+            commit: context.commit,
+            userQuery: context.userQuery,
+            replacementCodeBlock: context.replacementCodeBlock,
+            filePath: context.filePath,
+            fileContent: context.fileContent,
+        }
+
         if (
-            !shouldLogEditContextItem(
-                context,
+            shouldLogEditContextItem(
+                contextPayload,
                 this.loggingFeatureFlagManagerInstance.isSmartApplyContextDataCollectionFlagEnabled()
             )
         ) {
-            return undefined
+            // 🚨 SECURITY: included contextPayload for allowed users.
+            return {
+                ...basePayload,
+                smartApplyContext: contextPayload,
+            }
         }
-        // Verify that the context has the final property required.
-        if (typeof (context as SmartApplyFinalContext).applyTimeMs !== 'number') {
-            return undefined
-        }
-        return context as SmartApplyFinalContext
+        return basePayload
     }
 
     private getContext(taskId: string): SmartApplyLoggingState | undefined {

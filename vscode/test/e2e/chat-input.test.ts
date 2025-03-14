@@ -76,6 +76,7 @@ test.extend<ExpectedV2Events>({
     // streaming its response.
     await firstChatInput.fill('delay')
     await firstChatInput.press('Enter')
+    await page.waitForTimeout(400)
     await expect(lastChatInput).toBeFocused()
 
     // Make sure the chat input box does not steal focus from the editor when editor
@@ -202,10 +203,7 @@ test.extend<DotcomUrlOverride>({ dotcomUrl: mockServer.SERVER_URL }).extend<Expe
     const chatFrame = getChatSidebarPanel(page)
     const firstChatInput = getChatInputs(chatFrame).first()
 
-    const chatTab = chatFrame.getByTestId('tab-chat')
-    await chatTab.click()
-
-    const modelSelect = chatFrame.getByTestId('chat-model-selector')
+    const modelSelect = chatFrame.getByRole('combobox', { name: 'Select a model' }).last()
 
     await expect(modelSelect).toBeEnabled()
     await expect(modelSelect).toHaveText(/^Claude 3.5 Sonnet/)
@@ -218,10 +216,7 @@ test.extend<DotcomUrlOverride>({ dotcomUrl: mockServer.SERVER_URL }).extend<Expe
     await modelSelect.click()
     const modelChoices = chatFrame.getByRole('listbox', { name: 'Suggestions' })
     await modelChoices.getByRole('option', { name: 'Claude 3 Haiku' }).click()
-
     const lastChatInput = getChatInputs(chatFrame).last()
-    await lastChatInput.click()
-
     await expect(lastChatInput).toBeFocused()
     await expect(modelSelect).toHaveText(/^Claude 3 Haiku/)
     await lastChatInput.fill('to model2')
