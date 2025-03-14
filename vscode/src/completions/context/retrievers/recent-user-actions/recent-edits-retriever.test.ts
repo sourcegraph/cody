@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type * as vscode from 'vscode'
 import { range } from '../../../../testutils/textDocument'
 import { document } from '../../../test-helpers'
-import { RecentEditsRetrieverDiffStrategy } from './recent-edits-diff-helpers/recent-edits-diff-strategy'
+import type { RecentEditsRetrieverDiffStrategy } from './recent-edits-diff-helpers/recent-edits-diff-strategy'
 import { UnifiedDiffStrategy } from './recent-edits-diff-helpers/unified-diff'
 import { RecentEditsRetriever } from './recent-edits-retriever'
 
