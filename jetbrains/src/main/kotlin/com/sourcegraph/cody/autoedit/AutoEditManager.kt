@@ -5,21 +5,21 @@ import com.intellij.openapi.components.Service
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
-import com.sourcegraph.cody.agent.protocol_generated.AutocompleteEditResult
+import com.sourcegraph.cody.agent.protocol_generated.AutocompleteEditItem
 
 @Service(Service.Level.PROJECT)
 class AutoEditManager(private val project: Project) {
   private var activeAutoEdit: AutoEdit? = null
   private var activeAutoEditEditor: Editor? = null
 
-  fun showAutoEdit(editor: Editor, result: AutocompleteEditResult): AutoEdit? {
+  fun showAutoEdit(editor: Editor, result: AutocompleteEditItem): AutoEdit? {
     val autoEdit = createAutoEdit(editor, result)
     return if (autoEdit.showAutoEdit()) autoEdit else null
   }
 
   private fun createAutoEdit(
       editor: Editor,
-      result: AutocompleteEditResult,
+      result: AutocompleteEditItem,
   ): AutoEdit {
     ApplicationManager.getApplication().assertIsDispatchThread()
 

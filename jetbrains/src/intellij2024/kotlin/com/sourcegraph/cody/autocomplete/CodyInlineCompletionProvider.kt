@@ -60,11 +60,11 @@ class CodyInlineCompletionProvider : InlineCompletionProvider {
     val completions =
         fetchCompletions(project, editor, triggerKind, cancellationToken, lookupString)
             .completeOnTimeout(null, 1, TimeUnit.SECONDS)
-            .get()
-            .let { it as? AutocompleteCompletionResult } ?: return InlineCompletionSuggestion.Empty
+            .get() ?: return InlineCompletionSuggestion.Empty
 
     return InlineCompletionSingleSuggestion.build {
       completions.items
+          .mapNotNull { it as? AutocompleteCompletionItem }
           .firstNotNullOfOrNull {
             WriteCommandAction.runWriteCommandAction<InlineCompletionGrayTextElement?>(
                 editor.project) {

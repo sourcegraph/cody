@@ -11,8 +11,6 @@ import com.sourcegraph.cody.agent.protocol.ErrorCodeUtils.toErrorCode
 import com.sourcegraph.cody.agent.protocol.RateLimitError.Companion.toRateLimitError
 import com.sourcegraph.cody.agent.protocol_extensions.Position
 import com.sourcegraph.cody.agent.protocol_extensions.ProtocolTextDocumentExt
-import com.sourcegraph.cody.agent.protocol_generated.AutocompleteCompletionResult
-import com.sourcegraph.cody.agent.protocol_generated.AutocompleteEditResult
 import com.sourcegraph.cody.agent.protocol_generated.AutocompleteParams
 import com.sourcegraph.cody.agent.protocol_generated.AutocompleteResult
 import com.sourcegraph.cody.agent.protocol_generated.Ignore_TestResult
@@ -103,9 +101,7 @@ object Utils {
                       !UpgradeToCodyProNotification.isFirstRLEOnAutomaticAutocompletionsShown) {
                     handleError(project, error)
                   }
-                } else if (result != null &&
-                    ((result is AutocompleteCompletionResult && result.items.isNotEmpty()) ||
-                        result is AutocompleteEditResult)) {
+                } else if (result != null && result.items.isNotEmpty()) {
                   UpgradeToCodyProNotification.isFirstRLEOnAutomaticAutocompletionsShown = false
                   UpgradeToCodyProNotification.autocompleteRateLimitError.set(null)
                   successCallback(result)
