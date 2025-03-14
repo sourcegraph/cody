@@ -86,7 +86,7 @@ interface ImageRenderOutput {
 
 /**
  * This is an escape hatch to support clients that do not support images when rendering the diff to the side.
- * This is used when the client has `autoEditAsideDiff` set to `diff`.
+ * This is used when the client has `autoeditAsideDiff` set to `diff`.
  */
 interface CustomRenderOutput {
     type: 'custom'
@@ -115,13 +115,13 @@ export class AutoEditsRenderOutput {
         args: GetRenderOutputArgs,
         capabilities: AutoeditClientCapabilities
     ): AutoEditRenderOutput | null {
-        if (!capabilities.autoEditInlineDiff || capabilities.autoEditInlineDiff === 'none') {
+        if (!capabilities.autoeditInlineDiff || capabilities.autoeditInlineDiff === 'none') {
             // Inline diff rendering is disabled or not supported
             return null
         }
 
         const canRenderAside =
-            capabilities.autoEditAsideDiff && capabilities.autoEditAsideDiff !== 'none'
+            capabilities.autoeditAsideDiff && capabilities.autoeditAsideDiff !== 'none'
         const shouldRenderInline = this.shouldRenderInlineDiff(args.decorationInfo, capabilities)
 
         if (!shouldRenderInline && canRenderAside) {
@@ -143,18 +143,18 @@ export class AutoEditsRenderOutput {
         args: GetRenderOutputArgs,
         capabilities: AutoeditClientCapabilities
     ): AutoEditRenderOutput | null {
-        if (!capabilities.autoEditAsideDiff || capabilities.autoEditAsideDiff === 'none') {
+        if (!capabilities.autoeditAsideDiff || capabilities.autoeditAsideDiff === 'none') {
             // Aside diff rendering is disabled or not supported
             return null
         }
 
-        if (capabilities.autoEditAsideDiff === 'diff') {
+        if (capabilities.autoeditAsideDiff === 'diff') {
             return { type: 'custom' }
         }
 
         const diffMode =
-            capabilities.autoEditInlineDiff === 'deletions-only' ||
-            capabilities.autoEditInlineDiff === 'insertions-and-deletions'
+            capabilities.autoeditInlineDiff === 'deletions-only' ||
+            capabilities.autoeditInlineDiff === 'insertions-and-deletions'
                 ? 'additions'
                 : 'unified'
         const { diff, position } = makeVisualDiff(args.decorationInfo, diffMode, args.document)
@@ -333,7 +333,7 @@ export class AutoEditsRenderOutput {
         const hasDeletions =
             decorationInfo.removedLines.length > 0 ||
             !isOnlyAddingTextForModifiedLines(decorationInfo.modifiedLines)
-        if (clientCapabilities.autoEditInlineDiff === 'insertions-only' && hasDeletions) {
+        if (clientCapabilities.autoeditInlineDiff === 'insertions-only' && hasDeletions) {
             // We have deletions to show, but the client only supports insertions with text decorations.
             // We should render an image instead.
             return false
@@ -342,7 +342,7 @@ export class AutoEditsRenderOutput {
         const hasInsertions =
             decorationInfo.addedLines.length > 0 ||
             !isOnlyRemovingTextForModifiedLines(decorationInfo.modifiedLines)
-        if (clientCapabilities.autoEditInlineDiff === 'deletions-only' && hasInsertions) {
+        if (clientCapabilities.autoeditInlineDiff === 'deletions-only' && hasInsertions) {
             // We have insertions to show, but the client only supports deletions with text decorations.
             // We should render an image instead.
             return false

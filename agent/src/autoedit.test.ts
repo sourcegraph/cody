@@ -36,9 +36,9 @@ describe('Autoedit', () => {
             credentials: TESTING_CREDENTIALS.dotcom,
             capabilities: {
                 ...allClientCapabilitiesEnabled,
-                autoEdit: 'enabled',
-                autoEditInlineDiff: 'insertions-and-deletions',
-                autoEditAsideDiff: 'none',
+                autoedit: 'enabled',
+                autoeditInlineDiff: 'insertions-and-deletions',
+                autoeditAsideDiff: 'none',
             },
         })
 
@@ -71,10 +71,10 @@ describe('Autoedit', () => {
             // Tell completion provider that the completion was shown to the user.
             client.notify('autocomplete/completionSuggested', { completionID })
 
-            const autoEditPhase = await client.request('testing/autocomplete/autoeditEvent', {
+            const autoeditPhase = await client.request('testing/autocomplete/autoeditEvent', {
                 completionID,
             })
-            expect(autoEditPhase).toBe('suggested')
+            expect(autoeditPhase).toBe('suggested')
 
             // The LLM provided with a completion result.
             expect(result.items.length).toBeGreaterThan(0)
@@ -111,10 +111,10 @@ describe('Autoedit', () => {
             client.notify('autocomplete/completionSuggested', { completionID })
             client.notify('autocomplete/completionAccepted', { completionID })
 
-            const autoEditPhase = await client.request('testing/autocomplete/autoeditEvent', {
+            const autoeditPhase = await client.request('testing/autocomplete/autoeditEvent', {
                 completionID,
             })
-            expect(autoEditPhase).toBe('accepted')
+            expect(autoeditPhase).toBe('accepted')
 
             // The LLM provided with a completion result.
             expect(result.items.length).toBeGreaterThan(0)
@@ -166,9 +166,9 @@ describe('Autoedit', () => {
                 },
                 capabilities: {
                     ...allClientCapabilitiesEnabled,
-                    autoEdit: 'enabled',
-                    autoEditInlineDiff: 'insertions-and-deletions',
-                    autoEditAsideDiff: 'none',
+                    autoedit: 'enabled',
+                    autoeditInlineDiff: 'insertions-and-deletions',
+                    autoeditAsideDiff: 'none',
                 },
             })
 
@@ -238,9 +238,9 @@ describe('Autoedit', () => {
                 },
                 capabilities: {
                     ...allClientCapabilitiesEnabled,
-                    autoEdit: 'enabled',
-                    autoEditInlineDiff: 'none',
-                    autoEditAsideDiff: 'image',
+                    autoedit: 'enabled',
+                    autoeditInlineDiff: 'none',
+                    autoeditAsideDiff: 'image',
                 },
             })
 
@@ -330,9 +330,9 @@ describe('Autoedit', () => {
                 },
                 capabilities: {
                     ...allClientCapabilitiesEnabled,
-                    autoEdit: 'enabled',
-                    autoEditInlineDiff: 'none',
-                    autoEditAsideDiff: 'diff',
+                    autoedit: 'enabled',
+                    autoeditInlineDiff: 'none',
+                    autoeditAsideDiff: 'diff',
                 },
             })
 
@@ -412,9 +412,9 @@ describe('Autoedit', () => {
                 },
                 capabilities: {
                     ...allClientCapabilitiesEnabled,
-                    autoEdit: 'enabled',
-                    autoEditInlineDiff: 'none',
-                    autoEditAsideDiff: 'diff',
+                    autoedit: 'enabled',
+                    autoeditInlineDiff: 'none',
+                    autoeditAsideDiff: 'diff',
                 },
             })
 
@@ -494,9 +494,9 @@ describe('Autoedit', () => {
                 },
                 capabilities: {
                     ...allClientCapabilitiesEnabled,
-                    autoEdit: 'enabled',
-                    autoEditInlineDiff: 'insertions-and-deletions',
-                    autoEditAsideDiff: 'image',
+                    autoedit: 'enabled',
+                    autoeditInlineDiff: 'insertions-and-deletions',
+                    autoeditAsideDiff: 'image',
                 },
             })
 

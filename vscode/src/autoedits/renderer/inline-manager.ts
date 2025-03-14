@@ -40,8 +40,8 @@ export class AutoEditsInlineRendererManager
             return asideDiff
         }
 
-        // This should only happen if a client has opted in to `autoEdit` but not provided a valid
-        // `autoEditInlineDiff` or `autoEditAsideDiff` capability.
+        // This should only happen if a client has opted in to `autoedit` but not provided a valid
+        // `autoeditInlineDiff` or `autoeditAsideDiff` capability.
         throw new Error(
             'Unable to get a render suitable suggestion for autoedit. Please ensure the correct clientCapabilities are set for this client.'
         )

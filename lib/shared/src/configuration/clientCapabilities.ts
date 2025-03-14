@@ -66,7 +66,7 @@ export interface ClientCapabilities {
     /**
      * If `enabled` edit suggestions will be provided from `autocomplete/execute`
      */
-    autoEdit?: 'none' | 'enabled' | undefined | null
+    autoedit?: 'none' | 'enabled' | undefined | null
 
     /**
      * The inline diff decorations that the client supports when rendering auto-edit suggestions.
@@ -75,7 +75,7 @@ export interface ClientCapabilities {
      * - 'deletions-only': the client can render inline decorations for deletions only.
      * - 'insertions-and-deletions': the client can render inline decorations for both insertions and deletions.
      */
-    autoEditInlineDiff?: 'none' | 'insertions-only' | 'deletions-only' | 'insertions-and-deletions'
+    autoeditInlineDiff?: 'none' | 'insertions-only' | 'deletions-only' | 'insertions-and-deletions'
 
     /**
      * The aside diff decorations that the client supports when rendering auto-edit suggestions.
@@ -83,11 +83,11 @@ export interface ClientCapabilities {
      * - 'image': the client supports rendering an image showing the diff to the side.
      * - 'diff': the client has its own method of rendering a diff to the side.
      *
-     * Note: If `image` is provided, the generated image will differ depending on the `autoEditTextDecorations` capability.
+     * Note: If `image` is provided, the generated image will differ depending on the `autoeditTextDecorations` capability.
      * This is because it is preferred that deletions are shown inline in the editor. If the client does not support rendering
      * deletions inline, then an unified diff will be generated for the image.
      */
-    autoEditAsideDiff?: 'none' | 'image' | 'diff'
+    autoeditAsideDiff?: 'none' | 'image' | 'diff'
 
     /**
      * When 'streaming', handles 'chat/updateMessageInProgress' streaming notifications.

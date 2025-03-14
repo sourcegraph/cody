@@ -983,7 +983,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
                 }
 
                 // Check client capability for auto-edit support
-                const supportsAutoEdit = this.clientInfo?.capabilities?.autoEdit === 'enabled'
+                const supportsAutoEdit = this.clientInfo?.capabilities?.autoedit === 'enabled'
                 if (result.type === 'edit' && supportsAutoEdit) {
                     return { items: result.items, completionEvent: result.completionEvent }
                 }

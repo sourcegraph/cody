@@ -91,7 +91,7 @@ export type AutoeditsResult = AutoeditCompletionResult | AutoeditEditResult
 
 export type AutoeditClientCapabilities = Pick<
     ClientCapabilities,
-    'autoEdit' | 'autoEditInlineDiff' | 'autoEditAsideDiff'
+    'autoedit' | 'autoeditInlineDiff' | 'autoeditAsideDiff'
 >
 
 /**
@@ -169,17 +169,17 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
         if (!inAgent) {
             // We are running inside VS Code
             return {
-                autoEdit: 'enabled',
-                autoEditAsideDiff: 'image',
-                autoEditInlineDiff: 'insertions-and-deletions',
+                autoedit: 'enabled',
+                autoeditAsideDiff: 'image',
+                autoeditInlineDiff: 'insertions-and-deletions',
             }
         }
 
         const capabilitiesFromClient = clientCapabilities()
         return {
-            autoEdit: capabilitiesFromClient.autoEdit,
-            autoEditAsideDiff: capabilitiesFromClient.autoEditAsideDiff,
-            autoEditInlineDiff: capabilitiesFromClient.autoEditInlineDiff,
+            autoedit: capabilitiesFromClient.autoedit,
+            autoeditAsideDiff: capabilitiesFromClient.autoeditAsideDiff,
+            autoeditInlineDiff: capabilitiesFromClient.autoeditInlineDiff,
         }
     }
 
@@ -512,7 +512,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                 return { type: 'completion', items: renderOutput.inlineCompletionItems }
             }
 
-            if (this.capabilities.autoEdit !== 'enabled') {
+            if (this.capabilities.autoedit !== 'enabled') {
                 // Cannot render an edit suggestion
                 return null
             }
@@ -562,7 +562,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
         }
 
         // Handle based on client capabilities
-        switch (this.capabilities.autoEditInlineDiff) {
+        switch (this.capabilities.autoeditInlineDiff) {
             case 'none':
                 return null
             case 'insertions-only':

@@ -739,11 +739,11 @@ function registerAutoEdits({
     disposables: vscode.Disposable[]
     context: vscode.ExtensionContext
 }): void {
-    const { autoEdit } = clientCapabilities()
-    const autoEditDisabledForClient =
-        isRunningInsideAgent() && (autoEdit === undefined || autoEdit === 'none')
-    if (autoEditDisabledForClient) {
-        // Do not attempt to register autoedits for clients that have not opted in to use autoEdit.
+    const { autoedit } = clientCapabilities()
+    const autoeditDisabledForClient =
+        isRunningInsideAgent() && (autoedit === undefined || autoedit === 'none')
+    if (autoeditDisabledForClient) {
+        // Do not attempt to register autoedits for clients that have not opted in to use autoedit.
         return
     }
 
@@ -803,9 +803,9 @@ function registerAutocomplete(
     statusBar: CodyStatusBar,
     disposables: vscode.Disposable[]
 ): void {
-    const autoEditEnabledForClient =
-        isRunningInsideAgent() && clientCapabilities().autoEdit === 'enabled'
-    if (autoEditEnabledForClient) {
+    const autoeditEnabledForClient =
+        isRunningInsideAgent() && clientCapabilities().autoedit === 'enabled'
+    if (autoeditEnabledForClient) {
         // autoedit is a replacement for autocomplete for clients.
         // We should not register both if the client has opted in for auto-edit.
         // TODO: Eventually these should be consolidated so clients to not need to decide between
