@@ -60,7 +60,7 @@ export interface Model {
 
     readonly modelRef?: ModelRef
 
-    disabled: boolean
+    disabled?: boolean
 }
 
 interface ModelParams {

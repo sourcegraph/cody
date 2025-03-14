@@ -878,10 +878,10 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             }
             if (isRateLimitError(error)) {
                 this.postError(error, 'transcript')
+                logDebug('Rate limited, switching to fast chat model', 'chatcontroller')
                 // find the speed model then setSelectedModel to the speed model
                 const fastChatModel = modelsService.enableIsRateLimited()?.[0]
                 this.chatBuilder.setSelectedModel(fastChatModel?.id)
-                recordErrorToSpan(span, error as Error)
                 tracer.startActiveSpan('chat.resendRateLimitedMessage', async (span): Promise<void> => {
                     this.sendChat(params, span)
                 })
@@ -1348,6 +1348,16 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
      */
     private postError(error: Error, type?: MessageErrorType): void {
         logDebug('ChatController: postError', error.message)
+        if (isRateLimitError(error)) {
+            // find the speed model then setSelectedModel to the speed model
+            const fastChatModel = modelsService.enableIsRateLimited()?.[0]
+            this.chatBuilder.setSelectedModel(fastChatModel?.id)
+            tracer.startActiveSpan('chat.resendRateLimitedMessage', async (span): Promise<void> => {
+                // this.sendChat(params, span)
+                logDebug('Rate limited, switching to fast chat model', 'chatcontroller')
+            })
+            return
+        }
         // Add error to transcript
         if (type === 'transcript') {
             this.chatBuilder.addErrorAsBotMessage(error, ChatBuilder.NO_MODEL)
