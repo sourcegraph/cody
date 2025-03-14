@@ -542,11 +542,11 @@ export interface AutocompleteEditItem extends AutocompleteItemBase {
     originalText: string
     render: {
         inline: {
-            changes: AutoeditChanges[] | null
+            changes?: AutoeditChanges[] | null | undefined
         }
         aside: {
-            image: AutoeditImageDiff | null
-            diff: AutoeditTextDiff | null
+            image?: AutoeditImageDiff | null | undefined
+            diff?: AutoeditTextDiff | null | undefined
         }
     }
 }
@@ -572,7 +572,7 @@ export interface AutoeditImageDiff {
 export interface AutoeditChanges {
     type: 'insert' | 'delete'
     range: vscode.Range
-    text?: string
+    text?: string | null | undefined
 }
 
 export type AutoeditTextDiff = DecorationInfo

@@ -25,7 +25,8 @@ import {
 import { ContextMixer } from '../completions/context/context-mixer'
 
 import { mockLocalStorage } from '../services/LocalStorageProvider'
-import { autoeditAnalyticsLogger, autoeditTriggerKind } from './analytics-logger'
+import { type AutoeditRequestID, autoeditAnalyticsLogger, autoeditTriggerKind } from './analytics-logger'
+import { AutoeditCompletionItem } from './autoedit-completion-item'
 import {
     AUTOEDIT_CONTEXT_FETCHING_DEBOUNCE_INTERVAL,
     AUTOEDIT_TOTAL_DEBOUNCE_INTERVAL,
@@ -481,9 +482,17 @@ describe('AutoeditsProvider', () => {
                 selectedCompletionInfo: completionItem,
             },
         })
+        const id = result?.items[0].id as AutoeditRequestID
         expect(result?.items).toStrictEqual([
-            { insertText: completionItem.text, range: completionItem.range },
+            new AutoeditCompletionItem({
+                id,
+                insertText: completionItem.text,
+                range: completionItem.range,
+            }),
         ])
+        // expect(result?.items).toStrictEqual([
+        //     { insertText: completionItem.text, range: completionItem.range },
+        // ])
     })
 
     describe('Debounce logic', () => {
@@ -513,7 +522,7 @@ describe('AutoeditsProvider', () => {
             // Run all timers to get the result
             await vi.runAllTimersAsync()
             const result = await promiseResult
-            expect(result?.items[0].insertText).toBe('const x = 1\n')
+            expect(result?.items[0].insertText).toBe('const x = 1')
             expect(getModelResponseCalledAt).toBeDefined()
             // Check that getModelResponse was called only after at least AUTOEDIT_TOTAL_DEBOUNCE_INTERVAL have elapsed
             expect(getModelResponseCalledAt! - startTime).toBe(AUTOEDIT_TOTAL_DEBOUNCE_INTERVAL)

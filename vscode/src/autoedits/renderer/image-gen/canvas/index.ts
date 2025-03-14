@@ -32,12 +32,6 @@ async function initFont(): Promise<ArrayBuffer> {
         ? path.join(__dirname, 'DejaVuSansMono.ttf')
         : path.join(__dirname, '../../../../../resources/DejaVuSansMono.ttf')
 
-    console.log('PATH OPTIONS', {
-        usedFontPath: fontPath,
-        assumingDistDirectory: isInDistDirectory,
-        other: path.join(__dirname, '../../../../../resources/DejaVuSansMono.ttf'),
-    })
-
     const buffer = await fs.readFile(fontPath)
     return new Uint8Array(buffer).buffer
 }
