@@ -59,6 +59,8 @@ export interface Model {
     readonly tags: ModelTag[]
 
     readonly modelRef?: ModelRef
+
+    disabled: boolean
 }
 
 interface ModelParams {
@@ -114,6 +116,7 @@ export function createModel({
         tags,
         provider: modelRef.providerId,
         title: title ?? modelRef.modelId,
+        disabled: false,
     }
 }
 

@@ -245,6 +245,7 @@ export interface ModelAvailabilityStatus {
  */
 export class ModelsService {
     private storage: LocalStorageForModelPreferences | undefined
+    private inRateLimitedMode = false
 
     private storedValue: StoredLastValue<ModelsData>
     private syncPreferencesSubscription?: Unsubscribable
@@ -392,9 +393,13 @@ export class ModelsService {
                 if (data === pendingOperation || currentModel === pendingOperation) {
                     return pendingOperation
                 }
-                const models = data.primaryModels
+                let models = data.primaryModels
                     .concat(data.localModels)
                     .filter(model => model.usage.includes(type))
+                // When in rate limited mode, disable all the non fast chat models.
+                if (this.inRateLimitedMode) {
+                    models = models.map(m => ({ ...m, disabled: !m.tags.includes(ModelTag.FastChat) }))
+                }
                 if (!currentModel) {
                     return models
                 }
@@ -530,6 +535,10 @@ export class ModelsService {
         if (!resolved) {
             return false
         }
+        // When in RateLimited mode, only fast chat model is available
+        if (this.inRateLimitedMode) {
+            return resolved.tags.includes(ModelTag.FastChat)
+        }
         const tier = modelTier(resolved)
         // Cody Enterprise users are able to use any models that the backend says is supported.
         if (isEnterpriseUser(authStatus)) {
@@ -623,6 +632,11 @@ export class ModelsService {
         // TODO(sqs)#observe: remove synchronous access here, return an Observable<boolean> instead
         const model = this.getModelByID(modelID)
         return model?.tags.includes(ModelTag.StreamDisabled) ?? false
+    }
+
+    public enableIsRateLimited(): Model[] {
+        this.inRateLimitedMode = true
+        return this.models.filter(m => m.tags.includes(ModelTag.FastChat))
     }
 }
 

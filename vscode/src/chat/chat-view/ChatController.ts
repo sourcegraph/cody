@@ -705,7 +705,10 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
     }
 
     private async sendChat(
-        {
+        params: Parameters<typeof this.handleUserMessage>[0],
+        span: Span
+    ): Promise<void> {
+        const {
             requestID,
             inputText,
             mentions,
@@ -714,9 +717,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             source,
             command,
             manuallySelectedIntent,
-        }: Parameters<typeof this.handleUserMessage>[0],
-        span: Span
-    ): Promise<void> {
+        } = params
         span.addEvent('ChatController.sendChat')
         signal.throwIfAborted()
 
@@ -875,7 +876,18 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 this.postViewTranscript()
                 return
             }
-            if (isRateLimitError(error) || isContextWindowLimitError(error)) {
+            if (isRateLimitError(error)) {
+                this.postError(error, 'transcript')
+                // find the speed model then setSelectedModel to the speed model
+                const fastChatModel = modelsService.enableIsRateLimited()?.[0]
+                this.chatBuilder.setSelectedModel(fastChatModel?.id)
+                recordErrorToSpan(span, error as Error)
+                tracer.startActiveSpan('chat.resendRateLimitedMessage', async (span): Promise<void> => {
+                    this.sendChat(params, span)
+                })
+                return
+            }
+            if (isContextWindowLimitError(error)) {
                 this.postError(error, 'transcript')
             } else {
                 this.postError(
