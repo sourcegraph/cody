@@ -9,8 +9,8 @@ import {
 } from '../../completions/is-completion-visible'
 import {
     type AutoeditRequestID,
-    AutoeditRequestStateForAgentTesting,
-    Phase,
+    type AutoeditRequestStateForAgentTesting,
+    type Phase,
     autoeditAnalyticsLogger,
     autoeditDiscardReason,
 } from '../analytics-logger'

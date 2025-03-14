@@ -227,8 +227,8 @@ describe('Autoedit', () => {
                 // Prediction accurately reflects the edit that should be made.
                 expect(result.insertText).toMatchInlineSnapshot(`
                   "
-                  export function sumAge(humanA: Person, humanB: Person): number {
-                      return humanA.age + humanB.age
+                  export function sumAge(personA: Person, personB: Person): number {
+                      return personA.age + personB.age
                   }
                   "
                 `)
