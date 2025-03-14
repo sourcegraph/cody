@@ -64,6 +64,7 @@ class CodyInlineCompletionProvider : InlineCompletionProvider {
 
     return InlineCompletionSingleSuggestion.build {
       completions.items
+          .mapNotNull { it as? AutocompleteCompletionItem }
           .firstNotNullOfOrNull {
             WriteCommandAction.runWriteCommandAction<InlineCompletionGrayTextElement?>(
                 editor.project) {
