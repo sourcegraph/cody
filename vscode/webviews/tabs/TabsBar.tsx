@@ -4,6 +4,7 @@ import * as Tabs from '@radix-ui/react-tabs'
 import clsx from 'clsx'
 import {
     BookTextIcon,
+    ColumnsIcon,
     DownloadIcon,
     HistoryIcon,
     type LucideProps,
@@ -36,6 +37,7 @@ interface TabsBarProps {
     endpointHistory: string[]
     // Whether to show the Sourcegraph Teams upgrade CTA or not.
     isWorkspacesUpgradeCtaEnabled?: boolean
+    showOpenInEditor?: boolean
 }
 
 type IconComponent = React.ForwardRefExoticComponent<
@@ -70,7 +72,7 @@ interface TabConfig {
 }
 
 export const TabsBar = memo<TabsBarProps>(props => {
-    const { currentView, setView, user, endpointHistory } = props
+    const { currentView, setView, user, endpointHistory, showOpenInEditor } = props
     const { isCodyProUser, IDE } = user
     const tabItems = useTabs({ user })
     const {
@@ -125,14 +127,14 @@ export const TabsBar = memo<TabsBarProps>(props => {
                             />
                         </Tabs.Trigger>
                     ))}
-
                     <div className="tw-flex tw-ml-auto">
                         <TabButton
                             prominent
-                            Icon={MessageSquarePlusIcon}
-                            title="New Chat"
+                            Icon={showOpenInEditor ? ColumnsIcon : MessageSquarePlusIcon}
+                            title={showOpenInEditor ? 'Open in Editor' : 'New Chat'}
                             IDE={IDE}
                             tooltipExtra={
+                                !showOpenInEditor &&
                                 IDE === CodyIDE.VSCode && (
                                     <Kbd macOS="shift+opt+/" linuxAndWindows="shift+alt+/" />
                                 )
@@ -142,11 +144,15 @@ export const TabsBar = memo<TabsBarProps>(props => {
                             onClick={() =>
                                 handleSubActionClick({
                                     changesView: View.Chat,
-                                    command: getCreateNewChatCommand({
-                                        IDE,
-                                        webviewType,
-                                        multipleWebviewsEnabled,
-                                    }),
+                                    command: `${
+                                        showOpenInEditor
+                                            ? 'cody.chat.moveToEditor'
+                                            : getCreateNewChatCommand({
+                                                  IDE,
+                                                  webviewType,
+                                                  multipleWebviewsEnabled,
+                                              })
+                                    }`,
                                 })
                             }
                         />

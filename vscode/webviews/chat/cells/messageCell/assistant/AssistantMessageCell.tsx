@@ -105,13 +105,13 @@ export const AssistantMessageCell: FunctionComponent<{
                                 />
                             )
                         ) : null}
-                        {omniboxEnabled && !isLoading && message.search && (
+                        {omniboxEnabled && !isLoading && message.search ? (
                             <SearchResults
                                 message={message as ChatMessageWithSearch}
                                 onSelectedFiltersUpdate={onSelectedFiltersUpdate}
                                 enableContextSelection={isLastInteraction}
                             />
-                        )}
+                        ) : null}
                         {!isSearchIntent && displayMarkdown ? (
                             <ChatMessageContent
                                 displayMarkdown={displayMarkdown}
@@ -148,16 +148,13 @@ export const AssistantMessageCell: FunctionComponent<{
                     </>
                 }
                 footer={
-                    chatEnabled &&
-                    humanMessage && (
+                    isAborted ? (
                         <div className="tw-py-3 tw-flex tw-flex-col tw-gap-2">
-                            {isAborted && (
-                                <div className="tw-text-sm tw-text-muted-foreground tw-mt-4">
-                                    Output stream stopped
-                                </div>
-                            )}
+                            <div className="tw-text-sm tw-text-muted-foreground tw-mt-4">
+                                Output stream stopped
+                            </div>
                         </div>
-                    )
+                    ) : null
                 }
             />
         )

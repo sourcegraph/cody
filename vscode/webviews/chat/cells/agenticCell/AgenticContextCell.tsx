@@ -53,14 +53,12 @@ export const AgenticContextCell: FunctionComponent<{
                             <AccordionTrigger
                                 onClick={() => triggerAccordion()}
                                 title="Agentic chat"
-                                className="tw-flex tw-justify-center tw-items-center tw-gap-4"
+                                className="tw-flex tw-justify-center tw-items-center"
                                 disabled={!processes?.some(p => p.id)}
                             >
                                 {isContextLoading ? (
                                     <Loader2Icon size={16} className="tw-animate-spin" />
-                                ) : (
-                                    <BrainIcon size={16} className={statusClassName} />
-                                )}
+                                ) : null}
                                 <span className="tw-flex tw-items-baseline">
                                     Agentic chat
                                     <span className="tw-opacity-60 tw-text-sm tw-ml-2">

@@ -32,7 +32,7 @@ export function ThinkingCell({ isThinking, thought, isOpen, setIsOpen }: Thinkin
         expanded: {
             height: 'auto',
             opacity: 1,
-            marginTop: '1rem',
+            marginTop: '0.5rem',
             marginBottom: '0.5rem',
         },
     }
@@ -50,7 +50,7 @@ export function ThinkingCell({ isThinking, thought, isOpen, setIsOpen }: Thinkin
     }, [setIsOpen])
 
     return (
-        <div className="tw-flex tw-flex-col tw-justify-center tw-w-full tw-gap-2 tw-my-2">
+        <div className="tw-flex tw-flex-col tw-justify-center tw-w-full tw-gap-2 tw-mb-4">
             <Accordion
                 type="single"
                 collapsible={true}
@@ -64,7 +64,7 @@ export function ThinkingCell({ isThinking, thought, isOpen, setIsOpen }: Thinkin
                             <AccordionTrigger
                                 onClick={() => triggerAccordion()}
                                 title="Thought Process"
-                                className="tw-flex tw-justify-center tw-items-center tw-gap-4"
+                                className="tw-flex tw-justify-center tw-items-center"
                             >
                                 {isThinking ? (
                                     <LoaderIcon size={16} className="tw-animate-spin" />
@@ -74,12 +74,12 @@ export function ThinkingCell({ isThinking, thought, isOpen, setIsOpen }: Thinkin
                                 </span>
                             </AccordionTrigger>
                         }
-                        contentClassName="tw-flex tw-flex-col tw-gap-2 tw-max-w-full"
+                        contentClassName="tw-flex tw-flex-col tw-max-w-full"
                         data-testid="context"
                     >
-                        <AccordionContent className="tw-flex tw-flex-col tw-gap-4" overflow={false}>
+                        <AccordionContent className="tw-flex tw-flex-col" overflow={false}>
                             <AnimatePresence initial={false}>
-                                {isOpen && (
+                                {isOpen ? (
                                     <motion.div
                                         key="content"
                                         initial="collapsed"
@@ -88,11 +88,11 @@ export function ThinkingCell({ isThinking, thought, isOpen, setIsOpen }: Thinkin
                                         variants={variants}
                                         transition={{ duration: 0.2, ease: 'easeInOut' }}
                                         style={{ overflow: 'hidden' }}
-                                        className="tw-pl-4 tw-text-muted-foreground tw-dark:text-zinc-400 tw-border-l tw-flex tw-flex-col tw-gap-4 !tw-my-2"
+                                        className="tw-pl-4 tw-text-muted-foreground tw-dark:text-zinc-400 tw-border-l tw-flex tw-flex-col tw-gap-2"
                                     >
                                         <MarkdownFromCody>{thought}</MarkdownFromCody>
                                     </motion.div>
-                                )}
+                                ) : null}
                             </AnimatePresence>
                         </AccordionContent>
                     </Cell>

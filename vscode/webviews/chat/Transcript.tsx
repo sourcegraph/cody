@@ -125,7 +125,7 @@ export const Transcript: FC<TranscriptProps> = props => {
 
     return (
         <div
-            className={clsx(' tw-px-8 tw-pb-6 tw-flex tw-flex-col', {
+            className={clsx(' tw-px-8 tw-py-4 tw-flex tw-flex-col tw-gap-4', {
                 'tw-flex-grow': transcript.length > 0,
             })}
         >
