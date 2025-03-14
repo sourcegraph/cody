@@ -9,6 +9,7 @@ import {
 } from '../../completions/is-completion-visible'
 import {
     type AutoeditRequestID,
+    AutoeditRequestStateForAgentTesting,
     Phase,
     autoeditAnalyticsLogger,
     autoeditDiscardReason,
@@ -76,6 +77,12 @@ export interface AutoEditsRendererManager extends vscode.Disposable {
     hasActiveEdit(): boolean
 
     /**
+     * Promise that resolves with the request ID when the timeout completes.
+     * Used for agent integration tests to wait for the visibility timeout.
+     */
+    testing_completionSuggestedPromise: Promise<AutoeditRequestID> | undefined
+
+    /**
      * Method for test harnesses to control the completion visibility delay.
      */
     testing_setCompletionVisibilityDelay(delay: number): void
@@ -83,7 +90,7 @@ export interface AutoEditsRendererManager extends vscode.Disposable {
     /**
      * Method for test harnesses to get a specific request.
      */
-    testing_getTestingAutoeditEvent(id: AutoeditRequestID): Phase | undefined
+    testing_getTestingAutoeditEvent(id: AutoeditRequestID): AutoeditRequestStateForAgentTesting
 
     /**
      * Dismissed an active edit and frees resources.
@@ -226,70 +233,82 @@ export class AutoEditsDefaultRendererManager
         // Clear any existing timeouts, only one suggestion can be shown at a time
         clearTimeout(this.autoeditSuggestedTimeoutId)
 
-        // Mark suggestion as read after a delay if it's still visible.
-        this.autoeditSuggestedTimeoutId = setTimeout(() => {
-            if (this.activeRequest?.requestId === requestId) {
-                const {
-                    document: invokedDocument,
-                    position: invokedPosition,
-                    docContext,
-                    renderOutput,
-                } = this.activeRequest
+        this.testing_completionSuggestedPromise = new Promise(resolve => {
+            // Mark suggestion as read after a delay if it's still visible
+            this.autoeditSuggestedTimeoutId = setTimeout(() => {
+                resolve(requestId)
+                this.testing_completionSuggestedPromise = undefined
 
-                const { activeTextEditor } = vscode.window
-
-                if (!activeTextEditor || !areSameUriDocs(activeTextEditor.document, invokedDocument)) {
-                    // User is no longer in the same document as the completion
-                    return
-                }
-
-                const inlineCompletionItems =
-                    'inlineCompletionItems' in renderOutput ? renderOutput.inlineCompletionItems : []
-                // If a completion is rendered as an inline completion item we have to
-                // manually check if the visibility context for the item is still valid and
-                // it's still present in the document.
-                //
-                // If the invoked cursor position does not match the current cursor position
-                // we check if the items insert text matches the current document context.
-                // If a user continued typing as suggested the insert text is still present
-                // and we can a completion as read.
-                if (inlineCompletionItems?.[0]) {
-                    const visibilityContext = getLatestVisibilityContext({
-                        invokedPosition,
-                        invokedDocument,
-                        activeTextEditor,
+                if (this.activeRequest?.requestId === requestId) {
+                    const {
+                        document: invokedDocument,
+                        position: invokedPosition,
                         docContext,
-                        inlineCompletionContext: undefined,
-                        maxPrefixLength: tokensToChars(autoeditsProviderConfig.tokenLimit.prefixTokens),
-                        maxSuffixLength: tokensToChars(autoeditsProviderConfig.tokenLimit.suffixTokens),
-                        // TODO: implement suggest widget support
-                        shouldTakeSuggestWidgetSelectionIntoAccount: () => false,
-                    })
+                        renderOutput,
+                    } = this.activeRequest
 
-                    const isStillVisible = isCompletionVisible(
-                        inlineCompletionItems[0].insertText as string,
-                        visibilityContext.document,
-                        {
+                    const { activeTextEditor } = vscode.window
+
+                    if (
+                        !activeTextEditor ||
+                        !areSameUriDocs(activeTextEditor.document, invokedDocument)
+                    ) {
+                        // User is no longer in the same document as the completion
+                        return
+                    }
+
+                    const inlineCompletionItems =
+                        'inlineCompletionItems' in renderOutput ? renderOutput.inlineCompletionItems : []
+                    // If a completion is rendered as an inline completion item we have to
+                    // manually check if the visibility context for the item is still valid and
+                    // it's still present in the document.
+                    //
+                    // If the invoked cursor position does not match the current cursor position
+                    // we check if the items insert text matches the current document context.
+                    // If a user continued typing as suggested the insert text is still present
+                    // and we can a completion as read.
+                    if (inlineCompletionItems?.[0]) {
+                        const visibilityContext = getLatestVisibilityContext({
                             invokedPosition,
-                            latestPosition: visibilityContext.position,
-                        },
-                        visibilityContext.docContext,
-                        visibilityContext.inlineCompletionContext,
-                        visibilityContext.takeSuggestWidgetSelectionIntoAccount,
-                        undefined // abort signal
-                    )
+                            invokedDocument,
+                            activeTextEditor,
+                            docContext,
+                            inlineCompletionContext: undefined,
+                            maxPrefixLength: tokensToChars(
+                                autoeditsProviderConfig.tokenLimit.prefixTokens
+                            ),
+                            maxSuffixLength: tokensToChars(
+                                autoeditsProviderConfig.tokenLimit.suffixTokens
+                            ),
+                            // TODO: implement suggest widget support
+                            shouldTakeSuggestWidgetSelectionIntoAccount: () => false,
+                        })
 
-                    if (isStillVisible) {
+                        const isStillVisible = isCompletionVisible(
+                            inlineCompletionItems[0].insertText as string,
+                            visibilityContext.document,
+                            {
+                                invokedPosition,
+                                latestPosition: visibilityContext.position,
+                            },
+                            visibilityContext.docContext,
+                            visibilityContext.inlineCompletionContext,
+                            visibilityContext.takeSuggestWidgetSelectionIntoAccount,
+                            undefined // abort signal
+                        )
+
+                        if (isStillVisible) {
+                            autoeditAnalyticsLogger.markAsRead(requestId)
+                        }
+                    } else {
+                        // For suggestions rendered as inline decoration we can rely on our own dismissal
+                        // logic (document change/selection change callback). So having a truthy `this.activeRequest`
+                        // is enough to mark a suggestion as read.
                         autoeditAnalyticsLogger.markAsRead(requestId)
                     }
-                } else {
-                    // For suggestions rendered as inline decoration we can rely on our own dismissal
-                    // logic (document change/selection change callback). So having a truthy `this.activeRequest`
-                    // is enough to mark a suggestion as read.
-                    autoeditAnalyticsLogger.markAsRead(requestId)
                 }
-            }
-        }, this.AUTOEDIT_VISIBLE_DELAY_MS)
+            }, this.AUTOEDIT_VISIBLE_DELAY_MS)
+        })
     }
 
     protected async handleDidHideSuggestion(decorator: AutoEditsDecorator | null): Promise<void> {
@@ -324,6 +343,9 @@ export class AutoEditsDefaultRendererManager
             return this.rejectActiveEdit()
         }
 
+        // Reset the testing promise when accepting
+        this.testing_completionSuggestedPromise = undefined
+
         await this.handleDidHideSuggestion(decorator)
         autoeditAnalyticsLogger.markAsAccepted(activeRequest.requestId)
 
@@ -347,6 +369,9 @@ export class AutoEditsDefaultRendererManager
 
     protected async rejectActiveEdit(): Promise<void> {
         const { activeRequest, decorator } = this
+
+        // Reset the testing promise when rejecting
+        this.testing_completionSuggestedPromise = undefined
 
         if (decorator) {
             await this.handleDidHideSuggestion(this.decorator)
@@ -465,6 +490,13 @@ export class AutoEditsDefaultRendererManager
      * The amount of time before we consider an auto-edit to be "visible" to the user.
      */
     private AUTOEDIT_VISIBLE_DELAY_MS = 750
+
+    /**
+     * Promise that resolves with the request ID when the timeout completes.
+     * Used for agent integration tests to wait for the visibility timeout.
+     */
+    public testing_completionSuggestedPromise: Promise<AutoeditRequestID> | undefined = undefined
+
     /**
      * Method for test harnesses to control the completion visibility delay.
      */
@@ -475,8 +507,13 @@ export class AutoEditsDefaultRendererManager
     /**
      * Method for test harnesses to get the active request.
      */
-    public testing_getTestingAutoeditEvent(id: AutoeditRequestID): Phase | undefined {
-        return autoeditAnalyticsLogger.getRequest(id)?.phase
+    public testing_getTestingAutoeditEvent(id: AutoeditRequestID): { phase?: Phase; read?: boolean } {
+        const request = autoeditAnalyticsLogger.getRequest(id)
+        const payload = request?.payload
+        return {
+            phase: request?.phase,
+            read: payload && 'isRead' in payload ? payload.isRead : undefined,
+        }
     }
 
     public dispose(): void {

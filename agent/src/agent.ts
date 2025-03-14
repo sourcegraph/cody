@@ -1043,7 +1043,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
             'testing/autocomplete/awaitPendingVisibilityTimeout',
             async () => {
                 const provider = await vscode_shim.completionProvider()
-                return provider.testing_completionSuggestedPromise
+                return provider.testing_completionSuggestedPromise as Promise<any>
             }
         )
 

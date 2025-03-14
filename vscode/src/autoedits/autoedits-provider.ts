@@ -24,7 +24,7 @@ import type { AutoeditsModelAdapter, AutoeditsPrompt, ModelResponse } from './ad
 import { createAutoeditsModelAdapter } from './adapters/create-adapter'
 import {
     type AutoeditRequestID,
-    type Phase,
+    type AutoeditRequestStateForAgentTesting,
     autoeditAnalyticsLogger,
     autoeditDiscardReason,
     autoeditSource,
@@ -675,7 +675,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
         await vscode.commands.executeCommand('editor.action.inlineSuggest.trigger')
     }
 
-    public getTestingAutoeditEvent(id: AutoeditRequestID): Phase | undefined {
+    public getTestingAutoeditEvent(id: AutoeditRequestID): AutoeditRequestStateForAgentTesting {
         return this.rendererManager.testing_getTestingAutoeditEvent(id)
     }
 
@@ -688,10 +688,17 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
     }
 
     /**
+     * Added for testing async code in the agent integration tests where we don't have access
+     * to the vitest fakeTimers API.
+     */
+    public get testing_completionSuggestedPromise(): Promise<AutoeditRequestID> | undefined {
+        return this.rendererManager.testing_completionSuggestedPromise
+    }
+
+    /**
      * Method for agent integration tests to control the completion visibility delay.
      * See: vscode/src/completions/inline-completion-item-provider.ts
      */
-    public testing_completionSuggestedPromise: undefined
     public testing_setCompletionVisibilityDelay(delay: number): void {
         this.rendererManager.testing_setCompletionVisibilityDelay(delay)
     }

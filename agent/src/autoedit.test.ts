@@ -2,6 +2,7 @@ import path from 'node:path'
 import { toMatchImageSnapshot } from 'jest-image-snapshot'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import type * as vscode from 'vscode'
+import { sleep } from '../../vscode/src/completions/utils'
 import { TESTING_CREDENTIALS } from '../../vscode/src/testutils/testing-credentials'
 import { TestClient } from './TestClient'
 import { TestWorkspace } from './TestWorkspace'
@@ -71,10 +72,27 @@ describe('Autoedit', () => {
             // Tell completion provider that the completion was shown to the user.
             client.notify('autocomplete/completionSuggested', { completionID })
 
-            const autoeditPhase = await client.request('testing/autocomplete/autoeditEvent', {
+            // Wait for only half of the time required to mark the completion as read.
+            await sleep(visibilityDelay / 2)
+
+            // Change the cursor position discarding the current completion.
+            // Since the completion was visible only `visibilityDelay / 2` it should not be marked as read.
+            await client.changeFile(uri, {
+                selection: {
+                    start: { line: 0, character: 0 },
+                    end: { line: 0, character: 0 },
+                },
+            })
+
+            // Now the completion visibility timeout is elapsed but because we discarded it, it should not be
+            // marked as read because we moved the cursor on the previous step and discarded the completion.
+            await client.request('testing/autocomplete/awaitPendingVisibilityTimeout', null)
+
+            const autoeditEvent = await client.request('testing/autocomplete/autoeditEvent', {
                 completionID,
             })
-            expect(autoeditPhase).toBe('suggested')
+            expect(autoeditEvent?.phase).toBe('rejected')
+            expect(autoeditEvent?.read).toBe(false)
 
             // The LLM provided with a completion result.
             expect(result.items.length).toBeGreaterThan(0)
@@ -109,12 +127,15 @@ describe('Autoedit', () => {
 
             // Tell completion provider that the completion was shown to the user.
             client.notify('autocomplete/completionSuggested', { completionID })
+            // Wait for the completion visibility timeout we use to ensure users read a completion.
+            await client.request('testing/autocomplete/awaitPendingVisibilityTimeout', null)
             client.notify('autocomplete/completionAccepted', { completionID })
 
-            const autoeditPhase = await client.request('testing/autocomplete/autoeditEvent', {
+            const autoeditEvent = await client.request('testing/autocomplete/autoeditEvent', {
                 completionID,
             })
-            expect(autoeditPhase).toBe('accepted')
+            expect(autoeditEvent?.phase).toBe('accepted')
+            expect(autoeditEvent?.read).toBe(true)
 
             // The LLM provided with a completion result.
             expect(result.items.length).toBeGreaterThan(0)
