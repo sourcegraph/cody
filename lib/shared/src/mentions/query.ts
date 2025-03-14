@@ -1,4 +1,5 @@
 import type { RangeData } from '../common/range'
+import { GLOBAL_SEARCH_PROVIDER_URI } from '../context/openctx/api'
 import {
     type ContextMentionProviderID,
     type ContextMentionProviderMetadata,
@@ -75,9 +76,19 @@ export function parseMentionQuery(
     }
 
     const { textWithoutRange, maybeHasRangeSuffix, range } = extractRangeFromFileMention(query)
+
+    if (maybeHasRangeSuffix) {
+        return {
+            provider: FILE_CONTEXT_MENTION_PROVIDER.id,
+            text: textWithoutRange,
+            maybeHasRangeSuffix,
+            range,
+        }
+    }
+
     return {
-        provider: FILE_CONTEXT_MENTION_PROVIDER.id,
-        text: textWithoutRange,
+        provider: GLOBAL_SEARCH_PROVIDER_URI,
+        text: query,
         maybeHasRangeSuffix,
         range,
     }

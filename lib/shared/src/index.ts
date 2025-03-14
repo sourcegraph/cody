@@ -351,6 +351,7 @@ export {
     openCtxProviderMetadata,
     FILE_CONTEXT_MENTION_PROVIDER,
     SYMBOL_CONTEXT_MENTION_PROVIDER,
+    FREQUENTLY_USED_CONTEXT_MENTION_PROVIDER,
     type ContextMentionProviderID,
     type ContextMentionProviderMetadata,
 } from './mentions/api'
@@ -384,9 +385,11 @@ export {
     WEB_PROVIDER_URI,
     GIT_OPENCTX_PROVIDER_URI,
     CODE_SEARCH_PROVIDER_URI,
+    GLOBAL_SEARCH_PROVIDER_URI,
     currentOpenCtxController,
     RULES_PROVIDER_URI,
 } from './context/openctx/api'
+export * from './frequentlyUsedCache'
 export * from './context/openctx/context'
 export * from './lexicalEditor/editorState'
 export * from './lexicalEditor/nodes'

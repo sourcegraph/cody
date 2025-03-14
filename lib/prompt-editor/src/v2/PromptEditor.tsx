@@ -4,12 +4,15 @@ import {
     type ContextMentionProviderMetadata,
     FILE_CONTEXT_MENTION_PROVIDER,
     FILE_RANGE_TOOLTIP_LABEL,
+    FREQUENTLY_USED_CONTEXT_MENTION_PROVIDER,
     NO_SYMBOL_MATCHES_HELP_LABEL,
     REMOTE_DIRECTORY_PROVIDER_URI,
+    REMOTE_FILE_PROVIDER_URI,
     SYMBOL_CONTEXT_MENTION_PROVIDER,
     type SerializedContextItem,
     type SerializedPromptEditorState,
     type SerializedPromptEditorValue,
+    getFrequentlyUsedContextItems,
     parseMentionQuery,
 } from '@sourcegraph/cody-shared'
 import { clsx } from 'clsx'
@@ -32,6 +35,7 @@ import styles from './PromptEditor.module.css'
 import { fromSerializedPromptEditorState, toSerializedPromptEditorValue } from './lexical-interop'
 import { schema } from './promptInput'
 import 'prosemirror-view/style/prosemirror.css'
+import { Observable } from 'observable-fns'
 import {
     MentionMenuContextItemContent,
     MentionMenuProviderItemContent,
@@ -58,6 +62,8 @@ interface Props extends KeyboardEventPluginProps {
     editorRef?: React.RefObject<PromptEditorRefAPI>
 
     openExternalLink: (uri: string) => void
+
+    authStatus: { endpoint: string; username?: string }
 }
 
 interface PromptEditorRefAPI {
@@ -92,6 +98,8 @@ interface PromptEditorRefAPI {
 
 const SUGGESTION_LIST_LENGTH_LIMIT = 20
 
+const hiddenProviders = [REMOTE_FILE_PROVIDER_URI, REMOTE_DIRECTORY_PROVIDER_URI]
+
 /**
  * The component for composing and editing prompts.
  */
@@ -108,6 +116,7 @@ export const PromptEditor: FunctionComponent<Props> = ({
     editorRef: ref,
     onEnterKey,
     openExternalLink,
+    authStatus,
 }) => {
     // We use the interaction ID to differentiate between different
     // invocations of the mention-menu. That way upstream we don't trigger
@@ -130,13 +139,26 @@ export const PromptEditor: FunctionComponent<Props> = ({
             const queryLower = query.toLowerCase().trim()
             const filteredInitialContextItems = provider
                 ? []
-                : initialContext.filter(item =>
-                      queryLower
-                          ? item.title?.toLowerCase().includes(queryLower) ||
-                            item.uri.toString().toLowerCase().includes(queryLower) ||
-                            item.description?.toString().toLowerCase().includes(queryLower)
-                          : true
-                  )
+                : queryLower
+                  ? initialContext.filter(item => item.title?.toLowerCase().startsWith(queryLower))
+                  : initialContext
+
+            const codebases = defaultContext.corpusContext
+                .filter(item => item.type === 'repository')
+                .map(item => item.repoName)
+
+            // If this is the frequently used provider, fetch and return the frequently used items.
+            // Since frequently used items are stored in localStorage which is only accessible
+            // inside the webview, we need to fetch them here rather than from the extension API.
+            if (provider?.id === FREQUENTLY_USED_CONTEXT_MENTION_PROVIDER.id && authStatus.username) {
+                return Observable.of(
+                    getFrequentlyUsedContextItems({
+                        query,
+                        authStatus: { endpoint: authStatus.endpoint, username: authStatus.username },
+                        codebases,
+                    }).map(item => ({ ...item, source: ContextItemSource.User }))
+                )
+            }
 
             // NOTE: It's important to only emit after we receive new mentions menu data.
             // This ensures that we display the 'old' menu items until new have arrived
@@ -145,21 +167,53 @@ export const PromptEditor: FunctionComponent<Props> = ({
                 ...parseMentionQuery(query, provider ?? null),
                 interactionID: interactionID.current,
                 contextRemoteRepositoriesNames: mentionSettings.remoteRepositoriesNames,
-            }).map(result => [
-                ...result.providers,
-                ...filteredInitialContextItems,
-                ...(result.items
-                    ?.filter(
-                        item =>
-                            !filteredInitialContextItems.some(initialItem =>
-                                areContextItemsEqual(item, initialItem)
-                            )
-                    )
-                    .slice(0, SUGGESTION_LIST_LENGTH_LIMIT)
-                    .map(item => ({ ...item, source: ContextItemSource.User })) ?? []),
-            ])
+            }).map(result => {
+                // Get user-provided context items, limited to max suggestions and marked as user source
+                const items =
+                    result.items
+                        ?.slice(0, SUGGESTION_LIST_LENGTH_LIMIT)
+                        .map(item => ({ ...item, source: ContextItemSource.User })) ?? []
+
+                // Return early with just the items if a specific provider is selected
+                if (provider) {
+                    return items
+                }
+
+                // Get frequently used items (max 3) only if no provider or query specified
+                const frequentlyUsedItems = authStatus.username
+                    ? getFrequentlyUsedContextItems({
+                          query,
+                          authStatus: { endpoint: authStatus.endpoint, username: authStatus.username },
+                          codebases,
+                      }).slice(0, 3)
+                    : []
+
+                // Get available context providers, filtered to remove hidden ones
+                const providers = result.providers.filter(provider => {
+                    if (hiddenProviders.includes(provider.id)) {
+                        return false
+                    }
+
+                    // Only show the frequently used provider if there are items
+                    if (provider.id === FREQUENTLY_USED_CONTEXT_MENTION_PROVIDER.id) {
+                        return frequentlyUsedItems.length > 0
+                    }
+
+                    return true
+                })
+
+                // If there's a search query:
+                // Return filtered initial context + available providers + matching items
+                if (query) {
+                    return [...filteredInitialContextItems, ...providers, ...items]
+                }
+
+                // If no query:
+                // Return filtered initial context + frequently used items + available providers + all items
+                return [...filteredInitialContextItems, ...frequentlyUsedItems, ...providers, ...items]
+            })
         },
-        [mentionMenuData, mentionSettings, defaultContext]
+        [mentionMenuData, mentionSettings, defaultContext, authStatus.endpoint, authStatus.username]
     )
 
     const [input, api] = usePromptInput({
@@ -346,8 +400,4 @@ function normalizeEditorStateJSON(
     value: SerializedEditorState<SerializedLexicalNode>
 ): SerializedEditorState<SerializedLexicalNode> {
     return JSON.parse(JSON.stringify(value))
-}
-
-function areContextItemsEqual(a: ContextItem, b: ContextItem): boolean {
-    return a.type === b.type && a.uri.toString() === b.uri.toString()
 }

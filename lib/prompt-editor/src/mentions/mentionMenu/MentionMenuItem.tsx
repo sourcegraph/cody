@@ -2,6 +2,7 @@ import {
     type ContextItem,
     type ContextMentionProviderMetadata,
     FILE_CONTEXT_MENTION_PROVIDER,
+    FREQUENTLY_USED_CONTEXT_MENTION_PROVIDER,
     IGNORED_FILE_WARNING_LABEL,
     LARGE_FILE_WARNING_LABEL,
     type MentionQuery,
@@ -21,6 +22,7 @@ import {
     ArrowRightIcon,
     BookCheckIcon,
     BoxIcon,
+    ClockIcon,
     DatabaseIcon,
     ExternalLinkIcon,
     FileIcon,
@@ -99,7 +101,7 @@ export const MentionMenuContextItemContent: FunctionComponent<{
     const isLink = item.type === 'open-link'
 
     const iconId =
-        item.icon || (isSymbol ? (isClassSymbol ? 'symbol-structure' : 'symbol-method') : null)
+        item.icon || (isSymbol ? (isClassSymbol ? 'symbol-structure' : 'symbol-method') : item.type)
     const Icon = iconId ? iconForItem[iconId] : null
     const { title, displayName } = getMentionItemTitleAndDisplayName(item)
     const description = getDescription(item, query)
@@ -184,6 +186,7 @@ export const iconForProvider: Record<
     [REMOTE_DIRECTORY_PROVIDER_URI]: FolderGitIcon,
     [WEB_PROVIDER_URI]: LinkIcon,
     [RULES_PROVIDER_URI]: BookCheckIcon,
+    [FREQUENTLY_USED_CONTEXT_MENTION_PROVIDER.id]: ClockIcon,
 }
 
 const iconForItem: Record<
@@ -202,4 +205,6 @@ const iconForItem: Record<
     'square-dashed-mouse-pointer': SquareDashedMousePointerIcon,
     'layout-menubar': LayoutPanelTopIcon,
     search: SearchIcon,
+    repository: FolderGitIcon,
+    tree: FolderGitIcon,
 }
