@@ -166,6 +166,17 @@ describe('Autoedit', () => {
                 position,
                 triggerKind: 'Automatic',
             })) as AutocompleteResult
+            const id = result.items[0].id
+
+            // Tell completion provider that the completion was shown to the user.
+            client.notify('autocomplete/completionSuggested', { completionID: id })
+            // Wait for the completion visibility timeout we use to ensure users read a completion.
+            await client.request('testing/autocomplete/awaitPendingVisibilityTimeout', null)
+
+            const autoeditEvent = await client.request('testing/autocomplete/autoeditEvent', {
+                completionID: id,
+            })
+            expect(autoeditEvent?.phase).toBe('read')
 
             // Expect the result to have at least one item
             expect(result.items.length).toBeGreaterThan(0)
