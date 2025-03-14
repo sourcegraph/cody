@@ -31,6 +31,7 @@ import { autoeditIdRegistry } from './suggestion-id-registry'
 import {
     type AcceptedState,
     type AutoeditDiscardReasonMetadata,
+    type AutoeditRejectReasonMetadata,
     type AutoeditRequestID,
     type ContextLoadedState,
     type DiscardedState,
@@ -292,7 +293,13 @@ export class AutoeditAnalyticsLogger {
         }
     }
 
-    public markAsRejected(requestId: AutoeditRequestID): void {
+    public markAsRejected({
+        requestId,
+        rejectReason,
+    }: {
+        requestId: AutoeditRequestID
+        rejectReason: AutoeditRejectReasonMetadata
+    }): void {
         const rejectedAt = getTimeNowInMillis()
 
         const result = this.tryTransitionTo(requestId, 'rejected', request => ({
@@ -304,6 +311,7 @@ export class AutoeditAnalyticsLogger {
                 isRead: 'readAt' in request,
                 timeFromSuggestedAt: rejectedAt - request.suggestedAt,
                 suggestionsStartedSinceLastSuggestion: this.autoeditsStartedSinceLastSuggestion,
+                rejectReason,
             },
         }))
 

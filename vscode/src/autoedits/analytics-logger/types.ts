@@ -118,6 +118,20 @@ export const autoeditDiscardReason = {
 export type AutoeditDiscardReasonMetadata =
     (typeof autoeditDiscardReason)[keyof typeof autoeditDiscardReason]
 
+export const autoeditRejectReason = {
+    dismissCommand: 1,
+    onDidChangeTextDocument: 2,
+    onDidChangeActiveTextEditor: 3,
+    onDidCloseTextDocument: 4,
+    onDidChangeTextEditorSelection: 5,
+    handleDidShowSuggestion: 6,
+    acceptActiveEdit: 7,
+    disposal: 8,
+} as const
+
+export type AutoeditRejectReasonMetadata =
+    (typeof autoeditRejectReason)[keyof typeof autoeditRejectReason]
+
 /**
  * A stable ID that identifies a particular autoedit suggestion. If the same text
  * and context recurs, we reuse this ID to avoid double-counting.
@@ -307,7 +321,10 @@ export interface RejectedState extends Omit<SuggestedState, 'phase' | 'payload'>
     suggestionLoggedAt?: number
     /** Optional because it might be accepted before the read timeout */
     readAt?: number
-    payload: FinalPayload
+    payload: FinalPayload & {
+        /** Reason why the suggestion was rejected. */
+        rejectReason: AutoeditRejectReasonMetadata
+    }
 }
 
 export interface DiscardedState extends Omit<StartedState, 'phase' | 'payload'> {

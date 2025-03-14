@@ -8,9 +8,11 @@ import {
     isCompletionVisible,
 } from '../../completions/is-completion-visible'
 import {
+    type AutoeditRejectReasonMetadata,
     type AutoeditRequestID,
     autoeditAnalyticsLogger,
     autoeditDiscardReason,
+    autoeditRejectReason,
 } from '../analytics-logger'
 import { autoeditsProviderConfig } from '../autoedits-config'
 import type { CodeToReplaceData } from '../prompt/prompt-utils'
@@ -95,7 +97,9 @@ export class AutoEditsDefaultRendererManager
         super()
         this.disposables.push(
             vscode.commands.registerCommand('cody.supersuggest.accept', () => this.acceptActiveEdit()),
-            vscode.commands.registerCommand('cody.supersuggest.dismiss', () => this.rejectActiveEdit()),
+            vscode.commands.registerCommand('cody.supersuggest.dismiss', () =>
+                this.rejectActiveEdit(autoeditRejectReason.dismissCommand)
+            ),
             vscode.workspace.onDidChangeTextDocument(event => this.onDidChangeTextDocument(event)),
             vscode.window.onDidChangeTextEditorSelection(event =>
                 this.onDidChangeTextEditorSelection(event)
@@ -116,19 +120,19 @@ export class AutoEditsDefaultRendererManager
             // else, we will falsely discard the suggestion on unrelated changes such as changes in output panel.
             areSameUriDocs(event.document, this.activeRequest?.document)
         ) {
-            this.rejectActiveEdit()
+            this.rejectActiveEdit(autoeditRejectReason.onDidChangeTextDocument)
         }
     }
 
     protected onDidChangeActiveTextEditor(editor: vscode.TextEditor | undefined): void {
         if (!editor || !areSameUriDocs(editor.document, this.activeRequest?.document)) {
-            this.rejectActiveEdit()
+            this.rejectActiveEdit(autoeditRejectReason.onDidChangeActiveTextEditor)
         }
     }
 
     protected onDidCloseTextDocument(document: vscode.TextDocument): void {
         if (areSameUriDocs(document, this.activeRequest?.document)) {
-            this.rejectActiveEdit()
+            this.rejectActiveEdit(autoeditRejectReason.onDidCloseTextDocument)
         }
     }
 
@@ -147,7 +151,7 @@ export class AutoEditsDefaultRendererManager
         ) {
             const currentSelectionRange = event.selections.at(-1)
             if (!currentSelectionRange?.intersection(this.activeRequest.codeToReplaceData.range)) {
-                this.rejectActiveEdit()
+                this.rejectActiveEdit(autoeditRejectReason.onDidChangeTextEditorSelection)
             }
         }
     }
@@ -188,7 +192,7 @@ export class AutoEditsDefaultRendererManager
     }
 
     public async handleDidShowSuggestion(requestId: AutoeditRequestID): Promise<void> {
-        await this.rejectActiveEdit()
+        await this.rejectActiveEdit(autoeditRejectReason.handleDidShowSuggestion)
 
         const request = autoeditAnalyticsLogger.getRequest(requestId)
         if (!request) {
@@ -300,7 +304,7 @@ export class AutoEditsDefaultRendererManager
             !activeRequest ||
             !areSameUriDocs(editor.document, this.activeRequest?.document)
         ) {
-            return this.rejectActiveEdit()
+            return this.rejectActiveEdit(autoeditRejectReason.acceptActiveEdit)
         }
 
         await this.handleDidHideSuggestion(decorator)
@@ -319,7 +323,7 @@ export class AutoEditsDefaultRendererManager
         })
     }
 
-    protected async rejectActiveEdit(): Promise<void> {
+    protected async rejectActiveEdit(rejectReason: AutoeditRejectReasonMetadata): Promise<void> {
         const { activeRequest, decorator } = this
 
         if (decorator) {
@@ -327,7 +331,10 @@ export class AutoEditsDefaultRendererManager
         }
 
         if (activeRequest) {
-            autoeditAnalyticsLogger.markAsRejected(activeRequest.requestId)
+            autoeditAnalyticsLogger.markAsRejected({
+                requestId: activeRequest.requestId,
+                rejectReason,
+            })
         }
     }
 
@@ -432,7 +439,7 @@ export class AutoEditsDefaultRendererManager
     }
 
     public dispose(): void {
-        this.rejectActiveEdit()
+        this.rejectActiveEdit(autoeditRejectReason.disposal)
         for (const disposable of this.disposables) {
             disposable.dispose()
         }
