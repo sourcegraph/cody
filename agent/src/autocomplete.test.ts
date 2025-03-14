@@ -67,9 +67,7 @@ describe('Autocomplete', () => {
         expect(completionEvent?.read).toBe(false)
         expect(completionEvent?.acceptedAt).toBeFalsy()
 
-        const texts = completions.items
-            .filter(item => item.type === 'completion')
-            .map(item => item.insertText)
+        const texts = completions.items.map(item => item.insertText)
         expect(completions.items.length).toBeGreaterThan(0)
         expect(texts).toMatchInlineSnapshot(
             `
@@ -97,9 +95,7 @@ describe('Autocomplete', () => {
         })
 
         const completionID = completions.items[0].id
-        const texts = completions.items
-            .filter(item => item.type === 'completion')
-            .map(item => item.insertText)
+        const texts = completions.items.map(item => item.insertText)
 
         client.notify('autocomplete/completionSuggested', { completionID })
         // Wait for the completion visibility timeout we use to ensure users read a completion.

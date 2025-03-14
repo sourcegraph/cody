@@ -80,9 +80,7 @@ describe('Autoedit', () => {
             expect(result.items.length).toBeGreaterThan(0)
             expect(result.items[0].type).toBe('completion')
 
-            const texts = result.items
-                .filter(item => item.type === 'completion')
-                .map(item => item.insertText)
+            const texts = result.items.map(item => item.insertText)
             expect(texts).toMatchInlineSnapshot(
                 `
               [
@@ -122,9 +120,7 @@ describe('Autoedit', () => {
             expect(result.items.length).toBeGreaterThan(0)
             expect(result.items[0].type).toBe('completion')
 
-            const texts = result.items
-                .filter(item => item.type === 'completion')
-                .map(item => item.insertText)
+            const texts = result.items.map(item => item.insertText)
             expect(texts).toMatchSnapshot()
         }, 10_000)
     })

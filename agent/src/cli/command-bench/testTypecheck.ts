@@ -76,9 +76,7 @@ export async function testTypecheck(parameters: TestParameters): Promise<boolean
         const timer = new Timer()
         const result = await runCommand(testCommand, worktree)
         console.error(
-            `Completion '${item.type === 'completion' ? item.insertText : '<edit>'}': ${
-                result ? 'typecheck_ok' : 'typecheck_error'
-            } (${timer})`
+            `Completion '${item.insertText}': ${result ? 'typecheck_ok' : 'typecheck_error'} (${timer})`
         )
         return result
     } finally {
