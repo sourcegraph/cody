@@ -437,6 +437,7 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
                 ),
                 content: pendingToolResults,
                 model,
+                intent: 'agentic',
             })
         } catch (error) {
             logDebug('AgenticHandler', 'Failed adding pending tool calls', { verbose: error })
