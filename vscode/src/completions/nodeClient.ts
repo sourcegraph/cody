@@ -81,7 +81,13 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
             const onErrorOnce = (error: Error, statusCode?: number | undefined): void => {
                 if (!didSendError) {
                     recordErrorToSpan(span, error)
-                    cb.onError(error, statusCode)
+
+                    const simplifiedErrorMessage = ClientErrorsTransformer.transform(
+                        error.message,
+                        span.spanContext().traceId
+                    )
+                    const errorMessage = new Error(simplifiedErrorMessage)
+                    cb.onError(errorMessage, statusCode)
                     didSendMessage = true
                     didSendError = true
                 }
@@ -194,15 +200,8 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
 
                         res.on('error', e => handleError(e))
                         res.on('end', () => {
-                            const isSourcegraph = url.toString().includes('sourcegraph')
-                            const traceId = getActiveTraceAndSpanId()?.traceId || ''
-
-                            const simplifiedErrorMessage = ClientErrorsTransformer.transform(
-                                errorMessage,
-                                traceId
-                            )
                             const errorOptions = {
-                                url: isSourcegraph ? 'Sourcegraph' : url.toString(),
+                                url: url.toString(),
                                 status: statusCode,
                                 statusText: res.statusMessage ?? '',
                             }
@@ -210,7 +209,7 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                             return handleError(
                                 new NetworkError(
                                     errorOptions,
-                                    simplifiedErrorMessage,
+                                    errorMessage,
                                     getActiveTraceAndSpanId()?.traceId
                                 )
                             )
