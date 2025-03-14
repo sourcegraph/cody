@@ -11,6 +11,7 @@ import {
     type PromptString,
 } from '@sourcegraph/cody-shared'
 
+import styles from './Chat.module.css'
 import { Transcript, focusLastHumanMessageEditor } from './chat/Transcript'
 import { WelcomeMessage } from './chat/components/WelcomeMessage'
 import { WelcomeNotice } from './chat/components/WelcomeNotice'
@@ -20,8 +21,6 @@ import type { VSCodeWrapper } from './utils/VSCodeApi'
 import { SpanManager } from './utils/spanManager'
 import { getTraceparentFromSpanContext } from './utils/telemetry'
 import { useUserAccountInfo } from './utils/useConfig'
-
-import styles from './Chat.module.css'
 
 interface ChatboxProps {
     chatEnabled: boolean
