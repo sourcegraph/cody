@@ -4,6 +4,19 @@ This is a log of all notable changes to Cody for VS Code.
 
 <!--- {/_ CHANGELOG_START _/} -->
 
+## 1.76.1
+
+### Reverts
+
+  There were no reverts for this release
+
+### Uncategorized
+
+#### Others
+
+- [Backport M76] Changelog for 1.76.0 [#7410](https://github.com/sourcegraph/cody/pull/7410)
+
+
 ## 1.76.0
 
 ### Features
