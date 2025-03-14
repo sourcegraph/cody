@@ -131,7 +131,7 @@ export const TabsBar = memo<TabsBarProps>(props => {
                             Icon={MessageSquarePlusIcon}
                             title="New Chat"
                             IDE={IDE}
-                            tooltipExtra={IDE === CodyIDE.VSCode && ( "(⇧⌥/)")}
+                            tooltipExtra={IDE === CodyIDE.VSCode && '(⇧⌥/)'}
                             view={View.Chat}
                             data-testid="new-chat-button"
                             onClick={() =>
