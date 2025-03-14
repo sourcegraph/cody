@@ -1,7 +1,6 @@
 import path from 'node:path'
-import type { ClientCapabilities } from '@sourcegraph/cody-shared'
 import { toMatchImageSnapshot } from 'jest-image-snapshot'
-import { type TaskContext, describe, expect, it } from 'vitest'
+import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import type * as vscode from 'vscode'
 import { sleep } from '../../vscode/src/completions/utils'
 import { TESTING_CREDENTIALS } from '../../vscode/src/testutils/testing-credentials'
@@ -17,54 +16,45 @@ import type {
 
 expect.extend({ toMatchImageSnapshot })
 
-const clientConfiguration: Partial<ExtensionConfiguration> = {
-    suggestionsMode: 'auto-edit (Experimental)',
-}
-
-async function setupAutoeditTest(
-    context: TaskContext,
-    capabilities: ClientCapabilities
-): Promise<{ client: TestClient; workspace: TestWorkspace }> {
+describe('Autoedit', () => {
     const workspace = new TestWorkspace(path.join(__dirname, '__tests__', 'autoedit'))
-    await workspace.beforeAll()
+    const clientConfiguration: Partial<ExtensionConfiguration> = {
+        suggestionsMode: 'auto-edit (Experimental)',
+    }
 
-    const client = TestClient.create({
-        workspaceRootUri: workspace.rootUri,
-        name: 'autoedit',
-        credentials: TESTING_CREDENTIALS.dotcom,
-        extraConfiguration: {
-            experimentalAutoEditEnabled: true,
-        },
-        capabilities: {
-            ...allClientCapabilitiesEnabled,
-            ...capabilities,
-        },
+    beforeAll(async () => {
+        await workspace.beforeAll()
     })
-    await client.beforeAll(clientConfiguration)
 
-    // Ensure we clean up automatically when the test finished
-    context.onTestFinished(async () => {
-        await client.afterAll()
+    afterAll(async () => {
         await workspace.afterAll()
     })
 
-    return {
-        client,
-        workspace,
-    }
-}
-
-describe('Autoedit', () => {
     describe('autoedit - completions', () => {
-        const capabilities: ClientCapabilities = {
-            autoedit: 'enabled',
-            autoeditInlineDiff: 'insertions-and-deletions',
-            autoeditAsideDiff: 'none',
-        }
+        const client = TestClient.create({
+            workspaceRootUri: workspace.rootUri,
+            name: 'autoedit-completions',
+            credentials: TESTING_CREDENTIALS.enterprise,
+            extraConfiguration: {
+                experimentalAutoEditEnabled: true,
+            },
+            capabilities: {
+                ...allClientCapabilitiesEnabled,
+                autoedit: 'enabled',
+                autoeditInlineDiff: 'insertions-and-deletions',
+                autoeditAsideDiff: 'none',
+            },
+        })
 
-        it('autocomplete/execute (non-empty result)', async context => {
-            const { client, workspace } = await setupAutoeditTest(context, capabilities)
+        beforeAll(async () => {
+            await client.beforeAll(clientConfiguration)
+        })
 
+        afterAll(async () => {
+            await client.afterAll()
+        })
+
+        it('autocomplete/execute (non-empty result)', async () => {
             const uri = workspace.file('src', 'sum.ts')
             await client.openFile(uri)
 
@@ -121,9 +111,7 @@ describe('Autoedit', () => {
             )
         }, 10_000)
 
-        it('autocomplete/execute multiline (non-empty result)', async context => {
-            const { client, workspace } = await setupAutoeditTest(context, capabilities)
-
+        it('autocomplete/execute multiline (non-empty result)', async () => {
             // Open merge sort with a full algorithm implementation to add it to the context.
             // Otherwise there's a higher chance that model won't complete the code because of all
             // the functions in the workspace missing implementations.
@@ -212,24 +200,39 @@ describe('Autoedit', () => {
         }
 
         describe('client can only render inline diffs', () => {
-            const capabilities: ClientCapabilities = {
-                autoedit: 'enabled',
-                autoeditInlineDiff: 'insertions-and-deletions',
-                autoeditAsideDiff: 'none',
-            }
+            const client = TestClient.create({
+                workspaceRootUri: workspace.rootUri,
+                name: 'autoedit-inline-diffs',
+                credentials: TESTING_CREDENTIALS.enterprise,
+                extraConfiguration: {
+                    experimentalAutoEditEnabled: true,
+                },
+                capabilities: {
+                    ...allClientCapabilitiesEnabled,
+                    autoedit: 'enabled',
+                    autoeditInlineDiff: 'insertions-and-deletions',
+                    autoeditAsideDiff: 'none',
+                },
+            })
 
-            it('produces an inline diff for a simple suggestion', async context => {
-                const { client, workspace } = await setupAutoeditTest(context, capabilities)
+            beforeAll(async () => {
+                await client.beforeAll(clientConfiguration)
+            })
 
+            afterAll(async () => {
+                await client.afterAll()
+            })
+
+            it('produces an inline diff for a simple suggestion', async () => {
                 const file = workspace.file('src', 'sum-ages.ts')
-                const result = await getAutoEditSuggestion(client, file, { line: 5, character: 0 })
+                const result = await getAutoEditSuggestion(client, file, { line: 4, character: 1 })
 
                 // Prediction accurately reflects the edit that should be made.
                 expect(result.insertText).toMatchInlineSnapshot(`
-                  "
-                  export function sumAge(personA: Person, personB: Person): number {
-                      return personA.age + personB.age
-                  }
+                  "}
+
+                  export function sumAge(humanA: Person, humanB: Person): number {
+                      return humanA.age + humanB.age
                   "
                 `)
 
@@ -243,9 +246,7 @@ describe('Autoedit', () => {
                 expect(inline.changes).not.toBeNull()
             }, 10_000)
 
-            it('produces an inline diff for a complex suggestion', async context => {
-                const { client, workspace } = await setupAutoeditTest(context, capabilities)
-
+            it('produces an inline diff for a complex suggestion', async () => {
                 const file = workspace.file('src', 'sum-ages-complex-diff.ts')
                 const result = await getAutoEditSuggestion(client, file, { line: 6, character: 52 })
                 // No completions provided
@@ -271,23 +272,39 @@ describe('Autoedit', () => {
         })
 
         describe('client can only render aside diffs as images', () => {
-            const capabilities: ClientCapabilities = {
-                autoedit: 'enabled',
-                autoeditInlineDiff: 'none',
-                autoeditAsideDiff: 'image',
-            }
+            const client = TestClient.create({
+                workspaceRootUri: workspace.rootUri,
+                name: 'autoedit-aside-images',
+                credentials: TESTING_CREDENTIALS.enterprise,
+                extraConfiguration: {
+                    experimentalAutoEditEnabled: true,
+                },
+                capabilities: {
+                    ...allClientCapabilitiesEnabled,
+                    autoedit: 'enabled',
+                    autoeditInlineDiff: 'none',
+                    autoeditAsideDiff: 'image',
+                },
+            })
 
-            it('produces a unified image diff for a simple suggestion', async context => {
-                const { client, workspace } = await setupAutoeditTest(context, capabilities)
+            beforeAll(async () => {
+                await client.beforeAll(clientConfiguration)
+            })
+
+            afterAll(async () => {
+                await client.afterAll()
+            })
+
+            it('produces a unified image diff for a simple suggestion', async () => {
                 const file = workspace.file('src', 'sum-ages.ts')
-                const result = await getAutoEditSuggestion(client, file, { line: 5, character: 0 })
+                const result = await getAutoEditSuggestion(client, file, { line: 4, character: 1 })
 
                 // Prediction accurately reflects the edit that should be made.
                 expect(result.insertText).toMatchInlineSnapshot(`
-                  "
+                  "}
+
                   export function sumAge(humanA: Person, humanB: Person): number {
                       return humanA.age + humanB.age
-                  }
                   "
                 `)
 
@@ -312,8 +329,7 @@ describe('Autoedit', () => {
                 })
             }, 10_000)
 
-            it('produces a unified image diff for a complex suggestion', async context => {
-                const { client, workspace } = await setupAutoeditTest(context, capabilities)
+            it('produces a unified image diff for a complex suggestion', async () => {
                 const file = workspace.file('src', 'sum-ages-complex-diff.ts')
                 const result = await getAutoEditSuggestion(client, file, { line: 6, character: 52 })
 
@@ -348,23 +364,39 @@ describe('Autoedit', () => {
         })
 
         describe('client can only render aside diffs with their own implementation', () => {
-            const capabilities: ClientCapabilities = {
-                autoedit: 'enabled',
-                autoeditInlineDiff: 'none',
-                autoeditAsideDiff: 'diff',
-            }
+            const client = TestClient.create({
+                workspaceRootUri: workspace.rootUri,
+                name: 'autoedit-aside-custom',
+                credentials: TESTING_CREDENTIALS.enterprise,
+                extraConfiguration: {
+                    experimentalAutoEditEnabled: true,
+                },
+                capabilities: {
+                    ...allClientCapabilitiesEnabled,
+                    autoedit: 'enabled',
+                    autoeditInlineDiff: 'none',
+                    autoeditAsideDiff: 'diff',
+                },
+            })
 
-            it('produces a diff for a simple suggestion', async context => {
-                const { client, workspace } = await setupAutoeditTest(context, capabilities)
+            beforeAll(async () => {
+                await client.beforeAll(clientConfiguration)
+            })
+
+            afterAll(async () => {
+                await client.afterAll()
+            })
+
+            it('produces a diff for a simple suggestion', async () => {
                 const file = workspace.file('src', 'sum-ages.ts')
-                const result = await getAutoEditSuggestion(client, file, { line: 5, character: 0 })
+                const result = await getAutoEditSuggestion(client, file, { line: 4, character: 1 })
 
                 // Prediction accurately reflects the edit that should be made.
                 expect(result.insertText).toMatchInlineSnapshot(`
-                  "
+                  "}
+
                   export function sumAge(humanA: Person, humanB: Person): number {
                       return humanA.age + humanB.age
-                  }
                   "
                 `)
 
@@ -384,8 +416,7 @@ describe('Autoedit', () => {
                 expect(unchangedLines.length).toBeGreaterThan(0)
             }, 10_000)
 
-            it('produces a unified image diff for a complex suggestion', async context => {
-                const { client, workspace } = await setupAutoeditTest(context, capabilities)
+            it('produces a unified image diff for a complex suggestion', async () => {
                 const file = workspace.file('src', 'sum-ages-complex-diff.ts')
                 const result = await getAutoEditSuggestion(client, file, { line: 6, character: 52 })
 
@@ -415,24 +446,39 @@ describe('Autoedit', () => {
         })
 
         describe('client can render both inline and aside diffs', () => {
-            const capabilities: ClientCapabilities = {
-                autoedit: 'enabled',
-                autoeditInlineDiff: 'insertions-and-deletions',
-                autoeditAsideDiff: 'image',
-            }
+            const client = TestClient.create({
+                workspaceRootUri: workspace.rootUri,
+                name: 'autoedit-inline-and-aside',
+                credentials: TESTING_CREDENTIALS.enterprise,
+                extraConfiguration: {
+                    experimentalAutoEditEnabled: true,
+                },
+                capabilities: {
+                    ...allClientCapabilitiesEnabled,
+                    autoedit: 'enabled',
+                    autoeditInlineDiff: 'insertions-and-deletions',
+                    autoeditAsideDiff: 'image',
+                },
+            })
 
-            it('produces an inline diff for a simple suggestion', async context => {
-                const { client, workspace } = await setupAutoeditTest(context, capabilities)
+            beforeAll(async () => {
+                await client.beforeAll(clientConfiguration)
+            })
 
+            afterAll(async () => {
+                await client.afterAll()
+            })
+
+            it('produces an inline diff for a simple suggestion', async () => {
                 const file = workspace.file('src', 'sum-ages.ts')
-                const result = await getAutoEditSuggestion(client, file, { line: 5, character: 0 })
+                const result = await getAutoEditSuggestion(client, file, { line: 4, character: 1 })
 
                 // Prediction accurately reflects the edit that should be made.
                 expect(result.insertText).toMatchInlineSnapshot(`
-                  "
+                  "}
+
                   export function sumAge(humanA: Person, humanB: Person): number {
                       return humanA.age + humanB.age
-                  }
                   "
                 `)
 
@@ -446,9 +492,7 @@ describe('Autoedit', () => {
                 expect(inline.changes).not.toBeNull()
             }, 10_000)
 
-            it('produces a mix of aside and inline diffs for a complex suggestion', async context => {
-                const { client, workspace } = await setupAutoeditTest(context, capabilities)
-
+            it('produces a mix of aside and inline diffs for a complex suggestion', async () => {
                 const file = workspace.file('src', 'sum-ages-complex-diff.ts')
                 const result = await getAutoEditSuggestion(client, file, { line: 6, character: 52 })
 
