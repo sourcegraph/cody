@@ -33,7 +33,7 @@ export function completion(string: TemplateStringsArray, ...values: unknown[]): 
     }
 }
 
-const CURSOR_MARKER = '█'
+export const CURSOR_MARKER = '█'
 
 export function document(
     text: string,
@@ -154,7 +154,7 @@ export function mockNotebookAndPosition({
     // Patch the internal cells array
     // We do not create cells first to ensure they have a
     // parent notebook reference.
-    ;(notebookDoc as any).cellsInternal = mockCells
+    ; (notebookDoc as any).cellsInternal = mockCells
     notebookDoc.cellCount = mockCells.length
 
     return { notebookDoc, position: positionsWithCursorInNotebook[0] }
