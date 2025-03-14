@@ -145,12 +145,6 @@ export function inferCodyApiVersion(version: string, isDotCom: boolean): CodyApi
         return 1
     }
 
-    // 6.1.0+ is the first version to support api-version=8.
-    // https://github.com/sourcegraph/sourcegraph/pull/3507
-    if (semver.gte(parsedVersion, '6.1.0')) {
-        return 8
-    }
-
     // 5.8.0+ is the first version to support api-version=2.
     // https://github.com/sourcegraph/sourcegraph/pull/470
     if (semver.gte(parsedVersion, '5.8.0')) {
