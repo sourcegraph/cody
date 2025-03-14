@@ -446,16 +446,19 @@ export class AutoeditAnalyticsLogger {
         >
     }): void {
         autoeditsOutputChannelLogger.logDebug('writeAutoeditEvent', action, ...logDebugArgs)
-        telemetryRecorder.recordEvent('cody.autoedit', action, {
-            ...telemetryParams,
-            billingMetadata:
-                action === 'accepted' || action === 'suggested'
-                    ? {
-                          product: 'cody',
-                          category: action === 'accepted' ? 'core' : 'billable',
-                      }
-                    : undefined,
-        })
+        // do not log discared until the bug is fixed with it overfiring.
+        if (action !== 'discarded') {
+            telemetryRecorder.recordEvent('cody.autoedit', action, {
+                ...telemetryParams,
+                billingMetadata:
+                    action === 'accepted' || action === 'suggested'
+                        ? {
+                              product: 'cody',
+                              category: action === 'accepted' ? 'core' : 'billable',
+                          }
+                        : undefined,
+            })
+        }
     }
     /**
      * Rate-limited error logging, capturing exceptions with Sentry and grouping repeated logs.
