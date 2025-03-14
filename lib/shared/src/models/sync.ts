@@ -38,6 +38,8 @@ import { ModelUsage } from './types'
 import { getEnterpriseContextWindow } from './utils'
 
 const EMPTY_PREFERENCES: DefaultsAndUserPreferencesForEndpoint = { defaults: {}, selected: {} }
+export const INPUT_TOKEN_FLAG_OFF: number = 45_000
+const INPUT_TOKEN_FLAG_ON: number[] = [175_000, 100_000]
 
 /**
  * Observe the list of all available models.
@@ -504,9 +506,11 @@ export const maybeAdjustContextWindows = (
         // longContextWindow feature flag for testing the new context windows
         if (longContextWindowFlag !== undefined) {
             let maxOutputTokens = model.contextWindow.maxOutputTokens
-            if (!longContextWindowFlag || model.tier === ModelTag.Free) {
-                maxInputTokens = 45000
-                maxOutputTokens = 4000
+            if (
+                !longContextWindowFlag &&
+                (model.tier === ModelTag.Free || maxInputTokens in INPUT_TOKEN_FLAG_ON)
+            ) {
+                maxInputTokens = INPUT_TOKEN_FLAG_OFF
             }
             if (isDotComUser && model.tier === ModelTag.Pro) {
                 if (model.capabilities.includes('reasoning')) {

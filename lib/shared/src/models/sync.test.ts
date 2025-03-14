@@ -33,6 +33,7 @@ import {
     TestLocalStorageForModelPreferences,
     modelsService,
 } from './modelsService'
+import { INPUT_TOKEN_FLAG_OFF } from './sync'
 import { maybeAdjustContextWindows, syncModels } from './sync'
 import { ModelTag } from './tags'
 import { ModelUsage } from './types'
@@ -159,7 +160,7 @@ describe('server sent models', async () => {
         status: 'stable',
         tier: 'enterprise' as ModelTier,
         contextWindow: {
-            maxInputTokens: 45000,
+            maxInputTokens: 9000,
             maxOutputTokens: 4000,
         },
     }
@@ -752,7 +753,6 @@ describe('maybeAdjustContextWindows comprehensive context window adjustments', (
 
         // Test case 1: DotCom user with Pro tier, long context window flag OFF
         const results1 = maybeAdjustContextWindows(testModels, true, false)
-
         const proRegularModel = results1.find(
             m => m.tier === ModelTag.Pro && !m.capabilities.includes('reasoning')
         )
@@ -764,10 +764,10 @@ describe('maybeAdjustContextWindows comprehensive context window adjustments', (
         expect(proReasoningModel?.contextWindow.maxOutputTokens).toBe(16000)
 
         const claudeModel = results1.find(m => m.modelName.includes('claude'))
-        expect(claudeModel?.contextWindow.maxInputTokens).toBe(45000)
+        expect(claudeModel?.contextWindow.maxInputTokens).toBe(INPUT_TOKEN_FLAG_OFF)
 
         const gptModel = results1.find(m => m.modelName.includes('gpt'))
-        expect(gptModel?.contextWindow.maxInputTokens).toBe(7000)
+        expect(gptModel?.contextWindow.maxInputTokens).toBe(INPUT_TOKEN_FLAG_OFF)
 
         // Test case 2: DotCom user with Pro tier, long context window flag ON
         const results2 = maybeAdjustContextWindows(testModels, true, true)
