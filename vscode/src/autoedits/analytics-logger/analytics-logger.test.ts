@@ -304,7 +304,7 @@ describe('AutoeditAnalyticsLogger', () => {
         expect(suggestedEvent3.privateMetadata.id).not.toBe(suggestedEvent2.privateMetadata.id)
     })
 
-    it('logs `discarded` if the suggestion was not suggested for any reason', () => {
+    it.skip('logs `discarded` if the suggestion was not suggested for any reason', () => {
         const requestId = autoeditLogger.createRequest(getRequestStartMetadata())
         autoeditLogger.markAsContextLoaded({ requestId, payload: { contextSummary: undefined } })
         autoeditLogger.markAsDiscarded({

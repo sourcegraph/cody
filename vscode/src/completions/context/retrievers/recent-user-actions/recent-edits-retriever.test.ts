@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type * as vscode from 'vscode'
 import { range } from '../../../../testutils/textDocument'
 import { document } from '../../../test-helpers'
+import type { RecentEditsRetrieverDiffStrategy } from './recent-edits-diff-helpers/recent-edits-diff-strategy'
 import { UnifiedDiffStrategy } from './recent-edits-diff-helpers/unified-diff'
 import { RecentEditsRetriever } from './recent-edits-retriever'
 
@@ -11,6 +12,7 @@ const FIVE_MINUTES = 5 * 60 * 1000
 
 describe('RecentEditsRetriever', () => {
     let retriever: RecentEditsRetriever
+    let diffStrategy: RecentEditsRetrieverDiffStrategy
 
     // Mock workspace APIs to trigger document changes
     let onDidChangeTextDocument: (event: vscode.TextDocumentChangeEvent) => void
@@ -22,10 +24,13 @@ describe('RecentEditsRetriever', () => {
         vi.useFakeTimers()
         vi.spyOn(contextFiltersProvider, 'isUriIgnored').mockResolvedValue(false)
 
+        diffStrategy = new UnifiedDiffStrategy({ addLineNumbers: false })
+        vi.spyOn(diffStrategy, 'getDiffHunks')
+
         retriever = new RecentEditsRetriever(
             {
                 maxAgeMs: FIVE_MINUTES,
-                diffStrategyList: [new UnifiedDiffStrategy({ addLineNumbers: false })],
+                diffStrategyList: [diffStrategy],
             },
             {
                 onDidChangeTextDocument(listener) {
@@ -133,6 +138,24 @@ describe('RecentEditsRetriever', () => {
               \\ No newline at end of file
               "
             `)
+        })
+
+        it('diffs are cached', async () => {
+            onDidOpenTextDocument(testDocument)
+
+            replaceFooLogWithNumber(testDocument)
+
+            deleteBarLog(testDocument)
+
+            addNumberLog(testDocument)
+
+            const diffHunks = await retriever.getDiff(testDocument.uri)
+            expect(diffHunks).not.toBeNull()
+            expect(diffHunks?.length).toBe(1)
+
+            await retriever.getDiff(testDocument.uri)
+
+            expect(diffStrategy.getDiffHunks).toHaveBeenCalledTimes(1)
         })
 
         it('no-ops for blocked files due to the context filter', async () => {

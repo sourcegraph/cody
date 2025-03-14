@@ -194,6 +194,7 @@ describe('ChatController', () => {
             messages: [
                 {
                     agent: undefined,
+                    content: undefined,
                     speaker: 'human',
                     text: 'Test input',
                     intent: undefined,
@@ -209,6 +210,7 @@ describe('ChatController', () => {
                 },
                 {
                     agent: undefined,
+                    content: undefined,
                     speaker: 'assistant',
                     model: 'my-model',
                     intent: undefined,
@@ -272,6 +274,7 @@ describe('ChatController', () => {
             "messages": [
               {
                 "agent": undefined,
+                "content": undefined,
                 "contextFiles": undefined,
                 "didYouMeanQuery": undefined,
                 "editorState": null,
@@ -287,6 +290,7 @@ describe('ChatController', () => {
               },
               {
                 "agent": undefined,
+                "content": undefined,
                 "contextFiles": undefined,
                 "didYouMeanQuery": undefined,
                 "editorState": undefined,
@@ -338,6 +342,7 @@ describe('ChatController', () => {
             messages: [
                 {
                     agent: undefined,
+                    content: undefined,
                     speaker: 'human',
                     text: 'Test input',
                     intent: undefined,
@@ -353,6 +358,7 @@ describe('ChatController', () => {
                 },
                 {
                     agent: undefined,
+                    content: undefined,
                     speaker: 'assistant',
                     model: 'my-model',
                     intent: undefined,
@@ -368,6 +374,7 @@ describe('ChatController', () => {
                 },
                 {
                     agent: undefined,
+                    content: undefined,
                     speaker: 'human',
                     text: 'Test followup',
                     intent: undefined,
@@ -383,6 +390,7 @@ describe('ChatController', () => {
                 },
                 {
                     agent: undefined,
+                    content: undefined,
                     speaker: 'assistant',
                     model: 'my-model',
                     intent: undefined,
@@ -426,6 +434,7 @@ describe('ChatController', () => {
             messages: [
                 {
                     agent: undefined,
+                    content: undefined,
                     speaker: 'human',
                     text: 'Test input',
                     intent: undefined,
@@ -441,6 +450,7 @@ describe('ChatController', () => {
                 },
                 {
                     agent: undefined,
+                    content: undefined,
                     speaker: 'assistant',
                     model: 'my-model',
                     intent: undefined,
@@ -456,6 +466,7 @@ describe('ChatController', () => {
                 },
                 {
                     agent: undefined,
+                    content: undefined,
                     speaker: 'human',
                     text: 'Test edit',
                     intent: undefined,
@@ -471,6 +482,7 @@ describe('ChatController', () => {
                 },
                 {
                     agent: undefined,
+                    content: undefined,
                     speaker: 'assistant',
                     model: 'my-model',
                     intent: undefined,
