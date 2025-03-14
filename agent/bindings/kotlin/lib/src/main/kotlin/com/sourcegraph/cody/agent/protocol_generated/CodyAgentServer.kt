@@ -115,7 +115,7 @@ interface CodyAgentServer {
   @JsonRequest("testing/autocomplete/completionEvent")
   fun testing_autocomplete_completionEvent(params: CompletionItemParams): CompletableFuture<CompletionBookkeepingEvent?>
   @JsonRequest("testing/autocomplete/autoeditEvent")
-  fun testing_autocomplete_autoeditEvent(params: CompletionItemParams): CompletableFuture<Phase?>
+  fun testing_autocomplete_autoeditEvent(params: CompletionItemParams): CompletableFuture<AutoeditRequestStateForAgentTesting?>
   @JsonRequest("testing/autocomplete/awaitPendingVisibilityTimeout")
   fun testing_autocomplete_awaitPendingVisibilityTimeout(params: Null?): CompletableFuture<CompletionItemID?>
   @JsonRequest("testing/autocomplete/setCompletionVisibilityDelay")
