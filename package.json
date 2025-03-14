@@ -71,8 +71,7 @@
     "react-dom": "18.2.0",
     "vscode-jsonrpc": "^8.2.0",
     "web-tree-sitter": "^0.21.0",
-    "win-ca": "^3.5.1",
-    "zod-to-json-schema": "^3.24.3"
+    "win-ca": "^3.5.1"
   },
   "packageManager": "pnpm@8.6.7",
   "resolutions": {
@@ -83,10 +82,7 @@
       "tslib": "2.1.0",
       "@lexical/react": "https://storage.googleapis.com/sourcegraph-assets/npm/lexical-react-sourcegraph-fork-31065486.tgz"
     },
-    "neverBuiltDependencies": [
-      "deasync",
-      "playwright"
-    ],
+    "neverBuiltDependencies": ["deasync", "playwright"],
     "patchedDependencies": {
       "highlight.js@11.8.0": "patches/highlight.js@11.8.0.patch"
     }
