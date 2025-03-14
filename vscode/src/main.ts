@@ -94,7 +94,6 @@ import { manageDisplayPathEnvInfoForExtension } from './editor/displayPathEnvInf
 import { VSCodeEditor } from './editor/vscode-editor'
 import type { PlatformContext } from './extension.common'
 import { configureExternalServices } from './external-services'
-import { isRunningInsideAgent } from './jsonrpc/isRunningInsideAgent'
 import { FixupController } from './non-stop/FixupController'
 import { CodyProExpirationNotifications } from './notifications/cody-pro-expiration'
 import { showSetupNotification } from './notifications/setup-notification'
@@ -292,8 +291,6 @@ const register = async (
     )
 
     registerAutocomplete(platform, statusBar, disposables)
-    const tutorialSetup = tryRegisterTutorial(context, disposables)
-
     await registerCodyCommands({ statusBar, chatClient, fixupController, disposables, context })
     registerAuthCommands(disposables)
     registerChatCommands(disposables)
@@ -323,8 +320,6 @@ const register = async (
             })
         )
     )
-
-    await tutorialSetup
 
     return vscode.Disposable.from(...disposables)
 }
@@ -710,20 +705,6 @@ async function registerDebugCommands(
         vscode.commands.registerCommand('cody.debug.enable.all', () => enableVerboseDebugMode()),
         vscode.commands.registerCommand('cody.debug.reportIssue', () => openCodyIssueReporter())
     )
-}
-
-async function tryRegisterTutorial(
-    context: vscode.ExtensionContext,
-    disposables: vscode.Disposable[]
-): Promise<void> {
-    if (!isRunningInsideAgent()) {
-        // TODO: The interactive tutorial is currently VS Code specific, both in terms of features and keyboard shortcuts.
-        // Consider opening this up to support dynamic content via Cody Agent.
-        // This would allow us the present the same tutorial but with client-specific steps.
-        // Alternatively, clients may not wish to use this tutorial and instead opt for something more suitable for their environment.
-        const { registerInteractiveTutorial } = await import('./tutorial')
-        registerInteractiveTutorial(context).then(disposable => disposables.push(...disposable))
-    }
 }
 
 function registerAutoEdits({

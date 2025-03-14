@@ -36,7 +36,6 @@ import * as vscode from 'vscode'
 import { serializeConfigSnapshot } from '../../uninstall/serializeConfig'
 import { type ResolvedConfigurationCredentialsOnly, validateCredentials } from '../auth/auth'
 import { logError } from '../output-channel-logger'
-import { maybeStartInteractiveTutorial } from '../tutorial/helpers'
 import { version } from '../version'
 import { localStorage } from './LocalStorageProvider'
 
@@ -293,7 +292,6 @@ class AuthProvider implements vscode.Disposable {
             },
         })
         this.setHasAuthenticatedBefore()
-        void maybeStartInteractiveTutorial()
     }
 
     private setHasAuthenticatedBefore() {
