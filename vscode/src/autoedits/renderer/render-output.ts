@@ -2,12 +2,15 @@ import type { CodeToReplaceData, DocumentContext } from '@sourcegraph/cody-share
 import * as vscode from 'vscode'
 import { completionMatchesSuffix } from '../../completions/is-completion-visible'
 import { shortenPromptForOutputChannel } from '../../completions/output-channel-logger'
+import { isRunningInsideAgent } from '../../jsonrpc/isRunningInsideAgent'
 import type { AutoeditRequestID } from '../analytics-logger'
+import { AutoeditCompletionItem } from '../autoedit-completion-item'
+import type { AutoeditClientCapabilities } from '../autoedits-provider'
 import { autoeditsOutputChannelLogger } from '../output-channel-logger'
-import type { AutoEditDecorations, DecorationInfo } from './decorators/base'
+import type { AutoEditDecoration, AutoEditDecorations, DecorationInfo } from './decorators/base'
 import { cssPropertiesToString } from './decorators/utils'
 import { isOnlyAddingTextForModifiedLines, isOnlyRemovingTextForModifiedLines } from './diff-utils'
-import { generateSuggestionAsImage } from './image-gen'
+import { type GeneratedImageSuggestion, generateSuggestionAsImage } from './image-gen'
 import { getEndColumnForLine } from './image-gen/utils'
 import { makeVisualDiff } from './image-gen/visual-diff'
 import { getCompletionText } from './render-output-utils'
@@ -33,21 +36,21 @@ interface NoCompletionRenderOutput {
  */
 export interface LegacyCompletionRenderOutput {
     type: 'legacy-completion'
-    inlineCompletionItems: vscode.InlineCompletionItem[]
+    inlineCompletionItems: AutoeditCompletionItem[]
     updatedDecorationInfo: null
     updatedPrediction: string
 }
 
 export interface CompletionRenderOutput {
     type: 'completion'
-    inlineCompletionItems: vscode.InlineCompletionItem[]
+    inlineCompletionItems: AutoeditCompletionItem[]
     updatedDecorationInfo: null
     updatedPrediction: string
 }
 
 interface CompletionWithDecorationsRenderOutput {
     type: 'completion-with-decorations'
-    inlineCompletionItems: vscode.InlineCompletionItem[]
+    inlineCompletionItems: AutoeditCompletionItem[]
     decorations: AutoEditDecorations
     updatedDecorationInfo: DecorationInfo
     updatedPrediction: string
@@ -71,6 +74,22 @@ interface DecorationsRenderOutput {
 interface ImageRenderOutput {
     type: 'image'
     decorations: AutoEditDecorations
+    /**
+     * The image data to render.
+     * This is used for clients that do not have builtin support for decorations like VS Code.
+     * We will provide this image data directly so the client can still show the suggestion.
+     */
+    imageData: {
+        position: { line: number; column: number }
+    } & GeneratedImageSuggestion
+}
+
+/**
+ * This is an escape hatch to support clients that do not support images when rendering the diff to the side.
+ * This is used when the client has `autoeditAsideDiff` set to `diff`.
+ */
+interface CustomRenderOutput {
+    type: 'custom'
 }
 
 export type AutoEditRenderOutput =
@@ -81,6 +100,7 @@ export type AutoEditRenderOutput =
     | LegacyDecorationsRenderOutput
     | DecorationsRenderOutput
     | ImageRenderOutput
+    | CustomRenderOutput
 
 /**
  * Manages the rendering of an auto-edit suggestion in the editor.
@@ -91,8 +111,81 @@ export type AutoEditRenderOutput =
  * 4. As an image (adding/removing text in a complex diff where decorations are not desirable)
  */
 export class AutoEditsRenderOutput {
+    protected getInlineRenderOutput(
+        args: GetRenderOutputArgs,
+        capabilities: AutoeditClientCapabilities
+    ): AutoEditRenderOutput | null {
+        if (!capabilities.autoeditInlineDiff || capabilities.autoeditInlineDiff === 'none') {
+            // Inline diff rendering is disabled or not supported
+            return null
+        }
+
+        const canRenderAside =
+            capabilities.autoeditAsideDiff && capabilities.autoeditAsideDiff !== 'none'
+        const shouldRenderInline = this.shouldRenderInlineDiff(args.decorationInfo, capabilities)
+
+        if (!shouldRenderInline && canRenderAside) {
+            // We have determined this diff is not suitable to render inline, and we know we can render aside.
+            return null
+        }
+
+        return {
+            type: 'decorations',
+            decorations: {
+                ...this.getInlineDecorations(args.decorationInfo),
+                // No need to show insertion marker when only using inline decorations
+                insertMarkerDecorations: [],
+            },
+        }
+    }
+
+    protected getAsideRenderOutput(
+        args: GetRenderOutputArgs,
+        capabilities: AutoeditClientCapabilities
+    ): AutoEditRenderOutput | null {
+        if (!capabilities.autoeditAsideDiff || capabilities.autoeditAsideDiff === 'none') {
+            // Aside diff rendering is disabled or not supported
+            return null
+        }
+
+        if (capabilities.autoeditAsideDiff === 'diff') {
+            return { type: 'custom' }
+        }
+
+        const diffMode =
+            capabilities.autoeditInlineDiff === 'deletions-only' ||
+            capabilities.autoeditInlineDiff === 'insertions-and-deletions'
+                ? 'additions'
+                : 'unified'
+        const { diff, position } = makeVisualDiff(args.decorationInfo, diffMode, args.document)
+        const image = generateSuggestionAsImage({
+            diff,
+            lang: args.document.languageId,
+            mode: diffMode,
+        })
+        const { deletionDecorations } = this.getInlineDecorations(args.decorationInfo)
+        const { insertionDecorations, insertMarkerDecorations } = this.createModifiedImageDecorations(
+            image,
+            position,
+            args.document
+        )
+        return {
+            type: 'image',
+            decorations: {
+                insertionDecorations,
+                deletionDecorations,
+                insertMarkerDecorations,
+            },
+            imageData: {
+                ...image,
+                position,
+            },
+        }
+    }
+
     protected getCompletionsWithPossibleDecorationsRenderOutput(
-        args: GetRenderOutputArgs
+        args: GetRenderOutputArgs,
+        capabilities: AutoeditClientCapabilities
     ): CompletionRenderOutput | CompletionWithDecorationsRenderOutput | null {
         const completions = this.tryMakeInlineCompletions(args)
         if (!completions) {
@@ -110,6 +203,11 @@ export class AutoEditsRenderOutput {
             }
         }
 
+        if (isRunningInsideAgent()) {
+            // We do not support mixing completions and decorations in other clients right now.
+            return null
+        }
+
         // We have a partial completion, so we _can_ technically render this by including decorations.
         // We should only do this if we determine that the diff is simple enough to be readable.
         // This follows the same logic that we use to determine if we are rendering an image or decorations,
@@ -117,7 +215,7 @@ export class AutoEditsRenderOutput {
         // a confusing UX when rendering a mix of completion insertion text and decoration insertion text.
         const renderWithDecorations =
             isOnlyRemovingTextForModifiedLines(completions.updatedDecorationInfo.modifiedLines) &&
-            this.shouldRenderDecorations(completions.updatedDecorationInfo)
+            this.shouldRenderInlineDiff(completions.updatedDecorationInfo, capabilities)
 
         if (renderWithDecorations) {
             return {
@@ -145,7 +243,7 @@ export class AutoEditsRenderOutput {
         decorationInfo,
     }: GetRenderOutputArgs): {
         type: 'full' | 'partial'
-        inlineCompletionItems: vscode.InlineCompletionItem[]
+        inlineCompletionItems: AutoeditCompletionItem[]
         updatedDecorationInfo: DecorationInfo
         updatedPrediction: string
     } | null {
@@ -168,13 +266,14 @@ export class AutoEditsRenderOutput {
 
         const completionText = docContext.currentLinePrefix + insertText
         const inlineCompletionItems = [
-            new vscode.InlineCompletionItem(
-                completionText,
-                new vscode.Range(
+            new AutoeditCompletionItem({
+                id: requestId,
+                insertText: completionText,
+                range: new vscode.Range(
                     document.lineAt(position).range.start,
                     document.lineAt(position).range.end
                 ),
-                {
+                command: {
                     title: 'Autoedit accepted',
                     command: 'cody.supersuggest.accept',
                     arguments: [
@@ -182,8 +281,8 @@ export class AutoEditsRenderOutput {
                             requestId,
                         },
                     ],
-                }
-            ),
+                },
+            }),
         ]
 
         autoeditsOutputChannelLogger.logDebugIfVerbose(
@@ -222,9 +321,30 @@ export class AutoEditsRenderOutput {
         }
     }
 
-    protected shouldRenderDecorations(decorationInfo: DecorationInfo): boolean {
+    protected shouldRenderInlineDiff(
+        decorationInfo: DecorationInfo,
+        clientCapabilities: AutoeditClientCapabilities
+    ): boolean {
         if (decorationInfo.addedLines.length > 0) {
             // It is difficult to show added lines with decorations, as we cannot inject new lines.
+            return false
+        }
+
+        const hasDeletions =
+            decorationInfo.removedLines.length > 0 ||
+            !isOnlyAddingTextForModifiedLines(decorationInfo.modifiedLines)
+        if (clientCapabilities.autoeditInlineDiff === 'insertions-only' && hasDeletions) {
+            // We have deletions to show, but the client only supports insertions with text decorations.
+            // We should render an image instead.
+            return false
+        }
+
+        const hasInsertions =
+            decorationInfo.addedLines.length > 0 ||
+            !isOnlyRemovingTextForModifiedLines(decorationInfo.modifiedLines)
+        if (clientCapabilities.autoeditInlineDiff === 'deletions-only' && hasInsertions) {
+            // We have insertions to show, but the client only supports deletions with text decorations.
+            // We should render an image instead.
             return false
         }
 
@@ -286,13 +406,13 @@ export class AutoEditsRenderOutput {
         return false
     }
 
-    protected getInlineDecorations(
+    private getInlineDecorations(
         decorationInfo: DecorationInfo
     ): Omit<AutoEditDecorations, 'insertMarkerDecorations'> {
         const fullLineDeletionDecorations = decorationInfo.removedLines.map(
             ({ originalLineNumber, text }) => {
                 const range = new vscode.Range(originalLineNumber, 0, originalLineNumber, text.length)
-                return this.createRemovedDecoration(range, text.length)
+                return this.createRemovedDecoration(range, text)
             }
         )
         const partialLineDeletionDecorations = this.createModifiedRemovedDecorations(decorationInfo)
@@ -303,35 +423,25 @@ export class AutoEditsRenderOutput {
         }
     }
 
-    protected createModifiedImageDecorations(
-        document: vscode.TextDocument,
-        decorationInfo: DecorationInfo
+    private createModifiedImageDecorations(
+        image: GeneratedImageSuggestion,
+        position: { line: number; column: number },
+        document: vscode.TextDocument
     ): Omit<AutoEditDecorations, 'deletionDecorations'> {
-        // TODO: Diff mode will likely change depending on the environment.
-        // This should be determined by client capabilities.
-        // VS Code: 'additions'
-        // Client capabiliies === image: 'unified'
-        const diffMode = 'additions'
-        const { diff, target } = makeVisualDiff(decorationInfo, diffMode, document)
-        const { dark, light, pixelRatio } = generateSuggestionAsImage({
-            diff,
-            lang: document.languageId,
-            mode: diffMode,
-        })
-        const startLineEndColumn = getEndColumnForLine(document.lineAt(target.line), document)
-
+        const startLineEndColumn = getEndColumnForLine(document.lineAt(position.line), document)
         // The padding in which to offset the decoration image away from neighbouring code
         const decorationPadding = 4
         // The margin position where the decoration image should render.
         // Ensuring it does not conflict with the visibility of existing code.
-        const decorationMargin = target.offset - startLineEndColumn + decorationPadding
+        const decorationMargin = position.column - startLineEndColumn + decorationPadding
+
         const decorationStyle = cssPropertiesToString({
             // Absolutely position the suggested code so that the cursor does not jump there
             position: 'absolute',
             // Make sure the decoration is rendered on top of other decorations
             'z-index': '9999',
             // Scale the decoration to the correct size (upscaled to boost resolution)
-            scale: String(1 / pixelRatio),
+            scale: String(1 / image.pixelRatio),
             'transform-origin': '0px 0px',
             height: 'auto',
             // The decoration will be entirely taken up by the image.
@@ -342,10 +452,11 @@ export class AutoEditsRenderOutput {
         return {
             insertionDecorations: [
                 {
+                    text: '',
                     range: new vscode.Range(
-                        target.line,
+                        position.line,
                         startLineEndColumn,
-                        target.line,
+                        position.line,
                         startLineEndColumn
                     ),
                     renderOptions: {
@@ -362,14 +473,15 @@ export class AutoEditsRenderOutput {
                             margin: `0 0 0 ${decorationMargin}ch`,
                         },
                         // Provide different highlighting for dark/light themes
-                        dark: { before: { contentIconPath: vscode.Uri.parse(dark) } },
-                        light: { before: { contentIconPath: vscode.Uri.parse(light) } },
+                        dark: { before: { contentIconPath: vscode.Uri.parse(image.dark) } },
+                        light: { before: { contentIconPath: vscode.Uri.parse(image.light) } },
                     },
                 },
             ],
             insertMarkerDecorations: [
                 {
-                    range: new vscode.Range(target.line, 0, target.line, startLineEndColumn),
+                    text: '',
+                    range: new vscode.Range(position.line, 0, position.line, startLineEndColumn),
                 },
             ],
         }
@@ -379,7 +491,7 @@ export class AutoEditsRenderOutput {
         decorationInfo: DecorationInfo
     ): Omit<AutoEditDecorations, 'deletionDecorations' | 'insertMarkerDecorations'> {
         const { modifiedLines } = decorationInfo
-        const decorations: vscode.DecorationOptions[] = []
+        const decorations: AutoEditDecoration[] = []
 
         for (const line of modifiedLines) {
             // TODO(valery): verify that we still need to merge consecutive insertions.
@@ -428,18 +540,14 @@ export class AutoEditsRenderOutput {
         return { insertionDecorations: decorations }
     }
 
-    private createModifiedRemovedDecorations(
-        decorationInfo: DecorationInfo
-    ): vscode.DecorationOptions[] {
+    private createModifiedRemovedDecorations(decorationInfo: DecorationInfo): AutoEditDecoration[] {
         const { modifiedLines } = decorationInfo
-        const decorations: vscode.DecorationOptions[] = []
+        const decorations: AutoEditDecoration[] = []
 
         for (const line of modifiedLines) {
             for (const change of line.changes) {
                 if (change.type === 'delete') {
-                    decorations.push(
-                        this.createRemovedDecoration(change.originalRange, change.text.length)
-                    )
+                    decorations.push(this.createRemovedDecoration(change.originalRange, change.text))
                 }
             }
         }
@@ -450,11 +558,9 @@ export class AutoEditsRenderOutput {
     /**
      * Create a ghost text decoration at the given position.
      */
-    private createGhostTextDecoration(
-        position: vscode.Position,
-        text: string
-    ): vscode.DecorationOptions {
+    private createGhostTextDecoration(position: vscode.Position, text: string): AutoEditDecoration {
         return {
+            text,
             range: new vscode.Range(position, position),
             renderOptions: {
                 before: {
@@ -471,14 +577,15 @@ export class AutoEditsRenderOutput {
      * A helper to create a removed text decoration for a given range and text length.
      * Both entire line removals and inline deletions use this logic.
      */
-    private createRemovedDecoration(range: vscode.Range, textLength: number): vscode.DecorationOptions {
+    private createRemovedDecoration(range: vscode.Range, text: string): AutoEditDecoration {
         return {
+            text,
             range,
             renderOptions: {
                 before: {
-                    contentText: '\u00A0'.repeat(textLength),
+                    contentText: '\u00A0'.repeat(text.length),
                     backgroundColor: 'rgba(255,0,0,0.3)', // red background for deletions
-                    margin: `0 -${textLength}ch 0 0`,
+                    margin: `0 -${text.length}ch 0 0`,
                 },
             },
         }

@@ -9,7 +9,7 @@ export async function initImageSuggestionService() {
     return Promise.all([initSyntaxHighlighter(), initCanvas()])
 }
 
-interface SuggestionOptions {
+interface ImageSuggestionOptions {
     diff: VisualDiff
     lang: string
     mode: DiffMode
@@ -20,7 +20,7 @@ interface SuggestionOptions {
     config?: UserProvidedRenderConfig
 }
 
-interface GeneratedSuggestion {
+export interface GeneratedImageSuggestion {
     /* Base64 encoded image suitable for rendering in dark editor themes */
     dark: string
     /* Base64 encoded image suitable for rendering in light editor themes */
@@ -32,7 +32,7 @@ interface GeneratedSuggestion {
     pixelRatio: number
 }
 
-export function generateSuggestionAsImage(options: SuggestionOptions): GeneratedSuggestion {
+export function generateSuggestionAsImage(options: ImageSuggestionOptions): GeneratedImageSuggestion {
     const { diff, lang, config, mode } = options
     const highlightedDiff = makeDecoratedDiff(diff, lang)
     const renderConfig = getRenderConfig(config)
