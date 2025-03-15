@@ -52,7 +52,9 @@ describe('getEnterpriseContextWindow', () => {
         }
 
         expect(
-            getEnterpriseContextWindow(chatModel, configOverwrites, { providerLimitPrompt: undefined })
+            getEnterpriseContextWindow(chatModel, configOverwrites, {
+                providerLimitPrompt: undefined,
+            })
         ).toEqual({
             input: CHAT_INPUT_TOKEN_BUDGET,
             output: ANSWER_TOKENS,
