@@ -544,6 +544,11 @@ export const maybeAdjustContextWindows = (
         let maxOutputTokens = model.contextWindow.maxOutputTokens
         // Apply Mistral-specific adjustment
         if (mistralRegex.test(model.modelName)) {
+            // Adjust the context window size for Mistral models because the OpenAI tokenizer undercounts tokens in English
+            // compared to the Mistral tokenizer. Based on our observations, the OpenAI tokenizer usually undercounts by about 13%.
+            // We reduce the context window by 15% (0.85 multiplier) to provide a safety buffer and prevent potential overflow.
+            // Note: In other languages, the OpenAI tokenizer might actually overcount tokens. As a result, we accept the risk
+            // of using a slightly smaller context window than what's available for those languages.
             maxInputTokens = Math.round(maxInputTokens * TOKEN_LIMITS.MISTRAL_ADJUSTMENT_FACTOR)
         }
 
