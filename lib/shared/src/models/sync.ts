@@ -1,5 +1,5 @@
 import { Observable, interval, map } from 'observable-fns'
-import { isCodyProUser, type AuthStatus } from '../auth/types'
+import { type AuthStatus, isCodyProUser } from '../auth/types'
 import type { ClientConfiguration } from '../configuration'
 import { clientCapabilities } from '../configuration/clientCapabilities'
 import { cenv } from '../configuration/environment'
@@ -227,9 +227,17 @@ export function syncModels({
                                                     data.primaryModels.push(
                                                         ...maybeAdjustContextWindows(
                                                             filteredModels,
-                                                            isCodyProUser(authStatus, userProductSubscription),
-                                                            !(isCodyProUser(authStatus, userProductSubscription) || isCodyFreeUser),
-                                                            longContextWindowFlag,
+                                                            isCodyProUser(
+                                                                authStatus,
+                                                                userProductSubscription
+                                                            ),
+                                                            !(
+                                                                isCodyProUser(
+                                                                    authStatus,
+                                                                    userProductSubscription
+                                                                ) || isCodyFreeUser
+                                                            ),
+                                                            longContextWindowFlag
                                                         ).map(createModelFromServerModel)
                                                     )
                                                     data.preferences!.defaults =
@@ -292,9 +300,17 @@ export function syncModels({
                                                 data.primaryModels.push(
                                                     ...maybeAdjustContextWindows(
                                                         clientModels,
-                                                        isCodyProUser(authStatus, userProductSubscription),
-                                                        !(isCodyProUser(authStatus, userProductSubscription) || isCodyFreeUser),
-                                                        longContextWindowFlag,
+                                                        isCodyProUser(
+                                                            authStatus,
+                                                            userProductSubscription
+                                                        ),
+                                                        !(
+                                                            isCodyProUser(
+                                                                authStatus,
+                                                                userProductSubscription
+                                                            ) || isCodyFreeUser
+                                                        ),
+                                                        longContextWindowFlag
                                                     ).map(createModelFromServerModel)
                                                 )
 
@@ -314,7 +330,8 @@ export function syncModels({
                                                 }
 
                                                 return Observable.of(data)
-                                            }                                        )
+                                            }
+                                        )
                                     )
                                 })
                             )
@@ -536,7 +553,9 @@ export const maybeAdjustContextWindows = (
         // Apply tier-specific adjustments
         if (longContextWindowFlagOn && (isPro || isEnterprise)) {
             if (isPro) {
-                maxOutputTokens = hasReasoning ? TOKEN_LIMITS.PRO.REASONING_OUTPUT : TOKEN_LIMITS.PRO.STANDARD_OUTPUT
+                maxOutputTokens = hasReasoning
+                    ? TOKEN_LIMITS.PRO.REASONING_OUTPUT
+                    : TOKEN_LIMITS.PRO.STANDARD_OUTPUT
             }
         } else {
             // Fall back to the old limits (same across all tiers)
