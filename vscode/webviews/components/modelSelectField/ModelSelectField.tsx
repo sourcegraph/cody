@@ -34,7 +34,7 @@ export const ModelSelectField: React.FunctionComponent<{
 
     onCloseByEscape?: () => void
     className?: string
-    
+
     /** Current chat intent */
     intent?: string
 
