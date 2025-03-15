@@ -134,6 +134,9 @@ export enum FeatureFlag {
      * Auto generate short description for chat as title.
      */
     ChatTitleAutoGeneration = 'chat-title-auto-generation',
+
+    // Extend context window for Cody Clients
+    LongContextWindow = 'long-context-window',
 }
 
 const ONE_HOUR = 60 * 60 * 1000
