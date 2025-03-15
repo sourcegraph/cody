@@ -18,6 +18,13 @@ import { ChatHandler } from './ChatHandler'
 import type { AgentHandler, AgentHandlerDelegate, AgentRequest } from './interfaces'
 import { buildAgentPrompt } from './prompts'
 
+const AGENT_MODELS = {
+    // Loop 0 will be run with Claude 3.7 Sonnet with Extended Thinking.
+    0: 'anthropic::2024-10-22::claude-3-7-sonnet-extended-thinking',
+    // Loop 1+ will be run with Claude 3.7 Sonnet.
+    1: 'anthropic::2024-10-22::claude-3-7-sonnet',
+}
+
 /**
  * Base AgenticHandler class that manages tool execution state
  * and implements the core agentic conversation loop
@@ -234,7 +241,7 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
                 },
             })),
             stream: true,
-            model,
+            model: AGENT_MODELS[this.turnCount === 0 ? 0 : 1],
         }
 
         // Track tool calls across stream chunks
@@ -246,6 +253,7 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
                 speaker: 'assistant',
                 text: PromptString.unsafe_fromLLMResponse(streamed.text),
                 model,
+                intent: 'agentic',
             }) satisfies ChatMessage
 
         // Process stream chunks
