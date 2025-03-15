@@ -102,7 +102,7 @@ export const ModeSelectorField: React.FunctionComponent<{
 }> = ({ isDotComUser, className, intent, omniBoxEnabled, manuallySelectIntent }) => {
     const {
         clientCapabilities: { edit },
-        config: { experimentalAgenticChatEnabled },
+        config,
     } = useConfig()
 
     const intentOptions = useMemo(
@@ -111,9 +111,9 @@ export const ModeSelectorField: React.FunctionComponent<{
                 isEditEnabled: edit !== 'none',
                 isDotComUser,
                 omniBoxEnabled,
-                agenticChatEnabled: experimentalAgenticChatEnabled,
+                agenticChatEnabled: !!config?.experimentalAgenticChatEnabled,
             }).filter(option => !option.hidden),
-        [edit, isDotComUser, omniBoxEnabled, experimentalAgenticChatEnabled]
+        [edit, isDotComUser, omniBoxEnabled, config?.experimentalAgenticChatEnabled]
     )
 
     // Memoize the handler to avoid recreating on each render

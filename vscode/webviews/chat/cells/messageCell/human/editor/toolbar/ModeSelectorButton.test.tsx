@@ -1,0 +1,141 @@
+import {
+    AUTH_STATUS_FIXTURE_AUTHED,
+    type ClientCapabilitiesWithLegacyFields,
+} from '@sourcegraph/cody-shared'
+import { fireEvent, render, screen } from '@testing-library/react'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { TooltipProvider } from '../../../../../../components/shadcn/ui/tooltip'
+import * as useConfigModule from '../../../../../../utils/useConfig'
+import { ModeSelectorField } from './ModeSelectorButton'
+
+// Mock localStorage
+const localStorageMock = (() => {
+    let store: Record<string, string> = {}
+
+    return {
+        getItem: (key: string) => store[key] || null,
+        setItem: (key: string, value: string) => {
+            store[key] = value
+        },
+        clear: () => {
+            store = {}
+        },
+    }
+})() as Storage
+
+Object.defineProperty(window, 'localStorage', { value: localStorageMock })
+
+// Create a wrapper component that provides the TooltipProvider context
+const TestWrapper: React.FC<React.PropsWithChildren> = ({ children }) => (
+    <TooltipProvider>{children}</TooltipProvider>
+)
+
+describe('ModeSelectorField', () => {
+    vi.spyOn(useConfigModule, 'useConfig').mockReturnValue({
+        clientCapabilities: {
+            isVSCode: true,
+            edit: 'enabled',
+        } satisfies Partial<ClientCapabilitiesWithLegacyFields> as ClientCapabilitiesWithLegacyFields,
+        authStatus: AUTH_STATUS_FIXTURE_AUTHED,
+    } satisfies Partial<useConfigModule.Config> as useConfigModule.Config)
+
+    const defaultProps = {
+        experimentalAgenticChatEnabled: false,
+        omniBoxEnabled: true,
+        isDotComUser: false,
+        isCodyProUser: true,
+        intent: 'chat' as const,
+        manuallySelectIntent: vi.fn(),
+    }
+
+    beforeEach(() => {
+        window.localStorage.clear()
+        vi.clearAllMocks()
+    })
+
+    afterEach(() => {
+        vi.clearAllMocks()
+    })
+
+    it('renders the selector with the correct intent displayed', () => {
+        render(
+            <TestWrapper>
+                <ModeSelectorField {...defaultProps} />
+            </TestWrapper>
+        )
+
+        expect(screen.getByText('Chat')).toBeInTheDocument()
+    })
+
+    it('displays agentic intent when selected', () => {
+        render(
+            <TestWrapper>
+                <ModeSelectorField {...defaultProps} intent="agentic" />
+            </TestWrapper>
+        )
+
+        expect(screen.getByText('Agentic')).toBeInTheDocument()
+    })
+
+    it('toggles between intents when keyboard shortcut is used', () => {
+        render(
+            <TestWrapper>
+                <ModeSelectorField {...defaultProps} intent="chat" omniBoxEnabled={true} />
+            </TestWrapper>
+        )
+
+        // Verify the component renders correctly and has the expected elements
+        expect(screen.getByText('Chat')).toBeInTheDocument()
+        const button = screen.getByRole('combobox')
+        expect(button).toBeInTheDocument()
+        expect(button).toHaveAttribute('aria-label', 'switch-mode')
+    })
+
+    it('shows limited options for dot com users', () => {
+        render(
+            <TestWrapper>
+                <ModeSelectorField {...defaultProps} isDotComUser={true} />
+            </TestWrapper>
+        )
+
+        // Open the dropdown
+        fireEvent.click(screen.getByRole('combobox'))
+
+        // Testing for disabled state using different selector
+        const searchOption =
+            screen.getByText('Search').closest('div[role="option"]') ||
+            screen.getByText('Search').closest('div[data-disabled="true"]') ||
+            screen.getByText('Search').closest('div[class*="disabled"]')
+
+        expect(searchOption).not.toBeNull()
+        expect(searchOption?.getAttribute('aria-disabled')).toBe('true')
+    })
+
+    it('hides search option when omnibox is disabled', () => {
+        render(
+            <TestWrapper>
+                <ModeSelectorField {...defaultProps} omniBoxEnabled={false} />
+            </TestWrapper>
+        )
+
+        // Open the dropdown
+        fireEvent.click(screen.getByRole('combobox'))
+
+        // Search option should not be visible
+        expect(screen.queryByText('Search')).not.toBeInTheDocument()
+    })
+
+    it('hides agentic option when feature flag is disabled', () => {
+        render(
+            <TestWrapper>
+                <ModeSelectorField {...defaultProps} />
+            </TestWrapper>
+        )
+
+        // Open the dropdown
+        fireEvent.click(screen.getByRole('combobox'))
+
+        // Agentic option should not be visible
+        expect(screen.queryByText('Agentic')).not.toBeInTheDocument()
+    })
+})

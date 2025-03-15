@@ -16,6 +16,7 @@ import { Transcript, focusLastHumanMessageEditor } from './chat/Transcript'
 import { WelcomeMessage } from './chat/components/WelcomeMessage'
 import { WelcomeNotice } from './chat/components/WelcomeNotice'
 import { ScrollDown } from './components/ScrollDown'
+import { useLocalStorage } from './components/hooks'
 import type { View } from './tabs'
 import type { VSCodeWrapper } from './utils/VSCodeApi'
 import { SpanManager } from './utils/spanManager'
@@ -37,6 +38,8 @@ interface ChatboxProps {
     isWorkspacesUpgradeCtaEnabled?: boolean
 }
 
+const LAST_SELECTED_INTENT_KEY = 'last-selected-intent'
+
 export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>> = ({
     messageInProgress,
     transcript,
@@ -55,6 +58,9 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     transcriptRef.current = transcript
 
     const userInfo = useUserAccountInfo()
+    const [lastManuallySelectedIntent, setLastManuallySelectedIntent] = useLocalStorage<
+        ChatMessage['intent']
+    >(LAST_SELECTED_INTENT_KEY, 'chat')
 
     const copyButtonOnSubmit = useCallback(
         (text: string, eventType: 'Button' | 'Keydown' = 'Button') => {
@@ -225,6 +231,8 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                 postMessage={postMessage}
                 guardrails={guardrails}
                 smartApplyEnabled={smartApplyEnabled}
+                manuallySelectedIntent={lastManuallySelectedIntent}
+                setManuallySelectedIntent={setLastManuallySelectedIntent}
             />
             {transcript.length === 0 && showWelcomeMessage && (
                 <>
