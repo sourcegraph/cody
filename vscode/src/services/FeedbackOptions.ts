@@ -9,12 +9,6 @@ export const SupportOptionItems = [
             await vscode.env.openExternal(vscode.Uri.parse(CODY_SUPPORT_URL.href))
         },
     },
-    {
-        label: '$(tasklist) Cody Tutorial',
-        async onSelect(): Promise<void> {
-            await vscode.commands.executeCommand('cody.tutorial.start')
-        },
-    },
 ]
 
 export const FeedbackOptionItems = [

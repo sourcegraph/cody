@@ -20,8 +20,6 @@ test.extend<ExpectedV2Events>({
         'cody.auth:connected',
         'cody.auth.logout:clicked',
         'cody.auth:disconnected',
-        'cody.interactiveTutorial:attemptingStart',
-        'cody.experiment.interactiveTutorial:enrolled',
         'cody.signInNotification:shown',
     ],
 })('requires a valid auth token and allows logouts', async ({ page, sidebar }) => {
@@ -128,8 +126,6 @@ test.extend<ExpectedV2Events>({
         'cody.auth:connected',
         'cody.userMenu:open',
         'cody.auth:disconnected',
-        'cody.interactiveTutorial:attemptingStart',
-        'cody.experiment.interactiveTutorial:enrolled',
         'cody.signInNotification:shown',
     ],
 })

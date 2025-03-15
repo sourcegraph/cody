@@ -625,11 +625,6 @@
         "when": "cody.activated && !editorTextFocus"
       },
       {
-        "command": "cody.tutorial.chat",
-        "key": "alt+l",
-        "when": "cody.activated && cody.tutorialActive"
-      },
-      {
         "command": "cody.command.edit-code",
         "key": "alt+k",
         "when": "cody.activated && !editorReadonly"
@@ -638,11 +633,6 @@
         "command": "cody.command.execute-prompt",
         "key": "shift+alt+p",
         "when": "cody.activated"
-      },
-      {
-        "command": "cody.tutorial.edit",
-        "key": "alt+k",
-        "when": "cody.activated && !editorReadonly && cody.tutorialActive"
       },
       {
         "command": "cody.command.document-code",

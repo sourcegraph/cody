@@ -32,8 +32,6 @@ export function logFirstEnrollmentEvent(key: FeatureFlag, isEnabled: boolean): b
  */
 function getFeatureFlagEventName(key: FeatureFlag): string {
     switch (key) {
-        case FeatureFlag.CodyInteractiveTutorial:
-            return 'interactiveTutorial'
         case FeatureFlag.DeepCody:
             return 'deepCody'
         case FeatureFlag.CodyPromptCachingOnMessages:
