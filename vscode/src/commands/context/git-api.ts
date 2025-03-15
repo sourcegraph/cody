@@ -81,10 +81,11 @@ export async function getContextFilesFromGitDiff(gitRepo: Repository): Promise<C
             const normalizePath = (path: string) => path.replace(/\\/g, '/')
 
             // Verify the file exists before adding it as context.
-            // we do this by checking the reverse path because of how nested workspaces might add unknown prefixes
-            const normalizedDiffPath = normalizePath(diffPath)
+            // We do this by checking the reverse path because of how nested workspaces might add unknown prefixes.
+            const normalizedDiffPath = normalizePath(diffPath) // Example: "vscode/test.txt" - the path from the workspace root
             const matchingFile = diffFiles.find(file => {
-                const filePath = normalizePath(displayPath(file.uri))
+                // Example filePath: "/Users/yk/Desktop/cody/vscode/test.txt"
+                const filePath = normalizePath(file.uri.path)
                 return filePath.endsWith(normalizedDiffPath)
             })
             if (!matchingFile || !(await doesFileExist(matchingFile.uri))) {

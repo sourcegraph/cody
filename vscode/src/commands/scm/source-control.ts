@@ -40,7 +40,7 @@ export class CodySourceControl implements vscode.Disposable {
                     .getModels(ModelUsage.Edit)
                     .pipe(skipPendingOperation())
                     .subscribe(models => {
-                        // Removes experimental and preview models
+                        // Remove experimental and preview models
                         const filtered = models.filter(
                             m =>
                                 !m.tags.includes(ModelTag.Experimental) &&
@@ -48,7 +48,7 @@ export class CodySourceControl implements vscode.Disposable {
                         )
                         const flashLite = filtered.find(m => m.id.endsWith('gemini-2.0-flash-lite'))
                         const flash = filtered.find(m => m.id.endsWith('gemini-2.0-flash'))
-                        this.model = flashLite ?? flash ?? filtered.at(0)
+                        this.model = flash ?? flashLite ?? filtered.at(0)
                     })
             )
         )
