@@ -88,3 +88,50 @@ test.extend<ExpectedV2Events>({
     await expect(chatFrame.getByRole('heading', { name: 'Unable to Send Message' })).toBeVisible()
     await expect(chatFrame.getByRole('button', { name: 'Learn More' })).toBeVisible()
 })
+
+test.extend<ExpectedV2Events>({
+    expectedV2Events: [
+        'cody.extension:installed',
+        'cody.auth.login:clicked',
+        'cody.auth.login:firstEver',
+        'cody.auth.login.token:clicked',
+        'cody.auth:connected',
+        'cody.chat-question:submitted',
+        'cody.chat-question:executed',
+        'cody.chatResponse:noCode',
+        'cody.upsellUsageLimitCTA:shown',
+        'cody.modelSelector:select',
+    ],
+})('automatically switches to flash model when rate limited', async ({ page, sidebar }) => {
+    await fetch(`${mockServer.SERVER_URL}/.test/completions/triggerRateLimit/pro`, {
+        method: 'POST',
+    })
+
+    await sidebarSignin(page, sidebar)
+    const chatFrame = getChatSidebarPanel(page)
+    const chatInput = getChatInputs(chatFrame).last()
+    await chatInput.fill('test message that will hit rate limit')
+    await chatInput.press('Enter')
+
+    await expect(chatFrame.getByRole('heading', { name: 'Unable to Send Message' })).toBeVisible()
+
+    page.pause()
+    test.setTimeout(1000000000000000)
+
+    const modelSelector = chatFrame.getByTestId('chat-model-selector')
+    console.log('modelSelector---------------', modelSelector)
+    await expect(modelSelector).toContainText('Flash')
+
+    await modelSelector.click()
+    const modelPopover = chatFrame.getByTestId('chat-model-popover')
+
+    await expect(modelPopover.getByText('Usage limit reached: Premium models disabled')).toBeVisible()
+
+    const gpt4Option = modelPopover.getByText('haiku', { exact: false })
+    const parentItem = gpt4Option.locator('..')
+    await expect(parentItem).toHaveAttribute('aria-disabled', 'true')
+
+    const flashOption = modelPopover.getByText('Flash', { exact: false })
+    const flashParentItem = flashOption.locator('..')
+    await expect(flashParentItem).not.toHaveAttribute('aria-disabled', 'true')
+})
