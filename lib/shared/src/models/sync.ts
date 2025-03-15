@@ -1,5 +1,5 @@
 import { Observable, interval, map } from 'observable-fns'
-import type { AuthStatus } from '../auth/types'
+import { isCodyProUser, type AuthStatus } from '../auth/types'
 import type { ClientConfiguration } from '../configuration'
 import { clientCapabilities } from '../configuration/clientCapabilities'
 import { cenv } from '../configuration/environment'
@@ -39,7 +39,32 @@ import { getEnterpriseContextWindow } from './utils'
 
 const EMPTY_PREFERENCES: DefaultsAndUserPreferencesForEndpoint = { defaults: {}, selected: {} }
 export const INPUT_TOKEN_FLAG_OFF: number = 45_000
-const INPUT_TOKEN_FLAG_ON: number[] = [175_000, 100_000]
+const TOKEN_LIMITS = {
+    MISTRAL_ADJUSTMENT_FACTOR: 0.85,
+    FREE: {
+        MAX_INPUT_TOKENS: 45_000,
+        MAX_OUTPUT_TOKENS: 4_000,
+    },
+    PRO: {
+        STANDARD_OUTPUT: 6_000,
+        REASONING_OUTPUT: 16_000,
+        MAX_INPUT_TOKENS: 175_000,
+    },
+    ENTERPRISE: {
+        STANDARD_OUTPUT: 8_000,
+        REASONING_OUTPUT: 32_000,
+        MAX_INPUT_TOKENS: 175_000,
+    },
+    // LIMITS BY MODEL TYPE
+    SHARED: {
+        MAX_OPENAI_REASONING_INPUT: 175_000,
+        MAX_OPENAI_STANDARD_INPUT: 100_000,
+    },
+    ORIGINAL_ALL: {
+        MAX_INPUT_TOKENS: 45_000,
+        MAX_OUTPUT_TOKENS: 4_000,
+    },
+}
 
 /**
  * Observe the list of all available models.
@@ -202,8 +227,9 @@ export function syncModels({
                                                     data.primaryModels.push(
                                                         ...maybeAdjustContextWindows(
                                                             filteredModels,
-                                                            isDotComUser,
-                                                            longContextWindowFlag
+                                                            isCodyProUser(authStatus, userProductSubscription),
+                                                            !(isCodyProUser(authStatus, userProductSubscription) || isCodyFreeUser),
+                                                            longContextWindowFlag,
                                                         ).map(createModelFromServerModel)
                                                     )
                                                     data.preferences!.defaults =
@@ -266,8 +292,9 @@ export function syncModels({
                                                 data.primaryModels.push(
                                                     ...maybeAdjustContextWindows(
                                                         clientModels,
-                                                        isDotComUser,
-                                                        longContextWindowFlag
+                                                        isCodyProUser(authStatus, userProductSubscription),
+                                                        !(isCodyProUser(authStatus, userProductSubscription) || isCodyFreeUser),
+                                                        longContextWindowFlag,
                                                     ).map(createModelFromServerModel)
                                                 )
 
@@ -287,8 +314,7 @@ export function syncModels({
                                                 }
 
                                                 return Observable.of(data)
-                                            }
-                                        )
+                                            }                                        )
                                     )
                                 })
                             )
@@ -489,41 +515,45 @@ async function fetchServerSideModels(
  */
 export const maybeAdjustContextWindows = (
     models: ServerModel[],
-    isDotComUser: boolean,
-    longContextWindowFlag?: boolean
-): ServerModel[] =>
-    models.map(model => {
+    isPro = false,
+    isEnterprise = false,
+    longContextWindowFlagOn = false
+): ServerModel[] => {
+    // Compile regex once
+    const mistralRegex = /^mi(x|s)tral/
+    return models.map(model => {
+        // Start with original values
         let maxInputTokens = model.contextWindow.maxInputTokens
-        if (/^mi(x|s)tral/.test(model.modelName)) {
-            // Adjust the context window size for Mistral models because the OpenAI tokenizer undercounts tokens in English
-            // compared to the Mistral tokenizer. Based on our observations, the OpenAI tokenizer usually undercounts by about 13%.
-            // We reduce the context window by 15% (0.85 multiplier) to provide a safety buffer and prevent potential overflow.
-            // Note: In other languages, the OpenAI tokenizer might actually overcount tokens. As a result, we accept the risk
-            // of using a slightly smaller context window than what's available for those languages.
-            maxInputTokens = Math.round(model.contextWindow.maxInputTokens * 0.85)
+        let maxOutputTokens = model.contextWindow.maxOutputTokens
+        // Apply Mistral-specific adjustment
+        if (mistralRegex.test(model.modelName)) {
+            maxInputTokens = Math.round(maxInputTokens * TOKEN_LIMITS.MISTRAL_ADJUSTMENT_FACTOR)
         }
 
-        // longContextWindow feature flag for testing the new context windows
-        if (longContextWindowFlag !== undefined) {
-            let maxOutputTokens = model.contextWindow.maxOutputTokens
-            if (
-                !longContextWindowFlag &&
-                (model.tier === ModelTag.Free || maxInputTokens in INPUT_TOKEN_FLAG_ON)
-            ) {
-                maxInputTokens = INPUT_TOKEN_FLAG_OFF
+        // Get model characteristics
+        const hasReasoning = model.capabilities.includes(ModelTag.Reasoning)
+
+        // Apply tier-specific adjustments
+        if (longContextWindowFlagOn && (isPro || isEnterprise)) {
+            if (isPro) {
+                maxOutputTokens = hasReasoning ? TOKEN_LIMITS.PRO.REASONING_OUTPUT : TOKEN_LIMITS.PRO.STANDARD_OUTPUT
             }
-            if (isDotComUser && model.tier === ModelTag.Pro) {
-                if (model.capabilities.includes('reasoning')) {
-                    maxOutputTokens /= 2
-                } else {
-                    maxOutputTokens -= 2000
-                }
-            }
-            return { ...model, contextWindow: { maxInputTokens, maxOutputTokens } }
+        } else {
+            // Fall back to the old limits (same across all tiers)
+            maxInputTokens = Math.min(maxInputTokens, TOKEN_LIMITS.ORIGINAL_ALL.MAX_INPUT_TOKENS)
+            maxOutputTokens = Math.min(maxOutputTokens, TOKEN_LIMITS.ORIGINAL_ALL.MAX_OUTPUT_TOKENS)
         }
 
-        return { ...model, contextWindow: { ...model.contextWindow, maxInputTokens } }
+        return {
+            ...model,
+            contextWindow: {
+                ...model.contextWindow,
+                maxInputTokens,
+                maxOutputTokens,
+            },
+        }
     })
+}
 
 function deepClone<T>(value: T): T {
     return JSON.parse(JSON.stringify(value)) as T
