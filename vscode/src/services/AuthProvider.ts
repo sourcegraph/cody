@@ -11,6 +11,7 @@ import {
     abortableOperation,
     authStatus,
     combineLatest,
+    currentAuthStatusOrNotReadyYet,
     currentResolvedConfig,
     disposableSubscription,
     distinctUntilChanged,
@@ -29,6 +30,7 @@ import {
     isEnterpriseUserDotComError,
     isInvalidAccessTokenError,
     isNeedsAuthChallengeError,
+    isRateLimitError,
 } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
 import isEqual from 'lodash/isEqual'
 import { Observable, Subject, interval } from 'observable-fns'
@@ -199,6 +201,31 @@ class AuthProvider implements vscode.Disposable {
                 vscode.commands.registerCommand('cody.auth.refresh', () => this.refresh())
             )
         )
+    }
+
+    private updateRateLimitStatus(isRateLimited: boolean): void {
+        // Get current auth status using a different method
+        const currentStatus = currentAuthStatusOrNotReadyYet()
+        if (!currentStatus || !currentStatus?.authenticated) {
+            // Can't update if we don't have a current status
+            return
+        }
+
+        if (isRateLimited !== currentStatus.isRateLimited) {
+            // Merge isRateLimited with existing auth status to preserve all required fields
+            this.status.next({
+                ...currentStatus,
+                isRateLimited,
+                pendingValidation: false,
+            })
+        }
+    }
+
+    public updateRateLimitFromError(error: Error): void {
+        // Export a static method that can be called from anywhere to update rate limit status
+        // This makes it accessible from the ChatController without circular dependencies
+        const isRateLimited = isRateLimitError(error)
+        authProvider.updateRateLimitStatus(isRateLimited)
     }
 
     private async handleAuthTelemetry(authStatus: AuthStatus, signal?: AbortSignal): Promise<void> {

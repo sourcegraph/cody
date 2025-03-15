@@ -110,3 +110,32 @@ export function mockAuthStatus(
     Object.assign(syncValue, { last: value, isSet: true })
     syncValueSubscription.unsubscribe()
 }
+
+// Add this function to update auth status when rate limited
+export function updateAuthStatusForRateLimit(isRateLimited: boolean): void {
+    if (!syncValue.isSet) {
+        // Auth status not initialized yet
+        return
+    }
+
+    const currentStatus = syncValue.last
+
+    if (!currentStatus.authenticated) {
+        return
+    }
+
+    // Only update if there's a change needed
+    if (isRateLimited !== currentStatus.isRateLimited) {
+        // Create a new auth status object with rateLimited flag
+        const updatedStatus: AuthStatus = {
+            ...currentStatus,
+            isRateLimited,
+        }
+
+        // Update the auth status observable
+        _authStatus.setSource(Observable.of(updatedStatus), false)
+
+        // Update the sync value
+        Object.assign(syncValue, { last: updatedStatus, isSet: true })
+    }
+}

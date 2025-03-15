@@ -1,5 +1,5 @@
 import { isDotCom } from '../sourcegraph-api/environments'
-import type { AuthError } from '../sourcegraph-api/errors'
+import type { AuthError, NetworkError, RateLimitError } from '../sourcegraph-api/errors'
 import type { UserProductSubscription } from '../sourcegraph-api/userProductSubscription'
 
 /**
@@ -37,6 +37,9 @@ export interface AuthenticatedAuthStatus {
      * Organizations on the instance that the user is a member of.
      */
     organizations?: { name: string; id: string }[]
+
+    error?: RateLimitError | NetworkError
+    isRateLimited?: boolean
 }
 
 /**
@@ -46,7 +49,7 @@ export interface AuthenticatedAuthStatus {
 export interface UnauthenticatedAuthStatus {
     endpoint: string
     authenticated: false
-    error?: AuthError
+    error?: AuthError | RateLimitError | NetworkError
     pendingValidation: boolean
 }
 

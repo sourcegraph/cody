@@ -289,6 +289,19 @@ export function syncModels({
                                                     data.preferences!.defaults.chat = haikuModel.id
                                                 }
 
+                                                if (authStatus.isRateLimited) {
+                                                    // Set model to speed model
+                                                    const speedModels = data.primaryModels.filter(m =>
+                                                        m.tags.includes(ModelTag.Speed)
+                                                    )
+                                                    const geminiFlashModel = speedModels.find(m =>
+                                                        m.id.includes('gemini-flash')
+                                                    )
+                                                    data.preferences!.defaults.chat =
+                                                        geminiFlashModel?.id
+                                                    data.primaryModels = speedModels
+                                                }
+
                                                 return Observable.of(data)
                                             }
                                         )

@@ -1326,6 +1326,9 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         logDebug('ChatController: postError', error.message)
         // Add error to transcript
         if (type === 'transcript') {
+            // Update rate limit status in auth provider
+            authProvider.updateRateLimitFromError(error)
+
             this.chatBuilder.addErrorAsBotMessage(error, ChatBuilder.NO_MODEL)
             this.postViewTranscript()
             return
