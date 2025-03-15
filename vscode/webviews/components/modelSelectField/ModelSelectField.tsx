@@ -34,6 +34,9 @@ export const ModelSelectField: React.FunctionComponent<{
 
     onCloseByEscape?: () => void
     className?: string
+    
+    /** Current chat intent */
+    intent?: string
 
     /** For storybooks only. */
     __storybook__open?: boolean
@@ -45,6 +48,7 @@ export const ModelSelectField: React.FunctionComponent<{
     userInfo,
     onCloseByEscape,
     className,
+    intent,
     __storybook__open,
     modelSelectorRef,
 }) => {
@@ -119,7 +123,7 @@ export const ModelSelectField: React.FunctionComponent<{
     const options = useMemo<SelectListOption[]>(
         () =>
             models.map(m => {
-                const availability = modelAvailability(userInfo, serverSentModelsEnabled, m)
+                const availability = modelAvailability(userInfo, serverSentModelsEnabled, m, intent)
                 return {
                     value: m.id,
                     title: (
@@ -134,10 +138,10 @@ export const ModelSelectField: React.FunctionComponent<{
                     // be taken to the upgrade page.
                     disabled: !['available', 'needs-cody-pro'].includes(availability),
                     group: getModelDropDownUIGroup(m),
-                    tooltip: getTooltip(m, availability),
+                    tooltip: getTooltip(m, availability, intent),
                 } satisfies SelectListOption
             }),
-        [models, userInfo, serverSentModelsEnabled]
+        [models, userInfo, serverSentModelsEnabled, intent]
     )
     const optionsByGroup: { group: string; options: SelectListOption[] }[] = useMemo(() => {
         return optionByGroup(options)
@@ -290,7 +294,8 @@ type ModelAvailability = 'available' | 'needs-cody-pro' | 'not-selectable-on-ent
 function modelAvailability(
     userInfo: Pick<UserAccountInfo, 'isCodyProUser' | 'isDotComUser'>,
     serverSentModelsEnabled: boolean,
-    model: Model
+    model: Model,
+    intent?: string
 ): ModelAvailability {
     if (!userInfo.isDotComUser && !serverSentModelsEnabled) {
         return 'not-selectable-on-enterprise'
@@ -298,10 +303,14 @@ function modelAvailability(
     if (isCodyProModel(model) && userInfo.isDotComUser && !userInfo.isCodyProUser) {
         return 'needs-cody-pro'
     }
+    // For agentic mode, only allow models with the AgenticCompatible tag (Claude 3.7 Sonnet)
+    if (intent === 'agentic' && !model.tags.includes(ModelTag.AgenticCompatible)) {
+        return 'not-selectable-on-enterprise'
+    }
     return 'available'
 }
 
-function getTooltip(model: Model, availability: string): string {
+function getTooltip(model: Model, availability: string, intent?: string): string {
     if (model.id.includes(DeepCodyAgentID)) {
         return 'Agentic chat reflects on your request and uses tools to dynamically retrieve relevant context, improving accuracy and response quality.'
     }
@@ -319,6 +328,9 @@ function getTooltip(model: Model, availability: string): string {
             : model.provider.charAt(0).toUpperCase() + model.provider.slice(1)
     switch (availability) {
         case 'not-selectable-on-enterprise':
+            if (intent === 'agentic' && !model.tags.includes(ModelTag.AgenticCompatible)) {
+                return 'Only Claude 3.7 Sonnet is supported in agentic mode'
+            }
             return 'Chat model set by your Sourcegraph Enterprise admin'
         case 'needs-cody-pro':
             return `Upgrade to Cody Pro to use ${model.title} by ${capitalizedProvider}`
