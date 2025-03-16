@@ -300,9 +300,18 @@ export class EditManager implements vscode.Disposable {
         }
 
         this.logExecutedTaskEvent(task)
-        this.options.fixupController.startDecorator(task)
-        const provider = this.getProviderForTask(task)
-        await provider.startStreamingEdit()
+        try {
+            this.options.fixupController.startDecorator(task)
+            const provider = this.getProviderForTask(task)
+            await provider.startStreamingEdit()
+        } catch (error: any) {
+            // If there's an error, cancel the task
+            this.options.fixupController.cancel(task)
+            void vscode.window.showErrorMessage(
+                `Error performing the ${task.intent} edit task. Check the logs for more details.`
+            )
+            throw error
+        }
     }
 
     public dispose(): void {
