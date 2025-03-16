@@ -573,7 +573,7 @@ export class ModelsService {
      */
     public getContextWindowByID(modelID: string, models = this.models): ModelContextWindow {
         // TODO(sqs)#observe: remove synchronous access here, return an Observable<ModelContextWindow> instead
-        const model = this.getModelByID(modelID)
+        const model = this.getModelByID(modelID, models)
         return model
             ? model.contextWindow
             : { input: CHAT_INPUT_TOKEN_BUDGET, output: CHAT_OUTPUT_TOKEN_BUDGET }
@@ -591,14 +591,14 @@ export class ModelsService {
         )
     }
 
-    public getModelByID(modelID: string): Model | undefined {
+    public getModelByID(modelID: string, models = this.models): Model | undefined {
         // TODO(sqs)#observe: remove synchronous access here, return an Observable<Model|undefined> instead
         // split on :: or / to get the model id
         // e.g. "openai::v1::gpt-4o-mini" or "openai/gpt-4o-mini"
         const modelParameters = modelID.split(/[:\/]{2}|\//)
         const modelId = modelParameters.at(-1) || ''
 
-        return this.models.find(m => m.id.endsWith(modelId))
+        return models.find(m => m.id.endsWith(modelId))
     }
 
     public getAllModelsWithSubstring(modelSubstring: string): Model[] {
