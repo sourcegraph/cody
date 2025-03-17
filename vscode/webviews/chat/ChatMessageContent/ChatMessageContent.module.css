@@ -159,6 +159,8 @@
 .content {
     word-break: break-word;
     text-wrap: wrap;
+    margin-top: 0.5rem;
+    margin-bottom: 0.5rem;
 }
 
 /* Style @-file tokens to match TranscriptAction context files */

@@ -80,9 +80,6 @@ export enum FeatureFlag {
     // (Enabling users to use Cody Pro for free for 3-months starting in late Q4'2023.)
     CodyProTrialEnded = 'cody-pro-trial-ended',
 
-    /** Interactive tutorial, primarily for onboarding */
-    CodyInteractiveTutorial = 'cody-interactive-tutorial',
-
     GitMentionProvider = 'git-mention-provider',
 
     /** Enable debug mode for One Box feature in Cody */
@@ -134,6 +131,9 @@ export enum FeatureFlag {
      * Auto generate short description for chat as title.
      */
     ChatTitleAutoGeneration = 'chat-title-auto-generation',
+
+    // Extend context window for Cody Clients
+    LongContextWindow = 'long-context-window',
 }
 
 const ONE_HOUR = 60 * 60 * 1000

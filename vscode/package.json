@@ -625,11 +625,6 @@
         "when": "cody.activated && !editorTextFocus"
       },
       {
-        "command": "cody.tutorial.chat",
-        "key": "alt+l",
-        "when": "cody.activated && cody.tutorialActive"
-      },
-      {
         "command": "cody.command.edit-code",
         "key": "alt+k",
         "when": "cody.activated && !editorReadonly"
@@ -638,11 +633,6 @@
         "command": "cody.command.execute-prompt",
         "key": "shift+alt+p",
         "when": "cody.activated"
-      },
-      {
-        "command": "cody.tutorial.edit",
-        "key": "alt+k",
-        "when": "cody.activated && !editorReadonly && cody.tutorialActive"
       },
       {
         "command": "cody.command.document-code",
@@ -1453,6 +1443,7 @@
     "diff": "^5.2.0",
     "fast-myers-diff": "^3.2.0",
     "fast-xml-parser": "^4.3.2",
+    "framer-motion": "^12.5.0",
     "fzf": "^0.5.2",
     "glob": "^7.2.3",
     "graceful-fs": "^4.2.11",

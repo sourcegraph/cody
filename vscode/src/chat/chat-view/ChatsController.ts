@@ -12,6 +12,7 @@ import {
     currentAuthStatus,
     currentAuthStatusAuthed,
     editorStateFromPromptString,
+    isS2,
     subscriptionDisposable,
     telemetryRecorder,
 } from '@sourcegraph/cody-shared'
@@ -40,6 +41,7 @@ import {
 } from './ChatController'
 import { chatHistory } from './ChatHistoryManager'
 import type { ContextRetriever } from './ContextRetriever'
+import { initializeEditToolHistory } from './tools/edit-history'
 
 export const CodyChatEditorViewType = 'cody.editorPanel'
 
@@ -85,6 +87,14 @@ export class ChatsController implements vscode.Disposable {
                     }
 
                     this.currentAuthAccount = authStatus.authenticated ? { ...authStatus } : undefined
+
+                    // Initialize the edit source control UI for S2 users only.
+                    if (authStatus.authenticated && isS2(authStatus.endpoint)) {
+                        const editSourceControl = initializeEditToolHistory()
+                        if (editSourceControl?.length) {
+                            this.disposables.push(...editSourceControl)
+                        }
+                    }
                 })
             )
         )

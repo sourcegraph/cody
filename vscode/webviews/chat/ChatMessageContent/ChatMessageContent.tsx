@@ -1,6 +1,5 @@
 import { clsx } from 'clsx'
 import { LRUCache } from 'lru-cache'
-import { LoaderIcon, MinusIcon, PlusIcon } from 'lucide-react'
 import type React from 'react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
@@ -10,10 +9,10 @@ import type { FixupTaskID } from '../../../src/non-stop/FixupTask'
 import { CodyTaskState } from '../../../src/non-stop/state'
 import { type ClientActionListener, useClientActionListener } from '../../client/clientState'
 import { MarkdownFromCody } from '../../components/MarkdownFromCody'
-import { useLocalStorage } from '../../components/hooks'
 import { useConfig } from '../../utils/useConfig'
 import type { PriorHumanMessageInfo } from '../cells/messageCell/assistant/AssistantMessageCell'
 import styles from './ChatMessageContent.module.css'
+import { ThinkingCell } from './ThinkingCell'
 import { createButtons, createButtonsExperimentalUI } from './create-buttons'
 import { extractThinkContent, getCodeBlockId } from './utils'
 
@@ -44,6 +43,9 @@ interface ChatMessageContentProps {
     smartApplyEnabled?: boolean
     smartApply?: CodeBlockActionsProps['smartApply']
 
+    isThoughtProcessOpened?: boolean
+    setThoughtProcessOpened?: (open: boolean) => void
+
     guardrails?: Guardrails
     className?: string
 }
@@ -63,6 +65,8 @@ export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps
     className,
     smartApplyEnabled,
     smartApply,
+    isThoughtProcessOpened,
+    setThoughtProcessOpened,
 }) => {
     const rootRef = useRef<HTMLDivElement>(null)
     const config = useConfig()
@@ -223,46 +227,15 @@ export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps
         [displayMarkdown]
     )
 
-    const [isOpen, setIsOpen] = useLocalStorage('cody.thinking-space.open', true)
-
     return (
         <div ref={rootRef} data-testid="chat-message-content">
-            {thinkContent.length > 0 && (
-                <details
-                    open={isOpen}
-                    onToggle={e => setIsOpen((e.target as HTMLDetailsElement).open)}
-                    className="tw-container tw-mb-4 tw-border tw-border-gray-500/20 dark:tw-border-gray-600/40 tw-rounded-lg tw-overflow-hidden tw-backdrop-blur-sm tw-min-w-full"
-                    title="Thinking & Reasoning Space"
-                >
-                    <summary
-                        className={clsx(
-                            'tw-flex tw-items-center tw-gap-2 tw-px-3 tw-py-2 tw-bg-transparent dark:tw-bg-transparent tw-cursor-pointer tw-select-none tw-transition-colors',
-                            {
-                                'tw-animate-pulse': isThinking,
-                            }
-                        )}
-                    >
-                        {isThinking ? (
-                            <LoaderIcon size={16} className="tw-animate-spin tw-text-foreground/80" />
-                        ) : (
-                            <>
-                                {isOpen ? (
-                                    <MinusIcon size={16} className="tw-text-foreground/80" />
-                                ) : (
-                                    <PlusIcon size={16} className="tw-text-foreground/80" />
-                                )}
-                            </>
-                        )}
-                        <span className="tw-font-semibold tw-text-foreground/80">
-                            {isThinking ? 'Thinking...' : 'Thought Process'}
-                        </span>
-                    </summary>
-                    <div className="tw-px-4 tw-py-3 tw-mx-4 tw-text-sm tw-prose dark:tw-prose-invert tw-max-w-none tw-leading-relaxed tw-text-base/7">
-                        <MarkdownFromCody className={clsx(styles.content, className)}>
-                            {thinkContent}
-                        </MarkdownFromCody>
-                    </div>
-                </details>
+            {setThoughtProcessOpened && thinkContent.length > 0 && (
+                <ThinkingCell
+                    isOpen={!!isThoughtProcessOpened}
+                    setIsOpen={setThoughtProcessOpened}
+                    isThinking={isMessageLoading && isThinking}
+                    thought={thinkContent}
+                />
             )}
             <MarkdownFromCody className={clsx(styles.content, className)}>
                 {displayContent}
