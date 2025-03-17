@@ -90,7 +90,10 @@ describe('getCurrentFilePromptComponents', () => {
             },
         })
 
-        const result = getCurrentFilePromptComponents(document, codeToReplaceData)
+        const result = getCurrentFilePromptComponents({
+            document,
+            codeToReplaceDataRaw: codeToReplaceData,
+        })
         expect(result.fileWithMarkerPrompt.toString()).toBe(dedent`
             (\`test.ts\`)
             <file>
@@ -154,7 +157,10 @@ describe('getCurrentFilePromptComponents', () => {
             },
         })
 
-        const result = getCurrentFilePromptComponents(document, codeToReplaceData)
+        const result = getCurrentFilePromptComponents({
+            document,
+            codeToReplaceDataRaw: codeToReplaceData,
+        })
         expect(result.fileWithMarkerPrompt.toString()).toBe(dedent`
             (\`test.ts\`)
             <file>
