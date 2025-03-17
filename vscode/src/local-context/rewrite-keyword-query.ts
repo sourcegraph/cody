@@ -56,7 +56,7 @@ async function doRewrite(
             topK: 1,
             fast: true,
         },
-        { apiVersion: 1 }, // Use legacy API version for now
+        { apiVersion: 5 }, // Use legacy API version for now
         signal
     )
 
@@ -105,7 +105,7 @@ export async function extractKeywords(
             topK: 1,
             fast: true,
         },
-        { apiVersion: 0 }, // Use legacy API version for now
+        { apiVersion: 5 }, // Use legacy API version for now
         signal
     )
 

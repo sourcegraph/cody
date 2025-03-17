@@ -1998,5 +1998,1024 @@ log:
         send: 0
         ssl: -1
         wait: 130
+    - _id: 455c5f802ea51df96ca35f4eac8336f5
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 841
+        cookies: []
+        headers:
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_fc324d3667e841181b0779375f26dedc911d26b303d23b29b1a2d7ee63dc77eb
+          - name: connection
+            value: keep-alive
+          - name: content-type
+            value: application/json
+          - name: user-agent
+            value: / (Node.js v20.4.0)
+          - name: x-requested-with
+            value: ""
+          - name: host
+            value: sourcegraph.com
+        headersSize: 354
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            fast: true
+            maxTokensToSample: 400
+            messages:
+              - speaker: human
+                text: You are Cody, an AI coding assistant from Sourcegraph.
+              - speaker: assistant
+                text: I am Cody, an AI coding assistant from Sourcegraph.
+              - speaker: human
+                text: >
+                  You are helping a developer answer questions about their
+                  codebase. Write a keyword search to help find the relevant
+                  files to answer the question. Examples:
+
+                  - Find a symbol by name: `<query>SearchJob</query>`
+
+                  - Find a symbol using keywords: `<query>search indexing queue</query>`
+
+                  - Find where something is implemented: `<query>check for authentication</query>`
+
+                  - Find string literal in code: `<query>"result limit hit"</query>`
+
+                   ONLY return the keyword search. Question: <userQuery>Where is authentication router defined?</userQuery>
+              - speaker: assistant
+            temperature: 0
+            topK: 1
+        queryString:
+          - name: api-version
+            value: "5"
+        url: https://sourcegraph.com/.api/completions/stream?api-version=5
+      response:
+        bodySize: 86
+        content:
+          mimeType: text/event-stream
+          size: 86
+          text: |+
+            event: error
+            data: {"error":"message content cannot be empty"}
+
+            event: done
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Mon, 17 Mar 2025 16:05:04 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1320
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2025-03-17T16:05:04.431Z
+      time: 192
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 192
+    - _id: c04dec1e38d50b4fc7878fc8503a79ce
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 820
+        cookies: []
+        headers:
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_fc324d3667e841181b0779375f26dedc911d26b303d23b29b1a2d7ee63dc77eb
+          - name: connection
+            value: keep-alive
+          - name: content-type
+            value: application/json
+          - name: user-agent
+            value: / (Node.js v20.4.0)
+          - name: x-requested-with
+            value: ""
+          - name: host
+            value: sourcegraph.com
+        headersSize: 354
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            fast: true
+            maxTokensToSample: 400
+            messages:
+              - speaker: human
+                text: You are Cody, an AI coding assistant from Sourcegraph.
+              - speaker: assistant
+                text: I am Cody, an AI coding assistant from Sourcegraph.
+              - speaker: human
+                text: >
+                  You are helping a developer answer questions about their
+                  codebase. Write a keyword search to help find the relevant
+                  files to answer the question. Examples:
+
+                  - Find a symbol by name: `<query>SearchJob</query>`
+
+                  - Find a symbol using keywords: `<query>search indexing queue</query>`
+
+                  - Find where something is implemented: `<query>check for authentication</query>`
+
+                  - Find string literal in code: `<query>"result limit hit"</query>`
+
+                   ONLY return the keyword search. Question: <userQuery>scan tokens in C++</userQuery>
+              - speaker: assistant
+            temperature: 0
+            topK: 1
+        queryString:
+          - name: api-version
+            value: "5"
+        url: https://sourcegraph.com/.api/completions/stream?api-version=5
+      response:
+        bodySize: 86
+        content:
+          mimeType: text/event-stream
+          size: 86
+          text: |+
+            event: error
+            data: {"error":"message content cannot be empty"}
+
+            event: done
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Mon, 17 Mar 2025 16:05:04 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1320
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2025-03-17T16:05:04.632Z
+      time: 109
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 109
+    - _id: 93e32993a840302f0ba551ead6398262
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 829
+        cookies: []
+        headers:
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_fc324d3667e841181b0779375f26dedc911d26b303d23b29b1a2d7ee63dc77eb
+          - name: connection
+            value: keep-alive
+          - name: content-type
+            value: application/json
+          - name: user-agent
+            value: / (Node.js v20.4.0)
+          - name: x-requested-with
+            value: ""
+          - name: host
+            value: sourcegraph.com
+        headersSize: 354
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            fast: true
+            maxTokensToSample: 400
+            messages:
+              - speaker: human
+                text: You are Cody, an AI coding assistant from Sourcegraph.
+              - speaker: assistant
+                text: I am Cody, an AI coding assistant from Sourcegraph.
+              - speaker: human
+                text: >
+                  You are helping a developer answer questions about their
+                  codebase. Write a keyword search to help find the relevant
+                  files to answer the question. Examples:
+
+                  - Find a symbol by name: `<query>SearchJob</query>`
+
+                  - Find a symbol using keywords: `<query>search indexing queue</query>`
+
+                  - Find where something is implemented: `<query>check for authentication</query>`
+
+                  - Find string literal in code: `<query>"result limit hit"</query>`
+
+                   ONLY return the keyword search. Question: <userQuery>parse file with tree-sitter</userQuery>
+              - speaker: assistant
+            temperature: 0
+            topK: 1
+        queryString:
+          - name: api-version
+            value: "5"
+        url: https://sourcegraph.com/.api/completions/stream?api-version=5
+      response:
+        bodySize: 86
+        content:
+          mimeType: text/event-stream
+          size: 86
+          text: |+
+            event: error
+            data: {"error":"message content cannot be empty"}
+
+            event: done
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Mon, 17 Mar 2025 16:05:04 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1320
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2025-03-17T16:05:04.747Z
+      time: 117
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 117
+    - _id: 3a27d01f05c29b7aa2d91f82a87ee873
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 821
+        cookies: []
+        headers:
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_fc324d3667e841181b0779375f26dedc911d26b303d23b29b1a2d7ee63dc77eb
+          - name: connection
+            value: keep-alive
+          - name: content-type
+            value: application/json
+          - name: user-agent
+            value: / (Node.js v20.4.0)
+          - name: x-requested-with
+            value: ""
+          - name: host
+            value: sourcegraph.com
+        headersSize: 354
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            fast: true
+            maxTokensToSample: 400
+            messages:
+              - speaker: human
+                text: You are Cody, an AI coding assistant from Sourcegraph.
+              - speaker: assistant
+                text: I am Cody, an AI coding assistant from Sourcegraph.
+              - speaker: human
+                text: >
+                  You are helping a developer answer questions about their
+                  codebase. Write a keyword search to help find the relevant
+                  files to answer the question. Examples:
+
+                  - Find a symbol by name: `<query>SearchJob</query>`
+
+                  - Find a symbol using keywords: `<query>search indexing queue</query>`
+
+                  - Find where something is implemented: `<query>check for authentication</query>`
+
+                  - Find string literal in code: `<query>"result limit hit"</query>`
+
+                   ONLY return the keyword search. Question: <userQuery>type Zoekt struct {</userQuery>
+              - speaker: assistant
+            temperature: 0
+            topK: 1
+        queryString:
+          - name: api-version
+            value: "5"
+        url: https://sourcegraph.com/.api/completions/stream?api-version=5
+      response:
+        bodySize: 86
+        content:
+          mimeType: text/event-stream
+          size: 86
+          text: |+
+            event: error
+            data: {"error":"message content cannot be empty"}
+
+            event: done
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Mon, 17 Mar 2025 16:05:04 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1320
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2025-03-17T16:05:04.872Z
+      time: 121
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 121
+    - _id: f36ae7b32c3eb97b52e11feb1a9da090
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 982
+        cookies: []
+        headers:
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_fc324d3667e841181b0779375f26dedc911d26b303d23b29b1a2d7ee63dc77eb
+          - name: connection
+            value: keep-alive
+          - name: content-type
+            value: application/json
+          - name: user-agent
+            value: / (Node.js v20.4.0)
+          - name: x-requested-with
+            value: ""
+          - name: host
+            value: sourcegraph.com
+        headersSize: 354
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            fast: true
+            maxTokensToSample: 400
+            messages:
+              - speaker: human
+                text: You are Cody, an AI coding assistant from Sourcegraph.
+              - speaker: assistant
+                text: I am Cody, an AI coding assistant from Sourcegraph.
+              - speaker: human
+                text: >
+                  You are helping a developer answer questions about their
+                  codebase. Write a keyword search to help find the relevant
+                  files to answer the question. Examples:
+
+                  - Find a symbol by name: `<query>SearchJob</query>`
+
+                  - Find a symbol using keywords: `<query>search indexing queue</query>`
+
+                  - Find where something is implemented: `<query>check for authentication</query>`
+
+                  - Find string literal in code: `<query>"result limit hit"</query>`
+
+                   ONLY return the keyword search. Question: <userQuery>type Zoekt struct {
+                  	Client zoekt.Searcher
+
+                  	// DisableCache when true prevents caching of Client.List. Useful in
+                  	// tests.
+                  	DisableCache bool
+
+                  	mu       sync.RWMute
+                  </userQuery>
+              - speaker: assistant
+            temperature: 0
+            topK: 1
+        queryString:
+          - name: api-version
+            value: "5"
+        url: https://sourcegraph.com/.api/completions/stream?api-version=5
+      response:
+        bodySize: 86
+        content:
+          mimeType: text/event-stream
+          size: 86
+          text: |+
+            event: error
+            data: {"error":"message content cannot be empty"}
+
+            event: done
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Mon, 17 Mar 2025 16:05:05 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1320
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2025-03-17T16:05:04.999Z
+      time: 103
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 103
+    - _id: bac07b34eabc356134ce5ebf49b35cb5
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 849
+        cookies: []
+        headers:
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_fc324d3667e841181b0779375f26dedc911d26b303d23b29b1a2d7ee63dc77eb
+          - name: connection
+            value: keep-alive
+          - name: content-type
+            value: application/json
+          - name: user-agent
+            value: / (Node.js v20.4.0)
+          - name: x-requested-with
+            value: ""
+          - name: host
+            value: sourcegraph.com
+        headersSize: 354
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            fast: true
+            maxTokensToSample: 400
+            messages:
+              - speaker: human
+                text: You are Cody, an AI coding assistant from Sourcegraph.
+              - speaker: assistant
+                text: I am Cody, an AI coding assistant from Sourcegraph.
+              - speaker: human
+                text: >
+                  You are helping a developer answer questions about their
+                  codebase. Write a keyword search to help find the relevant
+                  files to answer the question. Examples:
+
+                  - Find a symbol by name: `<query>SearchJob</query>`
+
+                  - Find a symbol using keywords: `<query>search indexing queue</query>`
+
+                  - Find where something is implemented: `<query>check for authentication</query>`
+
+                  - Find string literal in code: `<query>"result limit hit"</query>`
+
+                   ONLY return the keyword search. Question: <userQuery>C'est ou la logique pour recloner les dépôts?</userQuery>
+              - speaker: assistant
+            temperature: 0
+            topK: 1
+        queryString:
+          - name: api-version
+            value: "5"
+        url: https://sourcegraph.com/.api/completions/stream?api-version=5
+      response:
+        bodySize: 86
+        content:
+          mimeType: text/event-stream
+          size: 86
+          text: |+
+            event: error
+            data: {"error":"message content cannot be empty"}
+
+            event: done
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Mon, 17 Mar 2025 16:05:05 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1320
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2025-03-17T16:05:05.107Z
+      time: 117
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 117
+    - _id: e6d9c4ac6182c09b70dc7ecdcd1c8bfc
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 855
+        cookies: []
+        headers:
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_fc324d3667e841181b0779375f26dedc911d26b303d23b29b1a2d7ee63dc77eb
+          - name: connection
+            value: keep-alive
+          - name: content-type
+            value: application/json
+          - name: user-agent
+            value: / (Node.js v20.4.0)
+          - name: x-requested-with
+            value: ""
+          - name: host
+            value: sourcegraph.com
+        headersSize: 354
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            fast: true
+            maxTokensToSample: 400
+            messages:
+              - speaker: human
+                text: You are Cody, an AI coding assistant from Sourcegraph.
+              - speaker: assistant
+                text: I am Cody, an AI coding assistant from Sourcegraph.
+              - speaker: human
+                text: >
+                  You are helping a developer answer questions about their
+                  codebase. Write a keyword search to help find the relevant
+                  files to answer the question. Examples:
+
+                  - Find a symbol by name: `<query>SearchJob</query>`
+
+                  - Find a symbol using keywords: `<query>search indexing queue</query>`
+
+                  - Find where something is implemented: `<query>check for authentication</query>`
+
+                  - Find string literal in code: `<query>"result limit hit"</query>`
+
+                   ONLY return the keyword search. Question: <userQuery>Wie kann ich eine neue Datenbankmigration definieren?</userQuery>
+              - speaker: assistant
+            temperature: 0
+            topK: 1
+        queryString:
+          - name: api-version
+            value: "5"
+        url: https://sourcegraph.com/.api/completions/stream?api-version=5
+      response:
+        bodySize: 86
+        content:
+          mimeType: text/event-stream
+          size: 86
+          text: |+
+            event: error
+            data: {"error":"message content cannot be empty"}
+
+            event: done
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Mon, 17 Mar 2025 16:05:05 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1320
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2025-03-17T16:05:05.228Z
+      time: 115
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 115
+    - _id: c792508c1dfbc981b658ce3da7fc684e
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 912
+        cookies: []
+        headers:
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_fc324d3667e841181b0779375f26dedc911d26b303d23b29b1a2d7ee63dc77eb
+          - name: connection
+            value: keep-alive
+          - name: content-type
+            value: application/json
+          - name: user-agent
+            value: / (Node.js v20.4.0)
+          - name: x-requested-with
+            value: ""
+          - name: host
+            value: sourcegraph.com
+        headersSize: 354
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            fast: true
+            maxTokensToSample: 400
+            messages:
+              - speaker: human
+                text: You are Cody, an AI coding assistant from Sourcegraph.
+              - speaker: assistant
+                text: I am Cody, an AI coding assistant from Sourcegraph.
+              - speaker: human
+                text: >
+                  You are helping a developer answer questions about their
+                  codebase. Write a keyword search to help find the relevant
+                  files to answer the question. Examples:
+
+                  - Find a symbol by name: `<query>SearchJob</query>`
+
+                  - Find a symbol using keywords: `<query>search indexing queue</query>`
+
+                  - Find where something is implemented: `<query>check for authentication</query>`
+
+                  - Find string literal in code: `<query>"result limit hit"</query>`
+
+                   ONLY return the keyword search. Question: <userQuery>Explain how the context window limit is calculated. how much budget is given to @-mentions vs. search context?</userQuery>
+              - speaker: assistant
+            temperature: 0
+            topK: 1
+        queryString:
+          - name: api-version
+            value: "5"
+        url: https://sourcegraph.com/.api/completions/stream?api-version=5
+      response:
+        bodySize: 86
+        content:
+          mimeType: text/event-stream
+          size: 86
+          text: |+
+            event: error
+            data: {"error":"message content cannot be empty"}
+
+            event: done
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Mon, 17 Mar 2025 16:05:05 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1320
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2025-03-17T16:05:05.347Z
+      time: 113
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 113
+    - _id: 35d159828e93ecaf2488ed7b48314c0a
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 907
+        cookies: []
+        headers:
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_fc324d3667e841181b0779375f26dedc911d26b303d23b29b1a2d7ee63dc77eb
+          - name: connection
+            value: keep-alive
+          - name: content-type
+            value: application/json
+          - name: user-agent
+            value: / (Node.js v20.4.0)
+          - name: x-requested-with
+            value: ""
+          - name: host
+            value: sourcegraph.com
+        headersSize: 354
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            fast: true
+            maxTokensToSample: 400
+            messages:
+              - speaker: human
+                text: You are Cody, an AI coding assistant from Sourcegraph.
+              - speaker: assistant
+                text: I am Cody, an AI coding assistant from Sourcegraph.
+              - speaker: human
+                text: >
+                  You are helping a developer answer questions about their
+                  codebase. Write a keyword search to help find the relevant
+                  files to answer the question. Examples:
+
+                  - Find a symbol by name: `<query>SearchJob</query>`
+
+                  - Find a symbol using keywords: `<query>search indexing queue</query>`
+
+                  - Find where something is implemented: `<query>check for authentication</query>`
+
+                  - Find string literal in code: `<query>"result limit hit"</query>`
+
+                   ONLY return the keyword search. Question: <userQuery>parse file with tree-sitter. follow these rules:
+                  *use the Google Go style guide
+
+                  *panic if parsing fails</userQuery>
+              - speaker: assistant
+            temperature: 0
+            topK: 1
+        queryString:
+          - name: api-version
+            value: "5"
+        url: https://sourcegraph.com/.api/completions/stream?api-version=5
+      response:
+        bodySize: 86
+        content:
+          mimeType: text/event-stream
+          size: 86
+          text: |+
+            event: error
+            data: {"error":"message content cannot be empty"}
+
+            event: done
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Mon, 17 Mar 2025 16:05:05 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1320
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2025-03-17T16:05:05.468Z
+      time: 109
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 109
   pages: []
   version: "1.2"
