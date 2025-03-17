@@ -88,8 +88,8 @@ function getAutoeditsProviderConfig(): AutoeditsProviderConfig {
         isChatModel: baseConfig.isChatModel,
         imageRenderConfig: {
             pixelRatio: clientConfiguration.displayScaleFactor,
-            fontSize: clientConfiguration.editor?.fontSize,
-            lineHeight: clientConfiguration.editor?.lineHeight,
+            fontSize: clientConfiguration?.autoeditFontSize,
+            lineHeight: clientConfiguration?.autoeditLineHeight,
         },
     }
 }

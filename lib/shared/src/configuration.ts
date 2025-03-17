@@ -121,6 +121,10 @@ interface RawClientConfiguration {
     autocompleteFormatOnAccept?: boolean
     autocompleteDisableInsideComments: boolean
 
+    //#region Autoedit
+    autoeditFontSize?: number
+    autoeditLineHeight?: number
+
     //#region Experimental
     autocompleteExperimentalGraphContext: 'lsp-light' | 'tsc' | 'tsc-mixed' | null
     autocompleteExperimentalOllamaOptions: OllamaOptions
@@ -192,12 +196,6 @@ interface RawClientConfiguration {
     overrideAuthToken?: string | undefined
 
     authExternalProviders: ExternalAuthProvider[]
-
-    //#region editor configuration
-    editor?: {
-        fontSize?: number
-        lineHeight?: number
-    }
 }
 
 /**

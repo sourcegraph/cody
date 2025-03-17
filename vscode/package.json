@@ -996,6 +996,14 @@
             }
           ]
         },
+        "cody.autoedit.fontSize": {
+          "type": "number",
+          "markdownDescription": "The font size to use for Cody autoedit suggestions."
+        },
+        "cody.autoedit.lineHeight": {
+          "type": "number",
+          "markdownDescription": "The line height to use for Cody autoedit suggestions."
+        },
         "cody.commandCodeLenses": {
           "order": 8,
           "type": "boolean",
