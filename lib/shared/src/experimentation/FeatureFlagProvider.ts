@@ -80,9 +80,6 @@ export enum FeatureFlag {
     // (Enabling users to use Cody Pro for free for 3-months starting in late Q4'2023.)
     CodyProTrialEnded = 'cody-pro-trial-ended',
 
-    /** Interactive tutorial, primarily for onboarding */
-    CodyInteractiveTutorial = 'cody-interactive-tutorial',
-
     GitMentionProvider = 'git-mention-provider',
 
     /** Enable debug mode for One Box feature in Cody */
