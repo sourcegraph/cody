@@ -75,15 +75,7 @@ export class AutoEditsInlineRendererManager
         event: vscode.TextEditorSelectionChangeEvent
     ): Promise<void> {
         if (
-            this.hasInlineCompletionItems() &&
-            // If we do not have inline decorations, the dismissal of the completion will
-            // automatically be handled by VS Code. Without this check, we will falsely
-            // reject an inline completion, because the `onDidChangeTextEditorSelection` callback
-            // can be fired before the inline-completion acceptance callback.
-            //
-            // I was not able to reproduce it in the E2E tests. For some reason the order of callbacks
-            // is different.
-            this.hasInlineDecorations() &&
+            this.activeRequest?.renderOutput.type === 'completion-with-decorations' &&
             areSameUriDocs(event.textEditor.document, this.activeRequest?.document)
         ) {
             // We are showing a completion alongisde decorations. The dismissal of the completion will
