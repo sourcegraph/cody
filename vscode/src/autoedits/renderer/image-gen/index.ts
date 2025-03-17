@@ -4,6 +4,10 @@ import { type UserProvidedRenderConfig, getRenderConfig } from './canvas/render-
 import { makeDecoratedDiff } from './decorated-diff'
 import { initSyntaxHighlighter } from './highlight'
 import type { DiffMode, VisualDiff } from './visual-diff/types'
+import type { AutoeditRequestID } from '../../analytics-logger'
+
+// In-memory cache for generated images
+const imageCache = new Map<AutoeditRequestID, GeneratedSuggestion>()
 
 export async function initImageSuggestionService() {
     return Promise.all([initSyntaxHighlighter(), initCanvas()])
@@ -18,6 +22,10 @@ interface SuggestionOptions {
      * differ between platforms.
      */
     config?: UserProvidedRenderConfig
+    /**
+     * Optional request ID to use for caching generated images
+     */
+    requestId?: AutoeditRequestID
 }
 
 interface GeneratedSuggestion {
@@ -33,11 +41,17 @@ interface GeneratedSuggestion {
 }
 
 export function generateSuggestionAsImage(options: SuggestionOptions): GeneratedSuggestion {
-    const { diff, lang, config, mode } = options
+    const { diff, lang, config, mode, requestId } = options
+    
+    // If we have a requestId, check if we have a cached image
+    if (requestId && imageCache.has(requestId)) {
+        return imageCache.get(requestId)!
+    }
+    
     const highlightedDiff = makeDecoratedDiff(diff, lang)
     const renderConfig = getRenderConfig(config)
 
-    return {
+    const generatedSuggestion = {
         dark: drawDecorationsToCanvas(highlightedDiff.dark, 'dark', mode, renderConfig).toDataURL(
             'image/png'
         ),
@@ -46,4 +60,25 @@ export function generateSuggestionAsImage(options: SuggestionOptions): Generated
         ),
         pixelRatio: renderConfig.pixelRatio,
     }
+    
+    // If we have a requestId, cache the generated image
+    if (requestId) {
+        imageCache.set(requestId, generatedSuggestion)
+    }
+    
+    return generatedSuggestion
+}
+
+/**
+ * Clear a specific image from the cache
+ */
+export function clearCachedImage(requestId: AutoeditRequestID): void {
+    imageCache.delete(requestId)
+}
+
+/**
+ * Clear all images from the cache
+ */
+export function clearImageCache(): void {
+    imageCache.clear()
 }

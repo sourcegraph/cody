@@ -39,7 +39,8 @@ export class AutoEditsInlineRendererManager
         const { deletionDecorations } = this.getInlineDecorations(args.decorationInfo)
         const { insertionDecorations, insertMarkerDecorations } = this.createModifiedImageDecorations(
             args.document,
-            args.decorationInfo
+            args.decorationInfo,
+            args.requestId
         )
         return {
             type: 'image',

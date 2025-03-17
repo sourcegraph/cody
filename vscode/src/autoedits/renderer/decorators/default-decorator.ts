@@ -225,6 +225,8 @@ export class DefaultDecorator implements AutoEditsDecorator {
             diff,
             lang: this.editor.document.languageId,
             mode: diffMode,
+            // DefaultDecorator doesn't have access to requestId
+            // requestId is undefined - this is OK as it will just not use the cache
         })
         const startLineEndColumn = getEndColumnForLine(
             this.editor.document.lineAt(target.line),
@@ -272,8 +274,12 @@ export class DefaultDecorator implements AutoEditsDecorator {
                         margin: `0 0 0 ${decorationMargin}ch`,
                     },
                     // Provide different highlighting for dark/light themes
-                    dark: { before: { contentIconPath: vscode.Uri.parse(dark) } },
-                    light: { before: { contentIconPath: vscode.Uri.parse(light) } },
+                    dark: {
+                        before: { contentIconPath: vscode.Uri.parse(dark) },
+                    },
+                    light: {
+                        before: { contentIconPath: vscode.Uri.parse(light) },
+                    },
                 },
             },
         ])
