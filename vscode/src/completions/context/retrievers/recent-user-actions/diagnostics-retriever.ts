@@ -1,12 +1,12 @@
 import type { AutocompleteContextSnippet } from '@sourcegraph/cody-shared'
 import { isDefined } from '@sourcegraph/cody-shared'
 import { XMLBuilder } from 'fast-xml-parser'
+import { LRUCache } from 'lru-cache'
 import * as vscode from 'vscode'
 import { autoeditsOutputChannelLogger } from '../../../../autoedits/output-channel-logger'
 import type { ContextRetriever, ContextRetrieverOptions } from '../../../types'
 import { RetrieverIdentifier } from '../../utils'
 import { getCellIndexInActiveNotebookEditor, getNotebookCells } from './notebook-utils'
-import { LRUCache } from 'lru-cache'
 
 // XML builder instance for formatting diagnostic messages
 const XML_BUILDER = new XMLBuilder({ format: true })
@@ -35,14 +35,18 @@ export class DiagnosticsRetriever implements vscode.Disposable, ContextRetriever
     private contextLines: number
     private useXMLForPromptRendering: boolean
     private useCaretToIndicateErrorLocation: boolean
-    private cache: LRUCache<string, AutocompleteContextSnippet[]>
+    private cache: LRUCache<vscode.Uri, vscode.Diagnostic[]>
 
-    constructor(options: DiagnosticsRetrieverOptions) {
+    constructor(
+        options: DiagnosticsRetrieverOptions,
+        readonly languages: Pick<typeof vscode.languages, 'onDidChangeDiagnostics'> = vscode.languages
+    ) {
         // Number of lines of context to include around the diagnostic information in the prompt
         this.contextLines = options.contextLines
         this.useXMLForPromptRendering = options.useXMLForPromptRendering
         this.useCaretToIndicateErrorLocation = options.useCaretToIndicateErrorLocation ?? true
         this.cache = new LRUCache({ max: 100 })
+        this.disposables.push(languages.onDidChangeDiagnostics(this.onDidChangeDiagnostics.bind(this)))
     }
 
     public async retrieve({
@@ -73,15 +77,16 @@ export class DiagnosticsRetriever implements vscode.Disposable, ContextRetriever
         if (!activeNotebook) {
             return []
         }
-        const key = this.toCacheKey(activeNotebook.uri, position)
-        const cached = this.cache.get(key)
-        if (cached) {
-            return cached
-        }
         const notebookCells = getNotebookCells(activeNotebook)
         const diagnostics = await Promise.all(
             notebookCells.map(cell => {
-                const diagnostics = vscode.languages.getDiagnostics(cell.document.uri)
+                let diagnostics: vscode.Diagnostic[]
+                if (this.cache.has(cell.document.uri)) {
+                    diagnostics = this.cache.get(cell.document.uri)!
+                } else {
+                    diagnostics = vscode.languages.getDiagnostics(cell.document.uri)
+                    this.cache.set(cell.document.uri, diagnostics)
+                }
                 return this.getDiagnosticsPromptFromInformation(cell.document, position, diagnostics)
             })
         )
@@ -89,7 +94,6 @@ export class DiagnosticsRetriever implements vscode.Disposable, ContextRetriever
             ...snippet,
             uri: activeNotebook!.uri,
         }))
-        this.cache.set(key, snippets)
         return snippets
     }
 
@@ -97,18 +101,18 @@ export class DiagnosticsRetriever implements vscode.Disposable, ContextRetriever
         document: vscode.TextDocument,
         position: vscode.Position
     ): Promise<AutocompleteContextSnippet[]> {
-        const key = this.toCacheKey(document.uri, position)
-        const cached = this.cache.get(key)
-        if (cached) {
-            return cached
+        let diagnostics: vscode.Diagnostic[]
+        if (this.cache.has(document.uri)) {
+            diagnostics = this.cache.get(document.uri)!
+        } else {
+            diagnostics = vscode.languages.getDiagnostics(document.uri)
+            this.cache.set(document.uri, diagnostics)
         }
-        const diagnostics = vscode.languages.getDiagnostics(document.uri)
         const diagnosticsSnippets = await this.getDiagnosticsPromptFromInformation(
             document,
             position,
             diagnostics
         )
-        this.cache.set(key, diagnosticsSnippets)
         return diagnosticsSnippets
     }
 
@@ -288,8 +292,10 @@ export class DiagnosticsRetriever implements vscode.Disposable, ContextRetriever
         return `${' '.repeat(column)}${'^'.repeat(diagnosticLength)} ${diagnostic.message}`
     }
 
-    private toCacheKey(documentUri: vscode.Uri, position: vscode.Position): string {
-        return `${documentUri.toString()}:${position.line}:${position.character}`
+    private onDidChangeDiagnostics(event: vscode.DiagnosticChangeEvent): void {
+        for (const uri of event.uris) {
+            this.cache.delete(uri)
+        }
     }
 
     public isSupportedForLanguageId(): boolean {
