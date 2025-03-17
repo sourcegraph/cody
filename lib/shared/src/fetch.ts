@@ -18,8 +18,5 @@ export function fetch(input: RequestInfo | URL, init?: RequestInit): Promise<Bro
         ...init,
         agent: globalAgentRef.agent,
     }
-    if (input instanceof URL) {
-        return (globalAgentRef.agent as any).sendMessageViaSocket(input, initWithAgent)
-    }
     return isomorphicFetch(input, initWithAgent)
 }

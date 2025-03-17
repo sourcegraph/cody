@@ -24,6 +24,7 @@ import {
     fetch,
     getActiveTraceAndSpanId,
     getClientInfoParams,
+    globalAgentRef,
     isAbortError,
     isCustomAuthChallengeResponse,
     isNodeResponse,
@@ -97,16 +98,18 @@ class DefaultCodeCompletionsClient implements CodeCompletionsClient {
                 // TODO(philipp-spiess): Feature test if the response is a Node or a browser stream and
                 // implement SSE parsing for both.
                 const isNode = typeof process !== 'undefined'
-                const enableStreaming = !!isNode
+                const enableStreaming = false // !!isNode
                 span.setAttribute('enableStreaming', enableStreaming)
 
                 // Disable gzip compression since the sg instance will start to batch
                 // responses afterwards.
                 if (enableStreaming) {
                     headers.set('Accept-Encoding', 'gzip;q=0')
+                    requestHeaders['Accept-Encoding'] = 'gzip;q=0'
                 }
 
                 headers.set('X-Timeout-Ms', params.timeoutMs.toString())
+                requestHeaders['X-Timeout-Ms'] = params.timeoutMs.toString()
 
                 const serializedParams: SerializedCodeCompletionsParams & {
                     stream: boolean
@@ -123,12 +126,29 @@ class DefaultCodeCompletionsClient implements CodeCompletionsClient {
 
                 log.onFetch('defaultClient', serializedParams)
 
-                const response = await fetch(url, {
-                    method: 'POST',
-                    body: JSON.stringify(serializedParams),
-                    headers,
-                    signal,
-                })
+                const serializedHeaders = JSON.stringify(requestHeaders)
+
+                let response: Response
+
+                try {
+                    response = await (globalAgentRef.agent as any).sendMessageViaSocket(url, {
+                        method: 'POST',
+                        body: JSON.stringify(serializedParams),
+                        headers: serializedHeaders,
+                        signal,
+                    })
+                } catch (error) {
+                    const message = `LLM response fetch error: ${error}`
+                    log?.onError(message)
+                    throw error
+                }
+
+                // const response = await fetch(url, {
+                //     method: 'POST',
+                //     body: JSON.stringify(serializedParams),
+                //     headers,
+                //     signal,
+                // })
 
                 logResponseHeadersToSpan(span, response)
 
@@ -239,6 +259,8 @@ class DefaultCodeCompletionsClient implements CodeCompletionsClient {
                         log?.onError(message)
                         throw new TracedError(message, traceId)
                     }
+
+                    yield result
 
                     return result
                 } catch (error) {
