@@ -2,9 +2,14 @@ package com.sourcegraph.config
 
 import com.google.gson.JsonObject
 import com.intellij.ide.plugins.PluginManagerCore
+import com.intellij.ide.ui.UISettings
 import com.intellij.openapi.application.ApplicationInfo
+import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.editor.Editor
+import com.intellij.openapi.editor.EditorFactory
+import com.intellij.openapi.editor.EditorKind
+import com.intellij.openapi.editor.impl.DocumentImpl
 import com.intellij.openapi.extensions.PluginId
 import com.intellij.openapi.fileEditor.FileEditor
 import com.intellij.openapi.fileEditor.FileEditorManager
@@ -12,7 +17,6 @@ import com.intellij.openapi.fileEditor.TextEditor
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ProjectManager
 import com.sourcegraph.cody.agent.CodyAgentService
-import com.sourcegraph.cody.agent.protocol_generated.Date
 import com.sourcegraph.cody.agent.protocol_generated.ExtensionConfiguration
 import com.sourcegraph.cody.auth.CodyAuthService
 import com.sourcegraph.cody.auth.CodySecureStore
@@ -24,6 +28,7 @@ import com.typesafe.config.ConfigValueFactory
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.util.concurrent.CompletableFuture
+import java.util.concurrent.TimeUnit
 import kotlin.io.path.readText
 import org.jetbrains.annotations.Contract
 import org.jetbrains.annotations.VisibleForTesting
@@ -97,6 +102,21 @@ object ConfigUtil {
       token: String? = null,
       customConfigContent: String? = null
   ): ExtensionConfiguration {
+
+    val ascentFuture = CompletableFuture<Int>()
+    runInEdt {
+      val editor =
+          EditorFactory.getInstance()
+              .createEditor(DocumentImpl(""), project, EditorKind.MAIN_EDITOR)
+      ascentFuture.complete(editor.ascent)
+    }
+
+    val ascent = ascentFuture.get(10, TimeUnit.SECONDS)
+    val fontSize = UISettings.getInstance().fontSize
+
+    println("Editor details:")
+    println("ascent: $ascent")
+    println("fontSize: $fontSize")
 
     return ExtensionConfiguration(
         anonymousUserID = CodyApplicationSettings.instance.anonymousUserId,
