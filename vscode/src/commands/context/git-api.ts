@@ -79,7 +79,7 @@ export async function getAllUnstagedFileChanges(gitRepo: Repository): Promise<st
                     const repoRootUri = gitRepo.rootUri
                     const absoluteRepoPath = repoRootUri.fsPath
 
-                    const path = require('path')
+                    const path = require('node:path')
                     const relativePath = path.relative(absoluteRepoPath, absoluteFilePath)
 
                     // Use git diff command with /dev/null to show full file content as added
