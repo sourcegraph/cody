@@ -74,8 +74,13 @@ export async function getAllUnstagedFileChanges(gitRepo: Repository): Promise<st
         const untrackedDiffs = await Promise.all(
             untrackedUnstagedFiles.map(async file => {
                 try {
-                    // Get relative path from repo root
-                    const relativePath = vscode.workspace.asRelativePath(file.uri, false)
+                    // Get paths relative to the git repository root
+                    const absoluteFilePath = file.uri.fsPath
+                    const repoRootUri = gitRepo.rootUri
+                    const absoluteRepoPath = repoRootUri.fsPath
+
+                    const path = require('path')
+                    const relativePath = path.relative(absoluteRepoPath, absoluteFilePath)
 
                     // Use git diff command with /dev/null to show full file content as added
                     const { stdout } = await execAsync(
