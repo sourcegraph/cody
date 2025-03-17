@@ -51,7 +51,7 @@ class CodyFixHighlightPass(val file: PsiFile, val editor: Editor) :
             .filter { it.severity == HighlightSeverity.ERROR }
             .map { highlight ->
               try {
-                val uri = ProtocolTextDocumentExt.fileUriFor(file.virtualFile)
+                val uri = ProtocolTextDocumentExt.vscNormalizedUriFor(file.virtualFile)
 
                 if (progress.isCanceled || uri == null) {
                   return@map CompletableFuture.completedFuture(emptyList<CodeActionQuickFix>())

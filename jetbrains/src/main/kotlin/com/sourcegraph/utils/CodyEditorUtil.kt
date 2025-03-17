@@ -22,6 +22,7 @@ import com.intellij.openapi.util.TextRange
 import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.openapi.vfs.VirtualFileManager
 import com.intellij.util.concurrency.annotations.RequiresEdt
 import com.intellij.util.withScheme
 import com.sourcegraph.cody.agent.protocol_extensions.toOffsetRange
@@ -185,10 +186,9 @@ object CodyEditorUtil {
       return ScratchRootType.getInstance()
           .findFile(project, fileName, ScratchFileService.Option.existing_only)
     } else {
-      val uri = VfsUtil.toUri(uriString)
-      return if (uri != null)
-          LocalFileSystem.getInstance().refreshAndFindFileByNioFile(uri.toPath())
-      else null
+      // Check `ProtocolTextDocumentExt.normalizeToVscUriFormat` for explanation
+      val patchedUri = uriString.replace("file://wsl.localhost/", "file:////wsl.localhost/")
+      return VirtualFileManager.getInstance().findFileByUrl(patchedUri)
     }
   }
 
@@ -199,7 +199,6 @@ object CodyEditorUtil {
   ): VirtualFile? {
     try {
       val uri = VfsUtil.toUri(uriString) ?: return null
-
       val fileUri = uri.withScheme("file")
       if (!fileUri.toPath().exists()) {
         fileUri.toPath().parent?.createDirectories()

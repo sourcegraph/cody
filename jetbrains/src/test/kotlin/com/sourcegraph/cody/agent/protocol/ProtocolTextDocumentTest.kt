@@ -239,11 +239,11 @@ class ProtocolTextDocumentTest : BasePlatformTestCase() {
   fun test_normalized_uri_or_path() {
     val testCases =
         listOf(
-            "\\\\wsl$\\Ubuntu\\home\\person" to "//wsl.localhost/Ubuntu/home/person",
-            "//wsl$/Ubuntu/home/person" to "//wsl.localhost/Ubuntu/home/person",
+            "\\\\wsl$\\Ubuntu\\home\\person" to "file://wsl.localhost/Ubuntu/home/person",
+            "//wsl$/Ubuntu/home/person" to "file://wsl.localhost/Ubuntu/home/person",
             "c:/home/person" to "c:/home/person",
             "D:/home/person" to "d:/home/person",
-            "file://\\\\wsl$\\Ubuntu\\home\\person" to "file:////wsl.localhost/Ubuntu/home/person",
+            "file://\\\\wsl$\\Ubuntu\\home\\person" to "file://wsl.localhost/Ubuntu/home/person",
             "file://c:/home/person" to "file:///c:/home/person",
             "file://Z:/home/PERSON" to "file:///z:/home/PERSON",
             "file:///C:/Users/person" to "file:///c:/Users/person",
@@ -251,65 +251,65 @@ class ProtocolTextDocumentTest : BasePlatformTestCase() {
             "file:///home/person/documents" to "file:///home/person/documents")
 
     for ((input, expected) in testCases) {
-      assertEquals(expected, ProtocolTextDocumentExt.normalizeFileUri(input))
+      assertEquals(expected, ProtocolTextDocumentExt.normalizeToVscUriFormat(input))
     }
   }
 
   fun test_wsl_path_with_backslashes() {
     val input = "\\\\wsl$\\Ubuntu\\home\\person"
-    val expected = "//wsl.localhost/Ubuntu/home/person"
-    assertEquals(expected, ProtocolTextDocumentExt.normalizeFileUri(input))
+    val expected = "file://wsl.localhost/Ubuntu/home/person"
+    assertEquals(expected, ProtocolTextDocumentExt.normalizeToVscUriFormat(input))
   }
 
   fun test_wsl_path_with_forward_slashes() {
     val input = "//wsl$/Ubuntu/home/person"
-    val expected = "//wsl.localhost/Ubuntu/home/person"
-    assertEquals(expected, ProtocolTextDocumentExt.normalizeFileUri(input))
+    val expected = "file://wsl.localhost/Ubuntu/home/person"
+    assertEquals(expected, ProtocolTextDocumentExt.normalizeToVscUriFormat(input))
   }
 
   fun testWindowsPathLowerCase() {
     val input = "c:/home/person"
     val expected = "c:/home/person"
-    assertEquals(expected, ProtocolTextDocumentExt.normalizeFileUri(input))
+    assertEquals(expected, ProtocolTextDocumentExt.normalizeToVscUriFormat(input))
   }
 
   fun testWindowsPathUpperCase() {
     val input = "D:/home/person"
     val expected = "d:/home/person"
-    assertEquals(expected, ProtocolTextDocumentExt.normalizeFileUri(input))
+    assertEquals(expected, ProtocolTextDocumentExt.normalizeToVscUriFormat(input))
   }
 
   fun testWslPathWithFileScheme() {
     val input = "file://\\\\wsl$\\Ubuntu\\home\\person"
-    val expected = "file:////wsl.localhost/Ubuntu/home/person"
-    assertEquals(expected, ProtocolTextDocumentExt.normalizeFileUri(input))
+    val expected = "file://wsl.localhost/Ubuntu/home/person"
+    assertEquals(expected, ProtocolTextDocumentExt.normalizeToVscUriFormat(input))
   }
 
   fun testWindowsPathWithFileScheme() {
     val input = "file://c:/home/person"
     val expected = "file:///c:/home/person"
-    assertEquals(expected, ProtocolTextDocumentExt.normalizeFileUri(input))
+    assertEquals(expected, ProtocolTextDocumentExt.normalizeToVscUriFormat(input))
   }
 
   fun testLinuxPath() {
     val input = "/home/person/documents"
     val expected = "/home/person/documents"
-    assertEquals(expected, ProtocolTextDocumentExt.normalizeFileUri(input))
+    assertEquals(expected, ProtocolTextDocumentExt.normalizeToVscUriFormat(input))
   }
 
   fun testLinuxPathWithFileScheme() {
     val input = "file:///home/person/documents"
     val expected = "file:///home/person/documents"
-    assertEquals(expected, ProtocolTextDocumentExt.normalizeFileUri(input))
+    assertEquals(expected, ProtocolTextDocumentExt.normalizeToVscUriFormat(input))
   }
 
   fun test_unsupportedNonFileScheme() {
     val input = "jar://temp/home/person"
-    assertEquals(null, ProtocolTextDocumentExt.normalizeFileUri(input))
+    assertEquals(null, ProtocolTextDocumentExt.normalizeToVscUriFormat(input))
   }
 
   fun test_conversionFromUnsupportedTempVirtualFile() {
     val vf = myFixture.createFile("virtualTempFile.txt", defaultContent)
-    assertEquals(null, ProtocolTextDocumentExt.fileUriFor(vf))
+    assertEquals(null, ProtocolTextDocumentExt.vscNormalizedUriFor(vf))
   }
 }

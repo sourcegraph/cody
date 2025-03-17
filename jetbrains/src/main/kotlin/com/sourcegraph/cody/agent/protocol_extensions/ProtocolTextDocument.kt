@@ -77,7 +77,7 @@ object ProtocolTextDocumentExt {
     val file = editor.virtualFile ?: return null
     val start = editor.document.codyPosition(caret.offset)
     val selection = Range(start, start)
-    val uri = fileUriFor(file) ?: return null
+    val uri = vscNormalizedUriFor(file) ?: return null
     return ProtocolTextDocument(
         uri = uri,
         selection = selection,
@@ -87,7 +87,7 @@ object ProtocolTextDocumentExt {
   @RequiresEdt
   fun fromEditorWithRangeSelection(editor: Editor, event: SelectionEvent): ProtocolTextDocument? {
     val file = editor.virtualFile ?: return null
-    val uri = fileUriFor(file) ?: return null
+    val uri = vscNormalizedUriFor(file) ?: return null
     val selection = editor.document.codyRange(event.newRange.startOffset, event.newRange.endOffset)
     return ProtocolTextDocument(
         uri = uri,
@@ -106,7 +106,7 @@ object ProtocolTextDocumentExt {
   @RequiresEdt
   fun fromEditorForDocumentEvent(editor: Editor, event: DocumentEvent): ProtocolTextDocument? {
     val file = editor.virtualFile ?: return null
-    val uri = fileUriFor(file) ?: return null
+    val uri = vscNormalizedUriFor(file) ?: return null
     val selection = event.document.codyRange(editor.caretModel.offset, editor.caretModel.offset)
 
     val content =
@@ -156,7 +156,7 @@ object ProtocolTextDocumentExt {
       file: VirtualFile,
   ): ProtocolTextDocument? {
     val content = FileDocumentManager.getInstance().getDocument(file)?.text
-    val uri = fileUriFor(file) ?: return null
+    val uri = vscNormalizedUriFor(file) ?: return null
     val selection = getSelection(editor)
     return ProtocolTextDocument(
         uri = uri,
@@ -168,16 +168,16 @@ object ProtocolTextDocumentExt {
 
   fun fromVirtualFile(file: VirtualFile): ProtocolTextDocument? {
     val content = FileDocumentManager.getInstance().getDocument(file)?.text
-    val uri = fileUriFor(file) ?: return null
+    val uri = vscNormalizedUriFor(file) ?: return null
     return ProtocolTextDocument(
         uri = uri, content = content, testing = getTestingParams(uri = uri, content = content))
   }
 
-  fun fileUriFor(file: VirtualFile): String? {
-    return normalizeFileUri(file.url)
+  fun vscNormalizedUriFor(file: VirtualFile): String? {
+    return normalizeToVscUriFormat(file.url)
   }
 
-  fun normalizeFileUri(uriString: String): String? {
+  fun normalizeToVscUriFormat(uriString: String): String? {
     val hasFileScheme = uriString.startsWith("file://")
 
     if (uriString.contains("://") && !hasFileScheme) {
@@ -189,10 +189,13 @@ object ProtocolTextDocumentExt {
         (if (hasFileScheme) uriString.removePrefix("file://") else uriString).replace("\\", "/")
 
     // Normalize WSL paths
-    val wslPrefix = "//wsl$"
-    if (path.startsWith(wslPrefix)) {
-      val newPath = "//wsl.localhost${path.removePrefix(wslPrefix)}"
-      return if (hasFileScheme) "file://$newPath" else newPath
+    val wslPatterns = """^(/+wsl\$/|/+wsl\.localhost/)""".toRegex()
+    if (path.contains(wslPatterns)) {
+      // That is not correct from IJ perspective but VSC disallow // in authority part of the URI:
+      // https://github.com/microsoft/vscode/blob/1.98.2/src/vs/base/test/common/uri.test.ts#L236.
+      // Because of that in the CodyEditorUtil::findFileOrScratch we need to make sure to convert it
+      // back to the proper format.
+      return path.replace(wslPatterns, "file://wsl.localhost/")
     }
 
     // Normalize drive letters for Windows

@@ -53,7 +53,7 @@ object Utils {
 
     val virtualFile = editor.virtualFile ?: return CompletableFuture.completedFuture(null)
     val fileUri =
-        ProtocolTextDocumentExt.fileUriFor(virtualFile)
+        ProtocolTextDocumentExt.vscNormalizedUriFor(virtualFile)
             ?: return CompletableFuture.completedFuture(null)
 
     val params =

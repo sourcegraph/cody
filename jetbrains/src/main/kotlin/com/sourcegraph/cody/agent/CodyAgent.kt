@@ -128,7 +128,7 @@ private constructor(
         try {
           val workspaceRootPath = ConfigUtil.getWorkspaceRootPath(project)
           val workspaceRootUri =
-              ProtocolTextDocumentExt.normalizeFileUri(workspaceRootPath.toUri().toString())
+              ProtocolTextDocumentExt.normalizeToVscUriFormat(workspaceRootPath.toUri().toString())
                   ?: throw CodyAgentException("Unsupported workspace location: $workspaceRootPath")
 
           return server
