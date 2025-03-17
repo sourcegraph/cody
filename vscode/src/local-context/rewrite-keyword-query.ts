@@ -33,7 +33,7 @@ async function doRewrite(
     query: PromptString,
     signal?: AbortSignal
 ): Promise<string> {
-    const preamble = getSimplePreamble(undefined, 0, 'Default')
+    const preamble = getSimplePreamble(undefined, 1, 'Default')
     const stream = completionsClient.stream(
         {
             messages: [
@@ -56,7 +56,7 @@ async function doRewrite(
             topK: 1,
             fast: true,
         },
-        { apiVersion: 0 }, // Use legacy API version for now
+        { apiVersion: 1 }, // Use legacy API version for now
         signal
     )
 
