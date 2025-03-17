@@ -108,6 +108,7 @@ interface RawClientConfiguration {
     codeActions: boolean
     commandHints: boolean
     commandCodeLenses: boolean
+    displayScaleFactor?: number
 
     // Deep Cody
     agenticContextExperimentalOptions?: AgenticContextConfiguration
@@ -191,6 +192,12 @@ interface RawClientConfiguration {
     overrideAuthToken?: string | undefined
 
     authExternalProviders: ExternalAuthProvider[]
+
+    //#region editor configuration
+    editor?: {
+        fontSize?: number
+        lineHeight?: number
+    }
 }
 
 /**

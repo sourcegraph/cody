@@ -4,7 +4,7 @@ import { DEFAULT_HIGHLIGHT_COLORS } from '../highlight/constants'
 import type { SYNTAX_HIGHLIGHT_THEME } from '../highlight/types'
 import type { VisualDiff, VisualDiffLine } from '../visual-diff/types'
 import type { DiffMode } from '../visual-diff/types'
-import { type RenderConfig, type UserProvidedRenderConfig, getRenderConfig } from './render-config'
+import type { RenderConfig } from './render-config'
 import type { RenderContext } from './types'
 import { getRangesToHighlight } from './utils'
 
@@ -107,7 +107,7 @@ export function drawDecorationsToCanvas(
     diff: VisualDiff,
     theme: SYNTAX_HIGHLIGHT_THEME,
     mode: DiffMode,
-    userConfig: UserProvidedRenderConfig
+    config: RenderConfig
 ): EmulatedCanvas2D {
     if (!canvasKit || !fontCache) {
         // TODO: Log these errors, useful to see if we run into issues where we're not correctly
@@ -119,7 +119,6 @@ export function drawDecorationsToCanvas(
         CanvasKit: canvasKit,
         font: fontCache,
     }
-    const config = getRenderConfig(userConfig)
 
     // In order for us to draw to the canvas, we must first determine the correct
     // dimensions for the canvas. We can do this with a temporary Canvas that uses the same font

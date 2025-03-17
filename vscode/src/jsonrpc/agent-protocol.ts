@@ -634,6 +634,18 @@ export interface ExtensionConfiguration {
     verboseDebug?: boolean | undefined | null
     telemetryClientName?: string | undefined | null
     codebase?: string | undefined | null
+    editor?: {
+        fontSize?: number | undefined | null
+        lineHeight?: number | undefined | null
+    }
+
+    /**
+     * Represents the ratio between physical pixels and logical pixels on the current display.
+     * Typically used to scale images, UI elements, or graphics for proper rendering on high-DPI screens.
+     *
+     * A value of `1` indicates a standard DPI display, while values greater than `1` indicate high-density displays (e.g., Retina).
+     */
+    displayScaleFactor?: number | undefined | null
 
     /**
      * @deprecated use 'customConfigurationJson' instead, it supports nested objects
