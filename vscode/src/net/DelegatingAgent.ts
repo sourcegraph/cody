@@ -29,6 +29,7 @@ import { ProxyAgent } from 'proxy-agent'
 import { SocksProxyAgent } from 'socks-proxy-agent'
 import type { WritableDeep } from 'type-fest'
 import type * as vscode from 'vscode'
+import { WebSocket } from 'ws'
 import { getConfiguration } from '../configuration'
 import { CONFIG_KEY } from '../configuration-keys'
 import { bypassVSCodeSymbol } from './net.patch'
@@ -47,6 +48,10 @@ export class DelegatingAgent extends AgentBase implements vscode.Disposable {
     private disposables: vscode.Disposable[] = []
     private latestConfig: ResolvedSettings | null = null // we need sync access for VSCode to work
     private agentCache: Map<string, AgentBase | http.Agent | https.Agent> = new Map()
+    private ws: WebSocket | undefined
+    private messageId = 0
+    private callbackQueue: Record<string, (response: Response) => void> = {}
+    private sentMessages: Record<string, string> = {}
 
     private constructor(private readonly ctx: { noxide?: Noxide | undefined }) {
         super()
@@ -66,6 +71,20 @@ export class DelegatingAgent extends AgentBase implements vscode.Disposable {
                 })
             )
         )
+        this.ws = new WebSocket('ws://localhost:8080')
+        this.ws.on('message', (data: string) => {
+            const response = JSON.parse(data)
+
+            if (
+                typeof response['x-message-id'] !== 'undefined' &&
+                typeof this.callbackQueue[response['x-message-id']] === 'function'
+            ) {
+                const callback = this.callbackQueue[response['x-message-id']]
+                callback(response)
+                delete this.callbackQueue[response['x-message-id']]
+                delete this.sentMessages[response['x-message-id']]
+            }
+        })
     }
 
     destroy(): void {
@@ -82,6 +101,7 @@ export class DelegatingAgent extends AgentBase implements vscode.Disposable {
             d.dispose()
         }
         this.disposables = []
+        this.ws?.close()
         super.destroy()
     }
 
@@ -336,6 +356,25 @@ export class DelegatingAgent extends AgentBase implements vscode.Disposable {
             logError('DelegatingProxy', 'Could not retrieve noxide CA certs', e)
         }
         return stringCerts
+    }
+
+    public async sendMessageViaSocket(input: URL, init: RequestInit): Promise<Response> {
+        return new Promise((resolve, reject) => {
+            const messageId = 'm_' + this.messageId++
+            this.callbackQueue[messageId] = resolve
+            this.sentMessages[messageId] = messageId
+            this.ws?.send(
+                JSON.stringify({
+                    'x-message-id': messageId,
+                    'x-message-body': init.body,
+                    'x-message-url': input.toString(),
+                    'x-message-headers': init.headers,
+                }),
+                err => {
+                    reject(err)
+                }
+            )
+        })
     }
 }
 

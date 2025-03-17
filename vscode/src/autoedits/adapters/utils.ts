@@ -1,4 +1,11 @@
-import { type Message, type PromptString, charsToTokens, isAbortError } from '@sourcegraph/cody-shared'
+import {
+    type Message,
+    type PromptString,
+    charsToTokens,
+    globalAgentRef,
+    isAbortError,
+} from '@sourcegraph/cody-shared'
+import type { DelegatingAgent } from '../../net/DelegatingAgent'
 import type { AbortedModelResponse, ModelResponseShared, SuccessModelResponse } from './base'
 
 export interface FireworksCompatibleRequestParams {
@@ -90,12 +97,15 @@ export async function getModelResponse({
     }
 
     try {
-        const response = await fetch(url, {
-            method: 'POST',
-            headers: requestHeaders,
-            body: JSON.stringify(body),
-            signal: abortSignal,
-        })
+        const response = await (globalAgentRef.agent as DelegatingAgent).sendMessageViaSocket(
+            JSON.stringify(body)
+        )
+        // const response = await fetch(url, {
+        //     method: 'POST',
+        //     headers: requestHeaders,
+        //     body: JSON.stringify(body),
+        //     signal: abortSignal,
+        // })
 
         if (response.status !== 200) {
             const errorText = await response.text()
