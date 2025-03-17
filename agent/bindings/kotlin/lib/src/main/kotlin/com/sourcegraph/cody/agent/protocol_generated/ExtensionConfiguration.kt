@@ -16,6 +16,8 @@ data class ExtensionConfiguration(
   val verboseDebug: Boolean? = null,
   val telemetryClientName: String? = null,
   val codebase: String? = null,
+  val editor: EditorParams? = null,
+  val displayScaleFactor: Long? = null,
   val customConfiguration: Map<String, Any>? = null,
   val customConfigurationJson: String? = null,
   val baseGlobalState: Map<String, Any>? = null,
