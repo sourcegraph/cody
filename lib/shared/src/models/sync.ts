@@ -231,12 +231,7 @@ export function syncModels({
                                                                 authStatus,
                                                                 userProductSubscription
                                                             ),
-                                                            !(
-                                                                isCodyProUser(
-                                                                    authStatus,
-                                                                    userProductSubscription
-                                                                ) || isCodyFreeUser
-                                                            ),
+                                                            isCodyFreeUser,
                                                             longContextWindowFlag
                                                         ).map(createModelFromServerModel)
                                                     )
@@ -325,12 +320,7 @@ export function syncModels({
                                                             authStatus,
                                                             userProductSubscription
                                                         ),
-                                                        !(
-                                                            isCodyProUser(
-                                                                authStatus,
-                                                                userProductSubscription
-                                                            ) || isCodyFreeUser
-                                                        ),
+                                                        isCodyFreeUser,
                                                         longContextWindowFlag
                                                     ).map(createModelFromServerModel)
                                                 )
@@ -532,24 +522,22 @@ async function fetchServerSideModels(
 }
 
 /**
- * maybeAdjustContextWindows adjusts the context window input tokens for specific models to prevent
- * context window overflow caused by token count discrepancies.
+ * Adjusts context windows for models based on user tier and model characteristics.
  *
- * Currently, the OpenAI tokenizer is used by default for all models. However, it often
- * counts tokens incorrectly for non-OpenAI models (e.g., Mistral), leading to over-counting
- * and potentially causing completion requests to fail due to exceeding the context window.
+ * This function:
+ * 1. Applies tokenizer-specific adjustments (e.g., for Mistral models)
+ * 2. Enforces tier-specific context window limits (free, pro, enterprise)
+ * 3. Sets appropriate output token limits based on model capabilities
  *
- * The proper fix would be to use model-specific tokenizers, but this would require significant
- * refactoring. As a temporary workaround, this function reduces the `maxInputTokens` for specific
- * models to mitigate the risk of context window overflow.
- *
- * @param {ServerModel[]} models - An array of models from the site config.
- * @returns {ServerModel[]} - The array of models with adjusted context windows where applicable.
+ * @param models - Array of models to adjust
+ * @param isPro - Whether the user has a pro subscription
+ * @param isFree - Whether the user has a free subscription
+ * @returns Array of models with adjusted context windows
  */
 export const maybeAdjustContextWindows = (
     models: ServerModel[],
     isPro = false,
-    isEnterprise = false,
+    isFree = false,
     longContextWindowFlagOn = false
 ): ServerModel[] => {
     // Compile regex once
@@ -570,18 +558,45 @@ export const maybeAdjustContextWindows = (
 
         // Get model characteristics
         const hasReasoning = model.capabilities.includes(ModelTag.Reasoning)
+        // Define token limits based on tier and reasoning capability
 
-        // Apply tier-specific adjustments
-        if (longContextWindowFlagOn && (isPro || isEnterprise)) {
-            if (isPro) {
-                maxOutputTokens = hasReasoning
-                    ? TOKEN_LIMITS.PRO.REASONING_OUTPUT
-                    : TOKEN_LIMITS.PRO.STANDARD_OUTPUT
-            }
-        } else {
+        const tokenConfig = {
+            pro: {
+                enhancedInput: TOKEN_LIMITS.PRO.MAX_INPUT_TOKENS,
+                output: (hasReasoning: boolean) =>
+                    hasReasoning ? TOKEN_LIMITS.PRO.REASONING_OUTPUT : TOKEN_LIMITS.PRO.STANDARD_OUTPUT,
+            },
+            enterprise: {
+                enhancedInput: TOKEN_LIMITS.ENTERPRISE.MAX_INPUT_TOKENS,
+                // The output is not used in the logic but for readability only.
+                // We set this value on the server side already, so no need to set it again on the client side.
+                output: (hasReasoning: boolean) =>
+                    hasReasoning
+                        ? TOKEN_LIMITS.ENTERPRISE.REASONING_OUTPUT
+                        : TOKEN_LIMITS.ENTERPRISE.STANDARD_OUTPUT,
+            },
+            default: {
+                standardInput: Math.min(maxInputTokens, TOKEN_LIMITS.ORIGINAL_ALL.MAX_INPUT_TOKENS),
+                output: Math.min(maxOutputTokens, TOKEN_LIMITS.ORIGINAL_ALL.MAX_OUTPUT_TOKENS),
+            },
+        }
+
+        // Output window adjustments: server side has the highest limits(ES limits), so we need to reduce the limits for pro users.
+        if (isPro) {
+            maxOutputTokens = tokenConfig.pro.output(hasReasoning)
+        }
+        // Input window adjustments (controlled by the flag)
+        // Change the input window limits back to the original ones for pro and enterprise users when the flag is off.
+        if (!longContextWindowFlagOn && !isFree) {
+            maxInputTokens = tokenConfig.default.standardInput
+        }
+        // Decrease both the input and output window for the free users.
+        // Free-tier models can be used by all tiers on the server side and the limits are increased on the server side.
+        // However, we decrease the limits to the original limits here for free users.
+        if (isFree) {
             // Fall back to the old limits (same across all tiers)
-            maxInputTokens = Math.min(maxInputTokens, TOKEN_LIMITS.ORIGINAL_ALL.MAX_INPUT_TOKENS)
-            maxOutputTokens = Math.min(maxOutputTokens, TOKEN_LIMITS.ORIGINAL_ALL.MAX_OUTPUT_TOKENS)
+            maxInputTokens = tokenConfig.default.standardInput
+            maxOutputTokens = tokenConfig.default.output
         }
 
         return {

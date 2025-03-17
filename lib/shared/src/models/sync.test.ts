@@ -658,7 +658,7 @@ describe('maybeAdjustContextWindows', () => {
             },
         ] satisfies ServerModel[]
 
-        const result = maybeAdjustContextWindows(models, false, true, true)
+        const result = maybeAdjustContextWindows(models, false, false, true)
         expect(result[0].contextWindow.maxInputTokens).toBe(100000)
         expect(result[0].contextWindow.maxOutputTokens).toBe(8000)
     })
@@ -724,7 +724,7 @@ describe('maybeAdjustContextWindows', () => {
             },
         ] satisfies ServerModel[]
 
-        const result = maybeAdjustContextWindows(models, false, false, true)
+        const result = maybeAdjustContextWindows(models, false, true, true)
         expect(result[0].contextWindow.maxInputTokens).toBe(45000)
         expect(result[0].contextWindow.maxOutputTokens).toBe(4000)
     })
@@ -748,7 +748,7 @@ describe('maybeAdjustContextWindows', () => {
 
         const result = maybeAdjustContextWindows(models, true, false, false)
         expect(result[0].contextWindow.maxInputTokens).toBe(45000)
-        expect(result[0].contextWindow.maxOutputTokens).toBe(4000)
+        expect(result[0].contextWindow.maxOutputTokens).toBe(6000)
     })
 
     it('Flag off, pro users with claude-3-opus (Free tier)', () => {
@@ -790,7 +790,7 @@ describe('maybeAdjustContextWindows', () => {
             },
         ] satisfies ServerModel[]
 
-        const result = maybeAdjustContextWindows(models)
+        const result = maybeAdjustContextWindows(models, false, true, false)
         expect(result[0].contextWindow.maxInputTokens).toBe(4000)
         expect(result[0].contextWindow.maxOutputTokens).toBe(1000)
     })
@@ -814,7 +814,7 @@ describe('maybeAdjustContextWindows', () => {
             },
         ] satisfies ServerModel[]
 
-        const result = maybeAdjustContextWindows(models)
+        const result = maybeAdjustContextWindows(models, false, true, false)
         expect(result[0].contextWindow.maxInputTokens).toBe(45000)
         expect(result[0].contextWindow.maxOutputTokens).toBe(4000)
     })
@@ -836,7 +836,7 @@ describe('maybeAdjustContextWindows', () => {
             },
         ] satisfies ServerModel[]
 
-        const result = maybeAdjustContextWindows(models)
+        const result = maybeAdjustContextWindows(models, false, true, false)
         expect(result[0].contextWindow.maxInputTokens).toBe(45000)
     })
 
