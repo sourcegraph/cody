@@ -8,6 +8,8 @@ import {
 } from '@sourcegraph/cody-shared'
 import { outputChannelLogger } from '../output-channel-logger'
 
+const LEGACY_API_VERSION = 1
+
 /**
  * Rewrite the query, using the fast completions model to pull out keywords.
  *
@@ -33,7 +35,7 @@ async function doRewrite(
     query: PromptString,
     signal?: AbortSignal
 ): Promise<string> {
-    const preamble = getSimplePreamble(undefined, 1, 'Default')
+    const preamble = getSimplePreamble(undefined, LEGACY_API_VERSION, 'Default')
     const stream = completionsClient.stream(
         {
             messages: [
@@ -49,14 +51,13 @@ async function doRewrite(
  ONLY return the keyword search. Question: <userQuery>${query}</userQuery>
 `,
                 },
-                { speaker: 'assistant' },
             ],
             maxTokensToSample: 400,
             temperature: 0,
             topK: 1,
             fast: true,
         },
-        { apiVersion: 5 }, // Use legacy API version for now
+        { apiVersion: LEGACY_API_VERSION }, // Use legacy API version for now
         signal
     )
 
@@ -89,7 +90,7 @@ export async function extractKeywords(
     query: PromptString,
     signal: AbortSignal
 ): Promise<string[]> {
-    const preamble = getSimplePreamble(undefined, 0, 'Default')
+    const preamble = getSimplePreamble(undefined, LEGACY_API_VERSION, 'Default')
     const stream = completionsClient.stream(
         {
             messages: [
@@ -98,14 +99,13 @@ export async function extractKeywords(
                     speaker: 'human',
                     text: ps`You are helping the user search over a codebase. List terms that could be found literally in code snippets or file names relevant to answering the user's query. Limit your results to terms that are in the user's query. Present your results in a *single* XML list in the following format: <keywords><keyword>a single keyword</keyword></keywords>. Here is the user query: <userQuery>${query}</userQuery>`,
                 },
-                { speaker: 'assistant' },
             ],
             maxTokensToSample: 400,
             temperature: 0,
             topK: 1,
             fast: true,
         },
-        { apiVersion: 5 }, // Use legacy API version for now
+        { apiVersion: LEGACY_API_VERSION }, // Use legacy API version for now
         signal
     )
 
