@@ -126,7 +126,7 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
                 })
 
                 // Execute tools and update results
-                const { processedTools, contextItems } = await this.executeTools(toolCalls, toolStateMap)
+                const { processedTools, contextItems } = await this.executeTools(toolCalls)
 
                 // Update tool results in the message
                 for (const tool of processedTools) {
@@ -236,8 +236,6 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
         toolCall: ToolContentPart,
         toolCalls: Map<string, ToolContentPart>
     ): void {
-        const toolStateMap = this.toolStateMap
-
         const existingCall = toolCalls.get(toolCall.id)
 
         // Add new tool call or update if arguments are more complete
@@ -245,8 +243,11 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
             !existingCall ||
             (existingCall.function.arguments?.length || 0) < (toolCall.function.arguments?.length || 0)
         ) {
-            toolCalls.set(toolCall.id, toolCall)
-            toolStateMap.set(toolCall.id, toolCall)
+            // Merge the existing call (if any) with the new toolCall,
+            // prioritizing properties from the new toolCall.  This ensures
+            // that status and result are preserved if they exist.
+            const updatedCall = { ...existingCall, ...toolCall }
+            toolCalls.set(toolCall.id, updatedCall)
 
             logDebug(
                 'AgenticHandler',
@@ -266,13 +267,12 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
      * Execute tools from LLM response
      */
     protected async executeTools(
-        toolCalls: ToolContentPart[],
-        toolStateMap: Map<string, ToolContentPart>
+        toolCalls: ToolContentPart[]
     ): Promise<{ processedTools: ToolContentPart[]; contextItems: ContextItem[] }> {
         try {
             // Execute all tools in parallel
             const results = await Promise.all(
-                toolCalls.map(toolCall => this.executeSingleTool(toolCall, toolStateMap))
+                toolCalls.map(toolCall => this.executeSingleTool(toolCall))
             )
 
             // Gather results and context
@@ -299,53 +299,32 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
      * Execute a single tool and handle success/failure
      */
     protected async executeSingleTool(
-        toolCall: ToolContentPart,
-        toolStateMap: Map<string, ToolContentPart>
+        toolCall: ToolContentPart
     ): Promise<{ toolResult: ToolContentPart; contextItems?: ContextItem[] } | null> {
         // Find the appropriate tool
         const tool = this.tools.find(t => t.spec.name === toolCall.function.name)
-        // Update tool state to pending
-        const toolState = toolStateMap.get(toolCall.id)
-        if (!tool || !toolState) return null
+        if (!tool) return null
 
-        toolState.status = 'pending'
+        // Update status to pending *before* execution
+        toolCall.status = 'pending'
 
         try {
-            // Execute the tool
             const args = parseToolCallArgs(toolCall.function.arguments)
             const output = await tool.invoke(args)
 
-            // Create success result
             const toolResult: ToolContentPart = {
-                type: 'function',
-                id: toolCall.id,
-                function: { ...toolCall.function },
-                status: 'done',
+                ...toolCall, // Copy existing properties
+                status: toolCall.status === 'error' ? 'error' : 'done',
                 result: output.text,
-            }
-
-            // Update shared state
-            if (toolState) {
-                toolState.status = 'done'
-                toolState.result = output.text
             }
 
             logDebug('AgenticHandler', `Tool execution successful: ${toolCall.function.name}`)
             return { toolResult, contextItems: output.contextItems }
         } catch (error) {
-            // Create error result
             const toolResult: ToolContentPart = {
-                type: 'function',
-                id: toolCall.id,
-                function: { ...toolCall.function },
+                ...toolCall, // Copy existing properties
                 status: 'error',
                 result: String(error),
-            }
-
-            // Update shared state
-            if (toolState) {
-                toolState.status = 'error'
-                toolState.result = String(error)
             }
 
             logDebug('AgenticHandler', `Tool execution failed: ${toolCall.function.name}`, {
