@@ -1,7 +1,11 @@
 import { decode } from 'he'
 import type * as vscode from 'vscode'
 import type { FixupTask } from '../../non-stop/FixupTask'
-import { PROMPT_TOPICS } from '../prompt/constants'
+import {
+    PROMPT_TOPICS,
+    SMART_APPLY_CUSTOM_PROMPT_TOPICS,
+    SMART_APPLY_MODEL_IDENTIFIERS,
+} from '../prompt/constants'
 import { matchIndentation } from './match-indentation'
 import { matchLanguage } from './match-language'
 
@@ -56,6 +60,30 @@ function stripText(text: string, task: FixupTask): string {
     )
 }
 
+function extractSmartApplyCustomModelResponse(text: string, task: FixupTask): string {
+    if (
+        task.intent !== 'smartApply' ||
+        !Object.values(SMART_APPLY_MODEL_IDENTIFIERS).includes(task.model)
+    ) {
+        return text
+    }
+
+    const openingTag = `<${SMART_APPLY_CUSTOM_PROMPT_TOPICS.FINAL_CODE}>`
+    const closingTag = `</${SMART_APPLY_CUSTOM_PROMPT_TOPICS.FINAL_CODE}>`
+
+    const startsWithTag = text.trimStart().startsWith(openingTag)
+    const endsWithTag = text.trimEnd().endsWith(closingTag)
+
+    if (!startsWithTag || !endsWithTag) {
+        return text
+    }
+
+    // Only extract the code between the outermost tags
+    const startIndex = text.indexOf(openingTag) + openingTag.length
+    const endIndex = text.lastIndexOf(closingTag)
+    return text.slice(startIndex, endIndex)
+}
+
 /**
  * Given the LLM response for a FixupTask, transforms the response
  * to make it suitable to insert as code.
@@ -66,7 +94,8 @@ export function responseTransformer(
     task: FixupTask,
     isMessageInProgress: boolean
 ): string {
-    const strippedText = stripText(text, task)
+    const updatedText = extractSmartApplyCustomModelResponse(text, task)
+    const strippedText = stripText(updatedText, task)
 
     // Trim leading spaces
     // - For `add` insertions, the LLM will attempt to continue the code from the position of the cursor, we handle the `insertionPoint`

@@ -21,7 +21,6 @@ import { ignoreReason, showCodyIgnoreNotification } from '../cody-ignore/notific
 import { localStorage } from '../services/LocalStorageProvider'
 import { autocompleteStageCounterLogger } from '../services/autocomplete-stage-counter-logger'
 import { recordExposedExperimentsToSpan } from '../services/open-telemetry/utils'
-import { isInTutorial } from '../tutorial/helpers'
 
 import { AuthError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
 import { AutoEditOnboarding } from '../autoedits/autoedit-onboarding'
@@ -715,11 +714,6 @@ export class InlineCompletionItemProvider
 
         // Mark as seen, so we don't show again after this.
         void localStorage.set(key, 'true')
-
-        if (isInTutorial(request.document)) {
-            // Do nothing, the user is already working through the tutorial
-            return
-        }
 
         // Show inline decoration.
         this.firstCompletionDecoration.show(request)

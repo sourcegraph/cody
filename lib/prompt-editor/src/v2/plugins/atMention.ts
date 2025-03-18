@@ -4,6 +4,8 @@ import { type EditorState, Plugin, PluginKey, TextSelection, type Transaction } 
 import { Decoration, DecorationSet } from 'prosemirror-view'
 import styles from './atMention.module.css'
 
+export const AT_MENTION_TRIGGER_CHARACTER = '@'
+
 export interface Position {
     top: number
     bottom: number
@@ -28,7 +30,7 @@ const atMentionPluginKey = new PluginKey<AtMentionPluginState>('suggestions')
  * Creates a new at-mention plugin. The plugin tracks the presence of '@...' slices in the editor.
  * When an '@' character is typed, the plugin will activate and track the filter text.
  *
- * Note that this behavior has to be triggered explictly, i.e. not every '@' character that happens
+ * Note that this behavior has to be triggered explicitly, i.e. not every '@' character that happens
  * to be present in the value is an at-mention.
  *
  * @return An array of ProseMirror plugins
@@ -127,7 +129,7 @@ export function createAtMentionPlugin(): Plugin[] {
             rules: [
                 new InputRule(
                     // Trigger on @, at beginning or after space
-                    /(^|\s)@$/,
+                    new RegExp(`(^|\\s)${AT_MENTION_TRIGGER_CHARACTER}$`),
                     (state, match, start, end) => {
                         return enableAtMention(state.tr.insertText(match[0], start, end))
                     }
@@ -157,6 +159,27 @@ export function replaceAtMention(state: EditorState, replacement: Node): Transac
             tr
                 // Move selection after the space after the node
                 .setSelection(TextSelection.create(tr.doc, end + 1))
+                .scrollIntoView()
+        )
+    }
+    return state.tr
+}
+/**
+ *
+ * Removes the current at-mention if an at-mention is currently present.
+ * @param state The current editor state
+ * @param replacement The node to replace the at-mention with
+ * @returns The transaction that replaces the at-mention
+ */
+export function deleteAtMention(state: EditorState): Transaction {
+    const decoration = getDecoration(state)
+    if (decoration) {
+        const tr = disableAtMention(state.tr.deleteRange(decoration.from, decoration.to))
+
+        return (
+            tr
+                // Move selection after the space after the node
+                .setSelection(TextSelection.create(tr.doc, decoration.from))
                 .scrollIntoView()
         )
     }
@@ -199,9 +222,8 @@ export function hasAtMentionChanged(nextState: EditorState, prevState: EditorSta
 }
 
 /**
- * Enables at-mention for the current cursor position.
- *
- * NOTE: This is only exported for testing purposes.
+ * Enables at-mention for the current cursor position. This function can be used to trigger
+ * at-mentions programmatically.
  *
  * @param tr An editor transaction
  * @returns The updated transaction
@@ -249,7 +271,7 @@ export function setAtMentionValue(state: EditorState, value: string): Transactio
         // Special case that requires a deletion operation
         return state.tr.delete(decoration.from + 1, decoration.to)
     }
-    if (value.startsWith('@')) {
+    if (value.startsWith(AT_MENTION_TRIGGER_CHARACTER)) {
         value = value.slice(1)
     }
     return state.tr.replaceWith(decoration.from + 1, decoration.to, state.schema.text(value))

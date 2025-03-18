@@ -22,7 +22,7 @@ class CodyStatusBarActionGroup : DefaultActionGroup() {
     removeAll()
     val status = e.project?.let { CodyStatusService.getCurrentStatus(it) }
     if (status == CodyStatus.CodyAgentNotRunning || status == CodyStatus.AgentError) {
-      addAll(CodyAgentRestartAction(), OpenLogAction(), ReportCodyBugAction())
+      addAll(CodyAgentRestartAction(), OpenLogAction())
     } else {
       addAll(listOfNotNull(deriveRateLimitErrorAction()))
       addSeparator()

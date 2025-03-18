@@ -1,5 +1,5 @@
 import { type SerializedChatMessage, contextFiltersProvider } from '../..'
-import { serverSupportsPromptCaching } from '../clientConfig'
+import { serverSupportsPromptCaching } from '../siteVersion'
 import type { CompletionParameters, Message, SerializedCompletionParameters } from './types'
 
 /**
@@ -34,6 +34,7 @@ async function serializePrompts(
                     speaker: m.speaker,
                     content: [
                         {
+                            ...m,
                             type: 'text',
                             text: text ?? '',
                             cache_control: { type: 'ephemeral' },

@@ -1,3 +1,5 @@
+import type { CompletionFunctionCallsData, ToolContentPart } from './types'
+
 /**
  * Helper to build the `completion` text from streaming LLM completions.
  *
@@ -6,25 +8,34 @@
  */
 export class CompletionsResponseBuilder {
     public totalCompletion = ''
+    private readonly thinkingBuffer: string[] = []
+    private readonly toolCalled = new Map<string, ToolContentPart>()
+    private lastToolCallId?: string
+
     constructor(public readonly apiVersion: number) {}
-    public nextCompletion(completion: string | undefined, deltaText: string | undefined): string {
-        const thinkingText = this.getThinkingText()
-        if (this.apiVersion >= 2) {
-            this.totalCompletion += deltaText ?? ''
-        } else {
-            this.totalCompletion = completion ?? ''
-        }
-        return thinkingText + this.totalCompletion
+
+    /**
+     * Creates a builder from a URL with api-version parameter
+     */
+    public static fromUrl(url: string): CompletionsResponseBuilder {
+        const apiVersion = Number.parseInt(new URL(url).searchParams.get('api-version') ?? '0', 10)
+        return new CompletionsResponseBuilder(apiVersion)
     }
 
-    private readonly thinkingBuffer: string[] = []
     /**
-     * Processes and accumulates thinking steps during the completion stream.
-     * Thinking steps must start at the beginning of completion and are enclosed in <think> tags.
-     * When the completion starts streaming, the previous <think> tag is closed.
-     *
-     * @param deltaThinking - The incremental thinking text to be added
-     * @returns The formatted thinking text wrapped in XML tags
+     * Processes the next chunk of completion text
+     */
+    public nextCompletion(completion: string | undefined, deltaText: string | undefined): string {
+        if (this.apiVersion >= 2) {
+            this.totalCompletion += deltaText || ''
+        } else {
+            this.totalCompletion = completion || ''
+        }
+        return this.getThinkingText() + this.totalCompletion
+    }
+
+    /**
+     * Adds an incremental thinking step to the buffer
      */
     public nextThinking(deltaThinking?: string): string {
         if (deltaThinking) {
@@ -32,19 +43,61 @@ export class CompletionsResponseBuilder {
         }
         return this.getThinkingText()
     }
+
     /**
-     * Generates the formatted thinking text by combining all thinking steps.
-     * Wraps the combined thinking text in <think> tags and adds a newline if content exists.
-     *
-     * @returns Formatted thinking text with XML tags, or empty string if no thinking steps exist
+     * Processes tool call data from the completion stream
+     */
+    public nextToolCalls(funcCalled: CompletionFunctionCallsData[] = []): ToolContentPart[] {
+        for (const func of funcCalled) {
+            this.processToolCall(func)
+        }
+        return Array.from(this.toolCalled.values())
+    }
+
+    /**
+     * Returns formatted thinking text with XML tags
      */
     private getThinkingText(): string {
         const thinking = this.thinkingBuffer.join('')
         return thinking ? `<think>${thinking}</think>\n` : ''
     }
 
-    public static fromUrl(url: string): CompletionsResponseBuilder {
-        const apiVersion = Number.parseInt(new URL(url).searchParams.get('api-version') ?? '0', 10)
-        return new CompletionsResponseBuilder(apiVersion)
+    /**
+     * Processes a single tool call and updates the internal state
+     */
+    private processToolCall(func: CompletionFunctionCallsData): void {
+        const { id, function: fnData } = func || {}
+        const args = fnData?.arguments || ''
+
+        // Case 1: New or existing tool call with ID and name
+        if (id && fnData?.name) {
+            const existingTool = this.toolCalled.get(id)
+
+            if (!existingTool) {
+                // Create new tool call
+                this.toolCalled.set(id, {
+                    id,
+                    status: 'pending',
+                    type: 'function',
+                    function: {
+                        name: fnData.name,
+                        arguments: args,
+                    },
+                })
+            } else {
+                // Update existing tool call arguments
+                existingTool.function.arguments =
+                    ((existingTool.function.arguments as string) || '') + args
+            }
+            this.lastToolCallId = id
+        }
+        // Case 2: Arguments without ID for the last tool call
+        else if (this.lastToolCallId && args) {
+            const lastTool = this.toolCalled.get(this.lastToolCallId)
+            if (lastTool) {
+                lastTool.function.arguments = ((lastTool.function.arguments as string) || '') + args
+                this.toolCalled.set(this.lastToolCallId, lastTool)
+            }
+        }
     }
 }

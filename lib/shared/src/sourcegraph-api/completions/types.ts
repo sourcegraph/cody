@@ -7,6 +7,33 @@ interface DoneEvent {
 
 interface CompletionEvent extends CompletionResponse {
     type: 'completion'
+    content?: CompletionContentData[] | undefined
+}
+
+export type CompletionContentData = ToolContentPart | TextContentPart
+
+// Tool calls returned by the LLM
+export interface CompletionFunctionCallsData {
+    type: 'function'
+    id?: string
+    function: {
+        name: string
+        arguments: string
+    }
+}
+
+// Tool function that can be called by the LLM
+export interface FunctionTool {
+    type: 'function'
+    function: {
+        name: string
+        description?: string
+        parameters?: {
+            type: 'object'
+            properties?: unknown | null
+            [k: string]: unknown
+        }
+    }
 }
 
 interface ErrorEvent {
@@ -24,6 +51,32 @@ export interface Message {
     // mirrors what OpenAI and Anthropic expect
     text?: PromptString
     cacheEnabled?: boolean | null
+    content?: MessagePart[] | undefined | null
+}
+
+// content: string | Array<TextPart | ImagePart | FilePart>
+export type MessagePart =
+    | TextContentPart // natively supported by LLM
+    | { type: 'context_file'; uri: string; content?: string } // Cody extension
+    | { type: 'context_repo'; repoId: string } // Cody extension
+    | { type: 'image_url'; image_url: { url: string } } // natively supported by LLM
+    | ToolContentPart
+
+export interface TextContentPart {
+    type: 'text'
+    text: string | undefined | null
+}
+
+// @added(Versions.V5_8)
+export interface ImageContentPart {
+    type: 'image_url'
+    image_url: { url: string }
+}
+
+export interface ToolContentPart extends CompletionFunctionCallsData {
+    id: string
+    result?: string
+    status: string
 }
 
 export interface CompletionUsage {
@@ -42,6 +95,7 @@ export interface CompletionResponse {
     completion: string
     thinking?: string
     stopReason?: string
+    tools?: ToolContentPart[]
 }
 
 export interface CompletionParameters {
@@ -62,6 +116,10 @@ export interface CompletionParameters {
         type: 'content'
         content: string
     }
+    // Rewrite and adaptive speculation is used by fireworks which improves performance for sparse rewrite tasks.
+    // https://docs.fireworks.ai/guides/predicted-outputs#using-predicted-outputs
+    rewriteSpeculation?: boolean
+    adaptiveSpeculation?: boolean
 }
 
 export interface SerializedCompletionParameters extends Omit<CompletionParameters, 'messages'> {
@@ -69,7 +127,7 @@ export interface SerializedCompletionParameters extends Omit<CompletionParameter
 }
 
 export interface CompletionCallbacks {
-    onChange: (text: string) => void
+    onChange: (text: string, content?: CompletionContentData[]) => void
     onComplete: () => void
     onError: (error: Error, statusCode?: number) => void
 }
@@ -85,6 +143,6 @@ export interface CompletionCallbacks {
  *   a "complete" event, and no other callbacks will be called afterwards.
  */
 export type CompletionGeneratorValue =
-    | { type: 'change'; text: string }
+    | { type: 'change'; text: string; content?: CompletionContentData[] }
     | { type: 'complete' }
     | { type: 'error'; error: Error; statusCode?: number }

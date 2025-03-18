@@ -1,12 +1,12 @@
 import type { ChatClient, Message } from '@sourcegraph/cody-shared'
 import { autoeditsOutputChannelLogger } from '../output-channel-logger'
-import type { AutoeditModelOptions, AutoeditsModelAdapter } from './base'
+import type { AutoeditModelOptions, AutoeditsModelAdapter, ModelResponse } from './base'
 import { getMaxOutputTokensForAutoedits, getSourcegraphCompatibleChatPrompt } from './utils'
 
 export class SourcegraphChatAdapter implements AutoeditsModelAdapter {
     constructor(private readonly chatClient: ChatClient) {}
 
-    async getModelResponse(option: AutoeditModelOptions): Promise<string> {
+    async getModelResponse(option: AutoeditModelOptions): Promise<ModelResponse> {
         try {
             const maxTokens = getMaxOutputTokensForAutoedits(option.codeToRewrite)
             const messages: Message[] = getSourcegraphCompatibleChatPrompt({
@@ -24,7 +24,7 @@ export class SourcegraphChatAdapter implements AutoeditsModelAdapter {
                         content: option.codeToRewrite,
                     },
                 },
-                new AbortController().signal
+                option.abortSignal
             )
 
             let accumulated = ''
@@ -36,7 +36,16 @@ export class SourcegraphChatAdapter implements AutoeditsModelAdapter {
                     break
                 }
             }
-            return accumulated
+
+            // For direct API calls without HTTP headers, we return an empty object
+            return {
+                type: 'success',
+                prediction: accumulated,
+                responseHeaders: {},
+                responseBody: {},
+                requestUrl: option.url,
+                requestHeaders: {},
+            }
         } catch (error) {
             autoeditsOutputChannelLogger.logError(
                 'getModelResponse',

@@ -44,7 +44,7 @@ object ProtocolTextDocumentExt {
   }
 
   @RequiresEdt
-  private fun getSelection(editor: Editor): Range {
+  private fun getSelection(editor: Editor): Range? {
     return editor.document.codyRange(
         editor.selectionModel.selectionStart, editor.selectionModel.selectionEnd)
   }

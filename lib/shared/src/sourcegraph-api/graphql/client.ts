@@ -1627,7 +1627,7 @@ export class SourcegraphGraphQLAPIClient {
         signal?.throwIfAborted()
 
         const headers = new Headers(config.configuration?.customHeaders as HeadersInit | undefined)
-        headers.set('Content-Type', 'application/json; charset=utf-8')
+
         if (config.clientState.anonymousUserID && !process.env.CODY_WEB_DONT_SET_SOME_HEADERS) {
             headers.set('X-Sourcegraph-Actor-Anonymous-UID', config.clientState.anonymousUserID)
         }
@@ -1641,6 +1641,7 @@ export class SourcegraphGraphQLAPIClient {
 
         addTraceparent(headers)
         addCodyClientIdentificationHeaders(headers)
+        setJSONAcceptContentTypeHeaders(headers)
 
         try {
             await addAuthHeaders(config.auth, headers, url)

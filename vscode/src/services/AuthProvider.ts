@@ -36,7 +36,6 @@ import * as vscode from 'vscode'
 import { serializeConfigSnapshot } from '../../uninstall/serializeConfig'
 import { type ResolvedConfigurationCredentialsOnly, validateCredentials } from '../auth/auth'
 import { logError } from '../output-channel-logger'
-import { maybeStartInteractiveTutorial } from '../tutorial/helpers'
 import { version } from '../version'
 import { localStorage } from './LocalStorageProvider'
 
@@ -174,6 +173,7 @@ class AuthProvider implements vscode.Disposable {
             authStatus.subscribe(authStatus => {
                 try {
                     this.lastEndpoint = authStatus.endpoint
+                    vscode.commands.executeCommand('authStatus.update', authStatus)
                     vscode.commands.executeCommand(
                         'setContext',
                         'cody.activated',
@@ -292,7 +292,6 @@ class AuthProvider implements vscode.Disposable {
             },
         })
         this.setHasAuthenticatedBefore()
-        void maybeStartInteractiveTutorial()
     }
 
     private setHasAuthenticatedBefore() {
@@ -360,15 +359,7 @@ function reportAuthTelemetryEvent(authStatus: AuthStatus): void {
     } else {
         eventValue = 'disconnected'
     }
-    telemetryRecorder.recordEvent('cody.auth', eventValue, {
-        billingMetadata:
-            eventValue === 'connected'
-                ? {
-                      product: 'cody',
-                      category: 'billable',
-                  }
-                : undefined,
-    })
+    telemetryRecorder.recordEvent('cody.auth', eventValue)
 }
 function toCredentialsOnlyNormalized(
     config: ResolvedConfiguration | ResolvedConfigurationCredentialsOnly

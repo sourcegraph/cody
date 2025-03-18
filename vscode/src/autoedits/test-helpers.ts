@@ -42,12 +42,7 @@ export async function autoeditResultFor(
         provider?: AutoeditsProvider
         inlineCompletionContext?: vscode.InlineCompletionContext
         token?: vscode.CancellationToken
-        getModelResponse?: (
-            url: string,
-            body: string,
-            apiKey: string,
-            customHeaders?: Record<string, string>
-        ) => Promise<unknown>
+        getModelResponse?: typeof adapters.getModelResponse
         isAutomaticTimersAdvancementDisabled?: boolean
     }
 ): Promise<{
@@ -58,17 +53,23 @@ export async function autoeditResultFor(
     provider: AutoeditsProvider
     editBuilder: WorkspaceEdit
 }> {
-    const getModelResponseMock = async (...args: unknown[]) => {
+    const getModelResponseMock: typeof adapters.getModelResponse = async () => {
         // Simulate response latency.
         vi.advanceTimersByTime(100)
 
         return {
-            choices: [
-                {
-                    text: prediction,
-                },
-            ],
-        }
+            type: 'success',
+            responseBody: {
+                choices: [
+                    {
+                        text: prediction,
+                    },
+                ],
+            },
+            requestHeaders: {},
+            responseHeaders: {},
+            requestUrl: 'test-url.com/completions',
+        } as const
     }
 
     // TODO: add a callback to verify `getModelResponse` arguments.
@@ -95,7 +96,7 @@ export async function autoeditResultFor(
     } as any as CodyStatusBar
     const provider =
         existingProvider ??
-        new AutoeditsProvider(chatClient, fixupController, mockStatusBar, { shouldRenderImage: false })
+        new AutoeditsProvider(chatClient, fixupController, mockStatusBar, { shouldRenderInline: true })
 
     let result: AutoeditsResult | null = null
 
@@ -104,6 +105,10 @@ export async function autoeditResultFor(
         .then(res => {
             result = res
             return result
+        })
+        .catch(err => {
+            console.error(err)
+            return null
         })
 
     if (!isAutomaticTimersAdvancementDisabled) {

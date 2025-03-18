@@ -1,0 +1,98 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`diffWithLineNum > should match snapshot for complex diff 1`] = `
+"\`\`\`diff
+1   Header line
+2 - First paragraph
+2 + First paragraph with changes
+3 + New paragraph
+3   Second paragraph
+4 - Footer line
+5 + Footer line with edits
+\`\`\`"
+`;
+
+exports[`diffWithLineNum > should match snapshot for complex diff 2`] = `
+"\`\`\`diff
+1   Header line
+2 - First paragraph
+2 + First paragraph with changes
+3 + New paragraph
+3   Second paragraph
+4 - Footer line
+5 + Footer line with edits
+\`\`\`"
+`;
+
+exports[`diffWithLineNum > should match snapshot for complex diff with line changed - 1 1`] = `
+"\`\`\`diff
+ 1   Header line
+ 2   
+ 3   
+ 4 - First paragraph
+ 4 + First paragraph with changes
+ 5 + 
+ 6 + New paragraph
+ 5   Second paragraph
+ 8 + Footer line with edits
+ 6   
+ 7 - Footer line
+ 8 - 
+\`\`\`"
+`;
+
+exports[`diffWithLineNum > should match snapshot for complex diff with line changed with empty lines changed 1`] = `
+"\`\`\`diff
+ 5     ): Promise<string> {
+ 6         // Remove the history item after reverting
+ 7         historyStore.delete(uri.toString())
+ 8 + 
+ 8         // Update the source control panel display
+ 9         updateEditHistoryGroup()
+11 + 
+10         const contentBuffer = new TextEncoder().encode(content)
+11         await vscode.workspace.fs.writeFile(uri, contentBuffer)
+12 -       const msg = 'Edit history item deleted'
+13 -       vscode.window.showInformationMessage(msg)
+14 -       return msg
+15 -   }
+14 +       return 'Reverted changes to ' + displayPath(uri)
+15 +   }
+16 +   
+\`\`\`"
+`;
+
+exports[`diffWithLineNum > should match snapshot for complex diff with line numbers 1`] = `
+"\`\`\`diff
+ 1   Header line
+ 2   
+ 3   
+ 4 - First paragraph
+ 4 + First paragraph with changes
+ 5 + 
+ 6 + New paragraph
+ 5   Second paragraph
+ 6 - 
+ 7 - Footer line
+ 8 + Footer line with edits
+\`\`\`"
+`;
+
+exports[`diffWithLineNum > should match snapshot for complex diff with non-empty line changed 1`] = `
+"\`\`\`diff
+239           return findLast(this.messages, message => message.speaker === 'human')
+240       }
+241   
+242 +     public getLastBotMessage(): ChatMessage | undefined {
+243 +         return findLast(this.messages, message => message.speaker === 'assistant')
+244 +     }
+245 + 
+242       public getLastSpeakerMessageIndex(speaker: 'human' | 'assistant'): number | undefined {
+243           return this.messages.findLastIndex(message => message.speaker === speaker)
+244       }
+245   
+246       /**
+247        * Removes all messages from the given index when it matches the expected speaker.
+248        *
+\`\`\`"
+`;

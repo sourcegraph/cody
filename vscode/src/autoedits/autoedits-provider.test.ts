@@ -24,10 +24,13 @@ import {
 
 import { ContextMixer } from '../completions/context/context-mixer'
 
+import { mockLocalStorage } from '../services/LocalStorageProvider'
+import { autoeditAnalyticsLogger, autoeditTriggerKind } from './analytics-logger'
 import {
     AUTOEDIT_CONTEXT_FETCHING_DEBOUNCE_INTERVAL,
     AUTOEDIT_TOTAL_DEBOUNCE_INTERVAL,
 } from './autoedits-provider'
+import { initImageSuggestionService } from './renderer/image-gen'
 import { AUTOEDIT_VISIBLE_DELAY_MS } from './renderer/manager'
 import { autoeditResultFor } from './test-helpers'
 
@@ -37,6 +40,14 @@ describe('AutoeditsProvider', () => {
     let acceptSuggestionCommand: () => Promise<void>
     let rejectSuggestionCommand: () => Promise<void>
     let executedCommands: unknown[] = []
+
+    let localStorageData: { [key: string]: unknown } = {}
+    mockLocalStorage({
+        get: (key: string) => localStorageData[key] || [], // Return empty array as default
+        update: (key: string, value: unknown) => {
+            localStorageData[key] = value
+        },
+    } as any)
 
     beforeAll(() => {
         vi.useFakeTimers()
@@ -73,11 +84,13 @@ describe('AutoeditsProvider', () => {
         mockAuthStatus()
     })
 
-    beforeEach(() => {
+    beforeEach(async () => {
+        await initImageSuggestionService()
         stableIdCounter = 0
         executedCommands = []
         recordSpy = vi.spyOn(telemetryRecorder, 'recordEvent')
         vi.spyOn(uuid, 'v4').mockImplementation(() => `stable-id-for-tests-${++stableIdCounter}`)
+        localStorageData = {}
     })
 
     afterEach(() => {
@@ -125,7 +138,7 @@ describe('AutoeditsProvider', () => {
               "isPartiallyOutsideOfVisibleRanges": 1,
               "isRead": 1,
               "isSelectionStale": 1,
-              "latency": 175,
+              "latency": 120,
               "noActiveTextEditor": 0,
               "otherCompletionProviderEnabled": 0,
               "outsideOfActiveEditor": 1,
@@ -187,7 +200,7 @@ describe('AutoeditsProvider', () => {
               "isPartiallyOutsideOfVisibleRanges": 1,
               "isRead": 1,
               "isSelectionStale": 1,
-              "latency": 175,
+              "latency": 120,
               "noActiveTextEditor": 0,
               "otherCompletionProviderEnabled": 0,
               "outsideOfActiveEditor": 1,
@@ -259,9 +272,10 @@ describe('AutoeditsProvider', () => {
               "isAccepted": 0,
               "isFuzzyMatch": 0,
               "isRead": 0,
-              "latency": 175,
+              "latency": 120,
               "otherCompletionProviderEnabled": 0,
               "recordsPrivateMetadataTranscript": 1,
+              "rejectReason": 1,
               "source": 1,
               "suggestionsStartedSinceLastSuggestion": 2,
               "timeFromSuggestedAt": 375,
@@ -334,6 +348,7 @@ describe('AutoeditsProvider', () => {
         const errorPayload = recordSpy.mock.calls[0].at(2)
         expect(errorPayload).toMatchInlineSnapshot(`
           {
+            "billingMetadata": undefined,
             "metadata": {
               "count": 1,
             },
@@ -459,13 +474,36 @@ describe('AutoeditsProvider', () => {
         expect(editBuilder.size).toBe(1)
     })
 
+    it('does not trigger a suggestion if the user has selectedCompletionInfo', async () => {
+        const prediction = 'const x = 1\n'
+        const completionItem = { range: new vscode.Range(0, 0, 0, 5), text: 'beans' }
+        const { result } = await autoeditResultFor('const x = █\n', {
+            prediction,
+            inlineCompletionContext: {
+                triggerKind: autoeditTriggerKind.automatic,
+                selectedCompletionInfo: completionItem,
+            },
+        })
+        expect(result?.items).toStrictEqual([
+            { insertText: completionItem.text, range: completionItem.range },
+        ])
+    })
+
     describe('Debounce logic', () => {
         it('waits for exactly AUTOEDIT_TOTAL_DEBOUNCE_INTERVAL before calling getPrediction', async () => {
             let getModelResponseCalledAt: number | undefined
             const customGetModelResponse = async () => {
                 // Record the current fake timer time when getModelResponse is called
                 getModelResponseCalledAt = Date.now()
-                return { choices: [{ text: 'const x = 1\n' }] }
+                return {
+                    type: 'success',
+                    responseBody: {
+                        choices: [{ text: 'const x = 1\n' }],
+                    },
+                    requestUrl: 'test-url.com/completions',
+                    requestHeaders: {},
+                    responseHeaders: {},
+                } as const
             }
 
             const startTime = Date.now()
@@ -489,7 +527,13 @@ describe('AutoeditsProvider', () => {
             let modelResponseCalled = false
             const customGetModelResponse = async () => {
                 modelResponseCalled = true
-                return { choices: [{ text: 'const x = 1\n' }] }
+                return {
+                    type: 'success',
+                    responseBody: { choices: [{ text: 'const x = 1\n' }] },
+                    requestUrl: 'test-url.com/completions',
+                    requestHeaders: {},
+                    responseHeaders: {},
+                } as const
             }
 
             const tokenSource = new vscode.CancellationTokenSource()
@@ -515,6 +559,41 @@ describe('AutoeditsProvider', () => {
 
             expect(result).toBeNull()
             expect(modelResponseCalled).toBe(false)
+        })
+
+        it('the abort signal is propagated to the model request', async () => {
+            const tokenSource = new vscode.CancellationTokenSource()
+            const logErrorSpy = vi.spyOn(autoeditAnalyticsLogger, 'logError')
+
+            const { promiseResult } = await autoeditResultFor('const x = █\n', {
+                prediction: 'const x = 1\n',
+                token: tokenSource.token,
+                isAutomaticTimersAdvancementDisabled: true,
+                getModelResponse: async ({ abortSignal }) => {
+                    if (abortSignal.aborted) {
+                        throw new Error('aborted before the cancellation')
+                    }
+
+                    tokenSource.cancel()
+                    if (abortSignal.aborted) {
+                        throw new Error('aborted after the cancellation')
+                    }
+
+                    return {
+                        type: 'success',
+                        responseBody: { choices: [{ text: 'const x = 1\n' }] },
+                        requestUrl: 'test-url.com/completions',
+                        requestHeaders: {},
+                        responseHeaders: {},
+                    } as const
+                },
+            })
+
+            await vi.advanceTimersByTimeAsync(AUTOEDIT_TOTAL_DEBOUNCE_INTERVAL)
+
+            expect(logErrorSpy).toHaveBeenCalledTimes(1)
+            expect(logErrorSpy).toHaveBeenCalledWith(new Error('aborted after the cancellation'))
+            expect(promiseResult).resolves.toBeNull()
         })
     })
 })

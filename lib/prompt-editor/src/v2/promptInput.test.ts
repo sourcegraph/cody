@@ -19,10 +19,11 @@ import {
     setDocument,
     upsertMentions,
 } from './actions'
-import { enableAtMention, hasAtMention } from './plugins/atMention'
+import { AT_MENTION_TRIGGER_CHARACTER, enableAtMention, hasAtMention } from './plugins/atMention'
 import {
     type DataLoaderInput,
     type MenuItem,
+    type MenuSelectionAPI,
     type PromptInputOptions,
     getMentions,
     promptInput,
@@ -111,7 +112,7 @@ function getText(editor: PromptInputActor): string {
 function createAtMention(editor: PromptInputActor): { type: (value: string) => void } {
     editor.send({
         type: 'dispatch',
-        transaction: enableAtMention(getEditorState(editor).tr.insertText('@')),
+        transaction: enableAtMention(getEditorState(editor).tr.insertText(AT_MENTION_TRIGGER_CHARACTER)),
     })
 
     let previousState = getEditorState(editor)
@@ -302,9 +303,17 @@ describe('actions', () => {
 
 describe('mentions menu', () => {
     const DEBOUNCE_TIME = 10
+
+    const openURI = vi.fn()
+
     beforeEach(() => {
         debounceAtMention.mockReturnValue(DEBOUNCE_TIME)
+        openURI.mockReset()
     })
+
+    const handleSelectMenuItemTest = (item: MenuItem, api: MenuSelectionAPI) => {
+        handleSelectMenuItem(item, { ...api, openURI })
+    }
 
     test('calls fetch function and updates available items', () => {
         fetchMenuData.mockImplementation(
@@ -314,7 +323,7 @@ describe('mentions menu', () => {
             ])
         )
 
-        const editor = createInput(d`test`, { handleSelectMenuItem })
+        const editor = createInput(d`test`, { handleSelectMenuItem: handleSelectMenuItemTest })
         const mention = createAtMention(editor)
         mention.type('file')
 
@@ -330,7 +339,7 @@ describe('mentions menu', () => {
     })
 
     test('debounces fetching of menu data', () => {
-        const editor = createInput(d``, { handleSelectMenuItem })
+        const editor = createInput(d``, { handleSelectMenuItem: handleSelectMenuItemTest })
         const mention = createAtMention(editor)
 
         expect.soft(fetchMenuData, 'initial fetch is done without debounce').toHaveBeenCalledTimes(1)
@@ -363,7 +372,7 @@ describe('mentions menu', () => {
         // works correctly together.
 
         test('apply normal context item', () => {
-            const editor = createInput(d`test `, { handleSelectMenuItem })
+            const editor = createInput(d`test `, { handleSelectMenuItem: handleSelectMenuItemTest })
             const item: ContextItem = {
                 type: 'file',
                 uri: URI.parse('file:///file.txt'),
@@ -393,7 +402,7 @@ describe('mentions menu', () => {
                 .mockImplementationOnce(mockFetchMenu([provider]))
                 .mockImplementationOnce(mockFetchMenu([provider]))
                 .mockImplementationOnce(mockFetchMenu([item]))
-            const editor = createInput(d`test `, { handleSelectMenuItem })
+            const editor = createInput(d`test `, { handleSelectMenuItem: handleSelectMenuItemTest })
             createAtMention(editor).type('file')
             clock.increment(DEBOUNCE_TIME)
 
@@ -420,7 +429,7 @@ describe('mentions menu', () => {
         })
 
         test('apply large file without range', () => {
-            const editor = createInput(d`test `, { handleSelectMenuItem })
+            const editor = createInput(d`test `, { handleSelectMenuItem: handleSelectMenuItemTest })
             createAtMention(editor)
 
             editor.send({
@@ -435,7 +444,7 @@ describe('mentions menu', () => {
         })
 
         test('apply large file with range', () => {
-            const editor = createInput(d`test `, { handleSelectMenuItem })
+            const editor = createInput(d`test `, { handleSelectMenuItem: handleSelectMenuItemTest })
             createAtMention(editor)
 
             editor.send({
@@ -482,7 +491,7 @@ describe('mentions menu', () => {
                     uri: 'file:///file2.txt',
                     size: 3,
                 }} `,
-                { contextWindowSizeInTokens: 10, handleSelectMenuItem }
+                { contextWindowSizeInTokens: 10, handleSelectMenuItem: handleSelectMenuItemTest }
             )
 
             createAtMention(editor)
@@ -528,7 +537,7 @@ describe('mentions menu', () => {
         })
         describe('special cases', () => {
             test('apply remote file', () => {
-                const editor = createInput(d`test `, { handleSelectMenuItem })
+                const editor = createInput(d`test `, { handleSelectMenuItem: handleSelectMenuItemTest })
                 createAtMention(editor)
 
                 editor.send({
@@ -555,7 +564,7 @@ describe('mentions menu', () => {
             })
 
             test('apply remote directory', () => {
-                const editor = createInput(d`test `, { handleSelectMenuItem })
+                const editor = createInput(d`test `, { handleSelectMenuItem: handleSelectMenuItemTest })
                 createAtMention(editor)
 
                 editor.send({
@@ -579,6 +588,25 @@ describe('mentions menu', () => {
                     'test @some-repo:'
                 )
                 expect(hasAtMention(getEditorState(editor))).toBe(true)
+            })
+
+            test('open link', () => {
+                const editor = createInput(d`test `, { handleSelectMenuItem: handleSelectMenuItemTest })
+                createAtMention(editor)
+
+                editor.send({
+                    type: 'atMention.apply',
+                    item: {
+                        type: 'open-link',
+                        uri: URI.parse('file:///file.txt'),
+                        name: 'some name',
+                        content: null,
+                    },
+                })
+
+                expect(getText(editor), 'at mention is removed').toBe('test ')
+                expect(hasAtMention(getEditorState(editor))).toBe(false)
+                expect(openURI, 'openURI was called').toHaveBeenCalledWith('file:///file.txt')
             })
         })
     })

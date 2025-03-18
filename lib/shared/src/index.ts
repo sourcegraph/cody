@@ -63,6 +63,7 @@ export { serializeChatMessage } from './chat/transcript'
 export {
     errorToChatError,
     DEFAULT_EVENT_SOURCE,
+    EventSourceTelemetryMetadataMapping,
 } from './chat/transcript/messages'
 export type {
     AccountKeyedChatHistory,
@@ -111,6 +112,7 @@ export {
     type ContextItemCurrentRepository,
     type ContextItemCurrentDirectory,
     type ContextItemCurrentOpenTabs,
+    type ContextItemMedia,
     FILE_RANGE_TOOLTIP_LABEL,
     GENERAL_HELP_LABEL,
     IGNORED_FILE_WARNING_LABEL,
@@ -442,3 +444,5 @@ export {
     type RuleService,
     isRulesEnabled,
 } from './rules/service'
+
+export type { SiteAndCodyAPIVersions } from './sourcegraph-api/siteVersion'

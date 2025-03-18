@@ -1,4 +1,12 @@
-import { type Message, type PromptString, charsToTokens } from '@sourcegraph/cody-shared'
+import {
+    type Message,
+    type PromptString,
+    charsToTokens,
+    fetch,
+    isAbortError,
+} from '@sourcegraph/cody-shared'
+import type { AbortedModelResponse, ModelResponseShared, SuccessModelResponse } from './base'
+import type { InceptionLabsRequestParams } from './inceptionlabs'
 
 export interface FireworksCompatibleRequestParams {
     stream: boolean
@@ -15,6 +23,24 @@ export interface FireworksCompatibleRequestParams {
     rewrite_speculation?: boolean
     user?: string
 }
+
+export interface FireworksChatMessage {
+    role: string
+    content: PromptString
+}
+
+export interface FireworksChatModelRequestParams extends FireworksCompatibleRequestParams {
+    messages: FireworksChatMessage[]
+}
+
+export interface FireworksCompletionModelRequestParams extends FireworksCompatibleRequestParams {
+    prompt: PromptString
+}
+
+export type AutoeditsRequestBody =
+    | FireworksChatModelRequestParams
+    | FireworksCompletionModelRequestParams
+    | InceptionLabsRequestParams
 
 export function getMaxOutputTokensForAutoedits(codeToRewrite: string): number {
     const MAX_NEW_GENERATED_TOKENS = 512
@@ -46,25 +72,58 @@ export function getSourcegraphCompatibleChatPrompt(param: {
     return prompt
 }
 
-export async function getModelResponse(
-    url: string,
-    body: string,
-    apiKey: string,
-    customHeaders: Record<string, string> = {}
-): Promise<any> {
-    const response = await fetch(url, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${apiKey}`,
-            ...customHeaders,
-        },
-        body: body,
-    })
-    if (response.status !== 200) {
-        const errorText = await response.text()
-        throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`)
+export async function getModelResponse({
+    apiKey,
+    url,
+    body,
+    abortSignal,
+    customHeaders = {},
+}: {
+    apiKey: string
+    url: string
+    body: ModelResponseShared['requestBody']
+    abortSignal: AbortSignal
+    customHeaders?: Record<string, string>
+}): Promise<Omit<SuccessModelResponse, 'prediction'> | AbortedModelResponse> {
+    const requestHeaders = {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${apiKey}`,
+        ...customHeaders,
     }
-    const data = await response.json()
-    return data
+
+    const partialResult = {
+        requestHeaders,
+        requestUrl: url,
+        requestBody: body,
+    }
+
+    try {
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: requestHeaders,
+            body: JSON.stringify(body),
+            signal: abortSignal,
+        })
+
+        if (response.status !== 200) {
+            const errorText = await response.text()
+            throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`)
+        }
+
+        // Extract headers into a plain object
+        const responseHeaders: Record<string, string> = {}
+        response.headers.forEach((value, key) => {
+            responseHeaders[key] = value
+        })
+
+        const responseBody = await response.json()
+        return { ...partialResult, type: 'success', responseBody, responseHeaders }
+    } catch (error) {
+        if (isAbortError(error)) {
+            return { ...partialResult, type: 'aborted' }
+        }
+
+        // Propagate error the auto-edit provider
+        throw error
+    }
 }

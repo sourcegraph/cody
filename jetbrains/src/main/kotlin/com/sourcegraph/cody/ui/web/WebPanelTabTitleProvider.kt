@@ -13,7 +13,7 @@ class WebPanelTabTitleProvider : EditorTabTitleProvider, DumbAware {
   }
 
   override fun getEditorTabTitle(project: Project, file: VirtualFile): String? {
-    return file.getUserData(WEB_PANEL_TITLE_KEY) ?: ""
+    return file.getUserData(WEB_PANEL_TITLE_KEY)
   }
 
   override fun getEditorTabTooltipText(project: Project, virtualFile: VirtualFile): String? {

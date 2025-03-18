@@ -9,7 +9,7 @@ import { SUPPORTED_URI_SCHEMAS } from '@sourcegraph/cody-shared'
  * active: The current valid active/supported text editor instance.
  * ignored: Whether the active editor is ignored by Cody or not.
  */
-interface LastActiveTextEditor {
+export interface LastActiveTextEditor {
     active?: vscode.TextEditor
     /**
      * @deprecated Cody Ignore has been deprecated. This field will be removed in the future.

@@ -58,11 +58,14 @@ export enum FeatureFlag {
 
     CodySmartApplyExperimentEnabledFeatureFlag = 'cody-smart-apply-experiment-enabled-flag',
     CodySmartApplyExperimentVariant1 = 'cody-smart-apply-experiment-variant-1',
+    CodySmartApplyExperimentVariant2 = 'cody-smart-apply-experiment-variant-2',
+    CodySmartApplyExperimentVariant3 = 'cody-smart-apply-experiment-variant-3',
+    CodySmartApplyPrefetching = 'cody-smart-apply-prefetching',
 
     CodyAutoEditExperimentEnabledFeatureFlag = 'cody-autoedit-experiment-enabled-flag',
 
-    // Enables image-based rendering of autoedit suggestions
-    CodyAutoEditImageRendering = 'cody-autoedit-image-rendering',
+    // Enables inline rendering of autoedit suggestions
+    CodyAutoEditInlineRendering = 'cody-autoedit-inline-rendering',
 
     // Enables gpt-4o-mini as a default Edit model
     CodyEditDefaultToGpt4oMini = 'cody-edit-default-to-gpt-4o-mini',
@@ -76,9 +79,6 @@ export enum FeatureFlag {
     // cody-pro-trial-ended is a feature flag that indicates if the Cody Pro "Free Trial"  has ended.
     // (Enabling users to use Cody Pro for free for 3-months starting in late Q4'2023.)
     CodyProTrialEnded = 'cody-pro-trial-ended',
-
-    /** Interactive tutorial, primarily for onboarding */
-    CodyInteractiveTutorial = 'cody-interactive-tutorial',
 
     GitMentionProvider = 'git-mention-provider',
 
@@ -96,12 +96,6 @@ export enum FeatureFlag {
      */
     CodyUnifiedPrompts = 'cody-unified-prompts',
     CodyDeepSeekChat = 'cody-deepseek-chat',
-
-    /**
-     * For internal use only. New Prompts UI and logic is behind this feature flag
-     * will be removed as soon as commands will be deprecated.
-     */
-    CodyPromptsV2 = 'prompt-creation-v2',
 
     // Enables Anthropic's prompt caching feature on messages for Cody Clients
     CodyPromptCachingOnMessages = 'cody-experimental-prompt-caching-on-messages',
@@ -137,6 +131,9 @@ export enum FeatureFlag {
      * Auto generate short description for chat as title.
      */
     ChatTitleAutoGeneration = 'chat-title-auto-generation',
+
+    // Extend context window for Cody Clients
+    LongContextWindow = 'long-context-window',
 }
 
 const ONE_HOUR = 60 * 60 * 1000

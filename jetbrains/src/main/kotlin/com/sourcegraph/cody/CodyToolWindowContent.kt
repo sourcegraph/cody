@@ -7,6 +7,7 @@ import com.intellij.openapi.wm.ToolWindowManager
 import com.intellij.ui.components.JBLabel
 import com.intellij.util.concurrency.annotations.RequiresEdt
 import com.intellij.util.ui.UIUtil
+import com.sourcegraph.Icons
 import com.sourcegraph.cody.chat.ui.ErrorPanel
 import com.sourcegraph.cody.chat.ui.MissingJcefPanel
 import com.sourcegraph.cody.initialization.VerifyJavaBootRuntimeVersion.Companion.isCurrentRuntimeMissingJcef
@@ -72,9 +73,11 @@ class CodyToolWindowContent(val project: Project) {
     var logger = Logger.getInstance(CodyToolWindowContent::class.java)
 
     fun show(project: Project) {
-      ToolWindowManager.getInstance(project)
-          .getToolWindow(CodyToolWindowFactory.TOOL_WINDOW_ID)
-          ?.show()
+      executeOnInstanceIfNotDisposed(project) {
+        ToolWindowManager.getInstance(project)
+            .getToolWindow(CodyToolWindowFactory.TOOL_WINDOW_ID)
+            ?.show { webview?.proxy?.component?.requestFocusInWindow() }
+      }
     }
 
     fun executeOnInstanceIfNotDisposed(

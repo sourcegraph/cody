@@ -40,7 +40,12 @@
             "correctness": {
                 "noInvalidUseBeforeDeclaration": "error",
                 "noUnusedPrivateClassMembers": "error",
-                "noUnusedImports": "error"
+                "noUnusedImports": "error",
+                "useExhaustiveDependencies": {
+                    "options": {
+                        "hooks": [{ "name": "useLatestRef", "stableResult": true }]
+                    }
+                }
             }
         }
     },

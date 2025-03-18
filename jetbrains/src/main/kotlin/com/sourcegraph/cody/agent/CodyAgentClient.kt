@@ -6,6 +6,7 @@ import com.intellij.notification.Notifications
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.diagnostic.Logger
+import com.intellij.openapi.diagnostic.debug
 import com.intellij.openapi.fileChooser.FileChooserFactory
 import com.intellij.openapi.fileChooser.FileSaverDescriptor
 import com.intellij.openapi.project.Project
@@ -15,27 +16,14 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.jetbrains.rd.util.firstOrNull
 import com.sourcegraph.cody.agent.protocol.WebviewCreateWebviewPanelParams
 import com.sourcegraph.cody.agent.protocol_extensions.ProtocolTextDocumentExt
-import com.sourcegraph.cody.agent.protocol_generated.DebugMessage
-import com.sourcegraph.cody.agent.protocol_generated.DisplayCodeLensParams
-import com.sourcegraph.cody.agent.protocol_generated.Env_OpenExternalParams
-import com.sourcegraph.cody.agent.protocol_generated.Null
-import com.sourcegraph.cody.agent.protocol_generated.ProtocolTextDocument
-import com.sourcegraph.cody.agent.protocol_generated.SaveDialogOptionsParams
-import com.sourcegraph.cody.agent.protocol_generated.Secrets_DeleteParams
-import com.sourcegraph.cody.agent.protocol_generated.Secrets_GetParams
-import com.sourcegraph.cody.agent.protocol_generated.Secrets_StoreParams
-import com.sourcegraph.cody.agent.protocol_generated.ShowWindowMessageParams
-import com.sourcegraph.cody.agent.protocol_generated.TextDocumentEditParams
-import com.sourcegraph.cody.agent.protocol_generated.TextDocument_ShowParams
-import com.sourcegraph.cody.agent.protocol_generated.UntitledTextDocument
-import com.sourcegraph.cody.agent.protocol_generated.Window_DidChangeContextParams
-import com.sourcegraph.cody.agent.protocol_generated.WorkspaceEditParams
+import com.sourcegraph.cody.agent.protocol_generated.*
 import com.sourcegraph.cody.auth.CodyAuthService
 import com.sourcegraph.cody.auth.CodySecureStore
 import com.sourcegraph.cody.auth.SourcegraphServerPath
 import com.sourcegraph.cody.edit.EditService
 import com.sourcegraph.cody.edit.lenses.LensesService
 import com.sourcegraph.cody.error.CodyConsole
+import com.sourcegraph.cody.error.SentryService
 import com.sourcegraph.cody.ignore.IgnoreOracle
 import com.sourcegraph.cody.statusbar.CodyStatusService
 import com.sourcegraph.cody.ui.web.NativeWebviewProvider
@@ -190,14 +178,26 @@ class CodyAgentClient(private val project: Project, private val webview: NativeW
 
   @JsonNotification("window/didChangeContext")
   fun window_didChangeContext(params: Window_DidChangeContextParams) {
-    if (params.key == "cody.activated") {
-      CodyAuthService.getInstance(project).setActivated(params.value?.toBoolean() ?: false)
-      CodyStatusService.resetApplication(project)
-    }
-    if (params.key == "cody.serverEndpoint") {
-      val endpoint = params.value ?: return
-      CodyAuthService.getInstance(project).setEndpoint(SourcegraphServerPath(endpoint))
-      CodyStatusService.resetApplication(project)
+    logger.debug("Received context change: ${params.key} = ${params.value}")
+  }
+
+  @JsonNotification("authStatus/didUpdate")
+  fun authStatus_didUpdate(params: ProtocolAuthStatus) {
+    runInEdt {
+      if (project.isDisposed) return@runInEdt
+
+      val authService = CodyAuthService.getInstance(project)
+      if (params is ProtocolAuthenticatedAuthStatus) {
+        SentryService.setUser(params.primaryEmail, params.username)
+        authService.setActivated(true)
+        authService.setEndpoint(SourcegraphServerPath(params.endpoint))
+        CodyStatusService.resetApplication(project)
+      } else if (params is ProtocolUnauthenticatedAuthStatus) {
+        SentryService.setUser(null, null)
+        authService.setActivated(false)
+        authService.setEndpoint(SourcegraphServerPath(params.endpoint))
+        CodyStatusService.resetApplication(project)
+      }
     }
   }
 

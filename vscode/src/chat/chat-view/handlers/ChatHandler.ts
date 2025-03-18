@@ -25,13 +25,12 @@ import { getCategorizedMentions } from '../../../prompt-builder/utils'
 import { ChatBuilder } from '../ChatBuilder'
 import type { ChatControllerOptions } from '../ChatController'
 import { type ContextRetriever, toStructuredMentions } from '../ContextRetriever'
-import { type HumanInput, getPriorityContext } from '../context'
+import type { HumanInput } from '../context'
 import { DefaultPrompter, type PromptInfo } from '../prompt'
 import type { AgentHandler, AgentHandlerDelegate, AgentRequest } from './interfaces'
 
 export class ChatHandler implements AgentHandler {
     constructor(
-        protected modelId: string,
         protected contextRetriever: Pick<ContextRetriever, 'retrieveContext' | 'computeDidYouMean'>,
         protected readonly editor: ChatControllerOptions['editor'],
         protected chatClient: ChatControllerOptions['chatClient']
@@ -47,6 +46,7 @@ export class ChatHandler implements AgentHandler {
             chatBuilder,
             recorder,
             span,
+            model,
         }: AgentRequest,
         delegate: AgentHandlerDelegate
     ): Promise<void> {
@@ -104,12 +104,12 @@ export class ChatHandler implements AgentHandler {
         // Send context to webview for display before sending the request.
         delegateWithDidYouMean.postMessageInProgress({
             speaker: 'assistant',
-            model: this.modelId,
+            model,
         })
         this.streamAssistantResponse(
             requestID,
             prompt,
-            this.modelId,
+            model,
             signal,
             chatBuilder,
             delegateWithDidYouMean
@@ -174,8 +174,7 @@ export class ChatHandler implements AgentHandler {
                         break
                     }
                     case 'error': {
-                        typewriter.close()
-                        typewriter.stop(message.error)
+                        throw message.error
                     }
                 }
             }
@@ -204,14 +203,14 @@ export class ChatHandler implements AgentHandler {
                     delegate.postMessageInProgress({
                         speaker: 'assistant',
                         text: PromptString.unsafe_fromLLMResponse(content),
-                        model: this.modelId,
+                        model,
                     })
                 },
                 close: content => {
                     delegate.postMessageInProgress({
                         speaker: 'assistant',
                         text: PromptString.unsafe_fromLLMResponse(content),
-                        model: this.modelId,
+                        model,
                     })
                     delegate.postDone()
                 },
@@ -222,7 +221,7 @@ export class ChatHandler implements AgentHandler {
                     delegate.postMessageInProgress({
                         speaker: 'assistant',
                         text: PromptString.unsafe_fromLLMResponse(partialResponse),
-                        model: this.modelId,
+                        model,
                     })
                     delegate.postDone()
                     if (isAbortErrorOrSocketHangUp(error)) {
@@ -234,7 +233,7 @@ export class ChatHandler implements AgentHandler {
         )
     }
 
-    private async buildPrompt(
+    public async buildPrompt(
         prompter: DefaultPrompter,
         chatBuilder: ChatBuilder,
         abortSignal: AbortSignal,
@@ -305,14 +304,8 @@ export async function computeContextAlternatives(
         signal,
         skipQueryRewrite
     )
-    const priorityContextPromise = skipQueryRewrite
-        ? Promise.resolve([])
-        : retrievedContextPromise
-              .then(p => getPriorityContext(text, editor, p))
-              .catch(() => getPriorityContext(text, editor, []))
     const openCtxContextPromise = getContextForChatMessage(text.toString(), signal)
-    const [priorityContext, retrievedContext, openCtxContext] = await Promise.all([
-        priorityContextPromise,
+    const [retrievedContext, openCtxContext] = await Promise.all([
         retrievedContextPromise.catch(e => {
             throw new Error(`Failed to retrieve search context: ${e}`)
         }),
@@ -321,7 +314,12 @@ export async function computeContextAlternatives(
 
     const resolvedExplicitMentionsPromise = resolveContextItems(
         editor,
-        [structuredMentions.symbols, structuredMentions.files, structuredMentions.openCtx].flat(),
+        [
+            structuredMentions.symbols,
+            structuredMentions.files,
+            structuredMentions.openCtx,
+            structuredMentions.mediaFiles,
+        ].flat(),
         text,
         signal
     )
@@ -332,7 +330,6 @@ export async function computeContextAlternatives(
             items: combineContext(
                 await resolvedExplicitMentionsPromise,
                 openCtxContext,
-                priorityContext,
                 retrievedContext
             ),
         },
@@ -345,8 +342,7 @@ export async function computeContextAlternatives(
 function combineContext(
     explicitMentions: ContextItem[],
     openCtxContext: ContextItemOpenCtx[],
-    priorityContext: ContextItem[],
     retrievedContext: ContextItem[]
 ): ContextItem[] {
-    return [explicitMentions, openCtxContext, priorityContext, retrievedContext].flat()
+    return [explicitMentions, openCtxContext, retrievedContext].flat()
 }

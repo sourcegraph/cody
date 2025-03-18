@@ -168,18 +168,28 @@ object ConfigUtil {
             "cody.experimental.foldingRanges" to "indentation-based",
             "cody.advanced.agent.ide.productCode" to getIntellijProductCode())
 
-    return try {
-      val text = customConfigContent ?: getSettingsFile(project).readText()
+    try {
+      val text =
+          try {
+            customConfigContent ?: getSettingsFile(project).readText()
+          } catch (e: Exception) {
+            logger.info("No user defined settings file found. Proceeding with empty custom config")
+            ""
+          }
+
       var config = ConfigFactory.parseString(text).resolve()
+      val globalConfig = ConfigFactory.parseString(GlobalCodySettings.getConfigJson()).resolve()
       additionalProperties.forEach { (key, value) ->
         config = config.withValue(key, ConfigValueFactory.fromAnyRef(value))
       }
-      config
+
+      return config
+          .withFallback(globalConfig)
           .root()
           .render(ConfigRenderOptions.defaults().setComments(false).setOriginComments(false))
     } catch (e: Exception) {
-      logger.info("No user defined settings file found. Proceeding with empty custom config")
-      ""
+      logger.error("Failed to parse Cody config", e)
+      return ""
     }
   }
 
@@ -189,6 +199,12 @@ object ConfigUtil {
     // Internal version
     val plugin = PluginManagerCore.getPlugin(PluginId.getId("com.sourcegraph.jetbrains"))
     return if (plugin != null) plugin.version else "unknown"
+  }
+
+  @JvmStatic
+  fun getPluginReleaseDate(): java.util.Date? {
+    val plugin = PluginManagerCore.getPlugin(PluginId.getId("com.sourcegraph.jetbrains"))
+    return plugin?.releaseDate
   }
 
   @JvmStatic fun isCodyEnabled(): Boolean = CodyApplicationSettings.instance.isCodyEnabled

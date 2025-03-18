@@ -34,4 +34,6 @@ export enum ModelTag {
     // Additional Info about the model. e.g. capabilities
     StreamDisabled = 'stream-disabled', // Model does not support streaming
     Vision = 'vision', // Model supports vision capabilities
+    Reasoning = 'reasoning', // Model supports reasoning capabilities
+    Tools = 'tools', // Model supports tools capabilities
 }

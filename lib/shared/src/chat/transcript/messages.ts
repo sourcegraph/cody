@@ -2,6 +2,7 @@ import type { ContextItem } from '../../codebase-context/messages'
 import type { Message } from '../../sourcegraph-api'
 
 import type { SerializedChatTranscript } from '.'
+import type { MessagePart } from '../..'
 import type { PromptString } from '../../prompt/prompt-string'
 import type { NLSSearchDynamicFilter, NLSSearchResponse } from '../../sourcegraph-api/graphql/client'
 
@@ -42,8 +43,8 @@ export interface ChatMessage extends Message {
     model?: string
 
     /* The detected intent of the message */
-    intent?: 'search' | 'chat' | 'edit' | 'insert' | undefined | null
-    manuallySelectedIntent?: 'search' | 'chat' | 'edit' | 'insert' | undefined | null
+    intent?: 'search' | 'chat' | 'edit' | 'insert' | 'agentic' | undefined | null
+    manuallySelectedIntent?: 'search' | 'chat' | 'edit' | 'insert' | 'agentic' | undefined | null
     didYouMeanQuery?: string | undefined | null
     search?: ChatMessageSearch | undefined | null
     agent?: string | undefined | null
@@ -141,6 +142,7 @@ export interface SerializedChatMessage {
     agent?: string | undefined | null
     processes?: ProcessingStep[] | undefined | null
     subMessages?: SubMessage[]
+    content?: MessagePart[] | undefined | null
 }
 
 export interface ChatError {

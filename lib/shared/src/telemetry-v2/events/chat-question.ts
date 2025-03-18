@@ -172,6 +172,7 @@ export const events = [
                 search: 3,
                 edit: 4,
                 insert: 5,
+                agentic: 6,
             } satisfies Record<
                 typeof fallbackValue | 'auto' | Exclude<ChatMessage['intent'], null | undefined>,
                 number
@@ -205,6 +206,7 @@ function publicContextSummary(globalPrefix: string, context: ContextItem[]) {
             ...cloneDeep(defaultByTypeCount),
             isWorkspaceRoot: undefined as number | undefined,
         },
+        media: cloneDeep(defaultByTypeCount),
         'current-selection': cloneDeep(defaultByTypeCount),
         'current-file': cloneDeep(defaultByTypeCount),
         'current-repository': cloneDeep(defaultByTypeCount),
@@ -356,6 +358,7 @@ const defaultBySourceCount: BySourceCount = {
         'current-repository': undefined,
         'current-directory': undefined,
         'current-open-tabs': undefined,
+        media: undefined,
     },
 }
 

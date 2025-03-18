@@ -130,8 +130,7 @@ export const ContextCell: FunctionComponent<{
         const hasContent =
             isContextLoading ||
             (contextItemsToDisplay && contextItemsToDisplay.length > 0) ||
-            !isForFirstMessage ||
-            isAgenticChat
+            !isForFirstMessage
 
         return (
             <div className="tw-flex tw-flex-col tw-justify-center tw-w-full tw-gap-2 tw-py-1">
@@ -148,7 +147,7 @@ export const ContextCell: FunctionComponent<{
                                 <AccordionTrigger
                                     onClick={triggerAccordion}
                                     title={itemCountLabel}
-                                    className="tw-flex tw-items-center tw-gap-4"
+                                    className="tw-flex tw-items-center"
                                     disabled={isContextLoading || !hasContent}
                                 >
                                     <span className="tw-flex tw-items-baseline">
@@ -162,17 +161,15 @@ export const ContextCell: FunctionComponent<{
                                 </AccordionTrigger>
                             }
                             containerClassName={className}
-                            contentClassName="tw-flex tw-flex-col tw-gap-4 tw-max-w-full"
+                            contentClassName="tw-flex tw-flex-col tw-max-w-full"
                             data-testid="context"
+                            aria-disabled={isContextLoading || !hasContent}
                         >
                             {isContextLoading && !isAgenticChat ? (
                                 <LoadingDots />
                             ) : (
                                 <>
-                                    <AccordionContent
-                                        className="tw-flex tw-flex-col tw-gap-2"
-                                        overflow={false}
-                                    >
+                                    <AccordionContent className="tw-flex tw-flex-col" overflow={false}>
                                         {internalDebugContext && contextAlternatives && (
                                             <div>
                                                 <button onClick={prevSelectedAlternative} type="button">
@@ -192,7 +189,7 @@ export const ContextCell: FunctionComponent<{
                                                       })`}
                                             </div>
                                         )}
-                                        <ul className="tw-list-none tw-flex tw-flex-col tw-gap-2">
+                                        <ul className="tw-list-none tw-flex tw-flex-col tw-gap-2 tw-pt-4">
                                             {contextItemsToDisplay?.map((item, i) => (
                                                 <li
                                                     // biome-ignore lint/correctness/useJsxKeyInIterable:
@@ -278,13 +275,13 @@ export const ContextCell: FunctionComponent<{
                     </AccordionItem>
                 </Accordion>
 
-                {contextItemsToDisplay && excludedContextInfo.length > 0 && (
+                {contextItemsToDisplay && excludedContextInfo.length > 0 ? (
                     <div className="tw-mt-2 tw-text-muted-foreground">
                         {excludedContextInfo.map(message => (
                             <ExcludedContextWarning key={message} message={message} />
                         ))}
                     </div>
-                )}
+                ) : null}
             </div>
         )
     }
@@ -320,13 +317,21 @@ const getContextInfo = (items?: ContextItem[], isFirst?: boolean) => {
 
 const TEMPLATES = {
     filter: 'filtered out by Cody Context Filters. Please contact your site admin for details.',
-    token: 'were retrieved but not used because they exceed the token limit. Learn more about token limits ',
+    token: {
+        singular:
+            'was retrieved but not used because it exceeds the token limit. Learn more about token limits ',
+        plural: 'were retrieved but not used because they exceed the token limit. Learn more about token limits ',
+    },
 } as const
 
 function generateExcludedInfo(token: number, filter: number): string[] {
+    const multipleTokens = token > 1
     return [
-        token > 0 && `${token} ${token === 1 ? 'item' : 'items'} ${TEMPLATES.token}`,
-        filter > 0 && `${filter} ${filter === 1 ? 'item' : 'items'} ${TEMPLATES.filter}`,
+        token > 0 &&
+            `${token} ${pluralize('item', token)} ${
+                multipleTokens ? TEMPLATES.token.plural : TEMPLATES.token.singular
+            }`,
+        filter > 0 && `${filter} ${pluralize('item', filter)} ${TEMPLATES.filter}`,
     ].filter(Boolean) as string[]
 }
 
@@ -335,10 +340,12 @@ const ExcludedContextWarning: React.FC<{ message: string }> = ({ message }) => (
         <i className="codicon codicon-warning" />
         <span>
             {message}
-            {message.includes(TEMPLATES.token) && (
-                <a href="https://sourcegraph.com/docs/cody/core-concepts/token-limits">here</a>
+            {(message.includes(TEMPLATES.token.singular) ||
+                message.includes(TEMPLATES.token.plural)) && (
+                <span>
+                    <a href="https://sourcegraph.com/docs/cody/core-concepts/token-limits">here</a>.
+                </span>
             )}
-            .
         </span>
     </div>
 )

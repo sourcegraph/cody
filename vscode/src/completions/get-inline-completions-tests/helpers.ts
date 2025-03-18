@@ -139,16 +139,18 @@ export function params(
             }
 
             if (responses === 'never-resolve') {
-                return new Promise(() => {})
+                yield new Promise<CompletionResponseWithMetaData>(() => {})
+                return
             }
 
             const response = responses[requestCounter++]
 
             if (response && 'completionResponse' in response) {
-                return response
+                yield response
+                return
             }
 
-            return {
+            yield {
                 completionResponse: (response as CompletionResponse) || {
                     completion: '',
                     stopReason: 'unknown',

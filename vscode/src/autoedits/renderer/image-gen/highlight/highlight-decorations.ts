@@ -4,8 +4,8 @@ import type { SYNTAX_HIGHLIGHT_THEME } from './types'
 import type { ThemedToken } from 'shiki/types.mjs'
 
 import type { MultiLineSupportedLanguage } from '../../../../completions/detect-multiline'
-import type { SyntaxHighlightRanges, VisualDiff } from '../decorated-diff/types'
-import { getCodeBlock } from '../decorated-diff/utils'
+import type { SyntaxHighlightRanges, VisualDiff } from '../visual-diff/types'
+import { getCodeBlock } from '../visual-diff/utils'
 import { DEFAULT_HIGHLIGHT_COLORS } from './constants'
 import { SYNTAX_HIGHLIGHTING_LANGUAGES, SYNTAX_HIGHLIGHTING_THEMES } from './shiki'
 

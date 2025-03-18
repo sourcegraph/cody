@@ -1,4 +1,5 @@
 import { type Model, ModelTag, isCodyProModel } from '@sourcegraph/cody-shared'
+import { isMacOS } from '@sourcegraph/cody-shared'
 import { DeepCodyAgentID, ToolCodyModelName } from '@sourcegraph/cody-shared/src/models/client'
 import { clsx } from 'clsx'
 import { BookOpenIcon, BrainIcon, BuildingIcon, ExternalLinkIcon } from 'lucide-react'
@@ -36,6 +37,7 @@ export const ModelSelectField: React.FunctionComponent<{
 
     /** For storybooks only. */
     __storybook__open?: boolean
+    modelSelectorRef?: React.MutableRefObject<{ open: () => void; close: () => void } | null>
 }> = ({
     models,
     onModelSelect: parentOnModelSelect,
@@ -44,6 +46,7 @@ export const ModelSelectField: React.FunctionComponent<{
     onCloseByEscape,
     className,
     __storybook__open,
+    modelSelectorRef,
 }) => {
     const telemetryRecorder = useTelemetryRecorder()
 
@@ -169,8 +172,9 @@ export const ModelSelectField: React.FunctionComponent<{
             className={cn('tw-justify-between', className)}
             disabled={readOnly}
             __storybook__open={__storybook__open}
-            tooltip={readOnly ? undefined : 'Select a model'}
+            tooltip={readOnly ? undefined : isMacOS() ? 'Switch model (⌘M)' : 'Switch model (Ctrl+M)'}
             aria-label="Select a model or an agent"
+            controlRef={modelSelectorRef}
             popoverContent={close => (
                 <Command
                     loop={true}

@@ -178,12 +178,7 @@ describe('Agent', () => {
         // telemetry assertion, to validate the expected events fired during the test run
         // Do not remove this assertion, and instead update the expectedEvents list above
         expect(await exportedTelemetryEvents(client)).toEqual(
-            expect.arrayContaining([
-                'cody.auth:connected',
-                'cody.auth.login:firstEver',
-                'cody.interactiveTutorial:attemptingStart',
-                'cody.experiment.interactiveTutorial:enrolled',
-            ])
+            expect.arrayContaining(['cody.auth:connected', 'cody.auth.login:firstEver'])
         )
     }, 10_000)
 
@@ -551,8 +546,10 @@ describe('Agent', () => {
                 expect.arrayContaining([
                     'cody.command.explain:executed',
                     'cody.chat-question:submitted',
+                    'cody.experiment.promptCachingOnMessages:enrolled',
                     'cody.chat-question:executed',
-                    'cody.chatResponse:noCode',
+                    // Do not look for has code as not all answers explains with code snippet
+                    // 'cody.chatResponse:hasCode',
                 ])
             )
         }, 30_000)
@@ -570,8 +567,10 @@ describe('Agent', () => {
                 expect.arrayContaining([
                     'cody.command.smell:executed',
                     'cody.chat-question:submitted',
+                    'cody.experiment.promptCachingOnMessages:enrolled',
                     'cody.chat-question:executed',
-                    'cody.chatResponse:hasCode',
+                    // Do not look for has code as not all answers explains with code snippet
+                    // 'cody.chatResponse:hasCode',
                 ])
             )
         }, 30_000)

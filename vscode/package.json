@@ -3,7 +3,7 @@
   "name": "cody-ai",
   "private": true,
   "displayName": "Cody: AI Code Assistant",
-  "version": "1.70.2",
+  "version": "1.76.1",
   "publisher": "sourcegraph",
   "license": "Apache-2.0",
   "icon": "resources/sourcegraph.png",
@@ -13,9 +13,9 @@
     "postinstall": "pnpm download-wasm && pnpm download-fonts && pnpm copy-win-ca-roots",
     "dev": "pnpm run -s dev:desktop",
     "dev:insiders": "pnpm run -s dev:desktop:insiders",
-    "start:dev:desktop": "NODE_ENV=development code --extensionDevelopmentPath=$PWD --disable-extension=sourcegraph.cody-ai --disable-extension=github.copilot --inspect-extensions=9333 --new-window . --goto ./src/completions/inline-completion-item-provider.ts:16:5",
+    "start:dev:desktop": "ts-node scripts/run-with-extension-development-path.ts code --disable-extension=sourcegraph.cody-ai --disable-extension=github.copilot --inspect-extensions=9333 --new-window . --goto ./src/completions/inline-completion-item-provider.ts:16:5",
     "dev:desktop": "pnpm run -s build:dev:desktop && pnpm run start:dev:desktop",
-    "dev:desktop:insiders": "pnpm run -s build:dev:desktop && NODE_ENV=development code-insiders --extensionDevelopmentPath=$PWD --disable-extension=sourcegraph.cody-ai --disable-extension=github.copilot --inspect-extensions=9333 --new-window . --goto ./src/completions/inline-completion-item-provider.ts:16:5",
+    "dev:desktop:insiders": "pnpm run -s build:dev:desktop && ts-node scripts/run-with-extension-development-path.ts code-insiders --disable-extension=sourcegraph.cody-ai --disable-extension=github.copilot --inspect-extensions=9333 --new-window . --goto ./src/completions/inline-completion-item-provider.ts:16:5",
     "dev:web": "pnpm run -s build:dev:web && pnpm run -s _dev:vscode-test-web --browserType none",
     "watch:dev:web": "concurrently \"pnpm run -s watch:build:dev:web\" \"pnpm run -s _dev:vscode-test-web --browserType none\"",
     "_dev:vscode-test-web": "vscode-test-web --extensionDevelopmentPath=. ${WORKSPACE-test/fixtures/workspace}",
@@ -40,7 +40,7 @@
     "download-wasm": "ts-node-transpile-only ./scripts/download-wasm-modules.ts",
     "download-fonts": "ts-node-transpile-only ./scripts/download-fonts.ts",
     "copy-win-ca-roots": "ts-node-transpile-only ./scripts/copy-win-ca-roots.ts",
-    "release:dry-run": "pnpm run download-wasm && pnpm run download-fonts && CODY_RELEASE_DRY_RUN=1 ts-node ./scripts/release.ts",
+    "release:dry-run": "pnpm run download-wasm && pnpm run download-fonts && cross-env CODY_RELEASE_DRY_RUN=1 ts-node ./scripts/release.ts",
     "storybook": "storybook dev -p 6007 --no-open --no-version-updates",
     "test:e2e": "playwright install && tsc --build && node dist/tsc/test/e2e/install-deps.js && pnpm run -s _build:vsix_for_test && pnpm run -s build:dev:desktop && pnpm run -s test:e2e:run",
     "test:e2e:run": "playwright test",
@@ -53,7 +53,7 @@
     "vscode:prepublish": "pnpm -s run build",
     "vscode:uninstall": "node ./dist/post-uninstall.js",
     "test:unit:tree-sitter-queries": "vitest ./src/tree-sitter/query-tests/*.test.ts",
-    "github-changelog": "ts-node-transpile-only ./scripts/github-changelog.ts",
+    "release-notes": "ts-node-transpile-only ./scripts/release-notes.ts",
     "measure-bundle-size": "cross-env LOG_BUNDLE_SIZE=true ts-node-transpile-only ./scripts/measure-bundle-size.ts"
   },
   "categories": ["AI", "Chat", "Programming Languages", "Machine Learning", "Snippets", "Education"],
@@ -270,6 +270,14 @@
         "category": "Cody",
         "group": "Cody",
         "icon": "$(feedback)"
+      },
+      {
+        "command": "cody.command.autoedit.open-debug-panel",
+        "title": "Debug Auto-Edit",
+        "category": "Cody",
+        "group": "Cody",
+        "icon": "$(debug)",
+        "enablement": "cody.activated"
       },
       {
         "command": "cody.command.explain-output",
@@ -582,6 +590,12 @@
         "command": "cody.command.autoedit-manual-trigger",
         "title": "Autoedits Manual Trigger",
         "enablement": "cody.activated && config.cody.suggestions.mode == 'auto-edit (Experimental)'"
+      },
+      {
+        "command": "cody.command.autoedit.open-debug-panel",
+        "category": "Cody",
+        "title": "Debug Auto-Edit",
+        "enablement": "cody.activated"
       }
     ],
     "keybindings": [
@@ -611,11 +625,6 @@
         "when": "cody.activated && !editorTextFocus"
       },
       {
-        "command": "cody.tutorial.chat",
-        "key": "alt+l",
-        "when": "cody.activated && cody.tutorialActive"
-      },
-      {
         "command": "cody.command.edit-code",
         "key": "alt+k",
         "when": "cody.activated && !editorReadonly"
@@ -624,11 +633,6 @@
         "command": "cody.command.execute-prompt",
         "key": "shift+alt+p",
         "when": "cody.activated"
-      },
-      {
-        "command": "cody.tutorial.edit",
-        "key": "alt+k",
-        "when": "cody.activated && !editorReadonly && cody.tutorialActive"
       },
       {
         "command": "cody.command.document-code",
@@ -721,6 +725,10 @@
     ],
     "menus": {
       "commandPalette": [
+        {
+          "command": "cody.command.autoedit.open-debug-panel",
+          "when": "cody.activated"
+        },
         {
           "command": "cody.command.edit-code",
           "when": "cody.activated && editorIsOpen"
@@ -1052,8 +1060,11 @@
           "order": 99,
           "type": "string",
           "enum": ["all", "off"],
-          "enumDescriptions": ["Sends usage data and errors.", "Disables all extension telemetry."],
-          "markdownDescription": "Controls the telemetry about Cody usage and errors. See [Cody usage and privacy notice](https://about.sourcegraph.com/terms/cody-notice).",
+          "enumDescriptions": [
+            "Sends usage data and errors.",
+            "[Enterprise-only] Disables all extension telemetry."
+          ],
+          "markdownDescription": "Controls the telemetry about Cody usage and errors for users connected to Enterprise instances. This setting only takes effect for Sourcegraph Enterprise users. For users connected to sourcegraph.com, this option is always enabled. See [Cody usage and privacy notice](https://about.sourcegraph.com/terms/cody-notice).",
           "default": "all"
         },
         "cody.autocomplete.advanced.provider": {
@@ -1384,6 +1395,7 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.33.1",
+    "@modelcontextprotocol/sdk": "^1.7.0",
     "@openctx/provider-linear-issues": "^0.0.9",
     "@openctx/vscode-lib": "^0.0.26",
     "@opentelemetry/api": "^1.7.0",
@@ -1431,6 +1443,7 @@
     "diff": "^5.2.0",
     "fast-myers-diff": "^3.2.0",
     "fast-xml-parser": "^4.3.2",
+    "framer-motion": "^12.5.0",
     "fzf": "^0.5.2",
     "glob": "^7.2.3",
     "graceful-fs": "^4.2.11",
@@ -1468,7 +1481,8 @@
     "valibot": "1.0.0-beta.9",
     "vscode-languageserver-textdocument": "^1.0.8",
     "vscode-uri": "^3.0.8",
-    "wink-nlp-utils": "^2.1.0"
+    "wink-nlp-utils": "^2.1.0",
+    "zod-to-json-schema": "^3.24.3"
   },
   "devDependencies": {
     "7zip-min": "^1.4.5",

@@ -171,10 +171,11 @@ export function chatInputMentions(chatInput: Locator): Locator {
 export async function openMentionsForProvider(
     frame: FrameLocator,
     chatInput: Locator,
-    provider: string
+    provider: string,
+    exact?: boolean
 ): Promise<void> {
     await chatInput.pressSequentially('@', { delay: 350 })
-    await frame.getByRole('option', { name: provider }).click()
+    await frame.getByRole('option', { name: provider, exact }).click()
 }
 
 export function mentionMenu(chatFrame: FrameLocator): Locator {

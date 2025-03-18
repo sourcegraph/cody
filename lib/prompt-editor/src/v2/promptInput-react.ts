@@ -8,7 +8,7 @@ import { useActorRef, useSelector } from '@xstate/react'
 import type { Observable } from 'observable-fns'
 import type { Node } from 'prosemirror-model'
 import type { EditorState } from 'prosemirror-state'
-import { useEffect, useMemo, useRef } from 'react'
+import { type MutableRefObject, useEffect, useMemo, useRef } from 'react'
 import { type ActorRefFrom, fromCallback } from 'xstate'
 import type { AnyEventObject } from 'xstate'
 import { usePromptEditorConfig } from '../config'
@@ -21,8 +21,14 @@ import {
     setDocument,
     upsertMentions,
 } from './actions'
-import type { Position } from './plugins/atMention'
-import { type DataLoaderInput, type MenuItem, promptInput, schema } from './promptInput'
+import { AT_MENTION_TRIGGER_CHARACTER, type Position, enableAtMention } from './plugins/atMention'
+import {
+    type DataLoaderInput,
+    type MenuItem,
+    type PromptInputOptions,
+    promptInput,
+    schema,
+} from './promptInput'
 
 type PromptInputLogic = typeof promptInput
 type PromptInputActor = ActorRefFrom<PromptInputLogic>
@@ -68,11 +74,17 @@ interface PromptEditorOptions {
     fetchMenuData: (args: { query: string; provider?: ContextMentionProviderMetadata }) => Observable<
         MenuItem[]
     >
+
+    /**
+     * Called when an 'open-link' context item is selected.
+     */
+    openExternalLink: (uri: string) => void
 }
 
 interface PromptEditorAPI {
     setFocus(focus: boolean, options?: { moveCursorToEnd?: boolean }): void
     appendText(text: string): void
+    openAtMentionMenu(): void
     addMentions(items: ContextItem[], position?: 'before' | 'after', sep?: string): void
     upsertMentions(
         items: ContextItem[],
@@ -113,10 +125,63 @@ export const usePromptInput = (options: PromptEditorOptions): [PromptInputActor,
 
     const focused = useRef(false)
 
-    const onFocusChangeRef = useRef(options.onFocusChange)
-    onFocusChangeRef.current = options.onFocusChange
-    const onEnterKeyRef = useRef(options.onEnterKey)
-    onEnterKeyRef.current = options.onEnterKey
+    const onFocusChangeRef = useLatestRef(options.onFocusChange)
+    const onEnterKeyRef = useLatestRef(options.onEnterKey)
+    const openExternalLinkRef = useLatestRef(options.openExternalLink)
+    const onContextItemMentionNodeMetaClickRef = useLatestRef(onContextItemMentionNodeMetaClick)
+
+    const actorOptions = useMemo(
+        (): PromptInputOptions => ({
+            editorViewProps: {
+                handleDOMEvents: {
+                    focus: () => {
+                        if (!focused.current) {
+                            focused.current = true
+                            onFocusChangeRef.current?.(true)
+                        }
+                    },
+                    blur: () => {
+                        if (focused.current) {
+                            focused.current = false
+                            onFocusChangeRef.current?.(false)
+                        }
+                    },
+                },
+                handleKeyDown: (_view, event) => {
+                    if (event.key === 'Enter') {
+                        onEnterKeyRef.current?.(event)
+                        return event.defaultPrevented
+                    }
+                    return false
+                },
+                handleClickOn(_view, _pos, node, _nodePos, _event, _direct) {
+                    if (node.type === schema.nodes.mention) {
+                        onContextItemMentionNodeMetaClickRef.current?.(node.attrs.item)
+                        return true
+                    }
+                    return false
+                },
+                nodeViews: {
+                    mention(node) {
+                        return new MentionView(node)
+                    },
+                },
+            },
+            handleSelectMenuItem: (item, api) => {
+                handleSelectMenuItem(item, { ...api, openURI: uri => openExternalLinkRef.current(uri) })
+            },
+            placeholder: options.placeholder,
+            initialDocument: options.initialDocument,
+            disabled: options.disabled,
+            contextWindowSizeInTokens: options.contextWindowSizeInTokens,
+        }),
+        [
+            options.placeholder,
+            options.initialDocument,
+            options.disabled,
+            options.contextWindowSizeInTokens,
+        ]
+    )
 
     const editor = useActorRef(
         promptInput.provide({
@@ -124,50 +189,7 @@ export const usePromptInput = (options: PromptEditorOptions): [PromptInputActor,
                 menuDataLoader: fetchMenuData,
             },
         }),
-        {
-            input: {
-                editorViewProps: {
-                    handleDOMEvents: {
-                        focus: () => {
-                            if (!focused.current) {
-                                focused.current = true
-                                onFocusChangeRef.current?.(true)
-                            }
-                        },
-                        blur: () => {
-                            if (focused.current) {
-                                focused.current = false
-                                onFocusChangeRef.current?.(false)
-                            }
-                        },
-                    },
-                    handleKeyDown: (_view, event) => {
-                        if (event.key === 'Enter') {
-                            onEnterKeyRef.current?.(event)
-                            return event.defaultPrevented
-                        }
-                        return false
-                    },
-                    handleClickOn(_view, _pos, node, _nodePos, _event, _direct) {
-                        if (node.type === schema.nodes.mention) {
-                            onContextItemMentionNodeMetaClick?.(node.attrs.item)
-                            return true
-                        }
-                        return false
-                    },
-                    nodeViews: {
-                        mention(node) {
-                            return new MentionView(node)
-                        },
-                    },
-                },
-                handleSelectMenuItem,
-                placeholder: options.placeholder,
-                initialDocument: options.initialDocument,
-                disabled: options.disabled,
-                contextWindowSizeInTokens: options.contextWindowSizeInTokens,
-            },
-        }
+        { input: actorOptions }
     )
 
     const api: PromptEditorAPI = useMemo(
@@ -192,6 +214,13 @@ export const usePromptInput = (options: PromptEditorOptions): [PromptInputActor,
                 editor.send({
                     type: 'document.update',
                     transaction: state => appendToDocument(state, text),
+                })
+            },
+            openAtMentionMenu() {
+                editor.send({
+                    type: 'document.update',
+                    transaction: state =>
+                        enableAtMention(appendToDocument(state, AT_MENTION_TRIGGER_CHARACTER)),
                 })
             },
             addMentions(items: ContextItem[], position: 'before' | 'after' = 'after', seperator = ' ') {
@@ -295,4 +324,17 @@ export function useMentionsMenu(input: PromptInputActor): MentionsMenuData {
         query: mentionsMenu.query,
         position: mentionsMenu.position,
     }
+}
+
+/**
+ * Helper hook to always update a ref with the latest value.
+ */
+function useLatestRef<T>(value: T): MutableRefObject<T> {
+    const ref = useRef(value)
+
+    useEffect(() => {
+        ref.current = value
+    }, [value])
+
+    return ref
 }

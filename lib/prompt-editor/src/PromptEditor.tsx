@@ -77,6 +77,11 @@ export interface PromptEditorRefAPI {
     filterMentions(filter: (item: SerializedContextItem) => boolean): Promise<void>
     setInitialContextMentions(items: ContextItem[]): Promise<void>
     setEditorState(state: SerializedPromptEditorState): void
+
+    /**
+     * Triggers opening the at-mention menu at the end of the current input value.
+     */
+    openAtMentionMenu(): Promise<void>
 }
 
 /**
@@ -115,60 +120,27 @@ export const PromptEditor: FunctionComponent<Props> = ({
                 return toSerializedPromptEditorValue(editorRef.current)
             },
             setFocus(focus, { moveCursorToEnd } = {}): Promise<void> {
-                return new Promise(resolve => {
-                    const editor = editorRef.current
-
-                    if (editor) {
-                        if (focus) {
-                            editor.update(
-                                () => {
-                                    const selection = $getSelection()
-                                    const root = $getRoot()
-
-                                    // Copied from LexicalEditor#focus, but we need to set the
-                                    // `skip-scroll-into-view` tag so that we don't always autoscroll.
-                                    if (selection !== null) {
-                                        selection.dirty = true
-                                    } else if (root.getChildrenSize() !== 0) {
-                                        root.selectEnd()
-                                    }
-
-                                    if (moveCursorToEnd) {
-                                        root.selectEnd()
-                                    }
-
-                                    // Ensure element is focused in case the editor is empty. Copied
-                                    // from LexicalAutoFocusPlugin.
-                                    const doFocus = () =>
-                                        editor.getRootElement()?.focus({ preventScroll: false })
-                                    doFocus()
-
-                                    // HACK(sqs): Needed in VS Code webviews to actually get it to focus
-                                    // on initial load, for some reason.
-                                    setTimeout(doFocus)
-                                },
-                                { tag: 'skip-scroll-into-view', onUpdate: resolve }
-                            )
-                        } else {
-                            editor.blur()
-                            resolve?.()
-                        }
-                    } else {
-                        resolve?.()
-                    }
-                })
+                if (!editorRef.current) {
+                    return Promise.resolve()
+                }
+                return setFocus(editorRef.current, { focus, moveCursorToEnd })
             },
             appendText(text: string): Promise<void> {
                 if (!editorRef.current) {
                     return Promise.resolve()
                 }
-                return update(editorRef.current, () => {
-                    const root = $getRoot()
-                    root.selectEnd()
-                    $insertNodes([$createTextNode(`${getWhitespace(root)}${text}`)])
-                    root.selectEnd()
-                    return true
-                })
+                return appendText(editorRef.current, text)
+            },
+            openAtMentionMenu() {
+                const editor = editorRef.current
+                if (!editor) {
+                    return Promise.resolve()
+                }
+
+                if (toSerializedPromptEditorValue(editor).text.trim().endsWith('@')) {
+                    return setFocus(editor, { focus: true, moveCursorToEnd: true })
+                }
+                return appendText(editorRef.current, '@')
             },
             filterMentions(filter: (item: SerializedContextItem) => boolean): Promise<void> {
                 if (!editorRef.current) {
@@ -377,6 +349,57 @@ export const PromptEditor: FunctionComponent<Props> = ({
             openExternalLink={openExternalLink}
         />
     )
+}
+
+function appendText(editor: LexicalEditor, text: string): Promise<void> {
+    return update(editor, () => {
+        const root = $getRoot()
+        root.selectEnd()
+        $insertNodes([$createTextNode(`${getWhitespace(root)}${text}`)])
+        root.selectEnd()
+        return true
+    })
+}
+
+function setFocus(
+    editor: LexicalEditor,
+    { focus, moveCursorToEnd }: { focus?: boolean; moveCursorToEnd?: boolean }
+): Promise<void> {
+    return new Promise(resolve => {
+        if (focus) {
+            editor.update(
+                () => {
+                    const selection = $getSelection()
+                    const root = $getRoot()
+
+                    // Copied from LexicalEditor#focus, but we need to set the
+                    // `skip-scroll-into-view` tag so that we don't always autoscroll.
+                    if (selection !== null) {
+                        selection.dirty = true
+                    } else if (root.getChildrenSize() !== 0) {
+                        root.selectEnd()
+                    }
+
+                    if (moveCursorToEnd) {
+                        root.selectEnd()
+                    }
+
+                    // Ensure element is focused in case the editor is empty. Copied
+                    // from LexicalAutoFocusPlugin.
+                    const doFocus = () => editor.getRootElement()?.focus({ preventScroll: false })
+                    doFocus()
+
+                    // HACK(sqs): Needed in VS Code webviews to actually get it to focus
+                    // on initial load, for some reason.
+                    setTimeout(doFocus)
+                },
+                { tag: 'skip-scroll-into-view', onUpdate: resolve }
+            )
+        } else {
+            editor.blur()
+            resolve?.()
+        }
+    })
 }
 
 /**

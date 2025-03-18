@@ -24,6 +24,7 @@ sealed class ContextItem {
           "current-repository" -> context.deserialize<ContextItemCurrentRepository>(element, ContextItemCurrentRepository::class.java)
           "current-directory" -> context.deserialize<ContextItemCurrentDirectory>(element, ContextItemCurrentDirectory::class.java)
           "current-open-tabs" -> context.deserialize<ContextItemCurrentOpenTabs>(element, ContextItemCurrentOpenTabs::class.java)
+          "media" -> context.deserialize<ContextItemMedia>(element, ContextItemMedia::class.java)
           else -> throw Exception("Unknown discriminator ${element}")
         }
       }
@@ -313,6 +314,34 @@ data class ContextItemCurrentOpenTabs(
 
   enum class TypeEnum {
     @SerializedName("current-open-tabs") `Current-open-tabs`,
+  }
+}
+
+data class ContextItemMedia(
+  val uri: String,
+  val range: RangeData? = null,
+  val content: String? = null,
+  val repoName: String? = null,
+  val revision: String? = null,
+  val title: String? = null,
+  val description: String? = null,
+  val source: ContextItemSource? = null, // Oneof: user, editor, search, initial, priority, unified, selection, terminal, history, agentic
+  val size: Long? = null,
+  val isIgnored: Boolean? = null,
+  val isTooLarge: Boolean? = null,
+  val isTooLargeReason: String? = null,
+  val provider: String? = null,
+  val icon: String? = null,
+  val metadata: List<String>? = null,
+  val badge: String? = null,
+  val type: TypeEnum, // Oneof: media
+  val mimeType: String,
+  val filename: String,
+  val data: String,
+) : ContextItem() {
+
+  enum class TypeEnum {
+    @SerializedName("media") Media,
   }
 }
 

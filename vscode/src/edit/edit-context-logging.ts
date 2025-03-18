@@ -1,23 +1,24 @@
 import {
     type EditModel,
     FeatureFlag,
+    currentAuthStatus,
     displayPathWithoutWorkspaceFolderPrefix,
     featureFlagProvider,
     isDotComAuthed,
+    isS2,
     storeLastValue,
     telemetryRecorder,
 } from '@sourcegraph/cody-shared'
 import { LRUCache } from 'lru-cache'
-import * as uuid from 'uuid'
 import type * as vscode from 'vscode'
 import { gitMetadataForCurrentEditor } from '../repository/git-metadata-for-editor'
 import { GitHubDotComRepoMetadata } from '../repository/githubRepoMetadata'
 import { splitSafeMetadata } from '../services/telemetry-v2'
-import type { SmartSelectionType } from './prompt/smart-apply'
+import type { SmartApplySelectionType } from './prompt/smart-apply/selection'
 
 const MAX_LOGGING_PAYLOAD_SIZE_BYTES = 1024 * 1024 // 1 MB
 
-type SmartApplyLoggingRequestId = string
+type ContextId = string
 
 interface RepoContext {
     repoName?: string
@@ -26,7 +27,9 @@ interface RepoContext {
 }
 
 interface SmartApplyBaseContext extends RepoContext {
-    smartApplyModel: EditModel
+    startedAt: number
+    isPrefetched: boolean
+    model: EditModel
     userQuery: string
     replacementCodeBlock: string
     filePath: string
@@ -34,13 +37,14 @@ interface SmartApplyBaseContext extends RepoContext {
 }
 
 interface SmartApplySelectionContext extends SmartApplyBaseContext {
-    selectionType: SmartSelectionType
+    selectionType: SmartApplySelectionType
     selectionRange: [number, number]
     selectionTimeMs: number
 }
 
 interface SmartApplyFinalContext extends SmartApplySelectionContext {
     applyTimeMs: number
+    totalTimeMs: number
     applyTaskId?: string
 }
 
@@ -52,6 +56,27 @@ interface EditLoggingContext {
 }
 
 type SmartApplyLoggingState = SmartApplyBaseContext | SmartApplySelectionContext | SmartApplyFinalContext
+
+interface SmartApplyLoggingContext {
+    isPublic?: boolean
+    isPrefetched: boolean
+    model: EditModel
+    selectionType: SmartApplySelectionType
+    selectionRangeStart: number
+    selectionRangeEnd: number
+    selectionTimeMs: number
+    applyTimeMs: number
+    totalTimeMs: number
+    applyTaskId?: string
+    smartApplyContext?: {
+        repoName?: string
+        commit?: string
+        userQuery: string
+        replacementCodeBlock: string
+        filePath: string
+        fileContent: string
+    }
+}
 
 export class EditLoggingFeatureFlagManager implements vscode.Disposable {
     private featureFlagSmartApplyContextDataCollection = storeLastValue(
@@ -81,9 +106,9 @@ export class EditLoggingFeatureFlagManager implements vscode.Disposable {
  */
 export class SmartApplyContextLogger {
     /**
-     * Stores the SmartApplyContext for each request ID.
+     * Stores the SmartApplyContext for each task ID.
      */
-    private activeRequests = new LRUCache<SmartApplyLoggingRequestId, SmartApplyLoggingState>({
+    private activeContexts = new LRUCache<ContextId, SmartApplyLoggingState>({
         max: 20,
     })
     private repoMetaDataInstance = GitHubDotComRepoMetadata.getInstance()
@@ -93,69 +118,78 @@ export class SmartApplyContextLogger {
         this.loggingFeatureFlagManagerInstance = loggingFeatureFlagManagerInstance
     }
 
-    public createSmartApplyLoggingRequest(params: {
+    /**
+     * Records the base context for a smart apply operation.
+     * Returns the task ID for future context updates.
+     */
+    public recordSmartApplyBaseContext({
+        taskId,
+        startedAt,
+        isPrefetched,
+        model,
+        userQuery,
+        replacementCodeBlock,
+        document,
+        selectionType,
+        selectionRange,
+        selectionTimeMs,
+    }: {
+        taskId: string
+        startedAt: number
+        isPrefetched: boolean
         model: EditModel
         userQuery: string
         replacementCodeBlock: string
         document: vscode.TextDocument
-    }): SmartApplyLoggingRequestId {
+        selectionType: SmartApplySelectionType
+        selectionRange: vscode.Range
+        selectionTimeMs: number
+    }): void {
         const baseRepoContext = this.getBaseRepoContext()
-        const requestId = uuid.v4() as SmartApplyLoggingRequestId
-        const filePath = displayPathWithoutWorkspaceFolderPrefix(params.document.uri)
-        const fileContent = params.document.getText()
+        const filePath = displayPathWithoutWorkspaceFolderPrefix(document.uri)
+        const fileContent = document.getText()
 
-        const baseContext: SmartApplyBaseContext = {
-            smartApplyModel: params.model,
+        const context: SmartApplySelectionContext = {
+            startedAt,
+            isPrefetched,
+            model,
             ...baseRepoContext,
-            userQuery: params.userQuery,
-            replacementCodeBlock: params.replacementCodeBlock,
+            userQuery,
+            replacementCodeBlock,
             filePath,
             fileContent,
-        }
-        this.activeRequests.set(requestId, baseContext)
-        return requestId
-    }
-
-    public addSmartApplySelectionContext(
-        requestId: SmartApplyLoggingRequestId,
-        selectionType: SmartSelectionType,
-        selectionRange: vscode.Range,
-        selectionTimeMs: number,
-        document: vscode.TextDocument
-    ): void {
-        const request = this.getRequest(requestId)
-        if (!request) {
-            return
-        }
-        this.activeRequests.set(requestId, {
-            ...request,
             selectionType,
             selectionRange: [
                 document.offsetAt(selectionRange.start),
                 document.offsetAt(selectionRange.end),
             ],
             selectionTimeMs,
-        })
+        }
+
+        this.activeContexts.set(taskId, context)
     }
 
-    public addApplyContext(
-        requestId: SmartApplyLoggingRequestId,
-        applyTimeMs: number,
-        applyTaskId: string | undefined
-    ): void {
-        const request = this.getRequest(requestId)
-        if (!request) {
+    public addApplyContext({
+        taskId,
+        applyTimeMs,
+    }: {
+        taskId: string
+        applyTimeMs: number
+    }): void {
+        const context = this.getContext(taskId)
+        if (!context) {
             return
         }
-        this.activeRequests.set(requestId, {
-            ...request,
+        this.activeContexts.set(taskId, {
+            ...context,
             applyTimeMs,
-            applyTaskId,
+            applyTaskId: taskId,
+            totalTimeMs: performance.now() - context.startedAt,
         })
     }
 
-    public logSmartApplyContextToTelemetry(requestId: SmartApplyLoggingRequestId): void {
-        const context = this.getSmartApplyLoggingContext(requestId)
+    public logSmartApplyContextToTelemetry(taskId: string): void {
+        const context = this.getSmartApplyLoggingContext(taskId)
         if (!context) {
             return
         }
@@ -166,36 +200,57 @@ export class SmartApplyContextLogger {
                 recordsPrivateMetadataTranscript: 1,
             },
             privateMetadata: {
-                smartApplyContext: privateMetadata,
+                ...privateMetadata,
             },
             billingMetadata: { product: 'cody', category: 'billable' },
         })
     }
 
-    private getSmartApplyLoggingContext(
-        requestId: SmartApplyLoggingRequestId
-    ): SmartApplyFinalContext | undefined {
-        const request = this.activeRequests.get(requestId)
-        if (!request) {
+    private getSmartApplyLoggingContext(taskId: string): SmartApplyLoggingContext | undefined {
+        const context = this.activeContexts.get(taskId) as SmartApplyFinalContext | undefined
+        if (!context || typeof (context as SmartApplyFinalContext).applyTimeMs !== 'number') {
             return undefined
         }
+
+        const basePayload: SmartApplyLoggingContext = {
+            isPublic: context.isPublic,
+            isPrefetched: context.isPrefetched,
+            model: context.model,
+            selectionType: context.selectionType,
+            selectionTimeMs: context.selectionTimeMs,
+            applyTimeMs: context.applyTimeMs,
+            totalTimeMs: context.totalTimeMs,
+            applyTaskId: context.applyTaskId,
+            selectionRangeStart: context.selectionRange[0],
+            selectionRangeEnd: context.selectionRange[1],
+        }
+
+        const contextPayload = {
+            repoName: context.repoName,
+            commit: context.commit,
+            userQuery: context.userQuery,
+            replacementCodeBlock: context.replacementCodeBlock,
+            filePath: context.filePath,
+            fileContent: context.fileContent,
+        }
+
         if (
-            !shouldLogEditContextItem(
-                request,
+            shouldLogEditContextItem(
+                contextPayload,
                 this.loggingFeatureFlagManagerInstance.isSmartApplyContextDataCollectionFlagEnabled()
             )
         ) {
-            return undefined
+            // 🚨 SECURITY: included contextPayload for allowed users.
+            return {
+                ...basePayload,
+                smartApplyContext: contextPayload,
+            }
         }
-        // Verify that the request has the final property required.
-        if (typeof (request as SmartApplyFinalContext).applyTimeMs !== 'number') {
-            return undefined
-        }
-        return request as SmartApplyFinalContext
+        return basePayload
     }
 
-    private getRequest(requestId: SmartApplyLoggingRequestId): SmartApplyLoggingState | undefined {
-        return this.activeRequests.get(requestId)
+    private getContext(taskId: string): SmartApplyLoggingState | undefined {
+        return this.activeContexts.get(taskId)
     }
 
     private getBaseRepoContext(): RepoContext | undefined {
@@ -236,8 +291,9 @@ export function getEditLoggingContext(param: {
 }
 
 function shouldLogEditContextItem<T>(payload: T, isFeatureFlagEnabledForLogging: boolean): boolean {
-    // 🚨 SECURITY: included only for DotCom users and for users in the feature flag.
-    if (isDotComAuthed() && isFeatureFlagEnabledForLogging) {
+    // 🚨 SECURITY: included only for DotCom or S2 users and for users in the feature flag.
+    const authStatus = currentAuthStatus()
+    if ((isDotComAuthed() || isS2(authStatus)) && isFeatureFlagEnabledForLogging) {
         const payloadSize = calculatePayloadSizeInBytes(payload)
         return payloadSize !== undefined && payloadSize < MAX_LOGGING_PAYLOAD_SIZE_BYTES
     }

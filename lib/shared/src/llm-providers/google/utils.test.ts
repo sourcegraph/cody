@@ -30,10 +30,10 @@ describe('constructGeminiChatMessages', () => {
         ])
     })
 
-    it('should handle messages with no text', async () => {
+    it('should not construct messages with no text', async () => {
         const messages: Message[] = [{ speaker: 'human', text: undefined }]
         const result = await constructGeminiChatMessages(messages)
-        expect(result).toEqual([{ role: 'user', parts: [{ text: '' }] }])
+        expect(result).toEqual([])
     })
 
     it('should filter out trailing model message', async () => {

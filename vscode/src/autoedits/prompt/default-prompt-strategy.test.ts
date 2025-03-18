@@ -1,4 +1,3 @@
-import dedent from 'dedent'
 import { describe, expect, it } from 'vitest'
 
 import {
@@ -188,190 +187,187 @@ describe('DefaultUserPromptStrategy', () => {
     it('creates prompt with the context source with context', () => {
         const userPromptData = getUserPromptData({ shouldIncludeContext: true })
         const prompt = promptProvider.getUserPrompt(userPromptData)
+        expect(prompt.toString()).toMatchInlineSnapshot(`
+          "Help me finish a coding change. You will see snippets from current open files in my editor, files I have recently viewed, the file I am editing, then a history of my recent codebase changes, then current compiler and linter errors, content I copied from my codebase. You will then rewrite the <code_to_rewrite>, to match what you think I would do next in the codebase. Note: I might have stopped in the middle of typing.
 
-        expect(prompt.toString()).toEqual(dedent`
-            Help me finish a coding change. In particular, you will see a series of snippets from current open files in my editor, files I have recently viewed, the file I am editing, then a history of my recent codebase changes, then current compiler and linter errors, content I copied from my codebase. You will then rewrite the <code_to_rewrite>, to match what you think I would do next in the codebase. Note: I might have stopped in the middle of typing.
+          Code snippets I have extracted from open files in my code editor. Some may be irrelevant to the change:
+          <extracted_code_snippets>
+          <snippet>
+          (\`test1.ts\`)
 
-            Here are some snippets of code I have extracted from open files in my code editor. It's possible these aren't entirely relevant to my code change:
-            <extracted_code_snippets>
-            <snippet>
-            (\`test1.ts\`)
+          jaccard similarity context 1
+          </snippet>
+          <snippet>
+          (\`test2.ts\`)
 
-            jaccard similarity context 1
-            </snippet>
-            <snippet>
-            (\`test2.ts\`)
+          jaccard similarity context 2
+          </snippet>
+          </extracted_code_snippets>
 
-            jaccard similarity context 2
-            </snippet>
-            </extracted_code_snippets>
+          Code snippets I have recently viewed, roughly from oldest to newest. Some may be irrelevant to the change:
+          <recently_viewed_snippets>
+          <snippet>
+          (\`test3.ts\`)
 
-            Here are some snippets of code I have recently viewed, roughly from oldest to newest. It's possible these aren't entirely relevant to my code change:
-            <recently_viewed_snippets>
-            <snippet>
-            (\`test3.ts\`)
+          view port context 4
+          </snippet>
+          <snippet>
+          (\`test2.ts\`)
 
-            view port context 4
-            </snippet>
-            <snippet>
-            (\`test2.ts\`)
+          view port context 3
+          </snippet>
+          <snippet>
+          (\`test1.ts\`)
 
-            view port context 3
-            </snippet>
-            <snippet>
-            (\`test1.ts\`)
+          view port context 2
+          </snippet>
+          <snippet>
+          (\`test0.ts\`)
 
-            view port context 2
-            </snippet>
-            <snippet>
-            (\`test0.ts\`)
+          view port context 1
+          </snippet>
+          </recently_viewed_snippets>
 
-            view port context 1
-            </snippet>
-            </recently_viewed_snippets>
+          The file currently open:(\`test.ts\`)
+          <file>
 
-            Here is the file that I am looking at (\`test.ts\`)
-            <file>
+          <<<AREA_AROUND_CODE_TO_REWRITE_WILL_BE_INSERTED_HERE>>>
 
-            <<<AREA_AROUND_CODE_TO_REWRITE_WILL_BE_INSERTED_HERE>>>
+          </file>
 
-            </file>
+          My recent edits, from oldest to newest:
+          <diff_history>
+          test2.ts
+          recent edits context 5
+          test3.ts
+          recent edits context 4
+          test3.ts
+          recent edits context 3
+          test0.ts
+          recent edits context 2
+          test0.ts
+          recent edits context 1
+          </diff_history>
 
-            Here is my recent series of edits from oldest to newest.
-            <diff_history>
-            test2.ts
-            recent edits context 5
-            test3.ts
-            recent edits context 4
-            test3.ts
-            recent edits context 3
-            test0.ts
-            recent edits context 2
-            test0.ts
-            recent edits context 1
-            </diff_history>
+          Linter errors from the code that you will rewrite:
+          <lint_errors>
+          (\`test1.ts\`)
 
-            Here are some linter errors from the code that you will rewrite.
-            <lint_errors>
-            (\`test1.ts\`)
+          diagnostics context 1
 
-            diagnostics context 1
+          diagnostics context 2
 
-            diagnostics context 2
+          (\`test2.ts\`)
 
-            (\`test2.ts\`)
+          diagnostics context 3
+          </lint_errors>
 
-            diagnostics context 3
-            </lint_errors>
+          Recently copied code from the editor:
+          <recent_copy>
+          (\`test1.ts\`)
 
-            Here is some recent code I copied from the editor.
-            <recent_copy>
-            (\`test1.ts\`)
+          recent copy context 1
 
-            recent copy context 1
+          (\`test2.ts\`)
 
-            (\`test2.ts\`)
+          recent copy context 2
+          </recent_copy>
 
-            recent copy context 2
-            </recent_copy>
+          <area_around_code_to_rewrite>
+          line 37
+          line 38
+          line 39
+          line 40
+          line 41
+          line 42
+          line 43
+          line 44
+          line 45
+          line 46
 
-            <area_around_code_to_rewrite>
-            line 37
-            line 38
-            line 39
-            line 40
-            line 41
-            line 42
-            line 43
-            line 44
-            line 45
-            line 46
+          <code_to_rewrite>
+          line 47
+          line 48
+          line 49
+          line 50
+          line 51
+          line 52
+          line 53
 
-            <code_to_rewrite>
-            line 47
-            line 48
-            line 49
-            line 50
-            line 51
-            line 52
-            line 53
+          </code_to_rewrite>
+          line 54
+          line 55
+          line 56
+          line 57
+          line 58
+          line 59
+          line 60
+          line 61
+          line 62
+          line 63
+          line 64
 
-            </code_to_rewrite>
-            line 54
-            line 55
-            line 56
-            line 57
-            line 58
-            line 59
-            line 60
-            line 61
-            line 62
-            line 63
-            line 64
+          </area_around_code_to_rewrite>
 
-            </area_around_code_to_rewrite>
-
-            Now, continue where I left off and finish my change by rewriting "code_to_rewrite":
+          Continue where I left off and finish my change by rewriting "code_to_rewrite":"
         `)
     })
 
     it('creates a prompt in the correct format', () => {
         const userPromptData = getUserPromptData({ shouldIncludeContext: false })
         const prompt = promptProvider.getUserPrompt(userPromptData)
-
-        const expectedPrompt = dedent`
-            Help me finish a coding change. In particular, you will see a series of snippets from current open files in my editor, files I have recently viewed, the file I am editing, then a history of my recent codebase changes, then current compiler and linter errors, content I copied from my codebase. You will then rewrite the <code_to_rewrite>, to match what you think I would do next in the codebase. Note: I might have stopped in the middle of typing.
-
-
-
-            Here is the file that I am looking at (\`test.ts\`)
-            <file>
-
-            <<<AREA_AROUND_CODE_TO_REWRITE_WILL_BE_INSERTED_HERE>>>
-
-            </file>
+        expect(prompt.toString()).toMatchInlineSnapshot(`
+          "Help me finish a coding change. You will see snippets from current open files in my editor, files I have recently viewed, the file I am editing, then a history of my recent codebase changes, then current compiler and linter errors, content I copied from my codebase. You will then rewrite the <code_to_rewrite>, to match what you think I would do next in the codebase. Note: I might have stopped in the middle of typing.
 
 
 
+          The file currently open:(\`test.ts\`)
+          <file>
 
-            <area_around_code_to_rewrite>
-            line 37
-            line 38
-            line 39
-            line 40
-            line 41
-            line 42
-            line 43
-            line 44
-            line 45
-            line 46
+          <<<AREA_AROUND_CODE_TO_REWRITE_WILL_BE_INSERTED_HERE>>>
 
-            <code_to_rewrite>
-            line 47
-            line 48
-            line 49
-            line 50
-            line 51
-            line 52
-            line 53
+          </file>
 
-            </code_to_rewrite>
-            line 54
-            line 55
-            line 56
-            line 57
-            line 58
-            line 59
-            line 60
-            line 61
-            line 62
-            line 63
-            line 64
 
-            </area_around_code_to_rewrite>
 
-            Now, continue where I left off and finish my change by rewriting "code_to_rewrite":`
 
-        expect(prompt.toString()).toEqual(expectedPrompt)
+          <area_around_code_to_rewrite>
+          line 37
+          line 38
+          line 39
+          line 40
+          line 41
+          line 42
+          line 43
+          line 44
+          line 45
+          line 46
+
+          <code_to_rewrite>
+          line 47
+          line 48
+          line 49
+          line 50
+          line 51
+          line 52
+          line 53
+
+          </code_to_rewrite>
+          line 54
+          line 55
+          line 56
+          line 57
+          line 58
+          line 59
+          line 60
+          line 61
+          line 62
+          line 63
+          line 64
+
+          </area_around_code_to_rewrite>
+
+          Continue where I left off and finish my change by rewriting "code_to_rewrite":"
+        `)
     })
 })
