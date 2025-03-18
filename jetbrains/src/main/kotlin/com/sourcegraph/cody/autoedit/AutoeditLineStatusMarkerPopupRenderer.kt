@@ -34,6 +34,7 @@ class AutoeditLineStatusMarkerPopupRenderer(tracker: LineStatusTrackerI<*>) :
   override fun showHintAt(editor: Editor, range: Range, mousePosition: Point?) {
     if (!myTracker.isValid()) return
     val disposable = Disposer.newDisposable()
+    Disposer.register(disposable, myTracker.disposable)
 
     var editorComponent: JComponent? = null
     if (range.hasVcsLines()) {
