@@ -63,6 +63,6 @@ open class AutocompleteActionHandler : EditorActionHandler() {
   }
 
   private fun AutocompleteEditItem.toCompletionItem(): AutocompleteItem {
-    return AutocompleteItem(this.id, this.range, this.insertText)
+    return AutocompleteItem(this.id, this.range, this.insertText.removeSuffix("\n"))
   }
 }
