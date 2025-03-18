@@ -16,15 +16,6 @@ export let fontCache: ArrayBuffer | null = null
  * We can consider changing this, or allowing the user to provide their own font in the future.
  */
 async function initFont(): Promise<ArrayBuffer> {
-    /**
-     * Possible paths
-     * 1. VS Code production: "/Users/user/dev/cody/vscode/dist/DejaVuSansMono.ttf"
-     * 2. VS Code tests: /Users/user/dev/cody/vscode/resources/DejaVuSansMono.ttf
-     * 3. Agent production: Users/user/dev/cody/agent/dist/DejaVuSansMono.ttf
-     * 4. Agent tests: Users/user/dev/cody/agent/dist/DejaVuSansMono.ttf
-     * 5. Agent tests (GH actions?)
-     */
-
     // Note: The font path will be slightly different in tests to production.
     // Relative to the test file for our tests, but relative to the dist directory in production
     const isInDistDirectory = process.env.NODE_ENV !== 'test' || isRunningInsideAgent()

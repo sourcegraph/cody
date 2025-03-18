@@ -26,7 +26,6 @@ object Constants {
   const val chat = "chat"
   const val `class` = "class"
   const val `client-managed` = "client-managed"
-  const val completion = "completion"
   const val confirmation = "confirmation"
   const val contextLoaded = "contextLoaded"
   const val contextFile = "context_file"
