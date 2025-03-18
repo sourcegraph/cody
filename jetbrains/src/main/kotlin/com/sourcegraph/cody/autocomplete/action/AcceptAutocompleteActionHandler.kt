@@ -17,7 +17,10 @@ class AcceptAutocompleteActionHandler : AutocompleteActionHandler() {
    */
   override fun doExecute(editor: Editor, maybeCaret: Caret?, dataContext: DataContext?) {
     val caret = maybeCaret ?: getSingleCaret(editor) ?: return
-    val completionItem = getCurrentAutocompleteItem(editor) ?: return
+    val completionItem =
+        getCurrentAutoeditItemAsCompletionItem(editor)
+            ?: getCurrentAutocompleteItem(editor)
+            ?: return
 
     AcceptCodyAutocompleteAction.tracker.set(completionItem.id)
     WriteAction.run<RuntimeException> { applyInsertText(editor, caret, completionItem) }

@@ -210,11 +210,11 @@ private constructor(
       }
     }
 
-      val borderColor: Color
+    val borderColor: Color
       get() =
           JBColor.namedColor("VersionControl.MarkerPopup.borderColor", JBColor(Gray._206, Gray._75))
 
-      fun installPopupEditorWordHighlighters(
+    fun installPopupEditorWordHighlighters(
         textField: EditorTextField,
         wordDiff: List<DiffFragment>?
     ) {
