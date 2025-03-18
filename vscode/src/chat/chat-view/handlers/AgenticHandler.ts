@@ -17,6 +17,11 @@ import { ChatHandler } from './ChatHandler'
 import type { AgentHandler, AgentHandlerDelegate, AgentRequest } from './interfaces'
 import { buildAgentPrompt } from './prompts'
 
+enum AGENT_MODELS {
+    ExtendedThinking = 'anthropic::2024-10-22::claude-3-7-sonnet-extended-thinking',
+    Base = 'anthropic::2024-10-22::claude-3-7-sonnet',
+}
+
 /**
  * Base AgenticHandler class that manages tool execution state
  * and implements the core agentic conversation loop
@@ -98,7 +103,7 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
                     recorder,
                     span,
                     signal,
-                    model
+                    turnCount === 0 ? AGENT_MODELS.ExtendedThinking : AGENT_MODELS.Base
                 )
 
                 // Add bot response to conversation
