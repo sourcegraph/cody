@@ -26,6 +26,7 @@ export interface CodeBlockActionsProps {
             isPrefetch?: boolean
             instruction?: PromptString
             fileName?: string
+            regex?: string
         }) => void
         onAccept: (id: string) => void
         onReject: (id: string) => void
@@ -134,6 +135,7 @@ export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps
                 // Check if the code element has either 'language-bash' class
                 const isShellCommand = codeElement?.classList.contains('language-bash')
                 const codeBlockName = isShellCommand ? 'command' : fileName
+                const regex = codeElement?.getAttribute('regex') || undefined
 
                 let buttons: HTMLElement
 
@@ -180,7 +182,8 @@ export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps
                         smartApplyId,
                         smartApplyState,
                         guardrails,
-                        isMessageLoading
+                        isMessageLoading,
+                        regex
                     )
                 } else {
                     buttons = createButtons(

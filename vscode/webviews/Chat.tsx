@@ -101,12 +101,14 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             instruction,
             fileName,
             isPrefetch,
+            regex,
         }: {
             id: string
             text: string
             isPrefetch?: boolean
             instruction?: PromptString
             fileName?: string
+            regex?: string
         }) {
             const command = isPrefetch ? 'smartApplyPrefetch' : 'smartApplySubmit'
 
@@ -127,6 +129,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                 code: text.replace(/\n$/, ''),
                 fileName,
                 traceparent,
+                regex,
             })
             span.end()
         }

@@ -71,17 +71,21 @@ function extractSmartApplyCustomModelResponse(text: string, task: FixupTask): st
     const openingTag = `<${SMART_APPLY_CUSTOM_PROMPT_TOPICS.FINAL_CODE}>`
     const closingTag = `</${SMART_APPLY_CUSTOM_PROMPT_TOPICS.FINAL_CODE}>`
 
-    const startsWithTag = text.trimStart().startsWith(openingTag)
-    const endsWithTag = text.trimEnd().endsWith(closingTag)
-
-    if (!startsWithTag || !endsWithTag) {
-        return text
+    let startsWithTag = text.trimStart().startsWith(openingTag)
+    let endsWithTag = text.trimEnd().endsWith(closingTag)
+    let startIndex = 0
+    let endIndex = text.length
+    while (startsWithTag || endsWithTag) {
+        // Only extract the code between the outermost tags
+        const s = text.indexOf(openingTag)
+        const e = text.lastIndexOf(closingTag)
+        startIndex = s === -1 ? 0 : s + openingTag.length
+        endIndex = e === -1 ? text.length : e
+        text = text.slice(startIndex, endIndex)
+        startsWithTag = text.trimStart().startsWith(openingTag)
+        endsWithTag = text.trimEnd().endsWith(closingTag)
     }
-
-    // Only extract the code between the outermost tags
-    const startIndex = text.indexOf(openingTag) + openingTag.length
-    const endIndex = text.lastIndexOf(closingTag)
-    return text.slice(startIndex, endIndex)
+    return text
 }
 
 /**

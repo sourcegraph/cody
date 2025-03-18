@@ -321,6 +321,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     fileUri: message.fileName,
                     traceparent: message.traceparent || undefined,
                     isPrefetch: message.command === 'smartApplyPrefetch',
+                    regex: message.regex,
                 })
                 break
             case 'trace-export':

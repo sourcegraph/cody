@@ -1,6 +1,7 @@
 import type { ChatMessage } from '../chat/transcript/messages'
 import type { ChatModel } from '../models/types'
 import { PromptString, ps } from './prompt-string'
+import { SMART_APPLY_SYSTEM_PROMPT } from './smart-apply'
 
 /**
  * The preamble we add to the start of the last human open-end chat message that has context items.
@@ -21,6 +22,11 @@ export class PromptMixin {
      */
     private static mixins: PromptMixin[] = []
     private static hedging: PromptMixin = new PromptMixin(HEDGES_PREVENTION)
+    /**
+     *  Instructions on specific output formatting for Smart Apply.
+     * Only applies to non-Claude-3 models as the same prompt is added to the system prompt for Claude-3 models.
+     */
+    private static smartApply = new PromptMixin(SMART_APPLY_SYSTEM_PROMPT)
 
     /**
      * Prepends all mixins to `humanMessage`. Modifies and returns `humanMessage`.
@@ -38,6 +44,7 @@ export class PromptMixin {
         if (modelID && apologiticModels.some(model => modelID.includes(model))) {
             mixins.push(PromptMixin.hedging)
         }
+        mixins.push(PromptMixin.smartApply)
 
         // Add new mixins to the list of mixins to be prepended to the next human message.
         mixins.push(...newMixins)

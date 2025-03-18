@@ -12,6 +12,7 @@ import {
     firstValueFrom,
     isDotCom,
     isS2,
+    ps,
     skipPendingOperation,
     switchMap,
     telemetryRecorder,
@@ -198,6 +199,7 @@ export async function handleSmartApply({
     fileUri,
     traceparent,
     isPrefetch,
+    regex,
 }: {
     id: string
     code: string
@@ -206,6 +208,7 @@ export async function handleSmartApply({
     fileUri?: string | null
     traceparent?: string | undefined | null
     isPrefetch: boolean
+    regex?: string | null
 }): Promise<void> {
     const activeEditor = getEditor()?.active
     const workspaceUri = vscode.workspace.workspaceFolders?.[0].uri
@@ -243,6 +246,33 @@ export async function handleSmartApply({
         })
 
         return
+    }
+
+    if (regex) {
+        // First, check if the regex is actually a literal match
+        const currentCode = document.getText()
+        const isLiteralMatch = currentCode.includes(regex)
+        const regexMatch = new RegExp(regex, 's')
+        const replacement = currentCode.replace(isLiteralMatch ? regex : regexMatch, code)
+        if (currentCode !== replacement) {
+            const range = new vscode.Range(
+                document.positionAt(0),
+                document.positionAt(currentCode.length)
+            )
+            await executeSmartApply({
+                configuration: {
+                    id,
+                    document,
+                    instruction: ps``,
+                    replacement,
+                    range,
+                    model: 'skip',
+                    traceparent,
+                },
+                source: 'chat',
+            })
+            return
+        }
     }
 
     const visibleEditor = vscode.window.visibleTextEditors.find(

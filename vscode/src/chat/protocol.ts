@@ -109,6 +109,7 @@ export type WebviewMessage =
           fileName?: string | undefined | null
           traceparent?: string | undefined | null
           isPrefetch?: boolean | undefined | null
+          regex?: string | undefined | null
       }
     | {
           command: 'trace-export'

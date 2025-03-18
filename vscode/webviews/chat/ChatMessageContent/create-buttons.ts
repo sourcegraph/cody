@@ -1,4 +1,4 @@
-import { type Guardrails, isError } from '@sourcegraph/cody-shared'
+import { type Guardrails, isError, logDebug } from '@sourcegraph/cody-shared'
 import type { FixupTaskID } from '../../../src/non-stop/FixupTask'
 import { CodyTaskState } from '../../../src/non-stop/state'
 import {
@@ -7,10 +7,8 @@ import {
     CopyCodeBlockIcon,
     EllipsisIcon,
     InsertCodeBlockIcon,
-    RefreshIcon,
     SaveCodeBlockIcon,
     SparkleIcon,
-    SyncSpinIcon,
     TickIcon,
 } from '../../icons/CodeBlockActionIcons'
 import { getVSCodeAPI } from '../../utils/VSCodeApi'
@@ -111,7 +109,8 @@ export function createButtonsExperimentalUI(
     smartApplyId?: string,
     smartApplyState?: CodyTaskState,
     guardrails?: Guardrails,
-    isMessageLoading?: boolean
+    isMessageLoading?: boolean,
+    regex?: string
 ): HTMLElement {
     const previewContainer = document.createElement('div')
     previewContainer.className = styles.buttonsContainer
@@ -154,6 +153,13 @@ export function createButtonsExperimentalUI(
     // Create container for action buttons to keep them grouped
     const actionButtons = document.createElement('div')
     actionButtons.className = styles.actionButtons
+
+    // For 'agentic' intent, position the buttons container on the very left
+    if (humanMessage?.intent === 'agentic') {
+        buttons.style.justifyContent = 'flex-start'
+        actionButtons.style.marginLeft = '0'
+    }
+
     buttons.appendChild(actionButtons)
 
     // Create metadata container for guardrails and filename
@@ -161,7 +167,7 @@ export function createButtonsExperimentalUI(
     metadataContainer.className = styles.metadataContainer
 
     // Add guardrails if needed
-    if (guardrails) {
+    if (guardrails && humanMessage?.intent !== 'agentic') {
         const container = document.createElement('div')
         container.classList.add(styles.attributionContainer)
         metadataContainer.append(container)
@@ -207,8 +213,12 @@ export function createButtonsExperimentalUI(
         const rejectButton = createRejectButton(smartApplyId, smartApply)
         actionButtons.append(acceptButton, rejectButton)
     } else {
-        const copyButton = createCopyButton(preText, copyButtonOnSubmit)
-        actionButtons.append(copyButton)
+        console.log('create-buttons, intent is', humanMessage?.intent || 'NONE')
+        logDebug('create-buttons, intent is', humanMessage?.intent || 'NONE')
+        if (humanMessage?.intent !== 'agentic') {
+            const copyButton = createCopyButton(preText, copyButtonOnSubmit)
+            actionButtons.append(copyButton)
+        }
 
         if (smartApply && smartApplyId) {
             // Execute button is only available in VS Code.
@@ -222,13 +232,14 @@ export function createButtonsExperimentalUI(
                           smartApply,
                           smartApplyId,
                           smartApplyState,
-                          codeBlockName
+                          codeBlockName,
+                          regex
                       )
             smartButton.title = isExecutable ? 'Execute in Terminal' : 'Apply in Editor'
             actionButtons.append(smartButton)
         }
 
-        if (config.clientCapabilities.isVSCode) {
+        if (config.clientCapabilities.isVSCode && humanMessage?.intent !== 'agentic') {
             // VS Code provides additional support for rendering an OS-native dropdown, that has some
             // additional benefits. Mainly that it can "break out" of the webview.
             // TODO: A dropdown would be useful for other clients too, we should consider building
@@ -383,46 +394,27 @@ function createApplyButton(
     smartApply: CodeBlockActionsProps['smartApply'],
     smartApplyId: FixupTaskID,
     smartApplyState?: CodyTaskState,
-    fileName?: string
+    fileName?: string,
+    regex?: string
 ): HTMLElement {
     const button = document.createElement('button')
     button.className = styles.button
     switch (smartApplyState) {
         case 'Working': {
-            button.innerHTML = wrapTextWithResponsiveSpan('Applying')
+            button.innerHTML = wrapTextWithResponsiveSpan('Opening File...')
             button.disabled = true
 
-            // Add Loading Icon
+            // Add Sparkle Icon
             const iconContainer = document.createElement('div')
             iconContainer.className = styles.iconContainer
-            iconContainer.innerHTML = SyncSpinIcon
+            iconContainer.innerHTML = SparkleIcon
             button.prepend(iconContainer)
 
             break
         }
         case 'Applied':
         case 'Finished': {
-            button.innerHTML = wrapTextWithResponsiveSpan('Reapply')
-
-            // Add Refresh Icon
-            const iconContainer = document.createElement('div')
-            iconContainer.className = styles.iconContainer
-            iconContainer.innerHTML = RefreshIcon
-            button.prepend(iconContainer)
-
-            button.addEventListener('click', () =>
-                smartApply.onSubmit({
-                    id: smartApplyId,
-                    text: preText,
-                    instruction: humanMessage?.text,
-                    fileName,
-                })
-            )
-
-            break
-        }
-        default: {
-            button.innerHTML = wrapTextWithResponsiveSpan('Apply')
+            button.innerHTML = wrapTextWithResponsiveSpan('Open Diff')
 
             // Add Sparkle Icon
             const iconContainer = document.createElement('div')
@@ -436,6 +428,28 @@ function createApplyButton(
                     text: preText,
                     instruction: humanMessage?.text,
                     fileName,
+                    regex,
+                })
+            )
+
+            break
+        }
+        default: {
+            button.innerHTML = wrapTextWithResponsiveSpan('Open Diff')
+
+            // Add Sparkle Icon
+            const iconContainer = document.createElement('div')
+            iconContainer.className = styles.iconContainer
+            iconContainer.innerHTML = SparkleIcon
+            button.prepend(iconContainer)
+
+            button.addEventListener('click', () =>
+                smartApply.onSubmit({
+                    id: smartApplyId,
+                    text: preText,
+                    instruction: humanMessage?.text,
+                    fileName,
+                    regex,
                 })
             )
         }

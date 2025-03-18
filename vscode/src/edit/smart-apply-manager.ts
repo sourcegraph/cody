@@ -23,6 +23,8 @@ import {
 import { isUriIgnoredByContextFilterWithNotification } from '../cody-ignore/context-filter'
 import type { FixupTask } from '../non-stop/FixupTask'
 
+import type { CreateTaskOptions } from '../non-stop/FixupController'
+// import type { FixupController } from '../non-stop/FixupController'
 import { SmartApplyContextLogger } from './edit-context-logging'
 import type { EditManager } from './edit-manager'
 import {
@@ -49,6 +51,7 @@ export class SmartApplyManager implements vscode.Disposable {
         private options: {
             editManager: EditManager
             chatClient: ChatClient
+            // fixupController: FixupController
         }
     ) {
         this.smartApplyContextLogger = new SmartApplyContextLogger(
@@ -255,7 +258,7 @@ ${replacementCode}`,
 
     public async smartApplyEdit(args: SmartApplyArguments): Promise<void> {
         const {
-            configuration: { document, traceparent, isNewFile },
+            configuration: { document, traceparent, isNewFile, replacement, range },
             configuration,
             source = 'chat',
         } = args
@@ -269,6 +272,37 @@ ${replacementCode}`,
 
                 if (await isUriIgnoredByContextFilterWithNotification(document.uri, 'edit')) {
                     return
+                }
+
+                // For the cases where a replacement with range has been provided, we can apply the edit directly.
+                if (replacement && range) {
+                    // Create a task that covers the entire document
+                    const fullDocRange = new vscode.Range(
+                        document.positionAt(0),
+                        document.positionAt(document.getText().length)
+                    )
+                    const taskParams: CreateTaskOptions = {
+                        taskId: configuration.id,
+                        document,
+                        instruction: ps``,
+                        userContextFiles: [],
+                        selectionRange: fullDocRange,
+                        intent: 'edit',
+                        mode: 'edit',
+                        model: 'manual',
+                        rules: null,
+                        source: 'chat',
+                        destinationFile: document.uri,
+                    }
+                    // Create a task with the regex replacement as the instruction
+                    const task =
+                        await this.options.editManager.options.fixupController.createTask(taskParams)
+                    // If the task has failed, we would fallback to smart apply.
+                    if (task) {
+                        const provider = this.options.editManager.getProviderForTask(task)
+                        await provider.applyEdit(replacement)
+                        return task
+                    }
                 }
 
                 const model = await this.options.editManager.getEditModel(configuration)
