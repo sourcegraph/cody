@@ -42,6 +42,8 @@ const meta: Meta<typeof Transcript> = {
         chatEnabled: true,
         models: FIXTURE_MODELS,
         setActiveChatContext: () => {},
+        manuallySelectedIntent: null,
+        setManuallySelectedIntent: () => {},
     } satisfies ComponentProps<typeof Transcript>,
 
     decorators: [

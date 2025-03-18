@@ -1,8 +1,8 @@
 import type * as vscode from 'vscode'
 
-import { isFileURI } from '@sourcegraph/cody-shared'
-
+import { autoeditRejectReason } from '../analytics-logger'
 import { areSameUriDocs } from '../utils'
+
 import { AutoEditsDefaultRendererManager, type AutoEditsRendererManager } from './manager'
 import type { AutoEditRenderOutput, GetRenderOutputArgs } from './render-output'
 
@@ -74,14 +74,17 @@ export class AutoEditsInlineRendererManager
     protected async onDidChangeTextEditorSelection(
         event: vscode.TextEditorSelectionChangeEvent
     ): Promise<void> {
-        if (this.hasInlineCompletionItems() && isFileURI(event.textEditor.document.uri)) {
-            // We are showing a completion, possibly alongisde decorations. The dismissal of the completion will
+        if (
+            this.activeRequest?.renderOutput.type === 'completion-with-decorations' &&
+            areSameUriDocs(event.textEditor.document, this.activeRequest?.document)
+        ) {
+            // We are showing a completion alongisde decorations. The dismissal of the completion will
             // automatically be handled by VS Code. We must match that behaviour for the decorations,
             // otherwise we will end up with a scenario where the decorations of a suggestion are preserved,
             // whilst the completion has already been dismissed.
             // If the cursor moved in any file, we assume it's a user action and
             // dismiss the active edit.
-            this.rejectActiveEdit()
+            this.rejectActiveEdit(autoeditRejectReason.onDidChangeTextEditorSelection)
         }
 
         if (
@@ -93,7 +96,7 @@ export class AutoEditsInlineRendererManager
             // We will only dismiss the suggestion if the user moves the cursor outside of the target range.
             const currentSelectionRange = event.selections.at(-1)
             if (!currentSelectionRange?.intersection(this.activeRequest.codeToReplaceData.range)) {
-                this.rejectActiveEdit()
+                this.rejectActiveEdit(autoeditRejectReason.onDidChangeTextEditorSelection)
             }
         }
     }

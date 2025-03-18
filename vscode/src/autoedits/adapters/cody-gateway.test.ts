@@ -7,6 +7,7 @@ import {
     mockResolvedConfig,
     ps,
 } from '@sourcegraph/cody-shared'
+import * as shared from '@sourcegraph/cody-shared'
 
 import type { AutoeditModelOptions } from './base'
 import { CodyGatewayAdapter } from './cody-gateway'
@@ -27,7 +28,7 @@ describe('CodyGatewayAdapter', () => {
         abortSignal: new AbortController().signal,
     }
 
-    const mockFetch = vi.fn()
+    const mockFetchSpy = vi.spyOn(shared, 'fetch') as any
 
     beforeEach(() => {
         mockClientCapabilities(CLIENT_CAPABILITIES_FIXTURE)
@@ -38,9 +39,8 @@ describe('CodyGatewayAdapter', () => {
                 serverEndpoint: DOTCOM_URL.toString(),
             },
         })
-        global.fetch = mockFetch
         adapter = new CodyGatewayAdapter()
-        mockFetch.mockReset()
+        mockFetchSpy.mockReset()
     })
 
     afterAll(() => {
@@ -49,7 +49,7 @@ describe('CodyGatewayAdapter', () => {
 
     it('sends correct request parameters for chat model', async () => {
         // Mock successful response
-        mockFetch.mockResolvedValueOnce({
+        mockFetchSpy.mockResolvedValueOnce({
             status: 200,
             headers: new Headers(),
             json: () => Promise.resolve({ choices: [{ message: { content: 'response' } }] }),
@@ -58,7 +58,7 @@ describe('CodyGatewayAdapter', () => {
         await adapter.getModelResponse(options)
 
         // Verify the fetch call
-        expect(mockFetch).toHaveBeenCalledWith(options.url, {
+        expect(mockFetchSpy).toHaveBeenCalledWith(options.url, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -70,7 +70,7 @@ describe('CodyGatewayAdapter', () => {
         })
 
         // Verify request body structure
-        const requestBody = JSON.parse(mockFetch.mock.calls[0][1].body)
+        const requestBody = JSON.parse(mockFetchSpy.mock.calls[0][1].body)
         expect(requestBody).toEqual(
             expect.objectContaining({
                 stream: false,
@@ -90,7 +90,7 @@ describe('CodyGatewayAdapter', () => {
     it('sends correct request parameters for completions model', async () => {
         const nonChatOptions = { ...options, isChatModel: false }
 
-        mockFetch.mockResolvedValueOnce({
+        mockFetchSpy.mockResolvedValueOnce({
             status: 200,
             headers: new Headers(),
             json: () => Promise.resolve({ choices: [{ text: 'response' }] }),
@@ -98,7 +98,7 @@ describe('CodyGatewayAdapter', () => {
 
         await adapter.getModelResponse(nonChatOptions)
 
-        const requestBody = JSON.parse(mockFetch.mock.calls[0][1].body)
+        const requestBody = JSON.parse(mockFetchSpy.mock.calls[0][1].body)
         expect(requestBody).toEqual(
             expect.objectContaining({
                 stream: false,
@@ -116,7 +116,7 @@ describe('CodyGatewayAdapter', () => {
     })
 
     it('handles error responses correctly', async () => {
-        mockFetch.mockResolvedValueOnce({
+        mockFetchSpy.mockResolvedValueOnce({
             status: 400,
             headers: new Headers(),
             text: () => Promise.resolve('Bad Request'),
