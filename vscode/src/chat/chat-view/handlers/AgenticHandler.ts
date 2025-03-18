@@ -2,12 +2,15 @@ import type { Span } from '@opentelemetry/api'
 import {
     type ChatMessage,
     type ContextItem,
+    type Message,
     PromptString,
     type ToolContentPart,
+    isDefined,
     logDebug,
     ps,
+    wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
-import { AgenticChatPrompter } from '../AgenticChatPrompter'
+import { PromptBuilder } from '../../../prompt-builder'
 import type { ChatBuilder } from '../ChatBuilder'
 import type { ChatControllerOptions } from '../ChatController'
 import type { ContextRetriever } from '../ContextRetriever'
@@ -29,7 +32,7 @@ enum AGENT_MODELS {
 export class AgenticHandler extends ChatHandler implements AgentHandler {
     public static readonly id = 'agentic-chat'
     protected readonly SYSTEM_PROMPT: PromptString
-    protected readonly MAX_TURN = 20
+    protected readonly MAX_TURN = 50
 
     protected tools: AgentTool[] = []
 
@@ -370,5 +373,40 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
         if (!signal.aborted) {
             delegate.postError(error instanceof Error ? error : new Error(String(error)), 'transcript')
         }
+    }
+}
+
+// A prompter that creates a prompt for an agentic chat model
+class AgenticChatPrompter {
+    constructor(private readonly preamble: PromptString) {}
+
+    public async makePrompt(chat: ChatBuilder, context: ContextItem[] = []): Promise<Message[]> {
+        return wrapInActiveSpan('chat.prompter', async () => {
+            const contextWindow = { input: 150000, output: 8000 }
+            const promptBuilder = await PromptBuilder.create(contextWindow)
+
+            // Add preamble messages
+            const preambleMessages = { speaker: 'system', text: this.preamble } satisfies ChatMessage
+            if (!promptBuilder.tryAddToPrefix([preambleMessages])) {
+                throw new Error(`Preamble length exceeded context window ${contextWindow.input}`)
+            }
+
+            // Add existing chat transcript messages
+            const reverseTranscript = [...chat.getDehydratedMessages()].reverse()
+
+            promptBuilder.tryAddMessages(reverseTranscript)
+
+            if (context.length > 0) {
+                await promptBuilder.tryAddContext('user', context)
+            }
+
+            const historyItems = reverseTranscript
+                .flatMap(m => (m.contextFiles ? [...m.contextFiles].reverse() : []))
+                .filter(isDefined)
+
+            await promptBuilder.tryAddContext('history', historyItems.reverse())
+
+            return promptBuilder.build()
+        })
     }
 }

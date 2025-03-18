@@ -33,6 +33,8 @@ Environment you are running in:
 1. Platform: {{USER_INFO_OS}}
 2. IDE: {{USER_INFO_IDE}}
 3. Date: ${currentDate}
+4. Current file: {{USER_INFO_CURRENT_FILE}}
+    - use the file tool to fetch the content of this file if needed
 </env>
 
 Remember:
@@ -48,14 +50,9 @@ REMEMBER, always be helpful and proactive! Don't ask for permission to do someth
 
 export function buildAgentPrompt(): string {
     const { OS, IDE } = getUserEnv()
-    return SYSTEM_PROMPT_TEMPLATE.replace('{{USER_INFO_OS}}', OS).replace('{{USER_INFO_IDE}}', IDE)
-}
-
-const CURRENT_EDITOR_STATE_PROMPT = `<user_env>
-Name of file that the user is currently looking at: '{{USER_INFO_CURRENT_FILE}}' - use the file tool to fetch the content of this file if needed.
-</user_env>`
-
-export function getEditorStatePrompt(): string {
     const currentFile = fileOps.getCurrentFileName() || 'unknown'
-    return CURRENT_EDITOR_STATE_PROMPT.replace('{{USER_INFO_CURRENT_FILE}}', currentFile)
+    // TODO(bee): codebase info
+    return SYSTEM_PROMPT_TEMPLATE.replace('{{USER_INFO_OS}}', OS)
+        .replace('{{USER_INFO_IDE}}', IDE)
+        .replace('{{USER_INFO_CURRENT_FILE}}', currentFile)
 }
