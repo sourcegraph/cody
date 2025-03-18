@@ -490,9 +490,6 @@ describe('AutoeditsProvider', () => {
                 range: completionItem.range,
             }),
         ])
-        // expect(result?.items).toStrictEqual([
-        //     { insertText: completionItem.text, range: completionItem.range },
-        // ])
     })
 
     describe('Debounce logic', () => {
