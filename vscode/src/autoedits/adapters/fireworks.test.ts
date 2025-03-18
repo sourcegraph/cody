@@ -1,6 +1,7 @@
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { ps } from '@sourcegraph/cody-shared'
+import * as shared from '@sourcegraph/cody-shared'
 
 import * as autoeditsConfig from '../autoedits-config'
 
@@ -31,12 +32,11 @@ describe('FireworksAdapter', () => {
         ...options,
     }
 
-    const mockFetch = vi.fn()
+    const mockFetchSpy = vi.spyOn(shared, 'fetch') as any
 
     beforeEach(() => {
-        global.fetch = mockFetch
         adapter = new FireworksAdapter()
-        mockFetch.mockReset()
+        mockFetchSpy.mockReset()
     })
 
     afterAll(() => {
@@ -44,7 +44,7 @@ describe('FireworksAdapter', () => {
     })
 
     it('sends correct request parameters for chat model', async () => {
-        mockFetch.mockResolvedValueOnce({
+        mockFetchSpy.mockResolvedValueOnce({
             status: 200,
             headers: new Headers(),
             json: () => Promise.resolve({ choices: [{ message: { content: 'response' } }] }),
@@ -52,7 +52,7 @@ describe('FireworksAdapter', () => {
 
         await adapter.getModelResponse(options)
 
-        expect(mockFetch).toHaveBeenCalledWith(options.url, {
+        expect(mockFetchSpy).toHaveBeenCalledWith(options.url, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -62,7 +62,7 @@ describe('FireworksAdapter', () => {
             signal: expect.any(AbortSignal),
         })
 
-        const requestBody = JSON.parse(mockFetch.mock.calls[0][1].body)
+        const requestBody = JSON.parse(mockFetchSpy.mock.calls[0][1].body)
         expect(requestBody).toEqual(
             expect.objectContaining({
                 stream: false,
@@ -83,7 +83,7 @@ describe('FireworksAdapter', () => {
     it('sends correct request parameters for completions model', async () => {
         const nonChatOptions = { ...options, isChatModel: false }
 
-        mockFetch.mockResolvedValueOnce({
+        mockFetchSpy.mockResolvedValueOnce({
             status: 200,
             headers: new Headers(),
             json: () => Promise.resolve({ choices: [{ text: 'response' }] }),
@@ -91,7 +91,7 @@ describe('FireworksAdapter', () => {
 
         await adapter.getModelResponse(nonChatOptions)
 
-        const requestBody = JSON.parse(mockFetch.mock.calls[0][1].body)
+        const requestBody = JSON.parse(mockFetchSpy.mock.calls[0][1].body)
         expect(requestBody).toEqual(
             expect.objectContaining({
                 stream: false,
@@ -110,7 +110,7 @@ describe('FireworksAdapter', () => {
     })
 
     it('handles error responses correctly', async () => {
-        mockFetch.mockResolvedValueOnce({
+        mockFetchSpy.mockResolvedValueOnce({
             status: 400,
             headers: new Headers(),
             text: () => Promise.resolve('Bad Request'),
@@ -121,7 +121,7 @@ describe('FireworksAdapter', () => {
 
     it('returns correct response for chat model', async () => {
         const expectedResponse = 'modified code'
-        mockFetch.mockResolvedValueOnce({
+        mockFetchSpy.mockResolvedValueOnce({
             status: 200,
             headers: new Headers(),
             json: () => Promise.resolve({ choices: [{ message: { content: expectedResponse } }] }),
@@ -135,7 +135,7 @@ describe('FireworksAdapter', () => {
         const expectedResponse = 'modified code'
         const nonChatOptions = { ...options, isChatModel: false }
 
-        mockFetch.mockResolvedValueOnce({
+        mockFetchSpy.mockResolvedValueOnce({
             status: 200,
             headers: new Headers(),
             json: () => Promise.resolve({ choices: [{ text: expectedResponse }] }),
