@@ -1,4 +1,4 @@
-import { type Guardrails, isError } from '@sourcegraph/cody-shared'
+import { type ChatMessage, type Guardrails, isError } from '@sourcegraph/cody-shared'
 import type { FixupTaskID } from '../../../src/non-stop/FixupTask'
 import { CodyTaskState } from '../../../src/non-stop/state'
 import {
@@ -111,7 +111,9 @@ export function createButtonsExperimentalUI(
     smartApplyId?: string,
     smartApplyState?: CodyTaskState,
     guardrails?: Guardrails,
-    isMessageLoading?: boolean
+    isMessageLoading?: boolean,
+    manuallySelectedIntent?: ChatMessage['intent'],
+    setManuallySelectedIntent?: (intent: ChatMessage['intent']) => void
 ): HTMLElement {
     const previewContainer = document.createElement('div')
     previewContainer.className = styles.buttonsContainer

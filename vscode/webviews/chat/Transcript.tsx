@@ -624,6 +624,8 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                         isLastSentInteraction={isLastSentInteraction}
                         setThoughtProcessOpened={setThoughtProcessOpened}
                         isThoughtProcessOpened={isThoughtProcessOpened}
+                        manuallySelectedIntent={manuallySelectedIntent}
+                        setManuallySelectedIntent={setManuallySelectedIntent}
                     />
                 )}
         </>

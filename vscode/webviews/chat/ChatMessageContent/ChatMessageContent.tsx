@@ -3,7 +3,7 @@ import { LRUCache } from 'lru-cache'
 import type React from 'react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
-import type { Guardrails, PromptString } from '@sourcegraph/cody-shared'
+import type { ChatMessage, Guardrails, PromptString } from '@sourcegraph/cody-shared'
 
 import type { FixupTaskID } from '../../../src/non-stop/FixupTask'
 import { CodyTaskState } from '../../../src/non-stop/state'
@@ -48,6 +48,9 @@ interface ChatMessageContentProps {
 
     guardrails?: Guardrails
     className?: string
+
+    manuallySelectedIntent?: ChatMessage['intent']
+    setManuallySelectedIntent?: (intent: ChatMessage['intent']) => void
 }
 
 const prefetchedEdits = new LRUCache<string, true>({ max: 100 })
@@ -67,6 +70,8 @@ export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps
     smartApply,
     isThoughtProcessOpened,
     setThoughtProcessOpened,
+    manuallySelectedIntent,
+    setManuallySelectedIntent,
 }) => {
     const rootRef = useRef<HTMLDivElement>(null)
     const config = useConfig()
@@ -180,7 +185,9 @@ export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps
                         smartApplyId,
                         smartApplyState,
                         guardrails,
-                        isMessageLoading
+                        isMessageLoading,
+                        manuallySelectedIntent,
+                        setManuallySelectedIntent
                     )
                 } else {
                     buttons = createButtons(
