@@ -1,9 +1,13 @@
 import { type PromptString, ps } from '@sourcegraph/cody-shared'
+import { BotResponseMultiplexer } from '@sourcegraph/cody-shared'
 import dedent from 'dedent'
-import { describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import * as vscode from 'vscode'
 import { document } from '../../../../completions/test-helpers'
+import type { FixupTask } from '../../../../non-stop/FixupTask'
+import type { BuildInteractionOptions } from '../../type'
 import { getCurrentTokenCount, getPrefixAndSuffixWithCharLimit } from './smart-apply-custom'
+import { SmartApplyCustomEditPromptBuilder } from './smart-apply-custom'
 
 describe('getPrefixAndSuffixWithCharLimit', () => {
     it('should return prefix and suffix within char limits', async () => {
@@ -72,5 +76,52 @@ describe('getCurrentTokenCount', () => {
         const tokenCount = await getCurrentTokenCount(prompts)
 
         expect(tokenCount).toBe(0)
+    })
+})
+
+describe('SmartApplyCustomEditPromptBuilder', () => {
+    const testFilePath = '/test/file.ts'
+    const testDocument = document(
+        'function test() {\n    console.log("hello")\n}',
+        'typescript',
+        testFilePath
+    )
+
+    beforeEach(() => {
+        vi.spyOn(vscode.workspace, 'openTextDocument').mockImplementation(uri => {
+            return Promise.resolve(testDocument)
+        })
+    })
+
+    it('builds correct interaction for smart apply task', async () => {
+        const builder = new SmartApplyCustomEditPromptBuilder()
+
+        const mockTask = {
+            original: testDocument.getText(),
+            inProgressReplacement: 'Hello',
+            selectionRange: new vscode.Range(0, 0, 2, 0),
+            document: testDocument,
+            intent: 'smartApply',
+            fixupFile: {
+                uri: vscode.Uri.file(testFilePath),
+            },
+            smartApplyMetadata: {
+                chatQuery: ps`Change console.log to console.error`,
+                replacementCodeBlock: ps`console.error("hello")`,
+            },
+        } as FixupTask
+
+        const builderOptions = {
+            contextWindow: 2000,
+            task: mockTask,
+        } as BuildInteractionOptions
+
+        const result = await builder.buildInteraction(builderOptions)
+
+        expect(result.messages).toHaveLength(2)
+        expect(result.messages[0].speaker).toBe('system')
+        expect(result.messages[1].speaker).toBe('human')
+        expect(result.stopSequences).toEqual([])
+        expect(result.responseTopic).toBe(BotResponseMultiplexer.DEFAULT_TOPIC)
     })
 })
