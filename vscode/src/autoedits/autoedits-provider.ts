@@ -19,7 +19,7 @@ import type { FixupController } from '../non-stop/FixupController'
 import type { CodyStatusBar } from '../services/StatusBar'
 
 import type { CompletionBookkeepingEvent } from '../completions/analytics-logger'
-import type { AutoeditChanges, AutoeditImageDiff, AutoeditTextDiff } from '../jsonrpc/agent-protocol'
+import type { AutocompleteEditItem, AutoeditChanges } from '../jsonrpc/agent-protocol'
 import type { AutoeditsModelAdapter, AutoeditsPrompt, ModelResponse } from './adapters/base'
 import { createAutoeditsModelAdapter } from './adapters/create-adapter'
 import {
@@ -58,36 +58,17 @@ export const AUTOEDIT_CONTEXT_FETCHING_DEBOUNCE_INTERVAL = 10
 const RESET_SUGGESTION_ON_CURSOR_CHANGE_AFTER_INTERVAL_MS = 60 * 1000
 const ON_SELECTION_CHANGE_DEFAULT_DEBOUNCE_INTERVAL_MS = 15
 
-interface AutoEditEditItem {
-    type: 'edit'
+interface AutoEditEditItem extends AutocompleteEditItem {
     id: AutoeditRequestID
-    range: vscode.Range
-    originalText: string
-    insertText: string
-    render: {
-        inline: {
-            changes: AutoeditChanges[] | null
-        }
-        aside: {
-            image: AutoeditImageDiff | null
-            diff: AutoeditTextDiff | null
-        }
-    }
 }
 
-interface AutoeditCompletionResult {
-    type: 'completion'
+export interface AutoeditsResult {
+    /** @deprecated Use `inlineCompletionItems` instead. */
     items: AutoeditCompletionItem[]
+    inlineCompletionItems: AutoeditCompletionItem[]
+    decoratedEditItems: AutoEditEditItem[]
     completionEvent?: CompletionBookkeepingEvent
 }
-
-interface AutoeditEditResult {
-    type: 'edit'
-    items: AutoEditEditItem[]
-    completionEvent?: CompletionBookkeepingEvent
-}
-
-export type AutoeditsResult = AutoeditCompletionResult | AutoeditEditResult
 
 export type AutoeditClientCapabilities = Pick<
     ClientCapabilities,
@@ -218,6 +199,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
 
         if (inlineCompletionContext.selectedCompletionInfo !== undefined) {
             const { range, text } = inlineCompletionContext.selectedCompletionInfo
+            const completion = new AutoeditCompletionItem({ id: null, insertText: text, range })
             // User has a currently selected item in the autocomplete widget.
             // Instead of attempting to suggest an auto-edit, just show the selected item
             // as the completion. This is to avoid an undesirable edit conflicting with the acceptance
@@ -225,8 +207,9 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
             // TODO: We should consider the optimal solution here, it may be better to show an
             // inline completion (not an edit) that includes the currently selected item.
             return {
-                type: 'completion',
-                items: [new AutoeditCompletionItem({ id: null, insertText: text, range })],
+                items: [completion],
+                inlineCompletionItems: [completion],
+                decoratedEditItems: [],
             }
         }
 
@@ -509,7 +492,11 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
             }
 
             if (renderOutput.type === 'completion') {
-                return { type: 'completion', items: renderOutput.inlineCompletionItems }
+                return {
+                    items: renderOutput.inlineCompletionItems,
+                    inlineCompletionItems: renderOutput.inlineCompletionItems,
+                    decoratedEditItems: [],
+                }
             }
 
             if (this.capabilities.autoedit !== 'enabled') {
@@ -518,10 +505,10 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
             }
 
             return {
-                type: 'edit',
-                items: [
+                items: [],
+                inlineCompletionItems: [],
+                decoratedEditItems: [
                     {
-                        type: 'edit',
                         id: requestId,
                         originalText: codeToReplaceData.codeToRewrite,
                         range: codeToReplaceData.range,

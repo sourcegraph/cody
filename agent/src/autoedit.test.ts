@@ -70,7 +70,7 @@ describe('Autoedit', () => {
                 position: { line: 1, character: 4 },
                 triggerKind: 'Automatic',
             })
-            const completionID = result.items[0].id
+            const completionID = result.inlineCompletionItems[0].id
 
             // Tell completion provider that the completion was shown to the user.
             client.notify('autocomplete/completionSuggested', { completionID })
@@ -98,10 +98,10 @@ describe('Autoedit', () => {
             expect(autoeditEvent?.read).toBe(false)
 
             // The LLM provided with a completion result.
-            expect(result.items.length).toBeGreaterThan(0)
-            expect(result.items[0].type).toBe('completion')
+            expect(result.inlineCompletionItems.length).toBeGreaterThan(0)
+            expect(result.decoratedEditItems.length).toBe(0)
 
-            const texts = result.items.map(item => item.insertText)
+            const texts = result.inlineCompletionItems.map(item => item.insertText)
             expect(texts).toMatchInlineSnapshot(
                 `
               [
@@ -126,7 +126,7 @@ describe('Autoedit', () => {
                 position: { line: 1, character: 4 },
                 triggerKind: 'Automatic',
             })
-            const completionID = result.items[0].id
+            const completionID = result.inlineCompletionItems[0].id
 
             // Tell completion provider that the completion was shown to the user.
             client.notify('autocomplete/completionSuggested', { completionID })
@@ -141,10 +141,10 @@ describe('Autoedit', () => {
             expect(autoeditEvent?.read).toBe(true)
 
             // The LLM provided with a completion result.
-            expect(result.items.length).toBeGreaterThan(0)
-            expect(result.items[0].type).toBe('completion')
+            expect(result.inlineCompletionItems.length).toBeGreaterThan(0)
+            expect(result.decoratedEditItems.length).toBe(0)
 
-            const texts = result.items.map(item => item.insertText)
+            const texts = result.inlineCompletionItems.map(item => item.insertText)
             expect(texts).toMatchSnapshot()
         }, 10_000)
     })
@@ -169,7 +169,7 @@ describe('Autoedit', () => {
                 position,
                 triggerKind: 'Automatic',
             })) as AutocompleteResult
-            const id = result.items[0].id
+            const id = result.decoratedEditItems[0].id
 
             // Tell completion provider that the completion was shown to the user.
             client.notify('autocomplete/completionSuggested', { completionID: id })
@@ -189,12 +189,12 @@ describe('Autoedit', () => {
             })
             expect(autoeditEvent?.phase).toBe('read')
 
-            // Expect the result to have at least one item
-            expect(result.items.length).toBeGreaterThan(0)
+            // Expect the result to have at least one edit item
+            expect(result.decoratedEditItems.length).toBeGreaterThan(0)
+            expect(result.inlineCompletionItems.length).toBe(0)
 
             // Expect the first item to be an edit
-            const editItem = result.items[0] as AutocompleteEditItem
-            expect(editItem.type).toBe('edit')
+            const editItem = result.decoratedEditItems[0] as AutocompleteEditItem
 
             return editItem
         }

@@ -110,7 +110,7 @@ describe('AutoeditsProvider', () => {
         await vi.advanceTimersByTimeAsync(100)
         await acceptSuggestionCommand()
 
-        expect(result?.items[0].insertText).toBe(prediction)
+        expect(result?.inlineCompletionItems[0].insertText).toBe(prediction)
 
         expect(recordSpy).toHaveBeenCalledTimes(2)
         expect(recordSpy).toHaveBeenNthCalledWith(1, 'cody.autoedit', 'suggested', expect.any(Object))
@@ -249,7 +249,7 @@ describe('AutoeditsProvider', () => {
         await vi.advanceTimersByTimeAsync(750 / 2)
         await rejectSuggestionCommand()
 
-        expect(result?.items[0].insertText).toBe(prediction)
+        expect(result?.inlineCompletionItems[0].insertText).toBe(prediction)
 
         expect(recordSpy).toHaveBeenCalledTimes(1)
         expect(recordSpy).toHaveBeenNthCalledWith(1, 'cody.autoedit', 'suggested', expect.any(Object))
@@ -317,7 +317,7 @@ describe('AutoeditsProvider', () => {
         await vi.advanceTimersByTimeAsync(750)
         await rejectSuggestionCommand()
 
-        expect(result?.items[0].insertText).toBe(prediction)
+        expect(result?.inlineCompletionItems[0].insertText).toBe(prediction)
 
         expect(recordSpy).toHaveBeenCalledTimes(1)
         expect(recordSpy).toHaveBeenNthCalledWith(1, 'cody.autoedit', 'suggested', expect.any(Object))
@@ -482,8 +482,8 @@ describe('AutoeditsProvider', () => {
                 selectedCompletionInfo: completionItem,
             },
         })
-        const id = result?.items[0].id as AutoeditRequestID
-        expect(result?.items).toStrictEqual([
+        const id = result?.inlineCompletionItems[0].id as AutoeditRequestID
+        expect(result?.inlineCompletionItems).toStrictEqual([
             new AutoeditCompletionItem({
                 id,
                 insertText: completionItem.text,
@@ -522,7 +522,7 @@ describe('AutoeditsProvider', () => {
             // Run all timers to get the result
             await vi.runAllTimersAsync()
             const result = await promiseResult
-            expect(result?.items[0].insertText).toBe('const x = 1')
+            expect(result?.inlineCompletionItems[0].insertText).toBe('const x = 1')
             expect(getModelResponseCalledAt).toBeDefined()
             // Check that getModelResponse was called only after at least AUTOEDIT_TOTAL_DEBOUNCE_INTERVAL have elapsed
             expect(getModelResponseCalledAt! - startTime).toBe(AUTOEDIT_TOTAL_DEBOUNCE_INTERVAL)

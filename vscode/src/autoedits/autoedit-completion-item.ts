@@ -10,8 +10,6 @@ interface AutoeditCompletionItemParams {
 }
 
 export class AutoeditCompletionItem extends vscode.InlineCompletionItem {
-    public readonly type = 'completion'
-
     /**
      * An ID used to track this particular completion item. This is used mainly for the Agent which,
      * given it's JSON RPC interface, needs to be able to identify the completion item and can not

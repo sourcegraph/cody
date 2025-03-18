@@ -527,32 +527,6 @@ export interface ChatExportResult {
     transcript: SerializedChatTranscript
 }
 
-export interface AutocompleteItemBase {
-    id: string
-    range: Range
-    insertText: string
-}
-
-export interface AutocompleteCompletionItem extends AutocompleteItemBase {
-    type: 'completion'
-}
-
-export interface AutocompleteEditItem extends AutocompleteItemBase {
-    type: 'edit'
-    originalText: string
-    render: {
-        inline: {
-            changes?: AutoeditChanges[] | null | undefined
-        }
-        aside: {
-            image?: AutoeditImageDiff | null | undefined
-            diff?: AutoeditTextDiff | null | undefined
-        }
-    }
-}
-
-export type AutocompleteItem = AutocompleteCompletionItem | AutocompleteEditItem
-
 export interface AutoeditImageDiff {
     /* Base64 encoded image suitable for rendering in dark editor themes */
     dark: string
@@ -577,8 +551,33 @@ export interface AutoeditChanges {
 
 export type AutoeditTextDiff = DecorationInfo
 
+export interface AutocompleteEditItem {
+    id: string
+    range: Range
+    insertText: string
+    originalText: string
+    render: {
+        inline: {
+            changes?: AutoeditChanges[] | null | undefined
+        }
+        aside: {
+            image?: AutoeditImageDiff | null | undefined
+            diff?: AutoeditTextDiff | null | undefined
+        }
+    }
+}
+
+export interface AutocompleteCompletionItem {
+    id: string
+    range: Range
+    insertText: string
+}
+
 export interface AutocompleteResult {
-    items: AutocompleteItem[]
+    /** @deprecated Use `inlineCompletionItems` instead. */
+    items: AutocompleteCompletionItem[]
+    inlineCompletionItems: AutocompleteCompletionItem[]
+    decoratedEditItems: AutocompleteEditItem[]
     completionEvent?: CompletionBookkeepingEvent | undefined | null
 }
 

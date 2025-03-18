@@ -920,7 +920,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
             const provider = await vscode_shim.completionProvider()
             if (!provider) {
                 logError('Agent', 'autocomplete/execute', 'Completion provider is not initialized')
-                return { items: [] }
+                return { items: [], inlineCompletionItems: [], decoratedEditItems: [] }
             }
             const uri =
                 typeof params.uri === 'string'
@@ -936,7 +936,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
                         params
                     )}. To fix this problem, set the 'uri' property.`
                 )
-                return { items: [] }
+                return { items: [], inlineCompletionItems: [], decoratedEditItems: [] }
             }
             const document = this.workspace.getDocument(uri)
             if (!document) {
@@ -947,7 +947,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
                     params.uri,
                     [...this.workspace.allUris()]
                 )
-                return { items: [] }
+                return { items: [], inlineCompletionItems: [], decoratedEditItems: [] }
             }
 
             try {
@@ -979,22 +979,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
                 )
 
                 if (!result) {
-                    return { items: [] }
-                }
-
-                // Check client capability for auto-edit support
-                const supportsAutoEdit = this.clientInfo?.capabilities?.autoedit === 'enabled'
-                if (result.type === 'edit' && supportsAutoEdit) {
-                    return { items: result.items, completionEvent: result.completionEvent }
-                }
-
-                if (result.type === 'edit') {
-                    // We got an edit but the client doesn't support auto-edit.
-                    // This should never happen. Warn and return empty just in case.
-                    console.error(
-                        'Received auto-edits but client does not support them, returning empty items.'
-                    )
-                    return { items: [] }
+                    return { items: [], inlineCompletionItems: [], decoratedEditItems: [] }
                 }
 
                 // Client can only render completions, ensure we only provide completion items.
@@ -1014,6 +999,8 @@ export class Agent extends MessageHandler implements ExtensionClient {
 
                 return {
                     items,
+                    inlineCompletionItems: items,
+                    decoratedEditItems: 'decoratedEditItems' in result ? result.decoratedEditItems : [],
                     completionEvent: result.completionEvent,
                 }
             } catch (error) {
