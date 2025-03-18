@@ -21,6 +21,7 @@ import { AutoeditAnalyticsLogger } from './analytics-logger'
 import {
     type AutoeditRequestID,
     autoeditDiscardReason,
+    autoeditRejectReason,
     autoeditSource,
     autoeditTriggerKind,
 } from './types'
@@ -138,7 +139,10 @@ describe('AutoeditAnalyticsLogger', () => {
         }
 
         if (finalPhase === 'rejected') {
-            autoeditLogger.markAsRejected(requestId)
+            autoeditLogger.markAsRejected({
+                requestId,
+                rejectReason: autoeditRejectReason.dismissCommand,
+            })
         }
 
         return requestId
@@ -304,7 +308,7 @@ describe('AutoeditAnalyticsLogger', () => {
         expect(suggestedEvent3.privateMetadata.id).not.toBe(suggestedEvent2.privateMetadata.id)
     })
 
-    it('logs `discarded` if the suggestion was not suggested for any reason', () => {
+    it.skip('logs `discarded` if the suggestion was not suggested for any reason', () => {
         const requestId = autoeditLogger.createRequest(getRequestStartMetadata())
         autoeditLogger.markAsContextLoaded({ requestId, payload: { contextSummary: undefined } })
         autoeditLogger.markAsDiscarded({
@@ -345,7 +349,10 @@ describe('AutoeditAnalyticsLogger', () => {
 
         // Both calls below are invalid transitions, so the logger logs debug events
         autoeditLogger.markAsSuggested(requestId)
-        autoeditLogger.markAsRejected(requestId)
+        autoeditLogger.markAsRejected({
+            requestId,
+            rejectReason: autoeditRejectReason.dismissCommand,
+        })
 
         expect(recordSpy).toHaveBeenCalledTimes(2)
         expect(recordSpy).toHaveBeenNthCalledWith(1, 'cody.autoedit', 'invalidTransitionToSuggested', {

@@ -91,6 +91,7 @@ export const getStatusColor = (phase: Phase): string => {
 export const extractPhaseInfo = (entry: AutoeditRequestDebugState) => {
     const { state } = entry
     const startTime = 'startedAt' in state ? state.startedAt : entry.updatedAt
+    const inferenceTime = extractInferenceTime(state)
 
     // Define all possible phase transitions in order with alternating color families for better visibility
     const phases: Array<{
@@ -104,8 +105,27 @@ export const extractPhaseInfo = (entry: AutoeditRequestDebugState) => {
             time: 'contextLoadedAt' in state ? state.contextLoadedAt : undefined,
             color: 'tw-bg-amber-500',
         },
+    ]
+
+    // Add Inference Time phase if it exists
+    // We're treating contextLoadedAt as the start of inference
+    // and the inference end as the start of the loaded phase
+    if (inferenceTime > 0 && 'contextLoadedAt' in state && 'loadedAt' in state) {
+        // Inference starts at contextLoadedAt
+        const inferenceEndTime = state.contextLoadedAt + inferenceTime
+
+        // Add the inference end phase, which should come right before loaded
+        phases.push({
+            name: 'Inference',
+            time: inferenceEndTime,
+            color: 'tw-bg-indigo-500',
+        })
+    }
+
+    // Continue with the rest of the phases
+    phases.push(
         {
-            name: 'Loaded',
+            name: 'Network',
             time: 'loadedAt' in state ? state.loadedAt : undefined,
             color: 'tw-bg-blue-500',
         },
@@ -143,8 +163,8 @@ export const extractPhaseInfo = (entry: AutoeditRequestDebugState) => {
                       ? entry.updatedAt
                       : undefined,
             color: 'tw-bg-rose-600',
-        },
-    ]
+        }
+    )
 
     // Filter out phases that didn't occur
     const validPhases = phases.filter(phase => phase.time !== undefined)
@@ -153,6 +173,28 @@ export const extractPhaseInfo = (entry: AutoeditRequestDebugState) => {
     validPhases.sort((a, b) => (a.time || 0) - (b.time || 0))
 
     return validPhases
+}
+
+/**
+ * Extract inference time from model response headers if available
+ */
+export const extractInferenceTime = (state: Record<string, any>): number => {
+    let inferenceTime = 0
+
+    if (
+        'modelResponse' in state &&
+        state.modelResponse?.responseHeaders?.['fireworks-server-processing-time']
+    ) {
+        inferenceTime =
+            Number.parseFloat(state.modelResponse.responseHeaders['fireworks-server-processing-time']) *
+            1000
+
+        if (Number.isNaN(inferenceTime)) {
+            inferenceTime = 0
+        }
+    }
+
+    return inferenceTime
 }
 
 /**
@@ -253,18 +295,20 @@ export const calculateTotalDuration = (
     return phases.length > 1 ? (phases[phases.length - 1]?.time ?? 0) - startTime : 0
 }
 
+export interface DetailedTimingInfo {
+    predictionDuration: string
+    inferenceTime?: string
+    details: Array<{ label: string; value: string }>
+}
+
 /**
  * Get detailed timing information from an entry
  * Returns an object with predictionDuration (time from start to suggested phase) and detailed timing breakdowns
  */
-export const getDetailedTimingInfo = (
-    entry: AutoeditRequestDebugState
-): {
-    predictionDuration: string
-    details: Array<{ label: string; value: string }>
-} => {
-    const result = {
+export const getDetailedTimingInfo = (entry: AutoeditRequestDebugState): DetailedTimingInfo => {
+    const result: DetailedTimingInfo = {
         predictionDuration: '',
+        inferenceTime: undefined,
         details: [] as Array<{ label: string; value: string }>,
     }
 
@@ -286,6 +330,10 @@ export const getDetailedTimingInfo = (
     const state = entry.state
     const startTime = 'startedAt' in state ? state.startedAt : undefined
 
+    // Extract inference time and format it
+    const inferenceTimeMs = extractInferenceTime(state)
+    result.inferenceTime = inferenceTimeMs > 0 ? formatLatency(inferenceTimeMs) : undefined
+
     if (startTime !== undefined) {
         // Context loading time
         if ('contextLoadedAt' in state) {
@@ -297,9 +345,26 @@ export const getDetailedTimingInfo = (
 
         // Model generation time
         if ('contextLoadedAt' in state && 'loadedAt' in state) {
+            // Get inference time using the extracted utility function
+            const inferenceTime = extractInferenceTime(state)
+
+            // Calculate model generation time and subtract inference time if available
+            let modelGenerationTime = state.loadedAt - state.contextLoadedAt
+            if (inferenceTime > 0) {
+                modelGenerationTime -= inferenceTime
+            }
+
+            // Add inference time as a separate item if available
+            if (inferenceTime > 0) {
+                result.details.push({
+                    label: 'Inference',
+                    value: formatLatency(inferenceTime),
+                })
+            }
+
             result.details.push({
-                label: 'Model Generation',
-                value: calculateDuration(state.contextLoadedAt, state.loadedAt),
+                label: 'Network',
+                value: formatLatency(Math.max(0, modelGenerationTime)), // Ensure it's never negative
             })
         }
 

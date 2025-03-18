@@ -6,7 +6,6 @@ import {
     PromptString,
     type ToolContentPart,
     logDebug,
-    ps,
 } from '@sourcegraph/cody-shared'
 import { getCategorizedMentions } from '../../../prompt-builder/utils'
 import type { ChatBuilder } from '../ChatBuilder'
@@ -18,6 +17,11 @@ import { parseToolCallArgs } from '../utils/parse'
 import { ChatHandler } from './ChatHandler'
 import type { AgentHandler, AgentHandlerDelegate, AgentRequest } from './interfaces'
 import { buildAgentPrompt } from './prompts'
+
+enum AGENT_MODELS {
+    ExtendedThinking = 'anthropic::2024-10-22::claude-3-7-sonnet-extended-thinking',
+    Base = 'anthropic::2024-10-22::claude-3-7-sonnet',
+}
 
 /**
  * Base AgenticHandler class that manages tool execution state
@@ -58,8 +62,6 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
         try {
             await this._handle(req, delegate)
         } catch (error) {
-            logDebug('AgenticHandler', 'Error in handle', { verbose: error })
-
             // Log the error to the output channel
             logDebug('AgenticHandler', `Error in agent session ${sessionID}`, {
                 verbose:
@@ -85,8 +87,6 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
 
     protected async _handle(req: AgentRequest, delegate: AgentHandlerDelegate): Promise<void> {
         const { signal, span, chatBuilder, recorder, model } = req
-
-        if (signal.aborted) return
 
         // Initialize session state
         const sessionID = chatBuilder.sessionID
@@ -144,7 +144,7 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
             signal.throwIfAborted()
 
             // Process LLM response and extract tool calls
-            const currentToolCalls = await this.processLLMResponse(
+            const { botResponse, toolCalls } = await this.requestLLM(
                 currentContextItems,
                 chatBuilder,
                 delegate,
@@ -160,16 +160,19 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
                         'transcript'
                     )
                 }
-                return []
+                throw error
             })
 
             signal.throwIfAborted()
 
             // If no tool calls, conversation is complete
-            if (currentToolCalls.length === 0) break
+            if (toolCalls?.length === 0) {
+                logDebug('AgenticHandler', 'No tool calls, ending conversation')
+                break
+            }
 
             // Add a human message with pending tool state
-            this.addPendingToolsMessage(currentToolCalls, chatBuilder, model)
+            this.addPendingToolsMessage(botResponse, toolCalls, chatBuilder, model)
 
             delegate.postMessageInProgress({
                 speaker: 'assistant',
@@ -177,13 +180,25 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
             })
 
             // Execute tools and process results
-            const { toolResults, contextFiles } = await this.executeTools(currentToolCalls, toolStateMap)
+            const { toolResults, contextFiles } = await this.executeTools(toolCalls, toolStateMap).catch(
+                error => {
+                    logDebug('AgenticHandler', 'Error executing tools', { verbose: error })
+                    if (!signal.aborted) {
+                        delegate.postError(
+                            error instanceof Error ? error : new Error(String(error)),
+                            'transcript'
+                        )
+                    }
+                    return { toolResults: [], contextFiles: [] }
+                }
+            )
 
             // Update the human message with completed tool results
             this.updateToolResultsMessage(toolResults, contextFiles, chatBuilder)
 
             // If no tools were executed or we reached max turns, exit loop
             if (!toolResults?.length || this.turnCount === this.MAX_TURN - 1) {
+                logDebug('AgenticHandler', 'No tool results or max turns reached, ending conversation')
                 break
             }
 
@@ -191,11 +206,10 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
             currentContextItems = contextFiles
         }
     }
-
     /**
      * Process LLM response and extract tool calls
      */
-    protected async processLLMResponse(
+    protected async requestLLM(
         contextItems: ContextItem[],
         chatBuilder: AgentRequest['chatBuilder'],
         delegate: AgentHandlerDelegate,
@@ -203,7 +217,7 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
         span: Span,
         signal: AbortSignal,
         model: string
-    ): Promise<ToolContentPart[]> {
+    ): Promise<{ botResponse: ChatMessage; toolCalls: ToolContentPart[] }> {
         // Create a new prompter for each turn
         const sessionID = chatBuilder.sessionID
         const { explicitMentions, implicitMentions } = getCategorizedMentions(contextItems)
@@ -225,7 +239,7 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
                 },
             })),
             stream: true,
-            model,
+            model: this.turnCount === 0 ? AGENT_MODELS.ExtendedThinking : AGENT_MODELS.Base,
         }
 
         // Track tool calls across stream chunks
@@ -237,6 +251,7 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
                 speaker: 'assistant',
                 text: PromptString.unsafe_fromLLMResponse(streamed.text),
                 model,
+                intent: 'agentic',
             }) satisfies ChatMessage
 
         // Process stream chunks
@@ -263,10 +278,9 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
         }
 
         // Final update - add message to chat history
+        // chatBuilder.addBotMessage(getBotMessage(), model)
 
-        chatBuilder.addBotMessage(getBotMessage(), model)
-
-        return Array.from(toolCalls.values())
+        return { botResponse: getBotMessage(), toolCalls: Array.from(toolCalls.values()) }
     }
 
     /**
@@ -307,7 +321,10 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
         // Process all tool calls in parallel for better performance
         const results = await Promise.all(
             toolCalls.map(toolCall => this.executeSingleTool(toolCall, toolStateMap))
-        )
+        ).catch(error => {
+            logDebug('AgenticHandler', 'Error executing tools', { verbose: error })
+            return []
+        })
 
         // Consolidate results
         const toolResults: MessagePart[] = []
@@ -348,8 +365,10 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
             const output = await tool.invoke(args)
 
             logDebug('AgenticHandler', `Tool invoked: ${toolCall.function.name}`, {
-                toolId: toolCall.id,
-                args: toolCall.function.arguments,
+                verbose: {
+                    toolId: toolCall.id,
+                    args: toolCall.function.arguments,
+                },
             })
 
             // Update tool state on success
@@ -371,7 +390,9 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
             }
         } catch (error) {
             // Log and handle errors
-            logDebug('AgenticHandler', `Failed to invoke ${toolCall.function.name}`, { verbose: error })
+            logDebug('AgenticHandler', `Failed to invoke ${toolCall.function.name}`, {
+                verbose: { error },
+            })
 
             // Update tool state on error
             if (toolState) {
@@ -396,6 +417,7 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
      * Add a human message with pending tool results
      */
     protected addPendingToolsMessage(
+        botResponse: ChatMessage,
         pendingToolResults: MessagePart[],
         chatBuilder: ChatBuilder,
         model: string
@@ -409,12 +431,9 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
                 lastMessageIndex !== undefined &&
                 (lastBotMessageIndex === undefined || lastBotMessageIndex < lastMessageIndex)
             ) {
-                chatBuilder.addBotMessage(
-                    {
-                        text: ps`Requesting tools.`,
-                    },
-                    model
-                )
+                logDebug('AgenticHandler', 'Adding pending tool calls message')
+
+                chatBuilder.addBotMessage(botResponse, model)
             }
 
             // Add the human message with pending tool status
@@ -424,6 +443,7 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
                 ),
                 content: pendingToolResults,
                 model,
+                intent: 'agentic',
             })
         } catch (error) {
             logDebug('AgenticHandler', 'Failed adding pending tool calls', { verbose: error })
