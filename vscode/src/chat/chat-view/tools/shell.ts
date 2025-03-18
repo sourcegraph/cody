@@ -1,5 +1,5 @@
 import { spawn } from 'node:child_process'
-import { type TerminalLine, TerminalLineType } from '@sourcegraph/cody-shared'
+import { type UITerminalLine, UITerminalLineType } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 import type { AgentTool, AgentToolResult } from '.'
 import { validateWithZod } from '../utils/input'
@@ -49,15 +49,15 @@ export const shellTool: AgentTool = {
             })
 
             // Format the output as an array of TerminalLine objects
-            const bashResult: TerminalLine[] = [
-                { content: validInput.command, type: TerminalLineType.Input },
-                ...formatOutputToTerminalLines(commandResult.stdout, TerminalLineType.Output),
-                ...formatOutputToTerminalLines(commandResult.stderr, TerminalLineType.Error),
+            const terminal: UITerminalLine[] = [
+                { content: validInput.command, type: UITerminalLineType.Input },
+                ...formatOutputToTerminalLines(commandResult.stdout, UITerminalLineType.Output),
+                ...formatOutputToTerminalLines(commandResult.stderr, UITerminalLineType.Error),
             ].filter(line => line.content.trim() !== '')
 
             return {
                 query: validInput.command,
-                bashResult,
+                terminal,
                 text: `Executed ${validInput.command}\n\nOutput:\n${commandResult.stdout}${
                     commandResult.stderr ? '\nErrors:\n' + commandResult.stderr : ''
                 }`,
@@ -65,11 +65,11 @@ export const shellTool: AgentTool = {
         } catch (error) {
             if (error instanceof CommandError) {
                 // Format the error output as an array of TerminalLine objects
-                const bashResult: TerminalLine[] = [
-                    { content: validInput.command, type: TerminalLineType.Input },
-                    { content: `Exited with code ${error.result.code}`, type: TerminalLineType.Error },
-                    ...formatOutputToTerminalLines(error.result.stdout, TerminalLineType.Output),
-                    ...formatOutputToTerminalLines(error.result.stderr, TerminalLineType.Error),
+                const bashResult: UITerminalLine[] = [
+                    { content: validInput.command, type: UITerminalLineType.Input },
+                    { content: `Exited with code ${error.result.code}`, type: UITerminalLineType.Error },
+                    ...formatOutputToTerminalLines(error.result.stdout, UITerminalLineType.Output),
+                    ...formatOutputToTerminalLines(error.result.stderr, UITerminalLineType.Error),
                 ].filter(line => line.content.trim() !== '')
 
                 return {
@@ -90,14 +90,14 @@ export const shellTool: AgentTool = {
 /**
  * Formats a string output into an array of TerminalLine objects
  */
-function formatOutputToTerminalLines(output: string, type: TerminalLineType): TerminalLine[] {
+function formatOutputToTerminalLines(output: string, type: UITerminalLineType): UITerminalLine[] {
     if (!output) {
         return []
     }
 
     return output.split('\n').map(line => ({
         content: line,
-        type: type === 'error' ? TerminalLineType.Error : TerminalLineType.Output,
+        type: type === 'error' ? UITerminalLineType.Error : UITerminalLineType.Output,
     }))
 }
 

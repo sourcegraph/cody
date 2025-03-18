@@ -2,7 +2,7 @@ import type { Span } from '@opentelemetry/api'
 import {
     type ContextItem,
     PromptString,
-    type SearchResultView,
+    type UISearchResults,
     displayPath,
     firstValueFrom,
     pendingOperation,
@@ -71,10 +71,10 @@ export async function getCodebaseSearchTool(
     return searchTool
 }
 
-function generateSearchToolResults(query: string, items: ContextItem[]): SearchResultView {
+function generateSearchToolResults(query: string, items: ContextItem[]): UISearchResults {
     return {
         query,
-        results: items.map(item => ({
+        items: items.map(item => ({
             fileName: getFileName(item.uri),
             uri: item.uri,
             lineNumber: createRange(item.range?.start?.line, item.range?.end?.line),

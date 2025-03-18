@@ -1,4 +1,4 @@
-import type { FileDiff } from '@sourcegraph/cody-shared'
+import type { UIFileDiff } from '@sourcegraph/cody-shared'
 import { FileDiffIcon, Minus, Plus } from 'lucide-react'
 import type { FC } from 'react'
 import type { URI } from 'vscode-uri'
@@ -7,7 +7,7 @@ import { cn } from '../../../components/shadcn/utils'
 import { BaseCell } from './BaseCell'
 
 interface DiffCellProps {
-    result: FileDiff
+    result: UIFileDiff
     className?: string
     defaultOpen?: boolean
     onFileLinkClicked: (uri: URI) => void

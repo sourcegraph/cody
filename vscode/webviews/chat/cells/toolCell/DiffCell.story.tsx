@@ -1,4 +1,4 @@
-import type { FileDiff } from '@sourcegraph/cody-shared'
+import type { UIFileDiff } from '@sourcegraph/cody-shared'
 import type { Meta, StoryObj } from '@storybook/react'
 import { URI } from 'vscode-uri'
 import { VSCodeWebview } from '../../../storybook/VSCodeStoryDecorator'
@@ -53,7 +53,7 @@ const diffStoryMock = {
             lineNumber: 136,
         },
     ],
-} satisfies FileDiff
+} satisfies UIFileDiff
 
 const meta: Meta<typeof DiffCell> = {
     title: 'agentic/DiffCell',
@@ -114,6 +114,6 @@ export const LargeDiff: Story = {
                         }
                     }),
             ],
-        } satisfies FileDiff,
+        } satisfies UIFileDiff,
     },
 }

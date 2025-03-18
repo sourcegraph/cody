@@ -1,4 +1,4 @@
-import type { FileView } from '@sourcegraph/cody-shared'
+import type { UIFileView } from '@sourcegraph/cody-shared'
 import { FileCode } from 'lucide-react'
 import type { FC } from 'react'
 import type { URI } from 'vscode-uri'
@@ -6,7 +6,7 @@ import { Button } from '../../../components/shadcn/ui/button'
 import { BaseCell } from './BaseCell'
 
 interface FileCellProps {
-    result: FileView
+    result: UIFileView
     className?: string
     defaultOpen?: boolean
     onFileLinkClicked: (uri: URI) => void

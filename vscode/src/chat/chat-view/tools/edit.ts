@@ -149,7 +149,7 @@ async function replaceInFile(
         return {
             text: output.join('\n'),
             contextItems: updatedContext?.content ? [updatedContext] : undefined,
-            diffResult: getFileDiff(uri, content, newContent),
+            diff: getFileDiff(uri, content, newContent),
         }
     } catch (error: any) {
         return { text: `Failed to replace text in ${fileName}: ${error.message}` }

@@ -1,4 +1,4 @@
-import { type FileDiff, TerminalLineType } from '@sourcegraph/cody-shared'
+import { type UIFileDiff, UITerminalLineType } from '@sourcegraph/cody-shared'
 import type { Meta, StoryObj } from '@storybook/react'
 import { URI } from 'vscode-uri'
 import { VSCodeWebview } from '../../../storybook/VSCodeStoryDecorator'
@@ -47,7 +47,7 @@ const diffStoryMock = {
                 }
             }),
     ],
-} satisfies FileDiff
+} satisfies UIFileDiff
 
 export const AllCells: Story = {
     render: () => (
@@ -74,7 +74,7 @@ export const AllCells: Story = {
             <SearchResultsCell
                 result={{
                     query: 'useState',
-                    results: [
+                    items: [
                         {
                             uri: URI.file('/path/to/ChatInput.tsx'),
                             fileName: 'ChatInput.tsx',
@@ -98,7 +98,7 @@ export const AllCells: Story = {
             <h2 className="tw-text-lg tw-font-bold">Terminal Output</h2>
             <TerminalOutputCell
                 result={[
-                    { content: 'ls -la', type: TerminalLineType.Input },
+                    { content: 'ls -la', type: UITerminalLineType.Input },
                     { content: 'total 32' },
                     { content: 'drwxr-xr-x  10 user  staff   320 Mar 17 12:34 .' },
                     { content: 'drwxr-xr-x   5 user  staff   160 Mar 17 12:30 ..' },

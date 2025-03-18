@@ -42,11 +42,11 @@ import { type Context, type Span, context, trace } from '@opentelemetry/api'
 import { DeepCodyAgentID, ToolCodyModelName } from '@sourcegraph/cody-shared/src/models/client'
 import { isCodeSearchContextItem } from '../../src/context/openctx/codeSearch'
 import { useLocalStorage } from '../components/hooks'
-import { ToolStatusCell } from './ChatMessageContent/ToolStatusCell'
 import { AgenticContextCell } from './cells/agenticCell/AgenticContextCell'
 import ApprovalCell from './cells/agenticCell/ApprovalCell'
 import { ContextCell } from './cells/contextCell/ContextCell'
 import { DidYouMeanNotice } from './cells/messageCell/assistant/DidYouMean'
+import { ToolStatusCell } from './cells/toolCell/ToolStatusCell'
 import { LastEditorContext } from './context'
 
 interface TranscriptProps {

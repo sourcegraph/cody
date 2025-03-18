@@ -1,4 +1,4 @@
-import type { TerminalLine } from '@sourcegraph/cody-shared'
+import type { UITerminalLine } from '@sourcegraph/cody-shared'
 import { Terminal } from 'lucide-react'
 import type { FC } from 'react'
 import { Skeleton } from '../../../components/shadcn/ui/skeleton'
@@ -6,7 +6,7 @@ import { cn } from '../../../components/shadcn/utils'
 import { BaseCell } from './BaseCell'
 
 interface TerminalOutputCellProps {
-    result: TerminalLine[]
+    result: UITerminalLine[]
     className?: string
     isLoading?: boolean
     defaultOpen?: boolean

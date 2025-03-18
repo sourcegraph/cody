@@ -71,6 +71,7 @@ data class ToolContentPart(
   val function: FunctionParams,
   val result: String? = null,
   val status: String,
+  val output: UIToolOutput? = null,
 ) : MessagePart() {
 
   enum class TypeEnum {

@@ -1,4 +1,4 @@
-import type { SearchResultView } from '@sourcegraph/cody-shared'
+import type { UISearchResults } from '@sourcegraph/cody-shared'
 import type { Meta, StoryObj } from '@storybook/react'
 import { URI } from 'vscode-uri'
 import { VSCodeWebview } from '../../../storybook/VSCodeStoryDecorator'
@@ -17,7 +17,7 @@ type Story = StoryObj<typeof SearchResultsCell>
 // Sample search results
 const searchResultMock = {
     query: 'useState',
-    results: [
+    items: [
         {
             uri: URI.file('/path/to/ChatInput.tsx'),
             fileName: 'ChatInput.tsx',
@@ -64,7 +64,7 @@ const searchResultMock = {
             type: 'code',
         },
     ],
-} satisfies SearchResultView
+} satisfies UISearchResults
 export const Default: Story = {
     args: {
         result: searchResultMock,
@@ -90,7 +90,7 @@ export const FewResults: Story = {
     args: {
         result: {
             query: 'useEffect',
-            results: searchResultMock.results.slice(0, 2),
+            items: searchResultMock.items?.slice(0, 2),
         },
         isLoading: false,
     },
@@ -100,9 +100,9 @@ export const ManyResults: Story = {
     args: {
         result: {
             query: 'component',
-            results: [
-                ...searchResultMock.results,
-                ...searchResultMock.results.map((result, index) => ({
+            items: [
+                ...searchResultMock.items,
+                ...searchResultMock.items.map((result, index) => ({
                     ...result,
                     fileName: `${result.fileName}-${index}`,
                 })),

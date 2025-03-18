@@ -1,4 +1,4 @@
-import type { SearchResultView } from '@sourcegraph/cody-shared'
+import type { UISearchResults } from '@sourcegraph/cody-shared'
 import { FileCode, FileText, FolderOpen, Search } from 'lucide-react'
 import type { FC } from 'react'
 import type { URI } from 'vscode-uri'
@@ -9,7 +9,7 @@ import { Skeleton } from '../../../components/shadcn/ui/skeleton'
 import { BaseCell } from './BaseCell'
 
 interface SearchResultsProps {
-    result: SearchResultView
+    result: UISearchResults
     className?: string
     isLoading?: boolean
     defaultOpen?: boolean
@@ -34,7 +34,7 @@ export const SearchResultsCell: FC<SearchResultsProps> = ({
         }
     }
 
-    if (!result.results?.length) {
+    if (!result.items?.length) {
         return null
     }
 
@@ -54,7 +54,7 @@ export const SearchResultsCell: FC<SearchResultsProps> = ({
                     {result.query}
                 </code>
                 <Badge variant="outline" className="tw-ml-2 tw-bg-zinc-800 tw-text-zinc-200">
-                    {result.results.length} results
+                    {result.items.length} results
                 </Badge>
             </div>
         )
@@ -79,7 +79,7 @@ export const SearchResultsCell: FC<SearchResultsProps> = ({
         return (
             <div className="tw-overflow-x-auto tw-bg-zinc-950 tw-p-0">
                 <div className="tw-font-mono tw-text-xs">
-                    {result.results.map((resultItem, index) => (
+                    {result.items.map((resultItem, index) => (
                         <Button
                             onClick={e => {
                                 e.preventDefault()

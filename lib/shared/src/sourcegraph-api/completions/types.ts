@@ -78,17 +78,7 @@ export interface ToolContentPart extends CompletionFunctionCallsData {
     id: string
     result?: string
     status: string
-    output?: ExtendedToolOutput
-}
-
-// Extended tool output interface with search and diff result types
-export interface ExtendedToolOutput {
-    title?: string
-    query?: string
-    searchResult?: SearchResultView
-    diffResult?: FileDiff
-    bashResult?: TerminalLine[]
-    fileResult?: FileView
+    output?: UIToolOutput
 }
 
 export interface CompletionUsage {
@@ -159,41 +149,60 @@ export type CompletionGeneratorValue =
     | { type: 'complete' }
     | { type: 'error'; error: Error; statusCode?: number }
 
-export interface FileView {
-    fileName: string
-    uri: URI
-    content?: string
+/**
+ * Main container for all tool output types
+ */
+export interface UIToolOutput {
+    title?: string
+    query?: string
+    search?: UISearchResults
+    diff?: UIFileDiff
+    terminal?: UITerminalLine[]
+    file?: UIFileView
 }
 
-export interface FileDiff extends FileView {
-    total: TotalLinesChanged
-    changes: LineChange[]
-}
-
-interface TotalLinesChanged {
-    added: number
-    removed: number
-    modified: number
-}
-
-export interface LineChange {
-    type: 'added' | 'removed' | 'unchanged'
-    content: string
-    lineNumber: number
-}
-
-export interface SearchResultView {
+// Search results display
+export interface UISearchResults {
     query: string
-    results: SearchResult[]
+    items: UISearchItem[]
 }
 
-interface SearchResult extends FileView {
+// Individual search result item
+interface UISearchItem extends UIFileView {
     lineNumber?: string
     preview?: string
     type: 'file' | 'folder' | 'code'
 }
 
-export enum TerminalLineType {
+// Basic file content display
+export interface UIFileView {
+    fileName: string
+    uri: URI
+    content?: string
+}
+
+// File diff display
+export interface UIFileDiff extends UIFileView {
+    total: UIChangeStats
+    changes: UIDiffLine[]
+}
+
+// Change statistics summary
+interface UIChangeStats {
+    added: number
+    removed: number
+    modified: number
+}
+
+// Individual diff line
+export interface UIDiffLine {
+    type: 'added' | 'removed' | 'unchanged'
+    content: string
+    lineNumber: number
+}
+
+// Terminal output types
+export enum UITerminalLineType {
     Input = 'input',
     Output = 'output',
     Error = 'error',
@@ -201,7 +210,8 @@ export enum TerminalLineType {
     Success = 'success',
 }
 
-export interface TerminalLine {
+// Individual terminal line
+export interface UITerminalLine {
     content: string
-    type?: TerminalLineType
+    type?: UITerminalLineType
 }
