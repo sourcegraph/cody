@@ -359,17 +359,17 @@ export class ChatBuilder {
         if (isNewMessage) {
             // Create a new message for this part
             const content = [part]
-            const text = this.computeTextFromParts(content)
+            const text = this.computeTextFromParts(content, speaker)
 
             if (speaker === 'human') {
                 this.addHumanMessage({
-                    text: PromptString.unsafe_fromUserQuery(text),
+                    text,
                     content,
                 })
             } else {
                 this.addBotMessage(
                     {
-                        text: PromptString.unsafe_fromLLMResponse(text),
+                        text,
                         content,
                     },
                     model || ChatBuilder.NO_MODEL
@@ -382,12 +382,7 @@ export class ChatBuilder {
             this.setLastMessageContent(updatedContent)
 
             // Update the text representation as well
-            const updatedText = this.computeTextFromParts(updatedContent)
-            if (speaker === 'human') {
-                lastMessage.text = PromptString.unsafe_fromUserQuery(updatedText)
-            } else {
-                lastMessage.text = PromptString.unsafe_fromLLMResponse(updatedText)
-            }
+            lastMessage.text = this.computeTextFromParts(updatedContent, speaker)
         }
 
         this.changeNotifications.next()
@@ -423,12 +418,7 @@ export class ChatBuilder {
 
             // Update the message text to reflect the tool result
             if (toolContent.result) {
-                const updatedText = this.computeTextFromParts(updatedContent)
-                if (speaker === 'human') {
-                    lastMessage.text = PromptString.unsafe_fromUserQuery(updatedText)
-                } else {
-                    lastMessage.text = PromptString.unsafe_fromLLMResponse(updatedText)
-                }
+                lastMessage.text = this.computeTextFromParts(updatedContent, speaker)
             }
         } else {
             // No existing tool to replace, just append
@@ -440,7 +430,7 @@ export class ChatBuilder {
      * Compute text representation from message parts
      * Intelligently combines text parts and tool results
      */
-    private computeTextFromParts(parts: MessagePart[]): string {
+    private computeTextFromParts(parts: MessagePart[], speaker: 'human' | 'assistant'): PromptString {
         const textParts: string[] = []
 
         for (const part of parts) {
@@ -452,7 +442,11 @@ export class ChatBuilder {
             }
         }
 
-        return textParts.join('\n').trim()
+        const joinedText = textParts.join('\n').trim()
+        if (speaker === 'human') {
+            return PromptString.unsafe_fromUserQuery(joinedText)
+        }
+        return PromptString.unsafe_fromLLMResponse(joinedText)
     }
 
     // Simplified methods that use the unified approach
