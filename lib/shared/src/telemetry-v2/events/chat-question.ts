@@ -138,6 +138,8 @@ export const events = [
                         isCommand: params.command ? 1 : 0,
                         ...metadata,
                         recordsPrivateMetadataTranscript: recordTranscript ? 1 : 0,
+                        // Include sessionID as Epoch timestamp for numerical metadata
+                        sessionIdEpoch: Number(new Date(params.sessionID).getTime()) || 0,
                     }),
                     privateMetadata: {
                         // TODO: Remove this field when the transition from commands to prompts is complete
