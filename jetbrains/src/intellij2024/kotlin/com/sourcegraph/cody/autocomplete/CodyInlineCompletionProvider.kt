@@ -63,7 +63,7 @@ class CodyInlineCompletionProvider : InlineCompletionProvider {
             .get() ?: return InlineCompletionSuggestion.Empty
 
     return InlineCompletionSingleSuggestion.build {
-      completions.items
+      completions.inlineCompletionItems
           .firstNotNullOfOrNull {
             WriteCommandAction.runWriteCommandAction<InlineCompletionGrayTextElement?>(
                 editor.project) {

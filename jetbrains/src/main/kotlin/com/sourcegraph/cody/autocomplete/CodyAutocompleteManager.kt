@@ -26,7 +26,7 @@ import com.intellij.util.concurrency.annotations.RequiresEdt
 import com.sourcegraph.Icons
 import com.sourcegraph.cody.CodyToolWindowContent
 import com.sourcegraph.cody.agent.CodyAgentService
-import com.sourcegraph.cody.agent.protocol_generated.AutocompleteItem
+import com.sourcegraph.cody.agent.protocol_generated.AutocompleteCompletionItem
 import com.sourcegraph.cody.agent.protocol_generated.AutocompleteResult
 import com.sourcegraph.cody.agent.protocol_generated.CompletionItemParams
 import com.sourcegraph.cody.auth.CodyAuthService
@@ -206,7 +206,7 @@ class CodyAutocompleteManager {
       return
     }
     val inlayModel = editor.inlayModel
-    if (result.items.isEmpty()) {
+    if (result.inlineCompletionItems.isEmpty()) {
       // NOTE(olafur): it would be nice to give the user a visual hint when this happens.
       // We don't do anything now because it's unclear what would be the most idiomatic
       // IntelliJ API to use.
@@ -223,7 +223,7 @@ class CodyAutocompleteManager {
       // https://github.com/sourcegraph/jetbrains/issues/350
       // CodyFormatter.formatStringBasedOnDocument needs to be on a write action.
       WriteCommandAction.runWriteCommandAction(editor.project) {
-        displayAgentAutocomplete(editor, offset, result.items, inlayModel)
+        displayAgentAutocomplete(editor, offset, result.inlineCompletionItems, inlayModel)
       }
     }
   }
@@ -238,7 +238,7 @@ class CodyAutocompleteManager {
   fun displayAgentAutocomplete(
       editor: Editor,
       cursorOffset: Int,
-      items: List<AutocompleteItem>,
+      items: List<AutocompleteCompletionItem>,
       inlayModel: InlayModel,
   ) {
     if (editor.isDisposed) {
