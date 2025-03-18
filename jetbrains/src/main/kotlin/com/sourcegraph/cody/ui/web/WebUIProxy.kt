@@ -51,6 +51,10 @@ import org.cef.network.CefRequest
 import org.cef.network.CefResponse
 import org.cef.network.CefURLRequest
 import org.cef.security.CefSSLInfo
+import java.awt.AWTEvent
+import java.awt.KeyboardFocusManager
+import java.awt.event.KeyEvent
+import java.lang.Exception
 
 private const val COMMAND_PREFIX = "command:"
 
@@ -104,6 +108,28 @@ internal class WebUIProxy(private val host: WebUIHost, private val browser: JBCe
             }
           },
           browser.cefBrowser)
+
+        KeyboardFocusManager.getCurrentKeyboardFocusManager().addKeyEventDispatcher { e: KeyEvent ->
+            val isCefComponent = e.component.javaClass.name == "com.intellij.ui.jcef.JBCefOsrComponent" // about 30% faster than
+            // `browser.uiComponent.hasFocus()`
+            if (!isCefComponent) {
+                false
+            } else {
+                if (e.isConsumed) {
+                    try {
+                        println("Key event: " + e.keyCode + ", consumed: " + e.isConsumed)
+
+                        val consumedField = AWTEvent::class.java.getDeclaredField("consumed")
+                        consumedField.isAccessible = true
+                        consumedField.setBoolean(e, false)
+                        println("Successfully un-consumed the event")
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                    }
+                }
+                false // Don't consume the event
+            }
+        }
     }
 
     fun create(host: WebUIHost): WebUIProxy {
