@@ -18,11 +18,9 @@ import { ChatHandler } from './ChatHandler'
 import type { AgentHandler, AgentHandlerDelegate, AgentRequest } from './interfaces'
 import { buildAgentPrompt } from './prompts'
 
-const AGENT_MODELS = {
-    // Loop 0 will be run with Claude 3.7 Sonnet with Extended Thinking.
-    0: 'anthropic::2024-10-22::claude-3-7-sonnet-extended-thinking',
-    // Loop 1+ will be run with Claude 3.7 Sonnet.
-    1: 'anthropic::2024-10-22::claude-3-7-sonnet',
+enum AGENT_MODELS {
+    ExtendedThinking = 'anthropic::2024-10-22::claude-3-7-sonnet-extended-thinking',
+    Base = 'anthropic::2024-10-22::claude-3-7-sonnet',
 }
 
 /**
@@ -241,7 +239,7 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
                 },
             })),
             stream: true,
-            model: AGENT_MODELS[this.turnCount === 0 ? 0 : 1],
+            model: this.turnCount === 0 ? AGENT_MODELS.ExtendedThinking : AGENT_MODELS.Base,
         }
 
         // Track tool calls across stream chunks
