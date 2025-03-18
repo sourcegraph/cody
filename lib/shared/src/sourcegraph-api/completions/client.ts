@@ -100,7 +100,9 @@ export abstract class SourcegraphCompletionsClient {
             headerParams['X-Sourcegraph-Interaction-ID'] = interactionId
         }
         const url = new URL(await this.completionsEndpoint())
-        url.searchParams.append('api-version', '' + apiVersion)
+        if (apiVersion >= 1) {
+            url.searchParams.append('api-version', '' + apiVersion)
+        }
         addClientInfoParams(url.searchParams)
         return { url, serializedParams, headerParams }
     }
