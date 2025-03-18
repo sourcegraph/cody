@@ -60,10 +60,6 @@ const TOKEN_LIMITS = {
         MAX_OPENAI_REASONING_INPUT: 175_000,
         MAX_OPENAI_STANDARD_INPUT: 100_000,
     },
-    ORIGINAL_ALL: {
-        MAX_INPUT_TOKENS: 45_000,
-        MAX_OUTPUT_TOKENS: 4_000,
-    },
 }
 
 /**
@@ -225,15 +221,18 @@ export function syncModels({
                                                                 (isDotComUser || m.status !== 'waitlist')
                                                         )
                                                     data.primaryModels.push(
-                                                        ...maybeAdjustContextWindows(
-                                                            filteredModels,
-                                                            isCodyProUser(
-                                                                authStatus,
-                                                                userProductSubscription
-                                                            ),
-                                                            isCodyFreeUser,
-                                                            longContextWindowFlag
-                                                        ).map(createModelFromServerModel)
+                                                        ...maybeAdjustContextWindows(filteredModels, {
+                                                            tier: isDotComUser
+                                                                ? isCodyProUser(
+                                                                      authStatus,
+                                                                      userProductSubscription
+                                                                  )
+                                                                    ? 'pro'
+                                                                    : 'free'
+                                                                : 'enterprise',
+                                                            longContextWindowFlagEnabled:
+                                                                longContextWindowFlag,
+                                                        }).map(createModelFromServerModel)
                                                     )
                                                     data.preferences!.defaults =
                                                         defaultModelPreferencesFromServerModelsConfig(
@@ -314,15 +313,18 @@ export function syncModels({
 
                                                 // Add the client models to the list of models.
                                                 data.primaryModels.push(
-                                                    ...maybeAdjustContextWindows(
-                                                        clientModels,
-                                                        isCodyProUser(
-                                                            authStatus,
-                                                            userProductSubscription
-                                                        ),
-                                                        isCodyFreeUser,
-                                                        longContextWindowFlag
-                                                    ).map(createModelFromServerModel)
+                                                    ...maybeAdjustContextWindows(clientModels, {
+                                                        tier: isDotComUser
+                                                            ? isCodyProUser(
+                                                                  authStatus,
+                                                                  userProductSubscription
+                                                              )
+                                                                ? 'pro'
+                                                                : 'free'
+                                                            : 'enterprise',
+                                                        longContextWindowFlagEnabled:
+                                                            longContextWindowFlag,
+                                                    }).map(createModelFromServerModel)
                                                 )
 
                                                 // Set the default model to Haiku for free users.
@@ -522,30 +524,37 @@ async function fetchServerSideModels(
 }
 
 /**
- * Adjusts context windows for models based on user tier and model characteristics.
+ * Adjusts context windows for models based on user tier and feature flags.
  *
  * This function:
- * 1. Applies tokenizer-specific adjustments (e.g., for Mistral models)
+ * 1. Applies tokenizer-specific adjustments (e.g., reducing context for Mistral models due to tokenizer differences)
  * 2. Enforces tier-specific context window limits (free, pro, enterprise)
- * 3. Sets appropriate output token limits based on model capabilities
+ * 3. Sets appropriate output token limits based on model capabilities and user tier
+ * 4. Respects the longContextWindowFlagEnabled feature flag for determining context limits
  *
  * @param models - Array of models to adjust
- * @param isPro - Whether the user has a pro subscription
- * @param isFree - Whether the user has a free subscription
+ * @param config - Configuration object containing user tier and feature flag status
+ * @param config.tier - User subscription tier ('free', 'pro', or 'enterprise')
+ * @param config.longContextWindowFlagEnabled - Whether the long context window feature is enabled
  * @returns Array of models with adjusted context windows
  */
 export const maybeAdjustContextWindows = (
     models: ServerModel[],
-    isPro = false,
-    isFree = false,
-    longContextWindowFlagOn = false
+    config: { tier: 'free' | 'pro' | 'enterprise'; longContextWindowFlagEnabled: boolean }
 ): ServerModel[] => {
-    // Compile regex once
+    // Compile regex once outside the map function
     const mistralRegex = /^mi(x|s)tral/
+
+    // Determine token limits based on config once outside the loop
+    const isFreeTier = config.tier === 'free'
+    const isPro = config.tier === 'pro'
+    const hasLongContextFeature = config.longContextWindowFlagEnabled && !isFreeTier
+
+    // Apply restrictions to all models
     return models.map(model => {
-        // Start with original values
-        let maxInputTokens = model.contextWindow.maxInputTokens
-        let maxOutputTokens = model.contextWindow.maxOutputTokens
+        // Get original values
+        let { maxInputTokens, maxOutputTokens } = model.contextWindow
+
         // Apply Mistral-specific adjustment
         if (mistralRegex.test(model.modelName)) {
             // Adjust the context window size for Mistral models because the OpenAI tokenizer undercounts tokens in English
@@ -556,49 +565,32 @@ export const maybeAdjustContextWindows = (
             maxInputTokens = Math.round(maxInputTokens * TOKEN_LIMITS.MISTRAL_ADJUSTMENT_FACTOR)
         }
 
-        // Get model characteristics
-        const hasReasoning = model.capabilities.includes(ModelTag.Reasoning)
-        // Define token limits based on tier and reasoning capability
-
-        const tokenConfig = {
-            pro: {
-                enhancedInput: TOKEN_LIMITS.PRO.MAX_INPUT_TOKENS,
-                output: (hasReasoning: boolean) =>
-                    hasReasoning ? TOKEN_LIMITS.PRO.REASONING_OUTPUT : TOKEN_LIMITS.PRO.STANDARD_OUTPUT,
-            },
-            enterprise: {
-                enhancedInput: TOKEN_LIMITS.ENTERPRISE.MAX_INPUT_TOKENS,
-                // The output is not used in the logic but for readability only.
-                // We set this value on the server side already, so no need to set it again on the client side.
-                output: (hasReasoning: boolean) =>
-                    hasReasoning
-                        ? TOKEN_LIMITS.ENTERPRISE.REASONING_OUTPUT
-                        : TOKEN_LIMITS.ENTERPRISE.STANDARD_OUTPUT,
-            },
-            default: {
-                standardInput: Math.min(maxInputTokens, TOKEN_LIMITS.ORIGINAL_ALL.MAX_INPUT_TOKENS),
-                output: Math.min(maxOutputTokens, TOKEN_LIMITS.ORIGINAL_ALL.MAX_OUTPUT_TOKENS),
-            },
+        // Apply input token limits
+        if (isFreeTier || !config.longContextWindowFlagEnabled) {
+            maxInputTokens = Math.min(maxInputTokens, TOKEN_LIMITS.FREE.MAX_INPUT_TOKENS)
         }
 
-        // Output window adjustments: server side has the highest limits(ES limits), so we need to reduce the limits for pro users.
-        if (isPro) {
-            maxOutputTokens = tokenConfig.pro.output(hasReasoning)
-        }
-        // Input window adjustments (controlled by the flag)
-        // Change the input window limits back to the original ones for pro and enterprise users when the flag is off.
-        if (!longContextWindowFlagOn && !isFree) {
-            maxInputTokens = tokenConfig.default.standardInput
-        }
-        // Decrease both the input and output window for the free users.
-        // Free-tier models can be used by all tiers on the server side and the limits are increased on the server side.
-        // However, we decrease the limits to the original limits here for free users.
-        if (isFree) {
-            // Fall back to the old limits (same across all tiers)
-            maxInputTokens = tokenConfig.default.standardInput
-            maxOutputTokens = tokenConfig.default.output
+        // Apply output token limits
+        if (hasLongContextFeature) {
+            if (isPro) {
+                const limit = model.capabilities.includes(ModelTag.Reasoning)
+                    ? TOKEN_LIMITS.PRO.REASONING_OUTPUT
+                    : TOKEN_LIMITS.PRO.STANDARD_OUTPUT
+                maxOutputTokens = Math.min(maxOutputTokens, limit)
+            }
+            // For enterprise tier with feature enabled, we use enterprise limits
+            else {
+                const limit = model.capabilities.includes(ModelTag.Reasoning)
+                    ? TOKEN_LIMITS.ENTERPRISE.REASONING_OUTPUT
+                    : TOKEN_LIMITS.ENTERPRISE.STANDARD_OUTPUT
+                maxOutputTokens = Math.min(maxOutputTokens, limit)
+            }
+        } else {
+            // Free tier or feature flag disabled
+            maxOutputTokens = Math.min(maxOutputTokens, TOKEN_LIMITS.FREE.MAX_OUTPUT_TOKENS)
         }
 
+        // Return model with adjusted context window
         return {
             ...model,
             contextWindow: {
