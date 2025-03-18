@@ -122,7 +122,10 @@ describe('maybeAdjustContextWindows', () => {
             } satisfies ServerModel,
         ]
 
-        const results = maybeAdjustContextWindows(testServerSideModels)
+        const results = maybeAdjustContextWindows(testServerSideModels, {
+            tier: 'enterprise',
+            longContextWindowFlagEnabled: false,
+        })
         const mistralModelNamePrefixes = ['mistral', 'mixtral']
         for (const model of results) {
             let wantMaxInputTokens = defaultMaxInputTokens
@@ -641,7 +644,7 @@ describe('syncModels', () => {
     })
 })
 describe('maybeAdjustContextWindows', () => {
-    it('Flag on, enterprise users with gpt 4o (Pro tier)', () => {
+    it('preserves context window for enterprise users with GPT-4o (Pro tier) when flag is on', () => {
         const models = [
             {
                 modelRef: 'openai::latest::gpt-4o' as const,
@@ -658,12 +661,15 @@ describe('maybeAdjustContextWindows', () => {
             },
         ] satisfies ServerModel[]
 
-        const result = maybeAdjustContextWindows(models, false, false, true)
+        const result = maybeAdjustContextWindows(models, {
+            tier: 'enterprise',
+            longContextWindowFlagEnabled: true,
+        })
         expect(result[0].contextWindow.maxInputTokens).toBe(100000)
         expect(result[0].contextWindow.maxOutputTokens).toBe(8000)
     })
 
-    it('Flag on, pro users with gpt o1 (Pro tier)', () => {
+    it('adjusts output tokens for pro users with GPT-o1 (Pro tier) when flag is on', () => {
         const models = [
             {
                 modelRef: 'openai::latest::gpt-o1' as const,
@@ -680,12 +686,15 @@ describe('maybeAdjustContextWindows', () => {
             },
         ] satisfies ServerModel[]
 
-        const result = maybeAdjustContextWindows(models, true, false, true)
+        const result = maybeAdjustContextWindows(models, {
+            tier: 'pro',
+            longContextWindowFlagEnabled: true,
+        })
         expect(result[0].contextWindow.maxInputTokens).toBe(175000)
         expect(result[0].contextWindow.maxOutputTokens).toBe(6000)
     })
 
-    it('Flag on, pro users with gpt o1 (Free tier)', () => {
+    it('adjusts output tokens for pro users with GPT-o1 (Free tier) when flag is on', () => {
         const models = [
             {
                 modelRef: 'openai::latest::gpt-o1' as const,
@@ -702,12 +711,15 @@ describe('maybeAdjustContextWindows', () => {
             },
         ] satisfies ServerModel[]
 
-        const result = maybeAdjustContextWindows(models, true, false, true)
+        const result = maybeAdjustContextWindows(models, {
+            tier: 'pro',
+            longContextWindowFlagEnabled: true,
+        })
         expect(result[0].contextWindow.maxInputTokens).toBe(175000)
         expect(result[0].contextWindow.maxOutputTokens).toBe(6000)
     })
 
-    it('Flag on, free users with gpt o1 (Free tier)', () => {
+    it('reduces context window for free users with GPT-o1 (Free tier) when flag is on', () => {
         const models = [
             {
                 modelRef: 'openai::latest::gpt-o1' as const,
@@ -724,12 +736,15 @@ describe('maybeAdjustContextWindows', () => {
             },
         ] satisfies ServerModel[]
 
-        const result = maybeAdjustContextWindows(models, false, true, true)
+        const result = maybeAdjustContextWindows(models, {
+            tier: 'free',
+            longContextWindowFlagEnabled: true,
+        })
         expect(result[0].contextWindow.maxInputTokens).toBe(45000)
         expect(result[0].contextWindow.maxOutputTokens).toBe(4000)
     })
 
-    it('Flag off, pro users with gpt o1 (Free tier)', () => {
+    it('reduces context window for pro users with GPT-o1 (Free tier) when flag is off', () => {
         const models = [
             {
                 modelRef: 'openai::latest::gpt-o1' as const,
@@ -746,12 +761,15 @@ describe('maybeAdjustContextWindows', () => {
             },
         ] satisfies ServerModel[]
 
-        const result = maybeAdjustContextWindows(models, true, false, false)
+        const result = maybeAdjustContextWindows(models, {
+            tier: 'pro',
+            longContextWindowFlagEnabled: false,
+        })
         expect(result[0].contextWindow.maxInputTokens).toBe(45000)
         expect(result[0].contextWindow.maxOutputTokens).toBe(6000)
     })
 
-    it('Flag off, pro users with claude-3-opus (Free tier)', () => {
+    it('preserves the context window if the original values are smaller than the adjusted values for pro users with Claude 3 Opus (Free tier) when flag is off', () => {
         const models = [
             {
                 modelRef: 'anthropic::latest::claude-3-opus' as const,
@@ -760,7 +778,7 @@ describe('maybeAdjustContextWindows', () => {
                 capabilities: ['chat', 'reasoning'],
                 category: ModelTag.Power as const,
                 status: 'stable' as const,
-                tier: ModelTag.Enterprise as const,
+                tier: ModelTag.Free as const,
                 contextWindow: {
                     maxInputTokens: 32000,
                     maxOutputTokens: 4000,
@@ -768,12 +786,15 @@ describe('maybeAdjustContextWindows', () => {
             },
         ] satisfies ServerModel[]
 
-        const result = maybeAdjustContextWindows(models)
+        const result = maybeAdjustContextWindows(models, {
+            tier: 'pro',
+            longContextWindowFlagEnabled: false,
+        })
         expect(result[0].contextWindow.maxInputTokens).toBe(32000)
         expect(result[0].contextWindow.maxOutputTokens).toBe(4000)
     })
 
-    it('Flag off, free users with gpt-3.5-turbo (Free tier)', () => {
+    it('preserves context window if the original values are smaller than the adjusted values for free users with GPT-3.5-Turbo (Free tier) when flag is off', () => {
         const models = [
             {
                 modelRef: 'openai::latest::gpt-3.5-turbo' as const,
@@ -790,12 +811,40 @@ describe('maybeAdjustContextWindows', () => {
             },
         ] satisfies ServerModel[]
 
-        const result = maybeAdjustContextWindows(models, false, true, false)
+        const result = maybeAdjustContextWindows(models, {
+            tier: 'free',
+            longContextWindowFlagEnabled: false,
+        })
         expect(result[0].contextWindow.maxInputTokens).toBe(4000)
         expect(result[0].contextWindow.maxOutputTokens).toBe(1000)
     })
 
-    it('Flag off, free users with gpt-3.5-turbo (pro tier)', () => {
+    it('preserves context window if the original values are smaller than the adjusted values for pro users with GPT-3.5-Turbo (Free tier) when flag is on', () => {
+        const models = [
+            {
+                modelRef: 'openai::latest::gpt-3.5-turbo' as const,
+                modelName: 'gpt-3.5-turbo',
+                displayName: 'GPT-3.5 Turbo',
+                capabilities: ['chat'],
+                category: ModelTag.Balanced as const,
+                status: 'stable' as const,
+                tier: ModelTag.Free as const,
+                contextWindow: {
+                    maxInputTokens: 5000,
+                    maxOutputTokens: 2000,
+                },
+            },
+        ] satisfies ServerModel[]
+
+        const result = maybeAdjustContextWindows(models, {
+            tier: 'pro',
+            longContextWindowFlagEnabled: true,
+        })
+        expect(result[0].contextWindow.maxInputTokens).toBe(5000)
+        expect(result[0].contextWindow.maxOutputTokens).toBe(2000)
+    })
+
+    it('reduces the input tokens for free users with Claude-3-Sonnet (Pro tier) when flag is off', () => {
         // This would need to simulate the feature flag behavior
         // For testing purposes, we assume the input already has the expanded context
         const models = [
@@ -814,12 +863,15 @@ describe('maybeAdjustContextWindows', () => {
             },
         ] satisfies ServerModel[]
 
-        const result = maybeAdjustContextWindows(models, false, true, false)
+        const result = maybeAdjustContextWindows(models, {
+            tier: 'free',
+            longContextWindowFlagEnabled: false,
+        })
         expect(result[0].contextWindow.maxInputTokens).toBe(45000)
         expect(result[0].contextWindow.maxOutputTokens).toBe(4000)
     })
 
-    it('Flag off, free users with laude-3-opus (pro tier)', () => {
+    it('preserves context window for free users with Claude-3-Opus (Pro tier) when flag is off', () => {
         const models = [
             {
                 modelRef: 'anthropic::latest::claude-3-opus' as const,
@@ -836,8 +888,12 @@ describe('maybeAdjustContextWindows', () => {
             },
         ] satisfies ServerModel[]
 
-        const result = maybeAdjustContextWindows(models, false, true, false)
+        const result = maybeAdjustContextWindows(models, {
+            tier: 'free',
+            longContextWindowFlagEnabled: false,
+        })
         expect(result[0].contextWindow.maxInputTokens).toBe(45000)
+        expect(result[0].contextWindow.maxOutputTokens).toBe(4000)
     })
 
     it('adjusts context window for Mistral models by reducing it by 15%', () => {
@@ -857,7 +913,10 @@ describe('maybeAdjustContextWindows', () => {
             },
         ] satisfies ServerModel[]
 
-        const result = maybeAdjustContextWindows(models)
+        const result = maybeAdjustContextWindows(models, {
+            tier: 'enterprise',
+            longContextWindowFlagEnabled: false,
+        })
         // 10000 * 0.85 = 8500
         expect(result[0].contextWindow.maxInputTokens).toBe(8500)
     })
@@ -879,7 +938,10 @@ describe('maybeAdjustContextWindows', () => {
             },
         ] satisfies ServerModel[]
 
-        const result = maybeAdjustContextWindows(models)
+        const result = maybeAdjustContextWindows(models, {
+            tier: 'enterprise',
+            longContextWindowFlagEnabled: false,
+        })
         // 12000 * 0.85 = 10200
         expect(result[0].contextWindow.maxInputTokens).toBe(10200)
     })
@@ -914,7 +976,10 @@ describe('maybeAdjustContextWindows', () => {
             },
         ] satisfies ServerModel[]
 
-        const result = maybeAdjustContextWindows(models)
+        const result = maybeAdjustContextWindows(models, {
+            tier: 'enterprise',
+            longContextWindowFlagEnabled: false,
+        })
         expect(result[0].contextWindow.maxInputTokens).toBe(8000) // No change for OpenAI
         expect(result[1].contextWindow.maxInputTokens).toBe(8500) // Adjusted for Mistral (10000 * 0.85)
     })
