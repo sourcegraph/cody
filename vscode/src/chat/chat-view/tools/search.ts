@@ -1,5 +1,13 @@
 import type { Span } from '@opentelemetry/api'
-import { PromptString, displayPath, firstValueFrom, pendingOperation } from '@sourcegraph/cody-shared'
+import {
+    type ContextItem,
+    PromptString,
+    type SearchResultView,
+    displayPath,
+    firstValueFrom,
+    pendingOperation,
+} from '@sourcegraph/cody-shared'
+import type { URI } from 'vscode-uri'
 import type { AgentTool } from '.'
 import { getCorpusContextItemsForEditorState } from '../../initialContext'
 import { type ContextRetriever, toStructuredMentions } from '../ContextRetriever'
@@ -51,9 +59,48 @@ export async function getCodebaseSearchTool(
 
             output.push(resultContext.join('\n'))
 
-            return { text: output.join('\n'), contextItems }
+            return {
+                text: output.join('\n'),
+                contextItems,
+                searchResult: generateSearchToolResults(validInput.query, contextItems),
+            }
         },
     } satisfies AgentTool
 
     return searchTool
+}
+
+function generateSearchToolResults(query: string, items: ContextItem[]): SearchResultView {
+    return {
+        query,
+        results: items.map(item => ({
+            fileName: getFileName(item.uri),
+            lineNumber: createRange(item.range?.start?.line, item.range?.end?.line),
+            type: 'code',
+        })),
+    }
+}
+
+// Helper function to create range string - moved outside for better readability
+function createRange(startLine?: number, endLine?: number): string {
+    if (startLine === undefined && endLine === undefined) {
+        return ''
+    }
+    return `${startLine !== undefined ? startLine + 1 : '0'}-${endLine ?? 'EOF'}`
+}
+
+// Helper function to extract file name from URI - moved outside for better readability
+function getFileName(uri: URI): string {
+    const displayName = displayPath(uri)
+
+    if (!displayName.includes('/-/blob/')) {
+        return displayName
+    }
+
+    const parts = displayName.split('/-/blob/')
+    const result = parts[1] || displayName
+
+    // Remove query parameters if present
+    const queryIndex = result.indexOf('?')
+    return queryIndex !== -1 ? result.substring(0, queryIndex) : result
 }

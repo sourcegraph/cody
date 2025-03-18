@@ -6,6 +6,7 @@ import {
     type NLSSearchDynamicFilter,
     REMOTE_FILE_PROVIDER_URI,
     type SerializedPromptEditorValue,
+    type ToolContentPart,
     deserializeContextItem,
     isAbortErrorOrSocketHangUp,
     serializedPromptEditorStateFromText,
@@ -533,18 +534,29 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
         [humanMessage]
     )
 
-    const toolContentParts = humanMessage?.content?.filter(c => c.type === 'function')
+    // Find thinking content from content parts if available
+    const toolContent = useMemo(() => {
+        if (!humanMessage.content) {
+            return undefined
+        }
+
+        const tools = humanMessage?.content?.filter(c => c.type === 'function') as
+            | ToolContentPart[]
+            | undefined
+        return tools || undefined
+    }, [humanMessage])
 
     return (
         <>
             {/* Shows tool contents instead of editor if any */}
-            {toolContentParts !== undefined ? (
-                toolContentParts?.map(tool => (
+            {toolContent !== undefined ? (
+                toolContent?.map(tool => (
                     <ToolStatusCell
                         key={tool.id}
                         status={tool.status}
                         title={tool.function.name}
-                        output={tool.result}
+                        output={tool.output}
+                        result={tool.result}
                         className="w-full"
                     />
                 ))

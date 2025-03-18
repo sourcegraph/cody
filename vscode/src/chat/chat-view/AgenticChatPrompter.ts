@@ -15,7 +15,7 @@ export class AgenticChatPrompter {
     constructor(private readonly preamble: PromptString) {}
     public async makePrompt(chat: ChatBuilder, context: ContextItem[] = []): Promise<Message[]> {
         return wrapInActiveSpan('chat.prompter', async () => {
-            const contextWindow = { input: 150000, output: 8000 }
+            const contextWindow = { input: 200000, output: 8000 }
             const promptBuilder = await PromptBuilder.create(contextWindow)
 
             // Add preamble messages

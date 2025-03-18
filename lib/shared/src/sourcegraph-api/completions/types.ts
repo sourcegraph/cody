@@ -77,6 +77,16 @@ export interface ToolContentPart extends CompletionFunctionCallsData {
     id: string
     result?: string
     status: string
+    output?: ExtendedToolOutput
+}
+
+// Extended tool output interface with search and diff result types
+export interface ExtendedToolOutput {
+    title?: string
+    query?: string
+    searchResult?: SearchResultView
+    diffResult?: FileDiff
+    bashResult?: TerminalLine[]
 }
 
 export interface CompletionUsage {
@@ -146,3 +156,46 @@ export type CompletionGeneratorValue =
     | { type: 'change'; text: string; content?: CompletionContentData[] }
     | { type: 'complete' }
     | { type: 'error'; error: Error; statusCode?: number }
+
+export interface FileDiff {
+    fileName: string
+    total: TotalLinesChanged
+    changes: LineChange[]
+}
+
+interface TotalLinesChanged {
+    added: number
+    removed: number
+    modified: number
+}
+
+export interface LineChange {
+    type: 'added' | 'removed' | 'unchanged'
+    content: string
+    lineNumber: number
+}
+
+export interface SearchResultView {
+    query: string
+    results: SearchResult[]
+}
+
+interface SearchResult {
+    fileName: string
+    lineNumber?: string
+    preview?: string
+    type: 'file' | 'folder' | 'code'
+}
+
+export enum TerminalLineType {
+    Input = 'input',
+    Output = 'output',
+    Error = 'error',
+    Warning = 'warning',
+    Success = 'success',
+}
+
+export interface TerminalLine {
+    content: string
+    type?: TerminalLineType
+}

@@ -1,0 +1,116 @@
+import type { FileDiff } from '@sourcegraph/cody-shared'
+import type { Meta, StoryObj } from '@storybook/react'
+import { VSCodeWebview } from '../../../storybook/VSCodeStoryDecorator'
+import { CodeDiffCell } from './DiffCell'
+
+const sampleDiff = {
+    fileName: 'ToolsStatus.tsx',
+    total: {
+        added: 6,
+        removed: 69,
+        modified: 98,
+    },
+    changes: [
+        { type: 'unchanged', content: '@@ -127,9 +127,9 @@', lineNumber: 127 },
+        {
+            type: 'unchanged',
+            content: '    if (seconds < 3600) return `${Math.floor(seconds / 60)}m ${seconds % 60}s`',
+            lineNumber: 128,
+        },
+        {
+            type: 'unchanged',
+            content: '    return `${Math.floor(seconds / 3600)}h ${Math.floor((seconds % 3600) / 60)}m`',
+            lineNumber: 129,
+        },
+        { type: 'unchanged', content: '}', lineNumber: 130 },
+        { type: 'unchanged', content: '', lineNumber: 131 },
+        { type: 'removed', content: 'export default function JobMonitor() {', lineNumber: 132 },
+        {
+            type: 'added',
+            content: 'export default function ToolsStatus({ tools }: ToolsStatusProps) {',
+            lineNumber: 132,
+        },
+        {
+            type: 'unchanged',
+            content: '  const [expanded, setExpanded] = useState(false)',
+            lineNumber: 133,
+        },
+        {
+            type: 'unchanged',
+            content: '  const [selectedJob, setSelectedJob] = useState<string | null>',
+            lineNumber: 134,
+        },
+        {
+            type: 'unchanged',
+            content: "  const [activeTab, setActiveTab] = useState<string>('logs')",
+            lineNumber: 135,
+        },
+        {
+            type: 'unchanged',
+            content: '  const [jobs, setJobs] = useState<Job[]>(mockJobs)',
+            lineNumber: 136,
+        },
+    ],
+} satisfies FileDiff
+
+const meta: Meta<typeof CodeDiffCell> = {
+    title: 'agentic/CodeDiffCell',
+    component: CodeDiffCell,
+    decorators: [VSCodeWebview],
+}
+
+export default meta
+
+type Story = StoryObj<typeof CodeDiffCell>
+
+export const Default: Story = {
+    args: {
+        result: { ...sampleDiff },
+        defaultOpen: true,
+    },
+}
+
+export const CollapsedByDefault: Story = {
+    args: {
+        result: { ...sampleDiff },
+        defaultOpen: false,
+    },
+}
+
+export const CustomClassName: Story = {
+    args: {
+        result: { ...sampleDiff },
+        className: 'tw-my-4 tw-shadow-md',
+        defaultOpen: true,
+    },
+}
+
+export const LargeDiff: Story = {
+    args: {
+        defaultOpen: true,
+        result: {
+            fileName: 'LargeComponent.tsx',
+            total: {
+                added: 42,
+                removed: 15,
+                modified: 108,
+            },
+            changes: [
+                { type: 'unchanged', content: '@@ -127,9 +127,9 @@', lineNumber: 127 },
+                ...Array(30)
+                    .fill(0)
+                    .map((_, i) => {
+                        const type: 'unchanged' | 'added' | 'removed' =
+                            i % 3 === 0 ? 'unchanged' : i % 3 === 1 ? 'added' : 'removed'
+                        return {
+                            type,
+                            content: `const line${i} = ${
+                                i % 3 === 1 ? '"new implementation"' : '"old implementation"'
+                            }`,
+                            lineNumber: 128 + i,
+                        }
+                    }),
+            ],
+        } satisfies FileDiff,
+    },
+}

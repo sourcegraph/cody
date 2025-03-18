@@ -119,7 +119,7 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
                 })
 
                 // Execute tools and update results
-                const { processedTools, contextItems } = await this.executeTools(toolCalls, toolStateMap)
+                const { processedTools, contextItems } = await this.executeTools(toolCalls)
 
                 // Update tool results in the message
                 for (const tool of processedTools) {
@@ -259,13 +259,12 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
      * Execute tools from LLM response
      */
     protected async executeTools(
-        toolCalls: ToolContentPart[],
-        toolStateMap: Map<string, ToolContentPart>
+        toolCalls: ToolContentPart[]
     ): Promise<{ processedTools: ToolContentPart[]; contextItems: ContextItem[] }> {
         try {
             // Execute all tools in parallel
             const results = await Promise.all(
-                toolCalls.map(toolCall => this.executeSingleTool(toolCall, toolStateMap))
+                toolCalls.map(toolCall => this.executeSingleTool(toolCall))
             )
 
             // Gather results and context
@@ -292,16 +291,17 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
      * Execute a single tool and handle success/failure
      */
     protected async executeSingleTool(
-        toolCall: ToolContentPart,
-        toolStateMap: Map<string, ToolContentPart>
+        toolCall: ToolContentPart
     ): Promise<{ toolResult: ToolContentPart; contextItems?: ContextItem[] } | null> {
         // Find the appropriate tool
         const tool = this.tools.find(t => t.spec.name === toolCall.function.name)
-        // Update tool state to pending
-        const toolState = toolStateMap.get(toolCall.id)
+        const toolState = this.toolStateMap.get(toolCall.id)
         if (!tool || !toolState) return null
 
-        toolState.status = 'pending'
+        // Update tool state to pending
+        if (toolState) {
+            toolState.status = 'pending'
+        }
 
         try {
             // Execute the tool
@@ -315,15 +315,15 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
                 function: { ...toolCall.function },
                 status: 'done',
                 result: output.text,
+                output: output,
             }
 
-            // Update shared state
-            if (toolState) {
-                toolState.status = 'done'
-                toolState.result = output.text
-            }
+            toolState.result = output.text
+            toolState.output = output
+            toolState.status = 'done'
 
             logDebug('AgenticHandler', `Tool execution successful: ${toolCall.function.name}`)
+
             return { toolResult, contextItems: output.contextItems }
         } catch (error) {
             // Create error result

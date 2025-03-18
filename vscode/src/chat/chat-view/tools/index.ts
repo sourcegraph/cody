@@ -1,6 +1,6 @@
 import type { Tool } from '@anthropic-ai/sdk/resources'
 import type { Span } from '@opentelemetry/api'
-import type { ContextItem } from '@sourcegraph/cody-shared'
+import type { ContextItem, ExtendedToolOutput } from '@sourcegraph/cody-shared'
 import type { ContextRetriever } from '../ContextRetriever'
 import { diagnosticTool } from './diagnostic'
 import { editTool } from './edit'
@@ -12,11 +12,10 @@ export type AgentID = string
 
 export interface AgentTool {
     spec: Tool
-    // validate: (input: any) => string | undefined
     invoke: (input: any) => Promise<AgentToolResult>
 }
 
-export interface AgentToolResult {
+export interface AgentToolResult extends ExtendedToolOutput {
     text: string
     contextItems?: ContextItem[]
 }

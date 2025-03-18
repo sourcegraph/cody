@@ -1,6 +1,7 @@
 import { spawn } from 'node:child_process'
+import { type TerminalLine, TerminalLineType } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
-import { getContextFileFromShell } from '../../../commands/context/shell'
+import type { AgentTool, AgentToolResult } from '.'
 import { validateWithZod } from '../utils/input'
 import { zodToolSchema } from '../utils/parse'
 import { type RunTerminalCommandInput, RunTerminalCommandSchema } from './schema'
@@ -11,6 +12,7 @@ interface CommandOptions {
 }
 
 export interface CommandResult {
+    command: string
     stdout: string
     stderr: string
     code: number | null
@@ -27,7 +29,7 @@ class CommandError extends Error {
     }
 }
 
-export const shellTool = {
+export const shellTool: AgentTool = {
     spec: {
         name: 'run_terminal_command',
         description: 'Run an arbitrary terminal command at the root of the users project.',
@@ -42,15 +44,61 @@ export const shellTool = {
         }
 
         try {
-            const commandResult = await getContextFileFromShell(validInput.command)
+            const commandResult = await runShellCommand(validInput.command, {
+                cwd: workspaceFolder.uri.fsPath,
+            })
+
+            // Format the output as an array of TerminalLine objects
+            const bashResult: TerminalLine[] = [
+                { content: validInput.command, type: TerminalLineType.Input },
+                ...formatOutputToTerminalLines(commandResult.stdout, TerminalLineType.Output),
+                ...formatOutputToTerminalLines(commandResult.stderr, TerminalLineType.Error),
+            ].filter(line => line.content.trim() !== '')
+
             return {
-                text: validInput.command,
-                contextItems: commandResult,
-            }
+                query: validInput.command,
+                bashResult,
+                text: `Executed ${validInput.command}\n\nOutput:\n${commandResult.stdout}${
+                    commandResult.stderr ? '\nErrors:\n' + commandResult.stderr : ''
+                }`,
+            } satisfies AgentToolResult
         } catch (error) {
+            if (error instanceof CommandError) {
+                // Format the error output as an array of TerminalLine objects
+                const bashResult: TerminalLine[] = [
+                    { content: validInput.command, type: TerminalLineType.Input },
+                    { content: `Exited with code ${error.result.code}`, type: TerminalLineType.Error },
+                    ...formatOutputToTerminalLines(error.result.stdout, TerminalLineType.Output),
+                    ...formatOutputToTerminalLines(error.result.stderr, TerminalLineType.Error),
+                ].filter(line => line.content.trim() !== '')
+
+                return {
+                    command: validInput.command,
+                    bashResult,
+                    text: `Command: ${validInput.command}\n\nExited with code ${
+                        error.result.code
+                    }\n\nOutput:\n${error.result.stdout}${
+                        error.result.stderr ? '\nErrors:\n' + error.result.stderr : ''
+                    }`,
+                }
+            }
             throw new Error(`Failed to run terminal command: ${input.command}: ${error}`)
         }
     },
+}
+
+/**
+ * Formats a string output into an array of TerminalLine objects
+ */
+function formatOutputToTerminalLines(output: string, type: TerminalLineType): TerminalLine[] {
+    if (!output) {
+        return []
+    }
+
+    return output.split('\n').map(line => ({
+        content: line,
+        type: type === 'error' ? TerminalLineType.Error : TerminalLineType.Output,
+    }))
 }
 
 export async function runShellCommand(
@@ -115,7 +163,7 @@ export async function runShellCommand(
             clearTimeout(timeoutId)
             if (killed) return
 
-            const result: CommandResult = { stdout, stderr, code, signal }
+            const result: CommandResult = { command, stdout, stderr, code, signal }
             if (code === 0) {
                 resolve(result)
             } else {

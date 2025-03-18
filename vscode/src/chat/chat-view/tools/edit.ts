@@ -2,7 +2,7 @@ import { displayPath, logDebug } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 import type { AgentToolResult } from '.'
 import { getContextFromRelativePath } from '../../../commands/context/file-path'
-import { diffWithLineNum } from '../utils/diff'
+import { diffWithLineNum, getFileDiff } from '../utils/diff'
 import { validateWithZod } from '../utils/input'
 import { zodToolSchema } from '../utils/parse'
 import { getErrorDiagnostics } from './diagnostic'
@@ -149,6 +149,7 @@ async function replaceInFile(
         return {
             text: output.join('\n'),
             contextItems: updatedContext ? [updatedContext] : undefined,
+            diffResult: getFileDiff(fileName, content, newContent),
         }
     } catch (error: any) {
         return { text: `Failed to replace text in ${fileName}: ${error.message}` }
