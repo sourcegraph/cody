@@ -28,7 +28,6 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
 
     protected tools: AgentTool[] = []
 
-    // Single global tool state map for all sessions
     private toolStateMap = new Map<string, ToolContentPart>()
 
     constructor(
