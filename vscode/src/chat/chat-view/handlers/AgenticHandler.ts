@@ -22,7 +22,7 @@ import { buildAgentPrompt } from './prompts'
 
 enum AGENT_MODELS {
     ExtendedThinking = 'anthropic::2024-10-22::claude-3-7-sonnet-extended-thinking',
-    Base = 'anthropic::2024-10-22::claude-3-7-sonnet',
+    Base = 'anthropic::2024-10-22::claude-3-7-sonnet-latest',
 }
 
 /**
