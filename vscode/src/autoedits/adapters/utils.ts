@@ -5,7 +5,6 @@ import {
     globalAgentRef,
     isAbortError,
 } from '@sourcegraph/cody-shared'
-import type { DelegatingAgent } from '../../net/DelegatingAgent'
 import type { AbortedModelResponse, ModelResponseShared, SuccessModelResponse } from './base'
 
 export interface FireworksCompatibleRequestParams {
@@ -97,9 +96,17 @@ export async function getModelResponse({
     }
 
     try {
-        const response = await (globalAgentRef.agent as DelegatingAgent).sendMessageViaSocket(
-            JSON.stringify(body)
-        )
+        const headers: Record<string, string> = {
+            ...customHeaders,
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${apiKey}`,
+        }
+        const response = (await (globalAgentRef.agent as any).sendMessageViaSocket(url, {
+            method: 'POST',
+            body: JSON.stringify(body),
+            headers: JSON.stringify(headers),
+            signal: abortSignal,
+        })) as Response
         // const response = await fetch(url, {
         //     method: 'POST',
         //     headers: requestHeaders,
