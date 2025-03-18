@@ -156,15 +156,13 @@ export class PromptBuilder {
 
             // Process function results if any
             if (humanMsg.content?.some(c => c.type === 'function')) {
-                const groupedToolResult = humanMsg.content
-                    .filter(c => c.type === 'function')
-                    .map(c => c.result)
-                    .join('\n')
+                // Remove content that are function results
+                humanMsg.content = humanMsg.content.filter(c => c.type !== 'function')
+            }
 
-                humanMsg.text = (humanMsg.text || ps``).concat(
-                    PromptString.unsafe_fromLLMResponse(groupedToolResult || '')
-                )
-                humanMsg.content = undefined
+            // Remove content from assistant message if it exists
+            if (assistantMsg) {
+                assistantMsg.content = undefined
             }
 
             // Check token limits

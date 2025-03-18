@@ -44,7 +44,7 @@ Remember:
 
 Begin by analyzing the user's input and gathering any necessary additional context. Then, present your plan at the start of your response before proceeding with the task. It's OK for this section to be quite long.
 
-REMEMBER, always be helpful and proactive! Don't ask for permission to do something when you can do it!`
+REMEMBER, always be helpful and proactive! Don't ask for permission to do something when you can do it! Do not indicates you will be using a tool unless you are actually going to use it.`
 
 export function buildAgentPrompt(): string {
     const { OS, IDE } = getUserEnv()
@@ -52,7 +52,7 @@ export function buildAgentPrompt(): string {
 }
 
 const CURRENT_EDITOR_STATE_PROMPT = `<user_env>
-Name of file that the user is currently looking at: '{{USER_INFO_CURRENT_FILE}}' - use the file tool to fetch the content of this file if needed.
+Opened File: '{{USER_INFO_CURRENT_FILE}}' - might not related to my query. Use the file tool to fetch the content of this file if needed.
 </user_env>`
 
 export function getEditorStatePrompt(): string {

@@ -7,8 +7,6 @@ import { validateWithZod } from '../utils/input'
 import { zodToolSchema } from '../utils/parse'
 import { type CodeSearchInput, CodeSearchSchema } from './schema'
 
-const CONTEXT_TEMPLATE = '```{{FILENAME}}\n{{CONTENT}}\n```'
-
 export async function getCodebaseSearchTool(
     contextRetriever: Pick<ContextRetriever, 'retrieveContext' | 'computeDidYouMean'>,
     span: Span
@@ -28,9 +26,9 @@ export async function getCodebaseSearchTool(
             const repo = corpusItems.find(i => i.type === 'tree' || i.type === 'repository')
             if (!repo) return { text: 'Codebase search failed - not in valid workspace.' }
 
-            const outputTitle = `Query: ${validInput.query}\n`
+            const output = [`Searched '${validInput.query}'`]
 
-            const contextItems = await contextRetriever.retrieveContext(
+            const searches = await contextRetriever.retrieveContext(
                 toStructuredMentions([repo]),
                 PromptString.unsafe_fromLLMResponse(validInput.query),
                 span,
@@ -38,30 +36,23 @@ export async function getCodebaseSearchTool(
                 true
             )
 
-            if (contextItems.length > 0) {
-                return {
-                    text: `Query: ${validInput.query}\nFound ${contextItems.length} results in the codebase.`,
-                    contextItems,
-                }
+            if (!searches.length) {
+                output.push('No results found.')
+                return { text: output.join('\n') }
             }
 
-            return {
-                text:
-                    outputTitle +
-                    contextItems
-                        .map(({ uri, content }) => {
-                            if (!content?.length) return ''
-                            const remote =
-                                !uri.scheme.startsWith('file') && uri.path?.split('/-/blob/')?.pop()
-                            const displayName = remote || displayPath(uri)
-                            return CONTEXT_TEMPLATE.replace('{{FILENAME}}', displayName).replace(
-                                '{{CONTENT}}',
-                                content
-                            )
-                        })
-                        .join('\n'),
-                contextItems,
-            }
+            output.push(`Found ${searches.length} results`)
+
+            // Only show the last 5 results
+            const resultContext = searches.map(({ uri, content }) => {
+                if (!content?.length) return ''
+                const remote = !uri.scheme.startsWith('file') && uri.path?.split('/-/blob/')?.pop()
+                return remote || displayPath(uri)
+            })
+
+            output.push(resultContext.join('\n'))
+
+            return { text: output.join('\n'), contextItems: searches.splice(0, searches.length - 5) }
         },
     } satisfies AgentTool
 

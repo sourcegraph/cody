@@ -289,6 +289,19 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                 return null
             }
 
+            const initialPrediction = predictionResult.prediction
+
+            autoeditAnalyticsLogger.markAsLoaded({
+                requestId,
+                prompt,
+                modelResponse: predictionResult,
+                payload: {
+                    source: autoeditSource.network,
+                    isFuzzyMatch: false,
+                    prediction: initialPrediction,
+                },
+            })
+
             if (predictionResult.prediction.length === 0) {
                 autoeditsOutputChannelLogger.logDebugIfVerbose(
                     'provideInlineCompletionItems',
@@ -302,18 +315,6 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                 return null
             }
 
-            const initialPrediction = predictionResult.prediction
-
-            autoeditAnalyticsLogger.markAsLoaded({
-                requestId,
-                prompt,
-                modelResponse: predictionResult,
-                payload: {
-                    source: autoeditSource.network,
-                    isFuzzyMatch: false,
-                    prediction: initialPrediction,
-                },
-            })
             autoeditsOutputChannelLogger.logDebug(
                 'provideInlineCompletionItems',
                 `"${requestId}" ============= Response:\n${initialPrediction}\n` +

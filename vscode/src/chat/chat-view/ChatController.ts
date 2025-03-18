@@ -558,7 +558,8 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             serverEndpoint: auth.serverEndpoint,
             endpointHistory: [...endpoints],
             experimentalNoodle: configuration.experimentalNoodle,
-            smartApply: this.isSmartApplyEnabled(),
+            // Disable smart apply codeblock toolbar when agentic chat is enabled.
+            smartApply: this.isSmartApplyEnabled() && !experimentalAgenticChatEnabled,
             hasEditCapability: this.hasEditCapability(),
             webviewType,
             multipleWebviewsEnabled: !sidebarViewOnly,
@@ -819,7 +820,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                         })
                         return confirmation
                     },
-                    postDone: (op?: { abort: boolean }): void => {
+                    postDone: async (op?: { abort: boolean }): Promise<void> => {
                         // Mark the end of the span for chat.handleUserMessage here, as we do not await
                         // the entire stream of chat messages being sent to the webview.
                         // The span is concluded when the stream is complete.
@@ -827,7 +828,11 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                         if (op?.abort || signal.aborted) {
                             throw new Error('aborted')
                         }
-
+                        if (chatAgent === 'agentic') {
+                            await this.saveSession()
+                            this.postViewTranscript()
+                            return
+                        }
                         // HACK(beyang): This conditional preserves the behavior from when
                         // all the response generation logic was handled in this method.
                         // In future work, we should remove this special-casing and unify

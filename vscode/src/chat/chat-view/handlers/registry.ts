@@ -36,11 +36,6 @@ const agentRegistry = new Map<string, (id: string, tools: AgentTools) => AgentHa
         },
     ],
     [
-        'agentic',
-        (_id, { contextRetriever, editor, chatClient }) =>
-            new AgenticHandler(contextRetriever, editor, chatClient),
-    ],
-    [
         DeepCodyAgentID,
         (_id, { contextRetriever, editor, chatClient }) =>
             new DeepCodyHandler(contextRetriever, editor, chatClient),
@@ -51,6 +46,11 @@ const agentRegistry = new Map<string, (id: string, tools: AgentTools) => AgentHa
  * Gets an agent handler for the specified agent and model ID
  */
 export function getAgent(model: string, agentName: string, tools: AgentTools): AgentHandler {
+    const { contextRetriever, editor, chatClient } = tools
+    if (agentName === 'agentic') {
+        return new AgenticHandler(contextRetriever, editor, chatClient)
+    }
+
     // Use registered agent or fall back to basic chat handler
     const handlerFactory = agentRegistry.get(model) ?? agentRegistry.get(agentName)
     if (handlerFactory) {
@@ -58,7 +58,6 @@ export function getAgent(model: string, agentName: string, tools: AgentTools): A
     }
 
     // Default to basic chat handler for unknown agents
-    const { contextRetriever, editor, chatClient } = tools
     return new ChatHandler(contextRetriever, editor, chatClient)
 }
 
