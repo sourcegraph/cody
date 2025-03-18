@@ -64,6 +64,9 @@ interface TranscriptProps {
     insertButtonOnSubmit?: CodeBlockActionsProps['insertButtonOnSubmit']
     smartApply?: CodeBlockActionsProps['smartApply']
     smartApplyEnabled?: boolean
+
+    manuallySelectedIntent: ChatMessage['intent']
+    setManuallySelectedIntent: (intent: ChatMessage['intent']) => void
 }
 
 export const Transcript: FC<TranscriptProps> = props => {
@@ -81,6 +84,8 @@ export const Transcript: FC<TranscriptProps> = props => {
         insertButtonOnSubmit,
         smartApply,
         smartApplyEnabled,
+        manuallySelectedIntent,
+        setManuallySelectedIntent,
     } = props
 
     const interactions = useMemo(
@@ -155,6 +160,8 @@ export const Transcript: FC<TranscriptProps> = props => {
                         smartApplyEnabled={smartApplyEnabled}
                         editorRef={i === interactions.length - 1 ? lastHumanEditorRef : undefined}
                         onAddToFollowupChat={onAddToFollowupChat}
+                        manuallySelectedIntent={manuallySelectedIntent}
+                        setManuallySelectedIntent={setManuallySelectedIntent}
                     />
                 ))}
             </LastEditorContext.Provider>
@@ -240,6 +247,8 @@ interface TranscriptInteractionProps
         filePath: string
         fileURL: string
     }) => void
+    manuallySelectedIntent: ChatMessage['intent']
+    setManuallySelectedIntent: (intent: ChatMessage['intent']) => void
 }
 
 const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
@@ -259,11 +268,9 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
         smartApply,
         smartApplyEnabled,
         editorRef: parentEditorRef,
+        manuallySelectedIntent,
+        setManuallySelectedIntent,
     } = props
-    // Start the intent value as the human message's intent, but allow it to be manually set.
-    const [manuallySelectedIntent, setManuallySelectedIntent] = useState<ChatMessage['intent']>(
-        humanMessage.intent
-    )
 
     const { activeChatContext, setActiveChatContext } = props
     const humanEditorRef = useRef<PromptEditorRefAPI | null>(null)
@@ -617,6 +624,8 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                         isLastSentInteraction={isLastSentInteraction}
                         setThoughtProcessOpened={setThoughtProcessOpened}
                         isThoughtProcessOpened={isThoughtProcessOpened}
+                        manuallySelectedIntent={manuallySelectedIntent}
+                        setManuallySelectedIntent={setManuallySelectedIntent}
                     />
                 )}
         </>

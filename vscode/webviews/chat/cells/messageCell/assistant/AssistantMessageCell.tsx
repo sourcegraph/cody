@@ -56,6 +56,8 @@ export const AssistantMessageCell: FunctionComponent<{
     guardrails?: Guardrails
     onSelectedFiltersUpdate: (filters: NLSSearchDynamicFilter[]) => void
     isLastSentInteraction: boolean
+    manuallySelectedIntent: ChatMessage['intent']
+    setManuallySelectedIntent: (intent: ChatMessage['intent']) => void
 }> = memo(
     ({
         message,
@@ -74,6 +76,8 @@ export const AssistantMessageCell: FunctionComponent<{
         isLastSentInteraction: isLastInteraction,
         isThoughtProcessOpened,
         setThoughtProcessOpened,
+        manuallySelectedIntent,
+        setManuallySelectedIntent,
     }) => {
         const displayMarkdown = useMemo(
             () => (message.text ? reformatBotMessageForChat(message.text).toString() : ''),
@@ -124,6 +128,8 @@ export const AssistantMessageCell: FunctionComponent<{
                                 smartApply={smartApply}
                                 isThoughtProcessOpened={!!isThoughtProcessOpened}
                                 setThoughtProcessOpened={setThoughtProcessOpened}
+                                manuallySelectedIntent={manuallySelectedIntent}
+                                setManuallySelectedIntent={setManuallySelectedIntent}
                             />
                         ) : (
                             isLoading &&

@@ -559,7 +559,8 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             serverEndpoint: auth.serverEndpoint,
             endpointHistory: [...endpoints],
             experimentalNoodle: configuration.experimentalNoodle,
-            smartApply: this.isSmartApplyEnabled(),
+            // Disable smart apply codeblock toolbar when agentic chat is enabled.
+            smartApply: this.isSmartApplyEnabled() && !experimentalAgenticChatEnabled,
             hasEditCapability: this.hasEditCapability(),
             webviewType,
             multipleWebviewsEnabled: !sidebarViewOnly,
