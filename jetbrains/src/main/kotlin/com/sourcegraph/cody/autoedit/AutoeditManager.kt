@@ -17,7 +17,7 @@ class AutoeditManager(private val project: Project) {
   var activeAutoeditEditor: Editor? = null
     private set
 
-  fun showAutoEdit(editor: Editor, item: AutocompleteEditItem) {
+  fun showAutoedit(editor: Editor, item: AutocompleteEditItem) {
     val virtualFile = editor.virtualFile ?: return
 
     activeAutoeditEditor = editor
