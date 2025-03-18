@@ -12,26 +12,14 @@ import com.intellij.diff.util.DiffUtil
 import com.intellij.diff.util.TextDiffType
 import com.intellij.ide.DataManager
 import com.intellij.openapi.Disposable
-import com.intellij.openapi.actionSystem.ActionManager
-import com.intellij.openapi.actionSystem.ActionPlaces
 import com.intellij.openapi.actionSystem.ActionToolbar
-import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.DataProvider
-import com.intellij.openapi.actionSystem.DefaultActionGroup
-import com.intellij.openapi.actionSystem.ex.ActionUtil
 import com.intellij.openapi.application.ApplicationManager
-import com.intellij.openapi.editor.Document
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.LogicalPosition
-import com.intellij.openapi.editor.colors.EditorColors
 import com.intellij.openapi.editor.ex.EditorEx
-import com.intellij.openapi.editor.highlighter.EditorHighlighterFactory
-import com.intellij.openapi.editor.highlighter.FragmentedEditorHighlighter
 import com.intellij.openapi.editor.markup.RangeHighlighter
-import com.intellij.openapi.fileTypes.FileType
-import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
-import com.intellij.openapi.util.TextRange
 import com.intellij.ui.EditorTextField
 import com.intellij.ui.ExperimentalUI
 import com.intellij.ui.Gray
@@ -60,7 +48,6 @@ import javax.swing.BorderFactory
 import javax.swing.JComponent
 import javax.swing.JPanel
 import javax.swing.SwingUtilities
-import javax.swing.border.Border
 
 /** This is a custom impl of [com.intellij.openapi.vcs.ex.LineStatusMarkerPopupPanel] */
 class AutoeditLineStatusMarkerPopupPanel
@@ -223,92 +210,11 @@ private constructor(
       }
     }
 
-    fun createTextField(editor: Editor, content: String): EditorTextField {
-      val field = EditorTextField(content)
-      field.border = null
-      field.setOneLineMode(false)
-      field.ensureWillComputePreferredSize()
-      field.setFontInheritedFromLAF(false)
-
-      field.addSettingsProvider { uEditor: EditorEx ->
-        uEditor.setVerticalScrollbarVisible(true)
-        uEditor.setHorizontalScrollbarVisible(true)
-        uEditor.settings.isUseSoftWraps = false
-
-        uEditor.isRendererMode = true
-        uEditor.setBorder(null)
-
-        uEditor.colorsScheme = editor.colorsScheme
-        uEditor.backgroundColor = getEditorBackgroundColor(editor)
-        uEditor.settings.isCaretRowShown = false
-
-        uEditor.settings.setTabSize(editor.settings.getTabSize(editor.project))
-        uEditor.settings.setUseTabCharacter(editor.settings.isUseTabCharacter(editor.project))
-      }
-
-      return field
-    }
-
-    fun createEditorComponent(editor: Editor, textField: EditorTextField): JComponent {
-      val editorComponent: JPanel = JBUI.Panels.simplePanel(textField)
-      editorComponent.border = createEditorFragmentBorder()
-      editorComponent.background = getEditorBackgroundColor(editor)
-      return editorComponent
-    }
-
-    fun createEditorFragmentBorder(): Border {
-      val outsideEditorBorder = JBUI.Borders.customLine(borderColor, 1)
-      val insideEditorBorder = JBUI.Borders.empty(2)
-      return BorderFactory.createCompoundBorder(outsideEditorBorder, insideEditorBorder)
-    }
-
-    fun getEditorBackgroundColor(editor: Editor): Color {
-      val color = editor.colorsScheme.getColor(EditorColors.CHANGED_LINES_POPUP)
-      return color ?: EditorFragmentComponent.getBackgroundColor(editor)
-    }
-
-    val borderColor: Color
+      val borderColor: Color
       get() =
           JBColor.namedColor("VersionControl.MarkerPopup.borderColor", JBColor(Gray._206, Gray._75))
 
-    fun buildToolbar(
-        editor: Editor,
-        actions: List<AnAction>,
-        parentDisposable: Disposable
-    ): ActionToolbar {
-      val editorComponent = editor.component
-      for (action in actions) {
-        DiffUtil.registerAction(action, editorComponent)
-      }
-
-      Disposer.register(parentDisposable) {
-        ActionUtil.getActions(editorComponent).removeAll(actions)
-      }
-
-      val toolbar =
-          ActionManager.getInstance()
-              .createActionToolbar(ActionPlaces.TOOLBAR, DefaultActionGroup(actions), true)
-      toolbar.setReservePlaceAutoPopupIcon(false)
-      return toolbar
-    }
-
-    fun installBaseEditorSyntaxHighlighters(
-        project: Project?,
-        textField: EditorTextField,
-        vcsDocument: Document,
-        vcsTextRange: TextRange,
-        fileType: FileType
-    ) {
-      val highlighter =
-          EditorHighlighterFactory.getInstance().createEditorHighlighter(project, fileType)
-      highlighter.setText(vcsDocument.immutableCharSequence)
-      val fragmentedHighlighter = FragmentedEditorHighlighter(highlighter, vcsTextRange)
-      textField.addSettingsProvider { uEditor: EditorEx ->
-        uEditor.highlighter = fragmentedHighlighter
-      }
-    }
-
-    fun installPopupEditorWordHighlighters(
+      fun installPopupEditorWordHighlighters(
         textField: EditorTextField,
         wordDiff: List<DiffFragment>?
     ) {
