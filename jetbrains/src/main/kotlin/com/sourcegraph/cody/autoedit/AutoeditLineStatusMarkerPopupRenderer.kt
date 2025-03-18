@@ -29,7 +29,7 @@ class AutoeditLineStatusMarkerPopupRenderer(tracker: LineStatusTrackerI<*>) :
     return mutableListOf()
   }
 
-  override fun shouldPaintGutter() = true // TODO: do we want it?
+  override fun shouldPaintGutter() = true
 
   override fun showHintAt(editor: Editor, range: Range, mousePosition: Point?) {
     if (!myTracker.isValid()) return
@@ -53,12 +53,12 @@ class AutoeditLineStatusMarkerPopupRenderer(tracker: LineStatusTrackerI<*>) :
       editorComponent = LineStatusMarkerPopupPanel.createEditorComponent(editor, textField)
     }
 
-    val actions: List<AnAction> = createToolbarActions(editor, range, mousePosition)
-    val toolbar = LineStatusMarkerPopupPanel.buildToolbar(editor, actions, disposable)
+    if (editorComponent == null) {
+      disposable.dispose()
+      return
+    }
 
-    val additionalInfoPanel = createAdditionalInfoPanel(editor, range, mousePosition, disposable)
-
-    // todo: consider deriving this from `originalText`
+    // Find max column in the range
     val column =
         editor.document.text
             .lines()
@@ -69,7 +69,7 @@ class AutoeditLineStatusMarkerPopupRenderer(tracker: LineStatusTrackerI<*>) :
     val logicalPosition = LogicalPosition(range.line1, column + 4)
 
     AutoeditLineStatusMarkerPopupPanel.showPopupAt(
-        editor, toolbar, editorComponent, additionalInfoPanel, logicalPosition, disposable, null)
+        editor, editorComponent, logicalPosition, disposable)
   }
 
   private fun installWordDiff(
