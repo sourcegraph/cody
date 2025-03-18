@@ -83,8 +83,9 @@ function parseEventData(
             }
             return { type: eventType, error: data.error }
         }
-        case 'done':
+        case 'done': {
             return { type: eventType }
+        }
     }
 }
 

@@ -7,9 +7,11 @@ import {
     type MessagePart,
     type ModelContextWindow,
     type ProcessingStep,
+    PromptString,
     type RankedContext,
     type SerializedChatInteraction,
     type SerializedChatTranscript,
+    type ToolContentPart,
     distinctUntilChanged,
     errorToChatError,
     modelsService,
@@ -154,7 +156,7 @@ export class ChatBuilder {
         this.changeNotifications.next()
     }
 
-    public setLastMessageContent(content: MessagePart[]): void {
+    private setLastMessageContent(content: MessagePart[]): void {
         const lastMessage = this.messages.at(-1)
         if (!lastMessage) {
             throw new Error('no last message')
@@ -340,6 +342,126 @@ export class ChatBuilder {
             interactions,
         }
         return result
+    }
+
+    /**
+     * Unified method to append any message part to any speaker.
+     * Handles creating new messages or appending to existing ones.
+     */
+    public appendMessagePart(
+        part: MessagePart,
+        speaker: 'human' | 'assistant',
+        model?: ChatModel
+    ): void {
+        const lastMessage = this.messages.at(-1)
+        const isNewMessage = !lastMessage || lastMessage.speaker !== speaker
+
+        if (isNewMessage) {
+            // Create a new message for this part
+            const content = [part]
+            const text = this.computeTextFromParts(content)
+
+            if (speaker === 'human') {
+                this.addHumanMessage({
+                    text: PromptString.unsafe_fromUserQuery(text),
+                    content,
+                })
+            } else {
+                this.addBotMessage(
+                    {
+                        text: PromptString.unsafe_fromLLMResponse(text),
+                        content,
+                    },
+                    model || ChatBuilder.NO_MODEL
+                )
+            }
+        } else {
+            // Append to existing message
+            const existingContent = lastMessage.content || []
+            const updatedContent = [...existingContent, part]
+            this.setLastMessageContent(updatedContent)
+
+            // Update the text representation as well
+            const updatedText = this.computeTextFromParts(updatedContent)
+            if (speaker === 'human') {
+                lastMessage.text = PromptString.unsafe_fromUserQuery(updatedText)
+            } else {
+                lastMessage.text = PromptString.unsafe_fromLLMResponse(updatedText)
+            }
+        }
+
+        this.changeNotifications.next()
+    }
+
+    /**
+     * Improved method to handle tool parts specifically, with clean replacement logic
+     */
+    public appendToolPart(
+        toolContent: ToolContentPart,
+        speaker: 'human' | 'assistant' = 'human',
+        model?: ChatModel
+    ): void {
+        const lastMessage = this.messages.at(-1)
+
+        // Nothing to replace if no message or no content
+        if (!lastMessage || !lastMessage.content || lastMessage.speaker !== speaker) {
+            this.appendMessagePart(toolContent, speaker, model)
+            return
+        }
+
+        // Try to find and replace an existing tool with the same ID
+        const toolId = toolContent.id
+        const existingToolIndex = lastMessage.content.findIndex(
+            part => part.type === 'function' && (part as ToolContentPart).id === toolId
+        )
+
+        if (existingToolIndex >= 0) {
+            // Replace the existing tool
+            const updatedContent = [...lastMessage.content]
+            updatedContent[existingToolIndex] = toolContent
+            this.setLastMessageContent(updatedContent)
+
+            // Update the message text to reflect the tool result
+            if (toolContent.result) {
+                const updatedText = this.computeTextFromParts(updatedContent)
+                if (speaker === 'human') {
+                    lastMessage.text = PromptString.unsafe_fromUserQuery(updatedText)
+                } else {
+                    lastMessage.text = PromptString.unsafe_fromLLMResponse(updatedText)
+                }
+            }
+        } else {
+            // No existing tool to replace, just append
+            this.appendMessagePart(toolContent, speaker, model)
+        }
+    }
+
+    /**
+     * Compute text representation from message parts
+     * Intelligently combines text parts and tool results
+     */
+    private computeTextFromParts(parts: MessagePart[]): string {
+        const textParts: string[] = []
+
+        for (const part of parts) {
+            if (part.type === 'text') {
+                textParts.push((part as { type: 'text'; text: string }).text)
+            } else if (part.type === 'function' && (part as ToolContentPart).result) {
+                // For function parts with results, include the result text
+                textParts.push(`\n${(part as ToolContentPart).result}`)
+            }
+        }
+
+        return textParts.join('\n').trim()
+    }
+
+    // Simplified methods that use the unified approach
+    public appendHumanToolPart(toolContent: ToolContentPart): void {
+        this.appendToolPart(toolContent, 'human')
+    }
+
+    public appendAssistantToolPart(toolContent: ToolContentPart, model: ChatModel): void {
+        this.appendToolPart(toolContent, 'assistant', model)
     }
 }
 

@@ -68,6 +68,10 @@ export async function getContextFromRelativePath(path: string): Promise<ContextI
         if (!currentWorkspaceURI) {
             return null
         }
+        if (path.startsWith(currentWorkspaceURI.path)) {
+            path = path.substring(currentWorkspaceURI.path.length)
+        }
+
         // Combine the workspace URI with the path to get the URI of the file
         const file = vscode.Uri.joinPath(currentWorkspaceURI, path)
         if (await contextFiltersProvider.isUriIgnored(file)) {

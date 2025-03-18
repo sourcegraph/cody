@@ -85,6 +85,11 @@ export function isUniqueContextItem(itemToAdd: ContextItem, uniqueItems: Context
             if (!itemToAddRange && equalTrimmedContent(item, itemToAdd)) {
                 return false
             }
+
+            // Prevent duplicate user-added items with same path and no range
+            if (isUserAddedItem(itemToAdd) && isUserAddedItem(item) && !itemToAddRange && !itemRange) {
+                return false
+            }
         }
     }
 
