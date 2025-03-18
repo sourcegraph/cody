@@ -122,6 +122,7 @@ async function replaceInFile(
         // Save history and perform replacement
         const timestamp = EditHistoryManager.saveHistory(uri, content)
         const newContent = parts.join(newStr || '')
+
         await fileOps.write(uri, newContent)
 
         // Open document and show diff

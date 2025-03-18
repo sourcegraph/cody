@@ -188,9 +188,9 @@ export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps
                         smartApplyState,
                         guardrails,
                         isMessageLoading,
+                        regex,
                         manuallySelectedIntent,
-                        setManuallySelectedIntent,
-                        regex
+                        setManuallySelectedIntent
                     )
                 } else {
                     buttons = createButtons(

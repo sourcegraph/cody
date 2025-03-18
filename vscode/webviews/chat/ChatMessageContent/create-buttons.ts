@@ -1,4 +1,4 @@
-import { type ChatMessage, type Guardrails, isError, logDebug } from '@sourcegraph/cody-shared'
+import { type ChatMessage, type Guardrails, isError } from '@sourcegraph/cody-shared'
 import type { FixupTaskID } from '../../../src/non-stop/FixupTask'
 import { CodyTaskState } from '../../../src/non-stop/state'
 import {
@@ -157,7 +157,7 @@ export function createButtonsExperimentalUI(
     actionButtons.className = styles.actionButtons
 
     // For 'agentic' intent, position the buttons container on the very left
-    if (humanMessage?.intent === 'agentic') {
+    if (manuallySelectedIntent === 'agentic') {
         buttons.style.justifyContent = 'flex-start'
         actionButtons.style.marginLeft = '0'
     }
@@ -169,7 +169,7 @@ export function createButtonsExperimentalUI(
     metadataContainer.className = styles.metadataContainer
 
     // Add guardrails if needed
-    if (guardrails && humanMessage?.intent !== 'agentic') {
+    if (guardrails && manuallySelectedIntent !== 'agentic') {
         const container = document.createElement('div')
         container.classList.add(styles.attributionContainer)
         metadataContainer.append(container)
@@ -210,17 +210,22 @@ export function createButtonsExperimentalUI(
 
     buttons.appendChild(metadataContainer)
 
-    if (smartApply && smartApplyState === CodyTaskState.Applied && smartApplyId) {
+    if (
+        manuallySelectedIntent !== 'agentic' &&
+        smartApply &&
+        smartApplyState === CodyTaskState.Applied &&
+        smartApplyId
+    ) {
         const acceptButton = createAcceptButton(smartApplyId, smartApply)
         const rejectButton = createRejectButton(smartApplyId, smartApply)
         actionButtons.append(acceptButton, rejectButton)
     } else {
-        console.log('create-buttons, intent is', humanMessage?.intent || 'NONE')
-        logDebug('create-buttons, intent is', humanMessage?.intent || 'NONE')
-        if (humanMessage?.intent !== 'agentic') {
-            const copyButton = createCopyButton(preText, copyButtonOnSubmit)
-            actionButtons.append(copyButton)
-        }
+        const copyButton = createCopyButton(
+            preText,
+            copyButtonOnSubmit,
+            manuallySelectedIntent === 'agentic'
+        )
+        actionButtons.append(copyButton)
 
         if (smartApply && smartApplyId) {
             // Execute button is only available in VS Code.
@@ -233,25 +238,30 @@ export function createButtonsExperimentalUI(
                           humanMessage,
                           smartApply,
                           smartApplyId,
+                          manuallySelectedIntent === 'agentic',
                           smartApplyState,
                           codeBlockName,
                           regex
                       )
-            smartButton.title = isExecutable ? 'Execute in Terminal' : 'Apply in Editor'
+            if (manuallySelectedIntent !== 'agentic') {
+                smartButton.title = isExecutable ? 'Execute in Terminal' : 'Apply in Editor'
+            }
             actionButtons.append(smartButton)
         }
 
-        if (config.clientCapabilities.isVSCode && humanMessage?.intent !== 'agentic') {
-            // VS Code provides additional support for rendering an OS-native dropdown, that has some
-            // additional benefits. Mainly that it can "break out" of the webview.
-            // TODO: A dropdown would be useful for other clients too, we should consider building
-            // a generic web-based dropdown component that can be used by any client.
-            const actionsDropdown = createActionsDropdown(preText)
-            actionButtons.append(actionsDropdown)
-        } else {
-            const insertButton = createInsertButton(preText, insertButtonOnSubmit)
-            const saveButton = createSaveButton(preText, insertButtonOnSubmit)
-            actionButtons.append(insertButton, saveButton)
+        if (manuallySelectedIntent !== 'agentic') {
+            if (config.clientCapabilities.isVSCode) {
+                // VS Code provides additional support for rendering an OS-native dropdown, that has some
+                // additional benefits. Mainly that it can "break out" of the webview.
+                // TODO: A dropdown would be useful for other clients too, we should consider building
+                // a generic web-based dropdown component that can be used by any client.
+                const actionsDropdown = createActionsDropdown(preText)
+                actionButtons.append(actionsDropdown)
+            } else {
+                const insertButton = createInsertButton(preText, insertButtonOnSubmit)
+                const saveButton = createSaveButton(preText, insertButtonOnSubmit)
+                actionButtons.append(insertButton, saveButton)
+            }
         }
     }
 
@@ -354,10 +364,13 @@ function wrapTextWithResponsiveSpan(text: string): string {
 
 function createCopyButton(
     preText: string,
-    onCopy: CodeBlockActionsProps['copyButtonOnSubmit']
+    onCopy: CodeBlockActionsProps['copyButtonOnSubmit'],
+    isAgenticMode: boolean
 ): HTMLElement {
     const button = document.createElement('button')
-    button.innerHTML = wrapTextWithResponsiveSpan('Copy')
+    if (!isAgenticMode) {
+        button.innerHTML = wrapTextWithResponsiveSpan('Copy')
+    }
     button.className = styles.button
 
     const iconContainer = document.createElement('div')
@@ -368,7 +381,9 @@ function createCopyButton(
     button.addEventListener('click', () => {
         iconContainer.innerHTML = CheckCodeBlockIcon
         iconContainer.className = styles.iconContainer
-        button.innerHTML = wrapTextWithResponsiveSpan('Copied')
+        if (!isAgenticMode) {
+            button.innerHTML = wrapTextWithResponsiveSpan('Copied')
+        }
         button.className = styles.button
         button.prepend(iconContainer)
 
@@ -378,7 +393,9 @@ function createCopyButton(
             // Reset the icon to the original.
             iconContainer.innerHTML = CopyCodeBlockIcon
             iconContainer.className = styles.iconContainer
-            button.innerHTML = wrapTextWithResponsiveSpan('Copy')
+            if (!isAgenticMode) {
+                button.innerHTML = wrapTextWithResponsiveSpan('Copy')
+            }
             button.className = styles.button
             button.prepend(iconContainer)
         }, 5000)
@@ -395,6 +412,7 @@ function createApplyButton(
     humanMessage: PriorHumanMessageInfo | null,
     smartApply: CodeBlockActionsProps['smartApply'],
     smartApplyId: FixupTaskID,
+    isAgenticMode: boolean,
     smartApplyState?: CodyTaskState,
     fileName?: string,
     regex?: string
@@ -403,14 +421,16 @@ function createApplyButton(
     button.className = styles.button
     switch (smartApplyState) {
         case 'Working': {
-            button.innerHTML = wrapTextWithResponsiveSpan('Opening File...')
+            button.innerHTML = wrapTextWithResponsiveSpan('Open Diff')
             button.disabled = true
 
             // Add Sparkle Icon
-            const iconContainer = document.createElement('div')
-            iconContainer.className = styles.iconContainer
-            iconContainer.innerHTML = SparkleIcon
-            button.prepend(iconContainer)
+            if (!isAgenticMode) {
+                const iconContainer = document.createElement('div')
+                iconContainer.className = styles.iconContainer
+                iconContainer.innerHTML = SparkleIcon
+                button.prepend(iconContainer)
+            }
 
             break
         }
@@ -419,10 +439,12 @@ function createApplyButton(
             button.innerHTML = wrapTextWithResponsiveSpan('Open Diff')
 
             // Add Sparkle Icon
-            const iconContainer = document.createElement('div')
-            iconContainer.className = styles.iconContainer
-            iconContainer.innerHTML = SparkleIcon
-            button.prepend(iconContainer)
+            if (!isAgenticMode) {
+                const iconContainer = document.createElement('div')
+                iconContainer.className = styles.iconContainer
+                iconContainer.innerHTML = SparkleIcon
+                button.prepend(iconContainer)
+            }
 
             button.addEventListener('click', () =>
                 smartApply.onSubmit({
@@ -440,10 +462,12 @@ function createApplyButton(
             button.innerHTML = wrapTextWithResponsiveSpan('Open Diff')
 
             // Add Sparkle Icon
-            const iconContainer = document.createElement('div')
-            iconContainer.className = styles.iconContainer
-            iconContainer.innerHTML = SparkleIcon
-            button.prepend(iconContainer)
+            if (!isAgenticMode) {
+                const iconContainer = document.createElement('div')
+                iconContainer.className = styles.iconContainer
+                iconContainer.innerHTML = SparkleIcon
+                button.prepend(iconContainer)
+            }
 
             button.addEventListener('click', () =>
                 smartApply.onSubmit({
