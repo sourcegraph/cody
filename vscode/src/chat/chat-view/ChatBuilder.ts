@@ -453,10 +453,6 @@ export class ChatBuilder {
     public appendHumanToolPart(toolContent: ToolContentPart): void {
         this.appendToolPart(toolContent, 'human')
     }
-
-    public appendAssistantToolPart(toolContent: ToolContentPart, model: ChatModel): void {
-        this.appendToolPart(toolContent, 'assistant', model)
-    }
 }
 
 function messageToSerializedChatInteraction(

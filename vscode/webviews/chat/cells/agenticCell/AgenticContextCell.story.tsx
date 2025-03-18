@@ -4,7 +4,7 @@ import { VSCodeWebview } from '../../../storybook/VSCodeStoryDecorator'
 import { AgenticContextCell } from './AgenticContextCell'
 
 const meta: Meta<typeof AgenticContextCell> = {
-    title: 'agentic/AgenticContextCell',
+    title: 'cody/AgenticContextCell',
     component: AgenticContextCell,
     decorators: [VSCodeWebview],
 }

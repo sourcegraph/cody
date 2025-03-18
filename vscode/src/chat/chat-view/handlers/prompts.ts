@@ -54,7 +54,7 @@ export function buildAgentPrompt(): string {
 }
 
 const CURRENT_EDITOR_STATE_PROMPT = `<user_env>
-Name of file that the user is currently looking at: '{{USER_INFO_CURRENT_FILE}}' - use the file tool to fetch the content of this file if needed.
+Opened File: '{{USER_INFO_CURRENT_FILE}}' - might not related to my query. Use the file tool to fetch the content of this file if needed.
 </user_env>`
 
 export function getEditorStatePrompt(): string {

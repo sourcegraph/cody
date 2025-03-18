@@ -19,7 +19,7 @@ export async function getCodebaseSearchTool(
     contextRetriever: Pick<ContextRetriever, 'retrieveContext' | 'computeDidYouMean'>,
     span: Span
 ): Promise<AgentTool> {
-    const searchTool = {
+    const searchTool: AgentTool = {
         spec: {
             name: 'code_search',
             description: 'Perform a keyword query search in the codebase.',
@@ -36,7 +36,7 @@ export async function getCodebaseSearchTool(
 
             const output = [`Searched '${validInput.query}'`]
 
-            const contextItems = await contextRetriever.retrieveContext(
+            const searches = await contextRetriever.retrieveContext(
                 toStructuredMentions([repo]),
                 PromptString.unsafe_fromLLMResponse(validInput.query),
                 span,
@@ -44,14 +44,15 @@ export async function getCodebaseSearchTool(
                 true
             )
 
-            if (!contextItems.length) {
+            if (!searches.length) {
                 output.push('No results found.')
                 return { text: output.join('\n') }
             }
 
-            output.push(`Found ${contextItems.length} results`)
+            output.push(`Found ${searches.length} results`)
 
-            const resultContext = contextItems.map(({ uri, content }) => {
+            // Only show the last 5 results
+            const resultContext = searches.map(({ uri, content }) => {
                 if (!content?.length) return ''
                 const remote = !uri.scheme.startsWith('file') && uri.path?.split('/-/blob/')?.pop()
                 return remote || displayPath(uri)
@@ -61,11 +62,11 @@ export async function getCodebaseSearchTool(
 
             return {
                 text: output.join('\n'),
-                contextItems,
-                searchResult: generateSearchToolResults(validInput.query, contextItems),
+                contextItems: searches.splice(0, searches.length - 5),
+                searchResult: generateSearchToolResults(validInput.query, searches),
             }
         },
-    } satisfies AgentTool
+    }
 
     return searchTool
 }
@@ -75,6 +76,7 @@ function generateSearchToolResults(query: string, items: ContextItem[]): SearchR
         query,
         results: items.map(item => ({
             fileName: getFileName(item.uri),
+            uri: item.uri,
             lineNumber: createRange(item.range?.start?.line, item.range?.end?.line),
             type: 'code',
         })),

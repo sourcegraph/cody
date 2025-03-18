@@ -1,5 +1,6 @@
-import type { FileDiff, LineChange } from '@sourcegraph/cody-shared'
+import { type FileDiff, type LineChange, displayPath } from '@sourcegraph/cody-shared'
 import * as Diff from 'diff'
+import type { URI } from 'vscode-uri'
 
 /**
  * Generate a markdown git diff with line numbers, showing only the section with changes
@@ -127,8 +128,9 @@ export function diffWithLineNum(oldText: string, newText: string): string {
     return output
 }
 
-export function getFileDiff(fileName: string, oldText: string, newText: string): FileDiff {
+export function getFileDiff(uri: URI, oldText: string, newText: string): FileDiff {
     const diff = Diff.diffLines(oldText, newText)
+    const fileName = displayPath(uri)
     const changes: LineChange[] = []
     const total = {
         added: 0,
@@ -189,6 +191,7 @@ export function getFileDiff(fileName: string, oldText: string, newText: string):
 
     return {
         fileName,
+        uri,
         total,
         changes,
     }

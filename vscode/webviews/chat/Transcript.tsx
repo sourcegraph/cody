@@ -6,7 +6,6 @@ import {
     type NLSSearchDynamicFilter,
     REMOTE_FILE_PROVIDER_URI,
     type SerializedPromptEditorValue,
-    type ToolContentPart,
     deserializeContextItem,
     isAbortErrorOrSocketHangUp,
     serializedPromptEditorStateFromText,
@@ -534,17 +533,12 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
         [humanMessage]
     )
 
-    // Find thinking content from content parts if available
     const toolContent = useMemo(() => {
-        if (!humanMessage.content) {
+        if (humanMessage?.index === 0 || !humanMessage?.content) {
             return undefined
         }
-
-        const tools = humanMessage?.content?.filter(c => c.type === 'function') as
-            | ToolContentPart[]
-            | undefined
-        return tools || undefined
-    }, [humanMessage])
+        return humanMessage?.content?.filter(c => c.type === 'function')
+    }, [humanMessage?.index, humanMessage?.content])
 
     return (
         <>
@@ -558,6 +552,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                         output={tool.output}
                         result={tool.result}
                         className="w-full"
+                        vscodeAPI={vscodeAPI}
                     />
                 ))
             ) : (
@@ -600,7 +595,8 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                 isContextLoading &&
                 assistantMessage?.isLoading && <ApprovalCell vscodeAPI={vscodeAPI} />}
 
-            {!usingToolCody &&
+            {!toolContent &&
+                !usingToolCody &&
                 !(humanMessage.agent && isContextLoading) &&
                 (humanMessage.contextFiles || assistantMessage || isContextLoading) &&
                 !isSearchIntent && (

@@ -12,6 +12,15 @@ export default meta
 
 type Story = StoryObj<typeof OutputStatusCell>
 
+export const Default: Story = {
+    args: {
+        title: 'Process Output',
+        status: 'info',
+        result: 'This is the default output content',
+        defaultOpen: false,
+    },
+}
+
 export const Info: Story = {
     args: {
         title: 'Process Output',

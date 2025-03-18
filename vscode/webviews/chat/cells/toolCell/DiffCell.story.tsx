@@ -1,10 +1,12 @@
 import type { FileDiff } from '@sourcegraph/cody-shared'
 import type { Meta, StoryObj } from '@storybook/react'
+import { URI } from 'vscode-uri'
 import { VSCodeWebview } from '../../../storybook/VSCodeStoryDecorator'
-import { CodeDiffCell } from './DiffCell'
+import { DiffCell } from './DiffCell'
 
-const sampleDiff = {
+const diffStoryMock = {
     fileName: 'ToolsStatus.tsx',
+    uri: URI.file('path/to/ToolsStatus.tsx'),
     total: {
         added: 6,
         removed: 69,
@@ -53,33 +55,33 @@ const sampleDiff = {
     ],
 } satisfies FileDiff
 
-const meta: Meta<typeof CodeDiffCell> = {
-    title: 'agentic/CodeDiffCell',
-    component: CodeDiffCell,
+const meta: Meta<typeof DiffCell> = {
+    title: 'agentic/DiffCell',
+    component: DiffCell,
     decorators: [VSCodeWebview],
 }
 
 export default meta
 
-type Story = StoryObj<typeof CodeDiffCell>
+type Story = StoryObj<typeof DiffCell>
 
 export const Default: Story = {
     args: {
-        result: { ...sampleDiff },
+        result: { ...diffStoryMock },
         defaultOpen: true,
     },
 }
 
 export const CollapsedByDefault: Story = {
     args: {
-        result: { ...sampleDiff },
+        result: { ...diffStoryMock },
         defaultOpen: false,
     },
 }
 
 export const CustomClassName: Story = {
     args: {
-        result: { ...sampleDiff },
+        result: { ...diffStoryMock },
         className: 'tw-my-4 tw-shadow-md',
         defaultOpen: true,
     },
@@ -89,6 +91,7 @@ export const LargeDiff: Story = {
     args: {
         defaultOpen: true,
         result: {
+            uri: URI.file('path/to/LargeComponent.tsx'),
             fileName: 'LargeComponent.tsx',
             total: {
                 added: 42,

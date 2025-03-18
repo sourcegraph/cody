@@ -1,3 +1,4 @@
+import type { URI } from 'vscode-uri'
 import type { SerializedChatMessage } from '../../chat/transcript/messages'
 import type { PromptString } from '../../prompt/prompt-string'
 
@@ -87,6 +88,7 @@ export interface ExtendedToolOutput {
     searchResult?: SearchResultView
     diffResult?: FileDiff
     bashResult?: TerminalLine[]
+    fileResult?: FileView
 }
 
 export interface CompletionUsage {
@@ -157,8 +159,13 @@ export type CompletionGeneratorValue =
     | { type: 'complete' }
     | { type: 'error'; error: Error; statusCode?: number }
 
-export interface FileDiff {
+export interface FileView {
     fileName: string
+    uri: URI
+    content?: string
+}
+
+export interface FileDiff extends FileView {
     total: TotalLinesChanged
     changes: LineChange[]
 }
@@ -180,8 +187,7 @@ export interface SearchResultView {
     results: SearchResult[]
 }
 
-interface SearchResult {
-    fileName: string
+interface SearchResult extends FileView {
     lineNumber?: string
     preview?: string
     type: 'file' | 'folder' | 'code'

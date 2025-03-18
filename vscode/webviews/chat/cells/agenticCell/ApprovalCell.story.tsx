@@ -3,7 +3,7 @@ import { VSCodeWebview } from '../../../storybook/VSCodeStoryDecorator'
 import ApprovalCell from './ApprovalCell'
 
 const meta: Meta<typeof ApprovalCell> = {
-    title: 'agentic/ApprovalCell',
+    title: 'cody/ApprovalCell',
     component: ApprovalCell,
     decorators: [VSCodeWebview],
 }

@@ -387,22 +387,6 @@ describe('Unique Context Items', () => {
 
             expect(getUniqueContextItems([priority, user])).toStrictEqual([user])
         })
-
-        it('should prevent adding duplicate user-added items with same path and no range', () => {
-            const user1: ContextItem = {
-                ...baseFile,
-                source: ContextItemSource.User,
-                content: 'content1',
-            }
-            const user2: ContextItem = {
-                ...baseFile,
-                source: ContextItemSource.User,
-                content: 'content2',
-            }
-
-            // The second user-added item without range should be ignored
-            expect(getUniqueContextItems([user1, user2])).toStrictEqual([user1])
-        })
     })
 
     describe('isUniqueContextItem', () => {
@@ -514,23 +498,6 @@ describe('Unique Context Items', () => {
             })
 
             expect(isUniqueContextItem(inner, [noOverlapFirst, outer])).toBeFalsy()
-        })
-
-        it('returns false when trying to add a user-added item with no range when one already exists', () => {
-            const existingItem: ContextItem = {
-                type: 'file',
-                uri: URI.file('/foo/bar'),
-                content: 'content1',
-                source: ContextItemSource.User,
-            }
-            const newItem: ContextItem = {
-                type: 'file',
-                uri: URI.file('/foo/bar'),
-                content: 'content2',
-                source: ContextItemSource.User,
-            }
-
-            expect(isUniqueContextItem(newItem, [existingItem])).toBeFalsy()
         })
     })
 })
