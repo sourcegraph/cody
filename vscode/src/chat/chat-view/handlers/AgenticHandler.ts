@@ -297,13 +297,11 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
     ): Promise<{ toolResult: ToolContentPart; contextItems?: ContextItem[] } | null> {
         // Find the appropriate tool
         const tool = this.tools.find(t => t.spec.name === toolCall.function.name)
-        if (!tool) return null
-
         // Update tool state to pending
         const toolState = toolStateMap.get(toolCall.id)
-        if (toolState) {
-            toolState.status = 'pending'
-        }
+        if (!tool || !toolState) return null
+
+        toolState.status = 'pending'
 
         try {
             // Execute the tool
