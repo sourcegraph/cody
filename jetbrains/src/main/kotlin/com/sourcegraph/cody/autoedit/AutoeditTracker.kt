@@ -8,6 +8,11 @@ import com.intellij.openapi.vcs.ex.Range
 import com.intellij.openapi.vfs.VirtualFile
 import java.util.BitSet
 
+/**
+ * We are using this LineStatusTrackerI API to effectively use
+ * [AutoeditLineStatusMarkerPopupRenderer] and [AutoeditLineStatusMarkerPopupPanel]. Most of these
+ * methods are not needed and are not used in our implementation.
+ */
 class AutoeditTracker(
     override val project: Project,
     override val disposable: Disposable,
@@ -18,65 +23,65 @@ class AutoeditTracker(
 ) : LineStatusTrackerI<Range> {
 
   override val isReleased: Boolean
-    get() = TODO("Not yet implemented")
+    get() = throw UnsupportedOperationException()
 
   override fun doFrozen(task: Runnable) {
-    TODO("Not yet implemented")
+    throw UnsupportedOperationException()
   }
 
   override fun findRange(range: Range): Range? {
-    TODO("Not yet implemented")
+    throw UnsupportedOperationException()
   }
 
   override fun getNextRange(line: Int): Range? {
-    TODO("Not yet implemented")
+    throw UnsupportedOperationException()
   }
 
   override fun getPrevRange(line: Int): Range? {
-    TODO("Not yet implemented")
+    throw UnsupportedOperationException()
   }
 
   override fun getRangeForLine(line: Int): Range? {
-    TODO("Not yet implemented")
+    throw UnsupportedOperationException()
   }
 
   override fun getRanges() = listOf(range)
 
   override fun getRangesForLines(lines: BitSet): List<Range>? {
-    TODO("Not yet implemented")
+    throw UnsupportedOperationException()
   }
 
   override fun isLineModified(line: Int): Boolean {
-    TODO("Not yet implemented")
+    throw UnsupportedOperationException()
   }
 
   override fun isOperational(): Boolean {
-    TODO("Not yet implemented")
+    throw UnsupportedOperationException()
   }
 
   override fun isRangeModified(startLine: Int, endLine: Int): Boolean {
-    TODO("Not yet implemented")
+    throw UnsupportedOperationException()
   }
 
   override fun isValid() = true
 
   override fun <T> readLock(task: () -> T): T {
-    TODO("Not yet implemented")
+    throw UnsupportedOperationException()
   }
 
   override fun rollbackChanges(range: Range) {
-    TODO("Not yet implemented")
+    throw UnsupportedOperationException()
   }
 
   override fun rollbackChanges(lines: BitSet) {
-    TODO("Not yet implemented")
+    throw UnsupportedOperationException()
   }
 
   override fun transferLineFromVcs(line: Int, approximate: Boolean): Int {
-    TODO("Not yet implemented")
+    throw UnsupportedOperationException()
   }
 
   override fun transferLineToVcs(line: Int, approximate: Boolean): Int {
-    TODO("Not yet implemented")
+    throw UnsupportedOperationException()
   }
 }
