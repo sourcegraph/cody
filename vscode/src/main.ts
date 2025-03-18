@@ -726,7 +726,7 @@ function registerAutoEdits({
                 featureFlagProvider.evaluateFeatureFlag(
                     FeatureFlag.CodyAutoEditExperimentEnabledFeatureFlag
                 ),
-                featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyAutoEditInlineRendering)
+                featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutoEditInlineRendering)
             )
                 .pipe(
                     distinctUntilChanged((a, b) => {

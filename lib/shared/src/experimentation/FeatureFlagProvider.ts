@@ -236,13 +236,13 @@ export class FeatureFlagProviderImpl implements FeatureFlagProvider {
         )
     }
 
-    private evaluatedFeatureFlagCache: Partial<Record<FeatureFlag, StoredLastValue<boolean>>> = {}
+    private featureFlagCache: Partial<Record<FeatureFlag, StoredLastValue<boolean>>> = {}
 
     /**
      * Observe the evaluated value of a feature flag.
      */
     public evaluateFeatureFlag(flagName: FeatureFlag): Observable<boolean> {
-        let entry = this.evaluatedFeatureFlagCache[flagName]
+        let entry = this.featureFlagCache[flagName]
 
         if (!entry) {
             // Whenever the auth status changes, we need to call `evaluateFeatureFlags` on the GraphQL
@@ -264,7 +264,7 @@ export class FeatureFlagProviderImpl implements FeatureFlagProvider {
                     )
                     .pipe(distinctUntilChanged(), shareReplay())
             )
-            this.evaluatedFeatureFlagCache[flagName] = entry
+            this.featureFlagCache[flagName] = entry
         }
 
         return entry.observable
@@ -275,10 +275,10 @@ export class FeatureFlagProviderImpl implements FeatureFlagProvider {
     }
 
     public dispose(): void {
-        for (const [, entry] of Object.entries(this.evaluatedFeatureFlagCache)) {
+        for (const [, entry] of Object.entries(this.featureFlagCache)) {
             entry.subscription.unsubscribe()
         }
-        this.evaluatedFeatureFlagCache = {}
+        this.featureFlagCache = {}
     }
 }
 

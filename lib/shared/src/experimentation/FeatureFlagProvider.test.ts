@@ -82,8 +82,8 @@ describe('FeatureFlagProvider', () => {
         expect(values).toContain(false)
     })
 
-    describe('evaluatedFeatureFlag', () => {
-        async function testEvaluatedFeatureFlag({
+    describe('evaluateFeatureFlag', () => {
+        async function testEvaluateFeatureFlag({
             expectInitialValues,
             updateMocks,
             expectFinalValues,
@@ -127,14 +127,14 @@ describe('FeatureFlagProvider', () => {
             vi.spyOn(graphqlClient, 'evaluateFeatureFlags').mockResolvedValue({
                 [FeatureFlag.TestFlagDoNotUse]: false,
             })
-            await testEvaluatedFeatureFlag({ expectInitialValues: [false], task })
+            await testEvaluateFeatureFlag({ expectInitialValues: [false], task })
         })
 
         it('should emit when value changes from true to false', async task => {
             vi.spyOn(graphqlClient, 'evaluateFeatureFlags').mockResolvedValue({
                 [FeatureFlag.TestFlagDoNotUse]: true,
             })
-            await testEvaluatedFeatureFlag({
+            await testEvaluateFeatureFlag({
                 expectInitialValues: [true],
                 updateMocks: () => {
                     vi.spyOn(graphqlClient, 'evaluateFeatureFlags').mockResolvedValue({
@@ -150,7 +150,7 @@ describe('FeatureFlagProvider', () => {
             vi.spyOn(graphqlClient, 'evaluateFeatureFlags').mockResolvedValue({
                 [FeatureFlag.TestFlagDoNotUse]: false,
             })
-            await testEvaluatedFeatureFlag({
+            await testEvaluateFeatureFlag({
                 expectInitialValues: [false],
                 updateMocks: () => {
                     vi.spyOn(graphqlClient, 'evaluateFeatureFlags').mockResolvedValue({

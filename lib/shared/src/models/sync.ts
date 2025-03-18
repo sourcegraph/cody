@@ -204,7 +204,7 @@ export function syncModels({
                                             FeatureFlag.CodyChatDefaultToClaude35Haiku
                                         ),
                                         enableToolCody,
-                                        featureFlagProvider.evaluatedFeatureFlag(
+                                        featureFlagProvider.evaluateFeatureFlag(
                                             FeatureFlag.LongContextWindow
                                         )
                                     ).pipe(

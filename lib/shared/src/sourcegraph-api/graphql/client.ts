@@ -49,7 +49,6 @@ import {
     FILE_MATCH_SEARCH_QUERY,
     FUZZY_FILES_QUERY,
     FUZZY_SYMBOLS_QUERY,
-    GET_FEATURE_FLAGS_QUERY,
     GET_REMOTE_FILE_QUERY,
     GET_URL_CONTENT_QUERY,
     HIGHLIGHTED_FILE_QUERY,
@@ -612,10 +611,6 @@ export interface CurrentUserInfo {
 interface EvaluatedFeatureFlag {
     name: string
     value: boolean
-}
-
-interface EvaluatedFeatureFlagsResponse {
-    evaluatedFeatureFlags: EvaluatedFeatureFlag[]
 }
 
 interface EvaluateFeatureFlagResponse {
@@ -1544,23 +1539,6 @@ export class SourcegraphGraphQLAPIClient {
             },
             signal
         ).then(response => extractDataOrError(response, data => data.snippetAttribution))
-    }
-
-    public async getEvaluatedFeatureFlags(
-        signal?: AbortSignal
-    ): Promise<Record<string, boolean> | Error> {
-        return this.fetchSourcegraphAPI<APIResponse<EvaluatedFeatureFlagsResponse>>(
-            GET_FEATURE_FLAGS_QUERY,
-            {},
-            signal
-        ).then(response => {
-            return extractDataOrError(response, data =>
-                data.evaluatedFeatureFlags.reduce((acc: Record<string, boolean>, { name, value }) => {
-                    acc[name] = value
-                    return acc
-                }, {})
-            )
-        })
     }
 
     public async evaluateFeatureFlags(
