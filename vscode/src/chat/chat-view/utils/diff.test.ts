@@ -1,5 +1,5 @@
+import { testFileUri } from '@sourcegraph/cody-shared'
 import { describe, expect, it } from 'vitest'
-import { URI } from 'vscode-uri'
 import { diffWithLineNum, getFileDiff } from './diff'
 
 describe('diffWithLineNum', () => {
@@ -133,7 +133,7 @@ describe('getFileDiff', () => {
         const oldText = 'First line\nSecond line'
         const newText = 'First line\nModified line'
         const filePath = 'path/to/file.ts'
-        const uri = URI.file(filePath)
+        const uri = testFileUri(filePath)
 
         const result = getFileDiff(uri, oldText, newText)
 
@@ -148,7 +148,7 @@ describe('getFileDiff', () => {
 
     it('should handle empty file contents', () => {
         const filePath = 'path/to/empty.ts'
-        const uri = URI.file(filePath)
+        const uri = testFileUri(filePath)
 
         const result = getFileDiff(uri, '', '')
 
@@ -164,7 +164,7 @@ describe('getFileDiff', () => {
     it('should handle new files', () => {
         const newText = 'First line\nSecond line'
         const filePath = 'path/to/new.ts'
-        const uri = URI.file(filePath)
+        const uri = testFileUri(filePath)
 
         const result = getFileDiff(uri, '', newText)
 
@@ -179,7 +179,7 @@ describe('getFileDiff', () => {
     it('should handle deleted files', () => {
         const oldText = 'First line\nSecond line'
         const filePath = 'path/to/deleted.ts'
-        const uri = URI.file(filePath)
+        const uri = testFileUri(filePath)
 
         const result = getFileDiff(uri, oldText, '')
 
@@ -196,7 +196,7 @@ describe('getFileDiff', () => {
         const newText =
             'Header line\nFirst paragraph with changes\nNew paragraph\nSecond paragraph\nFooter line with edits'
         const filePath = 'path/to/complex.md'
-        const uri = URI.file(filePath)
+        const uri = testFileUri(filePath)
 
         expect(getFileDiff(uri, oldText, newText)).toMatchSnapshot()
     })
