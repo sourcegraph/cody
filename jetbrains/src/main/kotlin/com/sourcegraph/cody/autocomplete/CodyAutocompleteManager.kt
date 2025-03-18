@@ -231,7 +231,7 @@ class CodyAutocompleteManager {
         runInEdt {
           editor.project
               ?.getService(AutoeditManager::class.java)
-              ?.showAutoEdit(editor, result.decoratedEditItems.first())
+              ?.showAutoedit(editor, result.decoratedEditItems.first())
         }
       } else if (result.inlineCompletionItems.isNotEmpty()) {
         WriteCommandAction.runWriteCommandAction(editor.project) {
