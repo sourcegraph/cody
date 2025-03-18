@@ -128,15 +128,12 @@ async function replaceInFile(
 
         // Generate output
         const diffMarkdown = diffWithLineNum(content, newContent)
-        const output = [`You updated ${fileName}:`, diffMarkdown]
+        const output = [`Edited ${fileName}`, diffMarkdown]
 
         // Show diff view
         const historyUri = uri.with({ scheme: 'cody-checkpoint' })
         const title = `History: ${fileName} (${new Date(timestamp).toLocaleString()})`
         await vscode.commands.executeCommand('vscode.diff', historyUri, uri, title)
-
-        // Get updated context for the file
-        const updatedContext = await getContextFromRelativePath(fileName)
 
         const diagnosticsOnEnd = getErrorDiagnostics(uri)
         if (diagnosticsOnEnd.length) {
@@ -146,9 +143,12 @@ async function replaceInFile(
             }
         }
 
+        // Get updated context for the file
+        const updatedContext = await getContextFromRelativePath(fileName)
+
         return {
             text: output.join('\n'),
-            contextItems: updatedContext ? [updatedContext] : undefined,
+            contextItems: updatedContext?.content ? [updatedContext] : undefined,
         }
     } catch (error: any) {
         return { text: `Failed to replace text in ${fileName}: ${error.message}` }

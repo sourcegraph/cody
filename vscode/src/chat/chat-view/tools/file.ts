@@ -26,6 +26,7 @@ export const getFileTool: AgentTool = {
                     '{{CONTENT}}',
                     context.content + '\nEOF'
                 ),
+                contextItems: [context],
             }
         } catch (error) {
             return {
