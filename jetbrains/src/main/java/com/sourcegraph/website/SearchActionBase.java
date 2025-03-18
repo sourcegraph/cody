@@ -7,7 +7,6 @@ import com.intellij.openapi.editor.Caret;
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.editor.SelectionModel;
-import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.TextRange;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -37,7 +36,7 @@ public abstract class SearchActionBase extends DumbAwareEDTAction {
     }
 
     //noinspection ConstantConditions selectedText != null, so the editor can't be null.
-    VirtualFile currentFile = FileDocumentManager.getInstance().getFile(editor.getDocument());
+    VirtualFile currentFile = editor.getVirtualFile();
     assert currentFile != null; // selectedText != null, so this can't be null.
 
     URLBuilder urlBuilder = new URLBuilder(project);
@@ -97,7 +96,7 @@ public abstract class SearchActionBase extends DumbAwareEDTAction {
   @Nullable
   private String getSelectedText(Editor editor) {
     Document currentDocument = editor.getDocument();
-    VirtualFile currentFile = FileDocumentManager.getInstance().getFile(currentDocument);
+    VirtualFile currentFile = editor.getVirtualFile();
     if (currentFile == null) {
       return null;
     }
