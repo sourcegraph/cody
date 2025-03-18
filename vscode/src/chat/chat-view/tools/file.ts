@@ -4,6 +4,8 @@ import { validateWithZod } from '../utils/input'
 import { zodToolSchema } from '../utils/parse'
 import { type GetFileInput, GetFileSchema } from './schema'
 
+const CONTEXT_TEMPLATE = '```{{FILENAME}}\n{{CONTENT}}\n```'
+
 export const getFileTool: AgentTool = {
     spec: {
         name: 'get_file',
@@ -15,13 +17,20 @@ export const getFileTool: AgentTool = {
         const validInput = validateWithZod(GetFileSchema, input, 'get_file')
         try {
             const context = await getContextFromRelativePath(validInput.name)
+            if (context === undefined || !context?.content) {
+                throw new Error(`File ${validInput.name} not found or empty`)
+            }
+
             return {
-                text: `Successfully retrieved content from ${validInput.name}.`,
-                contextItems: context ? [context] : undefined,
+                text: CONTEXT_TEMPLATE.replace('{{FILENAME}}', validInput.name).replace(
+                    '{{CONTENT}}',
+                    context.content + '\nEOF'
+                ),
+                contextItems: [context],
             }
         } catch (error) {
             return {
-                text: `Failed to read file ${validInput.name}: ${error}`,
+                text: `get_file for ${validInput.name} failed: ${error}`,
             }
         }
     },

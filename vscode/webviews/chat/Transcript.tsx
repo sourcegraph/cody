@@ -533,7 +533,12 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
         [humanMessage]
     )
 
-    const toolContentParts = humanMessage?.content?.filter(c => c.type === 'function')
+    const toolContentParts = useMemo(() => {
+        if (humanMessage?.index === 0 || !humanMessage?.content) {
+            return undefined
+        }
+        return humanMessage?.content?.filter(c => c.type === 'function')
+    }, [humanMessage?.index, humanMessage?.content])
 
     return (
         <>
@@ -588,7 +593,8 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                 isContextLoading &&
                 assistantMessage?.isLoading && <ApprovalCell vscodeAPI={vscodeAPI} />}
 
-            {!usingToolCody &&
+            {!toolContentParts &&
+                !usingToolCody &&
                 !(humanMessage.agent && isContextLoading) &&
                 (humanMessage.contextFiles || assistantMessage || isContextLoading) &&
                 !isSearchIntent && (
