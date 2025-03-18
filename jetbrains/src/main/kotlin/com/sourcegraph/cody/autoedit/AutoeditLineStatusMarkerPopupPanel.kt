@@ -179,7 +179,7 @@ private constructor(
       val flags =
           HintManager.HIDE_BY_CARET_MOVE or
               HintManager.HIDE_BY_TEXT_CHANGE or
-              HintManager.HIDE_BY_SCROLLING
+              HintManager.UPDATE_BY_SCROLLING
       HintManagerImpl.getInstanceImpl()
           .showEditorHint(hint, editor, point, flags, -1, false, HintHint(editor, point))
 
