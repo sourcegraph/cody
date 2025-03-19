@@ -290,14 +290,6 @@ describe('AgenticHandler', () => {
                 name: 'search',
                 arguments: '{}',
             },
-
-            tool_result: {
-                type: 'tool_result',
-                tool_result: {
-                    id: 'call1',
-                    content: JSON.stringify({ status: 'done' }),
-                },
-            },
         }
 
         // @ts-ignore - calling protected method for testing

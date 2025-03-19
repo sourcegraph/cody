@@ -72,7 +72,7 @@ export async function getCodebaseSearchTool(
 
             return {
                 text: output.join('\n'),
-                contextItems: searches.splice(0, searches.length - 5),
+                contextItems: searches,
                 output: generateSearchToolResults(validInput.query, searches),
             }
         },

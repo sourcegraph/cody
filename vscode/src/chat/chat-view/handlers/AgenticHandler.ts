@@ -103,10 +103,7 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
                     model
                 )
 
-                // Add bot response to conversation
                 delegate.postMessageInProgress(botResponse)
-
-                const content = Array.from(toolCalls.values())
 
                 // No tool calls means we're done
                 if (!toolCalls?.size) {
@@ -116,26 +113,14 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
                 }
 
                 // Execute tools and update results
+                const content = Array.from(toolCalls.values())
                 const toolResults = await this.executeTools(content)
-                for (const toolResult of toolResults) {
-                    loopController.signal.throwIfAborted()
-                    // Find the tool call that corresponds to this result
-                    const idx = botResponse.content?.findIndex(
-                        c => c.type === 'tool_call' && c.tool_call.id === toolResult.tool_result.id
-                    )
-                    const toolCall =
-                        idx !== undefined &&
-                        idx !== -1 &&
-                        (botResponse.content?.[idx] as ToolCallContentPart)
-                    // Update the tool call with the result
-                    if (toolCall) {
-                        toolCall.tool_result = toolResult
-                    }
-                }
-                // Add the tool result to the chat builder
-                chatBuilder.addBotMessage(botResponse, model)
 
-                loopController.signal.throwIfAborted()
+                botResponse.content?.push(...toolResults)
+
+                delegate.postMessageInProgress(botResponse)
+
+                chatBuilder.addBotMessage(botResponse, model)
 
                 // Add a human message to hold tool results
                 chatBuilder.addHumanMessage({

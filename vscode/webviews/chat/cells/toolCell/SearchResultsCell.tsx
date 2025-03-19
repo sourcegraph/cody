@@ -71,7 +71,7 @@ export const SearchResultsCell: FC<SearchResultsProps> = ({
                     </div>
                 ) : (
                     <div className="tw-overflow-x-auto tw-bg-zinc-950 tw-p-0">
-                        <div className="tw-font-mono tw-text-xs">
+                        <div className="tw-font-mono tw-text-xs tw-flex tw-flex-col tw-gap-1">
                             {result.items.map((resultItem, index) => (
                                 <Button
                                     onClick={e => {

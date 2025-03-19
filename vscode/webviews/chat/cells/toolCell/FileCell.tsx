@@ -59,7 +59,7 @@ export const FileCell: FC<FileCellProps> = ({
         <BaseCell
             icon={FileCode}
             headerContent={renderHeaderContent()}
-            bodyContent={renderBodyContent()}
+            bodyContent={result.file?.content ? renderBodyContent() : undefined}
             className={className}
             defaultOpen={defaultOpen}
         />

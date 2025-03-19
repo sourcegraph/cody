@@ -29,17 +29,21 @@ export const diagnosticTool: AgentTool = {
                 .getDiagnostics(fileInfo.uri)
                 .filter(d => d.severity === vscode.DiagnosticSeverity.Error)
 
-            const text = `Diagnostics for ${name}:\n${diagnostics.map(d => d.message).join('\n')}`
+            const text = diagnostics?.length
+                ? `Diagnostics for ${name}:\n${diagnostics.map(d => d.message).join('\n')}`
+                : 'Empty'
 
             return {
                 text,
                 output: {
-                    title: 'Diagnostics - ' + name,
+                    title: 'Diagnostics',
                     type: 'file-view',
                     status: UIToolStatus.Done,
-                    fileName: name,
-                    uri: fileInfo.uri,
-                    content: text,
+                    output: {
+                        fileName: name,
+                        uri: fileInfo.uri,
+                        content: text,
+                    },
                 },
             }
         } catch (error) {

@@ -533,20 +533,30 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
         [humanMessage]
     )
 
-    const toolContent = useMemo(() => {
-        if (!humanMessage?.content || !assistantMessage?.content) {
+    const isAgenticMode = useMemo(() => manuallySelectedIntent === 'agentic', [manuallySelectedIntent])
+    const toolCallContent = useMemo(() => {
+        if (!isAgenticMode || !humanMessage?.content || !assistantMessage?.content) {
             return undefined
         }
         if (!humanMessage?.content?.some(c => c.type === 'tool_result')) {
             return undefined
         }
         return assistantMessage?.content?.filter(c => c.type === 'tool_call')
-    }, [assistantMessage?.content, humanMessage?.content])
+    }, [isAgenticMode, assistantMessage?.content, humanMessage?.content])
+
+    const toolResultContent = useMemo(() => {
+        if (!isAgenticMode || !humanMessage?.content || !assistantMessage?.content) {
+            return undefined
+        }
+        const toolResults = humanMessage?.content?.filter(c => c.type === 'tool_result')
+        const botResults = assistantMessage?.content?.filter(c => c.type === 'tool_result')
+        return botResults || toolResults
+    }, [isAgenticMode, assistantMessage?.content, humanMessage?.content])
 
     return (
         <>
             {/* Shows tool contents instead of editor if any */}
-            {toolContent === undefined && (
+            {toolCallContent === undefined && (
                 <HumanMessageCell
                     key={humanMessage.index}
                     userInfo={userInfo}
@@ -567,7 +577,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                     manuallySelectIntent={setManuallySelectedIntent}
                 />
             )}
-            {omniboxEnabled && assistantMessage?.didYouMeanQuery && (
+            {!isAgenticMode && omniboxEnabled && assistantMessage?.didYouMeanQuery && (
                 <DidYouMeanNotice
                     query={assistantMessage?.didYouMeanQuery}
                     disabled={!!assistantMessage?.isLoading}
@@ -586,7 +596,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                 isContextLoading &&
                 assistantMessage?.isLoading && <ApprovalCell vscodeAPI={vscodeAPI} />}
 
-            {!toolContent &&
+            {!isAgenticMode &&
                 !usingToolCody &&
                 !(humanMessage.agent && isContextLoading) &&
                 (humanMessage.contextFiles || assistantMessage || isContextLoading) &&
@@ -618,19 +628,19 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                         humanMessage={humanMessageInfo}
                         isLoading={assistantMessage.isLoading}
                         smartApply={smartApply}
-                        smartApplyEnabled={smartApplyEnabled && !toolContent}
+                        smartApplyEnabled={smartApplyEnabled && !isAgenticMode}
                         onSelectedFiltersUpdate={onSelectedFiltersUpdate}
                         isLastSentInteraction={isLastSentInteraction}
                         setThoughtProcessOpened={setThoughtProcessOpened}
                         isThoughtProcessOpened={isThoughtProcessOpened}
                     />
                 )}
-            {toolContent?.map(tool => (
+            {toolResultContent?.map(tool => (
                 <ToolStatusCell
-                    key={tool.tool_call.id}
-                    content={tool.tool_result?.tool_result.content}
-                    title={tool.tool_call.name}
-                    output={tool.tool_result?.output}
+                    key={tool.tool_result.id}
+                    content={tool.tool_result.content}
+                    title={tool.output?.title || 'Tool Output'}
+                    output={tool.output}
                     className="w-full"
                 />
             ))}

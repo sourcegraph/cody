@@ -8,10 +8,10 @@ interface DoneEvent {
 
 interface CompletionEvent extends CompletionResponse {
     type: 'completion'
-    content?: CompletionContentData[] | undefined
+    content?: CompletionContentData[] | undefined | null
 }
 
-export type CompletionContentData = ToolContentParts | TextContentPart
+export type CompletionContentData = TextContentPart | ToolCallContentPart
 
 // Tool calls returned by the LLM
 export interface CompletionFunctionCallsData {
@@ -61,7 +61,8 @@ export type MessagePart =
     | { type: 'context_file'; uri: string; content?: string } // Cody extension
     | { type: 'context_repo'; repoId: string } // Cody extension
     | { type: 'image_url'; image_url: { url: string } } // natively supported by LLM
-    | ToolContentParts
+    | ToolCallContentPart // Assistant-only
+    | ToolResultContentPart // Human-only
 
 export interface TextContentPart {
     type: 'text'
@@ -74,8 +75,6 @@ export interface ImageContentPart {
     image_url: { url: string }
 }
 
-export type ToolContentParts = ToolCallContentPart | ToolResultContentPart
-
 export interface ToolCallContentPart {
     type: 'tool_call'
     tool_call: {
@@ -83,7 +82,6 @@ export interface ToolCallContentPart {
         name: string
         arguments: string
     }
-    tool_result?: ToolResultContentPart
 }
 
 export interface ToolResultContentPart {
@@ -143,7 +141,7 @@ export interface SerializedCompletionParameters extends Omit<CompletionParameter
 }
 
 export interface CompletionCallbacks {
-    onChange: (text: string, content?: CompletionContentData[]) => void
+    onChange: (text: string, content?: CompletionContentData[] | undefined | null) => void
     onComplete: () => void
     onError: (error: Error, statusCode?: number) => void
 }

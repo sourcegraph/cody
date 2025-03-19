@@ -30,10 +30,12 @@ export const getFileTool: AgentTool = {
                 output: {
                     type: 'file-view',
                     status: UIToolStatus.Done,
-                    fileName: validInput.name,
-                    uri: context.uri,
-                    content: context.content,
-                    title: validInput.name,
+                    file: {
+                        fileName: validInput.name,
+                        uri: context.uri,
+                        content: context.content,
+                        title: validInput.name,
+                    },
                 },
                 contextItems: [context],
             }

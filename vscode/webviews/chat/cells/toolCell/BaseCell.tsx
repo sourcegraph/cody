@@ -24,7 +24,7 @@ export interface BaseCellProps {
     /** Icon to display in the header (left side) */
     icon?: ForwardRefExoticComponent<Omit<LucideProps, 'ref'> & RefAttributes<SVGSVGElement>>
     /** Content to display in the collapsible body */
-    bodyContent: ReactNode
+    bodyContent?: ReactNode
     /** Additional class names for the container */
     className?: string
     /** Whether the cell is in a loading state */
@@ -58,7 +58,7 @@ const BaseCellComponent: FC<BaseCellProps> = ({
                         headerBgClass,
                         isLoading && 'tw-cursor-wait'
                     )}
-                    disabled={isLoading}
+                    disabled={isLoading || !bodyContent}
                 >
                     <div className="tw-flex tw-items-center tw-gap-2 tw-overflow-hidden">
                         {Icon && <Icon size={16} className="tw-flex-shrink-0 tw-text-zinc-400" />}

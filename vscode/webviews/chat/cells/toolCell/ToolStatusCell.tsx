@@ -42,7 +42,6 @@ export const ToolStatusCell: FC<ToolStatusProps> = ({ title, output, vscodeAPI }
     }
 
     if (output?.type === 'file-view') {
-        // Assuming FileCell expects a UIFileBase-like structure
         return <FileCell result={output as UIFileView} onFileLinkClicked={onFileLinkClicked} />
     }
 

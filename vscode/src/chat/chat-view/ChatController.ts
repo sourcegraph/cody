@@ -832,16 +832,14 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                         if (op?.abort || signal.aborted) {
                             throw new Error('aborted')
                         }
-                        if (chatAgent === 'agentic') {
-                            await this.saveSession()
-                            this.postViewTranscript()
-                            return
-                        }
                         // HACK(beyang): This conditional preserves the behavior from when
                         // all the response generation logic was handled in this method.
                         // In future work, we should remove this special-casing and unify
                         // how new messages are posted to the transcript.
-                        if (
+
+                        if (chatAgent === 'agentic') {
+                            this.saveSession()
+                        } else if (
                             messageInProgress &&
                             (['search', 'insert', 'edit'].includes(messageInProgress?.intent ?? '') ||
                                 messageInProgress?.search ||

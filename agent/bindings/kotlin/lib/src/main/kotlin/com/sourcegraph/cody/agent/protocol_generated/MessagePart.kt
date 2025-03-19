@@ -69,7 +69,6 @@ data class ImageUrlMessagePart(
 data class ToolCallContentPart(
   val type: TypeEnum, // Oneof: tool_call
   val tool_call: Tool_callParams,
-  val tool_result: ToolResultContentPart? = null,
 ) : MessagePart() {
 
   enum class TypeEnum {

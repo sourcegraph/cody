@@ -109,13 +109,13 @@ async function replaceInFile(
         const occurrences = parts.length - 1
 
         if (occurrences === 0) {
-            return { text: `No replacement performed: text not found in ${fileName}.` }
+            const text = `Failed: No replacement performed: text not found in ${fileName}.`
+            return { text, output: { type: 'file-diff', status: UIToolStatus.Error, content: text } }
         }
 
         if (occurrences > 1) {
-            return {
-                text: `No replacement performed: multiple occurrences of text found in ${fileName}.`,
-            }
+            const text = `Failed: No replacement performed: multiple occurrences of text found in ${fileName}.`
+            return { text, output: { type: 'file-diff', status: UIToolStatus.Error, content: text } }
         }
 
         // Save history and perform replacement
@@ -134,7 +134,10 @@ async function replaceInFile(
         // Show diff view
         const historyUri = uri.with({ scheme: 'cody-checkpoint' })
         const title = `History: ${fileName} (${new Date(timestamp).toLocaleString()})`
-        await vscode.commands.executeCommand('vscode.diff', historyUri, uri, title)
+
+        logDebug('text_editor', `Diff view for ${title} created`, { uri: historyUri })
+        // TODO: FIX abort issue caused by auto edit
+        // await vscode.commands.executeCommand('vscode.diff', historyUri, uri, title)
 
         const diagnosticsOnEnd = getErrorDiagnostics(uri)
         if (diagnosticsOnEnd.length) {

@@ -11,9 +11,17 @@ export function sanitizedChatMessages(messages: ChatMessage[]): any[] {
             const sanitizedContent = message.content
                 .map(part => {
                     if (part.type === 'tool_call') {
+                        // Removes tool calls from the human
+                        if (message.speaker !== 'assistant') {
+                            return undefined
+                        }
                         return sanitizeToolCall(part as ToolCallContentPart)
                     }
                     if (part.type === 'tool_result') {
+                        // Removes tool results from the assistant
+                        if (message.speaker === 'assistant') {
+                            return undefined
+                        }
                         return sanitizeToolResult(part as ToolResultContentPart)
                     }
                     if (part.type === 'text') {

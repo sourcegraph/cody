@@ -47,9 +47,13 @@ export class CompletionsResponseBuilder {
     /**
      * Processes tool call data from the completion stream
      */
-    public nextToolCalls(funcCalled: CompletionFunctionCallsData[] = []): CompletionContentData[] {
-        for (const func of funcCalled) {
-            this.processToolCall(func)
+    public nextToolCalls(
+        funcCalled: CompletionFunctionCallsData[] | undefined | null
+    ): CompletionContentData[] {
+        if (funcCalled) {
+            for (const func of funcCalled) {
+                this.processToolCall(func)
+            }
         }
         return Array.from(this.toolCalled.values())
     }
