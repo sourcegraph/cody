@@ -80,7 +80,7 @@ export const SearchResultsCell: FC<SearchResultsProps> = ({
                                     }}
                                     variant="text"
                                     key={`${resultItem.fileName}-${index}`}
-                                    className="tw-flex !tw-justify-start tw-py-1.5 tw-px-4 hover:tw-bg-zinc-900 tw-border-b tw-border-zinc-900 last:tw-border-b-0 tw-w-full !tw-items-center"
+                                    className="tw-text-left tw-truncate tw-flex !tw-justify-start tw-py-1.5 tw-px-4 hover:tw-bg-zinc-900 tw-border-b tw-border-zinc-900 last:tw-border-b-0 tw-w-full !tw-items-center"
                                 >
                                     <span className="tw-w-6 tw-text-right tw-text-zinc-500 tw-mr-3 tw-pt-0.5 tw-select-none">
                                         {index + 1}

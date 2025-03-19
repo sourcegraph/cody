@@ -25,7 +25,7 @@ export const DiffCell: FC<DiffCellProps> = ({
         <div className="tw-flex tw-items-center tw-gap-2 tw-overflow-hidden">
             <Button
                 variant="ghost"
-                className="tw-flex tw-items-center tw-gap-2 tw-overflow-hidden tw-p-0"
+                className="tw-text-left tw-truncate tw-flex tw-items-center tw-gap-2 tw-overflow-hidden tw-p-0"
                 onClick={e => {
                     e.preventDefault()
                     e.stopPropagation()

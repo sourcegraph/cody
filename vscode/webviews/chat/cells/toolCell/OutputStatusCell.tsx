@@ -73,9 +73,9 @@ export const OutputStatusCell: FC<OutputStatusProps> = ({ output, className, def
 
     // Define headerContent directly as JSX
     const headerContent = (
-        <div className="tw-flex tw-items-center tw-gap-2 tw-overflow-hidden">
-            <div className="tw-flex tw-items-center tw-gap-2">
-                <span className="tw-font-medium">{output.title}</span>
+        <div className="tw-flex tw-flex-row tw-items-center tw-gap-2 tw-overflow-hidden">
+            <div className="tw-flex tw-items-center tw-gap-2 tw-text-left tw-truncate tw-w-full">
+                <span className="tw-font-sm">{output.title}</span>
                 <Badge variant="outline" className={cn(getBadgeClass(status))}>
                     {getStatusLabel(status)}
                 </Badge>

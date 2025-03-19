@@ -19,10 +19,10 @@ export const FileCell: FC<FileCellProps> = ({
     defaultOpen = false,
 }) => {
     const renderHeaderContent = () => (
-        <div className="tw-flex tw-items-center tw-gap-2 tw-overflow-hidden">
+        <div className="tw-flex tw-items-center tw-gap-2 tw-overflow-hidden tw-flex-row">
             <Button
                 variant="ghost"
-                className="tw-flex tw-items-center tw-gap-2 tw-overflow-hidden tw-p-0"
+                className="tw-flex tw-items-center tw-gap-2 tw-overflow-hidden tw-p-0 tw-text-left tw-truncate tw-w-full"
                 onClick={e => {
                     e.preventDefault()
                     e.stopPropagation()

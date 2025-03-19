@@ -44,7 +44,7 @@ export const TerminalOutputCell: FC<TerminalOutputCellProps> = ({
 
         return (
             <div className="tw-flex tw-items-center tw-gap-2 tw-overflow-hidden">
-                <code className="tw-font-mono tw-bg-zinc-800 tw-px-2 tw-py-0.5 tw-rounded tw-text-zinc-200">
+                <code className="tw-text-left tw-truncate tw-font-mono tw-bg-zinc-800 tw-px-2 tw-py-0.5 tw-rounded tw-text-zinc-200">
                     $ {result?.output.find(l => l.type === 'input')?.content}
                 </code>
             </div>
