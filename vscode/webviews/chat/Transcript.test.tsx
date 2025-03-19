@@ -1,7 +1,7 @@
 import { type ChatMessage, FIXTURE_MODELS, errorToChatError, ps } from '@sourcegraph/cody-shared'
 import { fireEvent, getQueriesForElement, render as render_, screen } from '@testing-library/react'
 import type { ComponentProps } from 'react'
-import { type Assertion, describe, expect, test, vi } from 'vitest'
+import { describe, expect, test, vi } from 'vitest'
 import { URI } from 'vscode-uri'
 import { AppWrapperForTest } from '../AppWrapperForTest'
 import { type Interaction, Transcript, transcriptToInteractionPairs } from './Transcript'
@@ -16,6 +16,8 @@ const PROPS: Omit<ComponentProps<typeof Transcript>, 'transcript'> = {
     postMessage: () => {},
     models: FIXTURE_MODELS,
     setActiveChatContext: () => {},
+    manuallySelectedIntent: undefined,
+    setManuallySelectedIntent: () => {},
 }
 
 vi.mock('../utils/VSCodeApi', () => ({
@@ -54,9 +56,8 @@ describe('Transcript', () => {
         // Open the menu on click
         fireEvent.click(modelSelector!)
         const modelPopover = container?.querySelectorAll('[data-testid="chat-model-popover"]')[0]
-        const modelMenu = modelPopover!.querySelector('[data-testid="chat-model-popover-option"]')
-        const modelOptions = modelMenu!.querySelectorAll('[data-testid="chat-model-popover-option"]')
-        expect(modelOptions).toHaveLength(FIXTURE_MODELS.length)
+        const modelOptions = modelPopover!.querySelectorAll('[data-testid="chat-model-popover-option"]')
+        expect(modelOptions).toHaveLength(FIXTURE_MODELS.length + 1) // Plus 1 for the Document
 
         // Check if the model titles are correct
         const modelTitles = Array.from(modelOptions!).map(option => option.textContent)
@@ -351,10 +352,13 @@ function expectCells(expectedCells: CellMatcher[], containerElement?: HTMLElemen
                 expect(cell.querySelector('[role="status"]')).toHaveAttribute('aria-busy')
             }
             if (expectedCell.canSubmit !== undefined) {
-                notUnless(
-                    expect(cell.querySelector('button[type="submit"]')),
-                    expectedCell.canSubmit
-                ).toBeEnabled()
+                const submitButton = cell.querySelector('button[type="submit"]')
+                expect(submitButton).not.toBeNull() // First assert that the button exists
+                if (expectedCell.canSubmit) {
+                    expect(submitButton).toBeEnabled()
+                } else {
+                    expect(submitButton).toBeDisabled()
+                }
             }
         } else if ('context' in expectedCell) {
             expect(cell).toHaveAttribute('data-testid', 'context')
@@ -370,10 +374,6 @@ function expectCells(expectedCells: CellMatcher[], containerElement?: HTMLElemen
         } else {
             throw new Error('unknown cell')
         }
-    }
-
-    function notUnless<T>(assertion: Assertion<T>, value: boolean): Assertion<T> {
-        return value ? assertion : assertion.not
     }
 }
 

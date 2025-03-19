@@ -8,8 +8,6 @@ describe('diffWithLineNum', () => {
 
         const result = diffWithLineNum(oldText, newText)
 
-        console.log(result)
-
         expect(result).toContain('```diff')
         expect(result).toContain(' First line')
         expect(result).toContain('+ Second line')

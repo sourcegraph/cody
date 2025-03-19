@@ -61,123 +61,120 @@ class DefaultCodeCompletionsClient implements CodeCompletionsClient {
         return tracer.startActiveSpan(
             `POST ${url}`,
             async function* (span): CompletionResponseGenerator {
-                const tracingFlagEnabled = await featureFlagProvider.evaluateFeatureFlagEphemerally(
-                    FeatureFlag.CodyAutocompleteTracing
-                )
-
-                const headers = new Headers({
-                    ...configuration.customHeaders,
-                    ...providerOptions?.customHeaders,
-                    ...getClientIdentificationHeaders(),
-                })
-
-                setJSONAcceptContentTypeHeaders(headers)
-                addCodyClientIdentificationHeaders(headers)
-
-                if (tracingFlagEnabled) {
-                    headers.set('X-Sourcegraph-Should-Trace', '1')
-                    addTraceparent(headers)
-                }
-
-                try {
-                    await addAuthHeaders(auth, headers, url)
-                } catch (error: any) {
-                    throw recordErrorToSpan(span, error)
-                }
-
-                // Convert Headers to Record<string, string> for requestHeaders
-                const requestHeaders: Record<string, string> = {}
-                headers.forEach((value, key) => {
-                    requestHeaders[key] = value
-                })
-
-                // We enable streaming only for Node environments right now because it's hard to make
-                // the polyfilled fetch API work the same as it does in the browser.
-                //
-                // TODO(philipp-spiess): Feature test if the response is a Node or a browser stream and
-                // implement SSE parsing for both.
-                const isNode = typeof process !== 'undefined'
-                const enableStreaming = !!isNode
-                span.setAttribute('enableStreaming', enableStreaming)
-
-                // Disable gzip compression since the sg instance will start to batch
-                // responses afterwards.
-                if (enableStreaming) {
-                    headers.set('Accept-Encoding', 'gzip;q=0')
-                }
-
-                headers.set('X-Timeout-Ms', params.timeoutMs.toString())
-
-                const serializedParams: SerializedCodeCompletionsParams & {
-                    stream: boolean
-                } = {
-                    ...params,
-                    stream: enableStreaming,
-                    messages: await Promise.all(
-                        params.messages.map(async m => ({
-                            ...m,
-                            text: await m.text?.toFilteredString(contextFiltersProvider),
-                        }))
-                    ),
-                }
-
-                log.onFetch('defaultClient', serializedParams)
-
-                const response = await fetch(url, {
-                    method: 'POST',
-                    body: JSON.stringify(serializedParams),
-                    headers,
-                    signal,
-                })
-
-                logResponseHeadersToSpan(span, response)
-
                 const traceId = getActiveTraceAndSpanId()?.traceId
 
-                // When rate-limiting occurs, the response is an error message
-                if (response.status === 429) {
-                    // Check for explicit false, because if the header is not set, there is no upgrade
-                    // available.
-                    //
-                    // Note: This header is added only via the Sourcegraph instance and thus not added by
-                    //       the helper function.
-                    const upgradeIsAvailable =
-                        response.headers.get('x-is-cody-pro-user') === 'false' &&
-                        typeof response.headers.get('x-is-cody-pro-user') !== 'undefined'
-                    throw recordErrorToSpan(
-                        span,
-                        await createRateLimitErrorFromResponse(response, upgradeIsAvailable)
-                    )
-                }
-
-                if (!response.ok) {
-                    throw recordErrorToSpan(
-                        span,
-                        isCustomAuthChallengeResponse(response)
-                            ? new NeedsAuthChallengeError()
-                            : new NetworkError(response, await response.text(), traceId)
-                    )
-                }
-
-                if (response.body === null) {
-                    throw recordErrorToSpan(span, new TracedError('No response body', traceId))
-                }
-
-                // For backward compatibility, we have to check if the response is an SSE stream or a
-                // regular JSON payload. This ensures that the request also works against older backends
-                const isStreamingResponse = response.headers.get('content-type') === 'text/event-stream'
-
-                const result: CompletionResponseWithMetaData = {
+                let result: CompletionResponseWithMetaData = {
                     completionResponse: undefined,
-                    metadata: {
-                        response,
-                        requestHeaders,
-                        requestUrl: url.toString(),
-                        requestBody: serializedParams,
-                    },
+                    metadata: {},
                 }
 
                 try {
+                    const tracingFlagEnabled = await featureFlagProvider.evaluateFeatureFlagEphemerally(
+                        FeatureFlag.CodyAutocompleteTracing
+                    )
+
+                    const headers = new Headers({
+                        ...configuration.customHeaders,
+                        ...providerOptions?.customHeaders,
+                        ...getClientIdentificationHeaders(),
+                    })
+
+                    setJSONAcceptContentTypeHeaders(headers)
+                    addCodyClientIdentificationHeaders(headers)
+
+                    if (tracingFlagEnabled) {
+                        headers.set('X-Sourcegraph-Should-Trace', '1')
+                        addTraceparent(headers)
+                    }
+
+                    await addAuthHeaders(auth, headers, url)
+
+                    // Convert Headers to Record<string, string> for requestHeaders
+                    const requestHeaders: Record<string, string> = {}
+                    headers.forEach((value, key) => {
+                        requestHeaders[key] = value
+                    })
+
+                    // We enable streaming only for Node environments right now because it's hard to make
+                    // the polyfilled fetch API work the same as it does in the browser.
+                    //
+                    // TODO(philipp-spiess): Feature test if the response is a Node or a browser stream and
+                    // implement SSE parsing for both.
+                    const isNode = typeof process !== 'undefined'
+                    const enableStreaming = !!isNode
+                    span.setAttribute('enableStreaming', enableStreaming)
+
+                    // Disable gzip compression since the sg instance will start to batch
+                    // responses afterwards.
+                    if (enableStreaming) {
+                        headers.set('Accept-Encoding', 'gzip;q=0')
+                    }
+
+                    headers.set('X-Timeout-Ms', params.timeoutMs.toString())
+
+                    const serializedParams: SerializedCodeCompletionsParams & {
+                        stream: boolean
+                    } = {
+                        ...params,
+                        stream: enableStreaming,
+                        messages: await Promise.all(
+                            params.messages.map(async m => ({
+                                ...m,
+                                text: await m.text?.toFilteredString(contextFiltersProvider),
+                            }))
+                        ),
+                    }
+
+                    log.onFetch('defaultClient', serializedParams)
+
+                    const response = await fetch(url, {
+                        method: 'POST',
+                        body: JSON.stringify(serializedParams),
+                        headers,
+                        signal,
+                    })
+
+                    logResponseHeadersToSpan(span, response)
+
+                    // When rate-limiting occurs, the response is an error message
+                    if (response.status === 429) {
+                        // Check for explicit false, because if the header is not set, there is no upgrade
+                        // available.
+                        //
+                        // Note: This header is added only via the Sourcegraph instance and thus not added by
+                        //       the helper function.
+                        const upgradeIsAvailable =
+                            response.headers.get('x-is-cody-pro-user') === 'false' &&
+                            typeof response.headers.get('x-is-cody-pro-user') !== 'undefined'
+                        throw await createRateLimitErrorFromResponse(response, upgradeIsAvailable)
+                    }
+
+                    if (!response.ok) {
+                        throw isCustomAuthChallengeResponse(response)
+                            ? new NeedsAuthChallengeError()
+                            : new NetworkError(response, await response.text(), traceId)
+                    }
+
+                    if (response.body === null) {
+                        throw new TracedError('No response body', traceId)
+                    }
+
+                    // For backward compatibility, we have to check if the response is an SSE stream or a
+                    // regular JSON payload. This ensures that the request also works against older backends
+                    const isStreamingResponse =
+                        response.headers.get('content-type') === 'text/event-stream'
+
+                    result = {
+                        completionResponse: undefined,
+                        metadata: {
+                            response,
+                            requestHeaders,
+                            requestUrl: url.toString(),
+                            requestBody: serializedParams,
+                            isAborted: false,
+                        },
+                    }
+
                     if (isStreamingResponse && isNodeResponse(response)) {
                         const iterator = createSSEIterator(response.body, {
                             aggregatedCompletionEvent: true,
@@ -193,6 +190,10 @@ class DefaultCodeCompletionsClient implements CodeCompletionsClient {
                                 if (result.completionResponse) {
                                     result.completionResponse.stopReason =
                                         CompletionStopReason.RequestAborted
+                                }
+
+                                if (result.metadata) {
+                                    result.metadata.isAborted = true
                                 }
 
                                 break
@@ -224,7 +225,8 @@ class DefaultCodeCompletionsClient implements CodeCompletionsClient {
                             result.completionResponse.stopReason = CompletionStopReason.RequestFinished
                         }
 
-                        return result
+                        yield result
+                        return
                     }
 
                     // Handle non-streaming response
@@ -240,16 +242,25 @@ class DefaultCodeCompletionsClient implements CodeCompletionsClient {
                         throw new TracedError(message, traceId)
                     }
 
-                    return result
+                    yield result
+                    return
                 } catch (error) {
                     // Shared error handling for both streaming and non-streaming requests.
 
-                    // In case of the abort error and non-empty completion response, we can
-                    // consider the completion partially completed and want to log it to
-                    // the Cody output channel via `log.onComplete()` instead of erroring.
-                    if (isAbortError(error as Error) && result.completionResponse) {
-                        result.completionResponse.stopReason = CompletionStopReason.RequestAborted
-                        return result
+                    if (isAbortError(error as Error)) {
+                        // In case of the abort error and non-empty completion response, we can
+                        // consider the completion partially completed and want to log it to
+                        // the Cody output channel via `log.onComplete()` instead of erroring.
+                        if (result.completionResponse) {
+                            result.completionResponse.stopReason = CompletionStopReason.RequestAborted
+                        }
+
+                        if (result.metadata) {
+                            result.metadata.isAborted = true
+                        }
+
+                        yield result
+                        return
                     }
 
                     recordErrorToSpan(span, error as Error)

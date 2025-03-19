@@ -66,104 +66,115 @@ export function createFastPathClient(
     const log = logger?.startCompletion(requestParams, url)
 
     return tracer.startActiveSpan(`POST ${url}`, async function* (span): CompletionResponseGenerator {
-        if (abortController.signal.aborted) {
-            // return empty completion response and skip the HTTP request
-            return {
-                completionResponse: {
-                    completion: '',
-                    stopReason: CompletionStopReason.RequestAborted,
-                },
-            }
-        }
-
-        // Convert the SG instance messages array back to the original prompt
-        const prompt = await requestParams.messages[0]!.text!.toFilteredString(contextFiltersProvider)
-
-        // c.f. https://readme.fireworks.ai/reference/createcompletion
-        const fireworksRequest = {
-            model: fireworksConfig?.model || requestParams.model?.replace(/^fireworks\//, ''),
-            prompt,
-            max_tokens: requestParams.maxTokensToSample,
-            echo: false,
-            temperature: fireworksConfig?.parameters?.temperature || requestParams.temperature,
-            top_p: fireworksConfig?.parameters?.top_p || requestParams.topP,
-            top_k: fireworksConfig?.parameters?.top_k || requestParams.topK,
-            stop: [...(requestParams.stopSequences || []), ...(fireworksConfig?.parameters?.stop || [])],
-            stream: true,
-            languageId: providerOptions.document.languageId,
-            user: (await currentResolvedConfig()).clientState.anonymousUserID,
-        } satisfies FireworksCodeCompletionParams
-
-        const headers = new Headers(fireworksCustomHeaders)
-        headers.set('Content-Type', `application/json${fireworksConfig ? '' : '; charset=utf-8'}`)
-        headers.set('Authorization', `Bearer ${fastPathAccessToken}`)
-        headers.set('X-Sourcegraph-Feature', 'code_completions')
-        headers.set('X-Timeout-Ms', requestParams.timeoutMs.toString())
-        addTraceparent(headers)
-
-        log?.onFetch('fastPathClient', fireworksRequest)
-
-        const response = await fetch(url, {
-            method: 'POST',
-            body: JSON.stringify(fireworksRequest),
-            headers,
-            signal: abortController.signal,
-        })
-
-        logResponseHeadersToSpan(span, response)
-
         const traceId = getActiveTraceAndSpanId()?.traceId
-
-        // When rate-limiting occurs, the response is an error message The response here is almost
-        // identical to the SG instance response but does not contain information on whether a user
-        // is eligible to upgrade to the pro plan. We get this from the authState instead.
-        if (response.status === 429) {
-            const sub = await currentUserProductSubscription()
-            const upgradeIsAvailable = sub !== null && !!sub.userCanUpgrade
-
-            throw recordErrorToSpan(
-                span,
-                await createRateLimitErrorFromResponse(response, upgradeIsAvailable)
-            )
-        }
-
-        if (!response.ok) {
-            throw recordErrorToSpan(
-                span,
-                new NetworkError(
-                    response,
-                    (await response.text()) +
-                        (isLocalInstance ? '\nIs Cody Gateway running locally?' : ''),
-                    traceId
-                )
-            )
-        }
-
-        if (response.body === null) {
-            throw recordErrorToSpan(span, new TracedError('No response body', traceId))
-        }
-
-        const isStreamingResponse = response.headers.get('content-type')?.startsWith('text/event-stream')
-        if (!isStreamingResponse || !isNodeResponse(response)) {
-            throw recordErrorToSpan(span, new TracedError('No streaming response given', traceId))
-        }
-
-        const result: CompletionResponseWithMetaData = {
+        let result: CompletionResponseWithMetaData = {
             completionResponse: undefined,
-            metadata: { response },
-        }
-
-        // Convenience helper to make ternaries below more readable.
-        function lastResponseField<T extends keyof CompletionResponse>(
-            field: T
-        ): CompletionResponse[T] | undefined {
-            if (result.completionResponse) {
-                return result.completionResponse[field]
-            }
-            return undefined
+            metadata: {},
         }
 
         try {
+            if (abortController.signal.aborted) {
+                // return empty completion response and skip the HTTP request
+                yield {
+                    completionResponse: {
+                        completion: '',
+                        stopReason: CompletionStopReason.RequestAborted,
+                    },
+                }
+                return
+            }
+
+            // Convert the SG instance messages array back to the original prompt
+            const prompt =
+                await requestParams.messages[0]!.text!.toFilteredString(contextFiltersProvider)
+
+            // c.f. https://readme.fireworks.ai/reference/createcompletion
+            const fireworksRequest = {
+                model: fireworksConfig?.model || requestParams.model?.replace(/^fireworks\//, ''),
+                prompt,
+                max_tokens: requestParams.maxTokensToSample,
+                echo: false,
+                temperature: fireworksConfig?.parameters?.temperature || requestParams.temperature,
+                top_p: fireworksConfig?.parameters?.top_p || requestParams.topP,
+                top_k: fireworksConfig?.parameters?.top_k || requestParams.topK,
+                stop: [
+                    ...(requestParams.stopSequences || []),
+                    ...(fireworksConfig?.parameters?.stop || []),
+                ],
+                stream: true,
+                languageId: providerOptions.document.languageId,
+                user: (await currentResolvedConfig()).clientState.anonymousUserID,
+            } satisfies FireworksCodeCompletionParams
+
+            const headers = new Headers(fireworksCustomHeaders)
+            headers.set('Content-Type', `application/json${fireworksConfig ? '' : '; charset=utf-8'}`)
+            headers.set('Authorization', `Bearer ${fastPathAccessToken}`)
+            headers.set('X-Sourcegraph-Feature', 'code_completions')
+            headers.set('X-Timeout-Ms', requestParams.timeoutMs.toString())
+            addTraceparent(headers)
+
+            log?.onFetch('fastPathClient', fireworksRequest)
+
+            const response = await fetch(url, {
+                method: 'POST',
+                body: JSON.stringify(fireworksRequest),
+                headers,
+                signal: abortController.signal,
+            })
+
+            logResponseHeadersToSpan(span, response)
+
+            // When rate-limiting occurs, the response is an error message The response here is almost
+            // identical to the SG instance response but does not contain information on whether a user
+            // is eligible to upgrade to the pro plan. We get this from the authState instead.
+            if (response.status === 429) {
+                const sub = await currentUserProductSubscription()
+                const upgradeIsAvailable = sub !== null && !!sub.userCanUpgrade
+
+                throw recordErrorToSpan(
+                    span,
+                    await createRateLimitErrorFromResponse(response, upgradeIsAvailable)
+                )
+            }
+
+            if (!response.ok) {
+                throw recordErrorToSpan(
+                    span,
+                    new NetworkError(
+                        response,
+                        (await response.text()) +
+                            (isLocalInstance ? '\nIs Cody Gateway running locally?' : ''),
+                        traceId
+                    )
+                )
+            }
+
+            if (response.body === null) {
+                throw recordErrorToSpan(span, new TracedError('No response body', traceId))
+            }
+
+            const isStreamingResponse = response.headers
+                .get('content-type')
+                ?.startsWith('text/event-stream')
+            if (!isStreamingResponse || !isNodeResponse(response)) {
+                throw recordErrorToSpan(span, new TracedError('No streaming response given', traceId))
+            }
+
+            result = {
+                completionResponse: undefined,
+                metadata: { response },
+            }
+
+            // Convenience helper to make ternaries below more readable.
+            function lastResponseField<T extends keyof CompletionResponse>(
+                field: T
+            ): CompletionResponse[T] | undefined {
+                if (result.completionResponse) {
+                    return result.completionResponse[field]
+                }
+                return undefined
+            }
+
             const iterator = createSSEIterator(response.body)
             let chunkIndex = 0
 
@@ -175,6 +186,10 @@ export function createFastPathClient(
                 if (abortController.signal.aborted) {
                     if (result.completionResponse && !result.completionResponse.stopReason) {
                         result.completionResponse.stopReason = CompletionStopReason.RequestAborted
+                    }
+
+                    if (result.metadata) {
+                        result.metadata.isAborted = true
                     }
                     break
                 }
@@ -216,14 +231,23 @@ export function createFastPathClient(
                 result.completionResponse.stopReason = CompletionStopReason.RequestFinished
             }
 
-            return result
+            yield result
+            return
         } catch (error) {
-            // In case of the abort error and non-empty completion response, we can
-            // consider the completion partially completed and want to log it to
-            // the Cody output channel via `log.onComplete()` instead of erroring.
-            if (isAbortError(error as Error) && result.completionResponse) {
-                result.completionResponse.stopReason = CompletionStopReason.RequestAborted
-                return result
+            if (isAbortError(error as Error)) {
+                // In case of the abort error and non-empty completion response, we can
+                // consider the completion partially completed and want to log it to
+                // the Cody output channel via `log.onComplete()` instead of erroring.
+                if (result.completionResponse) {
+                    result.completionResponse.stopReason = CompletionStopReason.RequestAborted
+                }
+
+                if (result.metadata) {
+                    result.metadata.isAborted = true
+                }
+
+                yield result
+                return
             }
 
             recordErrorToSpan(span, error as Error)
