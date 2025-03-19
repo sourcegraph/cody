@@ -25,8 +25,8 @@ import {
 import { autoeditsProviderConfig } from './autoedits-config'
 import { FilterPredictionBasedOnRecentEdits } from './filter-prediction-edits'
 import { autoeditsOutputChannelLogger } from './output-channel-logger'
+import { PromptCacheOptimizedV1 } from './prompt/prompt-cache-optimized-v1'
 import { type CodeToReplaceData, getCodeToReplaceData } from './prompt/prompt-utils'
-import { ShortTermPromptStrategy } from './prompt/short-term-diff-prompt-strategy'
 import type { DecorationInfo } from './renderer/decorators/base'
 import { DefaultDecorator } from './renderer/decorators/default-decorator'
 import { InlineDiffDecorator } from './renderer/decorators/inline-diff-decorator'
@@ -69,7 +69,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
     public readonly rendererManager: AutoEditsRendererManager
     private readonly modelAdapter: AutoeditsModelAdapter
 
-    private readonly promptStrategy = new ShortTermPromptStrategy()
+    private readonly promptStrategy = new PromptCacheOptimizedV1()
     public readonly filterPrediction = new FilterPredictionBasedOnRecentEdits()
     private readonly contextMixer = new ContextMixer({
         strategyFactory: new DefaultContextStrategyFactory(Observable.of(AUTOEDIT_CONTEXT_STRATEGY)),
