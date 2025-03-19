@@ -47,19 +47,6 @@ export const OutputStatusCell: FC<OutputStatusProps> = ({
         }
     }
 
-    const getHeaderClass = () => {
-        switch (status) {
-            case 'success':
-                return 'tw-bg-emerald-900/30'
-            case 'error':
-                return 'tw-bg-red-900/30'
-            case 'warning':
-                return 'tw-bg-yellow-900/30'
-            default:
-                return 'tw-bg-blue-900/30'
-        }
-    }
-
     const getStatusLabel = () => {
         switch (status) {
             case 'success':
@@ -102,7 +89,7 @@ export const OutputStatusCell: FC<OutputStatusProps> = ({
     const renderBodyContent = () => (
         <div className={cn('tw-p-4', getStatusClass())}>
             {content && (
-                <div className="tw-bg-black tw-rounded-md tw-p-3 tw-font-mono tw-text-xs tw-mb-4 tw-overflow-x-auto">
+                <div className="tw-rounded-md tw-p-3 tw-font-mono tw-text-xs tw-mb-4 tw-overflow-x-auto">
                     <pre className="tw-whitespace-pre-wrap tw-break-words tw-text-zinc-300">
                         {content}
                     </pre>
@@ -120,7 +107,6 @@ export const OutputStatusCell: FC<OutputStatusProps> = ({
             bodyContent={renderBodyContent()}
             className={className}
             defaultOpen={defaultOpen}
-            headerBgClass={getHeaderClass()}
         />
     )
 }

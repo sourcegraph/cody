@@ -22,8 +22,8 @@ export const DiffCell: FC<DiffCellProps> = ({
     const renderHeaderContent = () => (
         <div className="tw-flex tw-items-center tw-gap-2 tw-overflow-hidden">
             <Button
-                variant="outline"
-                className="tw-flex tw-items-center tw-gap-2 tw-overflow-hidden"
+                variant="ghost"
+                className="tw-flex tw-items-center tw-gap-2 tw-overflow-hidden tw-p-0"
                 onClick={e => {
                     e.preventDefault()
                     e.stopPropagation()
@@ -44,7 +44,7 @@ export const DiffCell: FC<DiffCellProps> = ({
     )
 
     const renderBodyContent = () => (
-        <pre className="tw-font-mono tw-text-xs tw-leading-relaxed  tw-bg-zinc-950 ">
+        <pre className="tw-font-mono tw-text-xs tw-leading-relaxed  tw-bg-zinc-950">
             <table className="tw-w-full tw-h-full tw-border-collapse">
                 <tbody>
                     {result.changes.map((change, _index) => (

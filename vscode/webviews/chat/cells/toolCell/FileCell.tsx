@@ -21,8 +21,8 @@ export const FileCell: FC<FileCellProps> = ({
     const renderHeaderContent = () => (
         <div className="tw-flex tw-items-center tw-gap-2 tw-overflow-hidden">
             <Button
-                variant="outline"
-                className="tw-flex tw-items-center tw-gap-2 tw-overflow-hidden"
+                variant="ghost"
+                className="tw-flex tw-items-center tw-gap-2 tw-overflow-hidden tw-p-0"
                 onClick={e => {
                     e.preventDefault()
                     e.stopPropagation()
