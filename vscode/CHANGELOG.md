@@ -10,19 +10,7 @@ This is a log of all notable changes to Cody for VS Code.
 
 #### Models
 
-- prevent reasoning models from being set as default model [#7473](https://github.com/sourcegraph/cody/pull/7473)
-
-### Reverts
-
-  There were no reverts for this release
-
-### Uncategorized
-
-#### Others
-
-- [Backport M78] Prevent parallel agent restarts from happening [#7474](https://github.com/sourcegraph/cody/pull/7474)
-- Changelog for 1.78.0 [#7464](https://github.com/sourcegraph/cody/pull/7464)
-- [Backport M78] Revert "Fix assertion error from webview (closes #2845) [#7257](https://github.com/sourcegraph/cody/pull/7257)
+- Prevent reasoning models from being set as default model [#7473](https://github.com/sourcegraph/cody/pull/7473)
 
 
 ## 1.78.0
