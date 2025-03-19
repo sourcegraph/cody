@@ -1,4 +1,4 @@
-import { type UIDiffLine, type UIFileDiff, displayPath } from '@sourcegraph/cody-shared'
+import type { UIDiffLine, UIFileDiff } from '@sourcegraph/cody-shared'
 import * as Diff from 'diff'
 import type { URI } from 'vscode-uri'
 
@@ -130,7 +130,6 @@ export function diffWithLineNum(oldText: string, newText: string): string {
 
 export function getFileDiff(uri: URI, oldText: string, newText: string): UIFileDiff {
     const diff = Diff.diffLines(oldText, newText)
-    const fileName = displayPath(uri)
     const changes: UIDiffLine[] = []
     const total = {
         added: 0,
@@ -191,7 +190,6 @@ export function getFileDiff(uri: URI, oldText: string, newText: string): UIFileD
 
     return {
         type: 'file-diff',
-        fileName,
         uri,
         total,
         changes,

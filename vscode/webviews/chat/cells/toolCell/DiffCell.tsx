@@ -1,6 +1,6 @@
-import type { UIFileDiff } from '@sourcegraph/cody-shared'
+import { type UIFileDiff, displayPath } from '@sourcegraph/cody-shared'
 import { FileDiffIcon, Minus, Plus } from 'lucide-react'
-import type { FC } from 'react'
+import { type FC, useMemo } from 'react'
 import type { URI } from 'vscode-uri'
 import { Button } from '../../../components/shadcn/ui/button'
 import { cn } from '../../../components/shadcn/utils'
@@ -19,6 +19,8 @@ export const DiffCell: FC<DiffCellProps> = ({
     onFileLinkClicked,
     defaultOpen = false,
 }) => {
+    const fileName = useMemo(() => displayPath(result.uri), [result.uri])
+
     const renderHeaderContent = () => (
         <div className="tw-flex tw-items-center tw-gap-2 tw-overflow-hidden">
             <Button
@@ -30,7 +32,7 @@ export const DiffCell: FC<DiffCellProps> = ({
                     onFileLinkClicked(result.uri)
                 }}
             >
-                <span className="tw-font-mono">{result.fileName}</span>
+                <span className="tw-font-mono">{fileName}</span>
             </Button>
             <div className="tw-ml-2 tw-flex tw-flex-shrink-0 tw-items-center tw-gap-2">
                 <span className="tw-flex tw-items-center tw-text-emerald-500">

@@ -184,17 +184,18 @@ export enum UIToolStatus {
  */
 interface UIToolOutputBase {
     type: 'search-result' | 'file-diff' | 'terminal-output' | 'file-view' | 'status'
-    status?: UIToolStatus
-    title?: string
-    content?: string
-    duration?: number
+    status?: UIToolStatus | undefined | null
+    title?: string | undefined | null
+    content?: string | undefined | null
+    duration?: number | undefined | null
+    query?: string | undefined | null
 }
 
 // Basic file content display
 export interface UIFileBase {
     fileName: string
     uri: URI
-    content?: string
+    content?: string | undefined | null
 }
 
 // Individual search result item
@@ -205,7 +206,6 @@ export interface UIFileView extends UIToolOutputBase {
 
 export interface UISearchResults extends UIToolOutputBase {
     type: 'search-result'
-    query: string
     items: UISearchItem[]
 }
 
@@ -217,10 +217,11 @@ interface UISearchItem extends UIFileBase {
 }
 
 // File diff display
-export interface UIFileDiff extends UIFileBase, UIToolOutputBase {
+export interface UIFileDiff extends UIToolOutputBase {
     type: 'file-diff'
     total: UIChangeStats
     changes: UIDiffLine[]
+    uri: URI
 }
 
 // Change statistics summary
@@ -240,7 +241,6 @@ export interface UIDiffLine {
 export interface UITerminalToolOutput extends UIToolOutputBase {
     type: 'terminal-output'
     output: UITerminalLine[]
-    query?: string
 }
 
 // Terminal output types
@@ -255,5 +255,5 @@ export enum UITerminalOutputType {
 // Individual terminal line
 export interface UITerminalLine {
     content: string
-    type?: UITerminalOutputType
+    type?: UITerminalOutputType | undefined | null
 }

@@ -26,7 +26,6 @@ const defaultOpen = true
 const diffStoryMock = {
     type: 'file-diff',
     uri: URI.file('path/to/LargeComponent.tsx'),
-    fileName: 'LargeComponent.tsx',
     total: {
         added: 42,
         removed: 15,

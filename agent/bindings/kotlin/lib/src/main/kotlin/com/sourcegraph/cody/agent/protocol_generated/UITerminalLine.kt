@@ -3,6 +3,6 @@ package com.sourcegraph.cody.agent.protocol_generated;
 
 data class UITerminalLine(
   val content: String,
-  val type: UITerminalLineType? = null, // Oneof: input, output, error, warning, success
+  val type: UITerminalOutputType? = null, // Oneof: input, output, error, warning, success
 )
 

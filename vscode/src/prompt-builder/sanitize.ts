@@ -1,4 +1,5 @@
 import type { ChatMessage, ToolCallContentPart, ToolResultContentPart } from '@sourcegraph/cody-shared'
+import { isDefined } from '@vscode/test-electron/out/util'
 
 export function sanitizedChatMessages(messages: ChatMessage[]): any[] {
     return messages.map(message => {
@@ -16,7 +17,9 @@ export function sanitizedChatMessages(messages: ChatMessage[]): any[] {
                     }
                     return part
                 })
-                .filter(part => !(part.type === 'text' && part.text === '')) // Filter out empty text parts
+                .filter(isDefined)
+                // Filter out empty text parts
+                .filter(part => !(part.type === 'text' && part.text === ''))
 
             return {
                 ...message,
@@ -27,7 +30,10 @@ export function sanitizedChatMessages(messages: ChatMessage[]): any[] {
     })
 }
 
-function sanitizeToolCall(toolCall: ToolCallContentPart): ToolCallContentPart {
+function sanitizeToolCall(toolCall: ToolCallContentPart): ToolCallContentPart | undefined {
+    if (!toolCall.tool_call) {
+        return undefined
+    }
     return {
         type: 'tool_call',
         tool_call: {
@@ -38,12 +44,15 @@ function sanitizeToolCall(toolCall: ToolCallContentPart): ToolCallContentPart {
     }
 }
 
-function sanitizeToolResult(toolResult: ToolResultContentPart): ToolResultContentPart {
+function sanitizeToolResult(toolResult: ToolResultContentPart): ToolResultContentPart | undefined {
+    if (!toolResult.tool_result?.id) {
+        return undefined
+    }
     return {
         type: 'tool_result',
         tool_result: {
             id: toolResult.tool_result.id,
-            content: toolResult.tool_result.content,
+            content: toolResult.tool_result.content ?? 'Empty',
         },
     }
 }

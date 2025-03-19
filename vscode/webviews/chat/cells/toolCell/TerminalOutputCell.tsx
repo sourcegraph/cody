@@ -71,12 +71,19 @@ export const TerminalOutputCell: FC<TerminalOutputCellProps> = ({
 
         return (
             <pre className="tw-font-mono tw-text-xs tw-p-4 tw-bg-black tw-rounded-b-md tw-overflow-x-auto">
-                {result.output.map((line, index) => (
-                    // biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
-                    <div key={index} className={cn(getLineClass(line.type))}>
-                        {line.type === 'input' ? `$ ${line.content}` : line.content}
-                    </div>
-                ))}
+                {result.output.map((line, index) => {
+                    if (!line.type) {
+                        return null
+                    }
+                    return (
+                        <div
+                            key={`${line.type}-${line.content}-${index}`}
+                            className={cn(getLineClass(line.type))}
+                        >
+                            {line.type === 'input' ? `$ ${line.content}` : line.content}
+                        </div>
+                    )
+                })}
             </pre>
         )
     }

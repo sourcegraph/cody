@@ -6,7 +6,6 @@ import { DiffCell } from './DiffCell'
 
 const diffStoryMock = {
     type: 'file-diff',
-    fileName: 'ToolsStatus.tsx',
     uri: URI.file('path/to/ToolsStatus.tsx'),
     total: {
         added: 6,
@@ -104,7 +103,6 @@ export const LargeDiff: Story = {
         result: {
             type: 'file-diff',
             uri: URI.file('path/to/LargeComponent.tsx'),
-            fileName: 'LargeComponent.tsx',
             total: {
                 added: 42,
                 removed: 15,

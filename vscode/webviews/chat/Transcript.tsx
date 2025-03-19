@@ -615,7 +615,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                         humanMessage={humanMessageInfo}
                         isLoading={assistantMessage.isLoading}
                         smartApply={smartApply}
-                        smartApplyEnabled={smartApplyEnabled}
+                        smartApplyEnabled={smartApplyEnabled && !toolContent}
                         onSelectedFiltersUpdate={onSelectedFiltersUpdate}
                         isLastSentInteraction={isLastSentInteraction}
                         setThoughtProcessOpened={setThoughtProcessOpened}
