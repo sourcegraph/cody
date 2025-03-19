@@ -37,7 +37,7 @@ const getInteractionArgsFromIntent = (
     const modelInfo = modelsService.getModelByID(model)
     const isReasoningModel = modelInfo?.tags.includes(ModelTag.Reasoning)
     // Default to the generic Claude prompt if the provider is unknown
-    const interaction = modelInfo?.provider ? INTERACTION_PROVIDERS[modelInfo.provider] : claude
+    const interaction = INTERACTION_PROVIDERS[modelInfo?.provider || ''] || claude
 
     switch (intent) {
         case 'add':
