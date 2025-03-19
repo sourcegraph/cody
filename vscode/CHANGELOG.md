@@ -4,6 +4,98 @@ This is a log of all notable changes to Cody for VS Code.
 
 <!--- {/_ CHANGELOG_START _/} -->
 
+## 1.78.0
+
+### Features
+
+#### Auto-Edit
+
+- make prompt instructions more concise [#7402](https://github.com/sourcegraph/cody/pull/7402)
+- reduce context size [#7401](https://github.com/sourcegraph/cody/pull/7401)
+- cancel redundant requests [#7400](https://github.com/sourcegraph/cody/pull/7400)
+
+#### Chat
+
+- Add Agentic chat intent and UI [#7332](https://github.com/sourcegraph/cody/pull/7332)
+
+#### Context
+
+- Enable symf for ES dev workspaces [#7412](https://github.com/sourcegraph/cody/pull/7412)
+
+### Fix
+
+#### Autoedit
+
+- Fix conflict between suggestions and completion menu [#7389](https://github.com/sourcegraph/cody/pull/7389)
+
+#### Chat
+
+- Fix React warnings caused by relocating the model selector [#7351](https://github.com/sourcegraph/cody/pull/7351)
+
+#### Ci
+
+- improve windows unit-test job and cache [#7356](https://github.com/sourcegraph/cody/pull/7356)
+
+#### Cody
+
+- use correct access token when authenticating [#7362](https://github.com/sourcegraph/cody/pull/7362)
+
+#### Completions
+
+- Add api-version check for completions endpoint [#7448](https://github.com/sourcegraph/cody/pull/7448)
+
+#### Gateway
+
+- use latestCodyClientConfig for chat api version [#7365](https://github.com/sourcegraph/cody/pull/7365)
+
+#### Smart-Apply
+
+- Fix the smart apply prompt role from system to assistant [#7421](https://github.com/sourcegraph/cody/pull/7421)
+
+### Chore
+
+#### Agent
+
+- add minor version release script [#7330](https://github.com/sourcegraph/cody/pull/7330)
+
+#### Auto-Edit
+
+- reduce debounce time even further [#7348](https://github.com/sourcegraph/cody/pull/7348)
+
+#### Telemetry
+
+- update `billingMetadata` for autoedit and completion events [#7360](https://github.com/sourcegraph/cody/pull/7360)
+
+### Refactor
+
+#### Chat
+
+- Remove priority context logic [#7397](https://github.com/sourcegraph/cody/pull/7397)
+
+### Reverts
+
+- Revert "google auth / setup-gcloud seems unused in test-unit steps [#-1](https://github.com/sourcegraph/cody/pull/7357)
+
+### Uncategorized
+
+#### Others
+
+- [Backport M78] Fix current selection in ContextRetriever [#7462](https://github.com/sourcegraph/cody/pull/7462)
+- Changelog for 1.76.0 [#7409](https://github.com/sourcegraph/cody/pull/7409)
+- Fix Remote Directories Provider Valid Site Version Logic [#7396](https://github.com/sourcegraph/cody/pull/7396)
+- Cody CLI: Include Noxide files [#7390](https://github.com/sourcegraph/cody/pull/7390)
+- Refactor a few lines in vscode/src/commands/scm/source-control.ts [#7385](https://github.com/sourcegraph/cody/pull/7385)
+- Api: Fix version detection for non-main-branch images [#7382](https://github.com/sourcegraph/cody/pull/7382)
+- Fix gear action in Find with Sourcegraph dialog [#7369](https://github.com/sourcegraph/cody/pull/7369)
+- Merge sourcegraph.cody.Icons and sourcegraph.Icons - merge classes - remove redundant files [#7368](https://github.com/sourcegraph/cody/pull/7368)
+- Logging JCEF version to Sentry [#7364](https://github.com/sourcegraph/cody/pull/7364)
+- At-mention menu item naming changes [#7359](https://github.com/sourcegraph/cody/pull/7359)
+- Google auth / setup-gcloud seems unused in test-unit steps [#7357](https://github.com/sourcegraph/cody/pull/7357)
+- Chore: disable renovate [#7355](https://github.com/sourcegraph/cody/pull/7355)
+- Updating CodyAuthService from authStatus/didUpdate [#7354](https://github.com/sourcegraph/cody/pull/7354)
+- Remove CodyPromptsV2 (and fix prompts migration layout) [#7336](https://github.com/sourcegraph/cody/pull/7336)
+
+
 ## 1.76.1
 
 ### Reverts
