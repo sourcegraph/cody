@@ -5,6 +5,7 @@ import {
     type ChatMessage,
     type EditModel,
     type EditProvider,
+    ModelTag,
     PromptString,
     TokenCounterUtils,
     currentResolvedConfig,
@@ -37,18 +38,23 @@ const getInteractionArgsFromIntent = (
     const { provider } = getModelInfo(model)
     // Default to the generic Claude prompt if the provider is unknown
     const interaction = INTERACTION_PROVIDERS[provider] || claude
+
+    // Check if the model has the reasoning tag
+    const modelInfo = modelsService.getModelByID(model)
+    const isReasoningModel = modelInfo?.tags.includes(ModelTag.Reasoning)
+
     switch (intent) {
         case 'add':
-            return interaction.getAdd(options)
+            return interaction.getAdd({ ...options, isReasoningModel })
         case 'fix':
-            return interaction.getFix(options)
+            return interaction.getFix({ ...options, isReasoningModel })
         case 'doc':
-            return interaction.getDoc(options)
+            return interaction.getDoc({ ...options, isReasoningModel })
         case 'edit':
         case 'smartApply':
-            return interaction.getEdit(options)
+            return interaction.getEdit({ ...options, isReasoningModel })
         case 'test':
-            return interaction.getTest(options)
+            return interaction.getTest({ ...options, isReasoningModel })
     }
 }
 
