@@ -118,6 +118,10 @@ describe('AgentWorkspaceConfiguration', () => {
                     },
                     enabled: true,
                 },
+                autoedit: {
+                    fontSize: undefined,
+                    lineHeight: undefined,
+                },
                 suggestions: {
                     mode: 'autocomplete',
                 },
@@ -129,6 +133,7 @@ describe('AgentWorkspaceConfiguration', () => {
                     verbose: true,
                     additional: true,
                 },
+                displayScaleFactor: undefined,
                 experimental: {
                     tracing: true,
                 },
