@@ -29,7 +29,7 @@ export const FileCell: FC<FileCellProps> = ({
                     onFileLinkClicked(result.file?.uri)
                 }}
             >
-                <span className="tw-font-mono">{result.file?.fileName}</span>
+                <span className="tw-font-mono">{result.file?.fileName || result.title}</span>
             </Button>
         </div>
     )

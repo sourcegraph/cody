@@ -45,7 +45,7 @@ export const shellTool: AgentTool = {
 
         try {
             const commandResult = await runShellCommand(validInput.command, {
-                cwd: workspaceFolder.uri.fsPath,
+                cwd: workspaceFolder.uri.path,
             })
 
             // Format the output as an array of TerminalLine objects

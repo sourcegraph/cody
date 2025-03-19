@@ -33,6 +33,7 @@ export const getFileTool: AgentTool = {
                     fileName: validInput.name,
                     uri: context.uri,
                     content: context.content,
+                    title: validInput.name,
                 },
                 contextItems: [context],
             }

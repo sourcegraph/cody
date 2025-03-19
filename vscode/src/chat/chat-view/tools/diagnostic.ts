@@ -34,6 +34,7 @@ export const diagnosticTool: AgentTool = {
             return {
                 text,
                 output: {
+                    title: 'Diagnostics - ' + name,
                     type: 'file-view',
                     status: UIToolStatus.Done,
                     fileName: name,

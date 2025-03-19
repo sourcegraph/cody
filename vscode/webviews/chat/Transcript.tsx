@@ -534,16 +534,19 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
     )
 
     const toolContent = useMemo(() => {
-        if (!assistantMessage?.content) {
+        if (!humanMessage?.content || !assistantMessage?.content) {
+            return undefined
+        }
+        if (!humanMessage?.content?.some(c => c.type === 'tool_result')) {
             return undefined
         }
         return assistantMessage?.content?.filter(c => c.type === 'tool_call')
-    }, [assistantMessage?.content])
+    }, [assistantMessage?.content, humanMessage?.content])
 
     return (
         <>
             {/* Shows tool contents instead of editor if any */}
-            {(!humanMessage.index || toolContent === undefined) && (
+            {toolContent === undefined && (
                 <HumanMessageCell
                     key={humanMessage.index}
                     userInfo={userInfo}
