@@ -21,7 +21,9 @@ export const diagnosticTool: AgentTool = {
                 return { text: `Cannot find file ${name}.` }
             }
 
-            const diagnostics = vscode.languages.getDiagnostics(fileInfo.uri)
+            const diagnostics = vscode.languages
+                .getDiagnostics(fileInfo.uri)
+                .filter(d => d.severity === vscode.DiagnosticSeverity.Error)
             return {
                 text: `Diagnostics for ${name}:\n${diagnostics.map(d => d.message).join('\n')}`,
             }
@@ -52,10 +54,15 @@ export function getDiagnosticsDiff(
     return relevantDiagnostics
         .map(([uri, currentDiagnostics]) => {
             const previousDiagnostics = previousMap.get(uri) || []
-            const newDiagnostics = currentDiagnostics.filter(
-                current => !previousDiagnostics.some(prev => areEquivalent(prev, current))
-            )
+            const newDiagnostics = currentDiagnostics
+                .filter(d => d.severity === vscode.DiagnosticSeverity.Error)
+                .filter(current => !previousDiagnostics.some(prev => areEquivalent(prev, current)))
             return newDiagnostics.length ? ([uri, newDiagnostics] as WorkspaceDiagnostics) : null
         })
         .filter((entry): entry is WorkspaceDiagnostics => entry !== null)
+}
+
+export function getErrorDiagnostics(file: vscode.Uri): vscode.Diagnostic[] {
+    const diagnostics = vscode.languages.getDiagnostics(file)
+    return diagnostics.filter(d => d.severity === vscode.DiagnosticSeverity.Error)
 }

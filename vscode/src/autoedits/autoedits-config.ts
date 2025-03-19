@@ -31,11 +31,11 @@ const defaultTokenLimit = {
     codeToRewritePrefixLines: 1,
     codeToRewriteSuffixLines: 2,
     contextSpecificTokenLimit: {
-        [RetrieverIdentifier.RecentEditsRetriever]: 2500,
+        [RetrieverIdentifier.RecentEditsRetriever]: 1500,
         [RetrieverIdentifier.JaccardSimilarityRetriever]: 0,
         [RetrieverIdentifier.RecentCopyRetriever]: 500,
         [RetrieverIdentifier.DiagnosticsRetriever]: 250,
-        [RetrieverIdentifier.RecentViewPortRetriever]: 2500,
+        [RetrieverIdentifier.RecentViewPortRetriever]: 1000,
     },
 } as const satisfies AutoEditsTokenLimit
 

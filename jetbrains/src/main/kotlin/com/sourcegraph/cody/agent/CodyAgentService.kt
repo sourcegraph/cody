@@ -147,8 +147,28 @@ class CodyAgentService(private val project: Project) : Disposable {
 
   fun restartAgent(secondsTimeout: Long = 90): CompletableFuture<CodyAgent> {
     synchronized(this) {
-      stopAgent()
-      return startAgent(secondsTimeout)
+      if (!codyAgent.isDone) {
+        return codyAgent
+      }
+
+      val newCodyAgent = CompletableFuture<CodyAgent>()
+
+      try {
+        val stopFuture = stopAgent() ?: CompletableFuture.completedFuture(null)
+        stopFuture
+            .thenCompose { startAgent(secondsTimeout) }
+            .thenAccept { agent -> newCodyAgent.complete(agent) }
+            .exceptionally { exception ->
+              newCodyAgent.completeExceptionally(exception)
+              null
+            }
+      } catch (e: Exception) {
+        newCodyAgent.completeExceptionally(e)
+      } finally {
+        codyAgent = newCodyAgent
+      }
+
+      return newCodyAgent
     }
   }
 

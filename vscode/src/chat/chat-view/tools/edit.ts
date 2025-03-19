@@ -5,7 +5,7 @@ import { getContextFromRelativePath } from '../../../commands/context/file-path'
 import { diffWithLineNum } from '../utils/diff'
 import { validateWithZod } from '../utils/input'
 import { zodToolSchema } from '../utils/parse'
-import { getDiagnosticsDiff } from './diagnostic'
+import { getErrorDiagnostics } from './diagnostic'
 import { EditHistoryManager } from './edit-history'
 import { fileOps } from './file-operations'
 import { type EditToolInput, EditToolSchema } from './schema'
@@ -33,14 +33,13 @@ export const editTool = {
 
         // Prepare file path and capture initial diagnostics
         const fileUri = vscode.Uri.joinPath(workspaceFolder.uri, path)
-        const diagnosticsOnStart = vscode.languages.getDiagnostics()
 
         // Process commands
         switch (command) {
             case 'create':
                 return createFile(fileUri, validInput.file_text)
             case 'str_replace':
-                return replaceInFile(fileUri, validInput.old_str, validInput.new_str, diagnosticsOnStart)
+                return replaceInFile(fileUri, validInput.old_str, validInput.new_str)
             case 'insert':
                 return insertInFile(fileUri, validInput.insert_line, validInput.new_str)
             case 'undo_edit':
@@ -92,8 +91,7 @@ async function createFile(uri: vscode.Uri, fileText: string | undefined): Promis
 async function replaceInFile(
     uri: vscode.Uri,
     oldStr: string | undefined,
-    newStr: string | undefined,
-    initialDiagnostics: [vscode.Uri, vscode.Diagnostic[]][]
+    newStr: string | undefined
 ): Promise<AgentToolResult> {
     if (!oldStr) {
         return { text: 'Parameter `old_str` is required for command: str_replace' }
@@ -126,34 +124,31 @@ async function replaceInFile(
 
         // Open document and show diff
         const document = await vscode.workspace.openTextDocument(uri)
-        await vscode.window.showTextDocument(document)
+        await document.save()
 
         // Generate output
         const diffMarkdown = diffWithLineNum(content, newContent)
-        const output = [`${fileName} has been updated successfully:`, diffMarkdown]
-
-        // Get updated context for the file
-        const updatedContext = await getContextFromRelativePath(fileName)
-
-        // Check for new workspace diagnostics
-        const currentDiagnostics = vscode.languages.getDiagnostics()
-        const diff = getDiagnosticsDiff(initialDiagnostics, currentDiagnostics)
-        if (diff.length > 0) {
-            output.push(
-                `[CODEBASE ERROR - Action required] ${diff
-                    .map(d => d[1].map(diag => diag.message).join('\n'))
-                    .join('\n')}`
-            )
-        }
+        const output = [`Edited ${fileName}`, diffMarkdown]
 
         // Show diff view
         const historyUri = uri.with({ scheme: 'cody-checkpoint' })
         const title = `History: ${fileName} (${new Date(timestamp).toLocaleString()})`
         await vscode.commands.executeCommand('vscode.diff', historyUri, uri, title)
 
+        const diagnosticsOnEnd = getErrorDiagnostics(uri)
+        if (diagnosticsOnEnd.length) {
+            output.push('[Error deteched - Action required]')
+            for (const diagnostic of diagnosticsOnEnd) {
+                output.push(diagnostic.message)
+            }
+        }
+
+        // Get updated context for the file
+        const updatedContext = await getContextFromRelativePath(fileName)
+
         return {
             text: output.join('\n'),
-            contextItems: updatedContext ? [updatedContext] : undefined,
+            contextItems: updatedContext?.content ? [updatedContext] : undefined,
         }
     } catch (error: any) {
         return { text: `Failed to replace text in ${fileName}: ${error.message}` }
