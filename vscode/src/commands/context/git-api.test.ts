@@ -16,6 +16,7 @@ describe('getContextFilesFromGitDiff', () => {
         diffIndexWithHEAD: vi.fn(),
         diffWithHEAD: vi.fn(),
         diff: vi.fn(),
+        rootUri: URI.parse('file:///repo/root')
     } as unknown as Repository
 
     const diffIndexWithHEAD = mockGitRepo.diffIndexWithHEAD as Mock
@@ -54,13 +55,22 @@ describe('getContextFilesFromGitDiff', () => {
     it('should return diffs for unstaged changes when no staged changes', async () => {
         diffIndexWithHEAD.mockResolvedValue([])
         diffWithHEAD.mockResolvedValue([{ uri: URI.parse('file:///path/to/file2.ts') }])
-        diff.mockResolvedValue(
-            'diff --git a/file2.ts b/file2.ts\n' +
-                '--- a/file2.ts\n' +
-                '+++ b/file2.ts\n' +
-                '@@ -1,1 +1,2 @@\n' +
-                '+console.log("Unstaged change");\n'
-        )
+        
+        // Mock both diff(true) for staged changes and diff(false) for unstaged changes
+        diff.mockImplementation((staged) => {
+            if (staged === true) {
+                return Promise.resolve('') // No staged changes
+            } else {
+                // Return unstaged changes when diff(false) is called
+                return Promise.resolve(
+                    'diff --git a/file2.ts b/file2.ts\n' +
+                    '--- a/file2.ts\n' +
+                    '+++ b/file2.ts\n' +
+                    '@@ -1,1 +1,2 @@\n' +
+                    '+console.log("Unstaged change");\n'
+                )
+            }
+        })
 
         mockDoesFileExist.mockResolvedValue(true)
 
