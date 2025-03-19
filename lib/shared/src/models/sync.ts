@@ -335,23 +335,6 @@ export function syncModels({
                                                     ).map(createModelFromServerModel)
                                                 )
 
-                                                // Add special tag to Claude 3.7 Sonnet for agentic mode
-                                                data.primaryModels = data.primaryModels.map(model => {
-                                                    if (
-                                                        model.title?.toLowerCase() ===
-                                                        'claude 3.7 sonnet'
-                                                    ) {
-                                                        return {
-                                                            ...model,
-                                                            tags: [
-                                                                ...model.tags,
-                                                                ModelTag.AgenticCompatible,
-                                                            ],
-                                                        }
-                                                    }
-                                                    return model
-                                                })
-
                                                 // Set the default model to Haiku for free users.
                                                 if (
                                                     isDotComUser &&

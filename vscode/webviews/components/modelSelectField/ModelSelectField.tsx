@@ -94,12 +94,11 @@ export const ModelSelectField: React.FunctionComponent<{
             showCodyProBadge,
             parentOnModelSelect,
             isCodyProUser,
-            intent,
         ]
     )
 
-    // Readonly if they are an enterprise user that does not support server-sent models
-    const readOnly = !(userInfo.isDotComUser || serverSentModelsEnabled)
+    // Readonly if the intent is agentic or they are an enterprise user that does not support server-sent models
+    const readOnly = intent === 'agentic' || !(userInfo.isDotComUser || serverSentModelsEnabled)
 
     const onOpenChange = useCallback(
         (open: boolean): void => {
@@ -123,7 +122,7 @@ export const ModelSelectField: React.FunctionComponent<{
     const options = useMemo<SelectListOption[]>(
         () =>
             models.map(m => {
-                const availability = modelAvailability(userInfo, serverSentModelsEnabled, m, intent)
+                const availability = modelAvailability(userInfo, serverSentModelsEnabled, m)
                 return {
                     value: m.id,
                     title: (
@@ -141,7 +140,7 @@ export const ModelSelectField: React.FunctionComponent<{
                     tooltip: getTooltip(m, availability),
                 } satisfies SelectListOption
             }),
-        [models, userInfo, serverSentModelsEnabled, intent]
+        [models, userInfo, serverSentModelsEnabled]
     )
     const optionsByGroup: { group: string; options: SelectListOption[] }[] = useMemo(() => {
         return optionByGroup(options)
@@ -281,7 +280,11 @@ export const ModelSelectField: React.FunctionComponent<{
                 },
             }}
         >
-            {value !== undefined ? options.find(option => option.value === value)?.title : 'Select...'}
+            {intent === 'agentic'
+                ? 'Claude 3.7 Sonnet'
+                : value !== undefined
+                  ? options.find(option => option.value === value)?.title
+                  : 'Select...'}
         </ToolbarPopoverItem>
     )
 }
@@ -294,18 +297,13 @@ type ModelAvailability = 'available' | 'needs-cody-pro' | 'not-selectable-on-ent
 function modelAvailability(
     userInfo: Pick<UserAccountInfo, 'isCodyProUser' | 'isDotComUser'>,
     serverSentModelsEnabled: boolean,
-    model: Model,
-    intent?: ChatMessage['intent']
+    model: Model
 ): ModelAvailability {
     if (!userInfo.isDotComUser && !serverSentModelsEnabled) {
         return 'not-selectable-on-enterprise'
     }
     if (isCodyProModel(model) && userInfo.isDotComUser && !userInfo.isCodyProUser) {
         return 'needs-cody-pro'
-    }
-    // For agentic mode, only allow models with the AgenticCompatible tag (Claude 3.7 Sonnet)
-    if (intent === 'agentic' && !model.tags.includes(ModelTag.AgenticCompatible)) {
-        return 'not-selectable-on-enterprise'
     }
     return 'available'
 }

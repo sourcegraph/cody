@@ -31,7 +31,7 @@ const MODELS: Model[] = [
         id: 'anthropic/claude-3-7-sonnet',
         contextWindow: { input: 175000, output: 8000 },
         usage: [ModelUsage.Chat],
-        tags: [ModelTag.Power, ModelTag.AgenticCompatible],
+        tags: [ModelTag.Power],
     },
 ]
 
@@ -93,6 +93,7 @@ export const EnterpriseUser: Story = {
     },
 }
 
+// The model selector's value is always Claude 3.7 Sonnet in agentic mode
 export const AgenticMode: Story = {
     args: {
         userInfo: {
@@ -100,9 +101,5 @@ export const AgenticMode: Story = {
             isCodyProUser: true,
         },
         intent: 'agentic',
-        models: MODELS.map(m => ({
-            ...m,
-            default: m.title === 'Claude 3.7 Sonnet',
-        })),
     },
 }
