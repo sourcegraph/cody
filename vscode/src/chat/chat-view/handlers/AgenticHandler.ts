@@ -4,6 +4,7 @@ import {
     type ContextItem,
     type Message,
     PromptString,
+    type ThinkingContentPart,
     type ToolContentPart,
     isDefined,
     logDebug,
@@ -19,6 +20,11 @@ import { parseToolCallArgs } from '../utils/parse'
 import { ChatHandler } from './ChatHandler'
 import type { AgentHandler, AgentHandlerDelegate, AgentRequest } from './interfaces'
 import { buildAgentPrompt } from './prompts'
+
+interface ChatStream {
+    text: string
+    thinking: ThinkingContentPart | undefined
+}
 
 enum AGENT_MODELS {
     ExtendedThinking = 'anthropic::2024-10-22::claude-3-7-sonnet-extended-thinking',
@@ -174,7 +180,7 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
 
         // Initialize state
         const toolCalls = new Map<string, ToolContentPart>()
-        let streamedText = ''
+        const streamed: ChatStream = { text: '', thinking: undefined }
 
         // Process stream
         const stream = await this.chatClient.chat(prompt, params, signal)
@@ -184,16 +190,22 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
 
             switch (message.type) {
                 case 'change': {
-                    streamedText = message.text
+                    streamed.text = message.text
                     delegate.postMessageInProgress({
                         speaker: 'assistant',
-                        text: PromptString.unsafe_fromLLMResponse(streamedText),
+                        text: PromptString.unsafe_fromLLMResponse(streamed.text),
+                        content: streamed.thinking ? [streamed.thinking] : [],
                         model,
                     })
-                    // Process tool calls in the response
-                    const toolCalledParts = message.content?.filter(c => c.type === 'function') || []
-                    for (const toolCall of toolCalledParts) {
-                        this.syncToolCall(toolCall, toolCalls)
+                    for (const content of message.content || []) {
+                        // Handle thinking part if needed
+                        if (content.type === 'thinking') {
+                            streamed.thinking = content
+                        }
+                        // Process any tool calls in the message
+                        if (content.type === 'function') {
+                            this.syncToolCall(content, toolCalls)
+                        }
                     }
                     break
                 }
@@ -210,7 +222,7 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
         return {
             botResponse: {
                 speaker: 'assistant',
-                text: PromptString.unsafe_fromLLMResponse(streamedText),
+                text: PromptString.unsafe_fromLLMResponse(streamed.text),
                 intent: 'agentic',
                 model,
             },

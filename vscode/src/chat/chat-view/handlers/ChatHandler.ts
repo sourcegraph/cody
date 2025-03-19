@@ -161,11 +161,29 @@ export class ChatHandler implements AgentHandler {
                 params.stream = false
             }
 
+            let hasStartedThinking = false
             const stream = await this.chatClient.chat(prompt, params, abortSignal, requestID)
             for await (const message of stream) {
                 switch (message.type) {
                     case 'change': {
-                        typewriter.update(message.text)
+                        for (const content of message.content || []) {
+                            // Handle thinking part if needed
+                            if (content.type === 'thinking') {
+                                if (!hasStartedThinking) {
+                                    hasStartedThinking = true
+                                    typewriter.update('<think>')
+                                }
+                                typewriter.update(content.thinking)
+                                break
+                            }
+                        }
+                        if (message.text) {
+                            if (hasStartedThinking) {
+                                hasStartedThinking = false
+                                typewriter.update('</think>')
+                            }
+                            typewriter.update(message.text)
+                        }
                         break
                     }
                     case 'complete': {

@@ -10,7 +10,7 @@ interface CompletionEvent extends CompletionResponse {
     content?: CompletionContentData[] | undefined
 }
 
-export type CompletionContentData = ToolContentPart | TextContentPart
+export type CompletionContentData = ToolContentPart | TextContentPart | ThinkingContentPart
 
 // Tool calls returned by the LLM
 export interface CompletionFunctionCallsData {
@@ -61,6 +61,7 @@ export type MessagePart =
     | { type: 'context_repo'; repoId: string } // Cody extension
     | { type: 'image_url'; image_url: { url: string } } // natively supported by LLM
     | ToolContentPart
+    | ThinkingContentPart
 
 export interface TextContentPart {
     type: 'text'
@@ -77,6 +78,11 @@ export interface ToolContentPart extends CompletionFunctionCallsData {
     id: string
     result?: string
     status: string
+}
+
+export interface ThinkingContentPart {
+    type: 'thinking'
+    thinking: string
 }
 
 export interface CompletionUsage {

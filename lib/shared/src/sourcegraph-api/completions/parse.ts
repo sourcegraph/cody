@@ -1,3 +1,4 @@
+import { isDefined } from '../..'
 import { isError } from '../../utils'
 import type { CompletionsResponseBuilder } from './CompletionsResponseBuilder'
 
@@ -58,9 +59,8 @@ function parseEventData(
             if (isError(data)) {
                 return data
             }
-            // Process the delta_thinking and deltaText separately.
-            // The thinking text will be added to the completion text.
-            builder.nextThinking(data.delta_thinking)
+            // Process the delta_thinking and deltaText separately
+            const thinking = builder.nextThinking(data.delta_thinking)
             // Internally, don't handle delta text yet and there's limited value
             // in passing around deltas anyways so we concatenate them here.
             const completion = builder.nextCompletion(data.completion, data.deltaText)
@@ -70,7 +70,8 @@ function parseEventData(
                 type: eventType,
                 completion,
                 stopReason: data.stopReason,
-                content: toolCalls,
+                // Collect content parts (tools and thinking)
+                content: [thinking, ...toolCalls].filter(isDefined),
             }
         }
         case 'error': {

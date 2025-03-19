@@ -121,7 +121,15 @@ export function sanitizeMessages(messages: Message[]): Message[] {
         return true
     })
 
-    // 3. Final assistant content cannot end with trailing whitespace
+    // 3. Removes all the unexpected content. e.g. thinking, etc.
+    sanitizedMessages = sanitizedMessages.map(m => {
+        return {
+            ...m,
+            content: m.content?.filter(p => p.type !== 'thinking'),
+        }
+    })
+
+    // 4. Final assistant content cannot end with trailing whitespace
     lastMessage = sanitizedMessages.at(-1)
     if (lastMessage?.speaker === 'assistant' && lastMessage.text?.length) {
         const lastMessageText = lastMessage.text.trimEnd()
