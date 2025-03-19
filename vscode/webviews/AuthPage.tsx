@@ -301,9 +301,16 @@ const ClientSignInForm: React.FC<ClientSignInFormProps> = memo(
         // Memoize handlers to prevent unnecessary re-creations
         const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
             const { name, value } = e.target
+            let processedValue = value
+            
+            // Automatically add https:// for endpoint URLs if not present
+            if (name === 'endpoint' && value && !value.startsWith('http://') && !value.startsWith('https://')) {
+                processedValue = `https://${value}`
+            }
+            
             setFormState(prev => ({
                 ...prev,
-                formData: { ...prev.formData, [name]: value },
+                formData: { ...prev.formData, [name]: processedValue },
             }))
         }, [])
 
@@ -360,7 +367,7 @@ const ClientSignInForm: React.FC<ClientSignInFormProps> = memo(
                         <FormControl
                             type="url"
                             name="endpoint"
-                            placeholder="Example: https://instance.sourcegraph.com"
+                            placeholder="Example: instance.sourcegraph.com"
                             value={formState.formData.endpoint}
                             className="tw-w-full tw-my-2 !tw-p-4"
                             required
