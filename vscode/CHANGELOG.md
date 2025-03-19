@@ -4,6 +4,15 @@ This is a log of all notable changes to Cody for VS Code.
 
 <!--- {/_ CHANGELOG_START _/} -->
 
+## 1.78.1
+
+### Fix
+
+#### Models
+
+- Prevent reasoning models from being set as default model [#7473](https://github.com/sourcegraph/cody/pull/7473)
+
+
 ## 1.78.0
 
 ### Features
