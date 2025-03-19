@@ -60,16 +60,15 @@ describe('getContextFilesFromGitDiff', () => {
         diff.mockImplementation((staged) => {
             if (staged === true) {
                 return Promise.resolve('') // No staged changes
-            } else {
-                // Return unstaged changes when diff(false) is called
-                return Promise.resolve(
-                    'diff --git a/file2.ts b/file2.ts\n' +
-                    '--- a/file2.ts\n' +
-                    '+++ b/file2.ts\n' +
-                    '@@ -1,1 +1,2 @@\n' +
-                    '+console.log("Unstaged change");\n'
-                )
             }
+            // Return unstaged changes when diff(false) is called
+            return Promise.resolve(
+                'diff --git a/file2.ts b/file2.ts\n' +
+                '--- a/file2.ts\n' +
+                '+++ b/file2.ts\n' +
+                '@@ -1,1 +1,2 @@\n' +
+                '+console.log("Unstaged change");\n'
+            )
         })
 
         mockDoesFileExist.mockResolvedValue(true)
