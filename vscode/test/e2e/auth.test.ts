@@ -79,7 +79,7 @@ test
             .frameLocator('iframe[title="Chat"]')
             .getByText('Based on your email address')
     ).toBeVisible()
-    })
+})
 
 const refetchInterval = 500
 test
