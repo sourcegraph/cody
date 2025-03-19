@@ -39,12 +39,13 @@ class AutoeditManager(private val project: Project) {
 
     val endLineAfterInsert =
         item.range.start.line.toInt() + item.insertText.count { it == '\n' } - 1
+    // [com.intellij.openapi.vcs.ex.Range] is [,) while ours is [,]. Hence, let's add 1 to the ends.
     val range =
         Range(
             item.range.start.line.toInt(),
-            item.range.end.line.toInt(),
+            item.range.end.line.toInt() + 1,
             item.range.start.line.toInt(),
-            endLineAfterInsert)
+            endLineAfterInsert + 1)
     AutoeditLineStatusMarkerPopupRenderer(
             AutoeditTracker(
                 project,
