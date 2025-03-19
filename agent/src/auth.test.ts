@@ -172,7 +172,6 @@ describe(
                 customHeaders: {},
             })
             expect(authStatus?.authenticated).toBe(true)
-            // Use IDE or sourcegraph.com endpoint depending on test setup
             expect(authStatus?.endpoint).toBe(SWITCH_CREDENTIALS.serverEndpoint)
 
             // Test things that should work after having switched accounts.
