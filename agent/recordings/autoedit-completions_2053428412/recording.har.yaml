@@ -249,11 +249,11 @@ log:
         send: 0
         ssl: -1
         wait: 589
-    - _id: 556da50dd6f91bc4855e065b1bbc60ed
+    - _id: ee529817137bff822d064e3bd4dcabde
       _order: 0
       cache: {}
       request:
-        bodySize: 1384
+        bodySize: 1205
         cookies: []
         headers:
           - _fromType: array
@@ -280,7 +280,7 @@ log:
             value: "5000"
           - _fromType: array
             name: content-length
-            value: "1384"
+            value: "1205"
           - name: host
             value: demo.sourcegraph.com
         headersSize: 460
@@ -309,28 +309,6 @@ log:
 
 
                   </file>
-
-                  Code snippets just I viewed:
-
-                  <recently_viewed_snippets>
-
-                  <snippet>
-
-                  (`src/sum.ts`)
-
-
-
-                  </snippet>
-
-                  <snippet>
-
-                  (`src/mergeSort.ts`)
-
-
-
-                  </snippet>
-
-                  </recently_viewed_snippets>
 
                   <area_around_code_to_rewrite>
 
@@ -368,14 +346,14 @@ log:
             value: v1
         url: https://demo.sourcegraph.com/.api/completions/code?client-name=autoedit-completions&client-version=v1
       response:
-        bodySize: 2802
+        bodySize: 3679
         content:
           mimeType: text/event-stream
-          size: 2802
+          size: 3679
           text: >+
             event: completion
 
-            data: {"completion":"function bubbleSort(arr: number[]): number[] {\n    const n = arr.length;\n    for (let i = 0; i < n - 1; i++) {\n        for (let j = 0; j < n - i - 1; j++) {\n            if (arr[j] > arr[j + 1]) {\n                const temp = arr[j];\n                arr[j] = arr[j + 1];\n                arr[j + 1] = temp;\n            }\n        }\n    }\n    return arr;\n}\n","stopReason":"stop"}
+            data: {"completion":"function bubbleSort(arr: number[]): number[] {\n    const n = arr.length;\n    for (let i = 0; i < n - 1; i++) {\n        for (let j = 0; j < n - i - 1; j++) {\n            if (arr[j] > arr[j + 1]) {\n                // Swap arr[j] and arr[j + 1]\n                const temp = arr[j];\n                arr[j] = arr[j + 1];\n                arr[j + 1] = temp;\n            }\n        }\n    }\n    return arr;\n}\n","stopReason":"stop"}
 
 
             event: done
@@ -385,15 +363,13 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Fri, 14 Mar 2025 16:10:12 GMT
+            value: Wed, 19 Mar 2025 14:42:09 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
             value: chunked
           - name: connection
             value: close
-          - name: retry-after
-            value: "427"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -411,13 +387,13 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1337
+        headersSize: 1230
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-03-14T16:10:11.165Z
-      time: 2105
+      startedDateTime: 2025-03-19T14:42:08.254Z
+      time: 2374
       timings:
         blocked: -1
         connect: -1
@@ -425,7 +401,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 2105
+        wait: 2374
     - _id: 404a28d2461ea66da470804476c21f26
       _order: 0
       cache: {}
