@@ -166,7 +166,7 @@ describe('Autoedit', () => {
 
             const firstResult = await client.request('autocomplete/execute', {
                 uri: uri.toString(),
-                position: { line: 1, character: 14 },
+                position: { line: 1, character: 24 },
                 triggerKind: 'Automatic',
             })
             expect(firstResult.inlineCompletionItems.length).toBeGreaterThan(0)
@@ -174,7 +174,7 @@ describe('Autoedit', () => {
             expect(firstResult.inlineCompletionItems.map(item => item.insertText)).toMatchInlineSnapshot(
                 `
               [
-                "    return a + b;",
+                "    return parseInt(a) + parseInt(b);",
               ]
             `
             )

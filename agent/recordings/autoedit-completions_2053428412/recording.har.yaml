@@ -400,11 +400,11 @@ log:
         send: 0
         ssl: -1
         wait: 2105
-    - _id: 15db8f46ea8faed1cdb40e86e45b1a86
+    - _id: 59a243d629c95c45c2b63e29c5422c3b
       _order: 0
       cache: {}
       request:
-        bodySize: 1607
+        bodySize: 1627
         cookies: []
         headers:
           - _fromType: array
@@ -431,7 +431,7 @@ log:
             value: "5000"
           - _fromType: array
             name: content-length
-            value: "1607"
+            value: "1627"
           - name: host
             value: demo.sourcegraph.com
         headersSize: 460
@@ -441,7 +441,7 @@ log:
           mimeType: application/json; charset=utf-8
           params: []
           textJSON:
-            maxTokensToSample: 532
+            maxTokensToSample: 534
             messages:
               - speaker: human
                 text: >-
@@ -496,8 +496,8 @@ log:
 
                   <code_to_rewrite>
 
-                  function sumStrings(a: String, a: String): number {
-                      return a +
+                  function sumStrings(a: String, b: String): number {
+                      return parseInt(a) +
                   }
 
 
@@ -527,8 +527,8 @@ log:
             model: fireworks::v1::autoedits-deepseek-lite-default
             prediction:
               content: |+
-                function sumStrings(a: String, a: String): number {
-                    return a +
+                function sumStrings(a: String, b: String): number {
+                    return parseInt(a) +
                 }
 
               type: content
@@ -542,14 +542,14 @@ log:
             value: v1
         url: https://demo.sourcegraph.com/.api/completions/code?client-name=autoedit-completions&client-version=v1
       response:
-        bodySize: 392
+        bodySize: 442
         content:
           mimeType: text/event-stream
-          size: 392
+          size: 442
           text: >+
             event: completion
 
-            data: {"completion":"function sumStrings(a: String, a: String): number {\n    return a + b;\n}\n\n","stopReason":"stop"}
+            data: {"completion":"function sumStrings(a: String, b: String): number {\n    return parseInt(a) + parseInt(b);\n}\n\n","stopReason":"stop"}
 
 
             event: done
@@ -559,7 +559,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Wed, 19 Mar 2025 11:46:27 GMT
+            value: Wed, 19 Mar 2025 13:06:17 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -589,8 +589,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-03-19T11:46:26.813Z
-      time: 459
+      startedDateTime: 2025-03-19T13:06:17.382Z
+      time: 480
       timings:
         blocked: -1
         connect: -1
@@ -598,12 +598,12 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 459
-    - _id: dece90ac6371f1a350912b677123151b
+        wait: 480
+    - _id: 94e168e32dc52e53f4f3a3b71f06d589
       _order: 0
       cache: {}
       request:
-        bodySize: 1537
+        bodySize: 1547
         cookies: []
         headers:
           - _fromType: array
@@ -630,7 +630,7 @@ log:
             value: "5000"
           - _fromType: array
             name: content-length
-            value: "1537"
+            value: "1547"
           - name: host
             value: demo.sourcegraph.com
         headersSize: 460
@@ -692,8 +692,8 @@ log:
 
                   <area_around_code_to_rewrite>
 
-                  function sumStrings(a: String, a: String): number {
-                      return a +
+                  function sumStrings(a: String, b: String): number {
+                      return parseInt(a) +
                   }
 
 
@@ -748,7 +748,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Wed, 19 Mar 2025 11:46:53 GMT
+            value: Wed, 19 Mar 2025 13:06:26 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -778,8 +778,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-03-19T11:46:53.322Z
-      time: 416
+      startedDateTime: 2025-03-19T13:06:26.178Z
+      time: 443
       timings:
         blocked: -1
         connect: -1
@@ -787,7 +787,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 416
+        wait: 443
     - _id: 404a28d2461ea66da470804476c21f26
       _order: 0
       cache: {}

@@ -1,5 +1,5 @@
-function sumStrings(a: String, a: String): number {
-    return a +
+function sumStrings(a: String, b: String): number {
+    return parseInt(a) +
 }
 
 function sumInts(a: number, b: number): number {
