@@ -132,7 +132,7 @@ describe('getFileDiff', () => {
     it('should generate markdown diff for file changes', () => {
         const oldText = 'First line\nSecond line'
         const newText = 'First line\nModified line'
-        const filePath = 'path/to/file.ts'
+        const filePath = '/file.ts'
         const uri = testFileUri(filePath)
 
         const result = getFileDiff(uri, oldText, newText)
@@ -147,7 +147,7 @@ describe('getFileDiff', () => {
     })
 
     it('should handle empty file contents', () => {
-        const filePath = 'path/to/empty.ts'
+        const filePath = '/empty.ts'
         const uri = testFileUri(filePath)
 
         const result = getFileDiff(uri, '', '')
@@ -163,7 +163,7 @@ describe('getFileDiff', () => {
 
     it('should handle new files', () => {
         const newText = 'First line\nSecond line'
-        const filePath = 'path/to/new.ts'
+        const filePath = '/new.ts'
         const uri = testFileUri(filePath)
 
         const result = getFileDiff(uri, '', newText)
@@ -178,7 +178,7 @@ describe('getFileDiff', () => {
 
     it('should handle deleted files', () => {
         const oldText = 'First line\nSecond line'
-        const filePath = 'path/to/deleted.ts'
+        const filePath = '/deleted.ts'
         const uri = testFileUri(filePath)
 
         const result = getFileDiff(uri, oldText, '')
@@ -195,8 +195,7 @@ describe('getFileDiff', () => {
         const oldText = 'Header line\nFirst paragraph\nSecond paragraph\nFooter line'
         const newText =
             'Header line\nFirst paragraph with changes\nNew paragraph\nSecond paragraph\nFooter line with edits'
-        const filePath = 'path/to/complex.md'
-        const uri = testFileUri(filePath)
+        const uri = testFileUri('path/to/complex.md')
 
         expect(getFileDiff(uri, oldText, newText)).toMatchSnapshot()
     })

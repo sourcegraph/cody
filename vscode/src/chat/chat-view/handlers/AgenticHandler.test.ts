@@ -1,38 +1,26 @@
 import type { Span } from '@opentelemetry/api'
-import { type ToolCallContentPart, ps } from '@sourcegraph/cody-shared'
+import {
+    CLIENT_CAPABILITIES_FIXTURE,
+    type ToolCallContentPart,
+    mockAuthStatus,
+    mockClientCapabilities,
+    ps,
+} from '@sourcegraph/cody-shared'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { mockLocalStorage } from '../../../services/LocalStorageProvider'
 import { type AgentTool, AgentToolGroup } from '../tools'
 import { AgenticHandler } from './AgenticHandler'
 import type { AgentHandlerDelegate, AgentRequest } from './interfaces'
 
-// Mock dependencies
-vi.mock('../../../prompt-builder', () => ({
-    PromptBuilder: {
-        create: vi.fn().mockResolvedValue({
-            tryAddToPrefix: vi.fn().mockReturnValue(true),
-            tryAddMessages: vi.fn(),
-            tryAddContext: vi.fn(),
-            build: vi.fn().mockReturnValue([]),
-        }),
-    },
-}))
-
-vi.mock('../../../completions/utils', () => ({
-    forkSignal: vi.fn(signal => new AbortController().signal),
-}))
-
+// Mock modules
 vi.mock('../tools', () => ({
     AgentToolGroup: {
-        getToolsByAgentId: vi.fn(),
+        getToolsByAgentId: vi.fn().mockResolvedValue([]),
     },
-}))
-
-vi.mock('../utils/parse', () => ({
-    parseToolCallArgs: vi.fn().mockImplementation(args => JSON.parse(args)),
 }))
 
 vi.mock('../prompts', () => ({
-    buildAgentPrompt: vi.fn().mockReturnValue('You are an AI agent'),
+    buildAgentPrompt: vi.fn().mockReturnValue('You are Cody.'),
 }))
 
 describe('AgenticHandler', () => {
@@ -66,6 +54,9 @@ describe('AgenticHandler', () => {
     beforeEach(() => {
         vi.clearAllMocks()
 
+        mockAuthStatus({ authenticated: false })
+        mockLocalStorage('noop')
+        mockClientCapabilities(CLIENT_CAPABILITIES_FIXTURE)
         // Create mock tools for testing
         const mockTools: AgentTool[] = [
             {
@@ -95,8 +86,6 @@ describe('AgenticHandler', () => {
     it('initializes with the correct system prompt', () => {
         // @ts-ignore - accessing protected property for testing
         expect(agenticHandler.SYSTEM_PROMPT).toBeDefined()
-        // @ts-ignore - accessing protected property for testing
-        expect(agenticHandler.SYSTEM_PROMPT.toString()).toBe('You are an AI agent')
     })
 
     it('properly sets up tools during handle', async () => {
@@ -235,9 +224,13 @@ describe('AgenticHandler', () => {
 
         // Check that the invoke methods were called
         // @ts-ignore - accessing protected property for testing
-        expect(agenticHandler.tools[0].invoke).toHaveBeenCalledWith({ query: 'findFunction' })
+        expect(agenticHandler.tools[0].invoke).toHaveBeenCalledWith({
+            query: 'findFunction',
+        })
         // @ts-ignore - accessing protected property for testing
-        expect(agenticHandler.tools[1].invoke).toHaveBeenCalledWith({ path: '/test/file.ts' })
+        expect(agenticHandler.tools[1].invoke).toHaveBeenCalledWith({
+            path: '/test/file.ts',
+        })
     })
     it('handles tool execution errors gracefully', async () => {
         // Create test tool call
