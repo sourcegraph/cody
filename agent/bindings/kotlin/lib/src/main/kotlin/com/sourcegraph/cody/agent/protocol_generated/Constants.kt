@@ -107,6 +107,8 @@ object Constants {
   const val terminal = "terminal"
   const val text = "text"
   const val tool = "tool"
+  const val toolCall = "tool_call"
+  const val toolResult = "tool_result"
   const val tools = "tools"
   const val trace = "trace"
   const val tree = "tree"
