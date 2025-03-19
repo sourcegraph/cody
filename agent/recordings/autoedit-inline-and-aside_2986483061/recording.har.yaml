@@ -256,11 +256,11 @@ log:
         send: 0
         ssl: -1
         wait: 542
-    - _id: 0628459b9d2436f8f998b0f6d654b4f2
+    - _id: bef763bd0bac8165367ab1c94920d876
       _order: 0
       cache: {}
       request:
-        bodySize: 1415
+        bodySize: 1280
         cookies: []
         headers:
           - _fromType: array
@@ -287,7 +287,7 @@ log:
             value: "5000"
           - _fromType: array
             name: content-length
-            value: "1415"
+            value: "1280"
           - name: host
             value: demo.sourcegraph.com
         headersSize: 475
@@ -316,20 +316,6 @@ log:
 
 
                   </file>
-
-                  Code snippets just I viewed:
-
-                  <recently_viewed_snippets>
-
-                  <snippet>
-
-                  (`src/sum-ages.ts`)
-
-
-
-                  </snippet>
-
-                  </recently_viewed_snippets>
 
                   <area_around_code_to_rewrite>
 
@@ -374,10 +360,10 @@ log:
             value: v1
         url: https://demo.sourcegraph.com/.api/completions/code?client-name=autoedit-inline-and-aside&client-version=v1
       response:
-        bodySize: 477
+        bodySize: 583
         content:
           mimeType: text/event-stream
-          size: 477
+          size: 583
           text: >+
             event: completion
 
@@ -391,7 +377,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Wed, 19 Mar 2025 15:18:23 GMT
+            value: Wed, 19 Mar 2025 15:29:51 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -420,8 +406,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-03-19T15:18:23.388Z
-      time: 448
+      startedDateTime: 2025-03-19T15:29:51.328Z
+      time: 520
       timings:
         blocked: -1
         connect: -1
@@ -429,7 +415,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 448
+        wait: 520
     - _id: 404a28d2461ea66da470804476c21f26
       _order: 0
       cache: {}
