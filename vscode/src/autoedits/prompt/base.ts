@@ -36,11 +36,12 @@ export abstract class AutoeditsUserPromptStrategy {
         isChatModel,
         ...userPromptArgs
     }: UserPromptForModelArgs): AutoeditsPrompt {
-        // We want our Agent tests to have a deterministic prompt so we can match a network recording.
-        // We omit `context` here to avoid cases where the auto-edit prompt includes snippets about recently viewed
-        // files - something which can change depending on the order the tests run in.
-        const context = IS_AGENT_TESTING ? [] : userPromptArgs.context
-        const prompt = this.getUserPrompt({ ...userPromptArgs, context })
+        if (IS_AGENT_TESTING) {
+            // Need deterministic ordering of context files for the tests to pass
+            // consistently across different file systems.
+            userPromptArgs.context.sort((a, b) => a.uri.path.localeCompare(b.uri.path))
+        }
+        const prompt = this.getUserPrompt(userPromptArgs)
 
         const adjustedPrompt: AutoeditsPrompt = isChatModel
             ? { systemMessage: SYSTEM_PROMPT, userMessage: prompt }
