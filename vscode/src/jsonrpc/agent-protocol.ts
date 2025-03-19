@@ -394,6 +394,9 @@ export type ClientNotifications = {
 // Server -> Client
 // ================
 export type ServerNotifications = {
+    'autocomplete/didHide': [null]
+    'autocomplete/didTrigger': [null]
+
     'debug/message': [DebugMessage]
 
     // Certain properties of the task are updated:
