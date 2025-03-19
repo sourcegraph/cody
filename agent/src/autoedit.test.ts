@@ -20,6 +20,12 @@ describe('Autoedit', () => {
     const workspace = new TestWorkspace(path.join(__dirname, '__tests__', 'autoedit'))
     const clientConfiguration: Partial<ExtensionConfiguration> = {
         suggestionsMode: 'auto-edit (Experimental)',
+        // Use a larger font/size than line height than normal to confirm
+        // that the image generation respects the font size and line height
+        // set in the client configuration.
+        autoeditFontSize: 24,
+        autoeditLineHeight: 30,
+        displayScaleFactor: 2,
     }
 
     beforeAll(async () => {

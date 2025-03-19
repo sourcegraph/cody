@@ -98,6 +98,10 @@ export class AgentWorkspaceConfiguration implements vscode.WorkspaceConfiguratio
                     },
                     enabled: true,
                 },
+                autoedit: {
+                    fontSize: config?.autoeditFontSize,
+                    lineHeight: config?.autoeditLineHeight,
+                },
                 suggestions: {
                     mode: config?.suggestionsMode || 'autocomplete',
                 },
@@ -106,6 +110,7 @@ export class AgentWorkspaceConfiguration implements vscode.WorkspaceConfiguratio
                 debug: { verbose: config?.verboseDebug ?? false },
                 experimental: { tracing: config?.verboseDebug ?? false },
                 serverEndpoint: config?.serverEndpoint,
+                displayScaleFactor: config?.displayScaleFactor,
                 // Use the dedicated `telemetry/recordEvent` to send telemetry from
                 // agent clients.  The reason we disable telemetry via config is
                 // that we don't want to submit vscode-specific events when

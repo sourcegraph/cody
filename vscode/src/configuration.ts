@@ -121,6 +121,8 @@ export function getConfiguration(
             CONFIG_KEY.autocompleteDisableInsideComments,
             false
         ),
+        autoeditFontSize: config.get(CONFIG_KEY.autoeditFontSize),
+        autoeditLineHeight: config.get(CONFIG_KEY.autoeditLineHeight),
         codeActions: config.get(CONFIG_KEY.codeActionsEnabled, true),
         commandHints: config.get(CONFIG_KEY.commandHintsEnabled, false),
 

@@ -618,6 +618,13 @@ export interface ExtensionConfiguration {
     proxy?: string | undefined | null
     accessToken?: string | undefined | null
     customHeaders: Record<string, string>
+    /**
+     * Represents the ratio between physical pixels and logical pixels on the current display.
+     * Typically used to scale images, UI elements, or graphics for proper rendering on high-DPI screens.
+     *
+     * A value of `1` indicates a standard DPI display, while values greater than `1` indicate high-density displays (e.g., Retina).
+     */
+    displayScaleFactor?: number | undefined | null
 
     /**
      * anonymousUserID is an important component of telemetry events that get
@@ -629,6 +636,17 @@ export interface ExtensionConfiguration {
     autocompleteAdvancedProvider?: string | undefined | null
     autocompleteAdvancedModel?: string | undefined | null
     suggestionsMode?: 'autocomplete' | 'auto-edit (Experimental)' | 'off' | undefined | null
+
+    /**
+     * The font size to use for image-generated auto-edit suggestions.
+     */
+    autoeditFontSize?: number | undefined | null
+
+    /**
+     * The line height to use for image-generated auto-edit suggestions.
+     */
+    autoeditLineHeight?: number | undefined | null
+
     debug?: boolean | undefined | null
     verboseDebug?: boolean | undefined | null
     telemetryClientName?: string | undefined | null

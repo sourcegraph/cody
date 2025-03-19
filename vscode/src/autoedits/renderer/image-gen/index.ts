@@ -1,6 +1,6 @@
 import { initCanvas } from './canvas'
 import { drawDecorationsToCanvas } from './canvas/draw-decorations'
-import { type UserProvidedRenderConfig, getRenderConfig } from './canvas/render-config'
+import { getRenderConfig } from './canvas/render-config'
 import { makeDecoratedDiff } from './decorated-diff'
 import { initSyntaxHighlighter } from './highlight'
 import type { DiffMode, VisualDiff } from './visual-diff/types'
@@ -13,11 +13,6 @@ interface ImageSuggestionOptions {
     diff: VisualDiff
     lang: string
     mode: DiffMode
-    /**
-     * Note: This is currently only used for test stability, as the default font size / line height will
-     * differ between platforms.
-     */
-    config?: UserProvidedRenderConfig
 }
 
 export interface GeneratedImageSuggestion {
@@ -33,9 +28,9 @@ export interface GeneratedImageSuggestion {
 }
 
 export function generateSuggestionAsImage(options: ImageSuggestionOptions): GeneratedImageSuggestion {
-    const { diff, lang, config, mode } = options
+    const { diff, lang, mode } = options
     const highlightedDiff = makeDecoratedDiff(diff, lang)
-    const renderConfig = getRenderConfig(config)
+    const renderConfig = getRenderConfig()
 
     return {
         dark: drawDecorationsToCanvas(highlightedDiff.dark, 'dark', mode, renderConfig).toDataURL(
