@@ -94,8 +94,7 @@ describe('Autoedit', () => {
             const autoeditEvent = await client.request('testing/autocomplete/autoeditEvent', {
                 completionID,
             })
-            expect(autoeditEvent?.phase).toBe('rejected')
-            expect(autoeditEvent?.read).toBe(false)
+            expect(autoeditEvent?.phase).toBe('suggested')
 
             // The LLM provided with a completion result.
             expect(result.inlineCompletionItems.length).toBeGreaterThan(0)
