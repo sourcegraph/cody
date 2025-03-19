@@ -22,8 +22,8 @@ export const sidebarSignin = async (
     await sidebar.getByRole('button', { name: 'Sourcegraph logo Continue' }).click()
 
     await sidebar.getByText('Sourcegraph Instance URL').click()
-    await sidebar.getByPlaceholder('Example: https://instance.').click()
-    await sidebar.getByPlaceholder('Example: https://instance.').fill(SERVER_URL)
+    await sidebar.getByPlaceholder('Example: instance.sourcegraph.com').click()
+    await sidebar.getByPlaceholder('Example: instance.sourcegraph.com').fill(SERVER_URL)
 
     await sidebar.getByText('Access Token (Optional)').click()
     await sidebar.getByPlaceholder('Access token...').fill(VALID_TOKEN)

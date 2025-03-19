@@ -26,8 +26,8 @@ test.extend<ExpectedV2Events>({
     await expect(sidebar!.getByText('Sign in to Sourcegraph')).toBeVisible()
     await sidebar!.getByRole('button', { name: 'Sourcegraph logo Continue' }).click()
     await sidebar!.getByText('Sourcegraph Instance URL').click()
-    await sidebar!.getByPlaceholder('Example: https://instance.').click()
-    await sidebar!.getByPlaceholder('Example: https://instance.').fill(SERVER_URL)
+    await sidebar!.getByPlaceholder('Example: instance.sourcegraph.com').click()
+    await sidebar!.getByPlaceholder('Example: instance.sourcegraph.com').fill(SERVER_URL)
 
     await sidebar!.getByText('Access Token (Optional)').click()
     await sidebar!.getByPlaceholder('Access token...').fill('abcdefghijklmnopqrstuvwxyz')
@@ -70,16 +70,16 @@ test
             'cody.signInNotification:shown',
         ],
     })('test enterprise customers cannot log into dotcomUrl', async ({ page, sidebar }) => {
-    await sidebarSignin(page, sidebar, { skipAssertions: true })
-    await expectSignInPage(page)
-    await expect(
-        page
-            .frameLocator('iframe')
-            .first()
-            .frameLocator('iframe[title="Chat"]')
-            .getByText('Based on your email address')
-    ).toBeVisible()
-})
+        await sidebarSignin(page, sidebar, { skipAssertions: true })
+        await expectSignInPage(page)
+        await expect(
+            page
+                .frameLocator('iframe')
+                .first()
+                .frameLocator('iframe[title="Chat"]')
+                .getByText('Based on your email address')
+        ).toBeVisible()
+    })
 
 const refetchInterval = 500
 test
@@ -99,22 +99,22 @@ test
             'cody.signInNotification:shown',
         ],
     })(
-    'logs out the user when userShouldUseEnterprise is set to true',
-    async ({ page, sidebar, server }) => {
-        await sidebarSignin(page, sidebar, { skipAssertions: true })
-        await server.setUserShouldUseEnterprise(true)
-        await expectSignInPage(page)
-        await expect(
-            page
-                .frameLocator('iframe')
-                .first()
-                .frameLocator('iframe[title="Chat"]')
-                .getByText('Based on your email address')
-        ).toBeVisible({
-            timeout: refetchInterval * 10,
-        })
-    }
-)
+        'logs out the user when userShouldUseEnterprise is set to true',
+        async ({ page, sidebar, server }) => {
+            await sidebarSignin(page, sidebar, { skipAssertions: true })
+            await server.setUserShouldUseEnterprise(true)
+            await expectSignInPage(page)
+            await expect(
+                page
+                    .frameLocator('iframe')
+                    .first()
+                    .frameLocator('iframe[title="Chat"]')
+                    .getByText('Based on your email address')
+            ).toBeVisible({
+                timeout: refetchInterval * 10,
+            })
+        }
+    )
 
 // TODO: Fix flaky test
 test.extend<ExpectedV2Events>({
