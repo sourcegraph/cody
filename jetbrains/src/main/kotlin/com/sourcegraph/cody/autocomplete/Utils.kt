@@ -108,6 +108,7 @@ object Utils {
                   successCallback(result)
                   resultOuter.complete(result)
                 }
+
                 null
               }
               .exceptionally { error: Throwable? ->

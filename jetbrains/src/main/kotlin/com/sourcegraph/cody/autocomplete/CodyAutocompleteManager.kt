@@ -3,6 +3,7 @@ package com.sourcegraph.cody.autocomplete
 import com.intellij.codeInsight.hint.HintManager
 import com.intellij.codeWithMe.ClientId
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.client.ClientSessionsManager
 import com.intellij.openapi.command.CommandProcessor
 import com.intellij.openapi.command.WriteCommandAction
@@ -26,7 +27,8 @@ import com.intellij.util.concurrency.annotations.RequiresEdt
 import com.sourcegraph.Icons
 import com.sourcegraph.cody.CodyToolWindowContent
 import com.sourcegraph.cody.agent.CodyAgentService
-import com.sourcegraph.cody.agent.protocol_generated.AutocompleteItem
+import com.sourcegraph.cody.agent.protocol_generated.AutocompleteCompletionItem
+import com.sourcegraph.cody.agent.protocol_generated.AutocompleteEditItem
 import com.sourcegraph.cody.agent.protocol_generated.AutocompleteResult
 import com.sourcegraph.cody.agent.protocol_generated.CompletionItemParams
 import com.sourcegraph.cody.auth.CodyAuthService
@@ -36,6 +38,7 @@ import com.sourcegraph.cody.autocomplete.render.CodyAutocompleteBlockElementRend
 import com.sourcegraph.cody.autocomplete.render.CodyAutocompleteElementRenderer
 import com.sourcegraph.cody.autocomplete.render.CodyAutocompleteSingleLineRenderer
 import com.sourcegraph.cody.autocomplete.render.InlayModelUtil.getAllInlaysForEditor
+import com.sourcegraph.cody.autoedit.AutoeditManager
 import com.sourcegraph.cody.statusbar.CodyStatusService.Companion.resetApplication
 import com.sourcegraph.cody.vscode.CancellationToken
 import com.sourcegraph.cody.vscode.InlineCompletionTriggerKind
@@ -205,6 +208,7 @@ class CodyAutocompleteManager {
       if (triggerKind == InlineCompletionTriggerKind.INVOKE) logger.warn("autocomplete canceled")
       return
     }
+
     val inlayModel = editor.inlayModel
     if (result.items.isEmpty()) {
       // NOTE(olafur): it would be nice to give the user a visual hint when this happens.
@@ -222,8 +226,20 @@ class CodyAutocompleteManager {
       clearAutocompleteSuggestions(editor)
       // https://github.com/sourcegraph/jetbrains/issues/350
       // CodyFormatter.formatStringBasedOnDocument needs to be on a write action.
-      WriteCommandAction.runWriteCommandAction(editor.project) {
-        displayAgentAutocomplete(editor, offset, result.items, inlayModel)
+
+      val listOfCompletions = result.items.mapNotNull { it as? AutocompleteCompletionItem }
+      val listOfEdits = result.items.mapNotNull { it as? AutocompleteEditItem }
+
+      if (listOfEdits.isNotEmpty()) {
+        runInEdt {
+          editor.project
+              ?.getService(AutoeditManager::class.java)
+              ?.showAutoEdit(editor, listOfEdits.first())
+        }
+      } else if (listOfCompletions.isNotEmpty()) {
+        WriteCommandAction.runWriteCommandAction(editor.project) {
+          displayAgentAutocomplete(editor, offset, listOfCompletions, inlayModel)
+        }
       }
     }
   }
@@ -238,7 +254,7 @@ class CodyAutocompleteManager {
   fun displayAgentAutocomplete(
       editor: Editor,
       cursorOffset: Int,
-      items: List<AutocompleteItem>,
+      items: List<AutocompleteCompletionItem>,
       inlayModel: InlayModel,
   ) {
     if (editor.isDisposed) {
