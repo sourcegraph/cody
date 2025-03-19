@@ -134,20 +134,43 @@ export const ModeSelectorField: React.FunctionComponent<{
                 // Find the current index and select the next intent option
                 const currentIntent = intent || 'chat'
                 const currentIndex = intentOptions.findIndex(option => option.intent === currentIntent)
-                const nextIndex = (currentIndex + 1) % intentOptions.length
-                manuallySelectIntent(intentOptions[nextIndex].intent)
+
+                // Find the next enabled option
+                let nextIndex = (currentIndex + 1) % intentOptions.length
+                let attempts = 0
+
+                // Loop until we find an enabled option or we've checked all options
+                while (intentOptions[nextIndex].disabled && attempts < intentOptions.length) {
+                    nextIndex = (nextIndex + 1) % intentOptions.length
+                    attempts++
+                }
+
+                // Only change the intent if we found an enabled option
+                if (!intentOptions[nextIndex].disabled) {
+                    manuallySelectIntent(intentOptions[nextIndex].intent)
+                }
             }
         },
         [intent, intentOptions, manuallySelectIntent]
     )
 
-    // Add event listener for keyboard shortcut
+    // Add event listener for keyboard shortcut only if user has appropriate permissions
     useEffect(() => {
-        document.addEventListener('keydown', handleKeyDown)
-        return () => {
-            document.removeEventListener('keydown', handleKeyDown)
+        // Only add the keyboard shortcut if:
+        // 1. User is not a dotcom user (has enterprise features) OR
+        // 2. OmniBox is enabled AND there are multiple enabled intent options available
+        const hasMultipleEnabledOptions = intentOptions.filter(option => !option.disabled).length > 1
+        const shouldEnableShortcut = (!isDotComUser || omniBoxEnabled) && hasMultipleEnabledOptions
+
+        if (shouldEnableShortcut) {
+            document.addEventListener('keydown', handleKeyDown)
+            return () => {
+                document.removeEventListener('keydown', handleKeyDown)
+            }
         }
-    }, [handleKeyDown])
+        // Empty cleanup function when event listener is not added
+        return () => {}
+    }, [handleKeyDown, isDotComUser, omniBoxEnabled, intentOptions])
 
     return (
         <ToolbarPopoverItem
