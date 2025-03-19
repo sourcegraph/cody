@@ -160,21 +160,21 @@ export class ShortTermPromptStrategy extends AutoeditsUserPromptStrategy {
             }
         }
 
-        const shortTermViewPrompt =
-            shortTermViewedSnippets.length > 0
-                ? joinPromptsWithNewlineSeparator(
-                      constants.SHORT_TERM_SNIPPET_VIEWS_INSTRUCTION,
-                      getRecentlyViewedSnippetsPrompt(shortTermViewedSnippets)
-                  )
-                : ps``
+        const recentlyViewedShortTermSnippets = getRecentlyViewedSnippetsPrompt(shortTermViewedSnippets)
+        const shortTermViewPrompt = recentlyViewedShortTermSnippets
+            ? joinPromptsWithNewlineSeparator(
+                  constants.SHORT_TERM_SNIPPET_VIEWS_INSTRUCTION,
+                  recentlyViewedShortTermSnippets
+              )
+            : ps``
 
-        const longTermViewPrompt =
-            longTermViewedSnippets.length > 0
-                ? joinPromptsWithNewlineSeparator(
-                      constants.LONG_TERM_SNIPPET_VIEWS_INSTRUCTION,
-                      getRecentlyViewedSnippetsPrompt(longTermViewedSnippets)
-                  )
-                : ps``
+        const recentlyViewedLongTermSnippets = getRecentlyViewedSnippetsPrompt(longTermViewedSnippets)
+        const longTermViewPrompt = recentlyViewedLongTermSnippets
+            ? joinPromptsWithNewlineSeparator(
+                  constants.LONG_TERM_SNIPPET_VIEWS_INSTRUCTION,
+                  recentlyViewedLongTermSnippets
+              )
+            : ps``
 
         return {
             shortTermViewPrompt,
