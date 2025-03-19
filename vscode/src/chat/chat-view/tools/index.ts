@@ -15,9 +15,10 @@ export interface AgentTool {
     invoke: (input: any) => Promise<AgentToolResult>
 }
 
-export interface AgentToolResult extends UIToolOutput {
+export interface AgentToolResult {
     text: string
     contextItems?: ContextItem[]
+    output?: UIToolOutput
 }
 
 export class AgentToolGroup {

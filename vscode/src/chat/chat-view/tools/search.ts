@@ -3,6 +3,7 @@ import {
     type ContextItem,
     PromptString,
     type UISearchResults,
+    UIToolStatus,
     displayPath,
     firstValueFrom,
     pendingOperation,
@@ -29,7 +30,10 @@ export async function getCodebaseSearchTool(
             const validInput = validateWithZod(CodeSearchSchema, input, 'code_search')
             const corpusItems = await firstValueFrom(getCorpusContextItemsForEditorState())
             if (!corpusItems || corpusItems === pendingOperation)
-                return { text: 'Codebase search failed.' }
+                return {
+                    text: 'Codebase search failed.',
+                    output: { type: 'status', status: UIToolStatus.Error, content: 'Failed' },
+                }
 
             const repo = corpusItems.find(i => i.type === 'tree' || i.type === 'repository')
             if (!repo) return { text: 'Codebase search failed - not in valid workspace.' }
@@ -46,7 +50,10 @@ export async function getCodebaseSearchTool(
 
             if (!searches.length) {
                 output.push('No results found.')
-                return { text: output.join('\n') }
+                return {
+                    text: output.join('\n'),
+                    output: { type: 'status', status: UIToolStatus.Error, content: output.join('\n') },
+                }
             }
 
             output.push(`Found ${searches.length} results`)
@@ -66,7 +73,7 @@ export async function getCodebaseSearchTool(
             return {
                 text: output.join('\n'),
                 contextItems: searches.splice(0, searches.length - 5),
-                search: generateSearchToolResults(validInput.query, searches),
+                output: generateSearchToolResults(validInput.query, searches),
             }
         },
     }
@@ -76,6 +83,8 @@ export async function getCodebaseSearchTool(
 
 function generateSearchToolResults(query: string, items: ContextItem[]): UISearchResults {
     return {
+        type: 'search-result',
+        status: UIToolStatus.Done,
         query,
         items: items.map(item => ({
             fileName: getFileName(item.uri),

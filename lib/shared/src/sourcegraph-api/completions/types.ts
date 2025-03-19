@@ -163,42 +163,62 @@ export type CompletionGeneratorValue =
     | { type: 'complete' }
     | { type: 'error'; error: Error; statusCode?: number }
 
+export type UIToolOutput =
+    | UIToolOutputBase
+    | UISearchResults
+    | UITerminalToolOutput
+    | UIFileDiff
+    | UIFileView
+
+export enum UIToolStatus {
+    Pending = 'pending',
+    Done = 'done',
+    Error = 'error',
+    Canceled = 'canceled',
+    Idle = 'idle',
+    Info = 'info',
+}
+
 /**
  * Main container for all tool output types
  */
-export interface UIToolOutput {
-    status?: string
+interface UIToolOutputBase {
+    type: 'search-result' | 'file-diff' | 'terminal-output' | 'file-view' | 'status'
+    status?: UIToolStatus
     title?: string
-    query?: string
-    search?: UISearchResults
-    diff?: UIFileDiff
-    terminal?: UITerminalLine[]
-    file?: UIFileView
+    content?: string
     duration?: number
 }
 
-// Search results display
-export interface UISearchResults {
-    query: string
-    items: UISearchItem[]
-}
-
-// Individual search result item
-interface UISearchItem extends UIFileView {
-    lineNumber?: string
-    preview?: string
-    type: 'file' | 'folder' | 'code'
-}
-
 // Basic file content display
-export interface UIFileView {
+export interface UIFileBase {
     fileName: string
     uri: URI
     content?: string
 }
 
+// Individual search result item
+export interface UIFileView extends UIToolOutputBase {
+    type: 'file-view'
+    file: UIFileBase
+}
+
+export interface UISearchResults extends UIToolOutputBase {
+    type: 'search-result'
+    query: string
+    items: UISearchItem[]
+}
+
+// Individual search result item
+interface UISearchItem extends UIFileBase {
+    lineNumber?: string
+    preview?: string
+    type: 'file' | 'folder' | 'code'
+}
+
 // File diff display
-export interface UIFileDiff extends UIFileView {
+export interface UIFileDiff extends UIFileBase, UIToolOutputBase {
+    type: 'file-diff'
     total: UIChangeStats
     changes: UIDiffLine[]
 }
@@ -217,8 +237,14 @@ export interface UIDiffLine {
     lineNumber: number
 }
 
+export interface UITerminalToolOutput extends UIToolOutputBase {
+    type: 'terminal-output'
+    output: UITerminalLine[]
+    query?: string
+}
+
 // Terminal output types
-export enum UITerminalLineType {
+export enum UITerminalOutputType {
     Input = 'input',
     Output = 'output',
     Error = 'error',
@@ -229,5 +255,5 @@ export enum UITerminalLineType {
 // Individual terminal line
 export interface UITerminalLine {
     content: string
-    type?: UITerminalLineType
+    type?: UITerminalOutputType
 }

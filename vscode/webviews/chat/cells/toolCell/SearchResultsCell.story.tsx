@@ -1,4 +1,4 @@
-import type { UISearchResults } from '@sourcegraph/cody-shared'
+import { type UISearchResults, UIToolStatus } from '@sourcegraph/cody-shared'
 import type { Meta, StoryObj } from '@storybook/react'
 import { URI } from 'vscode-uri'
 import { VSCodeWebview } from '../../../storybook/VSCodeStoryDecorator'
@@ -16,6 +16,8 @@ type Story = StoryObj<typeof SearchResultsCell>
 
 // Sample search results
 const searchResultMock = {
+    status: UIToolStatus.Done,
+    type: 'search-result',
     query: 'useState',
     items: [
         {
@@ -66,10 +68,7 @@ const searchResultMock = {
     ],
 } satisfies UISearchResults
 export const Default: Story = {
-    args: {
-        result: searchResultMock,
-        isLoading: false,
-    },
+    args: { result: searchResultMock, isLoading: false },
 }
 export const Expanded: Story = {
     args: {
@@ -81,7 +80,7 @@ export const Expanded: Story = {
 
 export const Loading: Story = {
     args: {
-        result: searchResultMock,
+        result: { ...searchResultMock, status: UIToolStatus.Pending },
         isLoading: true,
     },
 }
@@ -89,6 +88,8 @@ export const Loading: Story = {
 export const FewResults: Story = {
     args: {
         result: {
+            status: UIToolStatus.Done,
+            type: 'search-result',
             query: 'useEffect',
             items: searchResultMock.items?.slice(0, 2),
         },
@@ -99,6 +100,8 @@ export const FewResults: Story = {
 export const ManyResults: Story = {
     args: {
         result: {
+            status: UIToolStatus.Done,
+            type: 'search-result',
             query: 'component',
             items: [
                 ...searchResultMock.items,

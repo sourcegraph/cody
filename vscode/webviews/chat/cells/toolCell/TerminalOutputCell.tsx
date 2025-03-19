@@ -1,4 +1,4 @@
-import type { UITerminalLine } from '@sourcegraph/cody-shared'
+import type { UITerminalToolOutput } from '@sourcegraph/cody-shared'
 import { Terminal } from 'lucide-react'
 import type { FC } from 'react'
 import { Skeleton } from '../../../components/shadcn/ui/skeleton'
@@ -6,7 +6,7 @@ import { cn } from '../../../components/shadcn/utils'
 import { BaseCell } from './BaseCell'
 
 interface TerminalOutputCellProps {
-    result: UITerminalLine[]
+    result: UITerminalToolOutput
     className?: string
     isLoading?: boolean
     defaultOpen?: boolean
@@ -45,7 +45,7 @@ export const TerminalOutputCell: FC<TerminalOutputCellProps> = ({
         return (
             <div className="tw-flex tw-items-center tw-gap-2 tw-overflow-hidden">
                 <code className="tw-font-mono tw-bg-zinc-800 tw-px-2 tw-py-0.5 tw-rounded tw-text-zinc-200">
-                    $ {result.find(l => l.type === 'input')?.content}
+                    $ {result?.output.find(l => l.type === 'input')?.content}
                 </code>
             </div>
         )
@@ -71,7 +71,7 @@ export const TerminalOutputCell: FC<TerminalOutputCellProps> = ({
 
         return (
             <pre className="tw-font-mono tw-text-xs tw-p-4 tw-bg-black tw-rounded-b-md tw-overflow-x-auto">
-                {result.map((line, index) => (
+                {result.output.map((line, index) => (
                     // biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
                     <div key={index} className={cn(getLineClass(line.type))}>
                         {line.type === 'input' ? `$ ${line.content}` : line.content}

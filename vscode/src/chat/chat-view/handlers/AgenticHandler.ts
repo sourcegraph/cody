@@ -7,6 +7,7 @@ import {
     PromptString,
     type ToolCallContentPart,
     type ToolResultContentPart,
+    UIToolStatus,
     isDefined,
     logDebug,
     wrapInActiveSpan,
@@ -296,17 +297,19 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
         // Update status to pending *before* execution
         try {
             const args = parseToolCallArgs(toolCall.tool_call.arguments)
-            const output = await tool.invoke(args)
+            const result = await tool.invoke(args)
 
-            toolResult.tool_result.content = output.text
-            toolResult.output = { status: 'done', ...output }
+            toolResult.tool_result.content = result.text
+            if (result.output) {
+                toolResult.output = { ...result.output, status: UIToolStatus.Done }
+            }
 
-            logDebug('AgenticHandler', `Executed ${toolCall.tool_call.name}`, { verbose: output })
+            logDebug('AgenticHandler', `Executed ${toolCall.tool_call.name}`, { verbose: result })
 
             return toolResult
         } catch (error) {
             toolResult.tool_result.content = String(error)
-            toolResult.output = { status: 'error' }
+            toolResult.output = { status: UIToolStatus.Error, type: 'status', content: String(error) }
             logDebug('AgenticHandler', `${toolCall.tool_call.name} failed`, { verbose: error })
             return toolResult
         }

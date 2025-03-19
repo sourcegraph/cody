@@ -1,4 +1,4 @@
-import { displayPath, logDebug } from '@sourcegraph/cody-shared'
+import { UIToolStatus, displayPath, logDebug } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 import type { AgentToolResult } from '.'
 import { getContextFromRelativePath } from '../../../commands/context/file-path'
@@ -44,8 +44,8 @@ export const editTool = {
                 return insertInFile(fileUri, validInput.insert_line, validInput.new_str)
             case 'undo_edit':
                 return {
+                    output: { status: UIToolStatus.Error, type: 'file-view' },
                     text: 'Undo is not supported directly. Use the Source Control UI to revert changes.',
-                    status: 'warning',
                 }
             default:
                 throw new Error(
@@ -150,7 +150,7 @@ async function replaceInFile(
         return {
             text: output.join('\n'),
             contextItems: updatedContext?.content ? [updatedContext] : undefined,
-            diff: getFileDiff(uri, content, newContent),
+            output: getFileDiff(uri, content, newContent),
         }
     } catch (error: any) {
         return { text: `Failed to replace text in ${fileName}: ${error.message}` }

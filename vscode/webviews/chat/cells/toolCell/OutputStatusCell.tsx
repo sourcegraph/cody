@@ -1,27 +1,17 @@
+import type { UIToolOutput } from '@sourcegraph/cody-shared'
 import { AlertCircle, CheckCircle, Info } from 'lucide-react'
 import type { FC } from 'react'
 import { Badge } from '../../../components/shadcn/ui/badge'
 import { cn } from '../../../components/shadcn/utils'
 import { BaseCell } from './BaseCell'
 
-type StatusType = 'success' | 'error' | 'info' | 'warning'
-
 interface OutputStatusProps {
-    query?: string
-    title: string
-    content?: string
-    status: StatusType
+    output: UIToolOutput
     className?: string
     defaultOpen?: boolean
 }
 
-export const OutputStatusCell: FC<OutputStatusProps> = ({
-    title,
-    content,
-    status = 'info',
-    className,
-    defaultOpen = false,
-}) => {
+export const OutputStatusCell: FC<OutputStatusProps> = ({ output, className, defaultOpen = false }) => {
     const getStatusIcon = () => {
         switch (status) {
             case 'success':
@@ -73,12 +63,16 @@ export const OutputStatusCell: FC<OutputStatusProps> = ({
         }
     }
 
+    if (!output.title) {
+        return null
+    }
+
     // Icon color is handled by the BaseCell component
 
     const renderHeaderContent = () => (
         <div className="tw-flex tw-items-center tw-gap-2 tw-overflow-hidden">
             <div className="tw-flex tw-items-center tw-gap-2">
-                <span className="tw-font-medium">{title}</span>
+                <span className="tw-font-medium">{output.title}</span>
                 <Badge variant="outline" className={cn(getBadgeClass())}>
                     {getStatusLabel()}
                 </Badge>
@@ -88,10 +82,10 @@ export const OutputStatusCell: FC<OutputStatusProps> = ({
 
     const renderBodyContent = () => (
         <div className={cn('tw-p-4', getStatusClass())}>
-            {content && (
+            {output.content && (
                 <div className="tw-rounded-md tw-p-3 tw-font-mono tw-text-xs tw-mb-4 tw-overflow-x-auto">
                     <pre className="tw-whitespace-pre-wrap tw-break-words tw-text-zinc-300">
-                        {content}
+                        {output.content}
                     </pre>
                 </div>
             )}

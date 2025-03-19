@@ -1,3 +1,4 @@
+import { UIToolStatus } from '@sourcegraph/cody-shared'
 import type { Meta, StoryObj } from '@storybook/react'
 import { VSCodeWebview } from '../../../storybook/VSCodeStoryDecorator'
 import { OutputStatusCell } from './OutputStatusCell'
@@ -14,43 +15,47 @@ type Story = StoryObj<typeof OutputStatusCell>
 
 export const Default: Story = {
     args: {
-        title: 'Process Output',
-        status: 'info',
-        content: 'This is the default output content',
+        output: {
+            type: 'status',
+            status: UIToolStatus.Info,
+            title: 'Process Output',
+            content: 'This is the default output content',
+        },
         defaultOpen: false,
     },
 }
 
 export const Info: Story = {
     args: {
-        title: 'Process Output',
-        status: 'info',
-        content: 'This is the default output content',
+        output: {
+            type: 'status',
+            status: UIToolStatus.Info,
+            title: 'Process Output',
+            content: 'This is the default output content',
+        },
         defaultOpen: true,
     },
 }
 
 export const Success: Story = {
     args: {
-        status: 'success',
-        title: 'Task Completed',
-        content: 'Successfully executed the requested task',
+        output: {
+            type: 'status',
+            status: UIToolStatus.Done,
+            title: 'Task Completed',
+            content: 'Successfully executed the requested task',
+        },
     },
 }
 
 export const Fail: Story = {
     args: {
-        status: 'error',
-        title: 'Command Failed',
-        content: 'Error: Unable to execute command due to missing permissions',
-    },
-}
-
-export const Warning: Story = {
-    args: {
-        status: 'warning',
-        title: 'Potential Issue',
-        content: 'The operation completed but with potential issues that might need attention',
+        output: {
+            type: 'status',
+            status: UIToolStatus.Error,
+            title: 'Command Failed',
+            content: 'Error: Unable to execute command due to missing permissions',
+        },
     },
 }
 
@@ -61,9 +66,7 @@ export const Collapsed: Story = {
 }
 
 export const WithoutOutput: Story = {
-    args: {
-        content: undefined,
-    },
+    args: {},
 }
 
 export const WithCustomClass: Story = {

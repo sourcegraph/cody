@@ -1,4 +1,10 @@
-import type { UIToolOutput } from '@sourcegraph/cody-shared'
+import type {
+    UIFileDiff,
+    UIFileView,
+    UISearchResults,
+    UITerminalToolOutput,
+    UIToolOutput,
+} from '@sourcegraph/cody-shared'
 import { type FC, useCallback } from 'react'
 import type { URI } from 'vscode-uri'
 import { Skeleton } from '../../../components/shadcn/ui/skeleton'
@@ -19,8 +25,6 @@ export interface ToolStatusProps {
     vscodeAPI?: VSCodeWrapper
 }
 
-type StatusType = 'success' | 'error' | 'info' | 'warning'
-
 export const ToolStatusCell: FC<ToolStatusProps> = ({ title, output, vscodeAPI }) => {
     const onFileLinkClicked = useCallback(
         (uri: URI) => {
@@ -28,8 +32,6 @@ export const ToolStatusCell: FC<ToolStatusProps> = ({ title, output, vscodeAPI }
         },
         [vscodeAPI]
     )
-
-    const currentStatus = getStatusType(output?.status)
 
     if (title && !output) {
         return (
@@ -39,32 +41,27 @@ export const ToolStatusCell: FC<ToolStatusProps> = ({ title, output, vscodeAPI }
         )
     }
 
-    if (output?.file) {
-        return <FileCell result={output.file} onFileLinkClicked={onFileLinkClicked} />
+    if (output?.type === 'file-view') {
+        // Assuming FileCell expects a UIFileBase-like structure
+        return <FileCell result={output as UIFileView} onFileLinkClicked={onFileLinkClicked} />
     }
 
-    if (output?.search?.items?.length) {
-        return <SearchResultsCell result={output?.search} onFileLinkClicked={onFileLinkClicked} />
+    if (output?.type === 'search-result') {
+        return (
+            <SearchResultsCell
+                result={output as UISearchResults}
+                onFileLinkClicked={onFileLinkClicked}
+            />
+        )
     }
 
-    if (output?.diff) {
-        return <DiffCell result={output.diff} onFileLinkClicked={onFileLinkClicked} />
+    if (output?.type === 'file-diff') {
+        return <DiffCell result={output as UIFileDiff} onFileLinkClicked={onFileLinkClicked} />
     }
 
-    if (output?.terminal?.length) {
-        return <TerminalOutputCell result={output?.terminal} />
+    if (output?.type === 'terminal-output') {
+        return <TerminalOutputCell result={output as UITerminalToolOutput} />
     }
 
-    return <OutputStatusCell title={title} query={output?.query} status={currentStatus} />
-}
-
-function getStatusType(status: string | undefined): StatusType {
-    switch (status) {
-        case 'error':
-            return 'error'
-        case 'done':
-            return 'success'
-        default:
-            return 'info'
-    }
+    return <OutputStatusCell output={output as UIToolOutput} />
 }

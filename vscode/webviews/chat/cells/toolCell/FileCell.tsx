@@ -26,10 +26,10 @@ export const FileCell: FC<FileCellProps> = ({
                 onClick={e => {
                     e.preventDefault()
                     e.stopPropagation()
-                    onFileLinkClicked(result.uri)
+                    onFileLinkClicked(result.file?.uri)
                 }}
             >
-                <span className="tw-font-mono">{result.fileName}</span>
+                <span className="tw-font-mono">{result.file?.fileName}</span>
             </Button>
         </div>
     )
@@ -39,7 +39,7 @@ export const FileCell: FC<FileCellProps> = ({
             <pre className="tw-font-mono tw-text-xs tw-leading-relaxed">
                 <table className="tw-w-full tw-border-collapse">
                     <tbody>
-                        {result.content?.split('\n').map((line, index) => (
+                        {result.file?.content?.split('\n').map((line, index) => (
                             <tr key={`${index}-${line.substring(0, 10)}`}>
                                 <td className="tw-select-none tw-border-r tw-border-r-zinc-700 tw-px-2 tw-text-right tw-text-zinc-500 tw-w-12">
                                     {index + 1}

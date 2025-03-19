@@ -1,5 +1,5 @@
 import { spawn } from 'node:child_process'
-import { type UITerminalLine, UITerminalLineType } from '@sourcegraph/cody-shared'
+import { type UITerminalLine, UITerminalOutputType, UIToolStatus } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 import type { AgentTool, AgentToolResult } from '.'
 import { validateWithZod } from '../utils/input'
@@ -49,37 +49,48 @@ export const shellTool: AgentTool = {
             })
 
             // Format the output as an array of TerminalLine objects
-            const terminal: UITerminalLine[] = [
-                { content: validInput.command, type: UITerminalLineType.Input },
-                ...formatOutputToTerminalLines(commandResult.stdout, UITerminalLineType.Output),
-                ...formatOutputToTerminalLines(commandResult.stderr, UITerminalLineType.Error),
+            const lines: UITerminalLine[] = [
+                { content: validInput.command, type: UITerminalOutputType.Input },
+                ...formatOutputToTerminalLines(commandResult.stdout, UITerminalOutputType.Output),
+                ...formatOutputToTerminalLines(commandResult.stderr, UITerminalOutputType.Error),
             ].filter(line => line.content.trim() !== '')
 
             return {
-                query: validInput.command,
-                terminal,
                 text: `Executed ${validInput.command}\n\nOutput:\n${commandResult.stdout}${
                     commandResult.stderr ? '\nErrors:\n' + commandResult.stderr : ''
                 }`,
+                output: {
+                    type: 'terminal-output',
+                    status: UIToolStatus.Done,
+                    query: validInput.command,
+                    output: lines,
+                },
             } satisfies AgentToolResult
         } catch (error) {
             if (error instanceof CommandError) {
                 // Format the error output as an array of TerminalLine objects
-                const terminal: UITerminalLine[] = [
-                    { content: validInput.command, type: UITerminalLineType.Input },
-                    { content: `Exited with code ${error.result.code}`, type: UITerminalLineType.Error },
-                    ...formatOutputToTerminalLines(error.result.stdout, UITerminalLineType.Output),
-                    ...formatOutputToTerminalLines(error.result.stderr, UITerminalLineType.Error),
+                const lines: UITerminalLine[] = [
+                    { content: validInput.command, type: UITerminalOutputType.Input },
+                    {
+                        content: `Exited with code ${error.result.code}`,
+                        type: UITerminalOutputType.Error,
+                    },
+                    ...formatOutputToTerminalLines(error.result.stdout, UITerminalOutputType.Output),
+                    ...formatOutputToTerminalLines(error.result.stderr, UITerminalOutputType.Error),
                 ].filter(line => line.content.trim() !== '')
 
                 return {
-                    command: validInput.command,
-                    terminal,
                     text: `Command: ${validInput.command}\n\nExited with code ${
                         error.result.code
                     }\n\nOutput:\n${error.result.stdout}${
                         error.result.stderr ? '\nErrors:\n' + error.result.stderr : ''
                     }`,
+                    output: {
+                        type: 'terminal-output',
+                        status: UIToolStatus.Error,
+                        query: validInput.command,
+                        output: lines,
+                    },
                 }
             }
             throw new Error(`Failed to run terminal command: ${input.command}: ${error}`)
@@ -90,14 +101,14 @@ export const shellTool: AgentTool = {
 /**
  * Formats a string output into an array of TerminalLine objects
  */
-function formatOutputToTerminalLines(output: string, type: UITerminalLineType): UITerminalLine[] {
+function formatOutputToTerminalLines(output: string, type: UITerminalOutputType): UITerminalLine[] {
     if (!output) {
         return []
     }
 
     return output.split('\n').map(line => ({
         content: line,
-        type: type === 'error' ? UITerminalLineType.Error : UITerminalLineType.Output,
+        type: type === 'error' ? UITerminalOutputType.Error : UITerminalOutputType.Output,
     }))
 }
 

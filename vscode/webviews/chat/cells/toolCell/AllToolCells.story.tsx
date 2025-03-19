@@ -1,4 +1,4 @@
-import { type UIFileDiff, UITerminalLineType } from '@sourcegraph/cody-shared'
+import { type UIFileDiff, UITerminalOutputType, UIToolStatus } from '@sourcegraph/cody-shared'
 import type { Meta, StoryObj } from '@storybook/react'
 import { URI } from 'vscode-uri'
 import { VSCodeWebview } from '../../../storybook/VSCodeStoryDecorator'
@@ -24,6 +24,7 @@ const onFileLinkClickedMock = (uri: URI) => {
 const defaultOpen = true
 
 const diffStoryMock = {
+    type: 'file-diff',
     uri: URI.file('path/to/LargeComponent.tsx'),
     fileName: 'LargeComponent.tsx',
     total: {
@@ -47,6 +48,7 @@ const diffStoryMock = {
                 }
             }),
     ],
+    status: UIToolStatus.Done,
 } satisfies UIFileDiff
 
 export const AllCells: Story = {
@@ -55,9 +57,14 @@ export const AllCells: Story = {
             <h2 className="tw-text-lg tw-font-bold">File</h2>
             <FileCell
                 result={{
-                    uri: URI.file('path/to/example.ts'),
-                    fileName: 'example.ts',
-                    content: 'function example() {\n  console.log("Hello, world!");\n  return true;\n}',
+                    type: 'file-view',
+                    file: {
+                        uri: URI.file('path/to/example.ts'),
+                        fileName: 'example.ts',
+                        content:
+                            'function example() {\n  console.log("Hello, world!");\n  return true;\n}',
+                    },
+                    status: UIToolStatus.Done,
                 }}
                 defaultOpen={defaultOpen}
                 onFileLinkClicked={() => {}}
@@ -73,6 +80,8 @@ export const AllCells: Story = {
             <h2 className="tw-text-lg tw-font-bold">Search Results</h2>
             <SearchResultsCell
                 result={{
+                    type: 'search-result',
+                    status: UIToolStatus.Done,
                     query: 'useState',
                     items: [
                         {
@@ -97,20 +106,28 @@ export const AllCells: Story = {
 
             <h2 className="tw-text-lg tw-font-bold">Terminal Output</h2>
             <TerminalOutputCell
-                result={[
-                    { content: 'ls -la', type: UITerminalLineType.Input },
-                    { content: 'total 32' },
-                    { content: 'drwxr-xr-x  10 user  staff   320 Mar 17 12:34 .' },
-                    { content: 'drwxr-xr-x   5 user  staff   160 Mar 17 12:30 ..' },
-                ]}
+                result={{
+                    status: UIToolStatus.Done,
+                    query: 'ls -la',
+                    type: 'terminal-output',
+                    output: [
+                        { content: 'ls -la', type: UITerminalOutputType.Input },
+                        { content: 'total 32' },
+                        { content: 'drwxr-xr-x  10 user  staff   320 Mar 17 12:34 .' },
+                        { content: 'drwxr-xr-x   5 user  staff   160 Mar 17 12:30 ..' },
+                    ],
+                }}
                 defaultOpen={defaultOpen}
             />
 
             <h2 className="tw-text-lg tw-font-bold">Anything else...</h2>
             <OutputStatusCell
-                title="Process Output"
-                status="info"
-                content="This is the default output content"
+                output={{
+                    title: 'Process Output',
+                    type: 'status',
+                    status: UIToolStatus.Done,
+                    content: 'This is the default output content',
+                }}
                 defaultOpen={defaultOpen}
             />
         </div>
