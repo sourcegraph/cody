@@ -451,9 +451,10 @@ export class ModelsService {
                     if (
                         selected &&
                         // Don't set default model for ModelUsage.Edit if the model has certain tags
-                        !(
+                        (
                             type === ModelUsage.Edit &&
-                            (selected.tags.includes(ModelTag.Reasoning) ||
+                            (selected.usage.includes(ModelUsage.Edit)) &&
+                            !(selected.tags.includes(ModelTag.Reasoning) ||
                                 selected.tags.includes(ModelTag.Deprecated))
                         ) &&
                         this._isModelAvailable(
