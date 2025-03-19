@@ -223,7 +223,7 @@ class CodyAutocompleteManager {
       // https://github.com/sourcegraph/jetbrains/issues/350
       // CodyFormatter.formatStringBasedOnDocument needs to be on a write action.
       WriteCommandAction.runWriteCommandAction(editor.project) {
-        displayAgentAutocomplete(editor, offset, result.inlineCompletionItems, inlayModel)
+        displayAutocomplete(editor, offset, result.inlineCompletionItems, inlayModel)
       }
     }
   }
@@ -235,7 +235,7 @@ class CodyAutocompleteManager {
    * can use `insertText` directly and the `range` encloses the entire line.
    */
   @RequiresEdt
-  fun displayAgentAutocomplete(
+  fun displayAutocomplete(
       editor: Editor,
       cursorOffset: Int,
       items: List<AutocompleteCompletionItem>,
