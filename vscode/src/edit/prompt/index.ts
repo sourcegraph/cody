@@ -9,7 +9,6 @@ import {
     PromptString,
     TokenCounterUtils,
     currentResolvedConfig,
-    getModelInfo,
     getSimplePreamble,
     modelsService,
     ps,
@@ -35,13 +34,10 @@ const getInteractionArgsFromIntent = (
     model: EditModel,
     options: GetLLMInteractionOptions
 ): LLMInteraction => {
-    const { provider } = getModelInfo(model)
-    // Default to the generic Claude prompt if the provider is unknown
-    const interaction = INTERACTION_PROVIDERS[provider] || claude
-
-    // Check if the model has the reasoning tag
     const modelInfo = modelsService.getModelByID(model)
     const isReasoningModel = modelInfo?.tags.includes(ModelTag.Reasoning)
+    // Default to the generic Claude prompt if the provider is unknown
+    const interaction = modelInfo?.provider ? INTERACTION_PROVIDERS[modelInfo.provider] : claude
 
     switch (intent) {
         case 'add':
