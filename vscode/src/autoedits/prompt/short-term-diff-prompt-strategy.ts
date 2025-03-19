@@ -161,7 +161,6 @@ export class ShortTermPromptStrategy extends AutoeditsUserPromptStrategy {
         }
 
         const recentlyViewedShortTermSnippets = getRecentlyViewedSnippetsPrompt(shortTermViewedSnippets)
-        console.log('recently viewed', recentlyViewedShortTermSnippets)
         const shortTermViewPrompt =
             recentlyViewedShortTermSnippets.length > 0
                 ? joinPromptsWithNewlineSeparator(
@@ -169,9 +168,13 @@ export class ShortTermPromptStrategy extends AutoeditsUserPromptStrategy {
                       recentlyViewedShortTermSnippets
                   )
                 : ps``
+        console.log('short term viewed', {
+            recentlyViewedShortTermSnippets,
+            lengthOfSnippets: recentlyViewedShortTermSnippets.length,
+            finalPrompt: shortTermViewPrompt,
+        })
 
         const recentlyViewedLongTermSnippets = getRecentlyViewedSnippetsPrompt(longTermViewedSnippets)
-        console.log('long term viewed', recentlyViewedShortTermSnippets)
         const longTermViewPrompt =
             recentlyViewedLongTermSnippets.length > 0
                 ? joinPromptsWithNewlineSeparator(
@@ -179,6 +182,11 @@ export class ShortTermPromptStrategy extends AutoeditsUserPromptStrategy {
                       recentlyViewedLongTermSnippets
                   )
                 : ps``
+        console.log('long term viewed', {
+            recentlyViewedLongTermSnippets,
+            lengthOfSnippets: recentlyViewedLongTermSnippets.length,
+            finalPrompt: longTermViewPrompt,
+        })
 
         return {
             shortTermViewPrompt,
