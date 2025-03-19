@@ -23,10 +23,10 @@ import { openai } from './models/openai'
 import type { EditLLMInteraction, GetLLMInteractionOptions, LLMInteraction } from './type'
 
 const INTERACTION_PROVIDERS: Record<EditProvider, EditLLMInteraction> = {
-    Anthropic: claude,
-    OpenAI: openai,
+    anthropic: claude,
+    openai: openai,
     // NOTE: Sharing the same model for GPT models for now.
-    Google: openai,
+    google: openai,
 } as const
 
 const getInteractionArgsFromIntent = (
@@ -36,6 +36,7 @@ const getInteractionArgsFromIntent = (
 ): LLMInteraction => {
     const modelInfo = modelsService.getModelByID(model)
     const isReasoningModel = modelInfo?.tags.includes(ModelTag.Reasoning)
+    console.log(modelInfo)
     // Default to the generic Claude prompt if the provider is unknown
     const interaction = INTERACTION_PROVIDERS[modelInfo?.provider || ''] || claude
 
