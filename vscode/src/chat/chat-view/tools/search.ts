@@ -43,14 +43,17 @@ export async function getCodebaseSearchTool(
 
             output.push(`Found ${searches.length} results`)
 
-            // Only show the last 5 results
-            const resultContext = searches.map(({ uri, content }) => {
-                if (!content?.length) return ''
-                const remote = !uri.scheme.startsWith('file') && uri.path?.split('/-/blob/')?.pop()
-                return remote || displayPath(uri)
-            })
+            // Group search results by file name with code content
+            const groupedResults = searches
+                .map(({ uri, content }) => {
+                    if (!content?.length) return ''
+                    const remote = !uri.scheme.startsWith('file') && uri.path?.split('/-/blob/')?.pop()
+                    const filePath = remote || displayPath(uri)
+                    return `\`\`\`${filePath}\n${content}\n\`\`\``
+                })
+                .join('\n\n')
 
-            output.push(resultContext.join('\n'))
+            output.push(groupedResults)
 
             return { text: output.join('\n'), contextItems: searches.splice(0, searches.length - 5) }
         },

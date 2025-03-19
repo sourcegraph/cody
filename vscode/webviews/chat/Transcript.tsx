@@ -533,27 +533,17 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
         [humanMessage]
     )
 
-    const toolContentParts = useMemo(() => {
-        if (humanMessage?.index === 0 || !humanMessage?.content) {
+    const toolContent = useMemo(() => {
+        if (!assistantMessage?.content) {
             return undefined
         }
-        return humanMessage?.content?.filter(c => c.type === 'function')
-    }, [humanMessage?.index, humanMessage?.content])
+        return assistantMessage?.content?.filter(c => c.type === 'tool_call')
+    }, [assistantMessage?.content])
 
     return (
         <>
             {/* Shows tool contents instead of editor if any */}
-            {toolContentParts !== undefined ? (
-                toolContentParts?.map(tool => (
-                    <ToolStatusCell
-                        key={tool.id}
-                        status={tool.status}
-                        title={tool.function.name}
-                        output={tool.result}
-                        className="w-full"
-                    />
-                ))
-            ) : (
+            {(!humanMessage.index || toolContent === undefined) && (
                 <HumanMessageCell
                     key={humanMessage.index}
                     userInfo={userInfo}
@@ -593,7 +583,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                 isContextLoading &&
                 assistantMessage?.isLoading && <ApprovalCell vscodeAPI={vscodeAPI} />}
 
-            {!toolContentParts &&
+            {!toolContent &&
                 !usingToolCody &&
                 !(humanMessage.agent && isContextLoading) &&
                 (humanMessage.contextFiles || assistantMessage || isContextLoading) &&
@@ -632,6 +622,15 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                         isThoughtProcessOpened={isThoughtProcessOpened}
                     />
                 )}
+            {toolContent?.map(tool => (
+                <ToolStatusCell
+                    key={tool.tool_call.id}
+                    status={tool.result?.status ?? 'pending'}
+                    title={tool.tool_call.name}
+                    output={tool.result?.title}
+                    className="w-full"
+                />
+            ))}
         </>
     )
 }, isEqual)

@@ -1,4 +1,5 @@
 import type { SerializedChatMessage } from '../../chat/transcript/messages'
+import type { UIToolOutput } from '../../chat/types'
 import type { PromptString } from '../../prompt/prompt-string'
 
 interface DoneEvent {
@@ -10,7 +11,7 @@ interface CompletionEvent extends CompletionResponse {
     content?: CompletionContentData[] | undefined
 }
 
-export type CompletionContentData = ToolContentPart | TextContentPart
+export type CompletionContentData = ToolContentParts | TextContentPart
 
 // Tool calls returned by the LLM
 export interface CompletionFunctionCallsData {
@@ -60,7 +61,7 @@ export type MessagePart =
     | { type: 'context_file'; uri: string; content?: string } // Cody extension
     | { type: 'context_repo'; repoId: string } // Cody extension
     | { type: 'image_url'; image_url: { url: string } } // natively supported by LLM
-    | ToolContentPart
+    | ToolContentParts
 
 export interface TextContentPart {
     type: 'text'
@@ -73,10 +74,24 @@ export interface ImageContentPart {
     image_url: { url: string }
 }
 
-export interface ToolContentPart extends CompletionFunctionCallsData {
-    id: string
-    result?: string
-    status: string
+export type ToolContentParts = ToolCallContentPart | ToolResultContentPart
+
+export interface ToolCallContentPart {
+    type: 'tool_call'
+    tool_call: {
+        id: string
+        name: string
+        arguments: string
+    }
+    result?: UIToolOutput
+}
+
+export interface ToolResultContentPart {
+    type: 'tool_result'
+    tool_result: {
+        id: string
+        content: string
+    }
 }
 
 export interface CompletionUsage {
@@ -95,7 +110,7 @@ export interface CompletionResponse {
     completion: string
     thinking?: string
     stopReason?: string
-    tools?: ToolContentPart[]
+    tools?: ToolCallContentPart[]
 }
 
 export interface CompletionParameters {
