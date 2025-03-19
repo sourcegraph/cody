@@ -231,7 +231,7 @@ export function getServerModelTags(
         tags.push(ModelTag.Vision)
     }
 
-    if(capabilities.includes('reasoning')) {
+    if (capabilities.includes('reasoning')) {
         tags.push(ModelTag.Reasoning)
     }
     // TODO (bee) removes once o1 is rolled out.
