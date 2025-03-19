@@ -100,6 +100,8 @@ export interface AutoEditsRendererManager extends vscode.Disposable {
     dispose(): void
 }
 
+export const DEFAULT_AUTOEDIT_VISIBLE_DELAY_MS = 750
+
 export class AutoEditsDefaultRendererManager
     extends AutoEditsRenderOutput
     implements AutoEditsRendererManager
@@ -496,7 +498,7 @@ export class AutoEditsDefaultRendererManager
     /**
      * The amount of time before we consider an auto-edit to be "visible" to the user.
      */
-    private AUTOEDIT_VISIBLE_DELAY_MS = 750
+    private AUTOEDIT_VISIBLE_DELAY_MS = DEFAULT_AUTOEDIT_VISIBLE_DELAY_MS
 
     /**
      * Promise that resolves with the request ID when the timeout completes.
