@@ -12,7 +12,6 @@ import {
     logDebug,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
-import { forkSignal } from '../../../completions/utils'
 import { PromptBuilder } from '../../../prompt-builder'
 import type { ChatBuilder } from '../ChatBuilder'
 import type { ChatControllerOptions } from '../ChatController'
@@ -79,15 +78,20 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
         delegate: AgentHandlerDelegate,
         recorder: AgentRequest['recorder'],
         span: Span,
-        signal: AbortSignal
+        parentSignal: AbortSignal
     ): Promise<void> {
         let turnCount = 0
-        const abortController = forkSignal(signal || new AbortController().signal)
+
+        const loopController = new AbortController()
+        const signal = loopController.signal
+
+        parentSignal.addEventListener('abort', () => {
+            loopController.abort()
+        })
 
         // Main conversation loop
-        while (turnCount < this.MAX_TURN && !signal.aborted) {
+        while (turnCount < this.MAX_TURN && !loopController.signal?.aborted) {
             const model = turnCount === 0 ? AGENT_MODELS.ExtendedThinking : AGENT_MODELS.Base
-
             try {
                 // Get LLM response
                 const { botResponse, toolCalls } = await this.requestLLM(
@@ -95,7 +99,7 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
                     delegate,
                     recorder,
                     span,
-                    abortController.signal,
+                    signal,
                     model
                 )
 
@@ -114,6 +118,7 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
                 // Execute tools and update results
                 const toolResults = await this.executeTools(content)
                 for (const toolResult of toolResults) {
+                    loopController.signal.throwIfAborted()
                     // Find the tool call that corresponds to this result
                     const idx = botResponse.content?.findIndex(
                         c => c.type === 'tool_call' && c.tool_call.id === toolResult.tool_result.id
@@ -129,6 +134,8 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
                 }
                 // Add the tool result to the chat builder
                 chatBuilder.addBotMessage(botResponse, model)
+
+                loopController.signal.throwIfAborted()
 
                 // Add a human message to hold tool results
                 chatBuilder.addHumanMessage({

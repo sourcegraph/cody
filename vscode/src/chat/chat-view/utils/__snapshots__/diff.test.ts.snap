@@ -141,12 +141,12 @@ exports[`getFileDiff > should match snapshot for complex file diff 1`] = `
       "type": "added",
     },
   ],
-  "fileName": "path/to/complex.md",
   "total": {
     "added": 1,
     "modified": 2,
     "removed": 0,
   },
+  "type": "file-diff",
   "uri": {
     "$mid": 1,
     "path": "/path/to/complex.md",

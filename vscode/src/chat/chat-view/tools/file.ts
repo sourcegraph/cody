@@ -1,3 +1,4 @@
+import { UIToolStatus } from '@sourcegraph/cody-shared'
 import type { AgentTool } from '.'
 import { getContextFromRelativePath } from '../../../commands/context/file-path'
 import { validateWithZod } from '../utils/input'
@@ -26,13 +27,23 @@ export const getFileTool: AgentTool = {
                     '{{CONTENT}}',
                     context.content + '\nEOF'
                 ),
-                query: validInput.name,
-                file: { fileName: validInput.name, uri: context.uri, content: context.content },
+                output: {
+                    type: 'file-view',
+                    status: UIToolStatus.Done,
+                    fileName: validInput.name,
+                    uri: context.uri,
+                    content: context.content,
+                },
                 contextItems: [context],
             }
         } catch (error) {
             return {
                 text: `get_file for ${validInput.name} failed: ${error}`,
+                output: {
+                    type: 'file-view',
+                    status: UIToolStatus.Error,
+                    content: `Failed to retrieve file: ${error}`,
+                },
             }
         }
     },

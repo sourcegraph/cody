@@ -1,5 +1,9 @@
-import type { ChatMessage, ToolCallContentPart, ToolResultContentPart } from '@sourcegraph/cody-shared'
-import { isDefined } from '@vscode/test-electron/out/util'
+import {
+    type ChatMessage,
+    type ToolCallContentPart,
+    type ToolResultContentPart,
+    isDefined,
+} from '@sourcegraph/cody-shared'
 
 export function sanitizedChatMessages(messages: ChatMessage[]): any[] {
     return messages.map(message => {

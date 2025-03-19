@@ -197,6 +197,6 @@ describe('getFileDiff', () => {
             'Header line\nFirst paragraph with changes\nNew paragraph\nSecond paragraph\nFooter line with edits'
         const uri = testFileUri('path/to/complex.md')
 
-        expect(getFileDiff(uri, oldText, newText)).toMatchSnapshot()
+        expect(getFileDiff(uri, oldText, newText)).toMatchSnapshot({})
     })
 })

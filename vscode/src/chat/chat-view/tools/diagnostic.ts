@@ -1,3 +1,4 @@
+import { UIToolStatus } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 import type { AgentTool } from '.'
 import { validateWithZod } from '../utils/input'
@@ -18,14 +19,27 @@ export const diagnosticTool: AgentTool = {
         try {
             const fileInfo = await fileOps.getWorkspaceFile(name)
             if (!fileInfo) {
-                return { text: `Cannot find file ${name}.` }
+                return {
+                    text: `Cannot find file ${name}.`,
+                    output: { type: 'status', status: UIToolStatus.Error, content: 'Failed' },
+                }
             }
 
             const diagnostics = vscode.languages
                 .getDiagnostics(fileInfo.uri)
                 .filter(d => d.severity === vscode.DiagnosticSeverity.Error)
+
+            const text = `Diagnostics for ${name}:\n${diagnostics.map(d => d.message).join('\n')}`
+
             return {
-                text: `Diagnostics for ${name}:\n${diagnostics.map(d => d.message).join('\n')}`,
+                text,
+                output: {
+                    type: 'file-view',
+                    status: UIToolStatus.Done,
+                    fileName: name,
+                    uri: fileInfo.uri,
+                    content: text,
+                },
             }
         } catch (error) {
             throw new Error(`Failed to get diagnostics for ${name}: ${error}`)
