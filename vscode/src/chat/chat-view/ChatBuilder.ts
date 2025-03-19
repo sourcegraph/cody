@@ -11,7 +11,6 @@ import {
     type RankedContext,
     type SerializedChatInteraction,
     type SerializedChatTranscript,
-    type ToolContentPart,
     distinctUntilChanged,
     errorToChatError,
     modelsService,
@@ -356,74 +355,29 @@ export class ChatBuilder {
         const lastMessage = this.messages.at(-1)
         const isNewMessage = !lastMessage || lastMessage.speaker !== speaker
 
+        const content = [part]
+        const text = this.computeTextFromParts(content, speaker)
+
         if (isNewMessage) {
             // Create a new message for this part
-            const content = [part]
-            const text = this.computeTextFromParts(content, speaker)
 
             if (speaker === 'human') {
-                this.addHumanMessage({
-                    text,
-                    content,
-                })
+                this.addHumanMessage({ content, text })
             } else {
-                this.addBotMessage(
-                    {
-                        text,
-                        content,
-                    },
-                    model || ChatBuilder.NO_MODEL
-                )
+                this.addBotMessage({ content, text }, model || ChatBuilder.NO_MODEL)
             }
         } else {
             // Append to existing message
             const existingContent = lastMessage.content || []
             const updatedContent = [...existingContent, part]
             this.setLastMessageContent(updatedContent)
-
-            // Update the text representation as well
-            lastMessage.text = this.computeTextFromParts(updatedContent, speaker)
+            // Update the text for the last message
+            if (text) {
+                lastMessage.text = text
+            }
         }
 
         this.changeNotifications.next()
-    }
-
-    /**
-     * Improved method to handle tool parts specifically, with clean replacement logic
-     */
-    public appendToolPart(
-        toolContent: ToolContentPart,
-        speaker: 'human' | 'assistant' = 'human',
-        model?: ChatModel
-    ): void {
-        const lastMessage = this.messages.at(-1)
-
-        // Nothing to replace if no message or no content
-        if (!lastMessage || !lastMessage.content || lastMessage.speaker !== speaker) {
-            this.appendMessagePart(toolContent, speaker, model)
-            return
-        }
-
-        // Try to find and replace an existing tool with the same ID
-        const toolId = toolContent.id
-        const existingToolIndex = lastMessage.content.findIndex(
-            part => part.type === 'function' && (part as ToolContentPart).id === toolId
-        )
-
-        if (existingToolIndex >= 0) {
-            // Replace the existing tool
-            const updatedContent = [...lastMessage.content]
-            updatedContent[existingToolIndex] = toolContent
-            this.setLastMessageContent(updatedContent)
-
-            // Update the message text to reflect the tool result
-            if (toolContent.result) {
-                lastMessage.text = this.computeTextFromParts(updatedContent, speaker)
-            }
-        } else {
-            // No existing tool to replace, just append
-            this.appendMessagePart(toolContent, speaker, model)
-        }
     }
 
     /**
@@ -434,11 +388,8 @@ export class ChatBuilder {
         const textParts: string[] = []
 
         for (const part of parts) {
-            if (part.type === 'text') {
+            if (part.type === 'text' && !!part.text) {
                 textParts.push((part as { type: 'text'; text: string }).text)
-            } else if (part.type === 'function' && (part as ToolContentPart).result) {
-                // For function parts with results, include the result text
-                textParts.push(`\n${(part as ToolContentPart).result}`)
             }
         }
 
@@ -447,11 +398,6 @@ export class ChatBuilder {
             return PromptString.unsafe_fromUserQuery(joinedText)
         }
         return PromptString.unsafe_fromLLMResponse(joinedText)
-    }
-
-    // Simplified methods that use the unified approach
-    public appendHumanToolPart(toolContent: ToolContentPart): void {
-        this.appendToolPart(toolContent, 'human')
     }
 }
 

@@ -110,7 +110,7 @@ export const AllCells: Story = {
             <OutputStatusCell
                 title="Process Output"
                 status="info"
-                result="This is the default output content"
+                content="This is the default output content"
                 defaultOpen={defaultOpen}
             />
         </div>

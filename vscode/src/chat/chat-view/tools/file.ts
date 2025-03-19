@@ -26,7 +26,8 @@ export const getFileTool: AgentTool = {
                     '{{CONTENT}}',
                     context.content + '\nEOF'
                 ),
-                fileResult: { fileName: validInput.name, uri: context.uri, content: context.content },
+                query: validInput.name,
+                file: { fileName: validInput.name, uri: context.uri, content: context.content },
                 contextItems: [context],
             }
         } catch (error) {

@@ -65,7 +65,7 @@ export const shellTool: AgentTool = {
         } catch (error) {
             if (error instanceof CommandError) {
                 // Format the error output as an array of TerminalLine objects
-                const bashResult: UITerminalLine[] = [
+                const terminal: UITerminalLine[] = [
                     { content: validInput.command, type: UITerminalLineType.Input },
                     { content: `Exited with code ${error.result.code}`, type: UITerminalLineType.Error },
                     ...formatOutputToTerminalLines(error.result.stdout, UITerminalLineType.Output),
@@ -74,7 +74,7 @@ export const shellTool: AgentTool = {
 
                 return {
                     command: validInput.command,
-                    bashResult,
+                    terminal,
                     text: `Command: ${validInput.command}\n\nExited with code ${
                         error.result.code
                     }\n\nOutput:\n${error.result.stdout}${

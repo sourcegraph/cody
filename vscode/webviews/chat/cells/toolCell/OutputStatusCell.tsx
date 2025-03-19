@@ -9,7 +9,7 @@ type StatusType = 'success' | 'error' | 'info' | 'warning'
 interface OutputStatusProps {
     query?: string
     title: string
-    result?: string
+    content?: string
     status: StatusType
     className?: string
     defaultOpen?: boolean
@@ -17,7 +17,7 @@ interface OutputStatusProps {
 
 export const OutputStatusCell: FC<OutputStatusProps> = ({
     title,
-    result,
+    content,
     status = 'info',
     className,
     defaultOpen = false,
@@ -101,10 +101,10 @@ export const OutputStatusCell: FC<OutputStatusProps> = ({
 
     const renderBodyContent = () => (
         <div className={cn('tw-p-4', getStatusClass())}>
-            {result && (
+            {content && (
                 <div className="tw-bg-black tw-rounded-md tw-p-3 tw-font-mono tw-text-xs tw-mb-4 tw-overflow-x-auto">
                     <pre className="tw-whitespace-pre-wrap tw-break-words tw-text-zinc-300">
-                        {result}
+                        {content}
                     </pre>
                 </div>
             )}

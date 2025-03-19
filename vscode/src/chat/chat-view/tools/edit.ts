@@ -45,6 +45,7 @@ export const editTool = {
             case 'undo_edit':
                 return {
                     text: 'Undo is not supported directly. Use the Source Control UI to revert changes.',
+                    status: 'warning',
                 }
             default:
                 throw new Error(

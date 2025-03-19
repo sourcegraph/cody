@@ -534,28 +534,16 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
     )
 
     const toolContent = useMemo(() => {
-        if (humanMessage?.index === 0 || !humanMessage?.content) {
+        if (!assistantMessage?.content) {
             return undefined
         }
-        return humanMessage?.content?.filter(c => c.type === 'function')
-    }, [humanMessage?.index, humanMessage?.content])
+        return assistantMessage?.content?.filter(c => c.type === 'tool_call')
+    }, [assistantMessage?.content])
 
     return (
         <>
             {/* Shows tool contents instead of editor if any */}
-            {toolContent !== undefined ? (
-                toolContent?.map(tool => (
-                    <ToolStatusCell
-                        key={tool.id}
-                        status={tool.status}
-                        title={tool.function.name}
-                        output={tool.output}
-                        result={tool.result}
-                        className="w-full"
-                        vscodeAPI={vscodeAPI}
-                    />
-                ))
-            ) : (
+            {(!humanMessage.index || toolContent === undefined) && (
                 <HumanMessageCell
                     key={humanMessage.index}
                     userInfo={userInfo}
@@ -634,6 +622,15 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                         isThoughtProcessOpened={isThoughtProcessOpened}
                     />
                 )}
+            {toolContent?.map(tool => (
+                <ToolStatusCell
+                    key={tool.tool_call.id}
+                    content={tool.tool_result?.tool_result.content}
+                    title={tool.tool_call.name}
+                    output={tool.tool_result?.output}
+                    className="w-full"
+                />
+            ))}
         </>
     )
 }, isEqual)

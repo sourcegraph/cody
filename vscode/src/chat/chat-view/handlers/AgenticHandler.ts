@@ -3,13 +3,15 @@ import {
     type ChatMessage,
     type ContextItem,
     type Message,
+    type MessagePart,
     PromptString,
-    type ToolContentPart,
+    type ToolCallContentPart,
+    type ToolResultContentPart,
     isDefined,
     logDebug,
-    ps,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
+import { forkSignal } from '../../../completions/utils'
 import { PromptBuilder } from '../../../prompt-builder'
 import type { ChatBuilder } from '../ChatBuilder'
 import type { ChatControllerOptions } from '../ChatController'
@@ -52,6 +54,8 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
         // Initialize available tools
         this.tools = await AgentToolGroup.getToolsByAgentId(this.contextRetriever, span)
 
+        const startTime = Date.now()
+
         logDebug('AgenticHandler', `Starting agent session ${sessionID}`)
 
         try {
@@ -62,6 +66,7 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
         } finally {
             delegate.postDone()
             logDebug('AgenticHandler', `Ending agent session ${sessionID}`)
+            logDebug('AgenticHandler', `Session ${sessionID} duration: ${Date.now() - startTime}ms`)
         }
     }
 
@@ -76,6 +81,7 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
         signal: AbortSignal
     ): Promise<void> {
         let turnCount = 0
+        const abortController = forkSignal(signal || new AbortController().signal)
 
         // Main conversation loop
         while (turnCount < this.MAX_TURN && !signal.aborted) {
@@ -88,43 +94,46 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
                     delegate,
                     recorder,
                     span,
-                    signal,
+                    abortController.signal,
                     model
                 )
 
                 // Add bot response to conversation
-                chatBuilder.addBotMessage(botResponse, model)
+                delegate.postMessageInProgress(botResponse)
+
+                const content = Array.from(toolCalls.values())
 
                 // No tool calls means we're done
                 if (!toolCalls?.size) {
+                    chatBuilder.addBotMessage(botResponse, model)
                     logDebug('AgenticHandler', 'No tool calls, ending conversation')
                     break
                 }
 
-                const content = Array.from(toolCalls.values())
-
-                delegate.postMessageInProgress(botResponse)
+                // Execute tools and update results
+                const toolResults = await this.executeTools(content)
+                for (const toolResult of toolResults) {
+                    // Find the tool call that corresponds to this result
+                    const idx = botResponse.content?.findIndex(
+                        c => c.type === 'tool_call' && c.tool_call.id === toolResult.tool_result.id
+                    )
+                    const toolCall =
+                        idx !== undefined &&
+                        idx !== -1 &&
+                        (botResponse.content?.[idx] as ToolCallContentPart)
+                    // Update the tool call with the result
+                    if (toolCall) {
+                        toolCall.tool_result = toolResult
+                    }
+                }
+                // Add the tool result to the chat builder
+                chatBuilder.addBotMessage(botResponse, model)
 
                 // Add a human message to hold tool results
                 chatBuilder.addHumanMessage({
-                    ...botResponse,
-                    text: ps`Results`,
-                    content,
+                    content: toolResults,
                     intent: 'agentic',
                 })
-
-                // Execute tools and update results
-                const { processedTools, contextItems } = await this.executeTools(content)
-
-                // Update tool results in the message
-                for (const tool of processedTools) {
-                    chatBuilder.appendHumanToolPart(tool)
-                }
-
-                // Add context if any was found
-                if (contextItems.length > 0) {
-                    chatBuilder.setLastMessageContext(contextItems)
-                }
 
                 // Exit if max turns reached
                 if (turnCount >= this.MAX_TURN - 1) {
@@ -139,7 +148,6 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
             }
         }
     }
-
     /**
      * Request a response from the LLM with tool calling capabilities
      */
@@ -150,7 +158,7 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
         span: Span,
         signal: AbortSignal,
         model: string
-    ): Promise<{ botResponse: ChatMessage; toolCalls: Map<string, ToolContentPart> }> {
+    ): Promise<{ botResponse: ChatMessage; toolCalls: Map<string, ToolCallContentPart> }> {
         // Create prompt
         const prompter = new AgenticChatPrompter(this.SYSTEM_PROMPT)
         const prompt = await prompter.makePrompt(chatBuilder)
@@ -159,7 +167,7 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
         // Prepare API call parameters
         const params = {
             maxTokensToSample: 8000,
-            messages: prompt,
+            messages: JSON.stringify(prompt),
             tools: this.tools.map(tool => ({
                 type: 'function',
                 function: {
@@ -173,25 +181,26 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
         }
 
         // Initialize state
-        const toolCalls = new Map<string, ToolContentPart>()
-        let streamedText = ''
+        const toolCalls = new Map<string, ToolCallContentPart>()
+        const streamed: MessagePart = { type: 'text', text: '' }
+        const content: MessagePart[] = []
 
         // Process stream
         const stream = await this.chatClient.chat(prompt, params, signal)
-
         for await (const message of stream) {
             if (signal.aborted) break
 
             switch (message.type) {
                 case 'change': {
-                    streamedText = message.text
+                    streamed.text = message.text
                     delegate.postMessageInProgress({
                         speaker: 'assistant',
-                        text: PromptString.unsafe_fromLLMResponse(streamedText),
+                        content: [streamed],
+                        text: PromptString.unsafe_fromLLMResponse(streamed.text),
                         model,
                     })
                     // Process tool calls in the response
-                    const toolCalledParts = message.content?.filter(c => c.type === 'function') || []
+                    const toolCalledParts = message?.content?.filter(c => c.type === 'tool_call') || []
                     for (const toolCall of toolCalledParts) {
                         this.syncToolCall(toolCall, toolCalls)
                     }
@@ -201,18 +210,25 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
                     throw message.error
                 }
                 case 'complete': {
+                    content.push(streamed)
                     break
                 }
             }
         }
 
         // Create final response
+
+        if (toolCalls.size > 0) {
+            content.push(...Array.from(toolCalls.values()))
+        }
+
         return {
             botResponse: {
                 speaker: 'assistant',
-                text: PromptString.unsafe_fromLLMResponse(streamedText),
                 intent: 'agentic',
+                content,
                 model,
+                text: streamed.text ? PromptString.unsafe_fromLLMResponse(streamed.text) : undefined,
             },
             toolCalls,
         }
@@ -221,53 +237,41 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
     /**
      * Process and sync tool calls
      */
-    protected syncToolCall(toolCall: ToolContentPart, toolCalls: Map<string, ToolContentPart>): void {
-        const existingCall = toolCalls.get(toolCall.id)
+    protected syncToolCall(
+        toolCall: ToolCallContentPart,
+        toolCalls: Map<string, ToolCallContentPart>
+    ): void {
+        const existingCall = toolCalls.get(toolCall?.tool_call?.id)
         if (!existingCall) {
-            logDebug('AgenticHandler', `Calling ${toolCall.function.name}`, { verbose: toolCall })
+            logDebug('AgenticHandler', `Calling ${toolCall?.tool_call?.name}`, { verbose: toolCall })
         }
         // Merge the existing call (if any) with the new toolCall,
         // prioritizing properties from the new toolCall.  This ensures
         // that status and result are preserved if they exist.
-        const updatedCall = { ...existingCall, ...toolCall, status: 'pending' }
-        toolCalls.set(toolCall.id, updatedCall)
+        const updatedCall = { ...existingCall, ...toolCall }
+        toolCalls.set(toolCall?.tool_call?.id, updatedCall)
     }
 
     /**
      * Execute tools from LLM response
      */
-    protected async executeTools(
-        toolCalls: ToolContentPart[]
-    ): Promise<{ processedTools: ToolContentPart[]; contextItems: ContextItem[] }> {
+    protected async executeTools(toolCalls: ToolCallContentPart[]): Promise<ToolResultContentPart[]> {
         try {
             logDebug('AgenticHandler', `Executing ${toolCalls.length} tools`)
             // Execute all tools concurrently
-            const results = await Promise.all(
+            const toolResults = await Promise.all(
                 toolCalls.map(async toolCall => {
-                    logDebug('AgenticHandler', `Executing ${toolCall.function?.name}`, {
+                    logDebug('AgenticHandler', `Executing ${toolCall.tool_call?.name}`, {
                         verbose: toolCall,
                     })
                     return this.executeSingleTool(toolCall)
                 })
             )
 
-            // Filter and flatten results
-            const processedTools: ToolContentPart[] = []
-            const contextItems: ContextItem[] = []
-
-            for (const result of results) {
-                if (result) {
-                    processedTools.push(result.toolResult)
-                    if (result.contextItems?.length) {
-                        contextItems.push(...result.contextItems)
-                    }
-                }
-            }
-
-            return { processedTools, contextItems }
+            return toolResults.filter(isDefined)
         } catch (error) {
             logDebug('AgenticHandler', 'Error executing tools', { verbose: error })
-            return { processedTools: [], contextItems: [] }
+            return []
         }
     }
 
@@ -275,37 +279,36 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
      * Execute a single tool and handle success/failure
      */
     protected async executeSingleTool(
-        toolCall: ToolContentPart
-    ): Promise<{ toolResult: ToolContentPart; contextItems?: ContextItem[] } | null> {
+        toolCall: ToolCallContentPart
+    ): Promise<ToolResultContentPart | undefined> {
         // Find the appropriate tool
-        const tool = this.tools.find(t => t.spec.name === toolCall.function.name)
-        if (!tool) return null
+        const tool = this.tools.find(t => t.spec.name === toolCall.tool_call.name)
+        if (!tool) return undefined
+
+        const toolResult: ToolResultContentPart = {
+            type: 'tool_result',
+            tool_result: {
+                id: toolCall.tool_call.id,
+                content: '',
+            },
+        }
 
         // Update status to pending *before* execution
-        toolCall.status = 'pending'
-
         try {
-            const args = parseToolCallArgs(toolCall.function.arguments)
+            const args = parseToolCallArgs(toolCall.tool_call.arguments)
             const output = await tool.invoke(args)
 
-            toolCall.result = output.text
-            toolCall.output = output
-            toolCall.status = 'done'
+            toolResult.tool_result.content = output.text
+            toolResult.output = { status: 'done', ...output }
 
-            logDebug('AgenticHandler', `Executed ${toolCall.function.name}`, { verbose: output })
+            logDebug('AgenticHandler', `Executed ${toolCall.tool_call.name}`, { verbose: output })
 
-            return { toolResult: toolCall, contextItems: output.contextItems }
+            return toolResult
         } catch (error) {
-            const toolResult: ToolContentPart = {
-                ...toolCall, // Copy existing properties
-                status: 'error',
-                result: String(error),
-            }
-
-            logDebug('AgenticHandler', `Tool execution failed: ${toolCall.function.name}`, {
-                verbose: { error },
-            })
-            return { toolResult }
+            toolResult.tool_result.content = String(error)
+            toolResult.output = { status: 'error' }
+            logDebug('AgenticHandler', `${toolCall.tool_call.name} failed`, { verbose: error })
+            return toolResult
         }
     }
 
