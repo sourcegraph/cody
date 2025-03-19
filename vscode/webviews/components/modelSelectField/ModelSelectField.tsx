@@ -1,4 +1,4 @@
-import { type Model, ModelTag, isCodyProModel } from '@sourcegraph/cody-shared'
+import { type ChatMessage, type Model, ModelTag, isCodyProModel } from '@sourcegraph/cody-shared'
 import { isMacOS } from '@sourcegraph/cody-shared'
 import { DeepCodyAgentID, ToolCodyModelName } from '@sourcegraph/cody-shared/src/models/client'
 import { clsx } from 'clsx'
@@ -35,8 +35,7 @@ export const ModelSelectField: React.FunctionComponent<{
     onCloseByEscape?: () => void
     className?: string
 
-    /** Current chat intent */
-    intent?: string
+    intent?: ChatMessage['intent']
 
     /** For storybooks only. */
     __storybook__open?: boolean
@@ -95,6 +94,7 @@ export const ModelSelectField: React.FunctionComponent<{
             showCodyProBadge,
             parentOnModelSelect,
             isCodyProUser,
+            intent,
         ]
     )
 
@@ -138,7 +138,7 @@ export const ModelSelectField: React.FunctionComponent<{
                     // be taken to the upgrade page.
                     disabled: !['available', 'needs-cody-pro'].includes(availability),
                     group: getModelDropDownUIGroup(m),
-                    tooltip: getTooltip(m, availability, intent),
+                    tooltip: getTooltip(m, availability),
                 } satisfies SelectListOption
             }),
         [models, userInfo, serverSentModelsEnabled, intent]
@@ -295,7 +295,7 @@ function modelAvailability(
     userInfo: Pick<UserAccountInfo, 'isCodyProUser' | 'isDotComUser'>,
     serverSentModelsEnabled: boolean,
     model: Model,
-    intent?: string
+    intent?: ChatMessage['intent']
 ): ModelAvailability {
     if (!userInfo.isDotComUser && !serverSentModelsEnabled) {
         return 'not-selectable-on-enterprise'
@@ -310,7 +310,7 @@ function modelAvailability(
     return 'available'
 }
 
-function getTooltip(model: Model, availability: string, intent?: string): string {
+function getTooltip(model: Model, availability: string): string {
     if (model.id.includes(DeepCodyAgentID)) {
         return 'Agentic chat reflects on your request and uses tools to dynamically retrieve relevant context, improving accuracy and response quality.'
     }
@@ -328,9 +328,6 @@ function getTooltip(model: Model, availability: string, intent?: string): string
             : model.provider.charAt(0).toUpperCase() + model.provider.slice(1)
     switch (availability) {
         case 'not-selectable-on-enterprise':
-            if (intent === 'agentic' && !model.tags.includes(ModelTag.AgenticCompatible)) {
-                return 'Only Claude 3.7 Sonnet is supported in agentic mode'
-            }
             return 'Chat model set by your Sourcegraph Enterprise admin'
         case 'needs-cody-pro':
             return `Upgrade to Cody Pro to use ${model.title} by ${capitalizedProvider}`
