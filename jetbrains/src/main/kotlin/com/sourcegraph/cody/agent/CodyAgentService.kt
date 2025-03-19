@@ -85,8 +85,6 @@ class CodyAgentService(private val project: Project) : Disposable {
       token: String?,
       secondsTimeout: Long = 45
   ): CompletableFuture<CodyAgent> {
-    WebUIService.getInstance(project).reset()
-
     ApplicationManager.getApplication().executeOnPooledThread {
       try {
         val future =
