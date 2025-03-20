@@ -4,20 +4,24 @@ import com.intellij.openapi.actionSystem.DataContext
 import com.intellij.openapi.editor.Caret
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.actionSystem.EditorActionHandler
+import com.sourcegraph.cody.agent.protocol_generated.AutocompleteEditItem
 import com.sourcegraph.cody.agent.protocol_generated.AutocompleteItem
 import com.sourcegraph.cody.autocomplete.render.CodyAutocompleteElementRenderer
 import com.sourcegraph.cody.autocomplete.render.InlayModelUtil
+import com.sourcegraph.cody.autoedit.AutoeditManager
 import com.sourcegraph.utils.CodyEditorUtil
 
 open class AutocompleteActionHandler : EditorActionHandler() {
 
   override fun isEnabledForCaret(editor: Editor, caret: Caret, dataContext: DataContext?): Boolean {
     // Returns false to fall back to normal action if there is no suggestion at the caret.
-    return CodyEditorUtil.isEditorInstanceSupported(editor) && hasAnyAutocompleteItems(caret)
+    return CodyEditorUtil.isEditorInstanceSupported(editor) &&
+        hasAnyAutocompleteItems(caret, editor)
   }
 
-  private fun hasAnyAutocompleteItems(caret: Caret): Boolean =
-      getCurrentAutocompleteItem(caret) != null
+  private fun hasAnyAutocompleteItems(caret: Caret, editor: Editor): Boolean =
+      getCurrentAutocompleteItem(caret) != null ||
+          getCurrentAutoeditItemAsCompletionItem(editor) != null
 
   private fun getAutocompleteRenderers(caret: Caret): List<CodyAutocompleteElementRenderer> =
       InlayModelUtil.getAllInlaysForEditor(caret.editor)
@@ -43,5 +47,21 @@ open class AutocompleteActionHandler : EditorActionHandler() {
     val allCarets = editor.caretModel.allCarets
     // Only accept completions if there's a single caret.
     return if (allCarets.size < 2) allCarets.firstOrNull() else null
+  }
+
+  /**
+   * Converts an active autoedit item to a completion item if available. We're consciously packing
+   * edit item as completion item because it contains enough information (id, range, insertText) to
+   * proceed with applying the insert.
+   */
+  protected fun getCurrentAutoeditItemAsCompletionItem(editor: Editor): AutocompleteItem? {
+    val service = editor.project?.getService(AutoeditManager::class.java)
+    return if (editor == service?.activeAutoeditEditor) {
+      service.activeAutocompleteEditItem?.toCompletionItem()
+    } else null
+  }
+
+  private fun AutocompleteEditItem.toCompletionItem(): AutocompleteItem {
+    return AutocompleteItem(this.id, this.range, this.insertText.removeSuffix("\n"))
   }
 }

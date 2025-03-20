@@ -102,12 +102,15 @@ object Utils {
                       !UpgradeToCodyProNotification.isFirstRLEOnAutomaticAutocompletionsShown) {
                     handleError(project, error)
                   }
-                } else if (result != null && result.inlineCompletionItems.isNotEmpty()) {
+                } else if (result != null &&
+                    (result.inlineCompletionItems.isNotEmpty() ||
+                        result.decoratedEditItems.isNotEmpty())) {
                   UpgradeToCodyProNotification.isFirstRLEOnAutomaticAutocompletionsShown = false
                   UpgradeToCodyProNotification.autocompleteRateLimitError.set(null)
                   successCallback(result)
                   resultOuter.complete(result)
                 }
+
                 null
               }
               .exceptionally { error: Throwable? ->
