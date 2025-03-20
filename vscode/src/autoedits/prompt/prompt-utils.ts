@@ -474,5 +474,6 @@ export function getRecentEditsContextPromptWithPath(
 }
 
 export function joinPromptsWithNewlineSeparator(...args: PromptString[]): PromptString {
-    return PromptString.join(args, ps`\n`)
+    const prompts = args.filter(args => args.length > 0)
+    return PromptString.join(prompts, ps`\n`)
 }
