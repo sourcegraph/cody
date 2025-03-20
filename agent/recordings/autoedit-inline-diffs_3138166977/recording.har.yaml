@@ -94,11 +94,11 @@ log:
         send: 0
         ssl: -1
         wait: 259
-    - _id: 9fd618a769b8ff77698231459ee8d37a
+    - _id: dfbce383bea6eaa4fd4269f248d50f16
       _order: 0
       cache: {}
       request:
-        bodySize: 1357
+        bodySize: 1389
         cookies: []
         headers:
           - _fromType: array
@@ -125,7 +125,7 @@ log:
             value: "5000"
           - _fromType: array
             name: content-length
-            value: "1357"
+            value: "1389"
           - name: host
             value: demo.sourcegraph.com
         headersSize: 463
@@ -139,19 +139,19 @@ log:
             messages:
               - speaker: human
                 text: >-
-                  You are an intelligent programmer and an expert at coding.
-                  Your goal is to help a colleague finish a code change.
+                  You are an intelligent programmer and an expert at coding
+                  DEBUG. Your goal is to help a colleague finish a code change.
 
 
                   User: Help me finish a coding change. You will see snippets from current open files in my editor, files I have recently viewed, the file I am editing, then a history of my recent codebase changes, then current compiler and linter errors, content I copied from my codebase. You will then rewrite the <code_to_rewrite>, to match what you think I would do next in the codebase. Note: I might have stopped in the middle of typing.
+
+                  Code snippets just I viewed:
 
                   The file currently open:(`src/sum-ages.ts`)
 
                   <file>
 
-
                   <<<AREA_AROUND_CODE_TO_REWRITE_WILL_BE_INSERTED_HERE>>>
-
 
                   </file>
 
@@ -198,10 +198,10 @@ log:
             value: v1
         url: https://demo.sourcegraph.com/.api/completions/code?client-name=autoedit-inline-diffs&client-version=v1
       response:
-        bodySize: 537
+        bodySize: 544
         content:
           mimeType: text/event-stream
-          size: 537
+          size: 544
           text: >+
             event: completion
 
@@ -215,169 +215,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Fri, 14 Mar 2025 16:14:05 GMT
-          - name: content-type
-            value: text/event-stream
-          - name: transfer-encoding
-            value: chunked
-          - name: connection
-            value: close
-          - name: retry-after
-            value: "193"
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache
-          - name: vary
-            value: Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
-              Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1337
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2025-03-14T16:14:05.345Z
-      time: 570
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 570
-    - _id: 86a3e0abc8d03e12f336ee1d5a4fb13e
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 1280
-        cookies: []
-        headers:
-          - _fromType: array
-            name: accept
-            value: application/json
-          - _fromType: array
-            name: accept-encoding
-            value: gzip;q=0
-          - _fromType: array
-            name: authorization
-            value: token
-              REDACTED_69e9f79ce29352d014eeb80b56510341844eb82ad9abac7cab3631c7e873e4ce
-          - _fromType: array
-            name: content-type
-            value: application/json; charset=utf-8
-          - _fromType: array
-            name: user-agent
-            value: autoedit-inline-diffs/v1 (Node.js v20.4.0)
-          - _fromType: array
-            name: x-requested-with
-            value: autoedit-inline-diffs v1
-          - _fromType: array
-            name: x-timeout-ms
-            value: "5000"
-          - _fromType: array
-            name: content-length
-            value: "1280"
-          - name: host
-            value: demo.sourcegraph.com
-        headersSize: 463
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json; charset=utf-8
-          params: []
-          textJSON:
-            maxTokensToSample: 528
-            messages:
-              - speaker: human
-                text: >-
-                  You are an intelligent programmer and an expert at coding.
-                  Your goal is to help a colleague finish a code change.
-
-
-                  User: Help me finish a coding change. You will see snippets from current open files in my editor, files I have recently viewed, the file I am editing, then a history of my recent codebase changes, then current compiler and linter errors, content I copied from my codebase. You will then rewrite the <code_to_rewrite>, to match what you think I would do next in the codebase. Note: I might have stopped in the middle of typing.
-
-                  The file currently open:(`src/sum-ages-complex-diff.ts`)
-
-                  <file>
-
-
-                  <<<AREA_AROUND_CODE_TO_REWRITE_WILL_BE_INSERTED_HERE>>>
-
-
-                  </file>
-
-                  <area_around_code_to_rewrite>
-
-                  interface Person {
-                      name: string
-                      age: number
-                  }
-
-
-
-                  <code_to_rewrite>
-
-                  export function sumAge(a: Human, a: Human): number {
-
-
-                  }
-
-
-                  </code_to_rewrite>
-
-
-                  </area_around_code_to_rewrite>
-
-                  Continue where I left off and finish my change by rewriting "code_to_rewrite":
-
-
-                  Assistant:
-            model: fireworks::v1::autoedits-deepseek-lite-default
-            prediction:
-              content: |
-                export function sumAge(a: Human, a: Human): number {
-
-                }
-              type: content
-            stream: true
-            temperature: 0.1
-            timeoutMs: 5000
-        queryString:
-          - name: client-name
-            value: autoedit-inline-diffs
-          - name: client-version
-            value: v1
-        url: https://demo.sourcegraph.com/.api/completions/code?client-name=autoedit-inline-diffs&client-version=v1
-      response:
-        bodySize: 583
-        content:
-          mimeType: text/event-stream
-          size: 583
-          text: >+
-            event: completion
-
-            data: {"completion":"export function sumAge(a: Person, b: Person): number {\n    return a.age + b.age\n}\n","stopReason":"stop"}
-
-
-            event: done
-
-            data: {}
-
-        cookies: []
-        headers:
-          - name: date
-            value: Wed, 19 Mar 2025 15:29:47 GMT
+            value: Thu, 20 Mar 2025 10:59:22 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -406,8 +244,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-03-19T15:29:46.694Z
-      time: 556
+      startedDateTime: 2025-03-20T10:59:21.955Z
+      time: 599
       timings:
         blocked: -1
         connect: -1
@@ -415,7 +253,166 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 556
+        wait: 599
+    - _id: 311644205cf684b0f45abbe1d5565f0d
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 1310
+        cookies: []
+        headers:
+          - _fromType: array
+            name: accept
+            value: application/json
+          - _fromType: array
+            name: accept-encoding
+            value: gzip;q=0
+          - _fromType: array
+            name: authorization
+            value: token
+              REDACTED_69e9f79ce29352d014eeb80b56510341844eb82ad9abac7cab3631c7e873e4ce
+          - _fromType: array
+            name: content-type
+            value: application/json; charset=utf-8
+          - _fromType: array
+            name: user-agent
+            value: autoedit-inline-diffs/v1 (Node.js v20.4.0)
+          - _fromType: array
+            name: x-requested-with
+            value: autoedit-inline-diffs v1
+          - _fromType: array
+            name: x-timeout-ms
+            value: "5000"
+          - _fromType: array
+            name: content-length
+            value: "1310"
+          - name: host
+            value: demo.sourcegraph.com
+        headersSize: 463
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json; charset=utf-8
+          params: []
+          textJSON:
+            maxTokensToSample: 528
+            messages:
+              - speaker: human
+                text: >-
+                  You are an intelligent programmer and an expert at coding
+                  DEBUG. Your goal is to help a colleague finish a code change.
+
+
+                  User: Help me finish a coding change. You will see snippets from current open files in my editor, files I have recently viewed, the file I am editing, then a history of my recent codebase changes, then current compiler and linter errors, content I copied from my codebase. You will then rewrite the <code_to_rewrite>, to match what you think I would do next in the codebase. Note: I might have stopped in the middle of typing.
+
+                  Code snippets just I viewed:
+
+                  The file currently open:(`src/sum-ages-complex-diff.ts`)
+
+                  <file>
+
+                  <<<AREA_AROUND_CODE_TO_REWRITE_WILL_BE_INSERTED_HERE>>>
+
+                  </file>
+
+                  <area_around_code_to_rewrite>
+
+                  interface Person {
+                      name: string
+                      age: number
+                  }
+
+
+
+                  <code_to_rewrite>
+
+                  export function sumAge(a: Human, a: Human): number {
+
+
+                  }
+
+
+                  </code_to_rewrite>
+
+                  </area_around_code_to_rewrite>
+
+                  Continue where I left off and finish my change by rewriting "code_to_rewrite":
+
+
+                  Assistant:
+            model: fireworks::v1::autoedits-deepseek-lite-default
+            prediction:
+              content: |
+                export function sumAge(a: Human, a: Human): number {
+
+                }
+              type: content
+            stream: true
+            temperature: 0.1
+            timeoutMs: 5000
+        queryString:
+          - name: client-name
+            value: autoedit-inline-diffs
+          - name: client-version
+            value: v1
+        url: https://demo.sourcegraph.com/.api/completions/code?client-name=autoedit-inline-diffs&client-version=v1
+      response:
+        bodySize: 580
+        content:
+          mimeType: text/event-stream
+          size: 580
+          text: >+
+            event: completion
+
+            data: {"completion":"export function sumAge(a: Person, b: Person): number {\n    return a.age + b.age\n}\n","stopReason":"stop"}
+
+
+            event: done
+
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Thu, 20 Mar 2025 10:59:23 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: close
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
+              Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1230
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2025-03-20T10:59:22.704Z
+      time: 482
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 482
     - _id: 404a28d2461ea66da470804476c21f26
       _order: 0
       cache: {}

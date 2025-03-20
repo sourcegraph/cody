@@ -94,11 +94,11 @@ log:
         send: 0
         ssl: -1
         wait: 243
-    - _id: a80cdbb24a9f16a44007dd6798ca8a8c
+    - _id: 956dd88033ca1e792d6da4ef66642a90
       _order: 0
       cache: {}
       request:
-        bodySize: 1208
+        bodySize: 1236
         cookies: []
         headers:
           - _fromType: array
@@ -125,7 +125,7 @@ log:
             value: "5000"
           - _fromType: array
             name: content-length
-            value: "1208"
+            value: "1236"
           - name: host
             value: demo.sourcegraph.com
         headersSize: 460
@@ -139,24 +139,23 @@ log:
             messages:
               - speaker: human
                 text: >-
-                  You are an intelligent programmer and an expert at coding.
-                  Your goal is to help a colleague finish a code change.
+                  You are an intelligent programmer and an expert at coding
+                  DEBUG. Your goal is to help a colleague finish a code change.
 
 
                   User: Help me finish a coding change. You will see snippets from current open files in my editor, files I have recently viewed, the file I am editing, then a history of my recent codebase changes, then current compiler and linter errors, content I copied from my codebase. You will then rewrite the <code_to_rewrite>, to match what you think I would do next in the codebase. Note: I might have stopped in the middle of typing.
+
+                  Code snippets just I viewed:
 
                   The file currently open:(`src/sum.ts`)
 
                   <file>
 
-
                   <<<AREA_AROUND_CODE_TO_REWRITE_WILL_BE_INSERTED_HERE>>>
-
 
                   </file>
 
                   <area_around_code_to_rewrite>
-
 
                   <code_to_rewrite>
 
@@ -166,7 +165,6 @@ log:
 
 
                   </code_to_rewrite>
-
 
                   </area_around_code_to_rewrite>
 
@@ -191,10 +189,10 @@ log:
             value: v1
         url: https://demo.sourcegraph.com/.api/completions/code?client-name=autoedit-completions&client-version=v1
       response:
-        bodySize: 487
+        bodySize: 489
         content:
           mimeType: text/event-stream
-          size: 487
+          size: 489
           text: >+
             event: completion
 
@@ -208,162 +206,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Fri, 14 Mar 2025 16:10:11 GMT
-          - name: content-type
-            value: text/event-stream
-          - name: transfer-encoding
-            value: chunked
-          - name: connection
-            value: close
-          - name: retry-after
-            value: "428"
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache
-          - name: vary
-            value: Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
-              Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1337
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2025-03-14T16:10:10.479Z
-      time: 589
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 589
-    - _id: ee529817137bff822d064e3bd4dcabde
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 1205
-        cookies: []
-        headers:
-          - _fromType: array
-            name: accept
-            value: application/json
-          - _fromType: array
-            name: accept-encoding
-            value: gzip;q=0
-          - _fromType: array
-            name: authorization
-            value: token
-              REDACTED_69e9f79ce29352d014eeb80b56510341844eb82ad9abac7cab3631c7e873e4ce
-          - _fromType: array
-            name: content-type
-            value: application/json; charset=utf-8
-          - _fromType: array
-            name: user-agent
-            value: autoedit-completions/v1 (Node.js v20.4.0)
-          - _fromType: array
-            name: x-requested-with
-            value: autoedit-completions v1
-          - _fromType: array
-            name: x-timeout-ms
-            value: "5000"
-          - _fromType: array
-            name: content-length
-            value: "1205"
-          - name: host
-            value: demo.sourcegraph.com
-        headersSize: 460
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json; charset=utf-8
-          params: []
-          textJSON:
-            maxTokensToSample: 527
-            messages:
-              - speaker: human
-                text: >-
-                  You are an intelligent programmer and an expert at coding.
-                  Your goal is to help a colleague finish a code change.
-
-
-                  User: Help me finish a coding change. You will see snippets from current open files in my editor, files I have recently viewed, the file I am editing, then a history of my recent codebase changes, then current compiler and linter errors, content I copied from my codebase. You will then rewrite the <code_to_rewrite>, to match what you think I would do next in the codebase. Note: I might have stopped in the middle of typing.
-
-                  The file currently open:(`src/bubbleSort.ts`)
-
-                  <file>
-
-
-                  <<<AREA_AROUND_CODE_TO_REWRITE_WILL_BE_INSERTED_HERE>>>
-
-
-                  </file>
-
-                  <area_around_code_to_rewrite>
-
-
-                  <code_to_rewrite>
-
-                  function bubbleSort(arr: number[]): number[] {
-                      
-                  }
-
-
-                  </code_to_rewrite>
-
-
-                  </area_around_code_to_rewrite>
-
-                  Continue where I left off and finish my change by rewriting "code_to_rewrite":
-
-
-                  Assistant:
-            model: fireworks::v1::autoedits-deepseek-lite-default
-            prediction:
-              content: |
-                function bubbleSort(arr: number[]): number[] {
-                    
-                }
-              type: content
-            stream: true
-            temperature: 0.1
-            timeoutMs: 5000
-        queryString:
-          - name: client-name
-            value: autoedit-completions
-          - name: client-version
-            value: v1
-        url: https://demo.sourcegraph.com/.api/completions/code?client-name=autoedit-completions&client-version=v1
-      response:
-        bodySize: 3424
-        content:
-          mimeType: text/event-stream
-          size: 3424
-          text: >+
-            event: completion
-
-            data: {"completion":"function bubbleSort(arr: number[]): number[] {\n    const n = arr.length;\n    for (let i = 0; i < n - 1; i++) {\n        for (let j = 0; j < n - i - 1; j++) {\n            if (arr[j] > arr[j + 1]) {\n                // Swap arr[j] and arr[j + 1]\n                const temp = arr[j];\n                arr[j] = arr[j + 1];\n                arr[j + 1] = temp;\n            }\n        }\n    }\n    return arr;\n}\n","stopReason":"stop"}
-
-
-            event: done
-
-            data: {}
-
-        cookies: []
-        headers:
-          - name: date
-            value: Wed, 19 Mar 2025 15:30:09 GMT
+            value: Thu, 20 Mar 2025 10:59:16 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -392,8 +235,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-03-19T15:30:08.464Z
-      time: 5058
+      startedDateTime: 2025-03-20T10:59:15.902Z
+      time: 560
       timings:
         blocked: -1
         connect: -1
@@ -401,7 +244,158 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 5058
+        wait: 560
+    - _id: 7d5a8e03482ffd4a5abecf85df662c6b
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 1233
+        cookies: []
+        headers:
+          - _fromType: array
+            name: accept
+            value: application/json
+          - _fromType: array
+            name: accept-encoding
+            value: gzip;q=0
+          - _fromType: array
+            name: authorization
+            value: token
+              REDACTED_69e9f79ce29352d014eeb80b56510341844eb82ad9abac7cab3631c7e873e4ce
+          - _fromType: array
+            name: content-type
+            value: application/json; charset=utf-8
+          - _fromType: array
+            name: user-agent
+            value: autoedit-completions/v1 (Node.js v20.4.0)
+          - _fromType: array
+            name: x-requested-with
+            value: autoedit-completions v1
+          - _fromType: array
+            name: x-timeout-ms
+            value: "5000"
+          - _fromType: array
+            name: content-length
+            value: "1233"
+          - name: host
+            value: demo.sourcegraph.com
+        headersSize: 460
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json; charset=utf-8
+          params: []
+          textJSON:
+            maxTokensToSample: 527
+            messages:
+              - speaker: human
+                text: >-
+                  You are an intelligent programmer and an expert at coding
+                  DEBUG. Your goal is to help a colleague finish a code change.
+
+
+                  User: Help me finish a coding change. You will see snippets from current open files in my editor, files I have recently viewed, the file I am editing, then a history of my recent codebase changes, then current compiler and linter errors, content I copied from my codebase. You will then rewrite the <code_to_rewrite>, to match what you think I would do next in the codebase. Note: I might have stopped in the middle of typing.
+
+                  Code snippets just I viewed:
+
+                  The file currently open:(`src/bubbleSort.ts`)
+
+                  <file>
+
+                  <<<AREA_AROUND_CODE_TO_REWRITE_WILL_BE_INSERTED_HERE>>>
+
+                  </file>
+
+                  <area_around_code_to_rewrite>
+
+                  <code_to_rewrite>
+
+                  function bubbleSort(arr: number[]): number[] {
+                      
+                  }
+
+
+                  </code_to_rewrite>
+
+                  </area_around_code_to_rewrite>
+
+                  Continue where I left off and finish my change by rewriting "code_to_rewrite":
+
+
+                  Assistant:
+            model: fireworks::v1::autoedits-deepseek-lite-default
+            prediction:
+              content: |
+                function bubbleSort(arr: number[]): number[] {
+                    
+                }
+              type: content
+            stream: true
+            temperature: 0.1
+            timeoutMs: 5000
+        queryString:
+          - name: client-name
+            value: autoedit-completions
+          - name: client-version
+            value: v1
+        url: https://demo.sourcegraph.com/.api/completions/code?client-name=autoedit-completions&client-version=v1
+      response:
+        bodySize: 2772
+        content:
+          mimeType: text/event-stream
+          size: 2772
+          text: >+
+            event: completion
+
+            data: {"completion":"function bubbleSort(arr: number[]): number[] {\n    const n = arr.length;\n    for (let i = 0; i < n - 1; i++) {\n        for (let j = 0; j < n - i - 1; j++) {\n            if (arr[j] > arr[j + 1]) {\n                const temp = arr[j];\n                arr[j] = arr[j + 1];\n                arr[j + 1] = temp;\n            }\n        }\n    }\n    return arr;\n}\n","stopReason":"stop"}
+
+
+            event: done
+
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Thu, 20 Mar 2025 10:59:17 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: close
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
+              Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1230
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2025-03-20T10:59:16.605Z
+      time: 4531
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 4531
     - _id: 404a28d2461ea66da470804476c21f26
       _order: 0
       cache: {}
