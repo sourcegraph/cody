@@ -25,6 +25,7 @@ sealed class ContextItem {
           "current-directory" -> context.deserialize<ContextItemCurrentDirectory>(element, ContextItemCurrentDirectory::class.java)
           "current-open-tabs" -> context.deserialize<ContextItemCurrentOpenTabs>(element, ContextItemCurrentOpenTabs::class.java)
           "media" -> context.deserialize<ContextItemMedia>(element, ContextItemMedia::class.java)
+          "tool-state" -> context.deserialize<ContextItemToolState>(element, ContextItemToolState::class.java)
           else -> throw Exception("Unknown discriminator ${element}")
         }
       }
@@ -342,6 +343,45 @@ data class ContextItemMedia(
 
   enum class TypeEnum {
     @SerializedName("media") Media,
+  }
+}
+
+data class ContextItemToolState(
+  val uri: String,
+  val range: RangeData? = null,
+  val content: String? = null,
+  val repoName: String? = null,
+  val revision: String? = null,
+  val title: String? = null,
+  val description: String? = null,
+  val source: ContextItemSource? = null, // Oneof: user, editor, search, initial, priority, unified, selection, terminal, history, agentic
+  val size: Long? = null,
+  val isIgnored: Boolean? = null,
+  val isTooLarge: Boolean? = null,
+  val isTooLargeReason: String? = null,
+  val provider: String? = null,
+  val icon: String? = null,
+  val metadata: List<String>? = null,
+  val badge: String? = null,
+  val type: TypeEnum, // Oneof: tool-state
+  val toolId: String,
+  val toolName: String,
+  val status: UIToolStatus, // Oneof: pending, done, error, canceled, idle, info
+  val duration: Long? = null,
+  val outputType: OutputTypeEnum, // Oneof: search-result, terminal-output, file-diff, file-view, status
+  val searchResultItems: List<ContextItem>? = null,
+) : ContextItem() {
+
+  enum class TypeEnum {
+    @SerializedName("tool-state") `Tool-state`,
+  }
+
+  enum class OutputTypeEnum {
+    @SerializedName("search-result") `Search-result`,
+    @SerializedName("terminal-output") `Terminal-output`,
+    @SerializedName("file-diff") `File-diff`,
+    @SerializedName("file-view") `File-view`,
+    @SerializedName("status") Status,
   }
 }
 

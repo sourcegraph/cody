@@ -96,3 +96,61 @@ exports[`diffWithLineNum > should match snapshot for complex diff with non-empty
 248        *
 \`\`\`"
 `;
+
+exports[`getFileDiff > should match snapshot for complex file diff 1`] = `
+{
+  "changes": [
+    {
+      "content": "@@ -1,4 +1,5 @@",
+      "lineNumber": 1,
+      "type": "unchanged",
+    },
+    {
+      "content": "Header line",
+      "lineNumber": 1,
+      "type": "unchanged",
+    },
+    {
+      "content": "First paragraph",
+      "lineNumber": 2,
+      "type": "removed",
+    },
+    {
+      "content": "First paragraph with changes",
+      "lineNumber": 2,
+      "type": "added",
+    },
+    {
+      "content": "New paragraph",
+      "lineNumber": 3,
+      "type": "added",
+    },
+    {
+      "content": "Second paragraph",
+      "lineNumber": 3,
+      "type": "unchanged",
+    },
+    {
+      "content": "Footer line",
+      "lineNumber": 4,
+      "type": "removed",
+    },
+    {
+      "content": "Footer line with edits",
+      "lineNumber": 5,
+      "type": "added",
+    },
+  ],
+  "total": {
+    "added": 1,
+    "modified": 2,
+    "removed": 0,
+  },
+  "type": "file-diff",
+  "uri": {
+    "$mid": 1,
+    "path": "/path/to/complex.md",
+    "scheme": "file",
+  },
+}
+`;

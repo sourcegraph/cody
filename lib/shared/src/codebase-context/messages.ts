@@ -1,5 +1,6 @@
 import type { URI } from 'vscode-uri'
 
+import type { UIToolStatus } from '../chat/types'
 import type { RangeData } from '../common/range'
 import type { Message } from '../sourcegraph-api'
 import type { MessagePart } from '../sourcegraph-api/completions/types'
@@ -143,6 +144,7 @@ export type ContextItem =
     | ContextItemCurrentDirectory
     | ContextItemCurrentOpenTabs
     | ContextItemMedia
+    | ContextItemToolState
 
 /**
  * Context items to show by default in the chat input, or as suggestions in the chat UI.
@@ -260,6 +262,43 @@ export interface ContextItemSymbol extends ContextItemCommon {
      * that we need to resolve this context item mention via remote search file
      */
     remoteRepositoryName?: string
+}
+
+/**
+ * A context item that represents a tool state from an agent execution.
+ */
+export interface ContextItemToolState extends ContextItemCommon {
+    type: 'tool-state'
+
+    /**
+     * Unique identifier for the tool execution
+     */
+    toolId: string
+
+    /**
+     * Name of the tool that was executed
+     */
+    toolName: string
+
+    /**
+     * Current status of the tool execution
+     */
+    status: UIToolStatus
+
+    /**
+     * How long the tool execution took (in milliseconds)
+     */
+    duration?: number
+
+    /**
+     * The specific kind of tool output this represents
+     */
+    outputType: 'search-result' | 'terminal-output' | 'file-diff' | 'file-view' | 'status'
+
+    /**
+     * For search results, the list of found items
+     */
+    searchResultItems?: ContextItem[]
 }
 
 /** The valid kinds of a symbol. */

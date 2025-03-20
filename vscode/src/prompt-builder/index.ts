@@ -14,6 +14,7 @@ import {
 import type { ContextTokenUsageType } from '@sourcegraph/cody-shared/src/token'
 import { sortContextItemsIfInTest } from '../chat/chat-view/agentContextSorting'
 import { logFirstEnrollmentEvent } from '../services/utils/enrollment-event'
+import { sanitizedChatMessages } from './sanitize'
 import { getUniqueContextItems, isUniqueContextItem } from './unique-context'
 import { getContextItemTokenUsageType, renderContextItem } from './utils'
 
@@ -77,8 +78,8 @@ export class PromptBuilder {
             const contextMessages = this.buildContextMessages()
             this.reverseMessages.push(...contextMessages)
         }
-
-        return this.prefixMessages.concat([...this.reverseMessages].reverse())
+        const chatMessages = [...this.reverseMessages].reverse()
+        return this.prefixMessages.concat(sanitizedChatMessages(chatMessages))
     }
 
     /**
@@ -152,17 +153,6 @@ export class PromptBuilder {
             const assistantMsg = reverseTranscript[i - 1]
             if (humanMsg?.speaker !== 'human' || humanMsg?.speaker === assistantMsg?.speaker) {
                 throw new Error(`Invalid transcript order: expected human message at index ${i}`)
-            }
-
-            // Process function results if any
-            if (humanMsg.content?.some(c => c.type === 'function')) {
-                // Remove content that are function results
-                humanMsg.content = humanMsg.content.filter(c => c.type !== 'function')
-            }
-
-            // Remove content from assistant message if it exists
-            if (assistantMsg) {
-                assistantMsg.content = undefined
             }
 
             // Check token limits

@@ -1,12 +1,12 @@
 import { ProcessType } from '@sourcegraph/cody-shared'
 import type { Meta, StoryObj } from '@storybook/react'
-import { VSCodeStandaloneComponent } from '../../../storybook/VSCodeStoryDecorator'
+import { VSCodeWebview } from '../../../storybook/VSCodeStoryDecorator'
 import { AgenticContextCell } from './AgenticContextCell'
 
 const meta: Meta<typeof AgenticContextCell> = {
     title: 'cody/AgenticContextCell',
     component: AgenticContextCell,
-    decorators: [VSCodeStandaloneComponent],
+    decorators: [VSCodeWebview],
 }
 
 export default meta

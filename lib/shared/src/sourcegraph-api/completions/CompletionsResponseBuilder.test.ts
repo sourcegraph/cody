@@ -209,11 +209,15 @@ describe('CompletionsResponseBuilder', () => {
                         if (step.expectedToolCalls) {
                             expect(toolCalls.length).toBe(step.expectedToolCalls.length)
                             for (let i = 0; i < toolCalls.length; i++) {
-                                expect(toolCalls[i].id).toBe(step.expectedToolCalls[i].id)
-                                expect(toolCalls[i].function.name).toBe(step.expectedToolCalls[i].name)
-                                expect(toolCalls[i].function.arguments).toBe(
-                                    step.expectedToolCalls[i].args
-                                )
+                                expect(toolCalls[i].type).toBe('tool_call')
+                                const toolCall = toolCalls[i]
+                                if (toolCall.type === 'tool_call') {
+                                    expect(toolCall.tool_call.id).toBe(step.expectedToolCalls[i].id)
+                                    expect(toolCall.tool_call.name).toBe(step.expectedToolCalls[i].name)
+                                    expect(toolCall.tool_call.arguments).toBe(
+                                        step.expectedToolCalls[i].args
+                                    )
+                                }
                             }
                         }
                     }
