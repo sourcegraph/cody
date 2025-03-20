@@ -128,28 +128,25 @@ internal class WebUIProxy(private val host: WebUIHost, private val browser: JBCe
         val isCefComponent =
             event.component.javaClass.name ==
                 "com.intellij.ui.jcef.JBCefOsrComponent" // about 30% faster than
-        if (!isCefComponent) {
-          false
-        } else {
-          if (event.isConsumed) { // if the event is already consumed, try to un-consume it
-            try {
-              if (event.keyCode == KeyEvent.VK_ENTER ||
+        try {
+          // if the event is destined for Cef component and it's already consumed, try to un-consume it
+          if (isCefComponent &&
+              event.isConsumed &&
+              (event.keyCode == KeyEvent.VK_ENTER ||
                   event.keyCode == KeyEvent.VK_DELETE ||
-                  event.keyCode == KeyEvent.VK_BACK_SPACE) {
+                  event.keyCode == KeyEvent.VK_BACK_SPACE)) {
 
-                // trying to un-consume the event via reflection
-                val consumedField = AWTEvent::class.java.getDeclaredField("consumed")
-                consumedField.isAccessible = true
-                consumedField.setBoolean(event, false)
-              }
-            } catch (e: Exception) {
-              val message = "Un-consuming the event keys failed."
-              logger.warn(message, e)
-              SentryService.report(e, message, null)
-            }
+            // trying to un-consume the event via reflection
+            val consumedField = AWTEvent::class.java.getDeclaredField("consumed")
+            consumedField.isAccessible = true
+            consumedField.setBoolean(event, false)
           }
-          false // Don't consume the event
+        } catch (e: Exception) {
+          val message = "Un-consuming the event keys failed."
+          logger.warn(message, e)
+          SentryService.report(e, message, null)
         }
+        false // Don't consume the event
       }
     }
 
