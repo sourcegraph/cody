@@ -3,13 +3,13 @@ package com.sourcegraph.cody.autocomplete.render
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.Inlay
 import com.intellij.openapi.editor.markup.TextAttributes
-import com.sourcegraph.cody.agent.protocol_generated.AutocompleteCompletionItem
+import com.sourcegraph.cody.agent.protocol_generated.AutocompleteItem
 import java.awt.Graphics
 import java.awt.Rectangle
 
 class CodyAutocompleteSingleLineRenderer(
     text: String,
-    items: List<AutocompleteCompletionItem>,
+    items: List<AutocompleteItem>,
     editor: Editor,
     type: AutocompleteRendererType
 ) : CodyAutocompleteElementRenderer(text, items, editor, type) {
