@@ -492,7 +492,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                 await this.rendererManager.renderInlineDecorations(decorationInfo)
             }
 
-            if (renderOutput.type === 'completion') {
+            if ('inlineCompletionItems' in renderOutput) {
                 return {
                     items: renderOutput.inlineCompletionItems,
                     inlineCompletionItems: renderOutput.inlineCompletionItems,
@@ -500,8 +500,14 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                 }
             }
 
+            if (!isRunningInsideAgent()) {
+                // If we are in VS Code there is nothing more we can do here. The decorations will be shown
+                // via the decorator.
+                return null
+            }
+
             if (this.capabilities.autoedit !== 'enabled') {
-                // Cannot render an edit suggestion
+                // We are running inside the agent, but the client does not support auto-edits.
                 return null
             }
 
