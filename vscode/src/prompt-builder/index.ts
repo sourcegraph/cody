@@ -14,6 +14,7 @@ import {
 import type { ContextTokenUsageType } from '@sourcegraph/cody-shared/src/token'
 import { sortContextItemsIfInTest } from '../chat/chat-view/agentContextSorting'
 import { logFirstEnrollmentEvent } from '../services/utils/enrollment-event'
+import { sanitizedChatMessages } from './sanitize'
 import { getUniqueContextItems, isUniqueContextItem } from './unique-context'
 import { getContextItemTokenUsageType, renderContextItem } from './utils'
 
@@ -77,8 +78,8 @@ export class PromptBuilder {
             const contextMessages = this.buildContextMessages()
             this.reverseMessages.push(...contextMessages)
         }
-
-        return this.prefixMessages.concat([...this.reverseMessages].reverse())
+        const chatMessages = [...this.reverseMessages].reverse()
+        return this.prefixMessages.concat(sanitizedChatMessages(chatMessages))
     }
 
     /**
@@ -152,19 +153,6 @@ export class PromptBuilder {
             const assistantMsg = reverseTranscript[i - 1]
             if (humanMsg?.speaker !== 'human' || humanMsg?.speaker === assistantMsg?.speaker) {
                 throw new Error(`Invalid transcript order: expected human message at index ${i}`)
-            }
-
-            // Process function results if any
-            if (humanMsg.content?.some(c => c.type === 'function')) {
-                const groupedToolResult = humanMsg.content
-                    .filter(c => c.type === 'function')
-                    .map(c => c.result)
-                    .join('\n')
-
-                humanMsg.text = (humanMsg.text || ps``).concat(
-                    PromptString.unsafe_fromLLMResponse(groupedToolResult || '')
-                )
-                humanMsg.content = undefined
             }
 
             // Check token limits

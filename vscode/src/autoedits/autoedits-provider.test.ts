@@ -275,6 +275,7 @@ describe('AutoeditsProvider', () => {
               "latency": 120,
               "otherCompletionProviderEnabled": 0,
               "recordsPrivateMetadataTranscript": 1,
+              "rejectReason": 1,
               "source": 1,
               "suggestionsStartedSinceLastSuggestion": 2,
               "timeFromSuggestedAt": 375,

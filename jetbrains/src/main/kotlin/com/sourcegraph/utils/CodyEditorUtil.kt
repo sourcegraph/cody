@@ -20,15 +20,15 @@ import com.intellij.openapi.project.ProjectManager
 import com.intellij.openapi.util.Key
 import com.intellij.openapi.util.TextRange
 import com.intellij.openapi.vfs.LocalFileSystem
+import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.vfs.VirtualFile
-import com.intellij.openapi.vfs.ex.temp.TempFileSystem
+import com.intellij.openapi.vfs.VirtualFileManager
 import com.intellij.util.concurrency.annotations.RequiresEdt
 import com.intellij.util.withScheme
 import com.sourcegraph.cody.agent.protocol_extensions.toOffsetRange
 import com.sourcegraph.cody.agent.protocol_generated.Range
 import com.sourcegraph.config.ConfigUtil
 import com.sourcegraph.utils.ThreadingUtil.runInEdtAndGet
-import java.net.URI
 import java.net.URISyntaxException
 import kotlin.io.path.createDirectories
 import kotlin.io.path.createFile
@@ -151,9 +151,7 @@ object CodyEditorUtil {
         command.contains(MOVE_CARET_COMMAND))
   }
 
-  @JvmStatic
-  fun getVirtualFile(editor: Editor): VirtualFile? =
-      FileDocumentManager.getInstance().getFile(editor.document)
+  @JvmStatic fun getVirtualFile(editor: Editor): VirtualFile? = editor.virtualFile
 
   @JvmStatic
   fun showDocument(
@@ -182,20 +180,15 @@ object CodyEditorUtil {
   }
 
   fun findFileOrScratch(project: Project, uriString: String): VirtualFile? {
-    try {
-      val uri = URI.create(uriString)
-
-      if (ConfigUtil.isIntegrationTestModeEnabled()) {
-        return TempFileSystem.getInstance().refreshAndFindFileByPath(uri.path)
-      } else {
-        val fixedUri = if (uriString.startsWith("untitled")) uri.withScheme("file") else uri
-        return LocalFileSystem.getInstance().refreshAndFindFileByNioFile(fixedUri.toPath())
-      }
-    } catch (e: URISyntaxException) {
-      // Let's try scratch files
+    // IntelliJ does not support in-memory files so we are using scratch files instead
+    if (uriString.startsWith("untitled://")) {
       val fileName = uriString.substringAfterLast(':').trimStart('/', '\\')
       return ScratchRootType.getInstance()
           .findFile(project, fileName, ScratchFileService.Option.existing_only)
+    } else {
+      // Check `ProtocolTextDocumentExt.normalizeToVscUriFormat` for explanation
+      val patchedUri = uriString.replace("file://wsl.localhost/", "file:////wsl.localhost/")
+      return VirtualFileManager.getInstance().findFileByUrl(patchedUri)
     }
   }
 
@@ -205,8 +198,7 @@ object CodyEditorUtil {
       content: String? = null
   ): VirtualFile? {
     try {
-      val uri = URI.create(uriString)
-
+      val uri = VfsUtil.toUri(uriString) ?: return null
       val fileUri = uri.withScheme("file")
       if (!fileUri.toPath().exists()) {
         fileUri.toPath().parent?.createDirectories()

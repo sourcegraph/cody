@@ -1,3 +1,4 @@
+import { sep } from 'node:path'
 import {
     type ContextItem,
     ContextItemSource,
@@ -70,6 +71,11 @@ export async function getContextFromRelativePath(path: string): Promise<ContextI
         }
         // Combine the workspace URI with the path to get the URI of the file
         const file = vscode.Uri.joinPath(currentWorkspaceURI, path)
+        // Check if the resolved file path is still within the workspace.
+        // Path traversal check.
+        if (!file.fsPath.startsWith(currentWorkspaceURI.fsPath + sep)) {
+            throw new Error('Path traversal detected')
+        }
         if (await contextFiltersProvider.isUriIgnored(file)) {
             return null
         }

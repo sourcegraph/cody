@@ -17,7 +17,6 @@ import {
     startWith,
 } from '@sourcegraph/cody-shared'
 import { type Observable, map } from 'observable-fns'
-import type { AutoEditNotificationInfo } from '../../src/autoedits/autoedit-onboarding'
 import { isSourcegraphToken } from '../chat/protocol'
 import type { GitHubDotComRepoMetaData } from '../repository/githubRepoMetadata'
 import { EventEmitter } from '../testutils/mocks'
@@ -37,7 +36,7 @@ class LocalStorage implements LocalStorageForModelPreferences {
     public readonly LAST_USED_ENDPOINT = 'SOURCEGRAPH_CODY_ENDPOINT'
     private readonly MODEL_PREFERENCES_KEY = 'cody-model-preferences'
     private readonly CODY_CHAT_MEMORY = 'cody-chat-memory'
-    private readonly AUTO_EDITS_ONBOARDING_NOTIFICATION_COUNT = 'cody-auto-edit-notification-info'
+    private readonly AUTO_EDITS_BETA_ENROLLED = 'cody-auto-edit-beta-onboard'
     private readonly DEVICE_PIXEL_RATIO = 'device-pixel-ratio'
 
     public readonly keys = {
@@ -231,17 +230,13 @@ class LocalStorage implements LocalStorageForModelPreferences {
         }
     }
 
-    public async getAutoEditOnboardingNotificationInfo(): Promise<AutoEditNotificationInfo> {
-        return (
-            this.get<AutoEditNotificationInfo>(this.AUTO_EDITS_ONBOARDING_NOTIFICATION_COUNT) ?? {
-                lastNotifiedTime: 0,
-                timesShown: 0,
-            }
-        )
+    public async isAutoEditBetaEnrolled(): Promise<boolean> {
+        const isAutoeditBetaEnrolled = this.get<boolean>(this.AUTO_EDITS_BETA_ENROLLED)
+        return !!isAutoeditBetaEnrolled
     }
 
-    public async setAutoEditOnboardingNotificationInfo(info: AutoEditNotificationInfo): Promise<void> {
-        await this.set(this.AUTO_EDITS_ONBOARDING_NOTIFICATION_COUNT, info)
+    public async setAutoeditBetaEnrollment(): Promise<void> {
+        await this.set(this.AUTO_EDITS_BETA_ENROLLED, true)
     }
 
     public async setGitHubRepoAccessibility(data: GitHubDotComRepoMetaData[]): Promise<void> {

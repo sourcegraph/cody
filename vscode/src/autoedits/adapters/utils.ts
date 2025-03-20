@@ -1,5 +1,12 @@
-import { type Message, type PromptString, charsToTokens, isAbortError } from '@sourcegraph/cody-shared'
+import {
+    type Message,
+    type PromptString,
+    charsToTokens,
+    fetch,
+    isAbortError,
+} from '@sourcegraph/cody-shared'
 import type { AbortedModelResponse, ModelResponseShared, SuccessModelResponse } from './base'
+import type { InceptionLabsRequestParams } from './inceptionlabs'
 
 export interface FireworksCompatibleRequestParams {
     stream: boolean
@@ -33,6 +40,7 @@ export interface FireworksCompletionModelRequestParams extends FireworksCompatib
 export type AutoeditsRequestBody =
     | FireworksChatModelRequestParams
     | FireworksCompletionModelRequestParams
+    | InceptionLabsRequestParams
 
 export function getMaxOutputTokensForAutoedits(codeToRewrite: string): number {
     const MAX_NEW_GENERATED_TOKENS = 512

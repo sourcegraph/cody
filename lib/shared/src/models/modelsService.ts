@@ -431,11 +431,14 @@ export class ModelsService {
                     return pendingOperation
                 }
 
-                // Free users can only use the default free model, so we just find the first model they can use
+                // Remove deprecated models from the list
+                models = models.filter(model => !model.tags.includes(ModelTag.Deprecated))
+
+                // Find the first model the user can use that isn't a reasoning model
                 const firstModelUserCanUse = models.find(
                     m =>
                         this._isModelAvailable(modelsData, authStatus, userProductSubscription, m) ===
-                        true
+                            true && !m.tags.includes(ModelTag.Reasoning)
                 )
 
                 if (modelsData.preferences) {
@@ -447,6 +450,12 @@ export class ModelsService {
                     )
                     if (
                         selected &&
+                        // Don't set default model for ModelUsage.Edit if the model has certain tags
+                        !(
+                            type === ModelUsage.Edit &&
+                            (selected.tags.includes(ModelTag.Reasoning) ||
+                                selected.tags.includes(ModelTag.Deprecated))
+                        ) &&
                         this._isModelAvailable(
                             modelsData,
                             authStatus,
@@ -477,7 +486,18 @@ export class ModelsService {
                 if (editModel === pendingOperation || chatModel === pendingOperation) {
                     return pendingOperation
                 }
-                return editModel?.id || chatModel?.id
+
+                // Filter out reasoning models
+                if (editModel && !editModel.tags.includes(ModelTag.Reasoning)) {
+                    return editModel?.id
+                }
+
+                // If edit model is not available or is a reasoning model, check chat model
+                if (chatModel && !chatModel.tags.includes(ModelTag.Reasoning)) {
+                    return chatModel?.id
+                }
+
+                return undefined
             })
         )
     }

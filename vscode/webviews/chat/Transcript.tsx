@@ -42,11 +42,11 @@ import { type Context, type Span, context, trace } from '@opentelemetry/api'
 import { DeepCodyAgentID, ToolCodyModelName } from '@sourcegraph/cody-shared/src/models/client'
 import { isCodeSearchContextItem } from '../../src/context/openctx/codeSearch'
 import { useLocalStorage } from '../components/hooks'
-import { ToolStatusCell } from './ChatMessageContent/ToolStatusCell'
 import { AgenticContextCell } from './cells/agenticCell/AgenticContextCell'
 import ApprovalCell from './cells/agenticCell/ApprovalCell'
 import { ContextCell } from './cells/contextCell/ContextCell'
 import { DidYouMeanNotice } from './cells/messageCell/assistant/DidYouMean'
+import { ToolStatusCell } from './cells/toolCell/ToolStatusCell'
 import { LastEditorContext } from './context'
 
 interface TranscriptProps {
@@ -64,6 +64,9 @@ interface TranscriptProps {
     insertButtonOnSubmit?: CodeBlockActionsProps['insertButtonOnSubmit']
     smartApply?: CodeBlockActionsProps['smartApply']
     smartApplyEnabled?: boolean
+
+    manuallySelectedIntent: ChatMessage['intent']
+    setManuallySelectedIntent: (intent: ChatMessage['intent']) => void
 }
 
 export const Transcript: FC<TranscriptProps> = props => {
@@ -81,6 +84,8 @@ export const Transcript: FC<TranscriptProps> = props => {
         insertButtonOnSubmit,
         smartApply,
         smartApplyEnabled,
+        manuallySelectedIntent,
+        setManuallySelectedIntent,
     } = props
 
     const interactions = useMemo(
@@ -155,6 +160,8 @@ export const Transcript: FC<TranscriptProps> = props => {
                         smartApplyEnabled={smartApplyEnabled}
                         editorRef={i === interactions.length - 1 ? lastHumanEditorRef : undefined}
                         onAddToFollowupChat={onAddToFollowupChat}
+                        manuallySelectedIntent={manuallySelectedIntent}
+                        setManuallySelectedIntent={setManuallySelectedIntent}
                     />
                 ))}
             </LastEditorContext.Provider>
@@ -240,6 +247,8 @@ interface TranscriptInteractionProps
         filePath: string
         fileURL: string
     }) => void
+    manuallySelectedIntent: ChatMessage['intent']
+    setManuallySelectedIntent: (intent: ChatMessage['intent']) => void
 }
 
 const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
@@ -259,11 +268,9 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
         smartApply,
         smartApplyEnabled,
         editorRef: parentEditorRef,
+        manuallySelectedIntent,
+        setManuallySelectedIntent,
     } = props
-    // Start the intent value as the human message's intent, but allow it to be manually set.
-    const [manuallySelectedIntent, setManuallySelectedIntent] = useState<ChatMessage['intent']>(
-        humanMessage.intent
-    )
 
     const { activeChatContext, setActiveChatContext } = props
     const humanEditorRef = useRef<PromptEditorRefAPI | null>(null)
@@ -526,22 +533,26 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
         [humanMessage]
     )
 
-    const toolContentParts = humanMessage?.content?.filter(c => c.type === 'function')
+    const isAgenticMode = useMemo(() => manuallySelectedIntent === 'agentic', [manuallySelectedIntent])
+
+    const toolResultContent = useMemo(() => {
+        if (!isAgenticMode || !humanMessage?.index) {
+            return undefined
+        }
+        return humanMessage?.content?.some(p => p.type === 'tool_result')
+    }, [isAgenticMode, humanMessage?.index, humanMessage?.content])
+
+    const toolCallContent = useMemo(() => {
+        if (!isAgenticMode || !humanMessage?.index) {
+            return undefined
+        }
+        return assistantMessage?.contextFiles?.filter(f => f.type === 'tool-state')
+    }, [isAgenticMode, assistantMessage?.contextFiles, humanMessage?.index])
 
     return (
         <>
             {/* Shows tool contents instead of editor if any */}
-            {toolContentParts !== undefined ? (
-                toolContentParts?.map(tool => (
-                    <ToolStatusCell
-                        key={tool.id}
-                        status={tool.status}
-                        title={tool.function.name}
-                        output={tool.result}
-                        className="w-full"
-                    />
-                ))
-            ) : (
+            {!toolResultContent && (
                 <HumanMessageCell
                     key={humanMessage.index}
                     userInfo={userInfo}
@@ -562,7 +573,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                     manuallySelectIntent={setManuallySelectedIntent}
                 />
             )}
-            {omniboxEnabled && assistantMessage?.didYouMeanQuery && (
+            {!isAgenticMode && omniboxEnabled && assistantMessage?.didYouMeanQuery && (
                 <DidYouMeanNotice
                     query={assistantMessage?.didYouMeanQuery}
                     disabled={!!assistantMessage?.isLoading}
@@ -581,7 +592,8 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                 isContextLoading &&
                 assistantMessage?.isLoading && <ApprovalCell vscodeAPI={vscodeAPI} />}
 
-            {!usingToolCody &&
+            {!isAgenticMode &&
+                !usingToolCody &&
                 !(humanMessage.agent && isContextLoading) &&
                 (humanMessage.contextFiles || assistantMessage || isContextLoading) &&
                 !isSearchIntent && (
@@ -612,13 +624,21 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                         humanMessage={humanMessageInfo}
                         isLoading={assistantMessage.isLoading}
                         smartApply={smartApply}
-                        smartApplyEnabled={smartApplyEnabled}
+                        smartApplyEnabled={smartApplyEnabled && !isAgenticMode}
                         onSelectedFiltersUpdate={onSelectedFiltersUpdate}
                         isLastSentInteraction={isLastSentInteraction}
                         setThoughtProcessOpened={setThoughtProcessOpened}
                         isThoughtProcessOpened={isThoughtProcessOpened}
                     />
                 )}
+            {toolCallContent?.map(tool => (
+                <ToolStatusCell
+                    key={tool.toolId}
+                    title={tool.toolName}
+                    output={tool}
+                    className="w-full"
+                />
+            ))}
         </>
     )
 }, isEqual)
