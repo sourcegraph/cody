@@ -303,7 +303,9 @@ export function contextItemMentionNodePromptText(contextItem: SerializedContextI
     if (contextItem.type === 'file' && !contextItem.provider) {
         const rangeText = contextItem.range?.start ? `:${displayLineRange(contextItem.range)}` : ''
 
-        return `${decodeURIComponent(displayPath(URI.parse(contextItem.uri)))}${rangeText}`
+        // Always use forward slashes for paths in tests, regardless of platform
+        const path = decodeURIComponent(displayPath(URI.parse(contextItem.uri)))
+        return `${path.replace(/\\/g, '/')}${rangeText}`
     }
 
     return contextItemMentionNodeDisplayText(contextItem)
