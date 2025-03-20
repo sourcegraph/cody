@@ -222,6 +222,7 @@ export function syncModels({
                                                                 : 'enterprise',
                                                             longContextWindowFlagEnabled:
                                                                 longContextWindowFlag,
+                                                            isClientModel: false,
                                                         }).map(createModelFromServerModel)
                                                     )
                                                     data.preferences!.defaults =
@@ -314,6 +315,7 @@ export function syncModels({
                                                             : 'enterprise',
                                                         longContextWindowFlagEnabled:
                                                             longContextWindowFlag,
+                                                        isClientModel: true,
                                                     }).map(createModelFromServerModel)
                                                 )
 
@@ -528,8 +530,16 @@ async function fetchServerSideModels(
  */
 export const maybeAdjustContextWindows = (
     models: ServerModel[],
-    config: { tier: 'free' | 'pro' | 'enterprise'; longContextWindowFlagEnabled: boolean }
+    config: {
+        tier: 'free' | 'pro' | 'enterprise'
+        longContextWindowFlagEnabled: boolean
+        isClientModel?: boolean
+    }
 ): ServerModel[] => {
+    if (config.isClientModel === undefined) {
+        config.isClientModel = false
+    }
+
     // Compile regex once
     const mistralRegex = /^mi(x|s)tral/
     // Determine token limits based on config once outside the loop
@@ -548,6 +558,9 @@ export const maybeAdjustContextWindows = (
             // Note: In other languages, the OpenAI tokenizer might actually overcount tokens. As a result, we accept the risk
             // of using a slightly smaller context window than what's available for those languages.
             maxInputTokens = Math.round(maxInputTokens * TOKEN_LIMITS.MISTRAL_ADJUSTMENT_FACTOR)
+        }
+        if (config.isClientModel) {
+            return { ...model, contextWindow: { ...model.contextWindow, maxInputTokens } }
         }
 
         /*

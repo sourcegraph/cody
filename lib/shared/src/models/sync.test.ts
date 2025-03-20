@@ -552,6 +552,176 @@ describe('syncModels', () => {
         })
     })
 })
+
+interface ContextWindowTestCase {
+    model: ServerModel
+    name: string
+    userTier: 'free' | 'pro' | 'enterprise'
+    featureFlagEnabled: boolean
+    expectedContextWindow: {
+        input: number
+        output: number
+    }
+    isReasoning: boolean
+    provider: string
+}
+
+const models = {
+    'claude-3-opus': {
+        modelRef: 'anthropic::latest::claude-3-opus' as const,
+        modelName: 'claude-3-opus',
+        displayName: 'Claude 3 Opus',
+        capabilities: ['chat', 'reasoning'],
+        category: ModelTag.Power as const,
+        status: 'stable' as const,
+        tier: ModelTag.Free as const,
+        contextWindow: {
+            maxInputTokens: 175000,
+            maxOutputTokens: 32000,
+        },
+    },
+    'gpt-o1': {
+        modelRef: 'openai::latest::gpt-o1' as const,
+        modelName: 'gpt-o1',
+        displayName: 'GPT-o1',
+        capabilities: ['chat'],
+        category: ModelTag.Balanced as const,
+        status: 'stable' as const,
+        tier: ModelTag.Free as const,
+        contextWindow: {
+            maxInputTokens: 175000,
+            maxOutputTokens: 32000,
+        },
+    },
+    'gpt-4o': {
+        modelRef: 'openai::latest::gpt-4o' as const,
+        modelName: 'gpt-4o',
+        displayName: 'GPT-4o',
+        capabilities: ['chat'],
+        category: ModelTag.Balanced as const,
+        status: 'stable' as const,
+        tier: ModelTag.Pro as const,
+        contextWindow: {
+            maxInputTokens: 100000,
+            maxOutputTokens: 8000,
+        },
+    },
+    'gemini-1.5-pro': {
+        modelRef: 'google::v1::gemini-1.5-pro' as const,
+        modelName: 'gemini-1.5-pro',
+        displayName: 'Gemini 1.5 Pro',
+        capabilities: ['chat', 'reasoning'],
+        category: ModelTag.Power as const,
+        status: ModelTag.Experimental as const,
+        tier: ModelTag.Pro as const,
+        contextWindow: {
+            maxInputTokens: 175000,
+            maxOutputTokens: 32000,
+        },
+    },
+} as const
+const modelTypes = [
+    { name: 'Claude', modelName: 'claude-3-opus', provider: 'anthropic' },
+    { name: 'Gemini', modelName: 'gemini-1.5-pro', provider: 'google' },
+    { name: 'OpenAI o series', modelName: 'gpt-o1', provider: 'openai' },
+    { name: 'OpenAI gpt series', modelName: 'gpt-4o', provider: 'openai' },
+]
+const userTiers = ['free', 'pro', 'enterprise'] as const
+const featureFlagStates = [true, false]
+const reasoningStates = [true, false]
+
+// Define expected input windows based on model, tier, and feature flag
+const getExpectedInputWindow = (
+    modelName: string,
+    userTier: 'free' | 'pro' | 'enterprise',
+    featureFlagEnabled: boolean
+): number => {
+    // If free tier or feature flag disabled, always return 45000
+    if (userTier === 'free' || !featureFlagEnabled) {
+        return 45000
+    }
+
+    // For pro/enterprise with feature flag enabled
+    if (modelName.includes('gpt-4')) {
+        return 100000 // OpenAI GPT series
+    }
+    return 175000 // All other models
+}
+
+// Define expected output windows based on tier and reasoning capability
+const getExpectedOutputWindow = (
+    userTier: 'free' | 'pro' | 'enterprise',
+    isReasoning: boolean
+): number => {
+    if (userTier === 'free') {
+        return 4000
+    }
+    if (userTier === 'pro') {
+        return isReasoning ? 16000 : 6000
+    }
+    // Enterprise tier
+    return isReasoning ? 32000 : 8000
+}
+
+// Generate all test cases
+const generateAllTestCases = (): ContextWindowTestCase[] => {
+    const testCases: ContextWindowTestCase[] = []
+    for (const modelType of modelTypes) {
+        for (const userTier of userTiers) {
+            for (const featureFlagEnabled of featureFlagStates) {
+                for (const isReasoning of reasoningStates) {
+                    const model = {
+                        ...models[modelType.modelName as keyof typeof models],
+                        // Override capabilities based on isReasoning
+                        capabilities: isReasoning ? ['chat', 'reasoning'] : ['chat'],
+                        contextWindow: {
+                            // Use the original maxInputTokens from the model
+                            maxInputTokens:
+                                models[modelType.modelName as keyof typeof models].contextWindow
+                                    .maxInputTokens,
+                            // Set maxOutputTokens based on tier and reasoning capability
+                            maxOutputTokens:
+                                userTier === 'pro'
+                                    ? isReasoning
+                                        ? 16000
+                                        : 6000
+                                    : isReasoning
+                                      ? 32000
+                                      : 8000,
+                        },
+                    } as ServerModel
+                    // Calculate expected context window values
+                    const expectedInput = getExpectedInputWindow(
+                        modelType.modelName,
+                        userTier,
+                        featureFlagEnabled
+                    )
+                    const expectedOutput = getExpectedOutputWindow(userTier, isReasoning)
+
+                    // Create test case
+                    testCases.push({
+                        model,
+                        name: modelType.name,
+                        userTier,
+                        featureFlagEnabled,
+                        expectedContextWindow: {
+                            input: expectedInput,
+                            output: expectedOutput,
+                        },
+                        isReasoning,
+                        provider: modelType.provider,
+                    })
+                }
+            }
+        }
+    }
+
+    return testCases
+}
+
+// Generate all test cases
+const contextWindowTestCases = generateAllTestCases()
+
 describe('maybeAdjustContextWindows', () => {
     it('works', () => {
         const defaultMaxInputTokens = 8192
@@ -641,367 +811,14 @@ describe('maybeAdjustContextWindows', () => {
             expect(model.contextWindow.maxInputTokens).toBe(wantMaxInputTokens)
         }
     })
-
-    it('preserves the context window for enterprise users with Claude-3-Sonnet (Pro tier) when the feature flag is on', () => {
-        const models = [
-            {
-                modelRef: 'anthropic::latest::claude-3-sonnet' as const,
-                modelName: 'claude-3-sonnet',
-                displayName: 'Claude 3 Sonnet',
-                capabilities: ['chat'],
-                category: ModelTag.Power as const,
-                status: ModelTag.Experimental as const,
-                tier: ModelTag.Pro as const,
-                contextWindow: {
-                    maxInputTokens: 175000,
-                    maxOutputTokens: 4000,
-                },
-            },
-        ] satisfies ServerModel[]
-
-        const result = maybeAdjustContextWindows(models, {
-            tier: 'enterprise',
-            longContextWindowFlagEnabled: true,
+    for (const testCase of contextWindowTestCases) {
+        it(`${testCase.name} model with userTier=${testCase.userTier}, featureFlag=${testCase.featureFlagEnabled}, reasoning=${testCase.isReasoning}`, () => {
+            const result = maybeAdjustContextWindows([testCase.model], {
+                tier: testCase.userTier,
+                longContextWindowFlagEnabled: testCase.featureFlagEnabled,
+            })
+            expect(result[0].contextWindow.maxInputTokens).toBe(testCase.expectedContextWindow.input)
+            expect(result[0].contextWindow.maxOutputTokens).toBe(testCase.expectedContextWindow.output)
         })
-        expect(result[0].contextWindow.maxInputTokens).toBe(175000)
-        expect(result[0].contextWindow.maxOutputTokens).toBe(4000)
-    })
-
-    it('reduces the output tokens for Pro users with Gemini-1.5-Pro (Pro tier) when the feature flag is on', () => {
-        const models = [
-            {
-                modelRef: 'google::v1::gemini-1.5-pro' as const,
-                modelName: 'gemini-1.5-pro',
-                displayName: 'Gemini 1.5 Pro',
-                capabilities: ['chat'],
-                category: ModelTag.Power as const,
-                status: ModelTag.Experimental as const,
-                tier: ModelTag.Pro as const,
-                contextWindow: {
-                    maxInputTokens: 175000,
-                    maxOutputTokens: 8000,
-                },
-            },
-        ] satisfies ServerModel[]
-
-        const result = maybeAdjustContextWindows(models, {
-            tier: 'pro',
-            longContextWindowFlagEnabled: true,
-        })
-        expect(result[0].contextWindow.maxInputTokens).toBe(175000)
-        expect(result[0].contextWindow.maxOutputTokens).toBe(6000)
-    })
-
-    it('reduces the output tokens for Pro users with GPT-o1 (Pro tier) when the feature flag is on', () => {
-        const models = [
-            {
-                modelRef: 'openai::latest::gpt-o1' as const,
-                modelName: 'gpt-o1',
-                displayName: 'GPT-o1',
-                capabilities: ['chat'],
-                category: ModelTag.Balanced as const,
-                status: 'stable' as const,
-                tier: ModelTag.Pro as const,
-                contextWindow: {
-                    maxInputTokens: 175000,
-                    maxOutputTokens: 32000,
-                },
-            },
-        ] satisfies ServerModel[]
-
-        const result = maybeAdjustContextWindows(models, {
-            tier: 'pro',
-            longContextWindowFlagEnabled: true,
-        })
-        expect(result[0].contextWindow.maxInputTokens).toBe(175000)
-        expect(result[0].contextWindow.maxOutputTokens).toBe(6000)
-    })
-
-    it('preserves the context window for enterprise users with GPT-4o (Pro tier) when the feature flag is on', () => {
-        const models = [
-            {
-                modelRef: 'openai::latest::gpt-4o' as const,
-                modelName: 'gpt-4o',
-                displayName: 'GPT-4o',
-                capabilities: ['chat'],
-                category: ModelTag.Balanced as const,
-                status: 'stable' as const,
-                tier: ModelTag.Pro as const,
-                contextWindow: {
-                    maxInputTokens: 100000,
-                    maxOutputTokens: 8000,
-                },
-            },
-        ] satisfies ServerModel[]
-
-        const result = maybeAdjustContextWindows(models, {
-            tier: 'enterprise',
-            longContextWindowFlagEnabled: true,
-        })
-        expect(result[0].contextWindow.maxInputTokens).toBe(100000)
-        expect(result[0].contextWindow.maxOutputTokens).toBe(8000)
-    })
-
-    it('reduces the context window for Pro users with GPT-o1 (Free tier) when the feature flag is off', () => {
-        const models = [
-            {
-                modelRef: 'openai::latest::gpt-o1' as const,
-                modelName: 'gpt-o1',
-                displayName: 'GPT-o1',
-                capabilities: ['chat'],
-                category: ModelTag.Balanced as const,
-                status: 'stable' as const,
-                tier: ModelTag.Free as const,
-                contextWindow: {
-                    maxInputTokens: 175000,
-                    maxOutputTokens: 32000,
-                },
-            },
-        ] satisfies ServerModel[]
-
-        const result = maybeAdjustContextWindows(models, {
-            tier: 'pro',
-            longContextWindowFlagEnabled: false,
-        })
-        expect(result[0].contextWindow.maxInputTokens).toBe(45000)
-        expect(result[0].contextWindow.maxOutputTokens).toBe(6000)
-    })
-
-    it('preserves the context window if the original values are smaller than the adjusted values for Pro users with Claude 3 Opus (Free tier) when the feature flag is off', () => {
-        const models = [
-            {
-                modelRef: 'anthropic::latest::claude-3-opus' as const,
-                modelName: 'claude-3-opus',
-                displayName: 'Claude 3 Opus',
-                capabilities: ['chat', 'reasoning'],
-                category: ModelTag.Power as const,
-                status: 'stable' as const,
-                tier: ModelTag.Free as const,
-                contextWindow: {
-                    maxInputTokens: 32000,
-                    maxOutputTokens: 4000,
-                },
-            },
-        ] satisfies ServerModel[]
-
-        const result = maybeAdjustContextWindows(models, {
-            tier: 'pro',
-            longContextWindowFlagEnabled: false,
-        })
-        expect(result[0].contextWindow.maxInputTokens).toBe(32000)
-        expect(result[0].contextWindow.maxOutputTokens).toBe(4000)
-    })
-
-    it('reduces the context window for Pro users with Claude 3 Opus (Free tier) when the feature flag is off', () => {
-        const models = [
-            {
-                modelRef: 'anthropic::latest::claude-3-opus' as const,
-                modelName: 'claude-3-opus',
-                displayName: 'Claude 3 Opus',
-                capabilities: ['chat', 'reasoning'],
-                category: ModelTag.Power as const,
-                status: 'stable' as const,
-                tier: ModelTag.Free as const,
-                contextWindow: {
-                    maxInputTokens: 175000,
-                    maxOutputTokens: 32000,
-                },
-            },
-        ] satisfies ServerModel[]
-
-        const result = maybeAdjustContextWindows(models, {
-            tier: 'pro',
-            longContextWindowFlagEnabled: false,
-        })
-        expect(result[0].contextWindow.maxInputTokens).toBe(45000)
-        expect(result[0].contextWindow.maxOutputTokens).toBe(16000)
-    })
-
-    it('reduces the input tokens for enterprise users with Claude 3 Opus (Free tier) when the feature flag is off', () => {
-        const models = [
-            {
-                modelRef: 'anthropic::latest::claude-3-opus' as const,
-                modelName: 'claude-3-opus',
-                displayName: 'Claude 3 Opus',
-                capabilities: ['chat', 'reasoning'],
-                category: ModelTag.Power as const,
-                status: 'stable' as const,
-                tier: ModelTag.Free as const,
-                contextWindow: {
-                    maxInputTokens: 175000,
-                    maxOutputTokens: 32000,
-                },
-            },
-        ] satisfies ServerModel[]
-
-        const result = maybeAdjustContextWindows(models, {
-            tier: 'enterprise',
-            longContextWindowFlagEnabled: false,
-        })
-        expect(result[0].contextWindow.maxInputTokens).toBe(45000)
-        expect(result[0].contextWindow.maxOutputTokens).toBe(32000)
-    })
-
-    it('reduces the input tokens for enterprise users with GPT-4o (Pro tier) when the feature flag is off', () => {
-        const models = [
-            {
-                modelRef: 'openai::latest::gpt-4o' as const,
-                modelName: 'gpt-4o',
-                displayName: 'GPT-4o',
-                capabilities: ['chat'],
-                category: ModelTag.Balanced as const,
-                status: 'stable' as const,
-                tier: ModelTag.Pro as const,
-                contextWindow: {
-                    maxInputTokens: 100000,
-                    maxOutputTokens: 8000,
-                },
-            },
-        ] satisfies ServerModel[]
-
-        const result = maybeAdjustContextWindows(models, {
-            tier: 'enterprise',
-            longContextWindowFlagEnabled: false,
-        })
-        expect(result[0].contextWindow.maxInputTokens).toBe(45000)
-        expect(result[0].contextWindow.maxOutputTokens).toBe(8000)
-    })
-
-    it('reduces the context window for free users with GPT-o1 (Free tier) when the feature flag is on', () => {
-        const models = [
-            {
-                modelRef: 'openai::latest::gpt-o1' as const,
-                modelName: 'gpt-o1',
-                displayName: 'GPT-o1',
-                capabilities: ['chat'],
-                category: ModelTag.Balanced as const,
-                status: 'stable' as const,
-                tier: ModelTag.Free as const,
-                contextWindow: {
-                    maxInputTokens: 175000,
-                    maxOutputTokens: 32000,
-                },
-            },
-        ] satisfies ServerModel[]
-
-        const result = maybeAdjustContextWindows(models, {
-            tier: 'free',
-            longContextWindowFlagEnabled: true,
-        })
-        expect(result[0].contextWindow.maxInputTokens).toBe(45000)
-        expect(result[0].contextWindow.maxOutputTokens).toBe(4000)
-    })
-
-    it('reduces the context window for free users with GPT-o1 (Free tier) when the feature flag is off', () => {
-        const models = [
-            {
-                modelRef: 'openai::latest::gpt-o1' as const,
-                modelName: 'gpt-o1',
-                displayName: 'GPT-o1',
-                capabilities: ['chat'],
-                category: ModelTag.Balanced as const,
-                status: 'stable' as const,
-                tier: ModelTag.Free as const,
-                contextWindow: {
-                    maxInputTokens: 175000,
-                    maxOutputTokens: 32000,
-                },
-            },
-        ] satisfies ServerModel[]
-
-        const result = maybeAdjustContextWindows(models, {
-            tier: 'free',
-            longContextWindowFlagEnabled: false,
-        })
-        expect(result[0].contextWindow.maxInputTokens).toBe(45000)
-        expect(result[0].contextWindow.maxOutputTokens).toBe(4000)
-    })
-
-    it('adjusts the context window for Mistral models by reducing it by 15%', () => {
-        const models = [
-            {
-                modelRef: 'mistral::latest::mistral-large' as const,
-                modelName: 'mistral-large',
-                displayName: 'Mistral Large',
-                capabilities: ['chat'],
-                category: ModelTag.Power as const,
-                status: 'stable' as const,
-                tier: ModelTag.Pro as const,
-                contextWindow: {
-                    maxInputTokens: 10000,
-                    maxOutputTokens: 2000,
-                },
-            },
-        ] satisfies ServerModel[]
-
-        const result = maybeAdjustContextWindows(models, {
-            tier: 'enterprise',
-            longContextWindowFlagEnabled: false,
-        })
-        // 10000 * 0.85 = 8500
-        expect(result[0].contextWindow.maxInputTokens).toBe(8500)
-    })
-
-    it('adjusts the context window for Mixtral models by reducing it by 15%', () => {
-        const models = [
-            {
-                modelRef: 'mistral::latest::mixtral-8x7b' as const,
-                modelName: 'mixtral-8x7b',
-                displayName: 'Mixtral 8x7B',
-                capabilities: ['chat'],
-                category: ModelTag.Power as const,
-                status: 'stable' as const,
-                tier: ModelTag.Pro as const,
-                contextWindow: {
-                    maxInputTokens: 12000,
-                    maxOutputTokens: 2000,
-                },
-            },
-        ] satisfies ServerModel[]
-
-        const result = maybeAdjustContextWindows(models, {
-            tier: 'enterprise',
-            longContextWindowFlagEnabled: false,
-        })
-        // 12000 * 0.85 = 10200
-        expect(result[0].contextWindow.maxInputTokens).toBe(10200)
-    })
-
-    it('correctly processes multiple models in a single call', () => {
-        const models = [
-            {
-                modelRef: 'openai::latest::gpt-4' as const,
-                modelName: 'gpt-4',
-                displayName: 'GPT-4',
-                capabilities: ['chat'],
-                category: ModelTag.Balanced as const,
-                status: 'stable' as const,
-                tier: ModelTag.Pro as const,
-                contextWindow: {
-                    maxInputTokens: 8000,
-                    maxOutputTokens: 2000,
-                },
-            },
-            {
-                modelRef: 'mistral::latest::mistral-large' as const,
-                modelName: 'mistral-large',
-                displayName: 'Mistral Large',
-                capabilities: ['chat'],
-                category: ModelTag.Power as const,
-                status: 'stable' as const,
-                tier: ModelTag.Pro as const,
-                contextWindow: {
-                    maxInputTokens: 10000,
-                    maxOutputTokens: 2000,
-                },
-            },
-        ] satisfies ServerModel[]
-
-        const result = maybeAdjustContextWindows(models, {
-            tier: 'enterprise',
-            longContextWindowFlagEnabled: false,
-        })
-        expect(result[0].contextWindow.maxInputTokens).toBe(8000) // No change for OpenAI
-        expect(result[1].contextWindow.maxInputTokens).toBe(8500) // Adjusted for Mistral (10000 * 0.85)
-    })
+    }
 })
