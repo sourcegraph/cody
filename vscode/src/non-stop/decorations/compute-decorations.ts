@@ -81,16 +81,11 @@ export function computeAppliedDecorations(task: FixupTask): Decorations | undefi
  * decorate an entire line.
  */
 function trimEmptyLinesFromRange(range: vscode.Range, document: vscode.TextDocument): vscode.Range {
-    let startLineIndex = range.start.line
-    let endLineIndex = range.end.line
+    const startLineIndex = range.start.line
+    let endLineIndex = range.end.line >= 1 ? range.end.line - 1 : range.end.line
 
-    const startLine = document.lineAt(startLineIndex)
-    if (range.start.character === startLine.range.end.character || startLine.text.length === 0) {
-        startLineIndex++
-    }
-
-    const endLine = document.lineAt(startLineIndex)
-    if (range.end.character === 0 || endLine.text.length === 0) {
+    const endLine = document.lineAt(endLineIndex)
+    if (endLineIndex > 0 && endLine.text.length === 0) {
         endLineIndex--
     }
 
