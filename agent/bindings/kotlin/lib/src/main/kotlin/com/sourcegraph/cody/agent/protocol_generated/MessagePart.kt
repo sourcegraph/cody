@@ -79,7 +79,6 @@ data class ToolCallContentPart(
 data class ToolResultContentPart(
   val type: TypeEnum, // Oneof: tool_result
   val tool_result: Tool_resultParams,
-  val output: UIToolOutput? = null,
 ) : MessagePart() {
 
   enum class TypeEnum {

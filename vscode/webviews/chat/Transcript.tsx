@@ -534,24 +534,17 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
     )
 
     const isAgenticMode = useMemo(() => manuallySelectedIntent === 'agentic', [manuallySelectedIntent])
-    const toolCallContent = useMemo(() => {
-        if (!isAgenticMode || !humanMessage?.content || !assistantMessage?.content) {
-            return undefined
-        }
-        if (!humanMessage?.content?.some(c => c.type === 'tool_result')) {
-            return undefined
-        }
-        return assistantMessage?.content?.filter(c => c.type === 'tool_call')
-    }, [isAgenticMode, assistantMessage?.content, humanMessage?.content])
 
-    const toolResultContent = useMemo(() => {
-        if (!isAgenticMode || !humanMessage?.content || !assistantMessage?.content) {
+    const toolCallContent = useMemo(() => {
+        if (!isAgenticMode || !humanMessage?.index) {
             return undefined
         }
-        const toolResults = humanMessage?.content?.filter(c => c.type === 'tool_result')
-        const botResults = assistantMessage?.content?.filter(c => c.type === 'tool_result')
-        return botResults || toolResults
-    }, [isAgenticMode, assistantMessage?.content, humanMessage?.content])
+        const toolCalls = assistantMessage?.contextFiles?.filter(f => f.type === 'tool-state')
+        if (toolCalls?.length) {
+            return toolCalls
+        }
+        return humanMessage?.contextFiles?.filter(f => f.type === 'tool-state')
+    }, [isAgenticMode, assistantMessage?.contextFiles, humanMessage?.contextFiles, humanMessage?.index])
 
     return (
         <>
@@ -635,12 +628,11 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                         isThoughtProcessOpened={isThoughtProcessOpened}
                     />
                 )}
-            {toolResultContent?.map(tool => (
+            {toolCallContent?.map(tool => (
                 <ToolStatusCell
-                    key={tool.tool_result.id}
-                    content={tool.tool_result.content}
-                    title={tool.output?.title || 'Tool Output'}
-                    output={tool.output}
+                    key={tool.toolId}
+                    title={tool.toolName}
+                    output={tool}
                     className="w-full"
                 />
             ))}

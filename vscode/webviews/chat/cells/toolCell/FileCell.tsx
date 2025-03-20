@@ -1,4 +1,4 @@
-import type { UIFileView } from '@sourcegraph/cody-shared'
+import type { ContextItemToolState } from '@sourcegraph/cody-shared/src/codebase-context/messages'
 import { FileCode } from 'lucide-react'
 import type { FC } from 'react'
 import type { URI } from 'vscode-uri'
@@ -6,7 +6,7 @@ import { Button } from '../../../components/shadcn/ui/button'
 import { BaseCell } from './BaseCell'
 
 interface FileCellProps {
-    result: UIFileView
+    result: ContextItemToolState
     className?: string
     defaultOpen?: boolean
     onFileLinkClicked: (uri: URI) => void
@@ -26,10 +26,10 @@ export const FileCell: FC<FileCellProps> = ({
                 onClick={e => {
                     e.preventDefault()
                     e.stopPropagation()
-                    onFileLinkClicked(result.file?.uri)
+                    if (result?.uri) onFileLinkClicked(result?.uri)
                 }}
             >
-                <span className="tw-font-mono">{result.file?.fileName || result.title}</span>
+                <span className="tw-font-mono">{result.title}</span>
             </Button>
         </div>
     )
@@ -39,7 +39,7 @@ export const FileCell: FC<FileCellProps> = ({
             <pre className="tw-font-mono tw-text-xs tw-leading-relaxed">
                 <table className="tw-w-full tw-border-collapse">
                     <tbody>
-                        {result.file?.content?.split('\n').map((line, index) => (
+                        {result?.content?.split('\n').map((line, index) => (
                             <tr key={`${index}-${line.substring(0, 10)}`}>
                                 <td className="tw-select-none tw-border-r tw-border-r-zinc-700 tw-px-2 tw-text-right tw-text-zinc-500 tw-w-12">
                                     {index + 1}
@@ -59,7 +59,7 @@ export const FileCell: FC<FileCellProps> = ({
         <BaseCell
             icon={FileCode}
             headerContent={renderHeaderContent()}
-            bodyContent={result.file?.content ? renderBodyContent() : undefined}
+            bodyContent={result?.content ? renderBodyContent() : undefined}
             className={className}
             defaultOpen={defaultOpen}
         />

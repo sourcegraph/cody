@@ -12,6 +12,8 @@ import {
     logDebug,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
+import type { ContextItemToolState } from '@sourcegraph/cody-shared/src/codebase-context/messages'
+import { URI } from 'vscode-uri'
 import { PromptBuilder } from '../../../prompt-builder'
 import type { ChatBuilder } from '../ChatBuilder'
 import type { ChatControllerOptions } from '../ChatController'
@@ -25,6 +27,11 @@ import { buildAgentPrompt } from './prompts'
 enum AGENT_MODELS {
     ExtendedThinking = 'anthropic::2024-10-22::claude-3-7-sonnet-extended-thinking',
     Base = 'anthropic::2024-10-22::claude-3-7-sonnet-latest',
+}
+
+interface ToolResult {
+    output: ContextItemToolState
+    tool_result: ToolResultContentPart
 }
 
 /**
@@ -103,8 +110,6 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
                     model
                 )
 
-                delegate.postMessageInProgress(botResponse)
-
                 // No tool calls means we're done
                 if (!toolCalls?.size) {
                     chatBuilder.addBotMessage(botResponse, model)
@@ -114,9 +119,11 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
 
                 // Execute tools and update results
                 const content = Array.from(toolCalls.values())
-                const toolResults = await this.executeTools(content)
+                delegate.postMessageInProgress(botResponse)
 
-                botResponse.content?.push(...toolResults)
+                const results = await this.executeTools(content)
+                const toolResults = results.map(result => result.tool_result).filter(isDefined)
+                const toolOutputs = results.map(result => result.output).filter(isDefined)
 
                 delegate.postMessageInProgress(botResponse)
 
@@ -126,6 +133,7 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
                 chatBuilder.addHumanMessage({
                     content: toolResults,
                     intent: 'agentic',
+                    contextFiles: toolOutputs,
                 })
 
                 // Exit if max turns reached
@@ -141,6 +149,9 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
             }
         }
     }
+    /**
+     * Request a response from the LLM with tool calling capabilities
+     */
     /**
      * Request a response from the LLM with tool calling capabilities
      */
@@ -210,10 +221,20 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
         }
 
         // Create final response
-
         if (toolCalls.size > 0) {
             content.push(...Array.from(toolCalls.values()))
         }
+
+        // Create contextFiles for each tool call
+        const contextFiles: ContextItemToolState[] = Array.from(toolCalls.values()).map(toolCall => ({
+            uri: URI.parse(''),
+            type: 'tool-state',
+            content: toolCall.tool_call.arguments,
+            toolId: toolCall.tool_call.id,
+            toolName: toolCall.tool_call.name,
+            status: UIToolStatus.Pending,
+            outputType: 'status',
+        }))
 
         return {
             botResponse: {
@@ -222,6 +243,7 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
                 content,
                 model,
                 text: streamed.text ? PromptString.unsafe_fromLLMResponse(streamed.text) : undefined,
+                contextFiles, // Add contextFiles to the bot response
             },
             toolCalls,
         }
@@ -248,11 +270,11 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
     /**
      * Execute tools from LLM response
      */
-    protected async executeTools(toolCalls: ToolCallContentPart[]): Promise<ToolResultContentPart[]> {
+    protected async executeTools(toolCalls: ToolCallContentPart[]): Promise<ToolResult[]> {
         try {
             logDebug('AgenticHandler', `Executing ${toolCalls.length} tools`)
             // Execute all tools concurrently
-            const toolResults = await Promise.all(
+            const results = await Promise.all(
                 toolCalls.map(async toolCall => {
                     logDebug('AgenticHandler', `Executing ${toolCall.tool_call?.name}`, {
                         verbose: toolCall,
@@ -261,7 +283,7 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
                 })
             )
 
-            return toolResults.filter(isDefined)
+            return results.filter(isDefined)
         } catch (error) {
             logDebug('AgenticHandler', 'Error executing tools', { verbose: error })
             return []
@@ -273,12 +295,12 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
      */
     protected async executeSingleTool(
         toolCall: ToolCallContentPart
-    ): Promise<ToolResultContentPart | undefined> {
+    ): Promise<ToolResult | undefined | null> {
         // Find the appropriate tool
         const tool = this.tools.find(t => t.spec.name === toolCall.tool_call.name)
         if (!tool) return undefined
 
-        const toolResult: ToolResultContentPart = {
+        const tool_result: ToolResultContentPart = {
             type: 'tool_result',
             tool_result: {
                 id: toolCall.tool_call.id,
@@ -286,27 +308,45 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
             },
         }
 
+        const tool_item = {
+            toolId: toolCall.tool_call.id,
+            toolName: toolCall.tool_call.name,
+            status: UIToolStatus.Done,
+        }
+
         // Update status to pending *before* execution
         try {
             const args = parseToolCallArgs(toolCall.tool_call.arguments)
             const result = await tool.invoke(args)
 
-            toolResult.tool_result.content = result.text
-            if (result.output) {
-                toolResult.output = { ...result.output, status: UIToolStatus.Done }
-            }
+            tool_result.tool_result.content = result.content || 'Empty result'
 
             logDebug('AgenticHandler', `Executed ${toolCall.tool_call.name}`, { verbose: result })
 
-            return toolResult
+            return {
+                tool_result,
+                output: {
+                    ...result,
+                    ...tool_item,
+                    status: UIToolStatus.Done,
+                },
+            }
         } catch (error) {
-            toolResult.tool_result.content = String(error)
-            toolResult.output = { status: UIToolStatus.Error, type: 'status', content: String(error) }
+            tool_result.tool_result.content = String(error)
             logDebug('AgenticHandler', `${toolCall.tool_call.name} failed`, { verbose: error })
-            return toolResult
+            return {
+                tool_result,
+                output: {
+                    uri: URI.parse(''),
+                    type: 'tool-state',
+                    content: String(error),
+                    ...tool_item,
+                    status: UIToolStatus.Error,
+                    outputType: 'status',
+                },
+            }
         }
     }
-
     /**
      * Handle errors with consistent logging and reporting
      */

@@ -189,7 +189,6 @@ export function getFileDiff(uri: URI, oldText: string, newText: string): UIFileD
     total.removed -= total.modified
 
     return {
-        type: 'file-diff',
         uri,
         total,
         changes,

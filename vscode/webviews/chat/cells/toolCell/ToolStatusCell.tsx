@@ -1,11 +1,5 @@
-import type {
-    UIFileDiff,
-    UIFileView,
-    UISearchResults,
-    UITerminalToolOutput,
-    UIToolOutput,
-} from '@sourcegraph/cody-shared'
-import { type FC, useCallback } from 'react'
+import type { ContextItemToolState } from '@sourcegraph/cody-shared/src/codebase-context/messages'
+import { type FC, useCallback, useMemo } from 'react'
 import type { URI } from 'vscode-uri'
 import { Skeleton } from '../../../components/shadcn/ui/skeleton'
 import type { VSCodeWrapper } from '../../../utils/VSCodeApi'
@@ -13,12 +7,11 @@ import { DiffCell } from './DiffCell'
 import { FileCell } from './FileCell'
 import { OutputStatusCell } from './OutputStatusCell'
 import { SearchResultsCell } from './SearchResultsCell'
-import { TerminalOutputCell } from './TerminalOutputCell'
+import { TerminalOutputCell, convertToTerminalLines } from './TerminalOutputCell'
 
 export interface ToolStatusProps {
     title: string
-    output?: UIToolOutput
-    content?: string
+    output?: ContextItemToolState
     className?: string
     startTime?: Date
     endTime?: Date
@@ -33,7 +26,7 @@ export const ToolStatusCell: FC<ToolStatusProps> = ({ title, output, vscodeAPI }
         [vscodeAPI]
     )
 
-    if (title && !output) {
+    if (!title || !output) {
         return (
             <div className="tw-flex tw-items-center tw-gap-2 tw-overflow-hidden tw-h-7">
                 <Skeleton className="tw-h-4 tw-w-40 tw-bg-zinc-800 tw-animate-pulse" />
@@ -41,26 +34,32 @@ export const ToolStatusCell: FC<ToolStatusProps> = ({ title, output, vscodeAPI }
         )
     }
 
-    if (output?.type === 'file-view') {
-        return <FileCell result={output as UIFileView} onFileLinkClicked={onFileLinkClicked} />
+    if (output?.outputType === 'file-view') {
+        return <FileCell result={output} onFileLinkClicked={onFileLinkClicked} />
     }
 
-    if (output?.type === 'search-result') {
+    if (output?.outputType === 'search-result' && output.searchResultItems) {
         return (
             <SearchResultsCell
-                result={output as UISearchResults}
+                query={output.title || ''}
+                results={output.searchResultItems}
                 onFileLinkClicked={onFileLinkClicked}
             />
         )
     }
 
-    if (output?.type === 'file-diff') {
-        return <DiffCell result={output as UIFileDiff} onFileLinkClicked={onFileLinkClicked} />
+    if (output?.outputType === 'file-diff') {
+        return <DiffCell item={output} onFileLinkClicked={onFileLinkClicked} />
     }
 
-    if (output?.type === 'terminal-output') {
-        return <TerminalOutputCell result={output as UITerminalToolOutput} />
+    if (output?.outputType === 'terminal-output') {
+        const lines = useMemo(
+            () => (output.content ? convertToTerminalLines(output.content) : []),
+            [output.content]
+        )
+
+        return <TerminalOutputCell lines={lines} />
     }
 
-    return <OutputStatusCell output={output as UIToolOutput} />
+    return <OutputStatusCell item={output} />
 }

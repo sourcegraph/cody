@@ -1,4 +1,4 @@
-import type { UIToolOutput } from '@sourcegraph/cody-shared'
+import type { ContextItemToolState } from '@sourcegraph/cody-shared/src/codebase-context/messages'
 import { AlertCircle, CheckCircle, Info } from 'lucide-react'
 import type { FC } from 'react'
 import { Badge } from '../../../components/shadcn/ui/badge'
@@ -6,7 +6,7 @@ import { cn } from '../../../components/shadcn/utils'
 import { BaseCell } from './BaseCell'
 
 interface OutputStatusProps {
-    output: UIToolOutput
+    item: ContextItemToolState
     className?: string
     defaultOpen?: boolean
 }
@@ -63,19 +63,19 @@ const getBadgeClass = (status: string) => {
     }
 }
 
-export const OutputStatusCell: FC<OutputStatusProps> = ({ output, className, defaultOpen = false }) => {
-    if (!output.title) {
+export const OutputStatusCell: FC<OutputStatusProps> = ({ item, className, defaultOpen = false }) => {
+    if (!item.title) {
         return null
     }
 
-    const status = output.status || 'info'
+    const status = item.status || 'info'
     const StatusIcon = getStatusIcon(status)
 
     // Define headerContent directly as JSX
     const headerContent = (
         <div className="tw-flex tw-flex-row tw-items-center tw-gap-2 tw-overflow-hidden">
             <div className="tw-flex tw-items-center tw-gap-2 tw-text-left tw-truncate tw-w-full">
-                <span className="tw-font-sm">{output.title}</span>
+                <span className="tw-font-sm">{item.title}</span>
                 <Badge variant="outline" className={cn(getBadgeClass(status))}>
                     {getStatusLabel(status)}
                 </Badge>
@@ -86,10 +86,10 @@ export const OutputStatusCell: FC<OutputStatusProps> = ({ output, className, def
     // Define bodyContent directly as JSX
     const bodyContent = (
         <div className={cn('tw-p-4', getStatusClass(status))}>
-            {output.content && (
+            {item.content && (
                 <div className="tw-rounded-md tw-p-3 tw-font-mono tw-text-xs tw-mb-4 tw-overflow-x-auto">
                     <pre className="tw-whitespace-pre-wrap tw-break-words tw-text-zinc-300">
-                        {output.content}
+                        {item.content}
                     </pre>
                 </div>
             )}

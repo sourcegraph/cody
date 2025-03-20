@@ -1,7 +1,11 @@
 import { spawn } from 'node:child_process'
 import { type UITerminalLine, UITerminalOutputType, UIToolStatus } from '@sourcegraph/cody-shared'
+import {
+    ContextItemSource,
+    type ContextItemToolState,
+} from '@sourcegraph/cody-shared/src/codebase-context/messages'
 import * as vscode from 'vscode'
-import type { AgentTool, AgentToolResult } from '.'
+import type { AgentTool } from '.'
 import { validateWithZod } from '../utils/input'
 import { zodToolSchema } from '../utils/parse'
 import { type RunTerminalCommandInput, RunTerminalCommandSchema } from './schema'
@@ -48,50 +52,34 @@ export const shellTool: AgentTool = {
                 cwd: workspaceFolder.uri.path,
             })
 
-            // Format the output as an array of TerminalLine objects
-            const lines: UITerminalLine[] = [
-                { content: validInput.command, type: UITerminalOutputType.Input },
-                ...formatOutputToTerminalLines(commandResult.stdout, UITerminalOutputType.Output),
-                ...formatOutputToTerminalLines(commandResult.stderr, UITerminalOutputType.Error),
-            ].filter(line => line.content.trim() !== '')
+            const content = `${validInput.command}<|OUTPUT|>${commandResult.stdout}${
+                commandResult.stderr ? '<|ERRORS|>' + commandResult.stderr : ''
+            }`
 
-            return {
-                text: `Executed ${validInput.command}\n\nOutput:\n${commandResult.stdout}${
-                    commandResult.stderr ? '\nErrors:\n' + commandResult.stderr : ''
-                }`,
-                output: {
-                    type: 'terminal-output',
-                    status: UIToolStatus.Done,
-                    query: validInput.command,
-                    output: lines,
-                },
-            } satisfies AgentToolResult
+            return createShellToolState(validInput.command, content, UIToolStatus.Done)
         } catch (error) {
             if (error instanceof CommandError) {
-                // Format the error output as an array of TerminalLine objects
-                const lines: UITerminalLine[] = [
-                    { content: validInput.command, type: UITerminalOutputType.Input },
-                    {
-                        content: `Exited with code ${error.result.code}`,
-                        type: UITerminalOutputType.Error,
-                    },
-                    ...formatOutputToTerminalLines(error.result.stdout, UITerminalOutputType.Output),
-                    ...formatOutputToTerminalLines(error.result.stderr, UITerminalOutputType.Error),
-                ].filter(line => line.content.trim() !== '')
+                if (error instanceof CommandError) {
+                    // Format the error output as an array of TerminalLine objects
+                    const lines: UITerminalLine[] = [
+                        { content: validInput.command, type: UITerminalOutputType.Input },
+                        {
+                            content: `Exited with code ${error.result.code}`,
+                            type: UITerminalOutputType.Error,
+                        },
+                        ...formatOutputToTerminalLines(error.result.stdout, UITerminalOutputType.Output),
+                        ...formatOutputToTerminalLines(error.result.stderr, UITerminalOutputType.Error),
+                    ].filter(line => line.content.trim() !== '')
+                    const content = lines.join('\n')
 
-                return {
-                    text: `Command: ${validInput.command}\n\nExited with code ${
-                        error.result.code
-                    }\n\nOutput:\n${error.result.stdout}${
-                        error.result.stderr ? '\nErrors:\n' + error.result.stderr : ''
-                    }`,
-                    output: {
-                        type: 'terminal-output',
-                        status: UIToolStatus.Error,
-                        query: validInput.command,
-                        output: lines,
-                    },
+                    return createShellToolState(validInput.command, content, UIToolStatus.Error)
                 }
+
+                return createShellToolState(
+                    validInput.command,
+                    `Failed to run terminal command: ${validInput.command}: ${error}`,
+                    UIToolStatus.Error
+                )
             }
             throw new Error(`Failed to run terminal command: ${input.command}: ${error}`)
         }
@@ -101,7 +89,10 @@ export const shellTool: AgentTool = {
 /**
  * Formats a string output into an array of TerminalLine objects
  */
-function formatOutputToTerminalLines(output: string, type: UITerminalOutputType): UITerminalLine[] {
+export function formatOutputToTerminalLines(
+    output: string,
+    type: UITerminalOutputType
+): UITerminalLine[] {
     if (!output) {
         return []
     }
@@ -187,4 +178,33 @@ export async function runShellCommand(
             }
         })
     })
+}
+
+/**
+ * Creates a ContextItemToolState for shell command operations
+ */
+function createShellToolState(
+    command: string,
+    content: string,
+    status: UIToolStatus,
+    outputType: 'terminal-output' = 'terminal-output'
+): ContextItemToolState {
+    const toolId = `shell-${Date.now()}`
+
+    return {
+        type: 'tool-state',
+        toolId,
+        toolName: 'run_terminal_command',
+        status,
+        outputType,
+
+        // ContextItemCommon properties
+        uri: vscode.Uri.parse(`cody:/tools/shell/${toolId}`),
+        content,
+        description: 'Terminal Command',
+        title: command,
+        source: ContextItemSource.Agentic,
+        icon: 'terminal',
+        metadata: [`Command: ${command}`, `Status: ${status}`],
+    }
 }

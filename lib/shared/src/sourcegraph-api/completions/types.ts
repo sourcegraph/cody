@@ -1,4 +1,3 @@
-import type { URI } from 'vscode-uri'
 import type { SerializedChatMessage } from '../../chat/transcript/messages'
 import type { PromptString } from '../../prompt/prompt-string'
 
@@ -90,7 +89,6 @@ export interface ToolResultContentPart {
         id: string
         content: string
     }
-    output?: UIToolOutput
 }
 
 export interface CompletionUsage {
@@ -160,98 +158,3 @@ export type CompletionGeneratorValue =
     | { type: 'change'; text: string; content?: CompletionContentData[] }
     | { type: 'complete' }
     | { type: 'error'; error: Error; statusCode?: number }
-
-export type UIToolOutput =
-    | UIToolOutputBase
-    | UISearchResults
-    | UITerminalToolOutput
-    | UIFileDiff
-    | UIFileView
-
-export enum UIToolStatus {
-    Pending = 'pending',
-    Done = 'done',
-    Error = 'error',
-    Canceled = 'canceled',
-    Idle = 'idle',
-    Info = 'info',
-}
-
-/**
- * Main container for all tool output types
- */
-interface UIToolOutputBase {
-    type: 'search-result' | 'file-diff' | 'terminal-output' | 'file-view' | 'status'
-    status?: UIToolStatus | undefined | null
-    title?: string | undefined | null
-    content?: string | undefined | null
-    duration?: number | undefined | null
-    query?: string | undefined | null
-}
-
-// Basic file content display
-export interface UIFileBase {
-    fileName: string
-    uri: URI
-    content?: string | undefined | null
-}
-
-// Individual search result item
-export interface UIFileView extends UIToolOutputBase {
-    type: 'file-view'
-    file: UIFileBase
-}
-
-export interface UISearchResults extends UIToolOutputBase {
-    type: 'search-result'
-    items: UISearchItem[]
-}
-
-// Individual search result item
-interface UISearchItem extends UIFileBase {
-    lineNumber?: string
-    preview?: string
-    type: 'file' | 'folder' | 'code'
-}
-
-// File diff display
-export interface UIFileDiff extends UIToolOutputBase {
-    type: 'file-diff'
-    total: UIChangeStats
-    changes: UIDiffLine[]
-    uri: URI
-}
-
-// Change statistics summary
-interface UIChangeStats {
-    added: number
-    removed: number
-    modified: number
-}
-
-// Individual diff line
-export interface UIDiffLine {
-    type: 'added' | 'removed' | 'unchanged'
-    content: string
-    lineNumber: number
-}
-
-export interface UITerminalToolOutput extends UIToolOutputBase {
-    type: 'terminal-output'
-    output: UITerminalLine[]
-}
-
-// Terminal output types
-export enum UITerminalOutputType {
-    Input = 'input',
-    Output = 'output',
-    Error = 'error',
-    Warning = 'warning',
-    Success = 'success',
-}
-
-// Individual terminal line
-export interface UITerminalLine {
-    content: string
-    type?: UITerminalOutputType | undefined | null
-}
