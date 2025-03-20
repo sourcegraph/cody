@@ -125,6 +125,8 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
                 const toolResults = results.map(result => result.tool_result).filter(isDefined)
                 const toolOutputs = results.map(result => result.output).filter(isDefined)
 
+                botResponse.contextFiles = toolOutputs
+
                 delegate.postMessageInProgress(botResponse)
 
                 chatBuilder.addBotMessage(botResponse, model)
@@ -149,9 +151,7 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
             }
         }
     }
-    /**
-     * Request a response from the LLM with tool calling capabilities
-     */
+
     /**
      * Request a response from the LLM with tool calling capabilities
      */

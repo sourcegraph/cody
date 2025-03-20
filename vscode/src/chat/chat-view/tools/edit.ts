@@ -25,7 +25,6 @@ function createEditToolState(
         toolName: 'text_editor',
         status,
         outputType,
-
         // ContextItemCommon properties
         uri: uri || vscode.Uri.parse(`cody:/tools/edit/${id}`),
         content,
@@ -200,9 +199,7 @@ async function replaceInFile(
 
         // Show diff view
         const historyUri = uri.with({ scheme: 'cody-checkpoint' })
-        // const title = `History: ${fileName} (${new Date(timestamp).toLocaleString()})`
 
-        // logDebug('text_editor', `Diff view for ${title} created`, { uri: historyUri })
         logDebug('text_editor', 'New content created', { uri: historyUri })
 
         const diagnosticsOnEnd = getErrorDiagnostics(uri)
@@ -213,7 +210,6 @@ async function replaceInFile(
             }
         }
 
-        // const fileDiff = getFileDiff(uri, content, newContent)
         const result = createEditToolState(
             toolId,
             UIToolStatus.Done,
@@ -223,9 +219,7 @@ async function replaceInFile(
         )
 
         // Add file diff properties
-        if (result?.content) {
-            result.metadata = [...(result.metadata || []), `Changes: ${result.content}`]
-        }
+        result.metadata = [content, newContent]
 
         return result
     } catch (error: any) {
