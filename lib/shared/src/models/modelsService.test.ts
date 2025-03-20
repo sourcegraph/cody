@@ -140,6 +140,7 @@ describe('modelsService', () => {
         const model1chat = createModel({
             id: 'model-1',
             usage: [ModelUsage.Chat],
+            tags: [ModelTag.Reasoning],
         })
 
         const model2chat = createModel({
@@ -155,6 +156,13 @@ describe('modelsService', () => {
         const model4edit = createModel({
             id: 'model-4',
             usage: [ModelUsage.Edit],
+            tags: [ModelTag.Reasoning],
+        })
+
+        const model5edit = createModel({
+            id: 'model-5',
+            usage: [ModelUsage.Edit],
+            tags: [ModelTag.Tools],
         })
 
         function modelsServiceWithModels(models: Model[]): ModelsService {
@@ -169,7 +177,13 @@ describe('modelsService', () => {
             vi.spyOn(userProductSubscriptionModule, 'userProductSubscription', 'get').mockReturnValue(
                 Observable.of(codyProSub)
             )
-            modelsService = modelsServiceWithModels([model1chat, model2chat, model3all, model4edit])
+            modelsService = modelsServiceWithModels([
+                model1chat,
+                model2chat,
+                model3all,
+                model4edit,
+                model5edit,
+            ])
         })
 
         it('allows setting default models per type', async () => {
@@ -186,7 +200,9 @@ describe('modelsService', () => {
                     preferences: storage?.getModelPreferences()[currentAuthStatus().endpoint]!,
                 })
             )
-            expect(await firstValueFrom(modelsService.getDefaultEditModel())).toBe(model4edit.id)
+            // Skip the reasoning model since it's not compatible with edit.
+            // Fallback to the first chat model that's available.
+            expect(await firstValueFrom(modelsService.getDefaultEditModel())).toBe(model2chat.id)
             expect(await firstValueFrom(modelsService.getDefaultChatModel())).toBe(model2chat.id)
         })
 
@@ -201,12 +217,12 @@ describe('modelsService', () => {
             vi.spyOn(modelsService, 'modelsChanges', 'get').mockReturnValue(
                 Observable.of({
                     ...EMPTY_MODELS_DATA,
-                    primaryModels: [model1chat],
+                    primaryModels: [model3all],
                     preferences: storage?.getModelPreferences()[currentAuthStatus().endpoint]!,
                 })
             )
-            vi.spyOn(modelsService, 'models', 'get').mockReturnValue([model1chat])
-            expect(await firstValueFrom(modelsService.getDefaultChatModel())).toBe(model1chat.id)
+            vi.spyOn(modelsService, 'models', 'get').mockReturnValue([model2chat])
+            expect(await firstValueFrom(modelsService.getDefaultChatModel())).toBe(model3all.id)
         })
 
         it('only allows setting appropriate model types', () => {
@@ -408,6 +424,238 @@ describe('modelsService', () => {
 
             expect(uncategorizedModel.tags).toHaveLength(0)
             expect(modelsService.models).toContain(uncategorizedModel)
+        })
+    })
+
+    describe('Default model selection for Edit and Chat', () => {
+        let modelsService: ModelsService
+        let storage: TestLocalStorageForModelPreferences
+
+        // Define various model types for testing
+        const validEditModel = createModel({
+            id: 'valid-edit-model',
+            usage: [ModelUsage.Edit],
+            tags: [ModelTag.Pro],
+        })
+
+        const validChatModel = createModel({
+            id: 'valid-chat-model',
+            usage: [ModelUsage.Chat],
+            tags: [ModelTag.Pro],
+        })
+
+        const reasoningModel = createModel({
+            id: 'reasoning-model',
+            usage: [ModelUsage.Edit, ModelUsage.Chat],
+            tags: [ModelTag.Reasoning],
+        })
+
+        const waitlistModel = createModel({
+            id: 'waitlist-model',
+            usage: [ModelUsage.Edit, ModelUsage.Chat],
+            tags: [ModelTag.Waitlist],
+        })
+
+        const onWaitlistModel = createModel({
+            id: 'on-waitlist-model',
+            usage: [ModelUsage.Edit, ModelUsage.Chat],
+            tags: [ModelTag.OnWaitlist],
+        })
+
+        const deprecatedModel = createModel({
+            id: 'deprecated-model',
+            usage: [ModelUsage.Edit, ModelUsage.Chat],
+            tags: [ModelTag.Deprecated],
+        })
+
+        const dualPurposeModel = createModel({
+            id: 'dual-purpose-model',
+            usage: [ModelUsage.Edit, ModelUsage.Chat],
+            tags: [ModelTag.Pro],
+        })
+
+        beforeEach(() => {
+            mockAuthStatus(codyProAuthStatus)
+            vi.spyOn(userProductSubscriptionModule, 'userProductSubscription', 'get').mockReturnValue(
+                Observable.of(codyProSub)
+            )
+
+            modelsService = new ModelsService()
+            storage = new TestLocalStorageForModelPreferences()
+            modelsService.setStorage(storage)
+        })
+
+        afterEach(() => {
+            modelsService.dispose()
+            vi.resetAllMocks()
+        })
+
+        it('does not return reasoning models for Edit usage', async () => {
+            // Setup models where reasoning model is the only one available for edit
+            vi.spyOn(modelsService, 'modelsChanges', 'get').mockReturnValue(
+                Observable.of({
+                    ...EMPTY_MODELS_DATA,
+                    primaryModels: [reasoningModel, validChatModel],
+                    preferences: {
+                        defaults: { edit: reasoningModel.id },
+                        selected: {},
+                    },
+                })
+            )
+
+            // Should fall back to chat model since reasoning model is not suitable for edit
+            const defaultEditModel = await firstValueFrom(modelsService.getDefaultEditModel())
+            expect(defaultEditModel).toBe(validChatModel.id)
+
+            // Directly check getDefaultModel behavior
+            const defaultEditModelDirect = await firstValueFrom(
+                modelsService.getDefaultModel(ModelUsage.Edit)
+            )
+            expect(defaultEditModelDirect).toBeUndefined() // No valid edit model available
+        })
+
+        it('does not return waitlist/onWaitlist models for Edit usage', async () => {
+            // Setup models where waitlist models are available for edit
+            vi.spyOn(modelsService, 'modelsChanges', 'get').mockReturnValue(
+                Observable.of({
+                    ...EMPTY_MODELS_DATA,
+                    primaryModels: [waitlistModel, onWaitlistModel, validChatModel],
+                    preferences: {
+                        defaults: { edit: waitlistModel.id },
+                        selected: {},
+                    },
+                })
+            )
+
+            // Should fall back to chat model since waitlist models are not suitable for edit
+            const defaultEditModel = await firstValueFrom(modelsService.getDefaultEditModel())
+            expect(defaultEditModel).toBe(validChatModel.id)
+        })
+
+        it('does not return deprecated models for Edit usage', async () => {
+            // Setup models where deprecated model is set as default for edit
+            vi.spyOn(modelsService, 'modelsChanges', 'get').mockReturnValue(
+                Observable.of({
+                    ...EMPTY_MODELS_DATA,
+                    primaryModels: [deprecatedModel, validChatModel],
+                    preferences: {
+                        defaults: { edit: deprecatedModel.id },
+                        selected: {},
+                    },
+                })
+            )
+
+            // Should fall back to chat model since deprecated model is not suitable for edit
+            const defaultEditModel = await firstValueFrom(modelsService.getDefaultEditModel())
+            expect(defaultEditModel).toBe(validChatModel.id)
+        })
+
+        it('correctly falls back to chat model when no valid edit model is available', async () => {
+            // Setup models where no valid edit model is available
+            vi.spyOn(modelsService, 'modelsChanges', 'get').mockReturnValue(
+                Observable.of({
+                    ...EMPTY_MODELS_DATA,
+                    primaryModels: [
+                        reasoningModel,
+                        waitlistModel,
+                        onWaitlistModel,
+                        deprecatedModel,
+                        validChatModel,
+                    ],
+                    preferences: {
+                        defaults: {},
+                        selected: {},
+                    },
+                })
+            )
+
+            // Should use chat model since no valid edit model is available
+            const defaultEditModel = await firstValueFrom(modelsService.getDefaultEditModel())
+            expect(defaultEditModel).toBe(validChatModel.id)
+        })
+
+        it('correctly selects valid edit model when available', async () => {
+            // Setup models with a valid edit model
+            vi.spyOn(modelsService, 'modelsChanges', 'get').mockReturnValue(
+                Observable.of({
+                    ...EMPTY_MODELS_DATA,
+                    primaryModels: [validEditModel, validChatModel, reasoningModel],
+                    preferences: {
+                        defaults: { edit: validEditModel.id },
+                        selected: {},
+                    },
+                })
+            )
+
+            // Should use the valid edit model
+            const defaultEditModel = await firstValueFrom(modelsService.getDefaultEditModel())
+            expect(defaultEditModel).toBe(validEditModel.id)
+        })
+
+        it('respects user preference for edit model when valid', async () => {
+            // Setup models with user preference set
+            vi.spyOn(modelsService, 'modelsChanges', 'get').mockReturnValue(
+                Observable.of({
+                    ...EMPTY_MODELS_DATA,
+                    primaryModels: [validEditModel, dualPurposeModel, validChatModel],
+                    preferences: {
+                        defaults: { edit: validEditModel.id },
+                        selected: { edit: dualPurposeModel.id },
+                    },
+                })
+            )
+
+            // Should use the user's preferred model
+            const defaultEditModel = await firstValueFrom(modelsService.getDefaultEditModel())
+            expect(defaultEditModel).toBe(dualPurposeModel.id)
+        })
+
+        it('ignores user preference for edit model when it is a reasoning model', async () => {
+            // Setup models with user preference set to a reasoning model
+            vi.spyOn(modelsService, 'modelsChanges', 'get').mockReturnValue(
+                Observable.of({
+                    ...EMPTY_MODELS_DATA,
+                    primaryModels: [validEditModel, reasoningModel, validChatModel],
+                    preferences: {
+                        defaults: { edit: validEditModel.id },
+                        selected: { edit: reasoningModel.id },
+                    },
+                })
+            )
+
+            // Should ignore the reasoning model preference and use the default edit model
+            const defaultEditModel = await firstValueFrom(modelsService.getDefaultEditModel())
+            expect(defaultEditModel).toBe(validEditModel.id)
+        })
+
+        it('handles the case when all models are reasoning models', async () => {
+            // Setup where only reasoning models are available
+            const reasoningModel1 = createModel({
+                id: 'reasoning-model-1',
+                usage: [ModelUsage.Edit, ModelUsage.Chat],
+                tags: [ModelTag.Reasoning],
+            })
+
+            const reasoningModel2 = createModel({
+                id: 'reasoning-model-2',
+                usage: [ModelUsage.Chat],
+                tags: [ModelTag.Reasoning],
+            })
+
+            vi.spyOn(modelsService, 'modelsChanges', 'get').mockReturnValue(
+                Observable.of({
+                    ...EMPTY_MODELS_DATA,
+                    primaryModels: [reasoningModel1, reasoningModel2],
+                    preferences: {
+                        defaults: {},
+                        selected: {},
+                    },
+                })
+            )
+
+            // Should return undefined since no valid models are available
+            const defaultEditModel = await firstValueFrom(modelsService.getDefaultEditModel())
+            expect(defaultEditModel).toBeUndefined()
         })
     })
 

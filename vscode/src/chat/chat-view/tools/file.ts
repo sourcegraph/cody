@@ -1,3 +1,6 @@
+import { ContextItemSource, UIToolStatus } from '@sourcegraph/cody-shared'
+import type { ContextItemToolState } from '@sourcegraph/cody-shared/src/codebase-context/messages'
+import { URI } from 'vscode-uri'
 import type { AgentTool } from '.'
 import { getContextFromRelativePath } from '../../../commands/context/file-path'
 import { validateWithZod } from '../utils/input'
@@ -15,14 +18,57 @@ export const getFileTool: AgentTool = {
         const validInput = validateWithZod(GetFileSchema, input, 'get_file')
         try {
             const context = await getContextFromRelativePath(validInput.name)
-            return {
-                text: `Successfully retrieved content from ${validInput.name}.`,
-                contextItems: context ? [context] : undefined,
+            if (context === undefined || !context?.content) {
+                throw new Error(`File ${validInput.name} not found or empty`)
             }
+
+            // For successful file retrieval
+            return createFileToolState(
+                validInput.name,
+                context.content + '\nEOF', // Keep the EOF marker which can be useful
+                UIToolStatus.Done,
+                context.uri // Use the actual file URI if available
+            )
         } catch (error) {
-            return {
-                text: `Failed to read file ${validInput.name}: ${error}`,
-            }
+            // For errors during file retrieval
+            return createFileToolState(
+                validInput.name,
+                `get_file for ${validInput.name} failed: ${error}`,
+                UIToolStatus.Error
+            )
         }
     },
+}
+
+/**
+ * Creates a ContextItemToolState for file retrieval operations
+ */
+function createFileToolState(
+    filePath: string,
+    content: string,
+    status: UIToolStatus,
+    uri?: URI
+): ContextItemToolState {
+    const toolId = `get_file-${filePath.replace(/[^\w]/g, '_')}-${Date.now()}`
+
+    return {
+        type: 'tool-state',
+        toolId,
+        toolName: 'get_file',
+        status,
+        outputType: 'file-view',
+
+        // ContextItemCommon properties
+        uri: uri || URI.parse(`cody:/tools/file/${toolId}`),
+        content,
+        title: filePath,
+        description: `File: ${filePath}`,
+        source: ContextItemSource.Agentic,
+        icon: 'file-code',
+        metadata: [
+            `File: ${filePath}`,
+            `Status: ${status}`,
+            `Content Length: ${content.length} characters`,
+        ],
+    }
 }

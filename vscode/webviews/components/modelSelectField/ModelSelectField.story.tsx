@@ -25,6 +25,14 @@ const MODELS: Model[] = [
         usage: [ModelUsage.Chat],
         tags: [ModelTag.Pro, ModelTag.Experimental],
     },
+    {
+        title: 'Claude 3.7 Sonnet',
+        provider: 'anthropic',
+        id: 'anthropic/claude-3-7-sonnet',
+        contextWindow: { input: 175000, output: 8000 },
+        usage: [ModelUsage.Chat],
+        tags: [ModelTag.Power],
+    },
 ]
 
 const meta: Meta<typeof ModelSelectField> = {
@@ -82,5 +90,16 @@ export const EnterpriseUser: Story = {
             isCodyProUser: false,
         },
         serverSentModelsEnabled: true,
+    },
+}
+
+// The model selector's value is always Claude 3.7 Sonnet in agentic mode
+export const AgenticMode: Story = {
+    args: {
+        userInfo: {
+            isDotComUser: true,
+            isCodyProUser: true,
+        },
+        intent: 'agentic',
     },
 }

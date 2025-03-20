@@ -31,6 +31,7 @@ public abstract class FileActionBase extends DumbAwareEDTAction {
     if (editor == null) {
       return;
     }
+
     VirtualFile currentFile = event.getData(CommonDataKeys.VIRTUAL_FILE);
     if (currentFile == null) {
       return;

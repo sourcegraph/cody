@@ -24,6 +24,7 @@ const historyStore = new Map<string, HistoryItem>()
 
 /**
  * Initialize the edit history source control UI
+ * NOTE: Temporary disabled due to abort issue caused by auto edit
  */
 export function initializeEditToolHistory(): vscode.Disposable[] {
     if (editSourceControl) {
