@@ -547,10 +547,15 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
 
     private async getConfigForWebview(): Promise<ConfigurationSubsetForWebview & LocalEnv> {
         const { configuration, auth } = await currentResolvedConfig()
-        const experimentalPromptEditorEnabled = await firstValueFrom(
-            featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyExperimentalPromptEditor)
-        )
-        const experimentalAgenticChatEnabled = isS2(auth.serverEndpoint)
+        const [experimentalPromptEditorEnabled, internalAgenticChatEnabled] = await Promise.all([
+            firstValueFrom(
+                featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyExperimentalPromptEditor)
+            ),
+            firstValueFrom(
+                featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.NextAgenticChatInternal)
+            ),
+        ])
+        const experimentalAgenticChatEnabled = internalAgenticChatEnabled && isS2(auth.serverEndpoint)
         const sidebarViewOnly = this.extensionClient.capabilities?.webviewNativeConfig?.view === 'single'
         const isEditorViewType = this.webviewPanelOrView?.viewType === 'cody.editorPanel'
         const webviewType = isEditorViewType && !sidebarViewOnly ? 'editor' : 'sidebar'

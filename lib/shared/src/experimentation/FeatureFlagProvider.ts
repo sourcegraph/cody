@@ -134,6 +134,12 @@ export enum FeatureFlag {
 
     // Extend context window for Cody Clients
     LongContextWindow = 'long-context-window',
+
+    /**
+     * Internal use only. Enables the next agentic chat experience.
+     * This is not for external use and should not be exposed to users.
+     */
+    NextAgenticChatInternal = 'next-agentic-chat-internal',
 }
 
 const ONE_HOUR = 60 * 60 * 1000
