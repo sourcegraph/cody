@@ -53,9 +53,7 @@ open class AutocompleteActionHandler : EditorActionHandler() {
    * edit item as completion item because it contains enough information (id, range, insertText) to
    * proceed with applying the insert.
    */
-  protected fun getCurrentAutoeditItemAsCompletionItem(
-      editor: Editor
-  ): AutocompleteItem? {
+  protected fun getCurrentAutoeditItemAsCompletionItem(editor: Editor): AutocompleteItem? {
     val service = editor.project?.getService(AutoeditManager::class.java)
     return if (editor == service?.activeAutoeditEditor) {
       service.activeAutocompleteEditItem?.toCompletionItem()
