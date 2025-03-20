@@ -160,22 +160,20 @@ export class ShortTermPromptStrategy extends AutoeditsUserPromptStrategy {
             }
         }
 
-        const recentlyViewedShortTermSnippets = getRecentlyViewedSnippetsPrompt(shortTermViewedSnippets)
         const shortTermViewPrompt =
-            recentlyViewedShortTermSnippets.length > 0
-                ? joinPromptsWithNewlineSeparator(
+            shortTermViewedSnippets.length > 0
+                ? joinPromptsWithNewlineSeparator([
                       constants.SHORT_TERM_SNIPPET_VIEWS_INSTRUCTION,
-                      recentlyViewedShortTermSnippets
-                  )
+                      getRecentlyViewedSnippetsPrompt(shortTermViewedSnippets),
+                  ])
                 : ps``
 
-        const recentlyViewedLongTermSnippets = getRecentlyViewedSnippetsPrompt(longTermViewedSnippets)
         const longTermViewPrompt =
-            recentlyViewedLongTermSnippets.length > 0
-                ? joinPromptsWithNewlineSeparator(
+            longTermViewedSnippets.length > 0
+                ? joinPromptsWithNewlineSeparator([
                       constants.LONG_TERM_SNIPPET_VIEWS_INSTRUCTION,
-                      recentlyViewedLongTermSnippets
-                  )
+                      getRecentlyViewedSnippetsPrompt(longTermViewedSnippets),
+                  ])
                 : ps``
 
         return {
@@ -230,9 +228,9 @@ export class ShortTermPromptStrategy extends AutoeditsUserPromptStrategy {
             combinedContextItems.push(combinedItem)
         }
 
-        return joinPromptsWithNewlineSeparator(
+        return joinPromptsWithNewlineSeparator([
             constants.RECENT_EDITS_INSTRUCTION,
-            getRecentEditsPrompt(combinedContextItems)
-        )
+            getRecentEditsPrompt(combinedContextItems),
+        ])
     }
 }

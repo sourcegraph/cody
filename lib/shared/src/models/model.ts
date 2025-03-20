@@ -230,6 +230,10 @@ export function getServerModelTags(
     if (capabilities.includes('vision')) {
         tags.push(ModelTag.Vision)
     }
+
+    if (capabilities.includes('reasoning')) {
+        tags.push(ModelTag.Reasoning)
+    }
     // TODO (bee) removes once o1 is rolled out.
     // HACK: Currently only o1 models are waitlisted,
     // so we can use this to determine if a model is stream-disabled.
