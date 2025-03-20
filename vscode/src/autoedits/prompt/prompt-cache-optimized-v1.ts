@@ -100,10 +100,10 @@ export class PromptCacheOptimizedV1 extends AutoeditsUserPromptStrategy {
             )
             .slice(0, this.SNIPPET_VIEW_MAX_COUNT)
 
-        return joinPromptsWithNewlineSeparator(
+        return joinPromptsWithNewlineSeparator([
             constants.SHORT_TERM_SNIPPET_VIEWS_INSTRUCTION,
-            getRecentlyViewedSnippetsPrompt(recentViewedSnippets)
-        )
+            getRecentlyViewedSnippetsPrompt(recentViewedSnippets),
+        ])
     }
 
     private getRecentEditsPromptComponents(
@@ -138,10 +138,10 @@ export class PromptCacheOptimizedV1 extends AutoeditsUserPromptStrategy {
         if (snippets.length === 0) {
             return ps``
         }
-        return joinPromptsWithNewlineSeparator(
+        return joinPromptsWithNewlineSeparator([
             constants.RECENT_EDITS_INSTRUCTION,
-            getRecentEditsPrompt(snippets)
-        )
+            getRecentEditsPrompt(snippets),
+        ])
     }
 
     private splitContextItemsIntoShortAndLongTerm(
