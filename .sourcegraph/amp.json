@@ -1,0 +1,13 @@
+{
+  "commands": {
+    "allowlist": [
+      "pnpm run dev", 
+      "git stash", 
+      "cargo build --release",
+      "cd",
+      "ls",
+      "pwd",
+      "npm run test:unit"
+    ]
+  }
+}
