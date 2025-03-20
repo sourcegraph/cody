@@ -139,7 +139,7 @@ export const autoeditAcceptReason = {
 } as const
 
 export type AutoeditAcceptReasonMetadata =
-    (typeof autoeditRejectReason)[keyof typeof autoeditRejectReason]
+    (typeof autoeditAcceptReason)[keyof typeof autoeditAcceptReason]
 
 /**
  * A stable ID that identifies a particular autoedit suggestion. If the same text
