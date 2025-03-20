@@ -129,7 +129,8 @@ internal class WebUIProxy(private val host: WebUIHost, private val browser: JBCe
             event.component.javaClass.name ==
                 "com.intellij.ui.jcef.JBCefOsrComponent" // about 30% faster than
         try {
-          // if the event is destined for Cef component and it's already consumed, try to un-consume it
+          // if the event is destined for Cef component and it's already consumed, try to un-consume
+          // it
           if (isCefComponent &&
               event.isConsumed &&
               (event.keyCode == KeyEvent.VK_ENTER ||
