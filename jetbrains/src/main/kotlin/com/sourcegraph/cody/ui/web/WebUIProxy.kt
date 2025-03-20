@@ -3,7 +3,6 @@ package com.sourcegraph.cody.ui.web
 import com.google.gson.GsonBuilder
 import com.google.gson.JsonParser
 import com.intellij.openapi.application.ApplicationManager
-import com.intellij.openapi.components.service
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.ide.CopyPasteManager
 import com.intellij.openapi.project.ProjectManager
@@ -67,7 +66,6 @@ private const val MAIN_RESOURCE_URL = "${PSEUDO_HOST_URL_PREFIX}main-resource-no
 internal class WebUIProxy(private val host: WebUIHost, private val browser: JBCefBrowserBase) {
   companion object {
     private val logger = Logger.getInstance(WebUIProxy::class.java)
-    private val sentryService = service<SentryService>()
 
     /**
      * TODO: Hopefully this can be removed when JetBrains will patch focus handler implementation
@@ -147,7 +145,7 @@ internal class WebUIProxy(private val host: WebUIHost, private val browser: JBCe
             } catch (e: Exception) {
               val message = "Un-consuming the event keys failed."
               logger.warn(message, e)
-              // sentryService.report(e, message)
+              SentryService.report(e, message, null)
             }
           }
           false // Don't consume the event
