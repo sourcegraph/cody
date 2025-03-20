@@ -1736,7 +1736,13 @@ function catchHTTPError(
             error = `ETIMEDOUT: timed out after ${DEFAULT_TIMEOUT_MSEC}ms`
         }
         const code = `${(typeof error === 'object' && error ? (error as any).code : undefined) ?? ''} `
-        return new Error(`accessing Sourcegraph HTTP API: ${code}${error} (${url})`)
+
+        logError(
+            'SourcegraphGraphQLAPIClient',
+            'catchHTTPError',
+            `accessing Sourcegraph HTTP API: ${code}${error} (${url})`
+        )
+        return new Error('Oops, we encountered a timeout error, please retry the request')
     }
 }
 
