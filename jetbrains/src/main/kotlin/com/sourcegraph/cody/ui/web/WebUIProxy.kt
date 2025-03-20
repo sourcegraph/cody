@@ -3,6 +3,7 @@ package com.sourcegraph.cody.ui.web
 import com.google.gson.GsonBuilder
 import com.google.gson.JsonParser
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.components.service
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.ide.CopyPasteManager
 import com.intellij.openapi.project.ProjectManager
@@ -13,6 +14,7 @@ import com.sourcegraph.cody.agent.CodyAgent
 import com.sourcegraph.cody.agent.CodyAgentService
 import com.sourcegraph.cody.agent.protocol.WebviewOptions
 import com.sourcegraph.cody.config.CodyApplicationSettings
+import com.sourcegraph.cody.error.SentryService
 import com.sourcegraph.cody.sidebar.WebTheme
 import com.sourcegraph.cody.telemetry.TelemetryV2
 import com.sourcegraph.common.BrowserOpener
@@ -65,6 +67,7 @@ private const val MAIN_RESOURCE_URL = "${PSEUDO_HOST_URL_PREFIX}main-resource-no
 internal class WebUIProxy(private val host: WebUIHost, private val browser: JBCefBrowserBase) {
   companion object {
     private val logger = Logger.getInstance(WebUIProxy::class.java)
+    private val sentryService = service<SentryService>()
 
     /**
      * TODO: Hopefully this can be removed when JetBrains will patch focus handler implementation
@@ -116,10 +119,10 @@ internal class WebUIProxy(private val host: WebUIHost, private val browser: JBCe
 
     /**
      * WORKAROUND: Rider, and potentially other IDEs, has a bug where they don't properly handle key
-     * events that should go to the Cef component, but instead they are swallowed, probably by others
-     * dispatchers from KeyboardFocusManager.keyEventDispatcher) . This is
-     * a workaround to make sure that the Cef component gets the key events like Enter, Shift+Enter,
-     * Delete, and Backspace even when they will be consumed by the processing pipeline.
+     * events that should go to the Cef component, but instead they are swallowed, probably by
+     * others dispatchers from KeyboardFocusManager.keyEventDispatcher) . This is a workaround to
+     * make sure that the Cef component gets the key events like Enter, Shift+Enter, Delete, and
+     * Backspace even when they will be consumed by the processing pipeline.
      */
     private fun registerCustomEventDispatcher() {
       KeyboardFocusManager.getCurrentKeyboardFocusManager().addKeyEventDispatcher { event: KeyEvent
@@ -142,7 +145,9 @@ internal class WebUIProxy(private val host: WebUIHost, private val browser: JBCe
                 consumedField.setBoolean(event, false)
               }
             } catch (e: Exception) {
-              logger.warn("Un-consuming the event keys failed.", e)
+              val message = "Un-consuming the event keys failed."
+              logger.warn(message, e)
+              // sentryService.report(e, message)
             }
           }
           false // Don't consume the event
