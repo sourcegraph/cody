@@ -12,7 +12,7 @@ import { useConfig } from '../../../../../../utils/useConfig'
 const isMac = isMacOS()
 
 export enum IntentEnum {
-    Agentic = 'Agentic',
+    Agentic = 'Agent',
     Chat = 'Chat',
     Search = 'Search',
     Edit = 'Edit',
@@ -66,7 +66,7 @@ function getIntentOptions({
             disabled: isDotComUser,
         },
         {
-            title: 'Agentic',
+            title: 'Agent',
             badge: agenticChatEnabled ? 'Experimental' : 'Pro',
             icon: Sparkle,
             intent: 'agentic',
