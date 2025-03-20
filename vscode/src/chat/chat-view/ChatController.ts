@@ -551,9 +551,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             firstValueFrom(
                 featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyExperimentalPromptEditor)
             ),
-            firstValueFrom(
-                featureFlagProvider.evaluateFeatureFlag(FeatureFlag.NextAgenticChatInternal)
-            ),
+            firstValueFrom(featureFlagProvider.evaluateFeatureFlag(FeatureFlag.NextAgenticChatInternal)),
         ])
         const experimentalAgenticChatEnabled = internalAgenticChatEnabled && isS2(auth.serverEndpoint)
         const sidebarViewOnly = this.extensionClient.capabilities?.webviewNativeConfig?.view === 'single'
