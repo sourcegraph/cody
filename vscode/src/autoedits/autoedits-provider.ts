@@ -58,7 +58,7 @@ export const AUTOEDIT_CONTEXT_FETCHING_DEBOUNCE_INTERVAL = 10
 const RESET_SUGGESTION_ON_CURSOR_CHANGE_AFTER_INTERVAL_MS = 60 * 1000
 const ON_SELECTION_CHANGE_DEFAULT_DEBOUNCE_INTERVAL_MS = 15
 
-interface AutoEditEditItem extends AutocompleteEditItem {
+interface AutoeditEditItem extends AutocompleteEditItem {
     id: AutoeditRequestID
 }
 
@@ -66,7 +66,7 @@ export interface AutoeditsResult {
     /** @deprecated Use `inlineCompletionItems` instead. */
     items: AutoeditCompletionItem[]
     inlineCompletionItems: AutoeditCompletionItem[]
-    decoratedEditItems: AutoEditEditItem[]
+    decoratedEditItems: AutoeditEditItem[]
     completionEvent?: CompletionBookkeepingEvent
 }
 
