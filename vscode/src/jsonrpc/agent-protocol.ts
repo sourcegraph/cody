@@ -567,7 +567,7 @@ export interface AutocompleteEditItem {
     }
 }
 
-export interface AutocompleteCompletionItem {
+export interface AutocompleteItem {
     id: string
     range: Range
     insertText: string
@@ -575,8 +575,8 @@ export interface AutocompleteCompletionItem {
 
 export interface AutocompleteResult {
     /** @deprecated Use `inlineCompletionItems` instead. */
-    items: AutocompleteCompletionItem[]
-    inlineCompletionItems: AutocompleteCompletionItem[]
+    items: AutocompleteItem[]
+    inlineCompletionItems: AutocompleteItem[]
     decoratedEditItems: AutocompleteEditItem[]
     completionEvent?: CompletionBookkeepingEvent | undefined | null
 }

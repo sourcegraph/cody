@@ -92,7 +92,7 @@ import {
 } from './jsonrpc-alias'
 import { getLanguageForFileName } from './language'
 import type {
-    AutocompleteCompletionItem,
+    AutocompleteItem,
     ClientInfo,
     CodyError,
     CustomCommandResult,
@@ -983,7 +983,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
                 }
 
                 // Client can only render completions, ensure we only provide completion items.
-                const items: AutocompleteCompletionItem[] =
+                const items: AutocompleteItem[] =
                     result.items.flatMap(({ insertText, range, id }) =>
                         typeof insertText === 'string' && range !== undefined
                             ? [
