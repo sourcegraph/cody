@@ -624,7 +624,7 @@ const modelTypes = [
     { name: 'Claude', modelName: 'claude-3-opus', provider: 'anthropic' },
     { name: 'Gemini', modelName: 'gemini-1.5-pro', provider: 'google' },
     { name: 'OpenAI o series', modelName: 'gpt-o1', provider: 'openai' },
-    { name: 'OpenAI gpt series', modelName: 'gpt-4o', provider: 'openai' },
+    { name: 'OpenAI gpt', modelName: 'gpt-4o', provider: 'openai' },
 ]
 const userTiers = ['free', 'pro', 'enterprise'] as const
 const featureFlagStates = [true, false]
@@ -812,7 +812,9 @@ describe('maybeAdjustContextWindows', () => {
         }
     })
     for (const testCase of contextWindowTestCases) {
-        it(`${testCase.name} model with userTier=${testCase.userTier}, featureFlag=${testCase.featureFlagEnabled}, reasoning=${testCase.isReasoning}`, () => {
+        const reasoningModel = testCase.isReasoning ? ' with reasoning ' : ' '
+        const featureFlagValue = testCase.featureFlagEnabled ? 'enabled' : 'disabled'
+        it(`${testCase.name} model(${testCase.model.displayName})${reasoningModel}for ${testCase.userTier} users and with the feature flag ${featureFlagValue}`, () => {
             const result = maybeAdjustContextWindows([testCase.model], {
                 tier: testCase.userTier,
                 longContextWindowFlagEnabled: testCase.featureFlagEnabled,
