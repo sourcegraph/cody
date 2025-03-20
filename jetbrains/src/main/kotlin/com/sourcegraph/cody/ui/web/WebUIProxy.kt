@@ -116,8 +116,8 @@ internal class WebUIProxy(private val host: WebUIHost, private val browser: JBCe
 
     /**
      * WORKAROUND: Rider, and potentially other IDEs, has a bug where they don't properly handle key
-     * events that should go to the Cef component, but instead they are swallowed (by others
-     * dispatchers - KeyboardFocusManager.keyEventDispatcher - like ToolWindowDragHelper) . This is
+     * events that should go to the Cef component, but instead they are swallowed, probably by others
+     * dispatchers from KeyboardFocusManager.keyEventDispatcher) . This is
      * a workaround to make sure that the Cef component gets the key events like Enter, Shift+Enter,
      * Delete, and Backspace even when they will be consumed by the processing pipeline.
      */
@@ -130,10 +130,8 @@ internal class WebUIProxy(private val host: WebUIHost, private val browser: JBCe
         if (!isCefComponent) {
           false
         } else {
-          if (event.isConsumed) {
+          if (event.isConsumed) { // if the event is already consumed, try to un-consume it
             try {
-              println("Key event: " + event.keyCode + ", consumed: " + event.isConsumed)
-
               if (event.keyCode == KeyEvent.VK_ENTER ||
                   event.keyCode == KeyEvent.VK_DELETE ||
                   event.keyCode == KeyEvent.VK_BACK_SPACE) {
@@ -142,11 +140,9 @@ internal class WebUIProxy(private val host: WebUIHost, private val browser: JBCe
                 val consumedField = AWTEvent::class.java.getDeclaredField("consumed")
                 consumedField.isAccessible = true
                 consumedField.setBoolean(event, false)
-                println("Successfully un-consumed the event")
               }
             } catch (e: Exception) {
-              e.printStackTrace()
-              logger.error("Un-consuming the event keys failed.", e)
+              logger.warn("Un-consuming the event keys failed.", e)
             }
           }
           false // Don't consume the event
