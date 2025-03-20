@@ -6,7 +6,7 @@ import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.editor.Caret
 import com.intellij.openapi.editor.Editor
 import com.sourcegraph.cody.agent.CodyAgentService
-import com.sourcegraph.cody.agent.protocol_generated.AutocompleteCompletionItem
+import com.sourcegraph.cody.agent.protocol_generated.AutocompleteItem
 import com.sourcegraph.cody.autocomplete.CodyAutocompleteManager
 import com.sourcegraph.utils.CodyEditorUtil
 import java.util.concurrent.ConcurrentHashMap
@@ -64,7 +64,6 @@ class CycleCodyAutocompleteActionHandler(private val cycleDirection: CycleDirect
 
     infix fun Editor.cycleAutocompleteCacheKey(caret: Caret) = CacheKey(caret, this)
 
-    private val autocompleteItemsCache =
-        ConcurrentHashMap<CacheKey, List<AutocompleteCompletionItem>>()
+    private val autocompleteItemsCache = ConcurrentHashMap<CacheKey, List<AutocompleteItem>>()
   }
 }
