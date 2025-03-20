@@ -164,9 +164,7 @@ describe('getCurrentFilePromptComponents', () => {
         expect(result.fileWithMarkerPrompt.toString()).toBe(dedent`
             (\`test.ts\`)
             <file>
-
             <<<AREA_AROUND_CODE_TO_REWRITE_WILL_BE_INSERTED_HERE>>>
-
             </file>
         `)
         expect(result.areaPrompt.toString()).toBe(dedent`
