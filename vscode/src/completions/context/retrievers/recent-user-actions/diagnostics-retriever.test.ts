@@ -2,7 +2,13 @@ import dedent from 'dedent'
 import { XMLParser } from 'fast-xml-parser'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import * as vscode from 'vscode'
-import { document } from '../../../test-helpers'
+import { getCurrentDocContext } from '../../../get-current-doc-context'
+import {
+    CURSOR_MARKER,
+    document,
+    documentAndPosition,
+    mockNotebookAndPosition,
+} from '../../../test-helpers'
 import { DiagnosticsRetriever } from './diagnostics-retriever'
 
 describe('DiagnosticsRetriever', () => {
@@ -20,6 +26,8 @@ describe('DiagnosticsRetriever', () => {
         source,
         relatedInformation,
     })
+
+    let onDidChangeDiagnostics: (event: vscode.DiagnosticChangeEvent) => void
 
     describe('DiagnosticsRetrieverWithXMLRendering', () => {
         let retriever: DiagnosticsRetriever
@@ -48,10 +56,18 @@ describe('DiagnosticsRetriever', () => {
 
         beforeEach(() => {
             vi.useFakeTimers()
-            retriever = new DiagnosticsRetriever({
-                contextLines: 3,
-                useXMLForPromptRendering: true,
-            })
+            retriever = new DiagnosticsRetriever(
+                {
+                    contextLines: 3,
+                    useXMLForPromptRendering: true,
+                },
+                {
+                    onDidChangeDiagnostics(listener) {
+                        onDidChangeDiagnostics = listener
+                        return { dispose: () => {} }
+                    },
+                }
+            )
             parser = new XMLParser()
         })
 
@@ -479,15 +495,131 @@ describe('DiagnosticsRetriever', () => {
         let retriever: DiagnosticsRetriever
 
         beforeEach(() => {
-            retriever = new DiagnosticsRetriever({
-                contextLines: 0,
-                useXMLForPromptRendering: false,
-                useCaretToIndicateErrorLocation: false,
-            })
+            retriever = new DiagnosticsRetriever(
+                {
+                    contextLines: 0,
+                    useXMLForPromptRendering: false,
+                    useCaretToIndicateErrorLocation: false,
+                },
+                {
+                    onDidChangeDiagnostics(listener) {
+                        onDidChangeDiagnostics = listener
+                        return { dispose: () => {} }
+                    },
+                }
+            )
+            vi.spyOn(retriever, 'getDiagnosticsPromptFromInformation')
+            vi.spyOn(vscode.languages, 'getDiagnostics')
         })
 
         afterEach(() => {
             retriever.dispose()
+        })
+
+        it('diagnostics change invalidates the cache', async () => {
+            const { document, position } = documentAndPosition(
+                dedent`
+                function foo(x: number) {
+                    return x.toString();
+                }
+                ${CURSOR_MARKER}
+
+                let y = foo('5');
+                let z = foo(true);
+                `,
+                'typescript'
+            )
+            const docContext = getCurrentDocContext({
+                document,
+                position,
+                maxPrefixLength: 100,
+                maxSuffixLength: 100,
+            })
+
+            await retriever.retrieve({
+                document,
+                position,
+                docContext,
+            })
+            onDidChangeDiagnostics({
+                uris: [document.uri],
+            })
+            await retriever.retrieve({
+                document,
+                position,
+                docContext,
+            })
+            expect(vscode.languages.getDiagnostics).toHaveBeenCalledTimes(2)
+        })
+
+        it('diagnostics are cached for non-notebook documents', async () => {
+            const { document, position } = documentAndPosition(
+                dedent`
+                function foo(x: number) {
+                    return x.toString();
+                }
+                ${CURSOR_MARKER}
+
+                let y = foo('5');
+                let z = foo(true);
+                `,
+                'typescript'
+            )
+            const docContext = getCurrentDocContext({
+                document,
+                position,
+                maxPrefixLength: 100,
+                maxSuffixLength: 100,
+            })
+
+            await retriever.retrieve({
+                document,
+                position,
+                docContext,
+            })
+            await retriever.retrieve({
+                document,
+                position,
+                docContext,
+            })
+            expect(vscode.languages.getDiagnostics).toHaveBeenCalledTimes(1)
+        })
+
+        it('diagnostics are cached for notebook documents as well', async () => {
+            const { notebookDoc, position } = mockNotebookAndPosition({
+                uri: 'file://test.ipynb',
+                cells: [
+                    {
+                        kind: vscode.NotebookCellKind.Code,
+                        text: `print("cell0 ${CURSOR_MARKER} code")`,
+                        languageId: 'python',
+                    },
+                ],
+            })
+
+            const testDocument = notebookDoc.cellAt(0)!.document
+            const docContext = getCurrentDocContext({
+                document: testDocument,
+                position,
+                maxPrefixLength: 100,
+                maxSuffixLength: 100,
+            })
+
+            vi.spyOn(vscode.window, 'activeNotebookEditor', 'get').mockReturnValue({
+                notebook: notebookDoc,
+            } as vscode.NotebookEditor)
+
+            await retriever.retrieve({
+                document: testDocument,
+                position,
+                docContext,
+            })
+            await retriever.retrieve({
+                document: testDocument,
+                position,
+                docContext,
+            })
+            expect(vscode.languages.getDiagnostics).toHaveBeenCalledTimes(1)
         })
 
         it('should handle diagnostics without XML rendering', async () => {
