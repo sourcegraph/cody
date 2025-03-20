@@ -195,12 +195,9 @@ describe('PromptCacheOptimizedV1', () => {
             expect(prompt.toString()).toMatchInlineSnapshot(`
               "Help me finish a coding change. You will see snippets from current open files in my editor, files I have recently viewed, the file I am editing, then a history of my recent codebase changes, then current compiler and linter errors, content I copied from my codebase. You will then rewrite the <code_to_rewrite>, to match what you think I would do next in the codebase. Note: I might have stopped in the middle of typing.
               Code snippets just I viewed:
-
               The file currently open:(\`test.ts\`)
               <file>
-
               <<<AREA_AROUND_CODE_TO_REWRITE_WILL_BE_INSERTED_HERE>>>
-
               </file>
               <area_around_code_to_rewrite>
               line 37
@@ -270,9 +267,7 @@ describe('PromptCacheOptimizedV1', () => {
               </diff_history>
               The file currently open:(\`test.ts\`)
               <file>
-
               <<<AREA_AROUND_CODE_TO_REWRITE_WILL_BE_INSERTED_HERE>>>
-
               </file>
               My recent edits, from oldest to newest:
               <diff_history>
