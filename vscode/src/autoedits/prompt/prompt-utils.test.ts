@@ -1074,9 +1074,19 @@ describe('getJaccardSimilarityPrompt', () => {
 
 describe('joinPromptsWithNewlineSeparator', () => {
     it('joins multiple prompt strings with a new line separator', () => {
-        const prompt = joinPromptsWithNewlineSeparator(ps`foo`, ps`bar`)
+        const prompt = joinPromptsWithNewlineSeparator([ps`foo`, ps`bar`])
         expect(prompt.toString()).toBe(dedent`
             foo
+            bar
+        `)
+    })
+
+    it('joins multiple prompt strings with a custom separator', () => {
+        const prompt = joinPromptsWithNewlineSeparator([ps`foo`, ps`bar`], ps`\n\n\n`)
+        expect(prompt.toString()).toBe(dedent`
+            foo
+
+
             bar
         `)
     })

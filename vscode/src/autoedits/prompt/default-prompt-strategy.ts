@@ -62,7 +62,7 @@ export class DefaultUserPromptStrategy extends AutoeditsUserPromptStrategy {
 
         const currentFilePrompt = ps`${constants.CURRENT_FILE_INSTRUCTION}${fileWithMarkerPrompt}`
 
-        const finalPrompt = joinPromptsWithNewlineSeparator(
+        const finalPrompt = joinPromptsWithNewlineSeparator([
             getPromptWithNewline(constants.BASE_USER_PROMPT),
             getPromptWithNewline(jaccardSimilarityPrompt),
             getPromptWithNewline(recentViewsPrompt),
@@ -71,8 +71,8 @@ export class DefaultUserPromptStrategy extends AutoeditsUserPromptStrategy {
             getPromptWithNewline(lintErrorsPrompt),
             getPromptWithNewline(recentCopyPrompt),
             getPromptWithNewline(areaPrompt),
-            constants.FINAL_USER_PROMPT
-        )
+            constants.FINAL_USER_PROMPT,
+        ])
 
         autoeditsOutputChannelLogger.logDebugIfVerbose('DefaultUserPromptStrategy', 'getUserPrompt', {
             verbose: shortenPromptForOutputChannel(finalPrompt.toString(), []),
