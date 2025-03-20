@@ -16,9 +16,13 @@ import com.sourcegraph.cody.config.CodyApplicationSettings
 import com.sourcegraph.cody.sidebar.WebTheme
 import com.sourcegraph.cody.telemetry.TelemetryV2
 import com.sourcegraph.common.BrowserOpener
+import java.awt.AWTEvent
 import java.awt.Component
+import java.awt.KeyboardFocusManager
 import java.awt.datatransfer.StringSelection
+import java.awt.event.KeyEvent
 import java.io.IOException
+import java.lang.Exception
 import java.net.URI
 import java.nio.ByteBuffer
 import java.nio.channels.AsynchronousFileChannel
@@ -51,10 +55,6 @@ import org.cef.network.CefRequest
 import org.cef.network.CefResponse
 import org.cef.network.CefURLRequest
 import org.cef.security.CefSSLInfo
-import java.awt.AWTEvent
-import java.awt.KeyboardFocusManager
-import java.awt.event.KeyEvent
-import java.lang.Exception
 
 private const val COMMAND_PREFIX = "command:"
 
@@ -64,6 +64,8 @@ private const val MAIN_RESOURCE_URL = "${PSEUDO_HOST_URL_PREFIX}main-resource-no
 
 internal class WebUIProxy(private val host: WebUIHost, private val browser: JBCefBrowserBase) {
   companion object {
+    private val logger = Logger.getInstance(WebUIProxy::class.java)
+
     /**
      * TODO: Hopefully this can be removed when JetBrains will patch focus handler implementation
      *   https://youtrack.jetbrains.com/issue/IJPL-158952/Focus-issue-when-using-multiple-JCEF-instances
@@ -109,27 +111,47 @@ internal class WebUIProxy(private val host: WebUIHost, private val browser: JBCe
           },
           browser.cefBrowser)
 
-        KeyboardFocusManager.getCurrentKeyboardFocusManager().addKeyEventDispatcher { e: KeyEvent ->
-            val isCefComponent = e.component.javaClass.name == "com.intellij.ui.jcef.JBCefOsrComponent" // about 30% faster than
-            // `browser.uiComponent.hasFocus()`
-            if (!isCefComponent) {
-                false
-            } else {
-                if (e.isConsumed) {
-                    try {
-                        println("Key event: " + e.keyCode + ", consumed: " + e.isConsumed)
+      registerCustomEventDispatcher()
+    }
 
-                        val consumedField = AWTEvent::class.java.getDeclaredField("consumed")
-                        consumedField.isAccessible = true
-                        consumedField.setBoolean(e, false)
-                        println("Successfully un-consumed the event")
-                    } catch (e: Exception) {
-                        e.printStackTrace()
-                    }
-                }
-                false // Don't consume the event
+    /**
+     * WORKAROUND: Rider, and potentially other IDEs, has a bug where they don't properly handle key
+     * events that should go to the Cef component, but instead they are swallowed (by others
+     * dispatchers - KeyboardFocusManager.keyEventDispatcher - like ToolWindowDragHelper) . This is
+     * a workaround to make sure that the Cef component gets the key events like Enter, Shift+Enter,
+     * Delete, and Backspace even when they will be consumed by the processing pipeline.
+     */
+    private fun registerCustomEventDispatcher() {
+      KeyboardFocusManager.getCurrentKeyboardFocusManager().addKeyEventDispatcher { event: KeyEvent
+        ->
+        val isCefComponent =
+            event.component.javaClass.name ==
+                "com.intellij.ui.jcef.JBCefOsrComponent" // about 30% faster than
+        if (!isCefComponent) {
+          false
+        } else {
+          if (event.isConsumed) {
+            try {
+              println("Key event: " + event.keyCode + ", consumed: " + event.isConsumed)
+
+              if (event.keyCode == KeyEvent.VK_ENTER ||
+                  event.keyCode == KeyEvent.VK_DELETE ||
+                  event.keyCode == KeyEvent.VK_BACK_SPACE) {
+
+                // trying to un-consume the event via reflection
+                val consumedField = AWTEvent::class.java.getDeclaredField("consumed")
+                consumedField.isAccessible = true
+                consumedField.setBoolean(event, false)
+                println("Successfully un-consumed the event")
+              }
+            } catch (e: Exception) {
+              e.printStackTrace()
+              logger.error("Un-consuming the event keys failed.", e)
             }
+          }
+          false // Don't consume the event
         }
+      }
     }
 
     fun create(host: WebUIHost): WebUIProxy {
