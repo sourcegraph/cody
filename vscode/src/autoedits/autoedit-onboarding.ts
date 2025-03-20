@@ -91,6 +91,9 @@ export class AutoEditBetaOnboarding implements vscode.Disposable {
     }
 
     private async isUserEligibleForAutoEditFeature(): Promise<boolean> {
+        if (process.env.CODY_TESTING === 'true') {
+            return false
+        }
         const authStatus = currentAuthStatus()
         const productSubscription = await currentUserProductSubscription()
         const autoEditFeatureFlag = this.isAutoEditFeatureFlagEnabled()
