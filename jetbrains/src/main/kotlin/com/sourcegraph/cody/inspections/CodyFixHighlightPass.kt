@@ -81,7 +81,7 @@ class CodyFixHighlightPass(val file: PsiFile, val editor: Editor) :
                 } else {
                   val result = CompletableFuture<List<CodeActionQuickFix>>()
 
-                  CodyAgentService.withAgentRestartIfNeeded(file.project) { agent ->
+                  CodyAgentService.withAgent(file.project) { agent ->
                     agent.server
                         .diagnostics_publish(Diagnostics_PublishParams(listOf(diagnostic)))
                         .get()
