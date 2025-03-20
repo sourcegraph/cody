@@ -26,7 +26,7 @@ import com.intellij.util.concurrency.annotations.RequiresEdt
 import com.sourcegraph.Icons
 import com.sourcegraph.cody.CodyToolWindowContent
 import com.sourcegraph.cody.agent.CodyAgentService
-import com.sourcegraph.cody.agent.protocol_generated.AutocompleteCompletionItem
+import com.sourcegraph.cody.agent.protocol_generated.AutocompleteItem
 import com.sourcegraph.cody.agent.protocol_generated.AutocompleteResult
 import com.sourcegraph.cody.agent.protocol_generated.CompletionItemParams
 import com.sourcegraph.cody.auth.CodyAuthService
@@ -238,7 +238,7 @@ class CodyAutocompleteManager {
   fun displayAutocomplete(
       editor: Editor,
       cursorOffset: Int,
-      items: List<AutocompleteCompletionItem>,
+      items: List<AutocompleteItem>,
       inlayModel: InlayModel,
   ) {
     if (editor.isDisposed) {
