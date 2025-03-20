@@ -1,5 +1,6 @@
+import { testFileUri } from '@sourcegraph/cody-shared'
 import { describe, expect, it } from 'vitest'
-import { diffWithLineNum } from './diff'
+import { diffWithLineNum, getFileDiff } from './diff'
 
 describe('diffWithLineNum', () => {
     it('should generate markdown diff for added content', () => {
@@ -125,5 +126,78 @@ describe('diffWithLineNum', () => {
 
         // Save the result as a snapshot and compare with it on future test runs
         expect(diffWithLineNum(oldText, newText)).toMatchSnapshot()
+    })
+})
+describe('getFileDiff', () => {
+    it('should generate markdown diff for file changes', () => {
+        const oldText = 'First line\nSecond line'
+        const newText = 'First line\nModified line'
+        const filePath = '/file.ts'
+        const uri = testFileUri(filePath)
+
+        const result = getFileDiff(uri, oldText, newText)
+
+        expect(result.changes.length).toEqual(4)
+        expect(result.changes.filter(c => c.type === 'unchanged').length).toEqual(2)
+        expect(result.changes.filter(c => c.type === 'added').length).toEqual(1)
+        expect(result.changes.filter(c => c.type === 'removed').length).toEqual(1)
+        expect(result.total.added).toEqual(0)
+        expect(result.total.removed).toEqual(0)
+        expect(result.total.modified).toEqual(1)
+    })
+
+    it('should handle empty file contents', () => {
+        const filePath = '/empty.ts'
+        const uri = testFileUri(filePath)
+
+        const result = getFileDiff(uri, '', '')
+
+        expect(result.changes.length).toEqual(1)
+        expect(result.changes.filter(c => c.type === 'unchanged').length).toEqual(1)
+        expect(result.changes.filter(c => c.type === 'added').length).toEqual(0)
+        expect(result.changes.filter(c => c.type === 'removed').length).toEqual(0)
+        expect(result.total.added).toEqual(0)
+        expect(result.total.removed).toEqual(0)
+        expect(result.total.modified).toEqual(0)
+    })
+
+    it('should handle new files', () => {
+        const newText = 'First line\nSecond line'
+        const filePath = '/new.ts'
+        const uri = testFileUri(filePath)
+
+        const result = getFileDiff(uri, '', newText)
+
+        expect(result.changes.filter(c => c.type === 'unchanged').length).toEqual(1)
+        expect(result.changes.filter(c => c.type === 'added').length).toEqual(2)
+        expect(result.changes.filter(c => c.type === 'removed').length).toEqual(0)
+        expect(result.total.added).toEqual(2)
+        expect(result.total.removed).toEqual(0)
+        expect(result.total.modified).toEqual(0)
+    })
+
+    it('should handle deleted files', () => {
+        const oldText = 'First line\nSecond line'
+        const filePath = '/deleted.ts'
+        const uri = testFileUri(filePath)
+
+        const result = getFileDiff(uri, oldText, '')
+
+        expect(result.changes.filter(c => c.type === 'unchanged').length).toEqual(1)
+        expect(result.changes.filter(c => c.type === 'added').length).toEqual(0)
+        expect(result.changes.filter(c => c.type === 'removed').length).toEqual(2)
+        expect(result.total.added).toEqual(0)
+        expect(result.total.removed).toEqual(2)
+        expect(result.total.modified).toEqual(0)
+    })
+
+    // TODO: (bee) update snapshot to not match uri on windows
+    it.skip('should match snapshot for complex file diff', () => {
+        const oldText = 'Header line\nFirst paragraph\nSecond paragraph\nFooter line'
+        const newText =
+            'Header line\nFirst paragraph with changes\nNew paragraph\nSecond paragraph\nFooter line with edits'
+        const uri = testFileUri('/complex.md')
+
+        expect(getFileDiff(uri, oldText, newText)).toMatchSnapshot({})
     })
 })

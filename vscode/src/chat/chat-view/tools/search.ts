@@ -1,5 +1,15 @@
 import type { Span } from '@opentelemetry/api'
-import { PromptString, displayPath, firstValueFrom, pendingOperation } from '@sourcegraph/cody-shared'
+import {
+    type ContextItem,
+    ContextItemSource,
+    PromptString,
+    UIToolStatus,
+    displayPath,
+    firstValueFrom,
+    pendingOperation,
+} from '@sourcegraph/cody-shared'
+import type { ContextItemToolState } from '@sourcegraph/cody-shared/src/codebase-context/messages'
+import { URI } from 'vscode-uri'
 import type { AgentTool } from '.'
 import { getCorpusContextItemsForEditorState } from '../../initialContext'
 import { type ContextRetriever, toStructuredMentions } from '../ContextRetriever'
@@ -11,7 +21,7 @@ export async function getCodebaseSearchTool(
     contextRetriever: Pick<ContextRetriever, 'retrieveContext' | 'computeDidYouMean'>,
     span: Span
 ): Promise<AgentTool> {
-    const searchTool = {
+    const searchTool: AgentTool = {
         spec: {
             name: 'code_search',
             description: 'Perform a keyword query search in the codebase.',
@@ -21,40 +31,78 @@ export async function getCodebaseSearchTool(
             const validInput = validateWithZod(CodeSearchSchema, input, 'code_search')
             const corpusItems = await firstValueFrom(getCorpusContextItemsForEditorState())
             if (!corpusItems || corpusItems === pendingOperation)
-                return { text: 'Codebase search failed.' }
+                return createSearchToolStateItem(
+                    validInput.query,
+                    [],
+                    UIToolStatus.Error,
+                    'Codebase search failed.'
+                )
 
             const repo = corpusItems.find(i => i.type === 'tree' || i.type === 'repository')
-            if (!repo) return { text: 'Codebase search failed - not in valid workspace.' }
-
-            const output = [`Searched '${validInput.query}'`]
+            const mentions = repo ? [repo] : []
 
             const searches = await contextRetriever.retrieveContext(
-                toStructuredMentions([repo]),
+                toStructuredMentions(mentions),
                 PromptString.unsafe_fromLLMResponse(validInput.query),
                 span,
                 undefined,
                 true
             )
 
-            if (!searches.length) {
-                output.push('No results found.')
-                return { text: output.join('\n') }
-            }
-
-            output.push(`Found ${searches.length} results`)
-
-            // Only show the last 5 results
-            const resultContext = searches.map(({ uri, content }) => {
-                if (!content?.length) return ''
-                const remote = !uri.scheme.startsWith('file') && uri.path?.split('/-/blob/')?.pop()
-                return remote || displayPath(uri)
-            })
-
-            output.push(resultContext.join('\n'))
-
-            return { text: output.join('\n'), contextItems: searches.splice(0, searches.length - 5) }
+            return createSearchToolStateItem(validInput.query, searches)
         },
-    } satisfies AgentTool
+    }
 
     return searchTool
+}
+
+export function createSearchToolStateItem(
+    query: string,
+    searchResults: ContextItem[],
+    status: UIToolStatus = UIToolStatus.Done,
+    error?: string,
+    startTime?: number
+): ContextItemToolState {
+    // Calculate duration if we have a start time
+    const duration = startTime ? Date.now() - startTime : undefined
+
+    // Create a virtual URI for this tool state
+    const uri = URI.parse(`cody:/tools/search/${query}`)
+
+    // Create a description based on query and result count
+    const description = `Search for "${query}" (${searchResults.length} results)\n`
+
+    // Group search results by file name with code content
+    const groupedResults = searchResults
+        .map(({ uri, content }) => {
+            if (!content?.length) return ''
+            const remote = !uri.scheme.startsWith('file') && uri.path?.split('/-/blob/')?.pop()
+            const filePath = remote || displayPath(uri)
+            return `\`\`\`${filePath}\n${content}\n\`\`\`\n`
+        })
+        .join('\n\n')
+
+    return {
+        type: 'tool-state',
+        toolId: `search-${query}`,
+        toolName: 'search',
+        status,
+        duration,
+        outputType: 'search-result',
+        searchResultItems: searchResults,
+
+        // ContextItemCommon properties
+        uri,
+        content: description + groupedResults + error,
+        title: 'Search Results',
+        description,
+        source: ContextItemSource.Agentic,
+        icon: 'search',
+        metadata: [
+            `Query: ${query}`,
+            `Results: ${searchResults.length}`,
+            `Status: ${status}`,
+            ...(duration ? [`Duration: ${duration}ms`] : []),
+        ],
+    }
 }

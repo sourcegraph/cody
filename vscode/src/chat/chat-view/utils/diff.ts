@@ -1,4 +1,6 @@
+import type { UIDiffLine, UIFileDiff } from '@sourcegraph/cody-shared'
 import * as Diff from 'diff'
+import type { URI } from 'vscode-uri'
 
 /**
  * Generate a markdown git diff with line numbers, showing only the section with changes
@@ -124,4 +126,71 @@ export function diffWithLineNum(oldText: string, newText: string): string {
 
     output += '```'
     return output
+}
+
+export function getFileDiff(uri: URI, oldText: string, newText: string): UIFileDiff {
+    const diff = Diff.diffLines(oldText, newText)
+    const changes: UIDiffLine[] = []
+    const total = {
+        added: 0,
+        removed: 0,
+        modified: 0,
+    }
+
+    let oldLineCounter = 1
+    let newLineCounter = 1
+
+    // Add hunk header for context
+    changes.push({
+        type: 'unchanged',
+        content: `@@ -1,${oldText.split('\n').length} +1,${newText.split('\n').length} @@`,
+        lineNumber: Math.min(oldLineCounter, newLineCounter),
+    })
+
+    for (const part of diff) {
+        const lines = part.value.split('\n')
+        // Remove empty line that comes from split when there's a newline at the end
+        if (lines[lines.length - 1] === '') {
+            lines.pop()
+        }
+
+        for (const line of lines) {
+            if (part.added) {
+                changes.push({
+                    type: 'added',
+                    content: line,
+                    lineNumber: newLineCounter,
+                })
+                newLineCounter++
+                total.added++
+            } else if (part.removed) {
+                changes.push({
+                    type: 'removed',
+                    content: line,
+                    lineNumber: oldLineCounter,
+                })
+                oldLineCounter++
+                total.removed++
+            } else {
+                changes.push({
+                    type: 'unchanged',
+                    content: line,
+                    lineNumber: oldLineCounter, // Using old line number for unchanged lines
+                })
+                oldLineCounter++
+                newLineCounter++
+            }
+        }
+    }
+
+    // For modified lines, count the minimum of added and removed
+    total.modified = Math.min(total.added, total.removed)
+    total.added -= total.modified
+    total.removed -= total.modified
+
+    return {
+        uri,
+        total,
+        changes,
+    }
 }

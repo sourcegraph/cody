@@ -1,10 +1,11 @@
+import { ContextItemSource, UIToolStatus } from '@sourcegraph/cody-shared'
+import type { ContextItemToolState } from '@sourcegraph/cody-shared/src/codebase-context/messages'
+import { URI } from 'vscode-uri'
 import type { AgentTool } from '.'
 import { getContextFromRelativePath } from '../../../commands/context/file-path'
 import { validateWithZod } from '../utils/input'
 import { zodToolSchema } from '../utils/parse'
 import { type GetFileInput, GetFileSchema } from './schema'
-
-const CONTEXT_TEMPLATE = '```{{FILENAME}}\n{{CONTENT}}\n```'
 
 export const getFileTool: AgentTool = {
     spec: {
@@ -21,17 +22,53 @@ export const getFileTool: AgentTool = {
                 throw new Error(`File ${validInput.name} not found or empty`)
             }
 
-            return {
-                text: CONTEXT_TEMPLATE.replace('{{FILENAME}}', validInput.name).replace(
-                    '{{CONTENT}}',
-                    context.content + '\nEOF'
-                ),
-                contextItems: [context],
-            }
+            // For successful file retrieval
+            return createFileToolState(
+                validInput.name,
+                context.content + '\nEOF', // Keep the EOF marker which can be useful
+                UIToolStatus.Done,
+                context.uri // Use the actual file URI if available
+            )
         } catch (error) {
-            return {
-                text: `get_file for ${validInput.name} failed: ${error}`,
-            }
+            // For errors during file retrieval
+            return createFileToolState(
+                validInput.name,
+                `get_file for ${validInput.name} failed: ${error}`,
+                UIToolStatus.Error
+            )
         }
     },
+}
+
+/**
+ * Creates a ContextItemToolState for file retrieval operations
+ */
+function createFileToolState(
+    filePath: string,
+    content: string,
+    status: UIToolStatus,
+    uri?: URI
+): ContextItemToolState {
+    const toolId = `get_file-${filePath.replace(/[^\w]/g, '_')}-${Date.now()}`
+
+    return {
+        type: 'tool-state',
+        toolId,
+        toolName: 'get_file',
+        status,
+        outputType: 'file-view',
+
+        // ContextItemCommon properties
+        uri: uri || URI.parse(`cody:/tools/file/${toolId}`),
+        content,
+        title: filePath,
+        description: `File: ${filePath}`,
+        source: ContextItemSource.Agentic,
+        icon: 'file-code',
+        metadata: [
+            `File: ${filePath}`,
+            `Status: ${status}`,
+            `Content Length: ${content.length} characters`,
+        ],
+    }
 }
