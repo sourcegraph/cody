@@ -1,15 +1,16 @@
 import { type UITerminalLine, UITerminalOutputType } from '@sourcegraph/cody-shared'
 import { Terminal } from 'lucide-react'
-import type { FC } from 'react'
+import { type FC, useMemo } from 'react'
 import { Skeleton } from '../../../components/shadcn/ui/skeleton'
 import { cn } from '../../../components/shadcn/utils'
 import { BaseCell } from './BaseCell'
 
 interface TerminalOutputCellProps {
-    lines: UITerminalLine[]
+    content?: string
     className?: string
     isLoading?: boolean
     defaultOpen?: boolean
+    lines?: UITerminalLine[] // Keep for backward compatibility
 }
 
 /**
@@ -42,25 +43,47 @@ const getLineClass = (type?: string) => {
 }
 
 // Format the output as an array of TerminalLine objects
-export function convertToTerminalLines(content: string): UITerminalLine[] {
-    const [command, output] = content.split('<|OUTPUT|>')
-    const [stdout, stderr] = output.split('<|ERRORS|>')
+export function convertToTerminalLines(content?: string): UITerminalLine[] {
+    if (!content) return []
+    // Split content into command and output parts
+    const parts = content.split('<|OUTPUT|>')
+    const command = parts[0] || ''
+    // If there's no output part, return just the command
+    if (parts.length < 2) {
+        return [{ content: command, type: UITerminalOutputType.Input }].filter(
+            line => line.content.trim() !== ''
+        )
+    }
+    // Split output into stdout and stderr
+    const outputParts = parts[1].split('<|ERRORS|>')
+    const stdout = outputParts[0] || ''
+    const stderr = outputParts.length > 1 ? outputParts[1] : ''
     const lines: UITerminalLine[] = [
         { content: command, type: UITerminalOutputType.Input },
         ...formatOutputToTerminalLines(stdout, UITerminalOutputType.Output),
         ...formatOutputToTerminalLines(stderr, UITerminalOutputType.Error),
     ].filter(line => line.content.trim() !== '')
+
     return lines
 }
 
 export const TerminalOutputCell: FC<TerminalOutputCellProps> = ({
-    lines,
+    content,
+    lines: propLines,
     className,
     isLoading = false,
     defaultOpen = false,
 }) => {
+    // Process content into lines if provided, otherwise use lines prop
+    const lines = useMemo(() => {
+        if (content) {
+            return convertToTerminalLines(content)
+        }
+        return propLines || []
+    }, [content, propLines])
+
     const renderHeaderContent = () => {
-        if (isLoading) {
+        if (isLoading || !lines?.length) {
             return (
                 <div className="tw-flex tw-items-center tw-gap-2 tw-overflow-hidden tw-flex-1">
                     <Skeleton className="tw-h-4 tw-w-40 tw-bg-zinc-800 tw-animate-pulse" />
@@ -78,7 +101,7 @@ export const TerminalOutputCell: FC<TerminalOutputCellProps> = ({
     }
 
     const renderBodyContent = () => {
-        if (isLoading) {
+        if (isLoading || !lines?.length) {
             return (
                 <div className="tw-font-mono tw-text-xs tw-p-4 tw-bg-black tw-rounded-b-md tw-space-y-1">
                     {Array.from({ length: 6 }).map((_, i) => (

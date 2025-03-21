@@ -200,7 +200,12 @@ export function transcriptToInteractionPairs(
             isLastPair
 
         pairs.push({
-            humanMessage: { ...humanMessage, index: i, isUnsentFollowup: false },
+            humanMessage: { 
+                ...humanMessage, 
+                index: i, 
+                isUnsentFollowup: false,
+                intent: humanMessage.intent ?? null 
+            },
             assistantMessage: assistantMessage
                 ? { ...assistantMessage, index: i + 1, isLoading: !!isLoading }
                 : null,

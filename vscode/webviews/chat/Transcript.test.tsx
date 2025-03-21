@@ -42,7 +42,7 @@ describe('Transcript', () => {
             <Transcript
                 {...PROPS}
                 transcript={[
-                    { speaker: 'human', text: ps`Hello` },
+                    { speaker: 'human', text: ps`Hello`, intent: null },
                     { speaker: 'assistant', text: ps`Hi` },
                 ]}
             />
@@ -69,7 +69,7 @@ describe('Transcript', () => {
             <Transcript
                 {...PROPS}
                 transcript={[
-                    { speaker: 'human', text: ps`Hello` },
+                    { speaker: 'human', text: ps`Hello`, intent: null },
                     { speaker: 'assistant', text: ps`Hi` },
                 ]}
             />
@@ -91,6 +91,7 @@ describe('Transcript', () => {
                         speaker: 'human',
                         text: ps`Foo`,
                         contextFiles: [{ type: 'file', uri: URI.file('/foo.js') }],
+                        intent: null,
                     },
                     { speaker: 'assistant', text: ps`Bar` },
                 ]}
@@ -312,6 +313,42 @@ describe('Transcript', () => {
             { message: 'Bar' },
             { message: 'xyz', canSubmit: true },
         ])
+    })
+
+    test('non-last human message with isPendingPriorResponse', () => {
+        // Set up a transcript with multiple messages
+        const transcript: ChatMessage[] = [
+            { speaker: 'human' as const, text: ps`First question`, intent: null },
+            { speaker: 'assistant' as const, text: ps`First answer` },
+            { speaker: 'human' as const, text: ps`Second question`, intent: null },
+        ]
+
+        // Create a message in progress for the second human message
+        const messageInProgress: ChatMessage = {
+            speaker: 'assistant' as const,
+            text: ps`Second answer in progress`,
+        }
+
+        // Render the component with our setup
+        const { container } = render(
+            <Transcript {...PROPS} transcript={transcript} messageInProgress={messageInProgress} />
+        )
+
+        // The second human message should show as pending
+        expectCells([
+            { message: 'First question' },
+            { context: {} },
+            { message: 'First answer' },
+            { message: 'Second question' },
+            { context: {} },
+            { message: 'Second answer in progress' },
+            { message: '', canSubmit: true },
+        ])
+
+        // Verify that the submit button for the followup is disabled when there's a pending response
+        const submitButtons = container.querySelectorAll('button[type="submit"]')
+        expect(submitButtons).toHaveLength(3) // One button per editor per message.
+        expect(submitButtons[0]).toBeEnabled()
     })
 })
 

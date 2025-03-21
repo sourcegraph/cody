@@ -1,5 +1,5 @@
 import type { ContextItemToolState } from '@sourcegraph/cody-shared/src/codebase-context/messages'
-import { type FC, useCallback, useMemo } from 'react'
+import { type FC, useCallback } from 'react'
 import type { URI } from 'vscode-uri'
 import { Skeleton } from '../../../components/shadcn/ui/skeleton'
 import type { VSCodeWrapper } from '../../../utils/VSCodeApi'
@@ -7,7 +7,7 @@ import { DiffCell } from './DiffCell'
 import { FileCell } from './FileCell'
 import { OutputStatusCell } from './OutputStatusCell'
 import { SearchResultsCell } from './SearchResultsCell'
-import { TerminalOutputCell, convertToTerminalLines } from './TerminalOutputCell'
+import { TerminalOutputCell } from './TerminalOutputCell'
 
 export interface ToolStatusProps {
     title: string
@@ -24,15 +24,6 @@ export const ToolStatusCell: FC<ToolStatusProps> = ({ title, output, vscodeAPI }
             vscodeAPI?.postMessage({ command: 'openFileLink', uri })
         },
         [vscodeAPI]
-    )
-
-    // Extract terminal lines outside of the conditional render
-    const terminalLines = useMemo(
-        () =>
-            output?.outputType === 'terminal-output' && output.content
-                ? convertToTerminalLines(output.content)
-                : [],
-        [output?.outputType, output?.content]
     )
 
     if (!title || !output) {
@@ -62,7 +53,7 @@ export const ToolStatusCell: FC<ToolStatusProps> = ({ title, output, vscodeAPI }
     }
 
     if (output?.outputType === 'terminal-output') {
-        return <TerminalOutputCell lines={terminalLines} />
+        return <TerminalOutputCell />
     }
 
     return <OutputStatusCell item={output} />

@@ -197,9 +197,8 @@ function createShellToolState(
         toolName: 'run_terminal_command',
         status,
         outputType,
-
         // ContextItemCommon properties
-        uri: vscode.Uri.parse(`cody:/tools/shell/${toolId}`),
+        uri: vscode.Uri.parse(`cody-tool://shell?id=${toolId}`),
         content,
         description: 'Terminal Command',
         title: command,
