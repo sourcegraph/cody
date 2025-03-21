@@ -95,7 +95,7 @@ const HumanMessageCellContent = memo<HumanMessageCellContent>(props => {
                     initialEditorState={initialEditorState}
                     placeholder={
                         isFirstMessage
-                            ? 'Enter your question use @ to add files and context...'
+                            ? 'Ask anything. Use @ to specify context...'
                             : 'Use @ to add more context...'
                     }
                     isFirstMessage={isFirstMessage}
