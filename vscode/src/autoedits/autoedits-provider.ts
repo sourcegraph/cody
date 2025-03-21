@@ -57,6 +57,7 @@ export const AUTOEDIT_TOTAL_DEBOUNCE_INTERVAL = 20
 export const AUTOEDIT_CONTEXT_FETCHING_DEBOUNCE_INTERVAL = 10
 const RESET_SUGGESTION_ON_CURSOR_CHANGE_AFTER_INTERVAL_MS = 60 * 1000
 const ON_SELECTION_CHANGE_DEFAULT_DEBOUNCE_INTERVAL_MS = 15
+const ON_OPEN_TEXT_DOCUMENT_DEFAULT_DEBOUNCE_INTERVAL_MS = 15
 
 interface AutoeditEditItem extends AutocompleteEditItem {
     id: AutoeditRequestID
@@ -86,6 +87,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
     /** Keeps track of the last time the text was changed in the editor. */
     private lastTextChangeTimeStamp: number | undefined
     private readonly onSelectionChangeDebounced: DebouncedFunc<typeof this.onSelectionChange>
+    private readonly onOpenTextDocumentDebounced: DebouncedFunc<typeof this.onOpenTextDocument>
 
     public readonly rendererManager: AutoEditsRendererManager
     private readonly modelAdapter: AutoeditsModelAdapter
@@ -135,13 +137,19 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
             ON_SELECTION_CHANGE_DEFAULT_DEBOUNCE_INTERVAL_MS
         )
 
+        this.onOpenTextDocumentDebounced = debounce(
+            (event: vscode.TextDocument) => this.onOpenTextDocument(event),
+            ON_OPEN_TEXT_DOCUMENT_DEFAULT_DEBOUNCE_INTERVAL_MS
+        )
+
         this.disposables.push(
             this.contextMixer,
             this.rendererManager,
             vscode.window.onDidChangeTextEditorSelection(this.onSelectionChangeDebounced),
             vscode.workspace.onDidChangeTextDocument(event => {
                 this.onDidChangeTextDocument(event)
-            })
+            }),
+            vscode.workspace.onDidOpenTextDocument(this.onOpenTextDocumentDebounced)
         )
 
         this.statusBar = statusBar
@@ -170,6 +178,13 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
         if (event.document.uri.scheme === 'file') {
             this.lastTextChangeTimeStamp = Date.now()
         }
+    }
+
+    private async onOpenTextDocument(event: vscode.TextDocument): Promise<void> {
+        // Trigger inline suggest request but reject it promptly. The goal is to warm-up
+        // the prompt cache for future requests from the same document.
+        await vscode.commands.executeCommand('editor.action.inlineSuggest.trigger')
+        await vscode.commands.executeCommand('cody.supersuggest.dismiss')
     }
 
     private async onSelectionChange(event: vscode.TextEditorSelectionChangeEvent): Promise<void> {
