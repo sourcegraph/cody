@@ -14,6 +14,8 @@ import type {
 import type { TelemetryEventMarketingTrackingInput } from '@sourcegraph/telemetry'
 
 import type { AuthError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
+import type { AutoeditRequestStateForAgentTesting } from '../autoedits/analytics-logger'
+import type { DecorationInfo } from '../autoedits/renderer/decorators/base'
 import type { ExtensionMessage, WebviewMessage } from '../chat/protocol'
 import type { CompletionBookkeepingEvent, CompletionItemID } from '../completions/analytics-logger'
 import type { FixupTaskID } from '../non-stop/FixupTask'
@@ -218,6 +220,11 @@ export type ClientRequests = {
         CompletionBookkeepingEvent | undefined | null,
     ]
 
+    'testing/autocomplete/autoeditEvent': [
+        CompletionItemParams,
+        AutoeditRequestStateForAgentTesting | undefined | null,
+    ]
+
     // For testing a short delay we give users for reading the completion
     // and deciding whether to accept it.
     'testing/autocomplete/awaitPendingVisibilityTimeout': [null, CompletionItemID | undefined]
@@ -229,7 +236,7 @@ export type ClientRequests = {
     // For testing purposes, returns the current autocomplete provider configuration.
     'testing/autocomplete/providerConfig': [
         null,
-        { id: string; legacyModel: string; configSource: string },
+        { id: string; legacyModel: string; configSource: string } | null | undefined,
     ]
 
     // Updates the extension configuration and returns the new
@@ -519,17 +526,59 @@ export interface ChatExportResult {
     chatID: string
     transcript: SerializedChatTranscript
 }
-export interface AutocompleteResult {
-    items: AutocompleteItem[]
 
-    /** completionEvent is not deprecated because it's used by non-editor clients like cody-bench that need access to book-keeping data to evaluate results. */
-    completionEvent?: CompletionBookkeepingEvent | undefined | null
+export interface AutoeditImageDiff {
+    /* Base64 encoded image suitable for rendering in dark editor themes */
+    dark: string
+    /* Base64 encoded image suitable for rendering in light editor themes */
+    light: string
+    /**
+     * The pixel ratio used to generate the image. Should be used to scale the image appropriately.
+     * Has a minimum value of 1.
+     */
+    pixelRatio: number
+    /**
+     * The position in which the image should be rendered in the editor.
+     */
+    position: { line: number; column: number }
+}
+
+export interface AutoeditChanges {
+    type: 'insert' | 'delete'
+    range: vscode.Range
+    text?: string | null | undefined
+}
+
+export type AutoeditTextDiff = DecorationInfo
+
+export interface AutocompleteEditItem {
+    id: string
+    range: Range
+    insertText: string
+    originalText: string
+    render: {
+        inline: {
+            changes?: AutoeditChanges[] | null | undefined
+        }
+        aside: {
+            image?: AutoeditImageDiff | null | undefined
+            diff?: AutoeditTextDiff | null | undefined
+        }
+    }
 }
 
 export interface AutocompleteItem {
     id: string
-    insertText: string
     range: Range
+    insertText: string
+}
+
+export interface AutocompleteResult {
+    /** @deprecated Use `inlineCompletionItems` instead. */
+    items: AutocompleteItem[]
+    inlineCompletionItems: AutocompleteItem[]
+    decoratedEditItems: AutocompleteEditItem[]
+    completionEvent?: CompletionBookkeepingEvent | undefined | null
 }
 
 export interface ClientInfo {
@@ -579,6 +628,7 @@ export interface ExtensionConfiguration {
 
     autocompleteAdvancedProvider?: string | undefined | null
     autocompleteAdvancedModel?: string | undefined | null
+    suggestionsMode?: 'autocomplete' | 'auto-edit (Experimental)' | 'off' | undefined | null
     debug?: boolean | undefined | null
     verboseDebug?: boolean | undefined | null
     telemetryClientName?: string | undefined | null

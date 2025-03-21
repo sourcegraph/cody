@@ -17,14 +17,14 @@ export function makeVisualDiff(
     /**
      * The area in the document at which the diff should be rendered.
      * Line: Should match the first relevant line of the diff.
-     * Offset: Should be the end column of the longest line in the diff. Ensures no existing code is overlapped.
+     * Column: Should be the end column of the longest line in the diff. Ensures no existing code is overlapped.
      */
-    target: { line: number; offset: number }
+    position: { line: number; column: number }
 } {
     const visualDiff = prepareVisualDiff(decorationInfo, mode)
     const blockifiedDiff = blockify(visualDiff, document)
-    const target = getDiffTargetPosition(blockifiedDiff, document)
-    return { diff: blockifiedDiff, target }
+    const position = getDiffTargetPosition(blockifiedDiff, document)
+    return { diff: blockifiedDiff, position }
 }
 
 /**

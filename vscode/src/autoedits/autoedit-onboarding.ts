@@ -14,7 +14,7 @@ import { isUserEligibleForAutoeditsFeature } from './create-autoedits-provider'
 
 export class AutoEditBetaOnboarding implements vscode.Disposable {
     private featureFlagAutoEditExperimental = storeLastValue(
-        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyAutoEditExperimentEnabledFeatureFlag)
+        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutoEditExperimentEnabledFeatureFlag)
     )
 
     public async enrollUserToAutoEditBetaIfEligible(): Promise<void> {
@@ -35,7 +35,7 @@ export class AutoEditBetaOnboarding implements vscode.Disposable {
                 vscode.ConfigurationTarget.Global
             )
         // Set Enroll to true in local storage so that we don't override the setting if the user changes it
-        await localStorage.setAutoeditBetaEnrollment()
+        this.markUserAsAutoEditBetaEnrolled()
         this.writeAutoeditNotificationEvent()
 
         const selection = await vscode.window.showInformationMessage(
@@ -52,12 +52,6 @@ export class AutoEditBetaOnboarding implements vscode.Disposable {
                     CodyAutoSuggestionMode.Autocomplete,
                     vscode.ConfigurationTarget.Global
                 )
-
-            // Open VS Code settings UI and focus on the Cody AutoEdit setting
-            await vscode.commands.executeCommand(
-                'workbench.action.openSettings',
-                'cody.suggestions.mode'
-            )
         }
     }
 
@@ -71,6 +65,9 @@ export class AutoEditBetaOnboarding implements vscode.Disposable {
     private async isUserEligibleForAutoeditBetaOverride(): Promise<boolean> {
         const isAutoEditEnabled = await this.isAutoEditEnabled()
         if (isAutoEditEnabled) {
+            // If auto-edit has been enabled, we don't need to show the onboarding and mark
+            // the user as enrolled
+            this.markUserAsAutoEditBetaEnrolled()
             return false
         }
         const isUserEligible = await this.isUserEligibleForAutoEditFeature()
@@ -88,6 +85,10 @@ export class AutoEditBetaOnboarding implements vscode.Disposable {
     private async isAutoEditEnabled(): Promise<boolean> {
         const config = await currentResolvedConfig()
         return config.configuration.experimentalAutoEditEnabled
+    }
+
+    public markUserAsAutoEditBetaEnrolled(): Promise<void> {
+        return localStorage.setAutoeditBetaEnrollment()
     }
 
     private async isUserEligibleForAutoEditFeature(): Promise<boolean> {
@@ -113,3 +114,5 @@ export class AutoEditBetaOnboarding implements vscode.Disposable {
         this.featureFlagAutoEditExperimental.subscription.unsubscribe()
     }
 }
+
+export const autoeditsOnboarding = new AutoEditBetaOnboarding()

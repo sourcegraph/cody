@@ -24,7 +24,6 @@ import { AutoeditDebugPanel } from './debug-panel/debug-panel'
 import { autoeditsOutputChannelLogger } from './output-channel-logger'
 
 const AUTOEDITS_NON_ELIGIBILITY_MESSAGES = {
-    ONLY_VSCODE_SUPPORT: 'Auto-edit is currently only supported in VS Code.',
     PRO_USER_ONLY: 'Auto-edit requires Cody Pro subscription.',
     FEATURE_FLAG_NOT_ELIGIBLE:
         'Auto-edit is an experimental feature and currently not enabled for your account. Please check back later.',
@@ -96,15 +95,24 @@ export function createAutoEditsProvider({
             const enabledRendererInSettings = vscode.workspace
                 .getConfiguration()
                 .get<'default' | 'inline'>('cody.experimental.autoedit.renderer', 'default')
+
+            /**
+             * Render inline when any of the following is true:
+             * 1. Feature flag is enabled
+             * 2. Setting is enabled
+             * 3. Running inside agent - The default renderer logic is not suitable to use inside agent.
+             */
+            const shouldRenderInline =
+                autoeditInlineRenderingEnabled ||
+                enabledRendererInSettings === 'inline' ||
+                isRunningInsideAgent()
             const provider = new AutoeditsProvider(chatClient, fixupController, statusBar, {
-                shouldRenderInline:
-                    autoeditInlineRenderingEnabled || enabledRendererInSettings === 'inline',
+                shouldRenderInline,
             })
             return [
-                vscode.commands.registerCommand('cody.command.autoedit-manual-trigger', async () => {
-                    await vscode.commands.executeCommand('editor.action.inlineSuggest.hide')
-                    await vscode.commands.executeCommand('editor.action.inlineSuggest.trigger')
-                }),
+                vscode.commands.registerCommand('cody.command.autoedit-manual-trigger', async () =>
+                    provider.manuallyTriggerCompletion()
+                ),
                 vscode.languages.registerInlineCompletionItemProvider(
                     [{ scheme: 'file', language: '*' }, { notebookType: '*' }],
                     provider
@@ -196,16 +204,8 @@ export function isUserEligibleForAutoeditsFeature(
     productSubscription: UserProductSubscription | null
 ): AutoeditsUserEligibilityInfo {
     // Always enable auto-edit when testing
-    if (process.env.CODY_TESTING === 'true') {
+    if (process.env.CODY_TESTING === 'true' || process.env.NODE_ENV === 'test') {
         return { isUserEligible: true }
-    }
-
-    // Editors other than vscode are not eligible for auto-edit
-    if (isRunningInsideAgent()) {
-        return {
-            isUserEligible: false,
-            nonEligibilityReason: AUTOEDITS_NON_ELIGIBILITY_MESSAGES.ONLY_VSCODE_SUPPORT,
-        }
     }
 
     // Free users are not eligible for auto-edit

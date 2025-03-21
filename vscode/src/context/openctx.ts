@@ -115,7 +115,7 @@ export function getOpenCtxProviders(
         resolvedConfig.pipe(pluck('configuration'), distinctUntilChanged()),
         clientConfigChanges,
         authStatusChanges,
-        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.GitMentionProvider),
+        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.GitMentionProvider),
         authStatusChanges.pipe(
             map(auth => auth.authenticated),
             switchMap(authenticated =>

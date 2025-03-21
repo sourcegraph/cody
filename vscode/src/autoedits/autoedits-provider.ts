@@ -2,26 +2,36 @@ import { type DebouncedFunc, debounce } from 'lodash'
 import { Observable } from 'observable-fns'
 import * as vscode from 'vscode'
 
-import { type ChatClient, currentResolvedConfig, tokensToChars } from '@sourcegraph/cody-shared'
+import {
+    type ChatClient,
+    type ClientCapabilities,
+    clientCapabilities,
+    currentResolvedConfig,
+    tokensToChars,
+} from '@sourcegraph/cody-shared'
 
+import type { CompletionBookkeepingEvent } from '../completions/analytics-logger'
 import { ContextRankingStrategy } from '../completions/context/completions-context-ranker'
 import { ContextMixer } from '../completions/context/context-mixer'
 import { DefaultContextStrategyFactory } from '../completions/context/context-strategy'
 import { getCurrentDocContext } from '../completions/get-current-doc-context'
+import type { AutocompleteEditItem, AutoeditChanges } from '../jsonrpc/agent-protocol'
 import { isRunningInsideAgent } from '../jsonrpc/isRunningInsideAgent'
 import type { FixupController } from '../non-stop/FixupController'
 import type { CodyStatusBar } from '../services/StatusBar'
-
 import type { AutoeditsModelAdapter, AutoeditsPrompt, ModelResponse } from './adapters/base'
 import { createAutoeditsModelAdapter } from './adapters/create-adapter'
 import {
     type AutoeditRequestID,
+    type AutoeditRequestStateForAgentTesting,
     autoeditAnalyticsLogger,
     autoeditDiscardReason,
     autoeditSource,
     autoeditTriggerKind,
     getTimeNowInMillis,
 } from './analytics-logger'
+import { AutoeditCompletionItem } from './autoedit-completion-item'
+import { autoeditsOnboarding } from './autoedit-onboarding'
 import { autoeditsProviderConfig } from './autoedits-config'
 import { FilterPredictionBasedOnRecentEdits } from './filter-prediction-edits'
 import { autoeditsOutputChannelLogger } from './output-channel-logger'
@@ -38,6 +48,7 @@ import {
     extractAutoEditResponseFromCurrentDocumentCommentTemplate,
     shrinkReplacerTextToCodeToReplaceRange,
 } from './renderer/mock-renderer'
+import type { AutoEditRenderOutput } from './renderer/render-output'
 import { shrinkPredictionUntilSuffix } from './shrink-prediction'
 import { areSameUriDocs, isPredictedTextAlreadyInSuffix } from './utils'
 
@@ -47,12 +58,22 @@ export const AUTOEDIT_CONTEXT_FETCHING_DEBOUNCE_INTERVAL = 10
 const RESET_SUGGESTION_ON_CURSOR_CHANGE_AFTER_INTERVAL_MS = 60 * 1000
 const ON_SELECTION_CHANGE_DEFAULT_DEBOUNCE_INTERVAL_MS = 15
 
-export interface AutoeditsResult extends vscode.InlineCompletionList {
-    requestId: AutoeditRequestID | null
-    prediction: string
-    /** temporary data structure, will need to update before integrating with the agent API */
-    decorationInfo: DecorationInfo | null
+interface AutoeditEditItem extends AutocompleteEditItem {
+    id: AutoeditRequestID
 }
+
+export interface AutoeditsResult {
+    /** @deprecated Use `inlineCompletionItems` instead. */
+    items: AutoeditCompletionItem[]
+    inlineCompletionItems: AutoeditCompletionItem[]
+    decoratedEditItems: AutoeditEditItem[]
+    completionEvent?: CompletionBookkeepingEvent
+}
+
+export type AutoeditClientCapabilities = Pick<
+    ClientCapabilities,
+    'autoedit' | 'autoeditInlineDiff' | 'autoeditAsideDiff'
+>
 
 /**
  * Provides inline completions and auto-edit functionality.
@@ -77,6 +98,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
         dataCollectionEnabled: false,
     })
     private readonly statusBar: CodyStatusBar
+    private readonly capabilities: AutoeditClientCapabilities
 
     constructor(
         chatClient: ChatClient,
@@ -84,8 +106,12 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
         statusBar: CodyStatusBar,
         options: { shouldRenderInline: boolean }
     ) {
+        this.capabilities = this.getClientCapabilities()
+
         // Initialise the canvas renderer for image generation.
         initImageSuggestionService()
+        // If the user is using auto-edit, mark the user as enrolled
+        autoeditsOnboarding.markUserAsAutoEditBetaEnrolled()
 
         autoeditsOutputChannelLogger.logDebug('Constructor', 'Constructing AutoEditsProvider')
         this.modelAdapter = createAutoeditsModelAdapter({
@@ -119,6 +145,25 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
         )
 
         this.statusBar = statusBar
+    }
+
+    private getClientCapabilities(): AutoeditClientCapabilities {
+        const inAgent = isRunningInsideAgent()
+        if (!inAgent) {
+            // We are running inside VS Code
+            return {
+                autoedit: 'enabled',
+                autoeditAsideDiff: 'image',
+                autoeditInlineDiff: 'insertions-and-deletions',
+            }
+        }
+
+        const capabilitiesFromClient = clientCapabilities()
+        return {
+            autoedit: capabilitiesFromClient.autoedit,
+            autoeditAsideDiff: capabilitiesFromClient.autoeditAsideDiff,
+            autoeditInlineDiff: capabilitiesFromClient.autoeditInlineDiff,
+        }
     }
 
     private onDidChangeTextDocument(event: vscode.TextDocumentChangeEvent): void {
@@ -156,6 +201,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
 
         if (inlineCompletionContext.selectedCompletionInfo !== undefined) {
             const { range, text } = inlineCompletionContext.selectedCompletionInfo
+            const completion = new AutoeditCompletionItem({ id: null, insertText: text, range })
             // User has a currently selected item in the autocomplete widget.
             // Instead of attempting to suggest an auto-edit, just show the selected item
             // as the completion. This is to avoid an undesirable edit conflicting with the acceptance
@@ -163,10 +209,9 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
             // TODO: We should consider the optimal solution here, it may be better to show an
             // inline completion (not an edit) that includes the currently selected item.
             return {
-                requestId: null,
-                items: [{ insertText: text, range }],
-                prediction: text,
-                decorationInfo: null,
+                items: [completion],
+                inlineCompletionItems: [completion],
+                decoratedEditItems: [],
             }
         }
 
@@ -380,15 +425,18 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                 return null
             }
 
-            const renderOutput = this.rendererManager.getRenderOutput({
-                requestId,
-                prediction,
-                document,
-                position,
-                docContext,
-                decorationInfo,
-                codeToReplaceData,
-            })
+            const renderOutput = this.rendererManager.getRenderOutput(
+                {
+                    requestId,
+                    prediction,
+                    document,
+                    position,
+                    docContext,
+                    decorationInfo,
+                    codeToReplaceData,
+                },
+                this.capabilities
+            )
 
             if (renderOutput.type === 'none') {
                 autoeditsOutputChannelLogger.logDebugIfVerbose(
@@ -446,16 +494,46 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                 await this.rendererManager.renderInlineDecorations(decorationInfo)
             }
 
-            // The data structure returned to the agent's from the `autoedits/execute` calls.
-            // Note: this is subject to change later once we start working on the agent API.
-            const result: AutoeditsResult = {
-                items: 'inlineCompletionItems' in renderOutput ? renderOutput.inlineCompletionItems : [],
-                requestId,
-                prediction,
-                decorationInfo,
+            if ('inlineCompletionItems' in renderOutput) {
+                return {
+                    items: renderOutput.inlineCompletionItems,
+                    inlineCompletionItems: renderOutput.inlineCompletionItems,
+                    decoratedEditItems: [],
+                }
             }
 
-            return result
+            if (!isRunningInsideAgent()) {
+                // If we are in VS Code there is nothing more we can do here. The decorations will be shown
+                // via the decorator.
+                return null
+            }
+
+            if (this.capabilities.autoedit !== 'enabled') {
+                // We are running inside the agent, but the client does not support auto-edits.
+                return null
+            }
+
+            return {
+                items: [],
+                inlineCompletionItems: [],
+                decoratedEditItems: [
+                    {
+                        id: requestId,
+                        originalText: codeToReplaceData.codeToRewrite,
+                        range: codeToReplaceData.range,
+                        insertText: prediction,
+                        render: {
+                            inline: {
+                                changes: this.getTextDecorationsForClient(renderOutput),
+                            },
+                            aside: {
+                                image: renderOutput.type === 'image' ? renderOutput.imageData : null,
+                                diff: renderOutput.type === 'custom' ? decorationInfo : null,
+                            },
+                        },
+                    },
+                ],
+            }
         } catch (error) {
             const errorToReport =
                 error instanceof Error
@@ -470,6 +548,64 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
             return null
         } finally {
             stopLoading?.()
+        }
+    }
+
+    private getTextDecorationsForClient(renderOutput: AutoEditRenderOutput): AutoeditChanges[] | null {
+        const decorations = 'decorations' in renderOutput ? renderOutput.decorations : null
+        if (!decorations) {
+            return null
+        }
+
+        // Handle based on client capabilities
+        switch (this.capabilities.autoeditInlineDiff) {
+            case 'none':
+                return null
+            case 'insertions-only':
+                if (decorations.insertionDecorations.length === 0) {
+                    return null
+                }
+                return decorations.insertionDecorations.map(decoration => ({
+                    type: 'insert',
+                    range: decoration.range,
+                    text: decoration.text,
+                }))
+            case 'deletions-only':
+                if (decorations.deletionDecorations.length === 0) {
+                    return null
+                }
+                return decorations.deletionDecorations.map(decoration => ({
+                    type: 'delete',
+                    range: decoration.range,
+                    text: decoration.text,
+                }))
+            case 'insertions-and-deletions': {
+                const output: AutoeditChanges[] = []
+                if (decorations.insertionDecorations.length > 0) {
+                    output.push(
+                        ...decorations.insertionDecorations.map(decoration => ({
+                            type: 'insert' as const,
+                            range: decoration.range,
+                            text: decoration.text,
+                        }))
+                    )
+                }
+                if (decorations.deletionDecorations.length > 0) {
+                    output.push(
+                        ...decorations.deletionDecorations.map(decoration => ({
+                            type: 'delete' as const,
+                            range: decoration.range,
+                            text: decoration.text,
+                        }))
+                    )
+                }
+                if (output.length === 0) {
+                    return null
+                }
+                return output.sort((a, b) => a.range.start.compareTo(b.range.start))
+            }
+            default:
+                return null
         }
     }
 
@@ -528,6 +664,43 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
             isChatModel: autoeditsProviderConfig.isChatModel,
             abortSignal,
         })
+    }
+
+    public async manuallyTriggerCompletion(): Promise<void> {
+        await vscode.commands.executeCommand('editor.action.inlineSuggest.hide')
+        await vscode.commands.executeCommand('editor.action.inlineSuggest.trigger')
+    }
+
+    public getTestingAutoeditEvent(id: AutoeditRequestID): AutoeditRequestStateForAgentTesting {
+        return this.rendererManager.testing_getTestingAutoeditEvent(id)
+    }
+
+    /**
+     * noop method for Agent compability with `InlineCompletionItemProvider`.
+     * See: vscode/src/completions/inline-completion-item-provider.ts
+     */
+    public clearLastCandidate(): void {
+        console.warn('clearLastCandidate is not implemented in AutoeditsProvider')
+    }
+
+    /**
+     * Added for testing async code in the agent integration tests where we don't have access
+     * to the vitest fakeTimers API.
+     */
+    public get testing_completionSuggestedPromise(): Promise<AutoeditRequestID> | undefined {
+        return this.rendererManager.testing_completionSuggestedPromise
+    }
+
+    /**
+     * Method for agent integration tests to control the completion visibility delay.
+     * See: vscode/src/completions/inline-completion-item-provider.ts
+     */
+    public testing_setCompletionVisibilityDelay(delay: number): void {
+        this.rendererManager.testing_setCompletionVisibilityDelay(delay)
+    }
+
+    public async handleDidAcceptCompletionItem(id: AutoeditRequestID): Promise<void> {
+        return this.rendererManager.handleDidAcceptCompletionItem(id)
     }
 
     public dispose(): void {
