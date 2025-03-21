@@ -25,6 +25,15 @@ export const ToolStatusCell: FC<ToolStatusProps> = ({ title, output }) => {
         getVSCodeAPI()?.postMessage({ command: 'openFileLink', uri })
     }, [])
 
+    // Extract terminal lines outside of the conditional render
+    const terminalLines = useMemo(
+        () =>
+            output?.outputType === 'terminal-output' && output.content
+                ? convertToTerminalLines(output.content)
+                : [],
+        [output?.outputType, output?.content]
+    )
+
     if (!title || !output) {
         return (
             <div className="tw-flex tw-items-center tw-gap-2 tw-overflow-hidden tw-h-7">
@@ -52,12 +61,7 @@ export const ToolStatusCell: FC<ToolStatusProps> = ({ title, output }) => {
     }
 
     if (output?.outputType === 'terminal-output') {
-        const lines = useMemo(
-            () => (output.content ? convertToTerminalLines(output.content) : []),
-            [output.content]
-        )
-
-        return <TerminalOutputCell lines={lines} />
+        return <TerminalOutputCell lines={terminalLines} />
     }
 
     return <OutputStatusCell item={output} />
