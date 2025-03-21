@@ -402,11 +402,11 @@ describe('transcriptToInteractionPairs', () => {
         ).toEqual<Interaction[]>([
             {
                 humanMessage: { index: 0, speaker: 'human', text: ps`a`, isUnsentFollowup: false },
-                assistantMessage: { index: 1, speaker: 'assistant', text: ps`b`, isLoading: false },
+                assistantMessage: { index: 1, speaker: 'assistant', text: ps`b`, isLoading: false, intent: null },
             },
             {
                 humanMessage: { index: 2, speaker: 'human', text: ps`c`, isUnsentFollowup: false },
-                assistantMessage: { index: 3, speaker: 'assistant', text: ps`d`, isLoading: false },
+                assistantMessage: { index: 3, speaker: 'assistant', text: ps`d`, isLoading: false, intent: null },
             },
             {
                 humanMessage: { index: 4, speaker: 'human', isUnsentFollowup: true },
@@ -428,7 +428,7 @@ describe('transcriptToInteractionPairs', () => {
         ).toEqual<Interaction[]>([
             {
                 humanMessage: { index: 0, speaker: 'human', text: ps`a`, isUnsentFollowup: false },
-                assistantMessage: { index: 1, speaker: 'assistant', text: ps`b`, isLoading: true },
+                assistantMessage: { index: 1, speaker: 'assistant', text: ps`b`, isLoading: true, intent: null },
             },
             {
                 humanMessage: { index: 2, speaker: 'human', isUnsentFollowup: true },
@@ -456,6 +456,7 @@ describe('transcriptToInteractionPairs', () => {
                     speaker: 'assistant',
                     error,
                     isLoading: false,
+                    intent: null,
                 },
             },
         ])
