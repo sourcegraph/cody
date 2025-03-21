@@ -8,10 +8,13 @@ data class ExtensionConfiguration(
   val proxy: String? = null,
   val accessToken: String? = null,
   val customHeaders: Map<String, String>,
+  val displayScaleFactor: Long? = null,
   val anonymousUserID: String? = null,
   val autocompleteAdvancedProvider: String? = null,
   val autocompleteAdvancedModel: String? = null,
   val suggestionsMode: SuggestionsModeEnum? = null, // Oneof: autocomplete, auto-edit (Experimental), off
+  val autoeditFontSize: Long? = null,
+  val autoeditLineHeight: Long? = null,
   val debug: Boolean? = null,
   val verboseDebug: Boolean? = null,
   val telemetryClientName: String? = null,

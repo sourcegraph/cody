@@ -9,6 +9,7 @@ import {
 
 import { RetrieverIdentifier } from '../completions/context/utils'
 import { getConfiguration } from '../configuration'
+import type { RenderConfig } from './renderer/image-gen/canvas/render-config'
 
 interface BaseAutoeditsProviderConfig {
     provider: AutoEditsModelConfig['provider']
@@ -21,6 +22,9 @@ interface BaseAutoeditsProviderConfig {
 export interface AutoeditsProviderConfig extends BaseAutoeditsProviderConfig {
     experimentalAutoeditsConfigOverride: AutoEditsModelConfig | undefined
     isMockResponseFromCurrentDocumentTemplateEnabled: boolean
+    imageRenderConfig: Partial<
+        Pick<RenderConfig, 'fontSize' | 'lineHeight' | 'pixelRatio' | 'backgroundColor'>
+    >
 }
 
 const defaultTokenLimit = {
@@ -70,7 +74,8 @@ function getAutoeditsProviderConfig(): AutoeditsProviderConfig {
         .getConfiguration()
         .get<boolean>('cody.experimental.autoedit.use-mock-responses', false)
 
-    const userConfig = getConfiguration().experimentalAutoEditConfigOverride
+    const clientConfiguration = getConfiguration()
+    const userConfig = clientConfiguration.experimentalAutoEditConfigOverride
     const baseConfig = userConfig ?? getBaseProviderConfig()
 
     return {
@@ -81,6 +86,11 @@ function getAutoeditsProviderConfig(): AutoeditsProviderConfig {
         url: baseConfig.url ?? '',
         tokenLimit: baseConfig.tokenLimit,
         isChatModel: baseConfig.isChatModel,
+        imageRenderConfig: {
+            pixelRatio: clientConfiguration.displayScaleFactor,
+            fontSize: clientConfiguration?.autoeditFontSize,
+            lineHeight: clientConfiguration?.autoeditLineHeight,
+        },
     }
 }
 

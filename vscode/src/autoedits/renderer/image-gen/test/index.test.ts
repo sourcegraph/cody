@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest'
 import { generateSuggestionAsImage, initImageSuggestionService } from '..'
 import { document } from '../../../../completions/test-helpers'
 import { mockLocalStorage } from '../../../../services/LocalStorageProvider'
+import * as autoeditsConfig from '../../../autoedits-config'
 import type { DecorationInfo } from '../../decorators/base'
 import { makeVisualDiff } from '../visual-diff'
 import type { DiffMode } from '../visual-diff/types'
@@ -18,22 +19,23 @@ async function generateImageForTest(
     mockLocalStorage()
     await initImageSuggestionService()
 
+    // The default render config changes depending on the platform, so we need to set it manually for tests.
+    // We're using the same defaults as VS Code on MacOS here
+    autoeditsConfig.autoeditsProviderConfig.imageRenderConfig = {
+        fontSize: 12,
+        lineHeight: 18,
+        backgroundColor: {
+            dark: '#212121',
+            light: '#f0f0f0',
+        },
+    }
+
     const doc = document('')
     const { diff } = makeVisualDiff(decorations, mode, doc)
     const { light, dark } = generateSuggestionAsImage({
         diff,
         lang,
         mode,
-        // The default render config changes depending on the platform, so we need to set it manually for tests.
-        // We're using the same defaults as VS Code on MacOS here.
-        config: {
-            fontSize: 12,
-            lineHeight: 18,
-            backgroundColor: {
-                dark: '#212121',
-                light: '#f0f0f0',
-            },
-        },
     })
     return {
         // These suggestions are generated as dataURLs, so let's convert them back to a useful Buffer for testing

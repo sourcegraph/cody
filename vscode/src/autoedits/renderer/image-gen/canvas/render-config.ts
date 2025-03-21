@@ -1,6 +1,7 @@
 import { isMacOS } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 import { localStorage } from '../../../../services/LocalStorageProvider'
+import { autoeditsProviderConfig } from '../../../autoedits-config'
 
 /**
  * TODO: Remove this once we have a way to provide font-size and line-height from clients
@@ -39,11 +40,21 @@ const DEFAULT_FONT_SIZE = IS_AGENT_TESTING || isMacOS() ? 12 : 14
  */
 const DEFAULT_PIXEL_RATIO = 1.95
 
-function getUserLineHeight(fontSize: number): number {
+function getLineHeight(fontSize: number): number {
+    const clientLineHeight = autoeditsProviderConfig.imageRenderConfig.lineHeight
+    if (clientLineHeight) {
+        return clientLineHeight
+    }
+
     return Math.round(GOLDEN_LINE_HEIGHT_RATIO * fontSize)
 }
 
-function getUserFontSize(): number | undefined {
+function getFontSize(): number {
+    const clientFontSize = autoeditsProviderConfig.imageRenderConfig.fontSize
+    if (clientFontSize) {
+        return clientFontSize
+    }
+
     // Extract the font size from VS Code user settings.
     // Note: VS Code warns but technically supports string-based font sizes, e.g. "14".
     // TODO: Support this for other editors. We should respect the font size in editors like JetBrains.
@@ -51,7 +62,7 @@ function getUserFontSize(): number | undefined {
 
     if (Number.isNaN(userFontSize) || userFontSize <= 0) {
         // We cannot use this font size, we will use a platform specific default
-        return
+        return DEFAULT_FONT_SIZE
     }
 
     return userFontSize
@@ -59,19 +70,25 @@ function getUserFontSize(): number | undefined {
 
 /**
  * In order to generate the most optimal image, we need to know the pixel ratio of the device.
- * We cannot get this through Node, we need to interface with the Webview.
- * This implementation is a form of progressive enhancement, where we use a suitable default that
- * works for both high and low DPI screens. We then use the pixel ratio available from the Webview
- * if it becomes available.
+ * There are two implementations:
+ * 1. For clients that support retrieving this natively, we can use the pixel ratio provided by the client.
+ * 2. For clients that do not support it, we support a method of progressive enhancement, where we use a suitable default
+ *    and enhance this value when a webview is opened, where we can use the accurate `devicePixelRatio` value.
  */
-function getUserPixelRatio(): number | undefined {
-    const devicePixelRatio = localStorage.getDevicePixelRatio()
-    if (!devicePixelRatio) {
-        // No pixel ratio available. User has not opened a Webview yet.
-        return
+function getPixelRatio(): number {
+    const clientPixelRatio = autoeditsProviderConfig.imageRenderConfig.pixelRatio
+    if (clientPixelRatio) {
+        return clientPixelRatio
     }
 
-    return Math.max(devicePixelRatio, 1)
+    const devicePixelRatio = localStorage.getDevicePixelRatio()
+    if (devicePixelRatio) {
+        // Otherwise check localStorage to see if a pixel ratio was initialised by a webview,
+        // via the `devicePixelRatio` property.
+        return Math.max(devicePixelRatio, 1)
+    }
+
+    return DEFAULT_PIXEL_RATIO
 }
 
 interface DiffColors {
@@ -141,13 +158,10 @@ export interface RenderConfig {
     }
 }
 
-export interface UserProvidedRenderConfig
-    extends Partial<Pick<RenderConfig, 'fontSize' | 'lineHeight' | 'pixelRatio' | 'backgroundColor'>> {}
-
-export function getRenderConfig(userProvidedConfig?: UserProvidedRenderConfig): RenderConfig {
-    const pixelRatio = userProvidedConfig?.pixelRatio || getUserPixelRatio() || DEFAULT_PIXEL_RATIO
-    const fontSize = userProvidedConfig?.fontSize || getUserFontSize() || DEFAULT_FONT_SIZE
-    const lineHeight = userProvidedConfig?.lineHeight || getUserLineHeight(fontSize)
+export function getRenderConfig(): RenderConfig {
+    const pixelRatio = getPixelRatio()
+    const fontSize = getFontSize()
+    const lineHeight = getLineHeight(fontSize)
 
     return {
         fontSize,
@@ -156,6 +170,6 @@ export function getRenderConfig(userProvidedConfig?: UserProvidedRenderConfig): 
         maxWidth: 1200,
         pixelRatio,
         diffColors: DEFAULT_DIFF_COLORS,
-        backgroundColor: userProvidedConfig?.backgroundColor,
+        backgroundColor: autoeditsProviderConfig.imageRenderConfig.backgroundColor,
     }
 }

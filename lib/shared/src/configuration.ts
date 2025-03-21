@@ -108,6 +108,7 @@ interface RawClientConfiguration {
     codeActions: boolean
     commandHints: boolean
     commandCodeLenses: boolean
+    displayScaleFactor?: number
 
     // Deep Cody
     agenticContextExperimentalOptions?: AgenticContextConfiguration
@@ -119,6 +120,10 @@ interface RawClientConfiguration {
     autocompleteCompleteSuggestWidgetSelection?: boolean
     autocompleteFormatOnAccept?: boolean
     autocompleteDisableInsideComments: boolean
+
+    //#region Autoedit
+    autoeditFontSize?: number
+    autoeditLineHeight?: number
 
     //#region Experimental
     autocompleteExperimentalGraphContext: 'lsp-light' | 'tsc' | 'tsc-mixed' | null
