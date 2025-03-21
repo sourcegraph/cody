@@ -152,7 +152,7 @@ export function getRenderConfig(userProvidedConfig?: UserProvidedRenderConfig): 
     return {
         fontSize,
         lineHeight,
-        padding: { x: 6, y: 2 },
+        padding: { x: 0, y: 0 },
         maxWidth: 1200,
         pixelRatio,
         diffColors: DEFAULT_DIFF_COLORS,
