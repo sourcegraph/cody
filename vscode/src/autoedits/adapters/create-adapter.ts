@@ -1,9 +1,4 @@
-import {
-    type AutoEditsModelConfig,
-    type ChatClient,
-    FeatureFlag,
-    featureFlagProvider,
-} from '@sourcegraph/cody-shared'
+import type { AutoEditsModelConfig, ChatClient } from '@sourcegraph/cody-shared'
 
 import { autoeditsOutputChannelLogger } from '../output-channel-logger'
 
@@ -30,14 +25,14 @@ export function createAutoeditsModelAdapter({
         case 'fireworks':
             return new FireworksAdapter()
         case 'fireworks-websocket':
-            if (
-                featureFlagProvider.evaluatedFeatureFlag(
-                    FeatureFlag.CodyAutoEditUseWebSocketForFireworksConnections
-                )
-            ) {
-                return new FireworksWebSocketAdapter()
-            }
-            throw new Error('user is not opted into fireworks-websocket feature')
+            // if (
+            //     featureFlagProvider.evaluatedFeatureFlag(
+            //         FeatureFlag.CodyAutoEditUseWebSocketForFireworksConnections
+            //     )
+            // ) {
+            return new FireworksWebSocketAdapter()
+        // }
+        // throw new Error('user is not opted into fireworks-websocket feature')
         case 'cody-gateway':
             return new CodyGatewayAdapter()
         case 'sourcegraph':

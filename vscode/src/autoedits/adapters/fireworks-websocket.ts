@@ -70,11 +70,20 @@ export class FireworksWebSocketAdapter extends FireworksAdapter implements vscod
                     const webSocketResponse = JSON.parse(event.data as string)
                     if (webSocketResponse['x-message-id'] === messageId) {
                         const body = webSocketResponse['x-message-body']
-                        resolve(
-                            new Response(body, {
-                                headers: JSON.parse(webSocketResponse['x-message-headers']),
-                            })
-                        )
+                        const headers = webSocketResponse['x-message-headers']
+                        const status = webSocketResponse['x-message-status']
+                        const statusText = webSocketResponse['x-message-status-text']
+                        if (status !== 200) {
+                            resolve(new Response(body, { status, statusText, headers }))
+                        } else {
+                            resolve(
+                                Response.json(body, {
+                                    status,
+                                    statusText,
+                                    headers,
+                                })
+                            )
+                        }
                         ws.removeEventListener('message', messageCallback)
                     }
                 }
