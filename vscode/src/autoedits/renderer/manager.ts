@@ -8,8 +8,10 @@ import {
     isCompletionVisible,
 } from '../../completions/is-completion-visible'
 import {
+    type AutoeditAcceptReasonMetadata,
     type AutoeditRejectReasonMetadata,
     type AutoeditRequestID,
+    autoeditAcceptReason,
     autoeditAnalyticsLogger,
     autoeditDiscardReason,
     autoeditRejectReason,
@@ -96,7 +98,9 @@ export class AutoEditsDefaultRendererManager
     ) {
         super()
         this.disposables.push(
-            vscode.commands.registerCommand('cody.supersuggest.accept', () => this.acceptActiveEdit()),
+            vscode.commands.registerCommand('cody.supersuggest.accept', () =>
+                this.acceptActiveEdit(autoeditAcceptReason.acceptCommand)
+            ),
             vscode.commands.registerCommand('cody.supersuggest.dismiss', () =>
                 this.rejectActiveEdit(autoeditRejectReason.dismissCommand)
             ),
@@ -293,7 +297,7 @@ export class AutoEditsDefaultRendererManager
         this.decorator = null
     }
 
-    protected async acceptActiveEdit(): Promise<void> {
+    protected async acceptActiveEdit(acceptReason: AutoeditAcceptReasonMetadata): Promise<void> {
         const editor = vscode.window.activeTextEditor
         const { activeRequest, decorator } = this
         // Compute this variable before the `handleDidHideSuggestion` call which removes the active request.
@@ -308,7 +312,10 @@ export class AutoEditsDefaultRendererManager
         }
 
         await this.handleDidHideSuggestion(decorator)
-        autoeditAnalyticsLogger.markAsAccepted(activeRequest.requestId)
+        autoeditAnalyticsLogger.markAsAccepted({
+            requestId: activeRequest.requestId,
+            acceptReason,
+        })
 
         if (!hasInlineDecorations) {
             // We rely on the native VS Code functionality for accepting pure inline completions items.
