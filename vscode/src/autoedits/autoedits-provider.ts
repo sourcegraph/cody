@@ -11,7 +11,6 @@ import { getCurrentDocContext } from '../completions/get-current-doc-context'
 import { isRunningInsideAgent } from '../jsonrpc/isRunningInsideAgent'
 import type { FixupController } from '../non-stop/FixupController'
 import type { CodyStatusBar } from '../services/StatusBar'
-
 import type { AutoeditsModelAdapter, AutoeditsPrompt, ModelResponse } from './adapters/base'
 import { createAutoeditsModelAdapter } from './adapters/create-adapter'
 import {
@@ -22,6 +21,7 @@ import {
     autoeditTriggerKind,
     getTimeNowInMillis,
 } from './analytics-logger'
+import { autoeditsOnboarding } from './autoedit-onboarding'
 import { autoeditsProviderConfig } from './autoedits-config'
 import { FilterPredictionBasedOnRecentEdits } from './filter-prediction-edits'
 import { autoeditsOutputChannelLogger } from './output-channel-logger'
@@ -86,6 +86,8 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
     ) {
         // Initialise the canvas renderer for image generation.
         initImageSuggestionService()
+        // If the user is using auto-edit, mark the user as enrolled
+        autoeditsOnboarding.markUserAsAutoEditBetaEnrolled()
 
         autoeditsOutputChannelLogger.logDebug('Constructor', 'Constructing AutoEditsProvider')
         this.modelAdapter = createAutoeditsModelAdapter({
