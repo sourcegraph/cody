@@ -3,7 +3,7 @@ import {
     type ClientCapabilitiesWithLegacyFields,
 } from '@sourcegraph/cody-shared'
 import { fireEvent, render, screen } from '@testing-library/react'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { TooltipProvider } from '../../../../../../components/shadcn/ui/tooltip'
 import * as useConfigModule from '../../../../../../utils/useConfig'
 import { ModeSelectorField } from './ModeSelectorButton'
@@ -31,16 +31,7 @@ const TestWrapper: React.FC<React.PropsWithChildren> = ({ children }) => (
 )
 
 describe('ModeSelectorField', () => {
-    vi.spyOn(useConfigModule, 'useConfig').mockReturnValue({
-        clientCapabilities: {
-            isVSCode: true,
-            edit: 'enabled',
-        } satisfies Partial<ClientCapabilitiesWithLegacyFields> as ClientCapabilitiesWithLegacyFields,
-        authStatus: AUTH_STATUS_FIXTURE_AUTHED,
-    } satisfies Partial<useConfigModule.Config> as useConfigModule.Config)
-
     const defaultProps = {
-        experimentalAgenticChatEnabled: false,
         omniBoxEnabled: true,
         isDotComUser: false,
         isCodyProUser: true,
@@ -48,9 +39,33 @@ describe('ModeSelectorField', () => {
         manuallySelectIntent: vi.fn(),
     }
 
+    const defaultConfigMock = {
+        config: {
+            experimentalAgenticChatEnabled: false,
+            experimentalPromptEditorEnabled: true,
+            experimentalNoodle: true,
+            internalDebugContext: false,
+            serverEndpoint: 'https://sourcegraph.com',
+            smartApply: true,
+            hasEditCapability: false,
+            allowEndpointChange: false,
+            uiKindIsWeb: false,
+            webviewType: 'sidebar',
+            multipleWebviewsEnabled: true,
+        },
+        clientCapabilities: {
+            isVSCode: true,
+            edit: 'enabled',
+        } satisfies Partial<ClientCapabilitiesWithLegacyFields> as ClientCapabilitiesWithLegacyFields,
+        authStatus: AUTH_STATUS_FIXTURE_AUTHED,
+    } satisfies Partial<useConfigModule.Config> as useConfigModule.Config
+
+    beforeAll(() => {
+        vi.spyOn(useConfigModule, 'useConfig').mockReturnValue(defaultConfigMock)
+    })
+
     beforeEach(() => {
         window.localStorage.clear()
-        vi.clearAllMocks()
     })
 
     afterEach(() => {
@@ -65,16 +80,6 @@ describe('ModeSelectorField', () => {
         )
 
         expect(screen.getByText('Chat')).toBeInTheDocument()
-    })
-
-    it('displays agentic intent when selected', () => {
-        render(
-            <TestWrapper>
-                <ModeSelectorField {...defaultProps} _intent="agentic" />
-            </TestWrapper>
-        )
-
-        expect(screen.getByText('Agentic')).toBeInTheDocument()
     })
 
     it('toggles between intents when keyboard shortcut is used', () => {
@@ -137,5 +142,35 @@ describe('ModeSelectorField', () => {
 
         // Agentic option should not be visible
         expect(screen.queryByText('Agentic')).not.toBeInTheDocument()
+    })
+
+    it('hides agentic intent even when it was last selected if flag is not on', () => {
+        render(
+            <TestWrapper>
+                <ModeSelectorField {...defaultProps} _intent="agentic" omniBoxEnabled={true} />
+            </TestWrapper>
+        )
+
+        expect(screen.getByText('Chat')).toBeInTheDocument()
+        expect(screen.queryByText('Agentic')).not.toBeInTheDocument()
+        // Open the dropdown to check if the option is still hidden
+        fireEvent.click(screen.getByRole('combobox'))
+        expect(screen.queryByText('Agentic')).not.toBeInTheDocument()
+    })
+
+    it('displays agentic intent in model dropdown title - flag on', () => {
+        //  Set the feature flag to true
+        const props = {
+            ...defaultConfigMock,
+            config: { ...defaultConfigMock.config, experimentalAgenticChatEnabled: true },
+        }
+        vi.spyOn(useConfigModule, 'useConfig').mockReturnValue(props)
+        render(
+            <TestWrapper>
+                <ModeSelectorField {...defaultProps} _intent="agentic" omniBoxEnabled={true} />
+            </TestWrapper>
+        )
+
+        expect(screen.getByText('Agentic')).toBeInTheDocument()
     })
 })
