@@ -52,11 +52,13 @@ export const shellTool: AgentTool = {
                 cwd: workspaceFolder.uri.path,
             })
 
-            const content = `${validInput.command}<|OUTPUT|>${commandResult.stdout}${
+            const content = `${commandResult.stdout}${
                 commandResult.stderr ? '<|ERRORS|>' + commandResult.stderr : ''
             }`
 
-            return createShellToolState(validInput.command, content, UIToolStatus.Done)
+            const error = commandResult.stderr ? `Exited with code ${commandResult.stderr}` : undefined
+
+            return createShellToolState(validInput.command, content, UIToolStatus.Done, error)
         } catch (error) {
             if (error instanceof CommandError) {
                 if (error instanceof CommandError) {
@@ -185,26 +187,30 @@ export async function runShellCommand(
  */
 function createShellToolState(
     command: string,
-    content: string,
-    status: UIToolStatus,
-    outputType: 'terminal-output' = 'terminal-output'
+    stdout: string,
+    sterr?: string,
+    error?: string
 ): ContextItemToolState {
     const toolId = `shell-${Date.now()}`
+    const status = error ? UIToolStatus.Error : sterr ? UIToolStatus.Info : UIToolStatus.Done
+    let content = error ?? stdout
+    if (sterr) {
+        content += `<sterr>${sterr}</sterr>`
+    }
 
     return {
         type: 'tool-state',
         toolId,
         toolName: 'run_terminal_command',
-        status,
         outputType,
-
-        // ContextItemCommon properties
-        uri: vscode.Uri.parse(`cody:/tools/shell/${toolId}`),
-        content,
-        description: 'Terminal Command',
         title: command,
-        source: ContextItemSource.Agentic,
+        content,
+        description: 'Bash',
         icon: 'terminal',
-        metadata: [`Command: ${command}`, `Status: ${status}`],
+        status,
+        source: ContextItemSource.Agentic,
+        uri: vscode.Uri.parse(`cody-tool://shell?id=${toolId}`),
     }
 }
+
+const outputType = 'terminal-output'
