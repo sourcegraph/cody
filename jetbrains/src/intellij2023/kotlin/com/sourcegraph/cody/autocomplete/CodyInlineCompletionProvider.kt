@@ -79,7 +79,7 @@ class CodyInlineCompletionProvider : InlineCompletionProvider {
                             it.insertText, project, editor.document, range, request.endOffset)
                       }
 
-                  val completionText = formattedCompletionText.removeSuffix(originalText)
+                  val completionText = formattedCompletionText.removePrefix(originalText)
                   if (completionText.trim().isBlank()) {
                     null
                   } else {
