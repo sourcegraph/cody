@@ -136,7 +136,10 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
     }
 
     private async onOpenTextDocument(event: vscode.TextDocument): Promise<void> {
+        // Trigger inline suggest request but reject it promptly. The goal is to warm-up
+        // the prompt cache for future requests from the same document.
         await vscode.commands.executeCommand('editor.action.inlineSuggest.trigger')
+        await vscode.commands.executeCommand('cody.supersuggest.dismiss')
     }
 
     private async onSelectionChange(event: vscode.TextEditorSelectionChangeEvent): Promise<void> {
