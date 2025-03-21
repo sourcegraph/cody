@@ -64,37 +64,59 @@ function isEven(num) {
     return num % 2 === 0;
 }`
 
-// Syntax-highlighted version
-const highlightedCode = `<span class="hljs-comment">// This is a sample JavaScript code</span>
-<span class="hljs-keyword">function</span> <span class="hljs-title function_">calculateFactorial</span>(<span class="hljs-params">n</span>) {
-    <span class="hljs-keyword">if</span> (n === <span class="hljs-number">0</span> || n === <span class="hljs-number">1</span>) {
-        <span class="hljs-keyword">return</span> <span class="hljs-number">1</span>;
-    }
-
-    <span class="hljs-keyword">let</span> result = <span class="hljs-number">1</span>;
-    <span class="hljs-keyword">for</span> (<span class="hljs-keyword">let</span> i = <span class="hljs-number">2</span>; i <= n; i++) {
+const highlightedCode = (
+    <>
+        <span className="hljs-comment">{'// This is a sample JavaScript code'}</span>
+        <span className="hljs-keyword">function</span>{' '}
+        <span className="hljs-title function_">calculateFactorial</span>
+        {'('}
+        <span className="hljs-params">n</span>
+        {') {'}
+        <span className="hljs-keyword">if</span>
+        {' (n === '}
+        <span className="hljs-number">0</span> || n === <span className="hljs-number">1</span>
+        {') {'}
+        <span className="hljs-keyword">return</span> <span className="hljs-number">1</span>;{'}'}
+        <span className="hljs-keyword">let</span> result = <span className="hljs-number">1</span>;
+        <span className="hljs-keyword">for</span>
+        {' ('}
+        <span className="hljs-keyword">let</span> i = <span className="hljs-number">2</span>
+        {'; i <= n; i++) {'}
         result *= i;
-    }
-
-    <span class="hljs-keyword">return</span> result;
-}
-
-<span class="hljs-comment">// Example usage</span>
-<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-title function_">calculateFactorial</span>(<span class="hljs-number">5</span>)); <span class="hljs-comment">// 120</span>
-<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-title function_">calculateFactorial</span>(<span class="hljs-number">10</span>)); <span class="hljs-comment">// 3628800</span>
-
-<span class="hljs-comment">// Additional helper function</span>
-<span class="hljs-keyword">function</span> <span class="hljs-title function_">isEven</span>(<span class="hljs-params">num</span>) {
-    <span class="hljs-keyword">return</span> num % <span class="hljs-number">2</span> === <span class="hljs-number">0</span>;
-}</span>`
+        {'}'}
+        <span className="hljs-keyword">return</span> result;
+        {'}'}
+        <span className="hljs-comment">{'// Example usage'}</span>
+        <span className="hljs-variable language_">console</span>.
+        <span className="hljs-title function_">log</span>
+        {'('}
+        <span className="hljs-title function_">calculateFactorial</span>(
+        <span className="hljs-number">5</span>
+        {'));'} <span className="hljs-comment">{'// 120'}</span>
+        <span className="hljs-variable language_">console</span>.
+        <span className="hljs-title function_">log</span>
+        {'('}
+        <span className="hljs-title function_">calculateFactorial</span>(
+        <span className="hljs-number">10</span>
+        {'));'} <span className="hljs-comment">{'// 3628800'}</span>
+        <span className="hljs-comment">{'// Additional helper function'}</span>
+        <span className="hljs-keyword">function</span>{' '}
+        <span className="hljs-title function_">isEven</span>
+        {'('}
+        <span className="hljs-params">num</span>
+        {') {'}
+        <span className="hljs-keyword">return</span> num % <span className="hljs-number">2</span> ==={' '}
+        <span className="hljs-number">0</span>;{'}'}
+    </>
+)
 
 const meta: Meta<typeof RichCodeBlock> = {
     title: 'components/RichCodeBlock',
     component: RichCodeBlock,
 
     args: {
-        syntaxHighlightedHtmlMarkup: highlightedCode,
         code: sampleCode,
+        children: highlightedCode,
         language: 'javascript',
         isCodeComplete: true,
         onCopy: () => console.log('Code copied'),
@@ -117,8 +139,12 @@ export const WithFileName: StoryObj<typeof meta> = {
 
 export const ShellCommand: StoryObj<typeof meta> = {
     args: {
-        syntaxHighlightedHtmlMarkup:
-            '<span class="hljs-built_in">echo</span> <span class="hljs-string">"Hello, World!"</span>',
+        children: (
+            <>
+                <span className="hljs-built_in">echo</span>{' '}
+                <span className="hljs-string">"Hello, World!"</span>
+            </>
+        ),
         code: 'echo "Hello, World!"',
         language: 'bash',
         isShellCommand: true,

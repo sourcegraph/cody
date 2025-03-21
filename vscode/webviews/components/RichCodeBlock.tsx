@@ -15,7 +15,6 @@ import { GuardrailsApplicator } from './GuardrailsManager'
 
 interface RichCodeBlockProps {
     hasEditIntent: boolean
-    syntaxHighlightedHtmlMarkup: string
     code: string // Raw text for copying/executing without HTML markup
     language?: string
     fileName?: string
@@ -27,6 +26,7 @@ interface RichCodeBlockProps {
     onExecute?: (command: string) => void
     smartApply?: CodeBlockActionsProps['smartApply']
     className?: string
+    children?: React.ReactNode
 }
 
 // A set of edits we have requested smart apply to prefetch.
@@ -42,9 +42,6 @@ const prefetchedEdits = new LRUCache<string, boolean>({ max: 100 })
  */
 export const RichCodeBlock: React.FC<RichCodeBlockProps> = ({
     hasEditIntent,
-    // TODO: Elaborate on this comment.
-    // SECURITY: We use dangerouslySetInnerHTML to render the HTML markup.
-    syntaxHighlightedHtmlMarkup,
     code,
     language,
     fileName,
@@ -56,6 +53,7 @@ export const RichCodeBlock: React.FC<RichCodeBlockProps> = ({
     onExecute,
     smartApply,
     className,
+    children,
 }) => {
     // Smart apply is only applicable if the code is complete. These properties
     // will be stable (undefined) until the code is complete, skipping any
@@ -211,11 +209,7 @@ export const RichCodeBlock: React.FC<RichCodeBlockProps> = ({
                     ) : (
                         // Otherwise show the actual code with syntax highlighting
                         <pre className={styles.content}>
-                            <code
-                                className={clsx(language && `language-${language}`)}
-                                // biome-ignore lint/security/noDangerouslySetInnerHtml: This is markdown sanitized by rehype-sanitize
-                                dangerouslySetInnerHTML={{ __html: syntaxHighlightedHtmlMarkup }}
-                            />
+                            <code className={clsx(language && `language-${language}`)}>{children}</code>
                         </pre>
                     )}
 

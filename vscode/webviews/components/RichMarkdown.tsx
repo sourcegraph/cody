@@ -304,7 +304,6 @@ export const RichMarkdown: React.FC<RichMarkdownProps> = ({
             return (
                 <RichCodeBlock
                     hasEditIntent={hasEditIntent}
-                    syntaxHighlightedHtmlMarkup={cached.highlightedHtml}
                     code={cached.plainText}
                     language={cached.language}
                     fileName={filePath}
@@ -315,7 +314,9 @@ export const RichMarkdown: React.FC<RichMarkdownProps> = ({
                     onInsert={onInsert}
                     onExecute={isShellCommand ? onExecute : undefined}
                     smartApply={smartApply}
-                />
+                >
+                    {children}
+                </RichCodeBlock>
             )
         },
     }

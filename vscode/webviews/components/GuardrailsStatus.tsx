@@ -23,7 +23,6 @@ export const GuardrailsStatus: React.FC<GuardrailsStatusProps> = ({
     className,
     onRetry,
 }) => {
-    // Import styles from ChatMessageContent to ensure consistency
     const containerClasses = clsx(
         'tw-flex tw-items-center tw-gap-1',
         status === GuardrailsCheckStatus.Failed && 'tw-text-[var(--vscode-errorForeground)]',
