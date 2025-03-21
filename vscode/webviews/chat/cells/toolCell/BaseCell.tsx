@@ -64,7 +64,8 @@ const BaseCellComponent: FC<BaseCellProps> = ({
                         {Icon && <Icon size={16} className="tw-flex-shrink-0 tw-text-zinc-400" />}
                         {headerContent}
                     </div>
-                    {isOpen ? (
+                    {/* Only show chevron icons when there's expandable content */}
+                    {bodyContent && isOpen ? (
                         <ChevronDown size={16} className="tw-flex-shrink-0 tw-text-zinc-400" />
                     ) : (
                         <ChevronRight size={16} className="tw-flex-shrink-0 tw-text-zinc-400" />
