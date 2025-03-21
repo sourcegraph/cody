@@ -12,9 +12,10 @@ import {
 } from '@sourcegraph/cody-shared'
 
 import styles from './Chat.module.css'
-import { Transcript, focusLastHumanMessageEditor } from './chat/Transcript'
+import { Transcript } from './chat/Transcript'
 import { WelcomeMessage } from './chat/components/WelcomeMessage'
 import { WelcomeNotice } from './chat/components/WelcomeNotice'
+import { useLastHumanEditor } from './chat/context'
 import { ScrollDown } from './components/ScrollDown'
 import { useLocalStorage } from './components/hooks'
 import type { View } from './tabs'
@@ -177,26 +178,20 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
         }
     }, [vscodeAPI, messageInProgress])
 
+    const lastHumanEditorRef = useLastHumanEditor()
+
     // Re-focus the input when the webview (re)gains focus if it was focused before the webview lost
     // focus. This makes it so that the user can easily switch back to the Cody view and keep
     // typing.
     useEffect(() => {
         const onFocus = (): void => {
-            // This works because for some reason Electron maintains the Selection but not the
-            // focus.
-            const sel = window.getSelection()
-            const focusNode = sel?.focusNode
-            const focusElement = focusNode instanceof Element ? focusNode : focusNode?.parentElement
-            const focusEditor = focusElement?.closest<HTMLElement>('[data-lexical-editor="true"]')
-            if (focusEditor) {
-                focusEditor.focus({ preventScroll: true })
-            }
+            lastHumanEditorRef?.focusLastHumanMessageEditor()
         }
         window.addEventListener('focus', onFocus)
         return () => {
             window.removeEventListener('focus', onFocus)
         }
-    }, [])
+    }, [lastHumanEditorRef])
 
     const handleScrollDownClick = useCallback(() => {
         // Scroll to the bottom instead of focus input for unsent message
@@ -206,8 +201,8 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             return
         }
 
-        focusLastHumanMessageEditor()
-    }, [transcript])
+        lastHumanEditorRef.focusLastHumanMessageEditor()
+    }, [transcript, lastHumanEditorRef])
     const [activeChatContext, setActiveChatContext] = useState<Context>()
 
     return (

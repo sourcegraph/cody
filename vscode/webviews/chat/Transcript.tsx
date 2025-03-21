@@ -1,10 +1,8 @@
 import {
     type ChatMessage,
-    ContextItemSource,
     type Guardrails,
     type Model,
     type NLSSearchDynamicFilter,
-    REMOTE_FILE_PROVIDER_URI,
     type SerializedPromptEditorValue,
     deserializeContextItem,
     isAbortErrorOrSocketHangUp,
@@ -24,7 +22,6 @@ import {
     useRef,
     useState,
 } from 'react'
-import { URI } from 'vscode-uri'
 import type { UserAccountInfo } from '../Chat'
 import type { ApiPostMessage } from '../Chat'
 import { getVSCodeAPI } from '../utils/VSCodeApi'
@@ -47,7 +44,7 @@ import ApprovalCell from './cells/agenticCell/ApprovalCell'
 import { ContextCell } from './cells/contextCell/ContextCell'
 import { DidYouMeanNotice } from './cells/messageCell/assistant/DidYouMean'
 import { ToolStatusCell } from './cells/toolCell/ToolStatusCell'
-import { LastEditorContext } from './context'
+import { LastEditorContext, useLastHumanEditor } from './context'
 
 interface TranscriptProps {
     activeChatContext?: Context
@@ -93,40 +90,7 @@ export const Transcript: FC<TranscriptProps> = props => {
         [transcript, messageInProgress]
     )
 
-    const lastHumanEditorRef = useRef<PromptEditorRefAPI | null>(null)
-
-    const onAddToFollowupChat = useCallback(
-        ({
-            repoName,
-            filePath,
-            fileURL,
-        }: {
-            repoName: string
-            filePath: string
-            fileURL: string
-        }) => {
-            lastHumanEditorRef.current?.addMentions([
-                {
-                    providerUri: REMOTE_FILE_PROVIDER_URI,
-                    provider: 'openctx',
-                    type: 'openctx',
-                    uri: URI.parse(fileURL),
-                    title: filePath.split('/').at(-1) ?? filePath,
-                    description: filePath,
-                    source: ContextItemSource.User,
-                    mention: {
-                        uri: fileURL,
-                        description: filePath,
-                        data: {
-                            repoName,
-                            filePath: filePath,
-                        },
-                    },
-                },
-            ])
-        },
-        []
-    )
+    const { lastHumanEditorRef } = useLastHumanEditor()
 
     return (
         <div
@@ -159,7 +123,6 @@ export const Transcript: FC<TranscriptProps> = props => {
                         smartApply={smartApply}
                         smartApplyEnabled={smartApplyEnabled}
                         editorRef={i === interactions.length - 1 ? lastHumanEditorRef : undefined}
-                        onAddToFollowupChat={onAddToFollowupChat}
                         manuallySelectedIntent={manuallySelectedIntent}
                         setManuallySelectedIntent={setManuallySelectedIntent}
                     />
@@ -273,6 +236,9 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
     } = props
 
     const { activeChatContext, setActiveChatContext } = props
+    // humanEditorRef: Local ref for this specific editor instance
+    // parentEditorRef: Ref passed from parent to access this editor
+    // lastEditorRef: Global context ref that always points to the most recent editor
     const humanEditorRef = useRef<PromptEditorRefAPI | null>(null)
     const lastEditorRef = useContext(LastEditorContext)
     useImperativeHandle(parentEditorRef, () => humanEditorRef.current)
@@ -529,6 +495,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                     editorState: serializedPromptEditorStateFromText(text),
                 },
                 manuallySelectedIntent: 'search',
+                lastHumanEditorRef: humanEditorRef,
             }),
         [humanMessage]
     )
@@ -643,33 +610,16 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
     )
 }, isEqual)
 
-// TODO(sqs): Do this the React-y way.
-export function focusLastHumanMessageEditor(): void {
-    const elements = document.querySelectorAll<HTMLElement>('[data-lexical-editor]')
-    const lastEditor = elements.item(elements.length - 1)
-    if (!lastEditor) {
-        return
-    }
-
-    lastEditor.focus()
-
-    // Only scroll the nearest scrollable ancestor container, not all scrollable ancestors, to avoid
-    // a bug in VS Code where the iframe is pushed up by ~5px.
-    const container = lastEditor?.closest('[data-scrollable]')
-    const editorScrollItemInContainer = lastEditor.parentElement
-    if (container && container instanceof HTMLElement && editorScrollItemInContainer) {
-        container.scrollTop = editorScrollItemInContainer.offsetTop - container.offsetTop
-    }
-}
-
 export function editHumanMessage({
     messageIndexInTranscript,
     editorValue,
     manuallySelectedIntent,
+    lastHumanEditorRef,
 }: {
     messageIndexInTranscript: number
     editorValue: SerializedPromptEditorValue
     manuallySelectedIntent?: ChatMessage['intent']
+    lastHumanEditorRef?: React.RefObject<PromptEditorRefAPI | null>
 }): void {
     getVSCodeAPI().postMessage({
         command: 'edit',
@@ -679,16 +629,18 @@ export function editHumanMessage({
         contextItems: editorValue.contextItems.map(deserializeContextItem),
         manuallySelectedIntent,
     })
-    focusLastHumanMessageEditor()
+    lastHumanEditorRef?.current?.setFocus(true)
 }
 
 function submitHumanMessage({
     editorValue,
     manuallySelectedIntent,
     traceparent,
+    lastHumanEditorRef,
 }: {
     editorValue: SerializedPromptEditorValue
     manuallySelectedIntent?: ChatMessage['intent']
+    lastHumanEditorRef?: React.RefObject<PromptEditorRefAPI | null>
     traceparent: string
 }): void {
     getVSCodeAPI().postMessage({
@@ -699,7 +651,7 @@ function submitHumanMessage({
         manuallySelectedIntent,
         traceparent,
     })
-    focusLastHumanMessageEditor()
+    lastHumanEditorRef?.current?.setFocus(true)
 }
 
 function reevaluateSearchWithSelectedFilters({
