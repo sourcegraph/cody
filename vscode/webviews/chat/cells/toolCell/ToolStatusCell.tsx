@@ -2,7 +2,7 @@ import type { ContextItemToolState } from '@sourcegraph/cody-shared/src/codebase
 import { type FC, useCallback, useMemo } from 'react'
 import type { URI } from 'vscode-uri'
 import { Skeleton } from '../../../components/shadcn/ui/skeleton'
-import type { VSCodeWrapper } from '../../../utils/VSCodeApi'
+import { type VSCodeWrapper, getVSCodeAPI } from '../../../utils/VSCodeApi'
 import { DiffCell } from './DiffCell'
 import { FileCell } from './FileCell'
 import { OutputStatusCell } from './OutputStatusCell'
@@ -18,13 +18,12 @@ export interface ToolStatusProps {
     vscodeAPI?: VSCodeWrapper
 }
 
-export const ToolStatusCell: FC<ToolStatusProps> = ({ title, output, vscodeAPI }) => {
-    const onFileLinkClicked = useCallback(
-        (uri: URI) => {
-            vscodeAPI?.postMessage({ command: 'openFileLink', uri })
-        },
-        [vscodeAPI]
-    )
+export const ToolStatusCell: FC<ToolStatusProps> = ({ title, output }) => {
+    const onFileLinkClicked = useCallback((uri: URI) => {
+        // Fixes an issue where the link is not getting sent to the extension host
+        // when the api is not available on the first render
+        getVSCodeAPI()?.postMessage({ command: 'openFileLink', uri })
+    }, [])
 
     if (!title || !output) {
         return (
