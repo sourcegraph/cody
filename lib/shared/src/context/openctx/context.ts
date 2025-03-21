@@ -12,7 +12,11 @@ export const getContextForChatMessage = async (
     // but doesn't propagate its own aborts back to the parent
     const controller = new AbortController()
     if (parentSignal) {
-        parentSignal.addEventListener('abort', () => controller.abort())
+        const abortHandler = (): void => {
+            parentSignal.removeEventListener('abort', abortHandler)
+            controller.abort()
+        }
+        parentSignal.addEventListener('abort', abortHandler)
     }
     try {
         const openCtxClient = currentOpenCtxController()
