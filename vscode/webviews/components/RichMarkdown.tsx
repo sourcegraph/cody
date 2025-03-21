@@ -3,15 +3,16 @@ import { clsx } from 'clsx'
 import { LRUCache } from 'lru-cache'
 import type { Code, Root } from 'mdast'
 import type React from 'react'
-import ReactMarkdown from 'react-markdown'
-import rehypeHighlight from 'rehype-highlight'
-import rehypeSanitize, { defaultSchema } from 'rehype-sanitize'
-import remarkGfm from 'remark-gfm'
+//import ReactMarkdown from 'react-markdown'
+//import rehypeHighlight from 'rehype-highlight'
+//import rehypeSanitize, { defaultSchema } from 'rehype-sanitize'
+//import remarkGfm from 'remark-gfm'
 import type { Plugin } from 'unified'
 import { visit } from 'unist-util-visit'
 import type { CodeBlockActionsProps } from '../chat/ChatMessageContent/ChatMessageContent'
-import { remarkAttachFilePathToCodeBlocks } from '../chat/extract-file-path'
-import { SYNTAX_HIGHLIGHTING_LANGUAGES } from '../utils/highlight'
+//import { remarkAttachFilePathToCodeBlocks } from '../chat/extract-file-path'
+//import { SYNTAX_HIGHLIGHTING_LANGUAGES } from '../utils/highlight'
+import { MarkdownFromCody } from './MarkdownFromCody'
 import { RichCodeBlock } from './RichCodeBlock'
 
 interface RichMarkdownProps {
@@ -94,43 +95,6 @@ export const RichMarkdown: React.FC<RichMarkdownProps> = ({
     className,
     hasEditIntent,
 }) => {
-    // Allow-list of elements for sanitization
-    const ALLOWED_ELEMENTS = [
-        'p',
-        'div',
-        'span',
-        'pre',
-        'i',
-        'em',
-        'b',
-        'strong',
-        'code',
-        'pre',
-        'kbd',
-        'blockquote',
-        'ul',
-        'li',
-        'ol',
-        'a',
-        'table',
-        'tr',
-        'th',
-        'td',
-        'thead',
-        'tbody',
-        'tfoot',
-        's',
-        'u',
-        'h1',
-        'h2',
-        'h3',
-        'h4',
-        'h5',
-        'h6',
-        'br',
-        'think',
-    ]
-
     // Handle rendering of code blocks with our custom RichCodeBlock component
     const components = {
         pre({ node, inline, className, children, ...props }: any) {
@@ -323,53 +287,12 @@ export const RichMarkdown: React.FC<RichMarkdownProps> = ({
 
     return (
         <div className={clsx('markdown-content', className)}>
-            <ReactMarkdown
-                remarkPlugins={[
-                    remarkAttachCompletedCodeBlocks,
-                    remarkGfm,
-                    remarkAttachFilePathToCodeBlocks,
-                ]}
-                rehypePlugins={[
-                    [
-                        rehypeSanitize,
-                        {
-                            ...defaultSchema,
-                            tagNames: ALLOWED_ELEMENTS,
-                            attributes: {
-                                ...defaultSchema.attributes,
-                                code: [
-                                    ...(defaultSchema.attributes?.code || []),
-                                    // Allow various metadata attributes for code blocks
-                                    ['data-file-path'],
-                                    ['data-is-code-complete'],
-                                    ['data-language'],
-                                    ['data-source-text'],
-                                    [
-                                        'className',
-                                        ...Object.keys(SYNTAX_HIGHLIGHTING_LANGUAGES).map(
-                                            language => `language-${language}`
-                                        ),
-                                    ],
-                                ],
-                            },
-                        },
-                    ],
-                    [
-                        rehypeHighlight as any,
-                        {
-                            detect: true,
-                            subset: false,
-                            languages: {
-                                ...SYNTAX_HIGHLIGHTING_LANGUAGES,
-                            },
-                            ignoreMissing: true,
-                        },
-                    ],
-                ]}
+            <MarkdownFromCody
                 components={components}
+                prefixRemarkPlugins={[remarkAttachCompletedCodeBlocks]}
             >
                 {markdown}
-            </ReactMarkdown>
+            </MarkdownFromCody>
         </div>
     )
 }
