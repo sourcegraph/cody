@@ -4,14 +4,15 @@ import * as vscode from 'vscode'
 
 import { type ChatClient, currentResolvedConfig, tokensToChars } from '@sourcegraph/cody-shared'
 
+import type { CompletionBookkeepingEvent } from '../completions/analytics-logger'
 import { ContextRankingStrategy } from '../completions/context/completions-context-ranker'
 import { ContextMixer } from '../completions/context/context-mixer'
 import { DefaultContextStrategyFactory } from '../completions/context/context-strategy'
 import { getCurrentDocContext } from '../completions/get-current-doc-context'
+import type { AutocompleteEditItem, AutoeditChanges } from '../jsonrpc/agent-protocol'
 import { isRunningInsideAgent } from '../jsonrpc/isRunningInsideAgent'
 import type { FixupController } from '../non-stop/FixupController'
 import type { CodyStatusBar } from '../services/StatusBar'
-
 import type { AutoeditsModelAdapter, AutoeditsPrompt, ModelResponse } from './adapters/base'
 import { createAutoeditsModelAdapter } from './adapters/create-adapter'
 import {
@@ -22,6 +23,8 @@ import {
     autoeditTriggerKind,
     getTimeNowInMillis,
 } from './analytics-logger'
+import { AutoeditCompletionItem } from './autoedit-completion-item'
+import { autoeditsOnboarding } from './autoedit-onboarding'
 import { autoeditsProviderConfig } from './autoedits-config'
 import { FilterPredictionBasedOnRecentEdits } from './filter-prediction-edits'
 import { autoeditsOutputChannelLogger } from './output-channel-logger'
@@ -86,6 +89,8 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
     ) {
         // Initialise the canvas renderer for image generation.
         initImageSuggestionService()
+        // If the user is using auto-edit, mark the user as enrolled
+        autoeditsOnboarding.markUserAsAutoEditBetaEnrolled()
 
         autoeditsOutputChannelLogger.logDebug('Constructor', 'Constructing AutoEditsProvider')
         this.modelAdapter = createAutoeditsModelAdapter({
