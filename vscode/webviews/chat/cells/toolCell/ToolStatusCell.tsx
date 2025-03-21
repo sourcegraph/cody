@@ -52,7 +52,7 @@ export const ToolStatusCell: FC<ToolStatusProps> = ({ title, output }) => {
     }
 
     if (output?.outputType === 'terminal-output') {
-        return <TerminalOutputCell />
+        return <TerminalOutputCell command={title} item={output} />
     }
 
     return <OutputStatusCell item={output} />

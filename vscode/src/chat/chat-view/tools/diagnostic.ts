@@ -91,18 +91,16 @@ function createDiagnosticToolState(
         ? `Diagnostics for ${name}:\n${diagnostics.map(d => d.message).join('\n')}`
         : error ?? 'EMPTY'
     const icon = hasProblems ? 'alarm-clock-check' : 'alarm-clock-minus'
-    const status = hasProblems ? UIToolStatus.Info : UIToolStatus.Done
+    const status = error ? UIToolStatus.Error : hasProblems ? UIToolStatus.Info : UIToolStatus.Done
 
     return {
         type: 'tool-state',
         toolId,
         toolName: 'get_diagnostic',
         status,
-        uri: uri || vscode.Uri.parse(`cody-tool://diagnostic?id=${toolId}`),
         content,
-        title: `Diagnostics for ${fileName}`,
-        description: 'File Diagnostics',
-        source: ContextItemSource.Agentic,
+        title: fileName ?? 'Diagnostics',
+        description: 'Diagnostics',
         icon,
         outputType,
         metadata: [
@@ -111,6 +109,8 @@ function createDiagnosticToolState(
             `Status: ${status}`,
             uri ? `Path: ${uri.fsPath}` : null,
         ].filter(Boolean) as string[],
+        source: ContextItemSource.Agentic,
+        uri: uri || vscode.Uri.parse(`cody-tool://diagnostic?id=${toolId}`),
     }
 }
 

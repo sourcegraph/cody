@@ -1,16 +1,17 @@
 import { type UITerminalLine, UITerminalOutputType } from '@sourcegraph/cody-shared'
-import { Terminal } from 'lucide-react'
+import type { ContextItemToolState } from '@sourcegraph/cody-shared/src/codebase-context/messages'
+import { AlarmCheck, Terminal } from 'lucide-react'
 import { type FC, useMemo } from 'react'
 import { Skeleton } from '../../../components/shadcn/ui/skeleton'
 import { cn } from '../../../components/shadcn/utils'
 import { BaseCell } from './BaseCell'
 
 interface TerminalOutputCellProps {
-    content?: string
+    command: string
     className?: string
     isLoading?: boolean
     defaultOpen?: boolean
-    lines?: UITerminalLine[] // Keep for backward compatibility
+    item: ContextItemToolState
 }
 
 /**
@@ -43,21 +44,20 @@ const getLineClass = (type?: string) => {
 }
 
 // Format the output as an array of TerminalLine objects
-export function convertToTerminalLines(content?: string): UITerminalLine[] {
+export function convertToTerminalLines(command: string, content?: string): UITerminalLine[] {
     if (!content) return []
-    // Split content into command and output parts
-    const parts = content.split('<|OUTPUT|>')
-    const command = parts[0] || ''
-    // If there's no output part, return just the command
+    // Split content into strout and sterr parts
+    // We will get the errors from between the <sterr> tags
+    const sterrRegex = /<sterr>([\s\S]*)<\/sterr>/g
+    const parts = content.split(sterrRegex)
+    const stdout = parts[0] || ''
+    const stderr = parts.length > 1 ? parts[1] : ''
+    // If there's no output parts, return just the command
     if (parts.length < 2) {
         return [{ content: command, type: UITerminalOutputType.Input }].filter(
             line => line.content.trim() !== ''
         )
     }
-    // Split output into stdout and stderr
-    const outputParts = parts[1].split('<|ERRORS|>')
-    const stdout = outputParts[0] || ''
-    const stderr = outputParts.length > 1 ? outputParts[1] : ''
     const lines: UITerminalLine[] = [
         { content: command, type: UITerminalOutputType.Input },
         ...formatOutputToTerminalLines(stdout, UITerminalOutputType.Output),
@@ -68,22 +68,22 @@ export function convertToTerminalLines(content?: string): UITerminalLine[] {
 }
 
 export const TerminalOutputCell: FC<TerminalOutputCellProps> = ({
-    content,
-    lines: propLines,
+    item,
     className,
     isLoading = false,
     defaultOpen = false,
 }) => {
+    const icon = item.toolName === 'get_diagnostic' ? AlarmCheck : Terminal
     // Process content into lines if provided, otherwise use lines prop
     const lines = useMemo(() => {
-        if (content) {
-            return convertToTerminalLines(content)
+        if (item?.content && item.content.trim() !== '') {
+            return convertToTerminalLines(item.title ?? 'Terminal', item.content)
         }
-        return propLines || []
-    }, [content, propLines])
+        return []
+    }, [item.title, item?.content])
 
     const renderHeaderContent = () => {
-        if (isLoading || !lines?.length) {
+        if (isLoading && item?.title) {
             return (
                 <div className="tw-flex tw-items-center tw-gap-2 tw-overflow-hidden tw-flex-1">
                     <Skeleton className="tw-h-4 tw-w-40 tw-bg-zinc-800 tw-animate-pulse" />
@@ -139,7 +139,7 @@ export const TerminalOutputCell: FC<TerminalOutputCellProps> = ({
 
     return (
         <BaseCell
-            icon={Terminal}
+            icon={icon}
             headerContent={renderHeaderContent()}
             bodyContent={renderBodyContent()}
             className={className}
