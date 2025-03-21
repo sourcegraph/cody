@@ -112,26 +112,33 @@ export class FireworksWebSocketAdapter extends FireworksAdapter implements vscod
                 return
             }
             this.ws = new WebSocket(this.webSocketEndpoint)
-            this.ws.addEventListener('open', (event: Event) => {
+            this.ws.addEventListener('open', () => {
                 autoeditsOutputChannelLogger.logDebug(
                     LOG_FILTER_LABEL,
-                    `successfully connected to ${this.webSocketEndpoint}: ${event}`
+                    `successfully connected to ${this.webSocketEndpoint}`
                 )
                 resolve(this.ws!)
             })
             this.ws.addEventListener('error', (event: ErrorEvent) => {
                 autoeditsOutputChannelLogger.logError(
                     LOG_FILTER_LABEL,
-                    `error from ${this.webSocketEndpoint}: ${event}`
+                    `error from ${this.webSocketEndpoint}: ${event.message}`
                 )
-                console.error(`error from ${this.webSocketEndpoint}: ${event}`)
+                if (process.env.NODE_ENV === 'development') {
+                    console.error(`error from ${this.webSocketEndpoint}: ${event.message}`)
+                    console.error(event)
+                }
                 reject(event)
             })
             this.ws.addEventListener('close', (event: CloseEvent) => {
                 autoeditsOutputChannelLogger.logDebug(
                     LOG_FILTER_LABEL,
-                    `${this.webSocketEndpoint} connection closed, ${event}`
+                    `${this.webSocketEndpoint} connection closed with code ${event.code}`
                 )
+                if (process.env.NODE_ENV === 'development') {
+                    console.error(`${this.webSocketEndpoint} connection closed`)
+                    console.error(event)
+                }
             })
         })
     }
