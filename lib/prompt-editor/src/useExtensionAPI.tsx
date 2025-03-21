@@ -44,7 +44,7 @@ export function useExtensionAPI<M extends keyof WebviewToExtensionAPI>(): Pick<
 export const MOCK_API = new Proxy<Partial<WebviewToExtensionAPI>>(
     {
         chatModels: () => Observable.of<Model[]>([]),
-        evaluatedFeatureFlag: () => Observable.of<boolean | undefined>(false),
+        evaluateFeatureFlag: () => Observable.of<boolean | undefined>(false),
     },
     {
         get: (obj, property) => {

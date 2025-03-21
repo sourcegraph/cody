@@ -46,58 +46,50 @@ export class ChatClient {
             throw new Error('not authenticated')
         }
 
-        // Only check the API version if it's a claude-3 model. Claude-3 models are being deprecated already,
-        // but old sg instances might still have them.
-        if (params.model?.includes('claude-3') && versions instanceof Error) {
-            throw new Error('unable to determine Cody API version')
+        const requestParams = buildChatRequestParams({
+            model: params.model,
+            codyAPIVersion: versions.codyAPIVersion,
+            isFireworksTracingEnabled: !!authStatus_.isFireworksTracingEnabled,
+            interactionId,
+        })
+
+        // Sanitize messages before sending them to the completions API.
+        messages = sanitizeMessages(messages)
+
+        // Older models or API versions look for prepended assistant messages.
+        if (requestParams.apiVersion === 0 && messages.at(-1)?.speaker === 'human') {
+            messages = messages.concat([{ speaker: 'assistant' }])
         }
-
-        const useApiV1 =
-            params.model?.includes('claude-3') && !(versions instanceof Error) && versions.codyAPIVersion
-        const isLastMessageFromHuman = messages.length > 0 && messages.at(-1)!.speaker === 'human'
-
-        const isFireworks =
-            params?.model?.startsWith('fireworks/') || params?.model?.startsWith('fireworks::')
-        const augmentedMessages =
-            isFireworks || useApiV1
-                ? sanitizeMessages(messages)
-                : isLastMessageFromHuman
-                  ? messages.concat([{ speaker: 'assistant' }])
-                  : messages
-
-        // We only want to send up the speaker and prompt text, regardless of whatever other fields
-        // might be on the messages objects (`file`, `displayText`, `contextFiles`, etc.).
-        const messagesToSend = augmentedMessages.map(({ speaker, text, cacheEnabled, content }) => ({
-            text,
-            speaker,
-            cacheEnabled,
-            content,
-        }))
 
         const completionParams = {
             ...DEFAULT_CHAT_COMPLETION_PARAMETERS,
             ...params,
-            messages: messagesToSend,
+            // We only want to send up the speaker and prompt text, regardless of whatever other fields
+            // might be on the messages objects (`file`, `displayText`, `contextFiles`, etc.).
+            messages: messages.map(({ speaker, text, cacheEnabled, content }) => ({
+                text,
+                speaker,
+                cacheEnabled,
+                content,
+            })),
         }
 
-        // Enabled Fireworks tracing for Sourcegraph teammates.
-        // https://readme.fireworks.ai/docs/enabling-tracing
-
-        const customHeaders: Record<string, string> =
-            isFireworks && authStatus_.isFireworksTracingEnabled ? { 'X-Fireworks-Genie': 'true' } : {}
-
-        return this.completions.stream(
-            completionParams,
-            {
-                apiVersion: useApiV1 ? versions.codyAPIVersion : 0,
-                interactionId: interactionId,
-                customHeaders,
-            },
-            abortSignal
-        )
+        return this.completions.stream(completionParams, requestParams, abortSignal)
     }
 }
 
+/**
+ * Sanitizes an array of conversation messages to ensure proper formatting for model processing.
+ *
+ * Performs three cleaning operations:
+ * 1. Removes trailing empty assistant messages
+ * 2. Removes pairs of messages where an assistant message in the middle has empty content
+ *    (also removes the preceding message that prompted the empty response)
+ * 3. Trims trailing whitespace from the final assistant message
+ *
+ * @param messages - The array of Message objects representing the conversation
+ * @returns A new array with sanitized messages
+ */
 export function sanitizeMessages(messages: Message[]): Message[] {
     let sanitizedMessages = messages
 
@@ -137,4 +129,32 @@ export function sanitizeMessages(messages: Message[]): Message[] {
     }
 
     return sanitizedMessages
+}
+
+/**
+ * Builds the request parameters for the chat API.
+ *
+ * @param options - The options for building the chat request parameters.
+ * @returns The request parameters for the chat API.
+ */
+export function buildChatRequestParams({
+    model,
+    codyAPIVersion,
+    isFireworksTracingEnabled,
+    interactionId,
+}: {
+    model?: string
+    codyAPIVersion: number
+    isFireworksTracingEnabled: boolean
+    interactionId?: string
+}): { apiVersion: number; interactionId?: string; customHeaders: Record<string, string> } {
+    const requestParams = { apiVersion: codyAPIVersion, interactionId, customHeaders: {} }
+
+    // Enabled Fireworks tracing for Sourcegraph teammates.
+    // https://readme.fireworks.ai/docs/enabling-tracing
+    if (model?.startsWith('fireworks') && isFireworksTracingEnabled) {
+        requestParams.customHeaders = { 'X-Fireworks-Genie': 'true' }
+    }
+
+    return requestParams
 }

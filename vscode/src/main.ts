@@ -291,8 +291,6 @@ const register = async (
     )
 
     registerAutocomplete(platform, statusBar, disposables)
-    const tutorialSetup = tryRegisterTutorial(context, disposables)
-
     await registerCodyCommands({ statusBar, chatClient, fixupController, disposables, context })
     registerAuthCommands(disposables)
     registerChatCommands(disposables)
@@ -322,8 +320,6 @@ const register = async (
             })
         )
     )
-
-    await tutorialSetup
 
     return vscode.Disposable.from(...disposables)
 }
@@ -483,7 +479,7 @@ async function registerCodyCommands({
     disposables.push(
         subscriptionDisposable(
             featureFlagProvider
-                .evaluatedFeatureFlag(FeatureFlag.CodyUnifiedPrompts)
+                .evaluateFeatureFlag(FeatureFlag.CodyUnifiedPrompts)
                 .pipe(
                     createDisposables(codyUnifiedPromptsFlag => {
                         // Commands that are available only if unified prompts feature is enabled.
@@ -709,20 +705,6 @@ async function registerDebugCommands(
     )
 }
 
-async function tryRegisterTutorial(
-    context: vscode.ExtensionContext,
-    disposables: vscode.Disposable[]
-): Promise<void> {
-    if (!isRunningInsideAgent()) {
-        // TODO: The interactive tutorial is currently VS Code specific, both in terms of features and keyboard shortcuts.
-        // Consider opening this up to support dynamic content via Cody Agent.
-        // This would allow us the present the same tutorial but with client-specific steps.
-        // Alternatively, clients may not wish to use this tutorial and instead opt for something more suitable for their environment.
-        const { registerInteractiveTutorial } = await import('./tutorial')
-        registerInteractiveTutorial(context).then(disposable => disposables.push(...disposable))
-    }
-}
-
 function registerAutoEdits({
     chatClient,
     fixupController,
@@ -736,16 +718,24 @@ function registerAutoEdits({
     disposables: vscode.Disposable[]
     context: vscode.ExtensionContext
 }): void {
+    const { autoedit } = clientCapabilities()
+    const autoeditDisabledForClient =
+        isRunningInsideAgent() && (autoedit === undefined || autoedit === 'none')
+    if (autoeditDisabledForClient) {
+        // Do not attempt to register autoedits for clients that have not opted in to use autoedit.
+        return
+    }
+
     disposables.push(
         autoeditDebugStore,
         subscriptionDisposable(
             combineLatest(
                 resolvedConfig,
                 authStatus,
-                featureFlagProvider.evaluatedFeatureFlag(
+                featureFlagProvider.evaluateFeatureFlag(
                     FeatureFlag.CodyAutoEditExperimentEnabledFeatureFlag
                 ),
-                featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyAutoEditInlineRendering)
+                featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutoEditInlineRendering)
             )
                 .pipe(
                     distinctUntilChanged((a, b) => {
@@ -792,6 +782,16 @@ function registerAutocomplete(
     statusBar: CodyStatusBar,
     disposables: vscode.Disposable[]
 ): void {
+    const autoeditEnabledForClient =
+        isRunningInsideAgent() && clientCapabilities().autoedit === 'enabled'
+    if (autoeditEnabledForClient) {
+        // autoedit is a replacement for autocomplete for clients.
+        // We should not register both if the client has opted in for auto-edit.
+        // TODO: Eventually these should be consolidated so clients to not need to decide between
+        // autocomplete and autoedit.
+        return
+    }
+
     //@ts-ignore
     let statusBarLoader: undefined | (() => void) = statusBar.addLoader({
         title: 'Completion Provider is starting',

@@ -6,7 +6,12 @@ import { createPatch } from 'diff'
 import { execSync, spawn } from 'node:child_process'
 import fspromises from 'node:fs/promises'
 import path from 'node:path'
-import { type ContextItem, type SerializedChatMessage, logError } from '@sourcegraph/cody-shared'
+import {
+    type ClientCapabilities,
+    type ContextItem,
+    type SerializedChatMessage,
+    logError,
+} from '@sourcegraph/cody-shared'
 import dedent from 'dedent'
 import { applyPatch } from 'fast-myers-diff'
 import * as vscode from 'vscode'
@@ -88,6 +93,7 @@ interface TestClientParams {
     telemetryExporter?: 'testing' | 'graphql' // defaults to testing, which doesn't send telemetry
     onWindowRequest?: (params: ShowWindowMessageParams) => Promise<string>
     extraConfiguration?: Record<string, any>
+    capabilities?: ClientCapabilities
 }
 
 export function setupRecording(): void {
@@ -198,7 +204,7 @@ export class TestClient extends MessageHandler {
         super(conn)
 
         this.name = params.name
-        this.info = this.getClientInfo()
+        this.info = this.getClientInfo(params.capabilities)
 
         this.registerNotification('progress/start', message => {
             this.progressStartEvents.fire(message)
@@ -950,14 +956,14 @@ ${patch}`
         })
     }
 
-    private getClientInfo(): ClientInfo {
+    private getClientInfo(capabilities: ClientCapabilities = allClientCapabilitiesEnabled): ClientInfo {
         return {
             name: this.name,
             version: 'v1',
             workspaceRootUri: this.params.workspaceRootUri.toString(),
             workspaceRootPath: this.params.workspaceRootUri.fsPath,
             capabilities: {
-                ...allClientCapabilitiesEnabled,
+                ...capabilities,
                 // The test client doesn't implement secrets/didChange, so we need to use the
                 // stateless secrets store.
                 secrets: 'stateless',

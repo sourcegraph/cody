@@ -51,7 +51,7 @@ export function observeDefaultContext({
         getCurrentFileOrSelection({ chatBuilder }).pipe(distinctUntilChanged()),
         getCorpusContextItemsForEditorState().pipe(distinctUntilChanged()),
         getOpenCtxContextItems().pipe(distinctUntilChanged()),
-        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.NoDefaultRepoChip)
+        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.NoDefaultRepoChip)
     ).pipe(
         debounceTime(50),
         map(
@@ -260,10 +260,10 @@ export function getCorpusContextItemsForEditorState(): Observable<
                                 authStatus
                             )
                         ),
-                        title: 'Current Remote Repository',
+                        title: 'Current repository search',
                         description: repo.name,
                         source: items.length > 0 ? ContextItemSource.Unified : ContextItemSource.Initial,
-                        icon: 'git-folder',
+                        icon: 'search',
                     })
                 }
                 // CTA to index repositories should only show for Enterprise customers, see CODY-5017 & CODY-4676
@@ -271,14 +271,14 @@ export function getCorpusContextItemsForEditorState(): Observable<
                     if (!clientCapabilities().isCodyWeb) {
                         items.push({
                             type: 'open-link',
-                            title: 'Current Remote Repository',
+                            title: 'Current repository search',
                             badge: 'Not yet available',
                             content: null,
                             uri: URI.parse(
                                 'https://sourcegraph.com/docs/cody/prompts-guide#indexing-your-repositories-for-context'
                             ),
                             name: '',
-                            icon: 'folder',
+                            icon: 'search',
                         })
                     }
                 }

@@ -5,6 +5,7 @@ import { autoeditsOutputChannelLogger } from '../output-channel-logger'
 import type { AutoeditsModelAdapter } from './base'
 import { CodyGatewayAdapter } from './cody-gateway'
 import { FireworksAdapter } from './fireworks'
+import { InceptionLabsAdapter } from './inceptionlabs'
 import { OpenAIAdapter } from './openai'
 import { SourcegraphChatAdapter } from './sourcegraph-chat'
 import { SourcegraphCompletionsAdapter } from './sourcegraph-completions'
@@ -19,6 +20,8 @@ export function createAutoeditsModelAdapter({
     chatClient: ChatClient
 }): AutoeditsModelAdapter {
     switch (providerName) {
+        case 'inceptionlabs':
+            return new InceptionLabsAdapter()
         case 'openai':
             return new OpenAIAdapter()
         case 'fireworks':

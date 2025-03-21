@@ -1,7 +1,7 @@
 import http from 'node:http'
 import open from 'open'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { URI } from 'vscode-uri'
+import type { URI } from 'vscode-uri'
 import { AgentAuthHandler } from './AgentAuthHandler'
 
 vi.mock('open')
@@ -33,18 +33,28 @@ describe('AgentAuthHandler', () => {
         it.each([
             [
                 'valid endpointUri',
-                'https://sourcegraph.test/user/settings/tokens/new/callback?requestFrom=CODY_JETBRAINS',
-                'https://sourcegraph.test/user/settings/tokens/new/callback?requestFrom=CODY_JETBRAINS-123',
+                'https://sourcegraph.test/user/settings/tokens/new/callback?requestFrom=JETBRAINS',
+                'https://sourcegraph.test/user/settings/tokens/new/callback?requestFrom=JETBRAINS-123',
+            ],
+            [
+                'valid endpointUri encoded',
+                'https://sourcegraph.test/user/settings/tokens/new/callback?requestFrom%3DJETBRAINS',
+                'https://sourcegraph.test/user/settings/tokens/new/callback?requestFrom=JETBRAINS-123',
             ],
             [
                 'valid endpointUri with additional params appended',
-                'https://sourcegraph.com/user/settings/tokens/new/callback?requestFrom=VISUAL_STUDIO&tokenReceiverUrl=https%3A%2F%2Fexample.com',
-                'https://sourcegraph.com/user/settings/tokens/new/callback?requestFrom=VISUAL_STUDIO-123&tokenReceiverUrl=https%3A%2F%2Fexample.com',
+                'https://sourcegraph.com/user/settings/tokens/new/callback?requestFrom=VISUAL_STUDIO',
+                'https://sourcegraph.com/user/settings/tokens/new/callback?requestFrom=VISUAL_STUDIO-123',
+            ],
+            [
+                'valid endpointUri with additional params appended and encoded',
+                'https://sourcegraph.com/.auth/openidconnect/login?prompt_auth=github&pc=sams&redirect=%2Fuser%2Fsettings%2Ftokens%2Fnew%2Fcallback%3FrequestFrom%3DJETBRAINS%26tokenReceiverUrl%3Dhttp%253A%252F%252F127.0.0.1%253A51231%252Fabcabcabc',
+                'https://sourcegraph.com/.auth/openidconnect/login?prompt_auth=github&pc=sams&redirect=%2Fuser%2Fsettings%2Ftokens%2Fnew%2Fcallback%3FrequestFrom%3DJETBRAINS-123%26tokenReceiverUrl%3Dhttp%253A%252F%252F127.0.0.1%253A51231%252Fabcabcabc',
             ],
             ['invalid IDE', 'https://sourcegraph.com', 'https://sourcegraph.com/'],
             ['invalid endpointUri', 'invalid-url', undefined],
         ])('%s', (_, endpointUri: string, expectedUrl?: string) => {
-            const uri = URI.parse(endpointUri)
+            const uri = endpointUri as unknown as URI
 
             agentAuthHandler.handleCallback(uri)
 

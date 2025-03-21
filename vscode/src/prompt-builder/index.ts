@@ -14,6 +14,7 @@ import {
 import type { ContextTokenUsageType } from '@sourcegraph/cody-shared/src/token'
 import { sortContextItemsIfInTest } from '../chat/chat-view/agentContextSorting'
 import { logFirstEnrollmentEvent } from '../services/utils/enrollment-event'
+import { sanitizedChatMessages } from './sanitize'
 import { getUniqueContextItems, isUniqueContextItem } from './unique-context'
 import { getContextItemTokenUsageType, renderContextItem } from './utils'
 
@@ -54,7 +55,7 @@ export class PromptBuilder {
     private constructor(private readonly tokenCounter: TokenCounter) {}
 
     private readonly hasCacheFeatureFlag = storeLastValue(
-        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyPromptCachingOnMessages)
+        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyPromptCachingOnMessages)
     )
     private readonly _isCacheEnabled: PromptCachingSetting = {
         featureFlag: false,
@@ -77,8 +78,8 @@ export class PromptBuilder {
             const contextMessages = this.buildContextMessages()
             this.reverseMessages.push(...contextMessages)
         }
-
-        return this.prefixMessages.concat([...this.reverseMessages].reverse())
+        const chatMessages = [...this.reverseMessages].reverse()
+        return this.prefixMessages.concat(sanitizedChatMessages(chatMessages))
     }
 
     /**
@@ -153,6 +154,8 @@ export class PromptBuilder {
             if (humanMsg?.speaker !== 'human' || humanMsg?.speaker === assistantMsg?.speaker) {
                 throw new Error(`Invalid transcript order: expected human message at index ${i}`)
             }
+
+            // Check token limits
             const { succeeded: withinLimit } = this.tokenCounter.updateUsage('input', [
                 humanMsg,
                 assistantMsg,

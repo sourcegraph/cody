@@ -28,16 +28,18 @@ export const Cell = forwardRef<HTMLDivElement, PropsWithChildren<CellProps>>((pr
     return (
         <div
             ref={ref}
-            className={clsx('tw-flex tw-flex-col tw-gap-4 tw-pt-4', containerClassName)}
+            className={clsx('tw-flex tw-flex-col', containerClassName)}
             role="row"
             aria-current={ariaCurrent}
             aria-disabled={ariaDisabled}
             data-testid={dataTestID}
         >
-            <header className="tw-flex tw-gap-4 tw-items-center [&_>_*]:tw-flex-shrink-0">
-                {header}
-            </header>
-            <div className={clsx('tw-flex-1', contentClassName)}>{children}</div>
+            {header ? (
+                <header className="tw-flex tw-gap-4 tw-items-center [&_>_*]:tw-flex-shrink-0">
+                    {header}
+                </header>
+            ) : null}
+            {children ? <div className={clsx('tw-flex-1', contentClassName)}>{children}</div> : null}
         </div>
     )
 })

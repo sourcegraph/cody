@@ -7,15 +7,10 @@ import {
 } from '@sourcegraph/cody-shared'
 import type { PromptEditorRefAPI } from '@sourcegraph/prompt-editor'
 import isEqual from 'lodash/isEqual'
-import { ColumnsIcon } from 'lucide-react'
 import { type FC, memo, useMemo } from 'react'
 import type { UserAccountInfo } from '../../../../Chat'
 import { BaseMessageCell } from '../BaseMessageCell'
 import { HumanMessageEditor } from './editor/HumanMessageEditor'
-
-import { Tooltip, TooltipContent, TooltipTrigger } from '../../../../components/shadcn/ui/tooltip'
-import { getVSCodeAPI } from '../../../../utils/VSCodeApi'
-import { useConfig } from '../../../../utils/useConfig'
 
 interface HumanMessageCellProps {
     message: ChatMessage
@@ -55,6 +50,17 @@ interface HumanMessageCellProps {
  * A component that displays a chat message from the human.
  */
 export const HumanMessageCell: FC<HumanMessageCellProps> = ({ message, ...otherProps }) => {
+    // Don't render the editor if the message text is explicitly undefined or empty,
+    // and it's been sent already and it's not the last interaction (i.e. there is a tool result response).
+    if (
+        (message.text === undefined || (message.text && message.text.length === 0)) &&
+        otherProps.isSent &&
+        !otherProps.isLastInteraction &&
+        message.intent === 'agentic'
+    ) {
+        return null
+    }
+
     const messageJSON = JSON.stringify(message)
 
     const initialEditorState = useMemo(
@@ -93,11 +99,6 @@ const HumanMessageCellContent = memo<HumanMessageCellContent>(props => {
 
     return (
         <BaseMessageCell
-            cellAction={
-                <div className="tw-flex tw-gap-2 tw-items-center tw-justify-end">
-                    {isFirstMessage && <OpenInNewEditorAction />}
-                </div>
-            }
             content={
                 <HumanMessageEditor
                     models={models}
@@ -106,7 +107,7 @@ const HumanMessageCellContent = memo<HumanMessageCellContent>(props => {
                     placeholder={
                         isFirstMessage
                             ? 'Ask anything. Use @ to specify context...'
-                            : 'Ask a followup...'
+                            : 'Use @ to add more context...'
                     }
                     isFirstMessage={isFirstMessage}
                     isSent={isSent}
@@ -129,35 +130,3 @@ const HumanMessageCellContent = memo<HumanMessageCellContent>(props => {
         />
     )
 }, isEqual)
-
-const OpenInNewEditorAction = () => {
-    const {
-        config: { multipleWebviewsEnabled, webviewType },
-    } = useConfig()
-
-    if (!multipleWebviewsEnabled || webviewType !== 'sidebar') {
-        return null
-    }
-
-    return (
-        <Tooltip>
-            <TooltipTrigger asChild>
-                <button
-                    type="button"
-                    onClick={() => {
-                        getVSCodeAPI().postMessage({
-                            command: 'command',
-                            id: 'cody.chat.moveToEditor',
-                        })
-                    }}
-                    className="tw-flex tw-gap-3 tw-items-center tw-leading-none tw-transition"
-                    aria-label="Open in Editor"
-                    title="Open in Editor"
-                >
-                    <ColumnsIcon size={16} strokeWidth={1.25} className="tw-w-8 tw-h-8" />
-                </button>
-            </TooltipTrigger>
-            <TooltipContent>Open in Editor</TooltipContent>
-        </Tooltip>
-    )
-}

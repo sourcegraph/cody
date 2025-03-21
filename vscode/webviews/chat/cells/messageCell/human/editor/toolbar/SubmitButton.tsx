@@ -16,7 +16,10 @@ export const SubmitButton: FC<{
                 type="submit"
                 onClick={e => {
                     e.preventDefault()
-                    onClick()
+                    // Do not submit if the editor is empty.
+                    if (state !== 'emptyEditorValue') {
+                        onClick()
+                    }
                 }}
                 className={clsx(
                     'tw-px-6 tw-py-1',

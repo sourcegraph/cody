@@ -49,6 +49,7 @@ import {
     isDotCom,
     isError,
     isRateLimitError,
+    isS2,
     logError,
     modelsService,
     pendingOperation,
@@ -76,11 +77,6 @@ import { type Span, context } from '@opentelemetry/api'
 import { captureException } from '@sentry/core'
 import type { SubMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { resolveAuth } from '@sourcegraph/cody-shared/src/configuration/auth-resolver'
-import {
-    DeepCodyAgentID,
-    ToolCodyModelName,
-    ToolCodyModelRef,
-} from '@sourcegraph/cody-shared/src/models/client'
 import type { TelemetryEventParameters } from '@sourcegraph/telemetry'
 import { Subject, map } from 'observable-fns'
 import type { URI } from 'vscode-uri'
@@ -133,7 +129,7 @@ import type { ContextRetriever } from './ContextRetriever'
 import { InitDoer } from './InitDoer'
 import { getChatPanelTitle, isAgentTesting } from './chat-helpers'
 import { OmniboxTelemetry } from './handlers/OmniboxTelemetry'
-import { getAgent } from './handlers/registry'
+import { getAgent, getAgentName } from './handlers/registry'
 import { getPromptsMigrationInfo, startPromptsMigration } from './prompts-migration'
 
 export interface ChatControllerOptions {
@@ -350,6 +346,10 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 break
             }
             case 'openFileLink':
+                if (message?.uri?.scheme?.startsWith('http')) {
+                    this.openRemoteFile(message.uri, true)
+                    return
+                }
                 vscode.commands.executeCommand('vscode.open', message.uri, {
                     selection: message.range,
                     preserveFocus: true,
@@ -377,7 +377,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             case 'chatSession':
                 switch (message.action) {
                     case 'new':
-                        await this.clearAndRestartSession()
+                        this.clearAndRestartSession()
                         break
                     case 'duplicate':
                         await this.duplicateSession(message.sessionID ?? this.chatBuilder.sessionID)
@@ -547,9 +547,13 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
 
     private async getConfigForWebview(): Promise<ConfigurationSubsetForWebview & LocalEnv> {
         const { configuration, auth } = await currentResolvedConfig()
-        const experimentalPromptEditorEnabled = await firstValueFrom(
-            featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyExperimentalPromptEditor)
-        )
+        const [experimentalPromptEditorEnabled, internalAgenticChatEnabled] = await Promise.all([
+            firstValueFrom(
+                featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyExperimentalPromptEditor)
+            ),
+            firstValueFrom(featureFlagProvider.evaluateFeatureFlag(FeatureFlag.NextAgenticChatInternal)),
+        ])
+        const experimentalAgenticChatEnabled = internalAgenticChatEnabled && isS2(auth.serverEndpoint)
         const sidebarViewOnly = this.extensionClient.capabilities?.webviewNativeConfig?.view === 'single'
         const isEditorViewType = this.webviewPanelOrView?.viewType === 'cody.editorPanel'
         const webviewType = isEditorViewType && !sidebarViewOnly ? 'editor' : 'sidebar'
@@ -561,6 +565,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             serverEndpoint: auth.serverEndpoint,
             endpointHistory: [...endpoints],
             experimentalNoodle: configuration.experimentalNoodle,
+            // Disable smart apply codeblock toolbar when agentic chat is enabled.
             smartApply: this.isSmartApplyEnabled(),
             hasEditCapability: this.hasEditCapability(),
             webviewType,
@@ -568,6 +573,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             internalDebugContext: configuration.internalDebugContext,
             allowEndpointChange: configuration.overrideServerEndpoint === undefined,
             experimentalPromptEditorEnabled,
+            experimentalAgenticChatEnabled,
         }
     }
 
@@ -654,6 +660,8 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         command?: DefaultChatCommands
         manuallySelectedIntent?: ChatMessage['intent'] | undefined | null
         traceparent?: string | undefined | null
+        model?: string | undefined
+        chatAgent?: string | undefined
     }): Promise<void> {
         return context.with(extractContextFromTraceparent(traceparent), () => {
             return tracer.startActiveSpan('chat.handleUserMessage', async (span): Promise<void> => {
@@ -664,23 +672,22 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     'handleUserMessageSubmission',
                     `traceId: ${span.spanContext().traceId}`
                 )
-
-                // Set selected agent to deep-cody for Deep Cody model.
+                // TODO: Pass the model name from webview on submit instead of fetching it here
                 const model = await wrapInActiveSpan('chat.resolveModel', () =>
                     firstResultFromOperation(ChatBuilder.resolvedModelForChat(this.chatBuilder))
                 )
+
                 this.chatBuilder.setSelectedModel(model)
-                let selectedAgent = model?.includes(DeepCodyAgentID) ? DeepCodyAgentID : undefined
-                if (model?.includes(ToolCodyModelName)) {
-                    selectedAgent = ToolCodyModelRef
-                }
+
+                const chatAgent = getAgentName(manuallySelectedIntent, model)
 
                 this.chatBuilder.addHumanMessage({
                     text: inputText,
                     editorState,
                     intent: manuallySelectedIntent,
-                    agent: selectedAgent,
+                    agent: chatAgent,
                 })
+
                 this.setCustomChatTitle(requestID, inputText, signal)
                 this.postViewTranscript({ speaker: 'assistant' })
 
@@ -697,6 +704,8 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                         source,
                         command,
                         manuallySelectedIntent,
+                        model,
+                        chatAgent,
                     },
                     span
                 )
@@ -714,27 +723,17 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             source,
             command,
             manuallySelectedIntent,
+            model,
+            chatAgent,
         }: Parameters<typeof this.handleUserMessage>[0],
         span: Span
     ): Promise<void> {
-        span.addEvent('ChatController.sendChat')
-        signal.throwIfAborted()
-
-        // Use default model if no model is selected.
-        const model =
-            this.chatBuilder.selectedModel ??
-            (await wrapInActiveSpan('chat.resolveModel', () =>
-                firstResultFromOperation(ChatBuilder.resolvedModelForChat(this.chatBuilder))
-            ))
         if (!model) {
             throw new Error('No model selected, and no default chat model is available')
         }
 
-        this.chatBuilder.setSelectedModel(model)
-        let chatAgent = model.includes(DeepCodyAgentID) ? DeepCodyAgentID : undefined
-        if (model.includes(ToolCodyModelName)) {
-            chatAgent = ToolCodyModelRef
-        }
+        span.addEvent('ChatController.sendChat')
+        signal.throwIfAborted()
 
         const recorder = await OmniboxTelemetry.create({
             requestID,
@@ -749,14 +748,10 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         recorder.recordChatQuestionSubmitted(mentions)
 
         signal.throwIfAborted()
-        this.chatBuilder.setLastMessageIntent(manuallySelectedIntent)
 
         this.postEmptyMessageInProgress(model)
 
-        const agentName = ['search', 'edit', 'insert'].includes(manuallySelectedIntent ?? '')
-            ? (manuallySelectedIntent as string)
-            : chatAgent ?? 'chat'
-        const agent = getAgent(agentName, model, {
+        const agent = getAgent(model, chatAgent ?? model, {
             contextRetriever: this.contextRetriever,
             editor: this.editor,
             chatClient: this.chatClient,
@@ -779,6 +774,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     chatBuilder: this.chatBuilder,
                     span,
                     recorder,
+                    model,
                 },
                 {
                     postError: (error: Error, type?: MessageErrorType): void => {
@@ -831,7 +827,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                         })
                         return confirmation
                     },
-                    postDone: (op?: { abort: boolean }): void => {
+                    postDone: async (op?: { abort: boolean }): Promise<void> => {
                         // Mark the end of the span for chat.handleUserMessage here, as we do not await
                         // the entire stream of chat messages being sent to the webview.
                         // The span is concluded when the stream is complete.
@@ -839,12 +835,14 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                         if (op?.abort || signal.aborted) {
                             throw new Error('aborted')
                         }
-
                         // HACK(beyang): This conditional preserves the behavior from when
                         // all the response generation logic was handled in this method.
                         // In future work, we should remove this special-casing and unify
                         // how new messages are posted to the transcript.
-                        if (
+
+                        if (chatAgent === 'agentic') {
+                            this.saveSession()
+                        } else if (
                             messageInProgress &&
                             (['search', 'insert', 'edit'].includes(messageInProgress?.intent ?? '') ||
                                 messageInProgress?.search ||
@@ -984,7 +982,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             return
         }
 
-        await this.handleAbort()
+        this.handleAbort()
 
         const humanMessage = this.chatBuilder.getMessages().at(index)
         const assistantMessage = this.chatBuilder.getMessages().at(index + 1)
@@ -1615,7 +1613,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                         })
                     },
                     clientActionBroadcast: () => this.clientBroadcast,
-                    evaluatedFeatureFlag: flag => featureFlagProvider.evaluatedFeatureFlag(flag),
+                    evaluateFeatureFlag: flag => featureFlagProvider.evaluateFeatureFlag(flag),
                     hydratePromptMessage: (promptText, initialContext) =>
                         promiseFactoryToObservable(() =>
                             hydratePromptText(promptText, initialContext ?? [])

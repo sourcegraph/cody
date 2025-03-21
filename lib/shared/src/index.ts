@@ -444,3 +444,6 @@ export {
     type RuleService,
     isRulesEnabled,
 } from './rules/service'
+
+export type { SiteAndCodyAPIVersions } from './sourcegraph-api/siteVersion'
+export * from './chat/types'

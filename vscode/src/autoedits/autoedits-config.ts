@@ -24,8 +24,8 @@ export interface AutoeditsProviderConfig extends BaseAutoeditsProviderConfig {
 }
 
 const defaultTokenLimit = {
-    prefixTokens: 2500,
-    suffixTokens: 2500,
+    prefixTokens: 500,
+    suffixTokens: 500,
     maxPrefixLinesInArea: 11,
     maxSuffixLinesInArea: 4,
     codeToRewritePrefixLines: 1,
@@ -34,8 +34,8 @@ const defaultTokenLimit = {
         [RetrieverIdentifier.RecentEditsRetriever]: 1500,
         [RetrieverIdentifier.JaccardSimilarityRetriever]: 0,
         [RetrieverIdentifier.RecentCopyRetriever]: 500,
-        [RetrieverIdentifier.DiagnosticsRetriever]: 500,
-        [RetrieverIdentifier.RecentViewPortRetriever]: 2500,
+        [RetrieverIdentifier.DiagnosticsRetriever]: 250,
+        [RetrieverIdentifier.RecentViewPortRetriever]: 1000,
     },
 } as const satisfies AutoEditsTokenLimit
 

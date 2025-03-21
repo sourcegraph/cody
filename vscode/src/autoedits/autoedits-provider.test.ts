@@ -25,12 +25,14 @@ import {
 import { ContextMixer } from '../completions/context/context-mixer'
 
 import { mockLocalStorage } from '../services/LocalStorageProvider'
+import { type AutoeditRequestID, autoeditAnalyticsLogger, autoeditTriggerKind } from './analytics-logger'
+import { AutoeditCompletionItem } from './autoedit-completion-item'
 import {
     AUTOEDIT_CONTEXT_FETCHING_DEBOUNCE_INTERVAL,
     AUTOEDIT_TOTAL_DEBOUNCE_INTERVAL,
 } from './autoedits-provider'
 import { initImageSuggestionService } from './renderer/image-gen'
-import { AUTOEDIT_VISIBLE_DELAY_MS } from './renderer/manager'
+import { DEFAULT_AUTOEDIT_VISIBLE_DELAY_MS } from './renderer/manager'
 import { autoeditResultFor } from './test-helpers'
 
 describe('AutoeditsProvider', () => {
@@ -109,7 +111,7 @@ describe('AutoeditsProvider', () => {
         await vi.advanceTimersByTimeAsync(100)
         await acceptSuggestionCommand()
 
-        expect(result?.prediction).toBe(prediction)
+        expect(result?.inlineCompletionItems[0].insertText).toBe(prediction)
 
         expect(recordSpy).toHaveBeenCalledTimes(2)
         expect(recordSpy).toHaveBeenNthCalledWith(1, 'cody.autoedit', 'suggested', expect.any(Object))
@@ -124,6 +126,7 @@ describe('AutoeditsProvider', () => {
             },
             "interactionID": "stable-id-for-tests-2",
             "metadata": {
+              "acceptReason": 1,
               "contextSummary.duration": 0,
               "contextSummary.prefixChars": 10,
               "contextSummary.suffixChars": 0,
@@ -137,7 +140,7 @@ describe('AutoeditsProvider', () => {
               "isPartiallyOutsideOfVisibleRanges": 1,
               "isRead": 1,
               "isSelectionStale": 1,
-              "latency": 175,
+              "latency": 120,
               "noActiveTextEditor": 0,
               "otherCompletionProviderEnabled": 0,
               "outsideOfActiveEditor": 1,
@@ -186,6 +189,7 @@ describe('AutoeditsProvider', () => {
             },
             "interactionID": "stable-id-for-tests-2",
             "metadata": {
+              "acceptReason": 1,
               "contextSummary.duration": 0,
               "contextSummary.prefixChars": 10,
               "contextSummary.suffixChars": 0,
@@ -199,7 +203,7 @@ describe('AutoeditsProvider', () => {
               "isPartiallyOutsideOfVisibleRanges": 1,
               "isRead": 1,
               "isSelectionStale": 1,
-              "latency": 175,
+              "latency": 120,
               "noActiveTextEditor": 0,
               "otherCompletionProviderEnabled": 0,
               "outsideOfActiveEditor": 1,
@@ -245,10 +249,10 @@ describe('AutoeditsProvider', () => {
         const { result } = await autoeditResultFor('const x = █', { prediction })
 
         // The suggestion should not be marked as read.
-        await vi.advanceTimersByTimeAsync(AUTOEDIT_VISIBLE_DELAY_MS / 2)
+        await vi.advanceTimersByTimeAsync(DEFAULT_AUTOEDIT_VISIBLE_DELAY_MS / 2)
         await rejectSuggestionCommand()
 
-        expect(result?.prediction).toBe(prediction)
+        expect(result?.inlineCompletionItems[0].insertText).toBe(prediction)
 
         expect(recordSpy).toHaveBeenCalledTimes(1)
         expect(recordSpy).toHaveBeenNthCalledWith(1, 'cody.autoedit', 'suggested', expect.any(Object))
@@ -271,9 +275,10 @@ describe('AutoeditsProvider', () => {
               "isAccepted": 0,
               "isFuzzyMatch": 0,
               "isRead": 0,
-              "latency": 175,
+              "latency": 120,
               "otherCompletionProviderEnabled": 0,
               "recordsPrivateMetadataTranscript": 1,
+              "rejectReason": 1,
               "source": 1,
               "suggestionsStartedSinceLastSuggestion": 2,
               "timeFromSuggestedAt": 375,
@@ -312,12 +317,11 @@ describe('AutoeditsProvider', () => {
     it('marks the suggestion as read after a certain timeout', async () => {
         const prediction = 'const x = 1\n'
         const { result } = await autoeditResultFor('const x = █', { prediction })
-
         // The suggestion should be marked as read.
-        await vi.advanceTimersByTimeAsync(AUTOEDIT_VISIBLE_DELAY_MS)
+        await vi.advanceTimersByTimeAsync(DEFAULT_AUTOEDIT_VISIBLE_DELAY_MS)
         await rejectSuggestionCommand()
 
-        expect(result?.prediction).toBe(prediction)
+        expect(result?.inlineCompletionItems[0].insertText).toBe(prediction)
 
         expect(recordSpy).toHaveBeenCalledTimes(1)
         expect(recordSpy).toHaveBeenNthCalledWith(1, 'cody.autoedit', 'suggested', expect.any(Object))
@@ -346,6 +350,7 @@ describe('AutoeditsProvider', () => {
         const errorPayload = recordSpy.mock.calls[0].at(2)
         expect(errorPayload).toMatchInlineSnapshot(`
           {
+            "billingMetadata": undefined,
             "metadata": {
               "count": 1,
             },
@@ -471,6 +476,26 @@ describe('AutoeditsProvider', () => {
         expect(editBuilder.size).toBe(1)
     })
 
+    it('does not trigger a suggestion if the user has selectedCompletionInfo', async () => {
+        const prediction = 'const x = 1\n'
+        const completionItem = { range: new vscode.Range(0, 0, 0, 5), text: 'beans' }
+        const { result } = await autoeditResultFor('const x = █\n', {
+            prediction,
+            inlineCompletionContext: {
+                triggerKind: autoeditTriggerKind.automatic,
+                selectedCompletionInfo: completionItem,
+            },
+        })
+        const id = result?.inlineCompletionItems[0].id as AutoeditRequestID
+        expect(result?.inlineCompletionItems).toStrictEqual([
+            new AutoeditCompletionItem({
+                id,
+                insertText: completionItem.text,
+                range: completionItem.range,
+            }),
+        ])
+    })
+
     describe('Debounce logic', () => {
         it('waits for exactly AUTOEDIT_TOTAL_DEBOUNCE_INTERVAL before calling getPrediction', async () => {
             let getModelResponseCalledAt: number | undefined
@@ -478,13 +503,14 @@ describe('AutoeditsProvider', () => {
                 // Record the current fake timer time when getModelResponse is called
                 getModelResponseCalledAt = Date.now()
                 return {
-                    data: {
+                    type: 'success',
+                    responseBody: {
                         choices: [{ text: 'const x = 1\n' }],
                     },
-                    url: 'test-url.com/completions',
+                    requestUrl: 'test-url.com/completions',
                     requestHeaders: {},
                     responseHeaders: {},
-                }
+                } as const
             }
 
             const startTime = Date.now()
@@ -497,8 +523,7 @@ describe('AutoeditsProvider', () => {
             // Run all timers to get the result
             await vi.runAllTimersAsync()
             const result = await promiseResult
-
-            expect(result?.prediction).toBe('const x = 1\n')
+            expect(result?.inlineCompletionItems[0].insertText).toBe('const x = 1')
             expect(getModelResponseCalledAt).toBeDefined()
             // Check that getModelResponse was called only after at least AUTOEDIT_TOTAL_DEBOUNCE_INTERVAL have elapsed
             expect(getModelResponseCalledAt! - startTime).toBe(AUTOEDIT_TOTAL_DEBOUNCE_INTERVAL)
@@ -509,11 +534,12 @@ describe('AutoeditsProvider', () => {
             const customGetModelResponse = async () => {
                 modelResponseCalled = true
                 return {
-                    data: { choices: [{ text: 'const x = 1\n' }] },
-                    url: 'test-url.com/completions',
+                    type: 'success',
+                    responseBody: { choices: [{ text: 'const x = 1\n' }] },
+                    requestUrl: 'test-url.com/completions',
                     requestHeaders: {},
                     responseHeaders: {},
-                }
+                } as const
             }
 
             const tokenSource = new vscode.CancellationTokenSource()
@@ -539,6 +565,41 @@ describe('AutoeditsProvider', () => {
 
             expect(result).toBeNull()
             expect(modelResponseCalled).toBe(false)
+        })
+
+        it('the abort signal is propagated to the model request', async () => {
+            const tokenSource = new vscode.CancellationTokenSource()
+            const logErrorSpy = vi.spyOn(autoeditAnalyticsLogger, 'logError')
+
+            const { promiseResult } = await autoeditResultFor('const x = █\n', {
+                prediction: 'const x = 1\n',
+                token: tokenSource.token,
+                isAutomaticTimersAdvancementDisabled: true,
+                getModelResponse: async ({ abortSignal }) => {
+                    if (abortSignal.aborted) {
+                        throw new Error('aborted before the cancellation')
+                    }
+
+                    tokenSource.cancel()
+                    if (abortSignal.aborted) {
+                        throw new Error('aborted after the cancellation')
+                    }
+
+                    return {
+                        type: 'success',
+                        responseBody: { choices: [{ text: 'const x = 1\n' }] },
+                        requestUrl: 'test-url.com/completions',
+                        requestHeaders: {},
+                        responseHeaders: {},
+                    } as const
+                },
+            })
+
+            await vi.advanceTimersByTimeAsync(AUTOEDIT_TOTAL_DEBOUNCE_INTERVAL)
+
+            expect(logErrorSpy).toHaveBeenCalledTimes(1)
+            expect(logErrorSpy).toHaveBeenCalledWith(new Error('aborted after the cancellation'))
+            expect(promiseResult).resolves.toBeNull()
         })
     })
 })

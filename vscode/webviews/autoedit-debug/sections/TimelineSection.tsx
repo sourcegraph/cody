@@ -80,7 +80,7 @@ export const TimelineSection: FC<TimelineSectionProps> = ({ entry }) => {
                                     segment.duration
                                 )}`}
                             >
-                                <span className="tw-text-sm tw-font-medium tw-text-white tw-drop-shadow-md">
+                                <span className="tw-text-xxs tw-font-medium tw-text-white tw-drop-shadow-md">
                                     {formatLatency(segment.duration)}
                                 </span>
                             </div>

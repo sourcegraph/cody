@@ -4,6 +4,7 @@ import * as Tabs from '@radix-ui/react-tabs'
 import clsx from 'clsx'
 import {
     BookTextIcon,
+    ColumnsIcon,
     DownloadIcon,
     HistoryIcon,
     type LucideProps,
@@ -16,7 +17,6 @@ import { View } from './types'
 
 import { type AuthenticatedAuthStatus, CodyIDE, isDefined } from '@sourcegraph/cody-shared'
 import { type FC, Fragment, forwardRef, memo, useCallback, useMemo, useState } from 'react'
-import { Kbd } from '../components/Kbd'
 import { Tooltip, TooltipContent, TooltipTrigger } from '../components/shadcn/ui/tooltip'
 import { useConfig } from '../utils/useConfig'
 
@@ -36,6 +36,7 @@ interface TabsBarProps {
     endpointHistory: string[]
     // Whether to show the Sourcegraph Teams upgrade CTA or not.
     isWorkspacesUpgradeCtaEnabled?: boolean
+    showOpenInEditor?: boolean
 }
 
 type IconComponent = React.ForwardRefExoticComponent<
@@ -70,7 +71,7 @@ interface TabConfig {
 }
 
 export const TabsBar = memo<TabsBarProps>(props => {
-    const { currentView, setView, user, endpointHistory } = props
+    const { currentView, setView, user, endpointHistory, showOpenInEditor } = props
     const { isCodyProUser, IDE } = user
     const tabItems = useTabs({ user })
     const {
@@ -125,30 +126,27 @@ export const TabsBar = memo<TabsBarProps>(props => {
                             />
                         </Tabs.Trigger>
                     ))}
-
                     <div className="tw-flex tw-ml-auto">
                         <TabButton
                             prominent
-                            Icon={MessageSquarePlusIcon}
-                            title="New Chat"
+                            Icon={showOpenInEditor ? ColumnsIcon : MessageSquarePlusIcon}
+                            title={showOpenInEditor ? 'Open in Editor' : 'New Chat'}
                             IDE={IDE}
-                            alwaysShowTitle={true}
-                            tooltipExtra={
-                                <>
-                                    {IDE === CodyIDE.VSCode && (
-                                        <Kbd macOS="shift+opt+l" linuxAndWindows="shift+alt+l" />
-                                    )}
-                                </>
-                            }
+                            tooltipExtra={IDE === CodyIDE.VSCode && '(⇧⌥/)'}
                             view={View.Chat}
+                            data-testid="new-chat-button"
                             onClick={() =>
                                 handleSubActionClick({
                                     changesView: View.Chat,
-                                    command: getCreateNewChatCommand({
-                                        IDE,
-                                        webviewType,
-                                        multipleWebviewsEnabled,
-                                    }),
+                                    command: `${
+                                        showOpenInEditor
+                                            ? 'cody.chat.moveToEditor'
+                                            : getCreateNewChatCommand({
+                                                  IDE,
+                                                  webviewType,
+                                                  multipleWebviewsEnabled,
+                                              })
+                                    }`,
                                 })
                             }
                         />
@@ -198,7 +196,6 @@ export const TabsBar = memo<TabsBarProps>(props => {
         </div>
     )
 }, isEqual)
-
 interface ActionButtonWithConfirmationProps {
     title: string
     Icon: IconComponent

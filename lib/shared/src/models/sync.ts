@@ -1,5 +1,5 @@
 import { Observable, interval, map } from 'observable-fns'
-import type { AuthStatus } from '../auth/types'
+import { type AuthStatus, isCodyProUser } from '../auth/types'
 import type { ClientConfiguration } from '../configuration'
 import { clientCapabilities } from '../configuration/clientCapabilities'
 import { cenv } from '../configuration/environment'
@@ -26,7 +26,7 @@ import { RestClient } from '../sourcegraph-api/rest/client'
 import type { UserProductSubscription } from '../sourcegraph-api/userProductSubscription'
 import { CHAT_INPUT_TOKEN_BUDGET } from '../token/constants'
 import { isError } from '../utils'
-import { TOOL_CODY_MODEL, ToolCodyModelName, getExperimentalClientModelByFeatureFlag } from './client'
+import { DEEP_CODY_MODEL, TOOL_CODY_MODEL } from './client'
 import { type Model, type ServerModel, createModel, createModelFromServerModel } from './model'
 import type {
     DefaultsAndUserPreferencesForEndpoint,
@@ -38,6 +38,19 @@ import { ModelUsage } from './types'
 import { getEnterpriseContextWindow } from './utils'
 
 const EMPTY_PREFERENCES: DefaultsAndUserPreferencesForEndpoint = { defaults: {}, selected: {} }
+export const INPUT_TOKEN_FLAG_OFF: number = 45_000
+const TOKEN_LIMITS = {
+    MISTRAL_ADJUSTMENT_FACTOR: 0.85,
+    ORIGINAL_ALL: {
+        MAX_INPUT_TOKENS: 45_000,
+        MAX_OUTPUT_TOKENS: 4_000,
+    },
+    PRO: {
+        STANDARD_OUTPUT: 6_000,
+        REASONING_OUTPUT: 16_000,
+        MAX_INPUT_TOKENS: 175_000,
+    },
+}
 
 /**
  * Observe the list of all available models.
@@ -148,11 +161,11 @@ export function syncModels({
                 const serverModelsConfig: Observable<
                     RemoteModelsData | Error | typeof pendingOperation
                 > = clientConfig.pipe(
-                    switchMapReplayOperation(maybeClientConfig => {
+                    switchMapReplayOperation(maybeServerSideClientConfig => {
                         // NOTE: isDotComUser to enable server-side models for DotCom users,
                         // as the modelsAPIEnabled is default to return false on DotCom to avoid older clients
                         // that also share the same check from breaking.
-                        if (isDotComUser || maybeClientConfig?.modelsAPIEnabled) {
+                        if (isDotComUser || maybeServerSideClientConfig?.modelsAPIEnabled) {
                             logDebug('ModelsService', 'new models API enabled')
                             return promiseFactoryToObservable(signal =>
                                 fetchServerSideModels_(config, signal)
@@ -163,46 +176,23 @@ export function syncModels({
                                         primaryModels: [],
                                     }
 
-                                    if (serverModelsConfig) {
-                                        // Remove deprecated models from the list, filter out waitlisted models for Enterprise.
-                                        const filteredModels = serverModelsConfig?.models.filter(
-                                            m =>
-                                                m.status !== 'deprecated' &&
-                                                (isDotComUser || m.status !== 'waitlist')
-                                        )
-                                        data.primaryModels.push(
-                                            ...maybeAdjustContextWindows(filteredModels).map(
-                                                createModelFromServerModel
-                                            )
-                                        )
-                                        data.preferences!.defaults =
-                                            defaultModelPreferencesFromServerModelsConfig(
-                                                serverModelsConfig
-                                            )
-                                    }
-
-                                    // NOTE: Calling `registerModelsFromVSCodeConfiguration()` doesn't
-                                    // entirely make sense in a world where LLM models are managed
-                                    // server-side. However, this is how Cody can be extended to use locally
-                                    // running LLMs such as Ollama. (Though some more testing is needed.)
-                                    // See:
-                                    // https://sourcegraph.com/blog/local-code-completion-with-ollama-and-cody
-                                    data.primaryModels.push(...getModelsFromVSCodeConfiguration(config))
-
                                     // For DotCom users with early access or on the waitlist, replace the waitlist tag with the appropriate tags.
                                     const enableToolCody: Observable<boolean> = resolvedConfig.pipe(
                                         map(c => !!c.configuration.experimentalMinionAnthropicKey),
                                         distinctUntilChanged()
                                     )
                                     return combineLatest(
-                                        featureFlagProvider.evaluatedFeatureFlag(
+                                        featureFlagProvider.evaluateFeatureFlag(
                                             FeatureFlag.CodyEarlyAccess
                                         ),
-                                        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.DeepCody),
-                                        featureFlagProvider.evaluatedFeatureFlag(
+                                        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.DeepCody),
+                                        featureFlagProvider.evaluateFeatureFlag(
                                             FeatureFlag.CodyChatDefaultToClaude35Haiku
                                         ),
-                                        enableToolCody
+                                        enableToolCody,
+                                        featureFlagProvider.evaluateFeatureFlag(
+                                            FeatureFlag.LongContextWindow
+                                        )
                                     ).pipe(
                                         switchMap(
                                             ([
@@ -210,7 +200,46 @@ export function syncModels({
                                                 hasAgenticChatFlag,
                                                 defaultToHaiku,
                                                 isToolCodyEnabled,
+                                                longContextWindowFlag,
                                             ]) => {
+                                                if (serverModelsConfig) {
+                                                    // Remove deprecated models from the list, filter out waitlisted models for Enterprise.
+                                                    const filteredModels =
+                                                        serverModelsConfig?.models.filter(
+                                                            m =>
+                                                                m.status !== 'deprecated' &&
+                                                                (isDotComUser || m.status !== 'waitlist')
+                                                        )
+                                                    data.primaryModels.push(
+                                                        ...maybeAdjustContextWindows(filteredModels, {
+                                                            tier: isDotComUser
+                                                                ? isCodyProUser(
+                                                                      authStatus,
+                                                                      userProductSubscription
+                                                                  )
+                                                                    ? 'pro'
+                                                                    : 'free'
+                                                                : 'enterprise',
+                                                            longContextWindowFlagEnabled:
+                                                                longContextWindowFlag,
+                                                        }).map(createModelFromServerModel)
+                                                    )
+                                                    data.preferences!.defaults =
+                                                        defaultModelPreferencesFromServerModelsConfig(
+                                                            serverModelsConfig
+                                                        )
+                                                }
+
+                                                // NOTE: Calling `registerModelsFromVSCodeConfiguration()` doesn't
+                                                // entirely make sense in a world where LLM models are managed
+                                                // server-side. However, this is how Cody can be extended to use locally
+                                                // running LLMs such as Ollama. (Though some more testing is needed.)
+                                                // See:
+                                                // https://sourcegraph.com/blog/local-code-completion-with-ollama-and-cody
+                                                data.primaryModels.push(
+                                                    ...getModelsFromVSCodeConfiguration(config)
+                                                )
+
                                                 // TODO(sqs): remove waitlist from localStorage when user has access
                                                 if (isDotComUser && hasEarlyAccess) {
                                                     data.primaryModels = data.primaryModels.map(
@@ -248,6 +277,7 @@ export function syncModels({
                                                 const isAgenticChatEnabled =
                                                     hasAgenticChatFlag ||
                                                     (isDotComUser && !isCodyFreeUser)
+                                                // Handle agentic chat features
                                                 const haikuModel = data.primaryModels.find(m =>
                                                     m.id.includes('5-haiku')
                                                 )
@@ -263,25 +293,28 @@ export function syncModels({
                                                     sonnetModel &&
                                                     haikuModel
                                                 ) {
-                                                    clientModels.push(
-                                                        getExperimentalClientModelByFeatureFlag(
-                                                            FeatureFlag.DeepCody
-                                                        )!
-                                                    )
-                                                }
-
-                                                const hasToolCody = data.primaryModels.some(m =>
-                                                    m.id.includes(ToolCodyModelName)
-                                                )
-                                                if (!hasToolCody && isToolCodyEnabled) {
-                                                    clientModels.push(TOOL_CODY_MODEL)
+                                                    // Add Deep Cody
+                                                    clientModels.push(DEEP_CODY_MODEL)
+                                                    // Add Tool Cody
+                                                    if (isToolCodyEnabled) {
+                                                        clientModels.push(TOOL_CODY_MODEL)
+                                                    }
                                                 }
 
                                                 // Add the client models to the list of models.
                                                 data.primaryModels.push(
-                                                    ...maybeAdjustContextWindows(clientModels).map(
-                                                        createModelFromServerModel
-                                                    )
+                                                    ...maybeAdjustContextWindows(clientModels, {
+                                                        tier: isDotComUser
+                                                            ? isCodyProUser(
+                                                                  authStatus,
+                                                                  userProductSubscription
+                                                              )
+                                                                ? 'pro'
+                                                                : 'free'
+                                                            : 'enterprise',
+                                                        longContextWindowFlagEnabled:
+                                                            longContextWindowFlag,
+                                                    }).map(createModelFromServerModel)
                                                 )
 
                                                 // Set the default model to Haiku for free users.
@@ -481,34 +514,77 @@ async function fetchServerSideModels(
 }
 
 /**
- * maybeAdjustContextWindows adjusts the context window input tokens for specific models to prevent
- * context window overflow caused by token count discrepancies.
+ * Adjusts context windows for models based on user tier and model characteristics.
  *
- * Currently, the OpenAI tokenizer is used by default for all models. However, it often
- * counts tokens incorrectly for non-OpenAI models (e.g., Mistral), leading to over-counting
- * and potentially causing completion requests to fail due to exceeding the context window.
+ * This function:
+ * 1. Applies tokenizer-specific adjustments (e.g., for Mistral models)
+ * 2. Enforces tier-specific context window limits (free, pro, enterprise)
+ * 3. Sets appropriate output token limits based on model capabilities
  *
- * The proper fix would be to use model-specific tokenizers, but this would require significant
- * refactoring. As a temporary workaround, this function reduces the `maxInputTokens` for specific
- * models to mitigate the risk of context window overflow.
- *
- * @param {ServerModel[]} models - An array of models from the site config.
- * @returns {ServerModel[]} - The array of models with adjusted context windows where applicable.
+ * @param models - Array of models to adjust
+ * @param isPro - Whether the user has a pro subscription
+ * @param isFree - Whether the user has a free subscription
+ * @returns Array of models with adjusted context windows
  */
-export const maybeAdjustContextWindows = (models: ServerModel[]): ServerModel[] =>
-    models.map(model => {
-        let maxInputTokens = model.contextWindow.maxInputTokens
-        if (/^mi(x|s)tral/.test(model.modelName)) {
+export const maybeAdjustContextWindows = (
+    models: ServerModel[],
+    config: { tier: 'free' | 'pro' | 'enterprise'; longContextWindowFlagEnabled: boolean }
+): ServerModel[] => {
+    // Compile regex once
+    const mistralRegex = /^mi(x|s)tral/
+    // Determine token limits based on config once outside the loop
+    const isFreeTier = config.tier === 'free'
+    const isProTier = config.tier === 'pro'
+
+    // Apply restrictions to all models
+    return models.map(model => {
+        let { maxInputTokens, maxOutputTokens } = model.contextWindow
+
+        // Apply Mistral-specific adjustment
+        if (mistralRegex.test(model.modelName)) {
             // Adjust the context window size for Mistral models because the OpenAI tokenizer undercounts tokens in English
             // compared to the Mistral tokenizer. Based on our observations, the OpenAI tokenizer usually undercounts by about 13%.
             // We reduce the context window by 15% (0.85 multiplier) to provide a safety buffer and prevent potential overflow.
             // Note: In other languages, the OpenAI tokenizer might actually overcount tokens. As a result, we accept the risk
             // of using a slightly smaller context window than what's available for those languages.
-            maxInputTokens = Math.round(model.contextWindow.maxInputTokens * 0.85)
+            maxInputTokens = Math.round(maxInputTokens * TOKEN_LIMITS.MISTRAL_ADJUSTMENT_FACTOR)
         }
-        return { ...model, contextWindow: { ...model.contextWindow, maxInputTokens } }
-    })
 
+        /*
+            Input window adjustments:
+            - The enhanced input window limits are applied to ES and Pro users when the flag is on, and we set the limits to the highest on the server side.
+            - Therefore, we change the input window limits back to the original ones for pro and enterprise users if the flag is off or if
+            the user is on the free tier.
+        */
+        if (isFreeTier || !config.longContextWindowFlagEnabled) {
+            maxInputTokens = Math.min(maxInputTokens, TOKEN_LIMITS.ORIGINAL_ALL.MAX_INPUT_TOKENS)
+        }
+
+        /*
+            Output window adjustments:
+            - We set the limits to the highest (ES limits) on the server side, so we need to reduce the limits for pro users and free users.
+        */
+        if (isProTier) {
+            const limit = model.capabilities.includes(ModelTag.Reasoning)
+                ? TOKEN_LIMITS.PRO.REASONING_OUTPUT
+                : TOKEN_LIMITS.PRO.STANDARD_OUTPUT
+            maxOutputTokens = Math.min(maxOutputTokens, limit)
+        }
+        if (isFreeTier) {
+            maxOutputTokens = Math.min(maxOutputTokens, TOKEN_LIMITS.ORIGINAL_ALL.MAX_OUTPUT_TOKENS)
+        }
+
+        // Return model with adjusted context window
+        return {
+            ...model,
+            contextWindow: {
+                ...model.contextWindow,
+                maxInputTokens,
+                maxOutputTokens,
+            },
+        }
+    })
+}
 function deepClone<T>(value: T): T {
     return JSON.parse(JSON.stringify(value)) as T
 }

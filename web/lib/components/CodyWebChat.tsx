@@ -310,7 +310,7 @@ const CodyWebPanel: FC<CodyWebPanelProps> = props => {
                         },
                         description: fileURL,
                     },
-                    icon: 'git-folder',
+                    icon: 'search',
                 } as ContextItemOpenCtx)
             } else {
                 // Common file mention with possible file range positions

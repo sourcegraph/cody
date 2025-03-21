@@ -1,8 +1,11 @@
 package com.sourcegraph.config;
 
 import com.intellij.openapi.actionSystem.AnAction;
+import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.Presentation;
 import com.intellij.openapi.actionSystem.impl.ActionButton;
+import com.intellij.openapi.actionSystem.impl.SimpleDataContext;
+import com.intellij.openapi.project.Project;
 import com.intellij.util.IconUtil;
 import com.intellij.util.ui.JBDimension;
 import com.intellij.util.ui.JBUI;
@@ -14,11 +17,19 @@ import org.jetbrains.annotations.NotNull;
 public class GoToPluginSettingsButtonFactory {
 
   @NotNull
-  public static ActionButton createGoToPluginSettingsButton() {
+  public static ActionButton createGoToPluginSettingsButton(Project project) {
     JBDimension actionButtonSize = JBUI.size(22, 22);
 
-    AnAction action = new OpenCodySettingsEditorAction();
     Presentation presentation = new Presentation("Open Plugin Settings");
+
+    AnAction action =
+        new AnAction() {
+          @Override
+          public void actionPerformed(@NotNull AnActionEvent e) {
+            new OpenCodySettingsEditorAction()
+                .actionPerformed(e.withDataContext(SimpleDataContext.getProjectContext(project)));
+          }
+        };
 
     ActionButton button =
         new ActionButton(

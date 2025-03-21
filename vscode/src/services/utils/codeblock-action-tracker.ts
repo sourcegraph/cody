@@ -11,6 +11,7 @@ import {
     featureFlagProvider,
     firstValueFrom,
     isDotCom,
+    isS2,
     skipPendingOperation,
     switchMap,
     telemetryRecorder,
@@ -19,8 +20,8 @@ import { doesFileExist } from '../../commands/utils/workspace-files'
 import { executePrefetchSmartApply, executeSmartApply } from '../../edit/smart-apply'
 import { getEditor } from '../../editor/active-editor'
 import type { VSCodeEditor } from '../../editor/vscode-editor'
-import { isRunningInsideAgent } from '../../jsonrpc/isRunningInsideAgent'
 
+import { SMART_APPLY_MODEL_IDENTIFIERS } from '../../edit/prompt/constants'
 import { countCode, matchCodeSnippets } from './code-count'
 import { resolveRelativeOrAbsoluteUri } from './edit-create-file'
 
@@ -140,22 +141,29 @@ export async function handleCodeFromInsertAtCursor(text: string): Promise<void> 
     await vscode.workspace.applyEdit(workspaceEdit)
 }
 
-function getSmartApplyExperimentModel(): Observable<EditModel | undefined> {
-    const defaultModel: EditModel = 'anthropic/claude-3-5-sonnet-20240620'
-    const haikuModel: EditModel = 'anthropic::2024-10-22::claude-3-5-haiku-latest'
-
+function getSmartApplyExperimentModel(
+    defaultModel: EditModel | undefined
+): Observable<EditModel | undefined> {
     return combineLatest(
-        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodySmartApplyExperimentEnabledFeatureFlag),
-        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodySmartApplyExperimentVariant1)
+        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodySmartApplyExperimentEnabledFeatureFlag),
+        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodySmartApplyExperimentVariant1),
+        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodySmartApplyExperimentVariant2),
+        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodySmartApplyExperimentVariant3)
     ).pipe(
-        switchMap(([isExperimentEnabled, isVariant1Enabled]) => {
+        switchMap(([isExperimentEnabled, isVariant1Enabled, isVariant2Enabled, isVariant3Enabled]) => {
             // We run fine tuning experiment for VSC client only.
             // We disable for all agent clients like the JetBrains plugin.
-            if (isRunningInsideAgent() || !isExperimentEnabled) {
+            if (!isExperimentEnabled) {
                 return Observable.of(defaultModel)
             }
             if (isVariant1Enabled) {
-                return Observable.of(haikuModel)
+                return Observable.of(SMART_APPLY_MODEL_IDENTIFIERS.FireworksQwenCodeDefault)
+            }
+            if (isVariant2Enabled) {
+                return Observable.of(SMART_APPLY_MODEL_IDENTIFIERS.FireworksQwenCodeVariant2)
+            }
+            if (isVariant3Enabled) {
+                return Observable.of(SMART_APPLY_MODEL_IDENTIFIERS.FireworksQwenCodeVariant3)
             }
             return Observable.of(defaultModel)
         }),
@@ -164,21 +172,22 @@ function getSmartApplyExperimentModel(): Observable<EditModel | undefined> {
 }
 
 async function getSmartApplyModel(authStatus: AuthStatus): Promise<EditModel | undefined> {
-    if (!isDotCom(authStatus)) {
-        // We cannot be sure what model we're using for enterprise, we will let this fall through
-        // to the default edit/smart apply behaviour where we use the configured enterprise model.
-        return
+    if (isDotCom(authStatus) || isS2(authStatus)) {
+        const defaultModel: EditModel = 'anthropic/claude-3-5-sonnet-20240620'
+        /**
+         * For PLG, we have a greater model choice. We default this to Claude 3.5 Sonnet
+         * as it is the most reliable model for smart apply from our testing.
+         * We choose the model based on the feature flag but default to the sonnet model if the flag is not enabled or as default model.
+         */
+        const smartApplyModel = await firstValueFrom(
+            getSmartApplyExperimentModel(defaultModel).pipe(skipPendingOperation())
+        )
+        return smartApplyModel
     }
 
-    /**
-     * For PLG, we have a greater model choice. We default this to Claude 3.5 Sonnet
-     * as it is the most reliable model for smart apply from our testing.
-     * We choose the model based on the feature flag but default to the sonnet model if the flag is not enabled or as default model.
-     */
-    const smartApplyModel = await firstValueFrom(
-        getSmartApplyExperimentModel().pipe(skipPendingOperation())
-    )
-    return smartApplyModel
+    // We cannot be sure what model we're using for enterprise, we will let this fall through
+    // to the default edit/smart apply behaviour where we use the configured enterprise model.
+    return undefined
 }
 
 export async function handleSmartApply({
