@@ -121,9 +121,13 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
                 const content = Array.from(toolCalls.values())
                 delegate.postMessageInProgress(botResponse)
 
-                const results = await this.executeTools(content)
-                const toolResults = results.map(result => result.tool_result).filter(isDefined)
-                const toolOutputs = results.map(result => result.output).filter(isDefined)
+                const results = await this.executeTools(content).catch(() => {
+                    console.error('Error executing tools')
+                    return []
+                })
+
+                const toolResults = results?.map(result => result.tool_result).filter(isDefined)
+                const toolOutputs = results?.map(result => result.output).filter(isDefined)
 
                 botResponse.contextFiles = toolOutputs
 
@@ -273,17 +277,26 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
     protected async executeTools(toolCalls: ToolCallContentPart[]): Promise<ToolResult[]> {
         try {
             logDebug('AgenticHandler', `Executing ${toolCalls.length} tools`)
-            // Execute all tools concurrently
-            const results = await Promise.all(
+            // Execute all tools concurrently and filter out any undefined/null results
+            const results = await Promise.allSettled(
                 toolCalls.map(async toolCall => {
-                    logDebug('AgenticHandler', `Executing ${toolCall.tool_call?.name}`, {
-                        verbose: toolCall,
-                    })
-                    return this.executeSingleTool(toolCall)
+                    try {
+                        logDebug('AgenticHandler', `Executing ${toolCall.tool_call?.name}`, {
+                            verbose: toolCall,
+                        })
+                        return await this.executeSingleTool(toolCall)
+                    } catch (error) {
+                        logDebug('AgenticHandler', `Error executing tool ${toolCall.tool_call?.name}`, {
+                            verbose: error,
+                        })
+                        return null // Return null for failed tool executions
+                    }
                 })
             )
-
-            return results.filter(isDefined)
+            // Filter out rejected promises and null/undefined results
+            return results
+                .filter(result => result.status === 'fulfilled' && result.value)
+                .map(result => (result as PromiseFulfilledResult<ToolResult>).value)
         } catch (error) {
             logDebug('AgenticHandler', 'Error executing tools', { verbose: error })
             return []
@@ -317,7 +330,16 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
         // Update status to pending *before* execution
         try {
             const args = parseToolCallArgs(toolCall.tool_call.arguments)
-            const result = await tool.invoke(args)
+            const result = await tool.invoke(args).catch(error => {
+                logDebug('AgenticHandler', `Error executing tool ${toolCall.tool_call.name}`, {
+                    verbose: error,
+                })
+                return null
+            })
+
+            if (result === null) {
+                throw new Error(`Tool ${toolCall.tool_call.name} failed`)
+            }
 
             tool_result.tool_result.content = result.content || 'Empty result'
 
