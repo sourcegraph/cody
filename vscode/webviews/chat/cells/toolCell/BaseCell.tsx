@@ -65,11 +65,12 @@ const BaseCellComponent: FC<BaseCellProps> = ({
                         {headerContent}
                     </div>
                     {/* Only show chevron icons when there's expandable content */}
-                    {bodyContent && isOpen ? (
-                        <ChevronDown size={16} className="tw-flex-shrink-0 tw-text-zinc-400" />
-                    ) : (
-                        <ChevronRight size={16} className="tw-flex-shrink-0 tw-text-zinc-400" />
-                    )}
+                    {bodyContent &&
+                        (isOpen ? (
+                            <ChevronDown size={16} className="tw-flex-shrink-0 tw-text-zinc-400" />
+                        ) : (
+                            <ChevronRight size={16} className="tw-flex-shrink-0 tw-text-zinc-400" />
+                        ))}
                 </CollapsibleTrigger>
                 <CollapsibleContent>
                     <div className="tw-overflow-auto tw-bg-zinc-950 tw-p-0 tw-h-auto tw-max-h-[300px]">

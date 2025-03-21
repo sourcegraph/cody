@@ -110,8 +110,7 @@ async function createFile(uri: vscode.Uri, fileText: string | undefined): Promis
         await fileOps.createFile(uri, fileText)
 
         // Open the file
-        const doc = await vscode.workspace.openTextDocument(uri)
-        await vscode.window.showTextDocument(doc)
+        await vscode.workspace.openTextDocument(uri)
 
         // Check for problems
         const problems = vscode.languages.getDiagnostics(uri)
@@ -286,8 +285,7 @@ async function insertInFile(
         await fileOps.write(uri, lines.join('\n'))
 
         // Open document
-        const document = await vscode.workspace.openTextDocument(uri)
-        await vscode.window.showTextDocument(document)
+        await vscode.workspace.openTextDocument(uri)
 
         return createEditToolState(
             toolId,
