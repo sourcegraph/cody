@@ -104,11 +104,9 @@ class DefaultCodeCompletionsClient implements CodeCompletionsClient {
                 // responses afterwards.
                 if (enableStreaming) {
                     headers.set('Accept-Encoding', 'gzip;q=0')
-                    requestHeaders['Accept-Encoding'] = 'gzip;q=0'
                 }
 
                 headers.set('X-Timeout-Ms', params.timeoutMs.toString())
-                requestHeaders['X-Timeout-Ms'] = params.timeoutMs.toString()
 
                 const serializedParams: SerializedCodeCompletionsParams & {
                     stream: boolean
