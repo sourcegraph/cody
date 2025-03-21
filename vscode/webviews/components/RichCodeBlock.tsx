@@ -208,9 +208,7 @@ export const RichCodeBlock: React.FC<RichCodeBlockProps> = ({
                         <CodeBlockPlaceholder text={code} />
                     ) : (
                         // Otherwise show the actual code with syntax highlighting
-                        <pre className={styles.content}>
-                            <code className={clsx(language && `language-${language}`)}>{children}</code>
-                        </pre>
+                        <pre className={styles.content}>{children}</pre>
                     )}
 
                     {/* Actions bar */}
