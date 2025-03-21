@@ -14,7 +14,7 @@ function unicodeSafeAtob(str: string) {
     return decodeURIComponent(atob(str))
 }
 
-const DYNAMIC_MENTION_TO_HYDRATABLE: Record<string, string> = {
+export const DYNAMIC_MENTION_TO_HYDRATABLE: Record<string, string> = {
     'current-selection': 'cody://selection',
     'current-file': 'cody://current-file',
     'current-repository': 'cody://repository',
@@ -235,7 +235,7 @@ export function splitToWords(s: string): string[] {
      * - "cody://tabs." -> matches "cody://tabs"
      * - "cody://serialized.v1?data=123_." -> matches "cody://serialized.v1?data=123_"
      */
-    const pattern = /(cody:\/\/(?:serialized[^_]+_|[^_\s.]+))/
+    const pattern = /(cody:\/\/(?:serialized[^_]+_|[a-zA-Z0-9-]+))/
     return s.split(pattern)
 }
 
