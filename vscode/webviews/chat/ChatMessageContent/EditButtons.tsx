@@ -129,12 +129,12 @@ export function createEditButtonsSmartApply({
         </div>
     )
 
+    const copyButton = createCopyButton(preText, copyButtonOnSubmit ?? (() => {}))
+
     const buttons = (
         <div className={styles.buttonContainer}>
             <div className={styles.buttons}>
-                {smartApplyState !== CodyTaskState.Applied &&
-                    copyButtonOnSubmit &&
-                    createCopyButton(preText, copyButtonOnSubmit)}
+                {smartApplyState !== CodyTaskState.Applied && copyButtonOnSubmit && copyButton}
                 {smartApply && smartApplyId && smartApplyState === CodyTaskState.Applied && (
                     <>
                         {createAcceptButton(smartApplyId, smartApply)}
