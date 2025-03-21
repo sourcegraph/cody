@@ -132,6 +132,9 @@ export function createEditButtonsSmartApply({
     const buttons = (
         <div className={styles.buttonContainer}>
             <div className={styles.buttons}>
+                {smartApplyState !== CodyTaskState.Applied &&
+                    copyButtonOnSubmit &&
+                    createCopyButton(preText, copyButtonOnSubmit)}
                 {smartApply && smartApplyId && smartApplyState === CodyTaskState.Applied && (
                     <>
                         {createAcceptButton(smartApplyId, smartApply)}
@@ -146,7 +149,6 @@ export function createEditButtonsSmartApply({
                             createApplyButton(onSmartApply, smartApplyState)}
                     </>
                 )}
-                {!smartApply && copyButtonOnSubmit && createCopyButton(preText, copyButtonOnSubmit)}
                 {isVSCode && createActionsDropdown(preText)}
                 {!isVSCode && (
                     <>
