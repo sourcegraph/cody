@@ -128,6 +128,7 @@ internal class WebUIProxy(private val host: WebUIHost, private val browser: JBCe
         val isCefComponent =
             event.component.javaClass.name ==
                 "com.intellij.ui.jcef.JBCefOsrComponent" // about 30% faster than
+        // browser.uiComponent.hasFocus()
         try {
           // if the event is destined for Cef component and it's already consumed, try to un-consume
           // it
