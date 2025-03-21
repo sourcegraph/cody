@@ -99,7 +99,7 @@ function createDiagnosticToolState(
         toolName: 'get_diagnostic',
         status,
         content,
-        title: fileName ?? 'Diagnostics',
+        title: 'diagnostics:' + fileName,
         description: 'Diagnostics',
         icon,
         outputType,
