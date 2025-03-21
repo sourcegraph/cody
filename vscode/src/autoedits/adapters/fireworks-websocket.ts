@@ -59,9 +59,9 @@ export class FireworksWebSocketAdapter extends FireworksAdapter implements vscod
         const messageId = 'm_' + this.messageId++
         const data = JSON.stringify({
             'x-message-id': messageId,
-            'x-message-body': JSON.stringify(body),
+            'x-message-body': body,
             'x-message-url': url,
-            'x-message-headers': JSON.stringify(requestHeaders),
+            'x-message-headers': requestHeaders,
         })
 
         try {
