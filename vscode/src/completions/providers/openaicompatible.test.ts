@@ -16,7 +16,7 @@ import {
 describe('openaicompatible autocomplete provider', () => {
     beforeEach(async () => {
         mockLocalStorage()
-        vi.spyOn(featureFlagProvider, 'evaluatedFeatureFlag').mockReturnValue(Observable.of(false))
+        vi.spyOn(featureFlagProvider, 'evaluateFeatureFlag').mockReturnValue(Observable.of(false))
     })
 
     const anthropicParams = {

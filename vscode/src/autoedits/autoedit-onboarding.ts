@@ -14,7 +14,7 @@ import { isUserEligibleForAutoeditsFeature } from './create-autoedits-provider'
 
 export class AutoEditBetaOnboarding implements vscode.Disposable {
     private featureFlagAutoEditExperimental = storeLastValue(
-        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyAutoEditExperimentEnabledFeatureFlag)
+        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutoEditExperimentEnabledFeatureFlag)
     )
 
     public async enrollUserToAutoEditBetaIfEligible(): Promise<void> {

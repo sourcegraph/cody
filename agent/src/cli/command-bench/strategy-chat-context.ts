@@ -42,10 +42,6 @@ export async function evaluateChatContextStrategy(options: CodyBenchOptions): Pr
     if (isError(userInfo)) {
         throw userInfo
     }
-    const evaluatedFeatureFlags = await graphqlClient.getEvaluatedFeatureFlags()
-    if (isError(evaluatedFeatureFlags)) {
-        throw evaluatedFeatureFlags
-    }
     const shortSiteVersion = siteVersion.match(/-[0-9a-f]{7,40}$/)
         ? siteVersion.match(/-([0-9a-f]{7,40})$/)?.[1]
         : siteVersion
@@ -74,7 +70,7 @@ export async function evaluateChatContextStrategy(options: CodyBenchOptions): Pr
             sourcegraphVersion: siteVersion,
             username: userInfo?.username ?? '[none]',
             userId: userInfo?.id ?? '[none]',
-            evaluatedFeatureFlags,
+            evaluatedFeatureFlags: {},
         },
     })
 }

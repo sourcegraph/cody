@@ -263,8 +263,8 @@ export class ModelsService {
 
         this.syncPreferencesSubscription = combineLatest(
             this.modelsChanges,
-            featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyEditDefaultToGpt4oMini),
-            featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyDeepSeekChat)
+            featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyEditDefaultToGpt4oMini),
+            featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyDeepSeekChat)
         )
             .pipe(
                 tap(([data, shouldEditDefaultToGpt4oMini, shouldChatDefaultToDeepSeek]) => {
