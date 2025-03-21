@@ -364,3 +364,13 @@ export interface PhaseStates {
 }
 
 export type AutoeditRequestState = PhaseStates[keyof PhaseStates]
+
+/**
+ * A simplified interface for testing the analytics logger from the agent.
+ * Our codegen fails when handling `AutoeditRequestState`, so this is a simplified version
+ * that gives us everything we need to test.
+ */
+export interface AutoeditRequestStateForAgentTesting {
+    phase?: Phase
+    read?: boolean
+}

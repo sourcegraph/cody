@@ -93,6 +93,7 @@ import { manageDisplayPathEnvInfoForExtension } from './editor/displayPathEnvInf
 import { VSCodeEditor } from './editor/vscode-editor'
 import type { PlatformContext } from './extension.common'
 import { configureExternalServices } from './external-services'
+import { isRunningInsideAgent } from './jsonrpc/isRunningInsideAgent'
 import { FixupController } from './non-stop/FixupController'
 import { CodyProExpirationNotifications } from './notifications/cody-pro-expiration'
 import { showSetupNotification } from './notifications/setup-notification'
@@ -717,6 +718,14 @@ function registerAutoEdits({
     disposables: vscode.Disposable[]
     context: vscode.ExtensionContext
 }): void {
+    const { autoedit } = clientCapabilities()
+    const autoeditDisabledForClient =
+        isRunningInsideAgent() && (autoedit === undefined || autoedit === 'none')
+    if (autoeditDisabledForClient) {
+        // Do not attempt to register autoedits for clients that have not opted in to use autoedit.
+        return
+    }
+
     disposables.push(
         autoeditDebugStore,
         subscriptionDisposable(
@@ -773,6 +782,16 @@ function registerAutocomplete(
     statusBar: CodyStatusBar,
     disposables: vscode.Disposable[]
 ): void {
+    const autoeditEnabledForClient =
+        isRunningInsideAgent() && clientCapabilities().autoedit === 'enabled'
+    if (autoeditEnabledForClient) {
+        // autoedit is a replacement for autocomplete for clients.
+        // We should not register both if the client has opted in for auto-edit.
+        // TODO: Eventually these should be consolidated so clients to not need to decide between
+        // autocomplete and autoedit.
+        return
+    }
+
     //@ts-ignore
     let statusBarLoader: undefined | (() => void) = statusBar.addLoader({
         title: 'Completion Provider is starting',

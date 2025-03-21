@@ -52,6 +52,7 @@ import * as uuid from 'uuid'
 import type { MessageConnection } from 'vscode-jsonrpc'
 import type { CommandResult } from '../../vscode/src/CommandResult'
 import { formatURL } from '../../vscode/src/auth/auth'
+import type { AutoeditRequestID } from '../../vscode/src/autoedits/analytics-logger'
 import { chatHistory } from '../../vscode/src/chat/chat-view/ChatHistoryManager'
 import type { ExtensionMessage, WebviewMessage } from '../../vscode/src/chat/protocol'
 import { executeExplainCommand, executeSmellCommand } from '../../vscode/src/commands/execute'
@@ -899,15 +900,27 @@ export class Agent extends MessageHandler implements ExtensionClient {
 
         this.registerAuthenticatedRequest('testing/autocomplete/completionEvent', async params => {
             const provider = await vscode_shim.completionProvider()
-
+            if (!('getTestingCompletionEvent' in provider)) {
+                console.warn('Provider does not support getTestingCompletionEvent')
+                return null
+            }
             return provider.getTestingCompletionEvent(params.completionID as CompletionItemID)
+        })
+
+        this.registerAuthenticatedRequest('testing/autocomplete/autoeditEvent', async params => {
+            const provider = await vscode_shim.completionProvider()
+            if (!('getTestingAutoeditEvent' in provider)) {
+                console.warn('Provider does not support getTestingAutoeditEvent')
+                return null
+            }
+            return provider.getTestingAutoeditEvent(params.completionID as AutoeditRequestID)
         })
 
         this.registerAuthenticatedRequest('autocomplete/execute', async (params, token) => {
             const provider = await vscode_shim.completionProvider()
             if (!provider) {
                 logError('Agent', 'autocomplete/execute', 'Completion provider is not initialized')
-                return { items: [] }
+                return { items: [], inlineCompletionItems: [], decoratedEditItems: [] }
             }
             const uri =
                 typeof params.uri === 'string'
@@ -923,7 +936,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
                         params
                     )}. To fix this problem, set the 'uri' property.`
                 )
-                return { items: [] }
+                return { items: [], inlineCompletionItems: [], decoratedEditItems: [] }
             }
             const document = this.workspace.getDocument(uri)
             if (!document) {
@@ -934,7 +947,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
                     params.uri,
                     [...this.workspace.allUris()]
                 )
-                return { items: [] }
+                return { items: [], inlineCompletionItems: [], decoratedEditItems: [] }
             }
 
             try {
@@ -965,14 +978,31 @@ export class Agent extends MessageHandler implements ExtensionClient {
                     token
                 )
 
+                if (!result) {
+                    return { items: [], inlineCompletionItems: [], decoratedEditItems: [] }
+                }
+
+                // Client can only render completions, ensure we only provide completion items.
                 const items: AutocompleteItem[] =
-                    result?.items.flatMap(({ insertText, range, id }) =>
+                    result.items.flatMap(({ insertText, range, id }) =>
                         typeof insertText === 'string' && range !== undefined
-                            ? [{ id, insertText, range }]
+                            ? [
+                                  {
+                                      id,
+                                      insertText,
+                                      range,
+                                      type: 'completion',
+                                  },
+                              ]
                             : []
                     ) ?? []
 
-                return { items, completionEvent: result?.completionEvent }
+                return {
+                    items,
+                    inlineCompletionItems: items,
+                    decoratedEditItems: 'decoratedEditItems' in result ? result.decoratedEditItems : [],
+                    completionEvent: result.completionEvent,
+                }
             } catch (error) {
                 if (isRateLimitError(error)) {
                     throw error
@@ -988,19 +1018,19 @@ export class Agent extends MessageHandler implements ExtensionClient {
 
         this.registerNotification('autocomplete/completionAccepted', async ({ completionID }) => {
             const provider = await vscode_shim.completionProvider()
-            await provider.handleDidAcceptCompletionItem(completionID as CompletionItemID)
+            await provider.handleDidAcceptCompletionItem(completionID as any)
         })
 
         this.registerNotification('autocomplete/completionSuggested', async ({ completionID }) => {
             const provider = await vscode_shim.completionProvider()
-            provider.unstable_handleDidShowCompletionItem(completionID as CompletionItemID)
+            provider.unstable_handleDidShowCompletionItem(completionID as any)
         })
 
         this.registerAuthenticatedRequest(
             'testing/autocomplete/awaitPendingVisibilityTimeout',
             async () => {
                 const provider = await vscode_shim.completionProvider()
-                return provider.testing_completionSuggestedPromise
+                return provider.testing_completionSuggestedPromise as Promise<any>
             }
         )
 
@@ -1015,7 +1045,11 @@ export class Agent extends MessageHandler implements ExtensionClient {
 
         this.registerAuthenticatedRequest('testing/autocomplete/providerConfig', async () => {
             const provider = await vscode_shim.completionProvider()
-            return provider.config.provider
+            if ('config' in provider) {
+                return provider.config.provider
+            }
+            // For autoedits provider which doesn't have config property, return null
+            return null
         })
 
         this.registerAuthenticatedRequest('graphql/getRepoIds', async ({ names, first }) => {

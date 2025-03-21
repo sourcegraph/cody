@@ -118,6 +118,9 @@ describe('AgentWorkspaceConfiguration', () => {
                     },
                     enabled: true,
                 },
+                suggestions: {
+                    mode: 'autocomplete',
+                },
                 codebase: 'test-repo',
                 customHeaders: {
                     'X-Test': 'test',

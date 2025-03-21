@@ -1,6 +1,8 @@
 import type * as vscode from 'vscode'
 
-import { autoeditAcceptReason, autoeditRejectReason } from '../analytics-logger'
+import { autoeditRejectReason } from '../analytics-logger'
+import { autoeditAcceptReason } from '../analytics-logger'
+import type { AutoeditClientCapabilities } from '../autoedits-provider'
 import { areSameUriDocs } from '../utils'
 
 import { AutoEditsDefaultRendererManager, type AutoEditsRendererManager } from './manager'
@@ -17,38 +19,33 @@ export class AutoEditsInlineRendererManager
     extends AutoEditsDefaultRendererManager
     implements AutoEditsRendererManager
 {
-    public getRenderOutput(args: GetRenderOutputArgs): AutoEditRenderOutput {
-        const completionsWithDecorations = this.getCompletionsWithPossibleDecorationsRenderOutput(args)
+    public getRenderOutput(
+        args: GetRenderOutputArgs,
+        capabilities: AutoeditClientCapabilities
+    ): AutoEditRenderOutput {
+        const completionsWithDecorations = this.getCompletionsWithPossibleDecorationsRenderOutput(
+            args,
+            capabilities
+        )
         if (completionsWithDecorations) {
             return completionsWithDecorations
         }
 
-        if (this.shouldRenderDecorations(args.decorationInfo)) {
-            return {
-                type: 'decorations',
-                decorations: {
-                    ...this.getInlineDecorations(args.decorationInfo),
-                    // No need to show insertion marker when only using inline decorations
-                    insertMarkerDecorations: [],
-                },
-            }
+        const inlineDiff = this.getInlineRenderOutput(args, capabilities)
+        if (inlineDiff) {
+            return inlineDiff
         }
 
-        // We have determined that the diff requires rendering as an image for the optimal user experience.
-        // Additions are entirely represented with the image, and deletions are shown as decorations.
-        const { deletionDecorations } = this.getInlineDecorations(args.decorationInfo)
-        const { insertionDecorations, insertMarkerDecorations } = this.createModifiedImageDecorations(
-            args.document,
-            args.decorationInfo
-        )
-        return {
-            type: 'image',
-            decorations: {
-                insertionDecorations,
-                insertMarkerDecorations,
-                deletionDecorations,
-            },
+        const asideDiff = this.getAsideRenderOutput(args, capabilities)
+        if (asideDiff) {
+            return asideDiff
         }
+
+        // This should only happen if a client has opted in to `autoedit` but not provided a valid
+        // `autoeditInlineDiff` or `autoeditAsideDiff` capability.
+        throw new Error(
+            'Unable to get a render suitable suggestion for autoedit. Please ensure the correct clientCapabilities are set for this client.'
+        )
     }
 
     public hasInlineCompletionItems(): boolean {
