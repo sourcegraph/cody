@@ -6,6 +6,8 @@ import {
     isDefined,
     languageFromFilename,
 } from '@sourcegraph/cody-shared'
+import { FeatureFlag, featureFlagProvider } from '@sourcegraph/cody-shared'
+import { switchMap } from '@sourcegraph/cody-shared'
 import { Observable } from 'observable-fns'
 import { createFileSystemRuleProvider } from './fs-rule-provider'
 import { createRemoteRuleProvider } from './remote-rule-provider'
@@ -15,12 +17,21 @@ import { createRemoteRuleProvider } from './remote-rule-provider'
  */
 export const ruleService: RuleService = createRuleService(
     defer(() =>
-        Observable.of(
-            [
-                clientCapabilities().isVSCode
-                    ? createFileSystemRuleProvider()
-                    : createRemoteRuleProvider(),
-            ].filter(isDefined)
+        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.NextAgenticChatInternal).pipe(
+            switchMap(isAgenticChatInternalTester => {
+                // Return empty array if the feature flag is on
+                if (isAgenticChatInternalTester !== false) {
+                    return Observable.of([])
+                }
+
+                return Observable.of(
+                    [
+                        clientCapabilities().isVSCode
+                            ? createFileSystemRuleProvider()
+                            : createRemoteRuleProvider(),
+                    ].filter(isDefined)
+                )
+            })
         )
     ),
     {
