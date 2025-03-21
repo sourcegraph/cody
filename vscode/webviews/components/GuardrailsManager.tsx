@@ -8,7 +8,7 @@ import type { Attribution } from '@sourcegraph/cody-shared/src/guardrails'
 import { LRUCache } from 'lru-cache'
 import { RefreshCwIcon } from 'lucide-react'
 import type React from 'react'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import styles from '../chat/ChatMessageContent/ChatMessageContent.module.css'
 import { GuardrailsStatus } from './GuardrailsStatus'
 
@@ -18,7 +18,6 @@ interface GuardrailsApplicatorProps {
     fileName?: string
     guardrails: Guardrails
     isCodeComplete: boolean
-    onCheckComplete?: (result: GuardrailsResult) => void
     children: (props: GuardrailsRenderProps) => React.ReactNode
 }
 
@@ -131,6 +130,16 @@ class GuardrailsCache {
         }
         return result
     }
+
+    // Deletes an entry from the cache. To retry a request, delete the old
+    // result and reissue the request.
+    delete(guardrails: Guardrails, code: string) {
+        const cache = this.cache.get(guardrails)
+        if (cache) {
+            cache.attributionRequests.delete(code)
+            cache.results.delete(code)
+        }
+    }
 }
 
 const guardrailsCache = new GuardrailsCache()
@@ -149,13 +158,18 @@ export const GuardrailsApplicator: React.FC<GuardrailsApplicatorProps> = ({
     fileName,
     guardrails,
     isCodeComplete,
-    onCheckComplete,
     children,
-}) => {
-    // TODO: Consider using a combiner to minimize guardrails result updates.
-    const [guardrailsResult, setGuardrailsResult] = useState<GuardrailsResult>(() =>
+}: GuardrailsApplicatorProps) => {
+    // TODO: Break out status, which is used heavily, from errors and attribution
+    const [guardrailsResult, setGuardrailsResult] = useState(() =>
         guardrailsCache.getStatus(guardrails, isCodeComplete, code, language)
     )
+
+    // Performs a guardrails check, if necessary. This is cheap to call
+    // repeatedly: It only attempts a check when the code is complete and needs
+    // a guardrails check; and multiple in-flight checks are de-duped. This sets
+    // guardrailsResult, and may asynchronously update guardrailsResult as
+    // checks complete.
     useEffect(() => {
         if (isCodeComplete) {
             if (!guardrails.needsAttribution({ code, language })) {
@@ -194,21 +208,21 @@ export const GuardrailsApplicator: React.FC<GuardrailsApplicatorProps> = ({
         }
     }, [guardrailsResult])
 
-    // Function to retry a failed check
-    const handleRetry = useCallback(() => {
-        // TODO: Trigger regenerating just that bit of code.
-        throw new Error('NYI')
-    }, [])
-
-    // Show retry button if check failed and code is hidden TODO move this to the main part of the panel */
-    //                 onRetry={
-    //    guardrailsResult.status === GuardrailsCheckStatus.Failed ? handleRetry : undefined
-    // }
+    // Function to retry a check that errored (for example, encountered a
+    // network error)
+    const handleRetry = () => {
+        // Delete the old result.
+        guardrailsCache.delete(guardrails, code)
+        // Start a new attribution request.
+        guardrailsCache.searchAttribution(guardrails, code).then(setGuardrailsResult)
+        // Set status to the best available (loading) state.
+        setGuardrailsResult(guardrailsCache.getStatus(guardrails, isCodeComplete, code, language))
+    }
 
     const statusDisplay = (
         <>
             <GuardrailsStatus status={guardrailsResult.status} filename={fileName} tooltip={tooltip} />
-            {!showCode && guardrailsResult.status === GuardrailsCheckStatus.Failed && (
+            {guardrailsResult.status === GuardrailsCheckStatus.Error && (
                 <button
                     className={styles.button}
                     type="button"
