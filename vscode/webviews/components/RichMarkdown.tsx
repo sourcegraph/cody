@@ -41,6 +41,9 @@ interface TerminatedCodeData {
         // This is provided by the remarkAttachFilePathToCodeBlocks plugin, but
         // we mention it here for convenience reading it later.
         'data-file-path': string
+        // This is provided by the remarkAttachFilePathToCodeBlocks plugin, but
+        // we mention it here for convenience reading it later.
+        'data-language': string
     }
 }
 
@@ -151,6 +154,7 @@ export const RichMarkdown: React.FC<RichMarkdownProps> = ({
                 'data-source-text': cacheKey,
                 'data-is-code-complete': isThisBlockComplete,
                 'data-file-path': filePath,
+                'data-language': language,
             } = (codeNode?.properties as TerminatedCodeData['hProperties'] | undefined) || {
                 'data-is-code-complete': false,
             }
@@ -159,10 +163,6 @@ export const RichMarkdown: React.FC<RichMarkdownProps> = ({
 
             if (!cached) {
                 try {
-                    // Extract language and content
-                    const match = /language-(\w+)/.exec(className || '')
-                    const language = match ? match[1] : undefined
-
                     // First get the raw text content (for copying and executing)
                     const extractText = (node: any): string => {
                         if (typeof node === 'string') return node
@@ -298,6 +298,7 @@ export const RichMarkdown: React.FC<RichMarkdownProps> = ({
 
             // Determine if this is a shell command
             const isShellCommand = cached.language === 'bash' || cached.language === 'sh'
+            console.log('isShellCommand', isShellCommand, 'language', cached.language, cached.plainText)
 
             // Render with our RichCodeBlock component
             return (
@@ -337,9 +338,10 @@ export const RichMarkdown: React.FC<RichMarkdownProps> = ({
                                 ...defaultSchema.attributes,
                                 code: [
                                     ...(defaultSchema.attributes?.code || []),
-                                    // Allow data-file-path attribute for code blocks
+                                    // Allow various metadata attributes for code blocks
                                     ['data-file-path'],
                                     ['data-is-code-complete'],
+                                    ['data-language'],
                                     ['data-source-text'],
                                     [
                                         'className',

@@ -5,10 +5,11 @@ import { visit } from 'unist-util-visit'
 interface CodeNodeData {
     hProperties?: {
         'data-file-path'?: string
+        'data-language'?: string
     }
 }
 
-const LANG_FILE_PATH_REGEX = /^(\w+):(.+)$/
+const LANG_FILE_PATH_REGEX = /^(\w+)(:(.+))?$/
 
 /**
  * Given a Markdown code block, inspect the `lang` property to determine if we can also extract
@@ -22,7 +23,7 @@ const LANG_FILE_PATH_REGEX = /^(\w+):(.+)$/
  * console.log()
  * ```
  * becomes ->
- * <code data-file-path="path/to/file.ts">
+ * <code data-file-path="path/to/file.ts" data-language="typescript">
  * console.log()
  * </code>
  */
@@ -31,7 +32,7 @@ export const remarkAttachFilePathToCodeBlocks: Plugin<[], Root> = () => {
         visit(tree, 'code', (node: Code) => {
             const match = node.lang?.match(LANG_FILE_PATH_REGEX)
             if (match) {
-                const [, language, filePath] = match
+                const [, language, hasFilePath, filePath] = match
 
                 // Update the node's lang to remove the file path
                 node.lang = language
@@ -41,8 +42,11 @@ export const remarkAttachFilePathToCodeBlocks: Plugin<[], Root> = () => {
                     ...node.data,
                     hProperties: {
                         ...(node.data as CodeNodeData)?.hProperties,
-                        // We sanitize spaces in markdown path files using `PromptString` class, now we can convert them back
-                        'data-file-path': filePath.trim().replaceAll('%20', ' '),
+                        ...(hasFilePath
+                            ? // We sanitize spaces in markdown path files using `PromptString` class, now we can convert them back
+                              { 'data-file-path': filePath.trim().replaceAll('%20', ' ') }
+                            : undefined),
+                        'data-language': language,
                     },
                 }
             }

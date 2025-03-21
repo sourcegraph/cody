@@ -35,13 +35,13 @@ export const GuardrailsStatus: React.FC<GuardrailsStatusProps> = ({
         <div className={containerClasses} title={tooltip} data-testid="guardrails-status">
             {status === GuardrailsCheckStatus.GeneratingCode && (
                 <div className={styles.status}>
-                    <LoaderIcon className="tw-animate-spin" size={14} />
+                    <LoaderIcon className={clsx('tw-animate-spin', styles.iconContainer)} size={14} />
                     <span className={styles.fileNameContainer}>Generating code</span>
                 </div>
             )}
             {status === GuardrailsCheckStatus.Checking && (
                 <div className={styles.status}>
-                    <LoaderIcon className="tw-animate-spin" size={14} />
+                    <LoaderIcon className={clsx('tw-animate-spin', styles.iconContainer)} size={14} />
                     <span className={styles.fileNameContainer}>Checking guardrails</span>
                 </div>
             )}
@@ -49,7 +49,11 @@ export const GuardrailsStatus: React.FC<GuardrailsStatusProps> = ({
                 <div className={styles.status} title={filename}>
                     <CheckCircleIcon
                         size={14}
-                        className="tw-inline tw-text-[var(--vscode-gitDecoration-addedResourceForeground)]"
+                        className={clsx(
+                            'tw-inline',
+                            'tw-text-[var(--vscode-gitDecoration-addedResourceForeground)]',
+                            styles.iconContainer
+                        )}
                     />
                     {filename && (
                         <span className={styles.fileNameContainer}>{filename.split('/').pop()}</span>
@@ -60,19 +64,29 @@ export const GuardrailsStatus: React.FC<GuardrailsStatusProps> = ({
                 <div className={styles.status} title={filename}>
                     <FileIcon
                         size={14}
-                        className="tw-inline tw-text-[var(--vscode-gitDecoration-addedResourceForeground)]"
+                        className={clsx(
+                            'tw-inline',
+                            'tw-text-[var(--vscode-gitDecoration-addedResourceForeground)]',
+                            styles.iconContainer
+                        )}
                     />
                     <span className={styles.fileNameContainer}>{filename.split('/').pop()}</span>
                 </div>
             )}
             {status === GuardrailsCheckStatus.Failed && (
                 <div className={styles.status}>
-                    <AlertTriangleIcon size={14} className={styles.attributionIconFound} />
+                    <AlertTriangleIcon
+                        size={14}
+                        className={clsx(styles.attributionIconFound, styles.iconContainer)}
+                    />
                 </div>
             )}
             {status === GuardrailsCheckStatus.Error && (
                 <div className={styles.status}>
-                    <AlertTriangleIcon size={14} className={styles.attributionIconUnavailable} />
+                    <AlertTriangleIcon
+                        size={14}
+                        className={clsx(styles.attributionIconUnavailable, styles.iconContainer)}
+                    />
                     <span className={styles.fileNameContainer}>Guardrails API Error</span>
                     {onRetry && (
                         <button

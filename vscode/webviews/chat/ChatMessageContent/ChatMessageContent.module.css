@@ -59,7 +59,7 @@
     margin-left: 0.25rem;
 }
 
-.button .icon-container {
+.button .icon-container, .status .icon-container {
     margin-right: 0.25rem
 }
 
@@ -114,6 +114,9 @@
     margin-right: 0.25rem;
 }
 
+/* The filename attached to generated code. Also status messages which occupy
+ * the same spot, such as "Generating code", which we want to have a consistent
+ * presentation. */
 .file-name-container {
     font-size: 12px;
     color: var(--vscode-descriptionForeground);
