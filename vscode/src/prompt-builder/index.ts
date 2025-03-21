@@ -55,7 +55,7 @@ export class PromptBuilder {
     private constructor(private readonly tokenCounter: TokenCounter) {}
 
     private readonly hasCacheFeatureFlag = storeLastValue(
-        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyPromptCachingOnMessages)
+        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyPromptCachingOnMessages)
     )
     private readonly _isCacheEnabled: PromptCachingSetting = {
         featureFlag: false,

@@ -145,10 +145,10 @@ function getSmartApplyExperimentModel(
     defaultModel: EditModel | undefined
 ): Observable<EditModel | undefined> {
     return combineLatest(
-        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodySmartApplyExperimentEnabledFeatureFlag),
-        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodySmartApplyExperimentVariant1),
-        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodySmartApplyExperimentVariant2),
-        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodySmartApplyExperimentVariant3)
+        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodySmartApplyExperimentEnabledFeatureFlag),
+        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodySmartApplyExperimentVariant1),
+        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodySmartApplyExperimentVariant2),
+        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodySmartApplyExperimentVariant3)
     ).pipe(
         switchMap(([isExperimentEnabled, isVariant1Enabled, isVariant2Enabled, isVariant3Enabled]) => {
             // We run fine tuning experiment for VSC client only.

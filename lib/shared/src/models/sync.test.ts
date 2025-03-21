@@ -42,7 +42,7 @@ vi.mock('../services/LocalStorageProvider')
 vi.mock('../experimentation/FeatureFlagProvider')
 
 // Returns true for all feature flags enabled during synctests.
-vi.spyOn(featureFlagProvider, 'evaluatedFeatureFlag').mockReturnValue(Observable.of(true))
+vi.spyOn(featureFlagProvider, 'evaluateFeatureFlag').mockReturnValue(Observable.of(true))
 
 mockClientCapabilities(CLIENT_CAPABILITIES_FIXTURE)
 
@@ -105,7 +105,7 @@ describe('server sent models', async () => {
     }
 
     const mockFetchServerSideModels = vi.fn(() => Promise.resolve(SERVER_MODELS))
-    vi.mocked(featureFlagProvider).evaluatedFeatureFlag.mockReturnValue(Observable.of(false))
+    vi.mocked(featureFlagProvider).evaluateFeatureFlag.mockReturnValue(Observable.of(false))
 
     const result = await firstValueFrom(
         syncModels({
@@ -420,7 +420,7 @@ describe('syncModels', () => {
         }
 
         const mockFetchServerSideModels = vi.fn(() => Promise.resolve(SERVER_MODELS))
-        vi.mocked(featureFlagProvider).evaluatedFeatureFlag.mockReturnValue(Observable.of(true))
+        vi.mocked(featureFlagProvider).evaluateFeatureFlag.mockReturnValue(Observable.of(true))
 
         const result = await firstValueFrom(
             syncModels({
@@ -496,14 +496,14 @@ describe('syncModels', () => {
         async function getModelResult(featureFlagEnabled: boolean, userCanUpgrade: boolean) {
             // set the feature flag
             if (featureFlagEnabled) {
-                vi.spyOn(featureFlagProvider, 'evaluatedFeatureFlag').mockImplementation(
+                vi.spyOn(featureFlagProvider, 'evaluateFeatureFlag').mockImplementation(
                     (flag: FeatureFlag) =>
                         flag === FeatureFlag.CodyChatDefaultToClaude35Haiku
                             ? Observable.of(featureFlagEnabled)
                             : Observable.of(false)
                 )
             } else {
-                vi.spyOn(featureFlagProvider, 'evaluatedFeatureFlag').mockImplementation(
+                vi.spyOn(featureFlagProvider, 'evaluateFeatureFlag').mockImplementation(
                     (flag: FeatureFlag) =>
                         flag === FeatureFlag.CodyChatDefaultToClaude35Haiku
                             ? Observable.of(featureFlagEnabled)

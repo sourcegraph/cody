@@ -30,6 +30,7 @@ import type { AutoEditRenderOutput } from '../renderer/render-output'
 import { autoeditIdRegistry } from './suggestion-id-registry'
 import {
     type AcceptedState,
+    type AutoeditAcceptReasonMetadata,
     type AutoeditDiscardReasonMetadata,
     type AutoeditRejectReasonMetadata,
     type AutoeditRequestID,
@@ -248,7 +249,13 @@ export class AutoeditAnalyticsLogger {
         }))
     }
 
-    public markAsAccepted(requestId: AutoeditRequestID): void {
+    public markAsAccepted({
+        requestId,
+        acceptReason,
+    }: {
+        requestId: AutoeditRequestID
+        acceptReason: AutoeditAcceptReasonMetadata
+    }): void {
         const acceptedAt = getTimeNowInMillis()
 
         const result = this.tryTransitionTo(requestId, 'accepted', request => {
@@ -283,6 +290,7 @@ export class AutoeditAnalyticsLogger {
                     isRead: true,
                     timeFromSuggestedAt: acceptedAt - request.suggestedAt,
                     suggestionsStartedSinceLastSuggestion: this.autoeditsStartedSinceLastSuggestion,
+                    acceptReason,
                 },
             }
         })

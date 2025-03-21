@@ -77,9 +77,9 @@ class ToolboxManager {
      */
     public readonly observable: Observable<AgentToolboxSettings | null> = combineLatest(
         authStatus,
-        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.DeepCody),
-        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.ContextAgentDefaultChatModel),
-        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.DeepCodyShellContext),
+        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.DeepCody),
+        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.ContextAgentDefaultChatModel),
+        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.DeepCodyShellContext),
         userProductSubscription.pipe(distinctUntilChanged()),
         modelsService.modelsChanges.pipe(
             map(models => (models === pendingOperation ? null : models)),

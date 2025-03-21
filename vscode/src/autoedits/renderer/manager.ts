@@ -8,10 +8,12 @@ import {
     isCompletionVisible,
 } from '../../completions/is-completion-visible'
 import {
+    type AutoeditAcceptReasonMetadata,
     type AutoeditRejectReasonMetadata,
     type AutoeditRequestID,
     type AutoeditRequestStateForAgentTesting,
     type Phase,
+    autoeditAcceptReason,
     autoeditAnalyticsLogger,
     autoeditDiscardReason,
     autoeditRejectReason,
@@ -122,7 +124,9 @@ export class AutoEditsDefaultRendererManager
     ) {
         super()
         this.disposables.push(
-            vscode.commands.registerCommand('cody.supersuggest.accept', () => this.acceptActiveEdit()),
+            vscode.commands.registerCommand('cody.supersuggest.accept', () =>
+                this.acceptActiveEdit(autoeditAcceptReason.acceptCommand)
+            ),
             vscode.commands.registerCommand('cody.supersuggest.dismiss', () =>
                 this.rejectActiveEdit(autoeditRejectReason.dismissCommand)
             ),
@@ -332,10 +336,10 @@ export class AutoEditsDefaultRendererManager
     }
 
     public handleDidAcceptCompletionItem(requestId: AutoeditRequestID): Promise<void> {
-        return this.acceptActiveEdit()
+        return this.acceptActiveEdit(autoeditAcceptReason.acceptCommand)
     }
 
-    protected async acceptActiveEdit(): Promise<void> {
+    protected async acceptActiveEdit(acceptReason: AutoeditAcceptReasonMetadata): Promise<void> {
         const editor = vscode.window.activeTextEditor
         const { activeRequest, decorator } = this
         // Compute this variable before the `handleDidHideSuggestion` call which removes the active request.
@@ -353,7 +357,10 @@ export class AutoEditsDefaultRendererManager
         this.testing_completionSuggestedPromise = undefined
 
         await this.handleDidHideSuggestion(decorator)
-        autoeditAnalyticsLogger.markAsAccepted(activeRequest.requestId)
+        autoeditAnalyticsLogger.markAsAccepted({
+            requestId: activeRequest.requestId,
+            acceptReason,
+        })
 
         if (isRunningInsideAgent()) {
             // We rely on the agent for accepting

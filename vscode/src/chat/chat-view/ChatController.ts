@@ -549,11 +549,9 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         const { configuration, auth } = await currentResolvedConfig()
         const [experimentalPromptEditorEnabled, internalAgenticChatEnabled] = await Promise.all([
             firstValueFrom(
-                featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyExperimentalPromptEditor)
+                featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyExperimentalPromptEditor)
             ),
-            firstValueFrom(
-                featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.NextAgenticChatInternal)
-            ),
+            firstValueFrom(featureFlagProvider.evaluateFeatureFlag(FeatureFlag.NextAgenticChatInternal)),
         ])
         const experimentalAgenticChatEnabled = internalAgenticChatEnabled && isS2(auth.serverEndpoint)
         const sidebarViewOnly = this.extensionClient.capabilities?.webviewNativeConfig?.view === 'single'
@@ -1615,7 +1613,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                         })
                     },
                     clientActionBroadcast: () => this.clientBroadcast,
-                    evaluatedFeatureFlag: flag => featureFlagProvider.evaluatedFeatureFlag(flag),
+                    evaluateFeatureFlag: flag => featureFlagProvider.evaluateFeatureFlag(flag),
                     hydratePromptMessage: (promptText, initialContext) =>
                         promiseFactoryToObservable(() =>
                             hydratePromptText(promptText, initialContext ?? [])

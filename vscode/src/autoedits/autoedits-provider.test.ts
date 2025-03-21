@@ -126,6 +126,7 @@ describe('AutoeditsProvider', () => {
             },
             "interactionID": "stable-id-for-tests-2",
             "metadata": {
+              "acceptReason": 1,
               "contextSummary.duration": 0,
               "contextSummary.prefixChars": 10,
               "contextSummary.suffixChars": 0,
@@ -188,6 +189,7 @@ describe('AutoeditsProvider', () => {
             },
             "interactionID": "stable-id-for-tests-2",
             "metadata": {
+              "acceptReason": 1,
               "contextSummary.duration": 0,
               "contextSummary.prefixChars": 10,
               "contextSummary.suffixChars": 0,

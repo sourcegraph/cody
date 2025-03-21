@@ -697,10 +697,6 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
         this.rendererManager.testing_setCompletionVisibilityDelay(delay)
     }
 
-    /**
-     * noop method for Agent compability with `InlineCompletionItemProvider`.
-     * See: vscode/src/completions/inline-completion-item-provider.ts
-     */
     public async handleDidAcceptCompletionItem(id: AutoeditRequestID): Promise<void> {
         return this.rendererManager.handleDidAcceptCompletionItem(id)
     }

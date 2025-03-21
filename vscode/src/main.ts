@@ -479,7 +479,7 @@ async function registerCodyCommands({
     disposables.push(
         subscriptionDisposable(
             featureFlagProvider
-                .evaluatedFeatureFlag(FeatureFlag.CodyUnifiedPrompts)
+                .evaluateFeatureFlag(FeatureFlag.CodyUnifiedPrompts)
                 .pipe(
                     createDisposables(codyUnifiedPromptsFlag => {
                         // Commands that are available only if unified prompts feature is enabled.
@@ -732,10 +732,10 @@ function registerAutoEdits({
             combineLatest(
                 resolvedConfig,
                 authStatus,
-                featureFlagProvider.evaluatedFeatureFlag(
+                featureFlagProvider.evaluateFeatureFlag(
                     FeatureFlag.CodyAutoEditExperimentEnabledFeatureFlag
                 ),
-                featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyAutoEditInlineRendering)
+                featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutoEditInlineRendering)
             )
                 .pipe(
                     distinctUntilChanged((a, b) => {
