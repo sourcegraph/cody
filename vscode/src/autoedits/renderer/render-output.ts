@@ -305,7 +305,8 @@ export class AutoEditsRenderOutput {
 
     protected createModifiedImageDecorations(
         document: vscode.TextDocument,
-        decorationInfo: DecorationInfo
+        decorationInfo: DecorationInfo,
+        requestId?: AutoeditRequestID
     ): Omit<AutoEditDecorations, 'deletionDecorations'> {
         // TODO: Diff mode will likely change depending on the environment.
         // This should be determined by client capabilities.
@@ -317,6 +318,7 @@ export class AutoEditsRenderOutput {
             diff,
             lang: document.languageId,
             mode: diffMode,
+            requestId,
         })
         const startLineEndColumn = getEndColumnForLine(document.lineAt(target.line), document)
 
