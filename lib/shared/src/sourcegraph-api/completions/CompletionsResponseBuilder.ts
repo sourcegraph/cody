@@ -1,4 +1,4 @@
-import type { CompletionFunctionCallsData, ToolContentPart } from './types'
+import type { CompletionContentData, CompletionFunctionCallsData, ToolCallContentPart } from './types'
 
 /**
  * Helper to build the `completion` text from streaming LLM completions.
@@ -9,7 +9,7 @@ import type { CompletionFunctionCallsData, ToolContentPart } from './types'
 export class CompletionsResponseBuilder {
     public totalCompletion = ''
     private readonly thinkingBuffer: string[] = []
-    private readonly toolCalled = new Map<string, ToolContentPart>()
+    private readonly toolCalled = new Map<string, ToolCallContentPart>()
     private lastToolCallId?: string
 
     constructor(public readonly apiVersion: number) {}
@@ -47,9 +47,13 @@ export class CompletionsResponseBuilder {
     /**
      * Processes tool call data from the completion stream
      */
-    public nextToolCalls(funcCalled: CompletionFunctionCallsData[] = []): ToolContentPart[] {
-        for (const func of funcCalled) {
-            this.processToolCall(func)
+    public nextToolCalls(
+        funcCalled: CompletionFunctionCallsData[] | undefined | null
+    ): CompletionContentData[] {
+        if (funcCalled) {
+            for (const func of funcCalled) {
+                this.processToolCall(func)
+            }
         }
         return Array.from(this.toolCalled.values())
     }
@@ -76,18 +80,17 @@ export class CompletionsResponseBuilder {
             if (!existingTool) {
                 // Create new tool call
                 this.toolCalled.set(id, {
-                    id,
-                    status: 'pending',
-                    type: 'function',
-                    function: {
+                    type: 'tool_call',
+                    tool_call: {
+                        id,
                         name: fnData.name,
                         arguments: args,
                     },
                 })
             } else {
                 // Update existing tool call arguments
-                existingTool.function.arguments =
-                    ((existingTool.function.arguments as string) || '') + args
+                existingTool.tool_call.arguments =
+                    ((existingTool.tool_call.arguments as string) || '') + args
             }
             this.lastToolCallId = id
         }
@@ -95,7 +98,7 @@ export class CompletionsResponseBuilder {
         else if (this.lastToolCallId && args) {
             const lastTool = this.toolCalled.get(this.lastToolCallId)
             if (lastTool) {
-                lastTool.function.arguments = ((lastTool.function.arguments as string) || '') + args
+                lastTool.tool_call.arguments = ((lastTool.tool_call.arguments as string) || '') + args
                 this.toolCalled.set(this.lastToolCallId, lastTool)
             }
         }

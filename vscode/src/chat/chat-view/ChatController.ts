@@ -346,6 +346,10 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 break
             }
             case 'openFileLink':
+                if (message?.uri?.scheme?.startsWith('http')) {
+                    this.openRemoteFile(message.uri, true)
+                    return
+                }
                 vscode.commands.executeCommand('vscode.open', message.uri, {
                     selection: message.range,
                     preserveFocus: true,
@@ -543,10 +547,15 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
 
     private async getConfigForWebview(): Promise<ConfigurationSubsetForWebview & LocalEnv> {
         const { configuration, auth } = await currentResolvedConfig()
-        const experimentalPromptEditorEnabled = await firstValueFrom(
-            featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyExperimentalPromptEditor)
-        )
-        const experimentalAgenticChatEnabled = isS2(auth.serverEndpoint)
+        const [experimentalPromptEditorEnabled, internalAgenticChatEnabled] = await Promise.all([
+            firstValueFrom(
+                featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyExperimentalPromptEditor)
+            ),
+            firstValueFrom(
+                featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.NextAgenticChatInternal)
+            ),
+        ])
+        const experimentalAgenticChatEnabled = internalAgenticChatEnabled && isS2(auth.serverEndpoint)
         const sidebarViewOnly = this.extensionClient.capabilities?.webviewNativeConfig?.view === 'single'
         const isEditorViewType = this.webviewPanelOrView?.viewType === 'cody.editorPanel'
         const webviewType = isEditorViewType && !sidebarViewOnly ? 'editor' : 'sidebar'
@@ -559,7 +568,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             endpointHistory: [...endpoints],
             experimentalNoodle: configuration.experimentalNoodle,
             // Disable smart apply codeblock toolbar when agentic chat is enabled.
-            smartApply: this.isSmartApplyEnabled() && !experimentalAgenticChatEnabled,
+            smartApply: this.isSmartApplyEnabled(),
             hasEditCapability: this.hasEditCapability(),
             webviewType,
             multipleWebviewsEnabled: !sidebarViewOnly,
@@ -828,16 +837,14 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                         if (op?.abort || signal.aborted) {
                             throw new Error('aborted')
                         }
-                        if (chatAgent === 'agentic') {
-                            await this.saveSession()
-                            this.postViewTranscript()
-                            return
-                        }
                         // HACK(beyang): This conditional preserves the behavior from when
                         // all the response generation logic was handled in this method.
                         // In future work, we should remove this special-casing and unify
                         // how new messages are posted to the transcript.
-                        if (
+
+                        if (chatAgent === 'agentic') {
+                            this.saveSession()
+                        } else if (
                             messageInProgress &&
                             (['search', 'insert', 'edit'].includes(messageInProgress?.intent ?? '') ||
                                 messageInProgress?.search ||

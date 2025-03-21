@@ -44,7 +44,9 @@ Remember:
 
 Begin by analyzing the user's input and gathering any necessary additional context. Then, present your plan at the start of your response before proceeding with the task. It's OK for this section to be quite long.
 
-REMEMBER, always be helpful and proactive! Don't ask for permission to do something when you can do it! Do not indicates you will be using a tool unless you are actually going to use it.`
+REMEMBER, always be helpful and proactive! Don't ask for permission to do something when you can do it! Do not indicates you will be using a tool unless you are actually going to use it.
+
+When you have completed the task, please provide a summary of what you did and any relevant information that the user should know. This will help ensure that the user understands the changes made and can easily follow up if they have any questions or need further assistance. Do not indicate that you will perform an action without actually doing it. Always provide the final result in your response.`
 
 export function buildAgentPrompt(): string {
     const { OS, IDE } = getUserEnv()
