@@ -601,7 +601,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                                 defaultOpen={isContextLoading && humanMessage.agent === DeepCodyAgentID}
                                 agent={humanMessage?.agent ?? undefined}
                             />
-                        )}{' '}
+                        )}
                 </>
             )}
             {assistantMessage &&
@@ -618,7 +618,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                         postMessage={postMessage}
                         guardrails={guardrails}
                         humanMessage={humanMessageInfo}
-                        isLoading={!isLastSentInteraction && assistantMessage.isLoading}
+                        isLoading={isLastSentInteraction && assistantMessage.isLoading}
                         smartApply={smartApply}
                         smartApplyEnabled={smartApplyEnabled && !agentToolCalls}
                         onSelectedFiltersUpdate={onSelectedFiltersUpdate}
