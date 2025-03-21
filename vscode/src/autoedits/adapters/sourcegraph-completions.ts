@@ -18,6 +18,7 @@ export class SourcegraphCompletionsAdapter implements AutoeditsModelAdapter {
     constructor() {
         this.client = defaultCodeCompletionsClient.instance!
     }
+    dispose() {}
 
     async getModelResponse(options: AutoeditModelOptions): Promise<ModelResponse> {
         try {

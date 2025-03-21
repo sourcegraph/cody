@@ -29,7 +29,6 @@ import { ProxyAgent } from 'proxy-agent'
 import { SocksProxyAgent } from 'socks-proxy-agent'
 import type { WritableDeep } from 'type-fest'
 import type * as vscode from 'vscode'
-import { type MessageEvent, WebSocket } from 'ws'
 import { getConfiguration } from '../configuration'
 import { CONFIG_KEY } from '../configuration-keys'
 import { bypassVSCodeSymbol } from './net.patch'
@@ -48,8 +47,6 @@ export class DelegatingAgent extends AgentBase implements vscode.Disposable {
     private disposables: vscode.Disposable[] = []
     private latestConfig: ResolvedSettings | null = null // we need sync access for VSCode to work
     private agentCache: Map<string, AgentBase | http.Agent | https.Agent> = new Map()
-    private ws: WebSocket | undefined
-    private messageId = 0
 
     private constructor(private readonly ctx: { noxide?: Noxide | undefined }) {
         super()
@@ -69,7 +66,6 @@ export class DelegatingAgent extends AgentBase implements vscode.Disposable {
                 })
             )
         )
-        this.ws = new WebSocket('ws://localhost:8080')
     }
 
     destroy(): void {
@@ -86,7 +82,6 @@ export class DelegatingAgent extends AgentBase implements vscode.Disposable {
             d.dispose()
         }
         this.disposables = []
-        this.ws?.close()
         super.destroy()
     }
 
@@ -341,31 +336,6 @@ export class DelegatingAgent extends AgentBase implements vscode.Disposable {
             logError('DelegatingProxy', 'Could not retrieve noxide CA certs', e)
         }
         return stringCerts
-    }
-
-    public async sendMessageViaSocket(url: URL, message: RequestInit): Promise<Response> {
-        return new Promise(resolve => {
-            const messageId = 'm_' + this.messageId++
-            const data = JSON.stringify({
-                'x-message-id': messageId,
-                'x-message-body': message.body,
-                'x-message-url': url.toString(),
-                'x-message-headers': message.headers,
-            })
-            const handleResponse = (event: MessageEvent) => {
-                const response = JSON.parse(event.data as string)
-                if (response['x-message-id'] === messageId) {
-                    const body = response['x-message-body']
-                    const httpResponse = new Response(body, {
-                        headers: JSON.parse(response['x-message-headers']),
-                    })
-                    resolve(httpResponse)
-                    this.ws?.removeEventListener('message', handleResponse)
-                }
-            }
-            this.ws?.addEventListener('message', handleResponse)
-            this.ws?.send(data)
-        })
     }
 }
 

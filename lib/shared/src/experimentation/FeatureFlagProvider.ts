@@ -134,6 +134,19 @@ export enum FeatureFlag {
      * Auto generate short description for chat as title.
      */
     ChatTitleAutoGeneration = 'chat-title-auto-generation',
+
+    /**
+     * Use websocket to connect to fireworks provider for auto-edit. The websocket address
+     * is configured with the following setting.
+     * "cody.experimental.autoedit.config.override": {
+     *   "provider": "fireworks-websocket"
+     *   "webSocketEndpoint": "ws://0.0.0.0:3000",
+     * }
+     * When enabled, Cody connects to a WebSocket to HTTP proxy which connects to fireworks directly.
+     * Both the WebSocket connection and HTTP (from proxy) use long-lived connection to reduce cross-request
+     * latency.
+     */
+    CodyAutoEditUseWebSocketForFireworksConnections = 'auto-edit-use-web-socket-for-fireworks-connections',
 }
 
 const ONE_HOUR = 60 * 60 * 1000
