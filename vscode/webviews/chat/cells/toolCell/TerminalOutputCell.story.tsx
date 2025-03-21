@@ -1,5 +1,7 @@
-import { UITerminalOutputType } from '@sourcegraph/cody-shared'
+import { UIToolStatus } from '@sourcegraph/cody-shared'
+import type { ContextItemToolState } from '@sourcegraph/cody-shared/src/codebase-context/messages'
 import type { Meta, StoryObj } from '@storybook/react'
+import { URI } from 'vscode-uri'
 import { VSCodeWebview } from '../../../storybook/VSCodeStoryDecorator'
 import { TerminalOutputCell } from './TerminalOutputCell'
 
@@ -13,72 +15,75 @@ export default meta
 
 type Story = StoryObj<typeof TerminalOutputCell>
 
+// Helper function to create a mock ContextItemToolState with terminal output
+const createTerminalItem = (title: string, content: string): ContextItemToolState => ({
+    type: 'tool-state',
+    toolId: `terminal-${title}-${Date.now()}`,
+    toolName: 'run_terminal_command',
+    status: UIToolStatus.Done,
+    outputType: 'terminal-output',
+    title,
+    content,
+    uri: URI.parse(`cody:/tools/shell/terminal-${title}`),
+})
+
 export const Default: Story = {
     args: {
-        lines: [
-            { content: 'ls -la', type: UITerminalOutputType.Input },
-            { content: 'total 32' },
-            { content: 'drwxr-xr-x  10 user  staff   320 Mar 17 12:34 .' },
-            { content: 'drwxr-xr-x   5 user  staff   160 Mar 17 12:30 ..' },
-            { content: '-rw-r--r--   1 user  staff  1420 Mar 17 12:34 TerminalOutputCell.tsx' },
-        ],
+        item: createTerminalItem(
+            'ls -la',
+            `total 32
+drwxr-xr-x  10 user  staff   320 Mar 17 12:34 .
+drwxr-xr-x   5 user  staff   160 Mar 17 12:30 ..
+-rw-r--r--   1 user  staff  1420 Mar 17 12:34 TerminalOutputCell.tsx`
+        ),
+        defaultOpen: false,
     },
 }
 
 export const WithErrors: Story = {
     args: {
-        lines: [
-            { content: 'npm run build', type: UITerminalOutputType.Input },
-            { content: '> cody-vscode@1.0.0 build' },
-            { content: '> vite build' },
-            { content: 'Error: Cannot find module', type: UITerminalOutputType.Error },
-            {
-                content: 'File not found: /src/components/ui/button.tsx',
-                type: UITerminalOutputType.Error,
-            },
-            { content: 'Build failed with 2 errors', type: UITerminalOutputType.Error },
-        ],
-
+        item: createTerminalItem(
+            'npm run build',
+            `> cody-vscode@1.0.0 build
+> vite build
+<sterr>Error: Cannot find module
+File not found: /src/components/ui/button.tsx
+Build failed with 2 errors</sterr>`
+        ),
         defaultOpen: true,
     },
 }
 
 export const WithWarnings: Story = {
     args: {
-        lines: [
-            { content: 'npm run lint', type: UITerminalOutputType.Input },
-            { content: '> cody-vscode@1.0.0 lint' },
-            { content: '> eslint . --ext ts,tsx' },
-            { content: 'Warning: Unexpected any in types', type: UITerminalOutputType.Warning },
-            {
-                content: 'Consider adding explicit type annotation',
-                type: UITerminalOutputType.Warning,
-            },
-            { content: 'Lint complete with 2 warnings', type: UITerminalOutputType.Warning },
-        ],
+        item: createTerminalItem(
+            'npm run lint',
+            `> cody-vscode@1.0.0 lint
+> eslint . --ext ts,tsx
+<sterr>Warning: Unexpected any in types
+Consider adding explicit type annotation
+Lint complete with 2 warnings</sterr>`
+        ),
         defaultOpen: true,
     },
 }
 
 export const WithSuccess: Story = {
     args: {
-        lines: [
-            { content: 'npm run test', type: UITerminalOutputType.Input },
-            { content: '> cody-vscode@1.0.0 test' },
-            { content: '> vitest run' },
-            { content: 'Running 24 tests...' },
-            {
-                content: 'Test suite completed: 24 passed, 0 failed',
-                type: UITerminalOutputType.Success,
-            },
-        ],
+        item: createTerminalItem(
+            'npm run test',
+            `> cody-vscode@1.0.0 test
+> vitest run
+Running 24 tests...
+Test suite completed: 24 passed, 0 failed`
+        ),
         defaultOpen: true,
     },
 }
 
 export const Loading: Story = {
     args: {
-        lines: [],
+        item: createTerminalItem('Loading...', ''),
         isLoading: true,
         defaultOpen: true,
     },
@@ -86,9 +91,13 @@ export const Loading: Story = {
 
 export const LongOutput: Story = {
     args: {
-        lines: Array.from({ length: 30 }, (_, i) => ({
-            content: `Line ${i + 1}: ${JSON.stringify({ key: `value-${i}` })}`,
-        })),
+        item: createTerminalItem(
+            'Long Output',
+            Array.from(
+                { length: 30 },
+                (_, i) => `Line ${i + 1}: ${JSON.stringify({ key: `value-${i}` })}`
+            ).join('\n')
+        ),
         defaultOpen: true,
     },
 }
