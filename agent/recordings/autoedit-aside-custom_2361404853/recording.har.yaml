@@ -94,11 +94,11 @@ log:
         send: 0
         ssl: -1
         wait: 212
-    - _id: 7312804efca7d01b84d216f0ea3fd869
+    - _id: f27d060ebc8c4c55a7e5f298bb844ebd
       _order: 0
       cache: {}
       request:
-        bodySize: 1389
+        bodySize: 1383
         cookies: []
         headers:
           - _fromType: array
@@ -125,7 +125,7 @@ log:
             value: "5000"
           - _fromType: array
             name: content-length
-            value: "1389"
+            value: "1383"
           - name: host
             value: demo.sourcegraph.com
         headersSize: 463
@@ -139,8 +139,8 @@ log:
             messages:
               - speaker: human
                 text: >-
-                  You are an intelligent programmer and an expert at coding
-                  DEBUG. Your goal is to help a colleague finish a code change.
+                  You are an intelligent programmer and an expert at coding.
+                  Your goal is to help a colleague finish a code change.
 
 
                   User: Help me finish a coding change. You will see snippets from current open files in my editor, files I have recently viewed, the file I am editing, then a history of my recent codebase changes, then current compiler and linter errors, content I copied from my codebase. You will then rewrite the <code_to_rewrite>, to match what you think I would do next in the codebase. Note: I might have stopped in the middle of typing.
@@ -198,10 +198,10 @@ log:
             value: v1
         url: https://demo.sourcegraph.com/.api/completions/code?client-name=autoedit-aside-custom&client-version=v1
       response:
-        bodySize: 565
+        bodySize: 555
         content:
           mimeType: text/event-stream
-          size: 565
+          size: 555
           text: >+
             event: completion
 
@@ -215,7 +215,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 20 Mar 2025 10:59:26 GMT
+            value: Fri, 21 Mar 2025 12:18:35 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -244,8 +244,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-03-20T10:59:26.311Z
-      time: 380
+      startedDateTime: 2025-03-21T12:18:35.354Z
+      time: 415
       timings:
         blocked: -1
         connect: -1
@@ -253,12 +253,12 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 380
-    - _id: f24b7dcdc8d54e1240e80f1c2092a534
+        wait: 415
+    - _id: b508280271cb6ce0f6175df58213785a
       _order: 0
       cache: {}
       request:
-        bodySize: 1310
+        bodySize: 1304
         cookies: []
         headers:
           - _fromType: array
@@ -285,7 +285,7 @@ log:
             value: "5000"
           - _fromType: array
             name: content-length
-            value: "1310"
+            value: "1304"
           - name: host
             value: demo.sourcegraph.com
         headersSize: 463
@@ -299,8 +299,8 @@ log:
             messages:
               - speaker: human
                 text: >-
-                  You are an intelligent programmer and an expert at coding
-                  DEBUG. Your goal is to help a colleague finish a code change.
+                  You are an intelligent programmer and an expert at coding.
+                  Your goal is to help a colleague finish a code change.
 
 
                   User: Help me finish a coding change. You will see snippets from current open files in my editor, files I have recently viewed, the file I am editing, then a history of my recent codebase changes, then current compiler and linter errors, content I copied from my codebase. You will then rewrite the <code_to_rewrite>, to match what you think I would do next in the codebase. Note: I might have stopped in the middle of typing.
@@ -357,10 +357,10 @@ log:
             value: v1
         url: https://demo.sourcegraph.com/.api/completions/code?client-name=autoedit-aside-custom&client-version=v1
       response:
-        bodySize: 584
+        bodySize: 477
         content:
           mimeType: text/event-stream
-          size: 584
+          size: 477
           text: >+
             event: completion
 
@@ -374,7 +374,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 20 Mar 2025 10:59:27 GMT
+            value: Fri, 21 Mar 2025 12:18:36 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -403,8 +403,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-03-20T10:59:26.842Z
-      time: 528
+      startedDateTime: 2025-03-21T12:18:35.919Z
+      time: 546
       timings:
         blocked: -1
         connect: -1
@@ -412,7 +412,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 528
+        wait: 546
     - _id: 404a28d2461ea66da470804476c21f26
       _order: 0
       cache: {}

@@ -21,7 +21,7 @@ export const CODE_TO_REWRITE_TAG_CLOSE = ps`</code_to_rewrite>`
 export const CODE_TO_REWRITE_TAG_OPEN = ps`<code_to_rewrite>`
 
 // Some common prompt instructions
-export const SYSTEM_PROMPT = ps`You are an intelligent programmer and an expert at coding DEBUG. Your goal is to help a colleague finish a code change.`
+export const SYSTEM_PROMPT = ps`You are an intelligent programmer and an expert at coding. Your goal is to help a colleague finish a code change.`
 export const BASE_USER_PROMPT = ps`Help me finish a coding change. You will see snippets from current open files in my editor, files I have recently viewed, the file I am editing, then a history of my recent codebase changes, then current compiler and linter errors, content I copied from my codebase. You will then rewrite the <code_to_rewrite>, to match what you think I would do next in the codebase. Note: I might have stopped in the middle of typing.`
 export const FINAL_USER_PROMPT = ps`Continue where I left off and finish my change by rewriting "code_to_rewrite":`
 export const LONG_TERM_SNIPPET_VIEWS_INSTRUCTION = ps`Code snippets I have recently viewed, roughly from oldest to newest. Some may be irrelevant to the change:`
