@@ -1,6 +1,6 @@
 import { isAbortError } from '@sourcegraph/cody-shared'
 import type * as vscode from 'vscode'
-import { type CloseEvent, type ErrorEvent, type Event, type MessageEvent, WebSocket } from 'ws'
+import { type CloseEvent, type ErrorEvent, type MessageEvent, WebSocket } from 'ws'
 import { autoeditsProviderConfig } from '../autoedits-config'
 import { autoeditsOutputChannelLogger } from '../output-channel-logger'
 import type { AbortedModelResponse, ModelResponseShared, SuccessModelResponse } from './base'
