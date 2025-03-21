@@ -379,7 +379,7 @@ function expectCells(expectedCells: CellMatcher[], containerElement?: HTMLElemen
 
 describe('transcriptToInteractionPairs', () => {
     test('empty transcript', () => {
-        expect(transcriptToInteractionPairs([], null)).toEqual<Interaction[]>([
+        expect(transcriptToInteractionPairs([], null, null)).toEqual<Interaction[]>([
             {
                 humanMessage: { index: 0, speaker: 'human', isUnsentFollowup: true },
                 assistantMessage: null,
@@ -396,6 +396,7 @@ describe('transcriptToInteractionPairs', () => {
                     { speaker: 'human', text: ps`c` },
                     { speaker: 'assistant', text: ps`d` },
                 ],
+                null,
                 null
             )
         ).toEqual<Interaction[]>([
@@ -416,10 +417,14 @@ describe('transcriptToInteractionPairs', () => {
 
     test('assistant message is loading', () => {
         expect(
-            transcriptToInteractionPairs([{ speaker: 'human', text: ps`a` }], {
-                speaker: 'assistant',
-                text: ps`b`,
-            })
+            transcriptToInteractionPairs(
+                [{ speaker: 'human', text: ps`a` }],
+                {
+                    speaker: 'assistant',
+                    text: ps`b`,
+                },
+                null
+            )
         ).toEqual<Interaction[]>([
             {
                 humanMessage: { index: 0, speaker: 'human', text: ps`a`, isUnsentFollowup: false },
@@ -435,10 +440,14 @@ describe('transcriptToInteractionPairs', () => {
     test('last assistant message is error', () => {
         const error = errorToChatError(new Error('x'))
         expect(
-            transcriptToInteractionPairs([{ speaker: 'human', text: ps`a` }], {
-                speaker: 'assistant',
-                error,
-            })
+            transcriptToInteractionPairs(
+                [{ speaker: 'human', text: ps`a` }],
+                {
+                    speaker: 'assistant',
+                    error,
+                },
+                null
+            )
         ).toEqual<Interaction[]>([
             {
                 humanMessage: { index: 0, speaker: 'human', text: ps`a`, isUnsentFollowup: false },
