@@ -44,7 +44,7 @@ describe('ModeSelectorField', () => {
         omniBoxEnabled: true,
         isDotComUser: false,
         isCodyProUser: true,
-        intent: 'chat' as const,
+        _intent: 'chat' as const,
         manuallySelectIntent: vi.fn(),
     }
 
@@ -70,7 +70,7 @@ describe('ModeSelectorField', () => {
     it('displays agentic intent when selected', () => {
         render(
             <TestWrapper>
-                <ModeSelectorField {...defaultProps} intent="agentic" />
+                <ModeSelectorField {...defaultProps} _intent="agentic" />
             </TestWrapper>
         )
 
@@ -80,7 +80,7 @@ describe('ModeSelectorField', () => {
     it('toggles between intents when keyboard shortcut is used', () => {
         render(
             <TestWrapper>
-                <ModeSelectorField {...defaultProps} intent="chat" omniBoxEnabled={true} />
+                <ModeSelectorField {...defaultProps} _intent="chat" omniBoxEnabled={true} />
             </TestWrapper>
         )
 

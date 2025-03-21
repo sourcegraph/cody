@@ -11,7 +11,7 @@ const meta: Meta<typeof ModeSelectorField> = {
         omniBoxEnabled: true,
         isDotComUser: false,
         isCodyProUser: true,
-        intent: 'chat',
+        _intent: 'chat',
         manuallySelectIntent: () => {},
     },
 }
@@ -24,13 +24,13 @@ export const Default: Story = {}
 
 export const WithSearchSelected: Story = {
     args: {
-        intent: 'search',
+        _intent: 'search',
     },
 }
 
 export const WithAgenticSelected: Story = {
     args: {
-        intent: 'agentic',
+        _intent: 'agentic',
     },
 }
 
