@@ -44,7 +44,8 @@ log:
           encoding: base64
           mimeType: text/plain; charset=utf-8
           size: 223
-          text: "[\"H4sIAAAAAAAAA2zOsQrDMAwE0D1fYTL3A0q2EDpkCwTaWakFNVhSsM40pfTfu2T0/O6O+\
+          text:
+            "[\"H4sIAAAAAAAAA2zOsQrDMAwE0D1fYTL3A0q2EDpkCwTaWakFNVhSsM40pfTfu2T0/O6O+\
             3YhhNA/LX5uSlvm2A8BpfLlhBehCVRhk8meGdxuVofJZCKk0dsbQElbRTJtugsVTKbg\
             A4+k0d7NmFjk7OMyNzUT2LHWfbcCjufnZOorCpOMy3zn4sm0H8K1+3V/AAAA//8=\",\
             \"AwB52l1wEwEAAA==\"]"
@@ -67,7 +68,8 @@ log:
           - name: cache-control
             value: no-cache, max-age=0
           - name: vary
-            value: Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
+            value:
+              Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
               Cookie
           - name: x-content-type-options
             value: nosniff
@@ -160,7 +162,7 @@ log:
                   <code_to_rewrite>
 
                   export function sum(a: number, b: number): number {
-                      
+
                   }
 
 
@@ -176,7 +178,7 @@ log:
             prediction:
               content: |
                 export function sum(a: number, b: number): number {
-                    
+
                 }
               type: content
             stream: true
@@ -220,7 +222,8 @@ log:
           - name: cache-control
             value: no-cache
           - name: vary
-            value: Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
+            value:
+              Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
               Cookie
           - name: x-content-type-options
             value: nosniff
@@ -311,7 +314,7 @@ log:
                   <code_to_rewrite>
 
                   function bubbleSort(arr: number[]): number[] {
-                      
+
                   }
 
 
@@ -327,7 +330,7 @@ log:
             prediction:
               content: |
                 function bubbleSort(arr: number[]): number[] {
-                    
+
                 }
               type: content
             stream: true
@@ -371,7 +374,8 @@ log:
           - name: cache-control
             value: no-cache
           - name: vary
-            value: Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
+            value:
+              Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
               Cookie
           - name: x-content-type-options
             value: nosniff
@@ -395,7 +399,395 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 2200
+        wait: 2105
+    - _id: 15db8f46ea8faed1cdb40e86e45b1a86
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 1607
+        cookies: []
+        headers:
+          - _fromType: array
+            name: accept
+            value: application/json
+          - _fromType: array
+            name: accept-encoding
+            value: gzip;q=0
+          - _fromType: array
+            name: authorization
+            value: token
+              REDACTED_69e9f79ce29352d014eeb80b56510341844eb82ad9abac7cab3631c7e873e4ce
+          - _fromType: array
+            name: content-type
+            value: application/json; charset=utf-8
+          - _fromType: array
+            name: user-agent
+            value: autoedit-completions/v1 (Node.js v20.4.0)
+          - _fromType: array
+            name: x-requested-with
+            value: autoedit-completions v1
+          - _fromType: array
+            name: x-timeout-ms
+            value: "5000"
+          - _fromType: array
+            name: content-length
+            value: "1607"
+          - name: host
+            value: demo.sourcegraph.com
+        headersSize: 460
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json; charset=utf-8
+          params: []
+          textJSON:
+            maxTokensToSample: 532
+            messages:
+              - speaker: human
+                text: >-
+                  You are an intelligent programmer and an expert at coding.
+                  Your goal is to help a colleague finish a code change.
+
+
+                  User: Help me finish a coding change. You will see snippets from current open files in my editor, files I have recently viewed, the file I am editing, then a history of my recent codebase changes, then current compiler and linter errors, content I copied from my codebase. You will then rewrite the <code_to_rewrite>, to match what you think I would do next in the codebase. Note: I might have stopped in the middle of typing.
+
+                  The file currently open:(`src/two-completions.ts`)
+
+                  <file>
+
+
+                  <<<AREA_AROUND_CODE_TO_REWRITE_WILL_BE_INSERTED_HERE>>>
+
+
+                  </file>
+
+                  Code snippets just I viewed:
+
+                  <recently_viewed_snippets>
+
+                  <snippet>
+
+                  (`src/sum.ts`)
+
+
+
+                  </snippet>
+
+                  <snippet>
+
+                  (`src/mergeSort.ts`)
+
+
+
+                  </snippet>
+
+                  <snippet>
+
+                  (`src/bubbleSort.ts`)
+
+
+
+                  </snippet>
+
+                  </recently_viewed_snippets>
+
+                  <area_around_code_to_rewrite>
+
+
+                  <code_to_rewrite>
+
+                  function sumStrings(a: String, a: String): number {
+                      return a +
+                  }
+
+
+
+                  </code_to_rewrite>
+
+                  function sumInts(a: number, b: number): number {
+                      return a +
+                  }
+
+
+
+                  </area_around_code_to_rewrite>
+
+                  <diff_history>
+
+                  src/two-completions.ts
+
+                  8+|
+
+                  </diff_history>
+
+                  Continue where I left off and finish my change by rewriting "code_to_rewrite":
+
+
+                  Assistant:
+            model: fireworks::v1::autoedits-deepseek-lite-default
+            prediction:
+              content: |+
+                function sumStrings(a: String, a: String): number {
+                    return a +
+                }
+
+              type: content
+            stream: true
+            temperature: 0.1
+            timeoutMs: 5000
+        queryString:
+          - name: client-name
+            value: autoedit-completions
+          - name: client-version
+            value: v1
+        url: https://demo.sourcegraph.com/.api/completions/code?client-name=autoedit-completions&client-version=v1
+      response:
+        bodySize: 392
+        content:
+          mimeType: text/event-stream
+          size: 392
+          text: >+
+            event: completion
+
+            data: {"completion":"function sumStrings(a: String, a: String): number {\n    return a + b;\n}\n\n","stopReason":"stop"}
+
+
+            event: done
+
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Wed, 19 Mar 2025 11:46:27 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: close
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value:
+              Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
+              Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1230
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2025-03-19T11:46:26.813Z
+      time: 459
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 459
+    - _id: dece90ac6371f1a350912b677123151b
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 1537
+        cookies: []
+        headers:
+          - _fromType: array
+            name: accept
+            value: application/json
+          - _fromType: array
+            name: accept-encoding
+            value: gzip;q=0
+          - _fromType: array
+            name: authorization
+            value: token
+              REDACTED_69e9f79ce29352d014eeb80b56510341844eb82ad9abac7cab3631c7e873e4ce
+          - _fromType: array
+            name: content-type
+            value: application/json; charset=utf-8
+          - _fromType: array
+            name: user-agent
+            value: autoedit-completions/v1 (Node.js v20.4.0)
+          - _fromType: array
+            name: x-requested-with
+            value: autoedit-completions v1
+          - _fromType: array
+            name: x-timeout-ms
+            value: "5000"
+          - _fromType: array
+            name: content-length
+            value: "1537"
+          - name: host
+            value: demo.sourcegraph.com
+        headersSize: 460
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json; charset=utf-8
+          params: []
+          textJSON:
+            maxTokensToSample: 530
+            messages:
+              - speaker: human
+                text: >-
+                  You are an intelligent programmer and an expert at coding.
+                  Your goal is to help a colleague finish a code change.
+
+
+                  User: Help me finish a coding change. You will see snippets from current open files in my editor, files I have recently viewed, the file I am editing, then a history of my recent codebase changes, then current compiler and linter errors, content I copied from my codebase. You will then rewrite the <code_to_rewrite>, to match what you think I would do next in the codebase. Note: I might have stopped in the middle of typing.
+
+                  The file currently open:(`src/two-completions.ts`)
+
+                  <file>
+
+
+                  <<<AREA_AROUND_CODE_TO_REWRITE_WILL_BE_INSERTED_HERE>>>
+
+
+                  </file>
+
+                  Code snippets just I viewed:
+
+                  <recently_viewed_snippets>
+
+                  <snippet>
+
+                  (`src/sum.ts`)
+
+
+
+                  </snippet>
+
+                  <snippet>
+
+                  (`src/mergeSort.ts`)
+
+
+
+                  </snippet>
+
+                  <snippet>
+
+                  (`src/bubbleSort.ts`)
+
+
+
+                  </snippet>
+
+                  </recently_viewed_snippets>
+
+                  <area_around_code_to_rewrite>
+
+                  function sumStrings(a: String, a: String): number {
+                      return a +
+                  }
+
+
+
+                  <code_to_rewrite>
+
+                  function sumInts(a: number, b: number): number {
+                      return a +
+                  }
+
+
+                  </code_to_rewrite>
+
+
+                  </area_around_code_to_rewrite>
+
+                  Continue where I left off and finish my change by rewriting "code_to_rewrite":
+
+
+                  Assistant:
+            model: fireworks::v1::autoedits-deepseek-lite-default
+            prediction:
+              content: |
+                function sumInts(a: number, b: number): number {
+                    return a +
+                }
+              type: content
+            stream: true
+            temperature: 0.1
+            timeoutMs: 5000
+        queryString:
+          - name: client-name
+            value: autoedit-completions
+          - name: client-version
+            value: v1
+        url: https://demo.sourcegraph.com/.api/completions/code?client-name=autoedit-completions&client-version=v1
+      response:
+        bodySize: 377
+        content:
+          mimeType: text/event-stream
+          size: 377
+          text: >+
+            event: completion
+
+            data: {"completion":"function sumInts(a: number, b: number): number {\n    return a + b\n}\n","stopReason":"stop"}
+
+
+            event: done
+
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Wed, 19 Mar 2025 11:46:53 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: close
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value:
+              Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
+              Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1230
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2025-03-19T11:46:53.322Z
+      time: 416
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 416
     - _id: 404a28d2461ea66da470804476c21f26
       _order: 0
       cache: {}
@@ -435,7 +827,7 @@ log:
           params: []
           textJSON:
             query: >
-              
+
               query CodeSearchEnabled {
                   codeSearchEnabled: enterpriseLicenseHasFeature(feature:"code-search")
               }
@@ -449,7 +841,7 @@ log:
         content:
           mimeType: application/json
           size: 35
-          text: "{\"data\":{\"codeSearchEnabled\":true}}"
+          text: '{"data":{"codeSearchEnabled":true}}'
         cookies: []
         headers:
           - name: date
@@ -469,7 +861,8 @@ log:
           - name: cache-control
             value: no-cache, max-age=0
           - name: vary
-            value: Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
+            value:
+              Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
               Cookie
           - name: x-content-type-options
             value: nosniff
@@ -533,7 +926,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query ContextFilters {
                   site {
                       codyContextFilters(version: V1) {
@@ -552,7 +945,8 @@ log:
           encoding: base64
           mimeType: application/json
           size: 104
-          text: "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqzixJBdHJ+SmVzvl5JakVJW6ZOSWpRcUg0aLEciWrv\
+          text:
+            "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqzixJBdHJ+SmVzvl5JakVJW6ZOSWpRcUg0aLEciWrv\
             NKcnNra2loAAAAA//8DADYuyGU1AAAA\"]"
           textDecoded:
             data:
@@ -578,7 +972,8 @@ log:
           - name: cache-control
             value: no-cache, max-age=0
           - name: vary
-            value: Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
+            value:
+              Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
               Cookie
           - name: x-content-type-options
             value: nosniff
@@ -644,7 +1039,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query CurrentSiteCodyLlmConfiguration {
                   site {
                       codyLLMConfiguration {
@@ -668,7 +1063,8 @@ log:
           encoding: base64
           mimeType: application/json
           size: 256
-          text: "[\"H4sIAAAAAAAAA3yOzQrCMBCE32XPBkutKL322t58gTXZ2tKYLdmNP0jfXSqIYsHTwPDNx\
+          text:
+            "[\"H4sIAAAAAAAAA3yOzQrCMBCE32XPBkutKL322t58gTXZ2tKYLdmNP0jfXSqIYsHTwPDNx\
             zzAoSKUD5BeaU7L7l7XTcWh7U8povYcXn2H2rAjDyWkMAS+hrX1mByZjdkZ4RBIjUcl\
             UVh98AZvBx4oCJTFNsuyFbQoWv2z8ZgEfrilxvJ59DTfe4uEU7R0ijh2a0c0CtFgLDu\
             K5pIb3yuZIwrBYvslz7NiP03T9AQAAP//AwCi2KUiGQEAAA==\"]"
@@ -701,7 +1097,8 @@ log:
           - name: cache-control
             value: no-cache, max-age=0
           - name: vary
-            value: Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
+            value:
+              Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
               Cookie
           - name: x-content-type-options
             value: nosniff
@@ -767,7 +1164,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query CurrentSiteCodyLlmConfiguration {
                   site {
                       codyLLMConfiguration {
@@ -786,7 +1183,8 @@ log:
           encoding: base64
           mimeType: application/json
           size: 139
-          text: "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqzixJBdHJ+SmVPj6+zvl5aZnppUWJJZn5eWD53MSiE\
+          text:
+            "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqzixJBdHJ+SmVPj6+zvl5aZnppUWJJZn5eWD53MSiE\
             uf8vJLUipLwzLyU/HIlK6WUzOLEpJzUFKXa2tpaAAAAAP//\",\"AwArMNn0TAAAAA==\
             \"]"
         cookies: []
@@ -808,7 +1206,8 @@ log:
           - name: cache-control
             value: no-cache, max-age=0
           - name: vary
-            value: Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
+            value:
+              Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
               Cookie
           - name: x-content-type-options
             value: nosniff
@@ -874,7 +1273,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query CurrentSiteCodyLlmProvider {
                   site {
                       codyLLMConfiguration {
@@ -893,7 +1292,8 @@ log:
           encoding: base64
           mimeType: application/json
           size: 128
-          text: "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqzixJBdHJ+SmVPj6+zvl5aZnppUWJJZn5eSDxgqL8s\
+          text:
+            "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqzixJBdHJ+SmVPj6+zvl5aZnppUWJJZn5eSDxgqL8s\
             syU1CIlK6Xi/NKi5NT0osSCDKXa2tpaAAAAAP//AwAfFAXARQAAAA==\"]"
           textDecoded:
             data:
@@ -919,7 +1319,8 @@ log:
           - name: cache-control
             value: no-cache, max-age=0
           - name: vary
-            value: Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
+            value:
+              Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
               Cookie
           - name: x-content-type-options
             value: nosniff
@@ -985,7 +1386,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query CurrentUser {
                   currentUser {
                       id
@@ -1015,7 +1416,8 @@ log:
           encoding: base64
           mimeType: application/json
           size: 260
-          text: "[\"H4sIAAAAAAAAAzSOwQrCQAxE/yXnevK24NGLaAWxRRAPoRtrZJstyVassv8u1Xp8wzDz3\
+          text:
+            "[\"H4sIAAAAAAAAAzSOwQrCQAxE/yXnevK24NGLaAWxRRAPoRtrZJstyVassv8u1Xp8wzDz3\
             uAxIbg3NIMqSaqMdEL24KA+laG5x1d53K2ggBtaTcpXJr/ukAO4KwajAjxbH3AssSNw\
             MoRQwGCk8mVooh8TWWJpoQB8YEKtDtt/s1fuUMd58ZdFbVH4hYmj2KQj0ZOBO89ix+V\
             G9vdqkppPWIzbW7IFPbHrAxnkS845fwAAAP//AwC8qhJW4QAAAA==\"]"
@@ -1051,7 +1453,8 @@ log:
           - name: cache-control
             value: no-cache, max-age=0
           - name: vary
-            value: Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
+            value:
+              Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
               Cookie
           - name: x-content-type-options
             value: nosniff
@@ -1117,7 +1520,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query SiteProductVersion {
                   site {
                       productVersion
@@ -1133,7 +1536,7 @@ log:
         content:
           mimeType: application/json
           size: 47
-          text: "{\"data\":{\"site\":{\"productVersion\":\"6.1.2889\"}}}"
+          text: '{"data":{"site":{"productVersion":"6.1.2889"}}}'
         cookies: []
         headers:
           - name: date
@@ -1153,7 +1556,8 @@ log:
           - name: cache-control
             value: no-cache, max-age=0
           - name: vary
-            value: Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
+            value:
+              Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
               Cookie
           - name: x-content-type-options
             value: nosniff
@@ -1217,7 +1621,7 @@ log:
           params: []
           textJSON:
             query: |
-              
+
               query ViewerSettings {
                 viewerSettings {
                   final
@@ -1234,7 +1638,8 @@ log:
           encoding: base64
           mimeType: application/json
           size: 1812
-          text: "[\"H4sIAAAAAAAA/7RYbVPcOBL+KyrXVh3sYTPM8Dau2spxXOByR3YhkNoPmFTJUttWRpYcS\
+          text:
+            "[\"H4sIAAAAAAAA/7RYbVPcOBL+KyrXVh3sYTPM8Dau2spxXOByR3YhkNoPmFTJUttWRpYcS\
             R7gOPa3X0nyvNvDTG6TqoCxWt1PP93qbvkloNjgIH4JxgweQd2CMUzk2r7JmMA8iIOX\
             JCCSwgdhgEdcsywJYqNq2PPvbw02+oPQLC+Mjph/iDgW+WeNc0iC+CUJpClA3RUKdCE\
             5TYK4F/UGe0mgoJKaGamekyBOgpyZok4jIst9LWtFIFe4Kuafk2AvCQwzHNyGKyxy1N\
@@ -1292,7 +1697,8 @@ log:
           - name: content-encoding
             value: gzip
           - name: vary
-            value: Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
+            value:
+              Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
               Cookie
           - name: x-content-type-options
             value: nosniff
@@ -1353,7 +1759,8 @@ log:
           encoding: base64
           mimeType: text/plain; charset=utf-8
           size: 1864
-          text: "[\"H4sIAAAAAAAA/+ydUXPaOBCA3/MrNDy1cxWxTQgpT5em7V3nmkvm0knn5qYPwl5AE2N5Z\
+          text:
+            "[\"H4sIAAAAAAAA/+ydUXPaOBCA3/MrNDy1cxWxTQgpT5em7V3nmkvm0knn5qYPwl5AE2N5Z\
             JmQ6eS/38gGE7DAUmITXNwnCqtd2XysV7vS5ucRQgi1IncME3ILPKIsaPVRy25brXfp\
             ZxymdPG21bba1m8eTBcfhpxNqQc8avXRf8lb8t/P7FUiRD05lgRizFlI3fnY7GOPRqF\
             PHv4mE5By55lcJvb4brvqIeVwz/hdVKD6cyanrXrE2MiHAr1/pELaSlkIAaEFSq9CCM\
@@ -1412,7 +1819,8 @@ log:
           - name: content-encoding
             value: gzip
           - name: vary
-            value: Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
+            value:
+              Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
               Cookie
           - name: x-content-type-options
             value: nosniff

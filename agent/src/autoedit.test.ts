@@ -147,6 +147,66 @@ describe('Autoedit', () => {
             const texts = result.inlineCompletionItems.map(item => item.insertText)
             expect(texts).toMatchSnapshot()
         }, 10_000)
+
+        it('autocomplete/execute (triggers on selection change)', async () => {
+            const uri = workspace.file('src', 'two-completions.ts')
+            await client.openFile(uri)
+
+            // It is important to trigger a change at the start here as we will only trigger on
+            // selection changes if we had had a recent change to the file
+            await client.changeFile(uri, {
+                text: client.workspace.getDocument(uri)?.getText() + '\n',
+            })
+
+            // Set a small visibility delay for testing purposes.
+            const visibilityDelay = 100
+            await client.request('testing/autocomplete/setCompletionVisibilityDelay', {
+                delay: visibilityDelay,
+            })
+
+            const firstResult = await client.request('autocomplete/execute', {
+                uri: uri.toString(),
+                position: { line: 1, character: 14 },
+                triggerKind: 'Automatic',
+            })
+            expect(firstResult.inlineCompletionItems.length).toBeGreaterThan(0)
+            expect(firstResult.decoratedEditItems.length).toBe(0)
+            expect(firstResult.inlineCompletionItems.map(item => item.insertText)).toMatchInlineSnapshot(
+                `
+              [
+                "    return a + b;",
+              ]
+            `
+            )
+
+            // We then ensure that we are able to retrieve the second completion by listening to
+            // the autocomplete trigger event
+            const nextCursorPosition = { line: 5, character: 14 }
+            const autocompleteTriggeredPromise = new Promise<AutocompleteResult>(resolve => {
+                client.onDidTriggerAutocomplete(async () => {
+                    const result = await client.request('autocomplete/execute', {
+                        uri: uri.toString(),
+                        position: nextCursorPosition,
+                        triggerKind: 'Automatic',
+                    })
+                    resolve(result)
+                })
+            })
+            await client.changeFile(uri, {
+                selection: { start: nextCursorPosition, end: nextCursorPosition },
+            })
+
+            const secondResult = await autocompleteTriggeredPromise
+            expect(secondResult.inlineCompletionItems.length).toBeGreaterThan(0)
+            expect(secondResult.decoratedEditItems.length).toBe(0)
+            expect(
+                secondResult.inlineCompletionItems.map(item => item.insertText)
+            ).toMatchInlineSnapshot(`
+              [
+                "    return a + b",
+              ]
+            `)
+        }, 10_000)
     })
 
     describe('autoedit - edits', () => {
