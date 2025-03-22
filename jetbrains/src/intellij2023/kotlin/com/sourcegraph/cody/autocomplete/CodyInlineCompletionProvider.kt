@@ -63,7 +63,7 @@ class CodyInlineCompletionProvider : InlineCompletionProvider {
             .get() ?: return InlineCompletionSuggestion.Empty
 
     return InlineCompletionSingleSuggestion.build {
-      completions.items
+      completions.inlineCompletionItems
           .firstNotNullOfOrNull {
             WriteCommandAction.runWriteCommandAction<InlineCompletionGrayTextElement?>(
                 editor.project) {
@@ -79,7 +79,7 @@ class CodyInlineCompletionProvider : InlineCompletionProvider {
                             it.insertText, project, editor.document, range, request.endOffset)
                       }
 
-                  val completionText = formattedCompletionText.removeSuffix(originalText)
+                  val completionText = formattedCompletionText.removePrefix(originalText)
                   if (completionText.trim().isBlank()) {
                     null
                   } else {
