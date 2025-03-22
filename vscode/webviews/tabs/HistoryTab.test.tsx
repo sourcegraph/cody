@@ -9,7 +9,7 @@ import { HistoryTabWithData } from './HistoryTab'
 // Create a proper mock for extensionAPI
 const createMockExtensionAPI = (): WebviewToExtensionAPI => ({
     mentionMenuData: vi.fn(),
-    evaluatedFeatureFlag: vi.fn(),
+    evaluateFeatureFlag: vi.fn(),
     prompts: vi.fn().mockReturnValue({ arePromptsSupported: false, actions: [], query: '' }),
     promptTags: vi.fn().mockReturnValue([]),
     getCurrentUserId: vi.fn().mockReturnValue(null),
