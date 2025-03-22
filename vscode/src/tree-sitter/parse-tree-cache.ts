@@ -44,6 +44,12 @@ export async function parseDocument(document: TextDocument): Promise<void> {
         return
     }
 
+    // CODY-5459: Swift grammar is not working with VSCode 1.98+
+    // TODO: Fix Swift grammar crash of extension host
+    if (parseLanguage === 'swift') {
+        return
+    }
+
     const parser = await createParser({ language: parseLanguage })
     if (!parser) {
         return
