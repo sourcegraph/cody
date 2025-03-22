@@ -1,10 +1,8 @@
 package com.sourcegraph.cody.autocomplete
 
 import com.intellij.codeInsight.hint.HintManager
-import com.intellij.codeWithMe.ClientId
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.runInEdt
-import com.intellij.openapi.client.ClientSessionsManager
 import com.intellij.openapi.command.CommandProcessor
 import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.components.Service
@@ -54,6 +52,7 @@ import com.sourcegraph.utils.CodyEditorUtil.isCommandExcluded
 import com.sourcegraph.utils.CodyEditorUtil.isEditorValidForAutocomplete
 import com.sourcegraph.utils.CodyEditorUtil.isImplicitAutocompleteEnabledForEditor
 import com.sourcegraph.utils.CodyFormatter
+import com.sourcegraph.utils.CodyIdeUtil
 import java.util.concurrent.atomic.AtomicReference
 import org.jetbrains.annotations.VisibleForTesting
 
@@ -147,8 +146,7 @@ class CodyAutocompleteManager {
       }
       return
     }
-    val isRemoteDev = ClientSessionsManager.getAppSession(ClientId.current)?.isRemote ?: false
-    if (isRemoteDev) {
+    if (CodyIdeUtil.isRD()) {
       return
     }
     if (isTriggeredImplicitly && !isImplicitAutocompleteEnabledForEditor(editor)) {
