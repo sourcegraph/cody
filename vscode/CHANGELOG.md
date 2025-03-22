@@ -4,6 +4,231 @@ This is a log of all notable changes to Cody for VS Code.
 
 <!--- {/_ CHANGELOG_START _/} -->
 
+## 1.78.1
+
+### Fix
+
+#### Models
+
+- Prevent reasoning models from being set as default model [#7473](https://github.com/sourcegraph/cody/pull/7473)
+
+
+## 1.78.0
+
+### Features
+
+#### Auto-Edit
+
+- make prompt instructions more concise [#7402](https://github.com/sourcegraph/cody/pull/7402)
+- reduce context size [#7401](https://github.com/sourcegraph/cody/pull/7401)
+- cancel redundant requests [#7400](https://github.com/sourcegraph/cody/pull/7400)
+
+#### Chat
+
+- Add Agentic chat intent and UI [#7332](https://github.com/sourcegraph/cody/pull/7332)
+- At-mention menu item naming changes [#7359](https://github.com/sourcegraph/cody/pull/7359)
+
+#### Context
+
+- Enable symf for ES dev workspaces [#7412](https://github.com/sourcegraph/cody/pull/7412)
+
+### Fix
+
+#### Auth
+
+- use correct access token when authenticating [#7362](https://github.com/sourcegraph/cody/pull/7362)
+
+#### Autoedit
+
+- Fix conflict between suggestions and completion menu [#7389](https://github.com/sourcegraph/cody/pull/7389)
+
+#### Chat
+
+- Fix React warnings caused by relocating the model selector [#7351](https://github.com/sourcegraph/cody/pull/7351)
+- [Backport M78] Fix current selection in ContextRetriever [#7462](https://github.com/sourcegraph/cody/pull/7462)
+- Fix Remote Directories Provider Valid Site Version Logic [#7396](https://github.com/sourcegraph/cody/pull/7396)
+- Remove CodyPromptsV2 (and fix prompts migration layout) [#7336](https://github.com/sourcegraph/cody/pull/7336)
+
+#### CI
+
+- improve windows unit-test job and cache [#7356](https://github.com/sourcegraph/cody/pull/7356)
+
+#### Completions
+
+- Add api-version check for completions endpoint [#7448](https://github.com/sourcegraph/cody/pull/7448)
+
+#### Gateway
+
+- use latestCodyClientConfig for chat api version [#7365](https://github.com/sourcegraph/cody/pull/7365)
+
+#### Smart-Apply
+
+- Fix the smart apply prompt role from system to assistant [#7421](https://github.com/sourcegraph/cody/pull/7421)
+
+#### Search
+
+- Fix gear action in Find with Sourcegraph dialog [#7369](https://github.com/sourcegraph/cody/pull/7369)
+
+### Chore
+
+#### Agent
+
+- add minor version release script [#7330](https://github.com/sourcegraph/cody/pull/7330)
+- Cody CLI: Include Noxide files [#7390](https://github.com/sourcegraph/cody/pull/7390)
+- Api: Fix version detection for non-main-branch images [#7382](https://github.com/sourcegraph/cody/pull/7382)
+
+#### Auto-Edit
+
+- reduce debounce time even further [#7348](https://github.com/sourcegraph/cody/pull/7348)
+
+#### Telemetry
+
+- update `billingMetadata` for autoedit and completion events [#7360](https://github.com/sourcegraph/cody/pull/7360)
+
+#### Others
+
+- Logging JCEF version to Sentry [#7364](https://github.com/sourcegraph/cody/pull/7364)
+- Merge sourcegraph.cody.Icons and sourcegraph.Icons - merge classes - remove redundant files [#7368](https://github.com/sourcegraph/cody/pull/7368)
+- Chore: disable renovate [#7355](https://github.com/sourcegraph/cody/pull/7355)
+
+### Refactor
+
+#### Auth
+
+- Updating CodyAuthService from authStatus/didUpdate [#7354](https://github.com/sourcegraph/cody/pull/7354)
+
+#### Chat
+
+- Remove priority context logic [#7397](https://github.com/sourcegraph/cody/pull/7397)
+- Refactor a few lines in vscode/src/commands/scm/source-control.ts [#7385](https://github.com/sourcegraph/cody/pull/7385)
+
+## 1.76.1
+
+### Reverts
+
+- Revert part of [#7344](https://github.com/sourcegraph/cody/pull/7344) to support Sourcegraph instances 6.1.0+ that do not support API version 8. (cfb30bbf41f31774fe2813d12740943d28a7da72)
+
+
+
+## 1.76.0
+
+### Features
+
+#### Auto-Edit
+
+- full debug panel UI implementation [#7306](https://github.com/sourcegraph/cody/pull/7306)
+- add basic webview debug-panel [#7304](https://github.com/sourcegraph/cody/pull/7304)
+- Enable inline renderer [#7172](https://github.com/sourcegraph/cody/pull/7172)
+
+#### Chat
+
+- removes feature flag requirement for title generation [#7291](https://github.com/sourcegraph/cody/pull/7291)
+- Add the latest conversation to the welcome page [#7227](https://github.com/sourcegraph/cody/pull/7227)
+- Add icon for Cody chat panel [#7285](https://github.com/sourcegraph/cody/pull/7285)
+
+#### Dev
+
+- Add image upload (vision) support for internal testing [#7279](https://github.com/sourcegraph/cody/pull/7279)
+
+#### Smart-Apply
+
+- Adds custom model prompt for smart apply. [#7328](https://github.com/sourcegraph/cody/pull/7328)
+- Add smart apply intent and refactor for custom models [#7324](https://github.com/sourcegraph/cody/pull/7324)
+
+#### Webview
+
+- Persist Thinking Space state using local storage [#7307](https://github.com/sourcegraph/cody/pull/7307)
+
+#### Edit
+
+- Use latest sonnet for fix and latest haiku-3-5 for doc intent [#7241](https://github.com/sourcegraph/cody/pull/7241)
+
+### Fix
+
+#### Autoedit
+
+- Fix conflict between suggestions and completion menu [#7406](https://github.com/sourcegraph/cody/pull/7406)
+
+#### Build
+
+- Make dev, insiders targets work on Windows [#7345](https://github.com/sourcegraph/cody/pull/7345)
+
+#### Chat
+
+- Fix React warnings caused by relocating the model selector [#7366](https://github.com/sourcegraph/cody/pull/7366)
+- Fix the filename container location in chat [#7262](https://github.com/sourcegraph/cody/pull/7262)
+- Fix the apply and copy buttons render improperly when the sidebar width is narrow [#7299](https://github.com/sourcegraph/cody/pull/7299)
+- Fix: Fix at-mentions menu in prompt template [#7289](https://github.com/sourcegraph/cody/pull/7289)
+- Fix positioning of file-like chats in Recent Files [#7284](https://github.com/sourcegraph/cody/pull/7284)
+- Open / close Cody tool window on a shortcut (closes #2618) [#7282](https://github.com/sourcegraph/cody/pull/7282)
+- Fix "Open Selection in Sourcegraph Web" (closes #3037) [#7278](https://github.com/sourcegraph/cody/pull/7278)
+- Truncate full file paths from the left, not from the right [#7277](https://github.com/sourcegraph/cody/pull/7277)
+- Fix 'Open Chat' Action [#7273](https://github.com/sourcegraph/cody/pull/7273)
+- Fix missing tab tooltips [#7271](https://github.com/sourcegraph/cody/pull/7271)
+- Fix: Add support for open-link items to new prompt editor [#7268](https://github.com/sourcegraph/cody/pull/7268)
+- Fix assertion error from webview (closes #2845) [#7257](https://github.com/sourcegraph/cody/pull/7257)
+- Remove the /reset command [#7256](https://github.com/sourcegraph/cody/pull/7256)
+
+#### Client
+
+- API versioning [#7344](https://github.com/sourcegraph/cody/pull/7344)
+- Set Accept header to 'application/json' for GraphQL queries [#7312](https://github.com/sourcegraph/cody/pull/7312)
+- Fix token-receiver url generation logic [#7338](https://github.com/sourcegraph/cody/pull/7338)
+
+#### Dev
+
+- Refine image upload logic and vision model support [#7305](https://github.com/sourcegraph/cody/pull/7305)
+
+#### Smart-Apply
+
+- do not create new files on prefetching [#7269](https://github.com/sourcegraph/cody/pull/7269)
+
+#### Webview
+
+- show copy button in web clients [#7310](https://github.com/sourcegraph/cody/pull/7310)
+- don't add aborted messages to new chat sessions [#7267](https://github.com/sourcegraph/cody/pull/7267)
+
+### Chore
+
+#### Agent
+
+- release agent-v5.5.16 [#7329](https://github.com/sourcegraph/cody/pull/7329)
+
+#### Auto-Edit
+
+- disable rewrite_speculation [#7347](https://github.com/sourcegraph/cody/pull/7347)
+- integrate model response metadata with analytics logger [#7303](https://github.com/sourcegraph/cody/pull/7303)
+- capture request/response metadata from auto-edit API adapters [#7302](https://github.com/sourcegraph/cody/pull/7302)
+- improve diff utils [#7301](https://github.com/sourcegraph/cody/pull/7301)
+
+#### Release
+
+- remove unreleased section [#7259](https://github.com/sourcegraph/cody/pull/7259)
+
+#### Smart-Apply
+
+- Refactor the selection prompt to use a interface for custom model [#7337](https://github.com/sourcegraph/cody/pull/7337)
+
+#### Build
+
+- Agent recordings: Ensure tests are not in watch mode [#7309](https://github.com/sourcegraph/cody/pull/7309)
+- Allow to open devtools as action for an instant debugging caability [#7308](https://github.com/sourcegraph/cody/pull/7308)
+- Reporting errors to Sentry [#7298](https://github.com/sourcegraph/cody/pull/7298)
+- Bump cody web version in preparation for publishing [#7290](https://github.com/sourcegraph/cody/pull/7290)
+- Make sure relevant stacktrace part is included in error reports [#7280](https://github.com/sourcegraph/cody/pull/7280)
+
+### Refactor
+
+#### Chat
+
+- remove mention and add intent selector to toolbar [#7287](https://github.com/sourcegraph/cody/pull/7287)
+- Remove CodyPromptsV2 (and fix prompts migration layout) [#7336](https://github.com/sourcegraph/cody/pull/7336)
+- Clean up the "Ask Cody to Explain" functionality in terminal [#7254](https://github.com/sourcegraph/cody/pull/7254)
+
+### Reverts
+
+There were no reverts for this release
+
 ## 1.74.0
 
 ### Features
@@ -115,7 +340,7 @@ This is a log of all notable changes to Cody for VS Code.
 
 ### Reverts
 
-  There were no reverts for this release
+There were no reverts for this release
 
 ### Uncategorized
 
@@ -129,7 +354,6 @@ This is a log of all notable changes to Cody for VS Code.
 - Fix inconsistent workspace handling in agent [#7160](https://github.com/sourcegraph/cody/pull/7160)
 - Handle case when VirtualFile is null [#7156](https://github.com/sourcegraph/cody/pull/7156)
 - Docs: prompt library at mentions [#7091](https://github.com/sourcegraph/cody/pull/7091)
-
 
 ## 1.72.0
 

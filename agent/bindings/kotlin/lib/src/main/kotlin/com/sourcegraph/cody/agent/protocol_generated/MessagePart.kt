@@ -13,19 +13,21 @@ sealed class MessagePart {
     val deserializer: JsonDeserializer<MessagePart> =
       JsonDeserializer { element: JsonElement, _: Type, context: JsonDeserializationContext ->
         when (element.getAsJsonObject().get("type").getAsString()) {
-          "text" -> context.deserialize<TextMessagePart>(element, TextMessagePart::class.java)
+          "text" -> context.deserialize<TextContentPart>(element, TextContentPart::class.java)
           "context_file" -> context.deserialize<ContextFileMessagePart>(element, ContextFileMessagePart::class.java)
           "context_repo" -> context.deserialize<ContextRepoMessagePart>(element, ContextRepoMessagePart::class.java)
           "image_url" -> context.deserialize<ImageUrlMessagePart>(element, ImageUrlMessagePart::class.java)
+          "tool_call" -> context.deserialize<ToolCallContentPart>(element, ToolCallContentPart::class.java)
+          "tool_result" -> context.deserialize<ToolResultContentPart>(element, ToolResultContentPart::class.java)
           else -> throw Exception("Unknown discriminator ${element}")
         }
       }
   }
 }
 
-data class TextMessagePart(
+data class TextContentPart(
   val type: TypeEnum, // Oneof: text
-  val text: String,
+  val text: String? = null,
 ) : MessagePart() {
 
   enum class TypeEnum {
@@ -61,6 +63,26 @@ data class ImageUrlMessagePart(
 
   enum class TypeEnum {
     @SerializedName("image_url") ImageUrl,
+  }
+}
+
+data class ToolCallContentPart(
+  val type: TypeEnum, // Oneof: tool_call
+  val tool_call: Tool_callParams,
+) : MessagePart() {
+
+  enum class TypeEnum {
+    @SerializedName("tool_call") ToolCall,
+  }
+}
+
+data class ToolResultContentPart(
+  val type: TypeEnum, // Oneof: tool_result
+  val tool_result: Tool_resultParams,
+) : MessagePart() {
+
+  enum class TypeEnum {
+    @SerializedName("tool_result") ToolResult,
   }
 }
 

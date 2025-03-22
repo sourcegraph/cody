@@ -23,26 +23,27 @@ export class FireworksAdapter implements AutoeditsModelAdapter {
                 )
                 throw new Error('No api key provided in the config override')
             }
-            const { data, requestHeaders, responseHeaders, url } = await getModelResponse(
-                option.url,
-                JSON.stringify(requestBody),
-                apiKey
-            )
+            const response = await getModelResponse({
+                url: option.url,
+                body: requestBody,
+                apiKey,
+                abortSignal: option.abortSignal,
+            })
+
+            if (response.type === 'aborted') {
+                return response
+            }
 
             let prediction: string
             if (option.isChatModel) {
-                prediction = data.choices[0].message.content
+                prediction = response.responseBody.choices[0].message.content
             } else {
-                prediction = data.choices[0].text
+                prediction = response.responseBody.choices[0].text
             }
 
             return {
+                ...response,
                 prediction,
-                responseHeaders,
-                requestHeaders,
-                requestBody,
-                requestUrl: url,
-                responseBody: data,
             }
         } catch (error) {
             autoeditsOutputChannelLogger.logError('getModelResponse', 'Error calling Fireworks API:', {

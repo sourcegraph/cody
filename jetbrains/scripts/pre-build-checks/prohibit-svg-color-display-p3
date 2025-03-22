@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+
+set -o pipefail -u
+
+svg_files_with_illegal_color=$(git grep -Po 'display-p3' -- './jetbrains/*.svg')
+
+exit_code=0
+for svg_file in $svg_files_with_illegal_color; do
+  file=$(echo $svg_file | cut -f1 -d:)
+  echo "SVG file '$file' contains color(display-p3 ...) definition which is not supported by JetBrains IDE and makes the icon invisible when used as an action icon"
+  exit_code=1
+done
+exit $exit_code

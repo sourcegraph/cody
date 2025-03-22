@@ -3,16 +3,22 @@ import * as vscode from 'vscode'
 import { localStorage } from '../../../../services/LocalStorageProvider'
 
 /**
+ * TODO: Remove this once we have a way to provide font-size and line-height from clients
+ * PR: https://github.com/sourcegraph/cody/pull/7445
+ */
+const IS_AGENT_TESTING = process.env.CODY_SHIM_TESTING === 'true'
+
+/**
  * This is the ratio that VS Code uses to automatically determine the line height based on the font size.
  * It is referenced in the VS Code source code here: https://sourcegraph.com/github.com/microsoft/vscode@bf4c96/-/blob/src/vs/editor/common/config/fontInfo.ts?L10-14
  */
-const GOLDEN_LINE_HEIGHT_RATIO = isMacOS() ? 1.5 : 1.35
+const GOLDEN_LINE_HEIGHT_RATIO = IS_AGENT_TESTING || isMacOS() ? 1.5 : 1.35
 
 /**
  * This is the default font size that VS Code uses when rendering text.
  * It is referenced in the VS Code source code here: https://sourcegraph.com/github.com/microsoft/vscode@bf4c96/-/blob/src/vs/editor/common/config/editorOptions.ts?L5410-5420
  */
-const DEFAULT_FONT_SIZE = isMacOS() ? 12 : 14
+const DEFAULT_FONT_SIZE = IS_AGENT_TESTING || isMacOS() ? 12 : 14
 
 /**
  * Use a default pixel ratio that works for both high and low DPI screens.

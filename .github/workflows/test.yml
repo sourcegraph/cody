@@ -16,6 +16,9 @@ jobs:
     steps:
       - name: Fetch Sources
         uses: actions/checkout@v4
+      - name: Run pre-build checks
+        shell: bash
+        run: "${{ github.workspace }}/jetbrains/scripts/run-pre-build-checks"
       - uses: pnpm/action-setup@fe02b34f77f8bc703788d5817da081398fad5dd2 # SECURITY: pin third-party action hashes
       - run: echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
         shell: bash

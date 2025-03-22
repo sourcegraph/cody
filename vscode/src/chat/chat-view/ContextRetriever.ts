@@ -65,6 +65,12 @@ export function toStructuredMentions(mentions: ContextItem[]): StructuredMention
             case 'openctx':
                 openCtx.push(mention)
                 break
+            case 'current-selection':
+                files.push({
+                    ...mention,
+                    type: 'file',
+                } as ContextItemFile)
+                break
         }
     }
     return { repos, trees, files, symbols, openCtx, mediaFiles }

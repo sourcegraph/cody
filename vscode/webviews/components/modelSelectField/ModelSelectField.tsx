@@ -1,4 +1,5 @@
-import { type Model, ModelTag, isCodyProModel } from '@sourcegraph/cody-shared'
+import { type ChatMessage, type Model, ModelTag, isCodyProModel } from '@sourcegraph/cody-shared'
+import { isMacOS } from '@sourcegraph/cody-shared'
 import { DeepCodyAgentID, ToolCodyModelName } from '@sourcegraph/cody-shared/src/models/client'
 import { clsx } from 'clsx'
 import { BookOpenIcon, BrainIcon, BuildingIcon, ExternalLinkIcon } from 'lucide-react'
@@ -34,10 +35,11 @@ export const ModelSelectField: React.FunctionComponent<{
     onCloseByEscape?: () => void
     className?: string
 
+    intent?: ChatMessage['intent']
+
     /** For storybooks only. */
     __storybook__open?: boolean
-
-    modelSelectorRef?: React.RefObject<{ open: () => void; close: () => void }>
+    modelSelectorRef?: React.MutableRefObject<{ open: () => void; close: () => void } | null>
 }> = ({
     models,
     onModelSelect: parentOnModelSelect,
@@ -45,6 +47,7 @@ export const ModelSelectField: React.FunctionComponent<{
     userInfo,
     onCloseByEscape,
     className,
+    intent,
     __storybook__open,
     modelSelectorRef,
 }) => {
@@ -94,8 +97,8 @@ export const ModelSelectField: React.FunctionComponent<{
         ]
     )
 
-    // Readonly if they are an enterprise user that does not support server-sent models
-    const readOnly = !(userInfo.isDotComUser || serverSentModelsEnabled)
+    // Readonly if the intent is agentic or they are an enterprise user that does not support server-sent models
+    const readOnly = intent === 'agentic' || !(userInfo.isDotComUser || serverSentModelsEnabled)
 
     const onOpenChange = useCallback(
         (open: boolean): void => {
@@ -152,11 +155,8 @@ export const ModelSelectField: React.FunctionComponent<{
 
     const onKeyDown = useCallback(
         (event: React.KeyboardEvent<HTMLDivElement>) => {
-            event.preventDefault()
-            event.stopPropagation()
             if (event.key === 'Escape') {
                 onCloseByEscape?.()
-                return
             }
         },
         [onCloseByEscape]
@@ -173,12 +173,11 @@ export const ModelSelectField: React.FunctionComponent<{
             data-testid="chat-model-selector"
             iconEnd={readOnly ? undefined : 'chevron'}
             className={cn('tw-justify-between', className)}
-            defaultOpen={false}
             disabled={readOnly}
             __storybook__open={__storybook__open}
-            tooltip={readOnly ? undefined : 'Switch model (⌘M)'}
+            tooltip={readOnly ? undefined : isMacOS() ? 'Switch model (⌘M)' : 'Switch model (Ctrl+M)'}
             aria-label="Select a model or an agent"
-            ref={modelSelectorRef}
+            controlRef={modelSelectorRef}
             popoverContent={close => (
                 <Command
                     loop={true}
@@ -273,7 +272,7 @@ export const ModelSelectField: React.FunctionComponent<{
             popoverRootProps={{ onOpenChange }}
             popoverContentProps={{
                 className: 'tw-min-w-[325px] tw-w-[unset] tw-max-w-[90%] !tw-p-0',
-                onKeyDown,
+                onKeyDown: onKeyDown,
                 onCloseAutoFocus: event => {
                     // Prevent the popover trigger from stealing focus after the user selects an
                     // item. We want the focus to return to the editor.
@@ -281,12 +280,15 @@ export const ModelSelectField: React.FunctionComponent<{
                 },
             }}
         >
-            {value !== undefined ? options.find(option => option.value === value)?.title : 'Select...'}
+            {intent === 'agentic'
+                ? 'Claude 3.7 Sonnet'
+                : value !== undefined
+                  ? options.find(option => option.value === value)?.title
+                  : 'Select...'}
         </ToolbarPopoverItem>
     )
 }
 
-ModelSelectField.displayName = 'ModelSelectField'
 const ENTERPRISE_MODEL_DOCS_PAGE =
     'https://sourcegraph.com/docs/cody/clients/enable-cody-enterprise?utm_source=cody.modelSelector'
 

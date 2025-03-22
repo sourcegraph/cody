@@ -230,7 +230,7 @@ const DYNAMIC_MENTIONS: ContextItem[] = [
         title: 'Current Repository',
         uri: Uri.parse('cody://repository'),
         description: 'Picks the current repository',
-        icon: 'git-folder',
+        icon: 'search',
     } as ContextItemCurrentRepository,
     {
         type: 'current-directory',

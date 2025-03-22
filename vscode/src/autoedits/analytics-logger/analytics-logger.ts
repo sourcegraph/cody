@@ -19,7 +19,7 @@ import { charactersLogger } from '../../services/CharactersLogger'
 import { upstreamHealthProvider } from '../../services/UpstreamHealthProvider'
 import { captureException, shouldErrorBeReported } from '../../services/sentry/sentry'
 import { splitSafeMetadata } from '../../services/telemetry-v2'
-import type { AutoeditsPrompt, ModelResponse } from '../adapters/base'
+import type { AutoeditsPrompt, SuccessModelResponse } from '../adapters/base'
 import { autoeditsOutputChannelLogger } from '../output-channel-logger'
 import type { CodeToReplaceData } from '../prompt/prompt-utils'
 import type { DecorationInfo } from '../renderer/decorators/base'
@@ -30,7 +30,9 @@ import type { AutoEditRenderOutput } from '../renderer/render-output'
 import { autoeditIdRegistry } from './suggestion-id-registry'
 import {
     type AcceptedState,
+    type AutoeditAcceptReasonMetadata,
     type AutoeditDiscardReasonMetadata,
+    type AutoeditRejectReasonMetadata,
     type AutoeditRequestID,
     type ContextLoadedState,
     type DiscardedState,
@@ -62,7 +64,6 @@ type AutoeditEventAction =
 
 const AUTOEDIT_EVENT_BILLING_CATEGORY: Partial<Record<AutoeditEventAction, BillingCategory>> = {
     accepted: 'core',
-    discarded: 'billable',
     suggested: 'billable',
 }
 
@@ -161,7 +162,7 @@ export class AutoeditAnalyticsLogger {
         payload,
         modelResponse,
     }: {
-        modelResponse: ModelResponse
+        modelResponse: SuccessModelResponse
         requestId: AutoeditRequestID
         prompt: AutoeditsPrompt
         payload: Required<Pick<LoadedState['payload'], 'source' | 'isFuzzyMatch' | 'prediction'>>
@@ -248,7 +249,13 @@ export class AutoeditAnalyticsLogger {
         }))
     }
 
-    public markAsAccepted(requestId: AutoeditRequestID): void {
+    public markAsAccepted({
+        requestId,
+        acceptReason,
+    }: {
+        requestId: AutoeditRequestID
+        acceptReason: AutoeditAcceptReasonMetadata
+    }): void {
         const acceptedAt = getTimeNowInMillis()
 
         const result = this.tryTransitionTo(requestId, 'accepted', request => {
@@ -283,6 +290,7 @@ export class AutoeditAnalyticsLogger {
                     isRead: true,
                     timeFromSuggestedAt: acceptedAt - request.suggestedAt,
                     suggestionsStartedSinceLastSuggestion: this.autoeditsStartedSinceLastSuggestion,
+                    acceptReason,
                 },
             }
         })
@@ -293,7 +301,13 @@ export class AutoeditAnalyticsLogger {
         }
     }
 
-    public markAsRejected(requestId: AutoeditRequestID): void {
+    public markAsRejected({
+        requestId,
+        rejectReason,
+    }: {
+        requestId: AutoeditRequestID
+        rejectReason: AutoeditRejectReasonMetadata
+    }): void {
         const rejectedAt = getTimeNowInMillis()
 
         const result = this.tryTransitionTo(requestId, 'rejected', request => ({
@@ -305,6 +319,7 @@ export class AutoeditAnalyticsLogger {
                 isRead: 'readAt' in request,
                 timeFromSuggestedAt: rejectedAt - request.suggestedAt,
                 suggestionsStartedSinceLastSuggestion: this.autoeditsStartedSinceLastSuggestion,
+                rejectReason,
             },
         }))
 
@@ -447,9 +462,20 @@ export class AutoeditAnalyticsLogger {
         >
     }): void {
         autoeditsOutputChannelLogger.logDebug('writeAutoeditEvent', action, ...logDebugArgs)
-        telemetryRecorder.recordEvent('cody.autoedit', action, telemetryParams)
+        // do not log discared until the bug is fixed with it overfiring.
+        if (action !== 'discarded') {
+            telemetryRecorder.recordEvent('cody.autoedit', action, {
+                ...telemetryParams,
+                billingMetadata:
+                    action === 'accepted' || action === 'suggested'
+                        ? {
+                              product: 'cody',
+                              category: action === 'accepted' ? 'core' : 'billable',
+                          }
+                        : undefined,
+            })
+        }
     }
-
     /**
      * Rate-limited error logging, capturing exceptions with Sentry and grouping repeated logs.
      */

@@ -1,3 +1,4 @@
+import type { SuccessModelResponse } from '../../src/autoedits/adapters/base'
 import type { AutoeditRequestDebugState } from '../../src/autoedits/debug-panel/debug-store'
 import { DISCARD_REASONS, getDetailedTimingInfo } from './autoedit-ui-utils'
 
@@ -130,7 +131,7 @@ export const getPositionInfo = (entry: AutoeditRequestDebugState): string => {
         const line = entry.state.position.line !== undefined ? entry.state.position.line + 1 : '?'
         const character =
             entry.state.position.character !== undefined ? entry.state.position.character : '?'
-        return `Line ${line}:${character}`
+        return `${line}:${character}`
     }
     return ''
 }
@@ -251,11 +252,24 @@ export const getNetworkLatencyInfo = (
     return { upstreamLatency, gatewayLatency }
 }
 
+export const getSuccessModelResponse = (
+    entry: AutoeditRequestDebugState
+): SuccessModelResponse | null => {
+    if ('modelResponse' in entry.state && entry.state.modelResponse.type === 'success') {
+        return entry.state.modelResponse
+    }
+    return null
+}
+
 /**
  * Get the full response body from the model if available
  */
 export const getFullResponseBody = (entry: AutoeditRequestDebugState): any | null => {
-    if ('modelResponse' in entry.state && entry.state.modelResponse?.responseBody) {
+    if (
+        'modelResponse' in entry.state &&
+        entry.state.modelResponse.type === 'success' &&
+        entry.state.modelResponse?.responseBody
+    ) {
         return entry.state.modelResponse.responseBody
     }
     return null

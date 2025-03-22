@@ -6,6 +6,7 @@ import com.intellij.notification.Notifications
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.diagnostic.Logger
+import com.intellij.openapi.diagnostic.debug
 import com.intellij.openapi.fileChooser.FileChooserFactory
 import com.intellij.openapi.fileChooser.FileSaverDescriptor
 import com.intellij.openapi.project.Project
@@ -177,27 +178,26 @@ class CodyAgentClient(private val project: Project, private val webview: NativeW
 
   @JsonNotification("window/didChangeContext")
   fun window_didChangeContext(params: Window_DidChangeContextParams) {
-    runInEdt {
-      if (project.isDisposed) return@runInEdt
-
-      if (params.key == "cody.activated") {
-        CodyAuthService.getInstance(project).setActivated(params.value?.toBoolean() ?: false)
-        CodyStatusService.resetApplication(project)
-      }
-      if (params.key == "cody.serverEndpoint") {
-        val endpoint = params.value ?: return@runInEdt
-        CodyAuthService.getInstance(project).setEndpoint(SourcegraphServerPath(endpoint))
-        CodyStatusService.resetApplication(project)
-      }
-    }
+    logger.debug("Received context change: ${params.key} = ${params.value}")
   }
 
   @JsonNotification("authStatus/didUpdate")
   fun authStatus_didUpdate(params: ProtocolAuthStatus) {
-    if (params is ProtocolAuthenticatedAuthStatus) {
-      SentryService.setUser(params.primaryEmail, params.username)
-    } else {
-      SentryService.setUser(null, null)
+    runInEdt {
+      if (project.isDisposed) return@runInEdt
+
+      val authService = CodyAuthService.getInstance(project)
+      if (params is ProtocolAuthenticatedAuthStatus) {
+        SentryService.setUser(params.primaryEmail, params.username)
+        authService.setActivated(true)
+        authService.setEndpoint(SourcegraphServerPath(params.endpoint))
+        CodyStatusService.resetApplication(project)
+      } else if (params is ProtocolUnauthenticatedAuthStatus) {
+        SentryService.setUser(null, null)
+        authService.setActivated(false)
+        authService.setEndpoint(SourcegraphServerPath(params.endpoint))
+        CodyStatusService.resetApplication(project)
+      }
     }
   }
 

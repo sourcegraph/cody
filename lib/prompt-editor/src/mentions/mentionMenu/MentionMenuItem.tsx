@@ -31,6 +31,7 @@ import {
     LibraryBigIcon,
     LinkIcon,
     ListMinusIcon,
+    SearchIcon,
     SmileIcon,
     SquareDashedMousePointerIcon,
     SquareFunctionIcon,
@@ -178,7 +179,7 @@ export const iconForProvider: Record<
     'https://openctx.org/npm/@openctx/provider-devdocs': LibraryBigIcon,
     'https://openctx.org/npm/@openctx/provider-sourcegraph-search': SourcegraphLogo,
     'internal-linear-issues': LinearLogo, // Can't import LinearIssuesProvider due to transitive dep on vscode.
-    [REMOTE_REPOSITORY_PROVIDER_URI]: FolderGitIcon,
+    [REMOTE_REPOSITORY_PROVIDER_URI]: SearchIcon,
     [REMOTE_FILE_PROVIDER_URI]: FileIcon,
     [REMOTE_DIRECTORY_PROVIDER_URI]: FolderGitIcon,
     [WEB_PROVIDER_URI]: LinkIcon,
@@ -200,4 +201,5 @@ const iconForItem: Record<
     file: FileIcon,
     'square-dashed-mouse-pointer': SquareDashedMousePointerIcon,
     'layout-menubar': LayoutPanelTopIcon,
+    search: SearchIcon,
 }

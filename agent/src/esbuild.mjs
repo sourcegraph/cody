@@ -82,7 +82,8 @@ async function buildAgent() {
             file.indexOf('/webviews/') !== -1 ||
             file.endsWith('.wasm') ||
             file.endsWith('.node') ||
-            file.endsWith('win-ca-roots.exe')
+            file.endsWith('win-ca-roots.exe') ||
+            file.endsWith('.ttf')
         if (!shouldCopyFile) {
             continue
         }

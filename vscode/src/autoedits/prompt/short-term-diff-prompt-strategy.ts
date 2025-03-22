@@ -1,10 +1,12 @@
-import { type AutocompleteContextSnippet, type PromptString, ps } from '@sourcegraph/cody-shared'
-
-import { groupConsecutiveItemsByPredicate } from '../../completions/context/retrievers/recent-user-actions/recent-edits-diff-helpers/utils'
-import { RetrieverIdentifier } from '../../completions/context/utils'
-import { autoeditsOutputChannelLogger } from '../output-channel-logger'
+import { type AutocompleteContextSnippet, PromptString, ps } from '@sourcegraph/cody-shared'
 
 import { shortenPromptForOutputChannel } from '../../../src/completions/output-channel-logger'
+import { groupConsecutiveItemsByPredicate } from '../../completions/context/retrievers/recent-user-actions/recent-edits-diff-helpers/utils'
+import { RetrieverIdentifier } from '../../completions/context/utils'
+import { inceptionlabsPrompt } from '../adapters/inceptionlabs'
+import { autoeditsProviderConfig } from '../autoedits-config'
+import { autoeditsOutputChannelLogger } from '../output-channel-logger'
+
 import { AutoeditsUserPromptStrategy, type UserPromptArgs } from './base'
 import * as constants from './constants'
 import {
@@ -24,7 +26,60 @@ import {
 export class ShortTermPromptStrategy extends AutoeditsUserPromptStrategy {
     private readonly SHORT_TERM_SNIPPET_VIEW_TIME_MS = 60 * 1000 // 1 minute
 
+    private getInceptionLabsUserPrompt({
+        context,
+        tokenBudget,
+        codeToReplaceData,
+        document,
+    }: UserPromptArgs): PromptString {
+        const contextItemMapping = getContextItemMappingWithTokenLimit(
+            context,
+            tokenBudget.contextSpecificTokenLimit
+        )
+        const { shortTermViewPrompt, longTermViewPrompt } = this.getRecentSnippetViewPrompt(
+            contextItemMapping.get(RetrieverIdentifier.RecentViewPortRetriever) || []
+        )
+        const { shortTermEditsPrompt, longTermEditsPrompt } = this.getRecentEditsPrompt(
+            contextItemMapping.get(RetrieverIdentifier.RecentEditsRetriever) || []
+        )
+        const lintErrorsPrompt = getPromptForTheContextSource(
+            contextItemMapping.get(RetrieverIdentifier.DiagnosticsRetriever) || [],
+            constants.LINT_ERRORS_INSTRUCTION,
+            getLintErrorsPrompt
+        )
+
+        const recentCopyPrompt = getPromptForTheContextSource(
+            contextItemMapping.get(RetrieverIdentifier.RecentCopyRetriever) || [],
+            constants.RECENT_COPY_INSTRUCTION,
+            getRecentCopyPrompt
+        )
+
+        const { areaPrompt } = getCurrentFilePromptComponents({
+            document,
+            codeToReplaceDataRaw: codeToReplaceData,
+            includeCursor: true,
+        })
+
+        const promptParts = [
+            getPromptWithNewline(inceptionlabsPrompt.start),
+            getPromptWithNewline(longTermViewPrompt),
+            getPromptWithNewline(shortTermViewPrompt),
+            getPromptWithNewline(lintErrorsPrompt),
+            getPromptWithNewline(recentCopyPrompt),
+            getPromptWithNewline(areaPrompt),
+            getPromptWithNewline(longTermEditsPrompt),
+            getPromptWithNewline(shortTermEditsPrompt),
+            getPromptWithNewline(inceptionlabsPrompt.end),
+        ]
+
+        return PromptString.join(promptParts, ps``)
+    }
+
     getUserPrompt({ context, tokenBudget, codeToReplaceData, document }: UserPromptArgs): PromptString {
+        if (autoeditsProviderConfig.provider === 'inceptionlabs') {
+            return this.getInceptionLabsUserPrompt({ context, tokenBudget, codeToReplaceData, document })
+        }
+
         const contextItemMapping = getContextItemMappingWithTokenLimit(
             context,
             tokenBudget.contextSpecificTokenLimit
@@ -53,14 +108,14 @@ export class ShortTermPromptStrategy extends AutoeditsUserPromptStrategy {
             getJaccardSimilarityPrompt
         )
 
-        const { fileWithMarkerPrompt, areaPrompt } = getCurrentFilePromptComponents(
+        const { fileWithMarkerPrompt, areaPrompt } = getCurrentFilePromptComponents({
             document,
-            codeToReplaceData
-        )
+            codeToReplaceDataRaw: codeToReplaceData,
+        })
 
         const currentFilePrompt = ps`${constants.CURRENT_FILE_INSTRUCTION}${fileWithMarkerPrompt}`
 
-        const finalPrompt = joinPromptsWithNewlineSeparator(
+        const promptParts = [
             getPromptWithNewline(constants.BASE_USER_PROMPT),
             getPromptWithNewline(jaccardSimilarityPrompt),
             getPromptWithNewline(longTermViewPrompt),
@@ -71,12 +126,15 @@ export class ShortTermPromptStrategy extends AutoeditsUserPromptStrategy {
             getPromptWithNewline(recentCopyPrompt),
             getPromptWithNewline(areaPrompt),
             getPromptWithNewline(shortTermEditsPrompt),
-            constants.FINAL_USER_PROMPT
-        )
+            constants.FINAL_USER_PROMPT,
+        ]
+
+        const finalPrompt = PromptString.join(promptParts, ps``)
 
         autoeditsOutputChannelLogger.logDebugIfVerbose('ShortTermPromptStrategy', 'getUserPrompt', {
             verbose: shortenPromptForOutputChannel(finalPrompt.toString(), []),
         })
+
         return finalPrompt
     }
 
@@ -104,18 +162,18 @@ export class ShortTermPromptStrategy extends AutoeditsUserPromptStrategy {
 
         const shortTermViewPrompt =
             shortTermViewedSnippets.length > 0
-                ? joinPromptsWithNewlineSeparator(
+                ? joinPromptsWithNewlineSeparator([
                       constants.SHORT_TERM_SNIPPET_VIEWS_INSTRUCTION,
-                      getRecentlyViewedSnippetsPrompt(shortTermViewedSnippets)
-                  )
+                      getRecentlyViewedSnippetsPrompt(shortTermViewedSnippets),
+                  ])
                 : ps``
 
         const longTermViewPrompt =
             longTermViewedSnippets.length > 0
-                ? joinPromptsWithNewlineSeparator(
+                ? joinPromptsWithNewlineSeparator([
                       constants.LONG_TERM_SNIPPET_VIEWS_INSTRUCTION,
-                      getRecentlyViewedSnippetsPrompt(longTermViewedSnippets)
-                  )
+                      getRecentlyViewedSnippetsPrompt(longTermViewedSnippets),
+                  ])
                 : ps``
 
         return {
@@ -170,9 +228,9 @@ export class ShortTermPromptStrategy extends AutoeditsUserPromptStrategy {
             combinedContextItems.push(combinedItem)
         }
 
-        return joinPromptsWithNewlineSeparator(
+        return joinPromptsWithNewlineSeparator([
             constants.RECENT_EDITS_INSTRUCTION,
-            getRecentEditsPrompt(combinedContextItems)
-        )
+            getRecentEditsPrompt(combinedContextItems),
+        ])
     }
 }

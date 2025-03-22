@@ -83,9 +83,7 @@ describe('rewrite-query', () => {
     check(
         ps`Explain how the context window limit is calculated. how much budget is given to @-mentions vs. search context?`,
         expanded =>
-            expect(expanded).toMatchInlineSnapshot(
-                `"context window limit calculation @-mentions search context"`
-            )
+            expect(expanded).toMatchInlineSnapshot(`"context window limit budget @-mentions search"`)
     )
 
     check(

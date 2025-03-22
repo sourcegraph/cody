@@ -1,6 +1,12 @@
 import Anthropic from '@anthropic-ai/sdk'
-import { DeepCodyAgentID, ToolCodyModelRef } from '@sourcegraph/cody-shared/src/models/client'
+import type { ChatMessage } from '@sourcegraph/cody-shared'
+import {
+    DeepCodyAgentID,
+    DeepCodyModelRef,
+    ToolCodyModelRef,
+} from '@sourcegraph/cody-shared/src/models/client'
 import { getConfiguration } from '../../../configuration'
+import { AgenticHandler } from './AgenticHandler'
 import { ChatHandler } from './ChatHandler'
 import { DeepCodyHandler } from './DeepCodyHandler'
 import { EditHandler } from './EditHandler'
@@ -9,42 +15,55 @@ import { ExperimentalToolHandler } from './ToolHandler'
 import type { AgentHandler, AgentTools } from './interfaces'
 
 /**
- * The agentRegistry registers agent handlers under IDs which can then be invoked
- * at query time to retrieve the appropriate handler for a user request.
+ * The agentRegistry maps agent IDs to their handler factory functions
  */
-const agentRegistry = new Map<string, (id: string, tools: AgentTools) => AgentHandler>()
+const agentRegistry = new Map<string, (id: string, tools: AgentTools) => AgentHandler>([
+    ['search', (_id, _tools) => new SearchHandler()],
+    ['edit', (_id, { contextRetriever, editor }) => new EditHandler('edit', contextRetriever, editor)],
+    [
+        'insert',
+        (_id, { contextRetriever, editor }) => new EditHandler('insert', contextRetriever, editor),
+    ],
+    [
+        ToolCodyModelRef,
+        (_id, _tools) => {
+            const config = getConfiguration()
+            return new ExperimentalToolHandler(
+                new Anthropic({
+                    apiKey: config.experimentalMinionAnthropicKey,
+                })
+            )
+        },
+    ],
+    [
+        DeepCodyAgentID,
+        (_id, { contextRetriever, editor, chatClient }) =>
+            new DeepCodyHandler(contextRetriever, editor, chatClient),
+    ],
+])
 
-function registerAgent(id: string, ctr: (id: string, tools: AgentTools) => AgentHandler) {
-    agentRegistry.set(id, ctr)
-}
-
-export function getAgent(id: string, modelId: string, tools: AgentTools): AgentHandler {
+/**
+ * Gets an agent handler for the specified agent and model ID
+ */
+export function getAgent(model: string, agentName: string, tools: AgentTools): AgentHandler {
     const { contextRetriever, editor, chatClient } = tools
-    if (id === DeepCodyAgentID) {
-        return new DeepCodyHandler(modelId, contextRetriever, editor, chatClient)
+    if (agentName === 'agentic') {
+        return new AgenticHandler(contextRetriever, editor, chatClient)
     }
-    if (agentRegistry.has(id)) {
-        return agentRegistry.get(id)!(id, tools)
+
+    // Use registered agent or fall back to basic chat handler
+    const handlerFactory = agentRegistry.get(model) ?? agentRegistry.get(agentName)
+    if (handlerFactory) {
+        return handlerFactory(agentName, tools)
     }
-    // If id is not found, assume it's a base model
-    return new ChatHandler(modelId, contextRetriever, editor, chatClient)
+
+    // Default to basic chat handler for unknown agents
+    return new ChatHandler(contextRetriever, editor, chatClient)
 }
 
-registerAgent('search', (_id: string, _tools: AgentTools) => new SearchHandler())
-registerAgent(
-    'edit',
-    (_id: string, { contextRetriever, editor }: AgentTools) =>
-        new EditHandler('edit', contextRetriever, editor)
-)
-registerAgent(
-    'insert',
-    (_id: string, { contextRetriever, editor }: AgentTools) =>
-        new EditHandler('insert', contextRetriever, editor)
-)
-registerAgent(ToolCodyModelRef, (_id: string) => {
-    const config = getConfiguration()
-    const anthropicAPI = new Anthropic({
-        apiKey: config.experimentalMinionAnthropicKey,
-    })
-    return new ExperimentalToolHandler(anthropicAPI)
-})
+export function getAgentName(intent: ChatMessage['intent'], model?: string): string | undefined {
+    if (model === DeepCodyModelRef) {
+        return DeepCodyAgentID
+    }
+    return (intent !== 'chat' && intent) || undefined
+}

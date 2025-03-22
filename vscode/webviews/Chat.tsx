@@ -11,17 +11,17 @@ import {
     type PromptString,
 } from '@sourcegraph/cody-shared'
 
+import styles from './Chat.module.css'
 import { Transcript, focusLastHumanMessageEditor } from './chat/Transcript'
 import { WelcomeMessage } from './chat/components/WelcomeMessage'
 import { WelcomeNotice } from './chat/components/WelcomeNotice'
 import { ScrollDown } from './components/ScrollDown'
+import { useLocalStorage } from './components/hooks'
 import type { View } from './tabs'
 import type { VSCodeWrapper } from './utils/VSCodeApi'
 import { SpanManager } from './utils/spanManager'
 import { getTraceparentFromSpanContext } from './utils/telemetry'
 import { useUserAccountInfo } from './utils/useConfig'
-
-import styles from './Chat.module.css'
 
 interface ChatboxProps {
     chatEnabled: boolean
@@ -37,6 +37,8 @@ interface ChatboxProps {
     smartApplyEnabled?: boolean
     isWorkspacesUpgradeCtaEnabled?: boolean
 }
+
+const LAST_SELECTED_INTENT_KEY = 'last-selected-intent'
 
 export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>> = ({
     messageInProgress,
@@ -56,6 +58,9 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     transcriptRef.current = transcript
 
     const userInfo = useUserAccountInfo()
+    const [lastManuallySelectedIntent, setLastManuallySelectedIntent] = useLocalStorage<
+        ChatMessage['intent']
+    >(LAST_SELECTED_INTENT_KEY, 'chat')
 
     const copyButtonOnSubmit = useCallback(
         (text: string, eventType: 'Button' | 'Keydown' = 'Button') => {
@@ -226,6 +231,8 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                 postMessage={postMessage}
                 guardrails={guardrails}
                 smartApplyEnabled={smartApplyEnabled}
+                manuallySelectedIntent={lastManuallySelectedIntent}
+                setManuallySelectedIntent={setLastManuallySelectedIntent}
             />
             {transcript.length === 0 && showWelcomeMessage && (
                 <>

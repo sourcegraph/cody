@@ -4,10 +4,17 @@ import type { TextDocumentChange } from './recent-edits-diff-helpers/recent-edit
 import { applyTextDocumentChanges } from './recent-edits-diff-helpers/utils'
 
 interface TrackedDocument {
+    lastUpdated: number
     content: string
     languageId: string
     uri: vscode.Uri
     changes: TextDocumentChange[]
+}
+
+export function getCacheKeyForTrackedDocument(document: TrackedDocument): string {
+    const oldestChange = Math.min(...document.changes.map(change => change.timestamp))
+    const latestChange = Math.max(...document.changes.map(change => change.timestamp))
+    return `${document.uri.toString()}:${document.lastUpdated}:${oldestChange}:${latestChange}`
 }
 
 export class RecentEditsTracker implements vscode.Disposable {
@@ -90,6 +97,7 @@ export class RecentEditsTracker implements vscode.Disposable {
     private trackDocument(document: vscode.TextDocument): void {
         if (document.uri.scheme === 'file' || document.uri.scheme === 'vscode-notebook-cell') {
             const trackedDocument: TrackedDocument = {
+                lastUpdated: Date.now(),
                 content: document.getText(),
                 languageId: document.languageId,
                 uri: document.uri,
@@ -111,6 +119,7 @@ export class RecentEditsTracker implements vscode.Disposable {
                 trackedDocument.content,
                 outdatedChanges.map(c => c.change)
             )
+            trackedDocument.lastUpdated = Date.now()
             trackedDocument.changes = trackedDocument.changes.slice(firstNonOutdatedChangeIndex)
         }
     }
