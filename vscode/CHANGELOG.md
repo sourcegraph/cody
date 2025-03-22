@@ -12,16 +12,6 @@ This is a log of all notable changes to Cody for VS Code.
 
 - Temporarily disable Swift tree-sitter parsing due to VSCode 1.98+ compatibility issue [#7521](https://github.com/sourcegraph/cody/pull/7521)
 
-### Reverts
-
-  There were no reverts for this release
-
-### Uncategorized
-
-#### Others
-
-- [Backport M78] Changelog for 1.78.1 [#7477](https://github.com/sourcegraph/cody/pull/7477)
-
 
 ## 1.78.1
 
