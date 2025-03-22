@@ -412,6 +412,7 @@ export const HumanMessageEditor: FunctionComponent<{
                     [styles.sent]: isSent,
                     [styles.focused]: focused,
                 },
+                'tw-relative',
                 'tw-transition',
                 className
             )}
@@ -421,6 +422,13 @@ export const HumanMessageEditor: FunctionComponent<{
             onFocus={onFocus}
             onBlur={onBlur}
         >
+            {/* Loading indicator */}
+            {isLastInteraction && isPendingPriorResponse && (
+                <span className="tw-absolute tw-top-0 tw-right-0 -tw-mt-1 -tw-mr-1 tw-flex tw-size-6">
+                    <span className="tw-absolute tw-inline-flex tw-h-full tw-w-full tw-animate-ping tw-rounded-full tw-bg-button-background tw-opacity-75" />
+                    <span className="tw-relative tw-inline-flex tw-size-6 tw-rounded-full tw-bg-button-background-hover" />
+                </span>
+            )}
             <Editor
                 seamless={true}
                 placeholder={placeholder}
