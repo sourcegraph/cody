@@ -25,6 +25,7 @@ import { recordExposedExperimentsToSpan } from '../services/open-telemetry/utils
 import { AuthError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
 import { autoeditsOnboarding } from '../autoedits/autoedit-onboarding'
 import { ContextRankingStrategy } from '../completions/context/completions-context-ranker'
+import { isRunningInsideAgent } from '../jsonrpc/isRunningInsideAgent'
 import type { CompletionBookkeepingEvent, CompletionItemID, CompletionLogID } from './analytics-logger'
 import * as CompletionAnalyticsLogger from './analytics-logger'
 import { completionProviderConfig } from './completion-provider-config'
@@ -872,6 +873,12 @@ export class InlineCompletionItemProvider
     }
 
     public async manuallyTriggerCompletion(): Promise<void> {
+        if (isRunningInsideAgent()) {
+            // Client manage their own shortcuts and logic for manually triggering a completion
+            this.lastManualCompletionTimestamp = Date.now()
+            return
+        }
+
         await vscode.commands.executeCommand('editor.action.inlineSuggest.hide')
         this.lastManualCompletionTimestamp = Date.now()
         await vscode.commands.executeCommand('editor.action.inlineSuggest.trigger')
