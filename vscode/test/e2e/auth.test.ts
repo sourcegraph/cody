@@ -26,8 +26,8 @@ test.extend<ExpectedV2Events>({
     await expect(sidebar!.getByText('Sign in to Sourcegraph')).toBeVisible()
     await sidebar!.getByRole('button', { name: 'Sourcegraph logo Continue' }).click()
     await sidebar!.getByText('Sourcegraph Instance URL').click()
-    await sidebar!.getByPlaceholder('Example: https://instance.').click()
-    await sidebar!.getByPlaceholder('Example: https://instance.').fill(SERVER_URL)
+    await sidebar!.getByPlaceholder('Example: instance.').click()
+    await sidebar!.getByPlaceholder('Example: instance.').fill(SERVER_URL)
 
     await sidebar!.getByText('Access Token (Optional)').click()
     await sidebar!.getByPlaceholder('Access token...').fill('abcdefghijklmnopqrstuvwxyz')
