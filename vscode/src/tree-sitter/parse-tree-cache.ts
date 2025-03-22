@@ -44,12 +44,6 @@ export async function parseDocument(document: TextDocument): Promise<void> {
         return
     }
 
-    // CODY-5459: Swift grammar is not working with VSCode 1.98+
-    // TODO: Fix Swift grammar crash of extension host
-    if (parseLanguage === 'swift') {
-        return
-    }
-
     const parser = await createParser({ language: parseLanguage })
     if (!parser) {
         return
@@ -65,6 +59,12 @@ export function updateParseTreeCache(document: TextDocument, parser: WrappedPars
 
 function getLanguageIfTreeSitterEnabled(document: TextDocument): SupportedLanguage | null {
     const { languageId } = document
+
+    // CODY-5459: Swift grammar is not working with VSCode 1.98+
+    // TODO: Fix Swift grammar crash of extension host
+    if (languageId === 'swift') {
+        return null
+    }
 
     /**
      * 1. Do not use tree-sitter for unsupported languages.
