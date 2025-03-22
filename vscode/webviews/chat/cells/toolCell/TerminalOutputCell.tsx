@@ -1,6 +1,6 @@
-import { type UITerminalLine, UITerminalOutputType } from '@sourcegraph/cody-shared'
+import { type UITerminalLine, UITerminalOutputType, UIToolStatus } from '@sourcegraph/cody-shared'
 import type { ContextItemToolState } from '@sourcegraph/cody-shared/src/codebase-context/messages'
-import { AlarmCheck, Terminal } from 'lucide-react'
+import { Bug, BugOff, Terminal } from 'lucide-react'
 import { type FC, useMemo } from 'react'
 import { Skeleton } from '../../../components/shadcn/ui/skeleton'
 import { cn } from '../../../components/shadcn/utils'
@@ -73,7 +73,12 @@ export const TerminalOutputCell: FC<TerminalOutputCellProps> = ({
     isLoading = false,
     defaultOpen = false,
 }) => {
-    const icon = item.toolName === 'get_diagnostic' ? AlarmCheck : Terminal
+    const icon =
+        item.toolName === 'get_diagnostic'
+            ? item.status === UIToolStatus.Info
+                ? Bug
+                : BugOff
+            : Terminal
     // Process content into lines if provided, otherwise use lines prop
     const lines = useMemo(() => {
         if (item?.content && item.content.trim() !== '') {
