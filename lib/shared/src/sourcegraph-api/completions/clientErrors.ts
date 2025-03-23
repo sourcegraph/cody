@@ -130,7 +130,7 @@ const handleFetchSubscriptionTransform: ErrorTransformer = error => {
 
 const handleOrganizationTokenLimit: ErrorTransformer = error => {
     if (error.includes('This request would exceed your organization')) {
-        return 'Upstream service error.'
+        return 'Status code 503: Upstream service error.'
     }
     return undefined
 }

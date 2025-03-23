@@ -134,7 +134,7 @@ describe('ClientErrorsTransformer', () => {
             expect(ClientErrorsTransformer.transform(errorMessage)).toContain(simplifiedErrorMessage)
         })
 
-        it('transforms another specific error case', () => {
+        it('transforms organization rate limit error case', () => {
             const errorMessage = `Request Failed: Sourcegraph Cody
                 Gateway: unexpected status code
                 503: ("type":"error", "error":
@@ -144,7 +144,7 @@ describe('ClientErrorsTransformer', () => {
                 ate-limits; see the response headers for current usage. Please reduce the prompt length or the maximum tokens requested, or try again later.
                 You may also contact sales at https://www.anthropic.com/contact-
                 sales to discuss your options for a rate limit increase."})`
-            const simplifiedErrorMessage = 'Upstream service error.'
+            const simplifiedErrorMessage = 'Status code 503: Upstream service error.'
             expect(ClientErrorsTransformer.transform(errorMessage)).toContain(simplifiedErrorMessage)
         })
     })
