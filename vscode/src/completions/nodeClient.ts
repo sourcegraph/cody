@@ -85,7 +85,12 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                         span.spanContext().traceId
                     )
                     const errorMessage = new Error(simplifiedErrorMessage)
+                    // pass the error name to the new error object
+                    // so that the client can handle it properly
+                    // (e.g. show a different error message for rate limit errors)
+                    errorMessage.name = error.name
                     cb.onError(errorMessage, statusCode)
+
                     didSendMessage = true
                     didSendError = true
                 }
