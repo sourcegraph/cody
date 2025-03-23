@@ -1,4 +1,5 @@
 import type { CodeCompletionsParams, PromptString } from '@sourcegraph/cody-shared'
+import type { AutoeditsUserPromptStrategy } from '../prompt/base'
 import type { AutoeditsRequestBody } from './utils'
 
 export type ModelResponseShared = {
@@ -63,4 +64,5 @@ export interface AutoeditModelOptions {
     userId: string | null
     isChatModel: boolean
     abortSignal: AbortSignal
+    promptStrategy: AutoeditsUserPromptStrategy
 }

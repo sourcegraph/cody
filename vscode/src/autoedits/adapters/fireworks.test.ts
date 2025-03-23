@@ -5,6 +5,7 @@ import * as shared from '@sourcegraph/cody-shared'
 
 import * as autoeditsConfig from '../autoedits-config'
 
+import { ZetaLikePromptProvider } from '../prompt/zeta-like-prompt-provider'
 import type { AutoeditModelOptions, SuccessModelResponse } from './base'
 import { FireworksAdapter } from './fireworks'
 
@@ -22,6 +23,7 @@ describe('FireworksAdapter', () => {
         userId: 'test-user',
         isChatModel: true,
         abortSignal: new AbortController().signal,
+        promptStrategy: new ZetaLikePromptProvider(),
     }
 
     const apiKey = 'test-api-key'

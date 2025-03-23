@@ -17,6 +17,7 @@ import type { AutoeditModelOptions } from '../adapters/base'
 import { getCodeToReplaceData } from '../prompt/prompt-utils'
 import { getDecorationInfo } from '../renderer/diff-utils'
 
+import { ZetaLikePromptProvider } from '../prompt/zeta-like-prompt-provider'
 import { AutoeditAnalyticsLogger } from './analytics-logger'
 import {
     type AutoeditRequestID,
@@ -68,6 +69,7 @@ describe('AutoeditAnalyticsLogger', () => {
         userId: 'test-user-id',
         isChatModel: false,
         abortSignal: new AbortController().signal,
+        promptStrategy: new ZetaLikePromptProvider(),
     }
 
     function getRequestStartMetadata(): Parameters<AutoeditAnalyticsLogger['createRequest']>[0] {

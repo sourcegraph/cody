@@ -45,7 +45,7 @@ export class LineLevelDiffStrategy implements RecentEditsRetrieverDiffStrategy {
             oldContent: input.oldContent,
             groupedChanges,
             contextLines: this.options.contextLines,
-            addLineNumbersForDiff: true,
+            addLineNumbersForDiff: false,
         }).filter(diffHunk => diffHunk.diff.toString() !== '')
         diffHunks.reverse()
         return diffHunks

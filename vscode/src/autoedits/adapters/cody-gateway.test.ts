@@ -8,7 +8,7 @@ import {
     ps,
 } from '@sourcegraph/cody-shared'
 import * as shared from '@sourcegraph/cody-shared'
-
+import { ZetaLikePromptProvider } from '../prompt/zeta-like-prompt-provider'
 import type { AutoeditModelOptions } from './base'
 import { CodyGatewayAdapter } from './cody-gateway'
 
@@ -26,6 +26,7 @@ describe('CodyGatewayAdapter', () => {
         userId: 'test-user',
         isChatModel: true,
         abortSignal: new AbortController().signal,
+        promptStrategy: new ZetaLikePromptProvider(),
     }
 
     const mockFetchSpy = vi.spyOn(shared, 'fetch') as any

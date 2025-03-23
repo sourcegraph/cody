@@ -311,7 +311,7 @@ export function getUnifiedDiffHunkFromTextDocumentChange(params: {
                   params.shouldAddLineNumbersForDiff,
                   params.shouldTrimSurroundingContextLines
               )
-            : PromptString.fromGitDiff(params.uri, params.oldContent, newContent)
+            : PromptString.fromGitDiff(params.uri, params.oldContent, newContent, params.contextLines)
 
     return {
         uri: params.uri,

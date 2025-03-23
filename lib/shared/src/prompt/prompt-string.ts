@@ -265,8 +265,13 @@ export class PromptString {
         return internal_createPromptString(diff, [uri])
     }
 
-    public static fromGitDiff(uri: vscode.Uri, oldContent: string, newContent: string) {
-        const diff = createGitDiff(displayPath(uri), oldContent, newContent)
+    public static fromGitDiff(
+        uri: vscode.Uri,
+        oldContent: string,
+        newContent: string,
+        contextLines = 4
+    ) {
+        const diff = createGitDiff(displayPath(uri), oldContent, newContent, contextLines)
         return internal_createPromptString(diff, [uri])
     }
 

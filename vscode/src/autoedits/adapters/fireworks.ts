@@ -40,6 +40,9 @@ export class FireworksAdapter implements AutoeditsModelAdapter {
             } else {
                 prediction = response.responseBody.choices[0].text
             }
+            prediction = option.promptStrategy.updatePrediction({
+                prediction,
+            })
 
             return {
                 ...response,

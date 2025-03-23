@@ -1,6 +1,7 @@
 import type { CodeCompletionsClient } from '@sourcegraph/cody-shared'
 import { ps } from '@sourcegraph/cody-shared'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
+import { ZetaLikePromptProvider } from '../prompt/zeta-like-prompt-provider'
 import type { AutoeditModelOptions, SuccessModelResponse } from './base'
 import { SourcegraphCompletionsAdapter } from './sourcegraph-completions'
 import { getMaxOutputTokensForAutoedits } from './utils'
@@ -19,6 +20,7 @@ describe('SourcegraphCompletionsAdapter', () => {
         userId: 'test-user',
         isChatModel: false,
         abortSignal: new AbortController().signal,
+        promptStrategy: new ZetaLikePromptProvider(),
     }
 
     beforeEach(() => {

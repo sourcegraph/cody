@@ -1,10 +1,10 @@
 import { ps } from '@sourcegraph/cody-shared'
 import type { ChatClient } from '@sourcegraph/cody-shared'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
+import { ZetaLikePromptProvider } from '../prompt/zeta-like-prompt-provider'
 import type { AutoeditModelOptions, SuccessModelResponse } from './base'
 import { SourcegraphChatAdapter } from './sourcegraph-chat'
 import { getMaxOutputTokensForAutoedits } from './utils'
-
 describe('SourcegraphChatAdapter', () => {
     let adapter: SourcegraphChatAdapter
     let mockChatClient: ChatClient
@@ -20,6 +20,7 @@ describe('SourcegraphChatAdapter', () => {
         userId: 'test-user',
         isChatModel: true,
         abortSignal: new AbortController().signal,
+        promptStrategy: new ZetaLikePromptProvider(),
     }
 
     beforeEach(() => {

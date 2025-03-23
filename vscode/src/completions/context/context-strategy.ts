@@ -134,11 +134,11 @@ export class DefaultContextStrategyFactory implements ContextStrategyFactory {
                                     maxAgeMs: 10 * 60 * 1000,
                                     diffStrategyList: [
                                         new LineLevelDiffStrategy({
-                                            contextLines: 3,
-                                            longTermDiffCombinationStrategy: 'unified-diff',
+                                            contextLines: 2,
+                                            longTermDiffCombinationStrategy: undefined,
                                             minShortTermEvents: 1,
                                             minShortTermTimeMs: 2 * 60 * 1000, // 2 minutes,
-                                            trimSurroundingContext: true,
+                                            trimSurroundingContext: false,
                                         }),
                                     ],
                                 }),

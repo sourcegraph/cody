@@ -48,4 +48,8 @@ export abstract class AutoeditsUserPromptStrategy {
 
         return adjustedPrompt
     }
+
+    public updatePrediction({ prediction }: { prediction: string }): string {
+        return prediction
+    }
 }
