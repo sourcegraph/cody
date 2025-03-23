@@ -11,7 +11,7 @@ import { useConfig } from '../../../../../../utils/useConfig'
 const isMac = isMacOS()
 
 export enum IntentEnum {
-    Agentic = 'Agentic',
+    Agentic = 'Agent',
     Chat = 'Chat',
     Search = 'Search',
     Edit = 'Edit',
@@ -73,7 +73,7 @@ export const ModeSelectorField: React.FunctionComponent<{
                 value: IntentEnum.Search,
             },
             {
-                title: 'Agentic',
+                title: 'Agent',
                 badge: agenticChatEnabled ? 'Experimental' : 'Pro',
                 icon: Sparkle,
                 intent: 'agentic',
