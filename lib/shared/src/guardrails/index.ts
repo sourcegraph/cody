@@ -25,7 +25,7 @@ export interface RepositoryAttribution {
 // GuardrailsMode represents the different enforcement modes for guardrails
 export enum GuardrailsMode {
     // Off mode: guardrails are disabled
-    Off = 'off',
+    Off = 'none',
     // Permissive mode: show the code but with an icon indicating the Guardrails check result
     Permissive = 'permissive',
     // Enforced mode: do not display code until guardrails check passes
@@ -107,7 +107,7 @@ export interface GuardrailsMetricEvent {
 
 // Creates an implementation of Guardrails that operates in the specified mode.
 export function createGuardrailsImpl(
-    mode: GuardrailsMode,
+    mode: 'none' | 'permissive' | 'enforced',
     postSnippet: (snippet: string) => void
 ): Guardrails & GuardrailsResultSink {
     if (mode === GuardrailsMode.Off) {

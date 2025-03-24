@@ -45,8 +45,11 @@ export interface CodyClientConfig {
     // Whether the site admin allows the user to make use of the **custom** Cody commands feature.
     customCommandsEnabled: boolean
 
-    // Whether the site admin allows this user to make use of the Cody attribution feature.
+    // Deprecated. Pre 6.2, if true, then 'permissive' attribution; if false, 'none' attribution.
     attributionEnabled: boolean
+
+    // 6.2 and later, whether Cody should hide generated code until attribution is complete.
+    attribution: 'none' | 'permissive' | 'enforced'
 
     // Whether the 'smart context window' feature should be enabled, and whether the Sourcegraph
     // instance supports various new GraphQL APIs needed to make it work.
@@ -81,6 +84,7 @@ export const dummyClientConfigForTest: CodyClientConfig = {
     autoCompleteEnabled: true,
     customCommandsEnabled: true,
     attributionEnabled: true,
+    attribution: 'permissive',
     smartContextWindowEnabled: true,
     modelsAPIEnabled: true,
     userShouldUseEnterprise: false,
@@ -267,6 +271,7 @@ export class ClientConfigSingleton {
             autoCompleteEnabled: features.autoComplete,
             customCommandsEnabled: features.commands,
             attributionEnabled: features.attribution,
+            attribution: features.attribution ? 'permissive' : 'none',
             smartContextWindowEnabled: smartContextWindow,
 
             // Things that did not exist before logically default to disabled.
@@ -309,6 +314,15 @@ export class ClientConfigSingleton {
             .then(clientConfig => {
                 if (isError(clientConfig)) {
                     throw clientConfig
+                }
+                if (!clientConfig.attribution) {
+                    // Precise attribution mode is not specified, so apply the default interpretation of attributionEnabled.
+                    clientConfig.attribution = clientConfig.attributionEnabled ? 'permissive' : 'none'
+                }
+                if (!['none', 'permissive', 'enforced'].includes(clientConfig.attribution)) {
+                    throw new Error(
+                        `server-set configuration specifies "${clientConfig.attribution}" attribution, but this client only supports "none", "permissive" or "enforced". Consider upgrading this client.`
+                    )
                 }
                 setLatestCodyAPIVersion(clientConfig?.latestSupportedCompletionsStreamAPIVersion)
                 return clientConfig
