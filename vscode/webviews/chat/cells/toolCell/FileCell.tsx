@@ -1,3 +1,4 @@
+import { displayPath } from '@sourcegraph/cody-shared'
 import type { ContextItemToolState } from '@sourcegraph/cody-shared/src/codebase-context/messages'
 import { FileCode } from 'lucide-react'
 import type { FC } from 'react'
@@ -29,7 +30,9 @@ export const FileCell: FC<FileCellProps> = ({
                     if (result?.uri) onFileLinkClicked(result?.uri)
                 }}
             >
-                <span className="tw-font-mono">{result.title}</span>
+                <span className="tw-font-mono">
+                    {result.uri ? displayPath(result.uri) : result.title}
+                </span>
             </Button>
         </div>
     )
