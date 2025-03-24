@@ -1,4 +1,4 @@
-import { afterAll, beforeAll, beforeEach, describe, it, vi } from 'vitest'
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { ps } from '@sourcegraph/cody-shared'
 
@@ -49,6 +49,7 @@ describe('FireworksWebsocketAdapter', () => {
 
     beforeEach(() => {
         adapter = new FireworksWebSocketAdapter()
+        vi.useFakeTimers()
     })
 
     afterAll(() => {
@@ -59,12 +60,30 @@ describe('FireworksWebsocketAdapter', () => {
         messageFn.mockReturnValueOnce(
             JSON.stringify({
                 'x-message-id': 'm_0',
+                'x-message-headers': {},
+                'x-message-body': {
+                    choices: [{ message: { content: 'response' } }],
+                },
+                'x-message-status': 200,
+                'x-message-status-text': 'OK',
+            })
+        )
+        await adapter.getModelResponse(options)
+    })
+
+    it('send times out', async () => {
+        messageFn.mockImplementation(() => {
+            vi.advanceTimersByTime(4000)
+            return JSON.stringify({
+                'x-message-id': 'm_0',
                 'x-message-headers': JSON.stringify({}),
                 'x-message-body': JSON.stringify({
                     choices: [{ message: { content: 'response' } }],
                 }),
             })
+        })
+        expect(() => adapter.getModelResponse(options)).rejects.toThrow(
+            'timeout in sending message to fireworks'
         )
-        await adapter.getModelResponse(options)
     })
 })

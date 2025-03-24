@@ -7,12 +7,14 @@ import type { AbortedModelResponse, ModelResponseShared, SuccessModelResponse } 
 import { FireworksAdapter } from './fireworks'
 
 const LOG_FILTER_LABEL = 'fireworks-websocket'
+const SOCKET_SEND_TIME_OUT_MS = 2000
 
 // Auto-edit adaptor for Fireworks using websocket connection instead of HTTP
 export class FireworksWebSocketAdapter extends FireworksAdapter implements vscode.Disposable {
     private readonly webSocketEndpoint: string
     private ws: WebSocket | undefined
     private messageId = 0
+    private callbackQueue: Record<string, (response: Response) => void> = {}
 
     constructor() {
         super()
@@ -44,52 +46,21 @@ export class FireworksWebSocketAdapter extends FireworksAdapter implements vscod
         abortSignal: AbortSignal
         customHeaders?: Record<string, string>
     }): Promise<Omit<SuccessModelResponse, 'prediction'> | AbortedModelResponse> {
-        const ws = await this.connect()
+        await this.connect()
 
         const requestHeaders: Record<string, string> = {
             'Content-Type': 'application/json',
             Authorization: `Bearer ${apiKey}`,
         }
+
         const partialResult = {
             requestHeaders,
             requestUrl: url,
             requestBody: body,
         }
 
-        const messageId = 'm_' + this.messageId++
-        const data = JSON.stringify({
-            'x-message-id': messageId,
-            'x-message-body': body,
-            'x-message-url': url,
-            'x-message-headers': requestHeaders,
-        })
-
         try {
-            const response = await new Promise((resolve: (response: Response) => void) => {
-                const messageCallback = (event: MessageEvent) => {
-                    const webSocketResponse = JSON.parse(event.data as string)
-                    if (webSocketResponse['x-message-id'] === messageId) {
-                        const body = webSocketResponse['x-message-body']
-                        const headers = webSocketResponse['x-message-headers']
-                        const status = webSocketResponse['x-message-status']
-                        const statusText = webSocketResponse['x-message-status-text']
-                        if (status !== 200) {
-                            resolve(new Response(body, { status, statusText, headers }))
-                        } else {
-                            resolve(
-                                Response.json(body, {
-                                    status,
-                                    statusText,
-                                    headers,
-                                })
-                            )
-                        }
-                        ws.removeEventListener('message', messageCallback)
-                    }
-                }
-                ws.addEventListener('message', messageCallback)
-                ws.send(data)
-            })
+            const response = await this.sendMessage(url, requestHeaders, body)
 
             if (response.status !== 200) {
                 const errorText = await response.text()
@@ -112,6 +83,45 @@ export class FireworksWebSocketAdapter extends FireworksAdapter implements vscod
             // Propagate error the auto-edit provider
             throw error
         }
+    }
+
+    private async sendMessage(
+        url: string,
+        headers: Record<string, string>,
+        body: ModelResponseShared['requestBody']
+    ): Promise<Response> {
+        const messageId = 'm_' + this.messageId++
+        const data = JSON.stringify({
+            'x-message-id': messageId,
+            'x-message-body': body,
+            'x-message-url': url,
+            'x-message-headers': headers,
+        })
+
+        if (messageId in this.callbackQueue) {
+            autoeditsOutputChannelLogger.logError(
+                LOG_FILTER_LABEL,
+                `unexpected, duplicate message ID ${messageId}`
+            )
+        }
+
+        const sendPromise: Promise<Response> = new Promise(resolve => {
+            this.callbackQueue[messageId] = resolve
+            this.ws?.send(data)
+        })
+
+        let timeoutHandle: NodeJS.Timeout
+        let timeoutPromise: Promise<Response> = new Promise((_, reject) => {
+            timeoutHandle = setTimeout(() => {
+                delete this.callbackQueue[messageId]
+                reject(new Error('timeout in sending message to fireworks'))
+            }, SOCKET_SEND_TIME_OUT_MS)
+        })
+
+        return Promise.race([sendPromise, timeoutPromise]).then((response) => {
+            clearTimeout(timeoutHandle)
+            return response
+        })
     }
 
     private async connect(): Promise<WebSocket> {
@@ -147,6 +157,29 @@ export class FireworksWebSocketAdapter extends FireworksAdapter implements vscod
                 if (process.env.NODE_ENV === 'development') {
                     console.error(`${this.webSocketEndpoint} connection closed`)
                     console.error(event)
+                }
+            })
+            this.ws.addEventListener('message', (event: MessageEvent) => {
+                const webSocketResponse = JSON.parse(event.data as string)
+                const messageId = webSocketResponse['x-message-id']
+                if (messageId in this.callbackQueue) {
+                    const body = webSocketResponse['x-message-body']
+                    const headers = webSocketResponse['x-message-headers']
+                    const status = webSocketResponse['x-message-status']
+                    const statusText = webSocketResponse['x-message-status-text']
+                    const callback = this.callbackQueue[messageId]
+                    if (status !== 200) {
+                        callback(new Response(body, { status, statusText, headers }))
+                    } else {
+                        callback(
+                            Response.json(body, {
+                                status,
+                                statusText,
+                                headers,
+                            })
+                        )
+                    }
+                    delete this.callbackQueue[messageId]
                 }
             })
         })
