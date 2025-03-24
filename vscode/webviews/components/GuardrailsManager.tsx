@@ -62,12 +62,14 @@ class GuardrailsCache {
 
     // Synchronously gets Guardrails status for the given code. This may
     // initiate requests if the code needs attribution and no attribution is in
-    // flight.
+    // flight. In that case, getStatus will return a status of "checking" and
+    // later call updateStatus.
     getStatus(
         guardrails: Guardrails,
         isCodeComplete: boolean,
         code: string,
-        language: string | undefined
+        language: string | undefined,
+        updateStatus: (status: GuardrailsResult) => void
     ): GuardrailsResult {
         if (!isCodeComplete) {
             return {
@@ -79,14 +81,19 @@ class GuardrailsCache {
                 status: GuardrailsCheckStatus.Skipped,
             }
         }
-        const cached = this.cache.get(guardrails)?.results.get(code)
-        if (cached) {
-            return cached
+        const cache = this.cache.get(guardrails)
+        const cachedResult = cache?.results.get(code)
+        if (cachedResult) {
+            console.log('GuardrailsCache: hit')
+            return cachedResult
         }
-        if (!this.cache.get(guardrails)?.attributionRequests.has(code)) {
+        if (!cache?.attributionRequests.has(code)) {
+            console.log('GuardrailsCache: miss, and no in-flight request')
             // Kick off a request so we are not lying that there is a request
             // in flight.
-            this.searchAttribution(guardrails, code)
+            this.searchAttribution(guardrails, code).then(updateStatus)
+        } else {
+            console.log('GuardrailsCache: miss, but in-flight request')
         }
         return {
             status: GuardrailsCheckStatus.Checking,
@@ -96,7 +103,7 @@ class GuardrailsCache {
     // Calls the Guardrails service to attribute the specified code and updates
     // the cache with the result when done. If there is an existing in-flight
     // request, returns the existing Promise.
-    searchAttribution(guardrails: Guardrails, code: string): Promise<GuardrailsResult> {
+    private searchAttribution(guardrails: Guardrails, code: string): Promise<GuardrailsResult> {
         let cache = this.cache.get(guardrails)
         if (!cache) {
             cache = {
@@ -160,9 +167,13 @@ export const GuardrailsApplicator: React.FC<GuardrailsApplicatorProps> = ({
     isCodeComplete,
     children,
 }: GuardrailsApplicatorProps) => {
-    // TODO: Break out status, which is used heavily, from errors and attribution
+    // State which can trigger updating the guardrails status indicator.
     const [guardrailsResult, setGuardrailsResult] = useState(() =>
-        guardrailsCache.getStatus(guardrails, isCodeComplete, code, language)
+        // We throw away the asynchronous result from this getStatus call.
+        // TypeScript can't tie the knot of the setGuardrailsResult type if we
+        // use setGuardrailsResult here. Instead, we rely on the effect below
+        // collecting the asynchronous result if necessary.
+        guardrailsCache.getStatus(guardrails, isCodeComplete, code, language, () => {})
     )
 
     // Performs a guardrails check, if necessary. This is cheap to call
@@ -178,8 +189,15 @@ export const GuardrailsApplicator: React.FC<GuardrailsApplicatorProps> = ({
                 })
                 return
             }
-            guardrailsCache.searchAttribution(guardrails, code).then(setGuardrailsResult)
-            setGuardrailsResult(guardrailsCache.getStatus(guardrails, isCodeComplete, code, language))
+            setGuardrailsResult(
+                guardrailsCache.getStatus(
+                    guardrails,
+                    isCodeComplete,
+                    code,
+                    language,
+                    setGuardrailsResult
+                )
+            )
         }
     }, [guardrails, isCodeComplete, code, language])
 
@@ -213,10 +231,10 @@ export const GuardrailsApplicator: React.FC<GuardrailsApplicatorProps> = ({
     const handleRetry = () => {
         // Delete the old result.
         guardrailsCache.delete(guardrails, code)
-        // Start a new attribution request.
-        guardrailsCache.searchAttribution(guardrails, code).then(setGuardrailsResult)
-        // Set status to the best available (loading) state.
-        setGuardrailsResult(guardrailsCache.getStatus(guardrails, isCodeComplete, code, language))
+        // Set status to the best available (loading) state and update it later.
+        setGuardrailsResult(
+            guardrailsCache.getStatus(guardrails, isCodeComplete, code, language, setGuardrailsResult)
+        )
     }
 
     const statusDisplay = (
