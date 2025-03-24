@@ -18,7 +18,7 @@ test('lexical -> prosemirror -> lexical', () => {
             paragraph.append(
                 $createTextNode('before '),
                 $createContextItemMentionNode(
-                    { type: 'file', uri: 'test.ts' },
+                    { type: 'file', uri: '/test.ts' },
                     { isFromInitialContext: true }
                 ),
                 $createTextNode(' after')
