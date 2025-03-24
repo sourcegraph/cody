@@ -19,7 +19,6 @@ export const CodeBlockPlaceholder: React.FC<CodeBlockPlaceholderProps> = ({
     const widths = text.split('\n').map(s => s.length)
     return (
         <div className={clsx(styles.content, 'tw-overflow-hidden tw-p-4', className)}>
-            {/* TODO, integrate the generating, retry etc. notices */}
             {widths.map((width, index) => (
                 <div
                     key={`${index}-${width}`}
