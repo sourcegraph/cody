@@ -123,7 +123,6 @@ export const RichMarkdown: React.FC<RichMarkdownProps> = ({
                 'data-is-code-complete': false,
             }
             let cached = cacheKey && highlightedMarkdownCache.get(cacheKey)
-            // TODO console.log('cached', cacheKey, isThisBlockComplete, filePath, JSON.stringify(cached))
 
             if (!cached) {
                 try {
@@ -262,7 +261,6 @@ export const RichMarkdown: React.FC<RichMarkdownProps> = ({
 
             // Determine if this is a shell command
             const isShellCommand = cached.language === 'bash' || cached.language === 'sh'
-            console.log('isShellCommand', isShellCommand, 'language', cached.language, cached.plainText)
 
             // Render with our RichCodeBlock component
             return (
