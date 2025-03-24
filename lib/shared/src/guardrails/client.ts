@@ -20,10 +20,8 @@ export interface GuardrailsClientConfig {
 
 export class SourcegraphGuardrailsClient {
     public async searchAttribution(snippet: string): Promise<Attribution | Error> {
-        // Short-circuit attribution search if turned off in site config.
-        const clientConfig = await ClientConfigSingleton.getInstance().getConfig()
-        if (!clientConfig?.attributionEnabled) {
-            return new Error('Attribution search is turned off.')
+        if (![GuardrailsMode.Permissive, GuardrailsMode.Enforced].includes(await this.getMode())) {
+            return new Error('Attempted attribution search when attribution is not configured.')
         }
 
         const timeout =
@@ -44,6 +42,16 @@ export class SourcegraphGuardrailsClient {
 
     public async getMode(): Promise<GuardrailsMode> {
         const clientConfig = await ClientConfigSingleton.getInstance().getConfig()
-        return clientConfig?.attributionEnabled ? GuardrailsMode.Permissive : GuardrailsMode.Off
+        switch (clientConfig?.attribution) {
+            case 'enforced':
+                return GuardrailsMode.Enforced
+            case 'permissive':
+                return GuardrailsMode.Permissive
+            case 'none':
+            case undefined:
+                return GuardrailsMode.Off
+            default:
+                throw new Error(`unrecognized attribution mode: ${clientConfig?.attribution}`)
+        }
     }
 }

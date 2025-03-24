@@ -17,7 +17,6 @@ import {
     type ContextItem,
     type ContextItemOpenCtx,
     ContextItemSource,
-    GuardrailsMode,
     PromptString,
     REMOTE_DIRECTORY_PROVIDER_URI,
     type WebviewToExtensionAPI,
@@ -371,14 +370,13 @@ const CodyWebPanel: FC<CodyWebPanelProps> = props => {
                             setView={handleViewChange}
                             errorMessages={errorMessages}
                             setErrorMessages={setErrorMessages}
-                            // TODO: This should not be a boolean but instead an enum to enable enforced mode.
                             guardrails={createGuardrailsImpl(
-                                config.config.attributionEnabled
-                                    ? GuardrailsMode.Permissive
-                                    : GuardrailsMode.Off,
-                                () => {
-                                    // TODO: Implement guardrails for Cody Web.
-                                    throw new Error('NYI')
+                                config.config.attribution,
+                                (snippet: string) => {
+                                    vscodeAPI.postMessage({
+                                        command: 'attribution-search',
+                                        snippet,
+                                    })
                                 }
                             )}
                             configuration={config}

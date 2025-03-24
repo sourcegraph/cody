@@ -366,7 +366,7 @@ export class MockServer {
             res.send(JSON.stringify(response));
         });
 
-        let attribution = false;
+        let attribution = 'none';
         let codyPro = false;
         let authedUser = {
             id: "u",
@@ -384,7 +384,8 @@ export class MockServer {
                     chatEnabled: true,
                     autoCompleteEnabled: true,
                     customCommandsEnabled: true,
-                    attributionEnabled: attribution,
+                    attributionEnabled: attribution !== 'none',
+                    attribution,
                     // When server-sent LLMs have been set, we enable the models api
                     modelsAPIEnabled: !!controller.availableLLMs,
                     userShouldUseEnterprise: controller.userShouldUseEnterprise,
@@ -583,12 +584,8 @@ export class MockServer {
             codyPro = true;
             res.sendStatus(200);
         });
-        app.post("/.test/attribution/enable", (req, res) => {
-            attribution = true;
-            res.sendStatus(200);
-        });
-        app.post("/.test/attribution/disable", (req, res) => {
-            attribution = false;
+        app.post("/.test/attribution/set-mode", (req, res) => {
+            attribution = req.query.mode?.toString() ?? 'permissive';
             res.sendStatus(200);
         });
 

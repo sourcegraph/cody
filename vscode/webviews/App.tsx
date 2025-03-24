@@ -4,7 +4,6 @@ import {
     type ChatMessage,
     type CodyClientConfig,
     type DefaultContext,
-    GuardrailsMode,
     PromptString,
     type TelemetryRecorder,
     createGuardrailsImpl,
@@ -43,19 +42,14 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
 
     const dispatchClientAction = useClientActionDispatcher()
 
-    const attributionEnabled = clientConfig?.attributionEnabled ?? false
     const guardrails = useMemo(() => {
-        // TODO: We need to get the guardrails mode from site configuration here for enforced mode
-        return createGuardrailsImpl(
-            attributionEnabled ? GuardrailsMode.Enforced : GuardrailsMode.Off,
-            (snippet: string) => {
-                vscodeAPI.postMessage({
-                    command: 'attribution-search',
-                    snippet,
-                })
-            }
-        )
-    }, [vscodeAPI, attributionEnabled])
+        return createGuardrailsImpl(clientConfig?.attribution ?? 'none', (snippet: string) => {
+            vscodeAPI.postMessage({
+                command: 'attribution-search',
+                snippet,
+            })
+        })
+    }, [vscodeAPI])
 
     useSuppressKeys()
 

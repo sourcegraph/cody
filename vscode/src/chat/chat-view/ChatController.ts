@@ -16,6 +16,7 @@ import {
     type DefaultChatCommands,
     type EventSource,
     FeatureFlag,
+    GuardrailsMode,
     ModelTag,
     ModelUsage,
     type NLSSearchDynamicFilter,
@@ -559,9 +560,8 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         const webviewType = isEditorViewType && !sidebarViewOnly ? 'editor' : 'sidebar'
         const uiKindIsWeb = (cenv.CODY_OVERRIDE_UI_KIND ?? vscode.env.uiKind) === vscode.UIKind.Web
         const endpoints = localStorage.getEndpointHistory() ?? []
-        // TODO: Should have a more reliable way to get configuration than this
-        const attributionEnabled =
-            (await ClientConfigSingleton.getInstance().getConfig())?.attributionEnabled ?? false
+        const attribution =
+            (await ClientConfigSingleton.getInstance().getConfig())?.attribution ?? GuardrailsMode.Off
 
         return {
             uiKindIsWeb,
@@ -577,7 +577,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             allowEndpointChange: configuration.overrideServerEndpoint === undefined,
             experimentalPromptEditorEnabled,
             experimentalAgenticChatEnabled,
-            attributionEnabled,
+            attribution,
         }
     }
 
