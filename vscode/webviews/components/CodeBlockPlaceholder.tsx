@@ -1,7 +1,7 @@
 import { clsx } from 'clsx'
 import type React from 'react'
-import modulestyles from './CodeBlockPlaceholder.module.css'
 import styles from '../chat/ChatMessageContent/ChatMessageContent.module.css'
+import modulestyles from './CodeBlockPlaceholder.module.css'
 
 interface CodeBlockPlaceholderProps {
     text: string
@@ -22,10 +22,7 @@ export const CodeBlockPlaceholder: React.FC<CodeBlockPlaceholderProps> = ({
             {widths.map((width, index) => (
                 <div
                     key={`${index}-${width}`}
-                    className={clsx(
-                        'tw-h-6 tw-my-2 tw-rounded',
-                        modulestyles.line
-                    )}
+                    className={clsx('tw-h-6 tw-my-2 tw-rounded', modulestyles.line)}
                     style={{
                         width: `${width}em`,
                     }}

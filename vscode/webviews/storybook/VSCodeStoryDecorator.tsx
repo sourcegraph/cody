@@ -73,7 +73,7 @@ export function VSCodeDecorator(className: string | undefined, style?: CSSProper
 
         // Handle custom parameters like guardrailsMode for stories
         const { guardrailsMode } = parameters.parameters || {}
-        
+
         // Create props that can be passed to children
         const storyProps = { guardrailsMode }
 

@@ -71,9 +71,19 @@ export const SparkleIcon = (
     </svg>
 )
 
-export const EllipsisIcon =
+export const EllipsisIcon = (
     // biome-ignore lint/a11y/noSvgWithoutTitle: These are titled by the button that contains the icon.
-    <svg role="img" width="16" height="16" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" fill="currentColor"><path d="M4 8a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm5 0a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm5 0a1 1 0 1 1-2 0 1 1 0 0 1 2 0z"/></svg>
+    <svg
+        role="img"
+        width="16"
+        height="16"
+        viewBox="0 0 16 16"
+        xmlns="http://www.w3.org/2000/svg"
+        fill="currentColor"
+    >
+        <path d="M4 8a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm5 0a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm5 0a1 1 0 1 1-2 0 1 1 0 0 1 2 0z" />
+    </svg>
+)
 
 export const SyncSpinIcon = (
     // biome-ignore lint/a11y/noSvgWithoutTitle: These are titled by the button that contains the icon.
@@ -94,12 +104,40 @@ export const SyncSpinIcon = (
     </svg>
 )
 
-export const TickIcon =
+export const TickIcon = (
     // biome-ignore lint/a11y/noSvgWithoutTitle: These are titled by the button that contains the icon.
-    <svg role="img" width="16" height="16" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" fill="currentColor"><path fill-rule="evenodd" clip-rule="evenodd" d="M14.431 3.323l-8.47 10-.79-.036-3.35-4.77.818-.574 2.978 4.24 8.051-9.506.764.646z"/></svg>
+    <svg
+        role="img"
+        width="16"
+        height="16"
+        viewBox="0 0 16 16"
+        xmlns="http://www.w3.org/2000/svg"
+        fill="currentColor"
+    >
+        <path
+            fill-rule="evenodd"
+            clip-rule="evenodd"
+            d="M14.431 3.323l-8.47 10-.79-.036-3.35-4.77.818-.574 2.978 4.24 8.051-9.506.764.646z"
+        />
+    </svg>
+)
 
-export const CloseIcon =
+export const CloseIcon = (
     // biome-ignore lint/a11y/noSvgWithoutTitle: These are titled by the button that contains the icon.
-    <svg role="img" width="16" height="16" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" fill="currentColor"><path fill-rule="evenodd" clip-rule="evenodd" d="M8 8.707l3.646 3.647.708-.707L8.707 8l3.647-3.646-.707-.708L8 7.293 4.354 3.646l-.707.708L7.293 8l-3.646 3.646.707.708L8 8.707z"/></svg>
+    <svg
+        role="img"
+        width="16"
+        height="16"
+        viewBox="0 0 16 16"
+        xmlns="http://www.w3.org/2000/svg"
+        fill="currentColor"
+    >
+        <path
+            fill-rule="evenodd"
+            clip-rule="evenodd"
+            d="M8 8.707l3.646 3.647.708-.707L8.707 8l3.647-3.646-.707-.708L8 7.293 4.354 3.646l-.707.708L7.293 8l-3.646 3.646.707.708L8 8.707z"
+        />
+    </svg>
+)
 
 export const RefreshIcon = <i className="codicon codicon-refresh tw-align-middle" />
