@@ -116,9 +116,11 @@ async function hydrateWithCurrentSelection(
     initialContext: PromptHydrationInitialContext
 ): Promise<[PromptString, ContextItem[]]> {
     // Check if initial context already contains current file with selection (Cody Web case)
-    const initialContextFile = initialContext.find(item => item.type === 'file' && item.range)
+    const initialContextFile = initialContext.find(item => item.type === 'file')
 
-    const currentSelection = initialContextFile ?? (await getSelectionOrFileContext())[0]
+    const currentSelection = initialContextFile?.range
+        ? initialContextFile
+        : (await getSelectionOrFileContext())[0] ?? initialContextFile
 
     // TODO (vk): Add support for error notification if prompt hydration fails
     if (!currentSelection) {
