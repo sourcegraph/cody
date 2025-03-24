@@ -32,6 +32,7 @@ import {
     tracer,
 } from '@sourcegraph/cody-shared'
 import { CompletionsResponseBuilder } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/CompletionsResponseBuilder'
+import { ClientErrorsTransformer } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/clientErrors'
 
 export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClient {
     protected async _streamWithCallbacks(
@@ -78,7 +79,18 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
             const onErrorOnce = (error: Error, statusCode?: number | undefined): void => {
                 if (!didSendError) {
                     recordErrorToSpan(span, error)
-                    cb.onError(error, statusCode)
+
+                    const simplifiedErrorMessage = ClientErrorsTransformer.transform(
+                        error.message,
+                        span.spanContext().traceId
+                    )
+                    const errorMessage = new Error(simplifiedErrorMessage)
+                    // pass the error name to the new error object
+                    // so that the client can handle it properly
+                    // (e.g. show a different error message for rate limit errors)
+                    errorMessage.name = error.name
+                    cb.onError(errorMessage, statusCode)
+
                     didSendMessage = true
                     didSendError = true
                 }
@@ -190,19 +202,21 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                         })
 
                         res.on('error', e => handleError(e))
-                        res.on('end', () =>
-                            handleError(
+                        res.on('end', () => {
+                            const errorOptions = {
+                                url: url.toString(),
+                                status: statusCode,
+                                statusText: res.statusMessage ?? '',
+                            }
+
+                            return handleError(
                                 new NetworkError(
-                                    {
-                                        url: url.toString(),
-                                        status: statusCode,
-                                        statusText: res.statusMessage ?? '',
-                                    },
+                                    errorOptions,
                                     errorMessage,
                                     getActiveTraceAndSpanId()?.traceId
                                 )
                             )
-                        )
+                        })
                         return
                     }
 
