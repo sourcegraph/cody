@@ -2,6 +2,7 @@ package com.sourcegraph.cody.autoedit
 
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.components.Service
+import com.intellij.openapi.components.service
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.EditorFactory
 import com.intellij.openapi.project.Project
@@ -17,16 +18,22 @@ class AutoeditManager(private val project: Project) {
   var activeAutoeditEditor: Editor? = null
     private set
 
+  var disposable: Disposable? = null
+    private set
+
   fun showAutoedit(editor: Editor, item: AutocompleteEditItem) {
     val virtualFile = editor.virtualFile ?: return
 
     activeAutoeditEditor = editor
     activeAutocompleteEditItem = item
 
-    val disposable = Disposable {
+    val myDisposable = Disposable {
       activeAutoeditEditor = null
       activeAutocompleteEditItem = null
     }
+
+    disposable?.dispose()
+    disposable = myDisposable
 
     val offsetRange = item.range.toOffsetRange(editor.document) ?: return
 
@@ -49,11 +56,21 @@ class AutoeditManager(private val project: Project) {
     AutoeditLineStatusMarkerPopupRenderer(
             AutoeditTracker(
                 project,
-                disposable = disposable,
+                disposable = myDisposable,
                 document = editor.document,
                 vcsDocument = document,
                 virtualFile = virtualFile,
                 range = range))
         .showHintAt(editor, range, mousePosition = null)
+  }
+
+  fun hide() {
+    disposable?.dispose()
+  }
+
+  companion object {
+    fun getInstance(project: Project): AutoeditManager {
+      return project.service<AutoeditManager>()
+    }
   }
 }
