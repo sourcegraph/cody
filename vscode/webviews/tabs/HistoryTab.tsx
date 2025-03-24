@@ -1,6 +1,6 @@
 'use client'
 
-import type { CodyIDE, UserLocalHistory, WebviewToExtensionAPI } from '@sourcegraph/cody-shared'
+import { CodyIDE, type UserLocalHistory, type WebviewToExtensionAPI } from '@sourcegraph/cody-shared'
 import { DownloadIcon, HistoryIcon, MessageSquarePlusIcon, Trash2Icon, TrashIcon } from 'lucide-react'
 import type React from 'react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
@@ -58,6 +58,7 @@ export const HistoryTab: React.FC<HistoryTabProps> = ({
                     handleStartNewChat={handleStartNewChat}
                     vscodeAPI={vscodeAPI}
                     extensionAPI={extensionAPI}
+                    IDE={IDE}
                 />
             )}
         </div>
@@ -69,7 +70,8 @@ export const HistoryTabWithData: React.FC<{
     handleStartNewChat: () => void
     vscodeAPI: VSCodeWrapper
     extensionAPI: WebviewToExtensionAPI
-}> = ({ chats, handleStartNewChat, vscodeAPI, extensionAPI }) => {
+    IDE: CodyIDE
+}> = ({ chats, handleStartNewChat, vscodeAPI, extensionAPI, IDE }) => {
     const [isDeleteAllActive, setIsDeleteAllActive] = useState<boolean>(false)
     const [deletingChatIds, setDeletingChatIds] = useState<Set<string>>(new Set())
 
@@ -244,26 +246,28 @@ export const HistoryTabWithData: React.FC<{
             className="tw-flex tw-flex-col tw-h-full tw-py-4 tw-bg-transparent tw-px-2 tw-mb-4 tw-overscroll-auto"
             disablePointerSelection={true}
         >
-            <header className="tw-inline-flex tw-mt-4 tw-px-4 tw-gap-4">
-                <Button
-                    variant="secondary"
-                    className="tw-bg-popover tw-border tw-border-border !tw-justify-between"
-                    onClick={onExportClick}
-                >
-                    <div className="tw-flex tw-items-center">
-                        <DownloadIcon size={16} className="tw-mr-3" /> Export
-                    </div>
-                </Button>
-                <Button
-                    variant="secondary"
-                    className="tw-bg-popover tw-border tw-border-border !tw-justify-between"
-                    onClick={() => setIsDeleteAllActive(true)}
-                >
-                    <div className="tw-flex tw-items-center">
-                        <Trash2Icon size={16} className="tw-mr-3" /> Delete all
-                    </div>
-                </Button>
-            </header>
+            {IDE !== CodyIDE.Web && (
+                <header className="tw-inline-flex tw-mt-4 tw-px-4 tw-gap-4">
+                    <Button
+                        variant="secondary"
+                        className="tw-bg-popover tw-border tw-border-border !tw-justify-between"
+                        onClick={onExportClick}
+                    >
+                        <div className="tw-flex tw-items-center">
+                            <DownloadIcon size={16} className="tw-mr-3" /> Export
+                        </div>
+                    </Button>
+                    <Button
+                        variant="secondary"
+                        className="tw-bg-popover tw-border tw-border-border !tw-justify-between"
+                        onClick={() => setIsDeleteAllActive(true)}
+                    >
+                        <div className="tw-flex tw-items-center">
+                            <Trash2Icon size={16} className="tw-mr-3" /> Delete all
+                        </div>
+                    </Button>
+                </header>
+            )}
             {isDeleteAllActive && (
                 <div
                     className="tw-my-4 tw-p-4 tw-mx-[0.5rem] tw-border tw-border-red-300 tw-rounded-lg tw-bg-muted-transparent dark:tw-text-red-400 dark:tw-border-red-800"
