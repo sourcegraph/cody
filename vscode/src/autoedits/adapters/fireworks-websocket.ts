@@ -126,7 +126,7 @@ export class FireworksWebSocketAdapter extends FireworksAdapter implements vscod
     }
 
     private reconnect() {
-        (async () => {
+        ;(async () => {
             await this.connect()
         })()
     }
