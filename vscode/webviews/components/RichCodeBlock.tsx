@@ -11,7 +11,7 @@ import { getCodeBlockId } from '../chat/ChatMessageContent/utils'
 import { type ClientActionListener, useClientActionListener } from '../client/clientState'
 import { useConfig } from '../utils/useConfig'
 import { CodeBlockPlaceholder } from './CodeBlockPlaceholder'
-import { GuardrailsApplicator } from './GuardrailsManager'
+import { GuardrailsApplicator } from './GuardrailsApplicator'
 
 interface RichCodeBlockProps {
     hasEditIntent: boolean
