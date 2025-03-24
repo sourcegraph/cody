@@ -111,14 +111,14 @@ export class FireworksWebSocketAdapter extends FireworksAdapter implements vscod
         })
 
         let timeoutHandle: NodeJS.Timeout
-        let timeoutPromise: Promise<Response> = new Promise((_, reject) => {
+        const timeoutPromise: Promise<Response> = new Promise((_, reject) => {
             timeoutHandle = setTimeout(() => {
                 delete this.callbackQueue[messageId]
                 reject(new Error('timeout in sending message to fireworks'))
             }, SOCKET_SEND_TIME_OUT_MS)
         })
 
-        return Promise.race([sendPromise, timeoutPromise]).then((response) => {
+        return Promise.race([sendPromise, timeoutPromise]).then(response => {
             clearTimeout(timeoutHandle)
             return response
         })
