@@ -84,16 +84,12 @@ class GuardrailsCache {
         const cache = this.cache.get(guardrails)
         const cachedResult = cache?.results.get(code)
         if (cachedResult) {
-            console.log('GuardrailsCache: hit')
             return cachedResult
         }
         if (!cache?.attributionRequests.has(code)) {
-            console.log('GuardrailsCache: miss, and no in-flight request')
             // Kick off a request so we are not lying that there is a request
             // in flight.
             this.searchAttribution(guardrails, code).then(updateStatus)
-        } else {
-            console.log('GuardrailsCache: miss, but in-flight request')
         }
         return {
             status: GuardrailsCheckStatus.Checking,
@@ -114,7 +110,6 @@ class GuardrailsCache {
         }
         let result = cache.attributionRequests.get(code)
         if (!result) {
-            console.log('GuardrailsCache: miss, creating an actual request')
             result = (async () => {
                 try {
                     return parseAttributionResult(await guardrails.searchAttribution(code))
@@ -128,7 +123,6 @@ class GuardrailsCache {
             cache.attributionRequests.set(code, result)
             result.then(parsedResult => {
                 if (cache.attributionRequests.get(code) === result) {
-                    console.log('GuardrailsCache: storing parsed result', parsedResult.status)
                     cache.results.set(code, parsedResult)
                     // This request is done, so clean up the cache of in-flight requests.
                     cache.attributionRequests.delete(code)

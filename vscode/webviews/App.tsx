@@ -44,7 +44,6 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
 
     const clientConfigAttribution = clientConfig?.attribution ?? 'none'
     const guardrails = useMemo(() => {
-        console.log('XXX DEBUG guardrails, creating client for mode', clientConfigAttribution)
         return createGuardrailsImpl(clientConfigAttribution, (snippet: string) => {
             vscodeAPI.postMessage({
                 command: 'attribution-search',
