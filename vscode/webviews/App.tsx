@@ -4,9 +4,9 @@ import {
     type ChatMessage,
     type CodyClientConfig,
     type DefaultContext,
-    GuardrailsPost,
     PromptString,
     type TelemetryRecorder,
+    createGuardrailsImpl,
 } from '@sourcegraph/cody-shared'
 import type { AuthMethod } from '../src/chat/protocol'
 import styles from './App.module.css'
@@ -42,14 +42,15 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
 
     const dispatchClientAction = useClientActionDispatcher()
 
+    const clientConfigAttribution = clientConfig?.attribution ?? 'none'
     const guardrails = useMemo(() => {
-        return new GuardrailsPost((snippet: string) => {
+        return createGuardrailsImpl(clientConfigAttribution, (snippet: string) => {
             vscodeAPI.postMessage({
                 command: 'attribution-search',
                 snippet,
             })
         })
-    }, [vscodeAPI])
+    }, [vscodeAPI, clientConfigAttribution])
 
     useSuppressKeys()
 
@@ -206,14 +207,12 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                     configuration={config}
                     errorMessages={errorMessages}
                     setErrorMessages={setErrorMessages}
-                    attributionEnabled={clientConfig?.attributionEnabled ?? false}
                     chatEnabled={clientConfig?.chatEnabled ?? true}
                     instanceNotices={clientConfig?.notices ?? []}
                     messageInProgress={messageInProgress}
                     transcript={transcript}
                     vscodeAPI={vscodeAPI}
                     guardrails={guardrails}
-                    smartApplyEnabled={config.config.smartApply}
                 />
             )}
         </ComposedWrappers>

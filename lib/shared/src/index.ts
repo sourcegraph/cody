@@ -192,10 +192,18 @@ export {
     type FeatureFlagProvider,
     featureFlagProvider,
 } from './experimentation/FeatureFlagProvider'
-export { GuardrailsPost } from './guardrails'
-export type { Attribution, Guardrails } from './guardrails'
-export { SourcegraphGuardrailsClient } from './guardrails/client'
+export type {
+    Guardrails,
+    GuardrailsResult,
+    GuardrailsStatusError,
+    GuardrailsStatusFailed,
+    GuardrailsStatusIndeterminate,
+    GuardrailsStatusSuccess,
+    GuardrailsResultSink,
+} from './guardrails'
+export { createGuardrailsImpl, GuardrailsMode, GuardrailsCheckStatus } from './guardrails'
 export type { GuardrailsClientConfig } from './guardrails/client'
+export { SourcegraphGuardrailsClient } from './guardrails/client'
 export {
     CompletionStopReason,
     type CodeCompletionsClient,

@@ -10,10 +10,10 @@ import {
     DOTCOM_URL,
     type DefaultCodyCommands,
     FeatureFlag,
-    type Guardrails,
     NEVER,
     PromptString,
     type ResolvedConfiguration,
+    type SourcegraphGuardrailsClient,
     authStatus,
     catchError,
     clientCapabilities,
@@ -846,7 +846,7 @@ interface RegisterChatOptions {
     context: vscode.ExtensionContext
     platform: PlatformContext
     chatClient: ChatClient
-    guardrails: Guardrails
+    guardrails: SourcegraphGuardrailsClient
     editor: VSCodeEditor
     contextRetriever: ContextRetriever
 }
