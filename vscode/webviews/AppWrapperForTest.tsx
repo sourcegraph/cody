@@ -140,6 +140,7 @@ export const AppWrapperForTest: FunctionComponent<{ children: ReactNode }> = ({ 
                             },
                         }),
                     userProductSubscription: () => Observable.of(null),
+                    mcpSettings: () => Observable.of(null),
                 },
             } satisfies Wrapper<ComponentProps<typeof ExtensionAPIProviderForTestsOnly>['value']>,
             {

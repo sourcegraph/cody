@@ -5,6 +5,7 @@ import type { ChatMessage, UserLocalHistory } from '../../chat/transcript/messag
 import type { ContextItem, DefaultContext } from '../../codebase-context/messages'
 import type { CodyCommand } from '../../commands/types'
 import type { FeatureFlag } from '../../experimentation/FeatureFlagProvider'
+import type { McpServer } from '../../llm-providers/mcp/types'
 import type { ContextMentionProviderMetadata } from '../../mentions/api'
 import type { MentionQuery } from '../../mentions/query'
 import type { Model } from '../../models/model'
@@ -103,6 +104,8 @@ export interface WebviewToExtensionAPI {
      * The current user's product subscription information (Cody Free/Pro).
      */
     userProductSubscription(): Observable<UserProductSubscription | null>
+
+    mcpSettings(): Observable<McpServer[] | null>
 }
 
 export function createExtensionAPI(
@@ -152,6 +155,7 @@ export function createExtensionAPI(
         userHistory: proxyExtensionAPI(messageAPI, 'userHistory'),
         userProductSubscription: proxyExtensionAPI(messageAPI, 'userProductSubscription'),
         repos: proxyExtensionAPI(messageAPI, 'repos'),
+        mcpSettings: proxyExtensionAPI(messageAPI, 'mcpSettings'),
     }
 }
 
