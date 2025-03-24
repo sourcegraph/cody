@@ -1,8 +1,8 @@
 import type { SerializedLexicalNode, SerializedRootNode } from 'lexical'
 import { describe, expect, test } from 'vitest'
-import { URI } from 'vscode-uri'
 import { ContextItemSource } from '../codebase-context/messages'
 import { PromptString, ps } from '../prompt/prompt-string'
+import { testFileUri } from '../test/path-helpers'
 import {
     editorStateFromPromptString,
     editorStateToText,
@@ -66,8 +66,8 @@ describe('textContentFromSerializedLexicalNode', () => {
 describe('editorStateFromPromptString', () => {
     test('converts to rich mentions', async () => {
         const input = ps`What are @${PromptString.fromDisplayPath(
-            URI.file('foo.go')
-        )}:3-5 and @${PromptString.fromDisplayPath(URI.file('bar.go'))} about?`
+            testFileUri('foo.go')
+        )}:3-5 and @${PromptString.fromDisplayPath(testFileUri('bar.go'))} about?`
         const editorState = editorStateFromPromptString(input)
         expect(editorState.lexicalEditorState.root).toEqual<SerializedRootNode>({
             children: [
@@ -87,7 +87,7 @@ describe('editorStateFromPromptString', () => {
                             version: 1,
                             contextItem: {
                                 type: 'file',
-                                uri: 'file:///foo.go',
+                                uri: testFileUri('foo.go').toString(),
                                 content: undefined,
                                 source: ContextItemSource.User,
                                 range: {
@@ -118,7 +118,7 @@ describe('editorStateFromPromptString', () => {
                             version: 1,
                             contextItem: {
                                 type: 'file',
-                                uri: 'file:///bar.go',
+                                uri: testFileUri('bar.go').toString(),
                                 content: undefined,
                                 range: undefined,
                                 source: ContextItemSource.Editor,
@@ -156,7 +156,7 @@ describe('editorStateFromPromptString', () => {
 
     test('parse templates', () => {
         const input = ps`Generate tests for @${PromptString.fromDisplayPath(
-            URI.file('foo.go')
+            testFileUri('foo.go')
         )} using {{mention framework}} framework to generate the unit tests`
         const editorState = editorStateFromPromptString(input, {
             parseTemplates: true,
@@ -227,7 +227,7 @@ describe('editorStateToText', () => {
                                     version: 1,
                                     contextItem: {
                                         type: 'file',
-                                        uri: 'file:///foo/bar/baz.go',
+                                        uri: testFileUri('foo/bar/baz.go').toString(),
                                         content: undefined,
                                         source: ContextItemSource.User,
                                         range: {
@@ -287,7 +287,7 @@ describe('editorStateToText', () => {
                                     version: 1,
                                     contextItem: {
                                         type: 'file',
-                                        uri: 'file:///foo/bar/file1.go',
+                                        uri: testFileUri('foo/bar/file1.go').toString(),
                                         content: undefined,
                                         source: ContextItemSource.User,
                                         range: {
@@ -312,7 +312,7 @@ describe('editorStateToText', () => {
                                     version: 1,
                                     contextItem: {
                                         type: 'file',
-                                        uri: 'file:///foo/bar/file2.go',
+                                        uri: testFileUri('foo/bar/file2.go').toString(),
                                         content: undefined,
                                         source: ContextItemSource.User,
                                         range: {
