@@ -38,8 +38,7 @@ describe('FireworksWebsocketAdapter', () => {
     const messageFn = vi.fn()
 
     beforeAll(() => {
-        server.addListener('connection', (client, request) => {
-            console.log('new connection from client')
+        server.addListener('connection', client => {
             client.addEventListener('message', event => {
                 const request = JSON.parse(event.data as string)
                 const response = messageFn(request)

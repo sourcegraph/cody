@@ -133,7 +133,7 @@ export enum FeatureFlag {
     ChatTitleAutoGeneration = 'chat-title-auto-generation',
 
     /**
-     * Use websocket to connect to fireworks provider for auto-edit. The websocket address
+     * Use websocket to connect to LLM providers (only fireworks provider for auto-edit currently). The websocket address
      * is configured with the following setting.
      * "cody.experimental.autoedit.config.override": {
      *   "provider": "fireworks-websocket"
@@ -143,7 +143,7 @@ export enum FeatureFlag {
      * Both the WebSocket connection and HTTP (from proxy) use long-lived connection to reduce cross-request
      * latency.
      */
-    CodyAutoEditUseWebSocketForFireworksConnections = 'auto-edit-use-web-socket-for-fireworks-connections',
+    CodyAutoEditUseWebSocketForFireworksConnections = 'auto-edit-use-web-socket-for-connections',
 
     // Extend context window for Cody Clients
     LongContextWindow = 'long-context-window',

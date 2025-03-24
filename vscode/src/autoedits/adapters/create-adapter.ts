@@ -15,10 +15,12 @@ export function createAutoeditsModelAdapter({
     providerName,
     isChatModel,
     chatClient,
+    allowUsingWebSocket,
 }: {
     providerName: AutoEditsModelConfig['provider']
     isChatModel: boolean
     chatClient: ChatClient
+    allowUsingWebSocket?: boolean
 }): AutoeditsModelAdapter {
     switch (providerName) {
         case 'inceptionlabs':
@@ -28,14 +30,10 @@ export function createAutoeditsModelAdapter({
         case 'fireworks':
             return new FireworksAdapter()
         case 'fireworks-websocket':
-            // if (
-            //     featureFlagProvider.evaluatedFeatureFlag(
-            //         FeatureFlag.CodyAutoEditUseWebSocketForFireworksConnections
-            //     )
-            // ) {
-            return new FireworksWebSocketAdapter()
-        // }
-        // throw new Error('user is not opted into fireworks-websocket feature')
+            if (allowUsingWebSocket) {
+                return new FireworksWebSocketAdapter()
+            }
+            throw new Error('user is not opted into fireworks-websocket feature')
         case 'cody-gateway':
             return new CodyGatewayAdapter()
         case 'sourcegraph':

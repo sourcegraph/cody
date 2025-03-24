@@ -8,7 +8,7 @@ import { FireworksAdapter } from './fireworks'
 
 const LOG_FILTER_LABEL = 'fireworks-websocket'
 
-// Auto-edit adaptor for fireworking using websocket connection instead of HTTP
+// Auto-edit adaptor for Fireworks using websocket connection instead of HTTP
 export class FireworksWebSocketAdapter extends FireworksAdapter implements vscode.Disposable {
     private readonly webSocketEndpoint: string
     private ws: WebSocket | undefined

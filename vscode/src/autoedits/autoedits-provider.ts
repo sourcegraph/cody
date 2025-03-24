@@ -104,7 +104,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
         chatClient: ChatClient,
         fixupController: FixupController,
         statusBar: CodyStatusBar,
-        options: { shouldRenderInline: boolean }
+        options: { shouldRenderInline: boolean; allowUsingWebSocket?: boolean }
     ) {
         this.capabilities = this.getClientCapabilities()
 
@@ -118,6 +118,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
             providerName: autoeditsProviderConfig.provider,
             isChatModel: autoeditsProviderConfig.isChatModel,
             chatClient: chatClient,
+            allowUsingWebSocket: options.allowUsingWebSocket,
         })
 
         this.rendererManager = options.shouldRenderInline
