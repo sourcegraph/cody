@@ -268,7 +268,7 @@ function createCopyButton(
     return (
         <button type="button" className={styles.button} onClick={onClick}>
             <div className={styles.iconContainer}>{icon}</div>
-            <span className="tw-hidden xs_tw-block">{label}</span>
+            <span className="tw-hidden xs:tw-block">{label}</span>
         </button>
     )
 }
