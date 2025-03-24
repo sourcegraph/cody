@@ -42,14 +42,16 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
 
     const dispatchClientAction = useClientActionDispatcher()
 
+    const clientConfigAttribution = clientConfig?.attribution ?? 'none'
     const guardrails = useMemo(() => {
-        return createGuardrailsImpl(clientConfig?.attribution ?? 'none', (snippet: string) => {
+        console.log('XXX DEBUG guardrails, creating client for mode', clientConfigAttribution)
+        return createGuardrailsImpl(clientConfigAttribution, (snippet: string) => {
             vscodeAPI.postMessage({
                 command: 'attribution-search',
                 snippet,
             })
         })
-    }, [vscodeAPI])
+    }, [vscodeAPI, clientConfigAttribution])
 
     useSuppressKeys()
 
