@@ -8,6 +8,7 @@ import { FireworksAdapter } from './fireworks'
 
 const LOG_FILTER_LABEL = 'fireworks-websocket'
 const SOCKET_SEND_TIME_OUT_MS = 2000
+const SOCKET_RECONNECT_DELAY_MS = 5000
 
 // Auto-edit adaptor for Fireworks using websocket connection instead of HTTP
 export class FireworksWebSocketAdapter extends FireworksAdapter implements vscode.Disposable {
@@ -124,21 +125,29 @@ export class FireworksWebSocketAdapter extends FireworksAdapter implements vscod
         })
     }
 
+    private reconnect() {
+        (async () => {
+            await this.connect()
+        })()
+    }
+
     private async connect(): Promise<WebSocket> {
         return new Promise((resolve, reject) => {
             if (this.ws && this.ws.readyState === WebSocket.OPEN) {
                 resolve(this.ws)
                 return
             }
-            this.ws = new WebSocket(this.webSocketEndpoint)
-            this.ws.addEventListener('open', () => {
+
+            const ws = new WebSocket(this.webSocketEndpoint)
+            ws.addEventListener('open', () => {
                 autoeditsOutputChannelLogger.logDebug(
                     LOG_FILTER_LABEL,
                     `successfully connected to ${this.webSocketEndpoint}`
                 )
+                this.ws = ws
                 resolve(this.ws!)
             })
-            this.ws.addEventListener('error', (event: ErrorEvent) => {
+            ws.addEventListener('error', (event: ErrorEvent) => {
                 autoeditsOutputChannelLogger.logError(
                     LOG_FILTER_LABEL,
                     `error from ${this.webSocketEndpoint}: ${event.message}`
@@ -149,7 +158,7 @@ export class FireworksWebSocketAdapter extends FireworksAdapter implements vscod
                 }
                 reject(event)
             })
-            this.ws.addEventListener('close', (event: CloseEvent) => {
+            ws.addEventListener('close', (event: CloseEvent) => {
                 autoeditsOutputChannelLogger.logDebug(
                     LOG_FILTER_LABEL,
                     `${this.webSocketEndpoint} connection closed with code ${event.code}`
@@ -158,8 +167,9 @@ export class FireworksWebSocketAdapter extends FireworksAdapter implements vscod
                     console.error(`${this.webSocketEndpoint} connection closed`)
                     console.error(event)
                 }
+                setTimeout(this.reconnect, SOCKET_RECONNECT_DELAY_MS)
             })
-            this.ws.addEventListener('message', (event: MessageEvent) => {
+            ws.addEventListener('message', (event: MessageEvent) => {
                 const webSocketResponse = JSON.parse(event.data as string)
                 const messageId = webSocketResponse['x-message-id']
                 if (messageId in this.callbackQueue) {
