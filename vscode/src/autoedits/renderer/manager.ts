@@ -38,6 +38,7 @@ import {
     AutoEditsRenderOutput,
     type GetRenderOutputArgs,
 } from './render-output'
+import { tabJumpDecorator } from '../tab-jump-decorator'
 
 export interface TryMakeInlineCompletionsArgs {
     requestId: AutoeditRequestID
@@ -378,6 +379,9 @@ export class AutoEditsDefaultRendererManager
         await editor.edit(editBuilder => {
             editBuilder.replace(activeRequest.codeToReplaceData.range, activeRequest.prediction)
         })
+        // Todo: Change the position to the next edit line
+        const currentCursorLine = editor.selection.active.line
+        tabJumpDecorator.showTabJumpHint(editor, currentCursorLine)
     }
 
     protected async rejectActiveEdit(rejectReason: AutoeditRejectReasonMetadata): Promise<void> {
