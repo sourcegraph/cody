@@ -1,4 +1,4 @@
-import type { WebviewToExtensionAPI } from '@sourcegraph/cody-shared'
+import { CodyIDE, type WebviewToExtensionAPI } from '@sourcegraph/cody-shared'
 import { render, screen } from '@testing-library/react'
 import { Observable } from 'observable-fns'
 import { describe, expect, test, vi } from 'vitest'
@@ -45,6 +45,7 @@ describe('HistoryTabWithData', () => {
                 vscodeAPI={dummyVSCodeAPI}
                 handleStartNewChat={handleStartNewChat}
                 chats={emptyChats}
+                IDE={CodyIDE.VSCode}
             />,
             {
                 wrapper: AppWrapperForTest,
