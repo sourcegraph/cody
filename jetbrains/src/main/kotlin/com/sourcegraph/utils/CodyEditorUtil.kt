@@ -188,7 +188,10 @@ object CodyEditorUtil {
     } else {
       // Check `ProtocolTextDocumentExt.normalizeToVscUriFormat` for explanation
       val patchedUri = uriString.replace("file://wsl.localhost/", "file:////wsl.localhost/")
-      return VirtualFileManager.getInstance().findFileByUrl(patchedUri)
+      // Unfortunately we cannot use `findFileByUrl` directly and need to do uri -> path conversion
+      // because `findFileByUrl` cannot decode paths with special characters (e.g. file:///c%3a/...)
+      val uri = VfsUtil.toUri(patchedUri) ?: return null
+      return VirtualFileManager.getInstance().refreshAndFindFileByNioPath(uri.toPath())
     }
   }
 
