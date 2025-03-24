@@ -3,7 +3,7 @@
 import type { CodyIDE, UserLocalHistory, WebviewToExtensionAPI } from '@sourcegraph/cody-shared'
 import { DownloadIcon, HistoryIcon, MessageSquarePlusIcon, Trash2Icon, TrashIcon } from 'lucide-react'
 import type React from 'react'
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { WebviewType } from '../../src/chat/protocol'
 import { LoadingDots } from '../chat/components/LoadingDots'
 import { downloadChatHistory } from '../chat/downloadChatHistory'
@@ -71,8 +71,35 @@ export const HistoryTabWithData: React.FC<{
     extensionAPI: WebviewToExtensionAPI
 }> = ({ chats, handleStartNewChat, vscodeAPI, extensionAPI }) => {
     const [isDeleteAllActive, setIsDeleteAllActive] = useState<boolean>(false)
-
     const [deletingChatIds, setDeletingChatIds] = useState<Set<string>>(new Set())
+
+    //add history search
+    const [searchText, setSearchText] = useState('')
+    const [visibleItems, setVisibleItems] = useState(HISTORY_ITEMS_PER_PAGE)
+    const [isLoading, setIsLoading] = useState(false)
+    const observerRef = useRef<IntersectionObserver | null>(null)
+    const loadingRef = useRef<HTMLDivElement>(null)
+
+    const filteredChats = useMemo(() => {
+        const filtered = chats?.filter(c => c.interactions.some(i => !!i.humanMessage?.text?.trim()))
+        const searchTerm = searchText.trim().toLowerCase()
+
+        // First filter by search term if provided
+        let searchFiltered = filtered
+        if (searchTerm) {
+            searchFiltered = filtered.filter(chat =>
+                chat.interactions.some(c =>
+                    c.humanMessage?.text?.trim()?.toLowerCase()?.includes(searchTerm)
+                )
+            )
+        }
+
+        // Then filter out any items that are being deleted for a smoother UX
+        return searchFiltered.filter(chat => !deletingChatIds.has(chat.lastInteractionTimestamp))
+    }, [chats, searchText, deletingChatIds])
+
+    const hasMoreItems = visibleItems < filteredChats.length
+    const displayedChats = filteredChats.slice(0, visibleItems)
 
     const onDeleteButtonClick = useCallback(
         (e: React.MouseEvent | React.KeyboardEvent, id: string) => {
@@ -93,48 +120,89 @@ export const HistoryTabWithData: React.FC<{
                 arg: id,
             })
 
-            // Optimistically remove chat from the local state after a short delay
-            // This improves perceived performance while the actual deletion happens
-            setTimeout(() => {
-                setDeletingChatIds(prev => {
-                    const newSet = new Set(prev)
-                    newSet.delete(id)
-                    return newSet
-                })
-            }, 1000)
+            // For "delete all" we want to clear the state immediately
+            if (id === 'clear-all-no-confirm') {
+                // Clear visible items to prevent empty slots
+                setVisibleItems(prev => Math.min(prev, filteredChats.length - deletingChatIds.size))
+            }
         },
-        [vscodeAPI]
+        [vscodeAPI, filteredChats.length, deletingChatIds]
     )
 
     const onExportClick = useCallback(() => downloadChatHistory(extensionAPI), [extensionAPI])
 
-    //add history search
-    const [searchText, setSearchText] = useState('')
-    const [currentPage, setCurrentPage] = useState(1)
+    // Reset visible items when search changes
+    useEffect(() => {
+        setVisibleItems(HISTORY_ITEMS_PER_PAGE)
+    }, [])
 
-    const filteredChats = useMemo(() => {
-        const filtered = chats?.filter(c => c.interactions.some(i => !!i.humanMessage?.text?.trim()))
-        const searchTerm = searchText.trim().toLowerCase()
-
-        // First filter by search term if provided
-        let searchFiltered = filtered
-        if (searchTerm) {
-            searchFiltered = filtered.filter(chat =>
-                chat.interactions.some(c =>
-                    c.humanMessage?.text?.trim()?.toLowerCase()?.includes(searchTerm)
-                )
-            )
+    // Listen for deletion confirmations from the extension
+    useEffect(() => {
+        const handleMessage = (event: MessageEvent) => {
+            const message = event.data
+            if (message.type === 'deletionComplete' && message.chatID) {
+                // Remove from deletingChatIds once we get confirmation
+                setDeletingChatIds(prev => {
+                    const newSet = new Set(prev)
+                    newSet.delete(message.chatID)
+                    return newSet
+                })
+            }
         }
 
-        // Then filter out any items that are being deleted for a smoother UX
-        return searchFiltered.filter(chat => !deletingChatIds.has(chat.lastInteractionTimestamp))
-    }, [chats, searchText, deletingChatIds])
+        window.addEventListener('message', handleMessage)
+        return () => window.removeEventListener('message', handleMessage)
+    }, [])
 
-    const totalPages = Math.ceil(filteredChats.length / HISTORY_ITEMS_PER_PAGE)
-    const paginatedChats = filteredChats.slice(
-        (currentPage - 1) * HISTORY_ITEMS_PER_PAGE,
-        currentPage * HISTORY_ITEMS_PER_PAGE
-    )
+    // Update visible items when items are deleted to prevent gaps
+    useEffect(() => {
+        if (deletingChatIds.size > 0) {
+            // Adjust visible items to prevent empty spaces
+            setVisibleItems(prev => {
+                const newVisibleItems = Math.min(
+                    prev,
+                    filteredChats.length + Math.min(HISTORY_ITEMS_PER_PAGE, deletingChatIds.size)
+                )
+                return Math.max(HISTORY_ITEMS_PER_PAGE, newVisibleItems)
+            })
+        }
+    }, [deletingChatIds.size, filteredChats.length])
+
+    useEffect(() => {
+        const loadMoreItems = () => {
+            if (hasMoreItems && !isLoading) {
+                setIsLoading(true)
+                // Simulate loading delay for better UX
+                setTimeout(() => {
+                    setVisibleItems(prev =>
+                        Math.min(prev + HISTORY_ITEMS_PER_PAGE, filteredChats.length)
+                    )
+                    setIsLoading(false)
+                }, 300)
+            }
+        }
+
+        // Create intersection observer
+        observerRef.current = new IntersectionObserver(
+            entries => {
+                if (entries[0].isIntersecting) {
+                    loadMoreItems()
+                }
+            },
+            { threshold: 0.1 }
+        )
+
+        // Observe the loading element
+        if (loadingRef.current && hasMoreItems) {
+            observerRef.current.observe(loadingRef.current)
+        }
+
+        return () => {
+            if (observerRef.current) {
+                observerRef.current.disconnect()
+            }
+        }
+    }, [hasMoreItems, filteredChats.length, isLoading])
 
     if (!filteredChats.length && !searchText) {
         return (
@@ -243,7 +311,7 @@ export const HistoryTabWithData: React.FC<{
                 />
             </CommandList>
             <CommandList className="tw-flex-1 tw-overflow-y-auto tw-m-2">
-                {paginatedChats.map(chat => {
+                {displayedChats.map((chat: UserLocalHistory['chat'][string]) => {
                     const id = chat.lastInteractionTimestamp
                     const interactions = chat.interactions
                     const chatTitle = chat.chatTitle
@@ -275,34 +343,16 @@ export const HistoryTabWithData: React.FC<{
                         </CommandItem>
                     )
                 })}
+                {hasMoreItems && (
+                    <div ref={loadingRef} className="tw-flex tw-justify-center tw-items-center tw-py-4">
+                        {isLoading ? (
+                            <LoadingDots />
+                        ) : (
+                            <span className="tw-text-sm tw-text-muted-foreground">Scroll for more</span>
+                        )}
+                    </div>
+                )}
             </CommandList>
-            <footer className="tw-my-4 tw-border-muted-foreground tw-inline-flex tw-items-center tw-w-full tw-justify-center tw-gap-4">
-                <Button
-                    variant={'ghost'}
-                    title="Previous page"
-                    aria-label="Previous page"
-                    onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                    onKeyDown={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                    disabled={currentPage === 1}
-                    className={currentPage === 1 ? 'tw-opacity-75' : undefined}
-                >
-                    Prev
-                </Button>
-                <span className="tw-font-semibold tw-text-muted-foreground">{currentPage}</span>
-                <span className="tw-text-xs">of</span>
-                <span className="tw-font-semibold tw-text-muted-foreground">{totalPages}</span>
-                <Button
-                    variant="ghost"
-                    title="Next"
-                    aria-label="Next"
-                    onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-                    onKeyDown={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-                    disabled={currentPage === totalPages}
-                    className={currentPage === totalPages ? 'tw-opacity-75' : undefined}
-                >
-                    Next
-                </Button>
-            </footer>
         </Command>
     )
 }
