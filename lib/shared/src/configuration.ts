@@ -69,7 +69,8 @@ export interface AutoEditsModelConfig {
      */
     isChatModel: boolean
     /**
-     * WebSocket endpoint to connect to if using websocket instead of HTTP/HTTPS
+     * WebSocket endpoint to connect to if using websocket instead of HTTP/HTTPS. This will be subsumed into `url` parameter eventually once
+     * WebSocket proxy is no longer necessary.
      */
     webSocketEndpoint?: string
 }
