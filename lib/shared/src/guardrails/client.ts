@@ -21,7 +21,7 @@ export interface GuardrailsClientConfig {
 export class SourcegraphGuardrailsClient {
     public async searchAttribution(snippet: string): Promise<Attribution | Error> {
         if (![GuardrailsMode.Permissive, GuardrailsMode.Enforced].includes(await this.getMode())) {
-            return new Error('Attempted attribution search when attribution is not configured.')
+            return new Error('Attribution search is turned off.')
         }
 
         const timeout =
