@@ -418,3 +418,14 @@ export const createSegmentKey = (segment: {
 export const createPhaseKey = (phase: { name: string; time?: number }): string => {
     return `${phase.name}-${phase.time || 'undefined'}`
 }
+
+export const calculateCacheHitRate = (state: Record<string, any>): string => {
+    const cachedTokens = state.modelResponse?.responseHeaders?.['fireworks-cached-prompt-tokens']
+    const totalTokens = state.modelResponse?.responseHeaders?.['fireworks-prompt-tokens']
+
+    if (!cachedTokens || !totalTokens) {
+        return 'n/a'
+    }
+
+    return `${((Number(cachedTokens) / Number(totalTokens)) * 100).toFixed(1)}%`
+}

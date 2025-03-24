@@ -5,6 +5,7 @@ import type { AutoeditRequestDebugState } from '../../../src/autoedits/debug-pan
 
 import { getNetworkLatencyInfo } from '../autoedit-data-sdk'
 import {
+    calculateCacheHitRate,
     calculateTimelineWidths,
     calculateTotalDuration,
     createPhaseKey,
@@ -206,6 +207,37 @@ export const TimelineSection: FC<TimelineSectionProps> = ({ entry }) => {
                     </div>
                 </div>
             )}
+
+            {/* Model Stats Section */}
+            <div className="tw-space-y-4">
+                <h3 className="tw-text-base tw-font-medium">Session Stats</h3>
+                <div className="tw-border tw-border-gray-200 tw-dark:tw-border-gray-700 tw-rounded-lg tw-overflow-hidden">
+                    <div className="tw-grid tw-grid-cols-[2rem_minmax(120px,auto)_minmax(140px,auto)_minmax(140px,auto)] tw-gap-3 tw-p-2 tw-bg-gray-100 tw-dark:tw-bg-gray-800 tw-font-medium tw-text-xs tw-text-gray-700 tw-dark:tw-text-gray-300 tw-border-b tw-border-gray-200 tw-dark:tw-border-gray-700">
+                        <div />
+                        <div>Metric</div>
+                        <div>Value</div>
+                        <div />
+                    </div>
+                    <div className="tw-grid tw-grid-cols-[2rem_minmax(120px,auto)_minmax(140px,auto)_minmax(140px,auto)] tw-gap-3 tw-p-2 tw-items-center tw-bg-gray-50 tw-dark:tw-bg-gray-800/50">
+                        <div className="tw-flex tw-justify-center">
+                            <div className="tw-bg-gray-500 tw-w-4 tw-h-4 tw-rounded-md tw-flex-shrink-0" />
+                        </div>
+                        <div className="tw-font-medium tw-text-sm">Prompt Cache Hit Rate</div>
+                        <div className="tw-text-xs tw-text-gray-600 tw-dark:tw-text-gray-400">
+                            <span className="tw-font-medium">
+                                <div className="tw-flex tw-flex-col">
+                                    <span>Current: {calculateCacheHitRate(entry.state)}</span>
+                                    <span>
+                                        Average: {entry.sessionStats.promptCacheHitRate.toFixed(1)}% (
+                                        {entry.sessionStats.promptCacheReqCount} requests)
+                                    </span>
+                                </div>
+                            </span>
+                        </div>
+                        <div />
+                    </div>
+                </div>
+            </div>
         </div>
     )
 }
