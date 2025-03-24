@@ -384,7 +384,7 @@ export interface RepositoryIdsResponse {
     }
 }
 
-interface SearchAttributionResponse {
+export interface SearchAttributionResponse {
     snippetAttribution: {
         limitHit: boolean
         nodes: { repositoryName: string }[]

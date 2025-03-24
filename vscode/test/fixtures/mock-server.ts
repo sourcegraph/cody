@@ -41,6 +41,26 @@ const responses = {
         "",
         "Hope this helps!",
     ].join("\n"),
+    chatWithLongSnippet: [
+        "Hello! Here is a long code snippet:",
+        "",
+        "```",
+        "def fib(n):",
+        "  if n < 0:",
+        "    return n",
+        "  else:",
+        "    return fib(n-1) + fib(n-2)",
+        "",
+        "# Prints the 17th Fibonacci number",
+        "def main():",
+        "  print(fib(17))",
+        "",
+        "if __name__ == '__main__':",
+        "  main()",
+        "```",
+        "",
+        "Hope this helps!",
+    ].join("\n"),
     fixup: "<CODE5711>interface Fruit {\n    bananaName: string\n    bananaAge: number\n}</CODE5711>",
     code: {
         template: { completion: "", stopReason: "stop_sequence" },
@@ -282,6 +302,9 @@ export class MockServer {
                     break;
                 case lastHumanMessageText.includes("show me a code snippet"):
                     response = responses.chatWithSnippet;
+                    break;
+                case lastHumanMessageText.includes("show me a long code snippet"):
+                    response = responses.chatWithLongSnippet;
                     break;
                 case lastHumanMessageText.endsWith("delay"):
                     handleDelayedResponse(res);
@@ -556,7 +579,8 @@ export class MockServer {
                                             chat: true,
                                             autoComplete: true,
                                             commands: true,
-                                            attribution,
+                                            // This is the *legacy* cody config features response, which just uses a boolean for attribution
+                                            attribution: attribution !== 'none',
                                         },
                                     },
                                 },
