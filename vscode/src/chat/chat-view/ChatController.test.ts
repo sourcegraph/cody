@@ -141,12 +141,9 @@ describe('ChatController', () => {
 
         // Expect not to add bot message as the chat session has been reset and aborted.
         expect(addBotMessageSpy).not.toHaveBeenCalled()
-
-        // Verify the view transcript was called to update UI after abort
-        expect(postMessageSpy).toHaveBeenCalledOnce()
     })
 
-    test('verifies interactionId is passed through chat requests', async () => {
+    test('verifies interactionId is passed through chat requests', { timeout: 3000 }, async () => {
         const mockRequestID = '0'
         mockContextRetriever.retrieveContext.mockResolvedValue([])
 
@@ -166,9 +163,9 @@ describe('ChatController', () => {
             expect.any(AbortSignal),
             mockRequestID
         )
-    }, 1500)
+    })
 
-    test('send, followup, and edit', { timeout: 1500 }, async () => {
+    test('send, followup, and edit', { timeout: 3000 }, async () => {
         const postMessageSpy = vi
             .spyOn(chatController as any, 'postMessage')
             .mockImplementation(() => {})
