@@ -45,10 +45,13 @@ export interface CodyClientConfig {
     // Whether the site admin allows the user to make use of the **custom** Cody commands feature.
     customCommandsEnabled: boolean
 
-    // Deprecated. Pre 6.2, if true, then 'permissive' attribution; if false, 'none' attribution.
+    /**
+     * Pre 6.2, if true, then 'permissive' attribution; if false, 'none' attribution.
+     * @deprecated Use `attribution` instead.
+     */
     attributionEnabled: boolean
 
-    // 6.2 and later, whether Cody should hide generated code until attribution is complete.
+    // Whether Cody should hide generated code until attribution is complete. Since 6.2.
     attribution: 'none' | 'permissive' | 'enforced'
 
     // Whether the 'smart context window' feature should be enabled, and whether the Sourcegraph
