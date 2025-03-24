@@ -30,7 +30,9 @@ import type { AutoEditRenderOutput } from '../renderer/render-output'
 import { autoeditIdRegistry } from './suggestion-id-registry'
 import {
     type AcceptedState,
+    type AutoeditAcceptReasonMetadata,
     type AutoeditDiscardReasonMetadata,
+    type AutoeditRejectReasonMetadata,
     type AutoeditRequestID,
     type ContextLoadedState,
     type DiscardedState,
@@ -247,7 +249,13 @@ export class AutoeditAnalyticsLogger {
         }))
     }
 
-    public markAsAccepted(requestId: AutoeditRequestID): void {
+    public markAsAccepted({
+        requestId,
+        acceptReason,
+    }: {
+        requestId: AutoeditRequestID
+        acceptReason: AutoeditAcceptReasonMetadata
+    }): void {
         const acceptedAt = getTimeNowInMillis()
 
         const result = this.tryTransitionTo(requestId, 'accepted', request => {
@@ -282,6 +290,7 @@ export class AutoeditAnalyticsLogger {
                     isRead: true,
                     timeFromSuggestedAt: acceptedAt - request.suggestedAt,
                     suggestionsStartedSinceLastSuggestion: this.autoeditsStartedSinceLastSuggestion,
+                    acceptReason,
                 },
             }
         })
@@ -292,7 +301,13 @@ export class AutoeditAnalyticsLogger {
         }
     }
 
-    public markAsRejected(requestId: AutoeditRequestID): void {
+    public markAsRejected({
+        requestId,
+        rejectReason,
+    }: {
+        requestId: AutoeditRequestID
+        rejectReason: AutoeditRejectReasonMetadata
+    }): void {
         const rejectedAt = getTimeNowInMillis()
 
         const result = this.tryTransitionTo(requestId, 'rejected', request => ({
@@ -304,6 +319,7 @@ export class AutoeditAnalyticsLogger {
                 isRead: 'readAt' in request,
                 timeFromSuggestedAt: rejectedAt - request.suggestedAt,
                 suggestionsStartedSinceLastSuggestion: this.autoeditsStartedSinceLastSuggestion,
+                rejectReason,
             },
         }))
 

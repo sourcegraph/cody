@@ -15,6 +15,7 @@ import type {
     ContextItemRepository,
     ContextItemSource,
     ContextItemSymbol,
+    ContextItemToolState,
     ContextItemTree,
 } from '../codebase-context/messages'
 import {
@@ -51,6 +52,7 @@ export type SerializedContextItem = {
     | Omit<ContextItemCurrentDirectory, 'uri' | 'content' | 'source'>
     | Omit<ContextItemCurrentOpenTabs, 'uri' | 'content' | 'source'>
     | Omit<ContextItemMedia, 'uri' | 'content' | 'source'>
+    | Omit<ContextItemToolState, 'uri' | 'content' | 'source'>
 )
 
 export type SerializedTemplateInput = {

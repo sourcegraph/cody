@@ -17,7 +17,8 @@ sealed class MessagePart {
           "context_file" -> context.deserialize<ContextFileMessagePart>(element, ContextFileMessagePart::class.java)
           "context_repo" -> context.deserialize<ContextRepoMessagePart>(element, ContextRepoMessagePart::class.java)
           "image_url" -> context.deserialize<ImageUrlMessagePart>(element, ImageUrlMessagePart::class.java)
-          "function" -> context.deserialize<ToolContentPart>(element, ToolContentPart::class.java)
+          "tool_call" -> context.deserialize<ToolCallContentPart>(element, ToolCallContentPart::class.java)
+          "tool_result" -> context.deserialize<ToolResultContentPart>(element, ToolResultContentPart::class.java)
           else -> throw Exception("Unknown discriminator ${element}")
         }
       }
@@ -65,16 +66,23 @@ data class ImageUrlMessagePart(
   }
 }
 
-data class ToolContentPart(
-  val type: TypeEnum, // Oneof: function
-  val id: String? = null,
-  val function: FunctionParams,
-  val result: String? = null,
-  val status: String,
+data class ToolCallContentPart(
+  val type: TypeEnum, // Oneof: tool_call
+  val tool_call: Tool_callParams,
 ) : MessagePart() {
 
   enum class TypeEnum {
-    @SerializedName("function") Function,
+    @SerializedName("tool_call") ToolCall,
+  }
+}
+
+data class ToolResultContentPart(
+  val type: TypeEnum, // Oneof: tool_result
+  val tool_result: Tool_resultParams,
+) : MessagePart() {
+
+  enum class TypeEnum {
+    @SerializedName("tool_result") ToolResult,
   }
 }
 

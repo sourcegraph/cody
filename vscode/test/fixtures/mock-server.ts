@@ -511,10 +511,10 @@ export class MockServer {
                         res.send(JSON.stringify({ data: { site: { isCodyEnabled: true } } }))
                         break
                     case 'FeatureFlags':
-                        res.send(JSON.stringify({ data: { evaluatedFeatureFlags: [{ name: 'git-mention-provider', value: true}]} }))
+                        res.send(JSON.stringify({ data: { evaluateFeatureFlags: [{ name: 'git-mention-provider', value: true}]} }))
                         break
                     case 'EvaluateFeatureFlag':
-                        res.send(JSON.stringify({ data: { evaluatedFeatureFlag: true } }))
+                        res.send(JSON.stringify({ data: { evaluateFeatureFlag: true } }))
                         break
                     case 'CurrentSiteCodyLlmProvider': {
                         res.send(

@@ -139,16 +139,18 @@ export function params(
             }
 
             if (responses === 'never-resolve') {
-                return new Promise(() => {})
+                yield new Promise<CompletionResponseWithMetaData>(() => {})
+                return
             }
 
             const response = responses[requestCounter++]
 
             if (response && 'completionResponse' in response) {
-                return response
+                yield response
+                return
             }
 
-            return {
+            yield {
                 completionResponse: (response as CompletionResponse) || {
                     completion: '',
                     stopReason: 'unknown',
@@ -414,7 +416,7 @@ export function initCompletionProviderConfig({
 }: Partial<Pick<ParamsResult, 'configuration' | 'authStatus'>>): void {
     setEditorWindowIsFocused(() => true)
     vi.spyOn(featureFlagProvider, 'evaluateFeatureFlagEphemerally').mockResolvedValue(false)
-    vi.spyOn(featureFlagProvider, 'evaluatedFeatureFlag').mockReturnValue(Observable.of(false))
+    vi.spyOn(featureFlagProvider, 'evaluateFeatureFlag').mockReturnValue(Observable.of(false))
     vi.spyOn(ClientConfigSingleton.getInstance(), 'getConfig').mockResolvedValue({
         autoCompleteEnabled: true,
         modelsAPIEnabled: false,

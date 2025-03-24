@@ -38,6 +38,10 @@ export type CompletionResponseWithMetaData = {
     completionResponse?: CompletionResponse
     metadata?: {
         /**
+         * Whether the request was aborted before we got any response.
+         */
+        isAborted?: boolean
+        /**
          * Yield response from HTTP clients to a logic shared across providers to
          * extract metadata required for analytics in one place.
          */
@@ -57,10 +61,7 @@ export type CompletionResponseWithMetaData = {
     }
 }
 
-export type CompletionResponseGenerator = AsyncGenerator<
-    CompletionResponseWithMetaData,
-    CompletionResponseWithMetaData
->
+export type CompletionResponseGenerator = AsyncGenerator<CompletionResponseWithMetaData, void>
 
 export interface CodeCompletionProviderOptions {
     /**

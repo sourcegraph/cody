@@ -118,6 +118,29 @@ export const autoeditDiscardReason = {
 export type AutoeditDiscardReasonMetadata =
     (typeof autoeditDiscardReason)[keyof typeof autoeditDiscardReason]
 
+export const autoeditRejectReason = {
+    dismissCommand: 1,
+    onDidChangeTextDocument: 2,
+    onDidChangeActiveTextEditor: 3,
+    onDidCloseTextDocument: 4,
+    onDidChangeTextEditorSelection: 5,
+    handleDidShowSuggestion: 6,
+    acceptActiveEdit: 7,
+    disposal: 8,
+} as const
+
+export type AutoeditRejectReasonMetadata =
+    (typeof autoeditRejectReason)[keyof typeof autoeditRejectReason]
+
+export const autoeditAcceptReason = {
+    acceptCommand: 1,
+    onDidChangeTextDocument: 2,
+    unknown: 3,
+} as const
+
+export type AutoeditAcceptReasonMetadata =
+    (typeof autoeditAcceptReason)[keyof typeof autoeditAcceptReason]
+
 /**
  * A stable ID that identifies a particular autoedit suggestion. If the same text
  * and context recurs, we reuse this ID to avoid double-counting.
@@ -296,7 +319,11 @@ export interface AcceptedState extends Omit<SuggestedState, 'phase' | 'payload'>
     suggestionLoggedAt?: number
     /** Optional because it might be accepted before the read timeout */
     readAt?: number
-    payload: FinalPayload & Omit<CodeGenEventMetadata, 'charsInserted' | 'charsDeleted'>
+    payload: FinalPayload &
+        Omit<CodeGenEventMetadata, 'charsInserted' | 'charsDeleted'> & {
+            /** Reason why the suggestion was accepted. */
+            acceptReason: AutoeditAcceptReasonMetadata
+        }
 }
 
 export interface RejectedState extends Omit<SuggestedState, 'phase' | 'payload'> {
@@ -307,7 +334,10 @@ export interface RejectedState extends Omit<SuggestedState, 'phase' | 'payload'>
     suggestionLoggedAt?: number
     /** Optional because it might be accepted before the read timeout */
     readAt?: number
-    payload: FinalPayload
+    payload: FinalPayload & {
+        /** Reason why the suggestion was rejected. */
+        rejectReason: AutoeditRejectReasonMetadata
+    }
 }
 
 export interface DiscardedState extends Omit<StartedState, 'phase' | 'payload'> {
@@ -334,3 +364,13 @@ export interface PhaseStates {
 }
 
 export type AutoeditRequestState = PhaseStates[keyof PhaseStates]
+
+/**
+ * A simplified interface for testing the analytics logger from the agent.
+ * Our codegen fails when handling `AutoeditRequestState`, so this is a simplified version
+ * that gives us everything we need to test.
+ */
+export interface AutoeditRequestStateForAgentTesting {
+    phase?: Phase
+    read?: boolean
+}

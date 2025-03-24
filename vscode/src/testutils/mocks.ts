@@ -746,6 +746,9 @@ const languages: Partial<typeof vscode_types.languages> = {
     registerCodeLensProvider() {
         return { dispose: () => {} }
     },
+    onDidChangeDiagnostics() {
+        return { dispose: () => {} }
+    },
 }
 
 export enum TextDocumentChangeReason {
