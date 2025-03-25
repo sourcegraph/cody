@@ -10,30 +10,34 @@ export const SessionStatsSection: FC<{ entry: AutoeditRequestDebugState }> = ({ 
 
     // Calculate p75 e2eLatency
     const p75Latency = calculatePercentile(
-        requestMetrics.map(metric => metric.e2eLatency),
+        requestMetrics
+            .filter(metric => metric.e2eLatency !== undefined && metric.e2eLatency !== null)
+            .map(metric => metric.e2eLatency),
         75
     )
 
     // Calculate p90 e2eLatency
     const p90Latency = calculatePercentile(
-        requestMetrics.map(metric => metric.e2eLatency),
+        requestMetrics
+            .filter(metric => metric.e2eLatency !== undefined && metric.e2eLatency !== null)
+            .map(metric => metric.e2eLatency),
         90
     )
 
     // Calculate p75 inferenceLatency
     const inferenceLatencies = requestMetrics
         .map(metric => metric.inferenceLatency)
-        .filter((latency): latency is number => latency !== undefined)
+        .filter((latency): latency is number => latency !== undefined && latency !== null)
 
     const p75InferenceLatency = calculatePercentile(inferenceLatencies, 75)
 
     // Calculate p90 inferenceLatency
     const p90InferenceLatency = calculatePercentile(inferenceLatencies, 90)
 
-    // Calculate mean promptCacheHitRate (excluding undefined values)
+    // Calculate mean promptCacheHitRate (excluding undefined/null values)
     const cacheHitRates = requestMetrics
         .map(metric => metric.promptCacheHitRate)
-        .filter((rate): rate is number => rate !== undefined)
+        .filter((rate): rate is number => rate !== undefined && rate !== null)
 
     const meanCacheHitRate =
         cacheHitRates.length > 0
@@ -46,27 +50,40 @@ export const SessionStatsSection: FC<{ entry: AutoeditRequestDebugState }> = ({ 
             return null
         }
 
+        // Filter out metrics with undefined e2eLatency
+        const validMetrics = requestMetrics.filter(
+            metric => metric.e2eLatency !== undefined && metric.e2eLatency !== null
+        )
+
+        if (validMetrics.length < 2) {
+            return null
+        }
+
         // We'll use a sliding window to calculate p75 and p90 over time
-        const windowSize = Math.min(10, Math.max(2, Math.floor(requestMetrics.length / 5)))
+        const windowSize = Math.min(10, Math.max(2, Math.floor(validMetrics.length / 5)))
         const dataPoints: Array<{
             index: number
             e2eLatency: number
             inferenceLatency?: number
         }> = []
 
-        for (let i = windowSize; i <= requestMetrics.length; i++) {
-            const window = requestMetrics.slice(i - windowSize, i)
-            const e2eLatencies = window.map(m => m.e2eLatency)
+        for (let i = windowSize; i <= validMetrics.length; i++) {
+            const window = validMetrics.slice(i - windowSize, i)
+            const e2eLatencies = window
+                .map(m => m.e2eLatency)
+                .filter((l): l is number => l !== undefined && l !== null)
             const infLatencies = window
                 .map(m => m.inferenceLatency)
-                .filter((l): l is number => l !== undefined)
+                .filter((l): l is number => l !== undefined && l !== null)
 
-            dataPoints.push({
-                index: i,
-                e2eLatency: calculatePercentile(e2eLatencies, 75) || 0,
-                inferenceLatency:
-                    infLatencies.length > 0 ? calculatePercentile(infLatencies, 75) : undefined,
-            })
+            if (e2eLatencies.length > 0) {
+                dataPoints.push({
+                    index: i,
+                    e2eLatency: calculatePercentile(e2eLatencies, 75) || 0,
+                    inferenceLatency:
+                        infLatencies.length > 0 ? calculatePercentile(infLatencies, 75) : undefined,
+                })
+            }
         }
 
         return dataPoints
@@ -163,39 +180,52 @@ export const SessionStatsSection: FC<{ entry: AutoeditRequestDebugState }> = ({ 
                                 </tr>
                             </thead>
                             <tbody className="tw-bg-white tw-dark:tw-bg-gray-900 tw-divide-y tw-divide-gray-200 tw-dark:tw-divide-gray-800">
-                                {requestMetrics.slice(0, 10).map((metric, idx) => {
-                                    // Create a unique key using the request number and a property from the metric
-                                    const uniqueKey = `req-${requestMetrics.length - idx}-${
-                                        metric.e2eLatency
-                                    }`
-                                    return (
-                                        <tr
-                                            key={uniqueKey}
-                                            className={
-                                                idx % 2 === 0
-                                                    ? 'tw-bg-gray-50 tw-dark:tw-bg-gray-800/50'
-                                                    : ''
-                                            }
-                                        >
-                                            <td className="tw-px-2 tw-py-2 tw-whitespace-nowrap tw-text-sm tw-text-gray-900 tw-dark:tw-text-gray-300">
-                                                {requestMetrics.length - idx}
-                                            </td>
-                                            <td className="tw-px-2 tw-py-2 tw-whitespace-nowrap tw-text-sm tw-text-gray-900 tw-dark:tw-text-gray-300">
-                                                {metric.e2eLatency.toFixed(2)}
-                                            </td>
-                                            <td className="tw-px-2 tw-py-2 tw-whitespace-nowrap tw-text-sm tw-text-gray-900 tw-dark:tw-text-gray-300">
-                                                {metric.inferenceLatency !== undefined
-                                                    ? metric.inferenceLatency.toFixed(2)
-                                                    : 'N/A'}
-                                            </td>
-                                            <td className="tw-px-2 tw-py-2 tw-whitespace-nowrap tw-text-sm tw-text-gray-900 tw-dark:tw-text-gray-300">
-                                                {metric.promptCacheHitRate !== undefined
-                                                    ? `${metric.promptCacheHitRate.toFixed(2)}`
-                                                    : 'N/A'}
-                                            </td>
-                                        </tr>
-                                    )
-                                })}
+                                {requestMetrics
+                                    .slice(0, 10)
+                                    .map((metric, idx) => {
+                                        // Skip rendering if e2eLatency is undefined or null
+                                        if (
+                                            metric.e2eLatency === undefined ||
+                                            metric.e2eLatency === null
+                                        ) {
+                                            return null
+                                        }
+
+                                        // Create a unique key using the request number and a property from the metric
+                                        const uniqueKey = `req-${requestMetrics.length - idx}-${
+                                            metric.e2eLatency
+                                        }`
+                                        return (
+                                            <tr
+                                                key={uniqueKey}
+                                                className={
+                                                    idx % 2 === 0
+                                                        ? 'tw-bg-gray-50 tw-dark:tw-bg-gray-800/50'
+                                                        : ''
+                                                }
+                                            >
+                                                <td className="tw-px-2 tw-py-2 tw-whitespace-nowrap tw-text-sm tw-text-gray-900 tw-dark:tw-text-gray-300">
+                                                    {requestMetrics.length - idx}
+                                                </td>
+                                                <td className="tw-px-2 tw-py-2 tw-whitespace-nowrap tw-text-sm tw-text-gray-900 tw-dark:tw-text-gray-300">
+                                                    {metric.e2eLatency.toFixed(2)}
+                                                </td>
+                                                <td className="tw-px-2 tw-py-2 tw-whitespace-nowrap tw-text-sm tw-text-gray-900 tw-dark:tw-text-gray-300">
+                                                    {metric.inferenceLatency !== undefined &&
+                                                    metric.inferenceLatency !== null
+                                                        ? metric.inferenceLatency.toFixed(2)
+                                                        : 'N/A'}
+                                                </td>
+                                                <td className="tw-px-2 tw-py-2 tw-whitespace-nowrap tw-text-sm tw-text-gray-900 tw-dark:tw-text-gray-300">
+                                                    {metric.promptCacheHitRate !== undefined &&
+                                                    metric.promptCacheHitRate !== null
+                                                        ? `${metric.promptCacheHitRate.toFixed(2)}`
+                                                        : 'N/A'}
+                                                </td>
+                                            </tr>
+                                        )
+                                    })
+                                    .filter(Boolean)}
                             </tbody>
                         </table>
                         {requestMetrics.length > 10 && (
@@ -405,7 +435,7 @@ const LatencyTrendGraph: FC<{
 
 // Helper function to calculate percentiles
 function calculatePercentile(values: number[], percentile: number): number | undefined {
-    if (values.length === 0) {
+    if (!values || values.length === 0) {
         return undefined
     }
 
