@@ -1,10 +1,18 @@
 #!/bin/bash
 
-# this script will gather all the changes between 2 versions and add them to the uncategorized section of the changelog.
-# to use this script, you will need to run `vscode/scripts/changelog.sh <from-commit> <to-commit>`
-
-# you can find the commits at each release using:
-# git ls-remote https://github.com/sourcegraph/cody | grep "refs/tags/vscode-\(insiders-\)\?v1\.[0-9]\+\.[0-9]\+" | less
+###############################################################################
+# Cody JetBrains Changelog Generator
+# 
+# This script generates a formatted changelog for JetBrains plugin releases
+# by filtering git commits between two tags and organizing them by type and domain.
+# It only includes changes relevant to the JetBrains extension (jetbrains/),
+# shared libraries (lib/), agent, and shared webviews.
+#
+# Usage: ./vscode/scripts/jb-changelogs.sh <from-tag> <to-tag>
+# Example: ./vscode/scripts/jb-changelogs.sh jb-v7.65.0 jb-v7.66.0
+#
+# The output is saved to JB-CHANGELOG.md in the current directory.
+###############################################################################
 
 # Help message
 usage() {
@@ -53,7 +61,7 @@ PATHS_PATTERN=${PATHS_PATTERN:1}  # Remove leading |
 
 # Get PR titles with changed files between tags
 if ! git log $1..$2 --pretty='format:%s' --name-only --boundary | sed -E 's/^(.*)\(#(.*)\)$/- \1 [pull\/\2](https:\/\/github.com\/sourcegraph\/cody\/pull\/\2)/' > temp_changes.txt; then
-    echo "Error: Failed to get git log"
+    echo "Error: Failed to get git log between $1 and $2. Please verify the tags exist."
     exit 1
 fi
 
@@ -89,17 +97,10 @@ process_section() {
         domain_lower=$(echo "$domain" | tr '[:upper:]' '[:lower:]')
         matches=$(grep -i "^- $type($domain_lower)" filtered_changes.txt)
         if [ ! -z "$matches" ]; then
-            domain_content="${domain_content:-}\n\n#### $domain\n$matches"
+            domain_content="${domain_content:-}\n#### $domain\n$matches"
             section_content="has_content"
         fi
     done
-    
-    # Add uncategorized items
-    uncategorized=$(grep "$grep_pattern" filtered_changes.txt | grep -v "$grep_pattern(")
-    if [ ! -z "$uncategorized" ]; then
-        domain_content="${domain_content:-}\n\n$uncategorized"
-        section_content="has_content"
-    fi
     
     # Only write the section if it has content
     if [ ! -z "$section_content" ]; then
@@ -112,6 +113,9 @@ process_section() {
 
 output_file="formatted_changes.md"
 > "$output_file"  # Initialize empty file
+
+# Add version information to the top of the generated changelog
+echo "# Changes from $1 to $2" > "$output_file"
 
 process_section "feat" "Features"
 process_section "fix" "Fixes"
