@@ -14,19 +14,19 @@ INCLUDE_PATHS=(
     "vscode/webviews/"
 )
 
-# Define domains to group by
+# Define domains to group by with proper capitalization
 DOMAINS=(
-    "autocomplete"
-    "chat"
-    "edit"
-    "models"
-    "agent"
-    "context"
-    "prompts"
-    "settings"
-    "logging"
-    "ci"
-    "release"
+    "Autocomplete"
+    "Chat"
+    "Edit"
+    "Models" 
+    "Agent"
+    "Context"
+    "Prompts"
+    "Settings"
+    "Logging"
+    "CI"
+    "Release"
 )
 
 # Convert array to awk pattern
@@ -56,10 +56,10 @@ END {
     }
 }' temp_changes.txt > filtered_changes.txt
 
-# Group changes by type and domain
-echo "## Features" > formatted_changes.md
+echo "### Features" > formatted_changes.md
 for domain in "${DOMAINS[@]}"; do
-    matches=$(grep "^- feat($domain)" filtered_changes.txt)
+    domain_lower=$(echo "$domain" | tr '[:upper:]' '[:lower:]')
+    matches=$(grep -i "^- feat($domain_lower)" filtered_changes.txt)
     if [ ! -z "$matches" ]; then
         echo -e "\n#### $domain" >> formatted_changes.md
         echo "$matches" >> formatted_changes.md
@@ -70,34 +70,44 @@ grep "^- feat" filtered_changes.txt | grep -v "^- feat(" >> formatted_changes.md
 
 echo -e "\n### Fixes" >> formatted_changes.md
 for domain in "${DOMAINS[@]}"; do
-    matches=$(grep "^- fix($domain)" filtered_changes.txt)
+    domain_lower=$(echo "$domain" | tr '[:upper:]' '[:lower:]')
+    matches=$(grep -i "^- fix($domain_lower)" filtered_changes.txt)
     if [ ! -z "$matches" ]; then
         echo -e "\n#### $domain" >> formatted_changes.md
         echo "$matches" >> formatted_changes.md
     fi
 done
+# Catch fixes without domain
 grep "^- fix" filtered_changes.txt | grep -v "^- fix(" >> formatted_changes.md
 
 echo -e "\n### Changes" >> formatted_changes.md
 for domain in "${DOMAINS[@]}"; do
-    matches=$(grep "^- changed($domain)" filtered_changes.txt)
+    domain_lower=$(echo "$domain" | tr '[:upper:]' '[:lower:]')
+    matches=$(grep -i "^- changed($domain_lower)" filtered_changes.txt)
     if [ ! -z "$matches" ]; then
         echo -e "\n#### $domain" >> formatted_changes.md
         echo "$matches" >> formatted_changes.md
     fi
 done
+# Catch changes without domain
 grep "^- changed" filtered_changes.txt | grep -v "^- changed(" >> formatted_changes.md
 
 echo -e "\n### Chores" >> formatted_changes.md
 for domain in "${DOMAINS[@]}"; do
-    matches=$(grep "^- chore($domain)" filtered_changes.txt)
+    domain_lower=$(echo "$domain" | tr '[:upper:]' '[:lower:]')
+    matches=$(grep -i "^- chore($domain_lower)" filtered_changes.txt)
     if [ ! -z "$matches" ]; then
         echo -e "\n#### $domain" >> formatted_changes.md
         echo "$matches" >> formatted_changes.md
     fi
 done
+# Catch chores without domain
 grep "^- chore" filtered_changes.txt | grep -v "^- chore(" >> formatted_changes.md
 
 # Catch any ungrouped changes
 echo -e "\n### Uncategorized" >> formatted_changes.md
 grep -v "^- \(feat\|fix\|changed\|chore\)" filtered_changes.txt >> formatted_changes.md
+
+# Clean up temporary files and rename the output
+mv formatted_changes.md JB-CHANGELOG.md
+rm temp_changes.txt filtered_changes.txt
