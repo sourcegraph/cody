@@ -1,6 +1,7 @@
 import { LRUCache } from 'lru-cache'
 import type * as vscode from 'vscode'
 
+import { forkSignal } from '../completions/utils'
 import type { ModelResponse, SuccessModelResponse } from './adapters/base'
 import { autoeditSource } from './analytics-logger'
 
@@ -42,7 +43,6 @@ export class RequestManager implements vscode.Disposable {
             return response
         }
 
-        // Last chance for the autoedit provider to abort the request.
         if (params.abortSignal.aborted) {
             return { type: 'aborted', requestUrl: params.requestUrl }
         }
@@ -140,11 +140,14 @@ class InflightRequest {
     public reject: (error: Error) => void
     public startedAt = performance.now()
     public isResolved = false
-    public abortController = new AbortController()
+    public abortController: AbortController
     public cacheKey: string
 
     constructor(public params: AutoeditRequestManagerParams) {
         this.cacheKey = createCacheKey(params)
+        // TODO: decouple the autoedit provider abort signal from the one used by the request manager
+        // so that we can keep some older requests alive for recycling.
+        this.abortController = forkSignal(params.abortSignal)
 
         this.resolve = () => {}
         this.reject = () => {}
