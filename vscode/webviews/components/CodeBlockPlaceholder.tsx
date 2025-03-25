@@ -10,7 +10,7 @@ interface CodeBlockPlaceholderProps {
 
 /**
  * CodeBlockPlaceholder shows a shimmer loading animation when code is being generated
- * or checked by guardrails.
+ * or checked by Guardrails.
  */
 export const CodeBlockPlaceholder: React.FC<CodeBlockPlaceholderProps> = ({
     text,
