@@ -50,13 +50,13 @@ import {
 } from './renderer/mock-renderer'
 import type { AutoEditRenderOutput } from './renderer/render-output'
 import { shrinkPredictionUntilSuffix } from './shrink-prediction'
+import { SmartThrottleService } from './smart-throttle'
 import { areSameUriDocs, isPredictedTextAlreadyInSuffix } from './utils'
 
 const AUTOEDIT_CONTEXT_STRATEGY = 'auto-edit'
-export const AUTOEDIT_TOTAL_DEBOUNCE_INTERVAL = 20
-export const AUTOEDIT_CONTEXT_FETCHING_DEBOUNCE_INTERVAL = 10
 const RESET_SUGGESTION_ON_CURSOR_CHANGE_AFTER_INTERVAL_MS = 60 * 1000
-const ON_SELECTION_CHANGE_DEFAULT_DEBOUNCE_INTERVAL_MS = 15
+const ON_SELECTION_CHANGE_DEFAULT_DEBOUNCE_INTERVAL_MS = 10
+export const AUTOEDIT_INITIAL_DEBOUNCE_INTERVAL_MS = 10
 
 interface AutoeditEditItem extends AutocompleteEditItem {
     id: AutoeditRequestID
@@ -85,10 +85,13 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
     private readonly disposables: vscode.Disposable[] = []
     /** Keeps track of the last time the text was changed in the editor. */
     private lastTextChangeTimeStamp: number | undefined
+    private lastManualTriggerTimestamp = Number.MIN_SAFE_INTEGER
+
     private readonly onSelectionChangeDebounced: DebouncedFunc<typeof this.onSelectionChange>
 
     public readonly rendererManager: AutoEditsRendererManager
     private readonly modelAdapter: AutoeditsModelAdapter
+    public readonly smartThrottleService = new SmartThrottleService()
 
     private readonly promptStrategy = new PromptCacheOptimizedV1()
     public readonly filterPrediction = new FilterPredictionBasedOnRecentEdits()
@@ -168,7 +171,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
 
     private onDidChangeTextDocument(event: vscode.TextDocumentChangeEvent): void {
         if (event.document.uri.scheme === 'file') {
-            this.lastTextChangeTimeStamp = Date.now()
+            this.lastTextChangeTimeStamp = performance.now()
         }
     }
 
@@ -184,7 +187,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
         // Don't show suggestion on cursor movement if the text has not changed for a certain amount of time
         if (
             this.lastTextChangeTimeStamp &&
-            Date.now() - this.lastTextChangeTimeStamp <
+            performance.now() - this.lastTextChangeTimeStamp <
                 RESET_SUGGESTION_ON_CURSOR_CHANGE_AFTER_INTERVAL_MS
         ) {
             await vscode.commands.executeCommand('editor.action.inlineSuggest.trigger')
@@ -198,6 +201,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
         token?: vscode.CancellationToken
     ): Promise<AutoeditsResult | null> {
         let stopLoading: (() => void) | undefined
+        const startedAt = getTimeNowInMillis()
 
         if (inlineCompletionContext.selectedCompletionInfo !== undefined) {
             const { range, text } = inlineCompletionContext.selectedCompletionInfo
@@ -216,28 +220,31 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
         }
 
         try {
-            const startedAt = getTimeNowInMillis()
-            const controller = new AbortController()
-            const abortSignal = controller.signal
-            token?.onCancellationRequested(() => controller.abort())
-
-            await new Promise(resolve =>
-                setTimeout(resolve, AUTOEDIT_CONTEXT_FETCHING_DEBOUNCE_INTERVAL)
-            )
-            const remainingDebounceInterval =
-                AUTOEDIT_TOTAL_DEBOUNCE_INTERVAL - AUTOEDIT_CONTEXT_FETCHING_DEBOUNCE_INTERVAL
-            if (abortSignal.aborted) {
-                autoeditsOutputChannelLogger.logDebugIfVerbose(
-                    'provideInlineCompletionItems',
-                    'debounce aborted AUTOEDIT_CONTEXT_FETCHING_DEBOUNCE_INTERVAL'
-                )
-                return null
-            }
-
             stopLoading = this.statusBar.addLoader({
                 title: 'Auto-edits are being generated',
-                timeout: 30_000,
+                timeout: 5_000,
             })
+
+            const throttledRequest = this.smartThrottleService.throttle({
+                uri: document.uri.toString(),
+                position,
+                isManuallyTriggered: this.lastManualTriggerTimestamp > performance.now() - 50,
+            })
+
+            const abortSignal = throttledRequest.abortController.signal
+
+            let remainingThrottleDelay = throttledRequest.delayMs
+            if (throttledRequest.delayMs > AUTOEDIT_INITIAL_DEBOUNCE_INTERVAL_MS) {
+                await new Promise(resolve => setTimeout(resolve, AUTOEDIT_INITIAL_DEBOUNCE_INTERVAL_MS))
+                if (abortSignal.aborted) {
+                    autoeditsOutputChannelLogger.logDebugIfVerbose(
+                        'provideInlineCompletionItems',
+                        `debounce aborted during first ${AUTOEDIT_INITIAL_DEBOUNCE_INTERVAL_MS}ms of throttle`
+                    )
+                    return null
+                }
+                remainingThrottleDelay -= AUTOEDIT_INITIAL_DEBOUNCE_INTERVAL_MS
+            }
 
             autoeditsOutputChannelLogger.logDebugIfVerbose(
                 'provideInlineCompletionItems',
@@ -282,13 +289,13 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                     docContext,
                     maxChars: 32_000,
                 }),
-                new Promise(resolve => setTimeout(resolve, remainingDebounceInterval)),
+                new Promise(resolve => setTimeout(resolve, remainingThrottleDelay)),
             ])
 
             if (abortSignal.aborted) {
                 autoeditsOutputChannelLogger.logDebugIfVerbose(
                     'provideInlineCompletionItems',
-                    'aborted during context fetch debounce'
+                    'aborted during context fetch and the remaining throttle delay'
                 )
                 return null
             }
@@ -346,6 +353,18 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                     prediction: initialPrediction,
                 },
             })
+
+            if (throttledRequest.isStale) {
+                autoeditsOutputChannelLogger.logDebugIfVerbose(
+                    'provideInlineCompletionItems',
+                    'throttled request is stale'
+                )
+                autoeditAnalyticsLogger.markAsDiscarded({
+                    requestId,
+                    discardReason: autoeditDiscardReason.staleThrottledRequest,
+                })
+                return null
+            }
 
             if (predictionResult.prediction.length === 0) {
                 autoeditsOutputChannelLogger.logDebugIfVerbose(
@@ -668,6 +687,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
 
     public async manuallyTriggerCompletion(): Promise<void> {
         await vscode.commands.executeCommand('editor.action.inlineSuggest.hide')
+        this.lastManualTriggerTimestamp = performance.now()
         await vscode.commands.executeCommand('editor.action.inlineSuggest.trigger')
     }
 
