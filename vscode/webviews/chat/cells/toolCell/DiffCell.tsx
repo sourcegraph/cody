@@ -1,6 +1,6 @@
 import { displayPath } from '@sourcegraph/cody-shared'
 import type { ContextItemToolState } from '@sourcegraph/cody-shared/src/codebase-context/messages'
-import { GitCompare, Minus, Plus } from 'lucide-react'
+import { DiffIcon, GitCompare, Minus, Plus } from 'lucide-react'
 import { type FC, useMemo } from 'react'
 import type { URI } from 'vscode-uri'
 import { getFileDiff } from '../../../../src/chat/chat-view/utils/diff'
@@ -50,10 +50,13 @@ export const DiffCell: FC<DiffCellProps> = ({
             </Button>
             <div className="tw-ml-2 tw-flex tw-flex-shrink-0 tw-items-center tw-gap-2">
                 <span className="tw-flex tw-items-center tw-text-emerald-500">
-                    <Plus size={14} className="tw-mr-0.5" /> {result.total.added + 1}
+                    <Plus size={14} className="tw-mr-0.5" /> {result.total.added}
+                </span>
+                <span className="tw-flex tw-items-center tw-text-orange-500">
+                    <DiffIcon size={14} className="tw-mr-0.5" /> {result.total.modified}
                 </span>
                 <span className="tw-flex tw-items-center tw-text-rose-500">
-                    <Minus size={14} className="tw-mr-0.5" /> {result.total.removed + 1}
+                    <Minus size={14} className="tw-mr-0.5" /> {result.total.removed}
                 </span>
             </div>
         </div>
