@@ -1,6 +1,8 @@
+import type { SerializedContextItem } from '@sourcegraph/cody-shared'
+import type { ContextItem } from '@sourcegraph/cody-shared/src/codebase-context/messages'
+import { deserializeContextItem } from '@sourcegraph/cody-shared/src/lexicalEditor/nodes'
 import _ from 'lodash'
-import type { ContextItem } from '../codebase-context/messages'
-import { type SerializedContextItem, deserializeContextItem } from '../lexicalEditor/nodes'
+import { localStorage } from '../services/LocalStorageProvider'
 
 // Constants
 const LOCAL_STORAGE_KEY = 'cody-frequently-used-items'
@@ -28,7 +30,7 @@ const getStoredItems = ({
     authStatus,
     codebase,
 }: { authStatus: { endpoint: string; username: string }; codebase?: string }): StoredItem[] => {
-    const data = localStorage.getItem(getLocalStorageKey({ authStatus, codebase }))
+    const data = localStorage.get<string>(getLocalStorageKey({ authStatus, codebase }))
     if (!data) {
         return []
     }
@@ -48,7 +50,7 @@ function saveStoredItems({
     codebase?: string
 }): void {
     try {
-        localStorage.setItem(getLocalStorageKey({ authStatus, codebase }), JSON.stringify(items))
+        localStorage.set(getLocalStorageKey({ authStatus, codebase }), JSON.stringify(items))
     } catch (error) {
         console.error('Failed to save frequently used items:', error)
     }
@@ -99,7 +101,7 @@ export function getFrequentlyUsedContextItems({
         const combinedItems: StoredItem[] = []
 
         for (const codebase of codebases || [undefined]) {
-            const data = localStorage.getItem(getLocalStorageKey({ authStatus, codebase }))
+            const data = localStorage.get<string>(getLocalStorageKey({ authStatus, codebase }))
             if (data) {
                 const parsed = JSON.parse(data)
                 const items: StoredItem[] = Array.isArray(parsed) ? parsed : []

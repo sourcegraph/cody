@@ -396,7 +396,6 @@ export {
     currentOpenCtxController,
     RULES_PROVIDER_URI,
 } from './context/openctx/api'
-export * from './frequentlyUsedCache'
 export * from './context/openctx/context'
 export * from './lexicalEditor/editorState'
 export * from './lexicalEditor/nodes'

@@ -436,7 +436,6 @@ export const HumanMessageEditor: FunctionComponent<{
                 editorClassName={styles.editor}
                 contentEditableClassName={styles.editorContentEditable}
                 openExternalLink={openExternalLink}
-                authStatus={authStatus}
             />
             {!disabled && (
                 <Toolbar

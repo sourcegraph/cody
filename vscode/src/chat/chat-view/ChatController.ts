@@ -60,6 +60,7 @@ import {
     reformatBotMessageForChat,
     resolvedConfig,
     serializeChatMessage,
+    serializeContextItem,
     shareReplay,
     skip,
     skipPendingOperation,
@@ -92,6 +93,10 @@ import type { startTokenReceiver } from '../../auth/token-receiver'
 import { getCurrentUserId } from '../../auth/user'
 import { getContextFileFromUri } from '../../commands/context/file-path'
 import { getContextFileFromCursor } from '../../commands/context/selection'
+import {
+    getFrequentlyUsedContextItems,
+    saveFrequentlyUsedContextItems,
+} from '../../context/frequentlyUsed'
 import { getEditor } from '../../editor/active-editor'
 import type { VSCodeEditor } from '../../editor/vscode-editor'
 import type { ExtensionClient } from '../../extension-client'
@@ -100,6 +105,7 @@ import { logDebug, outputChannelLogger } from '../../output-channel-logger'
 import { hydratePromptText } from '../../prompts/prompt-hydration'
 import { listPromptTags, mergedPromptsAndLegacyCommands } from '../../prompts/prompts'
 import { workspaceFolderForRepo } from '../../repository/remoteRepos'
+import { repoNameResolver } from '../../repository/repo-name-resolver'
 import { authProvider } from '../../services/AuthProvider'
 import { AuthProviderSimplified } from '../../services/AuthProviderSimplified'
 import { localStorage } from '../../services/LocalStorageProvider'
@@ -762,6 +768,8 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             chatClient: this.chatClient,
         })
 
+        this.setFrequentlyUsedContextItemsToStorage(mentions)
+
         recorder.setIntentInfo({
             userSpecifiedIntent: manuallySelectedIntent ?? 'chat',
         })
@@ -887,6 +895,50 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             }
             recordErrorToSpan(span, error as Error)
         }
+    }
+
+    private async setFrequentlyUsedContextItemsToStorage(mentions: ContextItem[]) {
+        const authStatus = currentAuthStatus()
+        const activeEditor = getEditor().active
+
+        const repoName = activeEditor?.document.uri
+            ? (
+                  await firstResultFromOperation(
+                      repoNameResolver.getRepoNamesContainingUri(activeEditor.document.uri)
+                  )
+              ).at(0)
+            : null
+
+        if (authStatus.authenticated) {
+            saveFrequentlyUsedContextItems({
+                items: mentions
+                    .filter(item => item.source === ContextItemSource.User)
+                    .map(item => serializeContextItem(item)),
+                authStatus,
+                codebases: repoName ? [repoName] : [],
+            })
+        }
+    }
+    private async getFrequentlyUsedContextItemsFromStorage() {
+        const authStatus = currentAuthStatus()
+        const activeEditor = getEditor().active
+
+        const repoName = activeEditor?.document.uri
+            ? (
+                  await firstResultFromOperation(
+                      repoNameResolver.getRepoNamesContainingUri(activeEditor.document.uri)
+                  )
+              ).at(0)
+            : null
+
+        if (authStatus.authenticated) {
+            return getFrequentlyUsedContextItems({
+                authStatus,
+                codebases: repoName ? [repoName] : [],
+            })
+        }
+
+        return []
     }
 
     private async openRemoteFile(uri: vscode.Uri, tryLocal?: boolean) {
@@ -1624,6 +1676,9 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                                     })
                                 )
                             )
+                    },
+                    frequentlyUsedContextItems: () => {
+                        return promiseFactoryToObservable(this.getFrequentlyUsedContextItemsFromStorage)
                     },
                     clientActionBroadcast: () => this.clientBroadcast,
                     evaluateFeatureFlag: flag => featureFlagProvider.evaluateFeatureFlag(flag),

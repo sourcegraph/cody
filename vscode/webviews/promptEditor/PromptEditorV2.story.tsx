@@ -21,7 +21,6 @@ const meta: Meta<typeof PromptEditor> = {
         openExternalLink(uri) {
             console.log('openExternalLink', uri)
         },
-        authStatus: { endpoint: 'https://sourcegraph.com', username: 'testuser' },
     } satisfies React.ComponentProps<typeof PromptEditor>,
 
     decorators: [VSCodeStandaloneComponent],

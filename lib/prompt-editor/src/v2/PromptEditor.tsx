@@ -11,7 +11,7 @@ import {
     type SerializedContextItem,
     type SerializedPromptEditorState,
     type SerializedPromptEditorValue,
-    getFrequentlyUsedContextItems,
+    combineLatest,
     parseMentionQuery,
 } from '@sourcegraph/cody-shared'
 import { clsx } from 'clsx'
@@ -34,6 +34,7 @@ import styles from './PromptEditor.module.css'
 import { fromSerializedPromptEditorState, toSerializedPromptEditorValue } from './lexical-interop'
 import { schema } from './promptInput'
 import 'prosemirror-view/style/prosemirror.css'
+import { map } from 'observable-fns'
 import {
     MentionMenuContextItemContent,
     MentionMenuProviderItemContent,
@@ -60,8 +61,6 @@ interface Props extends KeyboardEventPluginProps {
     editorRef?: React.RefObject<PromptEditorRefAPI>
 
     openExternalLink: (uri: string) => void
-
-    authStatus: { endpoint: string; username?: string }
 }
 
 interface PromptEditorRefAPI {
@@ -116,7 +115,6 @@ export const PromptEditor: FunctionComponent<Props> = ({
     editorRef: ref,
     onEnterKey,
     openExternalLink,
-    authStatus,
 }) => {
     // We use the interaction ID to differentiate between different
     // invocations of the mention-menu. That way upstream we don't trigger
@@ -130,7 +128,8 @@ export const PromptEditor: FunctionComponent<Props> = ({
     }, [initialEditorState])
 
     const defaultContext = useDefaultContextForChat()
-    const mentionMenuData = useExtensionAPI().mentionMenuData
+    const extensionAPI = useExtensionAPI()
+    const mentionMenuData = extensionAPI.mentionMenuData
     const mentionSettings = useContext(ChatMentionContext)
 
     const fetchMenuData = useCallback(
@@ -143,53 +142,63 @@ export const PromptEditor: FunctionComponent<Props> = ({
                   ? initialContext.filter(item => item.title?.toLowerCase().startsWith(queryLower))
                   : initialContext
 
-            const codebases = defaultContext.corpusContext
-                .filter(item => item.type === 'repository')
-                .map(item => item.repoName)
-
             // NOTE: It's important to only emit after we receive new mentions menu data.
             // This ensures that we display the 'old' menu items until new have arrived
             // and prevents the menu from 'flickering'.
-            return mentionMenuData({
-                ...parseMentionQuery(query, provider ?? null),
-                interactionID: interactionID.current,
-                contextRemoteRepositoriesNames: mentionSettings.remoteRepositoriesNames,
-            }).map(result => {
-                // Get user-provided context items, limited to max suggestions and marked as user source
-                const items =
-                    result.items
-                        ?.slice(0, SUGGESTION_LIST_LENGTH_LIMIT)
-                        .map(item => ({ ...item, source: ContextItemSource.User })) ?? []
+            return combineLatest(
+                mentionMenuData({
+                    ...parseMentionQuery(query, provider ?? null),
+                    interactionID: interactionID.current,
+                    contextRemoteRepositoriesNames: mentionSettings.remoteRepositoriesNames,
+                }),
+                extensionAPI.frequentlyUsedContextItems()
+            ).pipe(
+                map(([menuData, frequentlyUsedItems]) => {
+                    // Get user-provided context items, limited to max suggestions and marked as user source
+                    const items =
+                        menuData.items
+                            ?.slice(0, SUGGESTION_LIST_LENGTH_LIMIT)
+                            .map((item: ContextItem) => ({ ...item, source: ContextItemSource.User })) ??
+                        []
 
-                // Return early with just the items if a specific provider is selected
-                if (provider) {
-                    return items
-                }
+                    // Return early with just the items if a specific provider is selected
+                    if (provider) {
+                        return items
+                    }
 
-                // Get frequently used items (max 3) only if no provider or query specified
-                const frequentlyUsedItems = authStatus.username
-                    ? getFrequentlyUsedContextItems({
-                          query,
-                          authStatus: { endpoint: authStatus.endpoint, username: authStatus.username },
-                          codebases,
-                      }).slice(0, 3)
-                    : []
+                    // Filter out any hidden context providers
+                    const providers = menuData.providers.filter(
+                        (provider: ContextMentionProviderMetadata) =>
+                            !hiddenProviders.includes(provider.id)
+                    )
 
-                // Filter out any hidden context providers
-                const providers = result.providers.filter(
-                    provider => !hiddenProviders.includes(provider.id)
-                )
+                    // With a query, show only matching items
+                    if (query) {
+                        return [...filteredInitialContextItems, ...providers, ...items]
+                    }
 
-                // With a query, show only matching items
-                if (query) {
-                    return [...filteredInitialContextItems, ...providers, ...items]
-                }
+                    // Filter out any frequently used items that are already in filteredInitialContextItems
+                    const uniqueFrequentlyUsedItems = frequentlyUsedItems
+                        .filter(
+                            frequentItem =>
+                                !filteredInitialContextItems.some(
+                                    initialItem =>
+                                        initialItem.uri.toString() === frequentItem.uri.toString()
+                                )
+                        )
+                        .slice(0, 3)
 
-                // Without a query, also include frequently used items
-                return [...filteredInitialContextItems, ...frequentlyUsedItems, ...providers, ...items]
-            })
+                    // Without a query, include filtered frequently used items
+                    return [
+                        ...filteredInitialContextItems,
+                        ...uniqueFrequentlyUsedItems,
+                        ...providers,
+                        ...items,
+                    ]
+                })
+            )
         },
-        [mentionMenuData, mentionSettings, defaultContext, authStatus.endpoint, authStatus.username]
+        [mentionMenuData, mentionSettings, defaultContext, extensionAPI.frequentlyUsedContextItems]
     )
 
     const [input, api] = usePromptInput({
