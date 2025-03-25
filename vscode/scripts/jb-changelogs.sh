@@ -21,6 +21,7 @@ if [ "$#" -ne 2 ]; then
     usage
 fi
 
+# Add trap for cleanup on exit
 trap 'rm -f temp_changes.txt filtered_changes.txt' EXIT
 
 # Define paths to include
@@ -76,53 +77,115 @@ END {
     }
 }' temp_changes.txt > filtered_changes.txt
 
-echo "### Features" > formatted_changes.md
+# Create temporary file for the formatted changelog
+> formatted_changes.md
+
+# Process Features section
+section_content=""
+domain_content=""
 for domain in "${DOMAINS[@]}"; do
     domain_lower=$(echo "$domain" | tr '[:upper:]' '[:lower:]')
     matches=$(grep -i "^- feat($domain_lower)" filtered_changes.txt)
     if [ ! -z "$matches" ]; then
-        echo -e "\n#### $domain" >> formatted_changes.md
-        echo "$matches" >> formatted_changes.md
+        domain_content="${domain_content:-}\n\n#### $domain\n$matches"
+        section_content="has_content"
     fi
 done
-grep "^- feat" filtered_changes.txt | grep -v "^- feat(" >> formatted_changes.md
 
-echo -e "\n### Fixes" >> formatted_changes.md
+# Add uncategorized features
+uncategorized=$(grep "^- feat" filtered_changes.txt | grep -v "^- feat(")
+if [ ! -z "$uncategorized" ]; then
+    domain_content="${domain_content:-}\n\n$uncategorized"
+    section_content="has_content"
+fi
+
+# Only write the Features section if it has content
+if [ ! -z "$section_content" ]; then
+    echo "### Features" >> formatted_changes.md
+    echo -e "$domain_content" >> formatted_changes.md
+fi
+
+# Process Fixes section
+section_content=""
+domain_content=""
 for domain in "${DOMAINS[@]}"; do
     domain_lower=$(echo "$domain" | tr '[:upper:]' '[:lower:]')
     matches=$(grep -i "^- fix($domain_lower)" filtered_changes.txt)
     if [ ! -z "$matches" ]; then
-        echo -e "\n#### $domain" >> formatted_changes.md
-        echo "$matches" >> formatted_changes.md
+        domain_content="${domain_content:-}\n\n#### $domain\n$matches"
+        section_content="has_content"
     fi
 done
-grep "^- fix" filtered_changes.txt | grep -v "^- fix(" >> formatted_changes.md
 
-echo -e "\n### Changes" >> formatted_changes.md
+# Add uncategorized fixes
+uncategorized=$(grep "^- fix" filtered_changes.txt | grep -v "^- fix(")
+if [ ! -z "$uncategorized" ]; then
+    domain_content="${domain_content:-}\n\n$uncategorized"
+    section_content="has_content"
+fi
+
+# Only write the Fixes section if it has content
+if [ ! -z "$section_content" ]; then
+    echo -e "\n### Fixes" >> formatted_changes.md
+    echo -e "$domain_content" >> formatted_changes.md
+fi
+
+# Process Changes section
+section_content=""
+domain_content=""
 for domain in "${DOMAINS[@]}"; do
     domain_lower=$(echo "$domain" | tr '[:upper:]' '[:lower:]')
     matches=$(grep -i "^- changed($domain_lower)" filtered_changes.txt)
     if [ ! -z "$matches" ]; then
-        echo -e "\n#### $domain" >> formatted_changes.md
-        echo "$matches" >> formatted_changes.md
+        domain_content="${domain_content:-}\n\n#### $domain\n$matches"
+        section_content="has_content"
     fi
 done
-grep "^- changed" filtered_changes.txt | grep -v "^- changed(" >> formatted_changes.md
 
-echo -e "\n### Chores" >> formatted_changes.md
+# Add uncategorized changes
+uncategorized=$(grep "^- changed" filtered_changes.txt | grep -v "^- changed(")
+if [ ! -z "$uncategorized" ]; then
+    domain_content="${domain_content:-}\n\n$uncategorized"
+    section_content="has_content"
+fi
+
+# Only write the Changes section if it has content
+if [ ! -z "$section_content" ]; then
+    echo -e "\n### Changes" >> formatted_changes.md
+    echo -e "$domain_content" >> formatted_changes.md
+fi
+
+# Process Chores section
+section_content=""
+domain_content=""
 for domain in "${DOMAINS[@]}"; do
     domain_lower=$(echo "$domain" | tr '[:upper:]' '[:lower:]')
     matches=$(grep -i "^- chore($domain_lower)" filtered_changes.txt)
     if [ ! -z "$matches" ]; then
-        echo -e "\n#### $domain" >> formatted_changes.md
-        echo "$matches" >> formatted_changes.md
+        domain_content="${domain_content:-}\n\n#### $domain\n$matches"
+        section_content="has_content"
     fi
 done
-grep "^- chore" filtered_changes.txt | grep -v "^- chore(" >> formatted_changes.md
+
+# Add uncategorized chores
+uncategorized=$(grep "^- chore" filtered_changes.txt | grep -v "^- chore(")
+if [ ! -z "$uncategorized" ]; then
+    domain_content="${domain_content:-}\n\n$uncategorized"
+    section_content="has_content"
+fi
+
+# Only write the Chores section if it has content
+if [ ! -z "$section_content" ]; then
+    echo -e "\n### Chores" >> formatted_changes.md
+    echo -e "$domain_content" >> formatted_changes.md
+fi
 
 # Catch any ungrouped changes
-echo -e "\n### Uncategorized" >> formatted_changes.md
-grep -v "^- \(feat\|fix\|changed\|chore\)" filtered_changes.txt >> formatted_changes.md
+uncategorized=$(grep -v "^- \(feat\|fix\|changed\|chore\)" filtered_changes.txt)
+if [ ! -z "$uncategorized" ]; then
+    echo -e "\n### Uncategorized" >> formatted_changes.md
+    echo "$uncategorized" >> formatted_changes.md
+fi
 
 # Clean up temporary files and rename the output
 mv formatted_changes.md JB-CHANGELOG.md
