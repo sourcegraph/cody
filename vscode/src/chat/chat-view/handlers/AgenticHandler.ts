@@ -36,7 +36,7 @@ interface ToolResult {
 
 /**
  * Base AgenticHandler class that manages tool execution state
- * and implements the core agentic conversation loop
+ * and implements the core agentic conversation loop when Agent Mode is enabled.
  */
 export class AgenticHandler extends ChatHandler implements AgentHandler {
     public static readonly id = 'agentic-chat'
@@ -55,8 +55,18 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
     }
 
     public async handle(req: AgentRequest, delegate: AgentHandlerDelegate): Promise<void> {
-        const { chatBuilder, span, recorder, signal } = req
+        const { requestID, chatBuilder, inputText, editorState, span, recorder, signal, mentions } = req
         const sessionID = chatBuilder.sessionID
+        // Includes initial context mentioned by user
+        const contextResult = await this.computeContext(
+            requestID,
+            { text: inputText, mentions },
+            editorState,
+            chatBuilder,
+            delegate,
+            signal
+        )
+        const contextItems = contextResult?.contextItems ?? []
 
         // Initialize available tools
         this.tools = await AgentToolGroup.getToolsByAgentId(this.contextRetriever, span)
@@ -67,7 +77,7 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
 
         try {
             // Run the main conversation loop
-            await this.runConversationLoop(chatBuilder, delegate, recorder, span, signal)
+            await this.runConversationLoop(chatBuilder, delegate, recorder, span, signal, contextItems)
         } catch (error) {
             this.handleError(sessionID, error, delegate, signal)
         } finally {
@@ -85,7 +95,8 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
         delegate: AgentHandlerDelegate,
         recorder: AgentRequest['recorder'],
         span: Span,
-        parentSignal: AbortSignal
+        parentSignal: AbortSignal,
+        context: ContextItem[] = []
     ): Promise<void> {
         let turnCount = 0
 
@@ -99,6 +110,7 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
         // Main conversation loop
         while (turnCount < this.MAX_TURN && !loopController.signal?.aborted) {
             const model = turnCount === 0 ? AGENT_MODELS.ExtendedThinking : AGENT_MODELS.Base
+
             try {
                 // Get LLM response
                 const { botResponse, toolCalls } = await this.requestLLM(
@@ -107,8 +119,12 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
                     recorder,
                     span,
                     signal,
-                    model
+                    model,
+                    context
                 )
+
+                // Reset contextFiles for the next turn
+                context = []
 
                 // No tool calls means we're done
                 if (!toolCalls?.size) {
@@ -122,7 +138,7 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
                 delegate.postMessageInProgress(botResponse)
 
                 const results = await this.executeTools(content).catch(() => {
-                    console.error('Error executing tools')
+                    logDebug('AgenticHandler', 'Error executing tools')
                     return []
                 })
 
@@ -165,11 +181,12 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
         recorder: AgentRequest['recorder'],
         span: Span,
         signal: AbortSignal,
-        model: string
+        model: string,
+        context: ContextItem[] = []
     ): Promise<{ botResponse: ChatMessage; toolCalls: Map<string, ToolCallContentPart> }> {
         // Create prompt
         const prompter = new AgenticChatPrompter(this.SYSTEM_PROMPT)
-        const prompt = await prompter.makePrompt(chatBuilder)
+        const prompt = await prompter.makePrompt(chatBuilder, context)
         recorder.recordChatQuestionExecuted([], { addMetadata: true, current: span })
 
         // Prepare API call parameters
