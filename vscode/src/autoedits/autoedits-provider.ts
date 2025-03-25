@@ -85,7 +85,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
     private readonly disposables: vscode.Disposable[] = []
     /** Keeps track of the last time the text was changed in the editor. */
     private lastTextChangeTimeStamp: number | undefined
-    private lastManualTriggerTimestamp = performance.now()
+    private lastManualTriggerTimestamp = Number.MIN_SAFE_INTEGER
 
     private readonly onSelectionChangeDebounced: DebouncedFunc<typeof this.onSelectionChange>
 
