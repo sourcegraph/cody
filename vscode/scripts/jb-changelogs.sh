@@ -6,6 +6,21 @@
 # you can find the commits at each release using:
 # git ls-remote https://github.com/sourcegraph/cody | grep "refs/tags/vscode-\(insiders-\)\?v1\.[0-9]\+\.[0-9]\+" | less
 
+# Help message
+usage() {
+    echo "Usage: $0 <from-tag> <to-tag>"
+    echo "Generate JetBrains changelog between two tags"
+    echo ""
+    echo "Example:"
+    echo "  $0 jb-v7.65.0 jb-v7.66.0"
+    exit 1
+}
+
+# Error handling
+if [ "$#" -ne 2 ]; then
+    usage
+fi
+
 # Define paths to include
 INCLUDE_PATHS=(
     "jetbrains/"
@@ -33,8 +48,11 @@ DOMAINS=(
 PATHS_PATTERN=$(printf "|^%s" "${INCLUDE_PATHS[@]}")
 PATHS_PATTERN=${PATHS_PATTERN:1}  # Remove leading |
 
-# Get PR titles with changed files between commits
-git log $1..$2 --pretty='format:%s' --name-only --boundary | sed -E 's/^(.*)\(#(.*)\)$/- \1 [pull\/\2](https:\/\/github.com\/sourcegraph\/cody\/pull\/\2)/' > temp_changes.txt
+# Get PR titles with changed files between tags
+if ! git log $1..$2 --pretty='format:%s' --name-only --boundary | sed -E 's/^(.*)\(#(.*)\)$/- \1 [pull\/\2](https:\/\/github.com\/sourcegraph\/cody\/pull\/\2)/' > temp_changes.txt; then
+    echo "Error: Failed to get git log"
+    exit 1
+fi
 
 # Process the changes and filter based on paths
 awk -v paths="$PATHS_PATTERN" '
@@ -65,7 +83,6 @@ for domain in "${DOMAINS[@]}"; do
         echo "$matches" >> formatted_changes.md
     fi
 done
-# Catch features without domain
 grep "^- feat" filtered_changes.txt | grep -v "^- feat(" >> formatted_changes.md
 
 echo -e "\n### Fixes" >> formatted_changes.md
@@ -77,7 +94,6 @@ for domain in "${DOMAINS[@]}"; do
         echo "$matches" >> formatted_changes.md
     fi
 done
-# Catch fixes without domain
 grep "^- fix" filtered_changes.txt | grep -v "^- fix(" >> formatted_changes.md
 
 echo -e "\n### Changes" >> formatted_changes.md
@@ -89,7 +105,6 @@ for domain in "${DOMAINS[@]}"; do
         echo "$matches" >> formatted_changes.md
     fi
 done
-# Catch changes without domain
 grep "^- changed" filtered_changes.txt | grep -v "^- changed(" >> formatted_changes.md
 
 echo -e "\n### Chores" >> formatted_changes.md
@@ -101,7 +116,6 @@ for domain in "${DOMAINS[@]}"; do
         echo "$matches" >> formatted_changes.md
     fi
 done
-# Catch chores without domain
 grep "^- chore" filtered_changes.txt | grep -v "^- chore(" >> formatted_changes.md
 
 # Catch any ungrouped changes
