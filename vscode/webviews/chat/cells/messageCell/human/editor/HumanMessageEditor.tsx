@@ -77,6 +77,9 @@ export const HumanMessageEditor: FunctionComponent<{
 
     intent?: ChatMessage['intent']
     manuallySelectIntent: (intent: ChatMessage['intent']) => void
+
+    /** Index of this editor in the list of editors. Used to determine if this is the last editor. */
+    index?: number
 }> = ({
     models,
     userInfo,
@@ -97,6 +100,7 @@ export const HumanMessageEditor: FunctionComponent<{
     onEditorFocusChange: parentOnEditorFocusChange,
     intent,
     manuallySelectIntent,
+    index,
 }) => {
     const telemetryRecorder = useTelemetryRecorder()
 
@@ -140,6 +144,29 @@ export const HumanMessageEditor: FunctionComponent<{
 
             const value = editorRef.current.getSerializedValue()
             parentOnSubmit(intent)
+
+            // Reset the editor to empty after submit to prepare for next input
+            // This ensures a clean slate while preserving the same editor instance
+            // Only reset the editor with index -1 (the last editor)
+            if (index === -1) {
+                requestAnimationFrame(() => {
+                    if (editorRef.current) {
+                        editorRef.current.setEditorState({
+                            v: 'lexical-v1',
+                            lexicalEditorState: {
+                                root: {
+                                    children: [],
+                                    direction: null,
+                                    format: '',
+                                    indent: 0,
+                                    type: 'root',
+                                    version: 1,
+                                },
+                            },
+                        })
+                    }
+                })
+            }
 
             telemetryRecorder.recordEvent('cody.humanMessageEditor', 'submit', {
                 metadata: {
