@@ -19,7 +19,7 @@ object Constants {
   const val ask = "ask"
   const val assistant = "assistant"
   const val authenticated = "authenticated"
-  const val `auto-edit-Experimental` = "auto-edit (Experimental)"
+  const val `auto-edit-Beta` = "auto-edit (Beta)"
   const val autocomplete = "autocomplete"
   const val balanced = "balanced"
   const val byok = "byok"
