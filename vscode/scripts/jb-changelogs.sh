@@ -21,6 +21,8 @@ if [ "$#" -ne 2 ]; then
     usage
 fi
 
+trap 'rm -f temp_changes.txt filtered_changes.txt' EXIT
+
 # Define paths to include
 INCLUDE_PATHS=(
     "jetbrains/"
@@ -69,7 +71,7 @@ BEGIN { pr = ""; files = "" }
     files = files ? files "\n" $0 : $0
 }
 END {
-    if (pr && (files ~ /^jetbrains\// || files ~ /^lib\// || files ~ /^vscode\/webviews\//)) {
+    if (pr && (files ~ paths)) {
         print pr
     }
 }' temp_changes.txt > filtered_changes.txt
