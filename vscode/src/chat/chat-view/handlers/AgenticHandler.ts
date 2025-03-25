@@ -57,6 +57,7 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
     public async handle(req: AgentRequest, delegate: AgentHandlerDelegate): Promise<void> {
         const { requestID, chatBuilder, inputText, editorState, span, recorder, signal, mentions } = req
         const sessionID = chatBuilder.sessionID
+
         // Includes initial context mentioned by user
         const contextResult = await this.computeContext(
             requestID,
@@ -96,7 +97,7 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
         recorder: AgentRequest['recorder'],
         span: Span,
         parentSignal: AbortSignal,
-        context: ContextItem[] = []
+        contextItems: ContextItem[] = []
     ): Promise<void> {
         let turnCount = 0
 
@@ -120,11 +121,8 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
                     span,
                     signal,
                     model,
-                    context
+                    contextItems
                 )
-
-                // Reset contextFiles for the next turn
-                context = []
 
                 // No tool calls means we're done
                 if (!toolCalls?.size) {
@@ -165,6 +163,9 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
                 }
 
                 turnCount++
+
+                // Reset the context items for the next turn
+                contextItems = []
             } catch (error) {
                 this.handleError(chatBuilder.sessionID, error, delegate, signal)
                 break
@@ -182,11 +183,11 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
         span: Span,
         signal: AbortSignal,
         model: string,
-        context: ContextItem[] = []
+        contextItems: ContextItem[] = []
     ): Promise<{ botResponse: ChatMessage; toolCalls: Map<string, ToolCallContentPart> }> {
         // Create prompt
         const prompter = new AgenticChatPrompter(this.SYSTEM_PROMPT)
-        const prompt = await prompter.makePrompt(chatBuilder, context)
+        const prompt = await prompter.makePrompt(chatBuilder, contextItems)
         recorder.recordChatQuestionExecuted([], { addMetadata: true, current: span })
 
         // Prepare API call parameters
@@ -432,9 +433,7 @@ class AgenticChatPrompter {
 
             promptBuilder.tryAddMessages(reversedTranscript)
 
-            if (context.length > 0) {
-                await promptBuilder.tryAddContext('user', context)
-            }
+            await promptBuilder.tryAddContext('user', context)
 
             const historyItems = reversedTranscript
                 .flatMap(m => (m.contextFiles ? [...m.contextFiles].reverse() : []))
