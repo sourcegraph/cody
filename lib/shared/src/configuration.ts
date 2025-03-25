@@ -224,7 +224,7 @@ export enum CodyAutoSuggestionMode {
     /**
      * The suggestion mode where suggestions come from the Cody AI agent chat API.
      */
-    Autoedit = 'auto-edit (Experimental)',
+    Autoedit = 'auto-edit (Beta)',
     /**
      * Disable Cody suggestions altogether.
      */

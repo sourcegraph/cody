@@ -628,7 +628,7 @@ export interface ExtensionConfiguration {
 
     autocompleteAdvancedProvider?: string | undefined | null
     autocompleteAdvancedModel?: string | undefined | null
-    suggestionsMode?: 'autocomplete' | 'auto-edit (Experimental)' | 'off' | undefined | null
+    suggestionsMode?: 'autocomplete' | 'auto-edit (Beta)' | 'off' | undefined | null
     debug?: boolean | undefined | null
     verboseDebug?: boolean | undefined | null
     telemetryClientName?: string | undefined | null
