@@ -5,6 +5,8 @@ import type { AutoeditModelOptions, AutoeditsModelAdapter, ModelResponse } from 
 import { getModelResponse, getOpenaiCompatibleChatPrompt } from './utils'
 
 export class OpenAIAdapter implements AutoeditsModelAdapter {
+    dispose() {}
+
     async getModelResponse(options: AutoeditModelOptions): Promise<ModelResponse> {
         try {
             const apiKey = autoeditsProviderConfig.experimentalAutoeditsConfigOverride?.apiKey

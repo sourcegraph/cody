@@ -1,4 +1,5 @@
 import type { CodeCompletionsParams, PromptString } from '@sourcegraph/cody-shared'
+import type * as vscode from 'vscode'
 import type { AutoeditSourceMetadata } from '../analytics-logger/types'
 import type { AutoeditsRequestBody } from './utils'
 
@@ -40,7 +41,7 @@ export interface AbortedModelResponse extends ModelResponseShared {
 
 export type ModelResponse = SuccessModelResponse | AbortedModelResponse
 
-export interface AutoeditsModelAdapter {
+export interface AutoeditsModelAdapter extends vscode.Disposable {
     getModelResponse(args: AutoeditModelOptions): Promise<ModelResponse>
 }
 
