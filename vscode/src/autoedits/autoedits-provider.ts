@@ -49,6 +49,7 @@ import {
     shrinkReplacerTextToCodeToReplaceRange,
 } from './renderer/mock-renderer'
 import type { AutoEditRenderOutput } from './renderer/render-output'
+import { type AutoeditRequestManagerParams, RequestManager } from './request-manager'
 import { shrinkPredictionUntilSuffix } from './shrink-prediction'
 import { areSameUriDocs, isPredictedTextAlreadyInSuffix } from './utils'
 
@@ -89,6 +90,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
 
     public readonly rendererManager: AutoEditsRendererManager
     private readonly modelAdapter: AutoeditsModelAdapter
+    private readonly requestManager = new RequestManager()
 
     private readonly promptStrategy = new PromptCacheOptimizedV1()
     public readonly filterPrediction = new FilterPredictionBasedOnRecentEdits()
@@ -123,11 +125,13 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
         this.rendererManager = options.shouldRenderInline
             ? new AutoEditsInlineRendererManager(
                   editor => new InlineDiffDecorator(editor),
-                  fixupController
+                  fixupController,
+                  this.requestManager
               )
             : new AutoEditsDefaultRendererManager(
                   editor => new DefaultDecorator(editor),
-                  fixupController
+                  fixupController,
+                  this.requestManager
               )
 
         this.onSelectionChangeDebounced = debounce(
@@ -136,6 +140,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
         )
 
         this.disposables.push(
+            this.requestManager,
             this.contextMixer,
             this.rendererManager,
             vscode.window.onDidChangeTextEditorSelection(this.onSelectionChangeDebounced),
@@ -341,7 +346,8 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                 prompt,
                 modelResponse: predictionResult,
                 payload: {
-                    source: autoeditSource.network,
+                    // TODO: make it required
+                    source: predictionResult.source ?? autoeditSource.network,
                     isFuzzyMatch: false,
                     prediction: initialPrediction,
                 },
@@ -650,19 +656,30 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                         responseHeaders: {},
                         responseBody: {},
                         requestUrl: autoeditsProviderConfig.url,
+                        source: autoeditSource.cache,
                     }
                 }
             }
         }
 
-        return this.modelAdapter.getModelResponse({
-            url: autoeditsProviderConfig.url,
-            model: autoeditsProviderConfig.model,
-            prompt,
-            codeToRewrite: codeToReplaceData.codeToRewrite,
-            userId: (await currentResolvedConfig()).clientState.anonymousUserID,
-            isChatModel: autoeditsProviderConfig.isChatModel,
+        const requestParams: AutoeditRequestManagerParams = {
+            requestUrl: autoeditsProviderConfig.url,
+            uri: document.uri.toString(),
+            documentVersion: document.version,
+            position,
             abortSignal,
+        }
+
+        return this.requestManager.request(requestParams, async signal => {
+            return this.modelAdapter.getModelResponse({
+                url: autoeditsProviderConfig.url,
+                model: autoeditsProviderConfig.model,
+                prompt,
+                codeToRewrite: codeToReplaceData.codeToRewrite,
+                userId: (await currentResolvedConfig()).clientState.anonymousUserID,
+                isChatModel: autoeditsProviderConfig.isChatModel,
+                abortSignal: signal,
+            })
         })
     }
 
