@@ -39,6 +39,7 @@ export interface AutoEditsTokenLimit {
     codeToRewritePrefixLines: number
     codeToRewriteSuffixLines: number
     contextSpecificTokenLimit: Record<string, number>
+    suggestionLines: number
 }
 
 /**

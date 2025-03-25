@@ -1,9 +1,10 @@
 import { LRUCache } from 'lru-cache'
-import type * as vscode from 'vscode'
+import * as vscode from 'vscode'
 
 import { forkSignal } from '../completions/utils'
 import type { ModelResponse, SuccessModelResponse } from './adapters/base'
 import { autoeditSource } from './analytics-logger'
+import { autoeditsProviderConfig } from './autoedits-config'
 
 export interface AutoeditRequestManagerParams {
     requestUrl: string
@@ -80,6 +81,149 @@ export class RequestManager implements vscode.Disposable {
 
         // Return the promise to the client immediately and handle request completion in promise callbacks.
         return request.promise
+    }
+
+    /**
+     * Execute a streaming request that generates multiple model responses for hot streak
+     */
+    public async *streamRequest(
+        params: AutoeditRequestManagerParams,
+        generateResponses: (abortSignal: AbortSignal) => AsyncGenerator<ModelResponse>
+    ): AsyncGenerator<ModelResponse> {
+        // 1. First check the cache for exact matches
+        const cachedResponse = this.checkCache(params)
+        if (cachedResponse) {
+            yield cachedResponse
+            return
+        }
+
+        // 2. Then check for a matching in-flight request
+        const inflightRequest = this.findMatchingInflightRequest(params)
+        if (inflightRequest) {
+            const response = await inflightRequest.promise
+            if (response.type === 'success') {
+                yield {
+                    ...response,
+                    source: autoeditSource.inFlightRequest,
+                }
+                return
+            }
+            yield response
+            return
+        }
+
+        if (params.abortSignal.aborted) {
+            yield { type: 'aborted', requestUrl: params.requestUrl }
+            return
+        }
+
+        // 3. Create a new request if we couldn't reuse anything and the request is not aborted
+        const request = new InflightRequest(params)
+        this.inflightRequests.set(request.cacheKey, request)
+
+        // Cancel any irrelevant requests based on the current request
+        this.cancelIrrelevantRequests()
+
+        try {
+            // 4. Generate streaming responses
+            let firstResponse: ModelResponse | null = null
+            let isPredictionCached = false
+            let lineNumber = params.position.line
+            let lineCount = 0
+            const FIRST_CHUNK_LINE_COUNT = autoeditsProviderConfig.tokenLimit.suggestionLines // Use configured value for suggestion lines
+
+            for await (const response of generateResponses(request.abortController.signal)) {
+                if (response.type === 'aborted') {
+                    request.resolve(response)
+                    yield response
+                    break
+                }
+
+                if (response.type === 'success') {
+                    // Count lines in the current accumulated prediction
+                    const currentPrediction = response.prediction
+                    const newLineCount = (currentPrediction.match(/\n/g) || []).length + 1
+
+                    // Wait until we have at least 5 lines before returning first response
+                    if (!firstResponse) {
+                        if (newLineCount >= FIRST_CHUNK_LINE_COUNT) {
+                            // We've reached or exceeded 5 lines - use this as our first response
+                            firstResponse = response
+
+                            console.log('ADDING TO CACHE FROM FIRST ONE:', {
+                                response,
+                                lineCount: newLineCount,
+                            })
+
+                            // Cache the first response at the requested position
+                            this.cache.set(request.cacheKey, {
+                                response: {
+                                    ...response,
+                                    source: autoeditSource.cache,
+                                },
+                            })
+
+                            // Resolve the request with the first response
+                            request.resolve(response)
+
+                            // Yield the first response
+                            yield response
+                            isPredictionCached = true
+                            lineCount = newLineCount
+                        } else {
+                            // Not enough lines yet, continue collecting
+                            continue
+                        }
+                    } else {
+                        // For hot streak: handle subsequent chunks after the first response
+                        // Calculate how many new lines we've added since the last chunk
+                        const newLinesAdded = newLineCount - lineCount
+                        if (newLinesAdded > 0) {
+                            // Update line count
+                            lineCount = newLineCount
+
+                            // We'll cache these at positions ahead of the initial position
+                            lineNumber += newLinesAdded
+
+                            // Create a new cache key for the next line position
+                            const nextPositionParams = {
+                                ...params,
+                                position: new vscode.Position(lineNumber, 0),
+                            }
+
+                            // Cache the response at the next line position
+                            const cacheKey = createCacheKey(nextPositionParams)
+                            console.log('ADDING TO CACHE FROM HOT STREAK:', {
+                                response,
+                                lineCount: newLineCount,
+                                newLinesAdded,
+                            })
+                            this.cache.set(cacheKey, {
+                                response: {
+                                    ...response,
+                                    source: autoeditSource.hotStreak,
+                                },
+                            })
+
+                            // Yield the hot streak response
+                            yield response
+                        }
+                    }
+                }
+            }
+
+            // If we didn't get a successful response, resolve with an aborted response
+            if (!isPredictionCached) {
+                const abortedResponse = { type: 'aborted' as const, requestUrl: params.requestUrl }
+                request.resolve(abortedResponse)
+                yield abortedResponse
+            }
+        } catch (error: any) {
+            request.reject(error)
+            throw error
+        } finally {
+            this.inflightRequests.delete(request.cacheKey)
+        }
     }
 
     public removeFromCache(params: RequestCacheKeyParams): void {

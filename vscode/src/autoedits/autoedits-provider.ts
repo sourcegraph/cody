@@ -428,10 +428,20 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                 return null
             }
 
+            // Use suggestionLines config to only calculate diff based on first N lines
+            // when getting data from streaming API or cached hot streak responses
+            const useFirstNLinesOnly =
+                predictionResult.source === autoeditSource.hotStreak ||
+                predictionResult.source === autoeditSource.cache
+                    ? autoeditsProviderConfig.tokenLimit.suggestionLines
+                    : undefined
+
+            console.log('use first n lines only?', useFirstNLinesOnly)
             const decorationInfo = getDecorationInfoFromPrediction(
                 document,
                 prediction,
-                codeToReplaceData
+                codeToReplaceData,
+                { useFirstNLinesOnly }
             )
 
             if (
@@ -690,7 +700,61 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
             position,
             abortSignal,
         }
+        const userId = (await currentResolvedConfig()).clientState.anonymousUserID
 
+        // Use the streaming hot streak functionality if available in the adapter
+        if (this.modelAdapter.generateModelResponses) {
+            try {
+                // Start the streaming request but don't await all responses
+                const streamGenerator = this.requestManager.streamRequest(requestParams, signal => {
+                    return this.modelAdapter.generateModelResponses!({
+                        url: autoeditsProviderConfig.url,
+                        model: autoeditsProviderConfig.model,
+                        prompt,
+                        codeToRewrite: codeToReplaceData.codeToRewrite,
+                        userId,
+                        isChatModel: autoeditsProviderConfig.isChatModel,
+                        abortSignal: signal,
+                    })
+                })
+
+                // Get the first response for immediate display
+                const firstResponse = await streamGenerator.next()
+
+                // Continue streaming in the background to populate the cache for hot streak
+                void (async () => {
+                    try {
+                        // Consume the rest of the generator to populate cache
+                        for await (const _ of streamGenerator) {
+                            // We don't need to do anything with these responses
+                            // as they're being cached by the request manager
+                        }
+                    } catch (error) {
+                        // Silently fail for background processing
+                        autoeditsOutputChannelLogger.logError(
+                            'getPrediction',
+                            'Error in background hot streak processing:',
+                            { verbose: error }
+                        )
+                    }
+                })()
+
+                // Return the first response
+                if (firstResponse.done) {
+                    throw new Error('Stream ended before first response')
+                }
+                return firstResponse.value
+            } catch (error) {
+                autoeditsOutputChannelLogger.logError(
+                    'getPrediction',
+                    'Error streaming predictions, falling back to regular request:',
+                    { verbose: error }
+                )
+                // Fall back to non-streaming request
+            }
+        }
+
+        // Fall back to regular non-streaming request
         return this.requestManager.request(requestParams, async signal => {
             return this.modelAdapter.getModelResponse({
                 url: autoeditsProviderConfig.url,
@@ -753,13 +817,66 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
 export function getDecorationInfoFromPrediction(
     document: vscode.TextDocument,
     prediction: string,
-    codeToReplaceData: CodeToReplaceData
+    codeToReplaceData: CodeToReplaceData,
+    options?: {
+        useFirstNLinesOnly?: number // Only use the first N lines of the codeToReplace for diffing
+    }
 ): DecorationInfo {
     const currentFileText = document.getText()
+
+    // Get a modified version of codeToReplaceData with a range that only includes
+    // the first N lines of the original codeToRewrite if useFirstNLinesOnly is set
+    let effectiveCodeToReplaceData = codeToReplaceData
+
+    if (options?.useFirstNLinesOnly) {
+        // Count how many lines are in the original code to replace
+        const codeToRewriteLines = codeToReplaceData.codeToRewrite.split('\n')
+
+        // If we have more lines than we want to show, create a truncated version
+        if (codeToRewriteLines.length > options.useFirstNLinesOnly) {
+            // Get only the first N lines
+            const firstNLinesOfCodeToRewrite = codeToRewriteLines
+                .slice(0, options.useFirstNLinesOnly)
+                .join('\n')
+
+            // Calculate how many lines we're keeping
+            const startLine = codeToReplaceData.range.start.line
+            const endLine = Math.min(
+                startLine + options.useFirstNLinesOnly - 1,
+                codeToReplaceData.range.end.line
+            )
+
+            // Create a truncated range
+            const truncatedRange = new vscode.Range(
+                codeToReplaceData.range.start,
+                new vscode.Position(endLine, document.lineAt(endLine).text.length)
+            )
+
+            // Create the modified codeToReplaceData
+            effectiveCodeToReplaceData = {
+                ...codeToReplaceData,
+                range: truncatedRange,
+                codeToRewrite: firstNLinesOfCodeToRewrite,
+            }
+
+            autoeditsOutputChannelLogger.logDebug(
+                'getDecorationInfoFromPrediction',
+                'Using truncated range for diffing',
+                {
+                    originalLines: codeToRewriteLines.length,
+                    truncatedLines: options.useFirstNLinesOnly,
+                    originalRange: codeToReplaceData.range.toString(),
+                    truncatedRange: truncatedRange.toString(),
+                }
+            )
+        }
+    }
+
+    // Create the predicted file text using our potentially truncated range
     const predictedFileText =
-        currentFileText.slice(0, document.offsetAt(codeToReplaceData.range.start)) +
+        currentFileText.slice(0, document.offsetAt(effectiveCodeToReplaceData.range.start)) +
         prediction +
-        currentFileText.slice(document.offsetAt(codeToReplaceData.range.end))
+        currentFileText.slice(document.offsetAt(effectiveCodeToReplaceData.range.end))
 
     const decorationInfo = getDecorationInfo(currentFileText, predictedFileText)
     return decorationInfo

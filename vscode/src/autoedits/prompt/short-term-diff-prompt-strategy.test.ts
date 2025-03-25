@@ -67,6 +67,7 @@ describe('ShortTermPromptStrategy', () => {
                     [RetrieverIdentifier.JaccardSimilarityRetriever]: 100,
                     [RetrieverIdentifier.DiagnosticsRetriever]: 100,
                 },
+                suggestionLines: 5,
             }
             const codeToReplaceData = getCodeToReplaceData({
                 docContext,

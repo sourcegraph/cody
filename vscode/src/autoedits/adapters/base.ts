@@ -43,6 +43,7 @@ export type ModelResponse = SuccessModelResponse | AbortedModelResponse
 
 export interface AutoeditsModelAdapter extends vscode.Disposable {
     getModelResponse(args: AutoeditModelOptions): Promise<ModelResponse>
+    generateModelResponses?(args: AutoeditModelOptions): AsyncGenerator<ModelResponse>
 }
 
 /**

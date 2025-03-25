@@ -29,7 +29,10 @@ const defaultTokenLimit = {
     maxPrefixLinesInArea: 11,
     maxSuffixLinesInArea: 4,
     codeToRewritePrefixLines: 1,
-    codeToRewriteSuffixLines: 2,
+    codeToRewriteSuffixLines: 20,
+    // The number of lines to return in the first suggestion chunk
+    // This is used for streaming completions and hot streak
+    suggestionLines: 5,
     contextSpecificTokenLimit: {
         [RetrieverIdentifier.RecentEditsRetriever]: 1500,
         [RetrieverIdentifier.JaccardSimilarityRetriever]: 0,
