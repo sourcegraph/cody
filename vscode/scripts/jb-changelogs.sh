@@ -97,14 +97,14 @@ process_section() {
         domain_lower=$(echo "$domain" | tr '[:upper:]' '[:lower:]')
         matches=$(grep -i "^- $type($domain_lower)" filtered_changes.txt)
         if [ ! -z "$matches" ]; then
-            domain_content="${domain_content:-}\n#### $domain\n$matches"
+            domain_content="${domain_content:-}\n### $domain\n$matches"
             section_content="has_content"
         fi
     done
     
     # Only write the section if it has content
     if [ ! -z "$section_content" ]; then
-        echo -e "\n### $title" >> "$output_file"
+        echo -e "\n## $title" >> "$output_file"
         echo -e "$domain_content" >> "$output_file"
         return 0
     fi
@@ -125,7 +125,7 @@ process_section "chore" "Chores"
 # Handle completely uncategorized entries (this was missing)
 uncategorized=$(grep -v "^- \(feat\|fix\|changed\|chore\)" filtered_changes.txt)
 if [ ! -z "$uncategorized" ]; then
-    echo -e "\n### Uncategorized" >> "$output_file"
+    echo -e "\n## Uncategorized" >> "$output_file"
     echo "$uncategorized" >> "$output_file"
 fi
 
