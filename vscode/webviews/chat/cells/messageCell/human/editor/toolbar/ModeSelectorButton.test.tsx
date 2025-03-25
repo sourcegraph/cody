@@ -52,6 +52,7 @@ describe('ModeSelectorField', () => {
             uiKindIsWeb: false,
             webviewType: 'sidebar',
             multipleWebviewsEnabled: true,
+            attribution: 'none',
         },
         clientCapabilities: {
             isVSCode: true,
@@ -140,8 +141,8 @@ describe('ModeSelectorField', () => {
         // Open the dropdown
         fireEvent.click(screen.getByRole('combobox'))
 
-        // Agentic option should not be visible
-        expect(screen.queryByText('Agentic')).not.toBeInTheDocument()
+        // Agent option should not be visible
+        expect(screen.queryByText('Agent')).not.toBeInTheDocument()
     })
 
     it('hides agentic intent even when it was last selected if flag is not on', () => {
@@ -152,10 +153,10 @@ describe('ModeSelectorField', () => {
         )
 
         expect(screen.getByText('Chat')).toBeInTheDocument()
-        expect(screen.queryByText('Agentic')).not.toBeInTheDocument()
+        expect(screen.queryByText('Agent')).not.toBeInTheDocument()
         // Open the dropdown to check if the option is still hidden
         fireEvent.click(screen.getByRole('combobox'))
-        expect(screen.queryByText('Agentic')).not.toBeInTheDocument()
+        expect(screen.queryByText('Agent')).not.toBeInTheDocument()
     })
 
     it('displays agentic intent in model dropdown title - flag on', () => {
@@ -171,6 +172,6 @@ describe('ModeSelectorField', () => {
             </TestWrapper>
         )
 
-        expect(screen.getByText('Agentic')).toBeInTheDocument()
+        expect(screen.getByText('Agent')).toBeInTheDocument()
     })
 })

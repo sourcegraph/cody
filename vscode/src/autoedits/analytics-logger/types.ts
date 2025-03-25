@@ -114,6 +114,7 @@ export const autoeditDiscardReason = {
     noActiveEditor: 7,
     conflictingDecorationWithEdits: 8,
     notEnoughLinesEditor: 9,
+    staleThrottledRequest: 10,
 } as const
 
 /** We use numeric keys to send these to the analytics backend */

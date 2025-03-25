@@ -13,12 +13,17 @@ import com.sourcegraph.cody.agent.CodyAgent
 import com.sourcegraph.cody.agent.CodyAgentService
 import com.sourcegraph.cody.agent.protocol.WebviewOptions
 import com.sourcegraph.cody.config.CodyApplicationSettings
+import com.sourcegraph.cody.error.SentryService
 import com.sourcegraph.cody.sidebar.WebTheme
 import com.sourcegraph.cody.telemetry.TelemetryV2
 import com.sourcegraph.common.BrowserOpener
+import java.awt.AWTEvent
 import java.awt.Component
+import java.awt.KeyboardFocusManager
 import java.awt.datatransfer.StringSelection
+import java.awt.event.KeyEvent
 import java.io.IOException
+import java.lang.Exception
 import java.net.URI
 import java.nio.ByteBuffer
 import java.nio.channels.AsynchronousFileChannel
@@ -60,6 +65,8 @@ private const val MAIN_RESOURCE_URL = "${PSEUDO_HOST_URL_PREFIX}main-resource-no
 
 internal class WebUIProxy(private val host: WebUIHost, private val browser: JBCefBrowserBase) {
   companion object {
+    private val logger = Logger.getInstance(WebUIProxy::class.java)
+
     /**
      * TODO: Hopefully this can be removed when JetBrains will patch focus handler implementation
      *   https://youtrack.jetbrains.com/issue/IJPL-158952/Focus-issue-when-using-multiple-JCEF-instances
@@ -104,6 +111,45 @@ internal class WebUIProxy(private val host: WebUIHost, private val browser: JBCe
             }
           },
           browser.cefBrowser)
+
+      registerCustomEventDispatcher()
+    }
+
+    /**
+     * WORKAROUND: Rider, and potentially other IDEs, has a bug where they don't properly handle key
+     * events that should go to the Cef component, but instead they are swallowed, probably by
+     * others dispatchers from KeyboardFocusManager.keyEventDispatcher) . This is a workaround to
+     * make sure that the Cef component gets the key events like Enter, Shift+Enter, Delete, and
+     * Backspace even when they will be consumed by the processing pipeline.
+     */
+    private fun registerCustomEventDispatcher() {
+      KeyboardFocusManager.getCurrentKeyboardFocusManager().addKeyEventDispatcher { event: KeyEvent
+        ->
+        val isCefComponent =
+            event.component.javaClass.name ==
+                "com.intellij.ui.jcef.JBCefOsrComponent" // about 30% faster than
+        // browser.uiComponent.hasFocus()
+        try {
+          // if the event is destined for Cef component and it's already consumed, try to un-consume
+          // it
+          if (isCefComponent &&
+              event.isConsumed &&
+              (event.keyCode == KeyEvent.VK_ENTER ||
+                  event.keyCode == KeyEvent.VK_DELETE ||
+                  event.keyCode == KeyEvent.VK_BACK_SPACE)) {
+
+            // trying to un-consume the event via reflection
+            val consumedField = AWTEvent::class.java.getDeclaredField("consumed")
+            consumedField.isAccessible = true
+            consumedField.setBoolean(event, false)
+          }
+        } catch (e: Exception) {
+          val message = "Un-consuming the event keys failed."
+          logger.warn(message, e)
+          SentryService.report(e, message, null)
+        }
+        false // Don't consume the event
+      }
     }
 
     fun create(host: WebUIHost): WebUIProxy {

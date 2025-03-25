@@ -33,6 +33,7 @@ const dummyVSCodeAPI: VSCodeWrapper = {
                 allowEndpointChange: true,
                 experimentalPromptEditorEnabled: false,
                 experimentalAgenticChatEnabled: false,
+                attribution: 'none',
             },
             clientCapabilities: CLIENT_CAPABILITIES_FIXTURE,
             authStatus: {

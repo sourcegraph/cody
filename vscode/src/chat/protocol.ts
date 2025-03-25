@@ -271,6 +271,7 @@ export interface ConfigurationSubsetForWebview
     allowEndpointChange: boolean
     experimentalPromptEditorEnabled: boolean
     experimentalAgenticChatEnabled: boolean
+    attribution: 'none' | 'permissive' | 'enforced'
 }
 
 /**
