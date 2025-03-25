@@ -92,8 +92,8 @@ export class AutoeditDebugStore implements vscode.Disposable {
             updatedAt: Date.now(),
             autoeditsProviderConfig: { ...autoeditsProviderConfig },
             sideBySideDiffDecorationInfo: this.calculateSideBySideDiff(state),
-            sessionStats: this.sessionStatsTracker.getCurrentStats(),
             ...baseState,
+            sessionStats: this.sessionStatsTracker.getCurrentStats(),
         }
     }
 
