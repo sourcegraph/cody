@@ -1,5 +1,6 @@
 import type { FC } from 'react'
 import { useMemo } from 'react'
+import * as React from 'react'
 import type { AutoeditRequestDebugState } from '../../../src/autoedits/debug-panel/debug-store'
 
 // We'll use a simple canvas-based chart implementation
@@ -417,6 +418,3 @@ function calculatePercentile(values: number[], percentile: number): number | und
     // Return the value at the calculated index
     return sorted[Math.max(0, Math.min(index, sorted.length - 1))]
 }
-
-// Need to import React for the useRef hook
-import * as React from 'react'
