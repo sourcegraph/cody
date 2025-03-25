@@ -1611,7 +1611,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 {
                     mentionMenuData: query => {
                         return featureFlagProvider
-                            .evaluatedFeatureFlag(FeatureFlag.CodyExperimentalPromptEditor)
+                            .evaluateFeatureFlag(FeatureFlag.CodyExperimentalPromptEditor)
                             .pipe(
                                 switchMap((experimentalPromptEditor: boolean) =>
                                     getMentionMenuData({

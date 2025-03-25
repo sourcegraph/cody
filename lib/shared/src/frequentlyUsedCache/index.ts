@@ -4,8 +4,8 @@ import { type SerializedContextItem, deserializeContextItem } from '../lexicalEd
 
 // Constants
 const LOCAL_STORAGE_KEY = 'cody-frequently-used-items'
-const MAX_STORED_ITEMS = 50
-const MAX_RECENT_ITEMS = 20
+const MAX_STORED_ITEMS = 20
+const MAX_RECENT_ITEMS = 10
 // Time constants for decay calculation (in milliseconds)
 const HOUR_MS = 3600 * 1000
 const DAY_MS = 24 * HOUR_MS
@@ -77,8 +77,10 @@ function calculateItemScore(item: StoredItem): number {
 /**
  * Get frequently used context items, optionally filtered by a search query.
  * Items are sorted by a score combining frequency of use and recency.
- * @param query Optional search query to filter items by title
- * @returns Array of ContextItems, limited to 20 items
+ * @param query Optional search query to filter items by title, description or URI
+ * @param authStatus Authentication status containing endpoint and username
+ * @param codebases Array of codebase names to fetch items from
+ * @returns Array of ContextItems, limited to 20 items, sorted by frequency and recency score
  */
 export function getFrequentlyUsedContextItems({
     query,
@@ -130,8 +132,12 @@ export function getFrequentlyUsedContextItems({
 }
 
 /**
- * Save multiple context items to storage
- * @param items Array of ContextItems to save
+ * Saves multiple context items to local storage, updating existing items' usage counts
+ * and last used timestamps. Items are stored per codebase and sorted by a score based
+ * on frequency and recency of use.
+ * @param items Array of serialized context items to save
+ * @param authStatus Authentication details including endpoint and username
+ * @param codebases Array of codebase identifiers to save items for
  */
 export function saveFrequentlyUsedContextItems({
     items,

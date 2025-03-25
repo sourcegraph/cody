@@ -32,6 +32,7 @@ import { URI } from 'vscode-uri'
 import { getOpenTabsUris } from '.'
 import { toVSCodeRange } from '../../common/range'
 import { repoNameResolver } from '../../repository/repo-name-resolver'
+import { getEditor } from '../active-editor'
 import { findWorkspaceFiles } from './findWorkspaceFiles'
 
 // Some matches we don't want to ignore because they might be valid code (for example `bin/` in Dart)
@@ -287,7 +288,7 @@ export async function getSymbolContextFiles(
  * Filters out large files over 1MB to avoid expensive parsing.
  */
 export async function getOpenTabsContextFile(): Promise<ContextItemFile[]> {
-    const currentFile = vscode.window.activeTextEditor?.document.uri
+    const currentFile = getEditor().active?.document.uri
     const files = await filterContextItemFiles(
         (
             await Promise.all(
@@ -298,13 +299,14 @@ export async function getOpenTabsContextFile(): Promise<ContextItemFile[]> {
         ).flat()
     )
 
-    // Sort current file to the top if it exists
+    // Put current file at the top if it exists
     if (currentFile) {
-        return files.sort((a, b) => {
-            if (a.uri.toString() === currentFile.toString()) return -1
-            if (b.uri.toString() === currentFile.toString()) return 1
-            return 0
-        })
+        const currentFileIndex = files.findIndex(f => f.uri.toString() === currentFile.toString())
+        if (currentFileIndex > 0) {
+            const currentFileItem = files[currentFileIndex]
+            files.splice(currentFileIndex, 1)
+            files.unshift(currentFileItem)
+        }
     }
 
     return files

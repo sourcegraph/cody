@@ -56,22 +56,12 @@ export const SYMBOL_CONTEXT_MENTION_PROVIDER: ContextMentionProviderMetadata & {
     emptyLabel: 'No symbols found',
 }
 
-export const FREQUENTLY_USED_CONTEXT_MENTION_PROVIDER: ContextMentionProviderMetadata & {
-    id: 'frequentlyUsed'
-} = {
-    id: 'frequentlyUsed',
-    title: 'Frequently Used',
-    queryLabel: 'Search for a frequently used item to include...',
-    emptyLabel: 'No frequently used items found',
-}
-
 /**
  * Default order for context mention providers.
  * Providers will be sorted based on their position in this array.
  * Providers not in this list will be placed at the end.
  */
 export const DEFAULT_PROVIDER_ORDER: ContextMentionProviderID[] = [
-    FREQUENTLY_USED_CONTEXT_MENTION_PROVIDER.id,
     REMOTE_REPOSITORY_PROVIDER_URI,
     FILE_CONTEXT_MENTION_PROVIDER.id,
     SYMBOL_CONTEXT_MENTION_PROVIDER.id,
@@ -85,11 +75,7 @@ export function mentionProvidersMetadata(options?: {
     disableProviders: ContextMentionProviderID[]
 }): Observable<ContextMentionProviderMetadata[]> {
     return openCtxMentionProviders().map(providers =>
-        [
-            ...(options?.experimentalPromptEditor ? [FREQUENTLY_USED_CONTEXT_MENTION_PROVIDER] : []),
-            ...[FILE_CONTEXT_MENTION_PROVIDER, SYMBOL_CONTEXT_MENTION_PROVIDER],
-            ...providers,
-        ]
+        [...[FILE_CONTEXT_MENTION_PROVIDER, SYMBOL_CONTEXT_MENTION_PROVIDER], ...providers]
             .filter(provider => {
                 // Filter out providers that have been explicitly disabled
                 if (options?.disableProviders?.includes(provider.id)) {

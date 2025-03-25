@@ -4,7 +4,6 @@ import {
     type ContextMentionProviderMetadata,
     FILE_CONTEXT_MENTION_PROVIDER,
     FILE_RANGE_TOOLTIP_LABEL,
-    FREQUENTLY_USED_CONTEXT_MENTION_PROVIDER,
     NO_SYMBOL_MATCHES_HELP_LABEL,
     REMOTE_DIRECTORY_PROVIDER_URI,
     REMOTE_FILE_PROVIDER_URI,
@@ -35,7 +34,6 @@ import styles from './PromptEditor.module.css'
 import { fromSerializedPromptEditorState, toSerializedPromptEditorValue } from './lexical-interop'
 import { schema } from './promptInput'
 import 'prosemirror-view/style/prosemirror.css'
-import { Observable } from 'observable-fns'
 import {
     MentionMenuContextItemContent,
     MentionMenuProviderItemContent,
@@ -98,6 +96,8 @@ interface PromptEditorRefAPI {
 
 const SUGGESTION_LIST_LENGTH_LIMIT = 20
 
+// These providers are hidden from the UI but still needed for functionality
+// like remote file and directoryaccess
 const hiddenProviders = [REMOTE_FILE_PROVIDER_URI, REMOTE_DIRECTORY_PROVIDER_URI]
 
 /**
@@ -147,19 +147,6 @@ export const PromptEditor: FunctionComponent<Props> = ({
                 .filter(item => item.type === 'repository')
                 .map(item => item.repoName)
 
-            // If this is the frequently used provider, fetch and return the frequently used items.
-            // Since frequently used items are stored in localStorage which is only accessible
-            // inside the webview, we need to fetch them here rather than from the extension API.
-            if (provider?.id === FREQUENTLY_USED_CONTEXT_MENTION_PROVIDER.id && authStatus.username) {
-                return Observable.of(
-                    getFrequentlyUsedContextItems({
-                        query,
-                        authStatus: { endpoint: authStatus.endpoint, username: authStatus.username },
-                        codebases,
-                    }).map(item => ({ ...item, source: ContextItemSource.User }))
-                )
-            }
-
             // NOTE: It's important to only emit after we receive new mentions menu data.
             // This ensures that we display the 'old' menu items until new have arrived
             // and prevents the menu from 'flickering'.
@@ -188,28 +175,17 @@ export const PromptEditor: FunctionComponent<Props> = ({
                       }).slice(0, 3)
                     : []
 
-                // Get available context providers, filtered to remove hidden ones
-                const providers = result.providers.filter(provider => {
-                    if (hiddenProviders.includes(provider.id)) {
-                        return false
-                    }
+                // Filter out any hidden context providers
+                const providers = result.providers.filter(
+                    provider => !hiddenProviders.includes(provider.id)
+                )
 
-                    // Only show the frequently used provider if there are items
-                    if (provider.id === FREQUENTLY_USED_CONTEXT_MENTION_PROVIDER.id) {
-                        return frequentlyUsedItems.length > 0
-                    }
-
-                    return true
-                })
-
-                // If there's a search query:
-                // Return filtered initial context + available providers + matching items
+                // With a query, show only matching items
                 if (query) {
                     return [...filteredInitialContextItems, ...providers, ...items]
                 }
 
-                // If no query:
-                // Return filtered initial context + frequently used items + available providers + all items
+                // Without a query, also include frequently used items
                 return [...filteredInitialContextItems, ...frequentlyUsedItems, ...providers, ...items]
             })
         },

@@ -327,14 +327,6 @@ interface PromptInputContext {
         position: Position
     }
     /**
-     * Tracks state for the mode selector menu.
-     */
-    modeSelectorMenu: {
-        query: string
-        selectedIndex: number
-        position: Position
-    }
-    /**
      * A function for handling the selection of menu items. The function is passed a minimal API to apply
      * changes to the input.
      */
@@ -536,11 +528,6 @@ export const promptInput = setup({
             query: '',
             selectedIndex: 0,
             items: [],
-            position: { top: 0, left: 0, bottom: 0, right: 0 },
-        },
-        modeSelectorMenu: {
-            query: '',
-            selectedIndex: 0,
             position: { top: 0, left: 0, bottom: 0, right: 0 },
         },
         handleSelectMenuItem:

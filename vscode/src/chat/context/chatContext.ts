@@ -197,8 +197,8 @@ const getRepositoryContextItems = async (mentionQuery: MentionQuery, maxResults:
             items
                 .sort(
                     (a, b) =>
-                        getBestSearchMatch(a, mentionQuery.text) -
-                        getBestSearchMatch(b, mentionQuery.text)
+                        getSearchMatchRank(a, mentionQuery.text) -
+                        getSearchMatchRank(b, mentionQuery.text)
                 )
                 .slice(0, maxResults)
         )
@@ -211,6 +211,11 @@ export enum BestMatch {
     NoMatch = 3,
 }
 
+// TypeMatchOrder defines the priority order for different types of matches (Exact, StartsWith, Contains, NoMatch)
+// For each match type, it specifies the ranking (0 being highest) for repositories, files and symbols
+// For exact matches and startsWith, repositories are prioritized highest
+// For contains and no match cases, files are prioritized highest
+// Symbols consistently have lowest priority (2) across all match types
 const TypeMatchOrder: Record<BestMatch, Record<'file' | 'symbol' | 'repository', number>> = {
     [BestMatch.Exact]: { repository: 0, file: 1, symbol: 2 },
     [BestMatch.StartsWith]: { repository: 0, file: 1, symbol: 2 },
@@ -218,7 +223,7 @@ const TypeMatchOrder: Record<BestMatch, Record<'file' | 'symbol' | 'repository',
     [BestMatch.NoMatch]: { file: 0, repository: 1, symbol: 2 },
 }
 
-export const getBestSearchMatch = (item: ContextItem, query: string): BestMatch => {
+export const getSearchMatchRank = (item: ContextItem, query: string): BestMatch => {
     const searchableValues: string[] = []
     const normalizedQuery = query.toLowerCase().trim()
 
@@ -268,15 +273,15 @@ export const getBestSearchMatch = (item: ContextItem, query: string): BestMatch 
     return bestMatch
 }
 const sortByBestMatch = (a: ContextItem, b: ContextItem, mentionQuery: MentionQuery) => {
-    const matchA = getBestSearchMatch(a, mentionQuery.text)
-    const matchB = getBestSearchMatch(b, mentionQuery.text)
+    const matchA = getSearchMatchRank(a, mentionQuery.text)
+    const matchB = getSearchMatchRank(b, mentionQuery.text)
     if (matchA !== matchB) {
         return matchA - matchB
     }
 
     const typeOrder = TypeMatchOrder[matchA]
-    const typeA = typeOrder[a.type as keyof typeof typeOrder] ?? 3
-    const typeB = typeOrder[b.type as keyof typeof typeOrder] ?? 3
+    const typeA = typeOrder[a.type as keyof typeof typeOrder] ?? BestMatch.NoMatch
+    const typeB = typeOrder[b.type as keyof typeof typeOrder] ?? BestMatch.NoMatch
 
     return typeA - typeB
 }

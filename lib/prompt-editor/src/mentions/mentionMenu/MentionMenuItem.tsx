@@ -2,7 +2,6 @@ import {
     type ContextItem,
     type ContextMentionProviderMetadata,
     FILE_CONTEXT_MENTION_PROVIDER,
-    FREQUENTLY_USED_CONTEXT_MENTION_PROVIDER,
     IGNORED_FILE_WARNING_LABEL,
     LARGE_FILE_WARNING_LABEL,
     type MentionQuery,
@@ -22,7 +21,6 @@ import {
     ArrowRightIcon,
     BookCheckIcon,
     BoxIcon,
-    ClockIcon,
     DatabaseIcon,
     ExternalLinkIcon,
     FileIcon,
@@ -186,7 +184,6 @@ export const iconForProvider: Record<
     [REMOTE_DIRECTORY_PROVIDER_URI]: FolderGitIcon,
     [WEB_PROVIDER_URI]: LinkIcon,
     [RULES_PROVIDER_URI]: BookCheckIcon,
-    [FREQUENTLY_USED_CONTEXT_MENTION_PROVIDER.id]: ClockIcon,
 }
 
 const iconForItem: Record<
