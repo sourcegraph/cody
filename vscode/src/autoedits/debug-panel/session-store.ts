@@ -1,7 +1,7 @@
 import { LRUCache } from 'lru-cache'
 import type { AutoeditRequestState } from '../analytics-logger/types'
 
-interface RequestCacheEntry {
+export interface RequestCacheEntry {
     // prompt cache hit rate for the request.
     // This is only available if the fireworks response headers are available.
     promptCacheHitRate?: number
