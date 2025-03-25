@@ -48,6 +48,7 @@
     "@types/node": "20.12.7",
     "@types/react": "18.2.79",
     "@types/react-dom": "18.2.25",
+    "@types/ws": "^8.5.10",
     "@vitejs/plugin-react": "^4.2.1",
     "esbuild": "^0.18.20",
     "fs-extra": "^11.2.0",
@@ -71,7 +72,9 @@
     "react-dom": "18.2.0",
     "vscode-jsonrpc": "^8.2.0",
     "web-tree-sitter": "^0.21.0",
-    "win-ca": "^3.5.1"
+    "win-ca": "^3.5.1",
+    "ws": "^8.16.0",
+    "zod-to-json-schema": "^3.24.3"
   },
   "packageManager": "pnpm@8.6.7",
   "resolutions": {

@@ -46,8 +46,14 @@ export interface AutoEditsTokenLimit {
  * Used to configure the model provider for auto-edit functionality in the VS Code extension.
  */
 export interface AutoEditsModelConfig {
-    /** The provider service to use for auto-edit. Can be 'openai', 'fireworks', 'cody-gateway', 'sourcegraph', or 'inceptionlabs' */
-    provider: 'openai' | 'fireworks' | 'cody-gateway' | 'sourcegraph' | 'inceptionlabs'
+    /** The provider service to use for auto-edit. Can be 'openai', 'fireworks', 'fireworks-websocket', 'cody-gateway', 'sourcegraph', or 'inceptionlabs' */
+    provider:
+        | 'openai'
+        | 'fireworks'
+        | 'fireworks-websocket'
+        | 'cody-gateway'
+        | 'sourcegraph'
+        | 'inceptionlabs'
     /** The specific model identifier to use for auto-edit */
     model: string
     /** The endpoint URL for the provider's API */
@@ -62,6 +68,11 @@ export interface AutoEditsModelConfig {
      *   - The prompt is formatted accordingly
      */
     isChatModel: boolean
+    /**
+     * WebSocket endpoint to connect to if using websocket instead of HTTP/HTTPS. This will be subsumed into `url` parameter eventually once
+     * WebSocket proxy is no longer necessary.
+     */
+    webSocketEndpoint?: string
 }
 
 export interface NetConfiguration {
