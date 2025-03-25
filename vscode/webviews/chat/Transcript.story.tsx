@@ -366,3 +366,35 @@ export const WithCode: StoryObj<typeof meta> = {
         transcript: transcriptFixture([...FIXTURE_TRANSCRIPT.generateCode]),
     },
 }
+
+export const LoadingDotsState: StoryObj<typeof meta> = {
+    render: () => {
+        const [args] = useArgs<Required<NonNullable<(typeof meta)['args']>>>()
+
+        return (
+            <div className="tw-flex tw-flex-col tw-gap-4">
+                <Transcript
+                    {...args}
+                    transcript={transcriptFixture([
+                        {
+                            speaker: 'human',
+                            text: ps`Loading Dots in Transcript`,
+                            contextFiles: [],
+                        },
+                        { speaker: 'assistant', text: ps`Of course! What's your question?` },
+                        {
+                            speaker: 'human',
+                            text: ps`How do I implement a loading indicator in React?`,
+                            contextFiles: [],
+                        },
+                    ])}
+                    messageInProgress={{
+                        speaker: 'assistant',
+                        model: 'my-llm',
+                        text: ps`To imp`,
+                    }}
+                />
+            </div>
+        )
+    },
+}
