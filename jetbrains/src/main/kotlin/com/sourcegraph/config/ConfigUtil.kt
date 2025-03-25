@@ -123,7 +123,7 @@ object ConfigUtil {
         }
       }
     } else {
-      val token = CodySecureStore.getFromSecureStore(endpoint.url)
+      val token = CodySecureStore.getInstance().getFromSecureStore(endpoint.url)
       if (token != null) {
         authHeaders.complete(mapOf("Authorization" to "token $token"))
       }

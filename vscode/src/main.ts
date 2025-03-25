@@ -10,10 +10,10 @@ import {
     DOTCOM_URL,
     type DefaultCodyCommands,
     FeatureFlag,
-    type Guardrails,
     NEVER,
     PromptString,
     type ResolvedConfiguration,
+    type SourcegraphGuardrailsClient,
     authStatus,
     catchError,
     clientCapabilities,
@@ -735,7 +735,10 @@ function registerAutoEdits({
                 featureFlagProvider.evaluateFeatureFlag(
                     FeatureFlag.CodyAutoEditExperimentEnabledFeatureFlag
                 ),
-                featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutoEditInlineRendering)
+                featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutoEditInlineRendering),
+                featureFlagProvider.evaluateFeatureFlag(
+                    FeatureFlag.CodyAutoEditUseWebSocketForFireworksConnections
+                )
             )
                 .pipe(
                     distinctUntilChanged((a, b) => {
@@ -751,6 +754,7 @@ function registerAutoEdits({
                             authStatus,
                             autoeditFeatureFlagEnabled,
                             autoeditInlineRenderingEnabled,
+                            autoeditUseWebSocketEnabled,
                         ]) => {
                             return createAutoEditsProvider({
                                 config,
@@ -758,6 +762,7 @@ function registerAutoEdits({
                                 chatClient,
                                 autoeditFeatureFlagEnabled,
                                 autoeditInlineRenderingEnabled,
+                                autoeditUseWebSocketEnabled,
                                 fixupController,
                                 statusBar,
                                 context,
@@ -846,7 +851,7 @@ interface RegisterChatOptions {
     context: vscode.ExtensionContext
     platform: PlatformContext
     chatClient: ChatClient
-    guardrails: Guardrails
+    guardrails: SourcegraphGuardrailsClient
     editor: VSCodeEditor
     contextRetriever: ContextRetriever
 }

@@ -52,6 +52,7 @@ describe('ModeSelectorField', () => {
             uiKindIsWeb: false,
             webviewType: 'sidebar',
             multipleWebviewsEnabled: true,
+            attribution: 'none',
         },
         clientCapabilities: {
             isVSCode: true,

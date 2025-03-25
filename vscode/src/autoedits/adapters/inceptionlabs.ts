@@ -22,6 +22,7 @@ export const inceptionlabsPrompt = {
  * Experimental inceptionlabs auto-edit adapter for internal dogfooding only.
  */
 export class InceptionLabsAdapter implements AutoeditsModelAdapter {
+    dispose() {}
     async getModelResponse(option: AutoeditModelOptions): Promise<ModelResponse> {
         const requestBody = this.getMessageBody(option)
         try {

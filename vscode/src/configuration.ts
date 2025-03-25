@@ -54,9 +54,9 @@ export function getConfiguration(
 
     // Backward compatibility with the older auto-edit config name.
     // If auto-edit was turned on - override the suggestion mode to "auto-edit".
-    // TODO: clean up after the experimental release
+    // TODO: clean up after the beta release
     // https://linear.app/sourcegraph/issue/CODY-4701/clean-up-backwards-compatbility-settings-after-the-release
-    if (codyAutoSuggestionsMode === 'auto-edits (Experimental)') {
+    if (codyAutoSuggestionsMode === 'auto-edit (Experimental)') {
         codyAutoSuggestionsMode = CodyAutoSuggestionMode.Autoedit
 
         void vscode.workspace

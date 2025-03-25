@@ -1,0 +1,42 @@
+@keyframes shimmer {
+    0% {
+        opacity: .7;
+    }
+
+    50% {
+        opacity: .3;
+    }
+
+    100% {
+        opacity: .7;
+    }
+}
+
+.container {
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.line {
+    /* This height is important so that the shimmer animation and the final code are the same height. */
+    height: 1rem;
+    border-radius: 2px;
+    will-change: transform, opacity;
+    animation: shimmer 2s ease-in-out;
+    animation-iteration-count: infinite;
+    background-color: var(--vscode-editorInlayHint-background, var(--vscode-editor-selectionBackground, rgba(255, 255, 255, 0.08)));
+}
+
+.line:nth-of-type(2n+1) {
+    animation-delay: 0.5s;
+}
+
+.line:nth-of-type(3n+1) {
+    animation-delay: 1s;
+}
+
+.line:nth-of-type(4n+1) {
+    animation-delay: 1.5s;
+}
