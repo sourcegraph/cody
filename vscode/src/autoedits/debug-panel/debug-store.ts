@@ -4,11 +4,7 @@ import type { AutoeditRequestState } from '../analytics-logger/types'
 import { type AutoeditsProviderConfig, autoeditsProviderConfig } from '../autoedits-config'
 import type { DecorationInfo } from '../renderer/decorators/base'
 import { getDecorationInfo } from '../renderer/diff-utils'
-
-interface SessionStats {
-    promptCacheHitRate: number
-    promptCacheReqCount: number
-}
+import { type SessionStats, SessionStatsTracker } from './session-store'
 
 /**
  * Enhanced debug entry for auto-edit requests that extends the analytics logger state
@@ -34,55 +30,6 @@ export interface AutoeditRequestDebugState {
 const CHARACTER_REGEX = /./g
 
 /**
- * Tracks the stats for auto-edit requests across the session.
- */
-export class SessionStatsTracker {
-    private static instance: SessionStatsTracker
-    private promptCacheHitRate = 0
-    private promptCacheReqCount = 0
-
-    private constructor() {}
-
-    public static getInstance(): SessionStatsTracker {
-        if (!SessionStatsTracker.instance) {
-            SessionStatsTracker.instance = new SessionStatsTracker()
-        }
-        return SessionStatsTracker.instance
-    }
-
-    public trackRequest(state: AutoeditRequestState) {
-        this.updatePromptCacheStats(state)
-    }
-
-    public getCurrentStats(): SessionStats {
-        const sessionStats = {
-            promptCacheHitRate: this.promptCacheHitRate,
-            promptCacheReqCount: this.promptCacheReqCount,
-        }
-        console.log('SessionStatsTracker.getCurrentStats', sessionStats)
-        return sessionStats
-    }
-
-    private updatePromptCacheStats(state: AutoeditRequestState): void {
-        if (state.phase !== 'loaded') {
-            // Response headers are only available after receiving the response from the model.
-            return
-        }
-        const headers = state.payload.responseHeaders
-        const cachedTokens = headers?.['fireworks-cached-prompt-tokens']
-        const totalTokens = headers?.['fireworks-prompt-tokens']
-        if (!cachedTokens || !totalTokens) {
-            return
-        }
-        const currentRequestHitRate = (Number(cachedTokens) / Number(totalTokens)) * 100
-        this.promptCacheReqCount++
-        this.promptCacheHitRate =
-            (this.promptCacheHitRate * (this.promptCacheReqCount - 1) + currentRequestHitRate) /
-            this.promptCacheReqCount
-    }
-}
-
-/**
  * A simple in-memory store for debugging auto-edit requests.
  * Stores the most recent requests in a ring buffer.
  */
@@ -92,7 +39,7 @@ export class AutoeditDebugStore implements vscode.Disposable {
     /** Maximum number of auto-edit requests to store */
     private maxEntries = 50
     /** Session-wide stats tracker */
-    private sessionStatsTracker = SessionStatsTracker.getInstance()
+    private sessionStatsTracker = new SessionStatsTracker()
     /** Event emitter for notifying when data changes */
     private readonly onDidChangeEmitter = new vscode.EventEmitter<void>()
     /** Event that fires when the auto-edit requests data changes */
