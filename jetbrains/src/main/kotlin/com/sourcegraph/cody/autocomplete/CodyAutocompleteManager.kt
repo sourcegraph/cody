@@ -43,6 +43,7 @@ import com.sourcegraph.cody.vscode.IntelliJTextDocument
 import com.sourcegraph.cody.vscode.TextDocument
 import com.sourcegraph.common.CodyBundle
 import com.sourcegraph.common.CodyBundle.fmt
+import com.sourcegraph.config.ConfigUtil
 import com.sourcegraph.config.ConfigUtil.isCodyEnabled
 import com.sourcegraph.utils.CodyEditorUtil.getAllOpenEditors
 import com.sourcegraph.utils.CodyEditorUtil.getLanguage
@@ -124,7 +125,7 @@ class CodyAutocompleteManager {
       return
     }
 
-    if (editor.editorKind != EditorKind.MAIN_EDITOR) {
+    if (editor.editorKind != EditorKind.MAIN_EDITOR && !ConfigUtil.isIntegrationTestModeEnabled()) {
       logger.warn("triggered autocomplete with non-main editor")
       return
     }
