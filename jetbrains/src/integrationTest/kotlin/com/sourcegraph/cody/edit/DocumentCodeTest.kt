@@ -29,7 +29,7 @@ import org.junit.runner.RunWith
 class DocumentCodeTest {
 
   companion object {
-    val fixture = EditCodeFixture()
+    val fixture = EditCodeFixture("documentCode")
 
     @JvmStatic
     @AfterClass

@@ -16,7 +16,8 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Assert.fail
 
-class EditCodeFixture : BaseIntegrationTextFixture(), LensListener {
+class EditCodeFixture(recordingName: String) :
+    BaseIntegrationTextFixture(recordingName), LensListener {
   private val lensSubscribers = mutableListOf<(List<ProtocolCodeLens>) -> Boolean>()
 
   override fun checkInitialConditionsForOpenFile() {

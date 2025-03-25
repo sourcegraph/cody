@@ -28,7 +28,7 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 
-abstract class BaseIntegrationTextFixture {
+open class BaseIntegrationTextFixture(private val recordingName: String) {
   private val logger = Logger.getInstance(BaseIntegrationTextFixture::class.java)
 
   // We don't want to use .!! or .? everywhere in the tests,
@@ -118,6 +118,8 @@ abstract class BaseIntegrationTextFixture {
     val endpoint = SourcegraphServerPath.from(credentials.serverEndpoint, "")
     val token = credentials.token ?: credentials.redactedToken
 
+    System.setProperty("CODY_RECORDING_NAME", recordingName)
+
     assertNotNull(
         "Unable to start agent in a timely fashion!",
         CodyAgentService.getInstance(project)
@@ -148,7 +150,7 @@ abstract class BaseIntegrationTextFixture {
     assertFalse("Project should not be in LightEdit mode", isLightEditMode)
   }
 
-  abstract fun checkInitialConditionsForOpenFile()
+  open fun checkInitialConditionsForOpenFile() {}
 
   private fun isAuthenticated() {
     val authenticated = CompletableFuture<Boolean>()
@@ -205,7 +207,7 @@ abstract class BaseIntegrationTextFixture {
     }
   }
 
-  protected fun triggerAction(actionId: String) {
+  fun triggerAction(actionId: String) {
     runInEdtAndWait {
       PlatformTestUtil.dispatchAllEventsInIdeEventQueue()
       EditorTestUtil.executeAction(editor, actionId)
