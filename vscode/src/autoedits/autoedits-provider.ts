@@ -85,6 +85,8 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
     private readonly disposables: vscode.Disposable[] = []
     /** Keeps track of the last time the text was changed in the editor. */
     private lastTextChangeTimeStamp: number | undefined
+    private lastManualTriggerTimestamp = performance.now()
+
     private readonly onSelectionChangeDebounced: DebouncedFunc<typeof this.onSelectionChange>
 
     public readonly rendererManager: AutoEditsRendererManager
@@ -222,12 +224,13 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                 title: 'Auto-edits are being generated',
                 timeout: 5_000,
             })
+
             const throttledRequest = this.smartThrottleService.throttle({
                 uri: document.uri.toString(),
                 position,
-                isUserInitiated:
-                    inlineCompletionContext.triggerKind === vscode.InlineCompletionTriggerKind.Invoke,
+                isManuallyTriggered: this.lastManualTriggerTimestamp > performance.now() - 50,
             })
+
             const abortSignal = throttledRequest.abortController.signal
 
             let remainingThrottleDelay = throttledRequest.delayMs
@@ -684,6 +687,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
 
     public async manuallyTriggerCompletion(): Promise<void> {
         await vscode.commands.executeCommand('editor.action.inlineSuggest.hide')
+        this.lastManualTriggerTimestamp = performance.now()
         await vscode.commands.executeCommand('editor.action.inlineSuggest.trigger')
     }
 

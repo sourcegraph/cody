@@ -79,16 +79,16 @@ export class SmartThrottleService {
     public throttle(params: {
         uri: string
         position: vscode.Position
-        isUserInitiated: boolean
+        isManuallyTriggered: boolean
     }): ThrottledRequest {
-        const { uri, position, isUserInitiated } = params
+        const { uri, position, isManuallyTriggered } = params
         const now = performance.now()
 
         const lastRequest = this.lastRequest
         this.lastRequest = new ThrottledRequest({ uri, position, createdAt: now, delayMs: 0 })
 
-        // CASE 1: First request, different documents, or user-initiated - execute immediately
-        if (isUserInitiated || !lastRequest || !this.areCloseEnough(lastRequest, params)) {
+        // CASE 1: First request, different documents, or manually triggered - execute immediately
+        if (isManuallyTriggered || !lastRequest || !this.areCloseEnough(lastRequest, params)) {
             lastRequest?.abortController.abort()
             return this.lastRequest
         }
