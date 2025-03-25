@@ -1,4 +1,4 @@
-import type { ChatClient, Guardrails } from '@sourcegraph/cody-shared'
+import type { ChatClient, SourcegraphGuardrailsClient } from '@sourcegraph/cody-shared'
 
 import type { VSCodeEditor } from '../editor/vscode-editor'
 
@@ -11,6 +11,6 @@ export type MessageErrorType = 'transcript' | 'system'
 
 export interface MessageProviderOptions {
     chat: ChatClient
-    guardrails: Guardrails
+    guardrails: SourcegraphGuardrailsClient
     editor: VSCodeEditor
 }

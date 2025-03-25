@@ -1,6 +1,5 @@
-import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
-
 import { ps } from '@sourcegraph/cody-shared'
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { type AddressInfo, WebSocketServer } from 'ws'
 import * as autoeditsConfig from '../autoedits-config'

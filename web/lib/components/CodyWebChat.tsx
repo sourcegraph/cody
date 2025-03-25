@@ -20,6 +20,7 @@ import {
     PromptString,
     REMOTE_DIRECTORY_PROVIDER_URI,
     type WebviewToExtensionAPI,
+    createGuardrailsImpl,
     isErrorLike,
     setDisplayPathEnvInfo,
 } from '@sourcegraph/cody-shared'
@@ -369,7 +370,15 @@ const CodyWebPanel: FC<CodyWebPanelProps> = props => {
                             setView={handleViewChange}
                             errorMessages={errorMessages}
                             setErrorMessages={setErrorMessages}
-                            attributionEnabled={false}
+                            guardrails={createGuardrailsImpl(
+                                config.config.attribution,
+                                (snippet: string) => {
+                                    vscodeAPI.postMessage({
+                                        command: 'attribution-search',
+                                        snippet,
+                                    })
+                                }
+                            )}
                             configuration={config}
                             chatEnabled={true}
                             instanceNotices={clientConfig?.notices ?? []}
