@@ -15,6 +15,9 @@ import {
 } from './fixtures'
 import type { SerializedContextItemMentionNode } from './nodes'
 
+const testFileDisplayPath = (path: string) =>
+    PromptString.fromDisplayPath(testFileUri(path)).toString().replaceAll('\\', '/')
+
 describe('textContentFromSerializedLexicalNode', () => {
     test('empty root', () => {
         expect(
@@ -36,9 +39,9 @@ describe('textContentFromSerializedLexicalNode', () => {
                 wrapMention
             )
         ).toBe(
-            `What does <<Symbol1>> in <<${PromptString.fromDisplayPath(
-                testFileUri('dir/dir/file-a-1.py')
-            )}>> do? Also use <<${PromptString.fromDisplayPath(testFileUri('dir/dir/README.md'))}:2-8>>.`
+            `What does <<Symbol1>> in <<${testFileDisplayPath(
+                'dir/dir/file-a-1.py'
+            )}>> do? Also use <<${testFileDisplayPath('dir/dir/README.md')}:2-8>>.`
         )
     })
 
@@ -49,9 +52,9 @@ describe('textContentFromSerializedLexicalNode', () => {
                 wrapMention
             )
         ).toBe(
-            `What does <<Symbol1>> in <<${PromptString.fromDisplayPath(
-                testFileUri('dir/dir/file-a-1.py')
-            )}>> do? Also use <<${PromptString.fromDisplayPath(testFileUri('dir/dir/README.md'))}:2-8>>.`
+            `What does <<Symbol1>> in <<${testFileDisplayPath(
+                'dir/dir/file-a-1.py'
+            )}>> do? Also use <<${testFileDisplayPath('dir/dir/README.md')}:2-8>>.`
         )
     })
 
@@ -62,8 +65,8 @@ describe('textContentFromSerializedLexicalNode', () => {
                 wrapMention
             )
         ).toBe(
-            `Your task is to generate a suit of multiple unit tests for the functions defined inside the <<${PromptString.fromDisplayPath(
-                testFileUri('a/b/file1.go')
+            `Your task is to generate a suit of multiple unit tests for the functions defined inside the <<${testFileDisplayPath(
+                'a/b/file1.go'
             )}>> file.\n\nUse the <<mention the testing framework>> framework to generate the unit tests. Follow the example tests from the <<mention an example test file>> test file. Include unit tests for the following cases: <<list test cases>>.\n\nEnsure that the unit tests cover all the edge cases and validate the expected functionality of the functions`
         )
     })
