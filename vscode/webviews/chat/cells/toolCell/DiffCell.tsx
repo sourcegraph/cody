@@ -49,15 +49,21 @@ export const DiffCell: FC<DiffCellProps> = ({
                 <span className="tw-font-mono">{fileName}</span>
             </Button>
             <div className="tw-ml-2 tw-flex tw-flex-shrink-0 tw-items-center tw-gap-2">
-                <span className="tw-flex tw-items-center tw-text-emerald-500">
-                    <Plus size={14} className="tw-mr-0.5" /> {result.total.added}
-                </span>
-                <span className="tw-flex tw-items-center tw-text-orange-500">
-                    <DiffIcon size={14} className="tw-mr-0.5" /> {result.total.modified}
-                </span>
-                <span className="tw-flex tw-items-center tw-text-rose-500">
-                    <Minus size={14} className="tw-mr-0.5" /> {result.total.removed}
-                </span>
+                {result.total.added > 0 && (
+                    <span className="tw-flex tw-items-center tw-text-emerald-500">
+                        <Plus size={14} className="tw-mr-0.5" /> {result.total.added}
+                    </span>
+                )}
+                {result.total.modified > 0 && (
+                    <span className="tw-flex tw-items-center tw-text-orange-500">
+                        <DiffIcon size={14} className="tw-mr-0.5" /> {result.total.modified}
+                    </span>
+                )}
+                {result.total.removed > 0 && (
+                    <span className="tw-flex tw-items-center tw-text-rose-500">
+                        <Minus size={14} className="tw-mr-0.5" /> {result.total.removed}
+                    </span>
+                )}
             </div>
         </div>
     )
