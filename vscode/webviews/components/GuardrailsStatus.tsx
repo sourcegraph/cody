@@ -41,7 +41,7 @@ export const GuardrailsStatus: React.FC<GuardrailsStatusProps> = ({
             {status === GuardrailsCheckStatus.Checking && (
                 <div className={styles.status}>
                     <LoaderIcon className={clsx('tw-animate-spin', styles.iconContainer)} size={14} />
-                    <span className={styles.fileNameContainer}>Checking guardrails</span>
+                    <span className={styles.fileNameContainer}>Checking Guardrails</span>
                 </div>
             )}
             {status === GuardrailsCheckStatus.Success && (
@@ -92,7 +92,7 @@ export const GuardrailsStatus: React.FC<GuardrailsStatusProps> = ({
                             onClick={onRetry}
                             type="button"
                             className={styles.button}
-                            title="Retry guardrails check"
+                            title="Retry Guardrails check"
                         >
                             <div className={styles.iconContainer}>
                                 <RefreshCwIcon size={12} />
