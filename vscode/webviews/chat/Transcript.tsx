@@ -583,6 +583,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(
                 {/* Shows tool contents instead of editor if any */}
                 <HumanMessageCell
                     key={humanMessage.index}
+                    index={humanMessage.index}
                     userInfo={userInfo}
                     models={models}
                     chatEnabled={chatEnabled}

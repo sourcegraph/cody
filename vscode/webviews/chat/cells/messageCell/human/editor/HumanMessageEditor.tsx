@@ -150,7 +150,7 @@ export const HumanMessageEditor: FunctionComponent<{
             // Only reset the editor with index -1 (the last editor)
             if (index === -1) {
                 requestAnimationFrame(() => {
-                    if (editorRef.current) {
+                    if (editorRef?.current) {
                         editorRef.current.setEditorState({
                             v: 'lexical-v1',
                             lexicalEditorState: {
@@ -182,7 +182,15 @@ export const HumanMessageEditor: FunctionComponent<{
                 },
             })
         },
-        [submitState, parentOnSubmit, onStop, telemetryRecorder.recordEvent, isFirstMessage, isSent]
+        [
+            index,
+            submitState,
+            parentOnSubmit,
+            onStop,
+            telemetryRecorder.recordEvent,
+            isFirstMessage,
+            isSent,
+        ]
     )
 
     const omniBoxEnabled = useOmniBox()
