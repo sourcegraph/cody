@@ -146,7 +146,7 @@ export enum FeatureFlag {
     CodyAutoEditUseWebSocketForFireworksConnections = 'auto-edit-use-web-socket-for-connections',
 
     // Extend context window for Cody Clients
-    LongContextWindow = 'long-context-window',
+    EnhancedContextWindow = 'enhanced-context-window',
 
     /**
      * Internal use only. Enables the next agentic chat experience.

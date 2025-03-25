@@ -78,7 +78,7 @@ describe('createModelFromServerModel', () => {
         } satisfies ServerModel
 
         // Act
-        const result = createModelFromServerModel(reasoningEditModel)
+        const result = createModelFromServerModel(reasoningEditModel, false)
 
         // Assert
         expect(result.usage).toContain(ModelUsage.Chat)
@@ -103,7 +103,7 @@ describe('createModelFromServerModel', () => {
         } satisfies ServerModel
 
         // Act
-        const result = createModelFromServerModel(editOnlyModel)
+        const result = createModelFromServerModel(editOnlyModel, false)
 
         // Assert
         expect(result.usage).toContain(ModelUsage.Edit)
@@ -127,7 +127,7 @@ describe('createModelFromServerModel', () => {
         } satisfies ServerModel
 
         // Act
-        const result = createModelFromServerModel(reasoningOnlyModel)
+        const result = createModelFromServerModel(reasoningOnlyModel, false)
 
         // Assert
         expect(result.usage).toContain(ModelUsage.Chat)
