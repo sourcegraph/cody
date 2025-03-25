@@ -235,7 +235,7 @@ export function transcriptToInteractionPairs(
                 // across renders and not recreated when transcript length changes
                 index: -1,
                 speaker: 'human',
-                isUnsentFollowup: true,
+                isUnsentFollowup: !lastHumanMessage?.isUnsentFollowup,
                 // If the last submitted message was a search, default to chat for the followup. Else,
                 // keep the manually selected intent, if any, or the last human message's intent.
                 intent:
