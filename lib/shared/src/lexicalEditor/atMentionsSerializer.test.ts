@@ -276,10 +276,10 @@ describe('atMentionsSerializer', () => {
         })
 
         it('handles all dynamic selectors', () => {
-            Object.values(DYNAMIC_MENTION_TO_HYDRATABLE).forEach(v => {
+            for (const v of Object.values(DYNAMIC_MENTION_TO_HYDRATABLE)) {
                 const input = `a ${v} b`
                 expect(splitToWords(input)).toEqual(['a ', v, ' b'])
-            })
+            }
         })
     })
 
