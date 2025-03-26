@@ -127,6 +127,11 @@ export const TerminalOutputCell: FC<TerminalOutputCellProps> = ({
             )
         }
 
+        if (lines?.length < 2) {
+            // Since the first line is the name of the command, this means the result is empty.
+            return null
+        }
+
         return (
             <pre className="tw-font-mono tw-text-xs tw-p-4 tw-bg-black tw-rounded-b-md tw-overflow-x-auto">
                 {lines.map((line, index) => {

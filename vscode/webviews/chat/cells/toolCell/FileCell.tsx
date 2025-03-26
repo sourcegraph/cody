@@ -19,6 +19,7 @@ export const FileCell: FC<FileCellProps> = ({
     onFileLinkClicked,
     defaultOpen = false,
 }) => {
+    const isError = result?.status === UIToolStatus.Error
     const renderHeaderContent = () => (
         <div className="tw-flex tw-items-center tw-gap-2 tw-overflow-hidden tw-flex-row">
             <Button
@@ -27,12 +28,11 @@ export const FileCell: FC<FileCellProps> = ({
                 onClick={e => {
                     e.preventDefault()
                     e.stopPropagation()
-                    if (result?.uri && result?.status !== UIToolStatus.Error)
-                        onFileLinkClicked(result?.uri)
+                    if (result?.uri && result?.uri.scheme !== 'cody') onFileLinkClicked(result?.uri)
                 }}
             >
                 <span className="tw-font-mono">
-                    {!UIToolStatus.Error && result.uri ? displayPath(result.uri) : result.title}
+                    {result.uri ? displayPath(result.uri) : result.title}
                 </span>
             </Button>
         </div>
@@ -40,7 +40,7 @@ export const FileCell: FC<FileCellProps> = ({
 
     return (
         <BaseCell
-            icon={UIToolStatus.Error ? FileX : FileCode}
+            icon={isError ? FileX : FileCode}
             headerContent={renderHeaderContent()}
             bodyContent={undefined}
             className={className}
