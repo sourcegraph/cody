@@ -236,7 +236,7 @@ export const GuardrailsApplicator: React.FC<GuardrailsApplicatorProps> = ({
                     className={styles.button}
                     type="button"
                     onClick={handleRetry}
-                    title="Retry guardrails check"
+                    title="Retry Guardrails check"
                 >
                     <div className={styles.iconContainer}>
                         <RefreshCwIcon size={14} />
