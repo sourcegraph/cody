@@ -21,7 +21,15 @@ export const RunTerminalCommandSchema = z.object({
 })
 
 export const GetDiagnosticSchema = z.object({
-    name: z.string().describe('The name of the file for which to retrieve diagnostics from.'),
+    name: z
+        .string()
+        .describe(
+            'The name of the file for which to retrieve diagnostics from. Put "*" to get all diagnostics from current codebase.'
+        ),
+    type: z
+        .enum(['error', 'warning', 'all'])
+        .optional()
+        .describe('The type of diagnostics to retrieve. Default to error type when not specificied.'),
 })
 
 export const CodeSearchSchema = z.object({

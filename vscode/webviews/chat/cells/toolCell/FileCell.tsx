@@ -20,17 +20,24 @@ export const FileCell: FC<FileCellProps> = ({
     defaultOpen = false,
 }) => {
     const isError = result?.status === UIToolStatus.Error
+    const title = result.uri ? displayPath(result.uri) : result.title
     const renderHeaderContent = () => (
         <Button
             variant="ghost"
-            className="tw-flex tw-items-center tw-gap-2 tw-overflow-hidden tw-p-0 tw-w-full tw-text-left tw-truncate tw-z-10 hover:tw-bg-transparent tw-font-mono"
+            className={
+                'tw-flex tw-items-center tw-gap-2 tw-overflow-hidden tw-p-0 tw-w-full tw-text-left tw-truncate tw-z-10 hover:tw-bg-transparent tw-font-mono' +
+                isError
+                    ? ' tw-border-red-700'
+                    : ''
+            }
+            title={title}
             onClick={e => {
                 e.preventDefault()
                 e.stopPropagation()
                 if (result?.uri) onFileLinkClicked(result.uri)
             }}
         >
-            {result.uri ? displayPath(result.uri) : result.title}
+            {title}
         </Button>
     )
 
@@ -40,6 +47,7 @@ export const FileCell: FC<FileCellProps> = ({
             headerContent={renderHeaderContent()}
             className={className}
             defaultOpen={defaultOpen} // Always closed since there's no content to show
+            status={result?.status}
         />
     )
 }
