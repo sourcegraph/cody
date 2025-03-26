@@ -13,8 +13,7 @@ async function getGuardrailsMode(): Promise<'none' | 'permissive' | 'enforced'> 
     if (!config) {
         throw new Error('EditGuardrails cannot determine Guardrails mode: no client config')
     }
-    // TODO DONOTCOMMIT forcing enforced mode for testing
-    return 'enforced' // config.attribution
+    return config.attribution
 }
 
 function attributionToMessage(attribution: Attribution): string {
@@ -98,7 +97,7 @@ export class EditGuardrails {
 
             // Synchronously collect the result.
             const progressOptions: vscode.ProgressOptions = {
-                title: '$(loading~spin) Checking Guardrails',
+                title: 'Checking Guardrails',
                 location: vscode.ProgressLocation.Window,
             }
             const attribution = await vscode.window.withProgress(progressOptions, () => {
