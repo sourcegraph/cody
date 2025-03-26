@@ -161,7 +161,6 @@ export const HumanMessageEditor: FunctionComponent<{
     const omniBoxEnabled = useOmniBox()
     const {
         config: { experimentalPromptEditorEnabled },
-        authStatus,
     } = useConfig()
 
     const onEditorEnterKey = useCallback(
