@@ -18,6 +18,45 @@ describe('sanitizedChatMessages', () => {
         expect(result).toEqual(messages)
     })
 
+    it('should remove content between <think> tags in first human message', () => {
+        const messages: ChatMessage[] = [
+            { speaker: 'human', text: ps`<think>This should be removed</think>Keep this text` },
+            { speaker: 'assistant', text: ps`Response` },
+        ]
+        const result = sanitizedChatMessages(messages)
+        expect(result[0].text).toEqual(ps`Keep this text`)
+    })
+
+    it('should only process <think> tags if they start at the beginning of the message', () => {
+        const messages: ChatMessage[] = [
+            { speaker: 'human', text: ps`Text before <think>This should not be removed</think>` },
+            { speaker: 'assistant', text: ps`Response` },
+        ]
+        const result = sanitizedChatMessages(messages)
+        expect(result[0].text).toEqual(ps`Text before <think>This should not be removed</think>`)
+    })
+
+    it('should handle multiple <think> tags if the first one starts at the beginning', () => {
+        const messages: ChatMessage[] = [
+            {
+                speaker: 'human',
+                text: ps`<think>Remove this</think>Keep\n\nthis<think>And \nalso this \n</think>`,
+            },
+            { speaker: 'assistant', text: ps`Response` },
+        ]
+        const result = sanitizedChatMessages(messages)
+        expect(result[0].text).toEqual(ps`Keep\n\nthis<think>And \nalso this \n</think>`)
+    })
+
+    it('should not modify human message without <think> tags', () => {
+        const messages: ChatMessage[] = [
+            { speaker: 'human', text: ps`This message has no think tags` },
+            { speaker: 'assistant', text: ps`Response` },
+        ]
+        const result = sanitizedChatMessages(messages)
+        expect(result[0].text).toEqual(ps`This message has no think tags`)
+    })
+
     it('should remove tool_call from human messages', () => {
         const messages: ChatMessage[] = [
             {

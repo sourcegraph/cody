@@ -5,6 +5,7 @@ import {
     type ContextItemToolState,
 } from '@sourcegraph/cody-shared/src/codebase-context/messages'
 import * as vscode from 'vscode'
+import { URI } from 'vscode-uri'
 import type { AgentTool } from '.'
 import { validateWithZod } from '../utils/input'
 import { zodToolSchema } from '../utils/parse'
@@ -208,7 +209,7 @@ function createShellToolState(
         icon: 'terminal',
         status,
         source: ContextItemSource.Agentic,
-        uri: vscode.Uri.parse(`cody-tool://shell?id=${toolId}`),
+        uri: URI.parse(''),
     }
 }
 
