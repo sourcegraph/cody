@@ -16,6 +16,7 @@ import {
     isError,
     pendingOperation,
 } from '@sourcegraph/cody-shared'
+import { AT_MENTION_REGEX } from '@sourcegraph/cody-shared/dist/lexicalEditor/atMentionsSerializer'
 import { URI } from 'vscode-uri'
 import { contextItemMentionFromOpenCtxItem } from '../chat/context/chatContext'
 import { getContextFileFromTabs } from '../commands/context/open-tabs'
@@ -64,7 +65,7 @@ export async function hydratePromptText(
     const promptText = PromptString.unsafe_fromUserQuery(promptRawText)
 
     // Match any general cody mentions in the prompt text with cody:// prefix
-    const promptTextMentionMatches = promptText.toString().match(/cody:\/\/[a-zA-Z0-9-]+/gm) ?? []
+    const promptTextMentionMatches = promptText.toString().match(AT_MENTION_REGEX) ?? []
 
     let hydratedPromptText = promptText
     const contextItemsMap = new Map<string, ContextItem>()

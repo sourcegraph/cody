@@ -222,6 +222,8 @@ function createContextItemMention(
     }
 }
 
+export const AT_MENTION_REGEX = /(cody:\/\/(?:serialized[^_]+_|[a-zA-Z0-9-]+))/gm
+
 export function splitToWords(s: string): string[] {
     /**
      * Regular expression pattern that matches Cody context mentions in two formats:
@@ -236,8 +238,7 @@ export function splitToWords(s: string): string[] {
      * - "explain cody://current-selection's content" -> matches "cody://current-selection"
      * - "cody://serialized.v1?data=123_." -> matches "cody://serialized.v1?data=123_"
      */
-    const pattern = /(cody:\/\/(?:serialized[^_]+_|[a-zA-Z0-9-]+))/
-    return s.split(pattern)
+    return s.split(AT_MENTION_REGEX)
 }
 
 function deserializeDoc(s: string): SerializedLexicalNode[] {
