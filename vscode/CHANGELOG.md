@@ -38,6 +38,10 @@ This is a log of all notable changes to Cody for VS Code.
 
 - Improve error handling and tool execution robustne… [#7518](https://github.com/sourcegraph/cody/pull/7518)
 - Fix tool result rendering for first message [#7491](https://github.com/sourcegraph/cody/pull/7491)
+- new UI components [#7457](https://github.com/sourcegraph/cody/pull/7457)
+- add internal feature flag [#7479](https://github.com/sourcegraph/cody/pull/7479)
+- use different models for first turn and subsequent turns [#7436](https://github.com/sourcegraph/cody/pull/7436)
+- add tool status UI and thought process toggle [#7415](https://github.com/sourcegraph/cody/pull/7415)
 
 #### Auto-Edit
 
@@ -47,6 +51,7 @@ This is a log of all notable changes to Cody for VS Code.
 
 - persist and allow manual selection of intent mode [#7432](https://github.com/sourcegraph/cody/pull/7432)
 - Improve excluded context warning message [#7372](https://github.com/sourcegraph/cody/pull/7372)
+- Fix current selection in ContextRetriever [#7443](https://github.com/sourcegraph/cody/pull/7443)
 
 #### Completions
 
@@ -55,6 +60,7 @@ This is a log of all notable changes to Cody for VS Code.
 #### Edit
 
 - initialize edit tool history for S2 only [#7434](https://github.com/sourcegraph/cody/pull/7434)
+- Add longer duration for persistence tracking for longer suggestion prediction [#7548](https://github.com/sourcegraph/cody/pull/7548)
 
 #### Input
 
@@ -72,6 +78,11 @@ This is a log of all notable changes to Cody for VS Code.
 - Improve placeholder text in chat input [#7490](https://github.com/sourcegraph/cody/pull/7490)
 
 ### Chore
+
+- remove compatibility override after experimental release [#7459](https://github.com/sourcegraph/cody/pull/7459)
+- Remove NLS from cody-bench [#7458](https://github.com/sourcegraph/cody/pull/7458)
+- Cache diffs from recent edits [#7424](https://github.com/sourcegraph/cody/pull/7424)
+- Update subscription type when switching acc without endpoint change [#7451](https://github.com/sourcegraph/cody/pull/7451)
 
 #### Auto-Edit
 
@@ -96,29 +107,6 @@ This is a log of all notable changes to Cody for VS Code.
 ### Reverts
 
 - Revert "Fix assertion error from webview (closes #2845) [#2845](https://github.com/sourcegraph/cody/pull/7257)
-
-### Uncategorized
-
-#### Others
-
-- [Backport M80] (auto-edit): Add longer duration for persistence tracking for longer suggestion prediction [#7548](https://github.com/sourcegraph/cody/pull/7548)
-- [Backport M80] Fix uri conversions on Windows [#7533](https://github.com/sourcegraph/cody/pull/7533)
-- Feat(agentic chat): add internal feature flag [#7479](https://github.com/sourcegraph/cody/pull/7479)
-- Changelog for 1.78.1 [#7476](https://github.com/sourcegraph/cody/pull/7476)
-- Prevent parallel agent restarts from happening [#7466](https://github.com/sourcegraph/cody/pull/7466)
-- Changelog for 1.78.0 [#7464](https://github.com/sourcegraph/cody/pull/7464)
-- CODY-4631: remove compatibility override after experimental release [#7459](https://github.com/sourcegraph/cody/pull/7459)
-- Remove NLS from cody-bench [#7458](https://github.com/sourcegraph/cody/pull/7458)
-- Feat(agentic chat): new UI components [#7457](https://github.com/sourcegraph/cody/pull/7457)
-- Update subscription type when switching acc without endpoint change [#7451](https://github.com/sourcegraph/cody/pull/7451)
-- Update Cody Web 0.32.3 [#7444](https://github.com/sourcegraph/cody/pull/7444)
-- Fix current selection in ContextRetriever [#7443](https://github.com/sourcegraph/cody/pull/7443)
-- Feat(agentic chat): use different models for first turn and subsequent turns [#7436](https://github.com/sourcegraph/cody/pull/7436)
-- Cache diffs from recent edits [#7424](https://github.com/sourcegraph/cody/pull/7424)
-- Changelog for 1.76.1 [#7422](https://github.com/sourcegraph/cody/pull/7422)
-- Feat(agentic chat): add tool status UI and thought process toggle [#7415](https://github.com/sourcegraph/cody/pull/7415)
-- Add support for global Cody config [#7405](https://github.com/sourcegraph/cody/pull/7405)
-- Improve URI handling [#7281](https://github.com/sourcegraph/cody/pull/7281)
 
 
 ## 1.78.2
