@@ -230,7 +230,7 @@ export function transcriptToInteractionPairs(
                 // Always using a fixed index for the last/followup editor ensures it will be reused
                 // across renders and not recreated when transcript length changes.
                 // This is a hack to avoid the editor getting reset during Agent mode.
-                index: -1,
+                index: lastHumanMessage?.intent === 'agentic' ? -1 : pairs.length * 2,
                 speaker: 'human',
                 isUnsentFollowup: true,
                 // If the last submitted message was a search, default to chat for the followup. Else,
