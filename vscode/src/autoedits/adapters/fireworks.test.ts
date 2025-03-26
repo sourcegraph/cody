@@ -124,11 +124,16 @@ describe('FireworksAdapter', () => {
         mockFetchSpy.mockResolvedValueOnce({
             status: 200,
             headers: new Headers(),
-            json: () => Promise.resolve({ choices: [{ message: { content: expectedResponse } }] }),
+            text: () => Promise.resolve(JSON.stringify(expectedResponse)),
         })
 
-        const response = await adapter.getModelResponse(options)
-        expect((response as SuccessModelResponse).prediction).toBe(expectedResponse)
+        const responseGenerator = adapter.getModelResponse(options)
+        const responses = []
+        for await (const response of await responseGenerator) {
+            responses.push(response)
+        }
+        const lastResponse = responses[responses.length - 1]
+        expect((lastResponse as SuccessModelResponse).prediction).toBe(expectedResponse)
     })
 
     it('returns correct response for completions model', async () => {
@@ -138,10 +143,17 @@ describe('FireworksAdapter', () => {
         mockFetchSpy.mockResolvedValueOnce({
             status: 200,
             headers: new Headers(),
-            json: () => Promise.resolve({ choices: [{ text: expectedResponse }] }),
+            text: () => Promise.resolve(JSON.stringify(expectedResponse)),
         })
 
-        const response = await adapter.getModelResponse(nonChatOptions)
-        expect((response as SuccessModelResponse).prediction).toBe(expectedResponse)
+        const responseGenerator = await adapter.getModelResponse(nonChatOptions)
+        const responses = []
+        for await (const response of responseGenerator) {
+            responses.push(response)
+        }
+
+        expect(responses.length).toBeGreaterThan(0)
+        const lastResponse = responses[responses.length - 1]
+        expect(lastResponse.type !== 'aborted' ? lastResponse.prediction : null).toBe(expectedResponse)
     })
 })

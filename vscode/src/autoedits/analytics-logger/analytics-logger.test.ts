@@ -13,7 +13,7 @@ import {
 import { getCurrentDocContext } from '../../completions/get-current-doc-context'
 import { documentAndPosition } from '../../completions/test-helpers'
 import * as sentryModule from '../../services/sentry/sentry'
-import type { AutoeditModelOptions } from '../adapters/base'
+import { type AutoeditModelOptions, AutoeditStopReason } from '../adapters/base'
 import { getCodeToReplaceData } from '../prompt/prompt-utils'
 import { getDecorationInfo } from '../renderer/diff-utils'
 
@@ -114,9 +114,10 @@ describe('AutoeditAnalyticsLogger', () => {
             prompt: modelOptions.prompt,
             modelResponse: {
                 type: 'success',
+                stopReason: AutoeditStopReason.RequestFinished,
                 prediction,
-                requestHeaders: {},
                 requestUrl: modelOptions.url,
+                requestHeaders: {},
                 responseHeaders: {},
                 responseBody: {},
             },

@@ -1,49 +1,59 @@
 import { currentResolvedConfig, dotcomTokenToGatewayToken } from '@sourcegraph/cody-shared'
+import { forkSignal, generatorWithErrorObserver, generatorWithTimeout } from '../../completions/utils'
 
 import { autoeditsOutputChannelLogger } from '../output-channel-logger'
 
 import type { AutoeditModelOptions, AutoeditsModelAdapter, ModelResponse } from './base'
+import { getDefaultModelResponse } from './model-response/default'
 import {
     type AutoeditsRequestBody,
     type FireworksCompatibleRequestParams,
     getMaxOutputTokensForAutoedits,
-    getModelResponse,
     getOpenaiCompatibleChatPrompt,
 } from './utils'
 
 export class CodyGatewayAdapter implements AutoeditsModelAdapter {
     dispose() {}
 
-    public async getModelResponse(options: AutoeditModelOptions): Promise<ModelResponse> {
+    public async getModelResponse(
+        options: AutoeditModelOptions
+    ): Promise<AsyncGenerator<ModelResponse>> {
         const headers = {
             'X-Sourcegraph-Feature': 'code_completions',
         }
         const body = this.getMessageBody(options)
         try {
             const apiKey = await this.getApiKey()
-            const response = await getModelResponse({
-                url: options.url,
-                body,
-                apiKey,
-                customHeaders: headers,
-                abortSignal: options.abortSignal,
-            })
-
-            if (response.type === 'aborted') {
-                return response
-            }
-
-            let prediction: string
-            if (options.isChatModel) {
-                prediction = response.responseBody.choices[0].message.content
-            } else {
-                prediction = response.responseBody.choices[0].text
-            }
-
-            return {
-                ...response,
-                prediction,
-            }
+            const abortController = forkSignal(options.abortSignal)
+            return generatorWithErrorObserver(
+                generatorWithTimeout(
+                    getDefaultModelResponse({
+                        url: options.url,
+                        body,
+                        apiKey,
+                        customHeaders: headers,
+                        abortSignal: options.abortSignal,
+                        extractPrediction: (response: any) => {
+                            if (options.isChatModel) {
+                                return response.choices?.[0]?.message?.content
+                            }
+                            return response.choices?.[0]?.text
+                        },
+                    }),
+                    options.timeoutMs || 10000,
+                    abortController
+                ),
+                error => {
+                    autoeditsOutputChannelLogger.logError(
+                        'getModelResponse',
+                        'Error calling Cody Gateway:',
+                        {
+                            verbose: error,
+                        }
+                    )
+                    throw error
+                }
+            )
         } catch (error) {
             autoeditsOutputChannelLogger.logError('getModelResponse', 'Error calling Cody Gateway:', {
                 verbose: error,

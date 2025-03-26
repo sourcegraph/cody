@@ -1,24 +1,18 @@
+import { forkSignal, generatorWithErrorObserver, generatorWithTimeout } from '../../completions/utils'
 import { autoeditsProviderConfig } from '../autoedits-config'
 import { autoeditsOutputChannelLogger } from '../output-channel-logger'
 
-import type {
-    AbortedModelResponse,
-    AutoeditModelOptions,
-    AutoeditsModelAdapter,
-    ModelResponse,
-    ModelResponseShared,
-    SuccessModelResponse,
-} from './base'
+import type { AutoeditModelOptions, AutoeditsModelAdapter, ModelResponse } from './base'
+import { getFireworksModelResponse } from './model-response/fireworks'
 import {
     type AutoeditsRequestBody,
     type FireworksCompatibleRequestParams,
     getMaxOutputTokensForAutoedits,
-    getModelResponse,
     getOpenaiCompatibleChatPrompt,
 } from './utils'
 
 export class FireworksAdapter implements AutoeditsModelAdapter {
-    async getModelResponse(option: AutoeditModelOptions): Promise<ModelResponse> {
+    async getModelResponse(option: AutoeditModelOptions): Promise<AsyncGenerator<ModelResponse>> {
         const requestBody = this.getMessageBody(option)
         try {
             const apiKey = autoeditsProviderConfig.experimentalAutoeditsConfigOverride?.apiKey
@@ -30,28 +24,36 @@ export class FireworksAdapter implements AutoeditsModelAdapter {
                 )
                 throw new Error('No api key provided in the config override')
             }
-            const response = await this.sendModelRequest({
-                url: option.url,
-                body: requestBody,
-                apiKey,
-                abortSignal: option.abortSignal,
-            })
 
-            if (response.type === 'aborted') {
-                return response
-            }
-
-            let prediction: string
-            if (option.isChatModel) {
-                prediction = response.responseBody.choices[0].message.content
-            } else {
-                prediction = response.responseBody.choices[0].text
-            }
-
-            return {
-                ...response,
-                prediction,
-            }
+            const abortController = forkSignal(option.abortSignal)
+            return generatorWithErrorObserver(
+                generatorWithTimeout(
+                    getFireworksModelResponse({
+                        apiKey,
+                        url: option.url,
+                        body: requestBody,
+                        abortSignal: option.abortSignal,
+                        extractPrediction: (response: any) => {
+                            if (option.isChatModel) {
+                                return response.choices?.[0]?.message?.content
+                            }
+                            return response.choices?.[0]?.text
+                        },
+                    }),
+                    option.timeoutMs || 10000,
+                    abortController
+                ),
+                error => {
+                    autoeditsOutputChannelLogger.logError(
+                        'getModelResponse',
+                        'Error calling Fireworks API:',
+                        {
+                            verbose: error,
+                        }
+                    )
+                    throw error
+                }
+            )
         } catch (error) {
             autoeditsOutputChannelLogger.logError('getModelResponse', 'Error calling Fireworks API:', {
                 verbose: error,
@@ -62,32 +64,10 @@ export class FireworksAdapter implements AutoeditsModelAdapter {
 
     dispose() {}
 
-    protected async sendModelRequest({
-        apiKey,
-        url,
-        body,
-        abortSignal,
-        customHeaders = {},
-    }: {
-        apiKey: string
-        url: string
-        body: ModelResponseShared['requestBody']
-        abortSignal: AbortSignal
-        customHeaders?: Record<string, string>
-    }): Promise<Omit<SuccessModelResponse, 'prediction'> | AbortedModelResponse> {
-        return getModelResponse({
-            apiKey,
-            url,
-            body,
-            abortSignal,
-            customHeaders,
-        })
-    }
-
     private getMessageBody(options: AutoeditModelOptions): AutoeditsRequestBody {
         const maxTokens = getMaxOutputTokensForAutoedits(options.codeToRewrite)
         const baseParams: FireworksCompatibleRequestParams = {
-            stream: false,
+            stream: true,
             model: options.model,
             temperature: 0.1,
             max_tokens: maxTokens,

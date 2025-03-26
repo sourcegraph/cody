@@ -9,7 +9,8 @@ import { FixupController } from '../non-stop/FixupController'
 import { WorkspaceEdit, vsCodeMocks } from '../testutils/mocks'
 
 import type { CodyStatusBar } from '../services/StatusBar'
-import * as adapters from './adapters/utils'
+import { AutoeditStopReason } from './adapters/base'
+import * as modelResponse from './adapters/model-response/default'
 import { autoeditTriggerKind } from './analytics-logger'
 import {
     AUTOEDIT_INITIAL_DEBOUNCE_INTERVAL_MS,
@@ -42,7 +43,7 @@ export async function autoeditResultFor(
         /** provide to reuse an existing provider instance */
         provider?: AutoeditsProvider
         inlineCompletionContext?: vscode.InlineCompletionContext
-        getModelResponse?: typeof adapters.getModelResponse
+        getModelResponse?: typeof modelResponse.getDefaultModelResponse
         isAutomaticTimersAdvancementDisabled?: boolean
     }
 ): Promise<{
@@ -53,12 +54,14 @@ export async function autoeditResultFor(
     provider: AutoeditsProvider
     editBuilder: WorkspaceEdit
 }> {
-    const getModelResponseMock: typeof adapters.getModelResponse = async () => {
+    const getModelResponseMock: typeof modelResponse.getDefaultModelResponse = async function* () {
         // Simulate response latency.
         vi.advanceTimersByTime(100)
 
-        return {
+        yield {
             type: 'success',
+            stopReason: AutoeditStopReason.RequestFinished,
+            prediction,
             responseBody: {
                 choices: [
                     {
@@ -69,11 +72,13 @@ export async function autoeditResultFor(
             requestHeaders: {},
             responseHeaders: {},
             requestUrl: 'test-url.com/completions',
-        } as const
+        }
     }
 
     // TODO: add a callback to verify `getModelResponse` arguments.
-    vi.spyOn(adapters, 'getModelResponse').mockImplementation(getModelResponse || getModelResponseMock)
+    vi.spyOn(modelResponse, 'getDefaultModelResponse').mockImplementation(
+        getModelResponse || getModelResponseMock
+    )
 
     const editBuilder = new WorkspaceEdit()
     const { document, position } = versionedDocumentAndPosition({

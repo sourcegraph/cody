@@ -5,8 +5,15 @@ import type { CodeCompletionsParams, PromptString } from '@sourcegraph/cody-shar
 import type { AutoeditSourceMetadata } from '../analytics-logger/types'
 import type { AutoeditsRequestBody } from './utils'
 
+export enum AutoeditStopReason {
+    StreamingChunk = 'cody-streaming-chunk',
+    RequestAborted = 'cody-request-aborted',
+    RequestFinished = 'cody-request-finished',
+}
+
 export type ModelResponseShared = {
-    type: 'success' | 'aborted'
+    type: 'success' | 'partial' | 'aborted'
+    stopReason: AutoeditStopReason
     /** URL used to make the request to the model API */
     requestUrl: string
     /** Optional request headers sent to the model API */
@@ -20,6 +27,31 @@ export type ModelResponseShared = {
 
 export interface SuccessModelResponse extends ModelResponseShared {
     type: 'success'
+    stopReason: AutoeditStopReason.RequestFinished
+    prediction: string
+    /**
+     * Response headers received from the model API
+     */
+    responseHeaders: Record<string, string>
+    /**
+     * Optional full response body received from the model API
+     * This is propagated to the analytics logger for debugging purposes
+     * TODO: replace `any` with the proper type.
+     */
+    responseBody: Record<string, any>
+    /**
+     * The source of the suggestion, e.g. 'network', 'cache', etc.
+     */
+    source?: AutoeditSourceMetadata
+}
+
+/**
+ * Represents a partial response from the model API
+ * This is used for streaming responses
+ */
+export interface PartialModelResponse extends ModelResponseShared {
+    type: 'partial'
+    stopReason: AutoeditStopReason.StreamingChunk
     prediction: string
     /**
      * Response headers received from the model API
@@ -39,12 +71,13 @@ export interface SuccessModelResponse extends ModelResponseShared {
 
 export interface AbortedModelResponse extends ModelResponseShared {
     type: 'aborted'
+    stopReason: AutoeditStopReason.RequestAborted
 }
 
-export type ModelResponse = SuccessModelResponse | AbortedModelResponse
+export type ModelResponse = SuccessModelResponse | PartialModelResponse | AbortedModelResponse
 
 export interface AutoeditsModelAdapter extends vscode.Disposable {
-    getModelResponse(args: AutoeditModelOptions): Promise<ModelResponse>
+    getModelResponse(args: AutoeditModelOptions): Promise<AsyncGenerator<ModelResponse>>
 }
 
 /**
@@ -67,6 +100,8 @@ export interface AutoeditModelOptions {
     url: string
     model: string
     prompt: AutoeditsPrompt
+    // TODO: Make required
+    timeoutMs?: number
     codeToRewrite: string
     userId: string | null
     isChatModel: boolean

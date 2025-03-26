@@ -768,7 +768,7 @@ function registerAutoEdits({
                                 chatClient,
                                 autoeditFeatureFlagEnabled,
                                 autoeditInlineRenderingEnabled,
-                                autoeditUseWebSocketEnabled,
+                                autoeditUseWebSocketEnabled: true,
                                 fixupController,
                                 statusBar,
                                 context,
