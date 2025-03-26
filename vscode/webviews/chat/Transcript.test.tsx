@@ -428,7 +428,7 @@ describe('transcriptToInteractionPairs', () => {
     test('empty transcript', () => {
         expect(transcriptToInteractionPairs([], null, null)).toEqual<Interaction[]>([
             {
-                humanMessage: { index: -1, speaker: 'human', isUnsentFollowup: true, intent: undefined },
+                humanMessage: { index: 0, speaker: 'human', isUnsentFollowup: true, intent: null },
                 assistantMessage: null,
             },
         ])
@@ -478,7 +478,7 @@ describe('transcriptToInteractionPairs', () => {
                 },
             },
             {
-                humanMessage: { index: -1, speaker: 'human', isUnsentFollowup: true, intent: null },
+                humanMessage: { index: 4, speaker: 'human', isUnsentFollowup: true, intent: null },
                 assistantMessage: null,
             },
         ])
@@ -511,7 +511,7 @@ describe('transcriptToInteractionPairs', () => {
                 },
             },
             {
-                humanMessage: { index: -1, speaker: 'human', isUnsentFollowup: true, intent: null },
+                humanMessage: { index: 2, speaker: 'human', isUnsentFollowup: true, intent: null },
                 assistantMessage: null,
             },
         ])
