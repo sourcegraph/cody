@@ -64,7 +64,7 @@ export async function hydratePromptText(
     const promptText = PromptString.unsafe_fromUserQuery(promptRawText)
 
     // Match any general cody mentions in the prompt text with cody:// prefix
-    const promptTextMentionMatches = promptText.toString().match(/cody:\/\/[^\s.,;:]+/gm) ?? []
+    const promptTextMentionMatches = promptText.toString().match(/cody:\/\/[a-zA-Z0-9-]+/gm) ?? []
 
     let hydratedPromptText = promptText
     const contextItemsMap = new Map<string, ContextItem>()
