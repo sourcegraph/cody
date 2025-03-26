@@ -400,6 +400,9 @@ ${replacementCode}`,
             finalReplacement = '\n' + replacement
         }
 
+        const canStream =
+            !(await this.options.editManager.options.guardrails.shouldHideCodeBeforeAttribution())
+
         const task = this.options.editManager.createTaskAndCheckForDuplicates({
             taskId: id,
             document,
@@ -407,6 +410,7 @@ ${replacementCode}`,
             userContextFiles: [],
             selectionRange: insertionRange,
             intent: 'add',
+            isStreamed: canStream,
             mode: 'insert',
             model,
             rules: null,

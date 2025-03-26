@@ -87,6 +87,7 @@ import { createInlineCompletionItemProvider } from './completions/create-inline-
 import { getConfiguration } from './configuration'
 import { observeOpenCtxController } from './context/openctx'
 import { logGlobalStateEmissions } from './dev/helpers'
+import { EditGuardrails } from './edit/edit-guardrails'
 import { EditManager } from './edit/edit-manager'
 import { SmartApplyManager } from './edit/smart-apply-manager'
 import { manageDisplayPathEnvInfoForExtension } from './editor/displayPathEnvInfo'
@@ -272,7 +273,12 @@ const register = async (
     )
     const fixupController = new FixupController(platform.extensionClient)
     const ghostHintDecorator = new GhostHintDecorator({ fixupController })
-    const editManager = new EditManager({ chatClient, editor, fixupController })
+    const editManager = new EditManager({
+        chatClient,
+        editor,
+        fixupController,
+        guardrails: new EditGuardrails(guardrails),
+    })
     const smartApplyManager = new SmartApplyManager({ editManager, chatClient })
 
     CodyToolProvider.initialize(contextRetriever)
