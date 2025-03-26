@@ -1,6 +1,8 @@
 package com.sourcegraph.cody.autocomplete
 
 import com.intellij.openapi.application.ReadAction
+import com.intellij.openapi.editor.VisualPosition
+import com.intellij.testFramework.runInEdtAndGet
 import com.sourcegraph.cody.autocomplete.render.CodyAutocompleteElementRenderer
 import com.sourcegraph.cody.autocomplete.render.InlayModelUtil
 import com.sourcegraph.cody.util.BaseIntegrationTextFixture
@@ -9,6 +11,7 @@ import com.sourcegraph.cody.vscode.InlineCompletionTriggerKind
 import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers.containsString
 import org.junit.AfterClass
+import org.junit.Assert.assertTrue
 import org.junit.Assert.fail
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -32,6 +35,8 @@ class AutocompleteCompletionTest {
     triggerAutocomplete()
 
     awaitForInlayRenderer()
+    assertTrue(hasInlayAt(VisualPosition(2, 9)))
+
     fixture.triggerAction("cody.acceptAutocompleteAction")
     assertThat(fixture.editor.document.text, containsString("\n    for (x in list) {\n"))
   }
@@ -42,6 +47,7 @@ class AutocompleteCompletionTest {
     triggerAutocomplete()
 
     awaitForInlayRenderer()
+    assertTrue(hasInlayAt(VisualPosition(3, 23)))
     fixture.triggerAction("cody.acceptAutocompleteAction")
     assertThat(
         fixture.editor.document.text,
@@ -54,9 +60,14 @@ class AutocompleteCompletionTest {
     triggerAutocomplete()
 
     awaitForInlayRenderer()
+    assertTrue(hasInlayAt(VisualPosition(8, 4 + 13))) // +13 due to the common prefix
     fixture.triggerAction("cody.acceptAutocompleteAction")
     assertThat(
         fixture.editor.document.text, containsString("\n    CommonPrefix.sayHello(\"world\")\n"))
+  }
+
+  private fun hasInlayAt(position: VisualPosition) = runInEdtAndGet {
+    fixture.editor.inlayModel.hasInlineElementAt(position)
   }
 
   private fun triggerAutocomplete() {
