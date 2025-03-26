@@ -388,7 +388,13 @@ function expectCells(expectedCells: CellMatcher[], containerElement?: HTMLElemen
                     cell
                 expect(textElement.innerText.trim()).toBe(expectedCell.message)
             } else if ('loading' in expectedCell.message) {
-                expect(cell.querySelector('[role="status"]')).toHaveAttribute('aria-busy')
+                const statusElement = cell.querySelector('[role="status"]')
+                if (i === expectedCells.length - 1) {
+                    expect(statusElement).not.toBeNull()
+                    expect(statusElement).toHaveAttribute('aria-busy', 'true')
+                } else {
+                    expect(statusElement).toBeNull()
+                }
             }
             if (expectedCell.canSubmit !== undefined) {
                 const submitButton = cell.querySelector('button[type="submit"]')
@@ -408,7 +414,9 @@ function expectCells(expectedCells: CellMatcher[], containerElement?: HTMLElemen
                         : `${expectedCell.context.files} items`
                 )
             } else if (expectedCell.context.loading) {
-                expect(cell.querySelector('[role="status"]')).toHaveAttribute('aria-busy')
+                const statusElement = cell.querySelector('[role="status"]')
+                expect(statusElement).not.toBeNull()
+                expect(statusElement).toHaveAttribute('aria-busy', 'true')
             }
         } else {
             throw new Error('unknown cell')

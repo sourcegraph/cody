@@ -347,17 +347,25 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 break
             }
             case 'openFileLink':
-                if (message?.uri?.scheme?.startsWith('http')) {
-                    this.openRemoteFile(message.uri, true)
-                    return
+                {
+                    if (message?.uri?.scheme?.startsWith('http')) {
+                        this.openRemoteFile(message.uri, true)
+                        return
+                    }
+
+                    // Determine if we're in the sidebar view
+                    const isInSidebar =
+                        this._webviewPanelOrView && !('viewColumn' in this._webviewPanelOrView)
+
+                    vscode.commands.executeCommand('vscode.open', message.uri, {
+                        selection: message.range,
+                        preserveFocus: true,
+                        background: false,
+                        preview: true,
+                        // Use the active column if in sidebar, otherwise use Beside
+                        viewColumn: isInSidebar ? vscode.ViewColumn.Active : vscode.ViewColumn.Beside,
+                    })
                 }
-                vscode.commands.executeCommand('vscode.open', message.uri, {
-                    selection: message.range,
-                    preserveFocus: true,
-                    background: false,
-                    preview: true,
-                    viewColumn: vscode.ViewColumn.Beside,
-                })
                 break
             case 'openRemoteFile':
                 this.openRemoteFile(message.uri, message.tryLocal ?? false)

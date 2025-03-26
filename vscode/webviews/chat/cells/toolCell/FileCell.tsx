@@ -1,6 +1,6 @@
-import { displayPath } from '@sourcegraph/cody-shared'
+import { UIToolStatus, displayPath } from '@sourcegraph/cody-shared'
 import type { ContextItemToolState } from '@sourcegraph/cody-shared/src/codebase-context/messages'
-import { FileCode } from 'lucide-react'
+import { FileCode, FileX } from 'lucide-react'
 import type { FC } from 'react'
 import type { URI } from 'vscode-uri'
 import { Button } from '../../../components/shadcn/ui/button'
@@ -23,15 +23,16 @@ export const FileCell: FC<FileCellProps> = ({
         <div className="tw-flex tw-items-center tw-gap-2 tw-overflow-hidden tw-flex-row">
             <Button
                 variant="ghost"
-                className="tw-flex tw-items-center tw-gap-2 tw-overflow-hidden tw-p-0 tw-text-left tw-truncate tw-w-full"
+                className="tw-flex tw-items-center tw-gap-2 tw-overflow-hidden tw-p-0 tw-text-left tw-truncate tw-w-full hover:tw-bg-transparent"
                 onClick={e => {
                     e.preventDefault()
                     e.stopPropagation()
-                    if (result?.uri) onFileLinkClicked(result?.uri)
+                    if (result?.uri && result?.status !== UIToolStatus.Error)
+                        onFileLinkClicked(result?.uri)
                 }}
             >
                 <span className="tw-font-mono">
-                    {result.uri ? displayPath(result.uri) : result.title}
+                    {!UIToolStatus.Error && result.uri ? displayPath(result.uri) : result.title}
                 </span>
             </Button>
         </div>
@@ -39,11 +40,11 @@ export const FileCell: FC<FileCellProps> = ({
 
     return (
         <BaseCell
-            icon={FileCode}
+            icon={UIToolStatus.Error ? FileX : FileCode}
             headerContent={renderHeaderContent()}
             bodyContent={undefined}
             className={className}
-            defaultOpen={false} // Always closed since there's no content to show
+            defaultOpen={defaultOpen} // Always closed since there's no content to show
         />
     )
 }

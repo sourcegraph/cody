@@ -25,7 +25,6 @@ import {
 } from '../../../ChatMessageContent/ChatMessageContent'
 import { ErrorItem, RequestErrorItem } from '../../../ErrorItem'
 import { type Interaction, editHumanMessage } from '../../../Transcript'
-import { LoadingDots } from '../../../components/LoadingDots'
 import { BaseMessageCell } from '../BaseMessageCell'
 import { SearchResults } from './SearchResults'
 import { SubMessageCell } from './SubMessageCell'
@@ -132,7 +131,6 @@ export const AssistantMessageCell: FunctionComponent<{
                                             to "think". Recommended for complex reasoning & coding tasks.
                                         </p>
                                     )}
-                                    <LoadingDots />
                                 </div>
                             )
                         )}
