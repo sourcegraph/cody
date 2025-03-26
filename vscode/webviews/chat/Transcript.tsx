@@ -47,6 +47,7 @@ import ApprovalCell from './cells/agenticCell/ApprovalCell'
 import { ContextCell } from './cells/contextCell/ContextCell'
 import { DidYouMeanNotice } from './cells/messageCell/assistant/DidYouMean'
 import { ToolStatusCell } from './cells/toolCell/ToolStatusCell'
+import { LoadingDots } from './components/LoadingDots'
 import { LastEditorContext } from './context'
 
 interface TranscriptProps {
@@ -572,7 +573,8 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
 
     return (
         <>
-            {/* Shows tool contents instead of editor if any */}
+            {/* Show loading state on the last interaction */}
+            {isLastInteraction && priorAssistantMessageIsLoading && <LoadingDots />}
             <HumanMessageCell
                 key={humanMessage.index}
                 index={humanMessage.index}
@@ -655,6 +657,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                         isThoughtProcessOpened={isThoughtProcessOpened}
                     />
                 )}
+            {/* Shows tool contents instead of editor if any */}
             {agentToolCalls?.map(tool => (
                 <ToolStatusCell
                     key={tool.toolId}
