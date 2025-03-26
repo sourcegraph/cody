@@ -1,3 +1,4 @@
+import { getClientIdentificationHeaders } from '@sourcegraph/cody-shared'
 import { Command } from 'commander'
 import { AuthenticatedAccount } from './command-auth/AuthenticatedAccount'
 import { endpointOption } from './command-auth/command-login'
@@ -20,6 +21,7 @@ export const modelsCommand = () =>
                 const results = await fetch(`${account.serverEndpoint}/.api/llm/models`, {
                     headers: {
                         Authorization: `token ${account.accessToken}`,
+                        ...getClientIdentificationHeaders(),
                     },
                 })
                 if (!results.ok) {
