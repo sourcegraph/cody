@@ -21,28 +21,23 @@ export const FileCell: FC<FileCellProps> = ({
 }) => {
     const isError = result?.status === UIToolStatus.Error
     const renderHeaderContent = () => (
-        <div className="tw-flex tw-items-center tw-gap-2 tw-overflow-hidden tw-flex-row">
-            <Button
-                variant="ghost"
-                className="tw-flex tw-items-center tw-gap-2 tw-overflow-hidden tw-p-0 tw-text-left tw-truncate tw-w-full hover:tw-bg-transparent"
-                onClick={e => {
-                    e.preventDefault()
-                    e.stopPropagation()
-                    if (result?.uri && result?.uri.scheme !== 'cody') onFileLinkClicked(result?.uri)
-                }}
-            >
-                <span className="tw-font-mono">
-                    {result.uri ? displayPath(result.uri) : result.title}
-                </span>
-            </Button>
-        </div>
+        <Button
+            variant="ghost"
+            className="tw-flex tw-items-center tw-gap-2 tw-overflow-hidden tw-p-0 tw-w-full tw-text-left tw-truncate tw-z-10 hover:tw-bg-transparent tw-font-mono"
+            onClick={e => {
+                e.preventDefault()
+                e.stopPropagation()
+                if (result?.uri) onFileLinkClicked(result.uri)
+            }}
+        >
+            {result.uri ? displayPath(result.uri) : result.title}
+        </Button>
     )
 
     return (
         <BaseCell
             icon={isError ? FileX : FileCode}
             headerContent={renderHeaderContent()}
-            bodyContent={undefined}
             className={className}
             defaultOpen={defaultOpen} // Always closed since there's no content to show
         />

@@ -78,7 +78,11 @@ export const shellTool: AgentTool = {
                 return createShellToolState(validInput.command, contentString, UIToolStatus.Error)
             }
 
-            throw new Error(`Failed to run terminal command: ${input.command}: ${error}`)
+            return createShellToolState(
+                validInput.command ?? 'unknown command',
+                `Failed to run terminal command: ${input.command}: ${error}`,
+                UIToolStatus.Error
+            )
         }
     },
 }

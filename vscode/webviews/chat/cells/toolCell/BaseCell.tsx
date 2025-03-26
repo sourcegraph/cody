@@ -58,7 +58,7 @@ const BaseCellComponent: FC<BaseCellProps> = ({
                         headerBgClass,
                         isLoading && 'tw-cursor-wait'
                     )}
-                    disabled={isLoading || !bodyContent}
+                    disabled={isLoading}
                 >
                     <div className="tw-flex tw-items-center tw-gap-2 tw-overflow-hidden">
                         {Icon && <Icon size={16} className="tw-flex-shrink-0 tw-text-zinc-400" />}

@@ -58,7 +58,6 @@ function createFileToolState(
         toolName: 'get_file',
         status,
         outputType: 'file-view',
-
         // ContextItemCommon properties
         uri,
         content,

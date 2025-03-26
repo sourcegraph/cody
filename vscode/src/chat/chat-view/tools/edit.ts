@@ -28,7 +28,7 @@ function createEditToolState(
         // ContextItemCommon properties
         uri: uri,
         content,
-        title: 'Text Editor Operation',
+        title: 'Text Editor Tool',
         description: content?.split('\n')[0] || 'File edit operation',
         source: ContextItemSource.Agentic,
         icon: 'edit',
