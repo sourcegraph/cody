@@ -175,7 +175,9 @@ describe('editorStateFromPromptString', () => {
         expect(
             textContentFromSerializedLexicalNode(editorState.lexicalEditorState.root, wrapMention)
         ).toBe(
-            'Generate tests for <<foo.go>> using <<mention framework>> framework to generate the unit tests'
+            `Generate tests for <<${PromptString.fromDisplayPath(
+                URI.file('foo.go')
+            )}>> using <<mention framework>> framework to generate the unit tests`
         )
     })
 })
