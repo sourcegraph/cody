@@ -571,6 +571,7 @@ describe('AutoeditsProvider', () => {
                 getModelResponse: customGetModelResponse(calls[1]),
                 isAutomaticTimersAdvancementDisabled: true,
                 provider,
+                documentVersion: 2,
             })
 
             // Run all timers to get the result
@@ -636,6 +637,7 @@ describe('AutoeditsProvider', () => {
                 getModelResponse: customGetModelResponse(calls[1]),
                 isAutomaticTimersAdvancementDisabled: true,
                 provider,
+                documentVersion: 2,
             })
 
             await vi.advanceTimersByTimeAsync(25)
@@ -647,6 +649,7 @@ describe('AutoeditsProvider', () => {
                     getModelResponse: customGetModelResponse(calls[2]),
                     isAutomaticTimersAdvancementDisabled: true,
                     provider,
+                    documentVersion: 3,
                 }
             )
 
@@ -659,6 +662,7 @@ describe('AutoeditsProvider', () => {
                     getModelResponse: customGetModelResponse(calls[3]),
                     isAutomaticTimersAdvancementDisabled: true,
                     provider,
+                    documentVersion: 4,
                 }
             )
 
