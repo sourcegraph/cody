@@ -428,7 +428,7 @@ describe('transcriptToInteractionPairs', () => {
     test('empty transcript', () => {
         expect(transcriptToInteractionPairs([], null, null)).toEqual<Interaction[]>([
             {
-                humanMessage: { index: 0, speaker: 'human', isUnsentFollowup: true, intent: null },
+                humanMessage: { index: 0, speaker: 'human', isUnsentFollowup: true, intent: undefined },
                 assistantMessage: null,
             },
         ])
