@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import type { ModelCategory } from '..'
 import { ModelTag, ModelUsage } from '..'
 import { type ServerModel, createModelFromServerModel, getServerModelTags, toLegacyModel } from './model'
 
@@ -61,6 +62,63 @@ describe('toLegacyModel', () => {
 })
 
 describe('createModelFromServerModel', () => {
+    it('handles enhanced context window when flag is enabled', () => {
+        // Arrange
+        const modelWithEnhancedContext = {
+            modelRef: 'test::1::model',
+            displayName: 'Test Model',
+            modelName: 'test-model',
+            capabilities: ['chat'],
+            category: 'balanced' as ModelCategory,
+            status: 'stable',
+            tier: ModelTag.Pro,
+            contextWindow: {
+                maxInputTokens: 10000,
+                maxOutputTokens: 5000,
+                maxUserInputTokens: 6000,
+            },
+        } satisfies ServerModel
+
+        // Act
+        const result = createModelFromServerModel(modelWithEnhancedContext, true)
+
+        // Assert
+        expect(result.contextWindow).toEqual({
+            input: 6000,
+            context: {
+                user: 4000, // 10000 - 6000
+            },
+            output: 5000,
+        })
+    })
+
+    it('uses standard context window when flag is disabled', () => {
+        // Arrange
+        const modelWithEnhancedContext = {
+            modelRef: 'test::1::model',
+            displayName: 'Test Model',
+            modelName: 'test-model',
+            capabilities: ['chat'],
+            category: 'balanced' as ModelCategory,
+            status: 'stable',
+            tier: ModelTag.Pro,
+            contextWindow: {
+                maxInputTokens: 10000,
+                maxOutputTokens: 4000,
+                maxUserInputTokens: 6000,
+            },
+        } satisfies ServerModel
+
+        // Act
+        const result = createModelFromServerModel(modelWithEnhancedContext, false)
+
+        // Assert
+        expect(result.contextWindow).toEqual({
+            input: 10000,
+            output: 4000,
+        })
+    })
+
     it('removes Edit usage from models with reasoning capability', () => {
         // Arrange - model with both reasoning and edit capabilities
         const reasoningEditModel = {

@@ -641,4 +641,110 @@ describe('maybeAdjustContextWindows', () => {
             expect(model.contextWindow.maxInputTokens).toBe(wantMaxInputTokens)
         }
     })
+    it('keeps original context window for old clients', () => {
+        // Arrange
+        const model: ServerModel = {
+            modelRef: 'test::1::model',
+            displayName: 'Test Model',
+            modelName: 'test-model',
+            capabilities: ['chat'],
+            category: 'balanced' as ModelCategory,
+            status: 'stable',
+            tier: ModelTag.Pro,
+            contextWindow: {
+                maxInputTokens: 10000,
+                maxOutputTokens: 4000,
+            },
+            modelConfigAllTiers: {
+                pro: {
+                    contextWindow: {
+                        maxInputTokens: 12000,
+                        maxOutputTokens: 5000,
+                        maxUserInputTokens: 8000,
+                    },
+                },
+                free: {
+                    contextWindow: {
+                        maxInputTokens: 8000,
+                        maxOutputTokens: 4000,
+                        maxUserInputTokens: 6000,
+                    },
+                },
+                enterprise: {
+                    contextWindow: {
+                        maxInputTokens: 12000,
+                        maxOutputTokens: 5000,
+                        maxUserInputTokens: 8000,
+                    },
+                },
+            },
+        }
+        const config = {
+            tier: 'pro' as const,
+            enhancedContextWindowFlagEnabled: false,
+        }
+
+        // Act
+        const result = maybeAdjustContextWindows([model], config)[0]
+
+        // Assert
+        expect(result.contextWindow).toEqual({
+            maxInputTokens: 10000,
+            maxOutputTokens: 4000,
+        })
+    })
+
+    it('applies enhanced context window limits when flag is enabled', () => {
+        // Arrange
+        const model: ServerModel = {
+            modelRef: 'test::1::model',
+            displayName: 'Test Model',
+            modelName: 'test-model',
+            capabilities: ['chat'],
+            category: 'balanced' as ModelCategory,
+            status: 'stable',
+            tier: ModelTag.Pro,
+            contextWindow: {
+                maxInputTokens: 10000,
+                maxOutputTokens: 4000,
+            },
+            modelConfigAllTiers: {
+                pro: {
+                    contextWindow: {
+                        maxInputTokens: 12000,
+                        maxOutputTokens: 5000,
+                        maxUserInputTokens: 8000,
+                    },
+                },
+                free: {
+                    contextWindow: {
+                        maxInputTokens: 8000,
+                        maxOutputTokens: 4000,
+                        maxUserInputTokens: 6000,
+                    },
+                },
+                enterprise: {
+                    contextWindow: {
+                        maxInputTokens: 12000,
+                        maxOutputTokens: 5000,
+                        maxUserInputTokens: 8000,
+                    },
+                },
+            },
+        }
+        const config = {
+            tier: 'pro' as const,
+            enhancedContextWindowFlagEnabled: true,
+        }
+
+        // Act
+        const result = maybeAdjustContextWindows([model], config)[0]
+
+        // Assert
+        expect(result.contextWindow).toEqual({
+            maxInputTokens: 12000,
+            maxOutputTokens: 5000,
+            maxUserInputTokens: 8000,
+        })
+    })
 })
