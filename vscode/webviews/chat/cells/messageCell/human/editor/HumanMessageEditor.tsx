@@ -77,9 +77,6 @@ export const HumanMessageEditor: FunctionComponent<{
 
     intent?: ChatMessage['intent']
     manuallySelectIntent: (intent: ChatMessage['intent']) => void
-
-    /** Index of this editor in the list of editors. Used to determine if this is the last editor. */
-    index?: number
 }> = ({
     models,
     userInfo,
@@ -100,7 +97,6 @@ export const HumanMessageEditor: FunctionComponent<{
     onEditorFocusChange: parentOnEditorFocusChange,
     intent,
     manuallySelectIntent,
-    index,
 }) => {
     const telemetryRecorder = useTelemetryRecorder()
 
@@ -159,15 +155,7 @@ export const HumanMessageEditor: FunctionComponent<{
                 },
             })
         },
-        [
-            index,
-            submitState,
-            parentOnSubmit,
-            onStop,
-            telemetryRecorder.recordEvent,
-            isFirstMessage,
-            isSent,
-        ]
+        [submitState, parentOnSubmit, onStop, telemetryRecorder.recordEvent, isFirstMessage, isSent]
     )
 
     const omniBoxEnabled = useOmniBox()

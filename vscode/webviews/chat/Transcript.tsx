@@ -577,7 +577,6 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
             {isLastInteraction && priorAssistantMessageIsLoading && <LoadingDots />}
             <HumanMessageCell
                 key={humanMessage.index}
-                index={humanMessage.index}
                 userInfo={userInfo}
                 models={models}
                 chatEnabled={chatEnabled}

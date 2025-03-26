@@ -13,9 +13,6 @@ import { BaseMessageCell } from '../BaseMessageCell'
 import { HumanMessageEditor } from './editor/HumanMessageEditor'
 
 interface HumanMessageCellProps {
-    /** Index of this editor in the list of editors. Used to determine if this is the last editor. */
-    index?: number
-
     message: ChatMessage
     models: Model[]
     userInfo: UserAccountInfo
@@ -79,7 +76,6 @@ type HumanMessageCellContent = {
 } & Omit<HumanMessageCellProps, 'message'>
 const HumanMessageCellContent = memo<HumanMessageCellContent>(props => {
     const {
-        index,
         models,
         initialEditorState,
         userInfo,
@@ -105,7 +101,6 @@ const HumanMessageCellContent = memo<HumanMessageCellContent>(props => {
         <BaseMessageCell
             content={
                 <HumanMessageEditor
-                    index={index}
                     models={models}
                     userInfo={userInfo}
                     initialEditorState={initialEditorState}
