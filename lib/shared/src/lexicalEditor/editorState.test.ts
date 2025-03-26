@@ -1,5 +1,6 @@
 import type { SerializedLexicalNode, SerializedRootNode } from 'lexical'
 import { describe, expect, test } from 'vitest'
+import { URI } from 'vscode-uri'
 import { ContextItemSource } from '../codebase-context/messages'
 import { PromptString, ps } from '../prompt/prompt-string'
 import { testFileUri } from '../test/path-helpers'
@@ -165,7 +166,7 @@ describe('editorStateFromPromptString', () => {
 
     test('parse templates', () => {
         const input = ps`Generate tests for @${PromptString.fromDisplayPath(
-            testFileUri('foo.go')
+            URI.file('foo.go')
         )} using {{mention framework}} framework to generate the unit tests`
         const editorState = editorStateFromPromptString(input, {
             parseTemplates: true,
