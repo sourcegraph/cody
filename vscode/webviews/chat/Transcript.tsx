@@ -135,12 +135,7 @@ export const Transcript: FC<TranscriptProps> = props => {
             <LastEditorContext.Provider value={lastHumanEditorRef}>
                 {interactions.map((interaction, i) => (
                     <TranscriptInteraction
-                        // Using a key based on index for the last/followup message ensures it will be preserved across renders
-                        key={
-                            interaction.humanMessage.index === -1
-                                ? 'last-editor'
-                                : interaction.humanMessage.index
-                        }
+                        key={interaction.humanMessage.index}
                         activeChatContext={activeChatContext}
                         setActiveChatContext={setActiveChatContext}
                         models={models}
