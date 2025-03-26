@@ -1,4 +1,9 @@
-import type { CompletionContentData, CompletionFunctionCallsData, ToolCallContentPart } from './types'
+import type {
+    CompletionContentData,
+    CompletionFunctionCallsData,
+    ThinkingContentPart,
+    ToolCallContentPart,
+} from './types'
 
 /**
  * Helper to build the `completion` text from streaming LLM completions.
@@ -31,17 +36,24 @@ export class CompletionsResponseBuilder {
         } else {
             this.totalCompletion = completion || ''
         }
-        return this.getThinkingText() + this.totalCompletion
+        return this.totalCompletion
     }
 
     /**
      * Adds an incremental thinking step to the buffer
      */
-    public nextThinking(deltaThinking?: string): string {
+    public nextThinking(deltaThinking?: string): ThinkingContentPart | undefined {
         if (deltaThinking) {
             this.thinkingBuffer.push(deltaThinking)
         }
-        return this.getThinkingText()
+        const thinking = this.thinkingBuffer.join('')
+        if (!thinking) {
+            return undefined
+        }
+        return {
+            type: 'thinking',
+            thinking,
+        }
     }
 
     /**
@@ -56,14 +68,6 @@ export class CompletionsResponseBuilder {
             }
         }
         return Array.from(this.toolCalled.values())
-    }
-
-    /**
-     * Returns formatted thinking text with XML tags
-     */
-    private getThinkingText(): string {
-        const thinking = this.thinkingBuffer.join('')
-        return thinking ? `<think>${thinking}</think>\n` : ''
     }
 
     /**

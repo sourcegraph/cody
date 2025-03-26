@@ -9,6 +9,33 @@ export function sanitizedChatMessages(messages: ChatMessage[]): any[] {
     // Check if the last assistant message has a tool_call and the current human message doesn't have a tool_result
     const processedMessages = [...messages] // Create a copy to avoid mutating the original array
 
+    // Process the first human message to remove content between <think> tags
+    const firstHumanIndex = processedMessages.findIndex(m => m.speaker === 'human');
+    if (firstHumanIndex >= 0) {
+        const firstHumanMessage = processedMessages[firstHumanIndex];
+        if (firstHumanMessage.content) {
+            // Check if any text part contains <think> tags
+            const hasThinkTags = firstHumanMessage.content.some(
+                part => part.type === 'text' && 
+                typeof part.text === 'string' && 
+                part.text.includes('<think>') && 
+                part.text.includes('</think>')
+            );
+            
+            if (hasThinkTags) {
+                // Process text parts to remove content between <think> tags
+                firstHumanMessage.content = firstHumanMessage.content.map(part => {
+                    if (part.type === 'text' && typeof part.text === 'string') {
+                        // Remove content between <think> and </think> tags
+                        const text = part.text.replace(/<think>[\s\S]*?<\/think>/g, '');
+                        return { ...part, text };
+                    }
+                    return part;
+                });
+            }
+        }
+    }
+
     // Find the last assistant message index
     const lastAssistantIndex = processedMessages.map(m => m.speaker).lastIndexOf('assistant')
 
