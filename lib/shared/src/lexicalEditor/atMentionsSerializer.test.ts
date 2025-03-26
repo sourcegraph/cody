@@ -286,6 +286,16 @@ describe('atMentionsSerializer', () => {
                 expect(splitToWords(input)).toEqual(['a ', v, ' b'])
             }
         })
+
+        it('handles all dynamic selectors with apostrophes', () => {
+            for (const v of Object.values(DYNAMIC_MENTION_TO_HYDRATABLE)) {
+                for (const c of ['\'', '`']) {
+                    const input = `a ${v+c} b`
+                    expect(splitToWords(input)).toEqual(['a ', v, c + ' b'])
+                }
+            }
+        })
+
     })
 
     it('can deal with linebreaks and tabs', () => {

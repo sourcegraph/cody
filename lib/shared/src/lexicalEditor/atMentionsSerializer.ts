@@ -228,11 +228,12 @@ export function splitToWords(s: string): string[] {
      * 1. Built-in shortcuts like 'cody://tabs', 'cody://selection' (defined in CONTEXT_ITEMS)
      * 2. Serialized context items like 'cody://serialized.v1?data=base64data_'
      *
-     * For built-in shortcuts: stops at whitespace, periods, or newlines
+     * For built-in shortcuts: includes letters and numbers, and dash (-). Those are not part of built-in shortcuts.
      * For serialized items: includes everything between 'cody://serialized' and '_'
      *
      * Examples:
      * - "cody://tabs." -> matches "cody://tabs"
+     * - "explain cody://current-selection's content" -> matches "cody://current-selection"
      * - "cody://serialized.v1?data=123_." -> matches "cody://serialized.v1?data=123_"
      */
     const pattern = /(cody:\/\/(?:serialized[^_]+_|[a-zA-Z0-9-]+))/
