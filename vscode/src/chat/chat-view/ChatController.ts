@@ -1217,14 +1217,14 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         try {
             const attribution = await this.guardrails.searchAttribution(snippet)
             if (isError(attribution)) {
-                await this.postMessage({
+                void this.postMessage({
                     type: 'attribution',
                     snippet,
                     error: attribution.message,
                 })
                 return
             }
-            await this.postMessage({
+            void this.postMessage({
                 type: 'attribution',
                 snippet,
                 attribution: {
@@ -1233,7 +1233,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 },
             })
         } catch (error) {
-            await this.postMessage({
+            void this.postMessage({
                 type: 'attribution',
                 snippet,
                 error: `${error}`,

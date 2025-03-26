@@ -86,11 +86,8 @@ class GuardrailsCache {
         if (cachedResult) {
             return cachedResult
         }
-        if (!cache?.attributionRequests.has(code)) {
-            // Kick off a request so we are not lying that there is a request
-            // in flight.
-            this.searchAttribution(guardrails, code).then(updateStatus)
-        }
+        // Kick off a request, or join a request in flight.
+        this.searchAttribution(guardrails, code).then(updateStatus)
         return {
             status: GuardrailsCheckStatus.Checking,
         }

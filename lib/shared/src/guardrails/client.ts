@@ -8,7 +8,7 @@ import { isError } from '../utils'
 // 10s timeout is enough to serve most attribution requests.
 // It's a better user experience for chat attribution to wait
 // a few seconds more and get attribution result.
-const defaultTimeoutSeconds = 1
+const defaultTimeoutSeconds = 10
 
 /**
  * This defines the user controllable configuration. Note: enablement is
