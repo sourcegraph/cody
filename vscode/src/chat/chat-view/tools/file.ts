@@ -59,7 +59,7 @@ function createFileToolState(
         outputType: 'file-view',
 
         // ContextItemCommon properties
-        uri: uri || URI.parse(`cody:/tools/file/${toolId}`),
+        uri: uri || URI.parse(`cody:///tools/file?error=${filePath}`),
         content,
         title: filePath,
         description: `File: ${filePath}`,

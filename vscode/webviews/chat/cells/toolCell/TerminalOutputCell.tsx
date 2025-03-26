@@ -2,6 +2,7 @@ import { type UITerminalLine, UITerminalOutputType, UIToolStatus } from '@source
 import type { ContextItemToolState } from '@sourcegraph/cody-shared/src/codebase-context/messages'
 import { Bug, BugOff, Terminal } from 'lucide-react'
 import { type FC, useMemo } from 'react'
+import { Button } from '../../../components/shadcn/ui/button'
 import { Skeleton } from '../../../components/shadcn/ui/skeleton'
 import { cn } from '../../../components/shadcn/utils'
 import { BaseCell } from './BaseCell'
@@ -85,7 +86,7 @@ export const TerminalOutputCell: FC<TerminalOutputCellProps> = ({
             return convertToTerminalLines(item.title ?? 'Terminal', item.content)
         }
         return []
-    }, [item.title, item?.content])
+    }, [item?.title, item?.content])
 
     const renderHeaderContent = () => {
         if (isLoading && item?.title) {
@@ -98,9 +99,12 @@ export const TerminalOutputCell: FC<TerminalOutputCellProps> = ({
 
         return (
             <div className="tw-flex tw-items-center tw-gap-2 tw-overflow-hidden">
-                <code className="tw-text-left tw-truncate tw-font-mono tw-bg-zinc-800 tw-px-2 tw-py-0.5 tw-rounded tw-text-zinc-200">
-                    $ {lines[0]?.content}
-                </code>
+                <Button
+                    variant="ghost"
+                    className="tw-text-left tw-truncate tw-flex tw-items-center tw-gap-2 tw-overflow-hidden tw-p-0 hover:tw-bg-transparent"
+                >
+                    <span className="tw-font-mono">$ {lines[0]?.content}</span>
+                </Button>
             </div>
         )
     }
