@@ -165,8 +165,9 @@ spotless {
     ktfmt()
     trimTrailingWhitespace()
     target("src/**/*.kt")
-    targetExclude("src/main/kotlin/com/sourcegraph/cody/agent/protocol_generated/**")
-    targetExclude("src/integrationTest/resources/testProjects/**")
+    targetExclude(
+        "src/main/kotlin/com/sourcegraph/cody/agent/protocol_generated/**",
+        "src/integrationTest/resources/testProjects/**")
     toggleOffOn()
   }
 }
