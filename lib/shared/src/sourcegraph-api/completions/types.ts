@@ -10,7 +10,7 @@ interface CompletionEvent extends CompletionResponse {
     content?: CompletionContentData[] | undefined | null
 }
 
-export type CompletionContentData = TextContentPart | ToolCallContentPart
+export type CompletionContentData = TextContentPart | ToolCallContentPart | ThinkingContentPart
 
 // Tool calls returned by the LLM
 export interface CompletionFunctionCallsData {
@@ -89,6 +89,11 @@ export interface ToolResultContentPart {
         id: string
         content: string
     }
+}
+
+export interface ThinkingContentPart {
+    type: 'thinking'
+    thinking: string
 }
 
 export interface CompletionUsage {

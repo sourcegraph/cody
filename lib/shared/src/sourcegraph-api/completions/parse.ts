@@ -59,16 +59,25 @@ function parseEventData(
                 return data
             }
             // Process the delta_thinking and deltaText separately.
-            // The thinking text will be added to the completion text.
-            builder.nextThinking(data.delta_thinking)
+            // The thinking content will be added to the content array.
+            const thinking = builder.nextThinking(data.delta_thinking)
             // Internally, don't handle delta text yet and there's limited value
             // in passing around deltas anyways so we concatenate them here.
             const completion = builder.nextCompletion(data.completion, data.deltaText)
             const toolCalls = builder.nextToolCalls(data?.delta_tool_calls)
             const content: CompletionContentData[] = []
+
+            // Add thinking content if it exists
+            if (thinking?.thinking) {
+                content.push(thinking)
+            }
+
+            // Add text completion if it exists
             if (completion) {
                 content.push({ type: 'text', text: completion })
             }
+
+            // Add tool calls
             content.push(...toolCalls)
             return {
                 type: eventType,
