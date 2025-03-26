@@ -232,7 +232,7 @@ export function transcriptToInteractionPairs(
                 // This is a hack to avoid the editor getting reset during Agent mode.
                 index: -1,
                 speaker: 'human',
-                isUnsentFollowup: true,
+                isUnsentFollowup: !!assistantMessageInProgress || !!lastAssistantMessage?.text,
                 // If the last submitted message was a search, default to chat for the followup. Else,
                 // keep the manually selected intent, if any, or the last human message's intent.
                 intent: lastHumanMessage?.intent === 'search' ? 'chat' : lastHumanMessage?.intent,
