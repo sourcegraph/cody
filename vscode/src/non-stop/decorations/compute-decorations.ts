@@ -1,5 +1,4 @@
 import * as vscode from 'vscode'
-import { isStreamedIntent } from '../../edit/utils/edit-intent'
 import type { FixupTask } from '../FixupTask'
 import { getDecorationSuitableText, getLastFullLine } from './utils'
 
@@ -124,7 +123,7 @@ export function computeOngoingDecorations(
         return
     }
 
-    if (isStreamedIntent(task.intent)) {
+    if (task.isStreamed) {
         // We don't provide ongoing decorations for streamed edits, only applied decorations
         // as the incoming changes are immediately applied.
         return
