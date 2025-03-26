@@ -1,5 +1,5 @@
 import { ClientConfigSingleton, type SourcegraphGuardrailsClient } from '@sourcegraph/cody-shared'
-import { Attribution } from '@sourcegraph/cody-shared/src/guardrails'
+import type { Attribution } from '@sourcegraph/cody-shared/src/guardrails'
 import * as vscode from 'vscode'
 import { Logger } from '../output-channel-logger'
 
