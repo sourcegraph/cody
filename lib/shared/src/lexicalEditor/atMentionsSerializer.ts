@@ -222,7 +222,7 @@ function createContextItemMention(
     }
 }
 
-export const AT_MENTION_REGEX = /(cody:\/\/(?:serialized[^_]+_|[a-zA-Z0-9-]+))/gm
+const AT_MENTION_REGEX = /(cody:\/\/(?:serialized[^_]+_|[a-zA-Z0-9-]+))/
 
 export function splitToWords(s: string): string[] {
     /**
