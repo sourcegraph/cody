@@ -206,7 +206,7 @@ class CodyAutocompleteManager {
       return
     }
     val inlayModel = editor.inlayModel
-    if (result.items.isEmpty()) {
+    if (result.inlineCompletionItems.isEmpty()) {
       // NOTE(olafur): it would be nice to give the user a visual hint when this happens.
       // We don't do anything now because it's unclear what would be the most idiomatic
       // IntelliJ API to use.
@@ -223,7 +223,7 @@ class CodyAutocompleteManager {
       // https://github.com/sourcegraph/jetbrains/issues/350
       // CodyFormatter.formatStringBasedOnDocument needs to be on a write action.
       WriteCommandAction.runWriteCommandAction(editor.project) {
-        displayAgentAutocomplete(editor, offset, result.items, inlayModel)
+        displayAutocomplete(editor, offset, result.inlineCompletionItems, inlayModel)
       }
     }
   }
@@ -235,7 +235,7 @@ class CodyAutocompleteManager {
    * can use `insertText` directly and the `range` encloses the entire line.
    */
   @RequiresEdt
-  fun displayAgentAutocomplete(
+  fun displayAutocomplete(
       editor: Editor,
       cursorOffset: Int,
       items: List<AutocompleteItem>,
@@ -280,9 +280,8 @@ class CodyAutocompleteManager {
         val renderer =
             CodyAutocompleteSingleLineRenderer(
                 completionText, items, editor, AutocompleteRendererType.INLINE)
-        inlay =
-            inlayModel.addInlineElement(
-                cursorOffset + inlayOffset, /* relatesToPrecedingText= */ true, renderer)
+        val offset = range.startOffset + inlayOffset
+        inlay = inlayModel.addInlineElement(offset, /* relatesToPrecedingText= */ true, renderer)
       }
     }
     val lines = formattedCompletionText.lines()
