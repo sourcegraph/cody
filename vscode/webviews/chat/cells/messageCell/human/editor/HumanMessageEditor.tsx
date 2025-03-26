@@ -145,29 +145,6 @@ export const HumanMessageEditor: FunctionComponent<{
             const value = editorRef.current.getSerializedValue()
             parentOnSubmit(intent)
 
-            // Reset the editor to empty after submit to prepare for next input
-            // This ensures a clean slate while preserving the same editor instance
-            // Only reset the editor with index -1 (the last editor)
-            if (index === -1) {
-                requestAnimationFrame(() => {
-                    if (editorRef?.current) {
-                        editorRef.current.setEditorState({
-                            v: 'lexical-v1',
-                            lexicalEditorState: {
-                                root: {
-                                    children: [],
-                                    direction: null,
-                                    format: '',
-                                    indent: 0,
-                                    type: 'root',
-                                    version: 1,
-                                },
-                            },
-                        })
-                    }
-                })
-            }
-
             telemetryRecorder.recordEvent('cody.humanMessageEditor', 'submit', {
                 metadata: {
                     isFirstMessage: isFirstMessage ? 1 : 0,
