@@ -393,7 +393,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                     `============= Time Taken: ${getTimeNowInMillis() - startedAt}ms`
             )
 
-            const prediction = shrinkPredictionUntilSuffix({
+            let prediction = shrinkPredictionUntilSuffix({
                 prediction: initialPrediction,
                 codeToReplaceData,
             })
@@ -428,20 +428,34 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                 return null
             }
 
-            // Use suggestionLines config to only calculate diff based on first N lines
-            // when getting data from streaming API or cached hot streak responses
-            const useFirstNLinesOnly =
+            // For streaming hot streak responses, we need to expand the partial prediction
+            // to include the full content we're replacing to avoid showing false deletions
+            if (
                 predictionResult.source === autoeditSource.hotStreak ||
                 predictionResult.source === autoeditSource.cache
-                    ? autoeditsProviderConfig.tokenLimit.suggestionLines
-                    : undefined
+            ) {
+                console.log('EXPANDING PREDICTION...')
+                prediction = expandPartialPredictionToCodeToRewrite(
+                    prediction,
+                    codeToRewrite,
+                    autoeditsProviderConfig.tokenLimit.suggestionLines
+                )
 
-            console.log('use first n lines only?', useFirstNLinesOnly)
+                autoeditsOutputChannelLogger.logDebug(
+                    'provideInlineCompletionItems',
+                    'Expanded partial prediction to avoid false deletions',
+                    {
+                        originalLength: predictionResult.prediction.length,
+                        expandedLength: prediction.length,
+                    }
+                )
+            }
+
+            // No special handling needed for diff calculation since we've expanded the prediction
             const decorationInfo = getDecorationInfoFromPrediction(
                 document,
                 prediction,
-                codeToReplaceData,
-                { useFirstNLinesOnly }
+                codeToReplaceData
             )
 
             if (
@@ -699,6 +713,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
             documentVersion: document.version,
             position,
             abortSignal,
+            codeToRewrite: codeToReplaceData.codeToRewrite,
         }
         const userId = (await currentResolvedConfig()).clientState.anonymousUserID
 
@@ -720,6 +735,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
 
                 // Get the first response for immediate display
                 const firstResponse = await streamGenerator.next()
+                console.log('got first response', firstResponse.value)
 
                 // Continue streaming in the background to populate the cache for hot streak
                 void (async () => {
@@ -817,67 +833,63 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
 export function getDecorationInfoFromPrediction(
     document: vscode.TextDocument,
     prediction: string,
-    codeToReplaceData: CodeToReplaceData,
-    options?: {
-        useFirstNLinesOnly?: number // Only use the first N lines of the codeToReplace for diffing
-    }
+    codeToReplaceData: CodeToReplaceData
 ): DecorationInfo {
     const currentFileText = document.getText()
 
-    // Get a modified version of codeToReplaceData with a range that only includes
-    // the first N lines of the original codeToRewrite if useFirstNLinesOnly is set
-    let effectiveCodeToReplaceData = codeToReplaceData
-
-    if (options?.useFirstNLinesOnly) {
-        // Count how many lines are in the original code to replace
-        const codeToRewriteLines = codeToReplaceData.codeToRewrite.split('\n')
-
-        // If we have more lines than we want to show, create a truncated version
-        if (codeToRewriteLines.length > options.useFirstNLinesOnly) {
-            // Get only the first N lines
-            const firstNLinesOfCodeToRewrite = codeToRewriteLines
-                .slice(0, options.useFirstNLinesOnly)
-                .join('\n')
-
-            // Calculate how many lines we're keeping
-            const startLine = codeToReplaceData.range.start.line
-            const endLine = Math.min(
-                startLine + options.useFirstNLinesOnly - 1,
-                codeToReplaceData.range.end.line
-            )
-
-            // Create a truncated range
-            const truncatedRange = new vscode.Range(
-                codeToReplaceData.range.start,
-                new vscode.Position(endLine, document.lineAt(endLine).text.length)
-            )
-
-            // Create the modified codeToReplaceData
-            effectiveCodeToReplaceData = {
-                ...codeToReplaceData,
-                range: truncatedRange,
-                codeToRewrite: firstNLinesOfCodeToRewrite,
-            }
-
-            autoeditsOutputChannelLogger.logDebug(
-                'getDecorationInfoFromPrediction',
-                'Using truncated range for diffing',
-                {
-                    originalLines: codeToRewriteLines.length,
-                    truncatedLines: options.useFirstNLinesOnly,
-                    originalRange: codeToReplaceData.range.toString(),
-                    truncatedRange: truncatedRange.toString(),
-                }
-            )
-        }
-    }
-
-    // Create the predicted file text using our potentially truncated range
+    // Create the predicted file text
     const predictedFileText =
-        currentFileText.slice(0, document.offsetAt(effectiveCodeToReplaceData.range.start)) +
+        currentFileText.slice(0, document.offsetAt(codeToReplaceData.range.start)) +
         prediction +
-        currentFileText.slice(document.offsetAt(effectiveCodeToReplaceData.range.end))
+        currentFileText.slice(document.offsetAt(codeToReplaceData.range.end))
 
     const decorationInfo = getDecorationInfo(currentFileText, predictedFileText)
     return decorationInfo
+}
+
+/**
+ * Determines if a prediction might be a partial response based on line counts
+ * Used to identify when a hot streak response might need to be expanded
+ */
+export function isPartialPrediction(prediction: string, codeToRewrite: string): boolean {
+    const predictionLines = prediction.split('\n')
+    const codeToRewriteLines = codeToRewrite.split('\n')
+
+    // If the prediction has notably fewer lines than the code to rewrite,
+    // it's likely a partial prediction from streaming
+    return predictionLines.length < codeToRewriteLines.length
+}
+
+/**
+ * Expands a partial prediction to include the remaining lines from the original code
+ * This prevents false deletions from showing up in the diff when we have streaming partial responses
+ *
+ * @param prediction The partial prediction from the model
+ * @param codeToRewrite The complete original code being replaced
+ * @param suggestionLines How many lines we expect in the first chunk
+ * @returns An expanded prediction that won't show false deletions
+ */
+export function expandPartialPredictionToCodeToRewrite(
+    prediction: string,
+    codeToRewrite: string,
+    suggestionLines: number
+): string {
+    // Split both into lines
+    const predictionLines = prediction.split('\n')
+    const codeToRewriteLines = codeToRewrite.split('\n')
+
+    // If prediction already has more lines than we'd expect in a partial response,
+    // or if it has at least as many lines as the code to rewrite, no expansion needed
+    if (
+        predictionLines.length >= suggestionLines ||
+        predictionLines.length >= codeToRewriteLines.length
+    ) {
+        return prediction
+    }
+
+    // Get the remaining lines from the original code to rewrite
+    const remainingLines = codeToRewriteLines.slice(predictionLines.length)
+
+    // Append the remaining lines to the prediction
+    return prediction + '\n' + remainingLines.join('\n')
 }

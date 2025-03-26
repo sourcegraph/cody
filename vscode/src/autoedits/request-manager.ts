@@ -5,6 +5,7 @@ import { forkSignal } from '../completions/utils'
 import type { ModelResponse, SuccessModelResponse } from './adapters/base'
 import { autoeditSource } from './analytics-logger'
 import { autoeditsProviderConfig } from './autoedits-config'
+import { expandPartialPredictionToCodeToRewrite } from './autoedits-provider'
 
 export interface AutoeditRequestManagerParams {
     requestUrl: string
@@ -12,6 +13,7 @@ export interface AutoeditRequestManagerParams {
     documentVersion: number
     position: vscode.Position
     abortSignal: AbortSignal
+    codeToRewrite?: string
 }
 
 export class RequestManager implements vscode.Disposable {
@@ -150,10 +152,14 @@ export class RequestManager implements vscode.Disposable {
                             // We've reached or exceeded 5 lines - use this as our first response
                             firstResponse = response
 
-                            console.log('ADDING TO CACHE FROM FIRST ONE:', {
-                                response,
-                                lineCount: newLineCount,
-                            })
+                            response.prediction = expandPartialPredictionToCodeToRewrite(
+                                response.prediction,
+                                params.codeToRewrite || '',
+                                FIRST_CHUNK_LINE_COUNT
+                            )
+
+                            console.log('SET FIRST PREDDICTION', response.prediction)
+                            console.log('CODE TO REWRITE?', params.codeToRewrite)
 
                             // Cache the first response at the requested position
                             this.cache.set(request.cacheKey, {
@@ -170,9 +176,6 @@ export class RequestManager implements vscode.Disposable {
                             yield response
                             isPredictionCached = true
                             lineCount = newLineCount
-                        } else {
-                            // Not enough lines yet, continue collecting
-                            continue
                         }
                     } else {
                         // For hot streak: handle subsequent chunks after the first response
@@ -198,6 +201,13 @@ export class RequestManager implements vscode.Disposable {
                                 lineCount: newLineCount,
                                 newLinesAdded,
                             })
+
+                            response.prediction = expandPartialPredictionToCodeToRewrite(
+                                response.prediction,
+                                params.codeToRewrite || '',
+                                newLinesAdded
+                            )
+
                             this.cache.set(cacheKey, {
                                 response: {
                                     ...response,
