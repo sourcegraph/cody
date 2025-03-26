@@ -3,7 +3,7 @@ import type * as vscode from 'vscode'
 
 import type { ChatClient } from '@sourcegraph/cody-shared'
 
-import { documentAndPosition } from '../completions/test-helpers'
+import { versionedDocumentAndPosition } from '../completions/test-helpers'
 import { defaultVSCodeExtensionClient } from '../extension-client'
 import { FixupController } from '../non-stop/FixupController'
 import { WorkspaceEdit, vsCodeMocks } from '../testutils/mocks'
@@ -32,11 +32,13 @@ export async function autoeditResultFor(
             selectedCompletionInfo: undefined,
         },
         prediction,
+        documentVersion = 1,
         provider: existingProvider,
         getModelResponse,
         isAutomaticTimersAdvancementDisabled = false,
     }: {
         prediction: string
+        documentVersion?: number
         /** provide to reuse an existing provider instance */
         provider?: AutoeditsProvider
         inlineCompletionContext?: vscode.InlineCompletionContext
@@ -74,7 +76,10 @@ export async function autoeditResultFor(
     vi.spyOn(adapters, 'getModelResponse').mockImplementation(getModelResponse || getModelResponseMock)
 
     const editBuilder = new WorkspaceEdit()
-    const { document, position } = documentAndPosition(textWithCursor)
+    const { document, position } = versionedDocumentAndPosition({
+        textWithCursor,
+        version: documentVersion,
+    })
 
     vi.spyOn(vsCodeMocks.window, 'activeTextEditor', 'get').mockReturnValue({
         document,

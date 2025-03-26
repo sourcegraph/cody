@@ -54,6 +54,33 @@ export function documentFromFilePath(filePath: string, languageId = 'typescript'
     )
 }
 
+/**
+ * A version of `documentAndPosition` that accepts an object instead of the list of arguments
+ * and includes the document version.
+ *
+ * TODO: replace `documentAndPosition` with this implementation and remove this helper.
+ */
+export function versionedDocumentAndPosition({
+    textWithCursor,
+    languageId = 'typescript',
+    uriString = testFileUri('test.ts').toString(),
+    version = 1,
+}: {
+    textWithCursor: string
+    languageId?: string
+    uriString?: string
+    version?: number
+}): { document: vscode.TextDocument; position: vscode.Position } {
+    const { prefix, suffix, cursorIndex } = prefixAndSuffix(textWithCursor)
+
+    const document = wrapVSCodeTextDocument(
+        TextDocument.create(uriString, languageId, version, prefix + suffix)
+    )
+    const position = document.positionAt(cursorIndex)
+
+    return { document, position }
+}
+
 export function documentAndPosition(
     textWithCursor: string,
     languageId?: string,

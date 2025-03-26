@@ -1,5 +1,8 @@
-import type { CodeCompletionsParams, PromptString } from '@sourcegraph/cody-shared'
 import type * as vscode from 'vscode'
+
+import type { CodeCompletionsParams, PromptString } from '@sourcegraph/cody-shared'
+
+import type { AutoeditSourceMetadata } from '../analytics-logger/types'
 import type { AutoeditsRequestBody } from './utils'
 
 export type ModelResponseShared = {
@@ -28,6 +31,10 @@ export interface SuccessModelResponse extends ModelResponseShared {
      * TODO: replace `any` with the proper type.
      */
     responseBody: Record<string, any>
+    /**
+     * The source of the suggestion, e.g. 'network', 'cache', etc.
+     */
+    source?: AutoeditSourceMetadata
 }
 
 export interface AbortedModelResponse extends ModelResponseShared {
