@@ -45,6 +45,7 @@ export const AppWrapperForTest: FunctionComponent<{ children: ReactNode }> = ({ 
             {
                 provider: ExtensionAPIProviderForTestsOnly,
                 value: {
+                    frequentlyUsedContextItems: () => Observable.of([]),
                     mentionMenuData: query =>
                         promiseFactoryToObservable(async () => {
                             await new Promise<void>(resolve => setTimeout(resolve, 250))
