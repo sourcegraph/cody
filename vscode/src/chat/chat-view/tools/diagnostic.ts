@@ -17,26 +17,40 @@ export const diagnosticTool: AgentTool = {
             'Get diagnostics (including errors) from the editor for the file you have used text_editor on. This tool should be used at the end of your response on the files you have edited.',
         input_schema: zodToolSchema(GetDiagnosticSchema),
     },
-    invoke: async ({ name }: GetDiagnosticInput) => {
+    invoke: async ({ name, type }: GetDiagnosticInput) => {
         validateWithZod(GetDiagnosticSchema, { name }, 'get_diagnostic')
+        const fileName = name === '*' ? 'Workspace' : name
+        const severity =
+            type === 'warning'
+                ? vscode.DiagnosticSeverity.Warning
+                : type === 'all'
+                  ? true
+                  : vscode.DiagnosticSeverity.Error
 
         try {
+            let diagnostics = vscode.languages.getDiagnostics()?.flatMap(d => d[1])
+            if (name === '*') {
+                return createDiagnosticToolState(fileName, diagnostics)
+            }
+
             const fileInfo = await fileOps.getWorkspaceFile(name)
             if (!fileInfo) {
                 throw new Error(`File not found: ${name}`)
             }
 
-            const diagnostics = vscode.languages
-                .getDiagnostics(fileInfo.uri)
-                .filter(d => d.severity === vscode.DiagnosticSeverity.Error)
+            diagnostics = vscode.languages.getDiagnostics(fileInfo.uri)
 
-            return createDiagnosticToolState(name, diagnostics, fileInfo.uri)
-        } catch (error) {
             return createDiagnosticToolState(
                 name,
+                diagnostics.filter(d => d.severity === severity),
+                fileInfo.uri
+            )
+        } catch (error) {
+            return createDiagnosticToolState(
+                fileName,
                 [],
                 undefined,
-                `Failed to get diagnostics for ${name}: ${error}`
+                `Failed to get diagnostics for ${fileName}: ${error}`
             )
         }
     },
@@ -103,12 +117,7 @@ function createDiagnosticToolState(
         description: 'Diagnostics',
         icon,
         outputType,
-        metadata: [
-            'diagnostics',
-            `File: ${fileName}`,
-            `Status: ${status}`,
-            uri ? `Path: ${uri.fsPath}` : null,
-        ].filter(Boolean) as string[],
+        metadata: ['diagnostics'].filter(Boolean) as string[],
         source: ContextItemSource.Agentic,
         uri: uri || vscode.Uri.parse(`cody-tool://diagnostic?id=${toolId}`),
     }

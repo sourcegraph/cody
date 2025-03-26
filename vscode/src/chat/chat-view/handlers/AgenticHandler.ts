@@ -433,15 +433,29 @@ class AgenticChatPrompter {
 
             promptBuilder.tryAddMessages(reversedTranscript)
 
-            await promptBuilder.tryAddContext('user', context)
+            await this.tryAddContext(promptBuilder, context)
 
             const historyItems = reversedTranscript
                 .flatMap(m => (m.contextFiles ? [...m.contextFiles].reverse() : []))
                 .filter(isDefined)
 
-            await promptBuilder.tryAddContext('history', historyItems.reverse())
+            await this.tryAddContext(promptBuilder, historyItems, 'history')
 
             return promptBuilder.build()
         })
+    }
+
+    private async tryAddContext(
+        builder: PromptBuilder,
+        context: ContextItem[],
+        type = 'user'
+    ): Promise<void> {
+        try {
+            const contextItems = context.filter(item => item.type !== 'tool-state')
+            builder.tryAddContext(type === 'history' ? 'history' : 'user', contextItems)
+        } catch {
+            logDebug('AgenticChatPrompter', 'Error adding context to prompt')
+            return
+        }
     }
 }

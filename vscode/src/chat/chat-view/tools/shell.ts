@@ -5,6 +5,7 @@ import {
     type ContextItemToolState,
 } from '@sourcegraph/cody-shared/src/codebase-context/messages'
 import * as vscode from 'vscode'
+import { URI } from 'vscode-uri'
 import type { AgentTool } from '.'
 import { validateWithZod } from '../utils/input'
 import { zodToolSchema } from '../utils/parse'
@@ -78,7 +79,11 @@ export const shellTool: AgentTool = {
                 return createShellToolState(validInput.command, contentString, UIToolStatus.Error)
             }
 
-            throw new Error(`Failed to run terminal command: ${input.command}: ${error}`)
+            return createShellToolState(
+                validInput.command ?? 'unknown command',
+                `Failed to run terminal command: ${input.command}: ${error}`,
+                UIToolStatus.Error
+            )
         }
     },
 }
@@ -204,7 +209,7 @@ function createShellToolState(
         icon: 'terminal',
         status,
         source: ContextItemSource.Agentic,
-        uri: vscode.Uri.parse(`cody-tool://shell?id=${toolId}`),
+        uri: URI.parse(''),
     }
 }
 

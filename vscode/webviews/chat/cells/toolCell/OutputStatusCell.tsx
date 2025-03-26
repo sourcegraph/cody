@@ -1,3 +1,4 @@
+import { UIToolStatus } from '@sourcegraph/cody-shared'
 import type { ContextItemToolState } from '@sourcegraph/cody-shared/src/codebase-context/messages'
 import { AlertCircle, CheckCircle, Info } from 'lucide-react'
 import type { FC } from 'react'
@@ -12,39 +13,36 @@ interface OutputStatusProps {
 }
 
 // Extract mapping functions outside the component
-const getStatusIcon = (status: string) => {
+const getStatusIcon = (status: UIToolStatus) => {
     switch (status) {
-        case 'success':
+        case UIToolStatus.Done:
             return CheckCircle
-        case 'error':
-        case 'warning':
+        case UIToolStatus.Error:
             return AlertCircle
         default:
             return Info
     }
 }
 
-const getStatusClass = (status: string) => {
+const getStatusClass = (status: UIToolStatus) => {
     switch (status) {
-        case 'success':
+        case UIToolStatus.Done:
             return 'tw-bg-emerald-950/30 tw-border-emerald-800/50'
-        case 'error':
+        case UIToolStatus.Error:
             return 'tw-bg-red-950/30 tw-border-red-800/50'
-        case 'warning':
+        case UIToolStatus.Pending:
             return 'tw-bg-yellow-950/30 tw-border-yellow-800/50'
         default:
             return 'tw-bg-blue-950/30 tw-border-blue-800/50'
     }
 }
 
-const getStatusLabel = (status: string) => {
+const getStatusLabel = (status: UIToolStatus) => {
     switch (status) {
-        case 'success':
+        case UIToolStatus.Done:
             return 'Success'
-        case 'error':
+        case UIToolStatus.Error:
             return 'Error'
-        case 'warning':
-            return 'Warning'
         default:
             return 'Info'
     }
@@ -68,7 +66,7 @@ export const OutputStatusCell: FC<OutputStatusProps> = ({ item, className, defau
         return null
     }
 
-    const status = item.status || 'info'
+    const status = item.status || UIToolStatus.Info
     const StatusIcon = getStatusIcon(status)
 
     // Define headerContent directly as JSX
@@ -103,6 +101,7 @@ export const OutputStatusCell: FC<OutputStatusProps> = ({ item, className, defau
             bodyContent={bodyContent}
             className={className}
             defaultOpen={defaultOpen}
+            status={item?.status}
         />
     )
 }
