@@ -23,7 +23,7 @@ export const FileCell: FC<FileCellProps> = ({
         <div className="tw-flex tw-items-center tw-gap-2 tw-overflow-hidden tw-flex-row">
             <Button
                 variant="ghost"
-                className="tw-flex tw-items-center tw-gap-2 tw-overflow-hidden tw-p-0 tw-text-left tw-truncate tw-w-full"
+                className="tw-flex tw-items-center tw-gap-2 tw-overflow-hidden tw-p-0 tw-text-left tw-truncate tw-w-full hover:tw-bg-transparent"
                 onClick={e => {
                     e.preventDefault()
                     e.stopPropagation()
