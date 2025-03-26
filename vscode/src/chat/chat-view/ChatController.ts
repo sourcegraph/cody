@@ -377,8 +377,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 await vscode.commands.executeCommand('cody.show-page', message.page)
                 break
             case 'attribution-search':
-                // Attribution search is asynchronous and does not need to await.
-                void this.handleAttributionSearch(message.snippet)
+                await this.handleAttributionSearch(message.snippet)
                 break
             case 'restoreHistory':
                 this.restoreSession(message.chatID)
@@ -1217,14 +1216,14 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         try {
             const attribution = await this.guardrails.searchAttribution(snippet)
             if (isError(attribution)) {
-                void this.postMessage({
+                await this.postMessage({
                     type: 'attribution',
                     snippet,
                     error: attribution.message,
                 })
                 return
             }
-            void this.postMessage({
+            await this.postMessage({
                 type: 'attribution',
                 snippet,
                 attribution: {
@@ -1233,7 +1232,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 },
             })
         } catch (error) {
-            void this.postMessage({
+            await this.postMessage({
                 type: 'attribution',
                 snippet,
                 error: `${error}`,
