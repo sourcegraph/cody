@@ -347,6 +347,7 @@ export const HumanMessageEditor: FunctionComponent<{
     const currentChatModel = useMemo(() => (models ? models[0] : undefined), [models, models?.[0]])
 
     const defaultContext = useDefaultContextForChat()
+
     useEffect(() => {
         if (isSent || !isFirstMessage || !editorRef?.current) {
             return

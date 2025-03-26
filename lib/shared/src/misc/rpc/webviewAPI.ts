@@ -22,6 +22,11 @@ export interface WebviewToExtensionAPI {
     mentionMenuData(query: MentionQuery): Observable<MentionMenuData>
 
     /**
+     * Get the frequently used context items.
+     */
+    frequentlyUsedContextItems(): Observable<ContextItem[]>
+
+    /**
      * Get the evaluated value of a feature flag.
      */
     evaluateFeatureFlag(flag: FeatureFlag): Observable<boolean | undefined>
@@ -115,6 +120,7 @@ export function createExtensionAPI(
 
     return {
         mentionMenuData: proxyExtensionAPI(messageAPI, 'mentionMenuData'),
+        frequentlyUsedContextItems: proxyExtensionAPI(messageAPI, 'frequentlyUsedContextItems'),
         evaluateFeatureFlag: proxyExtensionAPI(messageAPI, 'evaluateFeatureFlag'),
         prompts: proxyExtensionAPI(messageAPI, 'prompts'),
         promptTags: proxyExtensionAPI(messageAPI, 'promptTags'),
