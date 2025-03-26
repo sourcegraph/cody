@@ -274,7 +274,8 @@ export class ClientConfigSingleton {
             autoCompleteEnabled: features.autoComplete,
             customCommandsEnabled: features.commands,
             attributionEnabled: features.attribution,
-            attribution: features.attribution ? 'permissive' : 'none',
+            // TODO DONOTCOMMIT forcing enforced mode for testing
+            attribution: features.attribution ? 'enforced' : 'none',
             smartContextWindowEnabled: smartContextWindow,
 
             // Things that did not exist before logically default to disabled.
@@ -320,7 +321,8 @@ export class ClientConfigSingleton {
                 }
                 if (!clientConfig.attribution) {
                     // Precise attribution mode is not specified, so apply the default interpretation of attributionEnabled.
-                    clientConfig.attribution = clientConfig.attributionEnabled ? 'permissive' : 'none'
+                    // TODO DONOTCOMMIT testing only, forcing this to enforced mode for testing
+                    clientConfig.attribution = clientConfig.attributionEnabled ? 'enforced' : 'none'
                 }
                 if (!['none', 'permissive', 'enforced'].includes(clientConfig.attribution)) {
                     throw new Error(

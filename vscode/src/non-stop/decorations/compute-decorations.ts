@@ -85,12 +85,12 @@ function trimEmptyLinesFromRange(range: vscode.Range, document: vscode.TextDocum
 
     const startLine = document.lineAt(startLineIndex)
     if (range.start.character === startLine.range.end.character || startLine.text.length === 0) {
-        startLineIndex++
+        startLineIndex = Math.min(startLineIndex + 1, document.lineCount - 1)
     }
 
     const endLine = document.lineAt(startLineIndex)
     if (range.end.character === 0 || endLine.text.length === 0) {
-        endLineIndex--
+        endLineIndex = Math.max(startLineIndex, Math.min(endLineIndex - 1, document.lineCount - 1))
     }
 
     return new vscode.Range(
