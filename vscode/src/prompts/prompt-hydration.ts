@@ -65,7 +65,8 @@ export async function hydratePromptText(
 
     // Match any general cody mentions in the prompt text with cody:// prefix
     // This should be the same as AT_MENTION_REGEX in the atMentionsSerializer.ts
-    const promptTextMentionMatches = promptText.toString().match(/(cody:\/\/(?:serialized[^_]+_|[a-zA-Z0-9-]+))/gm) ?? []
+    const promptTextMentionMatches =
+        promptText.toString().match(/(cody:\/\/(?:serialized[^_]+_|[a-zA-Z0-9-]+))/gm) ?? []
 
     let hydratedPromptText = promptText
     const contextItemsMap = new Map<string, ContextItem>()
