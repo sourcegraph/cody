@@ -377,7 +377,8 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 await vscode.commands.executeCommand('cody.show-page', message.page)
                 break
             case 'attribution-search':
-                await this.handleAttributionSearch(message.snippet)
+                // Attribution search is asynchronous and does not need to await.
+                void this.handleAttributionSearch(message.snippet)
                 break
             case 'restoreHistory':
                 this.restoreSession(message.chatID)
