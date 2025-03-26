@@ -97,7 +97,13 @@ export class EditGuardrails {
             }
 
             // Synchronously collect the result.
-            const attribution = await result
+            const progressOptions: vscode.ProgressOptions = {
+                title: '$(loading~spin) Checking Guardrails',
+                location: vscode.ProgressLocation.Window,
+            }
+            const attribution = await vscode.window.withProgress(progressOptions, () => {
+                return result
+            })
             if (attribution instanceof Error) {
                 // API errors, network errors, etc.: Present the option to retry.
                 logger.logDebug(
