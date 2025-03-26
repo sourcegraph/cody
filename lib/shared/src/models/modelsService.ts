@@ -61,11 +61,11 @@ export type ModelTier = ModelTag.Free | ModelTag.Pro | ModelTag.Enterprise
 export type ModelCapability = 'chat' | 'autocomplete' | 'edit' | 'vision' | 'reasoning' | 'tools'
 /** Must match types on github.com/sourcegraph/sourcegraph/-/blob/internal/modelconfig/types/model.go */
 export type ModelConfigAllTiers = {
-    [key in ModelTier]: ModelConfigPerTier
+    [key in ModelTier]: ModelConfigByTier
 }
 
 /** Matching github.com/sourcegraph/sourcegraph/-/blob/internal/modelconfig/types/model.go */
-export interface ModelConfigPerTier {
+export interface ModelConfigByTier {
     contextWindow: ContextWindow
 }
 
