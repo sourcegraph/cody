@@ -1,4 +1,4 @@
-import { toSerializedPromptEditorValue } from '@sourcegraph/cody-shared'
+import { testFileUri, toSerializedPromptEditorValue } from '@sourcegraph/cody-shared'
 import { $createParagraphNode, $createTextNode, $getRoot, createEditor } from 'lexical'
 import { expect, test } from 'vitest'
 import { RICH_EDITOR_NODES } from '../nodes'
@@ -18,7 +18,7 @@ test('lexical -> prosemirror -> lexical', () => {
             paragraph.append(
                 $createTextNode('before '),
                 $createContextItemMentionNode(
-                    { type: 'file', uri: 'test.ts' },
+                    { type: 'file', uri: testFileUri('test.ts') },
                     { isFromInitialContext: true }
                 ),
                 $createTextNode(' after')

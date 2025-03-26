@@ -1,4 +1,5 @@
 import type { SerializedLexicalNode, SerializedTextNode } from 'lexical'
+import { testFileUri } from '../test/path-helpers'
 import type { SerializedPromptEditorState } from './editorState'
 import type {
     SerializedContextItem,
@@ -28,7 +29,7 @@ export const FILE_MENTION_EDITOR_STATE_FIXTURE: SerializedPromptEditorState = {
                             version: 1,
                             contextItem: {
                                 type: 'symbol',
-                                uri: 'file:///a/b/file1.go',
+                                uri: testFileUri('a/b/file1.go').toString(),
                                 range: {
                                     start: {
                                         line: 2,
@@ -59,7 +60,7 @@ export const FILE_MENTION_EDITOR_STATE_FIXTURE: SerializedPromptEditorState = {
                             version: 1,
                             contextItem: {
                                 type: 'file',
-                                uri: 'file:///dir/dir/file-a-1.py',
+                                uri: testFileUri('dir/dir/file-a-1.py').toString(),
                             },
                             isFromInitialContext: false,
                             text: 'file-a-1.py',
@@ -78,7 +79,7 @@ export const FILE_MENTION_EDITOR_STATE_FIXTURE: SerializedPromptEditorState = {
                             version: 1,
                             contextItem: {
                                 type: 'file',
-                                uri: 'file:///dir/dir/README.md',
+                                uri: testFileUri('dir/dir/README.md').toString(),
                                 range: {
                                     start: {
                                         line: 1,
@@ -150,7 +151,7 @@ export const GENERATE_UNIT_TEST_EDITOR_STATE_FIXTURE: SerializedPromptEditorStat
                             type: 'contextItemMention',
                             contextItem: {
                                 type: 'file',
-                                uri: 'file:///a/b/file1.go',
+                                uri: testFileUri('a/b/file1.go').toString(),
                                 source: 'user',
                             },
                             text: 'file1.go',
@@ -253,7 +254,7 @@ export const OLD_TEXT_FILE_MENTION_EDITOR_STATE_FIXTURE: SerializedPromptEditorS
                             version: 1,
                             contextItem: {
                                 type: 'symbol',
-                                uri: 'file:///a/b/file1.go',
+                                uri: testFileUri('a/b/file1.go').toString(),
                                 range: {
                                     start: {
                                         line: 2,
@@ -291,7 +292,7 @@ export const OLD_TEXT_FILE_MENTION_EDITOR_STATE_FIXTURE: SerializedPromptEditorS
                             version: 1,
                             contextItem: {
                                 type: 'file',
-                                uri: 'file:///dir/dir/file-a-1.py',
+                                uri: testFileUri('dir/dir/file-a-1.py').toString(),
                             },
                             isFromInitialContext: false,
                         } satisfies SerializedTextNode & {
@@ -317,7 +318,7 @@ export const OLD_TEXT_FILE_MENTION_EDITOR_STATE_FIXTURE: SerializedPromptEditorS
                             version: 1,
                             contextItem: {
                                 type: 'file',
-                                uri: 'file:///dir/dir/README.md',
+                                uri: testFileUri('dir/dir/README.md').toString(),
                                 range: {
                                     start: {
                                         line: 1,
