@@ -165,13 +165,22 @@ describe('editorStateFromPromptString', () => {
     })
 
     test('parse templates', () => {
-        const input = ps`Generate tests for @${PromptString.fromDisplayPath(
+        const inputForSnapshot = ps`Generate tests for @${PromptString.fromDisplayPath(
             URI.file('foo.go')
+        )} using {{mention framework}} framework to generate the unit tests`
+        const editorStateForSnapshot = editorStateFromPromptString(inputForSnapshot, {
+            parseTemplates: true,
+        })
+
+        expect(editorStateForSnapshot.lexicalEditorState.root).matchSnapshot()
+
+        const input = ps`Generate tests for @${PromptString.fromDisplayPath(
+            testFileUri('foo.go')
         )} using {{mention framework}} framework to generate the unit tests`
         const editorState = editorStateFromPromptString(input, {
             parseTemplates: true,
         })
-        expect(editorState.lexicalEditorState.root).matchSnapshot()
+
         expect(
             textContentFromSerializedLexicalNode(editorState.lexicalEditorState.root, wrapMention)
         ).toBe(
