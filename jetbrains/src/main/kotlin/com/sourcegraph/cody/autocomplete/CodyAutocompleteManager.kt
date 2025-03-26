@@ -236,6 +236,7 @@ class CodyAutocompleteManager {
    * can use `insertText` directly and the `range` encloses the entire line.
    */
   @RequiresEdt
+  @VisibleForTesting
   fun displayAutocomplete(
       editor: Editor,
       cursorOffset: Int,
