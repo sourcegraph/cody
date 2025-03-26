@@ -227,16 +227,14 @@ export function transcriptToInteractionPairs(
         pairs.push({
             humanMessage: {
                 // Always using a fixed index for the last/followup editor ensures it will be reused
-                // across renders and not recreated when transcript length changes
+                // across renders and not recreated when transcript length changes.
+                // This is a hack to avoid the editor getting reset during Agent mode.
                 index: -1,
                 speaker: 'human',
-                isUnsentFollowup: !lastHumanMessage?.isUnsentFollowup,
+                isUnsentFollowup: true,
                 // If the last submitted message was a search, default to chat for the followup. Else,
                 // keep the manually selected intent, if any, or the last human message's intent.
-                intent:
-                    lastHumanMessage?.intent === 'search'
-                        ? 'chat'
-                        : manuallySelectedIntent ?? lastHumanMessage?.intent,
+                intent: lastHumanMessage?.intent === 'search' ? 'chat' : lastHumanMessage?.intent,
             },
             assistantMessage: null,
         })
@@ -264,438 +262,410 @@ interface TranscriptInteractionProps
     setManuallySelectedIntent: (intent: ChatMessage['intent']) => void
 }
 
-const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(
-    props => {
-        const {
-            interaction: { humanMessage, assistantMessage },
-            models,
-            isFirstInteraction,
-            isLastInteraction,
-            isLastSentInteraction,
-            priorAssistantMessageIsLoading,
-            userInfo,
-            chatEnabled,
-            postMessage,
-            guardrails,
-            insertButtonOnSubmit,
-            copyButtonOnSubmit,
-            smartApply,
-            editorRef: parentEditorRef,
-            manuallySelectedIntent,
-            setManuallySelectedIntent,
-        } = props
+const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
+    const {
+        interaction: { humanMessage, assistantMessage },
+        models,
+        isFirstInteraction,
+        isLastInteraction,
+        isLastSentInteraction,
+        priorAssistantMessageIsLoading,
+        userInfo,
+        chatEnabled,
+        postMessage,
+        guardrails,
+        insertButtonOnSubmit,
+        copyButtonOnSubmit,
+        smartApply,
+        editorRef: parentEditorRef,
+        manuallySelectedIntent,
+        setManuallySelectedIntent,
+    } = props
 
-        const { activeChatContext, setActiveChatContext } = props
-        const humanEditorRef = useRef<PromptEditorRefAPI | null>(null)
-        const lastEditorRef = useContext(LastEditorContext)
-        useImperativeHandle(parentEditorRef, () => humanEditorRef.current)
+    const { activeChatContext, setActiveChatContext } = props
+    const humanEditorRef = useRef<PromptEditorRefAPI | null>(null)
+    const lastEditorRef = useContext(LastEditorContext)
+    useImperativeHandle(parentEditorRef, () => humanEditorRef.current)
 
-        const usingToolCody = assistantMessage?.model?.includes(ToolCodyModelName)
+    const usingToolCody = assistantMessage?.model?.includes(ToolCodyModelName)
 
-        const onUserAction = useCallback(
-            (action: 'edit' | 'submit', intentFromSubmit?: ChatMessage['intent']) => {
-                // Start the span as soon as the user initiates the action
-                const startMark = performance.mark('startSubmit')
-                const spanManager = new SpanManager('cody-webview')
-                const span = spanManager.startSpan('chat-interaction', {
-                    attributes: {
-                        sampled: true,
-                        'render.state': 'started',
-                        'startSubmit.mark': startMark.startTime,
-                    },
-                })
-
-                if (!span) {
-                    throw new Error('Failed to start span for chat interaction')
-                }
-
-                const spanContext = trace.setSpan(context.active(), span)
-                setActiveChatContext(spanContext)
-                const currentSpanContext = span.spanContext()
-
-                const traceparent = getTraceparentFromSpanContext(currentSpanContext)
-
-                // Serialize the editor value after starting the span
-                const editorValue = humanEditorRef.current?.getSerializedValue()
-                if (!editorValue) {
-                    console.error('Failed to serialize editor value')
-                    return
-                }
-
-                const commonProps = {
-                    editorValue,
-                    manuallySelectedIntent: intentFromSubmit || manuallySelectedIntent,
-                    traceparent,
-                }
-
-                if (action === 'edit') {
-                    // Remove search context chips from the next input so that the user cannot
-                    // reference search results that don't exist anymore.
-                    // This is a no-op if the input does not contain any search context chips.
-                    // NOTE: Doing this for the penultimate input only seems to suffice because
-                    // editing a message earlier in the transcript will clear the conversation
-                    // and reset the last input anyway.
-                    if (isLastSentInteraction) {
-                        lastEditorRef.current?.filterMentions(item => !isCodeSearchContextItem(item))
-                    }
-
-                    editHumanMessage({
-                        messageIndexInTranscript: humanMessage.index,
-                        ...commonProps,
-                    })
-                } else {
-                    submitHumanMessage({
-                        ...commonProps,
-                    })
-                }
-            },
-            [
-                humanMessage,
-                setActiveChatContext,
-                isLastSentInteraction,
-                lastEditorRef,
-                manuallySelectedIntent,
-            ]
-        )
-
-        const onEditSubmit = useCallback(
-            (intentFromSubmit?: ChatMessage['intent']): void => {
-                onUserAction('edit', intentFromSubmit)
-            },
-            [onUserAction]
-        )
-
-        const onFollowupSubmit = useCallback(
-            (intentFromSubmit?: ChatMessage['intent']): void => {
-                onUserAction('submit', intentFromSubmit)
-            },
-            [onUserAction]
-        )
-
-        const omniboxEnabled = useOmniBox() && !usingToolCody
-
-        const vscodeAPI = getVSCodeAPI()
-        const onStop = useCallback(() => {
-            vscodeAPI.postMessage({
-                command: 'abort',
-            })
-        }, [vscodeAPI])
-
-        const isSearchIntent = omniboxEnabled && humanMessage.intent === 'search'
-
-        const isContextLoading = Boolean(
-            !isSearchIntent &&
-                humanMessage.contextFiles === undefined &&
-                isLastSentInteraction &&
-                assistantMessage?.text === undefined &&
-                assistantMessage?.subMessages === undefined
-        )
-        const spanManager = new SpanManager('cody-webview')
-        const renderSpan = useRef<Span>()
-        const timeToFirstTokenSpan = useRef<Span>()
-        const hasRecordedFirstToken = useRef(false)
-
-        const [isLoading, setIsLoading] = useState(assistantMessage?.isLoading)
-
-        const [isThoughtProcessOpened, setThoughtProcessOpened] = useLocalStorage(
-            'cody.thinking-space.open',
-            true
-        )
-
-        useEffect(() => {
-            setIsLoading(assistantMessage?.isLoading)
-        }, [assistantMessage])
-
-        const humanMessageText = humanMessage.text
-        const smartApplyWithInstruction = useMemo(() => {
-            if (!smartApply) return undefined
-            return {
-                ...smartApply,
-                onSubmit(params: Parameters<typeof smartApply.onSubmit>[0]) {
-                    return smartApply.onSubmit({
-                        ...params,
-                        instruction: params.instruction ?? humanMessageText,
-                    })
+    const onUserAction = useCallback(
+        (action: 'edit' | 'submit', intentFromSubmit?: ChatMessage['intent']) => {
+            // Start the span as soon as the user initiates the action
+            const startMark = performance.mark('startSubmit')
+            const spanManager = new SpanManager('cody-webview')
+            const span = spanManager.startSpan('chat-interaction', {
+                attributes: {
+                    sampled: true,
+                    'render.state': 'started',
+                    'startSubmit.mark': startMark.startTime,
                 },
-            }
-        }, [smartApply, humanMessageText])
+            })
 
-        useEffect(() => {
-            if (!assistantMessage) return
-
-            const startRenderSpan = () => {
-                // Reset the spans to their initial state
-                renderSpan.current = undefined
-                timeToFirstTokenSpan.current = undefined
-                hasRecordedFirstToken.current = false
-
-                const startRenderMark = performance.mark('startRender')
-                // Start a new span for rendering the assistant message
-                renderSpan.current = spanManager.startSpan('assistant-message-render', {
-                    attributes: {
-                        sampled: true,
-                        'message.index': assistantMessage.index,
-                        'render.start_time': startRenderMark.startTime,
-                        'parent.span.id': activeChatContext
-                            ? trace.getSpan(activeChatContext)?.spanContext().spanId
-                            : undefined,
-                    },
-                    context: activeChatContext,
-                })
-                // Start a span to measure time to first token
-                timeToFirstTokenSpan.current = spanManager.startSpan('time-to-first-token', {
-                    attributes: { 'message.index': assistantMessage.index },
-                    context: activeChatContext,
-                })
+            if (!span) {
+                throw new Error('Failed to start span for chat interaction')
             }
 
-            const endRenderSpan = () => {
-                // Mark the end of rendering
-                performance.mark('endRender')
-                // Measure the duration of the render
-                const measure = performance.measure('renderDuration', 'startRender', 'endRender')
-                if (renderSpan.current && measure.duration > 0) {
-                    // Set attributes and end the render span
-                    renderSpan.current.setAttributes({
-                        'render.success': !assistantMessage?.error,
-                        'message.length': assistantMessage?.text?.length ?? 0,
-                        'render.total_time': measure.duration,
-                    })
-                    renderSpan.current.end()
+            const spanContext = trace.setSpan(context.active(), span)
+            setActiveChatContext(spanContext)
+            const currentSpanContext = span.spanContext()
+
+            const traceparent = getTraceparentFromSpanContext(currentSpanContext)
+
+            // Serialize the editor value after starting the span
+            const editorValue = humanEditorRef.current?.getSerializedValue()
+            if (!editorValue) {
+                console.error('Failed to serialize editor value')
+                return
+            }
+
+            const commonProps = {
+                editorValue,
+                manuallySelectedIntent: intentFromSubmit || manuallySelectedIntent,
+                traceparent,
+            }
+
+            if (action === 'edit') {
+                // Remove search context chips from the next input so that the user cannot
+                // reference search results that don't exist anymore.
+                // This is a no-op if the input does not contain any search context chips.
+                // NOTE: Doing this for the penultimate input only seems to suffice because
+                // editing a message earlier in the transcript will clear the conversation
+                // and reset the last input anyway.
+                if (isLastSentInteraction) {
+                    lastEditorRef.current?.filterMentions(item => !isCodeSearchContextItem(item))
                 }
 
-                renderSpan.current = undefined
-                hasRecordedFirstToken.current = false
-
-                if (activeChatContext) {
-                    const rootSpan = trace.getSpan(activeChatContext)
-                    if (rootSpan) {
-                        // Calculate and set the total chat time
-                        const chatTotalTime =
-                            performance.now() - performance.getEntriesByName('startSubmit')[0].startTime
-                        rootSpan.setAttributes({
-                            'chat.completed': true,
-                            'render.state': 'completed',
-                            'chat.total_time': chatTotalTime,
-                        })
-                        rootSpan.end()
-                    }
-                }
-                // Clear the active chat context
-                setActiveChatContext(undefined)
-            }
-
-            const endFirstTokenSpan = () => {
-                if (renderSpan.current && timeToFirstTokenSpan.current) {
-                    // Mark the first token
-                    performance.mark('firstToken')
-                    // Measure the time to first token
-                    performance.measure('timeToFirstToken', 'startRender', 'firstToken')
-                    const firstTokenMeasure = performance.getEntriesByName('timeToFirstToken')[0]
-                    if (firstTokenMeasure.duration > 0) {
-                        // Set attributes and end the time-to-first-token span
-                        timeToFirstTokenSpan.current.setAttributes({
-                            'time.to.first.token': firstTokenMeasure.duration,
-                        })
-                        timeToFirstTokenSpan.current.end()
-                        timeToFirstTokenSpan.current = undefined
-                        hasRecordedFirstToken.current = true
-                    }
-                }
-            }
-            // Case 3: End the time-to-first-token span when the first token appears
-            if (
-                assistantMessage.text &&
-                !hasRecordedFirstToken.current &&
-                timeToFirstTokenSpan.current
-            ) {
-                endFirstTokenSpan()
-            }
-            // Case 1: Start rendering if the assistant message is loading and no render span exists
-            if (assistantMessage.isLoading && !renderSpan.current && activeChatContext) {
-                context.with(activeChatContext, startRenderSpan)
-            }
-            // Case 2: End rendering if loading is complete and a render span exists
-            else if (!isLoading && renderSpan.current) {
-                endRenderSpan()
-            }
-        }, [assistantMessage, activeChatContext, setActiveChatContext, spanManager, isLoading])
-
-        const humanMessageInfo = useMemo(() => {
-            // See SRCH-942: it's critical to memoize this value to avoid repeated
-            // requests to our guardrails server.
-            if (assistantMessage && !isContextLoading) {
-                return makeHumanMessageInfo({ humanMessage, assistantMessage }, humanEditorRef)
-            }
-            return null
-        }, [humanMessage, assistantMessage, isContextLoading])
-
-        const onHumanMessageSubmit = useCallback(
-            (intent?: ChatMessage['intent']) => {
-                if (humanMessage.isUnsentFollowup) {
-                    return onFollowupSubmit(intent)
-                }
-                onEditSubmit(intent)
-            },
-            [humanMessage.isUnsentFollowup, onFollowupSubmit, onEditSubmit]
-        )
-
-        const onSelectedFiltersUpdate = useCallback(
-            (selectedFilters: NLSSearchDynamicFilter[]) => {
-                reevaluateSearchWithSelectedFilters({
-                    messageIndexInTranscript: humanMessage.index,
-                    selectedFilters,
-                })
-            },
-            [humanMessage.index]
-        )
-
-        const editAndSubmitSearch = useCallback(
-            (text: string) =>
                 editHumanMessage({
                     messageIndexInTranscript: humanMessage.index,
-                    editorValue: {
-                        text,
-                        contextItems: [],
-                        editorState: serializedPromptEditorStateFromText(text),
-                    },
-                    manuallySelectedIntent: 'search',
-                }),
-            [humanMessage]
-        )
+                    ...commonProps,
+                })
+            } else {
+                submitHumanMessage({
+                    ...commonProps,
+                })
+            }
+        },
+        [
+            humanMessage,
+            setActiveChatContext,
+            isLastSentInteraction,
+            lastEditorRef,
+            manuallySelectedIntent,
+        ]
+    )
 
-        const isAgenticMode = useMemo(
-            () => !humanMessage.isUnsentFollowup && humanMessage?.intent === 'agentic',
-            [humanMessage.isUnsentFollowup, humanMessage?.intent]
-        )
+    const onEditSubmit = useCallback(
+        (intentFromSubmit?: ChatMessage['intent']): void => {
+            onUserAction('edit', intentFromSubmit)
+        },
+        [onUserAction]
+    )
 
-        const agentToolCalls = useMemo(() => {
-            return assistantMessage?.contextFiles?.filter(f => f.type === 'tool-state')
-        }, [assistantMessage?.contextFiles])
+    const onFollowupSubmit = useCallback(
+        (intentFromSubmit?: ChatMessage['intent']): void => {
+            onUserAction('submit', intentFromSubmit)
+        },
+        [onUserAction]
+    )
 
-        return (
-            <>
-                {/* Shows tool contents instead of editor if any */}
-                <HumanMessageCell
-                    key={humanMessage.index}
-                    index={humanMessage.index}
-                    userInfo={userInfo}
-                    models={models}
-                    chatEnabled={chatEnabled}
-                    message={humanMessage}
-                    isFirstMessage={humanMessage.index === 0}
-                    isSent={!humanMessage.isUnsentFollowup}
-                    isPendingPriorResponse={priorAssistantMessageIsLoading}
-                    onSubmit={onHumanMessageSubmit}
-                    onStop={onStop}
-                    isFirstInteraction={isFirstInteraction}
-                    isLastInteraction={isLastInteraction}
-                    isEditorInitiallyFocused={isLastInteraction}
-                    editorRef={humanEditorRef}
-                    className={!isFirstInteraction && isLastInteraction ? 'tw-mt-auto' : ''}
-                    intent={manuallySelectedIntent}
-                    manuallySelectIntent={setManuallySelectedIntent}
-                />
-                {!isAgenticMode && (
-                    <>
-                        {omniboxEnabled && assistantMessage?.didYouMeanQuery && (
-                            <DidYouMeanNotice
-                                query={assistantMessage?.didYouMeanQuery}
-                                disabled={!!assistantMessage?.isLoading}
-                                switchToSearch={() =>
-                                    editAndSubmitSearch(assistantMessage?.didYouMeanQuery ?? '')
-                                }
-                            />
-                        )}
-                        {!usingToolCody && !isSearchIntent && humanMessage.agent && (
-                            <AgenticContextCell
-                                key={`${humanMessage.index}-${humanMessage.intent}-process`}
-                                isContextLoading={isContextLoading}
-                                processes={humanMessage?.processes ?? undefined}
-                            />
-                        )}
-                        {humanMessage.agent && assistantMessage?.isLoading && (
-                            <ApprovalCell vscodeAPI={vscodeAPI} />
-                        )}
-                        {!usingToolCody &&
-                            !(humanMessage.agent && isContextLoading) &&
-                            (humanMessage.contextFiles || assistantMessage || isContextLoading) &&
-                            !isSearchIntent && (
-                                <ContextCell
-                                    key={`${humanMessage.index}-${humanMessage.intent}-context`}
-                                    contextItems={humanMessage.contextFiles}
-                                    contextAlternatives={humanMessage.contextAlternatives}
-                                    model={assistantMessage?.model}
-                                    isForFirstMessage={humanMessage.index === 0}
-                                    isContextLoading={isContextLoading}
-                                    defaultOpen={
-                                        isContextLoading && humanMessage.agent === DeepCodyAgentID
-                                    }
-                                    agent={humanMessage?.agent ?? undefined}
-                                />
-                            )}
-                    </>
-                )}
-                {assistantMessage &&
-                    (!isContextLoading ||
-                        (assistantMessage.subMessages && assistantMessage.subMessages.length > 0)) && (
-                        <AssistantMessageCell
-                            key={assistantMessage.index}
-                            userInfo={userInfo}
-                            models={models}
-                            chatEnabled={chatEnabled}
-                            message={assistantMessage}
-                            copyButtonOnSubmit={copyButtonOnSubmit}
-                            insertButtonOnSubmit={insertButtonOnSubmit}
-                            postMessage={postMessage}
-                            guardrails={guardrails}
-                            humanMessage={humanMessageInfo}
-                            isLoading={isLastSentInteraction && assistantMessage.isLoading}
-                            smartApply={agentToolCalls ? undefined : smartApplyWithInstruction}
-                            onSelectedFiltersUpdate={onSelectedFiltersUpdate}
-                            isLastSentInteraction={isLastSentInteraction}
-                            setThoughtProcessOpened={setThoughtProcessOpened}
-                            isThoughtProcessOpened={isThoughtProcessOpened}
-                        />
-                    )}
-                {agentToolCalls?.map(tool => (
-                    <ToolStatusCell
-                        key={tool.toolId}
-                        title={tool.toolName}
-                        output={tool}
-                        className="w-full"
-                    />
-                ))}
-            </>
-        )
-    },
-    (prevProps, nextProps) => {
-        // Special case for the last editor (humanMessage.index === -1)
-        // We want to avoid re-rendering it when the transcript changes
-        if (
-            prevProps.interaction.humanMessage.index === -1 &&
-            nextProps.interaction.humanMessage.index === -1
-        ) {
-            // For the last editor, we only care about specific prop changes that should trigger a re-render
-            return isEqual(
-                {
-                    ...prevProps,
-                    // Exclude certain props from the comparison that might change but shouldn't trigger re-render
-                    isLastInteraction: undefined,
-                    priorAssistantMessageIsLoading: undefined,
+    const omniboxEnabled = useOmniBox() && !usingToolCody
+
+    const vscodeAPI = getVSCodeAPI()
+    const onStop = useCallback(() => {
+        vscodeAPI.postMessage({
+            command: 'abort',
+        })
+    }, [vscodeAPI])
+
+    const isSearchIntent = omniboxEnabled && humanMessage.intent === 'search'
+
+    const isContextLoading = Boolean(
+        !isSearchIntent &&
+            humanMessage.contextFiles === undefined &&
+            isLastSentInteraction &&
+            assistantMessage?.text === undefined &&
+            assistantMessage?.subMessages === undefined
+    )
+    const spanManager = new SpanManager('cody-webview')
+    const renderSpan = useRef<Span>()
+    const timeToFirstTokenSpan = useRef<Span>()
+    const hasRecordedFirstToken = useRef(false)
+
+    const [isLoading, setIsLoading] = useState(assistantMessage?.isLoading)
+
+    const [isThoughtProcessOpened, setThoughtProcessOpened] = useLocalStorage(
+        'cody.thinking-space.open',
+        true
+    )
+
+    useEffect(() => {
+        setIsLoading(assistantMessage?.isLoading)
+    }, [assistantMessage])
+
+    const humanMessageText = humanMessage.text
+    const smartApplyWithInstruction = useMemo(() => {
+        if (!smartApply) return undefined
+        return {
+            ...smartApply,
+            onSubmit(params: Parameters<typeof smartApply.onSubmit>[0]) {
+                return smartApply.onSubmit({
+                    ...params,
+                    instruction: params.instruction ?? humanMessageText,
+                })
+            },
+        }
+    }, [smartApply, humanMessageText])
+
+    useEffect(() => {
+        if (!assistantMessage) return
+
+        const startRenderSpan = () => {
+            // Reset the spans to their initial state
+            renderSpan.current = undefined
+            timeToFirstTokenSpan.current = undefined
+            hasRecordedFirstToken.current = false
+
+            const startRenderMark = performance.mark('startRender')
+            // Start a new span for rendering the assistant message
+            renderSpan.current = spanManager.startSpan('assistant-message-render', {
+                attributes: {
+                    sampled: true,
+                    'message.index': assistantMessage.index,
+                    'render.start_time': startRenderMark.startTime,
+                    'parent.span.id': activeChatContext
+                        ? trace.getSpan(activeChatContext)?.spanContext().spanId
+                        : undefined,
                 },
-                {
-                    ...nextProps,
-                    isLastInteraction: undefined,
-                    priorAssistantMessageIsLoading: undefined,
-                }
-            )
+                context: activeChatContext,
+            })
+            // Start a span to measure time to first token
+            timeToFirstTokenSpan.current = spanManager.startSpan('time-to-first-token', {
+                attributes: { 'message.index': assistantMessage.index },
+                context: activeChatContext,
+            })
         }
 
-        // For all other messages, use the regular isEqual comparison
-        return isEqual(prevProps, nextProps)
-    }
-)
+        const endRenderSpan = () => {
+            // Mark the end of rendering
+            performance.mark('endRender')
+            // Measure the duration of the render
+            const measure = performance.measure('renderDuration', 'startRender', 'endRender')
+            if (renderSpan.current && measure.duration > 0) {
+                // Set attributes and end the render span
+                renderSpan.current.setAttributes({
+                    'render.success': !assistantMessage?.error,
+                    'message.length': assistantMessage?.text?.length ?? 0,
+                    'render.total_time': measure.duration,
+                })
+                renderSpan.current.end()
+            }
+
+            renderSpan.current = undefined
+            hasRecordedFirstToken.current = false
+
+            if (activeChatContext) {
+                const rootSpan = trace.getSpan(activeChatContext)
+                if (rootSpan) {
+                    // Calculate and set the total chat time
+                    const chatTotalTime =
+                        performance.now() - performance.getEntriesByName('startSubmit')[0].startTime
+                    rootSpan.setAttributes({
+                        'chat.completed': true,
+                        'render.state': 'completed',
+                        'chat.total_time': chatTotalTime,
+                    })
+                    rootSpan.end()
+                }
+            }
+            // Clear the active chat context
+            setActiveChatContext(undefined)
+        }
+
+        const endFirstTokenSpan = () => {
+            if (renderSpan.current && timeToFirstTokenSpan.current) {
+                // Mark the first token
+                performance.mark('firstToken')
+                // Measure the time to first token
+                performance.measure('timeToFirstToken', 'startRender', 'firstToken')
+                const firstTokenMeasure = performance.getEntriesByName('timeToFirstToken')[0]
+                if (firstTokenMeasure.duration > 0) {
+                    // Set attributes and end the time-to-first-token span
+                    timeToFirstTokenSpan.current.setAttributes({
+                        'time.to.first.token': firstTokenMeasure.duration,
+                    })
+                    timeToFirstTokenSpan.current.end()
+                    timeToFirstTokenSpan.current = undefined
+                    hasRecordedFirstToken.current = true
+                }
+            }
+        }
+        // Case 3: End the time-to-first-token span when the first token appears
+        if (assistantMessage.text && !hasRecordedFirstToken.current && timeToFirstTokenSpan.current) {
+            endFirstTokenSpan()
+        }
+        // Case 1: Start rendering if the assistant message is loading and no render span exists
+        if (assistantMessage.isLoading && !renderSpan.current && activeChatContext) {
+            context.with(activeChatContext, startRenderSpan)
+        }
+        // Case 2: End rendering if loading is complete and a render span exists
+        else if (!isLoading && renderSpan.current) {
+            endRenderSpan()
+        }
+    }, [assistantMessage, activeChatContext, setActiveChatContext, spanManager, isLoading])
+
+    const humanMessageInfo = useMemo(() => {
+        // See SRCH-942: it's critical to memoize this value to avoid repeated
+        // requests to our guardrails server.
+        if (assistantMessage && !isContextLoading) {
+            return makeHumanMessageInfo({ humanMessage, assistantMessage }, humanEditorRef)
+        }
+        return null
+    }, [humanMessage, assistantMessage, isContextLoading])
+
+    const onHumanMessageSubmit = useCallback(
+        (intent?: ChatMessage['intent']) => {
+            if (humanMessage.isUnsentFollowup) {
+                onFollowupSubmit(intent)
+            } else {
+                onEditSubmit(intent)
+            }
+            // Set the unsent followup flag to false after submitting
+            // to makes sure the last editor for Agent mode gets reset.
+            humanMessage.isUnsentFollowup = false
+        },
+        [humanMessage, onFollowupSubmit, onEditSubmit]
+    )
+
+    const onSelectedFiltersUpdate = useCallback(
+        (selectedFilters: NLSSearchDynamicFilter[]) => {
+            reevaluateSearchWithSelectedFilters({
+                messageIndexInTranscript: humanMessage.index,
+                selectedFilters,
+            })
+        },
+        [humanMessage.index]
+    )
+
+    const editAndSubmitSearch = useCallback(
+        (text: string) =>
+            editHumanMessage({
+                messageIndexInTranscript: humanMessage.index,
+                editorValue: {
+                    text,
+                    contextItems: [],
+                    editorState: serializedPromptEditorStateFromText(text),
+                },
+                manuallySelectedIntent: 'search',
+            }),
+        [humanMessage]
+    )
+
+    const isAgenticMode = useMemo(
+        () => humanMessage?.manuallySelectedIntent === 'agentic',
+        [humanMessage.manuallySelectedIntent]
+    )
+
+    const agentToolCalls = useMemo(() => {
+        return assistantMessage?.contextFiles?.filter(f => f.type === 'tool-state')
+    }, [assistantMessage?.contextFiles])
+
+    return (
+        <>
+            {/* Shows tool contents instead of editor if any */}
+            <HumanMessageCell
+                key={humanMessage.index}
+                index={humanMessage.index}
+                userInfo={userInfo}
+                models={models}
+                chatEnabled={chatEnabled}
+                message={humanMessage}
+                isFirstMessage={humanMessage.index === 0}
+                isSent={!humanMessage.isUnsentFollowup}
+                isPendingPriorResponse={priorAssistantMessageIsLoading}
+                onSubmit={onHumanMessageSubmit}
+                onStop={onStop}
+                isFirstInteraction={isFirstInteraction}
+                isLastInteraction={isLastInteraction}
+                isEditorInitiallyFocused={isLastInteraction}
+                editorRef={humanEditorRef}
+                className={!isFirstInteraction && isLastInteraction ? 'tw-mt-auto' : ''}
+                intent={manuallySelectedIntent}
+                manuallySelectIntent={setManuallySelectedIntent}
+            />
+            {!isAgenticMode && (
+                <>
+                    {omniboxEnabled && assistantMessage?.didYouMeanQuery && (
+                        <DidYouMeanNotice
+                            query={assistantMessage?.didYouMeanQuery}
+                            disabled={!!assistantMessage?.isLoading}
+                            switchToSearch={() =>
+                                editAndSubmitSearch(assistantMessage?.didYouMeanQuery ?? '')
+                            }
+                        />
+                    )}
+                    {!usingToolCody && !isSearchIntent && humanMessage.agent && (
+                        <AgenticContextCell
+                            key={`${humanMessage.index}-${humanMessage.intent}-process`}
+                            isContextLoading={isContextLoading}
+                            processes={humanMessage?.processes ?? undefined}
+                        />
+                    )}
+                    {humanMessage.agent && assistantMessage?.isLoading && (
+                        <ApprovalCell vscodeAPI={vscodeAPI} />
+                    )}
+                    {!usingToolCody &&
+                        !(humanMessage.agent && isContextLoading) &&
+                        (humanMessage.contextFiles || assistantMessage || isContextLoading) &&
+                        !isSearchIntent && (
+                            <ContextCell
+                                key={`${humanMessage.index}-${humanMessage.intent}-context`}
+                                contextItems={humanMessage.contextFiles}
+                                contextAlternatives={humanMessage.contextAlternatives}
+                                model={assistantMessage?.model}
+                                isForFirstMessage={humanMessage.index === 0}
+                                isContextLoading={isContextLoading}
+                                defaultOpen={isContextLoading && humanMessage.agent === DeepCodyAgentID}
+                                agent={humanMessage?.agent ?? undefined}
+                            />
+                        )}
+                </>
+            )}
+            {assistantMessage &&
+                (!isContextLoading ||
+                    (assistantMessage.subMessages && assistantMessage.subMessages.length > 0)) && (
+                    <AssistantMessageCell
+                        key={assistantMessage.index}
+                        userInfo={userInfo}
+                        models={models}
+                        chatEnabled={chatEnabled}
+                        message={assistantMessage}
+                        copyButtonOnSubmit={copyButtonOnSubmit}
+                        insertButtonOnSubmit={insertButtonOnSubmit}
+                        postMessage={postMessage}
+                        guardrails={guardrails}
+                        humanMessage={humanMessageInfo}
+                        isLoading={isLastSentInteraction && assistantMessage.isLoading}
+                        smartApply={
+                            humanMessage?.intent === 'agentic' ? undefined : smartApplyWithInstruction
+                        }
+                        onSelectedFiltersUpdate={onSelectedFiltersUpdate}
+                        isLastSentInteraction={isLastSentInteraction}
+                        setThoughtProcessOpened={setThoughtProcessOpened}
+                        isThoughtProcessOpened={isThoughtProcessOpened}
+                    />
+                )}
+            {agentToolCalls?.map(tool => (
+                <ToolStatusCell
+                    key={tool.toolId}
+                    title={tool.toolName}
+                    output={tool}
+                    className="w-full"
+                />
+            ))}
+        </>
+    )
+}, isEqual)
 
 // TODO(sqs): Do this the React-y way.
 export function focusLastHumanMessageEditor(): void {
