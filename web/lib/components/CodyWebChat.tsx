@@ -371,6 +371,23 @@ const CodyWebPanel: FC<CodyWebPanelProps> = props => {
             }),
         [attributionMode, vscodeAPI]
     )
+    useLayoutEffect(() => {
+        vscodeAPI.onMessage(message => {
+            if (message.type === 'attribution') {
+                if (message.attribution) {
+                    guardrails.notifyAttributionSuccess(message.snippet, {
+                        repositories: message.attribution.repositoryNames.map(name => {
+                            return { name }
+                        }),
+                        limitHit: message.attribution.limitHit,
+                    })
+                }
+                if (message.error) {
+                    guardrails.notifyAttributionFailure(message.snippet, new Error(message.error))
+                }
+            }
+        })
+    }, [vscodeAPI, guardrails])
 
     return (
         <div className={className} data-cody-web-chat={true}>
