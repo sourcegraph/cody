@@ -60,9 +60,6 @@ export class RequestManager implements vscode.Disposable {
 
         try {
             for await (const response of await makeRequest(request.abortController.signal)) {
-                console.log('UMPOX RESPONSE', {
-                    response,
-                })
                 if (response.type === 'partial') {
                     // Got a partial response, we do nothing here right now.
                     // TODO: Implement hot-streak, emit the partial response if it contains X lines

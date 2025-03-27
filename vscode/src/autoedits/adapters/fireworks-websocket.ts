@@ -20,8 +20,16 @@ const LOG_FILTER_LABEL = 'fireworks-websocket'
 const SOCKET_SEND_TIME_OUT_MS = 2000
 const SOCKET_RECONNECT_DELAY_MS = 5000
 
+interface FireworksSSEBody {
+    data:
+        | '[DONE]'
+        | {
+              choices: [{ message: { content: string } }]
+          }
+}
+
 interface MessageCallback {
-    resolve: (response: Response) => void
+    resolve: (body: FireworksSSEBody) => void
     reject: (error: Error) => void
     signal: AbortSignal
 }
@@ -175,14 +183,9 @@ export class FireworksWebSocketAdapter implements AutoeditsModelAdapter {
     ): AsyncGenerator<RawStreamEvent> {
         const isStreamingEnabled = !!body?.stream
         const messageId = 'm_' + this.messageId++
-        const state = { done: false, error: null as Error | null }
-        const data = JSON.stringify({
-            'x-message-id': messageId,
-            'x-message-body': body,
-            'x-message-url': url,
-            'x-message-headers': headers,
-            'x-message-stream': isStreamingEnabled,
-        })
+        const messageQueue: RawStreamEvent[] = []
+        let queueResolver: (() => void) | null = null
+        const state = { done: false }
 
         if (messageId in this.callbackQueue) {
             autoeditsOutputChannelLogger.logError(
@@ -191,47 +194,54 @@ export class FireworksWebSocketAdapter implements AutoeditsModelAdapter {
             )
         }
 
-        const sendPromise: Promise<RawStreamEvent> = new Promise((resolve, reject) => {
-            if (signal.aborted) {
-                return reject(new Error('abort signal received, message not sent'))
+        const pushEvent = (event: RawStreamEvent) => {
+            messageQueue.push(event)
+            // If we have a resolver, resolve it
+            if (queueResolver) {
+                queueResolver()
+                queueResolver = null
             }
-            this.callbackQueue[messageId] = {
-                resolve: response => {
-                    if (isStreamingEnabled) {
-                        return this.handleStreamingResponse(response, state)
-                    }
-                    return this.handleNonStreamingResponse(response, state)
-                },
-                reject: error => {
-                    state.error = error
-                    return
-                },
-                signal,
-            }
-            this.ws?.send(data)
-        })
+        }
 
-        let timeoutHandle: NodeJS.Timeout
-        const timeoutPromise: Promise<RawStreamEvent> = new Promise((_, reject) => {
-            timeoutHandle = setTimeout(() => {
-                delete this.callbackQueue[messageId]
-                reject(new Error('timeout in sending message to fireworks'))
-            }, SOCKET_SEND_TIME_OUT_MS)
+        this.callbackQueue[messageId] = {
+            resolve: (response: FireworksSSEBody) => {
+                const streamEvent = isStreamingEnabled
+                    ? this.handleStreamingResponse(response, state)
+                    : this.handleNonStreamingResponse(response, state)
+                pushEvent(streamEvent)
+            },
+            reject: (error: Error) => {
+                pushEvent({ event: 'error', data: error.message })
+            },
+            signal,
+        }
+
+        const data = JSON.stringify({
+            'x-message-id': messageId,
+            'x-message-body': body,
+            'x-message-url': url,
+            'x-message-headers': headers,
+            'x-message-stream': isStreamingEnabled,
         })
+        this.ws?.send(data)
 
         try {
-            while (!state.done && !signal.aborted) {
-                if (state.error) {
-                    throw state.error
+            while (!signal.aborted && !state.done) {
+                // Wait until there's something in our queue.
+                if (messageQueue.length === 0) {
+                    await new Promise<void>(resolve => {
+                        queueResolver = resolve
+                    })
                 }
-                const result = await Promise.race([sendPromise, timeoutPromise]).then(response => {
-                    clearTimeout(timeoutHandle)
-                    return response
-                })
-                if (result.event === 'done') {
-                    break
+                // Yield everything that's in the queue.
+                while (messageQueue.length > 0) {
+                    const event = messageQueue.shift()!
+                    yield event
+                    if (event.event === 'done') {
+                        state.done = true
+                        break
+                    }
                 }
-                yield result
             }
 
             if (!signal.aborted && !isStreamingEnabled) {
@@ -246,36 +256,39 @@ export class FireworksWebSocketAdapter implements AutoeditsModelAdapter {
     }
 
     private handleNonStreamingResponse(
-        response: any,
-        state: { done: boolean; error: Error | null }
+        responseBody: FireworksSSEBody,
+        state: { done: boolean }
     ): RawStreamEvent {
-        const responseBody = response['x-message-body']
         if (!responseBody) {
-            state.error = new Error('No response body received')
-            return { event: 'error', data: 'no response body' }
+            return { event: 'error', data: JSON.stringify({ error: 'no response body' }) }
         }
+
+        const data = responseBody.data
+        if (data === '[DONE]') {
+            return { event: 'error', data: JSON.stringify({ error: 'unexpected response body' }) }
+        }
+
         state.done = true
-        return { event: 'data', data: responseBody }
+        return { event: 'data', data: JSON.stringify(data) }
     }
 
     private handleStreamingResponse(
-        response: any,
-        state: { done: boolean; error: Error | null }
+        responseBody: FireworksSSEBody,
+        state: { done: boolean }
     ): RawStreamEvent {
-        const responseBody = response['x-message-body']?.data
         if (!responseBody) {
-            state.error = new Error('No streaming response body received')
-            return { event: 'error', data: 'no response body' }
+            return { event: 'error', data: JSON.stringify({ error: 'no response body' }) }
         }
 
-        if (responseBody === '[DONE]') {
+        const data = responseBody.data
+        if (data === '[DONE]') {
             state.done = true
             return { event: 'done', data: '' }
         }
 
         return {
             event: 'data',
-            data: responseBody,
+            data: JSON.stringify(data),
         }
     }
 
@@ -334,19 +347,11 @@ export class FireworksWebSocketAdapter implements AutoeditsModelAdapter {
                     }
 
                     const body = webSocketResponse['x-message-body']
-                    const headers = webSocketResponse['x-message-headers']
                     const status = webSocketResponse['x-message-status']
-                    const statusText = webSocketResponse['x-message-status-text']
                     if (status !== 200) {
-                        resolveFn(new Response(body, { status, statusText, headers }))
+                        resolveFn(body)
                     } else {
-                        resolveFn(
-                            Response.json(body, {
-                                status,
-                                statusText,
-                                headers,
-                            })
-                        )
+                        resolveFn(body)
                     }
                 }
             })

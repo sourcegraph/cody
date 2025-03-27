@@ -31,10 +31,6 @@ export async function* processRawStreamEvents(
 
     try {
         for await (const { event, data } of streamSource) {
-            console.log('UMPOX GOT EVENT', {
-                event: event,
-                data: JSON.parse(data),
-            })
             if (abortSignal.aborted) {
                 yield {
                     type: 'aborted',
