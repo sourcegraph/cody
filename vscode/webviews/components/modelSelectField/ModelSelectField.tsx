@@ -1,4 +1,4 @@
-import { type ChatMessage, type Model, ModelTag, isCodyProModel } from '@sourcegraph/cody-shared'
+import { type Model, ModelTag, isCodyProModel } from '@sourcegraph/cody-shared'
 import { isMacOS } from '@sourcegraph/cody-shared'
 import { DeepCodyAgentID, ToolCodyModelName } from '@sourcegraph/cody-shared/src/models/client'
 import { clsx } from 'clsx'
@@ -35,8 +35,6 @@ export const ModelSelectField: React.FunctionComponent<{
     onCloseByEscape?: () => void
     className?: string
 
-    intent?: ChatMessage['intent']
-
     /** For storybooks only. */
     __storybook__open?: boolean
     modelSelectorRef?: React.MutableRefObject<{ open: () => void; close: () => void } | null>
@@ -47,7 +45,6 @@ export const ModelSelectField: React.FunctionComponent<{
     userInfo,
     onCloseByEscape,
     className,
-    intent,
     __storybook__open,
     modelSelectorRef,
 }) => {
@@ -97,8 +94,8 @@ export const ModelSelectField: React.FunctionComponent<{
         ]
     )
 
-    // Readonly if the intent is agentic or they are an enterprise user that does not support server-sent models
-    const readOnly = intent === 'agentic' || !(userInfo.isDotComUser || serverSentModelsEnabled)
+    // Readonly if they are an enterprise user that does not support server-sent models
+    const readOnly = !(userInfo.isDotComUser || serverSentModelsEnabled)
 
     const onOpenChange = useCallback(
         (open: boolean): void => {
@@ -280,11 +277,7 @@ export const ModelSelectField: React.FunctionComponent<{
                 },
             }}
         >
-            {intent === 'agentic'
-                ? 'Claude 3.7 Sonnet'
-                : value !== undefined
-                  ? options.find(option => option.value === value)?.title
-                  : 'Select...'}
+            {value !== undefined ? options.find(option => option.value === value)?.title : 'Select...'}
         </ToolbarPopoverItem>
     )
 }

@@ -155,7 +155,6 @@ export const Toolbar: FunctionComponent<{
                     modelSelectorRef={modelSelectorRef}
                     className="tw-mr-1"
                     extensionAPI={extensionAPI}
-                    intent={intent}
                 />
             </div>
             <div className="tw-flex-1 tw-flex tw-justify-end">
@@ -189,8 +188,7 @@ const ModelSelectFieldToolbarItem: FunctionComponent<{
     className?: string
     extensionAPI: WebviewToExtensionAPI
     modelSelectorRef: React.MutableRefObject<{ open: () => void; close: () => void } | null>
-    intent?: ChatMessage['intent']
-}> = ({ userInfo, focusEditor, className, models, extensionAPI, modelSelectorRef, intent }) => {
+}> = ({ userInfo, focusEditor, className, models, extensionAPI, modelSelectorRef }) => {
     const clientConfig = useClientConfig()
     const serverSentModelsEnabled = !!clientConfig?.modelsAPIEnabled
 
@@ -216,7 +214,6 @@ const ModelSelectFieldToolbarItem: FunctionComponent<{
                 data-testid="chat-model-selector"
                 modelSelectorRef={modelSelectorRef}
                 onCloseByEscape={() => modelSelectorRef?.current?.close()}
-                intent={intent}
             />
         )
     )
