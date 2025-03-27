@@ -224,8 +224,6 @@ class CodyAutocompleteManager {
       }
       cancellationToken.dispose()
       clearAutocompleteSuggestions(editor)
-      // https://github.com/sourcegraph/jetbrains/issues/350
-      // CodyFormatter.formatStringBasedOnDocument needs to be on a write action.
 
       if (result.decoratedEditItems.isNotEmpty()) {
         runInEdt {
@@ -234,6 +232,8 @@ class CodyAutocompleteManager {
               ?.showAutoedit(editor, result.decoratedEditItems.first())
         }
       } else if (result.inlineCompletionItems.isNotEmpty()) {
+        // https://github.com/sourcegraph/jetbrains/issues/350
+        // CodyFormatter.formatStringBasedOnDocument needs to be on a write action.
         WriteCommandAction.runWriteCommandAction(editor.project) {
           displayAutocomplete(editor, offset, result.inlineCompletionItems, inlayModel)
         }

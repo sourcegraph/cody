@@ -1,13 +1,11 @@
 package com.sourcegraph.cody.autocomplete
 
-import com.intellij.openapi.application.ReadAction
 import com.intellij.openapi.editor.VisualPosition
 import com.intellij.testFramework.runInEdtAndGet
 import com.sourcegraph.cody.autocomplete.render.CodyAutocompleteElementRenderer
 import com.sourcegraph.cody.autocomplete.render.InlayModelUtil
 import com.sourcegraph.cody.util.BaseIntegrationTextFixture
 import com.sourcegraph.cody.util.CustomJunitClassRunner
-import com.sourcegraph.cody.vscode.InlineCompletionTriggerKind
 import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers.containsString
 import org.junit.AfterClass
@@ -17,7 +15,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 
 @RunWith(CustomJunitClassRunner::class)
-class AutocompleteCompletionTest {
+class AutocompleteCompletionTest : BaseAutocompleteTest() {
 
   companion object {
     val fixture = BaseIntegrationTextFixture("autocomplete")
@@ -43,7 +41,7 @@ class AutocompleteCompletionTest {
 
   @Test
   fun todoComment() {
-    fixture.openFile(relativeFilePath = "autocompleteCompletion/src/main/kotlin/TodoComment.kt")
+    fixture.openFile(relativeFilePath = "autocompleteCompletion/src/main/kotlin/debug-styles.ts")
     triggerAutocomplete()
 
     awaitForInlayRenderer()
@@ -68,13 +66,6 @@ class AutocompleteCompletionTest {
 
   private fun hasInlayAt(position: VisualPosition) = runInEdtAndGet {
     fixture.editor.inlayModel.hasInlineElementAt(position)
-  }
-
-  private fun triggerAutocomplete() {
-    ReadAction.run<Throwable> {
-      CodyAutocompleteManager.instance.triggerAutocomplete(
-          fixture.editor, fixture.editor.caretModel.offset, InlineCompletionTriggerKind.INVOKE)
-    }
   }
 
   private fun awaitForInlayRenderer() {

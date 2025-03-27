@@ -2,6 +2,7 @@ package com.sourcegraph.cody.autoedit
 
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.components.Service
+import com.intellij.openapi.components.service
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.EditorFactory
 import com.intellij.openapi.project.Project
@@ -55,5 +56,9 @@ class AutoeditManager(private val project: Project) {
                 virtualFile = virtualFile,
                 range = range))
         .showHintAt(editor, range, mousePosition = null)
+  }
+
+  companion object {
+    @JvmStatic fun getInstance(project: Project): AutoeditManager = project.service()
   }
 }
