@@ -294,7 +294,7 @@ class CodyAutocompleteManager {
         val renderer = CodyAutocompleteBlockElementRenderer(text, items, editor)
         val inlay2 =
             inlayModel.addBlockElement(
-                /* offset = */ inlay?.offset ?: cursorOffset,
+                /* offset = */ inlay?.offset ?: range.startOffset,
                 /* relatesToPrecedingText = */ true,
                 /* showAbove = */ false,
                 /* priority = */ Int.MAX_VALUE,
