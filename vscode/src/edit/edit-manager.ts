@@ -24,9 +24,10 @@ import { ACTIVE_TASK_STATES } from '../non-stop/codelenses/constants'
 import { splitSafeMetadata } from '../services/telemetry-v2'
 
 import { EditLoggingFeatureFlagManager, getEditLoggingContext } from './edit-context-logging'
+import type { EditGuardrails } from './edit-guardrails'
 import type { ExecuteEditArguments, ExecuteEditResult } from './execute'
 import { EditProvider } from './provider'
-import { getEditIntent } from './utils/edit-intent'
+import { getEditIntent, isStreamedIntent } from './utils/edit-intent'
 import { getEditMode } from './utils/edit-mode'
 import { getEditLineSelection, getEditSmartSelection } from './utils/edit-selection'
 
@@ -34,6 +35,7 @@ export interface EditManagerOptions {
     editor: VSCodeEditor
     fixupController: FixupController
     chatClient: ChatClient
+    guardrails: EditGuardrails
 }
 
 // EditManager handles translating specific edit intents (document, edit) into
@@ -182,6 +184,8 @@ export class EditManager implements vscode.Disposable {
             }
         }
 
+        const canStream = !(await this.options.guardrails.shouldHideCodeBeforeAttribution())
+
         if (configuration.instruction && configuration.instruction.trim().length > 0) {
             return this.createTaskAndCheckForDuplicates({
                 document,
@@ -189,6 +193,7 @@ export class EditManager implements vscode.Disposable {
                 userContextFiles: configuration.userContextFiles ?? [],
                 selectionRange: expandedRange || range,
                 intent,
+                isStreamed: canStream && isStreamedIntent(intent),
                 mode,
                 model,
                 rules: configuration.rules ?? null,
@@ -210,6 +215,7 @@ export class EditManager implements vscode.Disposable {
             model,
             configuration.rules ?? null,
             intent,
+            canStream,
             source,
             telemetryMetadata
         )

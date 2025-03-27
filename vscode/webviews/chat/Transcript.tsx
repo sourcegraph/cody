@@ -47,6 +47,7 @@ import ApprovalCell from './cells/agenticCell/ApprovalCell'
 import { ContextCell } from './cells/contextCell/ContextCell'
 import { DidYouMeanNotice } from './cells/messageCell/assistant/DidYouMean'
 import { ToolStatusCell } from './cells/toolCell/ToolStatusCell'
+import { LoadingDots } from './components/LoadingDots'
 import { LastEditorContext } from './context'
 
 interface TranscriptProps {
@@ -57,13 +58,12 @@ interface TranscriptProps {
     models: Model[]
     userInfo: UserAccountInfo
     messageInProgress: ChatMessage | null
-    guardrails?: Guardrails
+    guardrails: Guardrails
     postMessage?: ApiPostMessage
 
     copyButtonOnSubmit: CodeBlockActionsProps['copyButtonOnSubmit']
     insertButtonOnSubmit?: CodeBlockActionsProps['insertButtonOnSubmit']
     smartApply?: CodeBlockActionsProps['smartApply']
-    smartApplyEnabled?: boolean
 
     manuallySelectedIntent: ChatMessage['intent']
     setManuallySelectedIntent: (intent: ChatMessage['intent']) => void
@@ -83,7 +83,6 @@ export const Transcript: FC<TranscriptProps> = props => {
         copyButtonOnSubmit,
         insertButtonOnSubmit,
         smartApply,
-        smartApplyEnabled,
         manuallySelectedIntent,
         setManuallySelectedIntent,
     } = props
@@ -157,8 +156,11 @@ export const Transcript: FC<TranscriptProps> = props => {
                             messageInProgress && interactions.at(i - 1)?.assistantMessage?.isLoading
                         )}
                         smartApply={smartApply}
-                        smartApplyEnabled={smartApplyEnabled}
-                        editorRef={i === interactions.length - 1 ? lastHumanEditorRef : undefined}
+                        editorRef={
+                            interaction.humanMessage.index === -1 && !messageInProgress
+                                ? lastHumanEditorRef
+                                : undefined
+                        }
                         onAddToFollowupChat={onAddToFollowupChat}
                         manuallySelectedIntent={manuallySelectedIntent}
                         setManuallySelectedIntent={setManuallySelectedIntent}
@@ -225,12 +227,15 @@ export function transcriptToInteractionPairs(
     if (!transcript.length || shouldAddFollowup) {
         pairs.push({
             humanMessage: {
-                index: pairs.length * 2,
+                // Always using a fixed index for the last/followup editor ensures it will be reused
+                // across renders and not recreated when transcript length changes.
+                // This is a hack to avoid the editor getting reset during Agent mode.
+                index: lastHumanMessage?.intent === 'agentic' ? -1 : pairs.length * 2,
                 speaker: 'human',
                 isUnsentFollowup: true,
                 // If the last submitted message was a search, default to chat for the followup. Else,
-                // keep the manually selected intent.
-                intent: lastHumanMessage?.intent === 'search' ? 'chat' : manuallySelectedIntent,
+                // keep the manually selected intent, if any, or the last human message's intent.
+                intent: lastHumanMessage?.intent === 'search' ? 'chat' : lastHumanMessage?.intent,
             },
             assistantMessage: null,
         })
@@ -273,7 +278,6 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
         insertButtonOnSubmit,
         copyButtonOnSubmit,
         smartApply,
-        smartApplyEnabled,
         editorRef: parentEditorRef,
         manuallySelectedIntent,
         setManuallySelectedIntent,
@@ -400,6 +404,20 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
         setIsLoading(assistantMessage?.isLoading)
     }, [assistantMessage])
 
+    const humanMessageText = humanMessage.text
+    const smartApplyWithInstruction = useMemo(() => {
+        if (!smartApply) return undefined
+        return {
+            ...smartApply,
+            onSubmit(params: Parameters<typeof smartApply.onSubmit>[0]) {
+                return smartApply.onSubmit({
+                    ...params,
+                    instruction: params.instruction ?? humanMessageText,
+                })
+            },
+        }
+    }, [smartApply, humanMessageText])
+
     useEffect(() => {
         if (!assistantMessage) return
 
@@ -509,11 +527,15 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
     const onHumanMessageSubmit = useCallback(
         (intent?: ChatMessage['intent']) => {
             if (humanMessage.isUnsentFollowup) {
-                return onFollowupSubmit(intent)
+                onFollowupSubmit(intent)
+            } else {
+                onEditSubmit(intent)
             }
-            onEditSubmit(intent)
+            // Set the unsent followup flag to false after submitting
+            // to makes sure the last editor for Agent mode gets reset.
+            humanMessage.isUnsentFollowup = false
         },
-        [humanMessage.isUnsentFollowup, onFollowupSubmit, onEditSubmit]
+        [humanMessage, onFollowupSubmit, onEditSubmit]
     )
 
     const onSelectedFiltersUpdate = useCallback(
@@ -541,8 +563,8 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
     )
 
     const isAgenticMode = useMemo(
-        () => !humanMessage.isUnsentFollowup && humanMessage?.intent === 'agentic',
-        [humanMessage.isUnsentFollowup, humanMessage?.intent]
+        () => humanMessage?.intent === 'agentic' || humanMessage?.manuallySelectedIntent === 'agentic',
+        [humanMessage?.intent, humanMessage?.manuallySelectedIntent]
     )
 
     const agentToolCalls = useMemo(() => {
@@ -551,7 +573,8 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
 
     return (
         <>
-            {/* Shows tool contents instead of editor if any */}
+            {/* Show loading state on the last interaction */}
+            {isLastInteraction && priorAssistantMessageIsLoading && <LoadingDots />}
             <HumanMessageCell
                 key={humanMessage.index}
                 userInfo={userInfo}
@@ -624,14 +647,14 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                         guardrails={guardrails}
                         humanMessage={humanMessageInfo}
                         isLoading={isLastSentInteraction && assistantMessage.isLoading}
-                        smartApply={smartApply}
-                        smartApplyEnabled={smartApplyEnabled && !agentToolCalls}
+                        smartApply={isAgenticMode ? undefined : smartApplyWithInstruction}
                         onSelectedFiltersUpdate={onSelectedFiltersUpdate}
                         isLastSentInteraction={isLastSentInteraction}
                         setThoughtProcessOpened={setThoughtProcessOpened}
                         isThoughtProcessOpened={isThoughtProcessOpened}
                     />
                 )}
+            {/* Shows tool contents instead of editor if any */}
             {agentToolCalls?.map(tool => (
                 <ToolStatusCell
                     key={tool.toolId}

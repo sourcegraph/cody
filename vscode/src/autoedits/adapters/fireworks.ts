@@ -1,7 +1,14 @@
 import { autoeditsProviderConfig } from '../autoedits-config'
 import { autoeditsOutputChannelLogger } from '../output-channel-logger'
 
-import type { AutoeditModelOptions, AutoeditsModelAdapter, ModelResponse } from './base'
+import type {
+    AbortedModelResponse,
+    AutoeditModelOptions,
+    AutoeditsModelAdapter,
+    ModelResponse,
+    ModelResponseShared,
+    SuccessModelResponse,
+} from './base'
 import {
     type AutoeditsRequestBody,
     type FireworksCompatibleRequestParams,
@@ -23,7 +30,7 @@ export class FireworksAdapter implements AutoeditsModelAdapter {
                 )
                 throw new Error('No api key provided in the config override')
             }
-            const response = await getModelResponse({
+            const response = await this.sendModelRequest({
                 url: option.url,
                 body: requestBody,
                 apiKey,
@@ -51,6 +58,30 @@ export class FireworksAdapter implements AutoeditsModelAdapter {
             })
             throw error
         }
+    }
+
+    dispose() {}
+
+    protected async sendModelRequest({
+        apiKey,
+        url,
+        body,
+        abortSignal,
+        customHeaders = {},
+    }: {
+        apiKey: string
+        url: string
+        body: ModelResponseShared['requestBody']
+        abortSignal: AbortSignal
+        customHeaders?: Record<string, string>
+    }): Promise<Omit<SuccessModelResponse, 'prediction'> | AbortedModelResponse> {
+        return getModelResponse({
+            apiKey,
+            url,
+            body,
+            abortSignal,
+            customHeaders,
+        })
     }
 
     private getMessageBody(options: AutoeditModelOptions): AutoeditsRequestBody {

@@ -5,6 +5,7 @@ import {
     type ContextItemToolState,
 } from '@sourcegraph/cody-shared/src/codebase-context/messages'
 import * as vscode from 'vscode'
+import { URI } from 'vscode-uri'
 import type { AgentTool } from '.'
 import { validateWithZod } from '../utils/input'
 import { zodToolSchema } from '../utils/parse'
@@ -61,29 +62,28 @@ export const shellTool: AgentTool = {
             return createShellToolState(validInput.command, content, UIToolStatus.Done, error)
         } catch (error) {
             if (error instanceof CommandError) {
-                if (error instanceof CommandError) {
-                    // Format the error output as an array of TerminalLine objects
-                    const lines: UITerminalLine[] = [
-                        { content: validInput.command, type: UITerminalOutputType.Input },
-                        {
-                            content: `Exited with code ${error.result.code}`,
-                            type: UITerminalOutputType.Error,
-                        },
-                        ...formatOutputToTerminalLines(error.result.stdout, UITerminalOutputType.Output),
-                        ...formatOutputToTerminalLines(error.result.stderr, UITerminalOutputType.Error),
-                    ].filter(line => line.content.trim() !== '')
-                    const content = lines.join('\n')
+                // Format the error output as an array of TerminalLine objects
+                const lines: UITerminalLine[] = [
+                    { content: validInput.command, type: UITerminalOutputType.Input },
+                    {
+                        content: `Exited with code ${error.result.code}`,
+                        type: UITerminalOutputType.Error,
+                    },
+                    ...formatOutputToTerminalLines(error.result.stdout, UITerminalOutputType.Output),
+                    ...formatOutputToTerminalLines(error.result.stderr, UITerminalOutputType.Error),
+                ].filter(line => line.content.trim() !== '')
 
-                    return createShellToolState(validInput.command, content, UIToolStatus.Error)
-                }
+                // Extract just the content from each line object
+                const contentString = lines.map(line => line.content).join('\n')
 
-                return createShellToolState(
-                    validInput.command,
-                    `Failed to run terminal command: ${validInput.command}: ${error}`,
-                    UIToolStatus.Error
-                )
+                return createShellToolState(validInput.command, contentString, UIToolStatus.Error)
             }
-            throw new Error(`Failed to run terminal command: ${input.command}: ${error}`)
+
+            return createShellToolState(
+                validInput.command ?? 'unknown command',
+                `Failed to run terminal command: ${input.command}: ${error}`,
+                UIToolStatus.Error
+            )
         }
     },
 }
@@ -209,7 +209,7 @@ function createShellToolState(
         icon: 'terminal',
         status,
         source: ContextItemSource.Agentic,
-        uri: vscode.Uri.parse(`cody-tool://shell?id=${toolId}`),
+        uri: URI.parse(''),
     }
 }
 

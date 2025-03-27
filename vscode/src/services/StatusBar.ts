@@ -781,7 +781,7 @@ interface StatusBarLoader {
 
 enum CodyStatusBarSuggestionModeLabels {
     Autocomplete = 'Autocomplete',
-    AutoEdit = 'Auto-edit (experimental)',
+    AutoEdit = 'Auto-edit (Beta)',
     Disabled = 'Disabled',
 }
 

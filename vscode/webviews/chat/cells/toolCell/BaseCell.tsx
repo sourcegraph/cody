@@ -1,3 +1,4 @@
+import { UIToolStatus } from '@sourcegraph/cody-shared'
 import { ChevronDown, ChevronRight, type LucideProps } from 'lucide-react'
 import {
     type FC,
@@ -33,6 +34,7 @@ export interface BaseCellProps {
     defaultOpen?: boolean
     /** Theme variant (affects background colors) */
     theme?: ThemeVariant
+    status?: UIToolStatus
 }
 
 const BaseCellComponent: FC<BaseCellProps> = ({
@@ -42,12 +44,17 @@ const BaseCellComponent: FC<BaseCellProps> = ({
     className,
     isLoading = false,
     defaultOpen = false,
+    status = UIToolStatus.Done,
 }) => {
     const [isOpen, setIsOpen] = useState(defaultOpen)
 
     // Define standard background colors based on theme
     const headerBgClass = 'tw-bg-zinc-900 light:tw-bg-gray-100'
-    const bodyBgClass = 'tw-bg-zinc-950 light:tw-bg-gray-50'
+    const bodyBgClasses = ['tw-bg-zinc-950', 'light:tw-bg-gray-50']
+    if (status === UIToolStatus.Error) {
+        bodyBgClasses.push('tw-bg-red-500 light:tw-bg-red-500')
+    }
+    const bodyBgClass = bodyBgClasses.join(' ')
 
     return (
         <div className={cn('tw-rounded-md tw-border tw-border-border tw-w-full', className)}>
@@ -58,7 +65,7 @@ const BaseCellComponent: FC<BaseCellProps> = ({
                         headerBgClass,
                         isLoading && 'tw-cursor-wait'
                     )}
-                    disabled={isLoading || !bodyContent}
+                    disabled={isLoading}
                 >
                     <div className="tw-flex tw-items-center tw-gap-2 tw-overflow-hidden">
                         {Icon && <Icon size={16} className="tw-flex-shrink-0 tw-text-zinc-400" />}

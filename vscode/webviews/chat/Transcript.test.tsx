@@ -4,6 +4,7 @@ import type { ComponentProps } from 'react'
 import { describe, expect, test, vi } from 'vitest'
 import { URI } from 'vscode-uri'
 import { AppWrapperForTest } from '../AppWrapperForTest'
+import { MockNoGuardrails } from '../utils/guardrails'
 import { type Interaction, Transcript, transcriptToInteractionPairs } from './Transcript'
 import { FIXTURE_USER_ACCOUNT_INFO } from './fixtures'
 
@@ -18,6 +19,7 @@ const PROPS: Omit<ComponentProps<typeof Transcript>, 'transcript'> = {
     setActiveChatContext: () => {},
     manuallySelectedIntent: undefined,
     setManuallySelectedIntent: () => {},
+    guardrails: new MockNoGuardrails(),
 }
 
 vi.mock('../utils/VSCodeApi', () => ({
@@ -386,7 +388,13 @@ function expectCells(expectedCells: CellMatcher[], containerElement?: HTMLElemen
                     cell
                 expect(textElement.innerText.trim()).toBe(expectedCell.message)
             } else if ('loading' in expectedCell.message) {
-                expect(cell.querySelector('[role="status"]')).toHaveAttribute('aria-busy')
+                const statusElement = cell.querySelector('[role="status"]')
+                if (i === expectedCells.length - 1) {
+                    expect(statusElement).not.toBeNull()
+                    expect(statusElement).toHaveAttribute('aria-busy', 'true')
+                } else {
+                    expect(statusElement).toBeNull()
+                }
             }
             if (expectedCell.canSubmit !== undefined) {
                 const submitButton = cell.querySelector('button[type="submit"]')
@@ -406,7 +414,9 @@ function expectCells(expectedCells: CellMatcher[], containerElement?: HTMLElemen
                         : `${expectedCell.context.files} items`
                 )
             } else if (expectedCell.context.loading) {
-                expect(cell.querySelector('[role="status"]')).toHaveAttribute('aria-busy')
+                const statusElement = cell.querySelector('[role="status"]')
+                expect(statusElement).not.toBeNull()
+                expect(statusElement).toHaveAttribute('aria-busy', 'true')
             }
         } else {
             throw new Error('unknown cell')
@@ -418,7 +428,7 @@ describe('transcriptToInteractionPairs', () => {
     test('empty transcript', () => {
         expect(transcriptToInteractionPairs([], null, null)).toEqual<Interaction[]>([
             {
-                humanMessage: { index: 0, speaker: 'human', isUnsentFollowup: true, intent: null },
+                humanMessage: { index: 0, speaker: 'human', isUnsentFollowup: true, intent: undefined },
                 assistantMessage: null,
             },
         ])

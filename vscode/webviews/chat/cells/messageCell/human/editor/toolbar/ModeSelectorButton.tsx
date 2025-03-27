@@ -77,8 +77,9 @@ export const ModeSelectorField: React.FunctionComponent<{
                 badge: agenticChatEnabled ? 'Experimental' : 'Pro',
                 icon: Sparkle,
                 intent: 'agentic',
-                hidden: !agenticChatEnabled,
-                disabled: !agenticChatEnabled,
+                // Hide agentic option if not enabled or if edit not enabled
+                hidden: !agenticChatEnabled || !isEditEnabled,
+                disabled: !agenticChatEnabled || !isEditEnabled,
                 value: IntentEnum.Agentic,
             },
             {

@@ -97,6 +97,8 @@ export const autoeditSource = {
     network: 1,
     /** Autoedit originated from a client cached suggestion.  */
     cache: 2,
+    /** Autoedit originated from a in-flight request. */
+    inFlightRequest: 3,
 } as const
 
 /** We use numeric keys to send these to the analytics backend */
@@ -112,6 +114,7 @@ export const autoeditDiscardReason = {
     noActiveEditor: 7,
     conflictingDecorationWithEdits: 8,
     notEnoughLinesEditor: 9,
+    staleThrottledRequest: 10,
 } as const
 
 /** We use numeric keys to send these to the analytics backend */

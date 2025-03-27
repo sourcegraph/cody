@@ -1,11 +1,10 @@
-import {
-    $getRoot,
-    type EditorState,
-    type LexicalEditor,
-    type SerializedEditorState,
-    type SerializedLexicalNode,
-    type SerializedRootNode,
-    type SerializedTextNode,
+import type {
+    EditorState,
+    LexicalEditor,
+    SerializedEditorState,
+    SerializedLexicalNode,
+    SerializedRootNode,
+    SerializedTextNode,
 } from 'lexical'
 import type { ChatMessage } from '../chat/transcript/messages'
 import { type ContextItem, ContextItemSource } from '../codebase-context/messages'
@@ -20,6 +19,7 @@ import {
     type SerializedTemplateInputNode,
     TEMPLATE_INPUT_NODE_TYPE,
     contextItemMentionNodeDisplayText,
+    contextItemMentionNodePromptText,
     isSerializedContextItemMentionNode,
     serializeContextItem,
     templateInputNodeDisplayText,
@@ -225,7 +225,7 @@ export function textContentFromSerializedLexicalNode(
     const text: string[] = []
     forEachPreOrder(root, node => {
         if ('type' in node && node.type === CONTEXT_ITEM_MENTION_NODE_TYPE) {
-            const nodeText = contextItemMentionNodeDisplayText(
+            const nodeText = contextItemMentionNodePromptText(
                 (node as SerializedContextItemMentionNode).contextItem
             )
             text.push(__testing_wrapText ? __testing_wrapText(nodeText) ?? nodeText : nodeText)
@@ -240,7 +240,7 @@ export function textContentFromSerializedLexicalNode(
 }
 
 export function editorStateToText(editorState: EditorState): string {
-    return editorState.read(() => $getRoot().getTextContent())
+    return textContentFromSerializedLexicalNode(editorState.toJSON().root)
 }
 
 interface EditorStateFromPromptStringOptions {

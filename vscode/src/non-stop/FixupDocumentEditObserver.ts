@@ -1,6 +1,5 @@
 import * as vscode from 'vscode'
 
-import { isStreamedIntent } from '../edit/utils/edit-intent'
 import type { Edit } from './line-diff'
 import type { FixupActor, FixupFileCollection, FixupTextChanged } from './roles'
 import { CodyTaskState } from './state'
@@ -114,7 +113,7 @@ export class FixupDocumentEditObserver {
              * TODO: Instead of collapsing the range, `updateRangeMultipleChanges` should expand to match
              * the new contents.
              */
-            const isCollapsedInsertion = isStreamedIntent(task.intent) && updatedRange.isEmpty
+            const isCollapsedInsertion = task.isStreamed && updatedRange.isEmpty
 
             if (!isCollapsedInsertion && !updatedRange.isEqual(task.selectionRange)) {
                 task.selectionRange = updatedRange

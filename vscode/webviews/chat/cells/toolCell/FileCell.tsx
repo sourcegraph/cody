@@ -1,6 +1,6 @@
-import { displayPath } from '@sourcegraph/cody-shared'
+import { UIToolStatus, displayPath } from '@sourcegraph/cody-shared'
 import type { ContextItemToolState } from '@sourcegraph/cody-shared/src/codebase-context/messages'
-import { FileCode } from 'lucide-react'
+import { FileCode, FileX } from 'lucide-react'
 import type { FC } from 'react'
 import type { URI } from 'vscode-uri'
 import { Button } from '../../../components/shadcn/ui/button'
@@ -19,31 +19,35 @@ export const FileCell: FC<FileCellProps> = ({
     onFileLinkClicked,
     defaultOpen = false,
 }) => {
+    const isError = result?.status === UIToolStatus.Error
+    const title = result.uri ? displayPath(result.uri) : result.title
     const renderHeaderContent = () => (
-        <div className="tw-flex tw-items-center tw-gap-2 tw-overflow-hidden tw-flex-row">
-            <Button
-                variant="ghost"
-                className="tw-flex tw-items-center tw-gap-2 tw-overflow-hidden tw-p-0 tw-text-left tw-truncate tw-w-full"
-                onClick={e => {
-                    e.preventDefault()
-                    e.stopPropagation()
-                    if (result?.uri) onFileLinkClicked(result?.uri)
-                }}
-            >
-                <span className="tw-font-mono">
-                    {result.uri ? displayPath(result.uri) : result.title}
-                </span>
-            </Button>
-        </div>
+        <Button
+            variant="ghost"
+            className={
+                'tw-flex tw-items-center tw-gap-2 tw-overflow-hidden tw-p-0 tw-w-full tw-text-left tw-truncate tw-z-10 hover:tw-bg-transparent tw-font-mono' +
+                isError
+                    ? ' tw-border-red-700'
+                    : ''
+            }
+            title={title}
+            onClick={e => {
+                e.preventDefault()
+                e.stopPropagation()
+                if (result?.uri) onFileLinkClicked(result.uri)
+            }}
+        >
+            {title}
+        </Button>
     )
 
     return (
         <BaseCell
-            icon={FileCode}
+            icon={isError ? FileX : FileCode}
             headerContent={renderHeaderContent()}
-            bodyContent={undefined}
             className={className}
-            defaultOpen={false} // Always closed since there's no content to show
+            defaultOpen={defaultOpen} // Always closed since there's no content to show
+            status={result?.status}
         />
     )
 }
