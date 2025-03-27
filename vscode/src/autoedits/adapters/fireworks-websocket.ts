@@ -10,12 +10,18 @@ const LOG_FILTER_LABEL = 'fireworks-websocket'
 const SOCKET_SEND_TIME_OUT_MS = 2000
 const SOCKET_RECONNECT_DELAY_MS = 5000
 
+interface MessageCallback {
+    resolve: (response: Response) => void
+    reject: (reason?: any) => void
+    signal: AbortSignal
+}
+
 // Auto-edit adaptor for Fireworks using websocket connection instead of HTTP
 export class FireworksWebSocketAdapter extends FireworksAdapter implements vscode.Disposable {
     private readonly webSocketEndpoint: string
     private ws: WebSocket | undefined
     private messageId = 0
-    private callbackQueue: Record<string, (response: Response) => void> = {}
+    private callbackQueue: Record<string, MessageCallback> = {}
 
     constructor() {
         super()
@@ -61,7 +67,7 @@ export class FireworksWebSocketAdapter extends FireworksAdapter implements vscod
         }
 
         try {
-            const response = await this.sendMessage(url, requestHeaders, body)
+            const response = await this.sendMessage(url, requestHeaders, body, abortSignal)
 
             if (response.status !== 200) {
                 const errorText = await response.text()
@@ -89,7 +95,8 @@ export class FireworksWebSocketAdapter extends FireworksAdapter implements vscod
     private async sendMessage(
         url: string,
         headers: Record<string, string>,
-        body: ModelResponseShared['requestBody']
+        body: ModelResponseShared['requestBody'],
+        signal: AbortSignal
     ): Promise<Response> {
         const messageId = 'm_' + this.messageId++
         const data = JSON.stringify({
@@ -106,9 +113,17 @@ export class FireworksWebSocketAdapter extends FireworksAdapter implements vscod
             )
         }
 
-        const sendPromise: Promise<Response> = new Promise(resolve => {
-            this.callbackQueue[messageId] = resolve
-            this.ws?.send(data)
+        const sendPromise: Promise<Response> = new Promise((resolve, reject) => {
+            if (!signal.aborted) {
+                this.callbackQueue[messageId] = {
+                    resolve,
+                    reject,
+                    signal,
+                }
+                this.ws?.send(data)
+            } else {
+                reject(new Error('abort signal received, message not sent'))
+            }
         })
 
         let timeoutHandle: NodeJS.Timeout
@@ -170,26 +185,35 @@ export class FireworksWebSocketAdapter extends FireworksAdapter implements vscod
                 setTimeout(this.reconnect, SOCKET_RECONNECT_DELAY_MS)
             })
             ws.addEventListener('message', (event: MessageEvent) => {
-                const webSocketResponse = JSON.parse(event.data as string)
+                const webSocketResponse = JSON.parse(event.data.toString())
                 const messageId = webSocketResponse['x-message-id']
                 if (messageId in this.callbackQueue) {
-                    const body = webSocketResponse['x-message-body']
-                    const headers = webSocketResponse['x-message-headers']
-                    const status = webSocketResponse['x-message-status']
-                    const statusText = webSocketResponse['x-message-status-text']
-                    const callback = this.callbackQueue[messageId]
-                    if (status !== 200) {
-                        callback(new Response(body, { status, statusText, headers }))
+                    const {
+                        resolve: resolveFn,
+                        reject: rejectFn,
+                        signal,
+                    } = this.callbackQueue[messageId]
+                    if (signal.aborted) {
+                        delete this.callbackQueue[messageId]
+                        rejectFn(new Error('abort signal received, message not handled'))
                     } else {
-                        callback(
-                            Response.json(body, {
-                                status,
-                                statusText,
-                                headers,
-                            })
-                        )
+                        const body = webSocketResponse['x-message-body']
+                        const headers = webSocketResponse['x-message-headers']
+                        const status = webSocketResponse['x-message-status']
+                        const statusText = webSocketResponse['x-message-status-text']
+                        if (status !== 200) {
+                            resolveFn(new Response(body, { status, statusText, headers }))
+                        } else {
+                            resolveFn(
+                                Response.json(body, {
+                                    status,
+                                    statusText,
+                                    headers,
+                                })
+                            )
+                        }
+                        delete this.callbackQueue[messageId]
                     }
-                    delete this.callbackQueue[messageId]
                 }
             })
         })
