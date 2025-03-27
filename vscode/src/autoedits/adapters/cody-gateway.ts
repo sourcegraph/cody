@@ -4,7 +4,7 @@ import { forkSignal, generatorWithErrorObserver, generatorWithTimeout } from '..
 import { autoeditsOutputChannelLogger } from '../output-channel-logger'
 
 import type { AutoeditModelOptions, AutoeditsModelAdapter, ModelResponse } from './base'
-import { getDefaultModelResponse } from './model-response/default'
+import { getFireworksModelResponse } from './model-response/fireworks'
 import {
     type AutoeditsRequestBody,
     type FireworksCompatibleRequestParams,
@@ -27,7 +27,7 @@ export class CodyGatewayAdapter implements AutoeditsModelAdapter {
             const abortController = forkSignal(options.abortSignal)
             return generatorWithErrorObserver(
                 generatorWithTimeout(
-                    getDefaultModelResponse({
+                    getFireworksModelResponse({
                         url: options.url,
                         body,
                         apiKey,
@@ -80,7 +80,7 @@ export class CodyGatewayAdapter implements AutoeditsModelAdapter {
     private getMessageBody(options: AutoeditModelOptions): AutoeditsRequestBody {
         const maxTokens = getMaxOutputTokensForAutoedits(options.codeToRewrite)
         const baseBody: FireworksCompatibleRequestParams = {
-            stream: false,
+            stream: true,
             model: options.model,
             temperature: 0.1,
             max_tokens: maxTokens,
