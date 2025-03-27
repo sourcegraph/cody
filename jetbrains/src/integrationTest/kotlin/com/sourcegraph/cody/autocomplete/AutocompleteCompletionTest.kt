@@ -79,7 +79,7 @@ class AutocompleteCompletionTest {
 
   private fun awaitForInlayRenderer() {
     var attempts = 0
-    val maxAttempts = 10
+    val maxAttempts = 15
 
     while (attempts < maxAttempts) {
       val renderers =
@@ -88,7 +88,7 @@ class AutocompleteCompletionTest {
               .filterIsInstance<CodyAutocompleteElementRenderer>()
 
       if (renderers.size == 1) break
-      Thread.sleep(1000)
+      Thread.sleep(300)
       attempts++
     }
     if (attempts >= maxAttempts) {
