@@ -15,6 +15,7 @@ import { PromptSelectField } from '../../../../../../components/promptSelectFiel
 import toolbarStyles from '../../../../../../components/shadcn/ui/toolbar.module.css'
 import { useActionSelect } from '../../../../../../prompts/PromptsTab'
 import { useClientConfig } from '../../../../../../utils/useClientConfig'
+import { AddContextButton } from './AddContextButton'
 import { MediaUploadButton } from './MediaUploadButton'
 import { ModeSelectorField } from './ModeSelectorButton'
 import { SubmitButton, type SubmitButtonState } from './SubmitButton'
@@ -27,6 +28,8 @@ export const Toolbar: FunctionComponent<{
     userInfo: UserAccountInfo
 
     isEditorFocused: boolean
+
+    onMentionClick?: () => void
 
     onSubmitClick: (intent?: ChatMessage['intent']) => void
     submitState: SubmitButtonState
@@ -49,6 +52,7 @@ export const Toolbar: FunctionComponent<{
 }> = ({
     userInfo,
     isEditorFocused,
+    onMentionClick,
     onSubmitClick,
     submitState,
     onGapClick,
@@ -131,6 +135,13 @@ export const Toolbar: FunctionComponent<{
             data-testid="chat-editor-toolbar"
         >
             <div className="tw-flex tw-items-center">
+                {/* Can't use tw-gap-1 because the popover creates an empty element when open. */}
+                {onMentionClick && (
+                    <AddContextButton
+                        onClick={onMentionClick}
+                        className={`tw-opacity-60 focus-visible:tw-opacity-100 hover:tw-opacity-100 tw-mr-2 tw-gap-0.5 ${toolbarStyles.button} ${toolbarStyles.buttonSmallIcon}`}
+                    />
+                )}
                 {onMediaUpload && isImageUploadEnabled && (
                     <MediaUploadButton
                         onMediaUpload={onMediaUpload}

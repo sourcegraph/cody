@@ -232,6 +232,25 @@ export const HumanMessageEditor: FunctionComponent<{
         [onGapClick]
     )
 
+    const onMentionClick = useCallback((): void => {
+        if (editorRef.current) {
+            editorRef.current.openAtMentionMenu()
+            const value = editorRef.current.getSerializedValue()
+            telemetryRecorder.recordEvent('cody.humanMessageEditor.toolbar.mention', 'click', {
+                metadata: {
+                    isFirstMessage: isFirstMessage ? 1 : 0,
+                    isEdit: isSent ? 1 : 0,
+                    messageLength: value.text.length,
+                    contextItems: value.contextItems.length,
+                },
+                billingMetadata: {
+                    product: 'cody',
+                    category: 'billable',
+                },
+            })
+        }
+    }, [telemetryRecorder.recordEvent, isFirstMessage, isSent])
+
     const extensionAPI = useExtensionAPI()
 
     // Set up the message listener so the extension can control the input field.
@@ -441,6 +460,7 @@ export const HumanMessageEditor: FunctionComponent<{
                     models={models}
                     userInfo={userInfo}
                     isEditorFocused={focused}
+                    onMentionClick={onMentionClick}
                     omniBoxEnabled={omniBoxEnabled}
                     onSubmitClick={onSubmitClick}
                     manuallySelectIntent={manuallySelectIntent}
