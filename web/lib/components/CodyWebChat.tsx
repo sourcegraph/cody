@@ -360,6 +360,35 @@ const CodyWebPanel: FC<CodyWebPanelProps> = props => {
 
     const isLoading = !config || !view
 
+    const attributionMode = config?.config.attribution || 'none'
+    const guardrails = useMemo(
+        () =>
+            createGuardrailsImpl(attributionMode, (snippet: string) => {
+                vscodeAPI.postMessage({
+                    command: 'attribution-search',
+                    snippet,
+                })
+            }),
+        [attributionMode, vscodeAPI]
+    )
+    useLayoutEffect(() => {
+        vscodeAPI.onMessage(message => {
+            if (message.type === 'attribution') {
+                if (message.attribution) {
+                    guardrails.notifyAttributionSuccess(message.snippet, {
+                        repositories: message.attribution.repositoryNames.map(name => {
+                            return { name }
+                        }),
+                        limitHit: message.attribution.limitHit,
+                    })
+                }
+                if (message.error) {
+                    guardrails.notifyAttributionFailure(message.snippet, new Error(message.error))
+                }
+            }
+        })
+    }, [vscodeAPI, guardrails])
+
     return (
         <div className={className} data-cody-web-chat={true}>
             {!isLoading && (
@@ -370,15 +399,7 @@ const CodyWebPanel: FC<CodyWebPanelProps> = props => {
                             setView={handleViewChange}
                             errorMessages={errorMessages}
                             setErrorMessages={setErrorMessages}
-                            guardrails={createGuardrailsImpl(
-                                config.config.attribution,
-                                (snippet: string) => {
-                                    vscodeAPI.postMessage({
-                                        command: 'attribution-search',
-                                        snippet,
-                                    })
-                                }
-                            )}
+                            guardrails={guardrails}
                             configuration={config}
                             chatEnabled={true}
                             instanceNotices={clientConfig?.notices ?? []}
