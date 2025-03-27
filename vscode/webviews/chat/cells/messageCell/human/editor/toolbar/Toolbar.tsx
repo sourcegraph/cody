@@ -155,6 +155,7 @@ export const Toolbar: FunctionComponent<{
                     modelSelectorRef={modelSelectorRef}
                     className="tw-mr-1"
                     extensionAPI={extensionAPI}
+                    intent={intent}
                 />
             </div>
             <div className="tw-flex-1 tw-flex tw-justify-end">
@@ -188,9 +189,24 @@ const ModelSelectFieldToolbarItem: FunctionComponent<{
     className?: string
     extensionAPI: WebviewToExtensionAPI
     modelSelectorRef: React.MutableRefObject<{ open: () => void; close: () => void } | null>
-}> = ({ userInfo, focusEditor, className, models, extensionAPI, modelSelectorRef }) => {
+    intent?: ChatMessage['intent']
+}> = ({ userInfo, focusEditor, className, models, extensionAPI, modelSelectorRef, intent }) => {
     const clientConfig = useClientConfig()
     const serverSentModelsEnabled = !!clientConfig?.modelsAPIEnabled
+
+    const agenticModel = useMemo(
+        () => models.find(m => m.tags.includes(ModelTag.AgenticCompatible)),
+        [models]
+    )
+
+    // If in agentic mode, ensure the agentic model is selected
+    useEffect(() => {
+        if (intent === 'agentic' && agenticModel && models[0]?.id !== agenticModel.id) {
+            extensionAPI.setChatModel(agenticModel.id).subscribe({
+                error: error => console.error('Failed to set chat model:', error),
+            })
+        }
+    }, [intent, agenticModel, models, extensionAPI.setChatModel])
 
     const onModelSelect = useCallback(
         (model: Model) => {
@@ -214,6 +230,7 @@ const ModelSelectFieldToolbarItem: FunctionComponent<{
                 data-testid="chat-model-selector"
                 modelSelectorRef={modelSelectorRef}
                 onCloseByEscape={() => modelSelectorRef?.current?.close()}
+                intent={intent}
             />
         )
     )

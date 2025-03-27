@@ -327,6 +327,22 @@ export function syncModels({
                                                     data.preferences!.defaults.chat = haikuModel.id
                                                 }
 
+                                                // Add special tag to Claude 3.7 Sonnet for agentic mode
+                                                data.primaryModels = data.primaryModels.map(model => {
+                                                    if (
+                                                        model.title?.toLowerCase() ===
+                                                        'claude 3.7 sonnet'
+                                                    ) {
+                                                        return {
+                                                            ...model,
+                                                            tags: [
+                                                                ...model.tags,
+                                                                ModelTag.AgenticCompatible,
+                                                            ],
+                                                        }
+                                                    }
+                                                    return model
+                                                })
                                                 return Observable.of(data)
                                             }
                                         )
