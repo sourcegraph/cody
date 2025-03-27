@@ -49,50 +49,58 @@ class CodyAutocompleteManagerTest : BasePlatformTestCase() {
   }
 
   fun testTrimCommonPrefixAndSuffix_NoCommonParts() {
-    val formatted = "Hello, World!"
+    val completion = "Hello, World!"
     val original = "Goodbye, Universe?"
-    val (startIndex, result) = trimCommonPrefixAndSuffix(formatted, original)
+    val (startIndex, result) = trimCommonPrefixAndSuffix(completion, original)
     assertEquals(0, startIndex)
     assertEquals("Hello, World!", result)
   }
 
   fun testTrimCommonPrefixAndSuffix_CommonPrefix() {
-    val formatted = "Hello, World!"
+    val completion = "Hello, World!"
     val original = "Hello, Universe?"
-    val (startIndex, result) = trimCommonPrefixAndSuffix(formatted, original)
+    val (startIndex, result) = trimCommonPrefixAndSuffix(completion, original)
     assertEquals(7, startIndex)
     assertEquals("World!", result)
   }
 
   fun testTrimCommonPrefixAndSuffix_CommonSuffix() {
-    val formatted = "Hello, World!"
+    val completion = "Hello, World!"
     val original = "Goodbye, World!"
-    val (startIndex, result) = trimCommonPrefixAndSuffix(formatted, original)
+    val (startIndex, result) = trimCommonPrefixAndSuffix(completion, original)
     assertEquals(0, startIndex)
     assertEquals("Hello", result)
   }
 
   fun testTrimCommonPrefixAndSuffix_CommonPrefixAndSuffix() {
-    val formatted = "Hello, beautiful World!"
+    val completion = "Hello, beautiful World!"
     val original = "Hello, amazing World!"
-    val (startIndex, result) = trimCommonPrefixAndSuffix(formatted, original)
+    val (startIndex, result) = trimCommonPrefixAndSuffix(completion, original)
     assertEquals(7, startIndex)
     assertEquals("beautiful", result)
   }
 
   fun testTrimCommonPrefixAndSuffix_EmptyStrings() {
-    val formatted = ""
+    val completion = ""
     val original = ""
-    val (startIndex, result) = trimCommonPrefixAndSuffix(formatted, original)
+    val (startIndex, result) = trimCommonPrefixAndSuffix(completion, original)
     assertEquals(0, startIndex)
     assertEquals("", result)
   }
 
-  fun testTrimCommonPrefixAndSuffix_FormattedShorterThanOriginal() {
-    val formatted = "Hello"
+  fun testTrimCommonPrefixAndSuffix_CompletionShorterThanOriginal() {
+    val completion = "Hello"
     val original = "Hello, World!"
-    val (startIndex, result) = trimCommonPrefixAndSuffix(formatted, original)
+    val (startIndex, result) = trimCommonPrefixAndSuffix(completion, original)
     assertEquals(5, startIndex)
     assertEquals("", result)
+  }
+
+  fun testTrimCommonPrefixAndSuffix_sameCommonPrefixAndSuffix() {
+    val completion = "      <input type=\"text\" value={message} onChange={onInputChange} />"
+    val original = "      <input type=\"text\" value={message} />"
+    val (startIndex, result) = trimCommonPrefixAndSuffix(completion, original)
+    assertEquals(41, startIndex)
+    assertEquals("onChange={onInputChange} ", result)
   }
 }
