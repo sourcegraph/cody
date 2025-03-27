@@ -36,7 +36,7 @@ interface ToolResult {
 
 /**
  * Base AgenticHandler class that manages tool execution state
- * and implements the core agentic conversation loop
+ * and implements the core agentic conversation loop when Agent Mode is enabled.
  */
 export class AgenticHandler extends ChatHandler implements AgentHandler {
     public static readonly id = 'agentic-chat'
@@ -55,8 +55,19 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
     }
 
     public async handle(req: AgentRequest, delegate: AgentHandlerDelegate): Promise<void> {
-        const { chatBuilder, span, recorder, signal } = req
+        const { requestID, chatBuilder, inputText, editorState, span, recorder, signal, mentions } = req
         const sessionID = chatBuilder.sessionID
+
+        // Includes initial context mentioned by user
+        const contextResult = await this.computeContext(
+            requestID,
+            { text: inputText, mentions },
+            editorState,
+            chatBuilder,
+            delegate,
+            signal
+        )
+        const contextItems = contextResult?.contextItems ?? []
 
         // Initialize available tools
         this.tools = await AgentToolGroup.getToolsByAgentId(this.contextRetriever, span)
@@ -67,7 +78,7 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
 
         try {
             // Run the main conversation loop
-            await this.runConversationLoop(chatBuilder, delegate, recorder, span, signal)
+            await this.runConversationLoop(chatBuilder, delegate, recorder, span, signal, contextItems)
         } catch (error) {
             this.handleError(sessionID, error, delegate, signal)
         } finally {
@@ -85,7 +96,8 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
         delegate: AgentHandlerDelegate,
         recorder: AgentRequest['recorder'],
         span: Span,
-        parentSignal: AbortSignal
+        parentSignal: AbortSignal,
+        contextItems: ContextItem[] = []
     ): Promise<void> {
         let turnCount = 0
 
@@ -99,6 +111,7 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
         // Main conversation loop
         while (turnCount < this.MAX_TURN && !loopController.signal?.aborted) {
             const model = turnCount === 0 ? AGENT_MODELS.ExtendedThinking : AGENT_MODELS.Base
+
             try {
                 // Get LLM response
                 const { botResponse, toolCalls } = await this.requestLLM(
@@ -107,7 +120,8 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
                     recorder,
                     span,
                     signal,
-                    model
+                    model,
+                    contextItems
                 )
 
                 // No tool calls means we're done
@@ -121,9 +135,13 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
                 const content = Array.from(toolCalls.values())
                 delegate.postMessageInProgress(botResponse)
 
-                const results = await this.executeTools(content)
-                const toolResults = results.map(result => result.tool_result).filter(isDefined)
-                const toolOutputs = results.map(result => result.output).filter(isDefined)
+                const results = await this.executeTools(content).catch(() => {
+                    logDebug('AgenticHandler', 'Error executing tools')
+                    return []
+                })
+
+                const toolResults = results?.map(result => result.tool_result).filter(isDefined)
+                const toolOutputs = results?.map(result => result.output).filter(isDefined)
 
                 botResponse.contextFiles = toolOutputs
 
@@ -145,6 +163,9 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
                 }
 
                 turnCount++
+
+                // Reset the context items for the next turn
+                contextItems = []
             } catch (error) {
                 this.handleError(chatBuilder.sessionID, error, delegate, signal)
                 break
@@ -161,11 +182,12 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
         recorder: AgentRequest['recorder'],
         span: Span,
         signal: AbortSignal,
-        model: string
+        model: string,
+        contextItems: ContextItem[] = []
     ): Promise<{ botResponse: ChatMessage; toolCalls: Map<string, ToolCallContentPart> }> {
         // Create prompt
         const prompter = new AgenticChatPrompter(this.SYSTEM_PROMPT)
-        const prompt = await prompter.makePrompt(chatBuilder)
+        const prompt = await prompter.makePrompt(chatBuilder, contextItems)
         recorder.recordChatQuestionExecuted([], { addMetadata: true, current: span })
 
         // Prepare API call parameters
@@ -273,17 +295,26 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
     protected async executeTools(toolCalls: ToolCallContentPart[]): Promise<ToolResult[]> {
         try {
             logDebug('AgenticHandler', `Executing ${toolCalls.length} tools`)
-            // Execute all tools concurrently
-            const results = await Promise.all(
+            // Execute all tools concurrently and filter out any undefined/null results
+            const results = await Promise.allSettled(
                 toolCalls.map(async toolCall => {
-                    logDebug('AgenticHandler', `Executing ${toolCall.tool_call?.name}`, {
-                        verbose: toolCall,
-                    })
-                    return this.executeSingleTool(toolCall)
+                    try {
+                        logDebug('AgenticHandler', `Executing ${toolCall.tool_call?.name}`, {
+                            verbose: toolCall,
+                        })
+                        return await this.executeSingleTool(toolCall)
+                    } catch (error) {
+                        logDebug('AgenticHandler', `Error executing tool ${toolCall.tool_call?.name}`, {
+                            verbose: error,
+                        })
+                        return null // Return null for failed tool executions
+                    }
                 })
             )
-
-            return results.filter(isDefined)
+            // Filter out rejected promises and null/undefined results
+            return results
+                .filter(result => result.status === 'fulfilled' && result.value)
+                .map(result => (result as PromiseFulfilledResult<ToolResult>).value)
         } catch (error) {
             logDebug('AgenticHandler', 'Error executing tools', { verbose: error })
             return []
@@ -317,7 +348,16 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
         // Update status to pending *before* execution
         try {
             const args = parseToolCallArgs(toolCall.tool_call.arguments)
-            const result = await tool.invoke(args)
+            const result = await tool.invoke(args).catch(error => {
+                logDebug('AgenticHandler', `Error executing tool ${toolCall.tool_call.name}`, {
+                    verbose: error,
+                })
+                return null
+            })
+
+            if (result === null) {
+                throw new Error(`Tool ${toolCall.tool_call.name} failed`)
+            }
 
             tool_result.tool_result.content = result.content || 'Empty result'
 
@@ -393,17 +433,29 @@ class AgenticChatPrompter {
 
             promptBuilder.tryAddMessages(reversedTranscript)
 
-            if (context.length > 0) {
-                await promptBuilder.tryAddContext('user', context)
-            }
+            await this.tryAddContext(promptBuilder, context)
 
             const historyItems = reversedTranscript
                 .flatMap(m => (m.contextFiles ? [...m.contextFiles].reverse() : []))
                 .filter(isDefined)
 
-            await promptBuilder.tryAddContext('history', historyItems.reverse())
+            await this.tryAddContext(promptBuilder, historyItems, 'history')
 
             return promptBuilder.build()
         })
+    }
+
+    private async tryAddContext(
+        builder: PromptBuilder,
+        context: ContextItem[],
+        type = 'user'
+    ): Promise<void> {
+        try {
+            const contextItems = context.filter(item => item.type !== 'tool-state')
+            builder.tryAddContext(type === 'history' ? 'history' : 'user', contextItems)
+        } catch {
+            logDebug('AgenticChatPrompter', 'Error adding context to prompt')
+            return
+        }
     }
 }

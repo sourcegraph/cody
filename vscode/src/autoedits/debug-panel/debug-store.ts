@@ -4,6 +4,7 @@ import type { AutoeditRequestState } from '../analytics-logger/types'
 import { type AutoeditsProviderConfig, autoeditsProviderConfig } from '../autoedits-config'
 import type { DecorationInfo } from '../renderer/decorators/base'
 import { getDecorationInfo } from '../renderer/diff-utils'
+import { type SessionStats, SessionStatsTracker } from './session-store'
 
 /**
  * Enhanced debug entry for auto-edit requests that extends the analytics logger state
@@ -22,6 +23,8 @@ export interface AutoeditRequestDebugState {
      * the code in chunks for diffing it.
      */
     sideBySideDiffDecorationInfo?: DecorationInfo
+    /** The session stats for the auto-edit request */
+    sessionStats: SessionStats
 }
 
 const CHARACTER_REGEX = /./g
@@ -35,6 +38,8 @@ export class AutoeditDebugStore implements vscode.Disposable {
     private autoeditRequests: AutoeditRequestDebugState[] = []
     /** Maximum number of auto-edit requests to store */
     private maxEntries = 50
+    /** Session-wide stats tracker */
+    private sessionStatsTracker = new SessionStatsTracker()
     /** Event emitter for notifying when data changes */
     private readonly onDidChangeEmitter = new vscode.EventEmitter<void>()
     /** Event that fires when the auto-edit requests data changes */
@@ -50,6 +55,7 @@ export class AutoeditDebugStore implements vscode.Disposable {
             entry => entry.state.requestId === requestId
         )
 
+        this.sessionStatsTracker.trackRequest(state)
         if (existingIndex !== -1) {
             this.updateExistingEntry(existingIndex, state)
         } else {
@@ -87,6 +93,7 @@ export class AutoeditDebugStore implements vscode.Disposable {
             autoeditsProviderConfig: { ...autoeditsProviderConfig },
             sideBySideDiffDecorationInfo: this.calculateSideBySideDiff(state),
             ...baseState,
+            sessionStats: this.sessionStatsTracker.getCurrentStats(),
         }
     }
 

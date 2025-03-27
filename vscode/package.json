@@ -3,7 +3,7 @@
   "name": "cody-ai",
   "private": true,
   "displayName": "Cody: AI Code Assistant",
-  "version": "1.78.1",
+  "version": "1.80.0",
   "publisher": "sourcegraph",
   "license": "Apache-2.0",
   "icon": "resources/sourcegraph.png",
@@ -589,7 +589,7 @@
       {
         "command": "cody.command.autoedit-manual-trigger",
         "title": "Autoedits Manual Trigger",
-        "enablement": "cody.activated && config.cody.suggestions.mode == 'auto-edit (Experimental)'"
+        "enablement": "cody.activated && config.cody.suggestions.mode == 'auto-edit (Beta)'"
       },
       {
         "command": "cody.command.autoedit.open-debug-panel",
@@ -714,7 +714,7 @@
       {
         "command": "cody.supersuggest.testExample",
         "key": "ctrl+alt+enter",
-        "when": "cody.activated && config.cody.suggestions.mode == 'auto-edit (Experimental)'"
+        "when": "cody.activated && config.cody.suggestions.mode == 'auto-edit (Beta)'"
       }
     ],
     "submenus": [
@@ -957,7 +957,7 @@
         },
         "cody.suggestions.mode": {
           "type": "string",
-          "enum": ["autocomplete", "auto-edit (Experimental)", "off"],
+          "enum": ["autocomplete", "auto-edit (Beta)", "off"],
           "enumDescriptions": [
             "Suggests standard code completions as you type.",
             "Suggests advanced context-aware code edits as you navigate the codebase. Experimental feature for Pro and Enterprise users.",

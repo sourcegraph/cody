@@ -12,6 +12,8 @@ import {
 } from './utils'
 
 export class CodyGatewayAdapter implements AutoeditsModelAdapter {
+    dispose() {}
+
     public async getModelResponse(options: AutoeditModelOptions): Promise<ModelResponse> {
         const headers = {
             'X-Sourcegraph-Feature': 'code_completions',

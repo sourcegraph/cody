@@ -15,7 +15,7 @@ import { type EditToolInput, EditToolSchema } from './schema'
 function createEditToolState(
     id: string,
     status: UIToolStatus,
-    uri: vscode.Uri | undefined,
+    uri: vscode.Uri,
     content: string | undefined,
     outputType: 'file-view' | 'file-diff' | 'status' = 'file-view'
 ): ContextItemToolState {
@@ -26,9 +26,9 @@ function createEditToolState(
         status,
         outputType,
         // ContextItemCommon properties
-        uri: uri || vscode.Uri.parse(`cody:/tools/edit/${id}`),
+        uri: uri,
         content,
-        title: 'Text Editor Operation',
+        title: 'Text Editor Tool',
         description: content?.split('\n')[0] || 'File edit operation',
         source: ContextItemSource.Agentic,
         icon: 'edit',
@@ -76,7 +76,7 @@ export const editTool = {
                 return createEditToolState(
                     `undo-${Date.now()}`,
                     UIToolStatus.Error,
-                    undefined,
+                    fileUri,
                     'Undo is not supported directly. Use the Source Control UI to revert changes.',
                     'status'
                 )
@@ -110,8 +110,7 @@ async function createFile(uri: vscode.Uri, fileText: string | undefined): Promis
         await fileOps.createFile(uri, fileText)
 
         // Open the file
-        const doc = await vscode.workspace.openTextDocument(uri)
-        await vscode.window.showTextDocument(doc)
+        await vscode.workspace.openTextDocument(uri)
 
         // Check for problems
         const problems = vscode.languages.getDiagnostics(uri)
@@ -286,8 +285,7 @@ async function insertInFile(
         await fileOps.write(uri, lines.join('\n'))
 
         // Open document
-        const document = await vscode.workspace.openTextDocument(uri)
-        await vscode.window.showTextDocument(document)
+        await vscode.workspace.openTextDocument(uri)
 
         return createEditToolState(
             toolId,

@@ -9,7 +9,7 @@
     <change-notes>
         <![CDATA[<a href="https://github.com/sourcegraph/cody/releases?q=JetBrains&expanded=true">Update notes are available on GitHub.</a>]]></change-notes>
 
-    <depends>com.intellij.modules.json</depends>
+    <depends optional="true" config-file="plugin-json.xml">com.intellij.modules.json</depends>
     <depends>com.intellij.modules.platform</depends>
     <depends optional="true" config-file="plugin-git.xml">Git4Idea</depends>
     <depends optional="true" config-file="plugin-perforce.xml">

@@ -13,6 +13,7 @@ const CLIENT_CONFIG_FIXTURE: CodyClientConfig = {
     autoCompleteEnabled: true,
     customCommandsEnabled: true,
     attributionEnabled: false,
+    attribution: 'none',
     smartContextWindowEnabled: true,
     modelsAPIEnabled: false,
     userShouldUseEnterprise: false,

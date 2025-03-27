@@ -11,7 +11,7 @@ import { useConfig } from '../../../../../../utils/useConfig'
 const isMac = isMacOS()
 
 export enum IntentEnum {
-    Agentic = 'Agentic',
+    Agentic = 'Agent',
     Chat = 'Chat',
     Search = 'Search',
     Edit = 'Edit',
@@ -73,12 +73,13 @@ export const ModeSelectorField: React.FunctionComponent<{
                 value: IntentEnum.Search,
             },
             {
-                title: 'Agentic',
+                title: 'Agent',
                 badge: agenticChatEnabled ? 'Experimental' : 'Pro',
                 icon: Sparkle,
                 intent: 'agentic',
-                hidden: !agenticChatEnabled,
-                disabled: !agenticChatEnabled,
+                // Hide agentic option if not enabled or if edit not enabled
+                hidden: !agenticChatEnabled || !isEditEnabled,
+                disabled: !agenticChatEnabled || !isEditEnabled,
                 value: IntentEnum.Agentic,
             },
             {

@@ -17,34 +17,40 @@ export const diagnosticTool: AgentTool = {
             'Get diagnostics (including errors) from the editor for the file you have used text_editor on. This tool should be used at the end of your response on the files you have edited.',
         input_schema: zodToolSchema(GetDiagnosticSchema),
     },
-    invoke: async ({ name }: GetDiagnosticInput) => {
+    invoke: async ({ name, type }: GetDiagnosticInput) => {
         validateWithZod(GetDiagnosticSchema, { name }, 'get_diagnostic')
+        const fileName = name === '*' ? 'Workspace' : name
+        const severity =
+            type === 'warning'
+                ? vscode.DiagnosticSeverity.Warning
+                : type === 'all'
+                  ? true
+                  : vscode.DiagnosticSeverity.Error
 
         try {
-            const fileInfo = await fileOps.getWorkspaceFile(name)
-            if (!fileInfo) {
-                return createDiagnosticToolState(name, `Cannot find file ${name}.`, UIToolStatus.Error)
+            let diagnostics = vscode.languages.getDiagnostics()?.flatMap(d => d[1])
+            if (name === '*') {
+                return createDiagnosticToolState(fileName, diagnostics)
             }
 
-            const diagnostics = vscode.languages
-                .getDiagnostics(fileInfo.uri)
-                .filter(d => d.severity === vscode.DiagnosticSeverity.Error)
+            const fileInfo = await fileOps.getWorkspaceFile(name)
+            if (!fileInfo) {
+                throw new Error(`File not found: ${name}`)
+            }
 
-            const content = diagnostics?.length
-                ? `Diagnostics for ${name}:\n${diagnostics.map(d => d.message).join('\n')}`
-                : `No errors found in ${name}`
+            diagnostics = vscode.languages.getDiagnostics(fileInfo.uri)
 
             return createDiagnosticToolState(
                 name,
-                content,
-                diagnostics.length ? UIToolStatus.Error : UIToolStatus.Done,
+                diagnostics.filter(d => d.severity === severity),
                 fileInfo.uri
             )
         } catch (error) {
             return createDiagnosticToolState(
-                name,
-                `Failed to get diagnostics for ${name}: ${error}`,
-                UIToolStatus.Error
+                fileName,
+                [],
+                undefined,
+                `Failed to get diagnostics for ${fileName}: ${error}`
             )
         }
     },
@@ -89,28 +95,32 @@ export function getErrorDiagnostics(file: vscode.Uri): vscode.Diagnostic[] {
  */
 function createDiagnosticToolState(
     fileName: string,
-    content: string,
-    status: UIToolStatus,
-    uri?: vscode.Uri
+    diagnostics: vscode.Diagnostic[],
+    uri?: vscode.Uri,
+    error?: string
 ): ContextItemToolState {
     const toolId = `diagnostic-${Date.now()}`
+    const hasProblems = diagnostics?.length > 0 || error !== undefined
+    const content = hasProblems
+        ? `Diagnostics for ${name}:\n${diagnostics.map(d => d.message).join('\n')}`
+        : error ?? 'EMPTY'
+    const icon = hasProblems ? 'alarm-clock-check' : 'alarm-clock-minus'
+    const status = error ? UIToolStatus.Error : hasProblems ? UIToolStatus.Info : UIToolStatus.Done
 
     return {
         type: 'tool-state',
         toolId,
         toolName: 'get_diagnostic',
         status,
-        outputType: 'file-view',
-
-        // ContextItemCommon properties
-        uri: uri || vscode.Uri.parse(`cody:/tools/diagnostic/${toolId}`),
         content,
-        title: 'File Diagnostics',
-        description: `Diagnostics for ${fileName}`,
+        title: 'diagnostics:' + fileName,
+        description: 'Diagnostics',
+        icon,
+        outputType,
+        metadata: ['diagnostics'].filter(Boolean) as string[],
         source: ContextItemSource.Agentic,
-        icon: 'warning',
-        metadata: [`File: ${fileName}`, `Status: ${status}`, uri ? `Path: ${uri.fsPath}` : null].filter(
-            Boolean
-        ) as string[],
+        uri: uri || vscode.Uri.parse(`cody-tool://diagnostic?id=${toolId}`),
     }
 }
+
+const outputType = 'terminal-output'

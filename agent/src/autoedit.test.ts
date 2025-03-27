@@ -1,4 +1,5 @@
 import path from 'node:path'
+import { CodyAutoSuggestionMode } from '@sourcegraph/cody-shared'
 import { toMatchImageSnapshot } from 'jest-image-snapshot'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import type * as vscode from 'vscode'
@@ -19,7 +20,7 @@ expect.extend({ toMatchImageSnapshot })
 describe('Autoedit', () => {
     const workspace = new TestWorkspace(path.join(__dirname, '__tests__', 'autoedit'))
     const clientConfiguration: Partial<ExtensionConfiguration> = {
-        suggestionsMode: 'auto-edit (Experimental)',
+        suggestionsMode: CodyAutoSuggestionMode.Autoedit,
     }
 
     beforeAll(async () => {

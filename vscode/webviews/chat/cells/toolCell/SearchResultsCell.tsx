@@ -112,28 +112,29 @@ export const SearchResultsCell: FC<SearchResultsProps> = ({
                             </div>
                         ))}
                     </div>
-                ) : (
+                ) : results?.length === 0 ? null : (
                     <div className="tw-overflow-x-auto tw-bg-zinc-950 tw-p-0">
                         <div className="tw-font-mono tw-text-xs tw-flex tw-flex-col tw-gap-1">
                             {generateSearchToolResults(results).map((resultItem, index) => (
                                 <Button
                                     onClick={e => {
                                         e.preventDefault()
-                                        onFileLinkClicked(resultItem.uri)
+                                        const _uri = resultItem.uri
+                                        const _range = resultItem?.lineNumber
+                                            ? `:${Number.parseInt(resultItem.lineNumber) + 1}`
+                                            : ''
+                                        const uri = _uri.with({ path: `${_uri.path}${_range}` })
+                                        onFileLinkClicked(uri)
                                     }}
                                     variant="text"
                                     key={`${resultItem.fileName}-${index}`}
                                     className="tw-text-left tw-truncate tw-flex !tw-justify-start tw-py-1.5 tw-px-4 hover:tw-bg-zinc-900 tw-border-b tw-border-zinc-900 last:tw-border-b-0 tw-w-full !tw-items-center"
                                 >
-                                    <span className="tw-w-6 tw-text-right tw-text-zinc-500 tw-mr-3 tw-pt-0.5 tw-select-none">
-                                        {index + 1}
-                                    </span>
-
                                     <span className="tw-mr-2 tw-mt-0.5">{getIcon(resultItem.type)}</span>
                                     <div className="tw-flex tw-flex-col">
                                         <div className="tw-text-zinc-200">
                                             {resultItem.fileName}
-                                            {resultItem.lineNumber && (
+                                            {resultItem?.lineNumber && (
                                                 <span className="tw-text-zinc-500">
                                                     :{resultItem.lineNumber}
                                                 </span>

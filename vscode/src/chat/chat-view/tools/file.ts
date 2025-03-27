@@ -34,7 +34,8 @@ export const getFileTool: AgentTool = {
             return createFileToolState(
                 validInput.name,
                 `get_file for ${validInput.name} failed: ${error}`,
-                UIToolStatus.Error
+                UIToolStatus.Error,
+                URI.parse('')
             )
         }
     },
@@ -47,7 +48,7 @@ function createFileToolState(
     filePath: string,
     content: string,
     status: UIToolStatus,
-    uri?: URI
+    uri: URI
 ): ContextItemToolState {
     const toolId = `get_file-${filePath.replace(/[^\w]/g, '_')}-${Date.now()}`
 
@@ -57,9 +58,8 @@ function createFileToolState(
         toolName: 'get_file',
         status,
         outputType: 'file-view',
-
         // ContextItemCommon properties
-        uri: uri || URI.parse(`cody:/tools/file/${toolId}`),
+        uri,
         content,
         title: filePath,
         description: `File: ${filePath}`,

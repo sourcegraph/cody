@@ -3,7 +3,7 @@ import type * as vscode from 'vscode'
 
 import type { ChatClient } from '@sourcegraph/cody-shared'
 
-import { documentAndPosition } from '../completions/test-helpers'
+import { versionedDocumentAndPosition } from '../completions/test-helpers'
 import { defaultVSCodeExtensionClient } from '../extension-client'
 import { FixupController } from '../non-stop/FixupController'
 import { WorkspaceEdit, vsCodeMocks } from '../testutils/mocks'
@@ -12,7 +12,7 @@ import type { CodyStatusBar } from '../services/StatusBar'
 import * as adapters from './adapters/utils'
 import { autoeditTriggerKind } from './analytics-logger'
 import {
-    AUTOEDIT_TOTAL_DEBOUNCE_INTERVAL,
+    AUTOEDIT_INITIAL_DEBOUNCE_INTERVAL_MS,
     AutoeditsProvider,
     type AutoeditsResult,
 } from './autoedits-provider'
@@ -32,16 +32,16 @@ export async function autoeditResultFor(
             selectedCompletionInfo: undefined,
         },
         prediction,
-        token,
+        documentVersion = 1,
         provider: existingProvider,
         getModelResponse,
         isAutomaticTimersAdvancementDisabled = false,
     }: {
         prediction: string
+        documentVersion?: number
         /** provide to reuse an existing provider instance */
         provider?: AutoeditsProvider
         inlineCompletionContext?: vscode.InlineCompletionContext
-        token?: vscode.CancellationToken
         getModelResponse?: typeof adapters.getModelResponse
         isAutomaticTimersAdvancementDisabled?: boolean
     }
@@ -76,7 +76,10 @@ export async function autoeditResultFor(
     vi.spyOn(adapters, 'getModelResponse').mockImplementation(getModelResponse || getModelResponseMock)
 
     const editBuilder = new WorkspaceEdit()
-    const { document, position } = documentAndPosition(textWithCursor)
+    const { document, position } = versionedDocumentAndPosition({
+        textWithCursor,
+        version: documentVersion,
+    })
 
     vi.spyOn(vsCodeMocks.window, 'activeTextEditor', 'get').mockReturnValue({
         document,
@@ -101,7 +104,7 @@ export async function autoeditResultFor(
     let result: AutoeditsResult | null = null
 
     const promiseResult = provider
-        .provideInlineCompletionItems(document, position, inlineCompletionContext, token)
+        .provideInlineCompletionItems(document, position, inlineCompletionContext)
         .then(res => {
             result = res
             return result
@@ -113,7 +116,7 @@ export async function autoeditResultFor(
 
     if (!isAutomaticTimersAdvancementDisabled) {
         // Advance time by the default debounce interval.
-        await vi.advanceTimersByTimeAsync(AUTOEDIT_TOTAL_DEBOUNCE_INTERVAL)
+        await vi.advanceTimersByTimeAsync(AUTOEDIT_INITIAL_DEBOUNCE_INTERVAL_MS)
     }
 
     return { result, promiseResult, document, position, provider, editBuilder }

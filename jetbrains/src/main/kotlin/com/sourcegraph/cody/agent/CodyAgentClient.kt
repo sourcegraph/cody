@@ -130,18 +130,19 @@ class CodyAgentClient(private val project: Project, private val webview: NativeW
 
   @JsonRequest("secrets/get")
   fun secrets_get(params: Secrets_GetParams): CompletableFuture<String?> {
-    return CompletableFuture.completedFuture(CodySecureStore.getFromSecureStore(params.key))
+    return CompletableFuture.completedFuture(
+        CodySecureStore.getInstance().getFromSecureStore(params.key))
   }
 
   @JsonRequest("secrets/store")
   fun secrets_store(params: Secrets_StoreParams): CompletableFuture<Null?> {
-    CodySecureStore.writeToSecureStore(params.key, params.value)
+    CodySecureStore.getInstance().writeToSecureStore(params.key, params.value)
     return CompletableFuture.completedFuture(null)
   }
 
   @JsonRequest("secrets/delete")
   fun secrets_delete(params: Secrets_DeleteParams): CompletableFuture<Null?> {
-    CodySecureStore.writeToSecureStore(params.key, null)
+    CodySecureStore.getInstance().writeToSecureStore(params.key, null)
     return CompletableFuture.completedFuture(null)
   }
 

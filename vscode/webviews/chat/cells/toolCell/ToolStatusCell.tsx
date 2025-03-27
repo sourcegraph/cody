@@ -1,5 +1,5 @@
 import type { ContextItemToolState } from '@sourcegraph/cody-shared/src/codebase-context/messages'
-import { type FC, useCallback, useMemo } from 'react'
+import { type FC, useCallback } from 'react'
 import type { URI } from 'vscode-uri'
 import { Skeleton } from '../../../components/shadcn/ui/skeleton'
 import { type VSCodeWrapper, getVSCodeAPI } from '../../../utils/VSCodeApi'
@@ -7,7 +7,7 @@ import { DiffCell } from './DiffCell'
 import { FileCell } from './FileCell'
 import { OutputStatusCell } from './OutputStatusCell'
 import { SearchResultsCell } from './SearchResultsCell'
-import { TerminalOutputCell, convertToTerminalLines } from './TerminalOutputCell'
+import { TerminalOutputCell } from './TerminalOutputCell'
 
 export interface ToolStatusProps {
     title: string
@@ -25,15 +25,6 @@ export const ToolStatusCell: FC<ToolStatusProps> = ({ title, output }) => {
         getVSCodeAPI()?.postMessage({ command: 'openFileLink', uri })
     }, [])
 
-    // Extract terminal lines outside of the conditional render
-    const terminalLines = useMemo(
-        () =>
-            output?.outputType === 'terminal-output' && output.content
-                ? convertToTerminalLines(output.content)
-                : [],
-        [output?.outputType, output?.content]
-    )
-
     if (!title || !output) {
         return (
             <div className="tw-flex tw-items-center tw-gap-2 tw-overflow-hidden tw-h-7">
@@ -49,7 +40,7 @@ export const ToolStatusCell: FC<ToolStatusProps> = ({ title, output }) => {
     if (output?.outputType === 'search-result' && output.searchResultItems) {
         return (
             <SearchResultsCell
-                query={output.title || ''}
+                query={output.title || 'Search result'}
                 results={output.searchResultItems}
                 onFileLinkClicked={onFileLinkClicked}
             />
@@ -61,7 +52,7 @@ export const ToolStatusCell: FC<ToolStatusProps> = ({ title, output }) => {
     }
 
     if (output?.outputType === 'terminal-output') {
-        return <TerminalOutputCell lines={terminalLines} />
+        return <TerminalOutputCell command={title} item={output} />
     }
 
     return <OutputStatusCell item={output} />

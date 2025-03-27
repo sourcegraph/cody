@@ -24,7 +24,6 @@ import {
     type EditMode,
     EditModeTelemetryMetadataMapping,
 } from '../edit/types'
-import { isStreamedIntent } from '../edit/utils/edit-intent'
 import { getOverriddenModelForIntent } from '../edit/utils/edit-models'
 import type { ExtensionClient } from '../extension-client'
 import { isRunningInsideAgent } from '../jsonrpc/isRunningInsideAgent'
@@ -33,6 +32,7 @@ import { charactersLogger } from '../services/CharactersLogger'
 import { splitSafeMetadata } from '../services/telemetry-v2'
 import { countCode } from '../services/utils/code-count'
 
+import { isStreamedIntent } from '../edit/utils/edit-intent'
 import { FixupDocumentEditObserver } from './FixupDocumentEditObserver'
 import type { FixupFile } from './FixupFile'
 import { FixupFileObserver } from './FixupFileObserver'
@@ -56,6 +56,7 @@ export interface CreateTaskOptions {
     userContextFiles: ContextItem[]
     selectionRange: vscode.Range
     intent: EditIntent
+    isStreamed: boolean
     mode: EditMode
     model: EditModel
     rules: Rule[] | null
@@ -465,6 +466,7 @@ export class FixupController
         model: EditModel,
         rules: Rule[] | null,
         intent: EditIntent,
+        canStream: boolean,
         source: EventSource,
         telemetryMetadata?: FixupTelemetryMetadata,
         smartApplyMetadata?: SmartApplyAdditionalMetadata
@@ -491,6 +493,7 @@ export class FixupController
             userContextFiles: input.userContextFiles,
             selectionRange: input.range,
             intent: input.intent,
+            isStreamed: canStream && isStreamedIntent(input.intent),
             mode: input.mode,
             model: input.model,
             rules: input.rules,
@@ -521,6 +524,7 @@ export class FixupController
         userContextFiles,
         selectionRange,
         intent,
+        isStreamed,
         mode,
         model,
         rules,
@@ -540,6 +544,7 @@ export class FixupController
             instruction,
             userContextFiles,
             intent,
+            isStreamed,
             selectionRange,
             mode,
             overriddenModel,
@@ -1170,7 +1175,7 @@ export class FixupController
             return
         }
 
-        if (isStreamedIntent(task.intent)) {
+        if (task.isStreamed) {
             // Text change is most likely coming from the incoming streamed insertions,
             // No need to update the decorator here as it'll cause a flicker.
             return

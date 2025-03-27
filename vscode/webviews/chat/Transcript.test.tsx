@@ -4,6 +4,7 @@ import type { ComponentProps } from 'react'
 import { describe, expect, test, vi } from 'vitest'
 import { URI } from 'vscode-uri'
 import { AppWrapperForTest } from '../AppWrapperForTest'
+import { MockNoGuardrails } from '../utils/guardrails'
 import { type Interaction, Transcript, transcriptToInteractionPairs } from './Transcript'
 import { FIXTURE_USER_ACCOUNT_INFO } from './fixtures'
 
@@ -18,6 +19,7 @@ const PROPS: Omit<ComponentProps<typeof Transcript>, 'transcript'> = {
     setActiveChatContext: () => {},
     manuallySelectedIntent: undefined,
     setManuallySelectedIntent: () => {},
+    guardrails: new MockNoGuardrails(),
 }
 
 vi.mock('../utils/VSCodeApi', () => ({
@@ -42,7 +44,7 @@ describe('Transcript', () => {
             <Transcript
                 {...PROPS}
                 transcript={[
-                    { speaker: 'human', text: ps`Hello` },
+                    { speaker: 'human', text: ps`Hello`, intent: null },
                     { speaker: 'assistant', text: ps`Hi` },
                 ]}
             />
@@ -69,7 +71,7 @@ describe('Transcript', () => {
             <Transcript
                 {...PROPS}
                 transcript={[
-                    { speaker: 'human', text: ps`Hello` },
+                    { speaker: 'human', text: ps`Hello`, intent: null },
                     { speaker: 'assistant', text: ps`Hi` },
                 ]}
             />
@@ -91,6 +93,7 @@ describe('Transcript', () => {
                         speaker: 'human',
                         text: ps`Foo`,
                         contextFiles: [{ type: 'file', uri: URI.file('/foo.js') }],
+                        intent: null,
                     },
                     { speaker: 'assistant', text: ps`Bar` },
                 ]}
@@ -313,6 +316,42 @@ describe('Transcript', () => {
             { message: 'xyz', canSubmit: true },
         ])
     })
+
+    test('non-last human message with isPendingPriorResponse', () => {
+        // Set up a transcript with multiple messages
+        const transcript: ChatMessage[] = [
+            { speaker: 'human' as const, text: ps`First question`, intent: null },
+            { speaker: 'assistant' as const, text: ps`First answer` },
+            { speaker: 'human' as const, text: ps`Second question`, intent: null },
+        ]
+
+        // Create a message in progress for the second human message
+        const messageInProgress: ChatMessage = {
+            speaker: 'assistant' as const,
+            text: ps`Second answer in progress`,
+        }
+
+        // Render the component with our setup
+        const { container } = render(
+            <Transcript {...PROPS} transcript={transcript} messageInProgress={messageInProgress} />
+        )
+
+        // The second human message should show as pending
+        expectCells([
+            { message: 'First question' },
+            { context: {} },
+            { message: 'First answer' },
+            { message: 'Second question' },
+            { context: {} },
+            { message: 'Second answer in progress' },
+            { message: '', canSubmit: true },
+        ])
+
+        // Verify that the submit button for the followup is disabled when there's a pending response
+        const submitButtons = container.querySelectorAll('button[type="submit"]')
+        expect(submitButtons).toHaveLength(3) // One button per editor per message.
+        expect(submitButtons[0]).toBeEnabled()
+    })
 })
 
 type EditorHTMLElement = HTMLDivElement & { dataset: { lexicalEditor: 'true' } }
@@ -349,7 +388,13 @@ function expectCells(expectedCells: CellMatcher[], containerElement?: HTMLElemen
                     cell
                 expect(textElement.innerText.trim()).toBe(expectedCell.message)
             } else if ('loading' in expectedCell.message) {
-                expect(cell.querySelector('[role="status"]')).toHaveAttribute('aria-busy')
+                const statusElement = cell.querySelector('[role="status"]')
+                if (i === expectedCells.length - 1) {
+                    expect(statusElement).not.toBeNull()
+                    expect(statusElement).toHaveAttribute('aria-busy', 'true')
+                } else {
+                    expect(statusElement).toBeNull()
+                }
             }
             if (expectedCell.canSubmit !== undefined) {
                 const submitButton = cell.querySelector('button[type="submit"]')
@@ -369,7 +414,9 @@ function expectCells(expectedCells: CellMatcher[], containerElement?: HTMLElemen
                         : `${expectedCell.context.files} items`
                 )
             } else if (expectedCell.context.loading) {
-                expect(cell.querySelector('[role="status"]')).toHaveAttribute('aria-busy')
+                const statusElement = cell.querySelector('[role="status"]')
+                expect(statusElement).not.toBeNull()
+                expect(statusElement).toHaveAttribute('aria-busy', 'true')
             }
         } else {
             throw new Error('unknown cell')
@@ -379,9 +426,9 @@ function expectCells(expectedCells: CellMatcher[], containerElement?: HTMLElemen
 
 describe('transcriptToInteractionPairs', () => {
     test('empty transcript', () => {
-        expect(transcriptToInteractionPairs([], null)).toEqual<Interaction[]>([
+        expect(transcriptToInteractionPairs([], null, null)).toEqual<Interaction[]>([
             {
-                humanMessage: { index: 0, speaker: 'human', isUnsentFollowup: true },
+                humanMessage: { index: 0, speaker: 'human', isUnsentFollowup: true, intent: undefined },
                 assistantMessage: null,
             },
         ])
@@ -396,19 +443,42 @@ describe('transcriptToInteractionPairs', () => {
                     { speaker: 'human', text: ps`c` },
                     { speaker: 'assistant', text: ps`d` },
                 ],
+                null,
                 null
             )
         ).toEqual<Interaction[]>([
             {
-                humanMessage: { index: 0, speaker: 'human', text: ps`a`, isUnsentFollowup: false },
-                assistantMessage: { index: 1, speaker: 'assistant', text: ps`b`, isLoading: false },
+                humanMessage: {
+                    index: 0,
+                    speaker: 'human',
+                    text: ps`a`,
+                    isUnsentFollowup: false,
+                    intent: null,
+                },
+                assistantMessage: {
+                    index: 1,
+                    speaker: 'assistant',
+                    text: ps`b`,
+                    isLoading: false,
+                },
             },
             {
-                humanMessage: { index: 2, speaker: 'human', text: ps`c`, isUnsentFollowup: false },
-                assistantMessage: { index: 3, speaker: 'assistant', text: ps`d`, isLoading: false },
+                humanMessage: {
+                    index: 2,
+                    speaker: 'human',
+                    text: ps`c`,
+                    isUnsentFollowup: false,
+                    intent: null,
+                },
+                assistantMessage: {
+                    index: 3,
+                    speaker: 'assistant',
+                    text: ps`d`,
+                    isLoading: false,
+                },
             },
             {
-                humanMessage: { index: 4, speaker: 'human', isUnsentFollowup: true },
+                humanMessage: { index: 4, speaker: 'human', isUnsentFollowup: true, intent: null },
                 assistantMessage: null,
             },
         ])
@@ -416,17 +486,32 @@ describe('transcriptToInteractionPairs', () => {
 
     test('assistant message is loading', () => {
         expect(
-            transcriptToInteractionPairs([{ speaker: 'human', text: ps`a` }], {
-                speaker: 'assistant',
-                text: ps`b`,
-            })
+            transcriptToInteractionPairs(
+                [{ speaker: 'human', text: ps`a` }],
+                {
+                    speaker: 'assistant',
+                    text: ps`b`,
+                },
+                null
+            )
         ).toEqual<Interaction[]>([
             {
-                humanMessage: { index: 0, speaker: 'human', text: ps`a`, isUnsentFollowup: false },
-                assistantMessage: { index: 1, speaker: 'assistant', text: ps`b`, isLoading: true },
+                humanMessage: {
+                    index: 0,
+                    speaker: 'human',
+                    text: ps`a`,
+                    isUnsentFollowup: false,
+                    intent: null,
+                },
+                assistantMessage: {
+                    index: 1,
+                    speaker: 'assistant',
+                    text: ps`b`,
+                    isLoading: true,
+                },
             },
             {
-                humanMessage: { index: 2, speaker: 'human', isUnsentFollowup: true },
+                humanMessage: { index: 2, speaker: 'human', isUnsentFollowup: true, intent: null },
                 assistantMessage: null,
             },
         ])
@@ -435,13 +520,23 @@ describe('transcriptToInteractionPairs', () => {
     test('last assistant message is error', () => {
         const error = errorToChatError(new Error('x'))
         expect(
-            transcriptToInteractionPairs([{ speaker: 'human', text: ps`a` }], {
-                speaker: 'assistant',
-                error,
-            })
+            transcriptToInteractionPairs(
+                [{ speaker: 'human', text: ps`a` }],
+                {
+                    speaker: 'assistant',
+                    error,
+                },
+                null
+            )
         ).toEqual<Interaction[]>([
             {
-                humanMessage: { index: 0, speaker: 'human', text: ps`a`, isUnsentFollowup: false },
+                humanMessage: {
+                    index: 0,
+                    speaker: 'human',
+                    text: ps`a`,
+                    isUnsentFollowup: false,
+                    intent: null,
+                },
                 assistantMessage: {
                     index: 1,
                     speaker: 'assistant',
