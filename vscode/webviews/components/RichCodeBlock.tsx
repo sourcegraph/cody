@@ -170,7 +170,7 @@ export const RichCodeBlock: React.FC<RichCodeBlockProps> = ({
                     {/* Actions bar */}
                     <div className={styles.buttonsContainer}>
                         <div className={styles.buttons}>
-                            {actionButtons}
+                            {showCode && actionButtons}
                             <div className={styles.metadataContainer}>{guardrailsStatus}</div>
                         </div>
                     </div>
