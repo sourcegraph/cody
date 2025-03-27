@@ -21,7 +21,7 @@ class CodyAutocompleteManagerTest : BasePlatformTestCase() {
                 id = "0",
                 range = Range(Position(1, 4), Position(1, 17)),
                 insertText = "CommonPrefix.sayHello(\"world\")"))
-    CodyAutocompleteManager.instance.displayAgentAutocomplete(
+    CodyAutocompleteManager.instance.displayAutocomplete(
         editor, cursorOffset = 17, items, editor.inlayModel)
     val allInlaysForEditor = InlayModelUtil.getAllInlaysForEditor(editor)
     assertEquals(1, allInlaysForEditor.size)
@@ -40,7 +40,7 @@ class CodyAutocompleteManagerTest : BasePlatformTestCase() {
                 id = "0",
                 range = Range(Position(1, 0), Position(1, 17)),
                 insertText = "    CommonPrefix.sayHello(\"world\")"))
-    CodyAutocompleteManager.instance.displayAgentAutocomplete(
+    CodyAutocompleteManager.instance.displayAutocomplete(
         editor, cursorOffset = 17, items, editor.inlayModel)
     val allInlaysForEditor = InlayModelUtil.getAllInlaysForEditor(editor)
     assertEquals(1, allInlaysForEditor.size)
