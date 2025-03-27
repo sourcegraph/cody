@@ -6,6 +6,7 @@ import com.intellij.credentialStore.generateServiceName
 import com.intellij.ide.passwordSafe.PasswordSafe
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.Service
+import com.sourcegraph.config.ConfigUtil
 import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
@@ -15,7 +16,16 @@ import org.apache.commons.lang.RandomStringUtils
 
 @Service(Service.Level.APP)
 class CodySecureStore {
-  private val keyStoreFile = File(System.getProperty("user.home"), ".sourcegraph/cody.keystore")
+  private val keyStoreFile =
+      if (!ConfigUtil.isIntegrationTestModeEnabled()) {
+        File(System.getProperty("user.home"), ".sourcegraph/cody.keystore")
+      } else {
+        val file = File.createTempFile("cody", "keystore")
+        // File should be created and initialized in the init block
+        file.delete()
+        file.deleteOnExit()
+        file
+      }
 
   init {
     if (!keyStoreFile.exists()) {
