@@ -17,7 +17,7 @@ class CycleCodyAutocompleteActionHandler(private val cycleDirection: CycleDirect
 
   override fun isEnabledForCaret(editor: Editor, caret: Caret, dataContext: DataContext?): Boolean {
     val project = editor.project ?: return false
-    val allAutocompleteItems = getAllAutocompleteItems(caret)
+    val allAutocompleteItems = getAllAutocompleteItems(editor)
     val cacheKey = editor.cycleAutocompleteCacheKey(caret)
     autocompleteItemsCache[cacheKey] = allAutocompleteItems
     val isActionEnabled =
