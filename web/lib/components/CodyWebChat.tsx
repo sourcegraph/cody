@@ -360,6 +360,18 @@ const CodyWebPanel: FC<CodyWebPanelProps> = props => {
 
     const isLoading = !config || !view
 
+    const attributionMode = config?.config.attribution || 'none'
+    const guardrails = useMemo(
+        () =>
+            createGuardrailsImpl(attributionMode, (snippet: string) => {
+                vscodeAPI.postMessage({
+                    command: 'attribution-search',
+                    snippet,
+                })
+            }),
+        [attributionMode, vscodeAPI]
+    )
+
     return (
         <div className={className} data-cody-web-chat={true}>
             {!isLoading && (
@@ -370,15 +382,7 @@ const CodyWebPanel: FC<CodyWebPanelProps> = props => {
                             setView={handleViewChange}
                             errorMessages={errorMessages}
                             setErrorMessages={setErrorMessages}
-                            guardrails={createGuardrailsImpl(
-                                config.config.attribution,
-                                (snippet: string) => {
-                                    vscodeAPI.postMessage({
-                                        command: 'attribution-search',
-                                        snippet,
-                                    })
-                                }
-                            )}
+                            guardrails={guardrails}
                             configuration={config}
                             chatEnabled={true}
                             instanceNotices={clientConfig?.notices ?? []}
