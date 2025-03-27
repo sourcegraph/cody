@@ -103,6 +103,7 @@ export const OutputStatusCell: FC<OutputStatusProps> = ({ item, className, defau
             bodyContent={bodyContent}
             className={className}
             defaultOpen={defaultOpen}
+            status={item.status}
         />
     )
 }

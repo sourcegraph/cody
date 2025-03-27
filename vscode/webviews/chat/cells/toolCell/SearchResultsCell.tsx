@@ -1,4 +1,4 @@
-import { type ContextItem, displayPath } from '@sourcegraph/cody-shared'
+import { type ContextItem, UIToolStatus, displayPath } from '@sourcegraph/cody-shared'
 import { FileCode, FileText, FolderOpen, Search } from 'lucide-react'
 import type { FC } from 'react'
 import type { URI } from 'vscode-uri'
@@ -149,6 +149,7 @@ export const SearchResultsCell: FC<SearchResultsProps> = ({
             className={className}
             isLoading={isLoading}
             defaultOpen={defaultOpen}
+            status={UIToolStatus.Done}
         />
     )
 }

@@ -154,6 +154,7 @@ export const TerminalOutputCell: FC<TerminalOutputCellProps> = ({
             className={className}
             isLoading={isLoading}
             defaultOpen={defaultOpen}
+            status={item.status}
         />
     )
 }

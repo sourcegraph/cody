@@ -111,6 +111,7 @@ export const DiffCell: FC<DiffCellProps> = ({
             bodyContent={renderBodyContent()}
             className={className}
             defaultOpen={defaultOpen}
+            status={item.status}
         />
     )
 }

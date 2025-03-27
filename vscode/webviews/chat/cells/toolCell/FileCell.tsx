@@ -45,6 +45,7 @@ export const FileCell: FC<FileCellProps> = ({
             bodyContent={undefined}
             className={className}
             defaultOpen={defaultOpen} // Always closed since there's no content to show
+            status={result.status}
         />
     )
 }

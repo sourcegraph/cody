@@ -8,6 +8,7 @@ import { FileCell } from './FileCell'
 import { OutputStatusCell } from './OutputStatusCell'
 import { SearchResultsCell } from './SearchResultsCell'
 import { TerminalOutputCell } from './TerminalOutputCell'
+import { UnifiedToolCell } from './UnifiedToolCell'
 
 export interface ToolStatusProps {
     title: string
@@ -30,6 +31,12 @@ export const ToolStatusCell: FC<ToolStatusProps> = ({ title, output }) => {
             <div className="tw-flex tw-items-center tw-gap-2 tw-overflow-hidden tw-h-7">
                 <Skeleton className="tw-h-4 tw-w-40 tw-bg-zinc-800 tw-animate-pulse" />
             </div>
+        )
+    }
+
+    if (output.outputType) {
+        return (
+            <UnifiedToolCell item={output} onFileLinkClicked={onFileLinkClicked} defaultOpen={false} />
         )
     }
 

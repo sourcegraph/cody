@@ -1,3 +1,4 @@
+import type { UIToolStatus } from '@sourcegraph/cody-shared'
 import { ChevronDown, ChevronRight, type LucideProps } from 'lucide-react'
 import {
     type FC,
@@ -33,6 +34,7 @@ export interface BaseCellProps {
     defaultOpen?: boolean
     /** Theme variant (affects background colors) */
     theme?: ThemeVariant
+    status: UIToolStatus
 }
 
 const BaseCellComponent: FC<BaseCellProps> = ({
