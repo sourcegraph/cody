@@ -273,19 +273,27 @@ class CodyAutocompleteManager {
     val startsInline =
         lineBreaks.none { separator -> formattedCompletionText.startsWith(separator) }
 
-    var inlay: Inlay<*>? = null
-    if (startsInline) {
-      val (inlayOffset, completionText) =
+    val (commonTextLength, inlineCompletionText) =
+        if (startsInline) {
           trimCommonPrefixAndSuffix(
               formattedCompletionText.lines().first(), originalText.lines().first())
-      if (completionText.isNotEmpty()) {
+        } else {
+          0 to ""
+        }
+
+    val offset = range.startOffset + commonTextLength
+
+    var inlay: Inlay<*>? = null
+    if (startsInline) {
+
+      if (inlineCompletionText.isNotEmpty()) {
         val renderer =
             CodyAutocompleteSingleLineRenderer(
-                completionText, items, editor, AutocompleteRendererType.INLINE)
-        val offset = range.startOffset + inlayOffset
+                inlineCompletionText, items, editor, AutocompleteRendererType.INLINE)
         inlay = inlayModel.addInlineElement(offset, /* relatesToPrecedingText= */ true, renderer)
       }
     }
+
     val lines = formattedCompletionText.lines()
     if (lines.size > 1) {
       val text =
@@ -294,7 +302,7 @@ class CodyAutocompleteManager {
         val renderer = CodyAutocompleteBlockElementRenderer(text, items, editor)
         val inlay2 =
             inlayModel.addBlockElement(
-                /* offset = */ inlay?.offset ?: range.startOffset,
+                /* offset = */ offset,
                 /* relatesToPrecedingText = */ true,
                 /* showAbove = */ false,
                 /* priority = */ Int.MAX_VALUE,
