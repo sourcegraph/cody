@@ -1,7 +1,7 @@
 import { Tiktoken } from 'js-tiktoken/lite'
 import type { TokenBudget, TokenUsage } from '.'
 import type { ChatContextTokenUsage, TokenUsageType } from '.'
-import { EXTENDED_USER_CONTEXT_TOKEN_BUDGET, type ModelContextWindow } from '..'
+import { EXTENDED_USER_CONTEXT_TOKEN_BUDGET, type ModelContextWindow, logError } from '..'
 import type { Message, PromptString } from '..'
 import { CORPUS_CONTEXT_ALLOCATION } from './constants'
 
@@ -43,58 +43,93 @@ export function useFakeTokenCounterUtils(): void {
     }
 }
 
+const REFRESH_CALL_THRESHOLD = 1000
+let _tokenCounterUtilsPromise: Promise<TokenCounterUtils> | null = null
+let _isRefreshing = false
+let _callCount = 0
+
+async function createTokenCounterUtilsInstance(): Promise<TokenCounterUtils> {
+    const cl100k_base = await import('js-tiktoken/ranks/cl100k_base')
+    const tokenizer = new Tiktoken(cl100k_base.default)
+    const tokenCounterUtils: TokenCounterUtils = {
+        encode(text: string): number[] {
+            return tokenizer.encode(text.normalize('NFKC'), 'all')
+        },
+
+        decode(encoded: number[]): string {
+            return tokenizer.decode(encoded)
+        },
+
+        countTokens(text: string): number {
+            const wordCount = text.trim().split(/\s+/).length
+            return wordCount > EXTENDED_USER_CONTEXT_TOKEN_BUDGET ? wordCount : this.encode(text).length
+        },
+
+        countPromptString(text: PromptString): number {
+            return this.countTokens(text.toString())
+        },
+
+        getMessagesTokenCount(messages: Message[]): number {
+            return messages.reduce((acc, m) => acc + this.getTokenCountForMessage(m), 0)
+        },
+
+        getTokenCountForMessage(message: Message): number {
+            if (message?.text && message?.text.length > 0) {
+                return this.countPromptString(message.text)
+            }
+            return 0
+        },
+    }
+    return tokenCounterUtils
+}
+
+async function triggerBackgroundRefresh(): Promise<void> {
+    if (_isRefreshing || _useFakeTokenCounterUtils) {
+        return
+    }
+
+    try {
+        _isRefreshing = true
+        const newPromise = createTokenCounterUtilsInstance()
+        await newPromise
+        _tokenCounterUtilsPromise = newPromise
+    } catch (error) {
+        logError('TokenCounterUtils', 'Failed to refresh tokenizer instance', error)
+    } finally {
+        _isRefreshing = false
+        _callCount = 0
+    }
+}
+
 /**
- * Get the tokenizer, which is lazily-loaded it because it requires reading ~1 MB of tokenizer data.
+ * Get the tokenizer utils, which are lazily-loaded and periodically refreshed based on call count.
  */
 export async function getTokenCounterUtils(): Promise<TokenCounterUtils> {
     if (_useFakeTokenCounterUtils) {
         return _useFakeTokenCounterUtils
     }
 
-    // This could have been implemented in a separate file that is wholly async-imported, but that
-    // carries too much risk of accidental non-async importing.
-    if (!_tokenCounterUtilsPromise) {
-        _tokenCounterUtilsPromise = import('js-tiktoken/ranks/cl100k_base')
-            .then(({ default: cl100k_base }) => new Tiktoken(cl100k_base))
-            .then(tokenizer => {
-                const tokenCounterUtils: TokenCounterUtils = {
-                    encode(text: string): number[] {
-                        return tokenizer.encode(text.normalize('NFKC'), 'all')
-                    },
-
-                    decode(encoded: number[]): string {
-                        return tokenizer.decode(encoded)
-                    },
-
-                    countTokens(text: string): number {
-                        const wordCount = text.trim().split(/\s+/).length
-                        return wordCount > EXTENDED_USER_CONTEXT_TOKEN_BUDGET
-                            ? wordCount
-                            : this.encode(text).length
-                    },
-
-                    countPromptString(text: PromptString): number {
-                        return this.countTokens(text.toString())
-                    },
-
-                    getMessagesTokenCount(messages: Message[]): number {
-                        return messages.reduce((acc, m) => acc + this.getTokenCountForMessage(m), 0)
-                    },
-
-                    getTokenCountForMessage(message: Message): number {
-                        if (message?.text && message?.text.length > 0) {
-                            return this.countPromptString(message.text)
-                        }
-                        return 0
-                    },
-                }
-                return tokenCounterUtils
-            })
+    if (_callCount++ >= REFRESH_CALL_THRESHOLD && !_isRefreshing) {
+        triggerBackgroundRefresh().catch(error => {
+            logError('TokenCounterUtils', 'Error initiating background refresh', error)
+        })
     }
+
+    if (!_tokenCounterUtilsPromise) {
+        _tokenCounterUtilsPromise = createTokenCounterUtilsInstance()
+        try {
+            await _tokenCounterUtilsPromise
+            _callCount = 0
+        } catch (error) {
+            logError('TokenCounterUtils', 'Failed to create initial tokenizer instance', error)
+            _tokenCounterUtilsPromise = null
+            _callCount = 0
+            throw error
+        }
+    }
+
     return _tokenCounterUtilsPromise
 }
-
-let _tokenCounterUtilsPromise: Promise<TokenCounterUtils> | null = null
 
 type WithPromise<T> = {
     [K in keyof T]: T[K] extends (...args: any[]) => any
