@@ -149,7 +149,7 @@ async function replaceInFile(
             UIToolStatus.Error,
             uri,
             'Parameter `old_str` is required for command: str_replace',
-            'status'
+            'file-diff'
         )
     }
 
@@ -169,7 +169,7 @@ async function replaceInFile(
                 UIToolStatus.Error,
                 uri,
                 `Failed: No replacement performed: text not found in ${fileName}.`,
-                'status'
+                'file-diff'
             )
         }
 
@@ -248,7 +248,7 @@ async function insertInFile(
             UIToolStatus.Error,
             uri,
             'Parameter `insert_line` is required for insert command.',
-            'status'
+            'file-diff'
         )
     }
 
@@ -258,7 +258,7 @@ async function insertInFile(
             UIToolStatus.Error,
             uri,
             'Parameter `new_str` is required for insert command.',
-            'status'
+            'file-diff'
         )
     }
 
@@ -274,7 +274,7 @@ async function insertInFile(
                 UIToolStatus.Error,
                 uri,
                 `Invalid line number: ${insertLine}. Valid range: 0-${lines.length}`,
-                'status'
+                'file-diff'
             )
         }
 
@@ -300,7 +300,7 @@ async function insertInFile(
             UIToolStatus.Error,
             uri,
             `Failed to insert text: ${error.message}`,
-            'status'
+            'file-diff'
         )
     }
 }

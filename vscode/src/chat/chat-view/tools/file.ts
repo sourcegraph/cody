@@ -32,9 +32,9 @@ export const getFileTool: AgentTool = {
             // For errors during file retrieval
             return createFileToolState(
                 validInput.name,
-                `get_file for ${validInput.name} failed: ${error}`,
+                `${error}`,
                 UIToolStatus.Error,
-                URI.parse('')
+                URI.parse(validInput.name)
             )
         }
     },
