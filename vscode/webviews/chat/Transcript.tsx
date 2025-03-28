@@ -554,7 +554,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                 manuallySelectedIntent,
             })
         },
-        [humanMessage]
+        [humanMessage, manuallySelectedIntent, setManuallySelectedIntent]
     )
 
     const isAgenticMode = useMemo(
