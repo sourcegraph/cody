@@ -172,7 +172,8 @@ private constructor(
                 logger.warn("Connected to Cody agent " + info.name)
                 server.initialized(null)
                 if (info.authStatus is ProtocolAuthenticatedAuthStatus) {
-                  SentryService.setUser(info.authStatus.primaryEmail, info.authStatus.username)
+                  SentryService.getInstance()
+                      .setUser(info.authStatus.primaryEmail, info.authStatus.username)
                 }
                 CodyAgent(client, server, launcher, conn, listeningToJsonRpc)
               }

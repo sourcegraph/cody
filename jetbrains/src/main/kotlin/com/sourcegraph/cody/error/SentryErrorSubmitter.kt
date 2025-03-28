@@ -25,7 +25,7 @@ class SentryErrorSubmitter : ErrorReportSubmitter() {
           if (ex != null) additionalInfo
           else "$additionalInfo\n\n${event?.throwableText ?: "<No stacktrace>"}"
 
-      SentryService.report(ex, msg, null)
+      SentryService.getInstance().report(ex, msg, null)
     } catch (e: Exception) {
       consumer.consume(SubmittedReportInfo(SubmissionStatus.FAILED))
       return false
