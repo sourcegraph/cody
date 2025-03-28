@@ -6,7 +6,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { CodyTaskState } from '../../src/non-stop/state'
 import type { CodeBlockActionsProps } from '../chat/ChatMessageContent/ChatMessageContent'
 import styles from '../chat/ChatMessageContent/ChatMessageContent.module.css'
-import { createEditButtons } from '../chat/ChatMessageContent/EditButtons'
+import { createAdditionsDeletions, createEditButtons } from '../chat/ChatMessageContent/EditButtons'
 import { getCodeBlockId } from '../chat/ChatMessageContent/utils'
 import { type ClientActionListener, useClientActionListener } from '../client/clientState'
 import { useConfig } from '../utils/useConfig'
@@ -131,11 +131,19 @@ export const RichCodeBlock: React.FC<RichCodeBlockProps> = ({
         onExecute?.(code)
     }, [onExecute, code])
 
+    const additionsDeletions = smartApply ? (
+        <div className={styles.buttonContainer}>
+            {createAdditionsDeletions({
+                hasEditIntent,
+                preText: code,
+            })}
+        </div>
+    ) : undefined
+
     const actionButtons = (
         <div className={styles.actionButtons}>
             {isCodeComplete &&
                 createEditButtons({
-                    hasEditIntent,
                     isVSCode: config.clientCapabilities.isVSCode,
                     preText: code,
                     copyButtonOnSubmit: onCopy,
@@ -170,10 +178,11 @@ export const RichCodeBlock: React.FC<RichCodeBlockProps> = ({
                     )}
 
                     {/* Actions bar */}
+                    {additionsDeletions}
                     <div className={styles.buttonsContainer}>
                         <div className={styles.buttons}>
                             {showCode && actionButtons}
-                            <div className={styles.metadataContainer}>{guardrailsStatus}</div>
+                            {guardrailsStatus}
                         </div>
                     </div>
                 </div>
