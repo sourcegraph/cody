@@ -17,7 +17,9 @@ function createEditToolState(
     status: UIToolStatus,
     uri: vscode.Uri,
     content: string | undefined,
-    outputType: 'file-view' | 'file-diff' | 'status' = 'file-view'
+    outputType: 'file-view' | 'file-diff' | 'status' = 'file-view',
+    oldContent?: string,
+    newContent?: string
 ): ContextItemToolState {
     return {
         type: 'tool-state',
@@ -32,11 +34,7 @@ function createEditToolState(
         description: content?.split('\n')[0] || 'File edit operation',
         source: ContextItemSource.Agentic,
         icon: 'edit',
-        metadata: [
-            `Operation: ${outputType}`,
-            `Status: ${status}`,
-            ...(uri ? [`File: ${displayPath(uri)}`] : []),
-        ],
+        metadata: oldContent && newContent ? [oldContent, newContent] : undefined,
     }
 }
 
@@ -214,7 +212,9 @@ async function replaceInFile(
             UIToolStatus.Done,
             uri,
             output.join('\n'),
-            'file-diff'
+            'file-diff',
+            content,
+            newContent
         )
 
         // Add file diff properties

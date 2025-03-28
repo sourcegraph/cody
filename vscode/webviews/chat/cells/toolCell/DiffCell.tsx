@@ -24,9 +24,6 @@ export const DiffCell: FC<DiffCellProps> = ({
 }) => {
     const fileName = useMemo(() => (item.uri ? displayPath(item.uri) : 'Unknown'), [item.uri])
     const { result } = useMemo(() => {
-        if (item.status === UIToolStatus.Error) {
-            return { result: null, content: item?.content ?? 'Empty output' }
-        }
         const oldFile = item.metadata?.[0] || ''
         const newFile = item.metadata?.[1] || ''
         if (!oldFile && !newFile) {
@@ -52,7 +49,12 @@ export const DiffCell: FC<DiffCellProps> = ({
             >
                 <span className="tw-font-mono">{fileName}</span>
             </Button>
-            {result ? (
+            {item.status === UIToolStatus.Error && (
+                <Badge className="tw-mx-1" variant="error">
+                    Failed
+                </Badge>
+            )}
+            {item.status !== UIToolStatus.Error && result && (
                 <div className="tw-ml-2 tw-flex tw-flex-shrink-0 tw-items-center tw-gap-2">
                     {result.total.added > 0 && (
                         <span className="tw-flex tw-items-center tw-text-emerald-500">
@@ -70,55 +72,50 @@ export const DiffCell: FC<DiffCellProps> = ({
                         </span>
                     )}
                 </div>
-            ) : (
-                <Badge variant="error">Failed</Badge>
             )}
         </div>
     )
 
     const renderBodyContent = () => (
         <pre className="tw-font-mono tw-text-xs tw-leading-relaxed  tw-bg-zinc-950">
-            {result?.changes?.length ? (
-                <table className="tw-w-full tw-h-full tw-border-collapse">
-                    <tbody>
-                        {result?.changes.map((change, index) => (
-                            <tr
-                                key={change.lineNumber}
-                                className={cn(
-                                    'hover:tw-bg-zinc-800/50',
-                                    change.type === 'added' && 'tw-bg-emerald-950/30',
-                                    change.type === 'removed' && 'tw-bg-rose-950/30'
-                                )}
-                            >
-                                <td className="tw-select-none tw-border-r tw-border-r-zinc-700 tw-px-2 tw-text-right tw-text-zinc-500 tw-w-12">
-                                    {index === 0 && change.content?.startsWith('@@')
-                                        ? ''
-                                        : change.lineNumber}
-                                </td>
-                                <td className="tw-px-4 tw-py-0.5 tw-text-zinc-200 tw-whitespace-pre">
-                                    <div className="tw-flex tw-items-center">
-                                        <span className="tw-mr-2 tw-w-4 tw-text-center">
-                                            {change.type === 'added' && (
-                                                <span className="tw-text-emerald-500">+</span>
-                                            )}
-                                            {change.type === 'removed' && (
-                                                <span className="tw-text-rose-500">-</span>
-                                            )}
-                                        </span>
-                                        {change.content}
-                                    </div>
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-            ) : (
-                <div className="tw-rounded-md tw-p-3 tw-font-mono tw-text-xs tw-mb-4 tw-overflow-x-auto">
-                    <pre className="tw-whitespace-pre-wrap tw-break-words tw-text-zinc-300">
-                        {item.content}
-                    </pre>
-                </div>
-            )}
+            <table className="tw-w-full tw-h-full tw-border-collapse">
+                <tbody>
+                    {result?.changes.map((change, index) => (
+                        <tr
+                            key={change.lineNumber}
+                            className={cn(
+                                'hover:tw-bg-zinc-800/50',
+                                change.type === 'added' && 'tw-bg-emerald-950/30',
+                                change.type === 'removed' && 'tw-bg-rose-950/30'
+                            )}
+                        >
+                            <td className="tw-select-none tw-border-r tw-border-r-zinc-700 tw-px-2 tw-text-right tw-text-zinc-500 tw-w-12">
+                                {index === 0 && change.content?.startsWith('@@')
+                                    ? ''
+                                    : change.lineNumber}
+                            </td>
+                            <td className="tw-px-4 tw-py-0.5 tw-text-zinc-200 tw-whitespace-pre">
+                                <div className="tw-flex tw-items-center">
+                                    <span className="tw-mr-2 tw-w-4 tw-text-center">
+                                        {change.type === 'added' && (
+                                            <span className="tw-text-emerald-500">+</span>
+                                        )}
+                                        {change.type === 'removed' && (
+                                            <span className="tw-text-rose-500">-</span>
+                                        )}
+                                    </span>
+                                    {change.content}
+                                </div>
+                            </td>
+                        </tr>
+                    ))}
+                </tbody>
+            </table>
+            <div className="tw-rounded-md tw-p-3 tw-font-mono tw-text-xs tw-mb-4 tw-overflow-x-auto">
+                <pre className="tw-whitespace-pre-wrap tw-break-words tw-text-zinc-300">
+                    {item.content}
+                </pre>
+            </div>
         </pre>
     )
 
