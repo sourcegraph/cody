@@ -11,6 +11,7 @@ neverBuiltDependencies:
 overrides:
   tslib: 2.1.0
   '@lexical/react': https://storage.googleapis.com/sourcegraph-assets/npm/lexical-react-sourcegraph-fork-31065486.tgz
+  pkce-challenge: 3.0.0
 
 patchedDependencies:
   highlight.js@11.8.0:
@@ -3548,7 +3549,7 @@ packages:
       eventsource: 3.0.5
       express: 5.0.1
       express-rate-limit: 7.5.0(express@5.0.1)
-      pkce-challenge: 4.1.0
+      pkce-challenge: 3.0.0
       raw-body: 3.0.0
       zod: 3.23.8
       zod-to-json-schema: 3.24.3(zod@3.23.8)
@@ -14421,9 +14422,10 @@ packages:
       pngjs: 6.0.0
     dev: true
 
-  /pkce-challenge@4.1.0:
-    resolution: {integrity: sha512-ZBmhE1C9LcPoH9XZSdwiPtbPHZROwAnMy+kIFQVrnMCxY4Cudlz3gBOpzilgc0jOgRaiT3sIWfpMomW2ar2orQ==}
-    engines: {node: '>=16.20.0'}
+  /pkce-challenge@3.0.0:
+    resolution: {integrity: sha512-sQ8sJJJuLhA5pFnoxayMCrFnBMNj7DDpa+TWxOXl4B24oXHlVSADi/3Bowm66QuzWkBuF6DhmaelCdlC2JKwsg==}
+    dependencies:
+      crypto-js: 4.2.0
     dev: false
 
   /pkg-dir@3.0.0:
