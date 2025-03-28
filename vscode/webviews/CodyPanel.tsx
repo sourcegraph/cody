@@ -10,6 +10,7 @@ import {
     firstValueFrom,
 } from '@sourcegraph/cody-shared'
 import { useExtensionAPI, useObservable } from '@sourcegraph/prompt-editor'
+import { DatabaseBackup } from 'lucide-react'
 import type React from 'react'
 import { type FunctionComponent, useEffect, useMemo, useRef } from 'react'
 import type { ConfigurationSubsetForWebview, LocalEnv } from '../src/chat/protocol'
@@ -18,8 +19,10 @@ import { Chat } from './Chat'
 import { useClientActionDispatcher } from './client/clientState'
 import { Notices } from './components/Notices'
 import { StateDebugOverlay } from './components/StateDebugOverlay'
+import type { ServerType } from './components/mcp'
+import { ServerHome } from './components/mcp/ServerHome'
 import { TabContainer, TabRoot } from './components/shadcn/ui/tabs'
-import { HistoryTab, PromptsTab, SettingsTab, TabsBar, View } from './tabs'
+import { HistoryTab, PromptsTab, TabsBar, View } from './tabs'
 import type { VSCodeWrapper } from './utils/VSCodeApi'
 import { useUserAccountInfo } from './utils/useConfig'
 import { useFeatureFlag } from './utils/useFeatureFlags'
@@ -75,6 +78,22 @@ export const CodyPanel: FunctionComponent<CodyPanelProps> = ({
     const externalAPI = useExternalAPI()
     const api = useExtensionAPI()
     const { value: chatModels } = useObservable(useMemo(() => api.chatModels(), [api.chatModels]))
+    const { value: mcpServers } = useObservable<ServerType[]>(
+        useMemo(
+            () =>
+                api.mcpSettings()?.map(servers =>
+                    (servers || [])?.map(s => ({
+                        id: s.name,
+                        name: s.name,
+                        tools: s.tools,
+                        status: s.status === 'connected' ? 'online' : 'offline',
+                        icon: DatabaseBackup,
+                        type: 'mcp',
+                    }))
+                ),
+            [api.mcpSettings]
+        )
+    )
     // workspace upgrade eligibility should be that the flag is set, is on dotcom and only has one account. This prevents enterprise customers that are logged into multiple endpoints from seeing the CTA
     const isWorkspacesUpgradeCtaEnabled =
         useFeatureFlag(FeatureFlag.SourcegraphTeamsUpgradeCTA) &&
@@ -152,7 +171,7 @@ export const CodyPanel: FunctionComponent<CodyPanelProps> = ({
                     {view === View.Prompts && (
                         <PromptsTab IDE={clientCapabilities.agentIDE} setView={setView} />
                     )}
-                    {view === View.Settings && <SettingsTab />}
+                    {view === View.Settings && <ServerHome mcpServers={mcpServers} />}
                 </TabContainer>
                 <StateDebugOverlay />
             </TabRoot>

@@ -3,6 +3,7 @@ import type { Span } from '@opentelemetry/api'
 import type {} from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import type { ContextItemToolState } from '@sourcegraph/cody-shared/src/codebase-context/messages'
 import type { ContextRetriever } from '../ContextRetriever'
+import { MCPManager } from './MCPManager'
 import { diagnosticTool } from './diagnostic'
 import { editTool } from './edit'
 import { getFileTool } from './file'
@@ -55,9 +56,10 @@ export class AgentToolGroup {
     ): Promise<AgentToolGroup> {
         const baseInstance = AgentToolGroup.getInstance(agentId)
         const searchTool = await getCodebaseSearchTool(contextRetriever, span)
+        const mcpTools = MCPManager.tools
 
         // Create a new instance with all the tools
-        return new AgentToolGroup(agentId, [...baseInstance.tools, searchTool])
+        return new AgentToolGroup(agentId, [...baseInstance.tools, searchTool, ...mcpTools])
     }
 
     public static async getToolsByAgentId(
