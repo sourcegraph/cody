@@ -94,7 +94,6 @@ export const ModelSelectField: React.FunctionComponent<{
             showCodyProBadge,
             parentOnModelSelect,
             isCodyProUser,
-            intent,
         ]
     )
 
@@ -191,7 +190,9 @@ export const ModelSelectField: React.FunctionComponent<{
                         <div className="tw-pl-5 tw-pr-3 tw-py-1.5 tw-text-sm tw-text-foreground tw-flex tw-justify-center">
                             <div className="tw-flex tw-items-start tw-gap-2 tw-bg-muted tw-px-2 tw-py-0.5 tw-rounded">
                                 <AlertTriangleIcon className="tw-w-[16px] tw-h-[16px] tw-mt-[2px]" />
-                                <span className="tw-leading-4 tw-font-semibold">Only Claude 3.7 Sonnet is currently available in Agent Mode</span>
+                                <span className="tw-leading-4 tw-font-semibold">
+                                    Only Claude 3.7 Sonnet is currently available in Agent Mode
+                                </span>
                             </div>
                         </div>
                     )}
