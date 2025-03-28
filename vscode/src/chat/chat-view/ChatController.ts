@@ -1743,7 +1743,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     authStatus: () => authStatus,
                     transcript: () =>
                         this.chatBuilder.changes.pipe(map(chat => chat.getDehydratedMessages())),
-                    userHistory: () => chatHistory.changes,
+                    userHistory: () => chatHistory.lightweightChanges,
                     userProductSubscription: () =>
                         userProductSubscription.pipe(
                             map(value => (value === pendingOperation ? null : value))

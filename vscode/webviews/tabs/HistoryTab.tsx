@@ -1,4 +1,4 @@
-import type { CodyIDE, UserLocalHistory } from '@sourcegraph/cody-shared'
+import type { CodyIDE } from '@sourcegraph/cody-shared'
 import { useExtensionAPI, useObservable } from '@sourcegraph/prompt-editor'
 import { HistoryIcon, MessageSquarePlusIcon, TrashIcon } from 'lucide-react'
 import type React from 'react'
@@ -13,6 +13,10 @@ import { getVSCodeAPI } from '../utils/VSCodeApi'
 import { View } from './types'
 import { getCreateNewChatCommand } from './utils'
 
+import type {
+    LightweightChatHistory,
+    LightweightChatTranscript,
+} from '@sourcegraph/cody-shared/src/chat/transcript'
 import styles from './HistoryTab.module.css'
 
 interface HistoryTabProps {
@@ -25,10 +29,7 @@ interface HistoryTabProps {
 export const HistoryTab: React.FC<HistoryTabProps> = props => {
     const userHistory = useUserHistory()
 
-    const chats = useMemo(
-        () => (userHistory ? Object.values(userHistory.chat) : userHistory),
-        [userHistory]
-    )
+    const chats = useMemo(() => (userHistory ? Object.values(userHistory) : userHistory), [userHistory])
 
     return (
         <div className="tw-px-8 tw-pt-6 tw-pb-12 tw-overflow-y-scroll">
@@ -43,10 +44,14 @@ export const HistoryTab: React.FC<HistoryTabProps> = props => {
     )
 }
 
-export const HistoryTabWithData: React.FC<
-    HistoryTabProps & { chats: UserLocalHistory['chat'][string][] }
-> = ({ IDE, webviewType, multipleWebviewsEnabled, setView, chats }) => {
-    const nonEmptyChats = useMemo(() => chats.filter(chat => chat.interactions.length > 0), [chats])
+export const HistoryTabWithData: React.FC<HistoryTabProps & { chats: LightweightChatTranscript[] }> = ({
+    IDE,
+    webviewType,
+    multipleWebviewsEnabled,
+    setView,
+    chats,
+}) => {
+    const nonEmptyChats = useMemo(() => chats.filter(c => c?.firstHumanMessageText?.length), [chats])
 
     const onDeleteButtonClick = useCallback(
         (id: string) => {
@@ -77,26 +82,26 @@ export const HistoryTabWithData: React.FC<
         if (!searchTerm) {
             return nonEmptyChats
         }
-        //return the chats from nonEmptyChats where the humange messages contain the search term
+        // Search in chat titles or first message text
         return nonEmptyChats.filter(chat => {
-            return chat.interactions.some(c => {
-                return c.humanMessage?.text?.trim()?.toLowerCase()?.includes(searchTerm)
-            })
+            // Search in chat title if available
+            if (chat.chatTitle?.toLowerCase().includes(searchTerm)) {
+                return true
+            }
+            // Search in first message text if available
+            return chat.firstHumanMessageText?.toLowerCase().includes(searchTerm) || false
         })
     }, [nonEmptyChats, searchText])
 
     const sortedChatsByPeriod = useMemo(
         () =>
             Array.from(
-                filteredChats
-                    .filter(chat => chat.interactions.length)
-                    .reverse()
-                    .reduce((acc, chat) => {
-                        const period = getRelativeChatPeriod(new Date(chat.lastInteractionTimestamp))
-                        acc.set(period, [...(acc.get(period) || []), chat])
-                        return acc
-                    }, new Map<string, typeof filteredChats>())
-            ),
+                filteredChats.reverse().reduce((acc, chat) => {
+                    const period = getRelativeChatPeriod(new Date(chat.lastInteractionTimestamp))
+                    acc.set(period, [...(acc.get(period) || []), chat])
+                    return acc
+                }, new Map<string, LightweightChatTranscript[]>())
+            ) as [string, LightweightChatTranscript[]][],
         [filteredChats]
     )
 
@@ -111,54 +116,58 @@ export const HistoryTabWithData: React.FC<
                 />
             </div>
 
-            {sortedChatsByPeriod.map(([period, chats]) => (
-                <div key={period} className="tw-flex tw-flex-col">
-                    <h4 className="tw-font-semibold tw-text-muted-foreground tw-py-2 tw-my-4">
-                        {period}
-                    </h4>
-                    {chats.map(chat => {
-                        const id = chat.lastInteractionTimestamp
-                        const interactions = chat.interactions
-                        const chatTitle = chat.chatTitle
-                        const lastMessage =
-                            interactions[interactions.length - 1]?.humanMessage?.text?.trim()
-                        return (
-                            <div key={id} className={`tw-flex tw-flex-row tw-p-1 ${styles.historyRow}`}>
-                                <Button
-                                    variant="ghost"
-                                    className={`tw-text-left tw-truncate tw-w-full ${styles.historyItem}`}
-                                    onClick={() =>
-                                        getVSCodeAPI().postMessage({
-                                            command: 'restoreHistory',
-                                            chatID: id,
-                                        })
-                                    }
+            {sortedChatsByPeriod.map((periodData: [string, LightweightChatTranscript[]]) => {
+                const [period, chats] = periodData
+                return (
+                    <div key={period} className="tw-flex tw-flex-col">
+                        <h4 className="tw-font-semibold tw-text-muted-foreground tw-py-2 tw-my-4">
+                            {period}
+                        </h4>
+                        {chats.map((chat: LightweightChatTranscript) => {
+                            const id = chat.id
+                            const chatTitle = chat.chatTitle
+                            const lastMessage = chat.firstHumanMessageText
+                            return (
+                                <div
+                                    key={id}
+                                    className={`tw-flex tw-flex-row tw-p-1 ${styles.historyRow}`}
                                 >
-                                    <span className="tw-truncate tw-w-full">
-                                        {chatTitle || lastMessage}
-                                    </span>
-                                </Button>
-                                <Button
-                                    variant="ghost"
-                                    title="Delete chat"
-                                    aria-label="Delete chat"
-                                    className={`${styles.historyDeleteBtn}`}
-                                    onClick={() => onDeleteButtonClick(id)}
-                                    onKeyDown={() => onDeleteButtonClick(id)}
-                                >
-                                    <TrashIcon
-                                        className="tw-w-8 tw-h-8 tw-opacity-80"
-                                        size={16}
-                                        strokeWidth="1.25"
-                                    />
-                                </Button>
-                            </div>
-                        )
-                    })}
-                </div>
-            ))}
+                                    <Button
+                                        variant="ghost"
+                                        className={`tw-text-left tw-truncate tw-w-full ${styles.historyItem}`}
+                                        onClick={() =>
+                                            getVSCodeAPI().postMessage({
+                                                command: 'restoreHistory',
+                                                chatID: id,
+                                            })
+                                        }
+                                    >
+                                        <span className="tw-truncate tw-w-full">
+                                            {chatTitle || lastMessage}
+                                        </span>
+                                    </Button>
+                                    <Button
+                                        variant="ghost"
+                                        title="Delete chat"
+                                        aria-label="Delete chat"
+                                        className={`${styles.historyDeleteBtn}`}
+                                        onClick={() => onDeleteButtonClick(id)}
+                                        onKeyDown={() => onDeleteButtonClick(id)}
+                                    >
+                                        <TrashIcon
+                                            className="tw-w-8 tw-h-8 tw-opacity-80"
+                                            size={16}
+                                            strokeWidth="1.25"
+                                        />
+                                    </Button>
+                                </div>
+                            )
+                        })}
+                    </div>
+                )
+            })}
 
-            {nonEmptyChats.length === 0 && (
+            {!nonEmptyChats?.length && (
                 <div className="tw-flex tw-flex-col tw-items-center tw-mt-6">
                     <HistoryIcon
                         size={20}
@@ -191,7 +200,7 @@ export const HistoryTabWithData: React.FC<
     )
 }
 
-function useUserHistory(): UserLocalHistory | null | undefined {
+function useUserHistory(): LightweightChatHistory | null | undefined {
     const userHistory = useExtensionAPI().userHistory
     return useObservable(useMemo(() => userHistory(), [userHistory])).value
 }
