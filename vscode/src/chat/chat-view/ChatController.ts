@@ -743,7 +743,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             command,
             manuallySelectedIntent,
             model,
-            chatAgent,
         }: Parameters<typeof this.handleUserMessage>[0],
         span: Span
     ): Promise<void> {
@@ -762,7 +761,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             sessionID: this.chatBuilder.sessionID,
             traceId: span.spanContext().traceId,
             promptText: inputText,
-            chatAgent,
         })
         recorder.recordChatQuestionSubmitted(mentions)
 
@@ -770,7 +768,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
 
         this.postEmptyMessageInProgress(model)
 
-        const agent = getAgent(model, chatAgent ?? model, {
+        const agent = getAgent(model, manuallySelectedIntent, {
             contextRetriever: this.contextRetriever,
             editor: this.editor,
             chatClient: this.chatClient,
@@ -861,7 +859,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                         // In future work, we should remove this special-casing and unify
                         // how new messages are posted to the transcript.
 
-                        if (chatAgent === 'agentic') {
+                        if (manuallySelectedIntent === 'agentic') {
                             this.saveSession()
                         } else if (
                             messageInProgress &&
