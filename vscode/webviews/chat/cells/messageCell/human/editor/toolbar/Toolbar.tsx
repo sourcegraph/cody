@@ -143,7 +143,7 @@ export const Toolbar: FunctionComponent<{
                 <ModeSelectorField
                     className={className}
                     omniBoxEnabled={omniBoxEnabled}
-                    intent={intent}
+                    _intent={intent}
                     isDotComUser={userInfo?.isDotComUser}
                     isCodyProUser={userInfo?.isCodyProUser}
                     manuallySelectIntent={manuallySelectIntent}

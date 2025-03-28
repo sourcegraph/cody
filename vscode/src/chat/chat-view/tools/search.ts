@@ -28,28 +28,46 @@ export async function getCodebaseSearchTool(
             input_schema: zodToolSchema(CodeSearchSchema),
         },
         invoke: async (input: CodeSearchInput) => {
-            const validInput = validateWithZod(CodeSearchSchema, input, 'code_search')
-            const corpusItems = await firstValueFrom(getCorpusContextItemsForEditorState())
-            if (!corpusItems || corpusItems === pendingOperation)
+            const startTime = Date.now()
+            try {
+                const validInput = validateWithZod(CodeSearchSchema, input, 'code_search')
+                const corpusItems = await firstValueFrom(getCorpusContextItemsForEditorState())
+                if (!corpusItems || corpusItems === pendingOperation) {
+                    throw new Error('No corpus items available')
+                }
+
+                const repo = corpusItems.find(i => i.type === 'tree' || i.type === 'repository')
+                const mentions = repo ? [repo] : []
+
+                try {
+                    const searches = await contextRetriever.retrieveContext(
+                        toStructuredMentions(mentions),
+                        PromptString.unsafe_fromLLMResponse(validInput.query),
+                        span,
+                        // Create a new abort controller that doesn't propagate back
+                        new AbortController().signal,
+                        true
+                    )
+                    return createSearchToolStateItem(
+                        validInput.query,
+                        searches,
+                        UIToolStatus.Done,
+                        startTime
+                    )
+                } catch (error) {
+                    // Handle error from context retrieval
+                    throw new Error(`Context retrieval failed: ${error}`)
+                }
+            } catch (error) {
+                // Handle any other errors
                 return createSearchToolStateItem(
-                    validInput.query,
+                    input.query || 'unknown query',
                     [],
                     UIToolStatus.Error,
-                    'Codebase search failed.'
+                    startTime,
+                    `Tool error: ${error}`
                 )
-
-            const repo = corpusItems.find(i => i.type === 'tree' || i.type === 'repository')
-            const mentions = repo ? [repo] : []
-
-            const searches = await contextRetriever.retrieveContext(
-                toStructuredMentions(mentions),
-                PromptString.unsafe_fromLLMResponse(validInput.query),
-                span,
-                undefined,
-                true
-            )
-
-            return createSearchToolStateItem(validInput.query, searches)
+            }
         },
     }
 
@@ -60,8 +78,8 @@ export function createSearchToolStateItem(
     query: string,
     searchResults: ContextItem[],
     status: UIToolStatus = UIToolStatus.Done,
-    error?: string,
-    startTime?: number
+    startTime?: number,
+    error?: string
 ): ContextItemToolState {
     // Calculate duration if we have a start time
     const duration = startTime ? Date.now() - startTime : undefined
@@ -73,14 +91,18 @@ export function createSearchToolStateItem(
     const description = `Search for "${query}" (${searchResults.length} results)\n`
 
     // Group search results by file name with code content
-    const groupedResults = searchResults
-        .map(({ uri, content }) => {
-            if (!content?.length) return ''
-            const remote = !uri.scheme.startsWith('file') && uri.path?.split('/-/blob/')?.pop()
-            const filePath = remote || displayPath(uri)
-            return `\`\`\`${filePath}\n${content}\n\`\`\`\n`
-        })
-        .join('\n\n')
+    const isRemoteSearch = searchResults.some(r => r?.uri?.scheme === 'http')
+    const prefix = isRemoteSearch ? 'Remote search results:\n' : 'Search results:\n'
+    const groupedResults =
+        prefix +
+        searchResults
+            .map(({ uri, content }) => {
+                if (!content?.length) return ''
+                const remote = isRemoteSearch && uri.path?.split('/-/blob/')?.pop()
+                const filePath = remote || displayPath(uri)
+                return `\`\`\`${filePath}\n${content}\n\`\`\`\n`
+            })
+            .join('\n\n')
 
     return {
         type: 'tool-state',
@@ -94,7 +116,7 @@ export function createSearchToolStateItem(
         // ContextItemCommon properties
         uri,
         content: description + groupedResults + error,
-        title: 'Search Results',
+        title: query,
         description,
         source: ContextItemSource.Agentic,
         icon: 'search',

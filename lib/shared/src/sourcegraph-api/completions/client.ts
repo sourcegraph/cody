@@ -56,6 +56,13 @@ export abstract class SourcegraphCompletionsClient {
     }
 
     protected sendEvents(events: Event[], cb: CompletionCallbacks, span?: Span): void {
+        // If no events are provided, log a warning but don't throw an error
+        if (!events || events.length === 0) {
+            const warning = 'No usage data detected for completion request'
+            console.warn(warning)
+            return
+        }
+
         for (const event of events) {
             switch (event.type) {
                 case 'completion': {

@@ -102,7 +102,7 @@ object Utils {
                       !UpgradeToCodyProNotification.isFirstRLEOnAutomaticAutocompletionsShown) {
                     handleError(project, error)
                   }
-                } else if (result != null && result.items.isNotEmpty()) {
+                } else if (result != null && result.inlineCompletionItems.isNotEmpty()) {
                   UpgradeToCodyProNotification.isFirstRLEOnAutomaticAutocompletionsShown = false
                   UpgradeToCodyProNotification.autocompleteRateLimitError.set(null)
                   successCallback(result)

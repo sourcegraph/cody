@@ -1,6 +1,7 @@
 import fs from 'node:fs/promises'
 import path from 'node:path'
 import CanvasKitInit from 'canvaskit-wasm'
+import { isRunningInsideAgent } from '../../../../jsonrpc/isRunningInsideAgent'
 import type { CanvasKitType } from './types'
 
 let canvasKitInitPromise: Promise<void> | null = null
@@ -17,10 +18,10 @@ export let fontCache: ArrayBuffer | null = null
 async function initFont(): Promise<ArrayBuffer> {
     // Note: The font path will be slightly different in tests to production.
     // Relative to the test file for our tests, but relative to the dist directory in production
-    const fontPath =
-        process.env.NODE_ENV === 'test'
-            ? path.join(__dirname, '../../../../../resources/DejaVuSansMono.ttf')
-            : path.join(__dirname, 'DejaVuSansMono.ttf')
+    const isInDistDirectory = process.env.NODE_ENV !== 'test' || isRunningInsideAgent()
+    const fontPath = isInDistDirectory
+        ? path.join(__dirname, 'DejaVuSansMono.ttf')
+        : path.join(__dirname, '../../../../../resources/DejaVuSansMono.ttf')
 
     const buffer = await fs.readFile(fontPath)
     return new Uint8Array(buffer).buffer

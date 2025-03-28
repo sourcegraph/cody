@@ -1,14 +1,14 @@
 package com.sourcegraph.cody.config.ui
 
 import com.intellij.ide.plugins.CustomPluginRepositoryService
-import com.intellij.ide.plugins.PluginManagerConfigurable
+import com.intellij.ide.plugins.PluginManagerMain
 import com.intellij.notification.Notification
 import com.intellij.notification.NotificationAction
 import com.intellij.notification.NotificationType
 import com.intellij.notification.impl.NotificationFullContent
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.extensions.PluginId
-import com.intellij.openapi.options.ShowSettingsUtil
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.progress.Task
 import com.intellij.openapi.project.Project
@@ -25,7 +25,7 @@ class CheckUpdatesTask(project: Project) :
     val availableUpdate = getAvailablePluginDownloaders(indicator).find { it.id == pluginId }
     if (availableUpdate != null) {
       CustomPluginRepositoryService.getInstance().clearCache()
-      notifyAboutTheUpdate(project)
+      notifyAboutTheUpdate(project, availableUpdate, indicator)
     }
   }
 
@@ -58,17 +58,29 @@ class CheckUpdatesTask(project: Project) :
       return emptyList()
     }
 
-    fun notifyAboutTheUpdate(project: Project) {
+    fun notifyAboutTheUpdate(
+        project: Project,
+        pluginDownloader: PluginDownloader,
+        indicator: ProgressIndicator
+    ) {
       val notification =
           FullContent(
               NotificationGroups.CODY_UPDATES,
               "Update Available",
-              "A new version of Sourcegraph Cody + Code Search is available. Go to plugin settings to update.",
+              "A new version of Sourcegraph Cody + Code Search is available.",
               NotificationType.IDE_UPDATE)
       notification.addAction(
-          NotificationAction.createSimpleExpiring("Go to Plugins") {
-            ShowSettingsUtil.getInstance()
-                .showSettingsDialog(project, PluginManagerConfigurable::class.java)
+          NotificationAction.createSimpleExpiring("Update") {
+            ApplicationManager.getApplication().executeOnPooledThread {
+              try {
+                if (pluginDownloader.prepareToInstall(indicator)) {
+                  pluginDownloader.install()
+                  PluginManagerMain.notifyPluginsUpdated(project)
+                }
+              } catch (e: Exception) {
+                logger.warn("Error updating Cody plugin", e)
+              }
+            }
           })
       notification.notify(project)
     }

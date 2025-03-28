@@ -188,16 +188,15 @@ class CodyAgentClient(private val project: Project, private val webview: NativeW
 
       val authService = CodyAuthService.getInstance(project)
       if (params is ProtocolAuthenticatedAuthStatus) {
-        SentryService.setUser(params.primaryEmail, params.username)
+        SentryService.getInstance().setUser(params.primaryEmail, params.username)
         authService.setActivated(true)
         authService.setEndpoint(SourcegraphServerPath(params.endpoint))
-        CodyStatusService.resetApplication(project)
       } else if (params is ProtocolUnauthenticatedAuthStatus) {
-        SentryService.setUser(null, null)
+        SentryService.getInstance().setUser(null, null)
         authService.setActivated(false)
         authService.setEndpoint(SourcegraphServerPath(params.endpoint))
-        CodyStatusService.resetApplication(project)
       }
+      CodyStatusService.resetApplication(project)
     }
   }
 

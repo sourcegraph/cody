@@ -1,18 +1,32 @@
 import type * as vscode from 'vscode'
 
+/**
+ * Represents a decoration with associated text content.
+ * We support an additional field `text` to allow the decoration content to be hoisted up
+ * and made generic for clients that do not support decorations.
+ */
+export interface AutoEditDecoration extends vscode.DecorationOptions {
+    /**
+     * The content of the text to be inserted, without any special formatting that is
+     * specific to VS Code decorations. This is used to produce a generic representation
+     * of the decoration content for non-VS Code clients.
+     */
+    text: string
+}
+
 export interface AutoEditDecorations {
     /**
      * Decorations to represent text to be inserted
      */
-    insertionDecorations: vscode.DecorationOptions[]
+    insertionDecorations: AutoEditDecoration[]
     /**
      * Decorations to represent text to be deleted
      */
-    deletionDecorations: vscode.DecorationOptions[]
+    deletionDecorations: AutoEditDecoration[]
     /**
      * Decorations to represent the start point for the overall change.
      */
-    insertMarkerDecorations: vscode.DecorationOptions[]
+    insertMarkerDecorations: AutoEditDecoration[]
 }
 
 /**

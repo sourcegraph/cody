@@ -23,7 +23,7 @@ import { autocompleteStageCounterLogger } from '../services/autocomplete-stage-c
 import { recordExposedExperimentsToSpan } from '../services/open-telemetry/utils'
 
 import { AuthError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
-import { AutoEditBetaOnboarding } from '../autoedits/autoedit-onboarding'
+import { autoeditsOnboarding } from '../autoedits/autoedit-onboarding'
 import { ContextRankingStrategy } from '../completions/context/completions-context-ranker'
 import type { CompletionBookkeepingEvent, CompletionItemID, CompletionLogID } from './analytics-logger'
 import * as CompletionAnalyticsLogger from './analytics-logger'
@@ -143,9 +143,7 @@ export class InlineCompletionItemProvider
     }: CodyCompletionItemProviderConfig) {
         // Show the autoedit onboarding message if the user hasn't enabled autoedits
         // but is eligible to use them as an alternative to autocomplete
-        const autoeditsOnboarding = new AutoEditBetaOnboarding()
         autoeditsOnboarding.enrollUserToAutoEditBetaIfEligible()
-        this.disposables.push(autoeditsOnboarding)
 
         // This is a static field to allow for easy access in the static `configuration` getter.
         // There must only be one instance of this class at a time.
@@ -164,7 +162,7 @@ export class InlineCompletionItemProvider
         this.disposables.push(
             subscriptionDisposable(
                 featureFlagProvider
-                    .evaluatedFeatureFlag(FeatureFlag.CodyAutocompleteTracing)
+                    .evaluateFeatureFlag(FeatureFlag.CodyAutocompleteTracing)
                     .subscribe(shouldSample => {
                         this.shouldSample = Boolean(shouldSample)
                     })

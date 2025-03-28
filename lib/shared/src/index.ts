@@ -192,10 +192,18 @@ export {
     type FeatureFlagProvider,
     featureFlagProvider,
 } from './experimentation/FeatureFlagProvider'
-export { GuardrailsPost } from './guardrails'
-export type { Attribution, Guardrails } from './guardrails'
-export { SourcegraphGuardrailsClient } from './guardrails/client'
+export type {
+    Guardrails,
+    GuardrailsResult,
+    GuardrailsStatusError,
+    GuardrailsStatusFailed,
+    GuardrailsStatusIndeterminate,
+    GuardrailsStatusSuccess,
+    GuardrailsResultSink,
+} from './guardrails'
+export { createGuardrailsImpl, GuardrailsMode, GuardrailsCheckStatus } from './guardrails'
 export type { GuardrailsClientConfig } from './guardrails/client'
+export { SourcegraphGuardrailsClient } from './guardrails/client'
 export {
     CompletionStopReason,
     type CodeCompletionsClient,
@@ -384,6 +392,7 @@ export {
     WEB_PROVIDER_URI,
     GIT_OPENCTX_PROVIDER_URI,
     CODE_SEARCH_PROVIDER_URI,
+    GLOBAL_SEARCH_PROVIDER_URI,
     currentOpenCtxController,
     RULES_PROVIDER_URI,
 } from './context/openctx/api'

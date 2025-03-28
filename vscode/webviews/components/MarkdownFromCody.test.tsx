@@ -52,14 +52,14 @@ describe('MarkdownFromCody', () => {
           "<h1>This is a heading</h1>
           <h2>This is a subheading</h2>
           <p>Some text\nin the same paragraph\nwith a <a href="">link</a>.</p>
-          <pre><code class="hljs language-ts"><span class="hljs-keyword">const</span> someTypeScriptCode = <span class="hljs-title function_">funcCall</span>()
+          <pre><code class="hljs language-ts" data-language="ts"><span class="hljs-keyword">const</span> someTypeScriptCode = <span class="hljs-title function_">funcCall</span>()
           </code></pre>
           <ul>
           <li>bullet list item 1</li>
           <li>bullet list item 2</li>
           </ul>
           <ol>
-          <li>item 1\n<pre><code class="hljs language-ts"><span class="hljs-keyword">const</span> codeInsideTheBulletPoint = <span class="hljs-string">"string"</span>
+          <li>item 1\n<pre><code class="hljs language-ts" data-language="ts"><span class="hljs-keyword">const</span> codeInsideTheBulletPoint = <span class="hljs-string">"string"</span>
           </code></pre>
           </li>
           <li>item 2</li>

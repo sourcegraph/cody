@@ -1,13 +1,13 @@
 import type { ContextItemToolState } from '@sourcegraph/cody-shared/src/codebase-context/messages'
-import { type FC, useCallback, useMemo } from 'react'
+import { type FC, useCallback } from 'react'
 import type { URI } from 'vscode-uri'
 import { Skeleton } from '../../../components/shadcn/ui/skeleton'
-import type { VSCodeWrapper } from '../../../utils/VSCodeApi'
+import { type VSCodeWrapper, getVSCodeAPI } from '../../../utils/VSCodeApi'
 import { DiffCell } from './DiffCell'
 import { FileCell } from './FileCell'
 import { OutputStatusCell } from './OutputStatusCell'
 import { SearchResultsCell } from './SearchResultsCell'
-import { TerminalOutputCell, convertToTerminalLines } from './TerminalOutputCell'
+import { TerminalOutputCell } from './TerminalOutputCell'
 
 export interface ToolStatusProps {
     title: string
@@ -18,13 +18,12 @@ export interface ToolStatusProps {
     vscodeAPI?: VSCodeWrapper
 }
 
-export const ToolStatusCell: FC<ToolStatusProps> = ({ title, output, vscodeAPI }) => {
-    const onFileLinkClicked = useCallback(
-        (uri: URI) => {
-            vscodeAPI?.postMessage({ command: 'openFileLink', uri })
-        },
-        [vscodeAPI]
-    )
+export const ToolStatusCell: FC<ToolStatusProps> = ({ title, output }) => {
+    const onFileLinkClicked = useCallback((uri: URI) => {
+        // Fixes an issue where the link is not getting sent to the extension host
+        // when the api is not available on the first render
+        getVSCodeAPI()?.postMessage({ command: 'openFileLink', uri })
+    }, [])
 
     if (!title || !output) {
         return (
@@ -41,7 +40,7 @@ export const ToolStatusCell: FC<ToolStatusProps> = ({ title, output, vscodeAPI }
     if (output?.outputType === 'search-result' && output.searchResultItems) {
         return (
             <SearchResultsCell
-                query={output.title || ''}
+                query={output.title || 'Search result'}
                 results={output.searchResultItems}
                 onFileLinkClicked={onFileLinkClicked}
             />
@@ -53,12 +52,7 @@ export const ToolStatusCell: FC<ToolStatusProps> = ({ title, output, vscodeAPI }
     }
 
     if (output?.outputType === 'terminal-output') {
-        const lines = useMemo(
-            () => (output.content ? convertToTerminalLines(output.content) : []),
-            [output.content]
-        )
-
-        return <TerminalOutputCell lines={lines} />
+        return <TerminalOutputCell command={title} item={output} />
     }
 
     return <OutputStatusCell item={output} />

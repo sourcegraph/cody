@@ -43,7 +43,6 @@ import RemoteFileProvider, { createRemoteFileProvider } from './openctx/remoteFi
 import RemoteRepositorySearch, { createRemoteRepositoryProvider } from './openctx/remoteRepositorySearch'
 import { createRulesProvider } from './openctx/rules'
 import { createWebProvider } from './openctx/web'
-
 /**
  * DO NOT USE except in `main.ts` initial activation. Instead, ise the global `openctxController`
  * observable to obtain the OpenCtx controller.
@@ -115,7 +114,7 @@ export function getOpenCtxProviders(
         resolvedConfig.pipe(pluck('configuration'), distinctUntilChanged()),
         clientConfigChanges,
         authStatusChanges,
-        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.GitMentionProvider),
+        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.GitMentionProvider),
         authStatusChanges.pipe(
             map(auth => auth.authenticated),
             switchMap(authenticated =>

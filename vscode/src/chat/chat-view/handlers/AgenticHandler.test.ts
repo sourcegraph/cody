@@ -26,8 +26,8 @@ vi.mock('../prompts', () => ({
 describe('AgenticHandler', () => {
     // Mock dependencies
     const mockContextRetriever = {
-        retrieveContext: vi.fn(),
-        computeDidYouMean: vi.fn(),
+        retrieveContext: vi.fn().mockResolvedValue([]),
+        computeDidYouMean: vi.fn().mockResolvedValue(undefined),
     }
 
     const mockEditor = {} as any
@@ -130,7 +130,8 @@ describe('AgenticHandler', () => {
             mockDelegate,
             mockRecorder,
             mockSpan,
-            abortController.signal
+            abortController.signal,
+            expect.any(Array) // contextItems
         )
 
         // Verify delegate.postDone was called

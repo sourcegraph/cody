@@ -13,14 +13,14 @@ open class AutocompleteActionHandler : EditorActionHandler() {
 
   override fun isEnabledForCaret(editor: Editor, caret: Caret, dataContext: DataContext?): Boolean {
     // Returns false to fall back to normal action if there is no suggestion at the caret.
-    return CodyEditorUtil.isEditorInstanceSupported(editor) && hasAnyAutocompleteItems(caret)
+    return CodyEditorUtil.isEditorInstanceSupported(editor) && hasAnyAutocompleteItems(editor)
   }
 
-  private fun hasAnyAutocompleteItems(caret: Caret): Boolean =
-      getCurrentAutocompleteItem(caret) != null
+  private fun hasAnyAutocompleteItems(editor: Editor): Boolean =
+      getCurrentAutocompleteItem(editor) != null
 
-  private fun getAutocompleteRenderers(caret: Caret): List<CodyAutocompleteElementRenderer> =
-      InlayModelUtil.getAllInlaysForEditor(caret.editor)
+  private fun getAutocompleteRenderers(editor: Editor): List<CodyAutocompleteElementRenderer> =
+      InlayModelUtil.getAllInlaysForEditor(editor)
           .map { it.renderer }
           .filterIsInstance<CodyAutocompleteElementRenderer>()
 
@@ -33,11 +33,11 @@ open class AutocompleteActionHandler : EditorActionHandler() {
    * ` System.out.println("a: CARET"); // original System.out.println("a: " + a);CARET //
    * autocomplete ` *
    */
-  protected fun getCurrentAutocompleteItem(caret: Caret): AutocompleteItem? =
-      getAutocompleteRenderers(caret).firstNotNullOfOrNull { it.completionItems.firstOrNull() }
+  protected fun getCurrentAutocompleteItem(editor: Editor): AutocompleteItem? =
+      getAutocompleteRenderers(editor).firstNotNullOfOrNull { it.completionItems.firstOrNull() }
 
-  protected fun getAllAutocompleteItems(caret: Caret): List<AutocompleteItem> =
-      getAutocompleteRenderers(caret).flatMap { it.completionItems }.distinct()
+  protected fun getAllAutocompleteItems(editor: Editor): List<AutocompleteItem> =
+      getAutocompleteRenderers(editor).flatMap { it.completionItems }.distinct()
 
   protected fun getSingleCaret(editor: Editor): Caret? {
     val allCarets = editor.caretModel.allCarets
