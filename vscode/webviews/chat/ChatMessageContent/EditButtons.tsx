@@ -333,7 +333,7 @@ export function createExecuteButton(command: string): React.ReactElement {
             <div className={styles.iconContainer}>
                 <i className="codicon codicon-terminal tw-align-middle" />
             </div>
-            Send command to Terminal
+            Run
         </button>
     )
 }
