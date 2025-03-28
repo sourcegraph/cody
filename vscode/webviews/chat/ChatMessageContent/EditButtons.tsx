@@ -2,7 +2,6 @@ import clsx from 'clsx'
 import type React from 'react'
 import { useCallback, useState } from 'react'
 import { CodyTaskState } from '../../../src/non-stop/state'
-// TODO: Do these simply duplicate lucide-react icons, can we use them instead?
 import {
     CheckCodeBlockIcon,
     CloseIcon,
@@ -15,38 +14,40 @@ import {
     SyncSpinIcon,
     TickIcon,
 } from '../../icons/CodeBlockActionIcons'
-import { getVSCodeAPI } from '../../utils/VSCodeApi'
-//import type { Config } from '../../utils/useConfig'
-//import type { PriorHumanMessageInfo } from '../cells/messageCell/assistant/AssistantMessageCell'
 import type { CodeBlockActionsProps } from './ChatMessageContent'
 import styles from './ChatMessageContent.module.css'
 
 export type CreateEditButtonsParams = {
-    hasEditIntent: boolean
     // TODO: Remove this when there is a portable abstraction for popup menus, instead of special-casing VSCode.
     isVSCode: boolean
     preText: string
     copyButtonOnSubmit?: CodeBlockActionsProps['copyButtonOnSubmit']
     onInsert?: CodeBlockActionsProps['insertButtonOnSubmit']
     onSmartApply?: () => void
+    onExecute?: () => void
     smartApply?: CodeBlockActionsProps['smartApply']
     smartApplyId?: string
     smartApplyState?: CodyTaskState
     isCodeComplete: boolean
     fileName?: string
-    isShellCommand: boolean
 }
 
 export function createEditButtons(params: CreateEditButtonsParams): React.ReactElement {
     return params.smartApply
         ? createEditButtonsSmartApply(params)
-        : createEditButtonsBasic(params.preText, params.copyButtonOnSubmit, params.onInsert)
+        : createEditButtonsBasic(
+              params.preText,
+              params.copyButtonOnSubmit,
+              params.onInsert,
+              params.onExecute
+          )
 }
 
 export function createEditButtonsBasic(
     preText: string,
     copyButtonOnSubmit?: CodeBlockActionsProps['copyButtonOnSubmit'],
-    insertButtonOnSubmit?: CodeBlockActionsProps['insertButtonOnSubmit']
+    insertButtonOnSubmit?: CodeBlockActionsProps['insertButtonOnSubmit'],
+    onExecute?: () => void
 ): React.ReactElement {
     if (!copyButtonOnSubmit) {
         return <div />
@@ -84,6 +85,7 @@ export function createEditButtonsBasic(
                     )}
                 </div>
             )}
+            {onExecute && createExecuteButton(onExecute)}
         </>
     )
 }
@@ -101,70 +103,64 @@ function getLineChanges(text: string): { additions: number; deletions: number } 
     return { additions, deletions }
 }
 
+export function createAdditionsDeletions({
+    hasEditIntent,
+    preText,
+}: { hasEditIntent: boolean; preText: string }): React.ReactElement {
+    const { additions, deletions } = getLineChanges(preText)
+    const hasAdditionsDeletions = hasEditIntent && (additions >= 0 || deletions >= 0)
+
+    return (
+        <div>
+            {hasAdditionsDeletions && (
+                <>
+                    <span className={clsx(styles.addition, styles.stats)}>+{additions}</span>,{' '}
+                    <span className={styles.deletion}>-{deletions}</span>
+                </>
+            )}
+        </div>
+    )
+}
+
 export function createEditButtonsSmartApply({
     preText,
-    hasEditIntent,
     isVSCode,
-    isShellCommand,
     copyButtonOnSubmit,
     onInsert,
     onSmartApply,
+    onExecute,
     smartApply,
     smartApplyId,
     smartApplyState,
 }: CreateEditButtonsParams): React.ReactElement {
-    const { additions, deletions } = getLineChanges(preText)
-    const hasAdditionsDeletions = hasEditIntent && (additions >= 0 || deletions >= 0)
-
-    const preview = hasAdditionsDeletions && (
-        <div className={styles.buttonContainer}>
-            <div>
-                {hasAdditionsDeletions && (
-                    <>
-                        <span className={clsx(styles.addition, styles.stats)}>+{additions}</span>,{' '}
-                        <span className={styles.deletion}>-{deletions}</span>
-                    </>
-                )}
-            </div>
-        </div>
-    )
-
     const copyButton = createCopyButton(preText, copyButtonOnSubmit ?? (() => {}))
 
-    const buttons = (
-        <div className={styles.buttonContainer}>
-            <div className={styles.buttons}>
-                {smartApplyState !== CodyTaskState.Applied && copyButtonOnSubmit && copyButton}
-                {smartApply && smartApplyId && smartApplyState === CodyTaskState.Applied && (
-                    <>
-                        {createAcceptButton(smartApplyId, smartApply)}
-                        {createRejectButton(smartApplyId, smartApply)}
-                    </>
-                )}
-                {smartApply && smartApplyId && smartApplyState !== CodyTaskState.Applied && (
-                    <>
-                        {isShellCommand && isVSCode && createExecuteButton(preText)}
-                        {!isShellCommand &&
-                            onSmartApply &&
-                            createApplyButton(onSmartApply, smartApplyState)}
-                    </>
-                )}
-                {isVSCode && createActionsDropdown(preText)}
-                {!isVSCode && (
-                    <>
-                        {createInsertButton(preText, onInsert)}
-                        {createSaveButton(preText, onInsert)}
-                    </>
-                )}
-            </div>
-        </div>
-    )
-
     return (
-        <div>
-            {preview}
-            {buttons}
-        </div>
+        <>
+            {smartApplyState !== CodyTaskState.Applied && copyButtonOnSubmit && copyButton}
+            {smartApply && smartApplyId && smartApplyState === CodyTaskState.Applied && (
+                <>
+                    {createAcceptButton(smartApplyId, smartApply)}
+                    {createRejectButton(smartApplyId, smartApply)}
+                </>
+            )}
+            {smartApplyState !== CodyTaskState.Applied && (
+                <>
+                    {onExecute && isVSCode && createExecuteButton(onExecute)}
+                    {!onExecute &&
+                        smartApply &&
+                        onSmartApply &&
+                        createApplyButton(onSmartApply, smartApplyState)}
+                </>
+            )}
+            {isVSCode && createActionsDropdown(preText)}
+            {!isVSCode && (
+                <>
+                    {createInsertButton(preText, onInsert)}
+                    {createSaveButton(preText, onInsert)}
+                </>
+            )}
+        </>
     )
 }
 
@@ -311,29 +307,13 @@ function createApplyButton(
 /**
  * Creates a button that sends the command to the editor terminal on click.
  *
- * @param command - The command to be executed when the button is clicked.
+ * @param onExecute - the callback to run when the button is clicked.
  */
-export function createExecuteButton(command: string): React.ReactElement {
-    const handleClick = useCallback(
-        () =>
-            getVSCodeAPI().postMessage({
-                command: 'command',
-                id: 'cody.terminal.execute',
-                arg: command.trim(),
-            }),
-        [command]
-    )
+export function createExecuteButton(onExecute: () => void): React.ReactElement {
     return (
-        <button
-            type="button"
-            className={styles.button}
-            onClick={handleClick}
-            title="Execute in Terminal"
-        >
-            <div className={styles.iconContainer}>
-                <i className="codicon codicon-terminal tw-align-middle" />
-            </div>
-            Send command to Terminal
+        <button type="button" className={styles.button} onClick={onExecute} title="Execute in Terminal">
+            <div className={clsx(styles.iconContainer, 'tw-align-middle codicon codicon-terminal')} />
+            Execute
         </button>
     )
 }
