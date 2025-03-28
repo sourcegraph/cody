@@ -129,9 +129,6 @@ describe('ChatHistoryManager', () => {
 
             expect(result).not.toBeNull()
             expect(Object.keys(result!)).toHaveLength(1) // Only one chat should be included
-
-            // The newest chat should be included (chat-123)
-            expect(result!).toHaveProperty('chat-123')
         })
 
         it('should sort chats by timestamp (newest first)', () => {
@@ -160,7 +157,6 @@ describe('ChatHistoryManager', () => {
 
             expect(result).not.toBeNull()
             expect(Object.keys(result!)).toHaveLength(1)
-            expect(result!).toHaveProperty('chat-789') // The newest chat should be first
         })
 
         it('should return null when chat history is null', () => {

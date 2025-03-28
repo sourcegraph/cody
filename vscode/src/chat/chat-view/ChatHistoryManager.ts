@@ -66,23 +66,25 @@ class ChatHistoryManager implements vscode.Disposable {
         // Convert full history to lightweight history
         const lightweightHistory: LightweightChatHistory = {}
 
-        // Get all chat IDs, sort by timestamp (newest first), and limit
-        let chatIDs = Object.keys(history.chat).sort((a, b) => {
+        // Get all chat IDs and filter out empty chats first
+        let chatIDs = Object.keys(history.chat).filter(
+            chatID => history.chat[chatID]?.interactions?.[0]?.humanMessage?.text
+        )
+
+        // Sort by timestamp (newest first)
+        chatIDs = chatIDs.sort((a, b) => {
             const timestampA = new Date(history.chat[a].lastInteractionTimestamp).getTime()
             const timestampB = new Date(history.chat[b].lastInteractionTimestamp).getTime()
             return timestampA - timestampB // Descending order (newest first)
         })
 
+        // Apply limit after filtering
         if (limit) {
             chatIDs = chatIDs.slice(0, limit)
         }
 
         // Convert each chat to lightweight format
         for (const chatID of chatIDs) {
-            // Skip empty chats
-            if (!history.chat[chatID]?.interactions?.[0]?.humanMessage?.text) {
-                continue
-            }
             lightweightHistory[chatID] = toLightweightChatTranscript(history.chat[chatID])
         }
 
