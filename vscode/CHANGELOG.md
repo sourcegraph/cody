@@ -4,6 +4,25 @@ This is a log of all notable changes to Cody for VS Code.
 
 <!--- {/_ CHANGELOG_START _/} -->
 
+## 1.80.1
+
+### Fix
+
+#### Chat
+
+- Completely disable Swift tree-sitter parsing due to VS Code 1.98+ crash [#7609](https://github.com/sourcegraph/cody/pull/7609)
+
+### Reverts
+
+  There were no reverts for this release
+
+### Uncategorized
+
+#### Others
+
+- Changelog for 1.80.0 [#7572](https://github.com/sourcegraph/cody/pull/7572)
+
+
 ## 1.80.0
 
 ### Features
