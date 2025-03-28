@@ -6,7 +6,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { CodyTaskState } from '../../src/non-stop/state'
 import type { CodeBlockActionsProps } from '../chat/ChatMessageContent/ChatMessageContent'
 import styles from '../chat/ChatMessageContent/ChatMessageContent.module.css'
-import { createEditButtons, createExecuteButton } from '../chat/ChatMessageContent/EditButtons'
+import { createEditButtons } from '../chat/ChatMessageContent/EditButtons'
 import { getCodeBlockId } from '../chat/ChatMessageContent/utils'
 import { type ClientActionListener, useClientActionListener } from '../client/clientState'
 import { useConfig } from '../utils/useConfig'
@@ -127,6 +127,10 @@ export const RichCodeBlock: React.FC<RichCodeBlockProps> = ({
         )
     )
 
+    const onExecuteThisScript = useCallback(() => {
+        onExecute?.(code)
+    }, [onExecute, code])
+
     const actionButtons = (
         <div className={styles.actionButtons}>
             {isCodeComplete &&
@@ -137,15 +141,13 @@ export const RichCodeBlock: React.FC<RichCodeBlockProps> = ({
                     copyButtonOnSubmit: onCopy,
                     onInsert,
                     onSmartApply,
+                    onExecute: onExecute && onExecuteThisScript,
                     smartApply,
                     smartApplyId: thisTaskId,
                     smartApplyState,
                     isCodeComplete,
                     fileName,
-                    isShellCommand,
                 })}
-
-            {isCodeComplete && isShellCommand && onExecute && createExecuteButton(code)}
         </div>
     )
 

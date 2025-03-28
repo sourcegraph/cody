@@ -2,7 +2,6 @@ import clsx from 'clsx'
 import type React from 'react'
 import { useCallback, useState } from 'react'
 import { CodyTaskState } from '../../../src/non-stop/state'
-// TODO: Do these simply duplicate lucide-react icons, can we use them instead?
 import {
     CheckCodeBlockIcon,
     CloseIcon,
@@ -15,9 +14,6 @@ import {
     SyncSpinIcon,
     TickIcon,
 } from '../../icons/CodeBlockActionIcons'
-import { getVSCodeAPI } from '../../utils/VSCodeApi'
-//import type { Config } from '../../utils/useConfig'
-//import type { PriorHumanMessageInfo } from '../cells/messageCell/assistant/AssistantMessageCell'
 import type { CodeBlockActionsProps } from './ChatMessageContent'
 import styles from './ChatMessageContent.module.css'
 
@@ -29,24 +25,30 @@ export type CreateEditButtonsParams = {
     copyButtonOnSubmit?: CodeBlockActionsProps['copyButtonOnSubmit']
     onInsert?: CodeBlockActionsProps['insertButtonOnSubmit']
     onSmartApply?: () => void
+    onExecute?: () => void
     smartApply?: CodeBlockActionsProps['smartApply']
     smartApplyId?: string
     smartApplyState?: CodyTaskState
     isCodeComplete: boolean
     fileName?: string
-    isShellCommand: boolean
 }
 
 export function createEditButtons(params: CreateEditButtonsParams): React.ReactElement {
     return params.smartApply
         ? createEditButtonsSmartApply(params)
-        : createEditButtonsBasic(params.preText, params.copyButtonOnSubmit, params.onInsert)
+        : createEditButtonsBasic(
+              params.preText,
+              params.copyButtonOnSubmit,
+              params.onInsert,
+              params.onExecute
+          )
 }
 
 export function createEditButtonsBasic(
     preText: string,
     copyButtonOnSubmit?: CodeBlockActionsProps['copyButtonOnSubmit'],
-    insertButtonOnSubmit?: CodeBlockActionsProps['insertButtonOnSubmit']
+    insertButtonOnSubmit?: CodeBlockActionsProps['insertButtonOnSubmit'],
+    onExecute?: () => void
 ): React.ReactElement {
     if (!copyButtonOnSubmit) {
         return <div />
@@ -84,6 +86,7 @@ export function createEditButtonsBasic(
                     )}
                 </div>
             )}
+            {onExecute && createExecuteButton(onExecute)}
         </>
     )
 }
@@ -105,10 +108,10 @@ export function createEditButtonsSmartApply({
     preText,
     hasEditIntent,
     isVSCode,
-    isShellCommand,
     copyButtonOnSubmit,
     onInsert,
     onSmartApply,
+    onExecute,
     smartApply,
     smartApplyId,
     smartApplyState,
@@ -141,10 +144,11 @@ export function createEditButtonsSmartApply({
                         {createRejectButton(smartApplyId, smartApply)}
                     </>
                 )}
-                {smartApply && smartApplyId && smartApplyState !== CodyTaskState.Applied && (
+                {smartApplyState !== CodyTaskState.Applied && (
                     <>
-                        {isShellCommand && isVSCode && createExecuteButton(preText)}
-                        {!isShellCommand &&
+                        {onExecute && isVSCode && createExecuteButton(onExecute)}
+                        {!onExecute &&
+                            smartApply &&
                             onSmartApply &&
                             createApplyButton(onSmartApply, smartApplyState)}
                     </>
@@ -311,25 +315,11 @@ function createApplyButton(
 /**
  * Creates a button that sends the command to the editor terminal on click.
  *
- * @param command - The command to be executed when the button is clicked.
+ * @param onExecute - the callback to run when the button is clicked.
  */
-export function createExecuteButton(command: string): React.ReactElement {
-    const handleClick = useCallback(
-        () =>
-            getVSCodeAPI().postMessage({
-                command: 'command',
-                id: 'cody.terminal.execute',
-                arg: command.trim(),
-            }),
-        [command]
-    )
+export function createExecuteButton(onExecute: () => void): React.ReactElement {
     return (
-        <button
-            type="button"
-            className={styles.button}
-            onClick={handleClick}
-            title="Execute in Terminal"
-        >
+        <button type="button" className={styles.button} onClick={onExecute} title="Execute in Terminal">
             <div className={styles.iconContainer}>
                 <i className="codicon codicon-terminal tw-align-middle" />
             </div>
