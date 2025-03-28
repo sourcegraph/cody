@@ -51,7 +51,7 @@ export const HistoryTabWithData: React.FC<HistoryTabProps & { chats: Lightweight
     setView,
     chats,
 }) => {
-    const nonEmptyChats = useMemo(() => chats, [chats])
+    const nonEmptyChats = useMemo(() => chats.filter(c => c?.firstHumanMessageText?.length), [chats])
 
     const onDeleteButtonClick = useCallback(
         (id: string) => {
@@ -167,7 +167,7 @@ export const HistoryTabWithData: React.FC<HistoryTabProps & { chats: Lightweight
                 )
             })}
 
-            {nonEmptyChats.length === 0 && (
+            {!nonEmptyChats?.length && (
                 <div className="tw-flex tw-flex-col tw-items-center tw-mt-6">
                     <HistoryIcon
                         size={20}
