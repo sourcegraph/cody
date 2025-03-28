@@ -32,7 +32,7 @@ export enum SupportedLanguage {
     rust = 'rust',
     scala = 'scala',
     shellscript = 'bash',
-    swift = 'swift',
+    // swift = 'swift',
     typescript = 'typescript',
     typescriptreact = 'typescriptreact',
 }
@@ -63,7 +63,9 @@ export const DOCUMENT_LANGUAGE_TO_GRAMMAR: Record<SupportedLanguage, string> = {
     [SupportedLanguage.rust]: 'tree-sitter-rust.wasm',
     [SupportedLanguage.scala]: 'tree-sitter-scala.wasm',
     [SupportedLanguage.shellscript]: 'tree-sitter-bash.wasm',
-    [SupportedLanguage.swift]: 'tree-sitter-swift.wasm',
+    // CODY-5459: Swift grammar is not working with VSCode 1.98+
+    // TODO: Fix Swift grammar crash of extension host
+    // [SupportedLanguage.swift]: 'tree-sitter-swift.wasm',
     [SupportedLanguage.typescript]: 'tree-sitter-typescript.wasm',
     [SupportedLanguage.typescriptreact]: 'tree-sitter-tsx.wasm',
 } as const
