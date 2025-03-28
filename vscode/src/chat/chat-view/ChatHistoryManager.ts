@@ -56,7 +56,7 @@ class ChatHistoryManager implements vscode.Disposable {
      */
     public getLightweightHistory(
         authStatus: Pick<AuthenticatedAuthStatus, 'endpoint' | 'username'>,
-        limit = 20
+        limit?: number
     ): LightweightChatHistory | null {
         const history = this.getLocalHistory(authStatus)
         if (!history?.chat) {
@@ -67,18 +67,20 @@ class ChatHistoryManager implements vscode.Disposable {
         const lightweightHistory: LightweightChatHistory = {}
 
         // Get all chat IDs, sort by timestamp (newest first), and limit
-        const chatIDs = Object.keys(history.chat)
-            .sort((a, b) => {
-                const timestampA = new Date(history.chat[a].lastInteractionTimestamp).getTime()
-                const timestampB = new Date(history.chat[b].lastInteractionTimestamp).getTime()
-                return timestampB - timestampA // Descending order (newest first)
-            })
-            .slice(0, limit)
+        let chatIDs = Object.keys(history.chat).sort((a, b) => {
+            const timestampA = new Date(history.chat[a].lastInteractionTimestamp).getTime()
+            const timestampB = new Date(history.chat[b].lastInteractionTimestamp).getTime()
+            return timestampA - timestampB // Descending order (newest first)
+        })
+
+        if (limit) {
+            chatIDs = chatIDs.slice(0, limit)
+        }
 
         // Convert each chat to lightweight format
         for (const chatID of chatIDs) {
-            if (!history.chat[chatID]?.interactions?.length) {
-                // Remove empty chats
+            // Skip empty chats
+            if (!history.chat[chatID]?.interactions?.[0]?.humanMessage?.text) {
                 continue
             }
             lightweightHistory[chatID] = toLightweightChatTranscript(history.chat[chatID])

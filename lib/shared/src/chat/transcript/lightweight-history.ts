@@ -33,11 +33,13 @@ export function toLightweightChatTranscript(
     transcript: SerializedChatTranscript
 ): LightweightChatTranscript {
     // Extract the first human message text to use as a fallback title
-    const firstHumanMessage = transcript.interactions.find(i => !!i.humanMessage?.text)?.humanMessage
+    const firstHumanMessage = transcript.interactions.find(
+        i => !!transcript.chatTitle || !!i.humanMessage?.editorState
+    )?.humanMessage
 
     return {
         id: transcript.id,
-        chatTitle: transcript.chatTitle || firstHumanMessage?.text || 'Untitled',
+        chatTitle: transcript.chatTitle || firstHumanMessage?.text,
         lastInteractionTimestamp: transcript.lastInteractionTimestamp,
         firstHumanMessageText: firstHumanMessage?.text,
     }
