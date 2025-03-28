@@ -93,7 +93,7 @@ function pathFunctions(isWindows: boolean, sep: '\\' | '/', caseSensitive: boole
             if (isWindows && isDriveLetter(path)) {
                 return path + sep
             }
-        return path
+            return path
         },
         basename(path: string, suffix?: string): string {
             if (path === '') {
