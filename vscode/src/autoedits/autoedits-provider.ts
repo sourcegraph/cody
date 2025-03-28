@@ -202,7 +202,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
         const now = Date.now()
 
         if (
-            this.lastVisibleChangeTimeStamp &&
+            this.lastVisibleChangeTimeStamp === undefined ||
             now - this.lastVisibleChangeTimeStamp >
                 RESET_TEXT_EDITOR_VISIBLE_RANGE_CHANGE_DEBOUNCE_INTERVAL_MS
         ) {
