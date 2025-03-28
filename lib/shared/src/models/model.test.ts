@@ -63,7 +63,6 @@ describe('toLegacyModel', () => {
 
 describe('createModelFromServerModel', () => {
     it('handles enhanced context window when flag is enabled', () => {
-        // Arrange
         const modelWithEnhancedContext = {
             modelRef: 'test::1::model',
             displayName: 'Test Model',
@@ -79,10 +78,8 @@ describe('createModelFromServerModel', () => {
             },
         } satisfies ServerModel
 
-        // Act
         const result = createModelFromServerModel(modelWithEnhancedContext, true)
 
-        // Assert
         expect(result.contextWindow).toEqual({
             input: 6000,
             context: {
@@ -93,7 +90,6 @@ describe('createModelFromServerModel', () => {
     })
 
     it('uses standard context window when flag is disabled', () => {
-        // Arrange
         const modelWithEnhancedContext = {
             modelRef: 'test::1::model',
             displayName: 'Test Model',
@@ -109,10 +105,8 @@ describe('createModelFromServerModel', () => {
             },
         } satisfies ServerModel
 
-        // Act
         const result = createModelFromServerModel(modelWithEnhancedContext, false)
 
-        // Assert
         expect(result.contextWindow).toEqual({
             input: 10000,
             output: 4000,
@@ -120,7 +114,7 @@ describe('createModelFromServerModel', () => {
     })
 
     it('removes Edit usage from models with reasoning capability', () => {
-        // Arrange - model with both reasoning and edit capabilities
+        // model with both reasoning and edit capabilities
         const reasoningEditModel = {
             modelRef: 'anthropic::1::claude-3-sonnet',
             displayName: 'Claude 3 Sonnet',
@@ -135,17 +129,15 @@ describe('createModelFromServerModel', () => {
             },
         } satisfies ServerModel
 
-        // Act
         const result = createModelFromServerModel(reasoningEditModel, false)
 
-        // Assert
         expect(result.usage).toContain(ModelUsage.Chat)
         expect(result.usage).not.toContain(ModelUsage.Edit)
         expect(result.tags).toContain(ModelTag.Power) // Check that other attributes are preserved
     })
 
     it('preserves Edit usage for models without reasoning capability', () => {
-        // Arrange - similar model but without reasoning capability
+        // similar model but without reasoning capability
         const editOnlyModel = {
             modelRef: 'anthropic::1::claude-instant',
             displayName: 'Claude Instant',
@@ -160,16 +152,14 @@ describe('createModelFromServerModel', () => {
             },
         } satisfies ServerModel
 
-        // Act
         const result = createModelFromServerModel(editOnlyModel, false)
 
-        // Assert
         expect(result.usage).toContain(ModelUsage.Edit)
         expect(result.usage).toContain(ModelUsage.Chat)
     })
 
     it('correctly handles models with reasoning but no edit capability', () => {
-        // Arrange - model with reasoning but no edit capability
+        // model with reasoning but no edit capability
         const reasoningOnlyModel = {
             modelRef: 'anthropic::1::claude-3-opus',
             displayName: 'Claude 3 Opus',
@@ -184,10 +174,8 @@ describe('createModelFromServerModel', () => {
             },
         } satisfies ServerModel
 
-        // Act
         const result = createModelFromServerModel(reasoningOnlyModel, false)
 
-        // Assert
         expect(result.usage).toContain(ModelUsage.Chat)
         expect(result.usage).not.toContain(ModelUsage.Edit)
         // Also check that reasoning is reflected in tags
