@@ -39,18 +39,7 @@ import { getEnterpriseContextWindow } from './utils'
 
 const EMPTY_PREFERENCES: DefaultsAndUserPreferencesForEndpoint = { defaults: {}, selected: {} }
 export const INPUT_TOKEN_FLAG_OFF: number = 45_000
-const TOKEN_LIMITS = {
-    MISTRAL_ADJUSTMENT_FACTOR: 0.85,
-    ORIGINAL_ALL: {
-        MAX_INPUT_TOKENS: 45_000,
-        MAX_OUTPUT_TOKENS: 4_000,
-    },
-    PRO: {
-        STANDARD_OUTPUT: 6_000,
-        REASONING_OUTPUT: 16_000,
-        MAX_INPUT_TOKENS: 175_000,
-    },
-}
+const MISTRAL_ADJUSTMENT_FACTOR: number = 0.85
 
 /**
  * Observe the list of all available models.
@@ -191,7 +180,7 @@ export function syncModels({
                                         ),
                                         enableToolCody,
                                         featureFlagProvider.evaluateFeatureFlag(
-                                            FeatureFlag.LongContextWindow
+                                            FeatureFlag.EnhancedContextWindow
                                         )
                                     ).pipe(
                                         switchMap(
@@ -200,7 +189,7 @@ export function syncModels({
                                                 hasAgenticChatFlag,
                                                 defaultToHaiku,
                                                 isToolCodyEnabled,
-                                                longContextWindowFlag,
+                                                enhancedContextWindowFlag,
                                             ]) => {
                                                 if (serverModelsConfig) {
                                                     // Remove deprecated models from the list, filter out waitlisted models for Enterprise.
@@ -220,9 +209,14 @@ export function syncModels({
                                                                     ? 'pro'
                                                                     : 'free'
                                                                 : 'enterprise',
-                                                            longContextWindowFlagEnabled:
-                                                                longContextWindowFlag,
-                                                        }).map(createModelFromServerModel)
+                                                            enhancedContextWindowFlagEnabled:
+                                                                enhancedContextWindowFlag,
+                                                        }).map(model =>
+                                                            createModelFromServerModel(
+                                                                model,
+                                                                enhancedContextWindowFlag
+                                                            )
+                                                        )
                                                     )
                                                     data.preferences!.defaults =
                                                         defaultModelPreferencesFromServerModelsConfig(
@@ -312,9 +306,11 @@ export function syncModels({
                                                                 ? 'pro'
                                                                 : 'free'
                                                             : 'enterprise',
-                                                        longContextWindowFlagEnabled:
-                                                            longContextWindowFlag,
-                                                    }).map(createModelFromServerModel)
+                                                        // the feature flag is for serverModels, so it's always false for client models
+                                                        enhancedContextWindowFlagEnabled: false,
+                                                    }).map(model =>
+                                                        createModelFromServerModel(model, false)
+                                                    )
                                                 )
 
                                                 // Set the default model to Haiku for free users.
@@ -528,13 +524,10 @@ async function fetchServerSideModels(
  */
 export const maybeAdjustContextWindows = (
     models: ServerModel[],
-    config: { tier: 'free' | 'pro' | 'enterprise'; longContextWindowFlagEnabled: boolean }
+    config: { tier: 'free' | 'pro' | 'enterprise'; enhancedContextWindowFlagEnabled: boolean }
 ): ServerModel[] => {
     // Compile regex once
     const mistralRegex = /^mi(x|s)tral/
-    // Determine token limits based on config once outside the loop
-    const isFreeTier = config.tier === 'free'
-    const isProTier = config.tier === 'pro'
 
     // Apply restrictions to all models
     return models.map(model => {
@@ -547,40 +540,30 @@ export const maybeAdjustContextWindows = (
             // We reduce the context window by 15% (0.85 multiplier) to provide a safety buffer and prevent potential overflow.
             // Note: In other languages, the OpenAI tokenizer might actually overcount tokens. As a result, we accept the risk
             // of using a slightly smaller context window than what's available for those languages.
-            maxInputTokens = Math.round(maxInputTokens * TOKEN_LIMITS.MISTRAL_ADJUSTMENT_FACTOR)
+            maxInputTokens = Math.round(maxInputTokens * MISTRAL_ADJUSTMENT_FACTOR)
         }
 
-        /*
-            Input window adjustments:
-            - The enhanced input window limits are applied to ES and Pro users when the flag is on, and we set the limits to the highest on the server side.
-            - Therefore, we change the input window limits back to the original ones for pro and enterprise users if the flag is off or if
-            the user is on the free tier.
-        */
-        if (isFreeTier || !config.longContextWindowFlagEnabled) {
-            maxInputTokens = Math.min(maxInputTokens, TOKEN_LIMITS.ORIGINAL_ALL.MAX_INPUT_TOKENS)
+        // Keep the code block the same for the old clients
+        if (
+            config.enhancedContextWindowFlagEnabled === undefined ||
+            !config.enhancedContextWindowFlagEnabled
+        ) {
+            return { ...model, contextWindow: { ...model.contextWindow, maxInputTokens } }
         }
 
-        /*
-            Output window adjustments:
-            - We set the limits to the highest (ES limits) on the server side, so we need to reduce the limits for pro users and free users.
-        */
-        if (isProTier) {
-            const limit = model.capabilities.includes(ModelTag.Reasoning)
-                ? TOKEN_LIMITS.PRO.REASONING_OUTPUT
-                : TOKEN_LIMITS.PRO.STANDARD_OUTPUT
-            maxOutputTokens = Math.min(maxOutputTokens, limit)
-        }
-        if (isFreeTier) {
-            maxOutputTokens = Math.min(maxOutputTokens, TOKEN_LIMITS.ORIGINAL_ALL.MAX_OUTPUT_TOKENS)
-        }
+        // Apply enhanced context window limits if the flag is on
+        const ctWindow = model.modelConfigAllTiers
+            ? model.modelConfigAllTiers[config.tier].contextWindow
+            : { maxInputTokens, maxOutputTokens }
 
         // Return model with adjusted context window
         return {
             ...model,
             contextWindow: {
                 ...model.contextWindow,
-                maxInputTokens,
-                maxOutputTokens,
+                maxInputTokens: ctWindow.maxInputTokens,
+                maxOutputTokens: ctWindow.maxOutputTokens,
+                maxUserInputTokens: ctWindow.maxUserInputTokens,
             },
         }
     })
