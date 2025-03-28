@@ -146,7 +146,7 @@ internal class WebUIProxy(private val host: WebUIHost, private val browser: JBCe
         } catch (e: Exception) {
           val message = "Un-consuming the event keys failed."
           logger.warn(message, e)
-          SentryService.report(e, message, null)
+          SentryService.getInstance().report(e, message, null)
         }
         false // Don't consume the event
       }
