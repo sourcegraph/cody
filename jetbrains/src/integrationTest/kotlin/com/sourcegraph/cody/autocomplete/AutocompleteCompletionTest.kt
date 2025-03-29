@@ -3,6 +3,8 @@ package com.sourcegraph.cody.autocomplete
 import com.intellij.openapi.application.ReadAction
 import com.intellij.openapi.editor.VisualPosition
 import com.intellij.testFramework.runInEdtAndGet
+import com.sourcegraph.cody.agent.CodyAgentService
+import com.sourcegraph.cody.agent.protocol_generated.ClientCapabilities
 import com.sourcegraph.cody.autocomplete.render.CodyAutocompleteElementRenderer
 import com.sourcegraph.cody.autocomplete.render.InlayModelUtil
 import com.sourcegraph.cody.util.BaseIntegrationTextFixture
@@ -20,7 +22,11 @@ import org.junit.runner.RunWith
 class AutocompleteCompletionTest {
 
   companion object {
-    val fixture = BaseIntegrationTextFixture("autocomplete")
+    val fixture =
+        BaseIntegrationTextFixture(
+            "autocomplete",
+            CodyAgentService.clientCapabilities.copy(
+                globalState = ClientCapabilities.GlobalStateEnum.Stateless))
 
     @JvmStatic
     @AfterClass

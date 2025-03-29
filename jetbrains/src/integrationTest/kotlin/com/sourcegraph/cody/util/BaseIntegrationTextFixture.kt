@@ -31,7 +31,7 @@ import org.junit.Assert.assertTrue
 
 open class BaseIntegrationTextFixture(
     private val recordingName: String,
-    private val capabilities: ClientCapabilities = CodyAgentService.clientCapabilities
+    private val capabilities: ClientCapabilities
 ) {
   companion object {
     const val ASYNC_WAIT_TIMEOUT_SECONDS = 20L
@@ -132,10 +132,7 @@ open class BaseIntegrationTextFixture(
     assertNotNull(
         "Unable to start agent in a timely fashion!",
         CodyAgentService.getInstance(project)
-            .startAgent(
-                capabilities.copy(globalState = ClientCapabilities.GlobalStateEnum.Stateless),
-                endpoint,
-                token)
+            .startAgent(capabilities, endpoint, token)
             .completeOnTimeout(null, ASYNC_WAIT_TIMEOUT_SECONDS, TimeUnit.SECONDS)
             .get())
   }

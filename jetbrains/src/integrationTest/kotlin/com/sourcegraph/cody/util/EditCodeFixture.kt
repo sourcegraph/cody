@@ -6,6 +6,8 @@ import com.intellij.openapi.actionSystem.DataContext
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.ex.EditorEx
 import com.intellij.openapi.vfs.VirtualFile
+import com.sourcegraph.cody.agent.CodyAgentService
+import com.sourcegraph.cody.agent.protocol_generated.ClientCapabilities
 import com.sourcegraph.cody.agent.protocol_generated.ProtocolCodeLens
 import com.sourcegraph.cody.edit.lenses.LensListener
 import com.sourcegraph.cody.edit.lenses.LensesService
@@ -17,7 +19,11 @@ import org.junit.Assert.assertTrue
 import org.junit.Assert.fail
 
 class EditCodeFixture(recordingName: String) :
-    BaseIntegrationTextFixture(recordingName), LensListener {
+    BaseIntegrationTextFixture(
+        recordingName,
+        CodyAgentService.clientCapabilities.copy(
+            globalState = ClientCapabilities.GlobalStateEnum.Stateless)),
+    LensListener {
   private val lensSubscribers = mutableListOf<(List<ProtocolCodeLens>) -> Boolean>()
 
   override fun checkInitialConditionsForOpenFile() {
