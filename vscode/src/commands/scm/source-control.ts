@@ -225,7 +225,7 @@ export class CodySourceControl implements vscode.Disposable {
         preamble: Message[],
         context: ContextItem[]
     ): Promise<{ prompt: Message[]; ignoredContext: ContextItem[] }> {
-        if (!context.length) {
+        if (context.length === 0) {
             throw new Error('Failed to get git output.')
         }
 
