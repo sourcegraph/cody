@@ -705,6 +705,11 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
     }
 
     public async manuallyTriggerCompletion(): Promise<void> {
+        if (isRunningInsideAgent()) {
+            // Client manage their own shortcuts and logic for manually triggering a completion
+            return
+        }
+
         await vscode.commands.executeCommand('editor.action.inlineSuggest.hide')
         this.lastManualTriggerTimestamp = performance.now()
         await vscode.commands.executeCommand('editor.action.inlineSuggest.trigger')
