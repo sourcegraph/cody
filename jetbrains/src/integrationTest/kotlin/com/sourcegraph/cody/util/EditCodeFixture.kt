@@ -18,6 +18,7 @@ import org.junit.Assert.fail
 
 class EditCodeFixture(recordingName: String) :
     BaseIntegrationTextFixture(recordingName), LensListener {
+
   private val lensSubscribers = mutableListOf<(List<ProtocolCodeLens>) -> Boolean>()
 
   override fun checkInitialConditionsForOpenFile() {
@@ -96,9 +97,5 @@ class EditCodeFixture(recordingName: String) :
           "Error while awaiting after action $actionIdToRun. Expected lenses: [${expectedLenses.joinToString()}], got: $codeLenses")
       throw e
     }
-  }
-
-  companion object {
-    const val ASYNC_WAIT_TIMEOUT_SECONDS = 20L
   }
 }
