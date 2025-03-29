@@ -171,7 +171,12 @@ export const CodyPanel: FunctionComponent<CodyPanelProps> = ({
                     {view === View.Prompts && (
                         <PromptsTab IDE={clientCapabilities.agentIDE} setView={setView} />
                     )}
-                    {view === View.Settings && <ServerHome mcpServers={mcpServers} />}
+                    {view === View.Settings &&
+                        // NOTE: This is temporary to hide the MCP UI until it is implemented.
+                        // During internal dogfooding, users will be using the vscode config to set up
+                        // their servers.
+                        mcpServers?.length !== -1 &&
+                        config?.experimentalAgenticChatEnabled && <ServerHome mcpServers={mcpServers} />}
                 </TabContainer>
                 <StateDebugOverlay />
             </TabRoot>

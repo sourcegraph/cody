@@ -15,6 +15,7 @@ export type AgentID = string
 export interface AgentTool {
     spec: Tool
     invoke: (input: any) => Promise<Omit<ContextItemToolState, 'toolId'>>
+    disabled?: boolean
 }
 
 export class AgentToolGroup {
@@ -28,11 +29,15 @@ export class AgentToolGroup {
     private static readonly instance: Map<AgentID, AgentToolGroup> = new Map()
 
     public readonly agentId: AgentID
-    public readonly tools: AgentTool[]
+    private readonly _tools: AgentTool[]
 
     constructor(agentId: AgentID, tools: AgentTool[]) {
         this.agentId = agentId
-        this.tools = tools
+        this._tools = tools
+    }
+
+    public get tools(): AgentTool[] {
+        return this._tools.filter(tool => !tool.disabled)
     }
 
     public getToolByName(name: string): AgentTool | undefined {

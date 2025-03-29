@@ -80,8 +80,9 @@ import { type Span, context } from '@opentelemetry/api'
 import { captureException } from '@sentry/core'
 import type { SubMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { resolveAuth } from '@sourcegraph/cody-shared/src/configuration/auth-resolver'
+import type { McpServer } from '@sourcegraph/cody-shared/src/llm-providers/mcp/types'
 import type { TelemetryEventParameters } from '@sourcegraph/telemetry'
-import { Subject, map } from 'observable-fns'
+import { Observable, Subject, map } from 'observable-fns'
 import type { URI } from 'vscode-uri'
 import { View } from '../../../webviews/tabs/types'
 import { redirectToEndpointLogin, showSignInMenu, showSignOutMenu, signOut } from '../../auth/auth'
@@ -1750,11 +1751,23 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                             map(value => (value === pendingOperation ? null : value))
                         ),
                     // Existing tools endpoint - update to include MCP tools
-                    mcpSettings: () =>
-                        MCPManager.observable.pipe(
-                            startWith([]),
-                            map(servers => servers)
-                        ),
+                    mcpSettings: () => {
+                        return featureFlagProvider
+                            .evaluateFeatureFlag(FeatureFlag.NextAgenticChatInternal)
+                            .pipe(
+                                // Simplify the flow with map and distinctUntilChanged
+                                distinctUntilChanged(),
+                                startWith(null),
+                                // When disabled, return an empty array
+                                switchMap(experimentalAgentMode => {
+                                    if (!experimentalAgentMode) {
+                                        return Observable.of([] as McpServer[])
+                                    }
+                                    // When enabled, get servers from the manager
+                                    return MCPManager.observable
+                                })
+                            )
+                    },
                 }
             )
         )

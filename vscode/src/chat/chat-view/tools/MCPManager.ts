@@ -118,13 +118,17 @@ export class MCPManager {
         this.toolsChangeNotifications.pipe(startWith(undefined))
     ).pipe(
         map(([mcpEnabled]) => {
-            if (!mcpEnabled) {
+            // Return empty array if feature is disabled OR if the instance has been disposed
+            if (!mcpEnabled || !MCPManager.instance) {
                 return []
             }
-            return MCPManager.instance?.getServers() || []
+            return MCPManager.instance.getServers() || []
         }),
         distinctUntilChanged((prev, curr) => {
             // Check if the servers or their tools have changed
+            if (prev.length === 0 && curr.length === 0) {
+                return true
+            }
             const prevJson = JSON.stringify(prev.map(c => ({ name: c.name, tools: c.tools })))
             const currJson = JSON.stringify(curr.map(c => ({ name: c.name, tools: c.tools })))
             return prevJson === currJson
@@ -225,7 +229,6 @@ export class MCPManager {
         const currentConnections = this.connectionManager.getAllConnections()
         const currentNames = new Set(currentConnections.map(conn => conn.server.name))
         const newNames = new Set(Object.keys(mcpServers))
-
         // Delete removed servers
         for (const name of currentNames) {
             if (!newNames.has(name)) {
@@ -237,7 +240,6 @@ export class MCPManager {
         // Update or add servers
         for (const [name, config] of Object.entries(mcpServers)) {
             const currentConnection = this.connectionManager.getConnection(name)
-
             if (!currentConnection) {
                 // New server
                 try {
@@ -262,7 +264,6 @@ export class MCPManager {
                 }
             }
         }
-
         // Notify about server changes
         MCPManager.changeNotifications.next()
     }
@@ -271,25 +272,20 @@ export class MCPManager {
         try {
             // Determine if this is an SSE config based on presence of url
             const isSSE = 'url' in config
-
             // Set the transport type based on the detected type
             const configWithDefaults = {
                 ...config,
                 transportType: isSSE ? 'sse' : 'stdio',
             }
-
             // Validate the config
             const result = ServerConfigSchema.safeParse(configWithDefaults)
-
             if (!result.success) {
                 logDebug('MCPManager', `Invalid config for "${name}": missing or invalid parameters`, {
                     verbose: { errors: result.error.format() },
                 })
                 return
             }
-
             const parsedConfig = result.data
-
             // Add the connection
             await this.connectionManager.addConnection(name, configWithDefaults, parsedConfig?.disabled)
 
@@ -316,12 +312,10 @@ export class MCPManager {
             const tools = await this.serverManager.getToolList(serverName)
             const resources = await this.serverManager.getResourceList(serverName)
             const resourceTemplates = await this.serverManager.getResourceTemplateList(serverName)
-
             // Update server data
             connection.server.tools = tools
             connection.server.resources = resources
             connection.server.resourceTemplates = resourceTemplates
-
             logDebug('MCPManager', `Initialized data for server: ${serverName}`)
             MCPManager.changeNotifications.next()
         } catch (error) {
@@ -411,21 +405,17 @@ export class MCPManager {
             // Get current configuration
             const config = vscode.workspace.getConfiguration(MCPManager.CONFIG_SECTION)
             const mcpServers = { ...config.get<Record<string, any>>(MCPManager.MCP_SERVERS_KEY, {}) }
-
             if (mcpServers[serverName]) {
                 // Remove server from configuration
                 delete mcpServers[serverName]
-
                 // Update configuration
                 await config.update(
                     MCPManager.MCP_SERVERS_KEY,
                     mcpServers,
                     vscode.ConfigurationTarget.Global
                 )
-
                 // Remove connection
                 await this.connectionManager.removeConnection(serverName)
-
                 logDebug('MCPManager', `Deleted MCP server: ${serverName}`)
             } else {
                 logDebug('MCPManager', `${serverName} not found in MCP configuration`)
@@ -536,16 +526,18 @@ export class MCPManager {
     public async dispose(): Promise<void> {
         // Dispose the connection manager
         await this.connectionManager.dispose()
-
         // Dispose the server manager
         this.serverManager.dispose()
-
         // Dispose all disposables
         for (const disposable of this.disposables) {
             disposable.dispose()
         }
-
         this.disposables = []
+        // Clear the static instance
+        MCPManager.instance = undefined
+        // Notify subscribers that servers have changed
+        MCPManager.changeNotifications.next()
+        logDebug('MCPManager', 'disposed')
     }
 }
 
@@ -563,17 +555,15 @@ export function createMCPToolState(
         .map(p => p.text)
         .join('\n')
 
-    const imageContent = parts
-        .filter(p => p.type === 'image_url')
-        .map(p => p)
-        .join('\n')
+    // TODO: Handle image_url parts appropriately
+    // const imagePart = parts.find(p => p.type === 'image_url')
 
     return {
         type: 'tool-state',
         toolId: `mcp-${toolName}-${Date.now()}`,
         status,
         toolName: `${serverName}_${toolName}`,
-        content: imageContent || textContent,
+        content: textContent,
         // ContextItemCommon properties
         outputType: 'mcp',
         uri: URI.parse(''),

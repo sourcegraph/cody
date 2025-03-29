@@ -332,7 +332,8 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
         toolCall: ToolCallContentPart
     ): Promise<ToolResult | undefined | null> {
         // Find the appropriate tool
-        const tool = this.tools.find(t => t.spec.name === toolCall.tool_call.name)
+        const enabledTools = this.tools.filter(tool => !tool.disabled)
+        const tool = enabledTools.find(t => t.spec.name === toolCall.tool_call.name)
         if (!tool) return undefined
 
         const tool_result: ToolResultContentPart = {
