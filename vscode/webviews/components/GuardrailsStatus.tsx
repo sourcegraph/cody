@@ -5,6 +5,7 @@ import type React from 'react'
 import styles from '../chat/ChatMessageContent/ChatMessageContent.module.css'
 
 interface GuardrailsStatusProps {
+    children?: React.ReactNode
     status: GuardrailsCheckStatus
     filename?: string
     tooltip?: string
@@ -17,6 +18,7 @@ interface GuardrailsStatusProps {
  * It shows different icons and optional retry button based on the check status.
  */
 export const GuardrailsStatus: React.FC<GuardrailsStatusProps> = ({
+    children,
     status,
     filename,
     tooltip,
@@ -101,6 +103,7 @@ export const GuardrailsStatus: React.FC<GuardrailsStatusProps> = ({
                     )}
                 </div>
             )}
+            {children}
         </div>
     )
 }
