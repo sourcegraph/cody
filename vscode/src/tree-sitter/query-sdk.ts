@@ -140,7 +140,10 @@ function getLanguageSpecificQueryWrappers(
 ): QueryWrappers {
     return {
         getSinglelineTrigger: (root, start, end) => {
-            const captures = queries.singlelineTriggers.compiled.captures(root, start, end)
+            const captures = queries.singlelineTriggers.compiled.captures(root, {
+                startPosition: start,
+                endPosition: end,
+            })
             const { trigger, block } = getTriggerNodeWithBlockStaringAtPoint(captures, start)
 
             if (!trigger || !block || !isBlockNodeEmpty(block)) {
@@ -150,7 +153,10 @@ function getLanguageSpecificQueryWrappers(
             return [{ node: trigger, name: 'trigger' }] as const
         },
         getCompletionIntent: (root, start, end) => {
-            const captures = queries.intents.compiled.captures(root, start, end)
+            const captures = queries.intents.compiled.captures(root, {
+                startPosition: start,
+                endPosition: end,
+            })
 
             const { intentCapture } = getIntentFromCaptures(captures, start)
 
@@ -161,11 +167,10 @@ function getLanguageSpecificQueryWrappers(
             return [{ node: intentCapture.node, name: intentCapture.name as CompletionIntent }] as const
         },
         getDocumentableNode: (root, start, end) => {
-            const captures = queries.documentableNodes.compiled.captures(
-                root,
-                { ...start, column: 0 },
-                end ? { ...end, column: Number.MAX_SAFE_INTEGER } : undefined
-            )
+            const captures = queries.documentableNodes.compiled.captures(root, {
+                startPosition: { ...start, column: 0 },
+                endPosition: end ? { ...end, column: Number.MAX_SAFE_INTEGER } : undefined,
+            })
 
             const symbolCaptures = []
             const rangeCaptures = []
@@ -204,7 +209,10 @@ function getLanguageSpecificQueryWrappers(
                  * See https://peps.python.org/pep-0257/ for the documentation conventions for Python.
                  */
                 const insertionCaptures = queries.documentableNodes.compiled
-                    .captures(root, range.node.startPosition, range.node.endPosition)
+                    .captures(root, {
+                        startPosition: range.node.startPosition,
+                        endPosition: range.node.endPosition,
+                    })
                     .filter(({ name }) => name.startsWith('insertion'))
 
                 insertionPoint = insertionCaptures.find(
@@ -223,11 +231,10 @@ function getLanguageSpecificQueryWrappers(
                     ? insertionPoint.node.startPosition.row + 1
                     : start.row - 1
             const docstringCaptures = queries.documentableNodes.compiled
-                .captures(
-                    root,
-                    { row: docStringLine, column: 0 },
-                    { row: docStringLine, column: Number.MAX_SAFE_INTEGER }
-                )
+                .captures(root, {
+                    startPosition: { row: docStringLine, column: 0 },
+                    endPosition: { row: docStringLine, column: Number.MAX_SAFE_INTEGER },
+                })
                 .filter(node => node.name.startsWith('comment'))
 
             /**
@@ -251,14 +258,20 @@ function getLanguageSpecificQueryWrappers(
             ]
         },
         getIdentifiers: (root, start, end) => {
-            return queries.identifiers.compiled.captures(root, start, end)
+            return queries.identifiers.compiled.captures(root, {
+                startPosition: start,
+                endPosition: end,
+            })
         },
         getGraphContextIdentifiers: (root, start, end) => {
-            return queries.graphContextIdentifiers.compiled.captures(root, start, end)
+            return queries.graphContextIdentifiers.compiled.captures(root, {
+                startPosition: start,
+                endPosition: end,
+            })
         },
         getEnclosingFunction: (root, start, end) => {
             const captures = queries.enclosingFunction.compiled
-                .captures(root, start, end)
+                .captures(root, { startPosition: start, endPosition: end })
                 .filter(capture => capture.name.startsWith('range'))
 
             const firstEnclosingFunction = findLast(captures, ({ node }) => {
@@ -275,11 +288,10 @@ function getLanguageSpecificQueryWrappers(
             return [firstEnclosingFunction]
         },
         getTestableNode: (root, start, end) => {
-            const captures = queries.enclosingFunction.compiled.captures(
-                root,
-                { ...start, column: 0 },
-                end ? { ...end, column: Number.MAX_SAFE_INTEGER } : undefined
-            )
+            const captures = queries.enclosingFunction.compiled.captures(root, {
+                startPosition: { ...start, column: 0 },
+                endPosition: end ? { ...end, column: Number.MAX_SAFE_INTEGER } : undefined,
+            })
             const symbolCaptures = []
             const rangeCaptures = []
 
@@ -477,8 +489,8 @@ function getCapturedNodeAt(params: GetCapturedNodeAtParams): SyntaxNode | null {
  */
 function isBlockNodeEmpty(node: SyntaxNode | null): boolean {
     // Consider a node empty if it does not have any named children.
-    const isBlockEmpty = node?.children.filter(c => c.isNamed()).length === 0
-    const isMissingBlockEnd = Boolean(node?.lastChild?.isMissing())
+    const isBlockEmpty = node?.children.filter(c => c.isNamed).length === 0
+    const isMissingBlockEnd = Boolean(node?.lastChild?.isMissing)
 
     return isBlockEmpty || isMissingBlockEnd
 }

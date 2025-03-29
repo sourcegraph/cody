@@ -52,7 +52,7 @@ export class AutocompleteMatcher {
             return
         }
         this.originalTree = this.parser.parse(text)
-        this.originalTreeIsFreeOfErrrors = !this.originalTree.rootNode.hasError()
+        this.originalTreeIsFreeOfErrrors = !this.originalTree.rootNode.hasError
         const result: AutocompleteMatch[] = []
         const document = new EvaluationDocument(
             this.params,

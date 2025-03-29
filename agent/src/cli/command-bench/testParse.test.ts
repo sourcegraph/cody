@@ -55,7 +55,7 @@ describe('testParse', () => {
             throw new TypeError(`parser is undefined for language ${language}`)
         }
         const originalTree = parser.parse(okText)
-        expect(originalTree.rootNode.hasError()).toBe(false)
+        expect(originalTree.rootNode.hasError).toBe(false)
         expect(testParses(errorText, parser)).toBe(false)
     })
 })

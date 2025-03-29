@@ -75,11 +75,10 @@ export function parseCompletion(context: CompletionContext): ParsedCompletion {
     // Search for ERROR nodes in the completion range.
     const query = parser.getLanguage().query('(ERROR) @error')
     // TODO(tree-sitter): query bigger range to catch higher scope syntactic errors caused by the completion.
-    const captures = query.captures(
-        treeWithCompletion.rootNode,
-        points?.trigger || points.start,
-        points.end
-    )
+    const captures = query.captures(treeWithCompletion.rootNode, {
+        startPosition: points?.trigger || points.start,
+        endPosition: points.end,
+    })
 
     return {
         ...completion,
