@@ -1,9 +1,11 @@
 package com.sourcegraph.cody.agent
 
+import com.intellij.codeWithMe.ClientId
 import com.intellij.notification.NotificationsManager
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.runInEdt
+import com.intellij.openapi.client.ClientSessionsManager
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.diagnostic.Logger
@@ -79,7 +81,12 @@ class CodyAgentService(private val project: Project) : Disposable {
     // Normally we do not need to specify endpoint or token used for starting an agent.
     // Agent will automatically pick up the last used one or the default.
     // Custom endpoint and token are used in tests.
-    return startAgent(clientCapabilities, endpoint = null, token = null, secondsTimeout)
+    val isRemoteDev = ClientSessionsManager.getAppSession(ClientId.current)?.isRemote ?: false
+    val autoedit =
+        if (isRemoteDev) ClientCapabilities.AutoeditEnum.None
+        else ClientCapabilities.AutoeditEnum.Enabled
+    return startAgent(
+        clientCapabilities.copy(autoedit = autoedit), endpoint = null, token = null, secondsTimeout)
   }
 
   fun startAgent(
