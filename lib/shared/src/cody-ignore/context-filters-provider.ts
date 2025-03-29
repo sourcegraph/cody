@@ -219,7 +219,7 @@ export class ContextFiltersProvider implements vscode.Disposable {
         }
         await this.fetchIfNeeded()
 
-        if (allowedSchemes.has(uri.scheme) || this.hasAllowEverythingFilters()) {
+        if (!uri || allowedSchemes.has(uri.scheme) || this.hasAllowEverythingFilters()) {
             return false
         }
         if (this.hasIgnoreEverythingFilters()) {

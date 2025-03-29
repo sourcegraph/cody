@@ -206,7 +206,7 @@ export class PromptBuilder {
             // ignored on a client to always be treated as ignored.
             if (
                 item.type === 'file' &&
-                (item.uri.scheme === 'https' || item.uri.scheme === 'http') &&
+                (item?.uri?.scheme === 'https' || item?.uri?.scheme === 'http') &&
                 item.repoName &&
                 (await contextFiltersProvider.isRepoNameIgnored(item.repoName))
             ) {

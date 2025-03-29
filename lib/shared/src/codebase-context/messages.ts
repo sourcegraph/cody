@@ -293,7 +293,7 @@ export interface ContextItemToolState extends ContextItemCommon {
     /**
      * The specific kind of tool output this represents
      */
-    outputType: 'search-result' | 'terminal-output' | 'file-diff' | 'file-view' | 'status'
+    outputType: 'search-result' | 'terminal-output' | 'file-diff' | 'file-view' | 'status' | 'mcp'
 
     /**
      * For search results, the list of found items

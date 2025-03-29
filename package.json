@@ -83,7 +83,8 @@
   "pnpm": {
     "overrides": {
       "tslib": "2.1.0",
-      "@lexical/react": "https://storage.googleapis.com/sourcegraph-assets/npm/lexical-react-sourcegraph-fork-31065486.tgz"
+      "@lexical/react": "https://storage.googleapis.com/sourcegraph-assets/npm/lexical-react-sourcegraph-fork-31065486.tgz",
+      "pkce-challenge": "3.0.0"
     },
     "neverBuiltDependencies": ["deasync", "playwright"],
     "patchedDependencies": {

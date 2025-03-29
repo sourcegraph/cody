@@ -136,7 +136,7 @@ function _displayPath(
         }
     }
 
-    if (uri.scheme === 'file') {
+    if (uri?.scheme === 'file') {
         // Show the absolute file path because we couldn't find a parent workspace folder.
         return fixPathSep(uri.fsPath, isWindows, uri.scheme)
     }
