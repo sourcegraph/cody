@@ -29,6 +29,8 @@ export type ConnectionStatusChangeEvent = {
 export class MCPConnectionManager {
     private connections: McpConnection[] = []
     private isConnectingFlags: Map<string, boolean> = new Map() // Track connecting state per server
+    private lastConnectionAttempt: Map<string, number> = new Map() // Track last connection attempt time
+    private static readonly CONNECTION_COOLDOWN = 5000 // 5 second cooldown between connection attempts
 
     // Event emitter for connection status changes
     private statusChangeEmitter = new vscode.EventEmitter<ConnectionStatusChangeEvent>()
@@ -41,18 +43,11 @@ export class MCPConnectionManager {
             version,
         })
 
+        // SSE transport
         if (config.transportType === 'sse') {
-            // SSE transport
-            // const sseOptions: SSEClientTransportOptions = {
-            //     requestInit: {
-            //         headers: config.headers,
-            //         credentials: config.withCredentials ? 'include' : 'same-origin',
-            //     },
-            // }
-
             return {
                 client,
-                transport: new SSEClientTransport(new URL('/sse', config.url)),
+                transport: new SSEClientTransport(new URL(config.url)),
             }
         }
         // Default to stdio transport
@@ -62,8 +57,8 @@ export class MCPConnectionManager {
                 command: config.command,
                 args: config.args,
                 env: {
+                    ...process.env,
                     ...config.env,
-                    ...(process.env.PATH ? { PATH: process.env.PATH } : {}),
                 },
                 stderr: 'pipe',
             }),
@@ -79,6 +74,25 @@ export class MCPConnectionManager {
         if (this.isConnectingFlags.get(name)) {
             throw new Error(`Already attempting to connect to ${name}`)
         }
+
+        // Check if we've attempted to connect recently
+        const lastAttempt = this.lastConnectionAttempt.get(name) || 0
+        const now = Date.now()
+        if (now - lastAttempt < MCPConnectionManager.CONNECTION_COOLDOWN) {
+            const waitTime = (MCPConnectionManager.CONNECTION_COOLDOWN - (now - lastAttempt)) / 1000
+            logDebug(
+                'MCPConnectionManager',
+                `Throttling connection to ${name}, tried too recently (${waitTime.toFixed(1)}s ago)`
+            )
+            throw new Error(
+                `Connection attempt throttled. Please wait ${waitTime.toFixed(
+                    1
+                )} seconds before retrying.`
+            )
+        }
+
+        // Record this connection attempt time
+        this.lastConnectionAttempt.set(name, now)
         this.isConnectingFlags.set(name, true)
 
         // Remove existing connection if it exists (e.g., during restart or config update)

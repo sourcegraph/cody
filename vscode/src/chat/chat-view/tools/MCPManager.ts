@@ -15,34 +15,82 @@ import {
 import type { McpServer } from '@sourcegraph/cody-shared/src/llm-providers/mcp/types'
 import { type Observable, Subject, map } from 'observable-fns'
 import * as vscode from 'vscode'
+import { URI } from 'vscode-uri'
 import { z } from 'zod'
 import type { AgentTool } from '.'
-
 import { MCPConnectionManager } from './MCPConnectionManager'
 import { MCPServerManager } from './MCPServerManager'
+
+// Debounce function to prevent rapid consecutive calls
+function debounce<T extends (...args: any[]) => Promise<void>>(
+    func: T,
+    wait: number
+): (...args: Parameters<T>) => Promise<void> {
+    let timeout: NodeJS.Timeout | null = null
+    let pendingPromise: Promise<void> | null = null
+
+    return async (...args: Parameters<T>): Promise<void> => {
+        // Clear the previous timeout
+        if (timeout) {
+            clearTimeout(timeout)
+        }
+
+        // Create a new promise or return the pending one
+        if (pendingPromise) {
+            return pendingPromise
+        }
+
+        pendingPromise = new Promise<void>((resolve, reject) => {
+            timeout = setTimeout(() => {
+                timeout = null
+                func(...args)
+                    .then(() => {
+                        pendingPromise = null
+                        resolve()
+                    })
+                    .catch(err => {
+                        pendingPromise = null
+                        reject(err)
+                    })
+            }, wait)
+        })
+
+        return pendingPromise
+    }
+}
 
 // Configuration schemas
 const AutoApproveSchema = z.array(z.string()).default([])
 
-const StdioConfigSchema = z.object({
-    transportType: z.literal('stdio'),
-    command: z.string(),
-    args: z.array(z.string()).optional(),
-    env: z.record(z.string()).optional(),
+// Base schema with common properties
+const BaseConfigSchema = z.object({
     autoApprove: AutoApproveSchema.optional(),
     disabled: z.boolean().optional(),
 })
 
-const SseConfigSchema = z.object({
-    transportType: z.literal('sse'),
+// Schema for configs with a URL (SSE)
+const SseConfigSchema = BaseConfigSchema.extend({
+    transportType: z.literal('sse').optional().default('sse'),
     url: z.string().url(),
     headers: z.record(z.string()).optional(),
     withCredentials: z.boolean().optional().default(false),
-    autoApprove: AutoApproveSchema.optional(),
-    disabled: z.boolean().optional(),
 })
 
-const ServerConfigSchema = z.discriminatedUnion('transportType', [StdioConfigSchema, SseConfigSchema])
+// Schema for configs with a command (stdio)
+const StdioConfigSchema = BaseConfigSchema.extend({
+    transportType: z.literal('stdio').optional().default('stdio'),
+    command: z.string(),
+    args: z.array(z.string()).optional(),
+    env: z.record(z.string()).optional(),
+})
+
+// Combined schema that detects the type based on presence of url or command
+const ServerConfigSchema = z.union([
+    // If it has a url, it's an SSE config
+    SseConfigSchema,
+    // Otherwise, it's a stdio config
+    StdioConfigSchema,
+])
 
 const McpSettingsSchema = z.object({
     mcpServers: z.record(ServerConfigSchema),
@@ -55,10 +103,12 @@ export class MCPManager {
     public static instance: MCPManager | undefined
     private static readonly CONFIG_SECTION = 'cody'
     private static readonly MCP_SERVERS_KEY = 'mcpServers'
+    private static readonly DEBOUNCE_TIMEOUT = 1000 // 1 second debounce timeout
 
     private connectionManager: MCPConnectionManager
     private serverManager: MCPServerManager
     private disposables: vscode.Disposable[] = []
+    private debouncedSync: (mcpServers: Record<string, any>) => Promise<void>
 
     private static changeNotifications = new Subject<void>()
     private static toolsChangeNotifications = new Subject<void>()
@@ -84,6 +134,9 @@ export class MCPManager {
     constructor() {
         this.connectionManager = new MCPConnectionManager()
         this.serverManager = new MCPServerManager(this.connectionManager)
+
+        // Create debounced version of sync method
+        this.debouncedSync = debounce(this.sync.bind(this), MCPManager.DEBOUNCE_TIMEOUT)
 
         // Set up connection status change handler
         this.connectionManager.onStatusChange(event => {
@@ -131,7 +184,8 @@ export class MCPManager {
             if (
                 event.affectsConfiguration(`${MCPManager.CONFIG_SECTION}.${MCPManager.MCP_SERVERS_KEY}`)
             ) {
-                logDebug('MCPManager', 'Reloading settings from configuration...')
+                logDebug('MCPManager', 'Reloading settings from configuration (debounced)...')
+                // Use the loadServersFromConfig which internally uses the debounced sync
                 this.loadServersFromConfig().catch(error => {
                     logDebug('MCPManager', 'Error reloading settings from configuration', {
                         verbose: { error },
@@ -151,7 +205,8 @@ export class MCPManager {
             const result = McpSettingsSchema.safeParse({ mcpServers })
 
             if (result.success) {
-                await this.sync(mcpServers)
+                // Use debounced sync to prevent rapid consecutive syncs
+                await this.debouncedSync(mcpServers)
                 logDebug('MCPManager', 'MCP servers initialized successfully from configuration')
             } else {
                 logDebug('MCPManager', 'Invalid MCP settings format in configuration', {
@@ -214,31 +269,29 @@ export class MCPManager {
 
     private async addConnection(name: string, config: any): Promise<void> {
         try {
-            // Validate config based on transport type
-            let isValidConfig = false
-            let parsedConfig: any = null
+            // Determine if this is an SSE config based on presence of url
+            const isSSE = 'url' in config
 
-            if (config.transportType === 'stdio') {
-                const result = StdioConfigSchema.safeParse(config)
-                isValidConfig = result.success
-                if (result.success) {
-                    parsedConfig = result.data
-                }
-            } else if (config.transportType === 'sse') {
-                const result = SseConfigSchema.safeParse(config)
-                isValidConfig = result.success
-                if (result.success) {
-                    parsedConfig = result.data
-                }
+            // Set the transport type based on the detected type
+            const configWithDefaults = {
+                ...config,
+                transportType: isSSE ? 'sse' : 'stdio',
             }
 
-            if (!isValidConfig) {
-                logDebug('MCPManager', `Invalid config for "${name}": missing or invalid parameters`)
+            // Validate the config
+            const result = ServerConfigSchema.safeParse(configWithDefaults)
+
+            if (!result.success) {
+                logDebug('MCPManager', `Invalid config for "${name}": missing or invalid parameters`, {
+                    verbose: { errors: result.error.format() },
+                })
                 return
             }
 
+            const parsedConfig = result.data
+
             // Add the connection
-            await this.connectionManager.addConnection(name, config, parsedConfig?.disabled)
+            await this.connectionManager.addConnection(name, configWithDefaults, parsedConfig?.disabled)
 
             // If connection was successful, initialize server data
             const connection = this.connectionManager.getConnection(name)
@@ -336,8 +389,11 @@ export class MCPManager {
 
             try {
                 await this.connectionManager.removeConnection(serverName)
+                const parsedConfig = JSON.parse(config)
+                const isSSE = parsedConfig.url !== undefined
+                parsedConfig.transportType = isSSE ? 'sse' : 'stdio'
                 // Try to connect again using existing config
-                await this.addConnection(serverName, JSON.parse(config))
+                await this.addConnection(serverName, parsedConfig)
                 vscode.window.showInformationMessage(`${serverName} MCP server connected`)
             } catch (error) {
                 logDebug('MCPManager', `Failed to restart connection for ${serverName}`, {
@@ -435,20 +491,24 @@ export class MCPManager {
                 throw new Error(`MCP server "${name}" does not exist`)
             }
 
-            // Validate config based on transport type
-            let isValid = false
-            if (config.transportType === 'stdio') {
-                isValid = StdioConfigSchema.safeParse(config).success
-            } else if (config.transportType === 'sse') {
-                isValid = SseConfigSchema.safeParse(config).success
+            // Set default transport type if not provided
+            const configWithDefaults = {
+                transportType: 'stdio',
+                ...config,
             }
 
-            if (!isValid) {
+            // Validate config based on transport type
+            const isSSE = configWithDefaults.transportType === 'sse'
+            const result = isSSE
+                ? SseConfigSchema.safeParse(configWithDefaults)
+                : StdioConfigSchema.safeParse(configWithDefaults)
+
+            if (!result.success) {
                 throw new Error('Invalid server configuration')
             }
 
             // Update the server configuration
-            mcpServers[name] = config
+            mcpServers[name] = configWithDefaults
 
             // Update configuration
             await vsConfig.update(
@@ -459,9 +519,11 @@ export class MCPManager {
 
             // Reconnect to the server with new configuration
             await this.connectionManager.removeConnection(name)
-            await this.addConnection(name, config)
+            await this.addConnection(name, configWithDefaults)
 
-            logDebug('MCPManager', `Updated MCP server: ${name}`, { verbose: { config } })
+            logDebug('MCPManager', `Updated MCP server: ${name}`, {
+                verbose: { config: configWithDefaults },
+            })
         } catch (error) {
             vscode.window.showErrorMessage(
                 `Failed to update MCP server: ${error instanceof Error ? error.message : String(error)}`
@@ -510,11 +572,11 @@ export function createMCPToolState(
         type: 'tool-state',
         toolId: `mcp-${toolName}-${Date.now()}`,
         status,
-        toolName: `mcp-${serverName}-${toolName}`,
+        toolName: `${serverName}_${toolName}`,
         content: imageContent || textContent,
         // ContextItemCommon properties
         outputType: 'mcp',
-        uri: vscode.Uri.parse(`cody:///tools/mcp/${toolName}`),
+        uri: URI.parse(''),
         title: serverName + ' - ' + toolName,
         description: textContent,
         source: ContextItemSource.Agentic,

@@ -190,14 +190,22 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
         const params = {
             maxTokensToSample: 8000,
             messages: JSON.stringify(prompt),
-            tools: this.tools.map(tool => ({
-                type: 'function',
-                function: {
-                    name: tool.spec.name,
-                    description: tool.spec.description,
-                    parameters: tool.spec.input_schema,
-                },
-            })),
+            // Ensure unique tool names by using a Map keyed by tool name
+            tools: Array.from(
+                new Map(
+                    this.tools.map(tool => [
+                        tool.spec.name,
+                        {
+                            type: 'function',
+                            function: {
+                                name: tool.spec.name,
+                                description: tool.spec.description,
+                                parameters: tool.spec.input_schema,
+                            },
+                        },
+                    ])
+                ).values()
+            ),
             stream: true,
             model,
         }

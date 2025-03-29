@@ -147,15 +147,15 @@ export class MCPServerManager {
                 // Create an agent tool
                 const agentTool: AgentTool = {
                     spec: {
-                        name: `${serverName}_${tool.name || ''}`,
+                        name: `${serverName}_${tool.name}`,
                         description: tool.description || '',
                         input_schema: tool.input_schema || {},
                     },
                     invoke: async (args: Record<string, any>) => {
                         try {
-                            return this.executeTool(serverName, tool.name || '', args)
+                            return this.executeTool(serverName, tool.name, args)
                         } catch (error) {
-                            logDebug('MCPServerManager', `Error executing tool ${tool.name || ''}:`, {
+                            logDebug('MCPServerManager', `Error executing tool ${tool.name}:`, {
                                 verbose: { error },
                             })
                         }
