@@ -20,7 +20,6 @@ import com.intellij.testFramework.runInEdtAndWait
 import com.sourcegraph.cody.agent.CodyAgentService
 import com.sourcegraph.cody.agent.protocol_generated.ClientCapabilities
 import com.sourcegraph.cody.agent.protocol_generated.ProtocolAuthenticatedAuthStatus
-import com.sourcegraph.cody.agent.protocol_generated.WebviewNativeConfig
 import com.sourcegraph.cody.auth.SourcegraphServerPath
 import java.io.File
 import java.util.concurrent.CompletableFuture
@@ -32,35 +31,10 @@ import org.junit.Assert.assertTrue
 
 open class BaseIntegrationTextFixture(
     private val recordingName: String,
-    private val capabilities: ClientCapabilities = defaultCapabilities
+    private val capabilities: ClientCapabilities = CodyAgentService.clientCapabilities
 ) {
   companion object {
     const val ASYNC_WAIT_TIMEOUT_SECONDS = 20L
-
-    private val defaultCapabilities =
-        ClientCapabilities(
-            authentication = ClientCapabilities.AuthenticationEnum.Enabled,
-            edit = ClientCapabilities.EditEnum.Enabled,
-            editWorkspace = ClientCapabilities.EditWorkspaceEnum.Enabled,
-            codeLenses = ClientCapabilities.CodeLensesEnum.Enabled,
-            disabledMentionsProviders = listOf("symbol"),
-            showDocument = ClientCapabilities.ShowDocumentEnum.Enabled,
-            ignore = ClientCapabilities.IgnoreEnum.Enabled,
-            untitledDocuments = ClientCapabilities.UntitledDocumentsEnum.Enabled,
-            codeActions = ClientCapabilities.CodeActionsEnum.Enabled,
-            shell = ClientCapabilities.ShellEnum.Enabled,
-            globalState = ClientCapabilities.GlobalStateEnum.Stateless,
-            secrets = ClientCapabilities.SecretsEnum.`Client-managed`,
-            webview = ClientCapabilities.WebviewEnum.Native,
-            webviewNativeConfig =
-                WebviewNativeConfig(
-                    view = WebviewNativeConfig.ViewEnum.Multiple,
-                    cspSource = "'self' https://*.sourcegraphstatic.com",
-                    webviewBundleServingPrefix = "https://file+.sourcegraphstatic.com",
-                ),
-            webviewMessages = ClientCapabilities.WebviewMessagesEnum.`String-encoded`,
-            accountSwitchingInWebview = ClientCapabilities.AccountSwitchingInWebviewEnum.Enabled,
-            showWindowMessage = ClientCapabilities.ShowWindowMessageEnum.Request)
   }
 
   private val logger = Logger.getInstance(BaseIntegrationTextFixture::class.java)
@@ -158,7 +132,10 @@ open class BaseIntegrationTextFixture(
     assertNotNull(
         "Unable to start agent in a timely fashion!",
         CodyAgentService.getInstance(project)
-            .startAgent(capabilities, endpoint, token)
+            .startAgent(
+                capabilities.copy(globalState = ClientCapabilities.GlobalStateEnum.Stateless),
+                endpoint,
+                token)
             .completeOnTimeout(null, ASYNC_WAIT_TIMEOUT_SECONDS, TimeUnit.SECONDS)
             .get())
   }

@@ -76,36 +76,10 @@ class CodyAgentService(private val project: Project) : Disposable {
   }
 
   fun startAgent(secondsTimeout: Long = 45): CompletableFuture<CodyAgent> {
-
-    val capabilities =
-        ClientCapabilities(
-            authentication = ClientCapabilities.AuthenticationEnum.Enabled,
-            edit = ClientCapabilities.EditEnum.Enabled,
-            editWorkspace = ClientCapabilities.EditWorkspaceEnum.Enabled,
-            codeLenses = ClientCapabilities.CodeLensesEnum.Enabled,
-            disabledMentionsProviders = listOf("symbol"),
-            showDocument = ClientCapabilities.ShowDocumentEnum.Enabled,
-            ignore = ClientCapabilities.IgnoreEnum.Enabled,
-            untitledDocuments = ClientCapabilities.UntitledDocumentsEnum.Enabled,
-            codeActions = ClientCapabilities.CodeActionsEnum.Enabled,
-            shell = ClientCapabilities.ShellEnum.Enabled,
-            globalState = ClientCapabilities.GlobalStateEnum.`Server-managed`,
-            secrets = ClientCapabilities.SecretsEnum.`Client-managed`,
-            webview = ClientCapabilities.WebviewEnum.Native,
-            webviewNativeConfig =
-                WebviewNativeConfig(
-                    view = WebviewNativeConfig.ViewEnum.Multiple,
-                    cspSource = "'self' https://*.sourcegraphstatic.com",
-                    webviewBundleServingPrefix = "https://file+.sourcegraphstatic.com",
-                ),
-            webviewMessages = ClientCapabilities.WebviewMessagesEnum.`String-encoded`,
-            accountSwitchingInWebview = ClientCapabilities.AccountSwitchingInWebviewEnum.Enabled,
-            showWindowMessage = ClientCapabilities.ShowWindowMessageEnum.Request)
-
     // Normally we do not need to specify endpoint or token used for starting an agent.
     // Agent will automatically pick up the last used one or the default.
     // Custom endpoint and token are used in tests.
-    return startAgent(capabilities, endpoint = null, token = null, secondsTimeout)
+    return startAgent(clientCapabilities, endpoint = null, token = null, secondsTimeout)
   }
 
   fun startAgent(
@@ -206,6 +180,31 @@ class CodyAgentService(private val project: Project) : Disposable {
 
   companion object {
     private val logger = Logger.getInstance(CodyAgent::class.java)
+
+    val clientCapabilities =
+        ClientCapabilities(
+            authentication = ClientCapabilities.AuthenticationEnum.Enabled,
+            edit = ClientCapabilities.EditEnum.Enabled,
+            editWorkspace = ClientCapabilities.EditWorkspaceEnum.Enabled,
+            codeLenses = ClientCapabilities.CodeLensesEnum.Enabled,
+            disabledMentionsProviders = listOf("symbol"),
+            showDocument = ClientCapabilities.ShowDocumentEnum.Enabled,
+            ignore = ClientCapabilities.IgnoreEnum.Enabled,
+            untitledDocuments = ClientCapabilities.UntitledDocumentsEnum.Enabled,
+            codeActions = ClientCapabilities.CodeActionsEnum.Enabled,
+            shell = ClientCapabilities.ShellEnum.Enabled,
+            globalState = ClientCapabilities.GlobalStateEnum.`Server-managed`,
+            secrets = ClientCapabilities.SecretsEnum.`Client-managed`,
+            webview = ClientCapabilities.WebviewEnum.Native,
+            webviewNativeConfig =
+                WebviewNativeConfig(
+                    view = WebviewNativeConfig.ViewEnum.Multiple,
+                    cspSource = "'self' https://*.sourcegraphstatic.com",
+                    webviewBundleServingPrefix = "https://file+.sourcegraphstatic.com",
+                ),
+            webviewMessages = ClientCapabilities.WebviewMessagesEnum.`String-encoded`,
+            accountSwitchingInWebview = ClientCapabilities.AccountSwitchingInWebviewEnum.Enabled,
+            showWindowMessage = ClientCapabilities.ShowWindowMessageEnum.Request)
 
     val agentError: AtomicReference<String?> = AtomicReference(null)
 
