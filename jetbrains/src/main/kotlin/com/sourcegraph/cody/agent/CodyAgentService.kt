@@ -184,6 +184,9 @@ class CodyAgentService(private val project: Project) : Disposable {
     val clientCapabilities =
         ClientCapabilities(
             authentication = ClientCapabilities.AuthenticationEnum.Enabled,
+            autoedit = ClientCapabilities.AutoeditEnum.Enabled,
+            autoeditInlineDiff = ClientCapabilities.AutoeditInlineDiffEnum.None,
+            autoeditAsideDiff = ClientCapabilities.AutoeditAsideDiffEnum.Diff,
             edit = ClientCapabilities.EditEnum.Enabled,
             editWorkspace = ClientCapabilities.EditWorkspaceEnum.Enabled,
             codeLenses = ClientCapabilities.CodeLensesEnum.Enabled,
