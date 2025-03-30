@@ -3,6 +3,7 @@ import {
     type AuthStatus,
     type BillingCategory,
     type BillingProduct,
+    displayPath,
     CHAT_OUTPUT_TOKEN_BUDGET,
     type ChatClient,
     type ChatMessage,
@@ -371,6 +372,32 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                         preview: true,
                         // Use the active column if in sidebar, otherwise use Beside
                         viewColumn: isInSidebar ? vscode.ViewColumn.Active : vscode.ViewColumn.Beside,
+                    })
+
+                    // TODO: check if this is correct or not
+                    let linkOrigin: string;
+                    // If source is from a tool operation
+                    if (message.source === 'agentic') {
+                        // For the agentic features that involve tools
+                        linkOrigin = 'editFileTool';
+                    } else if (message.source === 'editor' || message.source === 'selection') {
+                        // Files from workspace or selected code
+                        linkOrigin = 'readFileTool';
+                    } else {
+                        // Default for AI-generated content, searches, mentions, etc.
+                        linkOrigin = 'outputText';
+                    }
+
+                    // Record telemetry for file link clicks
+                    telemetryRecorder.recordEvent('cody.fileLink', 'clicked', {
+                        billingMetadata: {
+                            product: 'cody',
+                            category: 'billable',
+                        },
+                        privateMetadata: {
+                            fileName: displayPath(message.uri),
+                            linkOrigin,
+                        },
                     })
                 }
                 break
@@ -779,6 +806,10 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         recorder.setIntentInfo({
             userSpecifiedIntent: manuallySelectedIntent ?? 'chat',
         })
+
+        // Record chat question executed telemetry right before agent handles the query
+        // This ensures it's only fired once when execution begins, not on subsequent model responses
+        recorder.recordChatQuestionExecuted(mentions, { addMetadata: true, current: span })
 
         this.postEmptyMessageInProgress(model)
         let messageInProgress: ChatMessage = { speaker: 'assistant', model }

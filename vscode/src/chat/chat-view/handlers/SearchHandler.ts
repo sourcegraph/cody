@@ -25,7 +25,8 @@ export class SearchHandler implements AgentHandler {
         { editorState, inputText, mentions, chatBuilder, signal, recorder, span }: AgentRequest,
         delegate: AgentHandlerDelegate
     ): Promise<void> {
-        recorder.recordChatQuestionExecuted(mentions, { addMetadata: true, current: span })
+        // No longer recording chat question executed telemetry in handlers
+        // This is now only done in ChatController when user submits a query
 
         const inputTextWithoutContextChips = editorState
             ? inputTextWithoutContextChipsFromPromptEditorState(editorState)

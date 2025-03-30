@@ -9,6 +9,7 @@ import {
     type ToolResultContentPart,
     UIToolStatus,
     isDefined,
+    telemetryRecorder,
     logDebug,
 } from '@sourcegraph/cody-shared'
 import type { ContextItemToolState } from '@sourcegraph/cody-shared/src/codebase-context/messages'
@@ -22,6 +23,7 @@ import { parseToolCallArgs } from '../utils/parse'
 import { ChatHandler } from './ChatHandler'
 import type { AgentHandler, AgentHandlerDelegate, AgentRequest } from './interfaces'
 import { buildAgentPrompt } from './prompts'
+import { getFileDiff } from '../utils/diff'
 
 enum AGENT_MODELS {
     ExtendedThinking = 'anthropic::2024-10-22::claude-3-7-sonnet-extended-thinking',
@@ -184,7 +186,8 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
         // Create prompt
         const prompter = new AgenticChatPrompter(this.SYSTEM_PROMPT)
         const prompt = await prompter.makePrompt(chatBuilder, contextItems)
-        recorder.recordChatQuestionExecuted(contextItems, { addMetadata: true, current: span })
+        // No longer recording chat question executed telemetry in handlers
+        // This is now only done in ChatController when user submits a query
         logDebug('AgenticHandler', 'Prompt created', { verbose: prompt })
         // Prepare API call parameters
         const params = {
@@ -295,11 +298,33 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
             const results = await Promise.allSettled(
                 toolCalls.map(async toolCall => {
                     try {
+                        telemetryRecorder.recordEvent('cody.tool-use', 'selected', {
+                            billingMetadata: {
+                            product: 'cody',
+                            category: 'billable',
+                            },
+                            privateMetadata: {
+                                input_args: JSON.stringify(toolCall.tool_call?.arguments),
+                                tool_name: toolCall.tool_call?.name,
+                                type: 'builtin',
+                            },
+                        })
                         logDebug('AgenticHandler', `Executing ${toolCall.tool_call?.name}`, {
                             verbose: toolCall,
                         })
                         return await this.executeSingleTool(toolCall)
                     } catch (error) {
+                        telemetryRecorder.recordEvent('cody.tool-use', 'failed', {
+                            billingMetadata: {
+                            product: 'cody',
+                            category: 'billable',
+                            },
+                            privateMetadata: {
+                                input_args: JSON.stringify(toolCall.tool_call?.arguments),
+                                tool_name: toolCall.tool_call?.name,
+                                type: 'builtin',
+                            },
+                        })
                         logDebug('AgenticHandler', `Error executing tool ${toolCall.tool_call?.name}`, {
                             verbose: error,
                         })
@@ -345,6 +370,18 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
         try {
             const args = parseToolCallArgs(toolCall.tool_call.arguments)
             const result = await tool.invoke(args).catch(error => {
+                telemetryRecorder.recordEvent('cody.tool-use', 'failed', {
+                    billingMetadata: {
+                        product: 'cody',
+                        category: 'billable',
+                        },
+                        privateMetadata: {
+                            input_args: JSON.stringify(toolCall.tool_call?.arguments),
+                            tool_name: toolCall.tool_call?.name,
+                            type: 'builtin',
+                        },
+                    }
+                )
                 logDebug('AgenticHandler', `Error executing tool ${toolCall.tool_call.name}`, {
                     verbose: error,
                 })
@@ -359,6 +396,51 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
 
             logDebug('AgenticHandler', `Executed ${toolCall.tool_call.name}`, { verbose: result })
 
+            // TODO: check if this is the best way to implement this here.
+            // Calculate lines changed based on diff if we have old and new file content
+            let linesChanged = 0
+
+            // If result has oldContent and newContent, use diff to calculate changes
+            if (result.metadata && Array.isArray(result.metadata) && result.metadata.length >= 2) {
+                const oldText = result.metadata[0] || ''
+                const newText = result.metadata[1] || ''
+
+                if (oldText !== newText) {
+                    // Use getFileDiff to calculate changes
+                    const diff = getFileDiff(URI.parse(''), oldText, newText)
+                    linesChanged = diff.total.added + diff.total.removed + diff.total.modified
+                }
+            } else if (result.content && typeof result.content === 'object' && 'edits' in result.content) {
+                // Fallback to using edits if available
+                interface EditWithRange {
+                    range: {
+                        start: { line: number }
+                        end: { line: number }
+                    }
+                }
+
+                const edits = (result.content as { edits: EditWithRange[] }).edits
+                if (Array.isArray(edits)) {
+                    linesChanged = edits.reduce(
+                        (total: number, edit: EditWithRange) =>
+                            total + Math.abs(edit.range.end.line - edit.range.start.line),
+                        0
+                    )
+                }
+            }
+            telemetryRecorder.recordEvent('cody.tool-use', 'executed', {
+                billingMetadata: {
+                    product: 'cody',
+                    category: 'billable',
+                },
+                privateMetadata: {
+                    input_args: JSON.stringify(toolCall.tool_call?.arguments),
+                    tool_name: toolCall.tool_call?.name,
+                    type: 'builtin',
+                    num_lines_changed: linesChanged
+                },
+            })
+
             return {
                 tool_result,
                 output: {
@@ -369,6 +451,18 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
             }
         } catch (error) {
             tool_result.tool_result.content = String(error)
+            telemetryRecorder.recordEvent('cody.tool-use', 'failed', {
+                billingMetadata: {
+                    product: 'cody',
+                    category: 'billable',
+                    },
+                    privateMetadata: {
+                        input_args: JSON.stringify(toolCall.tool_call?.arguments),
+                        tool_name: toolCall.tool_call?.name,
+                        type: 'builtin',
+                    },
+                }
+            )
             logDebug('AgenticHandler', `${toolCall.tool_call.name} failed`, { verbose: error })
             return {
                 tool_result,
