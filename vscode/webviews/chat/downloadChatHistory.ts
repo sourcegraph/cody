@@ -14,7 +14,7 @@ export async function downloadChatHistory(
     const chatHistory: SerializedChatTranscript[] | null = userHistory?.chat
         ? Object.values(userHistory.chat)
         : null
-    if (!chatHistory) {
+    if (!chatHistory || chatHistory.length === 0) {
         return
     }
     const json = JSON.stringify(chatHistory, null, 2)
