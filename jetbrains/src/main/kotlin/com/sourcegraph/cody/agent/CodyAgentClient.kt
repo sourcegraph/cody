@@ -4,6 +4,7 @@ import com.intellij.notification.Notification
 import com.intellij.notification.NotificationType
 import com.intellij.notification.Notifications
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.application.ReadAction
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.diagnostic.debug
@@ -251,8 +252,10 @@ class CodyAgentClient(private val project: Project, private val webview: NativeW
   @JsonNotification("autocomplete/didTrigger")
   fun autocomplete_didTrigger(params: Null?) {
     FileEditorManager.getInstance(project).selectedTextEditor?.let { editor ->
-      CodyAutocompleteManager.instance.triggerAutocomplete(
-          editor, editor.caretModel.offset, InlineCompletionTriggerKind.AUTOMATIC)
+      ReadAction.run<Throwable> {
+        CodyAutocompleteManager.instance.triggerAutocomplete(
+            editor, editor.caretModel.offset, InlineCompletionTriggerKind.AUTOMATIC)
+      }
     }
   }
 
