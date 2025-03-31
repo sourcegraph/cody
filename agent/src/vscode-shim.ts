@@ -1113,6 +1113,12 @@ _commands?.registerCommand?.(
         return _window.showTextDocument(uriPath, options)
     }
 )
+_commands?.registerCommand?.('editor.action.inlineSuggest.hide', () => {
+    agent?.notify('autocomplete/didHide', null)
+})
+_commands?.registerCommand?.('editor.action.inlineSuggest.trigger', () => {
+    agent?.notify('autocomplete/didTrigger', null)
+})
 
 function promisify(value: any): Promise<any> {
     return value instanceof Promise ? value : Promise.resolve(value)
