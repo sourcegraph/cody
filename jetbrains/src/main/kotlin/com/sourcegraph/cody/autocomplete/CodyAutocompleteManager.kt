@@ -407,6 +407,7 @@ class CodyAutocompleteManager {
       while (endIndex > 0 &&
           endIndex > startIndex &&
           original.length - (completion.length - endIndex) > 0 &&
+          original.length - (completion.length - endIndex) > startIndex &&
           completion[endIndex - 1] ==
               original[original.length - (completion.length - endIndex) - 1]) {
         endIndex--
