@@ -2,7 +2,6 @@ import {
     type ChatMessage,
     type Model,
     ModelTag,
-    currentAuthStatus,
     currentAuthStatusOrNotReadyYet,
     isCodyProModel,
 } from '@sourcegraph/cody-shared'
