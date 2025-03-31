@@ -18,7 +18,7 @@ class AutoeditManager(private val project: Project) {
   var activeAutoeditEditor: Editor? = null
     private set
 
-  var disposable: Disposable? = null
+  var disposable: Disposable = Disposable {}
     private set
 
   fun showAutoedit(editor: Editor, item: AutocompleteEditItem) {
@@ -31,8 +31,6 @@ class AutoeditManager(private val project: Project) {
       activeAutoeditEditor = null
       activeAutocompleteEditItem = null
     }
-
-    disposable?.dispose()
     disposable = myDisposable
 
     val offsetRange = item.range.toOffsetRange(editor.document) ?: return
@@ -65,7 +63,7 @@ class AutoeditManager(private val project: Project) {
   }
 
   fun hide() {
-    disposable?.dispose()
+    disposable.dispose()
   }
 
   companion object {
