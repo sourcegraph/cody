@@ -38,7 +38,7 @@ export const shellTool: AgentTool = {
     spec: {
         name: 'run_terminal_command',
         description:
-            'Run an arbitrary terminal command at the root of the users project. E.g. `ls -la` for listing files, or `find` for searching latest version of the codebase files locally.',
+            'Run an arbitrary terminal command at the root of the users project. E.g. `ls -la` for listing files. The command must not be interactive and must be shell escaped. The command will be run in the root of the current workspace folder.',
         input_schema: zodToolSchema(RunTerminalCommandSchema),
     },
     invoke: async (input: RunTerminalCommandInput) => {
