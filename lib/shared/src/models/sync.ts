@@ -1,4 +1,5 @@
 import { Observable, interval, map } from 'observable-fns'
+import { currentAuthStatusOrNotReadyYet, mockAuthStatus } from '../auth/authStatus'
 import { type AuthStatus, isCodyProUser } from '../auth/types'
 import type { ClientConfiguration } from '../configuration'
 import { clientCapabilities } from '../configuration/clientCapabilities'
@@ -21,9 +22,11 @@ import { pendingOperation, switchMapReplayOperation } from '../misc/observableOp
 import { ANSWER_TOKENS } from '../prompt/constants'
 import type { CodyClientConfig } from '../sourcegraph-api/clientConfig'
 import { isDotCom } from '../sourcegraph-api/environments'
+import type { RateLimitError } from '../sourcegraph-api/errors'
 import type { CodyLLMSiteConfiguration } from '../sourcegraph-api/graphql/client'
 import { RestClient } from '../sourcegraph-api/rest/client'
 import type { UserProductSubscription } from '../sourcegraph-api/userProductSubscription'
+import { telemetryRecorder } from '../telemetry-v2/singleton'
 import { CHAT_INPUT_TOKEN_BUDGET } from '../token/constants'
 import { isError } from '../utils'
 import { DEEP_CODY_MODEL, TOOL_CODY_MODEL } from './client'
@@ -40,6 +43,8 @@ import { getEnterpriseContextWindow } from './utils'
 const EMPTY_PREFERENCES: DefaultsAndUserPreferencesForEndpoint = { defaults: {}, selected: {} }
 export const INPUT_TOKEN_FLAG_OFF: number = 45_000
 const MISTRAL_ADJUSTMENT_FACTOR: number = 0.85
+let CHAT_MODEL_BEFORE_RATE_LIMIT = ''
+let EDIT_MODEL_BEFORE_RATE_LIMIT = ''
 
 /**
  * Observe the list of all available models.
@@ -218,10 +223,12 @@ export function syncModels({
                                                             )
                                                         )
                                                     )
-                                                    data.preferences!.defaults =
-                                                        defaultModelPreferencesFromServerModelsConfig(
-                                                            serverModelsConfig
-                                                        )
+                                                    if (data.preferences?.defaults) {
+                                                        data.preferences.defaults =
+                                                            defaultModelPreferencesFromServerModelsConfig(
+                                                                serverModelsConfig
+                                                            )
+                                                    }
                                                 }
 
                                                 // NOTE: Calling `registerModelsFromVSCodeConfiguration()` doesn't
@@ -323,7 +330,76 @@ export function syncModels({
                                                 ) {
                                                     data.preferences!.defaults.chat = haikuModel.id
                                                 }
+                                                if (authStatus.rateLimited) {
+                                                    // Disable all the non-fast models
+                                                    data.primaryModels = data.primaryModels.map(
+                                                        model => {
+                                                            if (!model.tags.includes(ModelTag.Speed)) {
+                                                                return { ...model, disabled: true }
+                                                            }
+                                                            return model
+                                                        }
+                                                    )
 
+                                                    // Set Gemini Flash as the selected model
+                                                    const geminiFlashModel = data.primaryModels.find(
+                                                        model =>
+                                                            model.id === 'google::v1::gemini-2.0-flash'
+                                                    )
+                                                    if (geminiFlashModel && data.preferences) {
+                                                        CHAT_MODEL_BEFORE_RATE_LIMIT =
+                                                            data.preferences.defaults.chat || ''
+                                                        EDIT_MODEL_BEFORE_RATE_LIMIT =
+                                                            data.preferences.defaults.edit || ''
+
+                                                        data.preferences.defaults.chat =
+                                                            geminiFlashModel.id
+                                                        data.preferences.defaults.edit =
+                                                            geminiFlashModel.id
+                                                        telemetryRecorder.recordEvent(
+                                                            'cody.rateLimit',
+                                                            'hit',
+                                                            {
+                                                                privateMetadata: {
+                                                                    rateLimitedModel:
+                                                                        geminiFlashModel.id,
+                                                                },
+                                                            }
+                                                        )
+                                                    } else {
+                                                        // Re-enable all models
+                                                        data.primaryModels = data.primaryModels.map(
+                                                            model => {
+                                                                if (
+                                                                    !model.tags.includes(ModelTag.Speed)
+                                                                ) {
+                                                                    return { ...model, disabled: false }
+                                                                }
+                                                                return model
+                                                            }
+                                                        )
+                                                        const originalChatModel =
+                                                            data.primaryModels.find(
+                                                                model =>
+                                                                    model.id ===
+                                                                    CHAT_MODEL_BEFORE_RATE_LIMIT
+                                                            )
+                                                        const originalEditModel =
+                                                            data.primaryModels.find(
+                                                                model =>
+                                                                    model.id ===
+                                                                    EDIT_MODEL_BEFORE_RATE_LIMIT
+                                                            )
+                                                        if (originalChatModel && data.preferences) {
+                                                            data.preferences.defaults.chat =
+                                                                originalChatModel.id
+                                                        }
+                                                        if (originalEditModel && data.preferences) {
+                                                            data.preferences.defaults.edit =
+                                                                originalEditModel.id
+                                                        }
+                                                    }
+                                                }
                                                 return Observable.of(data)
                                             }
                                         )
@@ -379,26 +455,31 @@ export function syncModels({
                 return serverModelsConfig
             })
         )
-
-    return combineLatest(localModels, remoteModelsData, userModelPreferences).pipe(
+    return combineLatest(localModels, remoteModelsData, userModelPreferences, authStatus).pipe(
         map(
-            ([localModels, remoteModelsData, userModelPreferences]):
+            ([localModels, remoteModelsData, userModelPreferences, currentAuthStatus]):
                 | ModelsData
-                | typeof pendingOperation =>
-                remoteModelsData === pendingOperation
-                    ? pendingOperation
-                    : {
-                          localModels,
-                          primaryModels: isError(remoteModelsData)
-                              ? []
-                              : normalizeModelList(remoteModelsData.primaryModels),
-                          preferences: isError(remoteModelsData)
-                              ? userModelPreferences
-                              : resolveModelPreferences(
-                                    remoteModelsData.preferences,
-                                    userModelPreferences
-                                ),
-                      }
+                | typeof pendingOperation => {
+                if (remoteModelsData === pendingOperation) {
+                    return pendingOperation
+                }
+
+                // Calculate isRateLimited directly from the current authStatus
+                const isRateLimited = !!(
+                    'rateLimited' in currentAuthStatus && currentAuthStatus.rateLimited
+                )
+
+                return {
+                    localModels,
+                    primaryModels: isError(remoteModelsData)
+                        ? []
+                        : normalizeModelList(remoteModelsData.primaryModels),
+                    preferences: isError(remoteModelsData)
+                        ? userModelPreferences
+                        : resolveModelPreferences(remoteModelsData.preferences, userModelPreferences),
+                    isRateLimited,
+                }
+            }
         ),
         distinctUntilChanged(),
         tap(modelsData => {
@@ -580,5 +661,16 @@ export function defaultModelPreferencesFromServerModelsConfig(
         autocomplete: config.defaultModels.codeCompletion,
         chat: config.defaultModels.chat,
         edit: config.defaultModels.chat,
+    }
+}
+
+export function handleRateLimitError(error: RateLimitError, feature: string): void {
+    const currentStatus = currentAuthStatusOrNotReadyYet()
+    if (currentStatus?.authenticated) {
+        const updatedStatus: AuthStatus = {
+            ...currentStatus,
+            rateLimited: true,
+        }
+        mockAuthStatus(updatedStatus)
     }
 }

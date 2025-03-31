@@ -22,6 +22,7 @@ import {
     type NLSSearchDynamicFilter,
     type ProcessingStep,
     PromptString,
+    type RateLimitError,
     type SerializedChatInteraction,
     type SerializedChatTranscript,
     type SerializedPromptEditorState,
@@ -43,6 +44,7 @@ import {
     forceHydration,
     getDefaultSystemPrompt,
     graphqlClient,
+    handleRateLimitError,
     hydrateAfterPostMessage,
     isAbortErrorOrSocketHangUp,
     isContextWindowLimitError,
@@ -1396,6 +1398,10 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
      * Display error message in webview as part of the chat transcript, or as a system banner alongside the chat.
      */
     private postError(error: Error, type?: MessageErrorType): void {
+        if (isRateLimitError(error)) {
+            handleRateLimitError(error as RateLimitError, error.feature)
+        }
+
         logDebug('ChatController: postError', error.message)
         // Add error to transcript
         if (type === 'transcript') {

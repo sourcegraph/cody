@@ -35,8 +35,10 @@ export class RateLimitError extends Error {
         super(message)
         this.userMessage =
             feature === 'Agentic Chat'
-                ? `You've reached the daily limit for agentic context (experimental).`
-                : `You've used all of your ${feature} for ${upgradeIsAvailable ? 'the month' : 'today'}.`
+                ? `You've reached the daily limit for agentic context (experimental). You can continue using Gemini Flash, or other standard models. `
+                : `You've used all of your premium ${feature} for ${
+                      upgradeIsAvailable ? 'the month' : 'today'
+                  }. You can continue using Gemini Flash, or other standard models. `
         this.retryAfterDate = retryAfter
             ? /^\d+$/.test(retryAfter)
                 ? new Date(Date.now() + Number.parseInt(retryAfter, 10) * 1000)

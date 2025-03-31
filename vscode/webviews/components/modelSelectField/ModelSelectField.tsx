@@ -1,8 +1,14 @@
-import { type ChatMessage, type Model, ModelTag, isCodyProModel } from '@sourcegraph/cody-shared'
+import {
+    type ChatMessage,
+    type Model,
+    ModelTag,
+    type ModelsData,
+    isCodyProModel,
+} from '@sourcegraph/cody-shared'
 import { isMacOS } from '@sourcegraph/cody-shared'
 import { DeepCodyAgentID, ToolCodyModelName } from '@sourcegraph/cody-shared/src/models/client'
 import { clsx } from 'clsx'
-import { BookOpenIcon, BrainIcon, BuildingIcon, ExternalLinkIcon } from 'lucide-react'
+import { AlertTriangleIcon, BookOpenIcon, BrainIcon, BuildingIcon, ExternalLinkIcon } from 'lucide-react'
 import { type FunctionComponent, type ReactNode, useCallback, useMemo } from 'react'
 import type { UserAccountInfo } from '../../Chat'
 import { getVSCodeAPI } from '../../utils/VSCodeApi'
@@ -40,6 +46,7 @@ export const ModelSelectField: React.FunctionComponent<{
     /** For storybooks only. */
     __storybook__open?: boolean
     modelSelectorRef?: React.MutableRefObject<{ open: () => void; close: () => void } | null>
+    modelsData?: ModelsData
 }> = ({
     models,
     onModelSelect: parentOnModelSelect,
@@ -50,6 +57,7 @@ export const ModelSelectField: React.FunctionComponent<{
     intent,
     __storybook__open,
     modelSelectorRef,
+    modelsData,
 }) => {
     const telemetryRecorder = useTelemetryRecorder()
 
@@ -166,6 +174,7 @@ export const ModelSelectField: React.FunctionComponent<{
         return null
     }
 
+    const isRateLimited = useMemo(() => models.some(model => model.disabled), [models])
     const value = selectedModel.id
     return (
         <ToolbarPopoverItem
@@ -190,6 +199,16 @@ export const ModelSelectField: React.FunctionComponent<{
                         className="model-selector-popover tw-max-h-[80vh] tw-overflow-y-auto"
                         data-testid="chat-model-popover-option"
                     >
+                        {isRateLimited && (
+                            <div className="tw-pl-5 tw-pr-3 tw-py-1.5 tw-text-sm tw-text-foreground tw-flex tw-justify-center">
+                                <div className="tw-flex tw-items-center tw-gap-2 tw-bg-muted tw-px-2 tw-py-0.5 tw-rounded">
+                                    <AlertTriangleIcon className="tw-w-[16px] tw-h-[16px]" />
+                                    <span className="tw-font-semibold">
+                                        Usage limit reached: Premium models disabled
+                                    </span>
+                                </div>
+                            </div>
+                        )}
                         {optionsByGroup.map(({ group, options }) => (
                             <CommandGroup heading={group} key={group}>
                                 {options.map(option => (
@@ -299,6 +318,9 @@ function modelAvailability(
     serverSentModelsEnabled: boolean,
     model: Model
 ): ModelAvailability {
+    if (model.disabled) {
+        return 'not-selectable-on-enterprise'
+    }
     if (!userInfo.isDotComUser && !serverSentModelsEnabled) {
         return 'not-selectable-on-enterprise'
     }
@@ -318,6 +340,10 @@ function getTooltip(model: Model, availability: string): string {
     }
     if (model.tags.includes(ModelTag.OnWaitlist)) {
         return 'Request received, we will reach out with next steps'
+    }
+
+    if (model.disabled) {
+        return 'This model is currently unavailable due to rate limiting. Please try a faster model.'
     }
 
     const capitalizedProvider =

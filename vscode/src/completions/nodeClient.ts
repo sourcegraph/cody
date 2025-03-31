@@ -22,6 +22,7 @@ import {
     getSerializedParams,
     getTraceparentHeaders,
     globalAgentRef,
+    handleRateLimitError,
     isCustomAuthChallengeResponse,
     isError,
     logError,
@@ -159,6 +160,8 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                                 limit ? Number.parseInt(limit, 10) : undefined,
                                 retryAfter
                             )
+                            const feature = 'chat messages and commands'
+                            handleRateLimitError(error, feature)
                             onErrorOnce(error, statusCode)
                         } else {
                             onErrorOnce(e, statusCode)
@@ -343,6 +346,24 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                     body: JSON.stringify(serializedParams),
                     signal,
                 })
+                if (response.status === 429) {
+                    const upgradeIsAvailable =
+                        response.headers.get('x-is-cody-pro-user') === 'false' &&
+                        typeof response.headers.get('x-is-cody-pro-user') !== 'undefined'
+                    const retryAfter = response.headers.get('retry-after')
+                    const limit = response.headers.get('x-ratelimit-limit')
+
+                    const error = new RateLimitError(
+                        'chat messages and commands',
+                        await response.text(),
+                        upgradeIsAvailable,
+                        limit ? Number.parseInt(limit, 10) : undefined,
+                        retryAfter
+                    )
+                    const feature = 'chat messages and commands'
+                    handleRateLimitError(error, feature)
+                    throw error
+                }
                 if (!response.ok) {
                     const errorMessage = await response.text()
                     throw new NetworkError(
