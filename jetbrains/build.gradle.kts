@@ -59,8 +59,8 @@ val skippedFailureLevels =
 plugins {
   id("java")
   id("jvm-test-suite")
-  id("org.jetbrains.kotlin.jvm") version "2.1.10"
-  id("org.jetbrains.intellij.platform") version "2.2.1"
+  id("org.jetbrains.kotlin.jvm") version "2.1.20"
+  id("org.jetbrains.intellij.platform") version "2.5.0"
   id("org.jetbrains.changelog") version "2.2.1"
   id("com.diffplug.spotless") version "7.0.2"
   id("io.sentry.jvm.gradle") version "5.2.0"
