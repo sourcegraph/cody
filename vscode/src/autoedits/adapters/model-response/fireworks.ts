@@ -1,10 +1,5 @@
 import { createSSEIterator, fetch, isAbortError, isNodeResponse } from '@sourcegraph/cody-shared'
 import { AutoeditStopReason, type ModelResponse, type ModelResponseShared } from '../base'
-import {
-    type RawStreamEvent,
-    type StreamProcessingInfo,
-    processRawStreamEvents,
-} from '../process-raw-stream-events'
 
 export async function* getFireworksModelResponse({
     apiKey,
@@ -26,14 +21,6 @@ export async function* getFireworksModelResponse({
         Authorization: `Bearer ${apiKey}`,
         ...(body?.stream ? { 'Accept-Encoding': 'gzip;q=0' } : {}),
         ...customHeaders,
-    }
-
-    const streamInfoBase: Omit<
-        StreamProcessingInfo,
-        'abortSignal' | 'extractPrediction' | 'responseHeaders'
-    > = {
-        requestUrl: url,
-        requestHeaders,
     }
 
     try {
@@ -60,27 +47,49 @@ export async function* getFireworksModelResponse({
         const isStreamingResponse = response.headers.get('content-type')?.startsWith('text/event-stream')
 
         if (isStreamingResponse && isNodeResponse(response)) {
+            let prediction = ''
             const sseIterator = createSSEIterator(response.body)
-            const streamSource = (async function* (): AsyncIterable<RawStreamEvent> {
-                for await (const { event, data } of sseIterator) {
-                    if (event === 'error') {
-                        yield { event: 'error', data }
-                    } else if (data === '[DONE]') {
-                        yield { event: 'done', data }
-                    } else {
-                        yield { event: 'data', data }
+            for await (const { data } of sseIterator) {
+                if (abortSignal.aborted) {
+                    yield {
+                        type: 'aborted',
+                        stopReason: AutoeditStopReason.RequestAborted,
+                        requestHeaders: requestHeaders,
+                        requestUrl: url,
                     }
+                    return
                 }
-            })()
 
-            const streamInfo: StreamProcessingInfo = {
-                ...streamInfoBase,
-                responseHeaders,
-                abortSignal,
-                extractPrediction,
+                if (data === '[DONE]') {
+                    yield {
+                        type: 'success',
+                        stopReason: AutoeditStopReason.RequestFinished,
+                        prediction,
+                        requestHeaders: requestHeaders,
+                        requestUrl: url,
+                        responseHeaders,
+                        responseBody: await response.json(),
+                    }
+                    break
+                }
+
+                try {
+                    const predictionChunk = extractPrediction(data)
+                    if (predictionChunk) {
+                        prediction += predictionChunk
+                        yield {
+                            type: 'partial',
+                            stopReason: AutoeditStopReason.StreamingChunk,
+                            prediction,
+                            requestHeaders: requestHeaders,
+                            requestUrl: url,
+                        }
+                    }
+                } catch (parseError) {
+                    throw new Error(`Failed to parse stream data: ${parseError}`)
+                }
             }
 
-            yield* processRawStreamEvents(streamSource, streamInfo)
             return
         }
 

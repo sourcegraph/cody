@@ -24,7 +24,7 @@ import {
 
 import { mockLocalStorage } from '../services/LocalStorageProvider'
 import { AutoeditStopReason } from './adapters/base'
-import { getDefaultModelResponse } from './adapters/model-response/default'
+import type { getDefaultModelResponse } from './adapters/model-response/default'
 import {
     type AutoeditRequestID,
     autoeditAnalyticsLogger,

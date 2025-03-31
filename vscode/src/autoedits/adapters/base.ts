@@ -53,20 +53,6 @@ export interface PartialModelResponse extends ModelResponseShared {
     type: 'partial'
     stopReason: AutoeditStopReason.StreamingChunk
     prediction: string
-    /**
-     * Response headers received from the model API
-     */
-    responseHeaders: Record<string, string>
-    /**
-     * Optional full response body received from the model API
-     * This is propagated to the analytics logger for debugging purposes
-     * TODO: replace `any` with the proper type.
-     */
-    responseBody: Record<string, any>
-    /**
-     * The source of the suggestion, e.g. 'network', 'cache', etc.
-     */
-    source?: AutoeditSourceMetadata
 }
 
 export interface AbortedModelResponse extends ModelResponseShared {

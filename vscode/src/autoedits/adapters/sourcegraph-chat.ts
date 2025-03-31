@@ -58,6 +58,13 @@ export class SourcegraphChatAdapter implements AutoeditsModelAdapter {
                 if (msg.type === 'change') {
                     const newText = msg.text.slice(accumulated.length)
                     accumulated += newText
+                    yield {
+                        type: 'partial',
+                        stopReason: AutoeditStopReason.StreamingChunk,
+                        prediction: accumulated,
+                        requestUrl: option.url,
+                        requestHeaders: {},
+                    }
                 } else if (msg.type === 'complete' || msg.type === 'error') {
                     break
                 }

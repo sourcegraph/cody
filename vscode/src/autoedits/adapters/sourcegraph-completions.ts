@@ -88,6 +88,14 @@ export class SourcegraphCompletionsAdapter implements AutoeditsModelAdapter {
                             responseBody = msg.completionResponse
                         }
                     }
+
+                    yield {
+                        type: 'partial',
+                        stopReason: AutoeditStopReason.StreamingChunk,
+                        prediction,
+                        requestUrl,
+                        requestHeaders,
+                    }
                 }
 
                 const sharedResult = {
