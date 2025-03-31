@@ -85,8 +85,7 @@ export class ChatHandler implements AgentHandler {
         }
         const { prompt } = await this.buildPrompt(prompter, chatBuilder, signal, versions.codyAPIVersion)
 
-        // No longer recording chat question executed telemetry in handlers
-        // This is now only done in ChatController when user submits a query
+        recorder.recordChatQuestionExecuted(corpusContext, { addMetadata: true, current: span })
 
         signal.throwIfAborted()
 

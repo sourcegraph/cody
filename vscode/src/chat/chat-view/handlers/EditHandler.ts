@@ -51,8 +51,7 @@ export class EditHandler implements AgentHandler {
               )
             : inputText
 
-        // No longer recording chat question executed telemetry in handlers
-        // This is now only done in ChatController when user submits a query
+        recorder.recordChatQuestionExecuted(context, { addMetadata: true, current: span })
 
         const result = await executeCodyCommand(DefaultEditCommands.Edit, {
             requestID,

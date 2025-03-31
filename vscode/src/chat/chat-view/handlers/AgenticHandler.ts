@@ -19,7 +19,6 @@ import type { ChatBuilder } from '../ChatBuilder'
 import type { ChatControllerOptions } from '../ChatController'
 import type { ContextRetriever } from '../ContextRetriever'
 import { type AgentTool, AgentToolGroup } from '../tools'
-import { getFileDiff } from '../utils/diff'
 import { parseToolCallArgs } from '../utils/parse'
 import { ChatHandler } from './ChatHandler'
 import type { AgentHandler, AgentHandlerDelegate, AgentRequest } from './interfaces'
@@ -77,6 +76,7 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
 
         logDebug('AgenticHandler', `Starting agent session ${sessionID}`)
 
+        recorder.recordChatQuestionExecuted(contextItems, { addMetadata: true, current: span })
         try {
             // Run the main conversation loop
             await this.runConversationLoop(chatBuilder, delegate, recorder, span, signal, contextItems)
@@ -186,8 +186,8 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
         // Create prompt
         const prompter = new AgenticChatPrompter(this.SYSTEM_PROMPT)
         const prompt = await prompter.makePrompt(chatBuilder, contextItems)
-        // No longer recording chat question executed telemetry in handlers
-        // This is now only done in ChatController when user submits a query
+        // No longer recording chat question executed telemetry in agentic handlers
+        // This is now only done when user submits a query
         logDebug('AgenticHandler', 'Prompt created', { verbose: prompt })
         // Prepare API call parameters
         const params = {
@@ -402,42 +402,6 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
 
             logDebug('AgenticHandler', `Executed ${toolCall.tool_call.name}`, { verbose: result })
 
-            // TODO: check if this is the best way to implement this here.
-            // Calculate lines changed based on diff if we have old and new file content
-            let linesChanged = 0
-
-            // If result has oldContent and newContent, use diff to calculate changes
-            if (result.metadata && Array.isArray(result.metadata) && result.metadata.length >= 2) {
-                const oldText = result.metadata[0] || ''
-                const newText = result.metadata[1] || ''
-
-                if (oldText !== newText) {
-                    // Use getFileDiff to calculate changes
-                    const diff = getFileDiff(URI.parse(''), oldText, newText)
-                    linesChanged = diff.total.added + diff.total.removed + diff.total.modified
-                }
-            } else if (
-                result.content &&
-                typeof result.content === 'object' &&
-                'edits' in result.content
-            ) {
-                // Fallback to using edits if available
-                interface EditWithRange {
-                    range: {
-                        start: { line: number }
-                        end: { line: number }
-                    }
-                }
-
-                const edits = (result.content as { edits: EditWithRange[] }).edits
-                if (Array.isArray(edits)) {
-                    linesChanged = edits.reduce(
-                        (total: number, edit: EditWithRange) =>
-                            total + Math.abs(edit.range.end.line - edit.range.start.line),
-                        0
-                    )
-                }
-            }
             telemetryRecorder.recordEvent('cody.tool-use', 'executed', {
                 billingMetadata: {
                     product: 'cody',
@@ -448,7 +412,6 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
                     input_args: JSON.stringify(toolCall.tool_call?.arguments),
                     tool_name: toolCall.tool_call?.name,
                     type: 'builtin',
-                    num_lines_changed: linesChanged,
                 },
             })
 
