@@ -1,5 +1,10 @@
 import { spawn } from 'node:child_process'
-import { type UITerminalLine, UITerminalOutputType, UIToolStatus } from '@sourcegraph/cody-shared'
+import {
+    type UITerminalLine,
+    UITerminalOutputType,
+    UIToolStatus,
+    telemetryRecorder,
+} from '@sourcegraph/cody-shared'
 import {
     ContextItemSource,
     type ContextItemToolState,
@@ -52,6 +57,15 @@ export const shellTool: AgentTool = {
         try {
             const commandResult = await runShellCommand(validInput.command, {
                 cwd: workspaceFolder.uri.path,
+            })
+            telemetryRecorder.recordEvent('cody.runTerminalCommand', 'accepted', {
+                billingMetadata: {
+                    product: 'cody',
+                    category: 'billable',
+                },
+                privateMetadata: {
+                    input_args: JSON.stringify(validInput),
+                },
             })
 
             const content = `${commandResult.stdout}${

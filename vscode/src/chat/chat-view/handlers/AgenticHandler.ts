@@ -9,8 +9,8 @@ import {
     type ToolResultContentPart,
     UIToolStatus,
     isDefined,
-    telemetryRecorder,
     logDebug,
+    telemetryRecorder,
 } from '@sourcegraph/cody-shared'
 import type { ContextItemToolState } from '@sourcegraph/cody-shared/src/codebase-context/messages'
 import { URI } from 'vscode-uri'
@@ -19,11 +19,11 @@ import type { ChatBuilder } from '../ChatBuilder'
 import type { ChatControllerOptions } from '../ChatController'
 import type { ContextRetriever } from '../ContextRetriever'
 import { type AgentTool, AgentToolGroup } from '../tools'
+import { getFileDiff } from '../utils/diff'
 import { parseToolCallArgs } from '../utils/parse'
 import { ChatHandler } from './ChatHandler'
 import type { AgentHandler, AgentHandlerDelegate, AgentRequest } from './interfaces'
 import { buildAgentPrompt } from './prompts'
-import { getFileDiff } from '../utils/diff'
 
 enum AGENT_MODELS {
     ExtendedThinking = 'anthropic::2024-10-22::claude-3-7-sonnet-extended-thinking',
@@ -136,7 +136,7 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
                 const content = Array.from(toolCalls.values())
                 delegate.postMessageInProgress(botResponse)
 
-                const results = await this.executeTools(content).catch(() => {
+                const results = await this.executeTools(content, model).catch(() => {
                     logDebug('AgenticHandler', 'Error executing tools')
                     return []
                 })
@@ -291,7 +291,10 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
     /**
      * Execute tools from LLM response
      */
-    protected async executeTools(toolCalls: ToolCallContentPart[]): Promise<ToolResult[]> {
+    protected async executeTools(
+        toolCalls: ToolCallContentPart[],
+        model: string
+    ): Promise<ToolResult[]> {
         try {
             logDebug('AgenticHandler', `Executing ${toolCalls.length} tools`)
             // Execute all tools concurrently and filter out any undefined/null results
@@ -300,10 +303,11 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
                     try {
                         telemetryRecorder.recordEvent('cody.tool-use', 'selected', {
                             billingMetadata: {
-                            product: 'cody',
-                            category: 'billable',
+                                product: 'cody',
+                                category: 'billable',
                             },
                             privateMetadata: {
+                                model,
                                 input_args: JSON.stringify(toolCall.tool_call?.arguments),
                                 tool_name: toolCall.tool_call?.name,
                                 type: 'builtin',
@@ -312,14 +316,15 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
                         logDebug('AgenticHandler', `Executing ${toolCall.tool_call?.name}`, {
                             verbose: toolCall,
                         })
-                        return await this.executeSingleTool(toolCall)
+                        return await this.executeSingleTool(toolCall, model)
                     } catch (error) {
                         telemetryRecorder.recordEvent('cody.tool-use', 'failed', {
                             billingMetadata: {
-                            product: 'cody',
-                            category: 'billable',
+                                product: 'cody',
+                                category: 'billable',
                             },
                             privateMetadata: {
+                                model,
                                 input_args: JSON.stringify(toolCall.tool_call?.arguments),
                                 tool_name: toolCall.tool_call?.name,
                                 type: 'builtin',
@@ -346,7 +351,8 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
      * Execute a single tool and handle success/failure
      */
     protected async executeSingleTool(
-        toolCall: ToolCallContentPart
+        toolCall: ToolCallContentPart,
+        model: string
     ): Promise<ToolResult | undefined | null> {
         // Find the appropriate tool
         const tool = this.tools.find(t => t.spec.name === toolCall.tool_call.name)
@@ -374,14 +380,14 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
                     billingMetadata: {
                         product: 'cody',
                         category: 'billable',
-                        },
-                        privateMetadata: {
-                            input_args: JSON.stringify(toolCall.tool_call?.arguments),
-                            tool_name: toolCall.tool_call?.name,
-                            type: 'builtin',
-                        },
-                    }
-                )
+                    },
+                    privateMetadata: {
+                        model,
+                        input_args: JSON.stringify(toolCall.tool_call?.arguments),
+                        tool_name: toolCall.tool_call?.name,
+                        type: 'builtin',
+                    },
+                })
                 logDebug('AgenticHandler', `Error executing tool ${toolCall.tool_call.name}`, {
                     verbose: error,
                 })
@@ -410,7 +416,11 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
                     const diff = getFileDiff(URI.parse(''), oldText, newText)
                     linesChanged = diff.total.added + diff.total.removed + diff.total.modified
                 }
-            } else if (result.content && typeof result.content === 'object' && 'edits' in result.content) {
+            } else if (
+                result.content &&
+                typeof result.content === 'object' &&
+                'edits' in result.content
+            ) {
                 // Fallback to using edits if available
                 interface EditWithRange {
                     range: {
@@ -434,10 +444,11 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
                     category: 'billable',
                 },
                 privateMetadata: {
+                    model,
                     input_args: JSON.stringify(toolCall.tool_call?.arguments),
                     tool_name: toolCall.tool_call?.name,
                     type: 'builtin',
-                    num_lines_changed: linesChanged
+                    num_lines_changed: linesChanged,
                 },
             })
 
@@ -455,14 +466,14 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
                 billingMetadata: {
                     product: 'cody',
                     category: 'billable',
-                    },
-                    privateMetadata: {
-                        input_args: JSON.stringify(toolCall.tool_call?.arguments),
-                        tool_name: toolCall.tool_call?.name,
-                        type: 'builtin',
-                    },
-                }
-            )
+                },
+                privateMetadata: {
+                    model,
+                    input_args: JSON.stringify(toolCall.tool_call?.arguments),
+                    tool_name: toolCall.tool_call?.name,
+                    type: 'builtin',
+                },
+            })
             logDebug('AgenticHandler', `${toolCall.tool_call.name} failed`, { verbose: error })
             return {
                 tool_result,
