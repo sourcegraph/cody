@@ -27,6 +27,11 @@ export interface AuthenticatedAuthStatus {
     hasVerifiedEmail?: boolean
     requiresVerifiedEmail?: boolean
 
+    /**
+     * Current we check the rate limit for two features: chat and edit (in-line edit)
+     */
+    rateLimited?: Record<string, boolean>
+
     primaryEmail?: string
     displayName?: string
     avatarURL?: string

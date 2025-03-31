@@ -64,6 +64,7 @@ export class ChatClient {
         const completionParams = {
             ...DEFAULT_CHAT_COMPLETION_PARAMETERS,
             ...params,
+            feature: 'chat messages and commands',
             // We only want to send up the speaker and prompt text, regardless of whatever other fields
             // might be on the messages objects (`file`, `displayText`, `contextFiles`, etc.).
             messages: messages.map(({ speaker, text, cacheEnabled, content }) => ({
@@ -72,7 +73,7 @@ export class ChatClient {
                 cacheEnabled,
                 content,
             })),
-        }
+        } as CompletionParameters
 
         return this.completions.stream(completionParams, requestParams, abortSignal)
     }

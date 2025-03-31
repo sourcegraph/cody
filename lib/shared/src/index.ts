@@ -24,6 +24,9 @@ enableImmerMapSetSupport()
 // Add anything else here that needs to be used outside of this library.
 
 export * from './models/modelsService'
+
+export { handleError } from './error-handler'
+
 export {
     type Model,
     type ServerModel,

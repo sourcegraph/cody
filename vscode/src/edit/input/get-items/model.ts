@@ -1,6 +1,12 @@
 import * as vscode from 'vscode'
 
-import { type EditModel, type Model, isCodyProModel, isDefined } from '@sourcegraph/cody-shared'
+import {
+    type EditModel,
+    type Model,
+    ModelTag,
+    isCodyProModel,
+    isDefined,
+} from '@sourcegraph/cody-shared'
 import {
     QUICK_PICK_ITEM_CHECKED_PREFIX,
     QUICK_PICK_ITEM_EMPTY_INDENT_PREFIX,
@@ -22,12 +28,14 @@ const getModelProviderIcon = (provider: string): string =>
 export const getModelOptionItems = (
     modelOptions: Model[],
     isCodyPro: boolean,
-    isEnterpriseUser: boolean
+    isEnterpriseUser: boolean,
+    rateLimited?: boolean
 ): EditModelItem[] => {
     const allOptions = modelOptions
         .map(modelOption => {
             const icon = getModelProviderIcon(modelOption.provider)
             const title = modelOption.title || modelOption.id
+            const isRateLimited = rateLimited && !modelOption.tags.includes(ModelTag.Speed)
             return {
                 label: `${QUICK_PICK_ITEM_EMPTY_INDENT_PREFIX} ${icon} ${title}`,
                 description: `by ${modelOption.provider}`,
@@ -35,6 +43,7 @@ export const getModelOptionItems = (
                 model: modelOption.id,
                 modelTitle: title,
                 codyProOnly: isCodyProModel(modelOption) && !isEnterpriseUser,
+                disabled: isRateLimited,
             }
         })
         .filter(isDefined)
@@ -54,10 +63,22 @@ export const getModelInputItems = (
     modelOptions: Model[],
     activeModel: EditModel,
     isCodyPro: boolean,
-    isEnterpriseUser: boolean
+    isEnterpriseUser: boolean,
+    rateLimited?: boolean
 ): GetItemsResult => {
-    const modelItems = getModelOptionItems(modelOptions, isCodyPro, isEnterpriseUser)
-    const activeItem = modelItems.find(item => item.model === activeModel)
+    const modelItems = getModelOptionItems(modelOptions, isCodyPro, isEnterpriseUser, rateLimited)
+
+    // If the active model is disabled (rate limited), try to find a non-disabled model
+    let activeItem = modelItems.find(item => item.model === activeModel)
+
+    // If the active model is disabled, try to find a non-disabled model to use instead
+    if (activeItem?.disabled) {
+        // Find the first non-disabled model to use as the active model
+        const firstNonDisabledModel = modelItems.find(item => !item.disabled)
+        if (firstNonDisabledModel) {
+            activeItem = firstNonDisabledModel
+        }
+    }
 
     if (activeItem) {
         // Update the label of the active item

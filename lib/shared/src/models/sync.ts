@@ -1,4 +1,5 @@
 import { Observable, interval, map } from 'observable-fns'
+import { currentAuthStatusOrNotReadyYet, mockAuthStatus } from '../auth/authStatus'
 import { type AuthStatus, isCodyProUser } from '../auth/types'
 import type { ClientConfiguration } from '../configuration'
 import { clientCapabilities } from '../configuration/clientCapabilities'
@@ -21,9 +22,11 @@ import { pendingOperation, switchMapReplayOperation } from '../misc/observableOp
 import { ANSWER_TOKENS } from '../prompt/constants'
 import type { CodyClientConfig } from '../sourcegraph-api/clientConfig'
 import { isDotCom } from '../sourcegraph-api/environments'
+import type { RateLimitError } from '../sourcegraph-api/errors'
 import type { CodyLLMSiteConfiguration } from '../sourcegraph-api/graphql/client'
 import { RestClient } from '../sourcegraph-api/rest/client'
 import type { UserProductSubscription } from '../sourcegraph-api/userProductSubscription'
+import { telemetryRecorder } from '../telemetry-v2/singleton'
 import { CHAT_INPUT_TOKEN_BUDGET } from '../token/constants'
 import { isError } from '../utils'
 import { DEEP_CODY_MODEL, TOOL_CODY_MODEL } from './client'
@@ -51,6 +54,7 @@ const TOKEN_LIMITS = {
         MAX_INPUT_TOKENS: 175_000,
     },
 }
+let CHAT_MODEL_BEFORE_RATE_LIMIT = ''
 
 /**
  * Observe the list of all available models.
@@ -224,10 +228,12 @@ export function syncModels({
                                                                 longContextWindowFlag,
                                                         }).map(createModelFromServerModel)
                                                     )
-                                                    data.preferences!.defaults =
-                                                        defaultModelPreferencesFromServerModelsConfig(
-                                                            serverModelsConfig
-                                                        )
+                                                    if (data.preferences?.defaults) {
+                                                        data.preferences.defaults =
+                                                            defaultModelPreferencesFromServerModelsConfig(
+                                                                serverModelsConfig
+                                                            )
+                                                    }
                                                 }
 
                                                 // NOTE: Calling `registerModelsFromVSCodeConfiguration()` doesn't
@@ -326,7 +332,101 @@ export function syncModels({
                                                 ) {
                                                     data.preferences!.defaults.chat = haikuModel.id
                                                 }
+                                                // disable the model (so that we can display that in the UI)
+                                                console.log(
+                                                    '[julia] check authStatus in sync.ts',
+                                                    authStatus.rateLimited
+                                                )
+                                                if (authStatus.rateLimited) {
+                                                    if (
+                                                        authStatus.rateLimited[
+                                                            'chat messages and commands'
+                                                        ] === true
+                                                    ) {
+                                                        // Disable all models except for fast models
+                                                        data.primaryModels = data.primaryModels.map(
+                                                            model => {
+                                                                // Disabled all models expect for fast models
+                                                                if (
+                                                                    !model.tags.includes(ModelTag.Speed)
+                                                                ) {
+                                                                    return { ...model, disabled: true }
+                                                                }
+                                                                return model
+                                                            }
+                                                        )
+                                                        console.log('[julia] disabled models in sync.ts')
 
+                                                        // Find the Gemini Flash model
+                                                        const geminiFlashModel = data.primaryModels.find(
+                                                            model =>
+                                                                model.id ===
+                                                                'google::v1::gemini-2.0-flash'
+                                                        )
+
+                                                        // Set Gemini Flash as the selected model for chat and edit
+                                                        if (geminiFlashModel && data.preferences) {
+                                                            CHAT_MODEL_BEFORE_RATE_LIMIT =
+                                                                data.preferences.defaults.chat || ''
+                                                            // Create a full preferences object with both defaults and selected
+                                                            data.preferences.defaults.chat =
+                                                                geminiFlashModel.id
+                                                            telemetryRecorder.recordEvent(
+                                                                'cody.rateLimit',
+                                                                'hit',
+                                                                {
+                                                                    privateMetadata: {
+                                                                        feature: 'chat',
+                                                                        rateLimitedModel:
+                                                                            geminiFlashModel.id,
+                                                                    },
+                                                                }
+                                                            )
+                                                            console.log(
+                                                                '[julia] set model to gemini flash in sync.ts'
+                                                            )
+                                                        }
+                                                    } else {
+                                                        // Re-enable all models except for fast models
+                                                        data.primaryModels = data.primaryModels.map(
+                                                            model => {
+                                                                // Disabled all models expect for fast models
+                                                                if (
+                                                                    !model.tags.includes(ModelTag.Speed)
+                                                                ) {
+                                                                    return { ...model, disabled: false }
+                                                                }
+                                                                return model
+                                                            }
+                                                        )
+                                                        console.log(
+                                                            '[julia] re-enabled all the models in sync.ts'
+                                                        )
+                                                        const originalModel = data.primaryModels.find(
+                                                            model =>
+                                                                model.id === CHAT_MODEL_BEFORE_RATE_LIMIT
+                                                        )
+                                                        if (originalModel && data.preferences) {
+                                                            // Create a full preferences object with both defaults and selected
+                                                            data.preferences.defaults.chat =
+                                                                originalModel.id
+                                                            telemetryRecorder.recordEvent(
+                                                                'cody.rateLimit',
+                                                                'hit',
+                                                                {
+                                                                    privateMetadata: {
+                                                                        feature: 'chat',
+                                                                        rateLimitedModel:
+                                                                            originalModel.id,
+                                                                    },
+                                                                }
+                                                            )
+                                                            console.log(
+                                                                '[julia] set model to gemini flash in sync.ts'
+                                                            )
+                                                        }
+                                                    }
+                                                }
                                                 return Observable.of(data)
                                             }
                                         )
@@ -596,5 +696,43 @@ export function defaultModelPreferencesFromServerModelsConfig(
         autocomplete: config.defaultModels.codeCompletion,
         chat: config.defaultModels.chat,
         edit: config.defaultModels.chat,
+    }
+}
+
+export function handleRateLimitError(error: RateLimitError, feature: string): void {
+    console.log(
+        '[julia] handleRateLimitError in sync.ts ---- before updating current AuthStatus, feature is',
+        feature
+    )
+
+    // TODO: disabled the models
+    // when u change the default model it triggers sync.ts
+    // user log in/out trigger sync.ts
+    // add a new field 'ratelimited' in authstatus? rate limited -- update authstatus (new field rate limited)
+    // read auth status in sync.ts. if 'ratelimited' is false change the model back
+    // if 'ratelimited' is true, change model to flash or other fast models. store the model we had
+
+    // Emit an event that models have been disabled
+    // const event = new CustomEvent('cody:models-disabled', {
+    //     detail: { until: disableUntil, error },
+    // })
+    // window.dispatchEvent(event)
+
+    // Update the authStatus to set rateLimited to true
+    const currentStatus = currentAuthStatusOrNotReadyYet()
+    if (currentStatus?.authenticated) {
+        console.log(
+            '[julia] handleRateLimitError in sync.ts ---- AuthStatus found, updating field rateLimited, feature is',
+            feature
+        )
+        // Create a new auth status object with rateLimited set to true
+        const updatedStatus: AuthStatus = {
+            ...currentStatus,
+            // Track which feature hit the rate limit
+            rateLimited: { ...(currentStatus.rateLimited || {}), [feature]: true },
+        }
+        console.log('[julia] handleRateLimitError in sync.ts ---- mockAuthStatus, feature is', feature)
+        // Update the auth status using mockAuthStatus
+        mockAuthStatus(updatedStatus)
     }
 }

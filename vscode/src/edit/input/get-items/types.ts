@@ -9,4 +9,5 @@ export interface EditModelItem extends vscode.QuickPickItem {
     modelTitle: string
     model: EditModel
     codyProOnly: boolean
+    disabled?: boolean
 }
