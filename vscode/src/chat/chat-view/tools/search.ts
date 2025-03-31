@@ -91,14 +91,18 @@ export function createSearchToolStateItem(
     const description = `Search for "${query}" (${searchResults.length} results)\n`
 
     // Group search results by file name with code content
-    const groupedResults = searchResults
-        .map(({ uri, content }) => {
-            if (!content?.length) return ''
-            const remote = !uri.scheme.startsWith('file') && uri.path?.split('/-/blob/')?.pop()
-            const filePath = remote || displayPath(uri)
-            return `\`\`\`${filePath}\n${content}\n\`\`\`\n`
-        })
-        .join('\n\n')
+    const isRemoteSearch = searchResults.some(r => r?.uri?.scheme === 'http')
+    const prefix = isRemoteSearch ? 'Remote search results:\n' : 'Search results:\n'
+    const groupedResults =
+        prefix +
+        searchResults
+            .map(({ uri, content }) => {
+                if (!content?.length) return ''
+                const remote = isRemoteSearch && uri.path?.split('/-/blob/')?.pop()
+                const filePath = remote || displayPath(uri)
+                return `\`\`\`${filePath}\n${content}\n\`\`\`\n`
+            })
+            .join('\n\n')
 
     return {
         type: 'tool-state',

@@ -394,6 +394,24 @@ export type ClientNotifications = {
 // Server -> Client
 // ================
 export type ServerNotifications = {
+    /**
+     * Notification sent when the inline completion should be hidden.
+     * This is complementary, clients should listen to this notifcation in addition to providing their
+     * own logic for hiding completions (e.g. on user types or user triggers keybinding).
+     */
+    'autocomplete/didHide': [null]
+    /**
+     * Notification sent when the inline completion should be triggered.
+     * This is complementary, clients should listen to this notifcation in addition to providing their
+     * own logic for triggering completions (e.g. on user types or user triggers keybinding).
+     *
+     * An example where this will be used, is in cases where we want to explictly trigger an autocomplete due
+     * to some internal logic. For example, we trigger certain completions on cursor movements, but only under certain
+     * conditions (no existing suggestion, recent change in the document). This notification will be fired instead of
+     * requiring that the client duplicates this logic.
+     */
+    'autocomplete/didTrigger': [null]
+
     'debug/message': [DebugMessage]
 
     // Certain properties of the task are updated:
@@ -628,7 +646,7 @@ export interface ExtensionConfiguration {
 
     autocompleteAdvancedProvider?: string | undefined | null
     autocompleteAdvancedModel?: string | undefined | null
-    suggestionsMode?: 'autocomplete' | 'auto-edit (Experimental)' | 'off' | undefined | null
+    suggestionsMode?: 'autocomplete' | 'auto-edit (Beta)' | 'off' | undefined | null
     debug?: boolean | undefined | null
     verboseDebug?: boolean | undefined | null
     telemetryClientName?: string | undefined | null

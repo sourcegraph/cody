@@ -71,6 +71,12 @@ export function VSCodeDecorator(className: string | undefined, style?: CSSProper
         const { theme } = parameters.globals
         const themeClassname = themeClassnames[theme as Theme] || themeClassnames[Theme.DarkModern]
 
+        // Handle custom parameters like guardrailsMode for stories
+        const { guardrailsMode } = parameters.parameters || {}
+
+        // Create props that can be passed to children
+        const storyProps = { guardrailsMode }
+
         // Set [data-vscode-theme-kind] and className for the selected theme
         document.body.dataset.vscodeThemeKind = themeClassname
         document.body.className = themeClassname
@@ -79,7 +85,7 @@ export function VSCodeDecorator(className: string | undefined, style?: CSSProper
             <div className={clsx(styles.container, className)} style={style}>
                 <AppWrapperForTest>
                     <TelemetryRecorderContext.Provider value={telemetryRecorder}>
-                        {story()}
+                        {story(storyProps)}
                     </TelemetryRecorderContext.Provider>
                 </AppWrapperForTest>
             </div>

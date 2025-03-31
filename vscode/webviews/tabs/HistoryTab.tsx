@@ -1,6 +1,6 @@
 'use client'
 
-import { CodyIDE, type UserLocalHistory, type WebviewToExtensionAPI } from '@sourcegraph/cody-shared'
+import { CodyIDE, type WebviewToExtensionAPI } from '@sourcegraph/cody-shared'
 import { DownloadIcon, HistoryIcon, MessageSquarePlusIcon, Trash2Icon, TrashIcon } from 'lucide-react'
 import type React from 'react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
@@ -9,11 +9,13 @@ import { LoadingDots } from '../chat/components/LoadingDots'
 import { downloadChatHistory } from '../chat/downloadChatHistory'
 import { Button } from '../components/shadcn/ui/button'
 import { Command, CommandInput, CommandItem, CommandList } from '../components/shadcn/ui/command'
-import { useUserHistory } from '../components/useUserHistory'
-import { type VSCodeWrapper, getVSCodeAPI } from '../utils/VSCodeApi'
+import { getVSCodeAPI } from '../utils/VSCodeApi'
 import styles from './HistoryTab.module.css'
 import { View } from './types'
 import { getCreateNewChatCommand } from './utils'
+
+import type { LightweightChatTranscript } from '@sourcegraph/cody-shared/src/chat/transcript'
+import { useUserHistory } from '../components/useUserHistory'
 
 interface HistoryTabProps {
     IDE: CodyIDE
@@ -32,46 +34,39 @@ export const HistoryTab: React.FC<HistoryTabProps> = ({
     setView,
     extensionAPI,
 }) => {
-    const vscodeAPI = getVSCodeAPI()
-    const { value: result, error } = useUserHistory()
+    const userHistory = useUserHistory()
 
-    const chats = useMemo(() => {
-        const history = result ? Object.values(result.chat) : result
-        return history?.filter(c => c.interactions.some(i => !!i.humanMessage?.text?.trim()))
-    }, [result])
-
-    const handleStartNewChat = () => {
-        vscodeAPI.postMessage({
-            command: 'command',
-            id: getCreateNewChatCommand({ IDE, webviewType, multipleWebviewsEnabled }),
-        })
-        setView(View.Chat)
-    }
+    const chats = useMemo(() => (userHistory ? Object.values(userHistory) : userHistory), [userHistory])
 
     return (
         <div className="tw-flex tw-overflow-hidden tw-h-full tw-w-full">
-            {error || !chats ? (
+            {!chats ? (
                 <LoadingDots />
             ) : (
                 <HistoryTabWithData
-                    chats={chats}
-                    handleStartNewChat={handleStartNewChat}
-                    vscodeAPI={vscodeAPI}
+                    chats={[...chats].reverse()}
                     extensionAPI={extensionAPI}
                     IDE={IDE}
+                    setView={setView}
+                    webviewType={webviewType}
+                    multipleWebviewsEnabled={multipleWebviewsEnabled}
                 />
             )}
         </div>
     )
 }
 
-export const HistoryTabWithData: React.FC<{
-    chats: UserLocalHistory['chat'][string][]
-    handleStartNewChat: () => void
-    vscodeAPI: VSCodeWrapper
-    extensionAPI: WebviewToExtensionAPI
-    IDE: CodyIDE
-}> = ({ chats, handleStartNewChat, vscodeAPI, extensionAPI, IDE }) => {
+export const HistoryTabWithData: React.FC<HistoryTabProps & { chats: LightweightChatTranscript[] }> = ({
+    IDE,
+    webviewType,
+    multipleWebviewsEnabled,
+    setView,
+    chats,
+    extensionAPI,
+}) => {
+    const vscodeAPI = getVSCodeAPI()
+    const nonEmptyChats = useMemo(() => chats.filter(c => c?.firstHumanMessageText?.length), [chats])
+
     const [isDeleteAllActive, setIsDeleteAllActive] = useState<boolean>(false)
     const [deletingChatIds, setDeletingChatIds] = useState<Set<string>>(new Set())
 
@@ -83,22 +78,20 @@ export const HistoryTabWithData: React.FC<{
     const loadingRef = useRef<HTMLDivElement>(null)
 
     const filteredChats = useMemo(() => {
-        const filtered = chats?.filter(c => c.interactions.some(i => !!i.humanMessage?.text?.trim()))
         const searchTerm = searchText.trim().toLowerCase()
-
-        // First filter by search term if provided
-        let searchFiltered = filtered
-        if (searchTerm) {
-            searchFiltered = filtered.filter(chat =>
-                chat.interactions.some(c =>
-                    c.humanMessage?.text?.trim()?.toLowerCase()?.includes(searchTerm)
-                )
-            )
+        if (!searchTerm) {
+            return nonEmptyChats
         }
-
-        // Then filter out any items that are being deleted for a smoother UX
-        return searchFiltered.filter(chat => !deletingChatIds.has(chat.lastInteractionTimestamp))
-    }, [chats, searchText, deletingChatIds])
+        // Search in chat titles or first message text
+        return nonEmptyChats.filter(chat => {
+            // Search in chat title if available
+            if (chat.chatTitle?.toLowerCase().includes(searchTerm)) {
+                return true
+            }
+            // Search in first message text if available
+            return chat.firstHumanMessageText?.toLowerCase().includes(searchTerm) || false
+        })
+    }, [nonEmptyChats, searchText])
 
     const hasMoreItems = visibleItems < filteredChats.length
     const displayedChats = filteredChats.slice(0, visibleItems)
@@ -130,6 +123,14 @@ export const HistoryTabWithData: React.FC<{
         },
         [vscodeAPI, filteredChats.length, deletingChatIds]
     )
+
+    const handleStartNewChat = () => {
+        getVSCodeAPI().postMessage({
+            command: 'command',
+            id: getCreateNewChatCommand({ IDE, webviewType, multipleWebviewsEnabled }),
+        })
+        setView(View.Chat)
+    }
 
     const onExportClick = useCallback(() => downloadChatHistory(extensionAPI), [extensionAPI])
 
@@ -315,11 +316,10 @@ export const HistoryTabWithData: React.FC<{
                 />
             </CommandList>
             <CommandList className="tw-flex-1 tw-overflow-y-auto tw-m-2">
-                {displayedChats.map((chat: UserLocalHistory['chat'][string]) => {
+                {displayedChats.map((chat: LightweightChatTranscript) => {
                     const id = chat.lastInteractionTimestamp
-                    const interactions = chat.interactions
                     const chatTitle = chat.chatTitle
-                    const lastMessage = interactions[interactions.length - 1]?.humanMessage?.text?.trim()
+                    const lastMessage = chat.firstHumanMessageText
                     // We're already filtering out deleted chats in filteredChats
 
                     return (

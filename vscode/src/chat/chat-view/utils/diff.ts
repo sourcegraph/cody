@@ -5,9 +5,9 @@ import type { URI } from 'vscode-uri'
 /**
  * Generate a markdown git diff with line numbers, showing only the section with changes
  */
-export function diffWithLineNum(oldText: string, newText: string): string {
+export function diffWithLineNum(oldText: string, newText: string, markdownFormat = true): string {
     const diff = Diff.diffLines(oldText, newText)
-    let output = '```diff\n'
+    let output = markdownFormat ? '```diff\n' : ''
 
     // First pass: find the first and last changed lines
     let firstChangedOldLine = Number.POSITIVE_INFINITY
@@ -124,7 +124,8 @@ export function diffWithLineNum(oldText: string, newText: string): string {
         }
     }
 
-    output += '```'
+    output += markdownFormat ? '```' : ''
+
     return output
 }
 

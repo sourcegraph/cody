@@ -15,17 +15,17 @@ interface LastConversationProps {
 }
 
 export const LastConversation: FunctionComponent<LastConversationProps> = ({ setView }) => {
-    const userHistory = useUserHistory()?.value
+    const userHistory = useUserHistory()
 
     const lastChat = useMemo(() => {
-        if (!userHistory?.chat) {
+        if (!userHistory) {
             return null
         }
 
         // Convert to array once and sort by timestamp
         return (
-            Object.values(userHistory.chat)
-                .filter(chat => chat?.interactions?.length > 0)
+            Object.values(userHistory)
+                .filter(chat => chat.firstHumanMessageText?.trim())
                 .sort(
                     (a, b) =>
                         new Date(b.lastInteractionTimestamp).getTime() -

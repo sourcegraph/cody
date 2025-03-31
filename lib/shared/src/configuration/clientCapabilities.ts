@@ -227,6 +227,7 @@ export function clientCapabilities(): ClientCapabilitiesWithLegacyFields {
     }
     return {
         ..._value.agentCapabilities,
+        edit: _value.agentCapabilities?.edit ?? 'enabled',
         agentIDE: _value.configuration.agentIDE ?? CodyIDE.VSCode,
         isVSCode: !_value.configuration.agentIDE || _value.configuration.agentIDE === CodyIDE.VSCode,
         isCodyWeb: _value.configuration.agentIDE === CodyIDE.Web,

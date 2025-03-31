@@ -21,11 +21,10 @@ export const getFileTool: AgentTool = {
             if (context === undefined || !context?.content) {
                 throw new Error(`File ${validInput.name} not found or empty`)
             }
-
             // For successful file retrieval
             return createFileToolState(
                 validInput.name,
-                context.content + '\nEOF', // Keep the EOF marker which can be useful
+                context.content + '\n<<EOF>>', // Keep the EOF marker which can be useful
                 UIToolStatus.Done,
                 context.uri // Use the actual file URI if available
             )
@@ -33,8 +32,9 @@ export const getFileTool: AgentTool = {
             // For errors during file retrieval
             return createFileToolState(
                 validInput.name,
-                `get_file for ${validInput.name} failed: ${error}`,
-                UIToolStatus.Error
+                `${error}`,
+                UIToolStatus.Error,
+                URI.parse(validInput.name)
             )
         }
     },
@@ -47,7 +47,7 @@ function createFileToolState(
     filePath: string,
     content: string,
     status: UIToolStatus,
-    uri?: URI
+    uri: URI
 ): ContextItemToolState {
     const toolId = `get_file-${filePath.replace(/[^\w]/g, '_')}-${Date.now()}`
 
@@ -57,9 +57,8 @@ function createFileToolState(
         toolName: 'get_file',
         status,
         outputType: 'file-view',
-
         // ContextItemCommon properties
-        uri: uri || URI.parse(`cody:/tools/file/${toolId}`),
+        uri,
         content,
         title: filePath,
         description: `File: ${filePath}`,

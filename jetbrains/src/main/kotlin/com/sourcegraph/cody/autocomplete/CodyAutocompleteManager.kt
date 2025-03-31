@@ -43,6 +43,7 @@ import com.sourcegraph.cody.vscode.IntelliJTextDocument
 import com.sourcegraph.cody.vscode.TextDocument
 import com.sourcegraph.common.CodyBundle
 import com.sourcegraph.common.CodyBundle.fmt
+import com.sourcegraph.config.ConfigUtil
 import com.sourcegraph.config.ConfigUtil.isCodyEnabled
 import com.sourcegraph.utils.CodyEditorUtil.getAllOpenEditors
 import com.sourcegraph.utils.CodyEditorUtil.getLanguage
@@ -124,7 +125,7 @@ class CodyAutocompleteManager {
       return
     }
 
-    if (editor.editorKind != EditorKind.MAIN_EDITOR) {
+    if (editor.editorKind != EditorKind.MAIN_EDITOR && !ConfigUtil.isIntegrationTestModeEnabled()) {
       logger.warn("triggered autocomplete with non-main editor")
       return
     }
@@ -206,7 +207,7 @@ class CodyAutocompleteManager {
       return
     }
     val inlayModel = editor.inlayModel
-    if (result.items.isEmpty()) {
+    if (result.inlineCompletionItems.isEmpty()) {
       // NOTE(olafur): it would be nice to give the user a visual hint when this happens.
       // We don't do anything now because it's unclear what would be the most idiomatic
       // IntelliJ API to use.
@@ -223,7 +224,7 @@ class CodyAutocompleteManager {
       // https://github.com/sourcegraph/jetbrains/issues/350
       // CodyFormatter.formatStringBasedOnDocument needs to be on a write action.
       WriteCommandAction.runWriteCommandAction(editor.project) {
-        displayAgentAutocomplete(editor, offset, result.items, inlayModel)
+        displayAutocomplete(editor, offset, result.inlineCompletionItems, inlayModel)
       }
     }
   }
@@ -235,7 +236,8 @@ class CodyAutocompleteManager {
    * can use `insertText` directly and the `range` encloses the entire line.
    */
   @RequiresEdt
-  fun displayAgentAutocomplete(
+  @VisibleForTesting
+  fun displayAutocomplete(
       editor: Editor,
       cursorOffset: Int,
       items: List<AutocompleteItem>,
@@ -271,20 +273,27 @@ class CodyAutocompleteManager {
     val startsInline =
         lineBreaks.none { separator -> formattedCompletionText.startsWith(separator) }
 
-    var inlay: Inlay<*>? = null
-    if (startsInline) {
-      val (inlayOffset, completionText) =
+    val (commonTextLength, inlineCompletionText) =
+        if (startsInline) {
           trimCommonPrefixAndSuffix(
               formattedCompletionText.lines().first(), originalText.lines().first())
-      if (completionText.isNotEmpty()) {
+        } else {
+          0 to ""
+        }
+
+    val offset = range.startOffset + commonTextLength
+
+    var inlay: Inlay<*>? = null
+    if (startsInline) {
+
+      if (inlineCompletionText.isNotEmpty()) {
         val renderer =
             CodyAutocompleteSingleLineRenderer(
-                completionText, items, editor, AutocompleteRendererType.INLINE)
-        inlay =
-            inlayModel.addInlineElement(
-                cursorOffset + inlayOffset, /* relatesToPrecedingText= */ true, renderer)
+                inlineCompletionText, items, editor, AutocompleteRendererType.INLINE)
+        inlay = inlayModel.addInlineElement(offset, /* relatesToPrecedingText= */ true, renderer)
       }
     }
+
     val lines = formattedCompletionText.lines()
     if (lines.size > 1) {
       val text =
@@ -293,7 +302,7 @@ class CodyAutocompleteManager {
         val renderer = CodyAutocompleteBlockElementRenderer(text, items, editor)
         val inlay2 =
             inlayModel.addBlockElement(
-                /* offset = */ cursorOffset,
+                /* offset = */ offset,
                 /* relatesToPrecedingText = */ true,
                 /* showAbove = */ false,
                 /* priority = */ Int.MAX_VALUE,
@@ -398,6 +407,7 @@ class CodyAutocompleteManager {
       while (endIndex > 0 &&
           endIndex > startIndex &&
           original.length - (completion.length - endIndex) > 0 &&
+          original.length - (completion.length - endIndex) > startIndex &&
           completion[endIndex - 1] ==
               original[original.length - (completion.length - endIndex) - 1]) {
         endIndex--

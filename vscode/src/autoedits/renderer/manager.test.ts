@@ -11,6 +11,7 @@ import { getDecorationInfoFromPrediction } from '../autoedits-provider'
 import { getCodeToReplaceForRenderer } from '../prompt/test-helper'
 import { AutoEditsDefaultRendererManager } from '../renderer/manager'
 
+import { RequestManager } from '../request-manager'
 import { DefaultDecorator } from './decorators/default-decorator'
 import type { TryMakeInlineCompletionsArgs } from './manager'
 import type { CompletionRenderOutput } from './render-output'
@@ -48,7 +49,8 @@ describe('AutoEditsDefaultRendererManager', () => {
         beforeEach(() => {
             manager = new AutoEditsDefaultRendererManager(
                 (editor: vscode.TextEditor) => new DefaultDecorator(editor),
-                fixupController
+                fixupController,
+                new RequestManager()
             )
         })
 

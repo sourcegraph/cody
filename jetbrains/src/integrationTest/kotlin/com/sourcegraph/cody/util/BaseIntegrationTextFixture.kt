@@ -1,100 +1,94 @@
 package com.sourcegraph.cody.util
 
 import com.intellij.ide.lightEdit.LightEdit
-import com.intellij.openapi.actionSystem.ActionManager
-import com.intellij.openapi.actionSystem.AnActionEvent
-import com.intellij.openapi.actionSystem.DataContext
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.editor.Editor
-import com.intellij.openapi.editor.ex.EditorEx
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.fileEditor.OpenFileDescriptor
 import com.intellij.openapi.project.DumbService
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.testFramework.EditorTestUtil
 import com.intellij.testFramework.PlatformTestUtil
-import com.intellij.testFramework.UsefulTestCase
 import com.intellij.testFramework.fixtures.HeavyIdeaTestFixture
 import com.intellij.testFramework.fixtures.IdeaTestFixtureFactory
 import com.intellij.testFramework.runInEdtAndWait
 import com.sourcegraph.cody.agent.CodyAgentService
 import com.sourcegraph.cody.agent.protocol_generated.ProtocolAuthenticatedAuthStatus
-import com.sourcegraph.cody.agent.protocol_generated.ProtocolCodeLens
 import com.sourcegraph.cody.auth.SourcegraphServerPath
-import com.sourcegraph.cody.edit.lenses.LensListener
-import com.sourcegraph.cody.edit.lenses.LensesService
-import com.sourcegraph.cody.edit.lenses.providers.EditAcceptCodeVisionProvider
 import java.io.File
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit
 import java.util.regex.Pattern
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertTrue
 
-open class CodyIntegrationTextFixture : UsefulTestCase(), LensListener {
-  private val logger = Logger.getInstance(CodyIntegrationTextFixture::class.java)
-  private val lensSubscribers = mutableListOf<(List<ProtocolCodeLens>) -> Boolean>()
+open class BaseIntegrationTextFixture(private val recordingName: String) {
+  private val logger = Logger.getInstance(BaseIntegrationTextFixture::class.java)
 
   // We don't want to use .!! or .? everywhere in the tests,
   // and if those won't be initialized test should crash anyway
   lateinit var editor: Editor
-  private lateinit var file: VirtualFile
-  private lateinit var myProject: Project
-  private lateinit var myFixture: HeavyIdeaTestFixture
+  lateinit var file: VirtualFile
+  val project: Project
 
-  override fun setUp() {
-    super.setUp()
+  protected val myFixture: HeavyIdeaTestFixture
 
-    val projectBuilder = IdeaTestFixtureFactory.getFixtureFactory().createFixtureBuilder(name)
+  init {
+    val projectBuilder =
+        IdeaTestFixtureFactory.getFixtureFactory().createFixtureBuilder(this::class.java.name)
 
     myFixture = projectBuilder.fixture as HeavyIdeaTestFixture
     myFixture.setUp()
-    myProject = myFixture.project
+    project = myFixture.project
+    Disposer.register(myFixture.testRootDisposable) { shutdown() }
 
+    initCredentialsAndAgent()
+    baseCheckInitialConditions()
+  }
+
+  fun openFile(relativeFilePath: String) {
     val testDataPath = System.getProperty("test.resources.dir")
-    val relativeFilePath = "src/main/java/Foo.java"
-    val sourceFile = "$testDataPath/testProjects/documentCode/$relativeFilePath"
-    val basePath = myProject.basePath!!
-
-    WriteCommandAction.runWriteCommandAction(myProject) {
+    val sourceFile = "$testDataPath/testProjects/$relativeFilePath"
+    val basePath = project.basePath!!
+    WriteCommandAction.runWriteCommandAction(project) {
       file =
           myFixture
               .addFileToProject(basePath, relativeFilePath, File(sourceFile).readText())
               ?.virtualFile!!
 
       editor =
-          FileEditorManager.getInstance(myProject)
-              .openTextEditor(OpenFileDescriptor(myProject, file), true)!!
+          FileEditorManager.getInstance(project)
+              .openTextEditor(OpenFileDescriptor(project, file), true)!!
     }
 
-    initCredentialsAndAgent()
     initCaretPosition()
+    checkInitialConditionsForOpenFile()
+  }
 
+  private fun awaitPendingPromises() {
     val done = CompletableFuture<Void>()
-    CodyAgentService.withAgent(myProject) { agent ->
+    CodyAgentService.withAgent(project) { agent ->
       agent.server.testing_awaitPendingPromises(null).thenAccept { done.complete(null) }
     }
     done.get(ASYNC_WAIT_TIMEOUT_SECONDS, TimeUnit.SECONDS)
-
-    checkInitialConditions()
-    LensesService.getInstance(myProject).addListener(this)
   }
 
-  override fun tearDown() {
-    try {
-      LensesService.getInstance(myProject).removeListener(this)
-
-      val recordingsFuture = CompletableFuture<Void>()
-      CodyAgentService.withAgent(myProject) { agent ->
-        val errors = agent.server.testing_requestErrors(null).get()
-        // We extract polly.js errors to notify users about the missing recordings, if any
-        val missingRecordings =
-            errors.errors.filter { it.error?.contains("`recordIfMissing` is") == true }
-        missingRecordings.forEach { missing ->
-          logger.error(
-              """Recording is missing: ${missing.error}
+  fun shutdown() {
+    val recordingsFuture = CompletableFuture<Void>()
+    CodyAgentService.withAgent(project) { agent ->
+      val errors = agent.server.testing_requestErrors(null).get()
+      // We extract polly.js errors to notify users about the missing recordings, if any
+      val missingRecordings =
+          errors.errors.filter { it.error?.contains("`recordIfMissing` is") == true }
+      missingRecordings.forEach { missing ->
+        logger.error(
+            """Recording is missing: ${missing.error}
                 |
                 |${missing.body}
                 |
@@ -104,18 +98,15 @@ open class CodyIntegrationTextFixture : UsefulTestCase(), LensListener {
                 |`agent/scripts/export-cody-http-recording-tokens.sh`
                 |------------------------------------------------------------------------------------------
               """
-                  .trimMargin())
-        }
-        recordingsFuture.complete(null)
+                .trimMargin())
       }
-      recordingsFuture.get(ASYNC_WAIT_TIMEOUT_SECONDS, TimeUnit.SECONDS)
-      CodyAgentService.getInstance(myProject)
-          .stopAgent()
-          ?.get(ASYNC_WAIT_TIMEOUT_SECONDS, TimeUnit.SECONDS)
-      CodyAgentService.getInstance(myProject).dispose()
-    } finally {
-      super.tearDown()
+      recordingsFuture.complete(null)
     }
+    recordingsFuture.get(ASYNC_WAIT_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+    CodyAgentService.getInstance(project)
+        .stopAgent()
+        ?.get(ASYNC_WAIT_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+    CodyAgentService.getInstance(project).dispose()
   }
 
   // Ideally we should call this method only once per recording session, but since we need a
@@ -127,15 +118,18 @@ open class CodyIntegrationTextFixture : UsefulTestCase(), LensListener {
     val endpoint = SourcegraphServerPath.from(credentials.serverEndpoint, "")
     val token = credentials.token ?: credentials.redactedToken
 
+    System.setProperty("CODY_RECORDING_NAME", recordingName)
+
     assertNotNull(
         "Unable to start agent in a timely fashion!",
-        CodyAgentService.getInstance(myProject)
+        CodyAgentService.getInstance(project)
             .startAgent(endpoint, token)
             .completeOnTimeout(null, ASYNC_WAIT_TIMEOUT_SECONDS, TimeUnit.SECONDS)
             .get())
   }
 
-  private fun checkInitialConditions() {
+  private fun baseCheckInitialConditions() {
+    awaitPendingPromises()
     isAuthenticated()
 
     // If you don't specify this system property with this setting when running the tests,
@@ -154,20 +148,13 @@ open class CodyIntegrationTextFixture : UsefulTestCase(), LensListener {
     // Check if the project is in LightEdit mode
     val isLightEditMode = LightEdit.owns(project)
     assertFalse("Project should not be in LightEdit mode", isLightEditMode)
-
-    // Check the initial state of the action's presentation
-    val action = ActionManager.getInstance().getAction("cody.documentCodeAction")
-    val event = AnActionEvent.createFromAnAction(action, null, "", createEditorContext(editor))
-    action.update(event)
-    val presentation = event.presentation
-    assertEquals("Action description should be empty", "", presentation.description)
-    assertTrue("Action should be enabled", presentation.isEnabled)
-    assertTrue("Action should be visible", presentation.isVisible)
   }
+
+  open fun checkInitialConditionsForOpenFile() {}
 
   private fun isAuthenticated() {
     val authenticated = CompletableFuture<Boolean>()
-    CodyAgentService.withAgent(myProject) { agent ->
+    CodyAgentService.withAgent(project) { agent ->
       agent.server.extensionConfiguration_status(null).thenAccept { authStatus ->
         authenticated.complete(authStatus is ProtocolAuthenticatedAuthStatus)
       }
@@ -178,10 +165,6 @@ open class CodyIntegrationTextFixture : UsefulTestCase(), LensListener {
         authenticated.completeOnTimeout(false, ASYNC_WAIT_TIMEOUT_SECONDS, TimeUnit.SECONDS).get())
   }
 
-  private fun createEditorContext(editor: Editor): DataContext {
-    return (editor as? EditorEx)?.dataContext ?: DataContext.EMPTY_CONTEXT
-  }
-
   // This provides a crude mechanism for specifying the caret position in the test file.
   private fun initCaretPosition() {
     runInEdtAndWait {
@@ -190,7 +173,7 @@ open class CodyIntegrationTextFixture : UsefulTestCase(), LensListener {
       val caretIndex = document.text.indexOf(caretToken)
 
       if (caretIndex != -1) { // Remove caret token from doc
-        WriteCommandAction.runWriteCommandAction(myProject) {
+        WriteCommandAction.runWriteCommandAction(project) {
           document.deleteString(caretIndex, caretIndex + caretToken.length)
         }
         // Place the caret at the position where the token was found.
@@ -224,78 +207,14 @@ open class CodyIntegrationTextFixture : UsefulTestCase(), LensListener {
     }
   }
 
-  private fun triggerAction(actionId: String) {
+  fun triggerAction(actionId: String) {
     runInEdtAndWait {
       PlatformTestUtil.dispatchAllEventsInIdeEventQueue()
       EditorTestUtil.executeAction(editor, actionId)
     }
   }
 
-  override fun onLensesUpdate(vf: VirtualFile, codeLenses: List<ProtocolCodeLens>) {
-    synchronized(lensSubscribers) { lensSubscribers.removeAll { it(codeLenses) } }
-  }
-
-  fun waitForSuccessfulEdit() {
-    var attempts = 0
-    val maxAttempts = 10
-
-    while (attempts < maxAttempts) {
-      val hasAcceptLens =
-          LensesService.getInstance(myFixture.project).getLenses(editor).any {
-            it.command?.command == EditAcceptCodeVisionProvider.command
-          }
-
-      if (hasAcceptLens) break
-      Thread.sleep(1000)
-      attempts++
-    }
-    if (attempts >= maxAttempts) {
-      assertTrue(
-          "Awaiting successful edit: No accept lens found after $maxAttempts attempts", false)
-    }
-  }
-
-  fun runAndWaitForCleanState(actionIdToRun: String) {
-    runAndWaitForLenses(actionIdToRun)
-  }
-
-  fun runAndWaitForLenses(
-      actionIdToRun: String,
-      vararg expectedLenses: String
-  ): List<ProtocolCodeLens> {
-    val future = CompletableFuture<List<ProtocolCodeLens>>()
-    synchronized(lensSubscribers) {
-      lensSubscribers.add { codeLenses ->
-        val error = codeLenses.find { it.command?.command == "cody.fixup.codelens.error" }
-        if (error != null) {
-          future.completeExceptionally(
-              IllegalStateException("Error group shown: ${error.command?.title}"))
-          return@add false
-        }
-
-        if ((expectedLenses.isEmpty() && codeLenses.isEmpty()) ||
-            expectedLenses.all { expected -> codeLenses.any { it.command?.command == expected } }) {
-          future.complete(codeLenses)
-          return@add true
-        }
-        return@add false
-      }
-    }
-
-    triggerAction(actionIdToRun)
-
-    try {
-      return future.get(ASYNC_WAIT_TIMEOUT_SECONDS, TimeUnit.SECONDS)
-    } catch (e: Exception) {
-      val codeLenses = LensesService.getInstance(myFixture.project).getLenses(editor)
-      assertTrue(
-          "Error while awaiting after action $actionIdToRun. Expected lenses: [${expectedLenses.joinToString()}], got: $codeLenses",
-          false)
-      throw e
-    }
-  }
-
-  protected fun hasJavadocComment(text: String): Boolean {
+  fun hasJavadocComment(text: String): Boolean {
     // TODO: Check for the exact contents once they are frozen.
     val javadocPattern = Pattern.compile("/\\*\\*.*?\\*/", Pattern.DOTALL)
     return javadocPattern.matcher(text).find()

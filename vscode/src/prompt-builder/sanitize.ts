@@ -3,10 +3,49 @@ import {
     type ToolCallContentPart,
     type ToolResultContentPart,
     isDefined,
+    ps,
 } from '@sourcegraph/cody-shared'
 
 export function sanitizedChatMessages(messages: ChatMessage[]): any[] {
-    return messages.map(message => {
+    // Check if the last assistant message has a tool_call and the current human message doesn't have a tool_result
+    const processedMessages = [...messages] // Create a copy to avoid mutating the original array
+
+    // Process the first human message to remove content between <think> tags
+    const firstHumanIndex = processedMessages.findIndex(m => m.speaker === 'human')
+    const firstHumanMessage = processedMessages[firstHumanIndex]
+    if (firstHumanIndex >= 0 && firstHumanMessage) {
+        const text = firstHumanMessage.text?.toString()
+        // Check if text starts with <think> tags and contains close tag
+        if (text?.startsWith('<think>') && text?.includes('</think>')) {
+            // Process text parts to remove content between <think> tags, including the tags.
+            // Only remove the content from the first pair.
+            firstHumanMessage.text = firstHumanMessage.text?.replace(/<think>.*?<\/think>/, ps``)
+        }
+    }
+
+    // Find the last assistant message index
+    const lastAssistantIndex = processedMessages.map(m => m.speaker).lastIndexOf('assistant')
+
+    // Check if there's a human message after the last assistant message
+    if (lastAssistantIndex >= 0 && lastAssistantIndex < processedMessages.length - 1) {
+        const lastAssistantMessage = processedMessages[lastAssistantIndex]
+        const nextHumanMessage = processedMessages[lastAssistantIndex + 1]
+
+        // Check if the last assistant message has a tool_call
+        const hasToolCall = lastAssistantMessage.content?.some(part => part.type === 'tool_call')
+
+        // Check if the next human message has a tool_result
+        const hasToolResult = nextHumanMessage.content?.some(part => part.type === 'tool_result')
+
+        // If the assistant has a tool_call but the human doesn't have a tool_result, remove the tool_call
+        if (hasToolCall && !hasToolResult && lastAssistantMessage.content) {
+            lastAssistantMessage.content = lastAssistantMessage.content
+                .map(part => (part.type === 'tool_call' ? undefined : part))
+                .filter(isDefined)
+        }
+    }
+
+    return processedMessages.map(message => {
         if (message.content) {
             const sanitizedContent = message.content
                 .map(part => {

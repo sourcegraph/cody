@@ -2,6 +2,7 @@ import { type UITerminalLine, UITerminalOutputType, UIToolStatus } from '@source
 import type { ContextItemToolState } from '@sourcegraph/cody-shared/src/codebase-context/messages'
 import { Bug, BugOff, Terminal } from 'lucide-react'
 import { type FC, useMemo } from 'react'
+import { Button } from '../../../components/shadcn/ui/button'
 import { Skeleton } from '../../../components/shadcn/ui/skeleton'
 import { cn } from '../../../components/shadcn/utils'
 import { BaseCell } from './BaseCell'
@@ -73,19 +74,15 @@ export const TerminalOutputCell: FC<TerminalOutputCellProps> = ({
     isLoading = false,
     defaultOpen = false,
 }) => {
-    const icon =
-        item.toolName === 'get_diagnostic'
-            ? item.status === UIToolStatus.Info
-                ? Bug
-                : BugOff
-            : Terminal
+    const isDiagnosticTool = item.toolName === 'get_diagnostic'
+    const icon = isDiagnosticTool ? (item.status === UIToolStatus.Info ? Bug : BugOff) : Terminal
     // Process content into lines if provided, otherwise use lines prop
     const lines = useMemo(() => {
         if (item?.content && item.content.trim() !== '') {
             return convertToTerminalLines(item.title ?? 'Terminal', item.content)
         }
         return []
-    }, [item.title, item?.content])
+    }, [item?.title, item?.content])
 
     const renderHeaderContent = () => {
         if (isLoading && item?.title) {
@@ -98,14 +95,18 @@ export const TerminalOutputCell: FC<TerminalOutputCellProps> = ({
 
         return (
             <div className="tw-flex tw-items-center tw-gap-2 tw-overflow-hidden">
-                <code className="tw-text-left tw-truncate tw-font-mono tw-bg-zinc-800 tw-px-2 tw-py-0.5 tw-rounded tw-text-zinc-200">
-                    $ {lines[0]?.content}
-                </code>
+                <Button
+                    variant="ghost"
+                    className="tw-text-left tw-truncate tw-flex tw-items-center tw-gap-2 tw-overflow-hidden tw-p-0 hover:tw-bg-transparent"
+                >
+                    <span className="tw-font-mono">$ {lines[0]?.content}</span>
+                </Button>
             </div>
         )
     }
 
     const renderBodyContent = () => {
+        const isDiagnosticTool = item.toolName === 'get_diagnostic'
         if (isLoading || !lines?.length) {
             return (
                 <div className="tw-font-mono tw-text-xs tw-p-4 tw-bg-black tw-rounded-b-md tw-space-y-1">
@@ -123,6 +124,11 @@ export const TerminalOutputCell: FC<TerminalOutputCellProps> = ({
             )
         }
 
+        if (lines?.length < 2) {
+            // Since the first line is the name of the command, this means the result is empty.
+            return null
+        }
+
         return (
             <pre className="tw-font-mono tw-text-xs tw-p-4 tw-bg-black tw-rounded-b-md tw-overflow-x-auto">
                 {lines.map((line, index) => {
@@ -134,7 +140,9 @@ export const TerminalOutputCell: FC<TerminalOutputCellProps> = ({
                             key={`${line.type}-${line.content}-${index}`}
                             className={cn(getLineClass(line.type))}
                         >
-                            {line.type === 'input' ? `$ ${line.content}` : line.content}
+                            {line.type === 'input' && !isDiagnosticTool
+                                ? `$ ${line.content}`
+                                : line.content}
                         </div>
                     )
                 })}
@@ -150,6 +158,7 @@ export const TerminalOutputCell: FC<TerminalOutputCellProps> = ({
             className={className}
             isLoading={isLoading}
             defaultOpen={defaultOpen}
+            status={item?.status}
         />
     )
 }

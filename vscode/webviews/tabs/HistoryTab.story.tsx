@@ -1,6 +1,5 @@
-import type { UserLocalHistory } from '@sourcegraph/cody-shared'
+import { CodyIDE, type UserLocalHistory } from '@sourcegraph/cody-shared'
 import type { Meta, StoryObj } from '@storybook/react'
-import { dummyVSCodeAPI } from '../App.story'
 import { VSCodeStandaloneComponent } from '../storybook/VSCodeStoryDecorator'
 import { HistoryTabWithData } from './HistoryTab'
 
@@ -21,23 +20,20 @@ type Story = StoryObj<typeof HistoryTabWithData>
 
 export const Empty: Story = {
     args: {
-        vscodeAPI: dummyVSCodeAPI,
         chats: [],
     },
 }
 
 export const SingleDay: Story = {
     args: {
+        IDE: CodyIDE.VSCode,
+        setView: () => {},
         chats: [
             {
                 id: '1',
-                interactions: [
-                    {
-                        humanMessage: { speaker: 'human', text: 'How do I use React hooks?' },
-                        assistantMessage: { speaker: 'assistant', text: 'Hello' },
-                    },
-                ],
                 lastInteractionTimestamp: new Date(Date.now() - 86400000).toISOString(),
+                chatTitle: 'React hooks',
+                firstHumanMessageText: 'How do I use React hooks?',
             },
         ],
     },
@@ -45,25 +41,19 @@ export const SingleDay: Story = {
 
 export const MultiDay: Story = {
     args: {
+        IDE: CodyIDE.VSCode,
+        setView: () => {},
         chats: [
             {
                 id: '1',
-                interactions: [
-                    {
-                        humanMessage: { speaker: 'human', text: 'How do I use React hooks?' },
-                        assistantMessage: { speaker: 'assistant', text: 'Hello' },
-                    },
-                ],
+                chatTitle: 'React hooks',
+                firstHumanMessageText: 'How do I use React hooks?',
                 lastInteractionTimestamp: new Date(Date.now() - 86400000).toISOString(), // Yesterday
             },
             {
                 id: '2',
-                interactions: [
-                    {
-                        humanMessage: { speaker: 'human', text: 'Explain TypeScript interfaces' },
-                        assistantMessage: { speaker: 'assistant', text: 'Hello' },
-                    },
-                ],
+                chatTitle: 'TypeScript interfaces',
+                firstHumanMessageText: 'Explain TypeScript interfaces',
                 lastInteractionTimestamp: new Date().toISOString(),
             },
         ],

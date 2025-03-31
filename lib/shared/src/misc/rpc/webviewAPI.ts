@@ -1,7 +1,8 @@
 import { type Observable, map } from 'observable-fns'
 import type { AuthStatus, ModelsData, ResolvedConfiguration, UserProductSubscription } from '../..'
 import type { SerializedPromptEditorState } from '../..'
-import type { ChatMessage, UserLocalHistory } from '../../chat/transcript/messages'
+import type { LightweightChatHistory } from '../../chat/transcript'
+import type { ChatMessage } from '../../chat/transcript/messages'
 import type { ContextItem, DefaultContext } from '../../codebase-context/messages'
 import type { CodyCommand } from '../../commands/types'
 import type { FeatureFlag } from '../../experimentation/FeatureFlagProvider'
@@ -20,6 +21,11 @@ export interface WebviewToExtensionAPI {
      * Get the data to display in the @-mention menu for the given query.
      */
     mentionMenuData(query: MentionQuery): Observable<MentionMenuData>
+
+    /**
+     * Get the frequently used context items.
+     */
+    frequentlyUsedContextItems(): Observable<ContextItem[]>
 
     /**
      * Get the evaluated value of a feature flag.
@@ -97,7 +103,7 @@ export interface WebviewToExtensionAPI {
     /**
      * The current user's chat history.
      */
-    userHistory(): Observable<UserLocalHistory | null>
+    userHistory(): Observable<LightweightChatHistory | null>
 
     /**
      * The current user's product subscription information (Cody Free/Pro).
@@ -115,6 +121,7 @@ export function createExtensionAPI(
 
     return {
         mentionMenuData: proxyExtensionAPI(messageAPI, 'mentionMenuData'),
+        frequentlyUsedContextItems: proxyExtensionAPI(messageAPI, 'frequentlyUsedContextItems'),
         evaluateFeatureFlag: proxyExtensionAPI(messageAPI, 'evaluateFeatureFlag'),
         prompts: proxyExtensionAPI(messageAPI, 'prompts'),
         promptTags: proxyExtensionAPI(messageAPI, 'promptTags'),

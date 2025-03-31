@@ -22,17 +22,18 @@ import {
     telemetryRecorder,
 } from '@sourcegraph/cody-shared'
 
-import { ContextMixer } from '../completions/context/context-mixer'
-
 import { mockLocalStorage } from '../services/LocalStorageProvider'
-import { type AutoeditRequestID, autoeditAnalyticsLogger, autoeditTriggerKind } from './analytics-logger'
-import { AutoeditCompletionItem } from './autoedit-completion-item'
 import {
-    AUTOEDIT_CONTEXT_FETCHING_DEBOUNCE_INTERVAL,
-    AUTOEDIT_TOTAL_DEBOUNCE_INTERVAL,
-} from './autoedits-provider'
+    type AutoeditRequestID,
+    autoeditAnalyticsLogger,
+    autoeditDiscardReason,
+    autoeditTriggerKind,
+} from './analytics-logger'
+import { AutoeditCompletionItem } from './autoedit-completion-item'
+import { AUTOEDIT_INITIAL_DEBOUNCE_INTERVAL_MS } from './autoedits-provider'
 import { initImageSuggestionService } from './renderer/image-gen'
 import { DEFAULT_AUTOEDIT_VISIBLE_DELAY_MS } from './renderer/manager'
+import { THROTTLE_TIME } from './smart-throttle'
 import { autoeditResultFor } from './test-helpers'
 
 describe('AutoeditsProvider', () => {
@@ -140,14 +141,14 @@ describe('AutoeditsProvider', () => {
               "isPartiallyOutsideOfVisibleRanges": 1,
               "isRead": 1,
               "isSelectionStale": 1,
-              "latency": 120,
+              "latency": 100,
               "noActiveTextEditor": 0,
               "otherCompletionProviderEnabled": 0,
               "outsideOfActiveEditor": 1,
               "recordsPrivateMetadataTranscript": 1,
               "source": 1,
               "suggestionsStartedSinceLastSuggestion": 1,
-              "timeFromSuggestedAt": 100,
+              "timeFromSuggestedAt": 110,
               "triggerKind": 1,
               "windowNotFocused": 1,
             },
@@ -203,14 +204,14 @@ describe('AutoeditsProvider', () => {
               "isPartiallyOutsideOfVisibleRanges": 1,
               "isRead": 1,
               "isSelectionStale": 1,
-              "latency": 120,
+              "latency": 100,
               "noActiveTextEditor": 0,
               "otherCompletionProviderEnabled": 0,
               "outsideOfActiveEditor": 1,
               "recordsPrivateMetadataTranscript": 1,
               "source": 1,
               "suggestionsStartedSinceLastSuggestion": 1,
-              "timeFromSuggestedAt": 100,
+              "timeFromSuggestedAt": 110,
               "triggerKind": 1,
               "windowNotFocused": 1,
             },
@@ -275,13 +276,13 @@ describe('AutoeditsProvider', () => {
               "isAccepted": 0,
               "isFuzzyMatch": 0,
               "isRead": 0,
-              "latency": 120,
+              "latency": 100,
               "otherCompletionProviderEnabled": 0,
               "recordsPrivateMetadataTranscript": 1,
               "rejectReason": 1,
               "source": 1,
               "suggestionsStartedSinceLastSuggestion": 2,
-              "timeFromSuggestedAt": 375,
+              "timeFromSuggestedAt": 385,
               "triggerKind": 1,
             },
             "privateMetadata": {
@@ -496,16 +497,17 @@ describe('AutoeditsProvider', () => {
         ])
     })
 
-    describe('Debounce logic', () => {
-        it('waits for exactly AUTOEDIT_TOTAL_DEBOUNCE_INTERVAL before calling getPrediction', async () => {
+    describe('smart-throttle', () => {
+        it('does not wait before calling getPrediction first time', async () => {
             let getModelResponseCalledAt: number | undefined
+            const prediction = 'const x = 1\n'
             const customGetModelResponse = async () => {
                 // Record the current fake timer time when getModelResponse is called
                 getModelResponseCalledAt = Date.now()
                 return {
                     type: 'success',
                     responseBody: {
-                        choices: [{ text: 'const x = 1\n' }],
+                        choices: [{ text: prediction }],
                     },
                     requestUrl: 'test-url.com/completions',
                     requestHeaders: {},
@@ -515,74 +517,195 @@ describe('AutoeditsProvider', () => {
 
             const startTime = Date.now()
             const { promiseResult } = await autoeditResultFor('const x = █\n', {
-                prediction: 'const x = 1\n',
+                prediction,
                 getModelResponse: customGetModelResponse,
                 isAutomaticTimersAdvancementDisabled: true,
             })
 
             // Run all timers to get the result
-            await vi.runAllTimersAsync()
+            await vi.advanceTimersByTimeAsync(10000)
             const result = await promiseResult
+
             expect(result?.inlineCompletionItems[0].insertText).toBe('const x = 1')
             expect(getModelResponseCalledAt).toBeDefined()
-            // Check that getModelResponse was called only after at least AUTOEDIT_TOTAL_DEBOUNCE_INTERVAL have elapsed
-            expect(getModelResponseCalledAt! - startTime).toBe(AUTOEDIT_TOTAL_DEBOUNCE_INTERVAL)
+            // Check that getModelResponse was called only after at least AUTOEDIT_INITIAL_DEBOUNCE_INTERVAL_MS have elapsed
+            expect(getModelResponseCalledAt! - startTime).toBe(0)
         })
 
-        it('aborts the operation if cancellation occurs during the context fetching debounce interval', async () => {
-            let modelResponseCalled = false
-            const customGetModelResponse = async () => {
-                modelResponseCalled = true
+        it('consequtive calls are throttled', async () => {
+            const calls = [
+                { prediction: 'const x = 1\n', getModelResponseCalledAt: -1 },
+                { prediction: 'const x = 12345\n', getModelResponseCalledAt: -1 },
+            ]
+
+            const customGetModelResponse = (call: (typeof calls)[number]) => async () => {
+                // Record the current fake timer time when getModelResponse is called
+                call.getModelResponseCalledAt = performance.now()
+                await vi.advanceTimersByTimeAsync(50)
                 return {
                     type: 'success',
-                    responseBody: { choices: [{ text: 'const x = 1\n' }] },
+                    responseBody: {
+                        choices: [{ text: call.prediction }],
+                    },
                     requestUrl: 'test-url.com/completions',
                     requestHeaders: {},
                     responseHeaders: {},
                 } as const
             }
 
-            const tokenSource = new vscode.CancellationTokenSource()
-            const getContextSpy = vi.spyOn(ContextMixer.prototype, 'getContext')
+            const { promiseResult: promiseResult1, provider } = await autoeditResultFor(
+                'const x = █\n',
+                {
+                    prediction: calls[0].prediction,
+                    getModelResponse: customGetModelResponse(calls[0]),
+                    isAutomaticTimersAdvancementDisabled: true,
+                }
+            )
 
-            const { promiseResult } = await autoeditResultFor('const x = █\n', {
-                prediction: 'const x = 1\n',
-                token: tokenSource.token,
-                getModelResponse: customGetModelResponse,
+            const delayBeforeSecondCall = AUTOEDIT_INITIAL_DEBOUNCE_INTERVAL_MS + 5
+            await vi.advanceTimersByTimeAsync(delayBeforeSecondCall)
+            const secondCallStartedAt = performance.now()
+
+            const { promiseResult: promiseResult2 } = await autoeditResultFor('const x = 123█\n', {
+                prediction: calls[1].prediction,
+                getModelResponse: customGetModelResponse(calls[1]),
                 isAutomaticTimersAdvancementDisabled: true,
+                provider,
+                documentVersion: 2,
             })
 
-            // Wait for the context fetching to start
-            await vi.advanceTimersByTimeAsync(AUTOEDIT_CONTEXT_FETCHING_DEBOUNCE_INTERVAL)
-            expect(getContextSpy).toHaveBeenCalled()
+            // Run all timers to get the result
+            await vi.advanceTimersByTimeAsync(10000)
+            const result1 = await promiseResult1
+            const result2 = await promiseResult2
 
-            // Cancel the auto-edit request
-            tokenSource.cancel()
+            // The first call is aborted because the second call is triggered before the
+            // `customGetModelResponse` function has returned.
+            expect(result1).toBeNull()
 
-            // Wait for the debounce period to complete to get the result
-            await vi.advanceTimersByTimeAsync(AUTOEDIT_TOTAL_DEBOUNCE_INTERVAL)
-            const result = await promiseResult
+            // Insert text includes duplicated the existing numbers becase we have inline decorations
+            // to remove "123" and replace it with "12345".
+            expect(result2?.inlineCompletionItems[0].insertText).toBe('const x = 12312345')
 
-            expect(result).toBeNull()
-            expect(modelResponseCalled).toBe(false)
+            // The first call is executed immediately.
+            expect(calls[0].getModelResponseCalledAt).toBe(0)
+
+            // The second call is executed after the throttle interval.
+            expect(calls[1].getModelResponseCalledAt).toBe(50)
+            expect(calls[1].getModelResponseCalledAt - secondCallStartedAt).toBe(
+                THROTTLE_TIME - delayBeforeSecondCall
+            )
+        })
+
+        it('consequtive calls are throttled and intermediate calls are aborted', async () => {
+            const calls = [
+                { prediction: 'const x = 1\n', getModelResponseCalledAt: -1 },
+                { prediction: 'const x = 12345\n', getModelResponseCalledAt: -1 },
+                { prediction: 'const x = 123\nconst y = 23456\n', getModelResponseCalledAt: -1 },
+                { prediction: 'const x = 123\nconst y = 12345\n', getModelResponseCalledAt: -1 },
+            ]
+
+            const customGetModelResponse = (call: (typeof calls)[number]) => async () => {
+                // Record the current fake timer time when getModelResponse is called
+                call.getModelResponseCalledAt = performance.now()
+                await vi.advanceTimersByTimeAsync(0)
+                return {
+                    type: 'success',
+                    responseBody: {
+                        choices: [{ text: call.prediction }],
+                    },
+                    requestUrl: 'test-url.com/completions',
+                    requestHeaders: {},
+                    responseHeaders: {},
+                } as const
+            }
+
+            const { promiseResult: promiseResult1, provider } = await autoeditResultFor(
+                'const x = █\n',
+                {
+                    prediction: calls[0].prediction,
+                    getModelResponse: customGetModelResponse(calls[0]),
+                    isAutomaticTimersAdvancementDisabled: true,
+                }
+            )
+
+            const delayBeforeSecondCall = AUTOEDIT_INITIAL_DEBOUNCE_INTERVAL_MS + 5
+            await vi.advanceTimersByTimeAsync(delayBeforeSecondCall)
+
+            const { promiseResult: promiseResult2 } = await autoeditResultFor('const x = 123█\n', {
+                prediction: calls[1].prediction,
+                getModelResponse: customGetModelResponse(calls[1]),
+                isAutomaticTimersAdvancementDisabled: true,
+                provider,
+                documentVersion: 2,
+            })
+
+            await vi.advanceTimersByTimeAsync(25)
+
+            const { promiseResult: promiseResult3 } = await autoeditResultFor(
+                'const x = 123\nconst y = █\n',
+                {
+                    prediction: calls[2].prediction,
+                    getModelResponse: customGetModelResponse(calls[2]),
+                    isAutomaticTimersAdvancementDisabled: true,
+                    provider,
+                    documentVersion: 3,
+                }
+            )
+
+            await vi.advanceTimersByTimeAsync(11)
+
+            const { promiseResult: promiseResult4 } = await autoeditResultFor(
+                'const x = 123\nconst y = 12█\n',
+                {
+                    prediction: calls[3].prediction,
+                    getModelResponse: customGetModelResponse(calls[3]),
+                    isAutomaticTimersAdvancementDisabled: true,
+                    provider,
+                    documentVersion: 4,
+                }
+            )
+
+            // Run all timers to get the result
+            await vi.advanceTimersByTimeAsync(10000)
+            const [result1, result2, result3, result4] = await Promise.all([
+                promiseResult1,
+                promiseResult2,
+                promiseResult3,
+                promiseResult4,
+            ])
+
+            // The first call is aborted because the second call is triggered before the
+            // `customGetModelResponse` function has returned.
+            expect(result1).toBeNull()
+            expect(result2).toBeNull()
+            expect(result3).toBeNull()
+            expect(result4?.inlineCompletionItems[0].insertText).toBe('const y = 1212345')
+
+            // The first call is executed immediately.
+            expect(calls[0].getModelResponseCalledAt).toBe(0)
+            // The second call is aborted because the third call
+            expect(calls[1].getModelResponseCalledAt).toBe(-1)
+            // The third call is throttled against the only executed (first) call
+            expect(calls[2].getModelResponseCalledAt).toBe(50)
         })
 
         it('the abort signal is propagated to the model request', async () => {
-            const tokenSource = new vscode.CancellationTokenSource()
-            const logErrorSpy = vi.spyOn(autoeditAnalyticsLogger, 'logError')
+            const markAsDiscardedSpy = vi.spyOn(autoeditAnalyticsLogger, 'markAsDiscarded')
 
-            const { promiseResult } = await autoeditResultFor('const x = █\n', {
+            const { promiseResult, provider } = await autoeditResultFor('const x = █\n', {
                 prediction: 'const x = 1\n',
-                token: tokenSource.token,
                 isAutomaticTimersAdvancementDisabled: true,
                 getModelResponse: async ({ abortSignal }) => {
-                    if (abortSignal.aborted) {
-                        throw new Error('aborted before the cancellation')
-                    }
+                    provider.smartThrottleService.lastRequest?.abort()
 
-                    tokenSource.cancel()
                     if (abortSignal.aborted) {
-                        throw new Error('aborted after the cancellation')
+                        return {
+                            type: 'aborted',
+                            requestUrl: 'test-url.com/completions',
+                            requestHeaders: {},
+                            responseHeaders: {},
+                        } as const
                     }
 
                     return {
@@ -595,11 +718,15 @@ describe('AutoeditsProvider', () => {
                 },
             })
 
-            await vi.advanceTimersByTimeAsync(AUTOEDIT_TOTAL_DEBOUNCE_INTERVAL)
+            await vi.advanceTimersToNextTimerAsync()
+            await promiseResult
 
-            expect(logErrorSpy).toHaveBeenCalledTimes(1)
-            expect(logErrorSpy).toHaveBeenCalledWith(new Error('aborted after the cancellation'))
             expect(promiseResult).resolves.toBeNull()
+            expect(markAsDiscardedSpy).toHaveBeenCalledTimes(1)
+            expect(markAsDiscardedSpy).toHaveBeenCalledWith({
+                requestId: expect.any(String),
+                discardReason: autoeditDiscardReason.clientAborted,
+            })
         })
     })
 })

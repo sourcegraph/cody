@@ -10,6 +10,10 @@ import {
     distinctUntilChanged,
     startWith,
 } from '@sourcegraph/cody-shared'
+import {
+    type LightweightChatHistory,
+    toLightweightChatTranscript,
+} from '@sourcegraph/cody-shared/src/chat/transcript'
 import { type Observable, Subject, map } from 'observable-fns'
 import * as vscode from 'vscode'
 import { localStorage } from '../../services/LocalStorageProvider'
@@ -42,6 +46,51 @@ class ChatHistoryManager implements vscode.Disposable {
         return chatHistory?.chat ? chatHistory.chat[sessionID] : null
     }
 
+    /**
+     * Returns a lightweight version of the chat history containing only the essential data
+     * needed for displaying in the history list (title, ID, timestamp).
+     *
+     * @param authStatus The authenticated user status
+     * @param limit Optional limit on the number of history items to return (default: 20)
+     * @returns A lightweight version of the chat history or null if not available
+     */
+    public getLightweightHistory(
+        authStatus: Pick<AuthenticatedAuthStatus, 'endpoint' | 'username'>,
+        limit?: number
+    ): LightweightChatHistory | null {
+        const history = this.getLocalHistory(authStatus)
+        if (!history?.chat) {
+            return null
+        }
+
+        // Convert full history to lightweight history
+        const lightweightHistory: LightweightChatHistory = {}
+
+        // Get all chat IDs and filter out empty chats first
+        let chatIDs = Object.keys(history.chat).filter(
+            chatID => history.chat[chatID]?.interactions?.[0]?.humanMessage?.text
+        )
+
+        // Sort by timestamp (newest first)
+        chatIDs = chatIDs.sort((a, b) => {
+            const timestampA = new Date(history.chat[a].lastInteractionTimestamp).getTime()
+            const timestampB = new Date(history.chat[b].lastInteractionTimestamp).getTime()
+            return timestampA - timestampB // Descending order (newest first)
+        })
+
+        // Apply limit after filtering
+        if (limit) {
+            chatIDs = chatIDs.slice(0, limit)
+        }
+
+        // Convert each chat to lightweight format
+        for (const chatID of chatIDs) {
+            lightweightHistory[chatID] = toLightweightChatTranscript(history.chat[chatID])
+        }
+
+        return lightweightHistory
+    }
+
     public async saveChat(
         authStatus: AuthenticatedAuthStatus,
         chat: SerializedChatTranscript
@@ -58,7 +107,7 @@ class ChatHistoryManager implements vscode.Disposable {
     public async importChatHistory(
         history: AccountKeyedChatHistory,
         merge: boolean,
-        authStatus: AuthStatus
+        _authStatus: AuthStatus
     ): Promise<void> {
         await localStorage.importChatHistory(history, merge)
         this.changeNotifications.next()
@@ -99,6 +148,33 @@ class ChatHistoryManager implements vscode.Disposable {
         ),
         this.changeNotifications.pipe(startWith(undefined))
     ).pipe(map(([authStatus]) => (authStatus.authenticated ? this.getLocalHistory(authStatus) : null)))
+
+    /**
+     * Observable that emits a lightweight version of the chat history
+     * containing only essential data for the history list.
+     */
+    public lightweightChanges: Observable<LightweightChatHistory | null> = combineLatest(
+        authStatus.pipe(
+            map(
+                (
+                    authStatus
+                ):
+                    | UnauthenticatedAuthStatus
+                    | Pick<AuthenticatedAuthStatus, 'authenticated' | 'endpoint' | 'username'> =>
+                    authStatus.authenticated
+                        ? {
+                              authenticated: authStatus.authenticated,
+                              endpoint: authStatus.endpoint,
+                              username: authStatus.username,
+                          }
+                        : authStatus
+            ),
+            distinctUntilChanged()
+        ),
+        this.changeNotifications.pipe(startWith(undefined))
+    ).pipe(
+        map(([authStatus]) => (authStatus.authenticated ? this.getLightweightHistory(authStatus) : null))
+    )
 }
 
 export const chatHistory = new ChatHistoryManager()

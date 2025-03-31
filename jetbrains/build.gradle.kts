@@ -59,8 +59,8 @@ val skippedFailureLevels =
 plugins {
   id("java")
   id("jvm-test-suite")
-  id("org.jetbrains.kotlin.jvm") version "2.1.10"
-  id("org.jetbrains.intellij.platform") version "2.2.1"
+  id("org.jetbrains.kotlin.jvm") version "2.1.20"
+  id("org.jetbrains.intellij.platform") version "2.5.0"
   id("org.jetbrains.changelog") version "2.2.1"
   id("com.diffplug.spotless") version "7.0.2"
   id("io.sentry.jvm.gradle") version "5.2.0"
@@ -165,7 +165,9 @@ spotless {
     ktfmt()
     trimTrailingWhitespace()
     target("src/**/*.kt")
-    targetExclude("src/main/kotlin/com/sourcegraph/cody/agent/protocol_generated/**")
+    targetExclude(
+        "src/main/kotlin/com/sourcegraph/cody/agent/protocol_generated/**",
+        "src/integrationTest/resources/testProjects/**")
     toggleOffOn()
   }
 }
@@ -327,7 +329,6 @@ fun Test.sharedIntegrationTestConfig(buildCodyDir: File, mode: String) {
 
   environment(
       "CODY_RECORDING_MODE" to mode,
-      "CODY_RECORDING_NAME" to "integration-test",
       "CODY_RECORDING_DIRECTORY" to resourcesDir.resolve("recordings").absolutePath,
       "CODY_SHIM_TESTING" to "true",
       "CODY_TEMPERATURE_ZERO" to "true",

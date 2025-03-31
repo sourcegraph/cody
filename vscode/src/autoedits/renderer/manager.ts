@@ -32,6 +32,7 @@ import { CodyTaskState } from '../../non-stop/state'
 import { AutoeditCompletionItem } from '../autoedit-completion-item'
 import type { AutoeditClientCapabilities } from '../autoedits-provider'
 import { autoeditsOutputChannelLogger } from '../output-channel-logger'
+import type { RequestManager } from '../request-manager'
 import type { AutoEditDecorations, AutoEditsDecorator, DecorationInfo } from './decorators/base'
 import {
     type AutoEditRenderOutput,
@@ -120,7 +121,9 @@ export class AutoEditsDefaultRendererManager
 
     constructor(
         protected createDecorator: (editor: vscode.TextEditor) => AutoEditsDecorator,
-        protected fixupController: FixupController
+        protected fixupController: FixupController,
+        // Used to remove cached suggestions when one is accepted or rejected.
+        protected requestManager: RequestManager
     ) {
         super()
         this.disposables.push(
@@ -342,6 +345,7 @@ export class AutoEditsDefaultRendererManager
     protected async acceptActiveEdit(acceptReason: AutoeditAcceptReasonMetadata): Promise<void> {
         const editor = vscode.window.activeTextEditor
         const { activeRequest, decorator } = this
+
         // Compute this variable before the `handleDidHideSuggestion` call which removes the active request.
         const hasInlineDecorations = this.hasInlineDecorations()
 
@@ -352,6 +356,12 @@ export class AutoEditsDefaultRendererManager
         ) {
             return this.rejectActiveEdit(autoeditRejectReason.acceptActiveEdit)
         }
+
+        this.requestManager.removeFromCache({
+            uri: activeRequest.document.uri.toString(),
+            documentVersion: activeRequest.document.version,
+            position: activeRequest.position,
+        })
 
         // Reset the testing promise when accepting
         this.testing_completionSuggestedPromise = undefined
@@ -382,6 +392,14 @@ export class AutoEditsDefaultRendererManager
 
     protected async rejectActiveEdit(rejectReason: AutoeditRejectReasonMetadata): Promise<void> {
         const { activeRequest, decorator } = this
+
+        if (activeRequest) {
+            this.requestManager.removeFromCache({
+                uri: activeRequest.document.uri.toString(),
+                documentVersion: activeRequest.document.version,
+                position: activeRequest.position,
+            })
+        }
 
         // Reset the testing promise when rejecting
         this.testing_completionSuggestedPromise = undefined
