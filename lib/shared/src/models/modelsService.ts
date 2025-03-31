@@ -215,6 +215,14 @@ export interface DefaultsAndUserPreferencesForEndpoint {
     selected: {
         [usage in ModelUsage]?: string
     }
+    
+    /**
+     * Stores the previous models when rate limited to restore them when rate limit is lifted.
+     */
+    _rateLimitedPrevious?: {
+        chat: string
+        edit: string
+    }
 }
 
 export interface ModelsData {

@@ -120,6 +120,7 @@ export interface CompletionParameters {
     topP?: number
     model?: string
     stream?: boolean
+    feature?: 'autocompletions' | 'chat messages and commands'
     // Configuration for a Predicted Output, which can greatly improve response
     // times when large parts of the model response are known ahead of time.
     // https://platform.openai.com/docs/guides/latency-optimization#use-predicted-outputs

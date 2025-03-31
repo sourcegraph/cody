@@ -1,4 +1,5 @@
 import {
+    type AuthStatus,
     type ContextItem,
     type EditModel,
     type EventSource,
@@ -9,6 +10,7 @@ import {
     PromptString,
     type Rule,
     SYMBOL_CONTEXT_MENTION_PROVIDER,
+    authStatus,
     checkIfEnterpriseUser,
     currentUserProductSubscription,
     displayLineRange,
@@ -17,6 +19,7 @@ import {
     modelsService,
     parseMentionQuery,
     scanForMentionTriggerInUserTextInput,
+    subscriptionDisposable,
 } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 
@@ -38,6 +41,8 @@ import type { EditModelItem, EditRangeItem } from './get-items/types'
 import { getMatchingContext } from './get-matching-context'
 import { createQuickPick } from './quick-pick'
 import { fetchDocumentSymbols, getLabelForContextItem, removeAfterLastAt } from './utils'
+
+let EDIT_MODEL_BEFORE_RATE_LIMIT = ''
 
 export interface QuickPickInput {
     /** The user provided instruction */
@@ -187,7 +192,102 @@ export const getInput = async (
     // Start fetching symbols early, so they can be used immediately if an option is selected
     const symbolsPromise = fetchDocumentSymbols(document)
 
-    return new Promise<QuickPickInput | null>(resolve => {
+    // Create disposables for subscriptions
+    const disposables: vscode.Disposable[] = []
+
+    return new Promise<QuickPickInput | null>((resolve, reject) => {
+        // Subscribe to auth status changes to update models when rate limits change
+        const authStatusSubscription = subscriptionDisposable(
+            authStatus.subscribe(async (newAuthStatus: AuthStatus) => {
+                try {
+                    // Only update if the auth status's rateLimited field changes
+                    if (newAuthStatus.authenticated && newAuthStatus.rateLimited) {
+                        if (newAuthStatus.rateLimited.autocompletions === true) {
+                            // Refresh model options when auth status changes
+                            const updatedModelOptions = await firstResultFromOperation(
+                                modelsService.getModels(ModelUsage.Edit)
+                            )
+                            // Disable non-fast models when rate limited
+                            const updatedModelItems = getModelOptionItems(
+                                updatedModelOptions,
+                                isCodyPro,
+                                isEnterpriseUser,
+                                newAuthStatus.rateLimited.autocompletions
+                            )
+
+                            // Check if the active model is now disabled (rate limited)
+                            const updatedActiveModelItem = updatedModelItems.find(
+                                item => item.model === activeModel
+                            )
+
+                            EDIT_MODEL_BEFORE_RATE_LIMIT = activeModel
+                            if (
+                                updatedActiveModelItem?.disabled &&
+                                modelInput.input.step &&
+                                modelInput.input.step > 0
+                            ) {
+                                // Fallback to flash
+                                const defaultModel = updatedModelItems.find(
+                                    item => item.model === 'google::v1::gemini-2.0-flash'
+                                )
+                                if (defaultModel) {
+                                    activeModel = defaultModel.model
+                                    activeModelItem = defaultModel
+                                    activeModelContextWindow = getContextWindowOnModelChange(activeModel)
+                                }
+                            }
+                            // Just update the items without changing the selection
+                            modelInput.setItems(
+                                getModelInputItems(
+                                    updatedModelOptions,
+                                    activeModel,
+                                    isCodyPro,
+                                    isEnterpriseUser,
+                                    newAuthStatus.rateLimited.autocompletions
+                                ).items
+                            )
+                        } else {
+                            // Refresh model options when auth status changes
+                            const updatedModelOptions = await firstResultFromOperation(
+                                modelsService.getModels(ModelUsage.Edit)
+                            )
+                            // Re-enable non-fast models when rate limited
+                            const updatedModelItems = getModelOptionItems(
+                                updatedModelOptions,
+                                isCodyPro,
+                                isEnterpriseUser,
+                                newAuthStatus.rateLimited.autocompletions
+                            )
+
+                            if (modelInput.input.step && modelInput.input.step > 0) {
+                                // Change the default model back
+                                const defaultModel = updatedModelItems.find(
+                                    item => item.model === EDIT_MODEL_BEFORE_RATE_LIMIT
+                                )
+                                if (defaultModel) {
+                                    activeModel = defaultModel.model
+                                    activeModelItem = defaultModel
+                                    activeModelContextWindow = getContextWindowOnModelChange(activeModel)
+                                }
+                            }
+                            // Just update the items without changing the selection
+                            modelInput.setItems(
+                                getModelInputItems(
+                                    updatedModelOptions,
+                                    activeModel,
+                                    isCodyPro,
+                                    isEnterpriseUser,
+                                    newAuthStatus.rateLimited.autocompletions
+                                ).items
+                            )
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error updating models after auth status change:', error)
+                }
+            })
+        )
+        disposables.push(authStatusSubscription)
         const modelInput = createQuickPick({
             title: activeTitle,
             placeHolder: 'Select a model',
@@ -489,6 +589,10 @@ export const getInput = async (
                 // Submission flow, validate selected items and return final output
                 input.hide()
                 textDocumentListener.dispose()
+                for (const d of disposables) {
+                    d.dispose()
+                }
+
                 const isGenerate = isGenerateIntent(document, activeRange)
                 return resolve({
                     instruction: instruction.trim(),

@@ -43,6 +43,7 @@ import {
     forceHydration,
     getDefaultSystemPrompt,
     graphqlClient,
+    handleError,
     hydrateAfterPostMessage,
     isAbortErrorOrSocketHangUp,
     isContextWindowLimitError,
@@ -893,7 +894,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 return
             }
             if (isRateLimitError(error) || isContextWindowLimitError(error)) {
-                this.postError(error, 'transcript')
+                // this.postError(error, 'transcript')
             } else {
                 this.postError(
                     isError(error) ? error : new Error(`Error generating assistant response: ${error}`)
@@ -1396,6 +1397,20 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
      * Display error message in webview as part of the chat transcript, or as a system banner alongside the chat.
      */
     private postError(error: Error, type?: MessageErrorType): void {
+        console.log(
+            '[julia] postError in ChatController.ts (before send to webview) ---- All regular (non-fast) models due to rate limiting'
+        )
+        if (isRateLimitError(error)) {
+            if (error.feature === 'chat messages and commands') {
+                void this.postMessage({
+                    type: 'rateLimit',
+                    isRateLimited: true,
+                })
+            }
+            // Handle errors through the centralized handler
+            handleError(error as Error, error.feature)
+        }
+
         logDebug('ChatController: postError', error.message)
         // Add error to transcript
         if (type === 'transcript') {

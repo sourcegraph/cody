@@ -22,6 +22,7 @@ import {
     getSerializedParams,
     getTraceparentHeaders,
     globalAgentRef,
+    handleError as handleRateLimitError,
     isCustomAuthChallengeResponse,
     isError,
     logError,
@@ -137,7 +138,7 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                     //
                     // If the request failed with a rate limit error, wraps the
                     // error in RateLimitError.
-                    function handleError(e: Error): void {
+                    function handleError(this: any, e: Error): void {
                         log?.onError(e.message, e)
 
                         if (statusCode === 429) {
@@ -159,6 +160,15 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                                 limit ? Number.parseInt(limit, 10) : undefined,
                                 retryAfter
                             )
+                            console.log(
+                                '[julia] _streamWithCallbacks in nodeClient.ts ---- All regular (non-fast) models due to rate limiting'
+                            )
+                            const feature = 'chat messages and commands'
+                            void this.postMessage({
+                                type: 'rateLimit',
+                                isRateLimited: true,
+                            })
+                            handleRateLimitError(error, feature)
                             onErrorOnce(error, statusCode)
                         } else {
                             onErrorOnce(e, statusCode)
@@ -343,6 +353,33 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                     body: JSON.stringify(serializedParams),
                     signal,
                 })
+                if (response.status === 429) {
+                    console.log(
+                        '[julia] _fetchWithCallbacks in nodeClient.ts ---- All regular (non-fast) models due to rate limiting'
+                    )
+                    // Extract rate limit information from response headers
+                    const upgradeIsAvailable =
+                        response.headers.get('x-is-cody-pro-user') === 'false' &&
+                        typeof response.headers.get('x-is-cody-pro-user') !== 'undefined'
+                    const retryAfter = response.headers.get('retry-after')
+                    const limit = response.headers.get('x-ratelimit-limit')
+
+                    // Create rate limit error
+                    const error = new RateLimitError(
+                        'chat messages and commands',
+                        await response.text(),
+                        upgradeIsAvailable,
+                        limit ? Number.parseInt(limit, 10) : undefined,
+                        retryAfter
+                    )
+                    const feature = 'chat messages and commands'
+                    // void this.postMessage({
+                    //     type: 'rateLimit',
+                    //     isRateLimited: true,
+                    // })
+                    handleRateLimitError(error, feature)
+                    throw error
+                }
                 if (!response.ok) {
                     const errorMessage = await response.text()
                     throw new NetworkError(
