@@ -2,7 +2,7 @@ import { type ChatMessage, type Model, ModelTag, isCodyProModel } from '@sourceg
 import { isMacOS } from '@sourcegraph/cody-shared'
 import { DeepCodyAgentID, ToolCodyModelName } from '@sourcegraph/cody-shared/src/models/client'
 import { clsx } from 'clsx'
-import { BookOpenIcon, BrainIcon, BuildingIcon, ExternalLinkIcon } from 'lucide-react'
+import { AlertTriangleIcon, BookOpenIcon, BrainIcon, BuildingIcon, ExternalLinkIcon } from 'lucide-react'
 import { type FunctionComponent, type ReactNode, useCallback, useMemo } from 'react'
 import type { UserAccountInfo } from '../../Chat'
 import { getVSCodeAPI } from '../../utils/VSCodeApi'
@@ -97,8 +97,8 @@ export const ModelSelectField: React.FunctionComponent<{
         ]
     )
 
-    // Readonly if the intent is agentic or they are an enterprise user that does not support server-sent models
-    const readOnly = intent === 'agentic' || !(userInfo.isDotComUser || serverSentModelsEnabled)
+    // Readonly if they are an enterprise user that does not support server-sent models
+    const readOnly = !(userInfo.isDotComUser || serverSentModelsEnabled)
 
     const onOpenChange = useCallback(
         (open: boolean): void => {
@@ -122,7 +122,7 @@ export const ModelSelectField: React.FunctionComponent<{
     const options = useMemo<SelectListOption[]>(
         () =>
             models.map(m => {
-                const availability = modelAvailability(userInfo, serverSentModelsEnabled, m)
+                const availability = modelAvailability(userInfo, serverSentModelsEnabled, m, intent)
                 return {
                     value: m.id,
                     title: (
@@ -140,7 +140,7 @@ export const ModelSelectField: React.FunctionComponent<{
                     tooltip: getTooltip(m, availability),
                 } satisfies SelectListOption
             }),
-        [models, userInfo, serverSentModelsEnabled]
+        [models, userInfo, serverSentModelsEnabled, intent]
     )
     const optionsByGroup: { group: string; options: SelectListOption[] }[] = useMemo(() => {
         return optionByGroup(options)
@@ -186,6 +186,16 @@ export const ModelSelectField: React.FunctionComponent<{
                     className={`focus:tw-outline-none ${styles.chatModelPopover}`}
                     data-testid="chat-model-popover"
                 >
+                    {intent === 'agentic' && (
+                        <div className="tw-pl-5 tw-pr-3 tw-py-1.5 tw-text-sm tw-text-foreground tw-flex tw-justify-center">
+                            <div className="tw-flex tw-items-start tw-gap-2 tw-bg-muted tw-px-2 tw-py-0.5 tw-rounded">
+                                <AlertTriangleIcon className="tw-w-[16px] tw-h-[16px] tw-mt-[2px]" />
+                                <span className="tw-leading-4 tw-font-semibold">
+                                    Only Claude 3.7 Sonnet is currently available in Agent Mode
+                                </span>
+                            </div>
+                        </div>
+                    )}
                     <CommandList
                         className="model-selector-popover tw-max-h-[80vh] tw-overflow-y-auto"
                         data-testid="chat-model-popover-option"
@@ -280,11 +290,7 @@ export const ModelSelectField: React.FunctionComponent<{
                 },
             }}
         >
-            {intent === 'agentic'
-                ? 'Claude 3.7 Sonnet'
-                : value !== undefined
-                  ? options.find(option => option.value === value)?.title
-                  : 'Select...'}
+            {value !== undefined ? options.find(option => option.value === value)?.title : 'Select...'}
         </ToolbarPopoverItem>
     )
 }
@@ -297,13 +303,18 @@ type ModelAvailability = 'available' | 'needs-cody-pro' | 'not-selectable-on-ent
 function modelAvailability(
     userInfo: Pick<UserAccountInfo, 'isCodyProUser' | 'isDotComUser'>,
     serverSentModelsEnabled: boolean,
-    model: Model
+    model: Model,
+    intent?: ChatMessage['intent']
 ): ModelAvailability {
     if (!userInfo.isDotComUser && !serverSentModelsEnabled) {
         return 'not-selectable-on-enterprise'
     }
     if (isCodyProModel(model) && userInfo.isDotComUser && !userInfo.isCodyProUser) {
         return 'needs-cody-pro'
+    }
+    // For agentic mode, only allow models with the AgenticCompatible tag (Claude 3.7 Sonnet)
+    if (intent === 'agentic' && !model.tags.includes(ModelTag.Default)) {
+        return 'not-selectable-on-enterprise'
     }
     return 'available'
 }
