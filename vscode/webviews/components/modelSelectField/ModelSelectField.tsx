@@ -313,7 +313,7 @@ function modelAvailability(
         return 'needs-cody-pro'
     }
     // For agentic mode, only allow models with the AgenticCompatible tag (Claude 3.7 Sonnet)
-    if (intent === 'agentic' && !model.tags.includes(ModelTag.AgenticCompatible)) {
+    if (intent === 'agentic' && !model.tags.includes(ModelTag.Default)) {
         return 'not-selectable-on-enterprise'
     }
     return 'available'

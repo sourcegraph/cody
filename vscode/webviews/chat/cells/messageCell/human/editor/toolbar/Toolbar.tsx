@@ -194,10 +194,7 @@ const ModelSelectFieldToolbarItem: FunctionComponent<{
     const clientConfig = useClientConfig()
     const serverSentModelsEnabled = !!clientConfig?.modelsAPIEnabled
 
-    const agenticModel = useMemo(
-        () => models.find(m => m.tags.includes(ModelTag.AgenticCompatible)),
-        [models]
-    )
+    const agenticModel = useMemo(() => models.find(m => m.tags.includes(ModelTag.Default)), [models])
 
     // If in agentic mode, ensure the agentic model is selected
     useEffect(() => {

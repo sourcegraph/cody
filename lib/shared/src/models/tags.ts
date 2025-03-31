@@ -36,5 +36,5 @@ export enum ModelTag {
     Vision = 'vision', // Model supports vision capabilities
     Reasoning = 'reasoning', // Model supports reasoning capabilities
     Tools = 'tools', // Model supports tools capabilities
-    AgenticCompatible = 'agentic-compatible', // Model is compatible with agentic mode
+    Default = 'default', // Default Model
 }
