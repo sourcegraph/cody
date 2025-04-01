@@ -99,6 +99,8 @@ export const autoeditSource = {
     cache: 2,
     /** Autoedit originated from a in-flight request. */
     inFlightRequest: 3,
+    /** Autoedit originated from a hot streak. */
+    hotStreak: 4,
 } as const
 
 /** We use numeric keys to send these to the analytics backend */

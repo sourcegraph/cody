@@ -9,6 +9,7 @@ export enum AutoeditStopReason {
     StreamingChunk = 'cody-streaming-chunk',
     RequestAborted = 'cody-request-aborted',
     RequestFinished = 'cody-request-finished',
+    HotStreak = 'cody-hot-streak',
 }
 
 export type ModelResponseShared = {
@@ -51,7 +52,7 @@ export interface SuccessModelResponse extends ModelResponseShared {
  */
 export interface PartialModelResponse extends ModelResponseShared {
     type: 'partial'
-    stopReason: AutoeditStopReason.StreamingChunk
+    stopReason: AutoeditStopReason.StreamingChunk | AutoeditStopReason.HotStreak
     prediction: string
 }
 

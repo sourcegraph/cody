@@ -2,7 +2,12 @@ import { LRUCache } from 'lru-cache'
 import type * as vscode from 'vscode'
 
 import { forkSignal } from '../completions/utils'
-import { AutoeditStopReason, type ModelResponse, type SuccessModelResponse } from './adapters/base'
+import {
+    AutoeditStopReason,
+    type ModelResponse,
+    type PartialModelResponse,
+    type SuccessModelResponse,
+} from './adapters/base'
 import { autoeditSource } from './analytics-logger'
 
 export interface AutoeditRequestManagerParams {
@@ -14,7 +19,9 @@ export interface AutoeditRequestManagerParams {
 }
 
 export class RequestManager implements vscode.Disposable {
-    private cache = new LRUCache<string, { response: SuccessModelResponse }>({ max: 50 })
+    private cache = new LRUCache<string, { response: SuccessModelResponse | PartialModelResponse }>({
+        max: 50,
+    })
     private readonly inflightRequests = new LRUCache<string, InflightRequest>({ max: 20 })
 
     /**
@@ -71,9 +78,15 @@ export class RequestManager implements vscode.Disposable {
         try {
             for await (const response of await makeRequest(request.abortController.signal)) {
                 if (response.type === 'partial') {
-                    // Got a partial response, we do nothing here right now.
-                    // TODO: Implement hot-streak, emit the partial response if it contains X lines
-                    // cache additional lines for follow up suggestions
+                    if (response.stopReason === AutoeditStopReason.HotStreak) {
+                        // Cache hot-streak responses for future use
+                        const hotStreakLineCount = response.prediction.split('\n').length
+                        const hotStreakCacheKey = request.cacheKey + '-hotstreak-' + hotStreakLineCount
+                        this.cache.set(hotStreakCacheKey, { response })
+                        console.log('CACHED HOT STREAK', { response })
+                    }
+
+                    // Continue processing the stream
                     continue
                 }
 
@@ -118,7 +131,9 @@ export class RequestManager implements vscode.Disposable {
         return undefined
     }
 
-    public checkCache(params: AutoeditRequestManagerParams): SuccessModelResponse | null {
+    public checkCache(
+        params: AutoeditRequestManagerParams
+    ): SuccessModelResponse | PartialModelResponse | null {
         const cached = this.cache.get(createCacheKey(params))
 
         return cached?.response ?? null
