@@ -24,6 +24,8 @@ import {
     type AutoeditsModelAdapter,
     type AutoeditsPrompt,
     type ModelResponse,
+    type PartialModelResponse,
+    type SuccessModelResponse,
 } from './adapters/base'
 import { createAutoeditsModelAdapter } from './adapters/create-adapter'
 import {
@@ -355,24 +357,34 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                 return null
             }
 
-            if (predictionResult.type === 'partial') {
-                // We ignore streamed responses right now
+            // Add a helper function to identify usable responses (either success or hot streak partials)
+            const isUsableResponse = (
+                response: ModelResponse
+            ): response is SuccessModelResponse | PartialModelResponse =>
+                response.type === 'success' ||
+                (response.type === 'partial' && response.stopReason === AutoeditStopReason.HotStreak)
+
+            // Check if the prediction is usable
+            if (!isUsableResponse(predictionResult)) {
+                // Ignore partial responses that aren't hot streaks or other response types
                 return null
             }
 
             const initialPrediction = predictionResult.prediction
 
-            autoeditAnalyticsLogger.markAsLoaded({
-                requestId,
-                prompt,
-                modelResponse: predictionResult,
-                payload: {
-                    // TODO: make it required
-                    source: predictionResult.source ?? autoeditSource.network,
-                    isFuzzyMatch: false,
-                    prediction: initialPrediction,
-                },
-            })
+            // autoeditAnalyticsLogger.markAsLoaded({
+            //     requestId,
+            //     prompt,
+            //     modelResponse: predictionResult,
+            //     payload: {
+            //         // Set source based on response type
+            //         source: predictionResult.type === 'partial'
+            //             ? 'hot-streak'
+            //             : (predictionResult.source ?? autoeditSource.network),
+            //         isFuzzyMatch: false,
+            //         prediction: initialPrediction,
+            //     },
+            // })
 
             if (throttledRequest.isStale) {
                 autoeditsOutputChannelLogger.logDebugIfVerbose(
@@ -401,7 +413,9 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
 
             autoeditsOutputChannelLogger.logDebug(
                 'provideInlineCompletionItems',
-                `"${requestId}" ============= Response:\n${initialPrediction}\n` +
+                `"${requestId}" ============= ${
+                    predictionResult.type === 'partial' ? 'Hot Streak' : 'Final'
+                } Response:\n${initialPrediction}\n` +
                     `============= Time Taken: ${getTimeNowInMillis() - startedAt}ms`
             )
 
