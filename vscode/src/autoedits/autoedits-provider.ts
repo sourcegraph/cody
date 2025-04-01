@@ -24,7 +24,6 @@ import {
     type AutoeditsModelAdapter,
     type AutoeditsPrompt,
     type ModelResponse,
-    type PartialModelResponse,
 } from './adapters/base'
 import { createAutoeditsModelAdapter } from './adapters/create-adapter'
 import {
@@ -708,32 +707,57 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                     const canEmitHotStreak =
                         currentLineCount >= lastHotStreakLineCount + HOT_STREAK_LINES_THRESHOLD
 
-                    if (canEmitHotStreak && !hasSuggested) {
-                        hasSuggested = true
-                        yield {
-                            ...response,
-                            type: 'success',
-                            stopReason: AutoeditStopReason.RequestFinished,
-                            prediction: accumulatedPrediction,
-                            source: autoeditSource.network,
-                        }
-                    }
-
-                    // If we have at least HOT_STREAK_LINES_THRESHOLD more lines since the last emitted hot streak, emit a new one
-                    if (currentLineCount >= lastHotStreakLineCount + HOT_STREAK_LINES_THRESHOLD) {
+                    if (canEmitHotStreak) {
+                        console.log('EMITTING HOT STREAK', {
+                            hasSuggested,
+                            accumulatedPrediction,
+                            currentLineCount,
+                            lastHotStreakLineCount,
+                        })
                         lastHotStreakLineCount = currentLineCount
 
-                        // Create a hot streak response with the current accumulated prediction
-                        const hotStreakResponse: PartialModelResponse = {
-                            ...response,
-                            stopReason: AutoeditStopReason.HotStreak,
-                            prediction: accumulatedPrediction,
+                        if (hasSuggested) {
+                            // We have already made our first suggestion, so we can emit this as
+                            // a hot-streak prediction
+                            yield {
+                                ...response,
+                                stopReason: AutoeditStopReason.HotStreak,
+                                prediction: accumulatedPrediction,
+                            }
+                        } else {
+                            // We haven't yet made our first suggestion, we should treat this as
+                            // a complete request. Future lines will be cached via hot-streak
+                            hasSuggested = true
+                            yield {
+                                ...response,
+                                type: 'success',
+                                stopReason: AutoeditStopReason.RequestFinished,
+                                prediction: accumulatedPrediction,
+                                source: autoeditSource.network,
+                                // We don't have access to the response headers and body here
+                                // TODO: Add these to partial responses?
+                                responseHeaders: {},
+                                responseBody: {},
+                            }
                         }
 
-                        yield hotStreakResponse
-                        // Skip yielding the original response since we've yielded the hot streak
                         continue
                     }
+
+                    // Cannot emit a hot streak prediction yet, keep streaming
+                    continue
+                }
+
+                if (hasSuggested && response.type === 'success') {
+                    // We finished the request, but we already suggested a hot streak prediction
+                    // We should emit this as a hot-streak prediction
+                    yield {
+                        ...response,
+                        type: 'partial',
+                        stopReason: AutoeditStopReason.HotStreak,
+                        prediction: accumulatedPrediction,
+                    }
+                    continue
                 }
 
                 // Pass through all other response types unchanged
