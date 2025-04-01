@@ -27,6 +27,7 @@ import com.sourcegraph.config.ConfigUtil
 import com.sourcegraph.utils.CodyEditorUtil.getTextRange
 import com.sourcegraph.utils.CodyEditorUtil.isImplicitAutocompleteEnabledForEditor
 import com.sourcegraph.utils.CodyFormatter
+import com.sourcegraph.utils.CodyIdeUtil
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicReference
@@ -150,9 +151,8 @@ class CodyInlineCompletionProvider : InlineCompletionProvider {
 
   private fun isEnabled(): Boolean {
     val ideVersion = ApplicationInfo.getInstance().build.baselineVersion
-    val isRemoteDev = ClientSessionsManager.getAppSession(ClientId.current)?.isRemote ?: false
     return ideVersion >= 233 &&
-        isRemoteDev &&
+        CodyIdeUtil.isRD() &&
         ConfigUtil.isCodyEnabled() &&
         ConfigUtil.isCodyAutocompleteEnabled()
   }
