@@ -76,6 +76,7 @@ export class RequestManager implements vscode.Disposable {
         makeRequest: (abortSignal: AbortSignal) => Promise<AsyncGenerator<ModelResponse>>
     ): Promise<void> {
         try {
+            let hasResolved = false
             for await (const response of await makeRequest(request.abortController.signal)) {
                 if (response.type === 'partial') {
                     if (response.stopReason === AutoeditStopReason.HotStreak) {
@@ -84,9 +85,16 @@ export class RequestManager implements vscode.Disposable {
                         const hotStreakCacheKey = request.cacheKey + '-hotstreak-' + hotStreakLineCount
                         this.cache.set(hotStreakCacheKey, { response })
                         console.log('CACHED HOT STREAK', { response })
+
+                        // If this is the first hot streak, resolve it immediately while continuing to stream
+                        if (!hasResolved) {
+                            hasResolved = true
+                            // Resolve with the hot streak response but don't break the loop
+                            request.resolve(response)
+                        }
                     }
 
-                    // Continue processing the stream
+                    // Continue processing the stream regardless of whether we resolved
                     continue
                 }
 
@@ -99,9 +107,16 @@ export class RequestManager implements vscode.Disposable {
                     })
 
                     console.log('SUCCESS', { response })
-                    request.resolve(response)
+                    if (!hasResolved) {
+                        // If we haven't resolved yet, do it now with the final response
+                        hasResolved = true
+                        request.resolve(response)
+                    }
+                    // Always recycle the response even if we already resolved
                     this.recycleResponseForInflightRequests(request, response)
-                } else {
+                } else if (!hasResolved) {
+                    // Only resolve with error responses if we haven't already resolved
+                    hasResolved = true
                     request.resolve(response)
                 }
             }
@@ -186,6 +201,7 @@ class InflightRequest {
 
         this.promise = new Promise<ModelResponse>((resolve, reject) => {
             this.resolve = result => {
+                console.log('UMPOX RESOLVING REQUEST', result)
                 this.isResolved = true
                 resolve(result)
             }
