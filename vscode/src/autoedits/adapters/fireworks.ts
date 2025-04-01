@@ -24,7 +24,6 @@ export class FireworksAdapter implements AutoeditsModelAdapter {
                 )
                 throw new Error('No api key provided in the config override')
             }
-            console.log('TIMEOUT SET IS...', option.timeoutMs)
 
             const abortController = forkSignal(option.abortSignal)
             return generatorWithErrorObserver(

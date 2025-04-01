@@ -215,7 +215,6 @@ export class FireworksWebSocketAdapter implements AutoeditsModelAdapter {
             }
             state.responseBody = message.body
 
-            console.log('GOT MESSAGE CURRENT STATE', state)
             if (state.responseBody.data === '[DONE]') {
                 // Notify the message loop to stop
                 state.done = true
