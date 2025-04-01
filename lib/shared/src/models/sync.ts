@@ -458,8 +458,31 @@ function normalizeModelList(models: Model[]): Model[] {
     const modelsBYOK = models.filter(model => model.tags.includes(ModelTag.BYOK))
     const modelsNonBYOK = models.filter(model => !model.tags.includes(ModelTag.BYOK))
 
-    const modelIDsNonBYOK = new Set(modelsNonBYOK.map(m => m.id))
-    return [...modelsNonBYOK, ...modelsBYOK.filter(model => !modelIDsNonBYOK.has(model.id))]
+    // Update model IDs
+    const updatedModels = [...modelsNonBYOK, ...modelsBYOK].map(model => {
+        if (model.id === 'google::v1::gemini-2.0-flash-lite-preview-02-05') {
+            return {
+                ...model,
+                id: 'gemini-2.0-flash-lite',
+                title: 'Gemini 2.0 Flash-Lite',
+                modelRef: {
+                    providerId: 'google',
+                    modelId: 'gemini-2.0-flash-lite',
+                    apiVersionId: 'v1',
+                },
+            }
+        }
+        return model
+    })
+
+    // Filter out duplicates
+    const modelIDsNonBYOK = new Set(
+        updatedModels.filter(m => !m.tags.includes(ModelTag.BYOK)).map(m => m.id)
+    )
+    return [
+        ...updatedModels.filter(m => !m.tags.includes(ModelTag.BYOK)),
+        ...updatedModels.filter(m => m.tags.includes(ModelTag.BYOK) && !modelIDsNonBYOK.has(m.id)),
+    ]
 }
 
 export interface ChatModelProviderConfig {
