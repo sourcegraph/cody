@@ -558,6 +558,12 @@
         "title": "Report Issue"
       },
       {
+        "command": "cody.debug.heapDump",
+        "category": "Cody Debug",
+        "group": "Debug",
+        "title": "Heap Dump"
+      },
+      {
         "command": "cody.copy.version",
         "category": "Cody Debug",
         "group": "Debug",
