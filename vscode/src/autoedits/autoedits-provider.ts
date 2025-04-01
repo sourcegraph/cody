@@ -17,6 +17,7 @@ import { ContextRankingStrategy } from '../completions/context/completions-conte
 import { ContextMixer } from '../completions/context/context-mixer'
 import { DefaultContextStrategyFactory } from '../completions/context/context-strategy'
 import { getCurrentDocContext } from '../completions/get-current-doc-context'
+import { defaultVSCodeExtensionClient } from '../extension-client'
 import type { AutocompleteEditItem, AutoeditChanges } from '../jsonrpc/agent-protocol'
 import { isRunningInsideAgent } from '../jsonrpc/isRunningInsideAgent'
 import type { FixupController } from '../non-stop/FixupController'
@@ -171,7 +172,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
             })
         )
 
-        const meter = metrics.getMeter('autoedit')
+        const meter = metrics.getMeter('autoedit', defaultVSCodeExtensionClient().clientVersion)
 
         this.completionLatencyMetric = meter.createHistogram<CompletionLatencyMetricAttributes>(
             'autoedits.inlinecompletions.latency',
