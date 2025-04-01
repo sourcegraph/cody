@@ -8,7 +8,9 @@ import {
     type AutoeditsModelAdapter,
     type ModelResponse,
     type ModelResponseShared,
+    type SuccessModelResponse,
 } from './base'
+import type { FireworksResponse } from './model-response/fireworks'
 import {
     type AutoeditsRequestBody,
     type FireworksCompatibleRequestParams,
@@ -17,15 +19,10 @@ import {
 } from './utils'
 
 const LOG_FILTER_LABEL = 'fireworks-websocket'
-export const SOCKET_SEND_TIME_OUT_MS = 2000
 const SOCKET_RECONNECT_DELAY_MS = 5000
 
 interface FireworksSSEBody {
-    data:
-        | '[DONE]'
-        | {
-              choices: [{ message?: { content: string }; text?: string }]
-          }
+    data: '[DONE]' | FireworksResponse
 }
 
 interface WebSocketMessage {
@@ -83,14 +80,14 @@ export class FireworksWebSocketAdapter implements AutoeditsModelAdapter {
                         url: option.url,
                         body: requestBody,
                         abortSignal: option.abortSignal,
-                        extractPrediction: (response: any) => {
+                        extractPrediction: response => {
                             if (option.isChatModel) {
-                                return response.choices?.[0]?.message?.content
+                                return response.choices?.[0]?.message?.content ?? ''
                             }
-                            return response.choices?.[0]?.text
+                            return response.choices?.[0]?.text ?? ''
                         },
                     }),
-                    option.timeoutMs || 10000,
+                    option.timeoutMs,
                     abortController
                 ),
                 error => {
@@ -159,7 +156,7 @@ export class FireworksWebSocketAdapter implements AutoeditsModelAdapter {
         url: string
         body: ModelResponseShared['requestBody']
         abortSignal: AbortSignal
-        extractPrediction: (body: any) => string
+        extractPrediction: (body: FireworksResponse) => string
         customHeaders?: Record<string, string>
     }): AsyncGenerator<ModelResponse> {
         await this.connect()
@@ -173,7 +170,6 @@ export class FireworksWebSocketAdapter implements AutoeditsModelAdapter {
         const messageId = 'm_' + this.messageId++
         const messageQueue: WebSocketMessage[] = []
         let queueResolver: (() => void) | null = null
-        const state = { done: false }
 
         if (messageId in this.callbackQueue) {
             autoeditsOutputChannelLogger.logError(
@@ -208,36 +204,39 @@ export class FireworksWebSocketAdapter implements AutoeditsModelAdapter {
         // Initiate the request
         this.ws?.send(data)
 
-        let prediction = ''
+        const state: Pick<SuccessModelResponse, 'responseBody' | 'prediction'> & { done: boolean } = {
+            responseBody: {},
+            prediction: '',
+            done: false,
+        }
         const processFireworksResponse = (message: WebSocketMessage): ModelResponse => {
-            const { body: responseBody, headers: responseHeaders } = message
-            if (!body) {
-                throw new Error('no message body received')
+            if (!message.body) {
+                throw new Error('Processing WebSocket response: no body')
             }
+            state.responseBody = message.body
 
-            const shared = {
-                requestHeaders: requestHeaders,
-                requestUrl: url,
-            }
-
-            if (responseBody.data === '[DONE]') {
+            console.log('GOT MESSAGE CURRENT STATE', state)
+            if (state.responseBody.data === '[DONE]') {
+                // Notify the message loop to stop
+                state.done = true
                 return {
-                    ...shared,
                     type: 'success',
                     stopReason: AutoeditStopReason.RequestFinished,
-                    prediction: prediction,
-                    responseHeaders,
-                    responseBody,
+                    prediction: state.prediction,
+                    responseHeaders: message.headers,
+                    responseBody: state.responseBody,
+                    requestHeaders,
+                    requestUrl: url,
                 }
             }
 
             try {
-                const predictionChunk = extractPrediction(responseBody.data) || ''
-                prediction += predictionChunk
+                const predictionChunk = extractPrediction(state.responseBody.data) || ''
+                state.prediction += predictionChunk
                 return {
                     type: 'partial',
                     stopReason: AutoeditStopReason.StreamingChunk,
-                    prediction,
+                    prediction: state.prediction,
                     requestHeaders,
                     requestUrl: url,
                 }
@@ -254,6 +253,7 @@ export class FireworksWebSocketAdapter implements AutoeditsModelAdapter {
         try {
             while (!abortSignal.aborted && !state.done) {
                 if (messageQueue.length === 0) {
+                    // If there is nothing in the queue, wait for the next message
                     await new Promise<void>(resolve => {
                         queueResolver = resolve
                     })

@@ -19,6 +19,7 @@ describe('SourcegraphCompletionsAdapter', () => {
         userId: 'test-user',
         isChatModel: false,
         abortSignal: new AbortController().signal,
+        timeoutMs: 10_000,
     }
 
     beforeEach(() => {

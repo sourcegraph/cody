@@ -12,7 +12,6 @@ import { type AutoeditsRequestBody, getOpenaiCompatibleChatPrompt } from './util
 export interface InceptionLabsRequestParams {
     model: string
     temperature: number
-    stream: boolean
 }
 
 export const inceptionlabsPrompt = {
@@ -61,7 +60,7 @@ export class InceptionLabsAdapter implements AutoeditsModelAdapter {
                             )
                         },
                     }),
-                    option.timeoutMs || 10000,
+                    option.timeoutMs,
                     abortController
                 ),
                 error => {
@@ -91,7 +90,6 @@ export class InceptionLabsAdapter implements AutoeditsModelAdapter {
         const baseParams: InceptionLabsRequestParams = {
             model: options.model,
             temperature: 0,
-            stream: false,
         }
 
         return {

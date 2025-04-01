@@ -212,7 +212,6 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
         inlineCompletionContext: vscode.InlineCompletionContext,
         token?: vscode.CancellationToken
     ): Promise<AutoeditsResult | null> {
-        console.log('CALLED PROVIDEINLIEN CMPLETIONS')
         let stopLoading: (() => void) | undefined
         const startedAt = getTimeNowInMillis()
 
@@ -713,6 +712,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                 userId,
                 isChatModel: autoeditsProviderConfig.isChatModel,
                 abortSignal: signal,
+                timeoutMs: autoeditsProviderConfig.timeoutMs,
             })
         })
     }

@@ -20,6 +20,7 @@ describe('SourcegraphChatAdapter', () => {
         userId: 'test-user',
         isChatModel: true,
         abortSignal: new AbortController().signal,
+        timeoutMs: 10_000,
     }
 
     beforeEach(() => {

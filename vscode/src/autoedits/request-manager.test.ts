@@ -3,7 +3,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vites
 
 import { documentAndPosition } from '../completions/test-helpers'
 
-import { AutoeditStopReason, type ModelResponse } from './adapters/base'
+import { AutoeditStopReason, type ModelResponse, type SuccessModelResponse } from './adapters/base'
 import { autoeditSource } from './analytics-logger'
 import { type AutoeditRequestManagerParams, RequestManager } from './request-manager'
 
@@ -11,11 +11,11 @@ function createSuccessResponse(prediction: string): ModelResponse {
     return {
         type: 'success',
         stopReason: AutoeditStopReason.RequestFinished,
+        source: autoeditSource.network,
         prediction,
         requestUrl: 'https://test.com',
         responseHeaders: {},
         responseBody: {},
-        source: autoeditSource.network,
     }
 }
 
@@ -57,23 +57,20 @@ describe('Autoedits RequestManager', () => {
 
         const responsePromise = requestManager.request(params, mockRequest)
         await vi.advanceTimersByTimeAsync(200) // Give time for the request to complete
-        const responseFromNetwork = (await responsePromise) as ModelResponse
+        const responseFromNetwork = (await responsePromise) as SuccessModelResponse
 
         expect(responseFromNetwork.type).toBe('success')
-        expect('source' in responseFromNetwork ? responseFromNetwork.source : null).toBe(
-            autoeditSource.network
-        )
-        expect('prediction' in responseFromNetwork ? responseFromNetwork.prediction : null).toBe(
-            prediction
-        )
+        expect(responseFromNetwork.source).toBe(autoeditSource.network)
+        expect(responseFromNetwork.prediction).toBe(prediction)
 
-        const responseFromCache = (await requestManager.request(params, mockRequest)) as ModelResponse
+        const responseFromCache = (await requestManager.request(
+            params,
+            mockRequest
+        )) as SuccessModelResponse
 
         expect(responseFromCache.type).toBe('success')
-        expect('source' in responseFromCache ? responseFromCache.source : null).toBe(
-            autoeditSource.cache
-        )
-        expect('prediction' in responseFromCache ? responseFromCache.prediction : null).toBe(prediction)
+        expect(responseFromCache.source).toBe(autoeditSource.cache)
+        expect(responseFromCache.prediction).toBe(prediction)
         expect(mockRequest).toHaveBeenCalledTimes(1)
     })
 })

@@ -22,6 +22,7 @@ describe('FireworksAdapter', () => {
         userId: 'test-user',
         isChatModel: true,
         abortSignal: new AbortController().signal,
+        timeoutMs: 10_000,
     }
 
     const apiKey = 'test-api-key'

@@ -118,7 +118,7 @@ export class ChatBuilder {
         return this.messages.length === 0
     }
 
-    public setLastMessageIntent(chatIntent: ChatMessage['intent']): void {
+    public setLastMessageIntent(intent: ChatMessage['intent']): void {
         const lastMessage = this.messages.at(-1)
         if (!lastMessage) {
             throw new Error('no last message')

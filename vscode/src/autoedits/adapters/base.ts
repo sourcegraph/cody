@@ -86,10 +86,9 @@ export interface AutoeditModelOptions {
     url: string
     model: string
     prompt: AutoeditsPrompt
-    // TODO: Make required
-    timeoutMs?: number
     codeToRewrite: string
     userId: string | null
     isChatModel: boolean
     abortSignal: AbortSignal
+    timeoutMs: number
 }

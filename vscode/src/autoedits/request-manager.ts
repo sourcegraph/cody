@@ -61,6 +61,7 @@ export class RequestManager implements vscode.Disposable {
         try {
             for await (const response of await makeRequest(request.abortController.signal)) {
                 if (response.type === 'partial') {
+                    console.log('UMPOX PARTIAL RESPONSE', response)
                     // Got a partial response, we do nothing here right now.
                     // TODO: Implement hot-streak, emit the partial response if it contains X lines
                     // cache additional lines for follow up suggestions
@@ -78,7 +79,6 @@ export class RequestManager implements vscode.Disposable {
                     request.resolve(response)
                     this.recycleResponseForInflightRequests(request, response)
                 } else {
-                    // aborted
                     request.resolve(response)
                 }
             }
@@ -123,7 +123,7 @@ export class RequestManager implements vscode.Disposable {
      */
     private recycleResponseForInflightRequests(
         completedRequest: InflightRequest,
-        response: ModelResponse
+        response: SuccessModelResponse
     ): void {
         // TODO: Implement
     }

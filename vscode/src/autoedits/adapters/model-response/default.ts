@@ -1,5 +1,6 @@
 import { isAbortError } from '@sourcegraph/cody-shared'
-import { AutoeditStopReason, type ModelResponse, type ModelResponseShared } from '../base'
+import { AutoeditStopReason, type ModelResponse } from '../base'
+import type { AutoeditsRequestBody } from '../utils'
 
 export async function* getDefaultModelResponse({
     apiKey,
@@ -11,7 +12,7 @@ export async function* getDefaultModelResponse({
 }: {
     apiKey: string
     url: string
-    body: ModelResponseShared['requestBody']
+    body: AutoeditsRequestBody
     abortSignal: AbortSignal
     extractPrediction: (body: any) => string
     customHeaders?: Record<string, string>

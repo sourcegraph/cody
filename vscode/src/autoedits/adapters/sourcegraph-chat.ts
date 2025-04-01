@@ -38,57 +38,46 @@ export class SourcegraphChatAdapter implements AutoeditsModelAdapter {
         messages: Message[],
         maxTokens: number
     ): AsyncGenerator<ModelResponse> {
-        try {
-            const stream = await this.chatClient.chat(
-                messages,
-                {
-                    model: option.model,
-                    maxTokensToSample: maxTokens,
-                    temperature: 0.1,
-                    prediction: {
-                        type: 'content',
-                        content: option.codeToRewrite,
-                    },
+        const stream = await this.chatClient.chat(
+            messages,
+            {
+                model: option.model,
+                maxTokensToSample: maxTokens,
+                temperature: 0.1,
+                prediction: {
+                    type: 'content',
+                    content: option.codeToRewrite,
                 },
-                option.abortSignal
-            )
+            },
+            option.abortSignal
+        )
 
-            let accumulated = ''
-            for await (const msg of stream) {
-                if (msg.type === 'change') {
-                    const newText = msg.text.slice(accumulated.length)
-                    accumulated += newText
-                    yield {
-                        type: 'partial',
-                        stopReason: AutoeditStopReason.StreamingChunk,
-                        prediction: accumulated,
-                        requestUrl: option.url,
-                        requestHeaders: {},
-                    }
-                } else if (msg.type === 'complete' || msg.type === 'error') {
-                    break
+        let accumulated = ''
+        for await (const msg of stream) {
+            if (msg.type === 'change') {
+                const newText = msg.text.slice(accumulated.length)
+                accumulated += newText
+                yield {
+                    type: 'partial',
+                    stopReason: AutoeditStopReason.StreamingChunk,
+                    prediction: accumulated,
+                    requestUrl: option.url,
+                    requestHeaders: {},
                 }
+            } else if (msg.type === 'complete' || msg.type === 'error') {
+                break
             }
+        }
 
-            // For direct API calls without HTTP headers, we return an empty object
-            yield {
-                type: 'success',
-                stopReason: AutoeditStopReason.RequestFinished,
-                prediction: accumulated,
-                responseHeaders: {},
-                responseBody: {},
-                requestUrl: option.url,
-                requestHeaders: {},
-            }
-        } catch (error) {
-            autoeditsOutputChannelLogger.logError(
-                'getModelResponse',
-                'Error calling Sourcegraph Chat:',
-                {
-                    verbose: error,
-                }
-            )
-            throw error
+        // For direct API calls without HTTP headers, we return an empty object
+        yield {
+            type: 'success',
+            stopReason: AutoeditStopReason.RequestFinished,
+            prediction: accumulated,
+            responseHeaders: {},
+            responseBody: {},
+            requestUrl: option.url,
+            requestHeaders: {},
         }
     }
 }

@@ -22,7 +22,6 @@ export class OpenAIAdapter implements AutoeditsModelAdapter {
             }
 
             const abortController = forkSignal(options.abortSignal)
-
             return generatorWithErrorObserver(
                 generatorWithTimeout(
                     getDefaultModelResponse({
@@ -46,11 +45,11 @@ export class OpenAIAdapter implements AutoeditsModelAdapter {
                         },
                         apiKey,
                         abortSignal: options.abortSignal,
-                        extractPrediction: (response: any) => {
+                        extractPrediction: response => {
                             return response.responseBody.choices[0].message.content
                         },
                     }),
-                    options.timeoutMs || 10000,
+                    options.timeoutMs,
                     abortController
                 ),
                 error => {

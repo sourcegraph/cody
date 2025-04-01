@@ -24,6 +24,7 @@ export class FireworksAdapter implements AutoeditsModelAdapter {
                 )
                 throw new Error('No api key provided in the config override')
             }
+            console.log('TIMEOUT SET IS...', option.timeoutMs)
 
             const abortController = forkSignal(option.abortSignal)
             return generatorWithErrorObserver(
@@ -33,14 +34,14 @@ export class FireworksAdapter implements AutoeditsModelAdapter {
                         url: option.url,
                         body: requestBody,
                         abortSignal: option.abortSignal,
-                        extractPrediction: (response: any) => {
+                        extractPrediction: response => {
                             if (option.isChatModel) {
-                                return response.choices?.[0]?.message?.content
+                                return response.choices?.[0]?.message?.content ?? ''
                             }
-                            return response.choices?.[0]?.text
+                            return response.choices?.[0]?.text ?? ''
                         },
                     }),
-                    option.timeoutMs || 10000,
+                    option.timeoutMs,
                     abortController
                 ),
                 error => {

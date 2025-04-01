@@ -1,5 +1,10 @@
 import { createSSEIterator, fetch, isAbortError, isNodeResponse } from '@sourcegraph/cody-shared'
-import { AutoeditStopReason, type ModelResponse, type ModelResponseShared } from '../base'
+import { AutoeditStopReason, type ModelResponse, type SuccessModelResponse } from '../base'
+import type { AutoeditsRequestBody } from '../utils'
+
+export interface FireworksResponse {
+    choices: [{ message?: { content: string }; text?: string }]
+}
 
 export async function* getFireworksModelResponse({
     apiKey,
@@ -11,15 +16,16 @@ export async function* getFireworksModelResponse({
 }: {
     apiKey: string
     url: string
-    body: ModelResponseShared['requestBody']
+    body: AutoeditsRequestBody
     abortSignal: AbortSignal
-    extractPrediction: (body: any) => string
+    extractPrediction: (body: FireworksResponse) => string
     customHeaders?: Record<string, string>
 }): AsyncGenerator<ModelResponse> {
+    const isStreamingRequest = 'stream' in body && body.stream
     const requestHeaders = {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${apiKey}`,
-        ...(body?.stream ? { 'Accept-Encoding': 'gzip;q=0' } : {}),
+        ...(isStreamingRequest ? { 'Accept-Encoding': 'gzip;q=0' } : {}),
         ...customHeaders,
     }
 
@@ -47,8 +53,12 @@ export async function* getFireworksModelResponse({
         const isStreamingResponse = response.headers.get('content-type')?.startsWith('text/event-stream')
 
         if (isStreamingResponse && isNodeResponse(response)) {
-            let prediction = ''
             const sseIterator = createSSEIterator(response.body)
+            const state: Pick<SuccessModelResponse, 'responseBody' | 'prediction'> = {
+                responseBody: {},
+                prediction: '',
+            }
+
             for await (const { data } of sseIterator) {
                 if (abortSignal.aborted) {
                     yield {
@@ -64,23 +74,24 @@ export async function* getFireworksModelResponse({
                     yield {
                         type: 'success',
                         stopReason: AutoeditStopReason.RequestFinished,
-                        prediction,
+                        prediction: state.prediction,
                         requestHeaders: requestHeaders,
                         requestUrl: url,
                         responseHeaders,
-                        responseBody: await response.json(),
+                        responseBody: state.responseBody,
                     }
                     break
                 }
 
                 try {
-                    const predictionChunk = extractPrediction(data)
+                    state.responseBody = JSON.parse(data)
+                    const predictionChunk = extractPrediction(state.responseBody as FireworksResponse)
                     if (predictionChunk) {
-                        prediction += predictionChunk
+                        state.prediction += predictionChunk
                         yield {
                             type: 'partial',
                             stopReason: AutoeditStopReason.StreamingChunk,
-                            prediction,
+                            prediction: state.prediction,
                             requestHeaders: requestHeaders,
                             requestUrl: url,
                         }
@@ -94,7 +105,7 @@ export async function* getFireworksModelResponse({
         }
 
         // Handle non-streaming response
-        const responseBody = await response.json()
+        const responseBody = (await response.json()) as FireworksResponse
         const prediction = extractPrediction(responseBody)
         if (typeof prediction !== 'string') {
             throw new Error(`response does not satisfy SuccessModelResponse: ${responseBody}`)

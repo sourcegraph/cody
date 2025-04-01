@@ -68,6 +68,7 @@ describe('AutoeditAnalyticsLogger', () => {
         userId: 'test-user-id',
         isChatModel: false,
         abortSignal: new AbortController().signal,
+        timeoutMs: 10_000,
     }
 
     function getRequestStartMetadata(): Parameters<AutoeditAnalyticsLogger['createRequest']>[0] {
@@ -116,8 +117,8 @@ describe('AutoeditAnalyticsLogger', () => {
                 type: 'success',
                 stopReason: AutoeditStopReason.RequestFinished,
                 prediction,
-                requestUrl: modelOptions.url,
                 requestHeaders: {},
+                requestUrl: modelOptions.url,
                 responseHeaders: {},
                 responseBody: {},
             },

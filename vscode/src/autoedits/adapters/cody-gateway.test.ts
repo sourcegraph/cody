@@ -26,6 +26,7 @@ describe('CodyGatewayAdapter', () => {
         userId: 'test-user',
         isChatModel: true,
         abortSignal: new AbortController().signal,
+        timeoutMs: 10_000,
     }
 
     const mockFetchSpy = vi.spyOn(shared, 'fetch') as any
