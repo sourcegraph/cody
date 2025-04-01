@@ -45,7 +45,7 @@ import { type CodeToReplaceData, getCodeToReplaceData } from './prompt/prompt-ut
 import type { DecorationInfo } from './renderer/decorators/base'
 import { DefaultDecorator } from './renderer/decorators/default-decorator'
 import { InlineDiffDecorator } from './renderer/decorators/inline-diff-decorator'
-import { getDecorationInfo } from './renderer/diff-utils'
+import { getDecorationInfo, isUnchangedDiff } from './renderer/diff-utils'
 import { initImageSuggestionService } from './renderer/image-gen'
 import { AutoEditsInlineRendererManager } from './renderer/inline-manager'
 import { AutoEditsDefaultRendererManager, type AutoEditsRendererManager } from './renderer/manager'
@@ -443,7 +443,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
             const decorationInfo = getDecorationInfoFromPrediction(
                 document,
                 prediction,
-                codeToReplaceData
+                codeToReplaceData.range
             )
 
             if (
@@ -687,85 +687,134 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
             timeoutMs: autoeditsProviderConfig.timeoutMs,
         })
 
-        // Track the accumulated prediction for hot streak analysis
-        let accumulatedPrediction = ''
+        return this.processModelResponses(responseGenerator, document, codeToReplaceData)
+    }
+
+    private async *processModelResponses(
+        responseGenerator: AsyncGenerator<ModelResponse>,
+        document: vscode.TextDocument,
+        codeToReplaceData: CodeToReplaceData
+    ): AsyncGenerator<ModelResponse, any, undefined> {
         // Track the number of lines in the last emitted hot streak prediction
         let lastHotStreakLineCount = 0
 
-        async function* generator(): AsyncGenerator<ModelResponse, any, undefined> {
-            let hasSuggested = false
-            for await (const response of responseGenerator) {
-                console.log('GOT RESPONSE', response)
-                // If it's a partial response, check if we can emit a hot streak prediction
-                if (response.type === 'partial') {
-                    // Update the accumulated prediction
-                    accumulatedPrediction = response.prediction
+        for await (const response of responseGenerator) {
+            if (response.type === 'partial') {
+                // Trim the prediction to the last complete line
+                const trimmedPrediction = this.trimPredictionToLastCompleteLine(response.prediction)
 
-                    // Count the number of lines in the accumulated prediction
-                    const lines = accumulatedPrediction.split('\n')
-                    const currentLineCount = lines.length
-                    const canEmitHotStreak =
-                        currentLineCount >= lastHotStreakLineCount + HOT_STREAK_LINES_THRESHOLD
+                // If there are no complete lines yet, continue
+                if (!trimmedPrediction) {
+                    continue
+                }
 
-                    if (canEmitHotStreak) {
-                        console.log('EMITTING HOT STREAK', {
-                            hasSuggested,
-                            accumulatedPrediction,
+                // Count the number of lines in the trimmed prediction
+                const lines = trimmedPrediction.split('\n')
+                const currentLineCount = lines.length
+
+                console.log('TRYING HOT STREAK', {
+                    currentLineCount,
+                    lastHotStreakLineCount,
+                    threshold: HOT_STREAK_LINES_THRESHOLD,
+                })
+
+                // Check if the current length of the prediciton meets the threshold for a hot streak chunk.
+                // This is in place to ensure that our hot-streak predictions are not too short.
+                const reachedHotStreakThreshold =
+                    currentLineCount >= lastHotStreakLineCount + HOT_STREAK_LINES_THRESHOLD
+
+                if (!reachedHotStreakThreshold) {
+                    // We need more lines before we can consider emitting a hot streak prediction
+                    continue
+                }
+
+                // The default `codeToReplaceData` range is not suitable, as we haven't finished
+                // generating the prediction. Instead, we trim this range so it matches the same
+                // number of lines as the prediction.
+                const diffRange = new vscode.Range(
+                    codeToReplaceData.range.start,
+                    codeToReplaceData.range.start.translate(currentLineCount)
+                )
+
+                let diff = getDecorationInfoFromPrediction(document, trimmedPrediction, diffRange)
+                console.log('FIRST DIFF', diff)
+
+                const diffAdjustment = diff.addedLines.length - diff.removedLines.length
+                if (diffAdjustment !== 0) {
+                    console.log('GOT DIFF ADJUSTMENT', diffAdjustment)
+                    // We need to adjust our diff to account for the added/removed lines.
+                    // The `adjustedRange` is likely not accurate.
+                    const lineCountToDiff = currentLineCount + diffAdjustment
+                    if (currentLineCount < lineCountToDiff) {
+                        console.log('DIFF ADJUSTMENT NOT POSSIBLE', {
                             currentLineCount,
-                            lastHotStreakLineCount,
+                            lineCountToDiff,
                         })
-                        lastHotStreakLineCount = currentLineCount
-
-                        if (hasSuggested) {
-                            // We have already made our first suggestion, so we can emit this as
-                            // a hot-streak prediction
-                            yield {
-                                ...response,
-                                stopReason: AutoeditStopReason.HotStreak,
-                                prediction: accumulatedPrediction,
-                            }
-                        } else {
-                            // We haven't yet made our first suggestion, we should treat this as
-                            // a complete request. Future lines will be cached via hot-streak
-                            hasSuggested = true
-                            yield {
-                                ...response,
-                                type: 'success',
-                                stopReason: AutoeditStopReason.RequestFinished,
-                                prediction: accumulatedPrediction,
-                                source: autoeditSource.network,
-                                // We don't have access to the response headers and body here
-                                // TODO: Add these to partial responses?
-                                responseHeaders: {},
-                                responseBody: {},
-                            }
-                        }
-
+                        // We don't have enough lines to reliably diff the prediction
+                        // Continue streaming
                         continue
                     }
+                    const adjustedDiffRange = new vscode.Range(
+                        diffRange.start,
+                        diffRange.end.translate(diffAdjustment)
+                    )
+                    console.log('COMPARING RANGES', {
+                        diffRange,
+                        adjustedDiffRange,
+                    })
+                    diff = getDecorationInfoFromPrediction(
+                        document,
+                        trimmedPrediction,
+                        adjustedDiffRange
+                    )
+                    console.log('SECOND DIFF', diff)
+                }
 
-                    // Cannot emit a hot streak prediction yet, keep streaming
+                if (isUnchangedDiff(diff)) {
+                    // We have enough lines, but there's no suggestion here. There is no value in
+                    // emitting a hot streak prediction so we should continue
                     continue
                 }
 
-                if (hasSuggested && response.type === 'success') {
-                    // We finished the request, but we already suggested a hot streak prediction
-                    // We should emit this as a hot-streak prediction
-                    yield {
-                        ...response,
-                        type: 'partial',
-                        stopReason: AutoeditStopReason.HotStreak,
-                        prediction: accumulatedPrediction,
-                    }
-                    continue
+                lastHotStreakLineCount = currentLineCount
+                yield {
+                    ...response,
+                    prediction: trimmedPrediction, // Use the trimmed prediction
+                    stopReason: AutoeditStopReason.HotStreak,
                 }
-
-                // Pass through all other response types unchanged
-                yield response
             }
+
+            // Pass through all other response types unchanged
+            yield response
+        }
+    }
+
+    /**
+     * Trims a prediction string to the last complete line
+     * @param prediction The streamed prediction that might end mid-line
+     * @returns The prediction trimmed to the last complete line
+     */
+    private trimPredictionToLastCompleteLine(prediction: string): string {
+        // If the prediction is empty, return it as is
+        if (!prediction) {
+            return prediction
         }
 
-        return generator()
+        // If the prediction ends with a newline, it's already complete
+        if (prediction.endsWith('\n')) {
+            return prediction
+        }
+
+        // Find the last newline character
+        const lastNewlineIndex = prediction.lastIndexOf('\n')
+
+        // If there's no newline, we can't trim to a complete line
+        if (lastNewlineIndex === -1) {
+            return ''
+        }
+
+        // Return everything up to and including the last newline
+        return prediction.substring(0, lastNewlineIndex + 1)
     }
 
     private async getPrediction({
@@ -880,13 +929,13 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
 export function getDecorationInfoFromPrediction(
     document: vscode.TextDocument,
     prediction: string,
-    codeToReplaceData: CodeToReplaceData
+    range: vscode.Range
 ): DecorationInfo {
     const currentFileText = document.getText()
     const predictedFileText =
-        currentFileText.slice(0, document.offsetAt(codeToReplaceData.range.start)) +
+        currentFileText.slice(0, document.offsetAt(range.start)) +
         prediction +
-        currentFileText.slice(document.offsetAt(codeToReplaceData.range.end))
+        currentFileText.slice(document.offsetAt(range.end))
 
     const decorationInfo = getDecorationInfo(currentFileText, predictedFileText)
     return decorationInfo

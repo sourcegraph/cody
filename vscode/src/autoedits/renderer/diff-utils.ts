@@ -548,3 +548,9 @@ export function isOnlyRemovingTextForModifiedLines(modifiedLines: ModifiedLineIn
     }
     return true
 }
+
+export function isUnchangedDiff(diff: DecorationInfo): boolean {
+    return (
+        diff.modifiedLines.length === 0 && diff.addedLines.length === 0 && diff.removedLines.length === 0
+    )
+}

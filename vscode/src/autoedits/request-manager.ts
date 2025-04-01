@@ -98,6 +98,7 @@ export class RequestManager implements vscode.Disposable {
                         },
                     })
 
+                    console.log('SUCCESS', { response })
                     request.resolve(response)
                     this.recycleResponseForInflightRequests(request, response)
                 } else {
