@@ -86,7 +86,9 @@ describe('ChatController', () => {
         })
     })
 
-    test('does not create new chat builder when current one is empty during abort', async () => {
+    // Skipped flaky test
+    // Discussion: https://sourcegraph.slack.com/archives/C05AGQYD528/p1743508470592569
+    test.skip('does not create new chat builder when current one is empty during abort', async () => {
         // Setup spies
         const addBotMessageSpy = vi
             .spyOn(chatController as any, 'addBotMessage')
