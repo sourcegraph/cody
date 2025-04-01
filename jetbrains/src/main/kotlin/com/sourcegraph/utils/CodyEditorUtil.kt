@@ -24,12 +24,12 @@ import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.VirtualFileManager
 import com.intellij.util.concurrency.annotations.RequiresEdt
-import com.intellij.util.withScheme
 import com.sourcegraph.cody.agent.protocol_extensions.toOffsetRange
 import com.sourcegraph.cody.agent.protocol_generated.Range
 import com.sourcegraph.config.ConfigUtil
 import com.sourcegraph.utils.ThreadingUtil.runInEdtAndGet
 import java.net.URISyntaxException
+import java.net.URLDecoder
 import kotlin.io.path.createDirectories
 import kotlin.io.path.createFile
 import kotlin.io.path.exists
@@ -179,6 +179,10 @@ object CodyEditorUtil {
     }
   }
 
+  @JvmStatic
+  private fun fixUriString(uriString: String): String =
+      if (uriString.startsWith("file://")) uriString else "file://$uriString"
+
   fun findFileOrScratch(project: Project, uriString: String): VirtualFile? {
     // IntelliJ does not support in-memory files so we are using scratch files instead
     if (uriString.startsWith("untitled://")) {
@@ -190,7 +194,7 @@ object CodyEditorUtil {
       val patchedUri = uriString.replace("file://wsl.localhost/", "file:////wsl.localhost/")
       // Unfortunately we cannot use `findFileByUrl` directly and need to do uri -> path conversion
       // because `findFileByUrl` cannot decode paths with special characters (e.g. file:///c%3a/...)
-      val uri = VfsUtil.toUri(patchedUri) ?: return null
+      val uri = VfsUtil.toUri(fixUriString(patchedUri)) ?: return null
       return VirtualFileManager.getInstance().refreshAndFindFileByNioPath(uri.toPath())
     }
   }
@@ -201,8 +205,7 @@ object CodyEditorUtil {
       content: String? = null
   ): VirtualFile? {
     try {
-      val uri = VfsUtil.toUri(uriString) ?: return null
-      val fileUri = uri.withScheme("file")
+      val fileUri = VfsUtil.toUri(fixUriString(uriString)) ?: return null
       if (!fileUri.toPath().exists()) {
         fileUri.toPath().parent?.createDirectories()
         fileUri.toPath().createFile()
@@ -223,7 +226,7 @@ object CodyEditorUtil {
       return ScratchRootType.getInstance()
           .createScratchFile(
               project,
-              fileName,
+              URLDecoder.decode(fileName, "UTF-8"),
               language,
               content ?: "",
               ScratchFileService.Option.create_if_missing)
