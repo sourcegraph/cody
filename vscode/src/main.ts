@@ -793,16 +793,6 @@ function registerAutocomplete(
     statusBar: CodyStatusBar,
     disposables: vscode.Disposable[]
 ): void {
-    const autoeditEnabledForClient =
-        isRunningInsideAgent() && clientCapabilities().autoedit === 'enabled'
-    if (autoeditEnabledForClient) {
-        // autoedit is a replacement for autocomplete for clients.
-        // We should not register both if the client has opted in for auto-edit.
-        // TODO: Eventually these should be consolidated so clients to not need to decide between
-        // autocomplete and autoedit.
-        return
-    }
-
     //@ts-ignore
     let statusBarLoader: undefined | (() => void) = statusBar.addLoader({
         title: 'Completion Provider is starting',
