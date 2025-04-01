@@ -16,8 +16,6 @@ export type ModelResponseShared = {
      * TODO: update to proper types from different adapters.
      */
     requestBody?: AutoeditsRequestBody | CodeCompletionsParams
-    responseStatusCode: number
-    responseBody: string
 }
 
 export interface SuccessModelResponse extends ModelResponseShared {
