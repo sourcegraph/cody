@@ -35,15 +35,6 @@ export function createInlineCompletionItemProvider({
     statusBar,
 }: InlineCompletionItemProviderArgs): Observable<void> {
     if (!configuration.autocomplete) {
-        if (
-            configuration.isRunningInsideAgent &&
-            platform.extensionClient.capabilities?.completions !== 'none'
-        ) {
-            throw new Error(
-                'The setting `config.autocomplete` evaluated to `false`. It must be true when running inside the agent. ' +
-                    'To fix this problem, make sure that the setting cody.suggestions.mode has the value autocomplete.'
-            )
-        }
         return NEVER
     }
 
