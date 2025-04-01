@@ -72,6 +72,14 @@ interface AutoeditEditItem extends AutocompleteEditItem {
     id: AutoeditRequestID
 }
 
+/**
+ * Interface that extends ModelResponse with adjusted code to replace data for hot streak suggestions
+ */
+export interface PredictionResult {
+    response: ModelResponse
+    adjustedCodeToReplaceData?: CodeToReplaceData
+}
+
 export interface AutoeditsResult {
     /** @deprecated Use `inlineCompletionItems` instead. */
     items: AutoeditCompletionItem[]
@@ -273,13 +281,12 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                 maxSuffixLength: tokensToChars(autoeditsProviderConfig.tokenLimit.suffixTokens),
             })
 
-            const codeToReplaceData = getCodeToReplaceData({
+            let codeToReplaceData = getCodeToReplaceData({
                 docContext,
                 document,
                 position,
                 tokenBudget: autoeditsProviderConfig.tokenLimit,
             })
-            const { codeToRewrite } = codeToReplaceData
             const requestId = autoeditAnalyticsLogger.createRequest({
                 startedAt,
                 codeToReplaceData,
@@ -289,7 +296,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                 payload: {
                     languageId: document.languageId,
                     model: autoeditsProviderConfig.model,
-                    codeToRewrite,
+                    codeToRewrite: codeToReplaceData.codeToRewrite,
                     triggerKind: autoeditTriggerKind.automatic,
                 },
             })
@@ -336,13 +343,17 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                 'provideInlineCompletionItems',
                 'Calculating prediction from getPrediction...'
             )
-            const predictionResult = await this.getPrediction({
+            const { response: predictionResult, adjustedCodeToReplaceData } = await this.getPrediction({
                 document,
                 position,
                 prompt,
                 codeToReplaceData,
                 abortSignal,
             })
+
+            if (adjustedCodeToReplaceData) {
+                codeToReplaceData = adjustedCodeToReplaceData
+            }
 
             if (abortSignal?.aborted || predictionResult.type === 'aborted') {
                 autoeditsOutputChannelLogger.logDebugIfVerbose(
@@ -424,7 +435,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                 codeToReplaceData,
             })
 
-            if (prediction === codeToRewrite) {
+            if (prediction === codeToReplaceData.codeToRewrite) {
                 autoeditsOutputChannelLogger.logDebugIfVerbose(
                     'provideInlineCompletionItems',
                     'prediction equals to code to rewrite'
@@ -439,7 +450,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
             const shouldFilterPredictionBasedRecentEdits = this.filterPrediction.shouldFilterPrediction({
                 uri: document.uri,
                 prediction,
-                codeToRewrite,
+                codeToRewrite: codeToReplaceData.codeToRewrite,
             })
 
             if (shouldFilterPredictionBasedRecentEdits) {
@@ -462,7 +473,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
 
             if (
                 isPredictedTextAlreadyInSuffix({
-                    codeToRewrite,
+                    codeToRewrite: codeToReplaceData.codeToRewrite,
                     decorationInfo,
                     suffix: codeToReplaceData.suffixInArea + codeToReplaceData.suffixAfterArea,
                 })
@@ -687,9 +698,8 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
         codeToReplaceData: CodeToReplaceData
         prompt: AutoeditsPrompt
         abortSignal: AbortSignal
-    }): Promise<AsyncGenerator<ModelResponse>> {
+    }): Promise<AsyncGenerator<PredictionResult>> {
         const userId = (await currentResolvedConfig()).clientState.anonymousUserID
-        console.log('UMPOX USER ID', userId)
         const responseGenerator = await this.modelAdapter.getModelResponse({
             url: autoeditsProviderConfig.url,
             model: autoeditsProviderConfig.model,
@@ -708,7 +718,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
         responseGenerator: AsyncGenerator<ModelResponse>,
         document: vscode.TextDocument,
         codeToReplaceData: CodeToReplaceData
-    ): AsyncGenerator<ModelResponse, any, undefined> {
+    ): AsyncGenerator<PredictionResult> {
         // Track the number of lines in the last emitted hot streak prediction
         let lastHotStreakLineCount = 0
 
@@ -745,7 +755,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                 // The default `codeToReplaceData` range is not suitable, as we haven't finished
                 // generating the prediction. Instead, we trim this range so it matches the same
                 // number of lines as the prediction.
-                const diffRange = new vscode.Range(
+                let diffRange = new vscode.Range(
                     codeToReplaceData.range.start,
                     codeToReplaceData.range.start.translate(currentLineCount)
                 )
@@ -768,19 +778,12 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                         // Continue streaming
                         continue
                     }
-                    const adjustedDiffRange = new vscode.Range(
+                    diffRange = new vscode.Range(
                         diffRange.start,
                         diffRange.end.translate(diffAdjustment)
                     )
-                    console.log('COMPARING RANGES', {
-                        diffRange,
-                        adjustedDiffRange,
-                    })
-                    diff = getDecorationInfoFromPrediction(
-                        document,
-                        trimmedPrediction,
-                        adjustedDiffRange
-                    )
+
+                    diff = getDecorationInfoFromPrediction(document, trimmedPrediction, diffRange)
                     console.log('SECOND DIFF', diff)
                 }
 
@@ -791,15 +794,27 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                 }
 
                 lastHotStreakLineCount = currentLineCount
+
+                // Create an adjusted codeToReplaceData with the current range
+                const adjustedCodeToReplaceData: CodeToReplaceData = {
+                    ...codeToReplaceData,
+                    range: diffRange,
+                    // Adjust codeToRewrite to match the current range
+                    codeToRewrite: document.getText(diffRange),
+                }
+
                 yield {
-                    ...response,
-                    prediction: trimmedPrediction, // Use the trimmed prediction
-                    stopReason: AutoeditStopReason.HotStreak,
+                    response: {
+                        ...response,
+                        prediction: trimmedPrediction, // Use the trimmed prediction
+                        stopReason: AutoeditStopReason.HotStreak,
+                    },
+                    adjustedCodeToReplaceData,
                 }
             }
 
             // Pass through all other response types unchanged
-            yield response
+            yield { response }
         }
     }
 
@@ -843,7 +858,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
         codeToReplaceData: CodeToReplaceData
         prompt: AutoeditsPrompt
         abortSignal: AbortSignal
-    }): Promise<ModelResponse> {
+    }): Promise<PredictionResult> {
         if (autoeditsProviderConfig.isMockResponseFromCurrentDocumentTemplateEnabled) {
             const responseMetadata = extractAutoEditResponseFromCurrentDocumentCommentTemplate(
                 document,
@@ -858,13 +873,15 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
 
                 if (prediction) {
                     return {
-                        type: 'success',
-                        stopReason: AutoeditStopReason.RequestFinished,
-                        prediction,
-                        responseHeaders: {},
-                        responseBody: {},
-                        requestUrl: autoeditsProviderConfig.url,
-                        source: autoeditSource.cache,
+                        response: {
+                            type: 'success',
+                            stopReason: AutoeditStopReason.RequestFinished,
+                            prediction,
+                            responseHeaders: {},
+                            responseBody: {},
+                            requestUrl: autoeditsProviderConfig.url,
+                            source: autoeditSource.cache,
+                        },
                     }
                 }
             }
