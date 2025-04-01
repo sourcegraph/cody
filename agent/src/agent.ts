@@ -745,6 +745,10 @@ export class Agent extends MessageHandler implements ExtensionClient {
             return { usage: process.memoryUsage() }
         })
 
+        this.registerAuthenticatedRequest('testing/heapdump', async () => {
+            return await vscode.commands.executeCommand('cody.debug.heapDump')
+        })
+
         this.registerAuthenticatedRequest('testing/networkRequests', async () => {
             const requests = this.params.networkRequests ?? []
             return {

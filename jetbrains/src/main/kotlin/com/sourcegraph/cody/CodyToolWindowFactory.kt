@@ -8,6 +8,7 @@ import com.intellij.openapi.wm.ToolWindowFactory
 import com.intellij.ui.content.ContentFactory
 import com.sourcegraph.cody.CodyToolWindowContent.Companion.executeOnInstanceIfNotDisposed
 import com.sourcegraph.cody.config.actions.OpenCodySettingsEditorAction
+import com.sourcegraph.cody.debugging.OpenWebviewDevToolsAction
 import com.sourcegraph.cody.ui.web.WebUIService.Companion.getInstance
 import com.sourcegraph.config.ConfigUtil.isCodyEnabled
 import com.sourcegraph.config.ConfigUtil.isFeatureFlagEnabled
