@@ -1,7 +1,8 @@
 import { type Observable, map } from 'observable-fns'
 import type { AuthStatus, ModelsData, ResolvedConfiguration, UserProductSubscription } from '../..'
 import type { SerializedPromptEditorState } from '../..'
-import type { ChatMessage, UserLocalHistory } from '../../chat/transcript/messages'
+import type { LightweightChatHistory } from '../../chat/transcript'
+import type { ChatMessage } from '../../chat/transcript/messages'
 import type { ContextItem, DefaultContext } from '../../codebase-context/messages'
 import type { CodyCommand } from '../../commands/types'
 import type { FeatureFlag } from '../../experimentation/FeatureFlagProvider'
@@ -102,7 +103,7 @@ export interface WebviewToExtensionAPI {
     /**
      * The current user's chat history.
      */
-    userHistory(): Observable<UserLocalHistory | null>
+    userHistory(): Observable<LightweightChatHistory | null>
 
     /**
      * The current user's product subscription information (Cody Free/Pro).

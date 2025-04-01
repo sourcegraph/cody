@@ -6,7 +6,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { CodyTaskState } from '../../src/non-stop/state'
 import type { CodeBlockActionsProps } from '../chat/ChatMessageContent/ChatMessageContent'
 import styles from '../chat/ChatMessageContent/ChatMessageContent.module.css'
-import { createEditButtons, createExecuteButton } from '../chat/ChatMessageContent/EditButtons'
+import { createAdditionsDeletions, createEditButtons } from '../chat/ChatMessageContent/EditButtons'
 import { getCodeBlockId } from '../chat/ChatMessageContent/utils'
 import { type ClientActionListener, useClientActionListener } from '../client/clientState'
 import { useConfig } from '../utils/useConfig'
@@ -127,25 +127,35 @@ export const RichCodeBlock: React.FC<RichCodeBlockProps> = ({
         )
     )
 
+    const onExecuteThisScript = useCallback(() => {
+        onExecute?.(code)
+    }, [onExecute, code])
+
+    const additionsDeletions = smartApply ? (
+        <div className={styles.buttonContainer}>
+            {createAdditionsDeletions({
+                hasEditIntent,
+                preText: code,
+            })}
+        </div>
+    ) : undefined
+
     const actionButtons = (
         <div className={styles.actionButtons}>
             {isCodeComplete &&
                 createEditButtons({
-                    hasEditIntent,
                     isVSCode: config.clientCapabilities.isVSCode,
                     preText: code,
                     copyButtonOnSubmit: onCopy,
                     onInsert,
                     onSmartApply,
+                    onExecute: onExecute && onExecuteThisScript,
                     smartApply,
                     smartApplyId: thisTaskId,
                     smartApplyState,
                     isCodeComplete,
                     fileName,
-                    isShellCommand,
                 })}
-
-            {isCodeComplete && isShellCommand && onExecute && createExecuteButton(code)}
         </div>
     )
 
@@ -168,10 +178,11 @@ export const RichCodeBlock: React.FC<RichCodeBlockProps> = ({
                     )}
 
                     {/* Actions bar */}
+                    {additionsDeletions}
                     <div className={styles.buttonsContainer}>
                         <div className={styles.buttons}>
-                            {actionButtons}
-                            <div className={styles.metadataContainer}>{guardrailsStatus}</div>
+                            {showCode && actionButtons}
+                            {guardrailsStatus}
                         </div>
                     </div>
                 </div>

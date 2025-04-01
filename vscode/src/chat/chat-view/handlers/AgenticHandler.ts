@@ -10,7 +10,6 @@ import {
     UIToolStatus,
     isDefined,
     logDebug,
-    wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
 import type { ContextItemToolState } from '@sourcegraph/cody-shared/src/codebase-context/messages'
 import { URI } from 'vscode-uri'
@@ -163,9 +162,6 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
                 }
 
                 turnCount++
-
-                // Reset the context items for the next turn
-                contextItems = []
             } catch (error) {
                 this.handleError(chatBuilder.sessionID, error, delegate, signal)
                 break
@@ -183,13 +179,13 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
         span: Span,
         signal: AbortSignal,
         model: string,
-        contextItems: ContextItem[] = []
+        contextItems: ContextItem[]
     ): Promise<{ botResponse: ChatMessage; toolCalls: Map<string, ToolCallContentPart> }> {
         // Create prompt
         const prompter = new AgenticChatPrompter(this.SYSTEM_PROMPT)
         const prompt = await prompter.makePrompt(chatBuilder, contextItems)
-        recorder.recordChatQuestionExecuted([], { addMetadata: true, current: span })
-
+        recorder.recordChatQuestionExecuted(contextItems, { addMetadata: true, current: span })
+        logDebug('AgenticHandler', 'Prompt created', { verbose: prompt })
         // Prepare API call parameters
         const params = {
             maxTokensToSample: 8000,
@@ -419,29 +415,41 @@ class AgenticChatPrompter {
     }
 
     public async makePrompt(chat: ChatBuilder, context: ContextItem[] = []): Promise<Message[]> {
-        return wrapInActiveSpan('AgenticChat.prompter', async () => {
-            const promptBuilder = await PromptBuilder.create(contextWindow)
+        const builder = await PromptBuilder.create(contextWindow)
 
-            // Add preamble messages
-            if (!promptBuilder.tryAddToPrefix([this.preamble])) {
-                throw new Error(`Preamble length exceeded context window ${contextWindow.input}`)
-            }
+        // Add preamble messages
+        if (!builder.tryAddToPrefix([this.preamble])) {
+            throw new Error(`Preamble length exceeded context window ${contextWindow.input}`)
+        }
 
-            // Add existing chat transcript messages
-            const transcript = chat.getDehydratedMessages()
-            const reversedTranscript = [...transcript].reverse()
+        // Add existing chat transcript messages
+        const transcript = chat.getDehydratedMessages()
+        const reversedTranscript = [...transcript].reverse()
 
-            promptBuilder.tryAddMessages(reversedTranscript)
+        builder.tryAddMessages(reversedTranscript)
 
-            await promptBuilder.tryAddContext('user', context)
+        if (context.length) {
+            const { added } = await builder.tryAddContext('user', transformItems(context))
+            chat.setLastMessageContext(added)
+        }
 
-            const historyItems = reversedTranscript
-                .flatMap(m => (m.contextFiles ? [...m.contextFiles].reverse() : []))
-                .filter(isDefined)
+        const historyItems = reversedTranscript
+            .flatMap(m => (m.contextFiles ? [...m.contextFiles].reverse() : []))
+            .filter(isDefined)
 
-            await promptBuilder.tryAddContext('history', historyItems.reverse())
-
-            return promptBuilder.build()
-        })
+        if (historyItems.length) {
+            await builder.tryAddContext('history', transformItems(historyItems))
+        }
+        return builder.build()
     }
+}
+function transformItems(items: ContextItem[]): ContextItem[] {
+    return items
+        .filter(item => item.type !== 'tool-state')
+        ?.map(i => {
+            if (i.type === 'file' && !i.range) {
+                i.content = i.content?.concat('\n<<EOF>>')
+            }
+            return i
+        })
 }

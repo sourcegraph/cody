@@ -5,6 +5,7 @@ import type React from 'react'
 import styles from '../chat/ChatMessageContent/ChatMessageContent.module.css'
 
 interface GuardrailsStatusProps {
+    children?: React.ReactNode
     status: GuardrailsCheckStatus
     filename?: string
     tooltip?: string
@@ -17,6 +18,7 @@ interface GuardrailsStatusProps {
  * It shows different icons and optional retry button based on the check status.
  */
 export const GuardrailsStatus: React.FC<GuardrailsStatusProps> = ({
+    children,
     status,
     filename,
     tooltip,
@@ -41,7 +43,7 @@ export const GuardrailsStatus: React.FC<GuardrailsStatusProps> = ({
             {status === GuardrailsCheckStatus.Checking && (
                 <div className={styles.status}>
                     <LoaderIcon className={clsx('tw-animate-spin', styles.iconContainer)} size={14} />
-                    <span className={styles.fileNameContainer}>Checking guardrails</span>
+                    <span className={styles.fileNameContainer}>Checking Guardrails</span>
                 </div>
             )}
             {status === GuardrailsCheckStatus.Success && (
@@ -92,7 +94,7 @@ export const GuardrailsStatus: React.FC<GuardrailsStatusProps> = ({
                             onClick={onRetry}
                             type="button"
                             className={styles.button}
-                            title="Retry guardrails check"
+                            title="Retry Guardrails check"
                         >
                             <div className={styles.iconContainer}>
                                 <RefreshCwIcon size={12} />
@@ -101,6 +103,7 @@ export const GuardrailsStatus: React.FC<GuardrailsStatusProps> = ({
                     )}
                 </div>
             )}
+            {children}
         </div>
     )
 }

@@ -1,6 +1,5 @@
-import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
-
 import { ps } from '@sourcegraph/cody-shared'
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { type AddressInfo, WebSocketServer } from 'ws'
 import * as autoeditsConfig from '../autoedits-config'
@@ -52,7 +51,9 @@ describe('FireworksWebsocketAdapter', () => {
         vi.useFakeTimers()
     })
 
-    afterAll(() => {
+    afterEach(() => {
+        adapter.dispose()
+        vi.clearAllTimers()
         vi.restoreAllMocks()
     })
 
@@ -84,6 +85,47 @@ describe('FireworksWebsocketAdapter', () => {
         })
         expect(() => adapter.getModelResponse(options)).rejects.toThrow(
             'timeout in sending message to fireworks'
+        )
+    })
+
+    it('model request aborted before send', async () => {
+        const controller = new AbortController()
+        const testOptions: AutoeditModelOptions = {
+            ...options,
+            abortSignal: controller.signal,
+        }
+
+        controller.abort()
+
+        expect(() => adapter.getModelResponse(testOptions)).rejects.toThrow(
+            'abort signal received, message not sent'
+        )
+        expect(messageFn).toBeCalledTimes(0)
+    })
+
+    it('model request aborted after', async () => {
+        const controller = new AbortController()
+        const testOptions: AutoeditModelOptions = {
+            ...options,
+            abortSignal: controller.signal,
+        }
+
+        messageFn.mockImplementation(request => {
+            controller.abort()
+
+            return JSON.stringify({
+                'x-message-id': 'm_0',
+                'x-message-headers': {},
+                'x-message-body': {
+                    choices: [{ message: { content: 'response' } }],
+                },
+                'x-message-status': 200,
+                'x-message-status-text': 'OK',
+            })
+        })
+
+        expect(() => adapter.getModelResponse(testOptions)).rejects.toThrow(
+            'abort signal received, message not handled'
         )
     })
 })

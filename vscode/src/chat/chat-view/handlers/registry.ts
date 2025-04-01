@@ -1,10 +1,6 @@
 import Anthropic from '@anthropic-ai/sdk'
-import type { ChatMessage } from '@sourcegraph/cody-shared'
-import {
-    DeepCodyAgentID,
-    DeepCodyModelRef,
-    ToolCodyModelRef,
-} from '@sourcegraph/cody-shared/src/models/client'
+import type { ChatMessage, ChatModel } from '@sourcegraph/cody-shared'
+import { DeepCodyAgentID, ToolCodyModelRef } from '@sourcegraph/cody-shared/src/models/client'
 import { getConfiguration } from '../../../configuration'
 import { AgenticHandler } from './AgenticHandler'
 import { ChatHandler } from './ChatHandler'
@@ -45,25 +41,41 @@ const agentRegistry = new Map<string, (id: string, tools: AgentTools) => AgentHa
 /**
  * Gets an agent handler for the specified agent and model ID
  */
-export function getAgent(model: string, agentName: string, tools: AgentTools): AgentHandler {
+export function getAgent(model: string, intent: ChatMessage['intent'], tools: AgentTools): AgentHandler {
     const { contextRetriever, editor, chatClient } = tools
-    if (agentName === 'agentic') {
+
+    // Special case for agentic intent
+    if (intent === 'agentic') {
         return new AgenticHandler(contextRetriever, editor, chatClient)
     }
 
-    // Use registered agent or fall back to basic chat handler
-    const handlerFactory = agentRegistry.get(model) ?? agentRegistry.get(agentName)
-    if (handlerFactory) {
-        return handlerFactory(agentName, tools)
-    }
+    // Return appropriate handler or fallback to chat handler
+    const intentHandler = intent && agentRegistry.get(intent)
+    if (intentHandler) return intentHandler(intent, tools)
 
-    // Default to basic chat handler for unknown agents
+    // Try to get handler from registry based on model or intent
+    const modelHandler = agentRegistry.get(model)
+    if (modelHandler) return modelHandler(model, tools)
+
     return new ChatHandler(contextRetriever, editor, chatClient)
 }
 
-export function getAgentName(intent: ChatMessage['intent'], model?: string): string | undefined {
-    if (model === DeepCodyModelRef) {
+/**
+ * Gets the agent name based on the intent and model
+ * @param intent The intent of the chat message
+ * @param model The model of the chat message
+ * @returns The agent name or undefined if not applicable
+ */
+export function getAgentName(intent: ChatMessage['intent'], model?: ChatModel): string | undefined {
+    // Special case for agentic intent
+    if (intent === 'agentic') {
+        return 'agent-mode'
+    }
+    if (model === ToolCodyModelRef) {
+        return ToolCodyModelRef
+    }
+    if (model === DeepCodyAgentID) {
         return DeepCodyAgentID
     }
-    return (intent !== 'chat' && intent) || undefined
+    return undefined
 }

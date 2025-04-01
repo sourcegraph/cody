@@ -60,12 +60,6 @@ export function updateParseTreeCache(document: TextDocument, parser: WrappedPars
 function getLanguageIfTreeSitterEnabled(document: TextDocument): SupportedLanguage | null {
     const { languageId } = document
 
-    // CODY-5459: Swift grammar is not working with VSCode 1.98+
-    // TODO: Fix Swift grammar crash of extension host
-    if (languageId === 'swift') {
-        return null
-    }
-
     /**
      * 1. Do not use tree-sitter for unsupported languages.
      * 2. Do not use tree-sitter for files with more than N lines to avoid performance issues.

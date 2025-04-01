@@ -14,6 +14,7 @@ import { CodeToRewriteDataSection } from '../sections/CodeToRewriteDataSection'
 import { ContextInfoSection } from '../sections/ContextInfoSection'
 import { NetworkRequestSection, NetworkResponseSection } from '../sections/NetworkRequestSection'
 import { PromptSection } from '../sections/PromptSection'
+import { SessionStatsSection } from '../sections/SessionStatsSection'
 import { TimelineSection } from '../sections/TimelineSection'
 import { SideBySideDiff } from './side-by-side-diff/SideBySideDiff'
 
@@ -155,6 +156,9 @@ export const AutoeditDetailView: FC<{
                         <TabButton value="network-response" activeTab={activeTab}>
                             Response
                         </TabButton>
+                        <TabButton value="session-stats" activeTab={activeTab}>
+                            Session Stats
+                        </TabButton>
                         <TabButton value="config" activeTab={activeTab}>
                             Config
                         </TabButton>
@@ -180,6 +184,10 @@ export const AutoeditDetailView: FC<{
 
                     <TabsPrimitive.Content value="network-response" className="tw-space-y-8">
                         <NetworkResponseSection entry={entry} />
+                    </TabsPrimitive.Content>
+
+                    <TabsPrimitive.Content value="session-stats" className="tw-space-y-8">
+                        <SessionStatsSection entry={entry} />
                     </TabsPrimitive.Content>
 
                     <TabsPrimitive.Content value="config" className="tw-space-y-8">

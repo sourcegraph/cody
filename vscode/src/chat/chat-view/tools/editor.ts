@@ -15,9 +15,11 @@ import { type EditToolInput, EditToolSchema } from './schema'
 function createEditToolState(
     id: string,
     status: UIToolStatus,
-    uri: vscode.Uri | undefined,
+    uri: vscode.Uri,
     content: string | undefined,
-    outputType: 'file-view' | 'file-diff' | 'status' = 'file-view'
+    outputType: 'file-view' | 'file-diff' | 'status' = 'file-view',
+    oldContent?: string,
+    newContent?: string
 ): ContextItemToolState {
     return {
         type: 'tool-state',
@@ -26,17 +28,13 @@ function createEditToolState(
         status,
         outputType,
         // ContextItemCommon properties
-        uri: uri || vscode.Uri.parse(`cody:/tools/edit/${id}`),
+        uri: uri,
         content,
-        title: 'Text Editor Operation',
+        title: 'Text Editor Tool',
         description: content?.split('\n')[0] || 'File edit operation',
         source: ContextItemSource.Agentic,
         icon: 'edit',
-        metadata: [
-            `Operation: ${outputType}`,
-            `Status: ${status}`,
-            ...(uri ? [`File: ${displayPath(uri)}`] : []),
-        ],
+        metadata: oldContent && newContent ? [oldContent, newContent] : undefined,
     }
 }
 
@@ -76,7 +74,7 @@ export const editTool = {
                 return createEditToolState(
                     `undo-${Date.now()}`,
                     UIToolStatus.Error,
-                    undefined,
+                    fileUri,
                     'Undo is not supported directly. Use the Source Control UI to revert changes.',
                     'status'
                 )
@@ -149,7 +147,7 @@ async function replaceInFile(
             UIToolStatus.Error,
             uri,
             'Parameter `old_str` is required for command: str_replace',
-            'status'
+            'file-diff'
         )
     }
 
@@ -169,7 +167,7 @@ async function replaceInFile(
                 UIToolStatus.Error,
                 uri,
                 `Failed: No replacement performed: text not found in ${fileName}.`,
-                'status'
+                'file-diff'
             )
         }
 
@@ -214,7 +212,9 @@ async function replaceInFile(
             UIToolStatus.Done,
             uri,
             output.join('\n'),
-            'file-diff'
+            'file-diff',
+            content,
+            newContent
         )
 
         // Add file diff properties
@@ -248,7 +248,7 @@ async function insertInFile(
             UIToolStatus.Error,
             uri,
             'Parameter `insert_line` is required for insert command.',
-            'status'
+            'file-diff'
         )
     }
 
@@ -258,7 +258,7 @@ async function insertInFile(
             UIToolStatus.Error,
             uri,
             'Parameter `new_str` is required for insert command.',
-            'status'
+            'file-diff'
         )
     }
 
@@ -274,7 +274,7 @@ async function insertInFile(
                 UIToolStatus.Error,
                 uri,
                 `Invalid line number: ${insertLine}. Valid range: 0-${lines.length}`,
-                'status'
+                'file-diff'
             )
         }
 
@@ -300,7 +300,7 @@ async function insertInFile(
             UIToolStatus.Error,
             uri,
             `Failed to insert text: ${error.message}`,
-            'status'
+            'file-diff'
         )
     }
 }

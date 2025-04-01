@@ -9,6 +9,7 @@ import type {
     ContextWindow,
     ModelCapability,
     ModelCategory,
+    ModelConfigAllTiers,
     ModelRef,
     ModelRefStr,
     ModelStatus,
@@ -125,22 +126,26 @@ export interface ServerModel {
     category: ModelCategory
     status: ModelStatus
     tier: ModelTier
+    modelConfigAllTiers?: ModelConfigAllTiers
 
     contextWindow: ContextWindow
 
     clientSideConfig?: ClientSideConfig
 }
 
-export function createModelFromServerModel({
-    modelRef,
-    displayName,
-    capabilities,
-    category,
-    tier,
-    status,
-    clientSideConfig,
-    contextWindow,
-}: ServerModel): Model {
+export function createModelFromServerModel(
+    {
+        modelRef,
+        displayName,
+        capabilities,
+        category,
+        tier,
+        status,
+        clientSideConfig,
+        contextWindow,
+    }: ServerModel,
+    enhancedContextWindowFlagEnabled: boolean
+): Model {
     const ref = parseModelRef(modelRef)
     const { maxInputTokens, maxOutputTokens } = contextWindow
     const _contextWindow: ModelContextWindow = {
@@ -156,6 +161,18 @@ export function createModelFromServerModel({
     if (maxInputTokens === EXTENDED_CHAT_INPUT_TOKEN_BUDGET + EXTENDED_USER_CONTEXT_TOKEN_BUDGET) {
         _contextWindow.input = EXTENDED_CHAT_INPUT_TOKEN_BUDGET
         _contextWindow.context = { user: EXTENDED_USER_CONTEXT_TOKEN_BUDGET }
+    }
+
+    if (
+        enhancedContextWindowFlagEnabled &&
+        contextWindow.maxUserInputTokens &&
+        contextWindow.maxInputTokens > 0 &&
+        contextWindow.maxInputTokens > contextWindow.maxUserInputTokens
+    ) {
+        _contextWindow.input = contextWindow.maxUserInputTokens
+        _contextWindow.context = {
+            user: contextWindow.maxInputTokens - contextWindow.maxUserInputTokens,
+        }
     }
     return createModel({
         id: modelRef,

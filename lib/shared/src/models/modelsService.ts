@@ -59,10 +59,23 @@ export type ModelStatus =
 export type ModelTier = ModelTag.Free | ModelTag.Pro | ModelTag.Enterprise
 /** Must match types on github.com/sourcegraph/sourcegraph/-/blob/internal/modelconfig/types/model.go */
 export type ModelCapability = 'chat' | 'autocomplete' | 'edit' | 'vision' | 'reasoning' | 'tools'
+/** Must match types on github.com/sourcegraph/sourcegraph/-/blob/internal/modelconfig/types/model.go */
+export type ModelConfigAllTiers = {
+    [key in ModelTier]: ModelConfigByTier
+}
 
+/** Matching github.com/sourcegraph/sourcegraph/-/blob/internal/modelconfig/types/model.go */
+export interface ModelConfigByTier {
+    contextWindow: ContextWindow
+}
+
+/** Matching github.com/sourcegraph/sourcegraph/-/blob/internal/modelconfig/types/model.go */
 export interface ContextWindow {
     maxInputTokens: number
     maxOutputTokens: number
+    // maxUserInputTokens is the maximum number of tokens user puts into the chat message.
+    // It is part of the input context window (maxInputTokens)
+    maxUserInputTokens?: number
 }
 
 export interface ClientSideConfig {

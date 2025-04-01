@@ -55,6 +55,8 @@ describe('pathFunctions', () => {
                 expect(posixFileUris.dirname('file:///a/b/')).toBe('file:///a')
             })
             test('basename', () => {
+                expect(posixFileUris.basename('')).toBe('')
+                expect(posixFileUris.basename('file:///')).toBe('')
                 expect(posixFileUris.basename('file:///a/b/c')).toBe('c')
                 expect(posixFileUris.basename('file:///a/b')).toBe('b')
                 expect(posixFileUris.basename('file:///a/b/')).toBe('b')
@@ -96,6 +98,7 @@ describe('pathFunctions', () => {
                 expect(windowsFilePaths.dirname('\\a')).toBe('\\')
             })
             test('basename', () => {
+                expect(windowsFilePaths.basename('C:\\')).toBe('')
                 expect(windowsFilePaths.basename('C:\\a\\b\\c')).toBe('c')
                 expect(windowsFilePaths.basename('C:\\a\\b')).toBe('b')
                 expect(windowsFilePaths.basename('C:\\a')).toBe('a')
@@ -134,6 +137,7 @@ describe('pathFunctions', () => {
                 expect(windowsFileUris.dirname('file:///C:/a/')).toBe('file:///C:')
             })
             test('basename', () => {
+                expect(windowsFilePaths.basename('')).toBe('')
                 expect(windowsFileUris.basename('file:///C:/a/b/c')).toBe('c')
                 expect(windowsFileUris.basename('file:///C:/a/b')).toBe('b')
                 expect(windowsFileUris.basename('file:///C:/a')).toBe('a')

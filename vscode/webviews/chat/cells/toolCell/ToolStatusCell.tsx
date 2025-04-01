@@ -40,7 +40,7 @@ export const ToolStatusCell: FC<ToolStatusProps> = ({ title, output }) => {
     if (output?.outputType === 'search-result' && output.searchResultItems) {
         return (
             <SearchResultsCell
-                query={output.title || ''}
+                query={output.title || 'Search result'}
                 results={output.searchResultItems}
                 onFileLinkClicked={onFileLinkClicked}
             />

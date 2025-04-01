@@ -3,11 +3,25 @@ import {
     type ToolCallContentPart,
     type ToolResultContentPart,
     isDefined,
+    ps,
 } from '@sourcegraph/cody-shared'
 
 export function sanitizedChatMessages(messages: ChatMessage[]): any[] {
     // Check if the last assistant message has a tool_call and the current human message doesn't have a tool_result
     const processedMessages = [...messages] // Create a copy to avoid mutating the original array
+
+    // Process the first human message to remove content between <think> tags
+    const firstHumanIndex = processedMessages.findIndex(m => m.speaker === 'human')
+    const firstHumanMessage = processedMessages[firstHumanIndex]
+    if (firstHumanIndex >= 0 && firstHumanMessage) {
+        const text = firstHumanMessage.text?.toString()
+        // Check if text starts with <think> tags and contains close tag
+        if (text?.startsWith('<think>') && text?.includes('</think>')) {
+            // Process text parts to remove content between <think> tags, including the tags.
+            // Only remove the content from the first pair.
+            firstHumanMessage.text = firstHumanMessage.text?.replace(/<think>.*?<\/think>/, ps``)
+        }
+    }
 
     // Find the last assistant message index
     const lastAssistantIndex = processedMessages.map(m => m.speaker).lastIndexOf('assistant')
