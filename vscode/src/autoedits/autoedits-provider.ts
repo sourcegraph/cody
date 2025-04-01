@@ -10,7 +10,8 @@ import {
     tokensToChars,
 } from '@sourcegraph/cody-shared'
 
-import { Counter, metrics } from '@opentelemetry/api'
+import { type Attributes, metrics } from '@opentelemetry/api'
+import type { Histogram } from '@opentelemetry/api'
 import type { CompletionBookkeepingEvent } from '../completions/analytics-logger'
 import { ContextRankingStrategy } from '../completions/context/completions-context-ranker'
 import { ContextMixer } from '../completions/context/context-mixer'
@@ -53,7 +54,7 @@ import type { AutoEditRenderOutput } from './renderer/render-output'
 import { type AutoeditRequestManagerParams, RequestManager } from './request-manager'
 import { shrinkPredictionUntilSuffix } from './shrink-prediction'
 import { SmartThrottleService } from './smart-throttle'
-import { AUTOEDIT_METER, areSameUriDocs, isPredictedTextAlreadyInSuffix } from './utils'
+import { areSameUriDocs, isPredictedTextAlreadyInSuffix } from './utils'
 
 const AUTOEDIT_CONTEXT_STRATEGY = 'auto-edit'
 const RESET_SUGGESTION_ON_CURSOR_CHANGE_AFTER_INTERVAL_MS = 60 * 1000
@@ -77,6 +78,20 @@ export type AutoeditClientCapabilities = Pick<
     'autoedit' | 'autoeditInlineDiff' | 'autoeditAsideDiff'
 >
 
+type CompletionResponseType = 'selection' | 'success' | 'error' | 'throttled' | 'aborted' | 'discarded'
+type DiscardReason =
+    | 'stale'
+    | 'empty_prediction'
+    | 'same_code_rewrite'
+    | 'filtered'
+    | 'no_suggestion'
+    | 'no_active_editor'
+    | 'not_in_agent'
+    | 'not_supported'
+interface CompletionLatencyMetricAttributes extends Attributes {
+    response_type: CompletionResponseType
+    discard_reason?: DiscardReason
+}
 /**
  * Provides inline completions and auto-edit functionality.
  *
@@ -84,7 +99,6 @@ export type AutoeditClientCapabilities = Pick<
  * This practice ensures that AutoEditsProvider remains focused on its primary responsibilities of triggering and providing completions
  */
 export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, vscode.Disposable {
-    private readonly invokedCounter: Counter
     private readonly disposables: vscode.Disposable[] = []
     /** Keeps track of the last time the text was changed in the editor. */
     private lastTextChangeTimeStamp: number | undefined
@@ -106,6 +120,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
     })
     private readonly statusBar: CodyStatusBar
     private readonly capabilities: AutoeditClientCapabilities
+    private completionLatencyMetric: Histogram<CompletionLatencyMetricAttributes>
 
     constructor(
         chatClient: ChatClient,
@@ -158,7 +173,13 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
 
         const meter = metrics.getMeter('autoedit')
 
-        this.invokedCounter = meter.createCounter('autoedits.invoked')
+        this.completionLatencyMetric = meter.createHistogram<CompletionLatencyMetricAttributes>(
+            'autoedits.inlinecompletions.latency',
+            {
+                description: 'Latency of inline completions',
+                unit: 'ms',
+            }
+        )
 
         this.statusBar = statusBar
     }
@@ -216,8 +237,6 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
         let stopLoading: (() => void) | undefined
         const startedAt = getTimeNowInMillis()
 
-        this.invokedCounter.add(1)
-
         if (inlineCompletionContext.selectedCompletionInfo !== undefined) {
             const { range, text } = inlineCompletionContext.selectedCompletionInfo
             const completion = new AutoeditCompletionItem({ id: null, insertText: text, range })
@@ -227,6 +246,9 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
             // of the item shown in the widget.
             // TODO: We should consider the optimal solution here, it may be better to show an
             // inline completion (not an edit) that includes the currently selected item.
+            this.completionLatencyMetric.record(getTimeNowInMillis() - startedAt, {
+                response_type: 'selection',
+            })
             return {
                 items: [completion],
                 inlineCompletionItems: [completion],
@@ -256,6 +278,9 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                         'provideInlineCompletionItems',
                         `debounce aborted during first ${AUTOEDIT_INITIAL_DEBOUNCE_INTERVAL_MS}ms of throttle`
                     )
+                    this.completionLatencyMetric.record(getTimeNowInMillis() - startedAt, {
+                        response_type: 'aborted',
+                    })
                     return null
                 }
                 remainingThrottleDelay -= AUTOEDIT_INITIAL_DEBOUNCE_INTERVAL_MS
@@ -312,6 +337,9 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                     'provideInlineCompletionItems',
                     'aborted during context fetch and the remaining throttle delay'
                 )
+                this.completionLatencyMetric.record(getTimeNowInMillis() - startedAt, {
+                    response_type: 'aborted',
+                })
                 return null
             }
             autoeditAnalyticsLogger.markAsContextLoaded({
@@ -353,6 +381,9 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                     requestId,
                     discardReason: autoeditDiscardReason.clientAborted,
                 })
+                this.completionLatencyMetric.record(getTimeNowInMillis() - startedAt, {
+                    response_type: 'aborted',
+                })
                 return null
             }
 
@@ -379,6 +410,10 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                     requestId,
                     discardReason: autoeditDiscardReason.staleThrottledRequest,
                 })
+                this.completionLatencyMetric.record(getTimeNowInMillis() - startedAt, {
+                    response_type: 'discarded',
+                    discard_reason: 'stale',
+                })
                 return null
             }
 
@@ -391,6 +426,10 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                 autoeditAnalyticsLogger.markAsDiscarded({
                     requestId,
                     discardReason: autoeditDiscardReason.emptyPrediction,
+                })
+                this.completionLatencyMetric.record(getTimeNowInMillis() - startedAt, {
+                    response_type: 'discarded',
+                    discard_reason: 'empty_prediction',
                 })
                 return null
             }
@@ -415,6 +454,10 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                     requestId,
                     discardReason: autoeditDiscardReason.predictionEqualsCodeToRewrite,
                 })
+                this.completionLatencyMetric.record(getTimeNowInMillis() - startedAt, {
+                    response_type: 'discarded',
+                    discard_reason: 'same_code_rewrite',
+                })
                 return null
             }
 
@@ -432,6 +475,10 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                 autoeditAnalyticsLogger.markAsDiscarded({
                     requestId,
                     discardReason: autoeditDiscardReason.recentEdits,
+                })
+                this.completionLatencyMetric.record(getTimeNowInMillis() - startedAt, {
+                    response_type: 'discarded',
+                    discard_reason: 'filtered',
                 })
                 return null
             }
@@ -456,6 +503,10 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                 autoeditAnalyticsLogger.markAsDiscarded({
                     requestId,
                     discardReason: autoeditDiscardReason.suffixOverlap,
+                })
+                this.completionLatencyMetric.record(getTimeNowInMillis() - startedAt, {
+                    response_type: 'discarded',
+                    discard_reason: 'same_code_rewrite',
                 })
                 return null
             }
@@ -482,6 +533,10 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                     requestId,
                     discardReason: autoeditDiscardReason.emptyPredictionAfterInlineCompletionExtraction,
                 })
+                this.completionLatencyMetric.record(getTimeNowInMillis() - startedAt, {
+                    response_type: 'discarded',
+                    discard_reason: 'no_suggestion',
+                })
                 return null
             }
 
@@ -494,6 +549,10 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                 autoeditAnalyticsLogger.markAsDiscarded({
                     requestId,
                     discardReason: autoeditDiscardReason.noActiveEditor,
+                })
+                this.completionLatencyMetric.record(getTimeNowInMillis() - startedAt, {
+                    response_type: 'discarded',
+                    discard_reason: 'no_active_editor',
                 })
                 return null
             }
@@ -530,6 +589,9 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
             }
 
             if ('inlineCompletionItems' in renderOutput) {
+                this.completionLatencyMetric.record(getTimeNowInMillis() - startedAt, {
+                    response_type: 'success',
+                })
                 return {
                     items: renderOutput.inlineCompletionItems,
                     inlineCompletionItems: renderOutput.inlineCompletionItems,
@@ -540,13 +602,25 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
             if (!isRunningInsideAgent()) {
                 // If we are in VS Code there is nothing more we can do here. The decorations will be shown
                 // via the decorator.
+                this.completionLatencyMetric.record(getTimeNowInMillis() - startedAt, {
+                    response_type: 'discarded',
+                    discard_reason: 'not_in_agent',
+                })
                 return null
             }
 
             if (this.capabilities.autoedit !== 'enabled') {
                 // We are running inside the agent, but the client does not support auto-edits.
+                this.completionLatencyMetric.record(getTimeNowInMillis() - startedAt, {
+                    response_type: 'discarded',
+                    discard_reason: 'not_supported',
+                })
                 return null
             }
+
+            this.completionLatencyMetric.record(getTimeNowInMillis() - startedAt, {
+                response_type: 'success',
+            })
 
             return {
                 items: [],

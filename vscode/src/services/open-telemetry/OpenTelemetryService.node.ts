@@ -17,13 +17,11 @@ import {
 } from '@sourcegraph/cody-shared'
 
 import { DiagConsoleLogger, DiagLogLevel, diag, metrics } from '@opentelemetry/api'
-import { type ExportResult, ExportResultCode } from '@opentelemetry/core'
 import { OTLPMetricExporter } from '@opentelemetry/exporter-metrics-otlp-http'
 import {
     ConsoleMetricExporter,
     MeterProvider,
     PeriodicExportingMetricReader,
-    type ResourceMetrics,
 } from '@opentelemetry/sdk-metrics'
 import { BatchSpanProcessor } from '@opentelemetry/sdk-trace-base'
 import { externalAuthRefresh } from '@sourcegraph/cody-shared/src/configuration/auth-resolver'
@@ -31,17 +29,6 @@ import { isEqual } from 'lodash'
 import { CodyTraceExporter } from './CodyTraceExport'
 import { ConsoleBatchSpanExporter } from './console-batch-span-exporter'
 
-class DebugMetricExporter extends OTLPMetricExporter {
-    export(metrics: ResourceMetrics, resultCallback: (result: ExportResult) => void): void {
-        const reporter = (result: ExportResult) => {
-            if (result.code !== ExportResultCode.SUCCESS) {
-                console.error('DebugMetricExporter.export failed', result.error)
-            }
-            resultCallback(result)
-        }
-        super.export(metrics, reporter)
-    }
-}
 export interface OpenTelemetryServiceConfig {
     isTracingEnabled: boolean
     traceUrl: string
@@ -105,10 +92,11 @@ export class OpenTelemetryService {
                     const metricUrl = new URL('/-/debug/otlp/v1/metrics', auth.serverEndpoint)
                     this.meterProvider?.addMetricReader(
                         new PeriodicExportingMetricReader({
-                            exporter: new DebugMetricExporter({
+                            exporter: new OTLPMetricExporter({
                                 url: metricUrl.toString(),
                                 headers: Object.fromEntries(headers.entries()),
                             }),
+                            // export metrics every minute
                             exportIntervalMillis: 60 * 1000,
                         })
                     )
