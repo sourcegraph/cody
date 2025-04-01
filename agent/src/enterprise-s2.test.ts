@@ -168,7 +168,7 @@ describe('Enterprise - S2 (close main branch)', { timeout: 5000 }, () => {
             `
             )
 
-            const retriverStat = completionEvent?.params.contextSummary?.retrieverStats.find(
+            const retrieverStat = completionEvent?.params.contextSummary.retrieverStats.find(
                 stat => stat.name === 'jaccard-similarity'
             )
 
