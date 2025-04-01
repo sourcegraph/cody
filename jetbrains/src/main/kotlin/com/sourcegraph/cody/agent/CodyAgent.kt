@@ -96,9 +96,6 @@ private constructor(
     private val logger = Logger.getInstance(CodyAgent::class.java)
     private val PLUGIN_ID = PluginId.getId("com.sourcegraph.jetbrains")
     private const val DEFAULT_AGENT_DEBUG_PORT = 3113 // Also defined in agent/src/cli/jsonrpc.ts
-    private val globalState =
-        if (ConfigUtil.isIntegrationTestModeEnabled()) ClientCapabilities.GlobalStateEnum.Stateless
-        else ClientCapabilities.GlobalStateEnum.`Server-managed`
     @JvmField val executorService: ExecutorService = Executors.newCachedThreadPool()
 
     enum class Debuggability {
@@ -116,6 +113,7 @@ private constructor(
 
     fun create(
         project: Project,
+        capabilities: ClientCapabilities,
         endpoint: SourcegraphServerPath?,
         token: String?,
     ): CompletableFuture<CodyAgent> {
@@ -140,34 +138,7 @@ private constructor(
                       workspaceRootUri = workspaceRootUri,
                       extensionConfiguration =
                           ConfigUtil.getAgentConfiguration(project, endpoint, token),
-                      capabilities =
-                          ClientCapabilities(
-                              authentication = ClientCapabilities.AuthenticationEnum.Enabled,
-                              edit = ClientCapabilities.EditEnum.Enabled,
-                              editWorkspace = ClientCapabilities.EditWorkspaceEnum.Enabled,
-                              codeLenses = ClientCapabilities.CodeLensesEnum.Enabled,
-                              disabledMentionsProviders = listOf("symbol"),
-                              showDocument = ClientCapabilities.ShowDocumentEnum.Enabled,
-                              ignore = ClientCapabilities.IgnoreEnum.Enabled,
-                              untitledDocuments = ClientCapabilities.UntitledDocumentsEnum.Enabled,
-                              codeActions = ClientCapabilities.CodeActionsEnum.Enabled,
-                              shell = ClientCapabilities.ShellEnum.Enabled,
-                              globalState = globalState,
-                              secrets = ClientCapabilities.SecretsEnum.`Client-managed`,
-                              webview = ClientCapabilities.WebviewEnum.Native,
-                              webviewNativeConfig =
-                                  WebviewNativeConfig(
-                                      view = WebviewNativeConfig.ViewEnum.Multiple,
-                                      cspSource = "'self' https://*.sourcegraphstatic.com",
-                                      webviewBundleServingPrefix =
-                                          "https://file+.sourcegraphstatic.com",
-                                  ),
-                              webviewMessages =
-                                  ClientCapabilities.WebviewMessagesEnum.`String-encoded`,
-                              accountSwitchingInWebview =
-                                  ClientCapabilities.AccountSwitchingInWebviewEnum.Enabled,
-                              showWindowMessage =
-                                  ClientCapabilities.ShowWindowMessageEnum.Request)))
+                      capabilities = capabilities))
               .thenApply { info ->
                 logger.warn("Connected to Cody agent " + info.name)
                 server.initialized(null)

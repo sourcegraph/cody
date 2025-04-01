@@ -43,8 +43,8 @@ importers:
         specifier: ^8.2.0
         version: 8.2.0
       web-tree-sitter:
-        specifier: ^0.21.0
-        version: 0.21.0
+        specifier: ^0.24.5
+        version: 0.24.5
       win-ca:
         specifier: ^3.5.1
         version: 3.5.1
@@ -17942,8 +17942,8 @@ packages:
     engines: {node: '>= 14'}
     dev: false
 
-  /web-tree-sitter@0.21.0:
-    resolution: {integrity: sha512-iJ+QJ6ikN9D9cG7Kh6q3KtAstYFUQbYZ8OjuPEJYWfj2kLrmp5I3C2n6WjE1Y3jvj7nJbkcrJytJGWUEhCxn+g==}
+  /web-tree-sitter@0.24.5:
+    resolution: {integrity: sha512-+J/2VSHN8J47gQUAvF8KDadrfz6uFYVjxoxbKWDoXVsH2u7yLdarCnIURnrMA6uSRkgX3SdmqM5BOoQjPdSh5w==}
     dev: false
 
   /webauthn4js@3.0.0:

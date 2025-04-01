@@ -18,6 +18,7 @@ import com.intellij.testFramework.fixtures.HeavyIdeaTestFixture
 import com.intellij.testFramework.fixtures.IdeaTestFixtureFactory
 import com.intellij.testFramework.runInEdtAndWait
 import com.sourcegraph.cody.agent.CodyAgentService
+import com.sourcegraph.cody.agent.protocol_generated.ClientCapabilities
 import com.sourcegraph.cody.agent.protocol_generated.ProtocolAuthenticatedAuthStatus
 import com.sourcegraph.cody.auth.SourcegraphServerPath
 import java.io.File
@@ -28,13 +29,21 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 
-open class BaseIntegrationTextFixture(private val recordingName: String) {
+open class BaseIntegrationTextFixture(
+    private val recordingName: String,
+    private val capabilities: ClientCapabilities
+) {
+  companion object {
+    const val ASYNC_WAIT_TIMEOUT_SECONDS = 20L
+  }
+
   private val logger = Logger.getInstance(BaseIntegrationTextFixture::class.java)
 
   // We don't want to use .!! or .? everywhere in the tests,
   // and if those won't be initialized test should crash anyway
   lateinit var editor: Editor
   lateinit var file: VirtualFile
+
   val project: Project
 
   protected val myFixture: HeavyIdeaTestFixture
@@ -123,7 +132,7 @@ open class BaseIntegrationTextFixture(private val recordingName: String) {
     assertNotNull(
         "Unable to start agent in a timely fashion!",
         CodyAgentService.getInstance(project)
-            .startAgent(endpoint, token)
+            .startAgent(capabilities, endpoint, token)
             .completeOnTimeout(null, ASYNC_WAIT_TIMEOUT_SECONDS, TimeUnit.SECONDS)
             .get())
   }
@@ -218,9 +227,5 @@ open class BaseIntegrationTextFixture(private val recordingName: String) {
     // TODO: Check for the exact contents once they are frozen.
     val javadocPattern = Pattern.compile("/\\*\\*.*?\\*/", Pattern.DOTALL)
     return javadocPattern.matcher(text).find()
-  }
-
-  companion object {
-    const val ASYNC_WAIT_TIMEOUT_SECONDS = 20L
   }
 }
