@@ -28,7 +28,6 @@ class AutocompleteCompletionTest {
         BaseIntegrationTextFixture(
             "autocomplete",
             CodyAgentService.clientCapabilities.copy(
-                autoedit = ClientCapabilities.AutoeditEnum.None,
                 globalState = ClientCapabilities.GlobalStateEnum.Stateless))
 
     @JvmStatic
