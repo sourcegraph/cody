@@ -23,6 +23,7 @@ interface QuickPick {
     render: (value: string) => void
     setItems: (items: vscode.QuickPickItem[]) => void
     hide: () => void
+    show: () => void
 }
 
 export const createQuickPick = ({
@@ -96,5 +97,8 @@ export const createQuickPick = ({
             quickPick.items = items
         },
         hide: () => quickPick.hide(),
+        show: () => {
+            quickPick.show()
+        },
     }
 }

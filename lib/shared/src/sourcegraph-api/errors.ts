@@ -3,6 +3,7 @@ import { differenceInDays, format, formatDistanceStrict, formatRelative } from '
 import { isError } from '../utils'
 
 import type { BrowserOrNodeResponse } from './graphql/client'
+import { RateLimitManager } from './rate-limit-manager'
 
 function formatRetryAfterDate(retryAfterDate: Date): string {
     const now = new Date()
@@ -22,7 +23,6 @@ export class RateLimitError extends Error {
     public readonly userMessage: string
     public readonly retryAfterDate: Date | undefined
     public readonly retryMessage: string | undefined
-    private modelReenableTimeout?: NodeJS.Timeout
 
     constructor(
         public readonly feature: 'autocompletions' | 'chat messages and commands' | 'Agentic Chat',
@@ -37,7 +37,7 @@ export class RateLimitError extends Error {
         this.userMessage =
             feature === 'Agentic Chat'
                 ? `You've reached the daily limit for agentic context (experimental). You can continue using Gemini Flash, or other standard models. `
-                : `You've used all of your ${feature} for ${
+                : `You've used all of your premium ${feature} for ${
                       upgradeIsAvailable ? 'the month' : 'today'
                   }. You can continue using Gemini Flash, or other standard models. `
         this.retryAfterDate = retryAfter
@@ -46,104 +46,10 @@ export class RateLimitError extends Error {
                 : new Date(retryAfter)
             : undefined
         this.retryMessage = this.retryAfterDate ? formatRetryAfterDate(this.retryAfterDate) : undefined
-        
+
         // Schedule model re-enable when retry time is reached
         if (this.retryAfterDate) {
-            this.scheduleModelReenableOnRetry();
-        }
-    }
-    
-    /**
-     * Schedules a task to re-enable models when the retry-after time is reached.
-     * This ensures that models are automatically re-enabled once the rate limit period expires.
-     */
-    private scheduleModelReenableOnRetry(): void {
-        if (!this.retryAfterDate) {
-            return;
-        }
-        
-        const now = new Date();
-        const timeToWait = Math.max(0, this.retryAfterDate.getTime() - now.getTime());
-        
-        // Clear any existing timeout to avoid multiple handlers
-        if (this.modelReenableTimeout) {
-            clearTimeout(this.modelReenableTimeout);
-        }
-        
-        // Set a timeout to re-enable models when the retry period expires
-        this.modelReenableTimeout = setTimeout(() => {
-            this.reenableModels();
-        }, timeToWait);
-    }
-    
-    /**
-     * Re-enables all models that were disabled due to rate limiting.
-     * This is called automatically when the retry-after period expires.
-     */
-    private reenableModels(): void {
-        console.log(`[Cody] Rate limit period expired for ${this.feature}. Re-enabling models.`);
-        
-        // For Agentic Chat feature, we need to reset the rate limit in the ToolboxManager
-        if (this.feature === 'Agentic Chat' && typeof require !== 'undefined') {
-            try {
-                // Dynamically import to avoid circular dependencies
-                const { toolboxManager } = require('../../vscode/src/chat/agentic/ToolboxManager');
-                if (toolboxManager) {
-                    toolboxManager.setIsRateLimited(false);
-                    console.log('[Cody] Successfully re-enabled DeepCody models in ToolboxManager');
-                }
-            } catch (error) {
-                console.error('[Cody] Failed to re-enable models in ToolboxManager:', error);
-            }
-        }
-        
-        // Update the authStatus to remove the rate limit for this feature
-        try {
-            const { currentAuthStatusOrNotReadyYet, mockAuthStatus } = require('../auth/authStatus');
-            const currentStatus = currentAuthStatusOrNotReadyYet();
-            if (currentStatus?.authenticated && currentStatus.rateLimited) {
-                // Create a new auth status object with the rate limit for this feature removed
-                const updatedRateLimited = { ...currentStatus.rateLimited };
-                delete updatedRateLimited[this.feature];
-                
-                // If there are no more rate limited features, remove the rateLimited property entirely
-                const updatedStatus: typeof currentStatus = {
-                    ...currentStatus,
-                    rateLimited: Object.keys(updatedRateLimited).length > 0 ? updatedRateLimited : undefined,
-                };
-                
-                console.log(`[Cody] Updating auth status to remove rate limit for ${this.feature}`);
-                mockAuthStatus(updatedStatus);
-                
-                // This will trigger syncModels to re-enable the models since the authStatus has changed
-                console.log('[Cody] Auth status updated, models will be re-enabled via syncModels');
-            }
-        } catch (error) {
-            console.error('[Cody] Failed to update auth status to remove rate limit:', error);
-        }
-        
-        // Emit an event that can be listened to by various components
-        // to re-enable their models
-        if (typeof window !== 'undefined') {
-            const event = new CustomEvent('cody:rate-limit-expired', {
-                detail: {
-                    feature: this.feature,
-                    timestamp: new Date(),
-                }
-            });
-            window.dispatchEvent(event);
-        } else if (typeof process !== 'undefined') {
-            // For Node.js environments, use EventEmitter pattern
-            // We need to use a proper Node.js event emitter
-            // This will need to be handled by components that want to listen for this event
-            console.log(`[Cody] Rate limit period expired for ${this.feature}. Components should check for re-enabling.`);
-            // Notify any listeners through a global event bus if available
-            if (typeof global !== 'undefined' && (global as any).codyEventBus) {
-                (global as any).codyEventBus.emit('rate-limit-expired', {
-                    feature: this.feature,
-                    timestamp: new Date(),
-                });
-            }
+            RateLimitManager.getInstance().scheduleReset(feature, this.retryAfterDate)
         }
     }
 }

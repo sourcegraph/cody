@@ -24,7 +24,6 @@ import {
     fetch,
     getActiveTraceAndSpanId,
     getClientInfoParams,
-    handleError as handleRateLimitError,
     isAbortError,
     isCustomAuthChallengeResponse,
     isNodeResponse,
@@ -299,13 +298,11 @@ export async function createRateLimitErrorFromResponse(
     const retryAfter = response.headers.get('retry-after')
     const limit = response.headers.get('x-ratelimit-limit')
 
-    const error = new RateLimitError(
+    return new RateLimitError(
         'autocompletions',
         await response.text(),
         upgradeIsAvailable,
         limit ? Number.parseInt(limit, 10) : undefined,
         retryAfter
     )
-    handleRateLimitError(error, 'autocompletions')
-    return error
 }

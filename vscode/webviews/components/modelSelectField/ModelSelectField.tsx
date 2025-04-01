@@ -1,9 +1,14 @@
-import { type ChatMessage, type Model, ModelTag, isCodyProModel } from '@sourcegraph/cody-shared'
+import {
+    type ChatMessage,
+    type Model,
+    ModelTag,
+    type ModelsData,
+    isCodyProModel,
+} from '@sourcegraph/cody-shared'
 import { isMacOS } from '@sourcegraph/cody-shared'
 import { DeepCodyAgentID, ToolCodyModelName } from '@sourcegraph/cody-shared/src/models/client'
 import { clsx } from 'clsx'
-import { BookOpenIcon, BrainIcon, BuildingIcon, ExternalLinkIcon } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { AlertTriangleIcon, BookOpenIcon, BrainIcon, BuildingIcon, ExternalLinkIcon } from 'lucide-react'
 import { type FunctionComponent, type ReactNode, useCallback, useMemo } from 'react'
 import type { UserAccountInfo } from '../../Chat'
 import { getVSCodeAPI } from '../../utils/VSCodeApi'
@@ -41,6 +46,7 @@ export const ModelSelectField: React.FunctionComponent<{
     /** For storybooks only. */
     __storybook__open?: boolean
     modelSelectorRef?: React.MutableRefObject<{ open: () => void; close: () => void } | null>
+    modelsData?: ModelsData
 }> = ({
     models,
     onModelSelect: parentOnModelSelect,
@@ -51,6 +57,7 @@ export const ModelSelectField: React.FunctionComponent<{
     intent,
     __storybook__open,
     modelSelectorRef,
+    modelsData,
 }) => {
     const telemetryRecorder = useTelemetryRecorder()
 
@@ -60,19 +67,6 @@ export const ModelSelectField: React.FunctionComponent<{
     const isCodyProUser = userInfo.isDotComUser && userInfo.isCodyProUser
     const isEnterpriseUser = !userInfo.isDotComUser
     const showCodyProBadge = !isEnterpriseUser && !isCodyProUser
-    const [exceedRateLimit, setExceedRateLimit] = useState(false)
-    useEffect(() => {
-        const messageHandler = (event: { data: any }) => {
-            const message = event.data
-            if (message.type === 'rateLimit') {
-                // This does not set the rate limit state immediately but will
-                // cause the component to re-render with the new state
-                setExceedRateLimit(message.isRateLimited)
-            }
-        }
-        window.addEventListener('message', messageHandler)
-        return () => window.removeEventListener('message', messageHandler)
-    }, [models, selectedModel, parentOnModelSelect, telemetryRecorder, userInfo])
 
     const onModelSelect = useCallback(
         (model: Model): void => {
@@ -180,6 +174,7 @@ export const ModelSelectField: React.FunctionComponent<{
         return null
     }
 
+    const isRateLimited = useMemo(() => models.some(model => model.disabled), [models])
     const value = selectedModel.id
     return (
         <ToolbarPopoverItem
@@ -204,15 +199,14 @@ export const ModelSelectField: React.FunctionComponent<{
                         className="model-selector-popover tw-max-h-[80vh] tw-overflow-y-auto"
                         data-testid="chat-model-popover-option"
                     >
-                        {exceedRateLimit && (
-                            <div
-                                className="tw-px-3 tw-py-2 tw-text-s tw-border-b"
-                                style={{
-                                    backgroundColor: 'var(--vscode-warning-background)',
-                                    color: 'var(--vscode-warning-foreground)',
-                                }}
-                            >
-                                Usage limit reached: Premium models disabled
+                        {isRateLimited && (
+                            <div className="tw-pl-5 tw-pr-3 tw-py-1.5 tw-text-sm tw-text-foreground tw-flex tw-justify-center">
+                                <div className="tw-flex tw-items-center tw-gap-2 tw-bg-muted tw-px-2 tw-py-0.5 tw-rounded">
+                                    <AlertTriangleIcon className="tw-w-[16px] tw-h-[16px]" />
+                                    <span className="tw-font-semibold">
+                                        Usage limit reached: Premium models disabled
+                                    </span>
+                                </div>
                             </div>
                         )}
                         {optionsByGroup.map(({ group, options }) => (

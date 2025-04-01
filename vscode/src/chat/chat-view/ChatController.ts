@@ -894,7 +894,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 return
             }
             if (isRateLimitError(error) || isContextWindowLimitError(error)) {
-                // this.postError(error, 'transcript')
+                this.postError(error, 'transcript')
             } else {
                 this.postError(
                     isError(error) ? error : new Error(`Error generating assistant response: ${error}`)
@@ -1404,12 +1404,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             console.log(
                 '[julia] postError in ChatController.ts (before send to webview) ---- inside if (isRateLimitError(error))'
             )
-            if (error.feature === 'chat messages and commands') {
-                void this.postMessage({
-                    type: 'rateLimit',
-                    isRateLimited: true,
-                })
-            }
             // Handle errors through the centralized handler
             handleError(error as Error, error.feature)
         }

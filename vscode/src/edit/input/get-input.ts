@@ -3,6 +3,7 @@ import {
     type ContextItem,
     type EditModel,
     type EventSource,
+    currentAuthStatus,
     FILE_CONTEXT_MENTION_PROVIDER,
     GENERAL_HELP_LABEL,
     LARGE_FILE_WARNING_LABEL,
@@ -202,7 +203,7 @@ export const getInput = async (
                 try {
                     // Only update if the auth status's rateLimited field changes
                     if (newAuthStatus.authenticated && newAuthStatus.rateLimited) {
-                        if (newAuthStatus.rateLimited.autocompletions === true) {
+                        if (newAuthStatus.rateLimited === true) {
                             // Refresh model options when auth status changes
                             const updatedModelOptions = await firstResultFromOperation(
                                 modelsService.getModels(ModelUsage.Edit)
@@ -212,40 +213,32 @@ export const getInput = async (
                                 updatedModelOptions,
                                 isCodyPro,
                                 isEnterpriseUser,
-                                newAuthStatus.rateLimited.autocompletions
-                            )
-
-                            // Check if the active model is now disabled (rate limited)
-                            const updatedActiveModelItem = updatedModelItems.find(
-                                item => item.model === activeModel
+                                newAuthStatus.rateLimited
                             )
 
                             EDIT_MODEL_BEFORE_RATE_LIMIT = activeModel
-                            if (
-                                updatedActiveModelItem?.disabled &&
-                                modelInput.input.step &&
-                                modelInput.input.step > 0
-                            ) {
-                                // Fallback to flash
-                                const defaultModel = updatedModelItems.find(
-                                    item => item.model === 'google::v1::gemini-2.0-flash'
-                                )
-                                if (defaultModel) {
-                                    activeModel = defaultModel.model
-                                    activeModelItem = defaultModel
-                                    activeModelContextWindow = getContextWindowOnModelChange(activeModel)
-                                }
+                            // Fallback to flash
+                            const defaultModel = updatedModelItems.find(
+                                item => item.model === 'google::v1::gemini-2.0-flash'
+                            )
+                            if (defaultModel) {
+                                activeModel = defaultModel.model
+                                activeModelItem = defaultModel
+                                activeModelContextWindow = getContextWindowOnModelChange(activeModel)
                             }
                             // Just update the items without changing the selection
-                            modelInput.setItems(
-                                getModelInputItems(
-                                    updatedModelOptions,
-                                    activeModel,
-                                    isCodyPro,
-                                    isEnterpriseUser,
-                                    newAuthStatus.rateLimited.autocompletions
-                                ).items
+                            // Update both items and active items
+                            const updatedItems = getModelInputItems(
+                                updatedModelOptions,
+                                activeModel,
+                                isCodyPro,
+                                isEnterpriseUser,
+                                newAuthStatus.rateLimited
                             )
+                            modelInput.input.items = updatedItems.items
+                            if (updatedItems.activeItem) {
+                                modelInput.input.activeItems = [updatedItems.activeItem]
+                            }
                         } else {
                             // Refresh model options when auth status changes
                             const updatedModelOptions = await firstResultFromOperation(
@@ -256,30 +249,31 @@ export const getInput = async (
                                 updatedModelOptions,
                                 isCodyPro,
                                 isEnterpriseUser,
-                                newAuthStatus.rateLimited.autocompletions
+                                newAuthStatus.rateLimited
                             )
 
-                            if (modelInput.input.step && modelInput.input.step > 0) {
-                                // Change the default model back
-                                const defaultModel = updatedModelItems.find(
-                                    item => item.model === EDIT_MODEL_BEFORE_RATE_LIMIT
-                                )
-                                if (defaultModel) {
-                                    activeModel = defaultModel.model
-                                    activeModelItem = defaultModel
-                                    activeModelContextWindow = getContextWindowOnModelChange(activeModel)
-                                }
+                            // Change the default model back
+                            const defaultModel = updatedModelItems.find(
+                                item => item.model === EDIT_MODEL_BEFORE_RATE_LIMIT
+                            )
+                            if (defaultModel) {
+                                activeModel = defaultModel.model
+                                activeModelItem = defaultModel
+                                activeModelContextWindow = getContextWindowOnModelChange(activeModel)
                             }
                             // Just update the items without changing the selection
-                            modelInput.setItems(
-                                getModelInputItems(
-                                    updatedModelOptions,
-                                    activeModel,
-                                    isCodyPro,
-                                    isEnterpriseUser,
-                                    newAuthStatus.rateLimited.autocompletions
-                                ).items
+                            // Update both items and active items
+                            const updatedItems = getModelInputItems(
+                                updatedModelOptions,
+                                activeModel,
+                                isCodyPro,
+                                isEnterpriseUser,
+                                newAuthStatus.rateLimited
                             )
+                            modelInput.input.items = updatedItems.items
+                            if (updatedItems.activeItem) {
+                                modelInput.input.activeItems = [updatedItems.activeItem]
+                            }
                         }
                     }
                 } catch (error) {
@@ -288,10 +282,34 @@ export const getInput = async (
             })
         )
         disposables.push(authStatusSubscription)
+        // Check current rate limit state
+        const currentStatus = currentAuthStatus()
+        const isCurrentlyRateLimited = currentStatus.authenticated && currentStatus.rateLimited
+        
+        // If currently rate limited, switch to flash model
+        if (isCurrentlyRateLimited) {
+            const flashModel = modelItems.find(item => item.model === 'google::v1::gemini-2.0-flash')
+            if (flashModel) {
+                EDIT_MODEL_BEFORE_RATE_LIMIT = activeModel
+                activeModel = flashModel.model
+                activeModelItem = flashModel
+                activeModelContextWindow = getContextWindowOnModelChange(activeModel)
+            }
+        }
+
+        // Get initial items with current rate limit state
+        const initialModelItems = getModelInputItems(
+            modelOptions,
+            activeModel,
+            isCodyPro,
+            isEnterpriseUser,
+            isCurrentlyRateLimited
+        )
+
         const modelInput = createQuickPick({
             title: activeTitle,
             placeHolder: 'Select a model',
-            getItems: () => getModelInputItems(modelOptions, activeModel, isCodyPro, isEnterpriseUser),
+            getItems: () => initialModelItems,
             buttons: [vscode.QuickInputButtons.Back],
             onDidHide: () => editor.setDecorations(PREVIEW_RANGE_DECORATION, []),
             onDidTriggerButton: () => editInput.render(editInput.input.value),

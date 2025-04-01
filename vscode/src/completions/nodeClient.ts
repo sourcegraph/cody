@@ -138,7 +138,7 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                     //
                     // If the request failed with a rate limit error, wraps the
                     // error in RateLimitError.
-                    function handleError(this: any, e: Error): void {
+                    function handleError(e: Error): void {
                         log?.onError(e.message, e)
 
                         if (statusCode === 429) {
@@ -164,10 +164,6 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                                 '[julia] _streamWithCallbacks in nodeClient.ts ---- All regular (non-fast) models due to rate limiting'
                             )
                             const feature = 'chat messages and commands'
-                            void this.postMessage({
-                                type: 'rateLimit',
-                                isRateLimited: true,
-                            })
                             handleRateLimitError(error, feature)
                             onErrorOnce(error, statusCode)
                         } else {
@@ -373,10 +369,6 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                         retryAfter
                     )
                     const feature = 'chat messages and commands'
-                    // void this.postMessage({
-                    //     type: 'rateLimit',
-                    //     isRateLimited: true,
-                    // })
                     handleRateLimitError(error, feature)
                     throw error
                 }
