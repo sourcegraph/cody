@@ -2,7 +2,7 @@ import { registerInstrumentations } from '@opentelemetry/instrumentation'
 import { HttpInstrumentation } from '@opentelemetry/instrumentation-http'
 import { Resource } from '@opentelemetry/resources'
 import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node'
-import { SemanticResourceAttributes } from '@opentelemetry/semantic-conventions'
+import { ATTR_SERVICE_NAME, ATTR_SERVICE_VERSION } from '@opentelemetry/semantic-conventions'
 
 import {
     type CodyIDE,
@@ -16,13 +16,32 @@ import {
     startWith,
 } from '@sourcegraph/cody-shared'
 
-import { DiagConsoleLogger, DiagLogLevel, diag } from '@opentelemetry/api'
+import { DiagConsoleLogger, DiagLogLevel, diag, metrics } from '@opentelemetry/api'
+import { type ExportResult, ExportResultCode } from '@opentelemetry/core'
+import { OTLPMetricExporter } from '@opentelemetry/exporter-metrics-otlp-http'
+import {
+    ConsoleMetricExporter,
+    MeterProvider,
+    PeriodicExportingMetricReader,
+    type ResourceMetrics,
+} from '@opentelemetry/sdk-metrics'
 import { BatchSpanProcessor } from '@opentelemetry/sdk-trace-base'
 import { externalAuthRefresh } from '@sourcegraph/cody-shared/src/configuration/auth-resolver'
 import { isEqual } from 'lodash'
 import { CodyTraceExporter } from './CodyTraceExport'
 import { ConsoleBatchSpanExporter } from './console-batch-span-exporter'
 
+class DebugMetricExporter extends OTLPMetricExporter {
+    export(metrics: ResourceMetrics, resultCallback: (result: ExportResult) => void): void {
+        const reporter = (result: ExportResult) => {
+            if (result.code !== ExportResultCode.SUCCESS) {
+                console.error('DebugMetricExporter.export failed', result.error)
+            }
+            resultCallback(result)
+        }
+        super.export(metrics, reporter)
+    }
+}
 export interface OpenTelemetryServiceConfig {
     isTracingEnabled: boolean
     traceUrl: string
@@ -33,6 +52,7 @@ export interface OpenTelemetryServiceConfig {
     extensionVersion?: string
 }
 export class OpenTelemetryService {
+    private meterProvider?: MeterProvider
     private tracerProvider?: NodeTracerProvider
     private spanProcessors: BatchSpanProcessor[] = []
     private unloadInstrumentations?: () => void
@@ -51,15 +71,21 @@ export class OpenTelemetryService {
     // E.g. url endpoint may not match the endpoint for which headers were generated
     // `addAuthHeaders` function have internal guard against this, but it would be better to solve this issue on the architecture level
     constructor() {
+        const resource = new Resource({
+            [ATTR_SERVICE_NAME]: 'cody-client',
+            [ATTR_SERVICE_VERSION]: clientCapabilities().agentExtensionVersion,
+        })
         // Initialize once and never replace
         this.tracerProvider = new NodeTracerProvider({
-            resource: new Resource({
-                [SemanticResourceAttributes.SERVICE_NAME]: 'cody-client',
-                [SemanticResourceAttributes.SERVICE_VERSION]: clientCapabilities().agentExtensionVersion,
-            }),
+            resource,
         })
         // Register once at startup
         this.tracerProvider.register()
+
+        this.meterProvider = new MeterProvider({
+            resource,
+        })
+        metrics.setGlobalMeterProvider(this.meterProvider)
 
         this.configSubscription = combineLatest(
             resolvedConfig,
@@ -75,6 +101,26 @@ export class OpenTelemetryService {
 
                     const headers = new Headers()
                     await addAuthHeaders(auth, headers, traceUrl)
+
+                    const metricUrl = new URL('/-/debug/otlp/v1/metrics', auth.serverEndpoint)
+                    this.meterProvider?.addMetricReader(
+                        new PeriodicExportingMetricReader({
+                            exporter: new DebugMetricExporter({
+                                url: metricUrl.toString(),
+                                headers: Object.fromEntries(headers.entries()),
+                            }),
+                            exportIntervalMillis: 60 * 1000,
+                        })
+                    )
+                    // Enable the console exporter only in the development environment.
+                    if (process.env.NODE_ENV === 'development') {
+                        this.meterProvider?.addMetricReader(
+                            new PeriodicExportingMetricReader({
+                                exporter: new ConsoleMetricExporter(),
+                                exportIntervalMillis: 5 * 1000,
+                            })
+                        )
+                    }
 
                     const newConfig = {
                         isTracingEnabled: this.isTracingEnabled,
@@ -114,6 +160,9 @@ export class OpenTelemetryService {
 
     public dispose(): void {
         this.configSubscription.unsubscribe()
+        this.meterProvider
+            ?.shutdown()
+            .catch(error => console.error('Error shutting down meter provider:', error))
         this.reset().catch(error => console.error('Error disposing OpenTelemetry:', error))
     }
 

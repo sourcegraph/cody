@@ -10,6 +10,7 @@ import {
     tokensToChars,
 } from '@sourcegraph/cody-shared'
 
+import { Counter, metrics } from '@opentelemetry/api'
 import type { CompletionBookkeepingEvent } from '../completions/analytics-logger'
 import { ContextRankingStrategy } from '../completions/context/completions-context-ranker'
 import { ContextMixer } from '../completions/context/context-mixer'
@@ -52,7 +53,7 @@ import type { AutoEditRenderOutput } from './renderer/render-output'
 import { type AutoeditRequestManagerParams, RequestManager } from './request-manager'
 import { shrinkPredictionUntilSuffix } from './shrink-prediction'
 import { SmartThrottleService } from './smart-throttle'
-import { areSameUriDocs, isPredictedTextAlreadyInSuffix } from './utils'
+import { AUTOEDIT_METER, areSameUriDocs, isPredictedTextAlreadyInSuffix } from './utils'
 
 const AUTOEDIT_CONTEXT_STRATEGY = 'auto-edit'
 const RESET_SUGGESTION_ON_CURSOR_CHANGE_AFTER_INTERVAL_MS = 60 * 1000
@@ -83,6 +84,7 @@ export type AutoeditClientCapabilities = Pick<
  * This practice ensures that AutoEditsProvider remains focused on its primary responsibilities of triggering and providing completions
  */
 export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, vscode.Disposable {
+    private readonly invokedCounter: Counter
     private readonly disposables: vscode.Disposable[] = []
     /** Keeps track of the last time the text was changed in the editor. */
     private lastTextChangeTimeStamp: number | undefined
@@ -154,6 +156,10 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
             })
         )
 
+        const meter = metrics.getMeter('autoedit')
+
+        this.invokedCounter = meter.createCounter('autoedits.invoked')
+
         this.statusBar = statusBar
     }
 
@@ -209,6 +215,8 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
     ): Promise<AutoeditsResult | null> {
         let stopLoading: (() => void) | undefined
         const startedAt = getTimeNowInMillis()
+
+        this.invokedCounter.add(1)
 
         if (inlineCompletionContext.selectedCompletionInfo !== undefined) {
             const { range, text } = inlineCompletionContext.selectedCompletionInfo
