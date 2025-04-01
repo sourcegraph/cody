@@ -144,9 +144,11 @@ const RateLimitErrorItem: React.FunctionComponent<{
             <div className={styles.body}>
                 <header>
                     <h1>
-                        {canUpgrade
-                            ? 'Upgrade to Cody Pro'
-                            : 'Usage limit of premium models reached, switching the model to Gemini Flash.'}
+                        {userInfo?.isCodyProUser
+                            ? 'Upgrade to Cody Enterprise'
+                            : canUpgrade
+                              ? 'Upgrade to Cody Pro'
+                              : 'Usage limit of premium models reached, switching the model to Gemini Flash.'}
                     </h1>
                     <p>
                         {error.userMessage}

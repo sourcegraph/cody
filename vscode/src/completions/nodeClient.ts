@@ -160,8 +160,7 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                                 limit ? Number.parseInt(limit, 10) : undefined,
                                 retryAfter
                             )
-                            const feature = 'chat messages and commands'
-                            handleRateLimitError(error, feature)
+                            handleRateLimitError(error)
                             onErrorOnce(error, statusCode)
                         } else {
                             onErrorOnce(e, statusCode)
@@ -360,8 +359,7 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                         limit ? Number.parseInt(limit, 10) : undefined,
                         retryAfter
                     )
-                    const feature = 'chat messages and commands'
-                    handleRateLimitError(error, feature)
+                    handleRateLimitError(error)
                     throw error
                 }
                 if (!response.ok) {

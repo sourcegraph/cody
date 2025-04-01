@@ -1399,7 +1399,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
      */
     private postError(error: Error, type?: MessageErrorType): void {
         if (isRateLimitError(error)) {
-            handleRateLimitError(error as RateLimitError, error.feature)
+            handleRateLimitError(error as RateLimitError)
         }
 
         logDebug('ChatController: postError', error.message)
