@@ -689,19 +689,6 @@ export function handleRateLimitError(error: RateLimitError, feature: string): vo
         feature
     )
 
-    // TODO: disabled the models
-    // when u change the default model it triggers sync.ts
-    // user log in/out trigger sync.ts
-    // add a new field 'ratelimited' in authstatus? rate limited -- update authstatus (new field rate limited)
-    // read auth status in sync.ts. if 'ratelimited' is false change the model back
-    // if 'ratelimited' is true, change model to flash or other fast models. store the model we had
-
-    // Emit an event that models have been disabled
-    // const event = new CustomEvent('cody:models-disabled', {
-    //     detail: { until: disableUntil, error },
-    // })
-    // window.dispatchEvent(event)
-
     // Update the authStatus to set rateLimited to true
     const currentStatus = currentAuthStatusOrNotReadyYet()
     if (currentStatus?.authenticated) {

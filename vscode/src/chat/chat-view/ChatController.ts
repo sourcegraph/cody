@@ -1401,6 +1401,9 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             '[julia] postError in ChatController.ts (before send to webview) ---- All regular (non-fast) models due to rate limiting'
         )
         if (isRateLimitError(error)) {
+            console.log(
+                '[julia] postError in ChatController.ts (before send to webview) ---- inside if (isRateLimitError(error))'
+            )
             if (error.feature === 'chat messages and commands') {
                 void this.postMessage({
                     type: 'rateLimit',

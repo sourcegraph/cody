@@ -61,7 +61,6 @@ export interface Model {
 
     readonly modelRef?: ModelRef
 
-    // default to false
     disabled?: boolean
 }
 
