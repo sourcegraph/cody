@@ -4,11 +4,10 @@ import com.intellij.codeInsight.inline.completion.*
 import com.intellij.codeInsight.inline.completion.elements.InlineCompletionGrayTextElement
 import com.intellij.codeInsight.inline.completion.suggestion.InlineCompletionSingleSuggestion
 import com.intellij.codeInsight.inline.completion.suggestion.InlineCompletionSuggestion
-import com.intellij.codeWithMe.ClientId
 import com.intellij.openapi.application.ApplicationInfo
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.ReadAction
-import com.intellij.openapi.client.ClientSessionsManager
+import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.editor.Editor
@@ -19,6 +18,7 @@ import com.intellij.util.concurrency.annotations.RequiresReadLock
 import com.sourcegraph.cody.agent.CodyAgentService
 import com.sourcegraph.cody.agent.protocol_generated.AutocompleteResult
 import com.sourcegraph.cody.agent.protocol_generated.CompletionItemParams
+import com.sourcegraph.cody.autoedit.AutoeditManager
 import com.sourcegraph.cody.statusbar.CodyStatusService.Companion.resetApplication
 import com.sourcegraph.cody.vscode.CancellationToken
 import com.sourcegraph.cody.vscode.InlineCompletionTriggerKind
@@ -62,6 +62,14 @@ class CodyInlineCompletionProvider : InlineCompletionProvider {
         fetchCompletions(project, editor, triggerKind, cancellationToken, lookupString)
             .completeOnTimeout(null, 1, TimeUnit.SECONDS)
             .get() ?: return InlineCompletionSuggestion.Empty
+
+    if (completions.decoratedEditItems.isNotEmpty()) {
+      runInEdt {
+        AutoeditManager.getInstance(project)
+            .showAutoedit(editor, completions.decoratedEditItems.first())
+      }
+      return InlineCompletionSuggestion.Empty
+    }
 
     return InlineCompletionSingleSuggestion.build {
       completions.inlineCompletionItems

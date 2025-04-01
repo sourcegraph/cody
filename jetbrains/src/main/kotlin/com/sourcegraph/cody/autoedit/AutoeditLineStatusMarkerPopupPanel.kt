@@ -25,10 +25,12 @@ import com.intellij.ui.JBColor
 import com.intellij.ui.LightweightHint
 import com.intellij.ui.RelativeFont
 import com.intellij.ui.ScreenUtil
+import com.intellij.ui.components.JBLabel
 import com.intellij.util.ui.Advertiser
 import com.intellij.util.ui.JBUI
 import com.intellij.util.ui.StartupUiUtil.labelFont
 import com.sourcegraph.Icons
+import com.sourcegraph.utils.CodyIdeUtil
 import java.awt.BorderLayout
 import java.awt.Color
 import java.awt.Dimension
@@ -48,7 +50,10 @@ private constructor(val editor: Editor, private val editorComponent: JComponent)
     isOpaque = false
 
     add(editorComponent, BorderLayout.CENTER)
-    add(MyAdvertiser().adComponent, BorderLayout.SOUTH)
+    if (!CodyIdeUtil.isRD()) {
+      // Advertisement layout is in supported in RD mode.
+      add(MyAdvertiser().adComponent, BorderLayout.SOUTH)
+    }
   }
 
   val editorTextOffset: Int

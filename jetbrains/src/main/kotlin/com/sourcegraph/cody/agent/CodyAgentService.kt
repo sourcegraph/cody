@@ -1,11 +1,9 @@
 package com.sourcegraph.cody.agent
 
-import com.intellij.codeWithMe.ClientId
 import com.intellij.notification.NotificationsManager
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.runInEdt
-import com.intellij.openapi.client.ClientSessionsManager
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.diagnostic.Logger

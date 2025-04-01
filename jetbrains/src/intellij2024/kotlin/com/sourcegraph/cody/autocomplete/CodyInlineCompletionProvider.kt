@@ -4,11 +4,9 @@ import com.intellij.codeInsight.inline.completion.*
 import com.intellij.codeInsight.inline.completion.elements.InlineCompletionGrayTextElement
 import com.intellij.codeInsight.inline.completion.suggestion.InlineCompletionSingleSuggestion
 import com.intellij.codeInsight.inline.completion.suggestion.InlineCompletionSuggestion
-import com.intellij.codeWithMe.ClientId
 import com.intellij.openapi.application.ApplicationInfo
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.ReadAction
-import com.intellij.openapi.client.ClientSessionsManager
 import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.editor.Editor
@@ -62,6 +60,14 @@ class CodyInlineCompletionProvider : InlineCompletionProvider {
         fetchCompletions(project, editor, triggerKind, cancellationToken, lookupString)
             .completeOnTimeout(null, 1, TimeUnit.SECONDS)
             .get() ?: return InlineCompletionSuggestion.Empty
+
+    if (completions.decoratedEditItems.isNotEmpty()) {
+      runInEdt {
+        AutoeditManager.getInstance(project)
+            .showAutoedit(editor, completions.decoratedEditItems.first())
+      }
+      return InlineCompletionSuggestion.Empty
+    }
 
     return InlineCompletionSingleSuggestion.build {
       completions.inlineCompletionItems
