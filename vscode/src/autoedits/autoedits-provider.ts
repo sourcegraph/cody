@@ -24,6 +24,7 @@ import {
     type AutoeditsModelAdapter,
     type AutoeditsPrompt,
     type ModelResponse,
+    type PartialModelResponse,
 } from './adapters/base'
 import { createAutoeditsModelAdapter } from './adapters/create-adapter'
 import {
@@ -63,6 +64,8 @@ const AUTOEDIT_CONTEXT_STRATEGY = 'auto-edit'
 const RESET_SUGGESTION_ON_CURSOR_CHANGE_AFTER_INTERVAL_MS = 60 * 1000
 const ON_SELECTION_CHANGE_DEFAULT_DEBOUNCE_INTERVAL_MS = 10
 export const AUTOEDIT_INITIAL_DEBOUNCE_INTERVAL_MS = 10
+// Number of lines to accumulate before emitting a hot streak suggestion
+export const HOT_STREAK_LINES_THRESHOLD = 5
 
 interface AutoeditEditItem extends AutocompleteEditItem {
     id: AutoeditRequestID
@@ -655,6 +658,92 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
         return this.rendererManager.handleDidShowSuggestion(requestId)
     }
 
+    /**
+     * Process model responses and emit hot streak predictions
+     * This allows us to emit suggestions before the model is done generating
+     */
+    private async getAndProcessModelResponses({
+        document,
+        position,
+        codeToReplaceData,
+        prompt,
+        abortSignal,
+    }: {
+        document: vscode.TextDocument
+        position: vscode.Position
+        codeToReplaceData: CodeToReplaceData
+        prompt: AutoeditsPrompt
+        abortSignal: AbortSignal
+    }): Promise<AsyncGenerator<ModelResponse>> {
+        const userId = (await currentResolvedConfig()).clientState.anonymousUserID
+        console.log('UMPOX USER ID', userId)
+        const responseGenerator = await this.modelAdapter.getModelResponse({
+            url: autoeditsProviderConfig.url,
+            model: autoeditsProviderConfig.model,
+            prompt,
+            codeToRewrite: codeToReplaceData.codeToRewrite,
+            userId,
+            isChatModel: autoeditsProviderConfig.isChatModel,
+            abortSignal,
+            timeoutMs: autoeditsProviderConfig.timeoutMs,
+        })
+
+        // Track the accumulated prediction for hot streak analysis
+        let accumulatedPrediction = ''
+        // Track the number of lines in the last emitted hot streak prediction
+        let lastHotStreakLineCount = 0
+
+        async function* generator(): AsyncGenerator<ModelResponse, any, undefined> {
+            let hasSuggested = false
+            for await (const response of responseGenerator) {
+                console.log('GOT RESPONSE', response)
+                // If it's a partial response, check if we can emit a hot streak prediction
+                if (response.type === 'partial') {
+                    // Update the accumulated prediction
+                    accumulatedPrediction = response.prediction
+
+                    // Count the number of lines in the accumulated prediction
+                    const lines = accumulatedPrediction.split('\n')
+                    const currentLineCount = lines.length
+                    const canEmitHotStreak =
+                        currentLineCount >= lastHotStreakLineCount + HOT_STREAK_LINES_THRESHOLD
+
+                    if (canEmitHotStreak && !hasSuggested) {
+                        hasSuggested = true
+                        yield {
+                            ...response,
+                            type: 'success',
+                            stopReason: AutoeditStopReason.RequestFinished,
+                            prediction: accumulatedPrediction,
+                            source: autoeditSource.network,
+                        }
+                    }
+
+                    // If we have at least HOT_STREAK_LINES_THRESHOLD more lines since the last emitted hot streak, emit a new one
+                    if (currentLineCount >= lastHotStreakLineCount + HOT_STREAK_LINES_THRESHOLD) {
+                        lastHotStreakLineCount = currentLineCount
+
+                        // Create a hot streak response with the current accumulated prediction
+                        const hotStreakResponse: PartialModelResponse = {
+                            ...response,
+                            stopReason: AutoeditStopReason.HotStreak,
+                            prediction: accumulatedPrediction,
+                        }
+
+                        yield hotStreakResponse
+                        // Skip yielding the original response since we've yielded the hot streak
+                        continue
+                    }
+                }
+
+                // Pass through all other response types unchanged
+                yield response
+            }
+        }
+
+        return generator()
+    }
+
     private async getPrediction({
         document,
         position,
@@ -702,17 +791,13 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
             abortSignal,
         }
 
-        const userId = (await currentResolvedConfig()).clientState.anonymousUserID
         return this.requestManager.request(requestParams, signal => {
-            return this.modelAdapter.getModelResponse({
-                url: autoeditsProviderConfig.url,
-                model: autoeditsProviderConfig.model,
+            return this.getAndProcessModelResponses({
+                document,
+                position,
+                codeToReplaceData,
                 prompt,
-                codeToRewrite: codeToReplaceData.codeToRewrite,
-                userId,
-                isChatModel: autoeditsProviderConfig.isChatModel,
                 abortSignal: signal,
-                timeoutMs: autoeditsProviderConfig.timeoutMs,
             })
         })
     }
