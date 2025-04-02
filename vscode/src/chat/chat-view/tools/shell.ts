@@ -55,9 +55,6 @@ export const shellTool: AgentTool = {
         }
 
         try {
-            const commandResult = await runShellCommand(validInput.command, {
-                cwd: workspaceFolder.uri.path,
-            })
             telemetryRecorder.recordEvent('cody.runTerminalCommand', 'accepted', {
                 billingMetadata: {
                     product: 'cody',
@@ -66,6 +63,9 @@ export const shellTool: AgentTool = {
                 privateMetadata: {
                     input_args: JSON.stringify(validInput),
                 },
+            })
+            const commandResult = await runShellCommand(validInput.command, {
+                cwd: workspaceFolder.uri.path,
             })
 
             const content = `${commandResult.stdout}${

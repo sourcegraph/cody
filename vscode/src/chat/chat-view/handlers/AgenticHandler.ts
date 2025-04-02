@@ -318,18 +318,6 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
                         })
                         return await this.executeSingleTool(toolCall, model)
                     } catch (error) {
-                        telemetryRecorder.recordEvent('cody.tool-use', 'failed', {
-                            billingMetadata: {
-                                product: 'cody',
-                                category: 'billable',
-                            },
-                            privateMetadata: {
-                                model,
-                                input_args: JSON.stringify(toolCall.tool_call?.arguments),
-                                tool_name: toolCall.tool_call?.name,
-                                type: 'builtin',
-                            },
-                        })
                         logDebug('AgenticHandler', `Error executing tool ${toolCall.tool_call?.name}`, {
                             verbose: error,
                         })
