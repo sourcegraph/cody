@@ -61,6 +61,7 @@ import { CodyToolProvider } from './chat/agentic/CodyToolProvider'
 import { ChatsController, CodyChatEditorViewType } from './chat/chat-view/ChatsController'
 import { ContextRetriever } from './chat/chat-view/ContextRetriever'
 import { SourcegraphRemoteFileProvider } from './chat/chat-view/sourcegraphRemoteFile'
+import { MCPManager } from './chat/chat-view/tools/mcp'
 import {
     ACCOUNT_LIMITS_INFO_URL,
     ACCOUNT_UPGRADE_URL,
@@ -318,6 +319,11 @@ const register = async (
     // user has clicked on "Setup". Awaiting on this promise will make the Cody
     // extension timeout during activation.
     resolvedConfig.pipe(take(1)).subscribe(({ auth }) => showSetupNotification(auth))
+
+    // Initialize MCP Manager
+    MCPManager.init(context.globalStorageUri).then(manager => {
+        if (manager) disposables.push(manager)
+    })
 
     // Save config for `deactivate` handler.
     disposables.push(

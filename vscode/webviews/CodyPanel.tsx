@@ -18,8 +18,9 @@ import { Chat } from './Chat'
 import { useClientActionDispatcher } from './client/clientState'
 import { Notices } from './components/Notices'
 import { StateDebugOverlay } from './components/StateDebugOverlay'
+import { ServerHome } from './components/mcp/ServerHome'
 import { TabContainer, TabRoot } from './components/shadcn/ui/tabs'
-import { HistoryTab, PromptsTab, SettingsTab, TabsBar, View } from './tabs'
+import { HistoryTab, PromptsTab, TabsBar, View } from './tabs'
 import type { VSCodeWrapper } from './utils/VSCodeApi'
 import { useUserAccountInfo } from './utils/useConfig'
 import { useFeatureFlag } from './utils/useFeatureFlags'
@@ -152,7 +153,7 @@ export const CodyPanel: FunctionComponent<CodyPanelProps> = ({
                     {view === View.Prompts && (
                         <PromptsTab IDE={clientCapabilities.agentIDE} setView={setView} />
                     )}
-                    {view === View.Settings && <SettingsTab />}
+                    {view === View.Settings && <ServerHome api={api} />}
                 </TabContainer>
                 <StateDebugOverlay />
             </TabRoot>

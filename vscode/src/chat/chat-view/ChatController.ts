@@ -139,6 +139,7 @@ import { getChatPanelTitle, isAgentTesting } from './chat-helpers'
 import { OmniboxTelemetry } from './handlers/OmniboxTelemetry'
 import { getAgent, getAgentName } from './handlers/registry'
 import { getPromptsMigrationInfo, startPromptsMigration } from './prompts-migration'
+import { MCPManager } from './tools/mcp'
 
 export interface ChatControllerOptions {
     extensionUri: vscode.Uri
@@ -1745,6 +1746,12 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     userProductSubscription: () =>
                         userProductSubscription.pipe(
                             map(value => (value === pendingOperation ? null : value))
+                        ),
+                    // Existing tools endpoint - update to include MCP tools
+                    mcpSettings: () =>
+                        MCPManager.observable.pipe(
+                            startWith(null),
+                            map(servers => servers)
                         ),
                 }
             )
