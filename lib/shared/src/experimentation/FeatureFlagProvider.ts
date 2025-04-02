@@ -214,10 +214,11 @@ export class FeatureFlagProviderImpl implements FeatureFlagProvider {
         const siteVersion = await graphqlClient.getSiteVersion()
         // New API is available from 6.2 onwards
         if (
-            !isError(siteVersion) &&
-            siteVersion.startsWith('6.') &&
-            !siteVersion.startsWith('6.0') &&
-            !siteVersion.startsWith('6.1')
+            siteVersion === 'dev' ||
+            (!isError(siteVersion) &&
+                siteVersion.startsWith('6.') &&
+                !siteVersion.startsWith('6.0') &&
+                !siteVersion.startsWith('6.1'))
         ) {
             return graphqlClient.evaluateFeatureFlags(Object.values(FeatureFlag), signal)
         }
