@@ -14,7 +14,7 @@ import { getCurrentDocContext } from '../../completions/get-current-doc-context'
 import { documentAndPosition } from '../../completions/test-helpers'
 import * as sentryModule from '../../services/sentry/sentry'
 import { type AutoeditModelOptions, AutoeditStopReason } from '../adapters/base'
-import { getCodeToReplaceData } from '../prompt/prompt-utils'
+import { getCodeToReplace } from '../prompt/prompt-utils'
 import { getDecorationInfo } from '../renderer/diff-utils'
 
 import { AutoeditAnalyticsLogger } from './analytics-logger'
@@ -45,7 +45,7 @@ describe('AutoeditAnalyticsLogger', () => {
         maxSuffixLength: 1000,
     })
 
-    const codeToReplaceData = getCodeToReplaceData({
+    const codeToReplace = getCodeToReplace({
         docContext,
         position,
         document,
@@ -77,7 +77,7 @@ describe('AutoeditAnalyticsLogger', () => {
             docContext,
             document,
             position,
-            codeToReplaceData,
+            codeToReplaceData: codeToReplace.data,
             payload: {
                 languageId: 'typescript',
                 model: 'autoedit-model',

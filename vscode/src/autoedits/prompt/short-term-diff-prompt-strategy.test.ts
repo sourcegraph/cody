@@ -12,7 +12,7 @@ import { getCurrentDocContext } from '../../completions/get-current-doc-context'
 import { documentAndPosition } from '../../completions/test-helpers'
 
 import type { UserPromptArgs } from './base'
-import { getCodeToReplaceData } from './prompt-utils'
+import { getCodeToReplace } from './prompt-utils'
 import { ShortTermPromptStrategy } from './short-term-diff-prompt-strategy'
 
 describe('ShortTermPromptStrategy', () => {
@@ -68,7 +68,7 @@ describe('ShortTermPromptStrategy', () => {
                     [RetrieverIdentifier.DiagnosticsRetriever]: 100,
                 },
             }
-            const codeToReplaceData = getCodeToReplaceData({
+            const codeToReplace = getCodeToReplace({
                 docContext,
                 document,
                 position,
@@ -181,7 +181,7 @@ describe('ShortTermPromptStrategy', () => {
                 : []
 
             return {
-                codeToReplaceData,
+                codeToReplaceData: codeToReplace.data,
                 document,
                 context,
                 tokenBudget,

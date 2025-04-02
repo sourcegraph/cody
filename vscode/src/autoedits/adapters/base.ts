@@ -28,7 +28,7 @@ export type ModelResponseShared = {
 
 export interface SuccessModelResponse extends ModelResponseShared {
     type: 'success'
-    stopReason: AutoeditStopReason.RequestFinished
+    stopReason: AutoeditStopReason.RequestFinished | AutoeditStopReason.HotStreak
     prediction: string
     /**
      * Response headers received from the model API

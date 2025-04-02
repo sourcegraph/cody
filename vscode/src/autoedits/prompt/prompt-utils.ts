@@ -117,7 +117,10 @@ export function getCurrentFilePromptComponents({
     }
 }
 
-export function getCodeToReplaceData(options: CurrentFilePromptOptions): CodeToReplaceData {
+export function getCodeToReplace(options: CurrentFilePromptOptions): {
+    data: CodeToReplaceData
+    adjustCodeToReplaceDataForRange: (range: vscode.Range) => CodeToReplaceData
+} {
     const {
         position,
         document,
@@ -154,44 +157,51 @@ export function getCodeToReplaceData(options: CurrentFilePromptOptions): CodeToR
     const positionAtLineStart = (line: number) => new vscode.Position(line, 0)
     const positionAtLineEnd = (line: number) => document.lineAt(line).rangeIncludingLineBreak.end
 
-    // Create ranges for different sections
-    const ranges = {
-        codeToRewrite: new vscode.Range(
-            positionAtLineStart(codeToRewriteStart),
-            positionAtLineEnd(codeToRewriteEnd)
-        ),
-        codeToRewritePrefix: new vscode.Range(
-            positionAtLineStart(codeToRewriteStart),
-            new vscode.Position(position.line, position.character)
-        ),
-        codeToRewriteSuffix: new vscode.Range(
-            new vscode.Position(position.line, position.character),
-            positionAtLineEnd(codeToRewriteEnd)
-        ),
-        prefixInArea: new vscode.Range(
-            positionAtLineStart(areaStart),
-            positionAtLineStart(codeToRewriteStart)
-        ),
-        suffixInArea: new vscode.Range(positionAtLineEnd(codeToRewriteEnd), positionAtLineEnd(areaEnd)),
-        prefixBeforeArea: new vscode.Range(positionAtLineStart(minLine), positionAtLineStart(areaStart)),
-        suffixAfterArea: new vscode.Range(positionAtLineEnd(areaEnd), positionAtLineEnd(maxLine)),
+    const getCodeToReplaceDataForRange = (range: vscode.Range) => {
+        const ranges = {
+            codeToRewritePrefix: new vscode.Range(
+                range.start,
+                new vscode.Position(position.line, position.character)
+            ),
+            codeToRewriteSuffix: new vscode.Range(
+                new vscode.Position(position.line, position.character),
+                range.end
+            ),
+            prefixInArea: new vscode.Range(positionAtLineStart(areaStart), range.start),
+            suffixInArea: new vscode.Range(range.end, positionAtLineEnd(areaEnd)),
+            prefixBeforeArea: new vscode.Range(
+                positionAtLineStart(minLine),
+                positionAtLineStart(areaStart)
+            ),
+            suffixAfterArea: new vscode.Range(positionAtLineEnd(areaEnd), positionAtLineEnd(maxLine)),
+        }
+
+        const { prefixBeforeArea, suffixAfterArea } = getUpdatedCurrentFilePrefixAndSuffixOutsideArea(
+            document,
+            ranges.prefixBeforeArea,
+            ranges.suffixAfterArea
+        )
+
+        return {
+            range,
+            codeToRewrite: document.getText(range),
+            codeToRewritePrefix: document.getText(ranges.codeToRewritePrefix),
+            codeToRewriteSuffix: document.getText(ranges.codeToRewriteSuffix),
+            prefixInArea: document.getText(ranges.prefixInArea),
+            suffixInArea: document.getText(ranges.suffixInArea),
+            prefixBeforeArea: prefixBeforeArea.toString(),
+            suffixAfterArea: suffixAfterArea.toString(),
+        }
     }
 
-    const { prefixBeforeArea, suffixAfterArea } = getUpdatedCurrentFilePrefixAndSuffixOutsideArea(
-        document,
-        ranges.prefixBeforeArea,
-        ranges.suffixAfterArea
-    )
-
     return {
-        codeToRewrite: document.getText(ranges.codeToRewrite),
-        codeToRewritePrefix: document.getText(ranges.codeToRewritePrefix),
-        codeToRewriteSuffix: document.getText(ranges.codeToRewriteSuffix),
-        prefixInArea: document.getText(ranges.prefixInArea),
-        suffixInArea: document.getText(ranges.suffixInArea),
-        prefixBeforeArea: prefixBeforeArea.toString(),
-        suffixAfterArea: suffixAfterArea.toString(),
-        range: ranges.codeToRewrite,
+        data: getCodeToReplaceDataForRange(
+            new vscode.Range(
+                positionAtLineStart(codeToRewriteStart),
+                positionAtLineEnd(codeToRewriteEnd)
+            )
+        ),
+        adjustCodeToReplaceDataForRange: getCodeToReplaceDataForRange,
     }
 }
 

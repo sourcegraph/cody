@@ -2,7 +2,7 @@ import dedent from 'dedent'
 
 import { getCurrentDocContext } from '../../completions/get-current-doc-context'
 import { documentAndPosition } from '../../completions/test-helpers'
-import { type CodeToReplaceData, getCodeToReplaceData } from '../prompt/prompt-utils'
+import { type CodeToReplaceData, getCodeToReplace } from '../prompt/prompt-utils'
 
 interface CodeToReplaceTestOptions {
     maxPrefixLength: number
@@ -26,12 +26,12 @@ export function createCodeToReplaceDataForTest(
         maxSuffixLength: options.maxSuffixLength,
     })
 
-    return getCodeToReplaceData({
+    return getCodeToReplace({
         docContext,
         position,
         document,
         tokenBudget: options,
-    })
+    }).data
 }
 
 export function getCodeToReplaceForRenderer(

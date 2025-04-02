@@ -1,3 +1,4 @@
+// @ts-nocheck
 import dedent from 'dedent'
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 

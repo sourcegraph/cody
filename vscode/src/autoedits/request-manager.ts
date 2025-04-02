@@ -10,7 +10,6 @@ import {
     type SuccessModelResponse,
 } from './adapters/base'
 import { autoeditSource } from './analytics-logger'
-import type { CodeToReplaceData } from './prompt/prompt-utils'
 
 export interface AutoeditRequestManagerParams {
     requestUrl: string
@@ -20,10 +19,11 @@ export interface AutoeditRequestManagerParams {
     abortSignal: AbortSignal
 }
 
-// Define an interface for cache entries to include adjustedCodeToReplaceData
-interface CacheEntry {
+/**
+ * Cached predictions that can be reused
+ */
+interface CacheEntry extends PredictionResult {
     response: SuccessModelResponse | PartialModelResponse
-    adjustedCodeToReplaceData?: CodeToReplaceData
 }
 
 export class RequestManager implements vscode.Disposable {
@@ -42,23 +42,23 @@ export class RequestManager implements vscode.Disposable {
         // 1. First check the cache for exact matches
         const cachedResponse = this.checkCache(params)
         if (cachedResponse) {
-            return { response: cachedResponse }
+            return cachedResponse
         }
 
         // 2. Then check for a matching in-flight request
         const inflightRequest = this.findMatchingInflightRequest(params)
         if (inflightRequest) {
-            const { response, adjustedCodeToReplaceData } = await inflightRequest.promise
+            const { response, ...rest } = await inflightRequest.promise
             if (response.type === 'success') {
                 return {
                     response: {
                         ...response,
                         source: autoeditSource.inFlightRequest,
                     },
-                    adjustedCodeToReplaceData,
+                    ...rest,
                 }
             }
-            return { response, adjustedCodeToReplaceData }
+            return { response, ...rest }
         }
 
         if (params.abortSignal.aborted) {
@@ -89,54 +89,30 @@ export class RequestManager implements vscode.Disposable {
         makeRequest: (abortSignal: AbortSignal) => Promise<AsyncGenerator<ModelResponse>>
     ): Promise<void> {
         try {
-            let hasResolved = false
-            for await (const { response, adjustedCodeToReplaceData } of await makeRequest(
-                request.abortController.signal
-            )) {
-                if (response.type === 'partial') {
-                    if (response.stopReason === AutoeditStopReason.HotStreak) {
-                        // Cache hot-streak responses for future use
-                        const hotStreakLineCount = response.prediction.split('\n').length
-                        const hotStreakCacheKey = request.cacheKey + '-hotstreak-' + hotStreakLineCount
-                        this.cache.set(hotStreakCacheKey, {
-                            response,
-                            adjustedCodeToReplaceData,
-                        })
-
-                        // If this is the first hot streak, resolve it immediately while continuing to stream
-                        if (!hasResolved) {
-                            hasResolved = true
-                            // Resolve with the hot streak response but don't break the loop
-                            request.resolve({ response, adjustedCodeToReplaceData })
-                        }
-                    }
-
-                    // Continue processing the stream regardless of whether we resolved
+            for await (const result of await makeRequest(request.abortController.signal)) {
+                if (result.response.type === 'aborted') {
+                    request.resolve(result)
                     continue
                 }
 
-                if (response.type === 'success') {
-                    this.cache.set(request.cacheKey, {
-                        response: {
-                            ...response,
-                            source: autoeditSource.cache,
-                        },
-                        adjustedCodeToReplaceData,
-                    })
-
-                    console.log('SUCCESS', { response })
-                    if (!hasResolved) {
-                        // If we haven't resolved yet, do it now with the final response
-                        hasResolved = true
-                        request.resolve({ response, adjustedCodeToReplaceData })
-                    }
-                    // Always recycle the response even if we already resolved
-                    this.recycleResponseForInflightRequests(request, response)
-                } else if (!hasResolved) {
-                    // Only resolve with error responses if we haven't already resolved
-                    hasResolved = true
-                    request.resolve({ response, adjustedCodeToReplaceData })
+                if (
+                    result.response.type === 'partial' &&
+                    result.response.stopReason !== AutoeditStopReason.HotStreak
+                ) {
+                    // Partial response that we haven't made into a hot-streak
+                    // Continue streaming
+                    continue
                 }
+
+                const isHotStreak = result.response.stopReason === AutoeditStopReason.HotStreak
+                const cacheKey = isHotStreak
+                    ? request.cacheKey + '-hotstreak-' + result.response.prediction.split('\n').length
+                    : request.cacheKey
+
+                this.cache.set(cacheKey, result as CacheEntry)
+                request.resolve(result)
+                // Always recycle the response even if we already resolved
+                this.recycleResponseForInflightRequests(request, result)
             }
         } catch (error) {
             request.reject(error as Error)
@@ -165,12 +141,9 @@ export class RequestManager implements vscode.Disposable {
         return undefined
     }
 
-    public checkCache(
-        params: AutoeditRequestManagerParams
-    ): SuccessModelResponse | PartialModelResponse | null {
+    public checkCache(params: AutoeditRequestManagerParams): CacheEntry | null {
         const cached = this.cache.get(createCacheKey(params))
-
-        return cached?.response ?? null
+        return cached ?? null
     }
 
     /**
@@ -178,7 +151,7 @@ export class RequestManager implements vscode.Disposable {
      */
     private recycleResponseForInflightRequests(
         completedRequest: InflightRequest,
-        response: SuccessModelResponse
+        result: PredictionResult
     ): void {
         // TODO: Implement
     }

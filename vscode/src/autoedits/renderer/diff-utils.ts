@@ -549,8 +549,51 @@ export function isOnlyRemovingTextForModifiedLines(modifiedLines: ModifiedLineIn
     return true
 }
 
-export function isUnchangedDiff(diff: DecorationInfo): boolean {
-    return (
-        diff.modifiedLines.length === 0 && diff.addedLines.length === 0 && diff.removedLines.length === 0
-    )
+/**
+ * Sorts a diff by line number.
+ * Handles preferred sorting order when encountering line number conflicts
+ */
+export function sortDiff(diff: DecorationInfo): DecorationLineInfo[] {
+    const sortedDiff = [
+        ...diff.addedLines,
+        ...diff.modifiedLines,
+        ...diff.unchangedLines,
+        ...diff.removedLines,
+    ].sort((a, b) => {
+        const aLine = a.type === 'removed' ? a.originalLineNumber : a.modifiedLineNumber
+        const bLine = b.type === 'removed' ? b.originalLineNumber : b.modifiedLineNumber
+
+        if (aLine === bLine) {
+            // We have a conflict, this is because the same line number has been used for both added and removed lines.
+            // To make a visually appealing diff, we need to ensure that we order these conflicts like so:
+            // removed -> added -> modified -> unchanged
+            const typeOrder = {
+                removed: 0,
+                added: 1,
+                modified: 2,
+                unchanged: 3,
+            }
+            return typeOrder[a.type] - typeOrder[b.type]
+        }
+
+        return aLine - bLine
+    })
+
+    return sortedDiff
+}
+
+/**
+ * Given a diff, will return the first and last lines that have changes.
+ */
+export function getDiffChangeBoundaries(
+    diff: DecorationInfo
+): [DecorationLineInfo, DecorationLineInfo] | null {
+    const sortedDiff = sortDiff(diff)
+    const firstRelevantLine = sortedDiff.find(line => line.type !== 'unchanged')
+    const lastRelevantLine = sortedDiff.findLast(line => line.type !== 'unchanged')
+    if (!firstRelevantLine || !lastRelevantLine) {
+        // Diff has no changes
+        return null
+    }
+    return [firstRelevantLine, lastRelevantLine]
 }
