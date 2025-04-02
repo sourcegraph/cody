@@ -69,8 +69,6 @@ class AutoeditManager(private val project: Project) {
   }
 
   companion object {
-    fun getInstance(project: Project): AutoeditManager {
-      return project.service<AutoeditManager>()
-    }
+    @JvmStatic fun getInstance(project: Project): AutoeditManager = project.service()
   }
 }

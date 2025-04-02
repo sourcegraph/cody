@@ -94,7 +94,11 @@ private constructor(val editor: Editor, private val editorComponent: JComponent)
       val popupPanel = AutoeditLineStatusMarkerPopupPanel(editor, editorComponent)
 
       val hint = LightweightHint(popupPanel)
-      val closeListener = HintListener { _ -> Disposer.dispose(childDisposable) }
+      hint.putUserData(LightweightHint.SHOWN_AT_DEBUG, true)
+      val closeListener = HintListener { _ ->
+        hint.putUserData(LightweightHint.SHOWN_AT_DEBUG, null)
+        Disposer.dispose(childDisposable)
+      }
       hint.addHintListener(closeListener)
 
       val point = HintManagerImpl.getHintPosition(hint, editor, logicalPosition, HintManager.RIGHT)

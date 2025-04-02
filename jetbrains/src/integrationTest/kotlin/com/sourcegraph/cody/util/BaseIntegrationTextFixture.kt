@@ -21,6 +21,8 @@ import com.sourcegraph.cody.agent.CodyAgentService
 import com.sourcegraph.cody.agent.protocol_generated.ClientCapabilities
 import com.sourcegraph.cody.agent.protocol_generated.ProtocolAuthenticatedAuthStatus
 import com.sourcegraph.cody.auth.SourcegraphServerPath
+import com.sourcegraph.config.ConfigUtil
+import com.sourcegraph.utils.CodyEditorUtil
 import java.io.File
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit
@@ -31,7 +33,9 @@ import org.junit.Assert.assertTrue
 
 open class BaseIntegrationTextFixture(
     private val recordingName: String,
-    private val capabilities: ClientCapabilities
+    private val credentials: TestingCredentials,
+    private val capabilities: ClientCapabilities,
+    codySettingsContent: String = "{\n  \n}"
 ) {
   companion object {
     const val ASYNC_WAIT_TIMEOUT_SECONDS = 20L
@@ -56,6 +60,9 @@ open class BaseIntegrationTextFixture(
     myFixture.setUp()
     project = myFixture.project
     Disposer.register(myFixture.testRootDisposable) { shutdown() }
+
+    CodyEditorUtil.createFileOrScratchFromUntitled(
+        project, ConfigUtil.getSettingsFile(project).toUri().toString(), codySettingsContent)
 
     initCredentialsAndAgent()
     baseCheckInitialConditions()
@@ -123,7 +130,6 @@ open class BaseIntegrationTextFixture(
   // Methods there are mostly idempotent though, so calling again for every test case should not
   // change anything.
   private fun initCredentialsAndAgent() {
-    val credentials = TestingCredentials.dotcom
     val endpoint = SourcegraphServerPath.from(credentials.serverEndpoint, "")
     val token = credentials.token ?: credentials.redactedToken
 

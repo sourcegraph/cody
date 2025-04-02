@@ -21,6 +21,7 @@ import org.junit.Assert.fail
 class EditCodeFixture(recordingName: String) :
     BaseIntegrationTextFixture(
         recordingName,
+        credentials = TestingCredentials.dotcom,
         CodyAgentService.clientCapabilities.copy(
             globalState = ClientCapabilities.GlobalStateEnum.Stateless)),
     LensListener {

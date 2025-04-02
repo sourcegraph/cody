@@ -1,6 +1,5 @@
 package com.sourcegraph.cody.autocomplete
 
-import com.intellij.openapi.application.ReadAction
 import com.intellij.openapi.editor.VisualPosition
 import com.intellij.testFramework.runInEdtAndGet
 import com.sourcegraph.cody.agent.CodyAgentService
@@ -10,7 +9,7 @@ import com.sourcegraph.cody.autocomplete.render.InlayModelUtil
 import com.sourcegraph.cody.config.CodyApplicationSettings
 import com.sourcegraph.cody.util.BaseIntegrationTextFixture
 import com.sourcegraph.cody.util.CustomJunitClassRunner
-import com.sourcegraph.cody.vscode.InlineCompletionTriggerKind
+import com.sourcegraph.cody.util.TestingCredentials
 import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers.containsString
 import org.junit.AfterClass
@@ -21,12 +20,13 @@ import org.junit.Test
 import org.junit.runner.RunWith
 
 @RunWith(CustomJunitClassRunner::class)
-class AutocompleteCompletionTest {
+class AutocompleteCompletionTest : BaseAutocompleteTest() {
 
   companion object {
-    val fixture =
+    private val fixture =
         BaseIntegrationTextFixture(
             "autocomplete",
+            credentials = TestingCredentials.dotcom,
             CodyAgentService.clientCapabilities.copy(
                 globalState = ClientCapabilities.GlobalStateEnum.Stateless))
 
@@ -46,7 +46,7 @@ class AutocompleteCompletionTest {
   @Test
   fun forLoop() {
     fixture.openFile(relativeFilePath = "autocompleteCompletion/src/main/kotlin/ForLoop.kt")
-    triggerAutocomplete()
+    fixture.triggerAutocomplete()
 
     awaitForInlayRenderer()
     assertTrue(hasInlayAt(VisualPosition(2, 9)))
@@ -58,7 +58,7 @@ class AutocompleteCompletionTest {
   @Test
   fun todoComment() {
     fixture.openFile(relativeFilePath = "autocompleteCompletion/src/main/kotlin/TodoComment.kt")
-    triggerAutocomplete()
+    fixture.triggerAutocomplete()
 
     awaitForInlayRenderer()
     assertTrue(hasInlayAt(VisualPosition(3, 23)))
@@ -71,7 +71,7 @@ class AutocompleteCompletionTest {
   @Test
   fun commonPrefix() {
     fixture.openFile(relativeFilePath = "autocompleteCompletion/src/main/kotlin/CommonPrefix.kt")
-    triggerAutocomplete()
+    fixture.triggerAutocomplete()
 
     awaitForInlayRenderer()
     assertTrue(hasInlayAt(VisualPosition(8, 4 + 13))) // +13 due to the common prefix
@@ -82,13 +82,6 @@ class AutocompleteCompletionTest {
 
   private fun hasInlayAt(position: VisualPosition) = runInEdtAndGet {
     fixture.editor.inlayModel.hasInlineElementAt(position)
-  }
-
-  private fun triggerAutocomplete() {
-    ReadAction.run<Throwable> {
-      CodyAutocompleteManager.instance.triggerAutocomplete(
-          fixture.editor, fixture.editor.caretModel.offset, InlineCompletionTriggerKind.INVOKE)
-    }
   }
 
   private fun awaitForInlayRenderer() {
