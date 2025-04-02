@@ -41,13 +41,14 @@ import { AutoeditCompletionItem } from './autoedit-completion-item'
 import { autoeditsOnboarding } from './autoedit-onboarding'
 import { autoeditsProviderConfig } from './autoedits-config'
 import { FilterPredictionBasedOnRecentEdits } from './filter-prediction-edits'
+import { processHotStreakResponses } from './hot-streak'
 import { autoeditsOutputChannelLogger } from './output-channel-logger'
 import { PromptCacheOptimizedV1 } from './prompt/prompt-cache-optimized-v1'
-import { type CodeToReplaceData, getCodeToReplaceData } from './prompt/prompt-utils'
+import { type CodeToReplaceData, getCodeToReplace } from './prompt/prompt-utils'
 import type { DecorationInfo } from './renderer/decorators/base'
 import { DefaultDecorator } from './renderer/decorators/default-decorator'
 import { InlineDiffDecorator } from './renderer/decorators/inline-diff-decorator'
-import { getDecorationInfo, isUnchangedDiff } from './renderer/diff-utils'
+import { getDecorationInfo } from './renderer/diff-utils'
 import { initImageSuggestionService } from './renderer/image-gen'
 import { AutoEditsInlineRendererManager } from './renderer/inline-manager'
 import { AutoEditsDefaultRendererManager, type AutoEditsRendererManager } from './renderer/manager'
@@ -65,8 +66,6 @@ const AUTOEDIT_CONTEXT_STRATEGY = 'auto-edit'
 const RESET_SUGGESTION_ON_CURSOR_CHANGE_AFTER_INTERVAL_MS = 60 * 1000
 const ON_SELECTION_CHANGE_DEFAULT_DEBOUNCE_INTERVAL_MS = 10
 export const AUTOEDIT_INITIAL_DEBOUNCE_INTERVAL_MS = 10
-// Number of lines to accumulate before emitting a hot streak suggestion
-export const HOT_STREAK_LINES_THRESHOLD = 5
 
 interface AutoeditEditItem extends AutocompleteEditItem {
     id: AutoeditRequestID
@@ -77,7 +76,8 @@ interface AutoeditEditItem extends AutocompleteEditItem {
  */
 export interface PredictionResult {
     response: ModelResponse
-    adjustedCodeToReplaceData?: CodeToReplaceData
+    adjustedPredictionRange?: vscode.Range
+    nextCursorPosition?: vscode.Position
 }
 
 export interface AutoeditsResult {
@@ -281,7 +281,10 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                 maxSuffixLength: tokensToChars(autoeditsProviderConfig.tokenLimit.suffixTokens),
             })
 
-            let codeToReplaceData = getCodeToReplaceData({
+            let {
+                data: codeToReplaceData,
+                adjustCodeToReplaceDataForRange: adjustCodeToReplaceForRange,
+            } = getCodeToReplace({
                 docContext,
                 document,
                 position,
@@ -343,7 +346,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                 'provideInlineCompletionItems',
                 'Calculating prediction from getPrediction...'
             )
-            const { response: predictionResult, adjustedCodeToReplaceData } = await this.getPrediction({
+            const { response: predictionResult, adjustedPredictionRange } = await this.getPrediction({
                 document,
                 position,
                 prompt,
@@ -351,8 +354,8 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                 abortSignal,
             })
 
-            if (adjustedCodeToReplaceData) {
-                codeToReplaceData = adjustedCodeToReplaceData
+            if (adjustedPredictionRange) {
+                codeToReplaceData = adjustCodeToReplaceForRange(adjustedPredictionRange)
             }
 
             if (abortSignal?.aborted || predictionResult.type === 'aborted') {
@@ -432,6 +435,12 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
 
             const prediction = shrinkPredictionUntilSuffix({
                 prediction: initialPrediction,
+                codeToReplaceData,
+            })
+
+            console.log('SHRINKING PREDICTION', {
+                before: initialPrediction,
+                after: prediction,
                 codeToReplaceData,
             })
 
@@ -711,139 +720,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
             timeoutMs: autoeditsProviderConfig.timeoutMs,
         })
 
-        return this.processModelResponses(responseGenerator, document, codeToReplaceData)
-    }
-
-    private async *processModelResponses(
-        responseGenerator: AsyncGenerator<ModelResponse>,
-        document: vscode.TextDocument,
-        codeToReplaceData: CodeToReplaceData
-    ): AsyncGenerator<PredictionResult> {
-        // Track the number of lines in the last emitted hot streak prediction
-        let lastHotStreakLineCount = 0
-
-        for await (const response of responseGenerator) {
-            if (response.type === 'partial') {
-                // Trim the prediction to the last complete line
-                const trimmedPrediction = this.trimPredictionToLastCompleteLine(response.prediction)
-
-                // If there are no complete lines yet, continue
-                if (!trimmedPrediction) {
-                    continue
-                }
-
-                // Count the number of lines in the trimmed prediction
-                const lines = trimmedPrediction.split('\n')
-                const currentLineCount = lines.length
-
-                console.log('TRYING HOT STREAK', {
-                    currentLineCount,
-                    lastHotStreakLineCount,
-                    threshold: HOT_STREAK_LINES_THRESHOLD,
-                })
-
-                // Check if the current length of the prediciton meets the threshold for a hot streak chunk.
-                // This is in place to ensure that our hot-streak predictions are not too short.
-                const reachedHotStreakThreshold =
-                    currentLineCount >= lastHotStreakLineCount + HOT_STREAK_LINES_THRESHOLD
-
-                if (!reachedHotStreakThreshold) {
-                    // We need more lines before we can consider emitting a hot streak prediction
-                    continue
-                }
-
-                // The default `codeToReplaceData` range is not suitable, as we haven't finished
-                // generating the prediction. Instead, we trim this range so it matches the same
-                // number of lines as the prediction.
-                let diffRange = new vscode.Range(
-                    codeToReplaceData.range.start,
-                    codeToReplaceData.range.start.translate(currentLineCount)
-                )
-
-                let diff = getDecorationInfoFromPrediction(document, trimmedPrediction, diffRange)
-                console.log('FIRST DIFF', diff)
-
-                const diffAdjustment = diff.addedLines.length - diff.removedLines.length
-                if (diffAdjustment !== 0) {
-                    console.log('GOT DIFF ADJUSTMENT', diffAdjustment)
-                    // We need to adjust our diff to account for the added/removed lines.
-                    // The `adjustedRange` is likely not accurate.
-                    const lineCountToDiff = currentLineCount + diffAdjustment
-                    if (currentLineCount < lineCountToDiff) {
-                        console.log('DIFF ADJUSTMENT NOT POSSIBLE', {
-                            currentLineCount,
-                            lineCountToDiff,
-                        })
-                        // We don't have enough lines to reliably diff the prediction
-                        // Continue streaming
-                        continue
-                    }
-                    diffRange = new vscode.Range(
-                        diffRange.start,
-                        diffRange.end.translate(diffAdjustment)
-                    )
-
-                    diff = getDecorationInfoFromPrediction(document, trimmedPrediction, diffRange)
-                    console.log('SECOND DIFF', diff)
-                }
-
-                if (isUnchangedDiff(diff)) {
-                    // We have enough lines, but there's no suggestion here. There is no value in
-                    // emitting a hot streak prediction so we should continue
-                    continue
-                }
-
-                lastHotStreakLineCount = currentLineCount
-
-                // Create an adjusted codeToReplaceData with the current range
-                const adjustedCodeToReplaceData: CodeToReplaceData = {
-                    ...codeToReplaceData,
-                    range: diffRange,
-                    // Adjust codeToRewrite to match the current range
-                    codeToRewrite: document.getText(diffRange),
-                }
-
-                yield {
-                    response: {
-                        ...response,
-                        prediction: trimmedPrediction, // Use the trimmed prediction
-                        stopReason: AutoeditStopReason.HotStreak,
-                    },
-                    adjustedCodeToReplaceData,
-                }
-            }
-
-            // Pass through all other response types unchanged
-            yield { response }
-        }
-    }
-
-    /**
-     * Trims a prediction string to the last complete line
-     * @param prediction The streamed prediction that might end mid-line
-     * @returns The prediction trimmed to the last complete line
-     */
-    private trimPredictionToLastCompleteLine(prediction: string): string {
-        // If the prediction is empty, return it as is
-        if (!prediction) {
-            return prediction
-        }
-
-        // If the prediction ends with a newline, it's already complete
-        if (prediction.endsWith('\n')) {
-            return prediction
-        }
-
-        // Find the last newline character
-        const lastNewlineIndex = prediction.lastIndexOf('\n')
-
-        // If there's no newline, we can't trim to a complete line
-        if (lastNewlineIndex === -1) {
-            return ''
-        }
-
-        // Return everything up to and including the last newline
-        return prediction.substring(0, lastNewlineIndex + 1)
+        return processHotStreakResponses(responseGenerator, document, codeToReplaceData)
     }
 
     private async getPrediction({
