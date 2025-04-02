@@ -3,7 +3,7 @@
   "name": "cody-ai",
   "private": true,
   "displayName": "Cody: AI Code Assistant",
-  "version": "1.80.1",
+  "version": "1.82.0",
   "publisher": "sourcegraph",
   "license": "Apache-2.0",
   "icon": "resources/sourcegraph.png",
@@ -556,6 +556,12 @@
         "category": "Cody Debug",
         "group": "Debug",
         "title": "Report Issue"
+      },
+      {
+        "command": "cody.debug.heapDump",
+        "category": "Cody Debug",
+        "group": "Debug",
+        "title": "Heap Dump"
       },
       {
         "command": "cody.copy.version",

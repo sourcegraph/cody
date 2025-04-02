@@ -275,8 +275,9 @@ export function syncModels({
                                                 const haikuModel = data.primaryModels.find(m =>
                                                     m.id.includes('5-haiku')
                                                 )
+                                                // Look for any sonnet model to add Deep Cody.
                                                 const sonnetModel = data.primaryModels.find(m =>
-                                                    m.id.includes('5-sonnet')
+                                                    m.id.includes('sonnet')
                                                 )
                                                 const hasDeepCody = data.primaryModels.some(m =>
                                                     m.id.includes('deep-cody')
@@ -322,7 +323,18 @@ export function syncModels({
                                                 ) {
                                                     data.preferences!.defaults.chat = haikuModel.id
                                                 }
-
+                                                data.primaryModels = data.primaryModels.map(model => {
+                                                    if (
+                                                        model.modelRef ===
+                                                        data.preferences!.defaults.chat
+                                                    ) {
+                                                        return {
+                                                            ...model,
+                                                            tags: [...model.tags, ModelTag.Default],
+                                                        }
+                                                    }
+                                                    return model
+                                                })
                                                 return Observable.of(data)
                                             }
                                         )
