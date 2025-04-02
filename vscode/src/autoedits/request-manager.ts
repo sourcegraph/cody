@@ -104,13 +104,22 @@ export class RequestManager implements vscode.Disposable {
                     continue
                 }
 
+                let cacheKey = request.cacheKey
                 const isHotStreak = result.response.stopReason === AutoeditStopReason.HotStreak
-                const cacheKey = isHotStreak
-                    ? request.cacheKey + '-hotstreak-' + result.response.prediction.split('\n').length
-                    : request.cacheKey
-
+                if (isHotStreak && result.nextCursorPosition) {
+                    // Hot streak means one request can provide many cache items.
+                    // Use the next cursor position to create a unique cache key.
+                    cacheKey = createCacheKey({
+                        ...params,
+                        position: result.nextCursorPosition,
+                    })
+                }
                 this.cache.set(cacheKey, result as CacheEntry)
+
+                // A promise will never resolve more than once, so we don't need
+                // to check if the request was already fulfilled.
                 request.resolve(result)
+
                 // Always recycle the response even if we already resolved
                 this.recycleResponseForInflightRequests(request, result)
             }
