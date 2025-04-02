@@ -10,6 +10,7 @@ import {
     type CompletionParameters,
     type CompletionRequestParameters,
     type CompletionResponse,
+    FeatureFlag,
     NeedsAuthChallengeError,
     NetworkError,
     RateLimitError,
@@ -18,6 +19,7 @@ import {
     addClientInfoParams,
     addCodyClientIdentificationHeaders,
     currentResolvedConfig,
+    featureFlagProvider,
     getActiveTraceAndSpanId,
     getSerializedParams,
     getTraceparentHeaders,
@@ -153,15 +155,19 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                                 ? getHeader(res.headers['x-ratelimit-limit'])
                                 : undefined
 
-                            const error = new RateLimitError(
-                                'chat messages and commands',
-                                e.message,
-                                upgradeIsAvailable,
-                                limit ? Number.parseInt(limit, 10) : undefined,
-                                retryAfter
-                            )
-                            handleRateLimitError(error)
-                            onErrorOnce(error, statusCode)
+                            // Get feature flag value and create error
+                            featureFlagProvider.evaluateFeatureFlag(FeatureFlag.FallbackToFlash).subscribe(async (fallbackToFlash: boolean) => {
+                                const error = new RateLimitError(
+                                    'chat messages and commands',
+                                    e.message,
+                                    upgradeIsAvailable,
+                                    limit ? Number.parseInt(limit, 10) : undefined,
+                                    retryAfter,
+                                    fallbackToFlash
+                                )
+                                handleRateLimitError(error)
+                                onErrorOnce(error, statusCode)
+                            })
                         } else {
                             onErrorOnce(e, statusCode)
                         }
@@ -352,15 +358,18 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                     const retryAfter = response.headers.get('retry-after')
                     const limit = response.headers.get('x-ratelimit-limit')
 
-                    const error = new RateLimitError(
-                        'chat messages and commands',
-                        await response.text(),
-                        upgradeIsAvailable,
-                        limit ? Number.parseInt(limit, 10) : undefined,
-                        retryAfter
-                    )
-                    handleRateLimitError(error)
-                    throw error
+                    featureFlagProvider.evaluateFeatureFlag(FeatureFlag.FallbackToFlash).subscribe(async (fallbackToFlash: boolean) => {
+                        const error = new RateLimitError(
+                            'chat messages and commands',
+                            await response.text(),
+                            upgradeIsAvailable,
+                            limit ? Number.parseInt(limit, 10) : undefined,
+                            retryAfter,
+                            fallbackToFlash
+                        )
+                        handleRateLimitError(error)
+                        throw error
+                    })
                 }
                 if (!response.ok) {
                     const errorMessage = await response.text()

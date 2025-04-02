@@ -137,7 +137,6 @@ const RateLimitErrorItem: React.FunctionComponent<{
         },
         [postMessage, tier, telemetryRecorder]
     )
-
     let ctaText = canUpgrade ? 'Upgrade to Cody Pro' : 'Unable to Send Message'
     React.useEffect(() => {
         const subscription = featureFlagProvider

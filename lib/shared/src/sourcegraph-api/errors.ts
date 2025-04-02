@@ -1,7 +1,4 @@
 import { differenceInDays, format, formatDistanceStrict, formatRelative } from 'date-fns'
-
-import { FeatureFlag, featureFlagProvider } from '../experimentation/FeatureFlagProvider'
-
 import { isError } from '../utils'
 
 import type { BrowserOrNodeResponse } from './graphql/client'
@@ -32,16 +29,19 @@ export class RateLimitError extends Error {
         public readonly upgradeIsAvailable: boolean,
         public readonly limit?: number,
         /* The value of the `retry-after` header */
-        public readonly retryAfter?: string | null
+        public readonly retryAfter?: string | null,
+        /* Whether to show Flash fallback message */
+        fallbackToFlash = false
     ) {
         super(message)
-        this.userMessage =
-            feature === 'Agentic Chat'
-                ? `You've reached the daily limit for agentic context (experimental). `
-                : `You've used all of your premium ${feature} for ${
-                      upgradeIsAvailable ? 'the month' : 'today'
-                  }. `
-        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.FallbackToFlash).subscribe(enabled => {
+        if (!fallbackToFlash) {
+            this.userMessage =
+                feature === 'Agentic Chat'
+                    ? `You've reached the daily limit for agentic context (experimental). `
+                    : `You've used all of your premium ${feature} for ${
+                          upgradeIsAvailable ? 'the month' : 'today'
+                      }. `
+        } else {
             this.userMessage =
                 feature === 'Agentic Chat'
                     ? !upgradeIsAvailable
@@ -50,7 +50,7 @@ export class RateLimitError extends Error {
                     : `You've used all of your premium ${feature} for ${
                           upgradeIsAvailable ? 'the month' : 'today'
                       }. `
-        })
+        }
         this.retryAfterDate = retryAfter
             ? /^\d+$/.test(retryAfter)
                 ? new Date(Date.now() + Number.parseInt(retryAfter, 10) * 1000)
