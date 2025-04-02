@@ -81,7 +81,7 @@ describe('ContextMixer', () => {
             expect(normalize(context)).toEqual([])
             expect(contextSummary).toEqual({
                 duration: 0,
-                retrieverStats: {},
+                retrieverStats: [],
                 strategy: 'none',
                 totalChars: 8,
                 prefixChars: 8,
@@ -136,15 +136,16 @@ describe('ContextMixer', () => {
             ])
             expect(contextSummary).toEqual({
                 duration: expect.any(Number),
-                retrieverStats: {
-                    'jaccard-similarity': {
+                retrieverStats: [
+                    {
+                        name: 'jaccard-similarity',
                         duration: expect.any(Number),
                         positionBitmap: 3,
                         retrievedItems: 2,
                         suggestedItems: 2,
                         retrieverChars: 34,
                     },
-                },
+                ],
                 strategy: 'jaccard-similarity',
                 totalChars: 42,
                 prefixChars: 8,
@@ -258,22 +259,24 @@ describe('ContextMixer', () => {
             `)
             expect(contextSummary).toEqual({
                 duration: expect.any(Number),
-                retrieverStats: {
-                    retriever1: {
+                retrieverStats: [
+                    {
+                        name: 'retriever1',
                         duration: expect.any(Number),
                         positionBitmap: 0b00101,
                         retrievedItems: 2,
                         suggestedItems: 2,
                         retrieverChars: 36,
                     },
-                    retriever2: {
+                    {
+                        name: 'retriever2',
                         duration: expect.any(Number),
                         positionBitmap: 0b11010,
                         retrievedItems: 3,
                         suggestedItems: 3,
                         retrieverChars: 92,
                     },
-                },
+                ],
                 strategy: 'jaccard-similarity',
                 totalChars: 136,
                 prefixChars: 8,
@@ -443,15 +446,16 @@ describe('ContextMixer', () => {
             ])
             expect(contextSummary).toEqual({
                 duration: expect.any(Number),
-                retrieverStats: {
-                    retriever1: {
+                retrieverStats: [
+                    {
+                        name: 'retriever1',
                         duration: expect.any(Number),
                         positionBitmap: 3,
                         retrievedItems: 2,
                         suggestedItems: 2,
                         retrieverChars: 34,
                     },
-                },
+                ],
                 strategy: 'jaccard-similarity',
                 totalChars: 42,
                 prefixChars: 8,
