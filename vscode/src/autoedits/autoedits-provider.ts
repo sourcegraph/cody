@@ -342,7 +342,11 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                 'provideInlineCompletionItems',
                 'Calculating prediction from getPrediction...'
             )
-            const { response: predictionResult, adjustedPredictionRange } = await this.getPrediction({
+            const {
+                response: predictionResult,
+                adjustedPredictionRange,
+                nextCursorPosition,
+            } = await this.getPrediction({
                 document,
                 position,
                 prompt,
@@ -382,6 +386,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                 prompt,
                 modelResponse: predictionResult,
                 codeToReplaceData,
+                nextCursorPosition,
                 payload: {
                     // TODO: make it required
                     source: predictionResult.source ?? autoeditSource.network,
@@ -706,6 +711,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
         return processHotStreakResponses(responseGenerator, document, codeToReplaceData)
     }
 
+    private hasDoneMockPrediction = false
     private async getPrediction({
         document,
         position,
@@ -739,7 +745,9 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                     codeToReplaceData
                 )
 
-                if (prediction) {
+                if (prediction && !this.hasDoneMockPrediction) {
+                    // TODO: Remove
+                    this.hasDoneMockPrediction = true
                     const generator = createMockResponseGenerator(prediction)
                     return this.requestManager.request(requestParams, async () => {
                         return processHotStreakResponses(generator, document, codeToReplaceData)

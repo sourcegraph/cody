@@ -153,6 +153,44 @@ export class RequestManager implements vscode.Disposable {
         return cached ?? null
     }
 
+    public getNearestCacheItem(params: RequestCacheKeyParams): CacheEntry | null {
+        const currentPosition = params.position
+        const uri = params.uri
+
+        let closestItem: CacheEntry | null = null
+        let minDistance = Number.MAX_SAFE_INTEGER
+
+        for (const key of [...this.cache.keys()]) {
+            const item = this.cache.get(key)
+            if (!item?.nextCursorPosition || !key.startsWith(uri)) {
+                // Cannot use this item
+                continue
+            }
+
+            const nextPos = item.nextCursorPosition
+            if (nextPos.line === currentPosition.line) {
+                // This is probably the same item we just accepted.
+                // TODO: We need to eject from the cache before we try to do next cursor suggestion
+                continue
+            }
+
+            if (nextPos.line < currentPosition.line) {
+                // nextPos is above the current position, ignore this.
+                // Note: We may want to support this in the future.
+                continue
+            }
+
+            const distance = nextPos.line - currentPosition.line
+            if (distance < minDistance) {
+                // New closest item
+                minDistance = distance
+                closestItem = item
+            }
+        }
+
+        return closestItem
+    }
+
     /**
      * Try to recycle a completed request's response for other in-flight requests
      */
@@ -226,10 +264,10 @@ class InflightRequest {
 
 interface RequestCacheKeyParams {
     uri: string
-    documentVersion: number
+    documentVersion?: number
     position: vscode.Position
 }
 
-function createCacheKey({ uri, documentVersion, position }: RequestCacheKeyParams): string {
-    return `${uri}:${documentVersion}:${position.line}`
+function createCacheKey({ uri, position }: RequestCacheKeyParams): string {
+    return `${uri}:${position.line}`
 }

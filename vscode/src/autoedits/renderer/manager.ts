@@ -360,7 +360,7 @@ export class AutoEditsDefaultRendererManager
         this.requestManager.removeFromCache({
             uri: activeRequest.document.uri.toString(),
             documentVersion: activeRequest.document.version,
-            position: activeRequest.position,
+            position: activeRequest.nextCursorPosition || activeRequest.position,
         })
 
         // Reset the testing promise when accepting
@@ -388,6 +388,18 @@ export class AutoEditsDefaultRendererManager
         await editor.edit(editBuilder => {
             editBuilder.replace(activeRequest.codeToReplaceData.range, activeRequest.prediction)
         })
+
+        const nextItem = this.requestManager.getNearestCacheItem({
+            uri: editor.document.uri.toString(),
+            position: editor.selection.active,
+        })
+        if (nextItem?.nextCursorPosition) {
+            // Move cursor to this item
+            editor.selection = new vscode.Selection(
+                nextItem.nextCursorPosition,
+                nextItem.nextCursorPosition
+            )
+        }
     }
 
     protected async rejectActiveEdit(rejectReason: AutoeditRejectReasonMetadata): Promise<void> {
