@@ -40,6 +40,7 @@ import { autoeditsOnboarding } from './autoedit-onboarding'
 import { autoeditsProviderConfig } from './autoedits-config'
 import { FilterPredictionBasedOnRecentEdits } from './filter-prediction-edits'
 import { processHotStreakResponses } from './hot-streak'
+import { createMockResponseGenerator } from './mock-response-generator'
 import { autoeditsOutputChannelLogger } from './output-channel-logger'
 import { PromptCacheOptimizedV1 } from './prompt/prompt-cache-optimized-v1'
 import { type CodeToReplaceData, getCodeToReplace } from './prompt/prompt-utils'
@@ -380,11 +381,13 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                 requestId,
                 prompt,
                 modelResponse: predictionResult,
+                codeToReplaceData,
                 payload: {
                     // TODO: make it required
                     source: predictionResult.source ?? autoeditSource.network,
                     isFuzzyMatch: false,
                     prediction: initialPrediction,
+                    codeToRewrite: codeToReplaceData.codeToRewrite,
                 },
             })
 
@@ -716,6 +719,14 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
         prompt: AutoeditsPrompt
         abortSignal: AbortSignal
     }): Promise<PredictionResult> {
+        const requestParams: AutoeditRequestManagerParams = {
+            requestUrl: autoeditsProviderConfig.url,
+            uri: document.uri.toString(),
+            documentVersion: document.version,
+            position,
+            abortSignal,
+        }
+
         if (autoeditsProviderConfig.isMockResponseFromCurrentDocumentTemplateEnabled) {
             const responseMetadata = extractAutoEditResponseFromCurrentDocumentCommentTemplate(
                 document,
@@ -729,27 +740,12 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                 )
 
                 if (prediction) {
-                    return {
-                        response: {
-                            type: 'success',
-                            stopReason: AutoeditStopReason.RequestFinished,
-                            prediction,
-                            responseHeaders: {},
-                            responseBody: {},
-                            requestUrl: autoeditsProviderConfig.url,
-                            source: autoeditSource.cache,
-                        },
-                    }
+                    const generator = createMockResponseGenerator(prediction)
+                    return this.requestManager.request(requestParams, async () => {
+                        return processHotStreakResponses(generator, document, codeToReplaceData)
+                    })
                 }
             }
-        }
-
-        const requestParams: AutoeditRequestManagerParams = {
-            requestUrl: autoeditsProviderConfig.url,
-            uri: document.uri.toString(),
-            documentVersion: document.version,
-            position,
-            abortSignal,
         }
 
         return this.requestManager.request(requestParams, signal => {
