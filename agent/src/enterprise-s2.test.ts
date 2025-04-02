@@ -179,6 +179,7 @@ describe('Enterprise - S2 (close main branch)', { timeout: 5000 }, () => {
                 completionID: items[0].id,
             })
         }, 10_000)
+    })
 
     describe('attribution', () => {
         // Disabled because `attribution/search` GraphQL does not work on S2
