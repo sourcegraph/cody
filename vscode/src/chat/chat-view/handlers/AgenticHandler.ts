@@ -193,14 +193,22 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
         const params = {
             maxTokensToSample: 8000,
             messages: JSON.stringify(prompt),
-            tools: this.tools.map(tool => ({
-                type: 'function',
-                function: {
-                    name: tool.spec.name,
-                    description: tool.spec.description,
-                    parameters: tool.spec.input_schema,
-                },
-            })),
+            // Ensure unique tool names by using a Map keyed by tool name
+            tools: Array.from(
+                new Map(
+                    this.tools.map(tool => [
+                        tool.spec.name,
+                        {
+                            type: 'function',
+                            function: {
+                                name: tool.spec.name,
+                                description: tool.spec.description,
+                                parameters: tool.spec.input_schema,
+                            },
+                        },
+                    ])
+                ).values()
+            ),
             stream: true,
             model,
         }
@@ -343,7 +351,8 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
         model: string
     ): Promise<ToolResult | undefined | null> {
         // Find the appropriate tool
-        const tool = this.tools.find(t => t.spec.name === toolCall.tool_call.name)
+        const enabledTools = this.tools.filter(tool => !tool.disabled)
+        const tool = enabledTools.find(t => t.spec.name === toolCall.tool_call.name)
         if (!tool) return undefined
 
         const tool_result: ToolResultContentPart = {

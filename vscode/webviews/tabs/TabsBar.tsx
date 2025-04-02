@@ -10,6 +10,7 @@ import {
     type LucideProps,
     MessageSquarePlusIcon,
     MessagesSquareIcon,
+    Settings2Icon,
     Trash2Icon,
 } from 'lucide-react'
 import { getVSCodeAPI } from '../utils/VSCodeApi'
@@ -413,6 +414,12 @@ function useTabs(input: Pick<TabsBarProps, 'user'>): TabConfig[] {
                         view: View.Prompts,
                         title: 'Prompts',
                         Icon: BookTextIcon,
+                        changesView: true,
+                    },
+                    {
+                        view: View.Settings,
+                        title: 'Settings',
+                        Icon: Settings2Icon,
                         changesView: true,
                     },
                 ] as (TabConfig | null)[]
