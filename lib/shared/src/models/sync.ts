@@ -339,6 +339,18 @@ export function syncModels({
                                                 ) {
                                                     data.preferences!.defaults.chat = haikuModel.id
                                                 }
+
+                                                /**
+                                                 * Handle rate limiting for paid users
+                                                 *
+                                                 * When rate limited:
+                                                 * 1. Disables all non-fast models (models without Speed tag)
+                                                 * 2. Saves current model preferences for later restoration
+                                                 * 3. Forces default model to Gemini Flash for both chat and edit
+                                                 *
+                                                 * When rate limit is lifted:
+                                                 * - Restores previously saved model preferences
+                                                 */
                                                 if (
                                                     fallbackToFlashFlag &&
                                                     !isFreeUser(authStatus, userProductSubscription)
@@ -357,67 +369,74 @@ export function syncModels({
                                                         )
 
                                                         // Set Gemini Flash as the selected model
-                                                        const geminiFlashModel = data.primaryModels.find(
-                                                            model =>
-                                                                model.id ===
-                                                                'google::v1::gemini-2.0-flash'
+                                                        const modelToFallback =
+                                                            'google::v1::gemini-2.0-flash'
+
+                                                        // Try to use Gemini Flash first, if not available fallback to any fast model
+                                                        let defaultModel = data.primaryModels.find(
+                                                            model => model.id === modelToFallback
                                                         )
-                                                        if (geminiFlashModel && data.preferences) {
+                                                        if (!defaultModel) {
+                                                            defaultModel = data.primaryModels.find(
+                                                                model =>
+                                                                    model.tags.includes(ModelTag.Speed)
+                                                            )
+                                                        }
+
+                                                        // Set the default model
+                                                        if (defaultModel && data.preferences) {
                                                             rateLimitState.chatModel =
                                                                 data.preferences.defaults.chat || ''
                                                             rateLimitState.editModel =
                                                                 data.preferences.defaults.edit || ''
 
                                                             data.preferences.defaults.chat =
-                                                                geminiFlashModel.id
+                                                                defaultModel.id
                                                             data.preferences.defaults.edit =
-                                                                geminiFlashModel.id
+                                                                defaultModel.id
+
                                                             telemetryRecorder.recordEvent(
                                                                 'cody.rateLimit',
                                                                 'hit',
                                                                 {
                                                                     privateMetadata: {
-                                                                        chatModel: geminiFlashModel.id,
+                                                                        chatModel: defaultModel.id,
                                                                     },
                                                                 }
                                                             )
-                                                        } else {
-                                                            // Re-enable all models
-                                                            data.primaryModels = data.primaryModels.map(
-                                                                model => {
-                                                                    if (
-                                                                        !model.tags.includes(
-                                                                            ModelTag.Speed
-                                                                        )
-                                                                    ) {
-                                                                        return {
-                                                                            ...model,
-                                                                            disabled: false,
-                                                                        }
+                                                        }
+                                                    } else {
+                                                        // Re-enable all models
+                                                        data.primaryModels = data.primaryModels.map(
+                                                            model => {
+                                                                if (
+                                                                    !model.tags.includes(ModelTag.Speed)
+                                                                ) {
+                                                                    return {
+                                                                        ...model,
+                                                                        disabled: false,
                                                                     }
-                                                                    return model
                                                                 }
+                                                                return model
+                                                            }
+                                                        )
+                                                        const originalChatModel =
+                                                            data.primaryModels.find(
+                                                                model =>
+                                                                    model.id === rateLimitState.chatModel
                                                             )
-                                                            const originalChatModel =
-                                                                data.primaryModels.find(
-                                                                    model =>
-                                                                        model.id ===
-                                                                        rateLimitState.chatModel
-                                                                )
-                                                            const originalEditModel =
-                                                                data.primaryModels.find(
-                                                                    model =>
-                                                                        model.id ===
-                                                                        rateLimitState.editModel
-                                                                )
-                                                            if (originalChatModel && data.preferences) {
-                                                                data.preferences.defaults.chat =
-                                                                    originalChatModel.id
-                                                            }
-                                                            if (originalEditModel && data.preferences) {
-                                                                data.preferences.defaults.edit =
-                                                                    originalEditModel.id
-                                                            }
+                                                        const originalEditModel =
+                                                            data.primaryModels.find(
+                                                                model =>
+                                                                    model.id === rateLimitState.editModel
+                                                            )
+                                                        if (originalChatModel && data.preferences) {
+                                                            data.preferences.defaults.chat =
+                                                                originalChatModel.id
+                                                        }
+                                                        if (originalEditModel && data.preferences) {
+                                                            data.preferences.defaults.edit =
+                                                                originalEditModel.id
                                                         }
                                                     }
                                                 }

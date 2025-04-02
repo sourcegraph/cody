@@ -227,7 +227,7 @@ export interface ModelsData {
     /** Preferences for the current endpoint. */
     preferences: DefaultsAndUserPreferencesForEndpoint
 
-    // New field to indicate rate limit status
+    /** Rate limit status. */
     isRateLimited?: boolean
 }
 
