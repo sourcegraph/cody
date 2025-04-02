@@ -54,6 +54,10 @@ export interface PartialModelResponse extends ModelResponseShared {
     type: 'partial'
     stopReason: AutoeditStopReason.StreamingChunk | AutoeditStopReason.HotStreak
     prediction: string
+    /**
+     * The source of the suggestion, e.g. 'network', 'cache', etc.
+     */
+    source?: AutoeditSourceMetadata
 }
 
 export interface AbortedModelResponse extends ModelResponseShared {

@@ -19,9 +19,6 @@ export interface AutoeditRequestManagerParams {
     abortSignal: AbortSignal
 }
 
-/**
- * Cached predictions that can be reused
- */
 interface CacheEntry extends PredictionResult {
     response: SuccessModelResponse | PartialModelResponse
 }
@@ -90,14 +87,15 @@ export class RequestManager implements vscode.Disposable {
     ): Promise<void> {
         try {
             for await (const result of await makeRequest(request.abortController.signal)) {
-                if (result.response.type === 'aborted') {
+                const { response, nextCursorPosition } = result
+                if (response.type === 'aborted') {
                     request.resolve(result)
                     continue
                 }
 
                 if (
-                    result.response.type === 'partial' &&
-                    result.response.stopReason !== AutoeditStopReason.HotStreak
+                    response.type === 'partial' &&
+                    response.stopReason !== AutoeditStopReason.HotStreak
                 ) {
                     // Partial response that we haven't made into a hot-streak
                     // Continue streaming
@@ -105,13 +103,13 @@ export class RequestManager implements vscode.Disposable {
                 }
 
                 let cacheKey = request.cacheKey
-                const isHotStreak = result.response.stopReason === AutoeditStopReason.HotStreak
-                if (isHotStreak && result.nextCursorPosition) {
+                const isHotStreak = response.stopReason === AutoeditStopReason.HotStreak
+                if (isHotStreak && nextCursorPosition) {
                     // Hot streak means one request can provide many cache items.
                     // Use the next cursor position to create a unique cache key.
                     cacheKey = createCacheKey({
                         ...params,
-                        position: result.nextCursorPosition,
+                        position: nextCursorPosition,
                     })
                 }
                 this.cache.set(cacheKey, result as CacheEntry)
@@ -201,7 +199,6 @@ class InflightRequest {
 
         this.promise = new Promise<PredictionResult>((resolve, reject) => {
             this.resolve = result => {
-                console.log('UMPOX RESOLVING REQUEST', result)
                 this.isResolved = true
                 resolve(result)
             }
