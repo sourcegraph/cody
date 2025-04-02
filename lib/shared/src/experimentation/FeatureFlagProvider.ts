@@ -148,6 +148,9 @@ export enum FeatureFlag {
     // Extend context window for Cody Clients
     EnhancedContextWindow = 'enhanced-context-window',
 
+    // Fallback to Flash when rate limited
+    FallbackToFlash = 'fallback-to-flash',
+
     /**
      * Internal use only. Enables the next agentic chat experience.
      * This is not for external use and should not be exposed to users.

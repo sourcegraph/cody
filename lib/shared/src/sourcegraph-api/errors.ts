@@ -1,5 +1,7 @@
 import { differenceInDays, format, formatDistanceStrict, formatRelative } from 'date-fns'
 
+import { FeatureFlag, featureFlagProvider } from '../experimentation/FeatureFlagProvider'
+
 import { isError } from '../utils'
 
 import type { BrowserOrNodeResponse } from './graphql/client'
@@ -19,7 +21,7 @@ export class RateLimitError extends Error {
     public static readonly errorName = 'RateLimitError'
     public readonly name = RateLimitError.errorName
 
-    public readonly userMessage: string
+    public userMessage: string
     public readonly retryAfterDate: Date | undefined
     public readonly retryMessage: string | undefined
 
@@ -35,12 +37,20 @@ export class RateLimitError extends Error {
         super(message)
         this.userMessage =
             feature === 'Agentic Chat'
-                ? upgradeIsAvailable
-                    ? `You've reached the daily limit for agentic context (experimental). `
-                    : `You've reached the daily limit for agentic context (experimental). You can continue using Gemini Flash, or other standard models. `
+                ? `You've reached the daily limit for agentic context (experimental). `
                 : `You've used all of your premium ${feature} for ${
                       upgradeIsAvailable ? 'the month' : 'today'
                   }. `
+        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.FallbackToFlash).subscribe(enabled => {
+            this.userMessage =
+                feature === 'Agentic Chat'
+                    ? !upgradeIsAvailable
+                        ? `You've reached the daily limit for agentic context (experimental). You can continue using Gemini Flash, or other standard models. `
+                        : `You've reached the daily limit for agentic context (experimental). `
+                    : `You've used all of your premium ${feature} for ${
+                          upgradeIsAvailable ? 'the month' : 'today'
+                      }. `
+        })
         this.retryAfterDate = retryAfter
             ? /^\d+$/.test(retryAfter)
                 ? new Date(Date.now() + Number.parseInt(retryAfter, 10) * 1000)
