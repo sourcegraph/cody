@@ -537,9 +537,6 @@ export class MockServer {
                     case 'FeatureFlags':
                         res.send(JSON.stringify({ data: { evaluateFeatureFlags: [{ name: 'git-mention-provider', value: true}]} }))
                         break
-                    case 'EvaluateFeatureFlags':
-                        res.send(JSON.stringify({ data: { evaluateFeatureFlags: [{ name: 'cody-unified-prompts', value: true}]} }))
-                        break
                     case 'EvaluateFeatureFlag':
                         res.send(JSON.stringify({ data: { evaluateFeatureFlag: true } }))
                         break
