@@ -45,6 +45,8 @@ class AutoeditManager(private val project: Project) {
     val endLineAfterInsert =
         item.range.start.line.toInt() + item.insertText.count { it == '\n' } - 1
     // [com.intellij.openapi.vcs.ex.Range] is [,) while ours is [,]. Hence, let's add 1 to the ends.
+    // TODO(mkondratek): a single line autoedit to be supported
+    // https://linear.app/sourcegraph/issue/CODY-5620
     val range =
         Range(
             item.range.start.line.toInt(),
