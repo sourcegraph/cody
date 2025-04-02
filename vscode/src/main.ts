@@ -323,7 +323,8 @@ const register = async (
     let mcpManager: MCPManager | undefined
     disposables.push(
         subscriptionDisposable(
-            featureFlagProvider.evaluateFeatureFlag(FeatureFlag.NextAgenticChatInternal)
+            featureFlagProvider
+                .evaluateFeatureFlag(FeatureFlag.NextAgenticChatInternal)
                 .pipe(distinctUntilChanged())
                 .subscribe(async isEnabled => {
                     if (isEnabled) {
