@@ -117,6 +117,7 @@ import {
     exportOutputLog,
     openCodyOutputChannel,
 } from './services/utils/export-logs'
+import { dumpCodyHeapSnapshot } from './services/utils/heap-dump'
 import { openCodyIssueReporter } from './services/utils/issue-reporter'
 import { SupercompletionProvider } from './supercompletions/supercompletion-provider'
 import { parseAllVisibleDocuments, updateParseTreeOnEdit } from './tree-sitter/parse-tree-cache'
@@ -707,7 +708,8 @@ async function registerDebugCommands(
         vscode.commands.registerCommand('cody.debug.export.logs', () => exportOutputLog(context.logUri)),
         vscode.commands.registerCommand('cody.debug.outputChannel', () => openCodyOutputChannel()),
         vscode.commands.registerCommand('cody.debug.enable.all', () => enableVerboseDebugMode()),
-        vscode.commands.registerCommand('cody.debug.reportIssue', () => openCodyIssueReporter())
+        vscode.commands.registerCommand('cody.debug.reportIssue', () => openCodyIssueReporter()),
+        vscode.commands.registerCommand('cody.debug.heapDump', () => dumpCodyHeapSnapshot())
     )
 }
 
@@ -793,16 +795,6 @@ function registerAutocomplete(
     statusBar: CodyStatusBar,
     disposables: vscode.Disposable[]
 ): void {
-    const autoeditEnabledForClient =
-        isRunningInsideAgent() && clientCapabilities().autoedit === 'enabled'
-    if (autoeditEnabledForClient) {
-        // autoedit is a replacement for autocomplete for clients.
-        // We should not register both if the client has opted in for auto-edit.
-        // TODO: Eventually these should be consolidated so clients to not need to decide between
-        // autocomplete and autoedit.
-        return
-    }
-
     //@ts-ignore
     let statusBarLoader: undefined | (() => void) = statusBar.addLoader({
         title: 'Completion Provider is starting',

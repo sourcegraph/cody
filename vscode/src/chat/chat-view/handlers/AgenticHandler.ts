@@ -10,6 +10,7 @@ import {
     UIToolStatus,
     isDefined,
     logDebug,
+    telemetryRecorder,
 } from '@sourcegraph/cody-shared'
 import type { ContextItemToolState } from '@sourcegraph/cody-shared/src/codebase-context/messages'
 import { URI } from 'vscode-uri'
@@ -75,6 +76,7 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
 
         logDebug('AgenticHandler', `Starting agent session ${sessionID}`)
 
+        recorder.recordChatQuestionExecuted(contextItems, { addMetadata: true, current: span })
         try {
             // Run the main conversation loop
             await this.runConversationLoop(chatBuilder, delegate, recorder, span, signal, contextItems)
@@ -134,7 +136,7 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
                 const content = Array.from(toolCalls.values())
                 delegate.postMessageInProgress(botResponse)
 
-                const results = await this.executeTools(content).catch(() => {
+                const results = await this.executeTools(content, model).catch(() => {
                     logDebug('AgenticHandler', 'Error executing tools')
                     return []
                 })
@@ -184,7 +186,8 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
         // Create prompt
         const prompter = new AgenticChatPrompter(this.SYSTEM_PROMPT)
         const prompt = await prompter.makePrompt(chatBuilder, contextItems)
-        recorder.recordChatQuestionExecuted(contextItems, { addMetadata: true, current: span })
+        // No longer recording chat question executed telemetry in agentic handlers
+        // This is now only done when user submits a query
         logDebug('AgenticHandler', 'Prompt created', { verbose: prompt })
         // Prepare API call parameters
         const params = {
@@ -288,17 +291,32 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
     /**
      * Execute tools from LLM response
      */
-    protected async executeTools(toolCalls: ToolCallContentPart[]): Promise<ToolResult[]> {
+    protected async executeTools(
+        toolCalls: ToolCallContentPart[],
+        model: string
+    ): Promise<ToolResult[]> {
         try {
             logDebug('AgenticHandler', `Executing ${toolCalls.length} tools`)
             // Execute all tools concurrently and filter out any undefined/null results
             const results = await Promise.allSettled(
                 toolCalls.map(async toolCall => {
                     try {
+                        telemetryRecorder.recordEvent('cody.tool-use', 'selected', {
+                            billingMetadata: {
+                                product: 'cody',
+                                category: 'billable',
+                            },
+                            privateMetadata: {
+                                model,
+                                input_args: JSON.stringify(toolCall.tool_call?.arguments),
+                                tool_name: toolCall.tool_call?.name,
+                                type: 'builtin',
+                            },
+                        })
                         logDebug('AgenticHandler', `Executing ${toolCall.tool_call?.name}`, {
                             verbose: toolCall,
                         })
-                        return await this.executeSingleTool(toolCall)
+                        return await this.executeSingleTool(toolCall, model)
                     } catch (error) {
                         logDebug('AgenticHandler', `Error executing tool ${toolCall.tool_call?.name}`, {
                             verbose: error,
@@ -321,7 +339,8 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
      * Execute a single tool and handle success/failure
      */
     protected async executeSingleTool(
-        toolCall: ToolCallContentPart
+        toolCall: ToolCallContentPart,
+        model: string
     ): Promise<ToolResult | undefined | null> {
         // Find the appropriate tool
         const tool = this.tools.find(t => t.spec.name === toolCall.tool_call.name)
@@ -345,6 +364,18 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
         try {
             const args = parseToolCallArgs(toolCall.tool_call.arguments)
             const result = await tool.invoke(args).catch(error => {
+                telemetryRecorder.recordEvent('cody.tool-use', 'failed', {
+                    billingMetadata: {
+                        product: 'cody',
+                        category: 'billable',
+                    },
+                    privateMetadata: {
+                        model,
+                        input_args: JSON.stringify(toolCall.tool_call?.arguments),
+                        tool_name: toolCall.tool_call?.name,
+                        type: 'builtin',
+                    },
+                })
                 logDebug('AgenticHandler', `Error executing tool ${toolCall.tool_call.name}`, {
                     verbose: error,
                 })
@@ -359,6 +390,19 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
 
             logDebug('AgenticHandler', `Executed ${toolCall.tool_call.name}`, { verbose: result })
 
+            telemetryRecorder.recordEvent('cody.tool-use', 'executed', {
+                billingMetadata: {
+                    product: 'cody',
+                    category: 'billable',
+                },
+                privateMetadata: {
+                    model,
+                    input_args: JSON.stringify(toolCall.tool_call?.arguments),
+                    tool_name: toolCall.tool_call?.name,
+                    type: 'builtin',
+                },
+            })
+
             return {
                 tool_result,
                 output: {
@@ -369,6 +413,18 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
             }
         } catch (error) {
             tool_result.tool_result.content = String(error)
+            telemetryRecorder.recordEvent('cody.tool-use', 'failed', {
+                billingMetadata: {
+                    product: 'cody',
+                    category: 'billable',
+                },
+                privateMetadata: {
+                    model,
+                    input_args: JSON.stringify(toolCall.tool_call?.arguments),
+                    tool_name: toolCall.tool_call?.name,
+                    type: 'builtin',
+                },
+            })
             logDebug('AgenticHandler', `${toolCall.tool_call.name} failed`, { verbose: error })
             return {
                 tool_result,

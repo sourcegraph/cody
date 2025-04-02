@@ -42,7 +42,8 @@ function parseAttributionResult(result: Attribution | Error): GuardrailsResult {
 export interface GuardrailsRenderProps {
     // TODO: This should instead be the thing to display
     showCode: boolean
-    guardrailsStatus: React.ReactNode
+    guardrailsStatus: GuardrailsCheckStatus
+    guardrailsStatusDisplay: React.ReactNode
 }
 
 // A cache of Guardrails attribution results. Because React over-rendering can
@@ -258,7 +259,8 @@ export const GuardrailsApplicator: React.FC<GuardrailsApplicatorProps> = ({
         <>
             {children({
                 showCode,
-                guardrailsStatus: statusDisplay,
+                guardrailsStatus: guardrailsResult.status,
+                guardrailsStatusDisplay: statusDisplay,
             })}
         </>
     )

@@ -167,11 +167,11 @@ export const RichCodeBlock: React.FC<RichCodeBlockProps> = ({
             guardrails={guardrails}
             isCodeComplete={isCodeComplete}
         >
-            {({ showCode, guardrailsStatus }) => (
+            {({ showCode, guardrailsStatus, guardrailsStatusDisplay }) => (
                 <div className={clsx('tw-overflow-hidden', className)}>
                     {!showCode ? (
                         // When code shouldn't be show, display a placeholder
-                        <CodeBlockPlaceholder text={code} />
+                        <CodeBlockPlaceholder text={code} status={guardrailsStatus} />
                     ) : (
                         // Otherwise show the actual code with syntax highlighting
                         <pre className={styles.content}>{children}</pre>
@@ -182,7 +182,7 @@ export const RichCodeBlock: React.FC<RichCodeBlockProps> = ({
                     <div className={styles.buttonsContainer}>
                         <div className={styles.buttons}>
                             {showCode && actionButtons}
-                            {guardrailsStatus}
+                            {guardrailsStatusDisplay}
                         </div>
                     </div>
                 </div>

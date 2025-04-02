@@ -20,13 +20,16 @@
 }
 
 .line {
-    /* This height is important so that the shimmer animation and the final code are the same height. */
+    /* This height is important so that the shimmer animation and the final code are similar height. */
     height: 1rem;
     border-radius: 2px;
-    will-change: transform, opacity;
+    will-change: opacity;
+    background-color: var(--vscode-editorInlayHint-background, var(--vscode-editor-selectionBackground, rgba(255 255 255 / 8%)));
+}
+
+.guardrails-checking .line {
     animation: shimmer 2s ease-in-out;
     animation-iteration-count: infinite;
-    background-color: var(--vscode-editorInlayHint-background, var(--vscode-editor-selectionBackground, rgba(255, 255, 255, 0.08)));
 }
 
 .line:nth-of-type(2n+1) {
