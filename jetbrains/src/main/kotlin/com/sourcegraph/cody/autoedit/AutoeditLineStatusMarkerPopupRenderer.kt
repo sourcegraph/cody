@@ -3,6 +3,7 @@ package com.sourcegraph.cody.autoedit
 import com.intellij.diff.DiffApplicationSettings
 import com.intellij.diff.comparison.ByWord
 import com.intellij.diff.comparison.ComparisonPolicy
+import com.intellij.diff.util.DiffUtil
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.editor.Editor
@@ -10,8 +11,7 @@ import com.intellij.openapi.editor.LogicalPosition
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.progress.util.BackgroundTaskUtil
 import com.intellij.openapi.util.Disposer
-import com.intellij.openapi.vcs.ex.LineStatusMarkerPopupActions
-import com.intellij.openapi.vcs.ex.LineStatusMarkerPopupPanel
+import com.intellij.openapi.util.TextRange
 import com.intellij.openapi.vcs.ex.LineStatusMarkerPopupRenderer
 import com.intellij.openapi.vcs.ex.LineStatusTrackerI
 import com.intellij.openapi.vcs.ex.Range
@@ -38,19 +38,19 @@ class AutoeditLineStatusMarkerPopupRenderer(tracker: LineStatusTrackerI<*>) :
 
     var editorComponent: JComponent? = null
     if (range.hasVcsLines()) {
-      val content = LineStatusMarkerPopupActions.getVcsContent(myTracker, range).toString()
-      val textField = LineStatusMarkerPopupPanel.createTextField(editor, content)
+      val content = MyLineStatusMarkerPopupActions.getVcsContent(myTracker, range).toString()
+      val textField = AutoeditLineStatusMarkerPopupPanel.createTextField(editor, content)
 
-      LineStatusMarkerPopupPanel.installBaseEditorSyntaxHighlighters(
+      AutoeditLineStatusMarkerPopupPanel.installBaseEditorSyntaxHighlighters(
           myTracker.project,
           textField,
           myTracker.vcsDocument,
-          LineStatusMarkerPopupActions.getVcsTextRange(myTracker, range),
+          MyLineStatusMarkerPopupActions.getVcsTextRange(myTracker, range),
           fileType)
 
       installWordDiff(editor, textField, range, disposable)
 
-      editorComponent = LineStatusMarkerPopupPanel.createEditorComponent(editor, textField)
+      editorComponent = AutoeditLineStatusMarkerPopupPanel.createEditorComponent(editor, textField)
     }
 
     if (editorComponent == null) {
@@ -81,8 +81,8 @@ class AutoeditLineStatusMarkerPopupRenderer(tracker: LineStatusTrackerI<*>) :
     if (!DiffApplicationSettings.getInstance().SHOW_LST_WORD_DIFFERENCES) return
     if (!range.hasLines() || !range.hasVcsLines()) return
 
-    val vcsContent = LineStatusMarkerPopupActions.getVcsContent(myTracker, range)
-    val currentContent = LineStatusMarkerPopupActions.getCurrentContent(myTracker, range)
+    val vcsContent = MyLineStatusMarkerPopupActions.getVcsContent(myTracker, range)
+    val currentContent = MyLineStatusMarkerPopupActions.getCurrentContent(myTracker, range)
 
     val wordDiff =
         BackgroundTaskUtil.tryComputeFast(
@@ -95,5 +95,23 @@ class AutoeditLineStatusMarkerPopupRenderer(tracker: LineStatusTrackerI<*>) :
     AutoeditLineStatusMarkerPopupPanel.installMasterEditorWordHighlighters(
         editor, range.line1, range.line2, wordDiff, disposable)
     AutoeditLineStatusMarkerPopupPanel.installPopupEditorWordHighlighters(textField, wordDiff)
+  }
+
+  /**
+   * This is a copy of [com.intellij.openapi.vcs.ex.LineStatusMarkerPopupActions]. The class methods
+   * have been renamed between the earliest and latest supported versions.
+   */
+  object MyLineStatusMarkerPopupActions {
+    fun getVcsContent(tracker: LineStatusTrackerI<*>, range: Range): CharSequence {
+      return DiffUtil.getLinesContent(tracker.vcsDocument, range.vcsLine1, range.vcsLine2)
+    }
+
+    fun getCurrentContent(tracker: LineStatusTrackerI<*>, range: Range): CharSequence {
+      return DiffUtil.getLinesContent(tracker.document, range.line1, range.line2)
+    }
+
+    fun getVcsTextRange(tracker: LineStatusTrackerI<*>, range: Range): TextRange {
+      return DiffUtil.getLinesRange(tracker.vcsDocument, range.vcsLine1, range.vcsLine2)
+    }
   }
 }

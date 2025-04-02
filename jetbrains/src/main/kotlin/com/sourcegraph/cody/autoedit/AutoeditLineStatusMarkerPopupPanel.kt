@@ -12,11 +12,18 @@ import com.intellij.diff.util.DiffUtil
 import com.intellij.diff.util.TextDiffType
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.editor.Document
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.LogicalPosition
 import com.intellij.openapi.editor.ex.EditorEx
+import com.intellij.openapi.editor.highlighter.EditorHighlighterFactory
+import com.intellij.openapi.editor.highlighter.FragmentedEditorHighlighter
 import com.intellij.openapi.editor.markup.RangeHighlighter
+import com.intellij.openapi.fileTypes.FileType
+import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
+import com.intellij.openapi.util.TextRange
+import com.intellij.openapi.vcs.ex.LineStatusMarkerPopupPanel.getEditorBackgroundColor
 import com.intellij.ui.EditorTextField
 import com.intellij.ui.Gray
 import com.intellij.ui.HintHint
@@ -36,8 +43,10 @@ import java.awt.Font
 import java.awt.Rectangle
 import java.util.EventObject
 import java.util.function.Consumer
+import javax.swing.BorderFactory
 import javax.swing.JComponent
 import javax.swing.JPanel
+import javax.swing.border.Border
 
 /** This is a custom impl of [com.intellij.openapi.vcs.ex.LineStatusMarkerPopupPanel] */
 class AutoeditLineStatusMarkerPopupPanel
@@ -198,6 +207,63 @@ private constructor(val editor: Editor, private val editorComponent: JComponent)
           TextDiffType.INSERTED -> TextDiffType.DELETED
           else -> this
         }
+
+    fun createEditorComponent(editor: Editor, popupEditor: JComponent?): JComponent {
+      val editorComponent: JPanel = JBUI.Panels.simplePanel(popupEditor)
+      editorComponent.border = createEditorFragmentBorder()
+      editorComponent.background = getEditorBackgroundColor(editor)
+      return editorComponent
+    }
+
+    fun createEditorFragmentBorder(): Border {
+      val outsideEditorBorder =
+          JBUI.Borders.customLine(
+              com.intellij.openapi.vcs.ex.LineStatusMarkerPopupPanel.getBorderColor(), 1)
+      val insideEditorBorder = JBUI.Borders.empty(2)
+      return BorderFactory.createCompoundBorder(outsideEditorBorder, insideEditorBorder)
+    }
+
+    fun createTextField(editor: Editor, content: String): EditorTextField {
+      val field = EditorTextField(content)
+      field.border = null
+      field.setOneLineMode(false)
+      field.ensureWillComputePreferredSize()
+      field.setFontInheritedFromLAF(false)
+
+      field.addSettingsProvider { uEditor: EditorEx ->
+        uEditor.setVerticalScrollbarVisible(true)
+        uEditor.setHorizontalScrollbarVisible(true)
+        uEditor.settings.isUseSoftWraps = false
+
+        uEditor.isRendererMode = true
+        uEditor.setBorder(null)
+
+        uEditor.colorsScheme = editor.colorsScheme
+        uEditor.backgroundColor = getEditorBackgroundColor(editor)
+        uEditor.settings.isCaretRowShown = false
+
+        uEditor.settings.setTabSize(editor.settings.getTabSize(editor.project))
+        uEditor.settings.setUseTabCharacter(editor.settings.isUseTabCharacter(editor.project))
+      }
+
+      return field
+    }
+
+    fun installBaseEditorSyntaxHighlighters(
+        project: Project?,
+        textField: EditorTextField,
+        vcsDocument: Document,
+        vcsTextRange: TextRange,
+        fileType: FileType
+    ) {
+      val highlighter =
+          EditorHighlighterFactory.getInstance().createEditorHighlighter(project, fileType)
+      highlighter.setText(vcsDocument.immutableCharSequence)
+      val fragmentedHighlighter = FragmentedEditorHighlighter(highlighter, vcsTextRange)
+      textField.addSettingsProvider { uEditor: EditorEx ->
+        uEditor.highlighter = fragmentedHighlighter
+      }
+    }
   }
 
   private class MyAdvertiser : Advertiser() {
