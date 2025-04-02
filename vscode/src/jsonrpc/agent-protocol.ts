@@ -200,6 +200,7 @@ export type ClientRequests = {
     'testing/requestErrors': [null, { errors: NetworkRequest[] }]
     'testing/closestPostData': [{ url: string; postData: string }, { closestBody: string }]
     'testing/memoryUsage': [null, { usage: MemoryUsage }]
+    'testing/heapdump': [null, null]
     'testing/awaitPendingPromises': [null, null]
     // Retrieve the Agent's copy of workspace documents, for testing/validation.
     'testing/workspaceDocuments': [GetDocumentsParams, GetDocumentsResult]
