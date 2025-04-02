@@ -11,7 +11,11 @@ import {
 import { type PredictionResult, getDecorationInfoFromPrediction } from './autoedits-provider'
 import { getDiffChangeBoundaries } from './renderer/diff-utils'
 
-// Number of lines to accumulate before emitting a hot streak suggestion
+/**
+ * Number of lines that should be accumulated before attempting a hot streak suggestion.
+ * Note: Reaching this number does not guarantee a hot streak suggestion will be emitted.
+ * The suggestion should also produce a valid diff that is suitable to be chunked.
+ */
 export const HOT_STREAK_LINES_THRESHOLD = 5
 
 export function isHotStreakResponse(
@@ -31,15 +35,14 @@ export async function* processHotStreakResponses(
     document: vscode.TextDocument,
     codeToReplaceData: CodeToReplaceData
 ): AsyncGenerator<PredictionResult> {
-    // Track the chunks we've already emitted to adjust future prediction ranges
-    let previousChunksLines = 0
+    let linesAlreadyChunked = 0
     let startedHotStreak = false
 
     for await (const response of responseGenerator) {
         if (isHotStreakResponse(response, startedHotStreak)) {
             const trimmedPrediction = trimPredictionForHotStreak(
                 response.prediction,
-                previousChunksLines
+                linesAlreadyChunked
             )
             if (!trimmedPrediction) {
                 // No complete lines yet, continue
@@ -55,12 +58,11 @@ export async function* processHotStreakResponses(
                 continue
             }
 
-            // The default `codeToReplaceData` range is not suitable, as we haven't finished
-            // generating the prediction. Instead, we trim this range so it matches the same
-            // number of lines as the prediction.
+            // We need to adjust the prediction range to match the prediction so far.
+            // This ensures we don't diff the partial prediction against the full codeToRewrite
             const adjustedPredictionRange = new vscode.Range(
-                codeToReplaceData.range.start.translate(previousChunksLines),
-                codeToReplaceData.range.start.translate(previousChunksLines + currentLineCount)
+                codeToReplaceData.range.start.translate(linesAlreadyChunked),
+                codeToReplaceData.range.start.translate(linesAlreadyChunked + currentLineCount)
             )
 
             const diff = getDecorationInfoFromPrediction(
@@ -76,35 +78,39 @@ export async function* processHotStreakResponses(
             }
 
             const [firstLineOfDiff, lastLineOfDiff] = diffChangeBoundaries
-            const lastChangedLineNumber =
+            const lastLineNumberOfDiff =
                 lastLineOfDiff.type === 'removed'
                     ? lastLineOfDiff.originalLineNumber
                     : lastLineOfDiff.modifiedLineNumber
             if (
-                lastChangedLineNumber === adjustedPredictionRange.end.line &&
-                lastLineOfDiff.type !== 'unchanged'
+                lastLineOfDiff.type !== 'unchanged' &&
+                lastLineNumberOfDiff === adjustedPredictionRange.end.line
             ) {
-                // If the last line of the diff is a change, it indicates that the prediction is not complete.
+                // We only emit a hot streak prediction when the final line of the prediction range is unchanged.
+                // This ensures that the diff is appropriately chunked.
+                // Example: If the last line of the range was removed, it may be that the LLM is actually replacing
+                // this line with another one in the next chunk.
+                // TODO: Add tests for this
                 continue
             }
 
-            // We determine the next cursor position by using the first changed line of the diff.
-            // This can be used so that the user can "jump" to this suggestion and immediately understand what is being changed.
-            const nextCursorLine =
+            const firstLineNumberOfDiff =
                 firstLineOfDiff.type === 'removed'
                     ? firstLineOfDiff.originalLineNumber
                     : firstLineOfDiff.modifiedLineNumber
-            const nextCursorPosition = document.lineAt(nextCursorLine).range.end
+            // We use the first line of the diff as the next cursor position.
+            // This is useful so that we can support "jumping" to this suggestion from a different part of the document.
+            const nextCursorPosition = document.lineAt(firstLineNumberOfDiff).range.end
 
-            // Track how many lines we've processed so far for future chunks
-            previousChunksLines = currentLineCount - 1
-            // Mark that we've started a hot streak
+            // Track the number of lines we have processed, this is used to trim the prediction accordingly in the next response.
+            linesAlreadyChunked = currentLineCount - 1 // TODO: off by one error? do we need to adjust this to account for trimmed lines?
+            // We are emitting a hot streak prediction. This means that all future response should be treated as hot streaks.
             startedHotStreak = true
 
             yield {
                 response: {
                     ...response,
-                    prediction: trimmedPrediction, // Use the trimmed prediction
+                    prediction: trimmedPrediction,
                     stopReason: AutoeditStopReason.HotStreak,
                 },
                 adjustedPredictionRange,
@@ -130,11 +136,6 @@ function trimPredictionForHotStreak(prediction: string, previousChunksLines: num
 
     const lines = prediction.split('\n')
     const suffixTrimmedPrediction = lines.slice(previousChunksLines).join('\n')
-    console.log('DEBUG TRIMMING', {
-        prediction,
-        previousChunksLines,
-        suffixTrimmedPrediction,
-    })
 
     // If the prediction ends with a newline, it's already complete
     if (suffixTrimmedPrediction.endsWith('\n')) {
