@@ -42,17 +42,24 @@ class AutoeditManager(private val project: Project) {
         EditorFactory.getInstance()
             .createDocument(beforeInsertion + item.insertText + afterInsertion)
 
+    // Calculate the ending line after insertion
+    // by adding the number of newlines in the inserted text
     val endLineAfterInsert =
         item.range.start.line.toInt() + item.insertText.count { it == '\n' } - 1
-    // [com.intellij.openapi.vcs.ex.Range] is [,) while ours is [,]. Hence, let's add 1 to the ends.
-    // TODO(mkondratek): a single line autoedit to be supported
-    // https://linear.app/sourcegraph/issue/CODY-5620
+
+    // Range parameters explanation:
+    // - line1, line2: Define the line range in the main editor document [line1, line2)
+    // - vcsLine1, vcsLine2: Define the line range in the popup editor document [vcsLine1, vcsLine2)
+    // The +1 adjustments are needed because Range uses exclusive end bounds [,)
+    // while our ranges use inclusive [,].
+    // For single-line edits (no newlines), we ensure vcsLine2 > vcsLine1
+    // to properly display the edit.
     val range =
         Range(
-            item.range.start.line.toInt(),
-            item.range.end.line.toInt() + 1,
-            item.range.start.line.toInt(),
-            endLineAfterInsert + 1)
+            line1 = item.range.start.line.toInt(), // Starting line in main editor
+            line2 = item.range.end.line.toInt() + 1, // Ending line in main editor (exclusive)
+            vcsLine1 = item.range.start.line.toInt(), // Starting line in popup editor
+            vcsLine2 = endLineAfterInsert + 1) // Ending line in popup editor (exclusive)
     AutoeditLineStatusMarkerPopupRenderer(
             AutoeditTracker(
                 project,
