@@ -229,6 +229,7 @@ export interface LoadedState extends Omit<ContextLoadedState, 'phase' | 'payload
     loadedAt: number
     /** Model response metadata for the debug panel */
     modelResponse: ModelResponse
+    nextCursorPosition?: vscode.Position
     payload: ContextLoadedState['payload'] & {
         /**
          * An ID to uniquely identify a suggest autoedit. Note: It is possible for this ID to be part

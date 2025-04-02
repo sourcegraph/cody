@@ -162,9 +162,11 @@ export class AutoeditAnalyticsLogger {
         payload,
         modelResponse,
         codeToReplaceData,
+        nextCursorPosition,
     }: {
         modelResponse: SuccessModelResponse | PartialModelResponse
         codeToReplaceData: CodeToReplaceData
+        nextCursorPosition?: vscode.Position
         requestId: AutoeditRequestID
         prompt: AutoeditsPrompt
         payload: Required<
@@ -181,6 +183,7 @@ export class AutoeditAnalyticsLogger {
                 loadedAt,
                 modelResponse,
                 codeToReplaceData,
+                nextCursorPosition,
                 payload: {
                     ...request.payload,
                     id: stableId,

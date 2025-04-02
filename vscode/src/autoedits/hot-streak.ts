@@ -103,7 +103,7 @@ export async function* processHotStreakResponses(
             const nextCursorPosition = document.lineAt(firstLineNumberOfDiff).range.end
 
             // Track the number of lines we have processed, this is used to trim the prediction accordingly in the next response.
-            linesAlreadyChunked = currentLineCount
+            linesAlreadyChunked = linesAlreadyChunked + currentLineCount
             // We are emitting a hot streak prediction. This means that all future response should be treated as hot streaks.
             startedHotStreak = true
 
