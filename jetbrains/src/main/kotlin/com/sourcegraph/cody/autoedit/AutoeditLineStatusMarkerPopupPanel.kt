@@ -36,6 +36,7 @@ import com.intellij.util.ui.Advertiser
 import com.intellij.util.ui.JBUI
 import com.intellij.util.ui.StartupUiUtil.labelFont
 import com.sourcegraph.Icons
+import com.sourcegraph.config.ConfigUtil
 import java.awt.BorderLayout
 import java.awt.Color
 import java.awt.Dimension
@@ -97,7 +98,9 @@ private constructor(val editor: Editor, private val editorComponent: JComponent)
       // This flag helps identify if the hint presentation code path has been executed.
       // In integration tests, the hint is not actually shown (isVisible returns false).
       // Setting this flag allows tracking if the hint presentation logic was triggered.
-      hint.putUserData(LightweightHint.SHOWN_AT_DEBUG, true)
+      if (ConfigUtil.isIntegrationTestModeEnabled()) {
+        hint.putUserData(LightweightHint.SHOWN_AT_DEBUG, true)
+      }
       val closeListener = HintListener { _ ->
         hint.putUserData(LightweightHint.SHOWN_AT_DEBUG, null)
         Disposer.dispose(childDisposable)
