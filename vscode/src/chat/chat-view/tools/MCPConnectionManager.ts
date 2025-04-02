@@ -6,6 +6,7 @@ import type { McpServer } from '@sourcegraph/cody-shared/src/llm-providers/mcp/t
 import * as vscode from 'vscode'
 
 // Re-defined or imported types needed for connection management
+// See https://modelcontextprotocol.io/docs/concepts/transports for details on MCP transport types
 export type McpTransportType = 'stdio' | 'sse'
 
 export type McpConnection = {

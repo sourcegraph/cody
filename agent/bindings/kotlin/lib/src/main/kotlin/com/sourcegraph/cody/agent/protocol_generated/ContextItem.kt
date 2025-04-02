@@ -368,7 +368,7 @@ data class ContextItemToolState(
   val toolName: String,
   val status: UIToolStatus, // Oneof: pending, done, error, canceled, idle, info
   val duration: Long? = null,
-  val outputType: OutputTypeEnum, // Oneof: search-result, terminal-output, file-diff, file-view, status
+  val outputType: OutputTypeEnum, // Oneof: search-result, terminal-output, file-diff, file-view, status, mcp
   val searchResultItems: List<ContextItem>? = null,
 ) : ContextItem() {
 
@@ -382,6 +382,7 @@ data class ContextItemToolState(
     @SerializedName("file-diff") `File-diff`,
     @SerializedName("file-view") `File-view`,
     @SerializedName("status") Status,
+    @SerializedName("mcp") Mcp,
   }
 }
 
