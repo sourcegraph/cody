@@ -50,7 +50,7 @@ export async function* processHotStreakResponses(
             }
 
             const lines = trimmedPrediction.split('\n')
-            const currentLineCount = lines.length
+            const currentLineCount = lines.length - 1 // excluding the final new line
             const reachedHotStreakThreshold = currentLineCount > HOT_STREAK_LINES_THRESHOLD
             if (response.type === 'partial' && !reachedHotStreakThreshold) {
                 // We haven't reached the hot streak threshold and we still have more lines to process
@@ -103,7 +103,7 @@ export async function* processHotStreakResponses(
             const nextCursorPosition = document.lineAt(firstLineNumberOfDiff).range.end
 
             // Track the number of lines we have processed, this is used to trim the prediction accordingly in the next response.
-            linesAlreadyChunked = currentLineCount - 1 // TODO: off by one error? do we need to adjust this to account for trimmed lines?
+            linesAlreadyChunked = currentLineCount
             // We are emitting a hot streak prediction. This means that all future response should be treated as hot streaks.
             startedHotStreak = true
 

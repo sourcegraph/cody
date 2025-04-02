@@ -161,11 +161,15 @@ export class AutoeditAnalyticsLogger {
         prompt,
         payload,
         modelResponse,
+        codeToReplaceData,
     }: {
         modelResponse: SuccessModelResponse | PartialModelResponse
+        codeToReplaceData: CodeToReplaceData
         requestId: AutoeditRequestID
         prompt: AutoeditsPrompt
-        payload: Required<Pick<LoadedState['payload'], 'source' | 'isFuzzyMatch' | 'prediction'>>
+        payload: Required<
+            Pick<LoadedState['payload'], 'source' | 'isFuzzyMatch' | 'prediction' | 'codeToRewrite'>
+        >
     }): void {
         const { prediction, source, isFuzzyMatch } = payload
         const stableId = autoeditIdRegistry.getOrCreate(prompt, prediction)
@@ -176,6 +180,7 @@ export class AutoeditAnalyticsLogger {
                 ...request,
                 loadedAt,
                 modelResponse,
+                codeToReplaceData,
                 payload: {
                     ...request.payload,
                     id: stableId,
