@@ -168,18 +168,17 @@ describe('Enterprise - S2 (close main branch)', { timeout: 5000 }, () => {
             `
             )
 
-            const retrieverStat = completionEvent?.params.contextSummary.retrieverStats.find(
+            const retrieverStat = completionEvent?.params?.contextSummary?.retrieverStats.find(
                 stat => stat.name === 'jaccard-similarity'
             )
 
             // Two documents will be checked against context filters set in site-config on S2.
-            expect(retriverStat?.suggestedItems).toEqual(2)
+            expect(retrieverStat?.suggestedItems).toEqual(2)
 
             s2EnterpriseClient.notify('autocomplete/completionAccepted', {
                 completionID: items[0].id,
             })
         }, 10_000)
-    })
 
     describe('attribution', () => {
         // Disabled because `attribution/search` GraphQL does not work on S2
