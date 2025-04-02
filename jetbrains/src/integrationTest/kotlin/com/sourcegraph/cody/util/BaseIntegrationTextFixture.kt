@@ -18,8 +18,11 @@ import com.intellij.testFramework.fixtures.HeavyIdeaTestFixture
 import com.intellij.testFramework.fixtures.IdeaTestFixtureFactory
 import com.intellij.testFramework.runInEdtAndWait
 import com.sourcegraph.cody.agent.CodyAgentService
+import com.sourcegraph.cody.agent.protocol_generated.ClientCapabilities
 import com.sourcegraph.cody.agent.protocol_generated.ProtocolAuthenticatedAuthStatus
 import com.sourcegraph.cody.auth.SourcegraphServerPath
+import com.sourcegraph.config.ConfigUtil
+import com.sourcegraph.utils.CodyEditorUtil
 import java.io.File
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit
@@ -28,13 +31,23 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 
-open class BaseIntegrationTextFixture(private val recordingName: String) {
+open class BaseIntegrationTextFixture(
+    private val recordingName: String,
+    private val credentials: TestingCredentials,
+    private val capabilities: ClientCapabilities,
+    codySettingsContent: String = "{\n  \n}"
+) {
+  companion object {
+    const val ASYNC_WAIT_TIMEOUT_SECONDS = 20L
+  }
+
   private val logger = Logger.getInstance(BaseIntegrationTextFixture::class.java)
 
   // We don't want to use .!! or .? everywhere in the tests,
   // and if those won't be initialized test should crash anyway
   lateinit var editor: Editor
   lateinit var file: VirtualFile
+
   val project: Project
 
   protected val myFixture: HeavyIdeaTestFixture
@@ -47,6 +60,9 @@ open class BaseIntegrationTextFixture(private val recordingName: String) {
     myFixture.setUp()
     project = myFixture.project
     Disposer.register(myFixture.testRootDisposable) { shutdown() }
+
+    CodyEditorUtil.createFileOrScratchFromUntitled(
+        project, ConfigUtil.getSettingsFile(project).toUri().toString(), codySettingsContent)
 
     initCredentialsAndAgent()
     baseCheckInitialConditions()
@@ -114,7 +130,6 @@ open class BaseIntegrationTextFixture(private val recordingName: String) {
   // Methods there are mostly idempotent though, so calling again for every test case should not
   // change anything.
   private fun initCredentialsAndAgent() {
-    val credentials = TestingCredentials.dotcom
     val endpoint = SourcegraphServerPath.from(credentials.serverEndpoint, "")
     val token = credentials.token ?: credentials.redactedToken
 
@@ -123,7 +138,7 @@ open class BaseIntegrationTextFixture(private val recordingName: String) {
     assertNotNull(
         "Unable to start agent in a timely fashion!",
         CodyAgentService.getInstance(project)
-            .startAgent(endpoint, token)
+            .startAgent(capabilities, endpoint, token)
             .completeOnTimeout(null, ASYNC_WAIT_TIMEOUT_SECONDS, TimeUnit.SECONDS)
             .get())
   }
@@ -218,9 +233,5 @@ open class BaseIntegrationTextFixture(private val recordingName: String) {
     // TODO: Check for the exact contents once they are frozen.
     val javadocPattern = Pattern.compile("/\\*\\*.*?\\*/", Pattern.DOTALL)
     return javadocPattern.matcher(text).find()
-  }
-
-  companion object {
-    const val ASYNC_WAIT_TIMEOUT_SECONDS = 20L
   }
 }
