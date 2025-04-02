@@ -18,6 +18,7 @@ import com.sourcegraph.cody.listeners.CodyFileEditorListener
 import com.sourcegraph.cody.statusbar.CodyStatusService
 import com.sourcegraph.cody.ui.web.WebUIService
 import com.sourcegraph.common.CodyBundle
+import com.sourcegraph.utils.CodyIdeUtil
 import java.util.Timer
 import java.util.TimerTask
 import java.util.concurrent.CompletableFuture
@@ -79,7 +80,11 @@ class CodyAgentService(private val project: Project) : Disposable {
     // Normally we do not need to specify endpoint or token used for starting an agent.
     // Agent will automatically pick up the last used one or the default.
     // Custom endpoint and token are used in tests.
-    return startAgent(clientCapabilities, endpoint = null, token = null, secondsTimeout)
+    val autoedit =
+        if (CodyIdeUtil.isRD()) ClientCapabilities.AutoeditEnum.None
+        else ClientCapabilities.AutoeditEnum.Enabled
+    return startAgent(
+        clientCapabilities.copy(autoedit = autoedit), endpoint = null, token = null, secondsTimeout)
   }
 
   fun startAgent(
@@ -184,6 +189,9 @@ class CodyAgentService(private val project: Project) : Disposable {
     val clientCapabilities =
         ClientCapabilities(
             authentication = ClientCapabilities.AuthenticationEnum.Enabled,
+            autoedit = ClientCapabilities.AutoeditEnum.Enabled,
+            autoeditInlineDiff = ClientCapabilities.AutoeditInlineDiffEnum.None,
+            autoeditAsideDiff = ClientCapabilities.AutoeditAsideDiffEnum.Diff,
             edit = ClientCapabilities.EditEnum.Enabled,
             editWorkspace = ClientCapabilities.EditWorkspaceEnum.Enabled,
             codeLenses = ClientCapabilities.CodeLensesEnum.Enabled,

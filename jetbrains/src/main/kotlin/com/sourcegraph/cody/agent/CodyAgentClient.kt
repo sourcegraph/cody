@@ -4,11 +4,13 @@ import com.intellij.notification.Notification
 import com.intellij.notification.NotificationType
 import com.intellij.notification.Notifications
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.application.ReadAction
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.diagnostic.debug
 import com.intellij.openapi.fileChooser.FileChooserFactory
 import com.intellij.openapi.fileChooser.FileSaverDescriptor
+import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.guessProjectDir
 import com.intellij.openapi.vfs.VfsUtil
@@ -20,6 +22,8 @@ import com.sourcegraph.cody.agent.protocol_generated.*
 import com.sourcegraph.cody.auth.CodyAuthService
 import com.sourcegraph.cody.auth.CodySecureStore
 import com.sourcegraph.cody.auth.SourcegraphServerPath
+import com.sourcegraph.cody.autocomplete.CodyAutocompleteManager
+import com.sourcegraph.cody.autoedit.AutoeditManager
 import com.sourcegraph.cody.edit.EditService
 import com.sourcegraph.cody.edit.lenses.LensesService
 import com.sourcegraph.cody.error.CodyConsole
@@ -27,6 +31,7 @@ import com.sourcegraph.cody.error.SentryService
 import com.sourcegraph.cody.ignore.IgnoreOracle
 import com.sourcegraph.cody.statusbar.CodyStatusService
 import com.sourcegraph.cody.ui.web.NativeWebviewProvider
+import com.sourcegraph.cody.vscode.InlineCompletionTriggerKind
 import com.sourcegraph.common.BrowserOpener
 import com.sourcegraph.common.NotificationGroups
 import com.sourcegraph.common.ui.SimpleDumbAwareEDTAction
@@ -238,6 +243,21 @@ class CodyAgentClient(private val project: Project, private val webview: NativeW
   // =============
   // Notifications
   // =============
+
+  @JsonNotification("autocomplete/didHide")
+  fun autocomplete_didHide(params: Null?) {
+    AutoeditManager.getInstance(project).hide()
+  }
+
+  @JsonNotification("autocomplete/didTrigger")
+  fun autocomplete_didTrigger(params: Null?) {
+    FileEditorManager.getInstance(project).selectedTextEditor?.let { editor ->
+      ReadAction.run<Throwable> {
+        CodyAutocompleteManager.instance.triggerAutocomplete(
+            editor, editor.caretModel.offset, InlineCompletionTriggerKind.AUTOMATIC)
+      }
+    }
+  }
 
   @JsonNotification("codeLenses/display")
   fun codeLenses_display(params: DisplayCodeLensParams) {
