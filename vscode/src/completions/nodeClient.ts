@@ -161,18 +161,9 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                                 e.message,
                                 upgradeIsAvailable,
                                 limit ? Number.parseInt(limit, 10) : undefined,
-                                retryAfter,
-                                false // Set fallbackToFlash to false initially
+                                retryAfter
                             )
-
-                            // Check feature flag and handle rate limit error if enabled
-                            featureFlagProvider
-                                .evaluateFeatureFlag(FeatureFlag.FallbackToFlash)
-                                .subscribe(fallbackToFlash => {
-                                    if (fallbackToFlash) {
-                                        handleRateLimitError(error)
-                                    }
-                                })
+                            handleRateLimitError(error)
 
                             // Call error callback with rate limit error
                             onErrorOnce(error, statusCode)
@@ -359,29 +350,22 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                     body: JSON.stringify(serializedParams),
                     signal,
                 })
-                featureFlagProvider
-                    .evaluateFeatureFlag(FeatureFlag.FallbackToFlash)
-                    .subscribe(async (fallbackToFlash: boolean) => {
-                        if (fallbackToFlash) {
-                            if (response.status === 429) {
-                                const upgradeIsAvailable =
-                                    response.headers.get('x-is-cody-pro-user') === 'false' &&
-                                    typeof response.headers.get('x-is-cody-pro-user') !== 'undefined'
-                                const retryAfter = response.headers.get('retry-after')
-                                const limit = response.headers.get('x-ratelimit-limit')
-                                const error = new RateLimitError(
-                                    'chat messages and commands',
-                                    await response.text(),
-                                    upgradeIsAvailable,
-                                    limit ? Number.parseInt(limit, 10) : undefined,
-                                    retryAfter,
-                                    fallbackToFlash
-                                )
-                                handleRateLimitError(error)
-                                throw error
-                            }
-                        }
-                    })
+                if (response.status === 429) {
+                    const upgradeIsAvailable =
+                        response.headers.get('x-is-cody-pro-user') === 'false' &&
+                        typeof response.headers.get('x-is-cody-pro-user') !== 'undefined'
+                    const retryAfter = response.headers.get('retry-after')
+                    const limit = response.headers.get('x-ratelimit-limit')
+                    const error = new RateLimitError(
+                        'chat messages and commands',
+                        await response.text(),
+                        upgradeIsAvailable,
+                        limit ? Number.parseInt(limit, 10) : undefined,
+                        retryAfter
+                    )
+                    handleRateLimitError(error)
+                    throw error
+                }
                 if (!response.ok) {
                     const errorMessage = await response.text()
                     throw new NetworkError(

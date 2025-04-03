@@ -29,28 +29,17 @@ export class RateLimitError extends Error {
         public readonly upgradeIsAvailable: boolean,
         public readonly limit?: number,
         /* The value of the `retry-after` header */
-        public readonly retryAfter?: string | null,
-        /* Whether to show Flash fallback message */
-        fallbackToFlash = false
+        public readonly retryAfter?: string | null
     ) {
         super(message)
-        if (!fallbackToFlash) {
-            this.userMessage =
-                feature === 'Agentic Chat'
-                    ? `You've reached the daily limit for agentic context (experimental). `
-                    : `You've used all of your premium ${feature} for ${
-                          upgradeIsAvailable ? 'the month' : 'today'
-                      }. `
-        } else {
-            this.userMessage =
-                feature === 'Agentic Chat'
-                    ? !upgradeIsAvailable
-                        ? `You've reached the daily limit for agentic context (experimental). You can continue using Gemini Flash, or other standard models. `
-                        : `You've reached the daily limit for agentic context (experimental). `
-                    : `You've used all of your premium ${feature} for ${
-                          upgradeIsAvailable ? 'the month' : 'today'
-                      }. `
-        }
+        this.userMessage =
+            feature === 'Agentic Chat'
+                ? !upgradeIsAvailable
+                    ? `You've reached the daily limit for agentic context (experimental). You can continue using Gemini Flash, or other standard models. `
+                    : `You've reached the daily limit for agentic context (experimental). `
+                : `You've used all of your premium ${feature} for ${
+                      upgradeIsAvailable ? 'the month' : 'today'
+                  }. `
         this.retryAfterDate = retryAfter
             ? /^\d+$/.test(retryAfter)
                 ? new Date(Date.now() + Number.parseInt(retryAfter, 10) * 1000)

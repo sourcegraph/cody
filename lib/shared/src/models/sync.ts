@@ -193,9 +193,6 @@ export function syncModels({
                                         enableToolCody,
                                         featureFlagProvider.evaluateFeatureFlag(
                                             FeatureFlag.EnhancedContextWindow
-                                        ),
-                                        featureFlagProvider.evaluateFeatureFlag(
-                                            FeatureFlag.FallbackToFlash
                                         )
                                     ).pipe(
                                         switchMap(
@@ -205,7 +202,6 @@ export function syncModels({
                                                 defaultToHaiku,
                                                 isToolCodyEnabled,
                                                 enhancedContextWindowFlag,
-                                                fallbackToFlashFlag,
                                             ]) => {
                                                 if (serverModelsConfig) {
                                                     // Remove deprecated models from the list, filter out waitlisted models for Enterprise.
@@ -350,10 +346,7 @@ export function syncModels({
                                                  * When rate limit is lifted:
                                                  * - Restores previously saved model preferences
                                                  */
-                                                if (
-                                                    fallbackToFlashFlag &&
-                                                    !isFreeUser(authStatus, userProductSubscription)
-                                                ) {
+                                                if (!isFreeUser(authStatus, userProductSubscription)) {
                                                     if (authStatus.rateLimited) {
                                                         // Disable all the non-fast models
                                                         data.primaryModels = data.primaryModels.map(

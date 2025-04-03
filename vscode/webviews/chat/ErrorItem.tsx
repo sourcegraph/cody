@@ -137,21 +137,11 @@ const RateLimitErrorItem: React.FunctionComponent<{
         },
         [postMessage, tier, telemetryRecorder]
     )
-    let ctaText = canUpgrade ? 'Upgrade to Cody Pro' : 'Unable to Send Message'
-    React.useEffect(() => {
-        const subscription = featureFlagProvider
-            .evaluateFeatureFlag(FeatureFlag.FallbackToFlash)
-            .subscribe(enabled => {
-                if (enabled) {
-                    ctaText = userInfo?.isCodyProUser
-                        ? 'Upgrade to Cody Enterprise'
-                        : !canUpgrade
-                          ? 'Usage limit of premium models reached, switching the model to Gemini Flash.'
-                          : 'Upgrade to Cody Pro'
-                }
-            })
-        return () => subscription.unsubscribe()
-    }, [userInfo, canUpgrade, ctaText])
+    const ctaText = userInfo?.isCodyProUser
+        ? 'Upgrade to Cody Enterprise'
+        : !canUpgrade
+          ? 'Usage limit of premium models reached, switching the model to Gemini Flash.'
+          : 'Upgrade to Cody Pro'
 
     return (
         <div className={styles.errorItem}>
