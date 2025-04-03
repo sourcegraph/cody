@@ -497,15 +497,15 @@ describe('syncModels', () => {
             // set the feature flag
             if (featureFlagEnabled) {
                 vi.spyOn(featureFlagProvider, 'evaluateFeatureFlag').mockImplementation(
-                    (flag: FeatureFlag) =>
-                        flag === FeatureFlag.CodyChatDefaultToClaude35Haiku
+                    (flagName: FeatureFlag, _forceRefresh?: boolean) =>
+                        flagName === FeatureFlag.CodyChatDefaultToClaude35Haiku
                             ? Observable.of(featureFlagEnabled)
                             : Observable.of(false)
                 )
             } else {
                 vi.spyOn(featureFlagProvider, 'evaluateFeatureFlag').mockImplementation(
-                    (flag: FeatureFlag) =>
-                        flag === FeatureFlag.CodyChatDefaultToClaude35Haiku
+                    (flagName: FeatureFlag, _forceRefresh?: boolean) =>
+                        flagName === FeatureFlag.CodyChatDefaultToClaude35Haiku
                             ? Observable.of(featureFlagEnabled)
                             : Observable.of(true)
                 )
