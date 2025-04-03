@@ -87,7 +87,7 @@ export class RequestManager implements vscode.Disposable {
     ): Promise<void> {
         try {
             for await (const result of await makeRequest(request.abortController.signal)) {
-                const { response, nextCursorPosition } = result
+                const { response, hotStreak } = result
                 if (response.type === 'aborted') {
                     request.resolve(result)
                     continue
@@ -103,13 +103,12 @@ export class RequestManager implements vscode.Disposable {
                 }
 
                 let cacheKey = request.cacheKey
-                const isHotStreak = response.stopReason === AutoeditStopReason.HotStreak
-                if (isHotStreak && nextCursorPosition) {
+                if (hotStreak) {
                     // Hot streak means one request can provide many cache items.
-                    // Use the next cursor position to create a unique cache key.
+                    // Use the cursor position of this hot streak suggestion to create a unique cache key.
                     cacheKey = createCacheKey({
                         ...params,
-                        position: nextCursorPosition,
+                        position: hotStreak.cursorPosition,
                     })
                 }
                 this.cache.set(cacheKey, result as CacheEntry)
@@ -153,36 +152,22 @@ export class RequestManager implements vscode.Disposable {
         return cached ?? null
     }
 
-    public getNearestCacheItem(params: RequestCacheKeyParams): CacheEntry | null {
-        const currentPosition = params.position
-        const uri = params.uri
-
+    public getNearestHotStreakItem({
+        hotStreakID,
+        position,
+    }: { hotStreakID: string; position: vscode.Position }): CacheEntry | null {
         let closestItem: CacheEntry | null = null
         let minDistance = Number.MAX_SAFE_INTEGER
 
         for (const key of [...this.cache.keys()]) {
             const item = this.cache.get(key)
-            if (!item?.nextCursorPosition || !key.startsWith(uri)) {
-                // Cannot use this item
+            if (!item || item.hotStreak?.id !== hotStreakID) {
+                // Skip items that don't match the hot streak ID
                 continue
             }
 
-            const nextPos = item.nextCursorPosition
-            if (nextPos.line === currentPosition.line) {
-                // This is probably the same item we just accepted.
-                // TODO: We need to eject from the cache before we try to do next cursor suggestion
-                continue
-            }
-
-            if (nextPos.line < currentPosition.line) {
-                // nextPos is above the current position, ignore this.
-                // Note: We may want to support this in the future.
-                continue
-            }
-
-            const distance = nextPos.line - currentPosition.line
+            const distance = item.hotStreak.cursorPosition.line - position.line
             if (distance < minDistance) {
-                // New closest item
                 minDistance = distance
                 closestItem = item
             }
