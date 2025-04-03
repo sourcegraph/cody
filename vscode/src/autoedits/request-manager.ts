@@ -4,10 +4,13 @@ import type * as vscode from 'vscode'
 import { forkSignal } from '../completions/utils'
 import { AutoeditStopReason, type ModelResponse, type SuccessModelResponse } from './adapters/base'
 import { autoeditSource } from './analytics-logger'
+import type { CodeToReplaceData } from './prompt/prompt-utils'
+import { isNotRecyclable, isRequestNotRelevant } from './request-recycling'
 
 export interface AutoeditRequestManagerParams {
     requestUrl: string
     uri: string
+    codeToReplaceData: CodeToReplaceData
     documentVersion: number
     position: vscode.Position
     abortSignal: AbortSignal
@@ -16,6 +19,9 @@ export interface AutoeditRequestManagerParams {
 export class RequestManager implements vscode.Disposable {
     private cache = new LRUCache<string, { response: SuccessModelResponse }>({ max: 50 })
     private readonly inflightRequests = new LRUCache<string, InflightRequest>({ max: 20 })
+
+    /** Track the latest request to help determine if other requests are still relevant */
+    private latestRequestParams: AutoeditRequestManagerParams | null = null
 
     /**
      * Execute a request or use a cached/in-flight result if available
@@ -77,6 +83,8 @@ export class RequestManager implements vscode.Disposable {
 
                     request.resolve(response)
                     this.recycleResponseForInflightRequests(request, response)
+                    // After processing a completed request, check if any other requests are now irrelevant
+                    this.cancelIrrelevantRequests()
                 } else {
                     request.resolve(response)
                 }
@@ -117,21 +125,57 @@ export class RequestManager implements vscode.Disposable {
         return cached?.response ?? null
     }
 
-    /**
-     * Try to recycle a completed request's response for other in-flight requests
-     */
     private recycleResponseForInflightRequests(
         completedRequest: InflightRequest,
         response: SuccessModelResponse
     ): void {
-        // TODO: Implement
+        for (const inflightRequest of this.inflightRequests.values() as Generator<InflightRequest>) {
+            // Skip the request that just completed
+            if (inflightRequest === completedRequest) {
+                continue
+            }
+
+            if (!inflightRequest.isResolved) {
+                const notRecyclableReason = isNotRecyclable(completedRequest, inflightRequest, response)
+
+                if (!notRecyclableReason) {
+                    inflightRequest.abortNetworkRequest()
+                    inflightRequest.resolve({
+                        ...response,
+                        source: autoeditSource.inFlightRequest,
+                    })
+                    this.inflightRequests.delete(inflightRequest.cacheKey)
+                }
+            }
+        }
     }
 
     /**
      * Cancel any in-flight requests that are no longer relevant compared to the latest request
      */
     private cancelIrrelevantRequests(): void {
-        // TODO: Implement
+        if (!this.latestRequestParams) {
+            return
+        }
+
+        const inflightRequests = Array.from(this.inflightRequests.values() as Generator<InflightRequest>)
+
+        for (const request of inflightRequests) {
+            if (request.isResolved) {
+                continue
+            }
+
+            const notRelevantReason = isRequestNotRelevant(request.params, this.latestRequestParams)
+            if (notRelevantReason) {
+                request.abortNetworkRequest()
+                request.resolve({
+                    type: 'aborted',
+                    requestUrl: request.params.requestUrl,
+                    stopReason: AutoeditStopReason.IrrelevantInFlightRequest,
+                })
+                this.inflightRequests.delete(request.cacheKey)
+            }
+        }
     }
 
     public dispose(): void {
@@ -143,7 +187,7 @@ export class RequestManager implements vscode.Disposable {
     }
 }
 
-class InflightRequest {
+export class InflightRequest {
     public promise: Promise<ModelResponse>
     public resolve: (result: ModelResponse) => void
     public reject: (error: Error) => void
