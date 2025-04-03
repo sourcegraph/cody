@@ -1,4 +1,4 @@
-import { Tiktoken } from 'js-tiktoken/lite'
+import { decode, encode } from 'gpt-tokenizer/encoding/cl100k_base'
 import type { TokenBudget, TokenUsage } from '.'
 import type { ChatContextTokenUsage, TokenUsageType } from '.'
 import { EXTENDED_USER_CONTEXT_TOKEN_BUDGET, type ModelContextWindow } from '..'
@@ -14,106 +14,32 @@ export interface TokenCounterUtils {
     getTokenCountForMessage(message: Message | undefined): number
 }
 
-let _useFakeTokenCounterUtils: TokenCounterUtils | undefined
+export const TokenCounterUtils: TokenCounterUtils = {
+    encode(text: string): number[] {
+        return encode(text.normalize('NFKC'))
+    },
+    decode(encoded: number[]): string {
+        return decode(encoded)
+    },
+    countTokens(text: string): number {
+        const wordCount = text.trim().split(/\s+/).length
+        return wordCount > EXTENDED_USER_CONTEXT_TOKEN_BUDGET ? wordCount : this.encode(text).length
+    },
 
-/**
- * @internal For testing only. Importing the weights for the token counter is slow and is not
- * necessary for most tests.
- */
-export function useFakeTokenCounterUtils(): void {
-    _useFakeTokenCounterUtils = {
-        encode(text) {
-            return text.split(' ').map(word => word.length)
-        },
-        decode(encoded) {
-            return encoded.map(n => ' '.repeat(n)).join('')
-        },
-        countTokens(text) {
-            return text.split(' ').length
-        },
-        countPromptString(text) {
-            return text.split(' ').length
-        },
-        getMessagesTokenCount(messages) {
-            return messages.reduce((acc, m) => acc + (m?.text?.split(' ').length ?? 0), 0)
-        },
-        getTokenCountForMessage(message) {
-            return message?.text?.split(' ').length ?? 0
-        },
-    }
-}
+    countPromptString(text: PromptString): number {
+        return this.countTokens(text.toString())
+    },
 
-/**
- * Get the tokenizer, which is lazily-loaded it because it requires reading ~1 MB of tokenizer data.
- */
-export async function getTokenCounterUtils(): Promise<TokenCounterUtils> {
-    if (_useFakeTokenCounterUtils) {
-        return _useFakeTokenCounterUtils
-    }
+    getMessagesTokenCount(messages: Message[]): number {
+        return messages.reduce((acc, m) => acc + this.getTokenCountForMessage(m), 0)
+    },
 
-    // This could have been implemented in a separate file that is wholly async-imported, but that
-    // carries too much risk of accidental non-async importing.
-    if (!_tokenCounterUtilsPromise) {
-        _tokenCounterUtilsPromise = import('js-tiktoken/ranks/cl100k_base')
-            .then(({ default: cl100k_base }) => new Tiktoken(cl100k_base))
-            .then(tokenizer => {
-                const tokenCounterUtils: TokenCounterUtils = {
-                    encode(text: string): number[] {
-                        return tokenizer.encode(text.normalize('NFKC'), 'all')
-                    },
-
-                    decode(encoded: number[]): string {
-                        return tokenizer.decode(encoded)
-                    },
-
-                    countTokens(text: string): number {
-                        const wordCount = text.trim().split(/\s+/).length
-                        return wordCount > EXTENDED_USER_CONTEXT_TOKEN_BUDGET
-                            ? wordCount
-                            : this.encode(text).length
-                    },
-
-                    countPromptString(text: PromptString): number {
-                        return this.countTokens(text.toString())
-                    },
-
-                    getMessagesTokenCount(messages: Message[]): number {
-                        return messages.reduce((acc, m) => acc + this.getTokenCountForMessage(m), 0)
-                    },
-
-                    getTokenCountForMessage(message: Message): number {
-                        if (message?.text && message?.text.length > 0) {
-                            return this.countPromptString(message.text)
-                        }
-                        return 0
-                    },
-                }
-                return tokenCounterUtils
-            })
-    }
-    return _tokenCounterUtilsPromise
-}
-
-let _tokenCounterUtilsPromise: Promise<TokenCounterUtils> | null = null
-
-type WithPromise<T> = {
-    [K in keyof T]: T[K] extends (...args: any[]) => any
-        ? (...args: Parameters<T[K]>) => Promise<ReturnType<T[K]>>
-        : T[K]
-}
-
-/**
- * Calling `await TokenCounterUtils.foo()` is the same as `(await getTokenCounterUtils()).foo()`.
- */
-export const TokenCounterUtils: WithPromise<TokenCounterUtils> = {
-    encode: async (...args) => (await getTokenCounterUtils()).encode(...args),
-    decode: async (...args) => (await getTokenCounterUtils()).decode(...args),
-    countTokens: async (...args) => (await getTokenCounterUtils()).countTokens(...args),
-    countPromptString: async (...args) => (await getTokenCounterUtils()).countPromptString(...args),
-    getMessagesTokenCount: async (...args) =>
-        (await getTokenCounterUtils()).getMessagesTokenCount(...args),
-    getTokenCountForMessage: async (...args) =>
-        (await getTokenCounterUtils()).getTokenCountForMessage(...args),
+    getTokenCountForMessage(message: Message): number {
+        if (message?.text && message?.text.length > 0) {
+            return this.countPromptString(message.text)
+        }
+        return 0
+    },
 }
 
 /**
@@ -146,14 +72,11 @@ export class TokenCounter {
      * Convenience constructor to await the lazy-import from {@link getTokenCounterUtils} and then
      * call our constructor.
      */
-    public static async create(contextWindow: ModelContextWindow): Promise<TokenCounter> {
-        return new TokenCounter(await getTokenCounterUtils(), contextWindow)
+    public static create(contextWindow: ModelContextWindow): TokenCounter {
+        return new TokenCounter(contextWindow)
     }
 
-    private constructor(
-        readonly utils: TokenCounterUtils,
-        contextWindow: ModelContextWindow
-    ) {
+    private constructor(contextWindow: ModelContextWindow) {
         // If there is no context window reserved for context.user,
         // context will share the same token budget with chat.
         this.shareChatAndUserBudget = !contextWindow.context?.user
@@ -175,7 +98,7 @@ export class TokenCounter {
         type: TokenUsageType,
         messages: Message[]
     ): { succeeded: boolean; reason?: string } {
-        const count = this.utils.getMessagesTokenCount(messages)
+        const count = TokenCounterUtils.getMessagesTokenCount(messages)
         const { isWithinLimit, reason } = this.canAllocateTokens(type, count)
         if (isWithinLimit) {
             this.usedTokens[type] = this.usedTokens[type] + count
