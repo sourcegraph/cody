@@ -4,6 +4,7 @@ import {
     TelemetryRecorderProvider,
     clientCapabilities,
     isDotCom,
+    isWorkspaceInstance,
     resolvedConfig,
     subscriptionDisposable,
     telemetryRecorder,
@@ -38,7 +39,10 @@ export function createOrUpdateTelemetryRecorderProvider(
             ])
             // Telemetry can only be disabled for Non-Sourcegraph.com instances.
             if (configuration.telemetryLevel === 'off') {
-                if (auth.serverEndpoint && !isDotCom(auth.serverEndpoint)) {
+                if (
+                    auth.serverEndpoint &&
+                    !(isDotCom(auth.serverEndpoint) || isWorkspaceInstance(auth.serverEndpoint))
+                ) {
                     updateGlobalTelemetryInstances(defaultNoOpProvider)
                     logDebug('TelemetryRecorderProvider', 'telemetry has been disabled.', {
                         verbose: `telemetry is disabled for ${auth.serverEndpoint}`,
