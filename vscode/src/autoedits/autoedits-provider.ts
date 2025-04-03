@@ -27,6 +27,7 @@ import {
 } from './adapters/base'
 import { createAutoeditsModelAdapter } from './adapters/create-adapter'
 import {
+    type AutoeditHotStreakID,
     type AutoeditRequestID,
     type AutoeditRequestStateForAgentTesting,
     autoeditAnalyticsLogger,
@@ -76,7 +77,7 @@ export interface PredictionResult {
      * Metadata to process a hot-streak completion.
      */
     hotStreak?: {
-        id: string
+        id: AutoeditHotStreakID
         adjustedRange: vscode.Range
         cursorPosition: vscode.Position
     }

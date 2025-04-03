@@ -9,7 +9,7 @@ import {
     type PartialModelResponse,
     type SuccessModelResponse,
 } from './adapters/base'
-import { autoeditSource } from './analytics-logger'
+import { type AutoeditHotStreakID, autoeditSource } from './analytics-logger'
 
 export interface AutoeditRequestManagerParams {
     requestUrl: string
@@ -155,7 +155,7 @@ export class RequestManager implements vscode.Disposable {
     public getNearestHotStreakItem({
         hotStreakID,
         position,
-    }: { hotStreakID: string; position: vscode.Position }): CacheEntry | null {
+    }: { hotStreakID: AutoeditHotStreakID; position: vscode.Position }): CacheEntry | null {
         let closestItem: CacheEntry | null = null
         let minDistance = Number.MAX_SAFE_INTEGER
 
