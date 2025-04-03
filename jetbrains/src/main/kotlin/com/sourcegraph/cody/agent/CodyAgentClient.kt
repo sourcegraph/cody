@@ -29,12 +29,14 @@ import com.sourcegraph.cody.edit.lenses.LensesService
 import com.sourcegraph.cody.error.CodyConsole
 import com.sourcegraph.cody.error.SentryService
 import com.sourcegraph.cody.ignore.IgnoreOracle
+import com.sourcegraph.cody.initialization.SuggestAutoedit
 import com.sourcegraph.cody.statusbar.CodyStatusService
 import com.sourcegraph.cody.ui.web.NativeWebviewProvider
 import com.sourcegraph.cody.vscode.InlineCompletionTriggerKind
 import com.sourcegraph.common.BrowserOpener
 import com.sourcegraph.common.NotificationGroups
 import com.sourcegraph.common.ui.SimpleDumbAwareEDTAction
+import com.sourcegraph.config.ConfigUtil
 import com.sourcegraph.utils.CodyEditorUtil
 import java.nio.file.Paths
 import java.util.concurrent.CompletableFuture
@@ -196,6 +198,8 @@ class CodyAgentClient(private val project: Project, private val webview: NativeW
         SentryService.getInstance().setUser(params.primaryEmail, params.username)
         authService.setActivated(true)
         authService.setEndpoint(SourcegraphServerPath(params.endpoint))
+        val isDotcom = params.endpoint.lowercase().startsWith(ConfigUtil.DOTCOM_URL)
+        SuggestAutoedit(isDotcom).runActivity(project)
       } else if (params is ProtocolUnauthenticatedAuthStatus) {
         SentryService.getInstance().setUser(null, null)
         authService.setActivated(false)

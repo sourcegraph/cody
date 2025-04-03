@@ -5,4 +5,6 @@ import com.sourcegraph.cody.agent.protocol_generated.FeatureFlags_GetFeatureFlag
 object GetFeatureFlag {
   val UseSscForCodySubscription = FeatureFlags_GetFeatureFlagParams("UseSscForCodySubscription")
   val CodyProTrialEnded = FeatureFlags_GetFeatureFlagParams("CodyProTrialEnded")
+  val CodyAutoeditExperimentEnabledFeatureFlag =
+      FeatureFlags_GetFeatureFlagParams("CodyAutoeditExperimentEnabledFeatureFlag")
 }
