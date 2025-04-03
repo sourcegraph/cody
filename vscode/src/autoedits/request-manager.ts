@@ -76,14 +76,15 @@ export class RequestManager implements vscode.Disposable {
         this.cancelIrrelevantRequests()
 
         // Start processing the request in the background
-        this.processRequestInBackground(request, makeRequest)
+        this.processRequestInBackground(request, makeRequest, params)
 
         return request.promise
     }
 
     private async processRequestInBackground(
         request: InflightRequest,
-        makeRequest: (abortSignal: AbortSignal) => Promise<AsyncGenerator<ModelResponse>>
+        makeRequest: (abortSignal: AbortSignal) => Promise<AsyncGenerator<PredictionResult>>,
+        params: AutoeditRequestManagerParams
     ): Promise<void> {
         try {
             for await (const result of await makeRequest(request.abortController.signal)) {
