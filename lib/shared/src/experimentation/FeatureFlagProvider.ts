@@ -272,11 +272,14 @@ export class FeatureFlagProviderImpl implements FeatureFlagProvider {
 
     /**
      * Observe the evaluated value of a feature flag.
+     * @param flagName - The feature flag to evaluate
+     * @param forceRefresh - When set to true, forces a refresh of the feature flag value. Useful for new feature flags that are frequently toggled.
+     * @returns An Observable that emits the current value of the feature flag
      */
-    public evaluateFeatureFlag(flagName: FeatureFlag): Observable<boolean> {
+    public evaluateFeatureFlag(flagName: FeatureFlag, forceRefresh = false): Observable<boolean> {
         let entry = this.featureFlagCache[flagName]
 
-        if (!entry) {
+        if (!entry || forceRefresh) {
             // Whenever the auth status changes, we need to call `evaluateFeatureFlags` on the GraphQL
             // endpoint, because our endpoint or authentication may have changed.
             entry = storeLastValue(
