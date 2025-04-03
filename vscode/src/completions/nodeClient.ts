@@ -140,7 +140,7 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                     //
                     // If the request failed with a rate limit error, wraps the
                     // error in RateLimitError.
-                    function handleError(e: Error): void {
+                    async function handleError(e: Error): Promise<void> {
                         log?.onError(e.message, e)
 
                         if (statusCode === 429) {
@@ -155,19 +155,27 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                                 ? getHeader(res.headers['x-ratelimit-limit'])
                                 : undefined
 
-                            // Get feature flag value and create error
-                            featureFlagProvider.evaluateFeatureFlag(FeatureFlag.FallbackToFlash).subscribe(async (fallbackToFlash: boolean) => {
-                                const error = new RateLimitError(
-                                    'chat messages and commands',
-                                    e.message,
-                                    upgradeIsAvailable,
-                                    limit ? Number.parseInt(limit, 10) : undefined,
-                                    retryAfter,
-                                    fallbackToFlash
-                                )
-                                handleRateLimitError(error)
-                                onErrorOnce(error, statusCode)
-                            })
+                            // Get feature flag value synchronously
+                            const error = new RateLimitError(
+                                'chat messages and commands',
+                                e.message,
+                                upgradeIsAvailable,
+                                limit ? Number.parseInt(limit, 10) : undefined,
+                                retryAfter,
+                                false // Set fallbackToFlash to false initially
+                            )
+
+                            // Check feature flag and handle rate limit error if enabled
+                            featureFlagProvider
+                                .evaluateFeatureFlag(FeatureFlag.FallbackToFlash)
+                                .subscribe(fallbackToFlash => {
+                                    if (fallbackToFlash) {
+                                        handleRateLimitError(error)
+                                    }
+                                })
+
+                            // Call error callback with rate limit error
+                            onErrorOnce(error, statusCode)
                         } else {
                             onErrorOnce(e, statusCode)
                         }
@@ -351,26 +359,29 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                     body: JSON.stringify(serializedParams),
                     signal,
                 })
-                if (response.status === 429) {
-                    const upgradeIsAvailable =
-                        response.headers.get('x-is-cody-pro-user') === 'false' &&
-                        typeof response.headers.get('x-is-cody-pro-user') !== 'undefined'
-                    const retryAfter = response.headers.get('retry-after')
-                    const limit = response.headers.get('x-ratelimit-limit')
-
-                    featureFlagProvider.evaluateFeatureFlag(FeatureFlag.FallbackToFlash).subscribe(async (fallbackToFlash: boolean) => {
-                        const error = new RateLimitError(
-                            'chat messages and commands',
-                            await response.text(),
-                            upgradeIsAvailable,
-                            limit ? Number.parseInt(limit, 10) : undefined,
-                            retryAfter,
-                            fallbackToFlash
-                        )
-                        handleRateLimitError(error)
-                        throw error
+                featureFlagProvider
+                    .evaluateFeatureFlag(FeatureFlag.FallbackToFlash)
+                    .subscribe(async (fallbackToFlash: boolean) => {
+                        if (fallbackToFlash) {
+                            if (response.status === 429) {
+                                const upgradeIsAvailable =
+                                    response.headers.get('x-is-cody-pro-user') === 'false' &&
+                                    typeof response.headers.get('x-is-cody-pro-user') !== 'undefined'
+                                const retryAfter = response.headers.get('retry-after')
+                                const limit = response.headers.get('x-ratelimit-limit')
+                                const error = new RateLimitError(
+                                    'chat messages and commands',
+                                    await response.text(),
+                                    upgradeIsAvailable,
+                                    limit ? Number.parseInt(limit, 10) : undefined,
+                                    retryAfter,
+                                    fallbackToFlash
+                                )
+                                handleRateLimitError(error)
+                                throw error
+                            }
+                        }
                     })
-                }
                 if (!response.ok) {
                     const errorMessage = await response.text()
                     throw new NetworkError(

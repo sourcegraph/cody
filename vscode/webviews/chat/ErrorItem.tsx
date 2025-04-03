@@ -142,11 +142,13 @@ const RateLimitErrorItem: React.FunctionComponent<{
         const subscription = featureFlagProvider
             .evaluateFeatureFlag(FeatureFlag.FallbackToFlash)
             .subscribe(enabled => {
-                ctaText = userInfo?.isCodyProUser
-                    ? 'Upgrade to Cody Enterprise'
-                    : !canUpgrade
-                      ? 'Usage limit of premium models reached, switching the model to Gemini Flash.'
-                      : 'Upgrade to Cody Pro'
+                if (enabled) {
+                    ctaText = userInfo?.isCodyProUser
+                        ? 'Upgrade to Cody Enterprise'
+                        : !canUpgrade
+                          ? 'Usage limit of premium models reached, switching the model to Gemini Flash.'
+                          : 'Upgrade to Cody Pro'
+                }
             })
         return () => subscription.unsubscribe()
     }, [userInfo, canUpgrade, ctaText])
