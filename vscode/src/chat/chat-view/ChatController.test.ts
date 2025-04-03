@@ -12,10 +12,9 @@ import {
     mockResolvedConfig,
     modelsService,
     ps,
-    useFakeTokenCounterUtils,
 } from '@sourcegraph/cody-shared'
 import { Observable } from 'observable-fns'
-import { beforeAll, beforeEach, describe, expect, it, test, vi } from 'vitest'
+import { beforeEach, describe, expect, it, test, vi } from 'vitest'
 import { Uri } from 'vscode'
 import { URI } from 'vscode-uri'
 import * as featureFlagProviderModule from '../../../../lib/shared/src/experimentation/FeatureFlagProvider'
@@ -28,10 +27,6 @@ import { ChatController, type ChatControllerOptions } from './ChatController'
 import { manipulateWebviewHTML } from './ChatController'
 
 describe('ChatController', () => {
-    beforeAll(() => {
-        useFakeTokenCounterUtils()
-    })
-
     const mockChatClient = {
         chat: vi.fn(),
     } satisfies ChatControllerOptions['chatClient']
