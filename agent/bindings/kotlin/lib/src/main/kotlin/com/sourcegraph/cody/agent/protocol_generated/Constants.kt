@@ -78,6 +78,7 @@ object Constants {
   const val isChatErrorGuard = "isChatErrorGuard"
   const val loaded = "loaded"
   const val local = "local"
+  const val mcp = "mcp"
   const val media = "media"
   const val method = "method"
   const val modified = "modified"

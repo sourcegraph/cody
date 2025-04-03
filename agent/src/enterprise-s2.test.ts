@@ -168,11 +168,12 @@ describe('Enterprise - S2 (close main branch)', { timeout: 5000 }, () => {
             `
             )
 
+            const retrieverStat = completionEvent?.params?.contextSummary?.retrieverStats.find(
+                stat => stat.name === 'jaccard-similarity'
+            )
+
             // Two documents will be checked against context filters set in site-config on S2.
-            expect(
-                completionEvent?.params.contextSummary?.retrieverStats['jaccard-similarity']
-                    .suggestedItems
-            ).toEqual(2)
+            expect(retrieverStat?.suggestedItems).toEqual(2)
 
             s2EnterpriseClient.notify('autocomplete/completionAccepted', {
                 completionID: items[0].id,

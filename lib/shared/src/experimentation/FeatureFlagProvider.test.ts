@@ -27,6 +27,7 @@ describe('FeatureFlagProvider', () => {
             auth: { credentials: undefined, serverEndpoint: 'https://example.com' },
         })
         mockAuthStatus(AUTH_STATUS_FIXTURE_AUTHED)
+        vi.spyOn(graphqlClient, 'getSiteVersion').mockResolvedValue('6.2.0') // evaluateFeatureFlags is available from 6.2.0
     })
 
     let featureFlagProvider: FeatureFlagProviderImpl

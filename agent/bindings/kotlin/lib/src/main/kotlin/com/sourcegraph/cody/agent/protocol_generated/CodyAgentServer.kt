@@ -102,6 +102,8 @@ interface CodyAgentServer {
   fun testing_closestPostData(params: Testing_ClosestPostDataParams): CompletableFuture<Testing_ClosestPostDataResult>
   @JsonRequest("testing/memoryUsage")
   fun testing_memoryUsage(params: Null?): CompletableFuture<Testing_MemoryUsageResult>
+  @JsonRequest("testing/heapdump")
+  fun testing_heapdump(params: Null?): CompletableFuture<Null?>
   @JsonRequest("testing/awaitPendingPromises")
   fun testing_awaitPendingPromises(params: Null?): CompletableFuture<Null?>
   @JsonRequest("testing/workspaceDocuments")

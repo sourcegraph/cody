@@ -323,7 +323,18 @@ export function syncModels({
                                                 ) {
                                                     data.preferences!.defaults.chat = haikuModel.id
                                                 }
-
+                                                data.primaryModels = data.primaryModels.map(model => {
+                                                    if (
+                                                        model.modelRef ===
+                                                        data.preferences!.defaults.chat
+                                                    ) {
+                                                        return {
+                                                            ...model,
+                                                            tags: [...model.tags, ModelTag.Default],
+                                                        }
+                                                    }
+                                                    return model
+                                                })
                                                 return Observable.of(data)
                                             }
                                         )
