@@ -159,6 +159,12 @@ export type AutoeditSuggestionID = string & { readonly _brand: 'AutoeditSuggesti
 export type AutoeditRequestID = string & { readonly _brand: 'AutoeditRequestID' }
 
 /**
+ * A stable ID for a chain of hot-streak suggestions.
+ * Used to support jumping between hot-streak suggestions.
+ */
+export type AutoeditHotStreakID = string & { readonly _brand: 'AutoeditHotStreakID' }
+
+/**
  * The base fields common to all request states. We track ephemeral times and
  * the partial payload. Once we reach a certain phase, we log the payload as a telemetry event.
  */

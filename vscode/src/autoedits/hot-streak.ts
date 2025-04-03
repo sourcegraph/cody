@@ -9,6 +9,7 @@ import {
     type PartialModelResponse,
     type SuccessModelResponse,
 } from './adapters/base'
+import type { AutoeditHotStreakID } from './analytics-logger'
 import { type PredictionResult, getDecorationInfoFromPrediction } from './autoedits-provider'
 import { getDiffChangeBoundaries } from './renderer/diff-utils'
 
@@ -113,7 +114,7 @@ export async function* processHotStreakResponses(
 
             if (!hotStreakID) {
                 // We are emitting a hot streak prediction. This means that all future response should be treated as hot streaks.
-                hotStreakID = uui.v4()
+                hotStreakID = uui.v4() as AutoeditHotStreakID
             }
             yield {
                 response: {
