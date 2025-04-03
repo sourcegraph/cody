@@ -72,8 +72,14 @@ interface AutoeditEditItem extends AutocompleteEditItem {
 
 export interface PredictionResult {
     response: ModelResponse
-    adjustedPredictionRange?: vscode.Range
-    nextCursorPosition?: vscode.Position
+    /**
+     * Metadata to process a hot-streak completion.
+     */
+    hotStreak?: {
+        id: string
+        adjustedRange: vscode.Range
+        cursorPosition: vscode.Position
+    }
 }
 
 export interface AutoeditsResult {
@@ -342,11 +348,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                 'provideInlineCompletionItems',
                 'Calculating prediction from getPrediction...'
             )
-            const {
-                response: predictionResult,
-                adjustedPredictionRange,
-                nextCursorPosition,
-            } = await this.getPrediction({
+            const predictionResult = await this.getPrediction({
                 document,
                 position,
                 prompt,
@@ -354,11 +356,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                 abortSignal,
             })
 
-            if (adjustedPredictionRange) {
-                codeToReplaceData = adjustCodeToReplaceForRange(adjustedPredictionRange)
-            }
-
-            if (abortSignal?.aborted || predictionResult.type === 'aborted') {
+            if (abortSignal?.aborted || predictionResult.response.type === 'aborted') {
                 autoeditsOutputChannelLogger.logDebugIfVerbose(
                     'provideInlineCompletionItems',
                     'client aborted after getPrediction'
@@ -371,25 +369,29 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                 return null
             }
 
+            if (predictionResult.hotStreak) {
+                codeToReplaceData = adjustCodeToReplaceForRange(predictionResult.hotStreak.adjustedRange)
+            }
+
             if (
-                predictionResult.stopReason !== AutoeditStopReason.HotStreak &&
-                predictionResult.stopReason !== AutoeditStopReason.RequestFinished
+                predictionResult.response.stopReason !== AutoeditStopReason.HotStreak &&
+                predictionResult.response.stopReason !== AutoeditStopReason.RequestFinished
             ) {
                 // Ignore partial responses that we cannot use
                 return null
             }
 
-            const initialPrediction = predictionResult.prediction
+            const initialPrediction = predictionResult.response.prediction
 
             autoeditAnalyticsLogger.markAsLoaded({
                 requestId,
                 prompt,
-                modelResponse: predictionResult,
+                modelResponse: predictionResult.response,
+                hotStreak: predictionResult.hotStreak,
                 codeToReplaceData,
-                nextCursorPosition,
                 payload: {
                     // TODO: make it required
-                    source: predictionResult.source ?? autoeditSource.network,
+                    source: predictionResult.response.source ?? autoeditSource.network,
                     isFuzzyMatch: false,
                     prediction: initialPrediction,
                     codeToRewrite: codeToReplaceData.codeToRewrite,
@@ -408,7 +410,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                 return null
             }
 
-            if (predictionResult.prediction.length === 0) {
+            if (predictionResult.response.prediction.length === 0) {
                 autoeditsOutputChannelLogger.logDebugIfVerbose(
                     'provideInlineCompletionItems',
                     'received empty prediction'

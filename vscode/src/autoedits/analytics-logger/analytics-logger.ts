@@ -25,6 +25,7 @@ import type { CodeToReplaceData } from '../prompt/prompt-utils'
 import type { DecorationInfo } from '../renderer/decorators/base'
 import { getDecorationStats } from '../renderer/diff-utils'
 
+import type { PredictionResult } from '../autoedits-provider'
 import { autoeditDebugStore } from '../debug-panel/debug-store'
 import type { AutoEditRenderOutput } from '../renderer/render-output'
 import { autoeditIdRegistry } from './suggestion-id-registry'
@@ -162,11 +163,11 @@ export class AutoeditAnalyticsLogger {
         payload,
         modelResponse,
         codeToReplaceData,
-        nextCursorPosition,
+        hotStreak,
     }: {
         modelResponse: SuccessModelResponse | PartialModelResponse
         codeToReplaceData: CodeToReplaceData
-        nextCursorPosition?: vscode.Position
+        hotStreak: PredictionResult['hotStreak']
         requestId: AutoeditRequestID
         prompt: AutoeditsPrompt
         payload: Required<
@@ -183,7 +184,7 @@ export class AutoeditAnalyticsLogger {
                 loadedAt,
                 modelResponse,
                 codeToReplaceData,
-                nextCursorPosition,
+                hotStreak,
                 payload: {
                     ...request.payload,
                     id: stableId,

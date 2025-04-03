@@ -1,6 +1,7 @@
-import * as vscode from 'vscode'
-
 import type { CodeToReplaceData } from '@sourcegraph/cody-shared'
+import * as uui from 'uuid'
+
+import * as vscode from 'vscode'
 
 import {
     AutoeditStopReason,
@@ -36,10 +37,15 @@ export async function* processHotStreakResponses(
     codeToReplaceData: CodeToReplaceData
 ): AsyncGenerator<PredictionResult> {
     let linesAlreadyChunked = 0
-    let startedHotStreak = false
+    let hotStreakID = null
 
     for await (const response of responseGenerator) {
-        if (isHotStreakResponse(response, startedHotStreak)) {
+        const shouldHotStreak = hotStreakID
+            ? // If we have already started emitted hot-streak suggestions, then we should treat all responses as hot-streaks
+              response.type === 'partial' || response.type === 'success'
+            : // Otherwise only attempt doing so for partial responses.
+              response.type === 'partial'
+        if (shouldHotStreak && response.type !== 'aborted') {
             const trimmedPrediction = trimPredictionForHotStreak(
                 response.prediction,
                 linesAlreadyChunked
@@ -104,17 +110,22 @@ export async function* processHotStreakResponses(
 
             // Track the number of lines we have processed, this is used to trim the prediction accordingly in the next response.
             linesAlreadyChunked = linesAlreadyChunked + currentLineCount
-            // We are emitting a hot streak prediction. This means that all future response should be treated as hot streaks.
-            startedHotStreak = true
 
+            if (!hotStreakID) {
+                // We are emitting a hot streak prediction. This means that all future response should be treated as hot streaks.
+                hotStreakID = uui.v4()
+            }
             yield {
                 response: {
                     ...response,
                     prediction: trimmedPrediction,
                     stopReason: AutoeditStopReason.HotStreak,
                 },
-                adjustedPredictionRange,
-                nextCursorPosition,
+                hotStreak: {
+                    id: hotStreakID,
+                    adjustedRange: adjustedPredictionRange,
+                    cursorPosition: nextCursorPosition,
+                },
             }
         }
 
