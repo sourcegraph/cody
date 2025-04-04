@@ -131,14 +131,15 @@ jobs:
         # commands before `xvfb-run -a pnpm run test` avoid these ERROR messages:
         # - Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
         # - Exiting GPU process due to errors during initialization
-      - run: |
+      - name: Run tests (ubuntu)
+        run: |
           export XDG_RUNTIME_DIR=/run/user/$(id -u)
           export DBUS_SESSION_BUS_ADDRESS=unix:path=$XDG_RUNTIME_DIR/bus
           dbus-daemon --session --address=$DBUS_SESSION_BUS_ADDRESS --nofork --nopidfile --syslog-only &
           mkdir ~/.vscode && echo '{ "disable-hardware-acceleration": true }' > ~/.vscode/argv.json
           xvfb-run -a pnpm -C vscode run test:integration
         if: matrix.runner == 'ubuntu'
-      - name: Disable hardware acceleration in VS Code (Windows only)
+      - name: Run tests (windows)
         if: matrix.runner == 'windows'
         shell: powershell
         run: |
@@ -151,7 +152,8 @@ jobs:
           '@
           $json | Set-Content -Path "$vscodeDir\argv.json" -Encoding UTF8
           pnpm -C vscode run test:integration
-      - run: |
+      - name: Run tests (mac)
+        run: |
           mkdir ~/.vscode && echo '{ "disable-hardware-acceleration": true }' > ~/.vscode/argv.json
           pnpm -C vscode run test:integration
         if: matrix.runner == 'macos'
