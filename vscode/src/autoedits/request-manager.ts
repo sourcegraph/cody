@@ -58,6 +58,16 @@ export class RequestManager implements vscode.Disposable {
         // Cancel any irrelevant requests based on the current request
         this.cancelIrrelevantRequests()
 
+        // Start processing the request in the background
+        this.processRequestInBackground(request, makeRequest)
+
+        return request.promise
+    }
+
+    private async processRequestInBackground(
+        request: InflightRequest,
+        makeRequest: (abortSignal: AbortSignal) => Promise<AsyncGenerator<ModelResponse>>
+    ): Promise<void> {
         try {
             for await (const response of await makeRequest(request.abortController.signal)) {
                 if (response.type === 'partial') {
@@ -86,9 +96,6 @@ export class RequestManager implements vscode.Disposable {
         } finally {
             this.inflightRequests.delete(request.cacheKey)
         }
-
-        // Return the promise to the client immediately and handle request completion in promise callbacks.
-        return request.promise
     }
 
     public removeFromCache(params: RequestCacheKeyParams): void {
