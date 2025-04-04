@@ -397,8 +397,9 @@ tasks {
 
   fun downloadNodeBinaries(): File {
     val nodeVersion = properties("nodeBinaries.version")!!
-    val url = "https://github.com/sourcegraph/node-binaries/archive/refs/heads/${nodeVersion}.zip"
-    val zipFile = githubArchiveCache.resolve("$nodeVersion.zip")
+    val branch = "v${nodeVersion}"
+    val url = "https://github.com/sourcegraph/node-binaries/archive/refs/heads/$branch.zip"
+    val zipFile = githubArchiveCache.resolve("$branch.zip")
     download(url, zipFile)
 
     val destination = githubArchiveCache.resolve("node").resolve("node-binaries-$nodeVersion")
@@ -437,9 +438,9 @@ tasks {
       println("Using existing unzipped directory: $destination")
     }
 
-    val nodeVersionDir = destination.resolve(nodeVersion)
+    val nodeVersionDir = destination.resolve(branch)
     if (!nodeVersionDir.exists()) {
-      project.logger.warn(
+      project.logger.error(
           "Expected Node version directory not found after unzipping: $nodeVersionDir")
     }
     return nodeVersionDir
