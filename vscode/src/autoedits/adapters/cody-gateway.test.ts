@@ -66,7 +66,7 @@ describe('CodyGatewayAdapter', () => {
                 'Content-Type': 'application/json',
                 Authorization: expect.stringContaining('sgd_'),
                 'X-Sourcegraph-Feature': 'code_completions',
-                'Accept-Encoding': 'gzip;q=0'
+                'Accept-Encoding': 'gzip;q=0',
             },
             body: expect.stringContaining('"model":"anthropic/claude-2"'),
             signal: expect.any(AbortSignal),

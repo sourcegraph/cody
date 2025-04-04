@@ -584,9 +584,7 @@ describe('AutoeditsProvider', () => {
             })
 
             // Run all timers to get the result
-            await vi.advanceTimersByTimeAsync(10000)
-            const result1 = await promiseResult1
-            const result2 = await promiseResult2
+            const [result1, result2] = await Promise.all([promiseResult1, promiseResult2])
 
             // The first call is aborted because the second call is triggered before the
             // `customGetModelResponse` function has returned.

@@ -50,9 +50,9 @@ describe('Autoedits RequestManager', () => {
         const params = createRequestParams`function hello() {█`
         const prediction = '\n  console.log("Hello, world!");\n}'
 
-        const mockRequest = vi.fn().mockImplementation(async () => {
+        const mockRequest = vi.fn().mockImplementation(async function* () {
             await vi.advanceTimersByTimeAsync(100)
-            return createSuccessResponse(prediction)
+            yield createSuccessResponse(prediction)
         })
 
         const responsePromise = requestManager.request(params, mockRequest)
