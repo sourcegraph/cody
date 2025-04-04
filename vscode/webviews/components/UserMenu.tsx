@@ -363,7 +363,7 @@ export const UserMenu: React.FunctionComponent<UserMenuProps> = ({
                             </CommandGroup>
                             <CommandGroup>
                                 {/* Display the latest endpoint first. */}
-                                {[...endpointHistory].reverse().map(storedEndpoint => (
+                                {[...endpointHistory].sort((a, b) => (a === endpoint ? -1 : b === endpoint ? 1 : 0)).map(storedEndpoint => (
                                     <CommandItem
                                         key={`${storedEndpoint}-account`}
                                         title={`Sign Out & Remove ${storedEndpoint}`}
@@ -384,13 +384,15 @@ export const UserMenu: React.FunctionComponent<UserMenuProps> = ({
                                                 Active
                                             </Badge>
                                         )}
-                                        <span className="tw-flex-grow tw-truncate">
-                                            {storedEndpoint}
-                                        </span>
+                                        <div className="tw-flex-grow tw-overflow-x-auto no-scrollbar">
+                                            <span className="tw-whitespace-nowrap">
+                                                {storedEndpoint}
+                                            </span>
+                                        </div>
                                         <Button
                                             size="sm"
                                             variant="text"
-                                            className="tw-ml-auto tw-p-0 !tw-w-fit"
+                                            className="tw-ml-auto tw-p-0 !tw-w-fit tw-shrink-0"
                                             onClick={e => {
                                                 e.stopPropagation()
                                                 setEndpointToRemove(storedEndpoint)
@@ -399,7 +401,7 @@ export const UserMenu: React.FunctionComponent<UserMenuProps> = ({
                                         >
                                             <CircleXIcon size={16} strokeWidth={1.25} />
                                         </Button>
-                                    </CommandItem>
+                                    </CommandItem>                            
                                 ))}
                             </CommandGroup>
                             <CommandGroup>
