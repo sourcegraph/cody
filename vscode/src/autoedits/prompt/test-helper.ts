@@ -14,11 +14,12 @@ interface CodeToReplaceTestOptions {
 }
 
 export function createCodeToReplaceDataForTest(
-    code: TemplateStringsArray,
+    code: TemplateStringsArray | string,
     options: CodeToReplaceTestOptions,
     ...values: unknown[]
 ): CodeToReplaceData {
-    const { document, position } = documentAndPosition(dedent(code, values))
+    const documentText = isTemplateStringsArray(code) ? dedent(code, values) : code.toString()
+    const { document, position } = documentAndPosition(documentText)
     const docContext = getCurrentDocContext({
         document,
         position,
@@ -50,4 +51,8 @@ export function getCodeToReplaceForRenderer(
         },
         ...values
     )
+}
+
+export function isTemplateStringsArray(value: unknown): value is TemplateStringsArray {
+    return Array.isArray(value) && 'raw' in value && Array.isArray(value.raw)
 }

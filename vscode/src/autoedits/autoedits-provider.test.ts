@@ -527,7 +527,7 @@ describe('AutoeditsProvider', () => {
             })
 
             // Run all timers to get the result
-            await vi.advanceTimersByTimeAsync(10000)
+            await vi.advanceTimersByTimeAsync(1000)
             const result = await promiseResult
 
             expect(result?.inlineCompletionItems[0].insertText).toBe('const x = 1')
@@ -679,7 +679,7 @@ describe('AutoeditsProvider', () => {
             )
 
             // Run all timers to get the result
-            await vi.advanceTimersByTimeAsync(10000)
+            await vi.advanceTimersByTimeAsync(1000)
             const [result1, result2, result3, result4] = await Promise.all([
                 promiseResult1,
                 promiseResult2,
