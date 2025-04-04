@@ -401,7 +401,7 @@ export class AutoEditsDefaultRendererManager
                 return
             }
 
-            this.nextCursorManager.suggest(editor.document.uri, nextCursorPosition)
+            editor.selection = new vscode.Selection(nextCursorPosition, nextCursorPosition)
         }
     }
 
