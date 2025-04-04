@@ -1,4 +1,4 @@
-import type { CodyIDE } from '@sourcegraph/cody-shared'
+import type { CodyIDE, UserLocalHistory } from '@sourcegraph/cody-shared'
 import { useExtensionAPI, useObservable } from '@sourcegraph/prompt-editor'
 import { HistoryIcon, MessageSquarePlusIcon, TrashIcon } from 'lucide-react'
 import type React from 'react'
@@ -200,7 +200,9 @@ export const HistoryTabWithData: React.FC<HistoryTabProps & { chats: Lightweight
     )
 }
 
-function useUserHistory(): LightweightChatHistory | null | undefined {
+function useUserHistory(
+    getFullHistory = false
+): LightweightChatHistory | UserLocalHistory | null | undefined {
     const userHistory = useExtensionAPI().userHistory
-    return useObservable(useMemo(() => userHistory(), [userHistory])).value
+    return useObservable(useMemo(() => userHistory(getFullHistory), [userHistory, getFullHistory])).value
 }
