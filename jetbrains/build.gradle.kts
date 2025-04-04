@@ -413,7 +413,8 @@ tasks {
       println("Unzipped main archive, created $destination")
 
       destination.listFiles()?.forEach { fileInDestination ->
-        if (fileInDestination.isFile && fileInDestination.name.endsWith(".zip", ignoreCase = true)) {
+        if (fileInDestination.isFile &&
+            fileInDestination.name.endsWith(".zip", ignoreCase = true)) {
           println("Found inner zip file: ${fileInDestination.name}. Unzipping...")
           try {
             project.copy {
@@ -423,10 +424,12 @@ tasks {
             println("Successfully unzipped ${fileInDestination.name}")
 
             if (!fileInDestination.delete()) {
-              project.logger.warn("Failed to delete inner zip file: ${fileInDestination.absolutePath}")
+              project.logger.warn(
+                  "Failed to delete inner zip file: ${fileInDestination.absolutePath}")
             }
           } catch (e: Exception) {
-            project.logger.error("Failed to unzip inner file ${fileInDestination.name}: ${e.message}", e)
+            project.logger.error(
+                "Failed to unzip inner file ${fileInDestination.name}: ${e.message}", e)
           }
         }
       }
@@ -436,7 +439,8 @@ tasks {
 
     val nodeVersionDir = destination.resolve(nodeVersion)
     if (!nodeVersionDir.exists()) {
-      project.logger.warn("Expected Node version directory not found after unzipping: $nodeVersionDir")
+      project.logger.warn(
+          "Expected Node version directory not found after unzipping: $nodeVersionDir")
     }
     return nodeVersionDir
   }
