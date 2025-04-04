@@ -16,6 +16,7 @@ interface BaseAutoeditsProviderConfig {
     url: string
     tokenLimit: AutoEditsTokenLimit
     isChatModel: boolean
+    timeoutMs: number
 }
 
 export interface AutoeditsProviderConfig extends BaseAutoeditsProviderConfig {
@@ -50,6 +51,7 @@ function getBaseProviderConfig(): BaseAutoeditsProviderConfig {
             url: 'https://cody-gateway.sourcegraph.com/v1/completions/fireworks',
             tokenLimit: defaultTokenLimit,
             isChatModel: false,
+            timeoutMs: 10_000,
         }
     }
 
@@ -59,6 +61,7 @@ function getBaseProviderConfig(): BaseAutoeditsProviderConfig {
         tokenLimit: defaultTokenLimit,
         url: '',
         isChatModel: false,
+        timeoutMs: 10_000,
     }
 }
 
@@ -81,6 +84,7 @@ function getAutoeditsProviderConfig(): AutoeditsProviderConfig {
         url: baseConfig.url ?? '',
         tokenLimit: baseConfig.tokenLimit,
         isChatModel: baseConfig.isChatModel,
+        timeoutMs: baseConfig.timeoutMs,
     }
 }
 

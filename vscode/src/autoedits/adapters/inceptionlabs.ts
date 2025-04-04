@@ -1,11 +1,13 @@
 import { ps } from '@sourcegraph/cody-shared'
 
-import { getNewLineChar } from '../../completions/text-processing/utils'
+import { forkSignal, generatorWithErrorObserver, generatorWithTimeout } from '../../completions/utils'
 import { autoeditsProviderConfig } from '../autoedits-config'
 import { autoeditsOutputChannelLogger } from '../output-channel-logger'
 
+import { getNewLineChar } from '../../completions/text-processing'
 import type { AutoeditModelOptions, AutoeditsModelAdapter, ModelResponse } from './base'
-import { type AutoeditsRequestBody, getModelResponse, getOpenaiCompatibleChatPrompt } from './utils'
+import { getDefaultModelResponse } from './model-response/default'
+import { type AutoeditsRequestBody, getOpenaiCompatibleChatPrompt } from './utils'
 
 export interface InceptionLabsRequestParams {
     model: string
@@ -23,7 +25,8 @@ export const inceptionlabsPrompt = {
  */
 export class InceptionLabsAdapter implements AutoeditsModelAdapter {
     dispose() {}
-    async getModelResponse(option: AutoeditModelOptions): Promise<ModelResponse> {
+
+    async getModelResponse(option: AutoeditModelOptions): Promise<AsyncGenerator<ModelResponse>> {
         const requestBody = this.getMessageBody(option)
         try {
             const apiKey = autoeditsProviderConfig.experimentalAutoeditsConfigOverride?.apiKey
@@ -35,34 +38,50 @@ export class InceptionLabsAdapter implements AutoeditsModelAdapter {
                 )
                 throw new Error('No api key provided in the config override')
             }
-            const response = await getModelResponse({
-                apiKey,
-                url: option.url,
-                body: requestBody,
-                abortSignal: option.abortSignal,
-            })
 
-            if (response.type === 'aborted') {
-                return response
-            }
-
+            const abortController = forkSignal(option.abortSignal)
             const newLineChar = getNewLineChar(option.codeToRewrite)
-            const prediction = response.responseBody.choices[0].message.content
-                .replace(/<next-version>\n?/g, '')
-                .replace(/\n?<\/next-version>/g, '')
-                // For now manually limit prediction to the same number of lines as the code to rewrite
-                .split(newLineChar)
-                .slice(0, option.codeToRewrite.split(newLineChar).length)
-                .join(newLineChar)
-
-            return {
-                ...response,
-                prediction,
-            }
+            return generatorWithErrorObserver(
+                generatorWithTimeout(
+                    getDefaultModelResponse({
+                        apiKey,
+                        url: option.url,
+                        body: requestBody,
+                        abortSignal: option.abortSignal,
+                        extractPrediction: (response: any) => {
+                            return (
+                                response.responseBody.choices[0].message.content
+                                    .replace(/<next-version>\n?/g, '')
+                                    .replace(/\n?<\/next-version>/g, '')
+                                    // For now manually limit prediction to the same number of lines as the code to rewrite
+                                    .split(newLineChar)
+                                    .slice(0, option.codeToRewrite.split(newLineChar).length)
+                                    .join(newLineChar)
+                            )
+                        },
+                    }),
+                    option.timeoutMs,
+                    abortController
+                ),
+                error => {
+                    autoeditsOutputChannelLogger.logError(
+                        'getModelResponse',
+                        'Error calling Inceptionlabs API:',
+                        {
+                            verbose: error,
+                        }
+                    )
+                    throw error
+                }
+            )
         } catch (error) {
-            autoeditsOutputChannelLogger.logError('getModelResponse', 'Error calling Fireworks API:', {
-                verbose: error,
-            })
+            autoeditsOutputChannelLogger.logError(
+                'getModelResponse',
+                'Error calling Inceptionlabs API:',
+                {
+                    verbose: error,
+                }
+            )
             throw error
         }
     }

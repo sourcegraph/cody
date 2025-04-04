@@ -1,49 +1,59 @@
 import { currentResolvedConfig, dotcomTokenToGatewayToken } from '@sourcegraph/cody-shared'
+import { forkSignal, generatorWithErrorObserver, generatorWithTimeout } from '../../completions/utils'
 
 import { autoeditsOutputChannelLogger } from '../output-channel-logger'
 
 import type { AutoeditModelOptions, AutoeditsModelAdapter, ModelResponse } from './base'
+import { getFireworksModelResponse } from './model-response/fireworks'
 import {
     type AutoeditsRequestBody,
     type FireworksCompatibleRequestParams,
     getMaxOutputTokensForAutoedits,
-    getModelResponse,
     getOpenaiCompatibleChatPrompt,
 } from './utils'
 
 export class CodyGatewayAdapter implements AutoeditsModelAdapter {
     dispose() {}
 
-    public async getModelResponse(options: AutoeditModelOptions): Promise<ModelResponse> {
+    public async getModelResponse(
+        options: AutoeditModelOptions
+    ): Promise<AsyncGenerator<ModelResponse>> {
         const headers = {
             'X-Sourcegraph-Feature': 'code_completions',
         }
         const body = this.getMessageBody(options)
         try {
             const apiKey = await this.getApiKey()
-            const response = await getModelResponse({
-                url: options.url,
-                body,
-                apiKey,
-                customHeaders: headers,
-                abortSignal: options.abortSignal,
-            })
-
-            if (response.type === 'aborted') {
-                return response
-            }
-
-            let prediction: string
-            if (options.isChatModel) {
-                prediction = response.responseBody.choices[0].message.content
-            } else {
-                prediction = response.responseBody.choices[0].text
-            }
-
-            return {
-                ...response,
-                prediction,
-            }
+            const abortController = forkSignal(options.abortSignal)
+            return generatorWithErrorObserver(
+                generatorWithTimeout(
+                    getFireworksModelResponse({
+                        url: options.url,
+                        body,
+                        apiKey,
+                        customHeaders: headers,
+                        abortSignal: options.abortSignal,
+                        extractPrediction: response => {
+                            if (options.isChatModel) {
+                                return response.choices?.[0]?.message?.content ?? ''
+                            }
+                            return response.choices?.[0]?.text ?? ''
+                        },
+                    }),
+                    options.timeoutMs,
+                    abortController
+                ),
+                error => {
+                    autoeditsOutputChannelLogger.logError(
+                        'getModelResponse',
+                        'Error calling Cody Gateway:',
+                        {
+                            verbose: error,
+                        }
+                    )
+                    throw error
+                }
+            )
         } catch (error) {
             autoeditsOutputChannelLogger.logError('getModelResponse', 'Error calling Cody Gateway:', {
                 verbose: error,
@@ -70,7 +80,7 @@ export class CodyGatewayAdapter implements AutoeditsModelAdapter {
     private getMessageBody(options: AutoeditModelOptions): AutoeditsRequestBody {
         const maxTokens = getMaxOutputTokensForAutoedits(options.codeToRewrite)
         const baseBody: FireworksCompatibleRequestParams = {
-            stream: false,
+            stream: true,
             model: options.model,
             temperature: 0.1,
             max_tokens: maxTokens,

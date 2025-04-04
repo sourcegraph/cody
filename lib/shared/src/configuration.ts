@@ -73,6 +73,10 @@ export interface AutoEditsModelConfig {
      * WebSocket proxy is no longer necessary.
      */
     webSocketEndpoint?: string
+    /**
+     * Timeout for the request in milliseconds.
+     */
+    timeoutMs: number
 }
 
 export interface NetConfiguration {

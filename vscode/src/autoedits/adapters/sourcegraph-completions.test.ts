@@ -19,6 +19,7 @@ describe('SourcegraphCompletionsAdapter', () => {
         userId: 'test-user',
         isChatModel: false,
         abortSignal: new AbortController().signal,
+        timeoutMs: 10_000,
     }
 
     beforeEach(() => {
@@ -79,8 +80,13 @@ describe('SourcegraphCompletionsAdapter', () => {
         // @ts-ignore - accessing private property for testing
         adapter.client = { complete: mockComplete }
 
-        const response = await adapter.getModelResponse(options)
-        expect((response as SuccessModelResponse).prediction).toBe('part1part2')
+        const responseGenerator = await adapter.getModelResponse(options)
+        const responses = []
+        for await (const response of responseGenerator) {
+            responses.push(response)
+        }
+        const lastResponse = responses[responses.length - 1]
+        expect((lastResponse as SuccessModelResponse).prediction).toBe('part1part2')
     })
 
     it('handles errors correctly', async () => {

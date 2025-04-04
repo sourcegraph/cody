@@ -2,7 +2,7 @@ import { LRUCache } from 'lru-cache'
 import type * as vscode from 'vscode'
 
 import { forkSignal } from '../completions/utils'
-import type { ModelResponse, SuccessModelResponse } from './adapters/base'
+import { AutoeditStopReason, type ModelResponse, type SuccessModelResponse } from './adapters/base'
 import { autoeditSource } from './analytics-logger'
 
 export interface AutoeditRequestManagerParams {
@@ -22,7 +22,7 @@ export class RequestManager implements vscode.Disposable {
      */
     public async request(
         params: AutoeditRequestManagerParams,
-        makeRequest: (abortSignal: AbortSignal) => Promise<ModelResponse>
+        makeRequest: (abortSignal: AbortSignal) => Promise<AsyncGenerator<ModelResponse>>
     ): Promise<ModelResponse> {
         // 1. First check the cache for exact matches
         const cachedResponse = this.checkCache(params)
@@ -44,7 +44,11 @@ export class RequestManager implements vscode.Disposable {
         }
 
         if (params.abortSignal.aborted) {
-            return { type: 'aborted', requestUrl: params.requestUrl }
+            return {
+                type: 'aborted',
+                stopReason: AutoeditStopReason.RequestAborted,
+                requestUrl: params.requestUrl,
+            }
         }
 
         // 3. Create a new request if we couldn't reuse anything and the request is not aborted
@@ -54,9 +58,25 @@ export class RequestManager implements vscode.Disposable {
         // Cancel any irrelevant requests based on the current request
         this.cancelIrrelevantRequests()
 
-        // 4. Make the actual request
-        makeRequest(request.abortController.signal)
-            .then(response => {
+        // Start processing the request in the background
+        this.processRequestInBackground(request, makeRequest)
+
+        return request.promise
+    }
+
+    private async processRequestInBackground(
+        request: InflightRequest,
+        makeRequest: (abortSignal: AbortSignal) => Promise<AsyncGenerator<ModelResponse>>
+    ): Promise<void> {
+        try {
+            for await (const response of await makeRequest(request.abortController.signal)) {
+                if (response.type === 'partial') {
+                    // Got a partial response, we do nothing here right now.
+                    // TODO: Implement hot-streak, emit the partial response if it contains X lines
+                    // cache additional lines for follow up suggestions
+                    continue
+                }
+
                 if (response.type === 'success') {
                     this.cache.set(request.cacheKey, {
                         response: {
@@ -70,16 +90,12 @@ export class RequestManager implements vscode.Disposable {
                 } else {
                     request.resolve(response)
                 }
-            })
-            .catch(error => {
-                request.reject(error)
-            })
-            .finally(() => {
-                this.inflightRequests.delete(request.cacheKey)
-            })
-
-        // Return the promise to the client immediately and handle request completion in promise callbacks.
-        return request.promise
+            }
+        } catch (error) {
+            request.reject(error as Error)
+        } finally {
+            this.inflightRequests.delete(request.cacheKey)
+        }
     }
 
     public removeFromCache(params: RequestCacheKeyParams): void {
