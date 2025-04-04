@@ -180,21 +180,25 @@ object CodyEditorUtil {
   }
 
   @JvmStatic
-  private fun fixUriString(uriString: String): String =
-      if (uriString.startsWith("file://")) uriString else "file://$uriString"
+  fun fixUriString(uriString: String): String {
+      if (uriString.startsWith("untitled://")) {
+          // IntelliJ does not support in-memory files so we are using scratch files instead
+          return uriString.substringAfterLast(':').trimStart('/', '\\')
+      }
+      else {
+          // Check `ProtocolTextDocumentExt.normalizeToVscUriFormat` for explanation
+          val patchedUri = uriString.replace("file://wsl.localhost/", "file:////wsl.localhost/")
+          return if (patchedUri.startsWith("file://")) patchedUri else "file://$patchedUri"
+      }
+  }
 
   fun findFileOrScratch(project: Project, uriString: String): VirtualFile? {
-    // IntelliJ does not support in-memory files so we are using scratch files instead
-    if (uriString.startsWith("untitled://")) {
-      val fileName = uriString.substringAfterLast(':').trimStart('/', '\\')
+    val fixedUri = fixUriString(uriString)
+    if (fixedUri.startsWith("untitled://")) {
       return ScratchRootType.getInstance()
-          .findFile(project, fileName, ScratchFileService.Option.existing_only)
+          .findFile(project, fixedUri, ScratchFileService.Option.existing_only)
     } else {
-      // Check `ProtocolTextDocumentExt.normalizeToVscUriFormat` for explanation
-      val patchedUri = uriString.replace("file://wsl.localhost/", "file:////wsl.localhost/")
-      // Unfortunately we cannot use `findFileByUrl` directly and need to do uri -> path conversion
-      // because `findFileByUrl` cannot decode paths with special characters (e.g. file:///c%3a/...)
-      val uri = VfsUtil.toUri(fixUriString(patchedUri)) ?: return null
+      val uri = VfsUtil.toUri(fixedUri) ?: return null
       return VirtualFileManager.getInstance().refreshAndFindFileByNioPath(uri.toPath())
     }
   }
