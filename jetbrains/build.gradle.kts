@@ -396,14 +396,49 @@ tasks {
   }
 
   fun downloadNodeBinaries(): File {
-    val nodeCommit = properties("nodeBinaries.commit")!!
     val nodeVersion = properties("nodeBinaries.version")!!
-    val url = "https://github.com/sourcegraph/node-binaries/archive/$nodeCommit.zip"
-    val zipFile = githubArchiveCache.resolve("$nodeCommit.zip")
+    val url = "https://github.com/sourcegraph/node-binaries/archive/refs/heads/${nodeVersion}.zip"
+    val zipFile = githubArchiveCache.resolve("$nodeVersion.zip")
     download(url, zipFile)
-    val destination = githubArchiveCache.resolve("node").resolve("node-binaries-$nodeCommit")
-    unzip(zipFile, destination.parentFile)
-    return destination.resolve(nodeVersion)
+
+    val destination = githubArchiveCache.resolve("node").resolve("node-binaries-$nodeVersion")
+    if (!destination.exists()) {
+      val extractTargetDir = destination.parentFile
+      println("Unzipping $zipFile to $extractTargetDir...")
+      extractTargetDir.mkdirs()
+      project.copy {
+        from(project.zipTree(zipFile))
+        into(extractTargetDir)
+      }
+      println("Unzipped main archive, created $destination")
+
+      destination.listFiles()?.forEach { fileInDestination ->
+        if (fileInDestination.isFile && fileInDestination.name.endsWith(".zip", ignoreCase = true)) {
+          println("Found inner zip file: ${fileInDestination.name}. Unzipping...")
+          try {
+            project.copy {
+              from(project.zipTree(fileInDestination))
+              into(destination)
+            }
+            println("Successfully unzipped ${fileInDestination.name}")
+
+            if (!fileInDestination.delete()) {
+              project.logger.warn("Failed to delete inner zip file: ${fileInDestination.absolutePath}")
+            }
+          } catch (e: Exception) {
+            project.logger.error("Failed to unzip inner file ${fileInDestination.name}: ${e.message}", e)
+          }
+        }
+      }
+    } else {
+      println("Using existing unzipped directory: $destination")
+    }
+
+    val nodeVersionDir = destination.resolve(nodeVersion)
+    if (!nodeVersionDir.exists()) {
+      project.logger.warn("Expected Node version directory not found after unzipping: $nodeVersionDir")
+    }
+    return nodeVersionDir
   }
 
   val buildCodyDir = layout.buildDirectory.asFile.get().resolve("sourcegraph").resolve("agent")
