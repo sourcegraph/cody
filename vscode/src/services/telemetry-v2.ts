@@ -3,8 +3,6 @@ import {
     NoOpTelemetryRecorderProvider,
     TelemetryRecorderProvider,
     clientCapabilities,
-    isDotCom,
-    isWorkspaceInstance,
     resolvedConfig,
     subscriptionDisposable,
     telemetryRecorder,
@@ -37,26 +35,6 @@ export function createOrUpdateTelemetryRecorderProvider(
             const defaultNoOpProvider = new NoOpTelemetryRecorderProvider([
                 new TimestampTelemetryProcessor(),
             ])
-            // Telemetry Collection Policy:
-            // - Sourcegraph.com users (Free & Pro): Telemetry collection is mandatory and always enabled.
-            // - Workspace Users (Enterprise Starter): Telemetry collection is mandatory and always enabled.
-            // - Enterprise Customer Users: Have the option to disable telemetry collection
-            if (configuration.telemetryLevel === 'off') {
-                if (
-                    auth.serverEndpoint &&
-                    !(isDotCom(auth.serverEndpoint) || isWorkspaceInstance(auth.serverEndpoint))
-                ) {
-                    updateGlobalTelemetryInstances(defaultNoOpProvider)
-                    logDebug('TelemetryRecorderProvider', 'telemetry has been disabled.', {
-                        verbose: `telemetry is disabled for ${auth.serverEndpoint}`,
-                    })
-                    return
-                }
-                logDebug('TelemetryRecorderProvider', 'Failed to disable telemetry.', {
-                    verbose:
-                        'telemetry cannot be disabled for sourcegraph.com user or Enterprise Starter',
-                })
-            }
 
             const initialize = telemetryRecorderProvider === undefined
 
