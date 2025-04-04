@@ -111,7 +111,8 @@ export class RequestManager implements vscode.Disposable {
         for (const request of this.inflightRequests.values() as Generator<InflightRequest>) {
             if (request.isResolved) continue // Skip already resolved requests with same key
 
-            if (request.cacheKey === key || request.coversSameArea(params)) {
+            // TODO: uncomment this once we have a way to leverage requests with slightly different positions
+            if (request.cacheKey === key /** || request.coversSameArea(params) */) {
                 return request
             }
         }
@@ -136,9 +137,9 @@ export class RequestManager implements vscode.Disposable {
             }
 
             if (!inflightRequest.isResolved) {
-                const notRecyclableReason = isNotRecyclable(completedRequest, inflightRequest, response)
+                const reasonNotToRecycle = isNotRecyclable(completedRequest, inflightRequest, response)
 
-                if (!notRecyclableReason) {
+                if (!reasonNotToRecycle) {
                     inflightRequest.abortNetworkRequest()
                     inflightRequest.resolve({
                         ...response,

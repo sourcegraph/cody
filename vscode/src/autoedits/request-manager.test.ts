@@ -1,5 +1,15 @@
 import dedent from 'dedent'
-import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
+import {
+    type MockInstance,
+    afterAll,
+    afterEach,
+    beforeAll,
+    beforeEach,
+    describe,
+    expect,
+    it,
+    vi,
+} from 'vitest'
 
 import { documentAndPosition } from '../completions/test-helpers'
 
@@ -9,12 +19,14 @@ import {
     type ModelResponse,
     type SuccessModelResponse,
 } from './adapters/base'
-import { autoeditSource } from './analytics-logger'
-import { createCodeToReplaceDataForTest } from './prompt/test-helper'
+import { type AutoeditSourceMetadata, autoeditSource } from './analytics-logger'
+import { createCodeToReplaceDataForTest, isTemplateStringsArray } from './prompt/test-helper'
 import { type AutoeditRequestManagerParams, RequestManager } from './request-manager'
+import * as requestRecycling from './request-recycling'
 
 describe('Autoedits RequestManager', () => {
     let requestManager: RequestManager
+    let isNotRecyclable: MockInstance<typeof requestRecycling.isNotRecyclable>
 
     beforeAll(() => {
         vi.useFakeTimers()
@@ -26,6 +38,11 @@ describe('Autoedits RequestManager', () => {
 
     beforeEach(() => {
         requestManager = new RequestManager()
+        isNotRecyclable = vi.spyOn(requestRecycling, 'isNotRecyclable')
+    })
+
+    afterEach(() => {
+        isNotRecyclable.mockClear()
     })
 
     it('caches responses and retrieves them for exact matches', async () => {
@@ -57,302 +74,290 @@ describe('Autoedits RequestManager', () => {
     })
 
     it('recycles responses for type-forward patterns (same line expansion)', async () => {
-        const [params1, params2] = createMultipleRequestParams`const x = █4█`
-
-        // Mocked response will be called for the first request
-        const mockRequest1 = vi.fn().mockImplementationOnce(async function* () {
-            // Time to resolve first response
-            await vi.advanceTimersByTimeAsync(1000)
-            yield createSuccessResponse('const x = 42;')
+        const [request1, request2] = await startRequests({
+            requests: [
+                { code: 'const x = █', prediction: 'const x = 42;' },
+                { code: 'const x = 4█', prediction: 'const x = 4000;', delayBeforeRequestStart: 250 },
+            ],
         })
 
-        // Start first request and wait for it to complete
-        const response1Promise = requestManager.request(params1, mockRequest1)
+        expect(isNotRecyclable).toHaveBeenCalledTimes(1)
+        expect(isNotRecyclable).nthReturnedWith(1, false)
 
-        // Second mock would return a different response, but should never be called
-        const mockRequest2 = vi.fn().mockImplementationOnce(async function* (abortSignal: AbortSignal) {
-            if (abortSignal.aborted) {
-                yield createAbortResponse()
-                return
-            }
-            // Time to resolve second response
-            await vi.advanceTimersByTimeAsync(1000)
-            if (abortSignal.aborted) {
-                yield createAbortResponse()
-                return
-            }
-            yield createSuccessResponse('const x = 400;')
+        verifyResponse({ request: request1 })
+        verifyResponse({
+            request: request2,
+            source: autoeditSource.inFlightRequest,
+            prediction: request1.prediction,
         })
-
-        // In the middle of the first request, start the second request
-        await vi.advanceTimersByTimeAsync(500)
-        // Request for the second completion (the mock should not be called)
-        const response2Promise = requestManager.request(params2, mockRequest2)
-
-        // Wait for another 500ms to allow the first request to complete. At this point
-        // it should trigger the recycling of the first request's response for the second request
-        await vi.advanceTimersByTimeAsync(500)
-
-        const [response1, response2] = (await Promise.all([
-            response1Promise,
-            response2Promise,
-        ])) as SuccessModelResponse[]
-
-        expect(response1.type).toBe('success')
-        expect(response1.prediction).toBe('const x = 42;')
-
-        expect(response2.type).toBe('success')
-        expect(response2.prediction).toBe('const x = 42;') // Just the remaining part
-        expect(response2.source).toBe(autoeditSource.inFlightRequest)
-
-        // Check if the mocks were called correctly
-        expect(mockRequest1).toHaveBeenCalledTimes(1)
-        expect(mockRequest2).toHaveBeenCalledTimes(1) // Even though aborted, it still gets called
     })
 
     it('recycles responses for type-forward patterns (multiple line expansion)', async () => {
-        const [params1, params2] = createMultipleRequestParams`function test() {█\n  log("█`
-        const prediction1 = 'function test() {\n  log("test");\n  return true;\n}'
-
-        // First mock response for function implementation
-        const mockRequest1 = vi.fn().mockImplementationOnce(async function* () {
-            await vi.advanceTimersByTimeAsync(1000)
-            yield createSuccessResponse(prediction1)
+        const [request1, request2] = await startRequests({
+            requests: [
+                {
+                    code: 'function test() {█',
+                    prediction: `function test() {
+                      log("test");
+                      return true;
+                    }`,
+                },
+                {
+                    code: `function test() {
+                      log("█`,
+                    prediction: `function test() {
+                      log("something else");
+                      return true;
+                    }`,
+                    delayBeforeRequestStart: 250,
+                },
+            ],
         })
 
-        // Start first request
-        const response1Promise = requestManager.request(params1, mockRequest1)
+        expect(isNotRecyclable).toHaveBeenCalledTimes(1)
+        expect(isNotRecyclable).nthReturnedWith(1, false)
 
-        // Second mock would return a different response, but should never be called
-        const mockRequest2 = vi.fn().mockImplementationOnce(async function* (abortSignal: AbortSignal) {
-            if (abortSignal.aborted) {
-                yield createAbortResponse()
-                return
-            }
-            await vi.advanceTimersByTimeAsync(1000)
-            if (abortSignal.aborted) {
-                yield createAbortResponse()
-                return
-            }
-            yield createSuccessResponse('function test() {\n  log("something else");\n  return true;\n}')
+        verifyResponse({ request: request1 })
+        verifyResponse({
+            request: request2,
+            source: autoeditSource.inFlightRequest,
+            prediction: request1.prediction,
         })
-
-        // In the middle of the first request, start the second request
-        await vi.advanceTimersByTimeAsync(500)
-        const response2Promise = requestManager.request(params2, mockRequest2)
-
-        // Wait for the first request to complete
-        await vi.advanceTimersByTimeAsync(500)
-
-        // Wait for the promises to resolve
-        const [response1, response2] = (await Promise.all([
-            response1Promise,
-            response2Promise,
-        ])) as SuccessModelResponse[]
-
-        // Verify responses
-        expect(response1.type).toBe('success')
-        expect(response1.prediction).toBe(prediction1)
-
-        expect(response2.type).toBe('success')
-        expect(response2.prediction).toBe(prediction1)
-        expect(response2.source).toBe(autoeditSource.inFlightRequest)
-
-        // The first mock should be called, but the second one should be aborted
-        expect(mockRequest1).toHaveBeenCalledTimes(1)
-        expect(mockRequest2).toHaveBeenCalledTimes(1)
     })
 
     it('handles multiple concurrent type-forward recycling', async () => {
-        const [params1, params2, params3] =
-            createMultipleRequestParams`function process(data) {█\n  return data.map█(item => it█`
-        const prediction1 = 'function process(data) {\n  return data.map(item => item.value * 2);\n}'
-
-        // First mock response
-        const mockRequest1 = vi.fn().mockImplementationOnce(async function* () {
-            await vi.advanceTimersByTimeAsync(1000)
-            yield createSuccessResponse(prediction1)
+        const [request1, request2, request3] = await startRequests({
+            requests: [
+                {
+                    code: 'function process(data) {█',
+                    prediction: `function process(data) {
+                      return data.map(item => item.value * 2);
+                    }`,
+                },
+                {
+                    code: `function process(data) {
+                      return data.map█`,
+                    prediction: `function process(data) {
+                      return data.map(item => throw new Error("response 2"));
+                    }`,
+                    delayBeforeRequestStart: 250,
+                },
+                {
+                    code: `function process(data) {
+                      return data.map(item => it█`,
+                    prediction: `function process(data) {
+                      return data.map(item => throw new Error("response 3"));
+                    }`,
+                    delayBeforeRequestStart: 250,
+                },
+            ],
         })
 
-        // Start first request
-        const response1Promise = requestManager.request(params1, mockRequest1)
+        expect(isNotRecyclable).toHaveBeenCalledTimes(2)
+        expect(isNotRecyclable).nthReturnedWith(1, false)
+        expect(isNotRecyclable).nthReturnedWith(2, false)
 
-        // Mock responses for second and third requests
-        const mockRequest2 = vi.fn().mockImplementationOnce(async function* (abortSignal: AbortSignal) {
-            if (abortSignal.aborted) {
-                yield createAbortResponse()
-                return
-            }
-            await vi.advanceTimersByTimeAsync(1000)
-            if (abortSignal.aborted) {
-                yield createAbortResponse()
-                return
-            }
-            yield createSuccessResponse(
-                'function process(data) {\n  return data.map(item => throw new Error("response 2"))}\n}'
-            )
+        verifyResponse({ request: request1 })
+        verifyResponse({
+            request: request2,
+            source: autoeditSource.inFlightRequest,
+            prediction: request1.prediction,
         })
-
-        const mockRequest3 = vi.fn().mockImplementationOnce(async function* (abortSignal: AbortSignal) {
-            if (abortSignal.aborted) {
-                yield createAbortResponse()
-                return
-            }
-            await vi.advanceTimersByTimeAsync(1000)
-            if (abortSignal.aborted) {
-                yield createAbortResponse()
-                return
-            }
-            yield createSuccessResponse(
-                'function process(data) {\n  return data.map(item => throw new Error("response 3"))}\n}'
-            )
+        verifyResponse({
+            request: request3,
+            source: autoeditSource.inFlightRequest,
+            prediction: request1.prediction,
         })
-
-        const response2Promise = requestManager.request(params2, mockRequest2)
-        const response3Promise = requestManager.request(params3, mockRequest3)
-
-        // Wait for the first request to complete (which should then recycle for others)
-        await vi.advanceTimersByTimeAsync(400)
-
-        const [response1, response2, response3] = await Promise.all([
-            response1Promise,
-            response2Promise,
-            response3Promise,
-        ])
-
-        expect(response1.type).toBe('success')
-        expect((response1 as SuccessModelResponse).prediction).toBe(prediction1)
-
-        expect(response2.type).toBe('success')
-        expect((response2 as SuccessModelResponse).prediction).toBe(prediction1)
-        expect((response2 as SuccessModelResponse).source).toBe(autoeditSource.inFlightRequest)
-
-        expect(response3.type).toBe('success')
-        expect((response3 as SuccessModelResponse).prediction).toBe(prediction1)
-        expect((response3 as SuccessModelResponse).source).toBe(autoeditSource.inFlightRequest)
-
-        expect(mockRequest1).toHaveBeenCalledTimes(1)
-        expect(mockRequest2).toHaveBeenCalledTimes(1)
-        expect(mockRequest3).toHaveBeenCalledTimes(1)
     })
 
-    it('does not recycle responses when the type-forward pattern does not match', async () => {
-        const [params1, params2] = createMultipleRequestParams`const arr = [█5, 6█`
-        const prediction1 = 'const arr = [1, 2, 3];'
-        const prediction2 = 'const arr = [5, 6, 7];'
+    describe('does not recycle when', () => {
+        it('the type-forward pattern does not match', async () => {
+            const [request1, request2] = await startRequests({
+                requests: [
+                    { code: 'const arr = [█', prediction: 'const arr = [1, 2, 3];' },
+                    {
+                        code: 'const arr = [5, 6█',
+                        prediction: 'const arr = [5, 6, 7];',
+                        delayBeforeRequestStart: 500,
+                    },
+                ],
+            })
 
-        // First mock response for array items
-        const mockRequest1 = vi.fn().mockImplementationOnce(async function* () {
-            await vi.advanceTimersByTimeAsync(1000)
-            yield createSuccessResponse(prediction1)
+            expect(isNotRecyclable).toHaveBeenCalledTimes(1)
+            expect(isNotRecyclable).toHaveReturnedWith(
+                requestRecycling.notRecyclableReason.predictedTextDoesNotMatch
+            )
+
+            verifyResponse({ request: request1 })
+            verifyResponse({ request: request2 })
         })
 
-        // Start first request
-        const response1Promise = requestManager.request(params1, mockRequest1)
+        it('line is modfied with deletions', async () => {
+            const [request1, request2] = await startRequests({
+                requests: [
+                    {
+                        code: 'function helloBob() {█',
+                        prediction: `function helloBob() {
+                        return "Hello, Bob!";
+                        }`,
+                    },
+                    {
+                        code: 'function hello() {█',
+                        prediction: `function hello() {
+                        return "Hello, world!";
+                        }`,
+                        delayBeforeRequestStart: 500,
+                    },
+                ],
+            })
 
-        // Second mock should be called because type-forward doesn't match
-        const mockRequest2 = vi.fn().mockImplementationOnce(async function* (abortSignal: AbortSignal) {
-            if (abortSignal.aborted) {
-                yield createAbortResponse()
-                return
-            }
-            await vi.advanceTimersByTimeAsync(1000)
-            if (abortSignal.aborted) {
-                yield createAbortResponse()
-                return
-            }
-            yield createSuccessResponse(prediction2)
-        })
-        // Start second request after first one has started
-        await vi.advanceTimersByTimeAsync(500)
-        const response2Promise = requestManager.request(params2, mockRequest2)
-        // Wait for first request to complete
-        await vi.advanceTimersByTimeAsync(500)
-        // Wait for second request to complete
-        await vi.advanceTimersByTimeAsync(1000)
-        // Wait for both to complete
-        const [response1, response2] = (await Promise.all([
-            response1Promise,
-            response2Promise,
-        ])) as SuccessModelResponse[]
+            expect(isNotRecyclable).toHaveBeenCalledTimes(1)
+            expect(isNotRecyclable).toHaveReturnedWith(
+                requestRecycling.notRecyclableReason.notOnlyAdditions
+            )
 
-        // Verify responses
-        expect(response1.type).toBe('success')
-        expect(response1.prediction).toBe(prediction1)
-        expect(response2.type).toBe('success')
-        expect(response2.prediction).toBe(prediction2)
-        expect(response2.source).toBe(autoeditSource.network)
-        // Both mock requests should be called
-        expect(mockRequest1).toHaveBeenCalledTimes(1)
-        expect(mockRequest2).toHaveBeenCalledTimes(1)
-    })
-
-    it('does not recycle responses when text is deleted, even if some text is also added', async () => {
-        const params1 = createRequestParams`function sum(a, b) {█`
-
-        // First mock response
-        const mockRequest1 = vi.fn().mockImplementationOnce(async function* () {
-            await vi.advanceTimersByTimeAsync(1000)
-            yield createSuccessResponse('\n  return a + b;\n}')
+            verifyResponse({ request: request1 })
+            verifyResponse({ request: request2 })
         })
 
-        // Start first request
-        const response1Promise = requestManager.request(params1, mockRequest1)
+        it('multiple lines are modified', async () => {
+            const [request1, request2] = await startRequests({
+                requests: [
+                    {
+                        code: `function sum(a, b) {
+                            const result = a + b;█`,
+                        prediction: `function sum(a, b) {
+                            const result = a + b; return result;
+                        }`,
+                    },
+                    {
+                        code: `function my_sum(a, b) {
+                            const result = a + b; print█`,
+                        prediction: `function my_sum(a, b) {
+                            const result = a + b; print("result");
+                        }`,
+                        delayBeforeRequestStart: 250,
+                    },
+                ],
+            })
 
-        // Second request - user has deleted some text and added other text
-        // Changed "return a + b" to "return a * b" (deleted "+" and added "*")
-        // Keep the cursor at the end of the function to maintain positioning
-        const params2 = createRequestParams`function sum(a, b) {\n  return a * b;\n}█`
+            expect(isNotRecyclable).toHaveBeenCalledTimes(1)
+            expect(isNotRecyclable).toHaveReturnedWith(
+                requestRecycling.notRecyclableReason.moreThanOneLineAddedOrModified
+            )
 
-        // Second mock should be called because recycling should be rejected when text is deleted
-        const mockRequest2 = vi.fn().mockImplementationOnce(async function* (abortSignal: AbortSignal) {
-            if (abortSignal.aborted) {
-                yield createAbortResponse()
-                return
-            }
-            await vi.advanceTimersByTimeAsync(1000)
-            if (abortSignal.aborted) {
-                yield createAbortResponse()
-                return
-            }
-            yield createSuccessResponse('// Additional comment')
+            verifyResponse({ request: request1 })
+            verifyResponse({ request: request2 })
         })
 
-        // Start second request after first one has started
-        await vi.advanceTimersByTimeAsync(500)
-        const response2Promise = requestManager.request(params2, mockRequest2)
+        it('lines are deleted', async () => {
+            const [request1, request2] = await startRequests({
+                requests: [
+                    {
+                        code: `function printNumbers() {
+                            // comment
+                            print(1█`,
+                        prediction: `function printNumbers() {
+                            print(10)
+                            print(20)
+                            print(30)
+                        }`,
+                    },
+                    {
+                        code: `function printNumbers() {
+                            print(1)█`,
+                        prediction: `function printNumbers() {
+                            print(1)
+                            print(2)
+                            print(3)
+                        }`,
+                    },
+                ],
+            })
 
-        // Wait for first request to complete
-        await vi.advanceTimersByTimeAsync(600)
+            expect(isNotRecyclable).toHaveBeenCalledTimes(1)
+            expect(isNotRecyclable).toHaveReturnedWith(
+                requestRecycling.notRecyclableReason.notOnlyAdditions
+            )
 
-        // Wait for second request to have a chance to complete
-        await vi.advanceTimersByTimeAsync(1000)
-
-        // Get responses
-        try {
-            const [response1, response2] = (await Promise.all([
-                response1Promise,
-                response2Promise,
-            ])) as SuccessModelResponse[]
-
-            // Verify responses
-            expect(response1.type).toBe('success')
-            expect(response1.prediction).toBe('\n  return a + b;\n}')
-
-            // Since text was deleted, recycling should not happen and this should be a new network request
-            expect(response2.type).toBe('success')
-            expect(response2.source).toBe(autoeditSource.network)
-            expect(response2.prediction).toBe('// Additional comment')
-        } catch (error: any) {
-            // Allow the test to pass if we get the expected abort error
-            // This is temporary to help debugging
-            expect(error.message).toContain('Request aborted')
-        }
-
-        // Both mocks should be called
-        expect(mockRequest1).toHaveBeenCalledTimes(1)
+            verifyResponse({ request: request1 })
+            verifyResponse({ request: request2 })
+        })
     })
 })
+
+interface RequestWithResponse {
+    code: string
+    prediction: string
+    response: SuccessModelResponse
+    mockRequest: MockInstance<typeof RequestManager.prototype.request>
+}
+
+function verifyResponse({
+    request,
+    source = autoeditSource.network,
+    calledTimes = 1,
+    prediction = request.prediction,
+}: {
+    request: RequestWithResponse
+    prediction?: string
+    source?: AutoeditSourceMetadata
+    calledTimes?: number
+}) {
+    expect(request.response.type).toBe('success')
+    expect(request.response.prediction).toBe(prediction)
+    expect(request.response.source).toBe(source)
+    expect(request.mockRequest).toHaveBeenCalledTimes(calledTimes)
+}
+
+async function startRequests({
+    requests,
+    requestManager = new RequestManager(),
+}: {
+    requests: {
+        code: string
+        prediction: string
+        serverProcessingTime?: number
+        delayBeforeRequestStart?: number
+    }[]
+    requestManager?: RequestManager
+}): Promise<RequestWithResponse[]> {
+    const requestsWithResponses: Partial<RequestWithResponse>[] = requests
+    const pendingResponses: Promise<ModelResponse>[] = []
+
+    for (let i = 0; i < requests.length; i++) {
+        const { code, prediction, serverProcessingTime = 500, delayBeforeRequestStart = 0 } = requests[i]
+        const requestParams = createRequestParams(code, { documentVersion: i })
+
+        const mockRequest = vi.fn().mockImplementationOnce(async function* (abortSignal: AbortSignal) {
+            if (abortSignal.aborted) {
+                yield createAbortResponse()
+                return
+            }
+            logDebug('server started processing request', i)
+            await vi.advanceTimersByTimeAsync(serverProcessingTime)
+            logDebug('server finished processing request', i)
+            if (abortSignal.aborted) {
+                yield createAbortResponse()
+                return
+            }
+            yield createSuccessResponse(prediction)
+        })
+
+        vi.advanceTimersByTime(delayBeforeRequestStart)
+        logDebug('request ready to be sent', i)
+        const responsePromise = requestManager.request(requestParams, mockRequest)
+        pendingResponses.push(responsePromise)
+        requestsWithResponses[i].mockRequest = mockRequest
+    }
+
+    const responses = await Promise.all(pendingResponses)
+
+    return requestsWithResponses.map((request, index) => ({
+        ...request,
+        response: responses[index] as SuccessModelResponse,
+    })) as RequestWithResponse[]
+}
 
 function createSuccessResponse(prediction: string): ModelResponse {
     return {
@@ -374,8 +379,12 @@ function createAbortResponse(): AbortedModelResponse {
     }
 }
 
-function createRequestParams(code: TemplateStringsArray): AutoeditRequestManagerParams {
-    const { document, position } = documentAndPosition(dedent(code))
+function createRequestParams(
+    code: TemplateStringsArray | string,
+    { documentVersion }: { documentVersion: number } = { documentVersion: 1 }
+): AutoeditRequestManagerParams {
+    const documentText = isTemplateStringsArray(code) ? dedent(code) : code.toString()
+    const { document, position } = documentAndPosition(documentText)
 
     const codeToReplaceData = createCodeToReplaceDataForTest(code, {
         maxPrefixLength: 100,
@@ -388,7 +397,7 @@ function createRequestParams(code: TemplateStringsArray): AutoeditRequestManager
 
     return {
         uri: document.uri.toString(),
-        documentVersion: document.version,
+        documentVersion,
         position,
         requestUrl: 'https://test.com',
         abortSignal: new AbortController().signal,
@@ -396,48 +405,9 @@ function createRequestParams(code: TemplateStringsArray): AutoeditRequestManager
     }
 }
 
-function createMultipleRequestParams(code: TemplateStringsArray): AutoeditRequestManagerParams[] {
-    const codeString = dedent(code)
-    const codeStrings: string[] = []
-    let position = 0
-    let cursorCount = 0
-
-    // Find cursor positions and create individual code strings in a single pass
-    while (position < codeString.length) {
-        const cursorIndex = codeString.indexOf('█', position)
-        if (cursorIndex === -1) break
-
-        const cleanCode = codeString.replace(/█/g, '')
-        const codeWithSingleCursor = cleanCode.substring(0, cursorIndex - cursorCount) + '█'
-
-        codeStrings.push(codeWithSingleCursor)
-        position = cursorIndex + 1
-        cursorCount++
+const areDebugLogsEnabled = false
+function logDebug(...args: unknown[]) {
+    if (areDebugLogsEnabled) {
+        console.log(`[${performance.now()}]`, ...args)
     }
-
-    // Create request params for each cursor position
-    return codeStrings.map((codeWithSingleCursor, index) => {
-        const { document, position } = documentAndPosition(codeWithSingleCursor)
-
-        const codeToReplaceData = createCodeToReplaceDataForTest(
-            codeWithSingleCursor as unknown as TemplateStringsArray,
-            {
-                maxPrefixLength: 100,
-                maxSuffixLength: 100,
-                maxPrefixLinesInArea: 2,
-                maxSuffixLinesInArea: 2,
-                codeToRewritePrefixLines: 1,
-                codeToRewriteSuffixLines: 1,
-            }
-        )
-
-        return {
-            uri: document.uri.toString(),
-            documentVersion: document.version + index, // Increment version for each request
-            position,
-            requestUrl: 'https://test.com',
-            abortSignal: new AbortController().signal,
-            codeToReplaceData,
-        }
-    })
 }

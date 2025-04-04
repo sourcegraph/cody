@@ -1,13 +1,13 @@
 import type { ModelResponse } from './adapters/base'
-import { getDecorationInfo, isOnlyAddingTextForModifiedLines } from './renderer/diff-utils'
+import { getDecorationInfo, isOnlyAddingText } from './renderer/diff-utils'
 import type { AutoeditRequestManagerParams } from './request-manager'
 import type { InflightRequest } from './request-manager'
 
 /**
- * Reasons why a request cannot be recycled, for now only for console.log()
- * debugging purposes. Later will be integrated with the auto-edit debug panel.
+ * Reasons why a request cannot be recycled, for now only for debugging purposes.
+ * Later will be integrated with the auto-edit debug panel.
  */
-const notRecyclableReason = {
+export const notRecyclableReason = {
     notSuccess: 1,
     startedAfterInflightRequest: 2,
     notSameFile: 3,
@@ -19,6 +19,8 @@ const notRecyclableReason = {
 } as const
 
 type NotRecyclableReason = (typeof notRecyclableReason)[keyof typeof notRecyclableReason]
+/** We are interested in changes by character while looking for type-forward patterns */
+const CHARACTER_REGEX = /./g
 
 /**
  * Check if a completed request can be recycled for an in-flight request
@@ -46,19 +48,19 @@ export function isNotRecyclable(
     const currentText = inflightRequest.params.codeToReplaceData.codeToRewrite
     const prediction = response.prediction
 
-    const decorationInfoTyped = getDecorationInfo(originalText, currentText)
+    const decorationInfoTyped = getDecorationInfo(originalText, currentText, CHARACTER_REGEX)
 
     // For now, we only recycle responses if the only change is an addition
-    const onlyAdding = isOnlyAddingTextForModifiedLines(decorationInfoTyped.modifiedLines)
+    const onlyAdding = isOnlyAddingText(decorationInfoTyped)
 
     if (onlyAdding) {
         // If there are added more than one line, this is unlikely to be a type-forward case
         // as we're looking for small incremental edits
         if (decorationInfoTyped.addedLines.length + decorationInfoTyped.modifiedLines.length > 1) {
-            return false
+            return notRecyclableReason.moreThanOneLineAddedOrModified
         }
 
-        const decorationInfoPrediction = getDecorationInfo(originalText, prediction)
+        const decorationInfoPrediction = getDecorationInfo(originalText, prediction, CHARACTER_REGEX)
 
         if (decorationInfoTyped.addedLines.length === 1) {
             const typedAddedLine = decorationInfoTyped.addedLines[0]
