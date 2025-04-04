@@ -1,5 +1,4 @@
-
-h4{
+h4 {
     border-bottom: 1px solid var(--vscode-editorWidget-border);
 }
 
@@ -8,21 +7,19 @@ h4{
     flex-direction: row;
 }
 
-.history-item {
-    cursor: pointer;;
-}
-
-.history-item:hover {
-    cursor: pointer;
-    color: var(--vscode-list-highlightForeground);
-}
-
-.history-delete-btn {
+.delete-button {
     opacity: 0;
+    height: 98%;
+    padding: 0 !important;
     transition: opacity 0.2s ease;
+    background: inherit !important;
 }
 
-.history-row:hover .history-delete-btn {
+.deleting-button {
+    opacity: 0.5 !important;
+    pointer-events: none;
+}
+
+.history-item:hover .delete-button {
     opacity: 1;
 }
-
