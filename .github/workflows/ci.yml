@@ -93,6 +93,9 @@ jobs:
         runner: ${{ fromJson(needs.fast_tests_matrix_prep.outputs.matrix) }}
     runs-on: ${{ matrix.runner }}-latest
     timeout-minutes: 15
+    permissions:
+      id-token: write
+      contents: read
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
