@@ -1,4 +1,5 @@
 import type { ClientRequest } from 'node:http'
+import type { Socket } from 'node:net'
 import type { EventEmitter } from 'node:stream'
 import {
     NEVER,
@@ -111,25 +112,39 @@ export class NetworkDiagnostics implements vscode.Disposable {
         })
     }
 
-    private setupSocketEvents(requestTimings: RequestTimings): (socket: any) => void {
+    private setupSocketEvents(
+        req: ClientRequest,
+        requestTimings: RequestTimings
+    ): (socket: Socket) => void {
         return socket => {
             requestTimings.socket = { start: new Date() }
 
-            socket.once('connect', () => {
+            const onSocketConnect = () => {
                 if (requestTimings.socket) {
                     requestTimings.socket.connect = new Date()
                 }
-            })
-            socket.once('close', () => {
+            }
+            const onSocketClose = () => {
                 if (requestTimings.socket) {
                     requestTimings.socket.close = new Date()
                 }
-            })
-            socket.once('error', (error: Error) => {
+            }
+            const onSocketError = (error: Error) => {
                 if (requestTimings.socket) {
                     requestTimings.socket.error = new Date()
                     requestTimings.socket.errorValue = error
                 }
+            }
+
+            socket.once('connect', onSocketConnect)
+            socket.once('close', onSocketClose)
+            socket.once('error', onSocketError)
+
+            // Socket can be reused, so we have to remove the listeners when the request closes
+            req.once('close', () => {
+                socket.removeListener('connect', onSocketConnect)
+                socket.removeListener('close', onSocketClose)
+                socket.removeListener('error', onSocketError)
             })
         }
     }
@@ -194,7 +209,7 @@ export class NetworkDiagnostics implements vscode.Disposable {
                 this.outputChannel.trace(log('Request Created', { id: reqId, url, protocol, agent }))
 
                 this.setupRequestEvents(req, url, protocol, agent, requestTimings)
-                req.once('socket', this.setupSocketEvents(requestTimings))
+                req.once('socket', this.setupSocketEvents(req, requestTimings))
             })
         }
 
