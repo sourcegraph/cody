@@ -89,7 +89,7 @@ export function getConfiguration(
         customHeaders: config.get<Record<string, string>>(CONFIG_KEY.customHeaders),
         debugVerbose: config.get<boolean>(CONFIG_KEY.debugVerbose, false),
         debugFilter: debugRegex,
-        telemetryLevel: config.get<'all' | 'off'>(CONFIG_KEY.telemetryLevel, 'all'),
+        telemetryLevel: getHiddenSetting<'all' | 'off'>('telemetry.level', 'all'),
         autocomplete: codyAutoSuggestionsMode === CodyAutoSuggestionMode.Autocomplete,
         autocompleteLanguages: config.get(CONFIG_KEY.autocompleteLanguages, {
             '*': true,

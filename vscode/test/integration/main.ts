@@ -33,6 +33,10 @@ async function main(): Promise<void> {
 
     let exitCode = 0
     try {
+        // Suppresses the N-API callback uncaught exception warning
+        // See https://nodejs.org/api/n-api.html#n_api_uncaught_exceptions
+        process.env.NODE_NO_WARNINGS = '1'
+
         // Download VS Code, unzip it, and run the integration test.
         await MockServer.run(async () => {
             for (const testConfig of testConfigs) {

@@ -50,7 +50,7 @@ describe('getConfiguration', () => {
                     case 'cody.debug.filter':
                         return /.*/
                     case 'cody.telemetry.level':
-                        return 'off'
+                        return 'all'
                     case 'cody.telemetry.clientName':
                         return undefined
                     case 'cody.chat.preInstruction':
@@ -187,7 +187,7 @@ describe('getConfiguration', () => {
             internalDebugState: false,
             debugVerbose: true,
             debugFilter: /.*/,
-            telemetryLevel: 'off',
+            telemetryLevel: 'all',
             agentHasPersistentStorage: false,
             autocompleteAdvancedProvider: 'default',
             autocompleteAdvancedModel: 'starcoder-16b',
