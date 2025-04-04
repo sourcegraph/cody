@@ -60,6 +60,8 @@ export interface Model {
     readonly tags: ModelTag[]
 
     readonly modelRef?: ModelRef
+
+    disabled?: boolean
 }
 
 interface ModelParams {

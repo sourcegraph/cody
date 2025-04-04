@@ -24,6 +24,7 @@ enableImmerMapSetSupport()
 // Add anything else here that needs to be used outside of this library.
 
 export * from './models/modelsService'
+export { handleRateLimitError } from './models/sync'
 export {
     type Model,
     type ServerModel,
