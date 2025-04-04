@@ -42,6 +42,7 @@ export class FireworksWebSocketAdapter implements AutoeditsModelAdapter {
     private ws: WebSocket | undefined
     private messageId = 0
     private callbackQueue: Record<string, MessageCallback> = {}
+    private pendingConnectPromise: Promise<WebSocket> | null = null
 
     constructor() {
         const webSocketEndpoint =
@@ -56,7 +57,9 @@ export class FireworksWebSocketAdapter implements AutoeditsModelAdapter {
     dispose() {
         if (this.ws) {
             this.ws.close()
+            this.ws = undefined
         }
+        this.pendingConnectPromise = null
     }
 
     async getModelResponse(option: AutoeditModelOptions): Promise<AsyncGenerator<ModelResponse>> {
@@ -269,12 +272,17 @@ export class FireworksWebSocketAdapter implements AutoeditsModelAdapter {
     }
 
     private async connect(): Promise<WebSocket> {
-        return new Promise((resolve, reject) => {
-            if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-                resolve(this.ws)
-                return
-            }
+        if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+            // Already an open connection, use this
+            return this.ws
+        }
 
+        if (this.pendingConnectPromise) {
+            // Reuse the pending connection to avoid creating multiple connections
+            return this.pendingConnectPromise
+        }
+
+        this.pendingConnectPromise = new Promise<WebSocket>((resolve, reject) => {
             const ws = new WebSocket(this.webSocketEndpoint)
             ws.addEventListener('open', () => {
                 autoeditsOutputChannelLogger.logDebug(
@@ -282,6 +290,7 @@ export class FireworksWebSocketAdapter implements AutoeditsModelAdapter {
                     `successfully connected to ${this.webSocketEndpoint}`
                 )
                 this.ws = ws
+                this.pendingConnectPromise = null
                 resolve(this.ws)
             })
             ws.addEventListener('error', (event: ErrorEvent) => {
@@ -293,6 +302,7 @@ export class FireworksWebSocketAdapter implements AutoeditsModelAdapter {
                     console.error(`error from ${this.webSocketEndpoint}: ${event.message}`)
                     console.error(event)
                 }
+                this.pendingConnectPromise = null
                 reject(event)
             })
             ws.addEventListener('close', (event: CloseEvent) => {
@@ -304,6 +314,7 @@ export class FireworksWebSocketAdapter implements AutoeditsModelAdapter {
                     console.error(`${this.webSocketEndpoint} connection closed`)
                     console.error(event)
                 }
+                this.pendingConnectPromise = null
                 setTimeout(() => this.reconnect(), SOCKET_RECONNECT_DELAY_MS)
             })
             ws.addEventListener('message', (event: MessageEvent) => {
@@ -341,11 +352,13 @@ export class FireworksWebSocketAdapter implements AutoeditsModelAdapter {
                 }
             })
         })
+
+        return this.pendingConnectPromise
     }
 
     private reconnect() {
-        ;(async () => {
-            await this.connect()
-        })()
+        this.ws = undefined
+        this.pendingConnectPromise = null
+        this.pendingConnectPromise = this.connect()
     }
 }
