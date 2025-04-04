@@ -13,7 +13,7 @@ import { documentAndPosition } from '../../completions/test-helpers'
 
 import type { UserPromptArgs } from './base'
 import { PromptCacheOptimizedV1 } from './prompt-cache-optimized-v1'
-import { getCodeToReplaceData } from './prompt-utils'
+import { getCodeToReplace } from './prompt-utils'
 
 describe('PromptCacheOptimizedV1', () => {
     beforeEach(() => {
@@ -68,7 +68,7 @@ describe('PromptCacheOptimizedV1', () => {
             },
         }
 
-        const codeToReplaceData = getCodeToReplaceData({
+        const codeToReplace = getCodeToReplace({
             docContext,
             document,
             position,
@@ -180,7 +180,7 @@ describe('PromptCacheOptimizedV1', () => {
 
         return {
             context,
-            codeToReplaceData,
+            codeToReplaceData: codeToReplace.data,
             document,
             tokenBudget,
         }

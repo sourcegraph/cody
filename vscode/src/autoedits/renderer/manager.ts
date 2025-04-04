@@ -34,6 +34,7 @@ import type { AutoeditClientCapabilities } from '../autoedits-provider'
 import { autoeditsOutputChannelLogger } from '../output-channel-logger'
 import type { RequestManager } from '../request-manager'
 import type { AutoEditDecorations, AutoEditsDecorator, DecorationInfo } from './decorators/base'
+import { NextCursorManager } from './next-cursor-manager'
 import {
     type AutoEditRenderOutput,
     AutoEditsRenderOutput,
@@ -113,6 +114,7 @@ export class AutoEditsDefaultRendererManager
     protected activeRequestId: AutoeditRequestID | null = null
     protected disposables: vscode.Disposable[] = []
     protected decorator: AutoEditsDecorator | null = null
+    protected nextCursorManager = new NextCursorManager()
 
     /**
      * The amount of time before we consider a suggestion to be "visible" to the user.
@@ -360,7 +362,7 @@ export class AutoEditsDefaultRendererManager
         this.requestManager.removeFromCache({
             uri: activeRequest.document.uri.toString(),
             documentVersion: activeRequest.document.version,
-            position: activeRequest.position,
+            position: activeRequest.hotStreak?.cursorPosition || activeRequest.position,
         })
 
         // Reset the testing promise when accepting
@@ -388,6 +390,19 @@ export class AutoEditsDefaultRendererManager
         await editor.edit(editBuilder => {
             editBuilder.replace(activeRequest.codeToReplaceData.range, activeRequest.prediction)
         })
+
+        if (activeRequest.hotStreak) {
+            const nextCursorPosition = this.requestManager.getNearestHotStreakItem({
+                hotStreakID: activeRequest.hotStreak.id,
+                position: activeRequest.hotStreak.cursorPosition,
+            })?.hotStreak?.cursorPosition
+
+            if (!nextCursorPosition) {
+                return
+            }
+
+            editor.selection = new vscode.Selection(nextCursorPosition, nextCursorPosition)
+        }
     }
 
     protected async rejectActiveEdit(rejectReason: AutoeditRejectReasonMetadata): Promise<void> {

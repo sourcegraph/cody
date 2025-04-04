@@ -19,12 +19,13 @@ import { charactersLogger } from '../../services/CharactersLogger'
 import { upstreamHealthProvider } from '../../services/UpstreamHealthProvider'
 import { captureException, shouldErrorBeReported } from '../../services/sentry/sentry'
 import { splitSafeMetadata } from '../../services/telemetry-v2'
-import type { AutoeditsPrompt, SuccessModelResponse } from '../adapters/base'
+import type { AutoeditsPrompt, PartialModelResponse, SuccessModelResponse } from '../adapters/base'
 import { autoeditsOutputChannelLogger } from '../output-channel-logger'
 import type { CodeToReplaceData } from '../prompt/prompt-utils'
 import type { DecorationInfo } from '../renderer/decorators/base'
 import { getDecorationStats } from '../renderer/diff-utils'
 
+import type { PredictionResult } from '../autoedits-provider'
 import { autoeditDebugStore } from '../debug-panel/debug-store'
 import type { AutoEditRenderOutput } from '../renderer/render-output'
 import { autoeditIdRegistry } from './suggestion-id-registry'
@@ -161,11 +162,17 @@ export class AutoeditAnalyticsLogger {
         prompt,
         payload,
         modelResponse,
+        codeToReplaceData,
+        hotStreak,
     }: {
-        modelResponse: SuccessModelResponse
+        modelResponse: SuccessModelResponse | PartialModelResponse
+        codeToReplaceData: CodeToReplaceData
+        hotStreak: PredictionResult['hotStreak']
         requestId: AutoeditRequestID
         prompt: AutoeditsPrompt
-        payload: Required<Pick<LoadedState['payload'], 'source' | 'isFuzzyMatch' | 'prediction'>>
+        payload: Required<
+            Pick<LoadedState['payload'], 'source' | 'isFuzzyMatch' | 'prediction' | 'codeToRewrite'>
+        >
     }): void {
         const { prediction, source, isFuzzyMatch } = payload
         const stableId = autoeditIdRegistry.getOrCreate(prompt, prediction)
@@ -176,6 +183,8 @@ export class AutoeditAnalyticsLogger {
                 ...request,
                 loadedAt,
                 modelResponse,
+                codeToReplaceData,
+                hotStreak,
                 payload: {
                     ...request.payload,
                     id: stableId,
@@ -183,7 +192,8 @@ export class AutoeditAnalyticsLogger {
                     prediction: isDotComAuthed() && prediction.length < 300 ? prediction : undefined,
                     source,
                     isFuzzyMatch,
-                    responseHeaders: modelResponse.responseHeaders,
+                    responseHeaders:
+                        'responseHeaders' in modelResponse ? modelResponse.responseHeaders : {},
                     latency: Math.floor(loadedAt - request.startedAt),
                 },
             }

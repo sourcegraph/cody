@@ -27,6 +27,7 @@ import {
 } from './adapters/base'
 import { createAutoeditsModelAdapter } from './adapters/create-adapter'
 import {
+    type AutoeditHotStreakID,
     type AutoeditRequestID,
     type AutoeditRequestStateForAgentTesting,
     autoeditAnalyticsLogger,
@@ -39,9 +40,11 @@ import { AutoeditCompletionItem } from './autoedit-completion-item'
 import { autoeditsOnboarding } from './autoedit-onboarding'
 import { autoeditsProviderConfig } from './autoedits-config'
 import { FilterPredictionBasedOnRecentEdits } from './filter-prediction-edits'
+import { processHotStreakResponses } from './hot-streak'
+import { createMockResponseGenerator } from './mock-response-generator'
 import { autoeditsOutputChannelLogger } from './output-channel-logger'
 import { PromptCacheOptimizedV1 } from './prompt/prompt-cache-optimized-v1'
-import { type CodeToReplaceData, getCodeToReplaceData } from './prompt/prompt-utils'
+import { type CodeToReplaceData, getCodeToReplace } from './prompt/prompt-utils'
 import type { DecorationInfo } from './renderer/decorators/base'
 import { DefaultDecorator } from './renderer/decorators/default-decorator'
 import { InlineDiffDecorator } from './renderer/decorators/inline-diff-decorator'
@@ -66,6 +69,18 @@ export const AUTOEDIT_INITIAL_DEBOUNCE_INTERVAL_MS = 10
 
 interface AutoeditEditItem extends AutocompleteEditItem {
     id: AutoeditRequestID
+}
+
+export interface PredictionResult {
+    response: ModelResponse
+    /**
+     * Metadata to process a hot-streak completion.
+     */
+    hotStreak?: {
+        id: AutoeditHotStreakID
+        adjustedRange: vscode.Range
+        cursorPosition: vscode.Position
+    }
 }
 
 export interface AutoeditsResult {
@@ -269,13 +284,15 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                 maxSuffixLength: tokensToChars(autoeditsProviderConfig.tokenLimit.suffixTokens),
             })
 
-            const codeToReplaceData = getCodeToReplaceData({
+            let {
+                data: codeToReplaceData,
+                adjustCodeToReplaceDataForRange: adjustCodeToReplaceForRange,
+            } = getCodeToReplace({
                 docContext,
                 document,
                 position,
                 tokenBudget: autoeditsProviderConfig.tokenLimit,
             })
-            const { codeToRewrite } = codeToReplaceData
             const requestId = autoeditAnalyticsLogger.createRequest({
                 startedAt,
                 codeToReplaceData,
@@ -285,7 +302,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                 payload: {
                     languageId: document.languageId,
                     model: autoeditsProviderConfig.model,
-                    codeToRewrite,
+                    codeToRewrite: codeToReplaceData.codeToRewrite,
                     triggerKind: autoeditTriggerKind.automatic,
                 },
             })
@@ -340,7 +357,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                 abortSignal,
             })
 
-            if (abortSignal?.aborted || predictionResult.type === 'aborted') {
+            if (abortSignal?.aborted || predictionResult.response.type === 'aborted') {
                 autoeditsOutputChannelLogger.logDebugIfVerbose(
                     'provideInlineCompletionItems',
                     'client aborted after getPrediction'
@@ -353,22 +370,32 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                 return null
             }
 
-            if (predictionResult.type === 'partial') {
-                // We ignore streamed responses right now
+            if (predictionResult.hotStreak) {
+                codeToReplaceData = adjustCodeToReplaceForRange(predictionResult.hotStreak.adjustedRange)
+            }
+
+            if (
+                predictionResult.response.stopReason !== AutoeditStopReason.HotStreak &&
+                predictionResult.response.stopReason !== AutoeditStopReason.RequestFinished
+            ) {
+                // Ignore partial responses that we cannot use
                 return null
             }
 
-            const initialPrediction = predictionResult.prediction
+            const initialPrediction = predictionResult.response.prediction
 
             autoeditAnalyticsLogger.markAsLoaded({
                 requestId,
                 prompt,
-                modelResponse: predictionResult,
+                modelResponse: predictionResult.response,
+                hotStreak: predictionResult.hotStreak,
+                codeToReplaceData,
                 payload: {
                     // TODO: make it required
-                    source: predictionResult.source ?? autoeditSource.network,
+                    source: predictionResult.response.source ?? autoeditSource.network,
                     isFuzzyMatch: false,
                     prediction: initialPrediction,
+                    codeToRewrite: codeToReplaceData.codeToRewrite,
                 },
             })
 
@@ -384,7 +411,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                 return null
             }
 
-            if (predictionResult.prediction.length === 0) {
+            if (predictionResult.response.prediction.length === 0) {
                 autoeditsOutputChannelLogger.logDebugIfVerbose(
                     'provideInlineCompletionItems',
                     'received empty prediction'
@@ -408,7 +435,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                 codeToReplaceData,
             })
 
-            if (prediction === codeToRewrite) {
+            if (prediction === codeToReplaceData.codeToRewrite) {
                 autoeditsOutputChannelLogger.logDebugIfVerbose(
                     'provideInlineCompletionItems',
                     'prediction equals to code to rewrite'
@@ -423,7 +450,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
             const shouldFilterPredictionBasedRecentEdits = this.filterPrediction.shouldFilterPrediction({
                 uri: document.uri,
                 prediction,
-                codeToRewrite,
+                codeToRewrite: codeToReplaceData.codeToRewrite,
             })
 
             if (shouldFilterPredictionBasedRecentEdits) {
@@ -441,12 +468,12 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
             const decorationInfo = getDecorationInfoFromPrediction(
                 document,
                 prediction,
-                codeToReplaceData
+                codeToReplaceData.range
             )
 
             if (
                 isPredictedTextAlreadyInSuffix({
-                    codeToRewrite,
+                    codeToRewrite: codeToReplaceData.codeToRewrite,
                     decorationInfo,
                     suffix: codeToReplaceData.suffixInArea + codeToReplaceData.suffixAfterArea,
                 })
@@ -655,6 +682,39 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
         return this.rendererManager.handleDidShowSuggestion(requestId)
     }
 
+    /**
+     * Process model responses and emit hot streak predictions
+     * This allows us to emit suggestions before the model is done generating
+     */
+    private async getAndProcessModelResponses({
+        document,
+        position,
+        codeToReplaceData,
+        prompt,
+        abortSignal,
+    }: {
+        document: vscode.TextDocument
+        position: vscode.Position
+        codeToReplaceData: CodeToReplaceData
+        prompt: AutoeditsPrompt
+        abortSignal: AbortSignal
+    }): Promise<AsyncGenerator<PredictionResult>> {
+        const userId = (await currentResolvedConfig()).clientState.anonymousUserID
+        const responseGenerator = await this.modelAdapter.getModelResponse({
+            url: autoeditsProviderConfig.url,
+            model: autoeditsProviderConfig.model,
+            prompt,
+            codeToRewrite: codeToReplaceData.codeToRewrite,
+            userId,
+            isChatModel: autoeditsProviderConfig.isChatModel,
+            abortSignal,
+            timeoutMs: autoeditsProviderConfig.timeoutMs,
+        })
+
+        return processHotStreakResponses(responseGenerator, document, codeToReplaceData)
+    }
+
+    private hasDoneMockPrediction = false
     private async getPrediction({
         document,
         position,
@@ -667,7 +727,15 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
         codeToReplaceData: CodeToReplaceData
         prompt: AutoeditsPrompt
         abortSignal: AbortSignal
-    }): Promise<ModelResponse> {
+    }): Promise<PredictionResult> {
+        const requestParams: AutoeditRequestManagerParams = {
+            requestUrl: autoeditsProviderConfig.url,
+            uri: document.uri.toString(),
+            documentVersion: document.version,
+            position,
+            abortSignal,
+        }
+
         if (autoeditsProviderConfig.isMockResponseFromCurrentDocumentTemplateEnabled) {
             const responseMetadata = extractAutoEditResponseFromCurrentDocumentCommentTemplate(
                 document,
@@ -680,39 +748,24 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                     codeToReplaceData
                 )
 
-                if (prediction) {
-                    return {
-                        type: 'success',
-                        stopReason: AutoeditStopReason.RequestFinished,
-                        prediction,
-                        responseHeaders: {},
-                        responseBody: {},
-                        requestUrl: autoeditsProviderConfig.url,
-                        source: autoeditSource.cache,
-                    }
+                if (prediction && !this.hasDoneMockPrediction) {
+                    // TODO: Remove
+                    this.hasDoneMockPrediction = true
+                    const generator = createMockResponseGenerator(prediction)
+                    return this.requestManager.request(requestParams, async () => {
+                        return processHotStreakResponses(generator, document, codeToReplaceData)
+                    })
                 }
             }
         }
 
-        const requestParams: AutoeditRequestManagerParams = {
-            requestUrl: autoeditsProviderConfig.url,
-            uri: document.uri.toString(),
-            documentVersion: document.version,
-            position,
-            abortSignal,
-        }
-
-        const userId = (await currentResolvedConfig()).clientState.anonymousUserID
         return this.requestManager.request(requestParams, signal => {
-            return this.modelAdapter.getModelResponse({
-                url: autoeditsProviderConfig.url,
-                model: autoeditsProviderConfig.model,
+            return this.getAndProcessModelResponses({
+                document,
+                position,
+                codeToReplaceData,
                 prompt,
-                codeToRewrite: codeToReplaceData.codeToRewrite,
-                userId,
-                isChatModel: autoeditsProviderConfig.isChatModel,
                 abortSignal: signal,
-                timeoutMs: autoeditsProviderConfig.timeoutMs,
             })
         })
     }
@@ -771,13 +824,13 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
 export function getDecorationInfoFromPrediction(
     document: vscode.TextDocument,
     prediction: string,
-    codeToReplaceData: CodeToReplaceData
+    range: vscode.Range
 ): DecorationInfo {
     const currentFileText = document.getText()
     const predictedFileText =
-        currentFileText.slice(0, document.offsetAt(codeToReplaceData.range.start)) +
+        currentFileText.slice(0, document.offsetAt(range.start)) +
         prediction +
-        currentFileText.slice(document.offsetAt(codeToReplaceData.range.end))
+        currentFileText.slice(document.offsetAt(range.end))
 
     const decorationInfo = getDecorationInfo(currentFileText, predictedFileText)
     return decorationInfo

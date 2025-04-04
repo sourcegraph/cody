@@ -1,9 +1,15 @@
 import { LRUCache } from 'lru-cache'
 import type * as vscode from 'vscode'
 
+import type { PredictionResult } from './autoedits-provider'
+
 import { forkSignal } from '../completions/utils'
-import { AutoeditStopReason, type ModelResponse, type SuccessModelResponse } from './adapters/base'
-import { autoeditSource } from './analytics-logger'
+import {
+    AutoeditStopReason,
+    type PartialModelResponse,
+    type SuccessModelResponse,
+} from './adapters/base'
+import { type AutoeditHotStreakID, autoeditSource } from './analytics-logger'
 
 export interface AutoeditRequestManagerParams {
     requestUrl: string
@@ -13,8 +19,14 @@ export interface AutoeditRequestManagerParams {
     abortSignal: AbortSignal
 }
 
+interface CacheEntry extends PredictionResult {
+    response: SuccessModelResponse | PartialModelResponse
+}
+
 export class RequestManager implements vscode.Disposable {
-    private cache = new LRUCache<string, { response: SuccessModelResponse }>({ max: 50 })
+    private cache = new LRUCache<string, CacheEntry>({
+        max: 50,
+    })
     private readonly inflightRequests = new LRUCache<string, InflightRequest>({ max: 20 })
 
     /**
@@ -22,8 +34,8 @@ export class RequestManager implements vscode.Disposable {
      */
     public async request(
         params: AutoeditRequestManagerParams,
-        makeRequest: (abortSignal: AbortSignal) => Promise<AsyncGenerator<ModelResponse>>
-    ): Promise<ModelResponse> {
+        makeRequest: (abortSignal: AbortSignal) => Promise<AsyncGenerator<PredictionResult>>
+    ): Promise<PredictionResult> {
         // 1. First check the cache for exact matches
         const cachedResponse = this.checkCache(params)
         if (cachedResponse) {
@@ -33,21 +45,26 @@ export class RequestManager implements vscode.Disposable {
         // 2. Then check for a matching in-flight request
         const inflightRequest = this.findMatchingInflightRequest(params)
         if (inflightRequest) {
-            const response = await inflightRequest.promise
+            const { response, ...rest } = await inflightRequest.promise
             if (response.type === 'success') {
                 return {
-                    ...response,
-                    source: autoeditSource.inFlightRequest,
+                    response: {
+                        ...response,
+                        source: autoeditSource.inFlightRequest,
+                    },
+                    ...rest,
                 }
             }
-            return response
+            return { response, ...rest }
         }
 
         if (params.abortSignal.aborted) {
             return {
-                type: 'aborted',
-                stopReason: AutoeditStopReason.RequestAborted,
-                requestUrl: params.requestUrl,
+                response: {
+                    type: 'aborted',
+                    stopReason: AutoeditStopReason.RequestAborted,
+                    requestUrl: params.requestUrl,
+                },
             }
         }
 
@@ -59,37 +76,50 @@ export class RequestManager implements vscode.Disposable {
         this.cancelIrrelevantRequests()
 
         // Start processing the request in the background
-        this.processRequestInBackground(request, makeRequest)
+        this.processRequestInBackground(request, makeRequest, params)
 
         return request.promise
     }
 
     private async processRequestInBackground(
         request: InflightRequest,
-        makeRequest: (abortSignal: AbortSignal) => Promise<AsyncGenerator<ModelResponse>>
+        makeRequest: (abortSignal: AbortSignal) => Promise<AsyncGenerator<PredictionResult>>,
+        params: AutoeditRequestManagerParams
     ): Promise<void> {
         try {
-            for await (const response of await makeRequest(request.abortController.signal)) {
-                if (response.type === 'partial') {
-                    // Got a partial response, we do nothing here right now.
-                    // TODO: Implement hot-streak, emit the partial response if it contains X lines
-                    // cache additional lines for follow up suggestions
+            for await (const result of await makeRequest(request.abortController.signal)) {
+                const { response, hotStreak } = result
+                if (response.type === 'aborted') {
+                    request.resolve(result)
                     continue
                 }
 
-                if (response.type === 'success') {
-                    this.cache.set(request.cacheKey, {
-                        response: {
-                            ...response,
-                            source: autoeditSource.cache,
-                        },
-                    })
-
-                    request.resolve(response)
-                    this.recycleResponseForInflightRequests(request, response)
-                } else {
-                    request.resolve(response)
+                if (
+                    response.type === 'partial' &&
+                    response.stopReason !== AutoeditStopReason.HotStreak
+                ) {
+                    // Partial response that we haven't made into a hot-streak
+                    // Continue streaming
+                    continue
                 }
+
+                let cacheKey = request.cacheKey
+                if (hotStreak) {
+                    // Hot streak means one request can provide many cache items.
+                    // Use the cursor position of this hot streak suggestion to create a unique cache key.
+                    cacheKey = createCacheKey({
+                        ...params,
+                        position: hotStreak.cursorPosition,
+                    })
+                }
+                this.cache.set(cacheKey, result as CacheEntry)
+
+                // A promise will never resolve more than once, so we don't need
+                // to check if the request was already fulfilled.
+                request.resolve(result)
+
+                // Always recycle the response even if we already resolved
+                this.recycleResponseForInflightRequests(request, result)
             }
         } catch (error) {
             request.reject(error as Error)
@@ -118,10 +148,33 @@ export class RequestManager implements vscode.Disposable {
         return undefined
     }
 
-    public checkCache(params: AutoeditRequestManagerParams): SuccessModelResponse | null {
+    public checkCache(params: AutoeditRequestManagerParams): CacheEntry | null {
         const cached = this.cache.get(createCacheKey(params))
+        return cached ?? null
+    }
 
-        return cached?.response ?? null
+    public getNearestHotStreakItem({
+        hotStreakID,
+        position,
+    }: { hotStreakID: AutoeditHotStreakID; position: vscode.Position }): CacheEntry | null {
+        let closestItem: CacheEntry | null = null
+        let minDistance = Number.MAX_SAFE_INTEGER
+
+        for (const key of [...this.cache.keys()]) {
+            const item = this.cache.get(key)
+            if (!item || item.hotStreak?.id !== hotStreakID) {
+                // Skip items that don't match the hot streak ID
+                continue
+            }
+
+            const distance = item.hotStreak.cursorPosition.line - position.line
+            if (distance < minDistance) {
+                minDistance = distance
+                closestItem = item
+            }
+        }
+
+        return closestItem
     }
 
     /**
@@ -129,7 +182,7 @@ export class RequestManager implements vscode.Disposable {
      */
     private recycleResponseForInflightRequests(
         completedRequest: InflightRequest,
-        response: SuccessModelResponse
+        result: PredictionResult
     ): void {
         // TODO: Implement
     }
@@ -151,8 +204,8 @@ export class RequestManager implements vscode.Disposable {
 }
 
 class InflightRequest {
-    public promise: Promise<ModelResponse>
-    public resolve: (result: ModelResponse) => void
+    public promise: Promise<PredictionResult>
+    public resolve: (result: PredictionResult) => void
     public reject: (error: Error) => void
     public startedAt = performance.now()
     public isResolved = false
@@ -168,7 +221,7 @@ class InflightRequest {
         this.resolve = () => {}
         this.reject = () => {}
 
-        this.promise = new Promise<ModelResponse>((resolve, reject) => {
+        this.promise = new Promise<PredictionResult>((resolve, reject) => {
             this.resolve = result => {
                 this.isResolved = true
                 resolve(result)
@@ -197,10 +250,10 @@ class InflightRequest {
 
 interface RequestCacheKeyParams {
     uri: string
-    documentVersion: number
+    documentVersion?: number
     position: vscode.Position
 }
 
-function createCacheKey({ uri, documentVersion, position }: RequestCacheKeyParams): string {
-    return `${uri}:${documentVersion}:${position.line}`
+function createCacheKey({ uri, position }: RequestCacheKeyParams): string {
+    return `${uri}:${position.line}`
 }
