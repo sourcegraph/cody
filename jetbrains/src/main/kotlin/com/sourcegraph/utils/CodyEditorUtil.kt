@@ -181,20 +181,19 @@ object CodyEditorUtil {
 
   @JvmStatic
   fun fixUriString(uriString: String): String {
-      if (uriString.startsWith("untitled://")) {
-          // IntelliJ does not support in-memory files so we are using scratch files instead
-          return uriString.substringAfterLast(':').trimStart('/', '\\')
-      }
-      else {
-          // Check `ProtocolTextDocumentExt.normalizeToVscUriFormat` for explanation
-          val patchedUri = uriString.replace("file://wsl.localhost/", "file:////wsl.localhost/")
-          return if (patchedUri.startsWith("file://")) patchedUri else "file://$patchedUri"
-      }
+    if (uriString.startsWith("untitled://")) {
+      // IntelliJ does not support in-memory files so we are using scratch files instead
+      return uriString.substringAfterLast(':').trimStart('/', '\\')
+    } else {
+      // Check `ProtocolTextDocumentExt.normalizeToVscUriFormat` for explanation
+      val patchedUri = uriString.replace("file://wsl.localhost/", "file:////wsl.localhost/")
+      return if (patchedUri.startsWith("file://")) patchedUri else "file://$patchedUri"
+    }
   }
 
   fun findFileOrScratch(project: Project, uriString: String): VirtualFile? {
     val fixedUri = fixUriString(uriString)
-    if (fixedUri.startsWith("untitled://")) {
+    if (uriString.startsWith("untitled://")) {
       return ScratchRootType.getInstance()
           .findFile(project, fixedUri, ScratchFileService.Option.existing_only)
     } else {
