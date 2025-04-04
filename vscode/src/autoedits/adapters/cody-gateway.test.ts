@@ -56,7 +56,8 @@ describe('CodyGatewayAdapter', () => {
             json: () => Promise.resolve({ choices: [{ message: { content: 'response' } }] }),
         })
 
-        await adapter.getModelResponse(options)
+        const generator = await adapter.getModelResponse(options)
+        await generator.next() // Start the generator to trigger the API call
 
         // Verify the fetch call
         expect(mockFetchSpy).toHaveBeenCalledWith(options.url, {
@@ -65,6 +66,7 @@ describe('CodyGatewayAdapter', () => {
                 'Content-Type': 'application/json',
                 Authorization: expect.stringContaining('sgd_'),
                 'X-Sourcegraph-Feature': 'code_completions',
+                'Accept-Encoding': 'gzip;q=0'
             },
             body: expect.stringContaining('"model":"anthropic/claude-2"'),
             signal: expect.any(AbortSignal),
@@ -74,7 +76,7 @@ describe('CodyGatewayAdapter', () => {
         const requestBody = JSON.parse(mockFetchSpy.mock.calls[0][1].body)
         expect(requestBody).toEqual(
             expect.objectContaining({
-                stream: false,
+                stream: true,
                 model: options.model,
                 temperature: 0.1,
                 response_format: { type: 'text' },
@@ -97,12 +99,13 @@ describe('CodyGatewayAdapter', () => {
             json: () => Promise.resolve({ choices: [{ text: 'response' }] }),
         })
 
-        await adapter.getModelResponse(nonChatOptions)
+        const generator = await adapter.getModelResponse(nonChatOptions)
+        await generator.next() // Start the generator to trigger the API call
 
         const requestBody = JSON.parse(mockFetchSpy.mock.calls[0][1].body)
         expect(requestBody).toEqual(
             expect.objectContaining({
-                stream: false,
+                stream: true,
                 model: options.model,
                 temperature: 0.1,
                 response_format: { type: 'text' },
@@ -123,6 +126,7 @@ describe('CodyGatewayAdapter', () => {
             text: () => Promise.resolve('Bad Request'),
         })
 
-        await expect(adapter.getModelResponse(options)).rejects.toThrow('HTTP error!')
+        const generator = await adapter.getModelResponse(options)
+        await expect(generator.next()).rejects.toThrow('HTTP error!')
     })
 })

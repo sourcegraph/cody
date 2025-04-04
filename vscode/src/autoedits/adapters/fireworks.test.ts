@@ -51,13 +51,15 @@ describe('FireworksAdapter', () => {
             json: () => Promise.resolve({ choices: [{ message: { content: 'response' } }] }),
         })
 
-        await adapter.getModelResponse(options)
+        const generator = await adapter.getModelResponse(options)
+        await generator.next() // Start the generator to trigger the API call
 
         expect(mockFetchSpy).toHaveBeenCalledWith(options.url, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 Authorization: `Bearer ${apiKey}`,
+                'Accept-Encoding': 'gzip;q=0',
             },
             body: expect.stringContaining('"model":"accounts/fireworks/models/llama-v2-7b"'),
             signal: expect.any(AbortSignal),
@@ -66,7 +68,7 @@ describe('FireworksAdapter', () => {
         const requestBody = JSON.parse(mockFetchSpy.mock.calls[0][1].body)
         expect(requestBody).toEqual(
             expect.objectContaining({
-                stream: false,
+                stream: true,
                 model: options.model,
                 temperature: 0.1,
                 max_tokens: expect.any(Number),
@@ -90,12 +92,13 @@ describe('FireworksAdapter', () => {
             json: () => Promise.resolve({ choices: [{ text: 'response' }] }),
         })
 
-        await adapter.getModelResponse(nonChatOptions)
+        const generator = await adapter.getModelResponse(nonChatOptions)
+        await generator.next() // Start the generator to trigger the API call
 
         const requestBody = JSON.parse(mockFetchSpy.mock.calls[0][1].body)
         expect(requestBody).toEqual(
             expect.objectContaining({
-                stream: false,
+                stream: true,
                 model: options.model,
                 temperature: 0.1,
                 max_tokens: expect.any(Number),
@@ -117,7 +120,8 @@ describe('FireworksAdapter', () => {
             text: () => Promise.resolve('Bad Request'),
         })
 
-        await expect(adapter.getModelResponse(options)).rejects.toThrow()
+        const generator = await adapter.getModelResponse(options)
+        await expect(generator.next()).rejects.toThrow()
     })
 
     it('returns correct response for chat model', async () => {
@@ -125,12 +129,12 @@ describe('FireworksAdapter', () => {
         mockFetchSpy.mockResolvedValueOnce({
             status: 200,
             headers: new Headers(),
-            text: () => Promise.resolve(JSON.stringify(expectedResponse)),
+            json: () => Promise.resolve({ choices: [{ message: { content: expectedResponse } }] }),
         })
 
-        const responseGenerator = adapter.getModelResponse(options)
+        const responseGenerator = await adapter.getModelResponse(options)
         const responses = []
-        for await (const response of await responseGenerator) {
+        for await (const response of responseGenerator) {
             responses.push(response)
         }
         const lastResponse = responses[responses.length - 1]
@@ -144,7 +148,7 @@ describe('FireworksAdapter', () => {
         mockFetchSpy.mockResolvedValueOnce({
             status: 200,
             headers: new Headers(),
-            text: () => Promise.resolve(JSON.stringify(expectedResponse)),
+            json: () => Promise.resolve({ choices: [{ text: expectedResponse }] }),
         })
 
         const responseGenerator = await adapter.getModelResponse(nonChatOptions)
