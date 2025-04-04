@@ -10,7 +10,7 @@ import { WorkspaceEdit, vsCodeMocks } from '../testutils/mocks'
 
 import type { CodyStatusBar } from '../services/StatusBar'
 import { AutoeditStopReason } from './adapters/base'
-import * as modelResponse from './adapters/model-response/default'
+import * as fireworksAdapter from './adapters/model-response/fireworks'
 import { autoeditTriggerKind } from './analytics-logger'
 import {
     AUTOEDIT_INITIAL_DEBOUNCE_INTERVAL_MS,
@@ -43,7 +43,11 @@ export async function autoeditResultFor(
         /** provide to reuse an existing provider instance */
         provider?: AutoeditsProvider
         inlineCompletionContext?: vscode.InlineCompletionContext
-        getModelResponse?: typeof modelResponse.getDefaultModelResponse
+        /**
+         * In the test environment, the autoedit provider uses cody-gateway adapter,
+         * which relies on the `getFireworksModelResponse` function internally.
+         */
+        getModelResponse?: typeof fireworksAdapter.getFireworksModelResponse
         isAutomaticTimersAdvancementDisabled?: boolean
     }
 ): Promise<{
@@ -54,7 +58,7 @@ export async function autoeditResultFor(
     provider: AutoeditsProvider
     editBuilder: WorkspaceEdit
 }> {
-    const getModelResponseMock: typeof modelResponse.getDefaultModelResponse = async function* () {
+    const getModelResponseMock: typeof fireworksAdapter.getFireworksModelResponse = async function* () {
         // Simulate response latency.
         vi.advanceTimersByTime(100)
 
@@ -75,8 +79,7 @@ export async function autoeditResultFor(
         }
     }
 
-    // TODO: add a callback to verify `getModelResponse` arguments.
-    vi.spyOn(modelResponse, 'getDefaultModelResponse').mockImplementation(
+    vi.spyOn(fireworksAdapter, 'getFireworksModelResponse').mockImplementation(
         getModelResponse || getModelResponseMock
     )
 

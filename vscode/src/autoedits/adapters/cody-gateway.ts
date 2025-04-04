@@ -33,7 +33,7 @@ export class CodyGatewayAdapter implements AutoeditsModelAdapter {
                         apiKey,
                         customHeaders: headers,
                         abortSignal: options.abortSignal,
-                        extractPrediction: (response) => {
+                        extractPrediction: response => {
                             if (options.isChatModel) {
                                 return response.choices?.[0]?.message?.content ?? ''
                             }
