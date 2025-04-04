@@ -403,6 +403,8 @@ tasks {
     download(url, zipFile)
 
     val destination = githubArchiveCache.resolve("node").resolve("node-binaries-$nodeVersion")
+    val nodeVersionDir = destination.resolve(branch)
+
     if (!destination.exists()) {
       val extractTargetDir = destination.parentFile
       println("Unzipping $zipFile to $extractTargetDir...")
@@ -413,24 +415,24 @@ tasks {
       }
       println("Unzipped main archive, created $destination")
 
-      destination.listFiles()?.forEach { fileInDestination ->
-        if (fileInDestination.isFile &&
-            fileInDestination.name.endsWith(".zip", ignoreCase = true)) {
-          println("Found inner zip file: ${fileInDestination.name}. Unzipping...")
+      nodeVersionDir.listFiles()?.forEach { fileInNodeVersionDir ->
+        if (fileInNodeVersionDir.isFile &&
+            fileInNodeVersionDir.name.endsWith(".zip", ignoreCase = true)) {
+          println("Found inner zip file: ${fileInNodeVersionDir.name}. Unzipping...")
           try {
             project.copy {
-              from(project.zipTree(fileInDestination))
-              into(destination)
+              from(project.zipTree(fileInNodeVersionDir))
+              into(nodeVersionDir)
             }
-            println("Successfully unzipped ${fileInDestination.name}")
+            println("Successfully unzipped ${fileInNodeVersionDir.name}")
 
-            if (!fileInDestination.delete()) {
+            if (!fileInNodeVersionDir.delete()) {
               project.logger.warn(
-                  "Failed to delete inner zip file: ${fileInDestination.absolutePath}")
+                  "Failed to delete inner zip file: ${fileInNodeVersionDir.absolutePath}")
             }
           } catch (e: Exception) {
             project.logger.error(
-                "Failed to unzip inner file ${fileInDestination.name}: ${e.message}", e)
+                "Failed to unzip inner file ${fileInNodeVersionDir.name}: ${e.message}", e)
           }
         }
       }
@@ -438,7 +440,6 @@ tasks {
       println("Using existing unzipped directory: $destination")
     }
 
-    val nodeVersionDir = destination.resolve(branch)
     if (!nodeVersionDir.exists()) {
       project.logger.error(
           "Expected Node version directory not found after unzipping: $nodeVersionDir")
