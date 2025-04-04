@@ -37,10 +37,10 @@ export function createOrUpdateTelemetryRecorderProvider(
             const defaultNoOpProvider = new NoOpTelemetryRecorderProvider([
                 new TimestampTelemetryProcessor(),
             ])
-// Telemetry Collection Policy:
-// - Sourcegraph.com users (Free & Pro): Telemetry collection is mandatory and always enabled.
-// - Workspace Users (Enterprise Starter): Telemetry collection is mandatory and always enabled.
-// - Enterprise Customer Users: Have the option to disable telemetry collection
+            // Telemetry Collection Policy:
+            // - Sourcegraph.com users (Free & Pro): Telemetry collection is mandatory and always enabled.
+            // - Workspace Users (Enterprise Starter): Telemetry collection is mandatory and always enabled.
+            // - Enterprise Customer Users: Have the option to disable telemetry collection
             if (configuration.telemetryLevel === 'off') {
                 if (
                     auth.serverEndpoint &&
