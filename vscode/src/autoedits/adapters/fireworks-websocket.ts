@@ -171,7 +171,7 @@ export class FireworksWebSocketAdapter implements AutoeditsModelAdapter {
         }
 
         const messageId = 'm_' + this.messageId++
-        const messageQueue: WebSocketMessage[] = []
+        const messageQueue: (WebSocketMessage | Error)[] = []
         let queueResolver: (() => void) | null = null
 
         if (messageId in this.callbackQueue) {
@@ -181,19 +181,15 @@ export class FireworksWebSocketAdapter implements AutoeditsModelAdapter {
             )
         }
 
+        const pushToQueue = (message: WebSocketMessage | Error) => {
+            messageQueue.push(message)
+            queueResolver?.()
+            queueResolver = null
+        }
+
         this.callbackQueue[messageId] = {
-            resolve: message => {
-                messageQueue.push(message)
-                queueResolver?.()
-                queueResolver = null
-            },
-            reject: (error: Error) => {
-                autoeditsOutputChannelLogger.logError(LOG_FILTER_LABEL, 'WebSocket error', {
-                    verbose: error,
-                })
-                queueResolver?.()
-                queueResolver = null
-            },
+            resolve: pushToQueue,
+            reject: pushToQueue,
             signal: abortSignal,
         }
 
@@ -204,6 +200,11 @@ export class FireworksWebSocketAdapter implements AutoeditsModelAdapter {
             'x-message-headers': requestHeaders,
         })
 
+        if (abortSignal.aborted) {
+            delete this.callbackQueue[messageId]
+            throw new Error('abort signal received, message not sent')
+        }
+
         // Initiate the request
         this.ws?.send(data)
 
@@ -211,45 +212,6 @@ export class FireworksWebSocketAdapter implements AutoeditsModelAdapter {
             responseBody: {},
             prediction: '',
             done: false,
-        }
-        const processFireworksResponse = (message: WebSocketMessage): ModelResponse => {
-            if (!message.body) {
-                throw new Error('Processing WebSocket response: no body')
-            }
-            state.responseBody = message.body
-
-            if (state.responseBody.data === '[DONE]') {
-                // Notify the message loop to stop
-                state.done = true
-                return {
-                    type: 'success',
-                    stopReason: AutoeditStopReason.RequestFinished,
-                    prediction: state.prediction,
-                    responseHeaders: message.headers,
-                    responseBody: state.responseBody,
-                    requestHeaders,
-                    requestUrl: url,
-                }
-            }
-
-            try {
-                const predictionChunk = extractPrediction(state.responseBody.data) || ''
-                state.prediction += predictionChunk
-                return {
-                    type: 'partial',
-                    stopReason: AutoeditStopReason.StreamingChunk,
-                    prediction: state.prediction,
-                    requestHeaders,
-                    requestUrl: url,
-                }
-            } catch (parseError) {
-                autoeditsOutputChannelLogger.logError(
-                    LOG_FILTER_LABEL,
-                    `Failed to parse stream data: ${parseError}`,
-                    { verbose: body }
-                )
-                throw new Error(`Failed to parse stream data: ${parseError}`)
-            }
         }
 
         try {
@@ -263,11 +225,65 @@ export class FireworksWebSocketAdapter implements AutoeditsModelAdapter {
 
                 while (messageQueue.length > 0) {
                     const message = messageQueue.shift()!
-                    yield processFireworksResponse(message)
+                    if (message instanceof Error) {
+                        throw message
+                    }
+                    yield this.processFireworksResponse(message, state, extractPrediction, {
+                        requestHeaders,
+                        requestUrl: url,
+                    })
                 }
             }
         } finally {
             delete this.callbackQueue[messageId]
+        }
+    }
+
+    private processFireworksResponse(
+        message: WebSocketMessage,
+        state: Pick<SuccessModelResponse, 'responseBody' | 'prediction'> & { done: boolean },
+        extractPrediction: (body: FireworksResponse) => string,
+        requestParams: {
+            requestHeaders: Record<string, string>
+            requestUrl: string
+        }
+    ): ModelResponse {
+        if (!message.body) {
+            throw new Error('Processing WebSocket response: no body')
+        }
+        state.responseBody = message.body
+
+        if (state.responseBody.data === '[DONE]') {
+            // Notify the message loop to stop
+            state.done = true
+            return {
+                type: 'success',
+                stopReason: AutoeditStopReason.RequestFinished,
+                prediction: state.prediction,
+                responseHeaders: message.headers,
+                responseBody: state.responseBody,
+                requestHeaders: requestParams.requestHeaders,
+                requestUrl: requestParams.requestUrl,
+            }
+        }
+
+        try {
+            const predictionChunk = extractPrediction(state.responseBody.data) || ''
+            state.prediction += predictionChunk
+            return {
+                type: 'partial',
+                stopReason: AutoeditStopReason.StreamingChunk,
+                prediction: state.prediction,
+                requestHeaders: requestParams.requestHeaders,
+                requestUrl: requestParams.requestUrl,
+            }
+        } catch (parseError) {
+            autoeditsOutputChannelLogger.logError(
+                LOG_FILTER_LABEL,
+                `Failed to parse stream data: ${parseError}`,
+                { verbose: state.responseBody.data }
+            )
+            throw new Error(`Failed to parse stream data: ${parseError}`)
         }
     }
 
