@@ -28,6 +28,27 @@ interface GetContextOptions {
     repoName?: string
 }
 
+export interface RetrieverStat {
+    /** Name of the retriever */
+    name: string
+    /** Number of items that are ended up being suggested to be used by the context mixer */
+    suggestedItems: number
+    /** Number of total snippets */
+    retrievedItems: number
+    /** Number of characters in the suggested Items from the retriever */
+    retrieverChars: number
+    /** Duration of the individual retriever */
+    duration: number
+    /**
+     * A bitmap that indicates at which position in the result set an entry from the given
+     * retriever is included. It only includes information about the first 32 entries.
+     *
+     * The lowest bit indicates if the first entry is included, the second lowest bit
+     * indicates if the second entry is included, and so on.
+     */
+    positionBitmap: number
+}
+
 export interface ContextSummary {
     /** Name of the strategy being used */
     strategy: ContextStrategy
@@ -40,26 +61,7 @@ export interface ContextSummary {
     /** The number of characters in the prompt used from the document suffix. */
     suffixChars: number
     /** Detailed information for each retriever that has run */
-    retrieverStats: {
-        [identifier: string]: {
-            /** Number of items that are ended up being suggested to be used by the context mixer */
-            suggestedItems: number
-            /** Number of total snippets */
-            retrievedItems: number
-            /** Number of characters in the suggested Items from the retriever */
-            retrieverChars: number
-            /** Duration of the individual retriever */
-            duration: number
-            /**
-             * A bitmap that indicates at which position in the result set an entry from the given
-             * retriever is included. It only includes information about the first 32 entries.
-             *
-             * The lowest bit indicates if the first entry is included, the second lowest bit
-             * indicates if the second entry is included, and so on.
-             */
-            positionBitmap: number
-        }
-    }
+    retrieverStats: RetrieverStat[]
 }
 
 export interface GetContextResult {
@@ -117,7 +119,7 @@ export class ContextMixer implements vscode.Disposable {
                     prefixChars: options.docContext.prefix.length,
                     suffixChars: options.docContext.suffix.length,
                     duration: 0,
-                    retrieverStats: {},
+                    retrieverStats: [],
                 },
                 contextLoggingSnippets: [],
             }
@@ -168,7 +170,7 @@ export class ContextMixer implements vscode.Disposable {
                     prefixChars: options.docContext.prefix.length,
                     suffixChars: options.docContext.suffix.length,
                     duration: 0,
-                    retrieverStats: {},
+                    retrieverStats: [],
                 },
                 contextLoggingSnippets,
             }
@@ -187,7 +189,7 @@ export class ContextMixer implements vscode.Disposable {
         let totalChars = options.docContext.prefix.length + options.docContext.suffix.length
 
         const mixedContext: AutocompleteContextSnippet[] = []
-        const retrieverStats: ContextSummary['retrieverStats'] = {}
+        const retrieverStats: ContextSummary['retrieverStats'] = []
         let position = 0
         for (const snippet of fusedResults) {
             if (totalChars + snippet.content.length > options.maxChars) {
@@ -201,8 +203,10 @@ export class ContextMixer implements vscode.Disposable {
             // summarize the stats in retrieverStats.
             const retrieverId = results.find(r => r.snippets.has(snippet))?.identifier
             if (retrieverId) {
-                if (!retrieverStats[retrieverId]) {
-                    retrieverStats[retrieverId] = {
+                let stat = retrieverStats.find(stat => stat.name === retrieverId)
+                if (!stat) {
+                    stat = {
+                        name: retrieverId,
                         suggestedItems: 0,
                         positionBitmap: 0,
                         retrieverChars: 0,
@@ -210,12 +214,13 @@ export class ContextMixer implements vscode.Disposable {
                             results.find(r => r.identifier === retrieverId)?.snippets.size ?? 0,
                         duration: results.find(r => r.identifier === retrieverId)?.duration ?? 0,
                     }
+                    retrieverStats.push(stat)
                 }
-                retrieverStats[retrieverId].retrieverChars += snippet.content.length
-                retrieverStats[retrieverId].suggestedItems++
+                stat.retrieverChars += snippet.content.length
+                stat.suggestedItems++
                 // Only log the position for the first 32 results to avoid overflowing the bitmap
                 if (position < 32) {
-                    retrieverStats[retrieverId].positionBitmap |= 1 << position
+                    stat.positionBitmap |= 1 << position
                 }
             }
 

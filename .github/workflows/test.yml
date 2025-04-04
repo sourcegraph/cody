@@ -52,7 +52,8 @@ jobs:
           cache: gradle
       # Skip Code Search build in CI because it's slow, and we don't use it anyway for testing purposes.
       - run: echo "SKIP_CODE_SEARCH_BUILD=true" >> $GITHUB_ENV
-      - run: |
+      - name: Verify the build (runs static code analysis and tests)
+        run: |
           pushd jetbrains
           ./gradlew spotlessCheck
           ./gradlew check
@@ -64,7 +65,8 @@ jobs:
           name: test-report
           path: jetbrains/build/reports/tests/
           compression-level: 9
-      - run: |
+      - name: Build the plugin
+        run: |
           pushd jetbrains
           ./gradlew buildPlugin
           ./gradlew --stop

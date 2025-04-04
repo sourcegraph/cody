@@ -21,15 +21,12 @@ import org.jetbrains.annotations.NotNull;
 
 public class FindService implements Disposable {
   private final Project project;
-  private final FindPopupPanel mainPanel;
+  private FindPopupPanel mainPanel;
   private FindPopupDialog popup;
   private static final Logger logger = Logger.getInstance(FindService.class);
 
   public FindService(@NotNull Project project) {
     this.project = project;
-
-    // Create main panel
-    mainPanel = new FindPopupPanel(project, this);
   }
 
   public static FindService getInstance(@NotNull Project project) {
@@ -57,6 +54,8 @@ public class FindService implements Disposable {
   }
 
   private void createOrShowPopup() {
+    if (mainPanel == null) mainPanel = new FindPopupPanel(project, this);
+
     if (popup != null) {
       if (!popup.isVisible()) {
         popup.show();

@@ -12,10 +12,9 @@ import {
     mockResolvedConfig,
     modelsService,
     ps,
-    useFakeTokenCounterUtils,
 } from '@sourcegraph/cody-shared'
 import { Observable } from 'observable-fns'
-import { beforeAll, beforeEach, describe, expect, it, test, vi } from 'vitest'
+import { beforeEach, describe, expect, it, test, vi } from 'vitest'
 import { Uri } from 'vscode'
 import { URI } from 'vscode-uri'
 import * as featureFlagProviderModule from '../../../../lib/shared/src/experimentation/FeatureFlagProvider'
@@ -28,10 +27,6 @@ import { ChatController, type ChatControllerOptions } from './ChatController'
 import { manipulateWebviewHTML } from './ChatController'
 
 describe('ChatController', () => {
-    beforeAll(() => {
-        useFakeTokenCounterUtils()
-    })
-
     const mockChatClient = {
         chat: vi.fn(),
     } satisfies ChatControllerOptions['chatClient']
@@ -86,7 +81,9 @@ describe('ChatController', () => {
         })
     })
 
-    test('does not create new chat builder when current one is empty during abort', async () => {
+    // Skipped flaky test
+    // Discussion: https://sourcegraph.slack.com/archives/C05AGQYD528/p1743508470592569
+    test.skip('does not create new chat builder when current one is empty during abort', async () => {
         // Setup spies
         const addBotMessageSpy = vi
             .spyOn(chatController as any, 'addBotMessage')

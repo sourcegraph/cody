@@ -400,10 +400,16 @@
                     <override-text place="GoToAction" text="Cody: Enable OffScreen Rendering"/>
                 </action>
                 <action id="cody.openWebviewDevToolsAction"
-                        class="com.sourcegraph.cody.OpenWebviewDevToolsAction"
+                        class="com.sourcegraph.cody.debugging.OpenWebviewDevToolsAction"
                         text="Open DevTools"
                         description="Open DevTools to debug Cody webview">
                     <override-text place="GoToAction" text="Cody: Open DevTools"/>
+                </action>
+                <action id="cody.agentHeapDumpAction"
+                        class="com.sourcegraph.cody.debugging.AgentHeapDumpAction"
+                        text="Agent Heap Dump"
+                        description="Do a heap dump of the Cody agent process">
+                    <override-text place="GoToAction" text="Cody: Agent Heap Dump"/>
                 </action>
             </group>
         </group>

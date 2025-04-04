@@ -5,7 +5,6 @@ import { logError } from '../logger'
 import {
     type StoredLastValue,
     combineLatest,
-    concat,
     debounceTime,
     distinctUntilChanged,
     firstValueFrom,
@@ -146,7 +145,7 @@ export enum FeatureFlag {
     CodyAutoEditUseWebSocketForFireworksConnections = 'auto-edit-use-web-socket-for-connections',
 
     // Extend context window for Cody Clients
-    LongContextWindow = 'long-context-window',
+    EnhancedContextWindow = 'enhanced-context-window',
 
     /**
      * Internal use only. Enables the next agentic chat experience.
@@ -179,6 +178,7 @@ export interface FeatureFlagProvider {
     evaluateFeatureFlagEphemerally(flag: FeatureFlag): Promise<boolean>
 
     getExposedExperiments(serverEndpoint: string): Record<string, boolean>
+
     refresh(): void
 }
 
@@ -210,6 +210,21 @@ export class FeatureFlagProviderImpl implements FeatureFlagProvider {
         distinctUntilChanged()
     )
 
+    private async loadFeatureFlags(signal: AbortSignal): Promise<Record<string, boolean> | Error> {
+        const siteVersion = await graphqlClient.getSiteVersion()
+        // New API is available from 6.2 onwards
+        if (
+            siteVersion === 'dev' ||
+            (!isError(siteVersion) &&
+                siteVersion.startsWith('6.') &&
+                !siteVersion.startsWith('6.0') &&
+                !siteVersion.startsWith('6.1'))
+        ) {
+            return graphqlClient.evaluateFeatureFlags(Object.values(FeatureFlag), signal)
+        }
+        return graphqlClient.getEvaluatedFeatureFlags(signal)
+    }
+
     private evaluateFeatureFlags: Observable<Record<string, boolean>> = combineLatest(
         this.relevantAuthStatusChanges,
         this.refreshes
@@ -217,9 +232,7 @@ export class FeatureFlagProviderImpl implements FeatureFlagProvider {
         debounceTime(0),
         switchMap(([authStatus]) =>
             promiseFactoryToObservable(signal =>
-                process.env.DISABLE_FEATURE_FLAGS
-                    ? Promise.resolve({})
-                    : graphqlClient.evaluateFeatureFlags(Object.values(FeatureFlag), signal)
+                process.env.DISABLE_FEATURE_FLAGS ? Promise.resolve({}) : this.loadFeatureFlags(signal)
             ).pipe(
                 map(resultOrError => {
                     if (isError(resultOrError)) {
@@ -259,11 +272,14 @@ export class FeatureFlagProviderImpl implements FeatureFlagProvider {
 
     /**
      * Observe the evaluated value of a feature flag.
+     * @param flagName - The feature flag to evaluate
+     * @param forceRefresh - When set to true, forces a refresh of the feature flag value. Useful for new feature flags that are frequently toggled.
+     * @returns An Observable that emits the current value of the feature flag
      */
-    public evaluateFeatureFlag(flagName: FeatureFlag): Observable<boolean> {
+    public evaluateFeatureFlag(flagName: FeatureFlag, forceRefresh = false): Observable<boolean> {
         let entry = this.featureFlagCache[flagName]
 
-        if (!entry) {
+        if (!entry || forceRefresh) {
             // Whenever the auth status changes, we need to call `evaluateFeatureFlags` on the GraphQL
             // endpoint, because our endpoint or authentication may have changed.
             entry = storeLastValue(
@@ -274,10 +290,8 @@ export class FeatureFlagProviderImpl implements FeatureFlagProvider {
                         // may not always be correct, but it's probably more desirable for more feature
                         // flags. We can make the cache retrieval behavior configurable if needed.
                         switchMap(_ =>
-                            concat(
-                                this.evaluateFeatureFlags.pipe(
-                                    map(featureFlags => Boolean(featureFlags[flagName.toString()]))
-                                )
+                            this.evaluateFeatureFlags.pipe(
+                                map(featureFlags => Boolean(featureFlags[flagName.toString()]))
                             )
                         )
                     )

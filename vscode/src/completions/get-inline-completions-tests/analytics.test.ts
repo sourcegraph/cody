@@ -151,7 +151,7 @@ describe('[getInlineCompletions] completion event', () => {
                   "completionIntent": "function.body",
                   "contextSummary": {
                     "prefixChars": 16,
-                    "retrieverStats": {},
+                    "retrieverStats": [],
                     "strategy": "none",
                     "suffixChars": 1,
                     "totalChars": 17,
@@ -222,7 +222,7 @@ describe('[getInlineCompletions] completion event', () => {
                   "completionIntent": "return_statement",
                   "contextSummary": {
                     "prefixChars": 25,
-                    "retrieverStats": {},
+                    "retrieverStats": [],
                     "strategy": "none",
                     "suffixChars": 1,
                     "totalChars": 26,

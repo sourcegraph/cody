@@ -80,8 +80,9 @@ import { type Span, context } from '@opentelemetry/api'
 import { captureException } from '@sentry/core'
 import type { SubMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { resolveAuth } from '@sourcegraph/cody-shared/src/configuration/auth-resolver'
+import type { McpServer } from '@sourcegraph/cody-shared/src/llm-providers/mcp/types'
 import type { TelemetryEventParameters } from '@sourcegraph/telemetry'
-import { Subject, map } from 'observable-fns'
+import { Observable, Subject, map } from 'observable-fns'
 import type { URI } from 'vscode-uri'
 import { View } from '../../../webviews/tabs/types'
 import { redirectToEndpointLogin, showSignInMenu, showSignOutMenu, signOut } from '../../auth/auth'
@@ -139,6 +140,7 @@ import { getChatPanelTitle, isAgentTesting } from './chat-helpers'
 import { OmniboxTelemetry } from './handlers/OmniboxTelemetry'
 import { getAgent, getAgentName } from './handlers/registry'
 import { getPromptsMigrationInfo, startPromptsMigration } from './prompts-migration'
+import { MCPManager } from './tools/MCPManager'
 
 export interface ChatControllerOptions {
     extensionUri: vscode.Uri
@@ -743,7 +745,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             command,
             manuallySelectedIntent,
             model,
-            chatAgent,
         }: Parameters<typeof this.handleUserMessage>[0],
         span: Span
     ): Promise<void> {
@@ -762,7 +763,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             sessionID: this.chatBuilder.sessionID,
             traceId: span.spanContext().traceId,
             promptText: inputText,
-            chatAgent,
         })
         recorder.recordChatQuestionSubmitted(mentions)
 
@@ -770,7 +770,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
 
         this.postEmptyMessageInProgress(model)
 
-        const agent = getAgent(model, chatAgent ?? model, {
+        const agent = getAgent(model, manuallySelectedIntent, {
             contextRetriever: this.contextRetriever,
             editor: this.editor,
             chatClient: this.chatClient,
@@ -861,7 +861,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                         // In future work, we should remove this special-casing and unify
                         // how new messages are posted to the transcript.
 
-                        if (chatAgent === 'agentic') {
+                        if (manuallySelectedIntent === 'agentic') {
                             this.saveSession()
                         } else if (
                             messageInProgress &&
@@ -1743,11 +1743,29 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     authStatus: () => authStatus,
                     transcript: () =>
                         this.chatBuilder.changes.pipe(map(chat => chat.getDehydratedMessages())),
-                    userHistory: () => chatHistory.changes,
+                    userHistory: () => chatHistory.lightweightChanges,
                     userProductSubscription: () =>
                         userProductSubscription.pipe(
                             map(value => (value === pendingOperation ? null : value))
                         ),
+                    // Existing tools endpoint - update to include MCP tools
+                    mcpSettings: () => {
+                        return featureFlagProvider
+                            .evaluateFeatureFlag(FeatureFlag.NextAgenticChatInternal)
+                            .pipe(
+                                // Simplify the flow with map and distinctUntilChanged
+                                distinctUntilChanged(),
+                                startWith(null),
+                                // When disabled, return an empty array
+                                switchMap(experimentalAgentMode => {
+                                    if (!experimentalAgentMode) {
+                                        return Observable.of([] as McpServer[])
+                                    }
+                                    // When enabled, get servers from the manager
+                                    return MCPManager.observable
+                                })
+                            )
+                    },
                 }
             )
         )

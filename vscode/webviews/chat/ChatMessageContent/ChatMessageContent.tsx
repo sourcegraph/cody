@@ -3,6 +3,7 @@ import { clsx } from 'clsx'
 import type React from 'react'
 import { useCallback, useMemo } from 'react'
 import { RichMarkdown } from '../../components/RichMarkdown'
+import { getVSCodeAPI } from '../../utils/VSCodeApi'
 import { useConfig } from '../../utils/useConfig'
 import type { PriorHumanMessageInfo } from '../cells/messageCell/assistant/AssistantMessageCell'
 import styles from './ChatMessageContent.module.css'
@@ -66,15 +67,19 @@ export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps
 
     const onInsert = config.config.hasEditCapability ? insertButtonOnSubmit : undefined
 
-    const onExecute = useCallback((command: string) => {
+    let onExecute: ((command: string) => void) | undefined = useCallback((command: string) => {
         // Execute command in terminal
-        const vscodeApi = (window as any).acquireVsCodeApi?.()
-        vscodeApi?.postMessage({
+        const vscodeAPI = getVSCodeAPI()
+        vscodeAPI.postMessage({
             command: 'command',
             id: 'cody.terminal.execute',
             arg: command.trim(),
         })
     }, [])
+
+    // TODO: Replace this isVSCode check with a client capability check for
+    // terminal execution when agent/src/vscode-shim.ts implements `terminal()`
+    onExecute = config.clientCapabilities.isVSCode ? onExecute : undefined
 
     const onCopy = useCallback(
         (code: string) => copyButtonOnSubmit?.(code, 'Button'),

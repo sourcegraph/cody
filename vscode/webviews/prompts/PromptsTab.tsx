@@ -5,11 +5,10 @@ import { PromptList } from '../components/promptList/PromptList'
 import { View } from '../tabs/types'
 import { getVSCodeAPI } from '../utils/VSCodeApi'
 
-import { CodyIDE } from '@sourcegraph/cody-shared'
+import type { CodyIDE } from '@sourcegraph/cody-shared'
 import type { PromptMode } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
 import { useState } from 'react'
 import { PromptsFilter, type PromptsFilterArgs } from '../components/promptFilter/PromptsFilter'
-import { PromptMigrationWidget } from '../components/promptsMigration/PromptsMigration'
 import styles from './PromptsTab.module.css'
 
 export const PromptsTab: React.FC<{
@@ -22,9 +21,6 @@ export const PromptsTab: React.FC<{
 
     return (
         <div className="tw-overflow-auto tw-h-full tw-flex tw-flex-col">
-            {IDE !== CodyIDE.Web && (
-                <PromptMigrationWidget dismissible={false} className={styles.promptMigrationWidget} />
-            )}
             <PromptsFilter promptFilters={promptsFilter} setPromptFilters={setPromptsFilter} />
             <PromptList
                 showSearch={true}

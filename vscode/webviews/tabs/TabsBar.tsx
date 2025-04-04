@@ -10,6 +10,7 @@ import {
     type LucideProps,
     MessageSquarePlusIcon,
     MessagesSquareIcon,
+    Settings2Icon,
     Trash2Icon,
 } from 'lucide-react'
 import { getVSCodeAPI } from '../utils/VSCodeApi'
@@ -129,8 +130,8 @@ export const TabsBar = memo<TabsBarProps>(props => {
                     <div className="tw-flex tw-ml-auto">
                         <TabButton
                             prominent
-                            Icon={showOpenInEditor ? ColumnsIcon : MessageSquarePlusIcon}
-                            title={showOpenInEditor ? 'Open in Editor' : 'New Chat'}
+                            Icon={MessageSquarePlusIcon}
+                            title={'New Chat'}
                             IDE={IDE}
                             tooltipExtra={IDE === CodyIDE.VSCode && '(⇧⌥/)'}
                             view={View.Chat}
@@ -138,18 +139,30 @@ export const TabsBar = memo<TabsBarProps>(props => {
                             onClick={() =>
                                 handleSubActionClick({
                                     changesView: View.Chat,
-                                    command: `${
-                                        showOpenInEditor
-                                            ? 'cody.chat.moveToEditor'
-                                            : getCreateNewChatCommand({
-                                                  IDE,
-                                                  webviewType,
-                                                  multipleWebviewsEnabled,
-                                              })
-                                    }`,
+                                    command: getCreateNewChatCommand({
+                                        IDE,
+                                        webviewType,
+                                        multipleWebviewsEnabled,
+                                    }),
                                 })
                             }
                         />
+                        {showOpenInEditor && (
+                            <TabButton
+                                prominent
+                                Icon={ColumnsIcon}
+                                title={'Open in Editor'}
+                                IDE={IDE}
+                                view={View.Chat}
+                                data-testid="open-in-editor-button"
+                                onClick={() =>
+                                    handleSubActionClick({
+                                        changesView: View.Chat,
+                                        command: 'cody.chat.moveToEditor',
+                                    })
+                                }
+                            />
+                        )}
                         {IDE !== CodyIDE.Web && (
                             <UserMenu
                                 authStatus={user.user as AuthenticatedAuthStatus}
@@ -401,6 +414,12 @@ function useTabs(input: Pick<TabsBarProps, 'user'>): TabConfig[] {
                         view: View.Prompts,
                         title: 'Prompts',
                         Icon: BookTextIcon,
+                        changesView: true,
+                    },
+                    {
+                        view: View.Settings,
+                        title: 'Settings',
+                        Icon: Settings2Icon,
                         changesView: true,
                     },
                 ] as (TabConfig | null)[]

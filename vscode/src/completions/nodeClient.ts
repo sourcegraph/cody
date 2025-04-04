@@ -232,7 +232,19 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                         didSendMessage = true
                         didReceiveAnyEvent = didReceiveAnyEvent || parseResult.events.length > 0
                         log?.onEvents(parseResult.events)
-                        this.sendEvents(parseResult.events, cb, span)
+
+                        // Ensure we have usage data for the completion request
+                        if (parseResult.events.length > 0) {
+                            this.sendEvents(parseResult.events, cb, span)
+                        } else {
+                            // Log a warning but don't fail the request if no events were detected
+                            logError(
+                                'SourcegraphNodeCompletionsClient',
+                                'No events detected in parseResult',
+                                { verbose: { bufferText } }
+                            )
+                        }
+
                         bufferText = parseResult.remainingBuffer
                     })
                     res.on('error', e => handleError(e))
@@ -262,22 +274,25 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                     ? { traceId: traceSpan.traceId, spanId: traceSpan.spanId }
                     : undefined
                 if (!didReceiveAnyEvent) {
+                    const errorMsg =
+                        'Connection closed without receiving any events (this may be due to an outage with the upstream LLM provider)'
                     logError(
                         'SourcegraphNodeCompletionsClient',
                         "request.on('close')",
-                        'Connection closed without receiving any events (this may be due to an outage with the upstream LLM provider)',
+                        errorMsg,
                         `trace-and-span: ${JSON.stringify(traceInfo)}`,
                         { verbose: { bufferText } }
                     )
-                    onErrorOnce(
-                        new Error(
-                            `Connection closed without receiving any events (this may be due to an outage with the upstream LLM provider) ${JSON.stringify(
-                                traceInfo
-                            )}`
-                        )
+                    onErrorOnce(new Error(`${errorMsg} ${JSON.stringify(traceInfo)}`))
+                } else if (!didSendMessage) {
+                    // We received events but didn't send any messages to the callback
+                    logError(
+                        'SourcegraphNodeCompletionsClient',
+                        "request.on('close')",
+                        'Received events but did not send any messages to callback',
+                        `trace-and-span: ${JSON.stringify(traceInfo)}`,
+                        { verbose: { bufferText } }
                     )
-                }
-                if (!didSendMessage) {
                     onErrorOnce(
                         new Error(`Connection unexpectedly closed: ${JSON.stringify(traceInfo)}`)
                     )
