@@ -1,5 +1,4 @@
 import * as vscode from 'vscode'
-import { isStreamedIntent } from '../../edit/utils/edit-intent'
 import type { FixupTask } from '../FixupTask'
 import { getDecorationSuitableText, getLastFullLine } from './utils'
 
@@ -81,12 +80,17 @@ export function computeAppliedDecorations(task: FixupTask): Decorations | undefi
  * decorate an entire line.
  */
 function trimEmptyLinesFromRange(range: vscode.Range, document: vscode.TextDocument): vscode.Range {
-    const startLineIndex = range.start.line
-    let endLineIndex = range.end.line >= 1 ? range.end.line - 1 : range.end.line
+    let startLineIndex = range.start.line
+    let endLineIndex = range.end.line
 
-    const endLine = document.lineAt(endLineIndex)
-    if (endLineIndex > 0 && endLine.text.length === 0) {
-        endLineIndex--
+    const startLine = document.lineAt(startLineIndex)
+    if (range.start.character === startLine.range.end.character || startLine.text.length === 0) {
+        startLineIndex = Math.min(startLineIndex + 1, document.lineCount - 1)
+    }
+
+    const endLine = document.lineAt(startLineIndex)
+    if (range.end.character === 0 || endLine.text.length === 0) {
+        endLineIndex = Math.max(startLineIndex, Math.min(endLineIndex - 1, document.lineCount - 1))
     }
 
     return new vscode.Range(
@@ -119,7 +123,7 @@ export function computeOngoingDecorations(
         return
     }
 
-    if (isStreamedIntent(task.intent)) {
+    if (task.isStreamed) {
         // We don't provide ongoing decorations for streamed edits, only applied decorations
         // as the incoming changes are immediately applied.
         return

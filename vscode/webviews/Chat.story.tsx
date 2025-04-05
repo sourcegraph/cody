@@ -6,6 +6,7 @@ import { Chat } from './Chat'
 import { FIXTURE_TRANSCRIPT } from './chat/fixtures'
 import { FIXTURE_COMMANDS, makePromptsAPIWithData } from './components/promptList/fixtures'
 import { VSCodeWebview } from './storybook/VSCodeStoryDecorator'
+import { MockNoGuardrails } from './utils/guardrails'
 
 const meta: Meta<typeof Chat> = {
     title: 'cody/Chat',
@@ -30,6 +31,7 @@ const meta: Meta<typeof Chat> = {
         },
         setView: () => {},
         models: FIXTURE_MODELS,
+        guardrails: new MockNoGuardrails(),
     } satisfies React.ComponentProps<typeof Chat>,
 
     decorators: [VSCodeWebview],
@@ -52,7 +54,7 @@ export const EmptyWithPromptLibraryUnsupported: StoryObj<typeof meta> = {
                     prompts: [],
                     commands: FIXTURE_COMMANDS,
                 }),
-                evaluatedFeatureFlag: _flag => Observable.of(true),
+                evaluateFeatureFlag: _flag => Observable.of(true),
             }}
         >
             <Chat {...args} />
@@ -70,7 +72,7 @@ export const EmptyWithNoPrompts: StoryObj<typeof meta> = {
                     prompts: [],
                     commands: FIXTURE_COMMANDS,
                 }),
-                evaluatedFeatureFlag: _flag => Observable.of(true),
+                evaluateFeatureFlag: _flag => Observable.of(true),
             }}
         >
             <Chat {...args} />

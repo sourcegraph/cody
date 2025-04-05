@@ -18,6 +18,7 @@ export class SourcegraphCompletionsAdapter implements AutoeditsModelAdapter {
     constructor() {
         this.client = defaultCodeCompletionsClient.instance!
     }
+    dispose() {}
 
     async getModelResponse(options: AutoeditModelOptions): Promise<ModelResponse> {
         try {
@@ -46,7 +47,7 @@ export class SourcegraphCompletionsAdapter implements AutoeditsModelAdapter {
             let responseHeaders: Record<string, string> = {}
             let requestHeaders: Record<string, string> = {}
             let requestUrl = options.url
-            let stopReason: string | undefined = undefined
+            let isAborted = false
 
             for await (const msg of completionResponseGenerator) {
                 const newText = msg.completionResponse?.completion
@@ -73,10 +74,13 @@ export class SourcegraphCompletionsAdapter implements AutoeditsModelAdapter {
                         requestUrl = msg.metadata.requestUrl
                     }
 
+                    if (msg.metadata.isAborted) {
+                        isAborted = true
+                    }
+
                     // Store the full response body if available
                     if (msg.completionResponse) {
                         responseBody = msg.completionResponse
-                        stopReason = msg.completionResponse.stopReason
                     }
                 }
             }
@@ -89,7 +93,7 @@ export class SourcegraphCompletionsAdapter implements AutoeditsModelAdapter {
                 responseBody,
             }
 
-            if (stopReason === 'cody-request-aborted') {
+            if (isAborted) {
                 return {
                     ...sharedResult,
                     type: 'aborted',

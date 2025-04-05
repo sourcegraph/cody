@@ -24,8 +24,13 @@ const historyStore = new Map<string, HistoryItem>()
 
 /**
  * Initialize the edit history source control UI
+ * NOTE: Temporary disabled due to abort issue caused by auto edit
  */
-export function initializeEditToolHistory(context: vscode.ExtensionContext): void {
+export function initializeEditToolHistory(): vscode.Disposable[] {
+    if (editSourceControl) {
+        return []
+    }
+
     // Create source control for edit history
     const workspaceUri = vscode.workspace.workspaceFolders?.[0]?.uri
     editSourceControl = vscode.scm.createSourceControl(
@@ -130,7 +135,7 @@ export function initializeEditToolHistory(context: vscode.ExtensionContext): voi
     }
 
     // Add all disposables to context
-    context.subscriptions.push(...disposables)
+    return disposables
 }
 
 /**

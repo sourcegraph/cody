@@ -9,6 +9,7 @@ import {
     contextFiltersProvider,
     currentAuthStatus,
     featureFlagProvider,
+    graphqlClient,
     mockClientCapabilities,
     nextTick,
     telemetryRecorder,
@@ -145,7 +146,8 @@ class MockRequestProvider extends Provider {
 function getInlineCompletionProvider(
     args: Partial<ConstructorParameters<typeof InlineCompletionItemProvider>[0]> = {}
 ): InlineCompletionItemProvider {
-    vi.spyOn(featureFlagProvider, 'evaluatedFeatureFlag').mockReturnValue(Observable.of(false))
+    vi.spyOn(featureFlagProvider, 'evaluateFeatureFlag').mockReturnValue(Observable.of(false))
+    vi.spyOn(graphqlClient, 'getSiteVersion').mockResolvedValue('6.2.0')
     mockClientCapabilities(CLIENT_CAPABILITIES_FIXTURE)
     return new InlineCompletionItemProvider({
         completeSuggestWidgetSelection: true,

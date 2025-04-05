@@ -3,7 +3,7 @@
   "name": "cody-ai",
   "private": true,
   "displayName": "Cody: AI Code Assistant",
-  "version": "1.76.1",
+  "version": "1.82.0",
   "publisher": "sourcegraph",
   "license": "Apache-2.0",
   "icon": "resources/sourcegraph.png",
@@ -558,6 +558,12 @@
         "title": "Report Issue"
       },
       {
+        "command": "cody.debug.heapDump",
+        "category": "Cody Debug",
+        "group": "Debug",
+        "title": "Heap Dump"
+      },
+      {
         "command": "cody.copy.version",
         "category": "Cody Debug",
         "group": "Debug",
@@ -589,7 +595,7 @@
       {
         "command": "cody.command.autoedit-manual-trigger",
         "title": "Autoedits Manual Trigger",
-        "enablement": "cody.activated && config.cody.suggestions.mode == 'auto-edit (Experimental)'"
+        "enablement": "cody.activated && config.cody.suggestions.mode == 'auto-edit (Beta)'"
       },
       {
         "command": "cody.command.autoedit.open-debug-panel",
@@ -625,11 +631,6 @@
         "when": "cody.activated && !editorTextFocus"
       },
       {
-        "command": "cody.tutorial.chat",
-        "key": "alt+l",
-        "when": "cody.activated && cody.tutorialActive"
-      },
-      {
         "command": "cody.command.edit-code",
         "key": "alt+k",
         "when": "cody.activated && !editorReadonly"
@@ -638,11 +639,6 @@
         "command": "cody.command.execute-prompt",
         "key": "shift+alt+p",
         "when": "cody.activated"
-      },
-      {
-        "command": "cody.tutorial.edit",
-        "key": "alt+k",
-        "when": "cody.activated && !editorReadonly && cody.tutorialActive"
       },
       {
         "command": "cody.command.document-code",
@@ -724,7 +720,7 @@
       {
         "command": "cody.supersuggest.testExample",
         "key": "ctrl+alt+enter",
-        "when": "cody.activated && config.cody.suggestions.mode == 'auto-edit (Experimental)'"
+        "when": "cody.activated && config.cody.suggestions.mode == 'auto-edit (Beta)'"
       }
     ],
     "submenus": [
@@ -967,7 +963,7 @@
         },
         "cody.suggestions.mode": {
           "type": "string",
-          "enum": ["autocomplete", "auto-edit (Experimental)", "off"],
+          "enum": ["autocomplete", "auto-edit (Beta)", "off"],
           "enumDescriptions": [
             "Suggests standard code completions as you type.",
             "Suggests advanced context-aware code edits as you navigate the codebase. Experimental feature for Pro and Enterprise users.",
@@ -1424,6 +1420,7 @@
     "@radix-ui/react-label": "^2.1.1",
     "@radix-ui/react-popover": "^1.0.7",
     "@radix-ui/react-progress": "^1.1.0",
+    "@radix-ui/react-scroll-area": "^1.2.3",
     "@radix-ui/react-slot": "^1.0.2",
     "@radix-ui/react-switch": "^1.1.2",
     "@radix-ui/react-tabs": "^1.1.0",
@@ -1462,6 +1459,7 @@
     "hpagent": "^1.2.0",
     "ini": "^4.1.2",
     "js-levenshtein": "^1.1.6",
+    "jsonrepair": "^3.12.0",
     "lexical": "^0.17.0",
     "lodash": "^4.17.21",
     "lru-cache": "^10.0.0",

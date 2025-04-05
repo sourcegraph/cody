@@ -75,7 +75,8 @@ export function createOllamaClient(
             completionResponse.stopReason = CompletionStopReason.RequestFinished
             log?.onComplete(completionResponse)
 
-            return { completionResponse }
+            yield { completionResponse }
+            return
         } catch (error) {
             if (!isAbortError(error) && isError(error)) {
                 log?.onError(error.message, error)

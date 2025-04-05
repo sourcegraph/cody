@@ -8,9 +8,15 @@ import {
     isCompletionVisible,
 } from '../../completions/is-completion-visible'
 import {
+    type AutoeditAcceptReasonMetadata,
+    type AutoeditRejectReasonMetadata,
     type AutoeditRequestID,
+    type AutoeditRequestStateForAgentTesting,
+    type Phase,
+    autoeditAcceptReason,
     autoeditAnalyticsLogger,
     autoeditDiscardReason,
+    autoeditRejectReason,
 } from '../analytics-logger'
 import { autoeditsProviderConfig } from '../autoedits-config'
 import type { CodeToReplaceData } from '../prompt/prompt-utils'
@@ -20,9 +26,13 @@ import {
     extractInlineCompletionFromRewrittenCode,
 } from '../utils'
 
+import { isRunningInsideAgent } from '../../jsonrpc/isRunningInsideAgent'
 import type { FixupController } from '../../non-stop/FixupController'
 import { CodyTaskState } from '../../non-stop/state'
+import { AutoeditCompletionItem } from '../autoedit-completion-item'
+import type { AutoeditClientCapabilities } from '../autoedits-provider'
 import { autoeditsOutputChannelLogger } from '../output-channel-logger'
+import type { RequestManager } from '../request-manager'
 import type { AutoEditDecorations, AutoEditsDecorator, DecorationInfo } from './decorators/base'
 import {
     type AutoEditRenderOutput,
@@ -46,9 +56,14 @@ export interface TryMakeInlineCompletionsArgs {
  * if the inline renderer implementation won't see dogfood blockers.
  */
 export interface AutoEditsRendererManager extends vscode.Disposable {
-    getRenderOutput(args: GetRenderOutputArgs): AutoEditRenderOutput
+    getRenderOutput(
+        args: GetRenderOutputArgs,
+        capabilities: AutoeditClientCapabilities
+    ): AutoEditRenderOutput
 
     handleDidShowSuggestion(requestId: AutoeditRequestID): Promise<void>
+
+    handleDidAcceptCompletionItem(requestId: AutoeditRequestID): Promise<void>
 
     /**
      * Renders the prediction as inline decorations.
@@ -67,12 +82,28 @@ export interface AutoEditsRendererManager extends vscode.Disposable {
     hasActiveEdit(): boolean
 
     /**
+     * Promise that resolves with the request ID when the timeout completes.
+     * Used for agent integration tests to wait for the visibility timeout.
+     */
+    testing_completionSuggestedPromise: Promise<AutoeditRequestID> | undefined
+
+    /**
+     * Method for test harnesses to control the completion visibility delay.
+     */
+    testing_setCompletionVisibilityDelay(delay: number): void
+
+    /**
+     * Method for test harnesses to get a specific request.
+     */
+    testing_getTestingAutoeditEvent(id: AutoeditRequestID): AutoeditRequestStateForAgentTesting
+
+    /**
      * Dismissed an active edit and frees resources.
      */
     dispose(): void
 }
 
-export const AUTOEDIT_VISIBLE_DELAY_MS = 750
+export const DEFAULT_AUTOEDIT_VISIBLE_DELAY_MS = 750
 
 export class AutoEditsDefaultRendererManager
     extends AutoEditsRenderOutput
@@ -90,12 +121,18 @@ export class AutoEditsDefaultRendererManager
 
     constructor(
         protected createDecorator: (editor: vscode.TextEditor) => AutoEditsDecorator,
-        protected fixupController: FixupController
+        protected fixupController: FixupController,
+        // Used to remove cached suggestions when one is accepted or rejected.
+        protected requestManager: RequestManager
     ) {
         super()
         this.disposables.push(
-            vscode.commands.registerCommand('cody.supersuggest.accept', () => this.acceptActiveEdit()),
-            vscode.commands.registerCommand('cody.supersuggest.dismiss', () => this.rejectActiveEdit()),
+            vscode.commands.registerCommand('cody.supersuggest.accept', () =>
+                this.acceptActiveEdit(autoeditAcceptReason.acceptCommand)
+            ),
+            vscode.commands.registerCommand('cody.supersuggest.dismiss', () =>
+                this.rejectActiveEdit(autoeditRejectReason.dismissCommand)
+            ),
             vscode.workspace.onDidChangeTextDocument(event => this.onDidChangeTextDocument(event)),
             vscode.window.onDidChangeTextEditorSelection(event =>
                 this.onDidChangeTextEditorSelection(event)
@@ -116,19 +153,19 @@ export class AutoEditsDefaultRendererManager
             // else, we will falsely discard the suggestion on unrelated changes such as changes in output panel.
             areSameUriDocs(event.document, this.activeRequest?.document)
         ) {
-            this.rejectActiveEdit()
+            this.rejectActiveEdit(autoeditRejectReason.onDidChangeTextDocument)
         }
     }
 
     protected onDidChangeActiveTextEditor(editor: vscode.TextEditor | undefined): void {
         if (!editor || !areSameUriDocs(editor.document, this.activeRequest?.document)) {
-            this.rejectActiveEdit()
+            this.rejectActiveEdit(autoeditRejectReason.onDidChangeActiveTextEditor)
         }
     }
 
     protected onDidCloseTextDocument(document: vscode.TextDocument): void {
         if (areSameUriDocs(document, this.activeRequest?.document)) {
-            this.rejectActiveEdit()
+            this.rejectActiveEdit(autoeditRejectReason.onDidCloseTextDocument)
         }
     }
 
@@ -147,7 +184,7 @@ export class AutoEditsDefaultRendererManager
         ) {
             const currentSelectionRange = event.selections.at(-1)
             if (!currentSelectionRange?.intersection(this.activeRequest.codeToReplaceData.range)) {
-                this.rejectActiveEdit()
+                this.rejectActiveEdit(autoeditRejectReason.onDidChangeTextEditorSelection)
             }
         }
     }
@@ -188,7 +225,7 @@ export class AutoEditsDefaultRendererManager
     }
 
     public async handleDidShowSuggestion(requestId: AutoeditRequestID): Promise<void> {
-        await this.rejectActiveEdit()
+        await this.rejectActiveEdit(autoeditRejectReason.handleDidShowSuggestion)
 
         const request = autoeditAnalyticsLogger.getRequest(requestId)
         if (!request) {
@@ -209,70 +246,82 @@ export class AutoEditsDefaultRendererManager
         // Clear any existing timeouts, only one suggestion can be shown at a time
         clearTimeout(this.autoeditSuggestedTimeoutId)
 
-        // Mark suggestion as read after a delay if it's still visible.
-        this.autoeditSuggestedTimeoutId = setTimeout(() => {
-            if (this.activeRequest?.requestId === requestId) {
-                const {
-                    document: invokedDocument,
-                    position: invokedPosition,
-                    docContext,
-                    renderOutput,
-                } = this.activeRequest
+        this.testing_completionSuggestedPromise = new Promise(resolve => {
+            // Mark suggestion as read after a delay if it's still visible
+            this.autoeditSuggestedTimeoutId = setTimeout(() => {
+                resolve(requestId)
+                this.testing_completionSuggestedPromise = undefined
 
-                const { activeTextEditor } = vscode.window
-
-                if (!activeTextEditor || !areSameUriDocs(activeTextEditor.document, invokedDocument)) {
-                    // User is no longer in the same document as the completion
-                    return
-                }
-
-                const inlineCompletionItems =
-                    'inlineCompletionItems' in renderOutput ? renderOutput.inlineCompletionItems : []
-                // If a completion is rendered as an inline completion item we have to
-                // manually check if the visibility context for the item is still valid and
-                // it's still present in the document.
-                //
-                // If the invoked cursor position does not match the current cursor position
-                // we check if the items insert text matches the current document context.
-                // If a user continued typing as suggested the insert text is still present
-                // and we can a completion as read.
-                if (inlineCompletionItems?.[0]) {
-                    const visibilityContext = getLatestVisibilityContext({
-                        invokedPosition,
-                        invokedDocument,
-                        activeTextEditor,
+                if (this.activeRequest?.requestId === requestId) {
+                    const {
+                        document: invokedDocument,
+                        position: invokedPosition,
                         docContext,
-                        inlineCompletionContext: undefined,
-                        maxPrefixLength: tokensToChars(autoeditsProviderConfig.tokenLimit.prefixTokens),
-                        maxSuffixLength: tokensToChars(autoeditsProviderConfig.tokenLimit.suffixTokens),
-                        // TODO: implement suggest widget support
-                        shouldTakeSuggestWidgetSelectionIntoAccount: () => false,
-                    })
+                        renderOutput,
+                    } = this.activeRequest
 
-                    const isStillVisible = isCompletionVisible(
-                        inlineCompletionItems[0].insertText as string,
-                        visibilityContext.document,
-                        {
+                    const { activeTextEditor } = vscode.window
+
+                    if (
+                        !activeTextEditor ||
+                        !areSameUriDocs(activeTextEditor.document, invokedDocument)
+                    ) {
+                        // User is no longer in the same document as the completion
+                        return
+                    }
+
+                    const inlineCompletionItems =
+                        'inlineCompletionItems' in renderOutput ? renderOutput.inlineCompletionItems : []
+                    // If a completion is rendered as an inline completion item we have to
+                    // manually check if the visibility context for the item is still valid and
+                    // it's still present in the document.
+                    //
+                    // If the invoked cursor position does not match the current cursor position
+                    // we check if the items insert text matches the current document context.
+                    // If a user continued typing as suggested the insert text is still present
+                    // and we can a completion as read.
+                    if (inlineCompletionItems?.[0]) {
+                        const visibilityContext = getLatestVisibilityContext({
                             invokedPosition,
-                            latestPosition: visibilityContext.position,
-                        },
-                        visibilityContext.docContext,
-                        visibilityContext.inlineCompletionContext,
-                        visibilityContext.takeSuggestWidgetSelectionIntoAccount,
-                        undefined // abort signal
-                    )
+                            invokedDocument,
+                            activeTextEditor,
+                            docContext,
+                            inlineCompletionContext: undefined,
+                            maxPrefixLength: tokensToChars(
+                                autoeditsProviderConfig.tokenLimit.prefixTokens
+                            ),
+                            maxSuffixLength: tokensToChars(
+                                autoeditsProviderConfig.tokenLimit.suffixTokens
+                            ),
+                            // TODO: implement suggest widget support
+                            shouldTakeSuggestWidgetSelectionIntoAccount: () => false,
+                        })
 
-                    if (isStillVisible) {
+                        const isStillVisible = isCompletionVisible(
+                            inlineCompletionItems[0].insertText as string,
+                            visibilityContext.document,
+                            {
+                                invokedPosition,
+                                latestPosition: visibilityContext.position,
+                            },
+                            visibilityContext.docContext,
+                            visibilityContext.inlineCompletionContext,
+                            visibilityContext.takeSuggestWidgetSelectionIntoAccount,
+                            undefined // abort signal
+                        )
+
+                        if (isStillVisible) {
+                            autoeditAnalyticsLogger.markAsRead(requestId)
+                        }
+                    } else {
+                        // For suggestions rendered as inline decoration we can rely on our own dismissal
+                        // logic (document change/selection change callback). So having a truthy `this.activeRequest`
+                        // is enough to mark a suggestion as read.
                         autoeditAnalyticsLogger.markAsRead(requestId)
                     }
-                } else {
-                    // For suggestions rendered as inline decoration we can rely on our own dismissal
-                    // logic (document change/selection change callback). So having a truthy `this.activeRequest`
-                    // is enough to mark a suggestion as read.
-                    autoeditAnalyticsLogger.markAsRead(requestId)
                 }
-            }
-        }, AUTOEDIT_VISIBLE_DELAY_MS)
+            }, this.AUTOEDIT_VISIBLE_DELAY_MS)
+        })
     }
 
     protected async handleDidHideSuggestion(decorator: AutoEditsDecorator | null): Promise<void> {
@@ -289,9 +338,14 @@ export class AutoEditsDefaultRendererManager
         this.decorator = null
     }
 
-    protected async acceptActiveEdit(): Promise<void> {
+    public handleDidAcceptCompletionItem(requestId: AutoeditRequestID): Promise<void> {
+        return this.acceptActiveEdit(autoeditAcceptReason.acceptCommand)
+    }
+
+    protected async acceptActiveEdit(acceptReason: AutoeditAcceptReasonMetadata): Promise<void> {
         const editor = vscode.window.activeTextEditor
         const { activeRequest, decorator } = this
+
         // Compute this variable before the `handleDidHideSuggestion` call which removes the active request.
         const hasInlineDecorations = this.hasInlineDecorations()
 
@@ -300,11 +354,28 @@ export class AutoEditsDefaultRendererManager
             !activeRequest ||
             !areSameUriDocs(editor.document, this.activeRequest?.document)
         ) {
-            return this.rejectActiveEdit()
+            return this.rejectActiveEdit(autoeditRejectReason.acceptActiveEdit)
         }
 
+        this.requestManager.removeFromCache({
+            uri: activeRequest.document.uri.toString(),
+            documentVersion: activeRequest.document.version,
+            position: activeRequest.position,
+        })
+
+        // Reset the testing promise when accepting
+        this.testing_completionSuggestedPromise = undefined
+
         await this.handleDidHideSuggestion(decorator)
-        autoeditAnalyticsLogger.markAsAccepted(activeRequest.requestId)
+        autoeditAnalyticsLogger.markAsAccepted({
+            requestId: activeRequest.requestId,
+            acceptReason,
+        })
+
+        if (isRunningInsideAgent()) {
+            // We rely on the agent for accepting
+            return
+        }
 
         if (!hasInlineDecorations) {
             // We rely on the native VS Code functionality for accepting pure inline completions items.
@@ -319,15 +390,29 @@ export class AutoEditsDefaultRendererManager
         })
     }
 
-    protected async rejectActiveEdit(): Promise<void> {
+    protected async rejectActiveEdit(rejectReason: AutoeditRejectReasonMetadata): Promise<void> {
         const { activeRequest, decorator } = this
+
+        if (activeRequest) {
+            this.requestManager.removeFromCache({
+                uri: activeRequest.document.uri.toString(),
+                documentVersion: activeRequest.document.version,
+                position: activeRequest.position,
+            })
+        }
+
+        // Reset the testing promise when rejecting
+        this.testing_completionSuggestedPromise = undefined
 
         if (decorator) {
             await this.handleDidHideSuggestion(this.decorator)
         }
 
         if (activeRequest) {
-            autoeditAnalyticsLogger.markAsRejected(activeRequest.requestId)
+            autoeditAnalyticsLogger.markAsRejected({
+                requestId: activeRequest.requestId,
+                rejectReason,
+            })
         }
     }
 
@@ -343,14 +428,17 @@ export class AutoEditsDefaultRendererManager
         await vscode.commands.executeCommand('setContext', 'cody.supersuggest.active', true)
     }
 
-    public getRenderOutput({
-        requestId,
-        prediction,
-        codeToReplaceData,
-        document,
-        position,
-        docContext,
-    }: GetRenderOutputArgs): AutoEditRenderOutput {
+    public getRenderOutput(
+        {
+            requestId,
+            prediction,
+            codeToReplaceData,
+            document,
+            position,
+            docContext,
+        }: GetRenderOutputArgs,
+        capabilities?: AutoeditClientCapabilities
+    ): AutoEditRenderOutput {
         const updatedPrediction = adjustPredictionIfInlineCompletionPossible(
             prediction,
             codeToReplaceData.codeToRewritePrefix,
@@ -378,13 +466,14 @@ export class AutoEditsDefaultRendererManager
             }
 
             const insertText = docContext.currentLinePrefix + autocompleteInlineResponse
-            const inlineCompletionItem = new vscode.InlineCompletionItem(
+            const inlineCompletionItem = new AutoeditCompletionItem({
+                id: requestId,
                 insertText,
-                new vscode.Range(
+                range: new vscode.Range(
                     document.lineAt(position).range.start,
                     document.lineAt(position).range.end
                 ),
-                {
+                command: {
                     title: 'Autoedit accepted',
                     command: 'cody.supersuggest.accept',
                     arguments: [
@@ -392,8 +481,8 @@ export class AutoEditsDefaultRendererManager
                             requestId,
                         },
                     ],
-                }
-            )
+                },
+            })
             autoeditsOutputChannelLogger.logDebug('tryMakeInlineCompletions', 'insert text', {
                 verbose: insertText,
             })
@@ -431,8 +520,38 @@ export class AutoEditsDefaultRendererManager
         )
     }
 
+    /**
+     * The amount of time before we consider an auto-edit to be "visible" to the user.
+     */
+    private AUTOEDIT_VISIBLE_DELAY_MS = DEFAULT_AUTOEDIT_VISIBLE_DELAY_MS
+
+    /**
+     * Promise that resolves with the request ID when the timeout completes.
+     * Used for agent integration tests to wait for the visibility timeout.
+     */
+    public testing_completionSuggestedPromise: Promise<AutoeditRequestID> | undefined = undefined
+
+    /**
+     * Method for test harnesses to control the completion visibility delay.
+     */
+    public testing_setCompletionVisibilityDelay(delay: number): void {
+        this.AUTOEDIT_VISIBLE_DELAY_MS = delay
+    }
+
+    /**
+     * Method for test harnesses to get the active request.
+     */
+    public testing_getTestingAutoeditEvent(id: AutoeditRequestID): { phase?: Phase; read?: boolean } {
+        const request = autoeditAnalyticsLogger.getRequest(id)
+        const payload = request?.payload
+        return {
+            phase: request?.phase,
+            read: payload && 'isRead' in payload ? payload.isRead : undefined,
+        }
+    }
+
     public dispose(): void {
-        this.rejectActiveEdit()
+        this.rejectActiveEdit(autoeditRejectReason.disposal)
         for (const disposable of this.disposables) {
             disposable.dispose()
         }

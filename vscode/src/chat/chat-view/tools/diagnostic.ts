@@ -1,3 +1,8 @@
+import { UIToolStatus } from '@sourcegraph/cody-shared'
+import {
+    ContextItemSource,
+    type ContextItemToolState,
+} from '@sourcegraph/cody-shared/src/codebase-context/messages'
 import * as vscode from 'vscode'
 import type { AgentTool } from '.'
 import { validateWithZod } from '../utils/input'
@@ -12,21 +17,41 @@ export const diagnosticTool: AgentTool = {
             'Get diagnostics (including errors) from the editor for the file you have used text_editor on. This tool should be used at the end of your response on the files you have edited.',
         input_schema: zodToolSchema(GetDiagnosticSchema),
     },
-    invoke: async ({ name }: GetDiagnosticInput) => {
+    invoke: async ({ name, type }: GetDiagnosticInput) => {
         validateWithZod(GetDiagnosticSchema, { name }, 'get_diagnostic')
+        const fileName = name === '*' ? 'Workspace' : name
+        const severity =
+            type === 'warning'
+                ? vscode.DiagnosticSeverity.Warning
+                : type === 'all'
+                  ? true
+                  : vscode.DiagnosticSeverity.Error
 
         try {
-            const fileInfo = await fileOps.getWorkspaceFile(name)
-            if (!fileInfo) {
-                return { text: `Cannot find file ${name}.` }
+            let diagnostics = vscode.languages.getDiagnostics()?.flatMap(d => d[1])
+            if (name === '*') {
+                return createDiagnosticToolState(fileName, diagnostics)
             }
 
-            const diagnostics = vscode.languages.getDiagnostics(fileInfo.uri)
-            return {
-                text: `Diagnostics for ${name}:\n${diagnostics.map(d => d.message).join('\n')}`,
+            const fileInfo = await fileOps.getWorkspaceFile(name)
+            if (!fileInfo) {
+                throw new Error(`File not found: ${name}`)
             }
+
+            diagnostics = vscode.languages.getDiagnostics(fileInfo.uri)
+
+            return createDiagnosticToolState(
+                name,
+                diagnostics.filter(d => d.severity === severity),
+                fileInfo.uri
+            )
         } catch (error) {
-            throw new Error(`Failed to get diagnostics for ${name}: ${error}`)
+            return createDiagnosticToolState(
+                fileName,
+                [],
+                undefined,
+                `Failed to get diagnostics for ${fileName}: ${error}`
+            )
         }
     },
 }
@@ -52,10 +77,50 @@ export function getDiagnosticsDiff(
     return relevantDiagnostics
         .map(([uri, currentDiagnostics]) => {
             const previousDiagnostics = previousMap.get(uri) || []
-            const newDiagnostics = currentDiagnostics.filter(
-                current => !previousDiagnostics.some(prev => areEquivalent(prev, current))
-            )
+            const newDiagnostics = currentDiagnostics
+                .filter(d => d.severity === vscode.DiagnosticSeverity.Error)
+                .filter(current => !previousDiagnostics.some(prev => areEquivalent(prev, current)))
             return newDiagnostics.length ? ([uri, newDiagnostics] as WorkspaceDiagnostics) : null
         })
         .filter((entry): entry is WorkspaceDiagnostics => entry !== null)
 }
+
+export function getErrorDiagnostics(file: vscode.Uri): vscode.Diagnostic[] {
+    const diagnostics = vscode.languages.getDiagnostics(file)
+    return diagnostics.filter(d => d.severity === vscode.DiagnosticSeverity.Error)
+}
+
+/**
+ * Creates a ContextItemToolState for diagnostic operations
+ */
+function createDiagnosticToolState(
+    fileName: string,
+    diagnostics: vscode.Diagnostic[],
+    uri?: vscode.Uri,
+    error?: string
+): ContextItemToolState {
+    const toolId = `diagnostic-${Date.now()}`
+    const hasProblems = diagnostics?.length > 0 || error !== undefined
+    const content = hasProblems
+        ? `Diagnostics for ${name}:\n${diagnostics.map(d => d.message).join('\n')}`
+        : error ?? 'EMPTY'
+    const icon = hasProblems ? 'alarm-clock-check' : 'alarm-clock-minus'
+    const status = error ? UIToolStatus.Error : hasProblems ? UIToolStatus.Info : UIToolStatus.Done
+
+    return {
+        type: 'tool-state',
+        toolId,
+        toolName: 'get_diagnostic',
+        status,
+        content,
+        title: 'diagnostics:' + fileName,
+        description: 'Diagnostics',
+        icon,
+        outputType,
+        metadata: ['diagnostics'].filter(Boolean) as string[],
+        source: ContextItemSource.Agentic,
+        uri: uri || vscode.Uri.parse(`cody-tool://diagnostic?id=${toolId}`),
+    }
+}
+
+const outputType = 'terminal-output'

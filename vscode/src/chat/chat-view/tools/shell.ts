@@ -1,6 +1,17 @@
 import { spawn } from 'node:child_process'
+import {
+    type UITerminalLine,
+    UITerminalOutputType,
+    UIToolStatus,
+    telemetryRecorder,
+} from '@sourcegraph/cody-shared'
+import {
+    ContextItemSource,
+    type ContextItemToolState,
+} from '@sourcegraph/cody-shared/src/codebase-context/messages'
 import * as vscode from 'vscode'
-import { getContextFileFromShell } from '../../../commands/context/shell'
+import { URI } from 'vscode-uri'
+import type { AgentTool } from '.'
 import { validateWithZod } from '../utils/input'
 import { zodToolSchema } from '../utils/parse'
 import { type RunTerminalCommandInput, RunTerminalCommandSchema } from './schema'
@@ -11,6 +22,7 @@ interface CommandOptions {
 }
 
 export interface CommandResult {
+    command: string
     stdout: string
     stderr: string
     code: number | null
@@ -27,10 +39,11 @@ class CommandError extends Error {
     }
 }
 
-export const shellTool = {
+export const shellTool: AgentTool = {
     spec: {
         name: 'run_terminal_command',
-        description: 'Run an arbitrary terminal command at the root of the users project.',
+        description:
+            'Run an arbitrary terminal command at the root of the users project. E.g. `ls -la` for listing files, or `find` for searching latest version of the codebase files locally.',
         input_schema: zodToolSchema(RunTerminalCommandSchema),
     },
     invoke: async (input: RunTerminalCommandInput) => {
@@ -42,15 +55,69 @@ export const shellTool = {
         }
 
         try {
-            const commandResult = await getContextFileFromShell(validInput.command)
-            return {
-                text: validInput.command,
-                contextItems: commandResult,
-            }
+            telemetryRecorder.recordEvent('cody.runTerminalCommand', 'accepted', {
+                billingMetadata: {
+                    product: 'cody',
+                    category: 'billable',
+                },
+                privateMetadata: {
+                    input_args: JSON.stringify(validInput),
+                },
+            })
+            const commandResult = await runShellCommand(validInput.command, {
+                cwd: workspaceFolder.uri.path,
+            })
+
+            const content = `${commandResult.stdout}${
+                commandResult.stderr ? '<|ERRORS|>' + commandResult.stderr : ''
+            }`
+
+            const error = commandResult.stderr ? `Exited with code ${commandResult.stderr}` : undefined
+
+            return createShellToolState(validInput.command, content, UIToolStatus.Done, error)
         } catch (error) {
-            throw new Error(`Failed to run terminal command: ${input.command}: ${error}`)
+            if (error instanceof CommandError) {
+                // Format the error output as an array of TerminalLine objects
+                const lines: UITerminalLine[] = [
+                    { content: validInput.command, type: UITerminalOutputType.Input },
+                    {
+                        content: `Exited with code ${error.result.code}`,
+                        type: UITerminalOutputType.Error,
+                    },
+                    ...formatOutputToTerminalLines(error.result.stdout, UITerminalOutputType.Output),
+                    ...formatOutputToTerminalLines(error.result.stderr, UITerminalOutputType.Error),
+                ].filter(line => line.content.trim() !== '')
+
+                // Extract just the content from each line object
+                const contentString = lines.map(line => line.content).join('\n')
+
+                return createShellToolState(validInput.command, contentString, UIToolStatus.Error)
+            }
+
+            return createShellToolState(
+                validInput.command ?? 'unknown command',
+                `Failed to run terminal command: ${input.command}: ${error}`,
+                UIToolStatus.Error
+            )
         }
     },
+}
+
+/**
+ * Formats a string output into an array of TerminalLine objects
+ */
+export function formatOutputToTerminalLines(
+    output: string,
+    type: UITerminalOutputType
+): UITerminalLine[] {
+    if (!output) {
+        return []
+    }
+
+    return output.split('\n').map(line => ({
+        content: line,
+        type: type === 'error' ? UITerminalOutputType.Error : UITerminalOutputType.Output,
+    }))
 }
 
 export async function runShellCommand(
@@ -58,7 +125,7 @@ export async function runShellCommand(
     options: CommandOptions = {}
 ): Promise<CommandResult> {
     const { cwd = process.cwd(), env = process.env } = options
-    const timeout = 10_000
+    const timeout = 15_000
     const maxBuffer = 1024 * 1024 * 10
     const encoding = 'utf8'
 
@@ -115,7 +182,7 @@ export async function runShellCommand(
             clearTimeout(timeoutId)
             if (killed) return
 
-            const result: CommandResult = { stdout, stderr, code, signal }
+            const result: CommandResult = { command, stdout, stderr, code, signal }
             if (code === 0) {
                 resolve(result)
             } else {
@@ -129,3 +196,36 @@ export async function runShellCommand(
         })
     })
 }
+
+/**
+ * Creates a ContextItemToolState for shell command operations
+ */
+function createShellToolState(
+    command: string,
+    stdout: string,
+    sterr?: string,
+    error?: string
+): ContextItemToolState {
+    const toolId = `shell-${Date.now()}`
+    const status = error ? UIToolStatus.Error : sterr ? UIToolStatus.Error : UIToolStatus.Done
+    let content = error ?? stdout
+    if (sterr) {
+        content += `<sterr>${sterr}</sterr>`
+    }
+
+    return {
+        type: 'tool-state',
+        toolId,
+        toolName: 'run_terminal_command',
+        outputType,
+        title: command,
+        content,
+        description: 'Terminal',
+        icon: 'terminal',
+        status,
+        source: ContextItemSource.Agentic,
+        uri: URI.parse(''),
+    }
+}
+
+const outputType = 'terminal-output'

@@ -90,7 +90,10 @@ describe('getCurrentFilePromptComponents', () => {
             },
         })
 
-        const result = getCurrentFilePromptComponents(document, codeToReplaceData)
+        const result = getCurrentFilePromptComponents({
+            document,
+            codeToReplaceDataRaw: codeToReplaceData,
+        })
         expect(result.fileWithMarkerPrompt.toString()).toBe(dedent`
             (\`test.ts\`)
             <file>
@@ -154,13 +157,14 @@ describe('getCurrentFilePromptComponents', () => {
             },
         })
 
-        const result = getCurrentFilePromptComponents(document, codeToReplaceData)
+        const result = getCurrentFilePromptComponents({
+            document,
+            codeToReplaceDataRaw: codeToReplaceData,
+        })
         expect(result.fileWithMarkerPrompt.toString()).toBe(dedent`
             (\`test.ts\`)
             <file>
-
             <<<AREA_AROUND_CODE_TO_REWRITE_WILL_BE_INSERTED_HERE>>>
-
             </file>
         `)
         expect(result.areaPrompt.toString()).toBe(dedent`
@@ -1068,9 +1072,19 @@ describe('getJaccardSimilarityPrompt', () => {
 
 describe('joinPromptsWithNewlineSeparator', () => {
     it('joins multiple prompt strings with a new line separator', () => {
-        const prompt = joinPromptsWithNewlineSeparator(ps`foo`, ps`bar`)
+        const prompt = joinPromptsWithNewlineSeparator([ps`foo`, ps`bar`])
         expect(prompt.toString()).toBe(dedent`
             foo
+            bar
+        `)
+    })
+
+    it('joins multiple prompt strings with a custom separator', () => {
+        const prompt = joinPromptsWithNewlineSeparator([ps`foo`, ps`bar`], ps`\n\n\n`)
+        expect(prompt.toString()).toBe(dedent`
+            foo
+
+
             bar
         `)
     })

@@ -56,6 +56,13 @@ export abstract class SourcegraphCompletionsClient {
     }
 
     protected sendEvents(events: Event[], cb: CompletionCallbacks, span?: Span): void {
+        // If no events are provided, log a warning but don't throw an error
+        if (!events || events.length === 0) {
+            const warning = 'No usage data detected for completion request'
+            console.warn(warning)
+            return
+        }
+
         for (const event of events) {
             switch (event.type) {
                 case 'completion': {
@@ -100,7 +107,9 @@ export abstract class SourcegraphCompletionsClient {
             headerParams['X-Sourcegraph-Interaction-ID'] = interactionId
         }
         const url = new URL(await this.completionsEndpoint())
-        url.searchParams.append('api-version', '' + apiVersion)
+        if (apiVersion >= 1) {
+            url.searchParams.append('api-version', '' + apiVersion)
+        }
         addClientInfoParams(url.searchParams)
         return { url, serializedParams, headerParams }
     }

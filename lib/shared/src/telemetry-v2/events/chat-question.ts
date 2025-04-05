@@ -59,6 +59,8 @@ export const events = [
                         isPublicRepo: params.repoIsPublic ? 1 : 0,
                         // TODO: Remove this field when the transition from commands to prompts is complete
                         isCommand: params.command ? 1 : 0,
+                        // Include sessionID as Epoch timestamp for numerical metadata
+                        sessionIdEpoch: Number(new Date(params.sessionID).getTime()) || 0,
                     },
                     privateMetadata: {
                         chatModel: params.chatModel,
@@ -71,11 +73,7 @@ export const events = [
                         // V2 telemetry exports privateMetadata only for DotCom users
                         // the condition below is an additional safeguard measure
                         promptText: recordTranscript
-                            ? truncatePromptString(
-                                  params.promptText,
-                                  CHAT_INPUT_TOKEN_BUDGET,
-                                  tokenCounterUtils
-                              )
+                            ? truncatePromptString(params.promptText, CHAT_INPUT_TOKEN_BUDGET)
                             : undefined,
                         gitMetadata,
                         chatAgent: params.chatAgent,
@@ -136,6 +134,8 @@ export const events = [
                         isCommand: params.command ? 1 : 0,
                         ...metadata,
                         recordsPrivateMetadataTranscript: recordTranscript ? 1 : 0,
+                        // Include sessionID as Epoch timestamp for numerical metadata
+                        sessionIdEpoch: Number(new Date(params.sessionID).getTime()) || 0,
                     }),
                     privateMetadata: {
                         // TODO: Remove this field when the transition from commands to prompts is complete
@@ -147,11 +147,7 @@ export const events = [
                         // V2 telemetry exports privateMetadata only for S2 & Dotcom users. The condition below is an additional safeguard measure.
                         // Check `SRC_TELEMETRY_SENSITIVEMETADATA_ADDITIONAL_ALLOWED_EVENT_TYPES` env to learn more.
                         promptText: recordTranscript
-                            ? truncatePromptString(
-                                  params.promptText,
-                                  CHAT_INPUT_TOKEN_BUDGET,
-                                  tokenCounterUtils
-                              )
+                            ? truncatePromptString(params.promptText, CHAT_INPUT_TOKEN_BUDGET)
                             : undefined,
                         chatAgent: params.chatAgent,
                     },
@@ -212,6 +208,7 @@ function publicContextSummary(globalPrefix: string, context: ContextItem[]) {
         'current-repository': cloneDeep(defaultByTypeCount),
         'current-directory': cloneDeep(defaultByTypeCount),
         'current-open-tabs': cloneDeep(defaultByTypeCount),
+        'tool-state': cloneDeep(defaultByTypeCount),
     }
     const byOpenctxProvider = {
         [REMOTE_REPOSITORY_PROVIDER_URI]: cloneDeep(defaultSharedItemCount),
@@ -359,6 +356,7 @@ const defaultBySourceCount: BySourceCount = {
         'current-directory': undefined,
         'current-open-tabs': undefined,
         media: undefined,
+        'tool-state': undefined,
     },
 }
 

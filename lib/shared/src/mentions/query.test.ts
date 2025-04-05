@@ -1,6 +1,7 @@
 //@ts-nocheck
 import { describe, expect, test } from 'vitest'
 
+import { GLOBAL_SEARCH_PROVIDER_URI } from '../context/openctx/api'
 import { FILE_CONTEXT_MENTION_PROVIDER, SYMBOL_CONTEXT_MENTION_PROVIDER } from './api'
 import {
     type MentionQuery,
@@ -18,9 +19,9 @@ describe('parseMentionQuery', () => {
         })
     })
 
-    test('file query without prefix', () => {
+    test('global search query without prefix', () => {
         expect(parseMentionQuery('foo', null)).toEqual<MentionQuery>({
-            provider: FILE_CONTEXT_MENTION_PROVIDER.id,
+            provider: GLOBAL_SEARCH_PROVIDER_URI,
             text: 'foo',
             maybeHasRangeSuffix: false,
             range: undefined,
@@ -62,7 +63,7 @@ describe('parseMentionQuery', () => {
         // Note: This means that the user is literally looking for a file whose name contains `@`.
         // This is a very rare case. See the docstring for `parseMentionQuery`.
         expect(parseMentionQuery('@baz', null)).toEqual<MentionQuery>({
-            provider: FILE_CONTEXT_MENTION_PROVIDER.id,
+            provider: GLOBAL_SEARCH_PROVIDER_URI,
             text: '@baz',
             maybeHasRangeSuffix: false,
         })

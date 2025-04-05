@@ -52,22 +52,11 @@ export function getConfiguration(
         CodyAutoSuggestionMode.Autocomplete
     )
 
-    // Backward compatibility with the older config for autocomplete.
-    // If autocomplete was turned off - override the suggestion mode to "off".
-    // TODO (Hitesh): Remove the manual override once the updated config is communicated after experimental release
-    // https://linear.app/sourcegraph/issue/CODY-4701/clean-up-backwards-compatbility-settings-after-the-release
-    if (
-        codyAutoSuggestionsMode === CodyAutoSuggestionMode.Autocomplete &&
-        vscode.workspace.getConfiguration().get<boolean>('cody.autocomplete.enabled') === false
-    ) {
-        codyAutoSuggestionsMode = CodyAutoSuggestionMode.Off
-    }
-
     // Backward compatibility with the older auto-edit config name.
     // If auto-edit was turned on - override the suggestion mode to "auto-edit".
-    // TODO: clean up after the experimental release
+    // TODO: clean up after the beta release
     // https://linear.app/sourcegraph/issue/CODY-4701/clean-up-backwards-compatbility-settings-after-the-release
-    if (codyAutoSuggestionsMode === 'auto-edits (Experimental)') {
+    if (codyAutoSuggestionsMode === 'auto-edit (Experimental)') {
         codyAutoSuggestionsMode = CodyAutoSuggestionMode.Autoedit
 
         void vscode.workspace

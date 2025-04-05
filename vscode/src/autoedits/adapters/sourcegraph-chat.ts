@@ -5,6 +5,7 @@ import { getMaxOutputTokensForAutoedits, getSourcegraphCompatibleChatPrompt } fr
 
 export class SourcegraphChatAdapter implements AutoeditsModelAdapter {
     constructor(private readonly chatClient: ChatClient) {}
+    dispose() {}
 
     async getModelResponse(option: AutoeditModelOptions): Promise<ModelResponse> {
         try {

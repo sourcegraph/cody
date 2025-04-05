@@ -3,7 +3,6 @@ import { authStatus } from '../auth/authStatus'
 import { logError } from '../logger'
 import {
     debounceTime,
-    distinctUntilChanged,
     firstValueFrom,
     pick,
     promiseFactoryToObservable,
@@ -39,7 +38,6 @@ export const userProductSubscription: Observable<
     UserProductSubscription | null | typeof pendingOperation
 > = authStatus.pipe(
     pick('authenticated', 'endpoint', 'pendingValidation'),
-    distinctUntilChanged(),
     debounceTime(0),
     switchMapReplayOperation(
         (authStatus): Observable<UserProductSubscription | Error | null | typeof pendingOperation> => {

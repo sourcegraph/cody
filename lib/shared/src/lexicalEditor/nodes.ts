@@ -15,6 +15,7 @@ import type {
     ContextItemRepository,
     ContextItemSource,
     ContextItemSymbol,
+    ContextItemToolState,
     ContextItemTree,
 } from '../codebase-context/messages'
 import {
@@ -24,7 +25,7 @@ import {
     isRangeProperSubset,
     mergeRanges,
 } from '../common/range'
-import { displayPathBasename } from '../editor/displayPath'
+import { displayPath, displayPathBasename } from '../editor/displayPath'
 
 export const CONTEXT_ITEM_MENTION_NODE_TYPE = 'contextItemMention'
 export const TEMPLATE_INPUT_NODE_TYPE = 'templateInput'
@@ -51,6 +52,7 @@ export type SerializedContextItem = {
     | Omit<ContextItemCurrentDirectory, 'uri' | 'content' | 'source'>
     | Omit<ContextItemCurrentOpenTabs, 'uri' | 'content' | 'source'>
     | Omit<ContextItemMedia, 'uri' | 'content' | 'source'>
+    | Omit<ContextItemToolState, 'uri' | 'content' | 'source'>
 )
 
 export type SerializedTemplateInput = {
@@ -295,6 +297,18 @@ function doesSerializedContextItemSubsume(a: SerializedContextItem, b: Serialize
     }
 
     return isRangeContained(a.range, b.range) || isRangeContained(b.range, a.range)
+}
+
+export function contextItemMentionNodePromptText(contextItem: SerializedContextItem): string {
+    if (contextItem.type === 'file' && !contextItem.provider) {
+        const rangeText = contextItem.range?.start ? `:${displayLineRange(contextItem.range)}` : ''
+
+        // Always use forward slashes for paths in tests, regardless of platform
+        const path = decodeURIComponent(displayPath(URI.parse(contextItem.uri)))
+        return `${path.replace(/\\/g, '/')}${rangeText}`
+    }
+
+    return contextItemMentionNodeDisplayText(contextItem)
 }
 
 export function contextItemMentionNodeDisplayText(contextItem: SerializedContextItem): string {

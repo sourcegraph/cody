@@ -29,10 +29,8 @@ class PostStartupActivity : ProjectActivity {
   // doing something wrong, which may be slowing down agent startup. Not fixing it now but this
   // deserves more investigation.
   override suspend fun execute(project: Project) {
-    if (!ConfigUtil.isIntegrationTestModeEnabled() &&
-        !SentryService.isPluginTooOldForSentryLogging()) {
-      SentryService.initialize()
-    }
+    SentryService
+        .getInstance() // Initialize Sentry as early as possible to report early unhandled errors
     VerifyJavaBootRuntimeVersion().runActivity(project)
     SettingsMigration().runActivity(project)
     CodyWindowAdapter.addWindowFocusListener(project)

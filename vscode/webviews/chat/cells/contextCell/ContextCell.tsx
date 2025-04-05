@@ -15,7 +15,6 @@ import {
 import { Tooltip, TooltipContent, TooltipTrigger } from '../../../components/shadcn/ui/tooltip'
 import { useTelemetryRecorder } from '../../../utils/telemetry'
 import { useConfig } from '../../../utils/useConfig'
-import { LoadingDots } from '../../components/LoadingDots'
 import { Cell } from '../Cell'
 import styles from './ContextCell.module.css'
 
@@ -165,112 +164,102 @@ export const ContextCell: FunctionComponent<{
                             data-testid="context"
                             aria-disabled={isContextLoading || !hasContent}
                         >
-                            {isContextLoading && !isAgenticChat ? (
-                                <LoadingDots />
-                            ) : (
-                                <>
-                                    <AccordionContent className="tw-flex tw-flex-col" overflow={false}>
-                                        {internalDebugContext && contextAlternatives && (
-                                            <div>
-                                                <button onClick={prevSelectedAlternative} type="button">
-                                                    ←
-                                                </button>
-                                                <button onClick={nextSelectedAlternative} type="button">
-                                                    →
-                                                </button>{' '}
-                                                Ranking mechanism:{' '}
-                                                {selectedAlternative === undefined
-                                                    ? 'actual'
-                                                    : `${
-                                                          contextAlternatives[selectedAlternative]
-                                                              .strategy
-                                                      }: (${(selectedAlternative ?? -1) + 1} of ${
-                                                          contextAlternatives.length
-                                                      })`}
-                                            </div>
-                                        )}
-                                        <ul className="tw-list-none tw-flex tw-flex-col tw-gap-2 tw-pt-4">
-                                            {contextItemsToDisplay?.map((item, i) => (
-                                                <li
-                                                    // biome-ignore lint/correctness/useJsxKeyInIterable:
-                                                    // biome-ignore lint/suspicious/noArrayIndexKey: stable order
-                                                    key={i}
-                                                    data-testid="context-item"
-                                                >
-                                                    <FileLink
-                                                        uri={item.uri}
-                                                        repoName={item.repoName}
-                                                        revision={item.revision}
-                                                        source={item.source}
-                                                        range={item.range}
-                                                        title={item.title}
-                                                        isTooLarge={item.isTooLarge}
-                                                        isTooLargeReason={item.isTooLargeReason}
-                                                        isIgnored={item.isIgnored}
-                                                        providerUri={
-                                                            item.type === 'openctx'
-                                                                ? item.providerUri
-                                                                : undefined
-                                                        }
-                                                        linkClassName={styles.contextItemLink}
-                                                        className={clsx(
-                                                            styles.linkContainer,
-                                                            MENTION_CLASS_NAME
-                                                        )}
-                                                    />
-                                                    {internalDebugContext &&
-                                                        item.metadata &&
-                                                        item.metadata.length > 0 && (
-                                                            <span className={styles.contextItemMetadata}>
-                                                                {item.metadata.join(', ')}
-                                                            </span>
-                                                        )}
-                                                </li>
-                                            ))}
-
-                                            {!isForFirstMessage && (
-                                                <span
+                            <>
+                                <AccordionContent className="tw-flex tw-flex-col" overflow={false}>
+                                    {internalDebugContext && contextAlternatives && (
+                                        <div>
+                                            <button onClick={prevSelectedAlternative} type="button">
+                                                ←
+                                            </button>
+                                            <button onClick={nextSelectedAlternative} type="button">
+                                                →
+                                            </button>{' '}
+                                            Ranking mechanism:{' '}
+                                            {selectedAlternative === undefined
+                                                ? 'actual'
+                                                : `${
+                                                      contextAlternatives[selectedAlternative].strategy
+                                                  }: (${(selectedAlternative ?? -1) + 1} of ${
+                                                      contextAlternatives.length
+                                                  })`}
+                                        </div>
+                                    )}
+                                    <ul className="tw-list-none tw-flex tw-flex-col tw-gap-2 tw-pt-4">
+                                        {contextItemsToDisplay?.map((item, i) => (
+                                            <li
+                                                // biome-ignore lint/correctness/useJsxKeyInIterable:
+                                                // biome-ignore lint/suspicious/noArrayIndexKey: stable order
+                                                key={i}
+                                                data-testid="context-item"
+                                            >
+                                                <FileLink
+                                                    uri={item.uri}
+                                                    repoName={item.repoName}
+                                                    revision={item.revision}
+                                                    source={item.source}
+                                                    range={item.range}
+                                                    title={item.title}
+                                                    isTooLarge={item.isTooLarge}
+                                                    isTooLargeReason={item.isTooLargeReason}
+                                                    isIgnored={item.isIgnored}
+                                                    providerUri={
+                                                        item.type === 'openctx'
+                                                            ? item.providerUri
+                                                            : undefined
+                                                    }
+                                                    linkClassName={styles.contextItemLink}
                                                     className={clsx(
-                                                        styles.contextItem,
-                                                        'tw-flex tw-items-center tw-gap-2'
+                                                        styles.linkContainer,
+                                                        MENTION_CLASS_NAME
                                                     )}
-                                                >
-                                                    <MessagesSquareIcon size={14} className="tw-ml-1" />
-                                                    <span>
-                                                        Prior messages and context in this conversation
-                                                    </span>
+                                                />
+                                                {internalDebugContext &&
+                                                    item.metadata &&
+                                                    item.metadata.length > 0 && (
+                                                        <span className={styles.contextItemMetadata}>
+                                                            {item.metadata.join(', ')}
+                                                        </span>
+                                                    )}
+                                            </li>
+                                        ))}
+
+                                        {!isForFirstMessage && (
+                                            <span
+                                                className={clsx(
+                                                    styles.contextItem,
+                                                    'tw-flex tw-items-center tw-gap-2'
+                                                )}
+                                            >
+                                                <MessagesSquareIcon size={14} className="tw-ml-1" />
+                                                <span>
+                                                    Prior messages and context in this conversation
                                                 </span>
-                                            )}
-                                            {!isContextLoading && isAgenticChat && (
-                                                <li>
-                                                    <Tooltip>
-                                                        <TooltipTrigger asChild>
-                                                            <span
-                                                                className={clsx(
-                                                                    styles.contextItem,
-                                                                    'tw-flex tw-items-center tw-gap-2 tw-text-muted-foreground'
-                                                                )}
-                                                            >
-                                                                <BrainIcon
-                                                                    size={14}
-                                                                    className="tw-ml-1"
-                                                                />
-                                                                <span>
-                                                                    Selected from agentic context
-                                                                </span>
-                                                            </span>
-                                                        </TooltipTrigger>
-                                                        <TooltipContent side="bottom">
-                                                            Fetches additional context to improve
-                                                            response quality when needed
-                                                        </TooltipContent>
-                                                    </Tooltip>
-                                                </li>
-                                            )}
-                                        </ul>
-                                    </AccordionContent>
-                                </>
-                            )}
+                                            </span>
+                                        )}
+                                        {!isContextLoading && isAgenticChat && (
+                                            <li>
+                                                <Tooltip>
+                                                    <TooltipTrigger asChild>
+                                                        <span
+                                                            className={clsx(
+                                                                styles.contextItem,
+                                                                'tw-flex tw-items-center tw-gap-2 tw-text-muted-foreground'
+                                                            )}
+                                                        >
+                                                            <BrainIcon size={14} className="tw-ml-1" />
+                                                            <span>Selected from agentic context</span>
+                                                        </span>
+                                                    </TooltipTrigger>
+                                                    <TooltipContent side="bottom">
+                                                        Fetches additional context to improve response
+                                                        quality when needed
+                                                    </TooltipContent>
+                                                </Tooltip>
+                                            </li>
+                                        )}
+                                    </ul>
+                                </AccordionContent>
+                            </>
                         </Cell>
                     </AccordionItem>
                 </Accordion>
@@ -317,13 +306,21 @@ const getContextInfo = (items?: ContextItem[], isFirst?: boolean) => {
 
 const TEMPLATES = {
     filter: 'filtered out by Cody Context Filters. Please contact your site admin for details.',
-    token: 'were retrieved but not used because they exceed the token limit. Learn more about token limits ',
+    token: {
+        singular:
+            'was retrieved but not used because it exceeds the token limit. Learn more about token limits ',
+        plural: 'were retrieved but not used because they exceed the token limit. Learn more about token limits ',
+    },
 } as const
 
 function generateExcludedInfo(token: number, filter: number): string[] {
+    const multipleTokens = token > 1
     return [
-        token > 0 && `${token} ${token === 1 ? 'item' : 'items'} ${TEMPLATES.token}`,
-        filter > 0 && `${filter} ${filter === 1 ? 'item' : 'items'} ${TEMPLATES.filter}`,
+        token > 0 &&
+            `${token} ${pluralize('item', token)} ${
+                multipleTokens ? TEMPLATES.token.plural : TEMPLATES.token.singular
+            }`,
+        filter > 0 && `${filter} ${pluralize('item', filter)} ${TEMPLATES.filter}`,
     ].filter(Boolean) as string[]
 }
 
@@ -332,10 +329,12 @@ const ExcludedContextWarning: React.FC<{ message: string }> = ({ message }) => (
         <i className="codicon codicon-warning" />
         <span>
             {message}
-            {message.includes(TEMPLATES.token) && (
-                <a href="https://sourcegraph.com/docs/cody/core-concepts/token-limits">here</a>
+            {(message.includes(TEMPLATES.token.singular) ||
+                message.includes(TEMPLATES.token.plural)) && (
+                <span>
+                    <a href="https://sourcegraph.com/docs/cody/core-concepts/token-limits">here</a>.
+                </span>
             )}
-            .
         </span>
     </div>
 )

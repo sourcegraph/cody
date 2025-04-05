@@ -192,10 +192,18 @@ export {
     type FeatureFlagProvider,
     featureFlagProvider,
 } from './experimentation/FeatureFlagProvider'
-export { GuardrailsPost } from './guardrails'
-export type { Attribution, Guardrails } from './guardrails'
-export { SourcegraphGuardrailsClient } from './guardrails/client'
+export type {
+    Guardrails,
+    GuardrailsResult,
+    GuardrailsStatusError,
+    GuardrailsStatusFailed,
+    GuardrailsStatusIndeterminate,
+    GuardrailsStatusSuccess,
+    GuardrailsResultSink,
+} from './guardrails'
+export { createGuardrailsImpl, GuardrailsMode, GuardrailsCheckStatus } from './guardrails'
 export type { GuardrailsClientConfig } from './guardrails/client'
+export { SourcegraphGuardrailsClient } from './guardrails/client'
 export {
     CompletionStopReason,
     type CodeCompletionsClient,
@@ -356,9 +364,7 @@ export {
 } from './mentions/api'
 export {
     TokenCounter,
-    getTokenCounterUtils,
     TokenCounterUtils,
-    useFakeTokenCounterUtils,
 } from './token/counter'
 export { CORPUS_CONTEXT_ALLOCATION as ENHANCED_CONTEXT_ALLOCATION } from './token/constants'
 export { tokensToChars, charsToTokens } from './token/utils'
@@ -384,6 +390,7 @@ export {
     WEB_PROVIDER_URI,
     GIT_OPENCTX_PROVIDER_URI,
     CODE_SEARCH_PROVIDER_URI,
+    GLOBAL_SEARCH_PROVIDER_URI,
     currentOpenCtxController,
     RULES_PROVIDER_URI,
 } from './context/openctx/api'
@@ -446,3 +453,4 @@ export {
 } from './rules/service'
 
 export type { SiteAndCodyAPIVersions } from './sourcegraph-api/siteVersion'
+export * from './chat/types'

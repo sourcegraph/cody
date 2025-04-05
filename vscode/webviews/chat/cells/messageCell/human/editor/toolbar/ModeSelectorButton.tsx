@@ -1,8 +1,7 @@
 import type { ChatMessage } from '@sourcegraph/cody-shared'
 import { isMacOS } from '@sourcegraph/cody-shared'
 import { BetweenHorizonalEnd, MessageSquare, Pencil, Search, Sparkle } from 'lucide-react'
-import type { FC } from 'react'
-import { useCallback, useEffect, useMemo } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Badge } from '../../../../../../components/shadcn/ui/badge'
 import { Command, CommandItem, CommandList } from '../../../../../../components/shadcn/ui/command'
 import { ToolbarPopoverItem } from '../../../../../../components/shadcn/ui/toolbar'
@@ -12,7 +11,7 @@ import { useConfig } from '../../../../../../utils/useConfig'
 const isMac = isMacOS()
 
 export enum IntentEnum {
-    Agentic = 'Agentic',
+    Agentic = 'Agent',
     Chat = 'Chat',
     Search = 'Search',
     Edit = 'Edit',
@@ -36,118 +35,123 @@ interface IntentOption {
     hidden?: boolean
     disabled?: boolean
     agent?: string
-}
-
-const chatIntent: IntentOption = {
-    title: 'Chat',
-    icon: MessageSquare,
-    intent: 'chat',
-}
-
-function getIntentOptions({
-    isEditEnabled,
-    isDotComUser,
-    omniBoxEnabled,
-    agenticChatEnabled,
-}: {
-    isEditEnabled: boolean
-    isDotComUser: boolean
-    omniBoxEnabled: boolean
-    agenticChatEnabled: boolean
-}): IntentOption[] {
-    return [
-        chatIntent,
-        {
-            title: 'Search',
-            badge: isDotComUser ? 'Enterprise' : 'Beta',
-            icon: Search,
-            intent: 'search',
-            hidden: !omniBoxEnabled,
-            disabled: isDotComUser,
-        },
-        {
-            title: 'Agentic',
-            badge: agenticChatEnabled ? 'Experimental' : 'Pro',
-            icon: Sparkle,
-            intent: 'agentic',
-            hidden: !agenticChatEnabled,
-            disabled: !agenticChatEnabled,
-        },
-        {
-            title: 'Edit Code',
-            badge: 'Experimental',
-            icon: Pencil,
-            intent: 'edit',
-            hidden: true,
-            disabled: !isEditEnabled,
-        },
-        {
-            title: 'Insert Code',
-            badge: 'Experimental',
-            icon: BetweenHorizonalEnd,
-            intent: 'insert',
-            hidden: true,
-            disabled: !isEditEnabled,
-        },
-    ]
+    value: IntentEnum
 }
 
 export const ModeSelectorField: React.FunctionComponent<{
     omniBoxEnabled: boolean
     isDotComUser: boolean
     isCodyProUser: boolean
-    intent: ChatMessage['intent']
+    _intent: ChatMessage['intent']
     className?: string
     manuallySelectIntent: (intent?: ChatMessage['intent']) => void
-}> = ({ isDotComUser, className, intent, omniBoxEnabled, manuallySelectIntent }) => {
+}> = ({ isDotComUser, className, _intent = 'chat', omniBoxEnabled, manuallySelectIntent }) => {
     const {
         clientCapabilities: { edit },
-        config: { experimentalAgenticChatEnabled },
+        config,
     } = useConfig()
 
-    const intentOptions = useMemo(
-        () =>
-            getIntentOptions({
-                isEditEnabled: edit !== 'none',
-                isDotComUser,
-                omniBoxEnabled,
-                agenticChatEnabled: experimentalAgenticChatEnabled,
-            }).filter(option => !option.hidden),
-        [edit, isDotComUser, omniBoxEnabled, experimentalAgenticChatEnabled]
+    // Generate intent options based on current configuration
+    const intentOptions = useMemo(() => {
+        const isEditEnabled = edit !== 'none'
+        const agenticChatEnabled = !!config?.experimentalAgenticChatEnabled
+
+        return [
+            {
+                title: 'Chat',
+                icon: MessageSquare,
+                intent: 'chat',
+                value: IntentEnum.Chat,
+            },
+            {
+                title: 'Search',
+                badge: isDotComUser ? 'Enterprise' : 'Beta',
+                icon: Search,
+                intent: 'search',
+                hidden: !omniBoxEnabled,
+                disabled: isDotComUser,
+                value: IntentEnum.Search,
+            },
+            {
+                title: 'Agent',
+                badge: agenticChatEnabled ? 'Experimental' : 'Pro',
+                icon: Sparkle,
+                intent: 'agentic',
+                // Hide agentic option if not enabled or if edit not enabled
+                hidden: !agenticChatEnabled || !isEditEnabled,
+                disabled: !agenticChatEnabled || !isEditEnabled,
+                value: IntentEnum.Agentic,
+            },
+            {
+                title: 'Edit Code',
+                badge: 'Experimental',
+                icon: Pencil,
+                intent: 'edit',
+                hidden: true,
+                disabled: !isEditEnabled,
+                value: IntentEnum.Edit,
+            },
+            {
+                title: 'Insert Code',
+                badge: 'Experimental',
+                icon: BetweenHorizonalEnd,
+                intent: 'insert',
+                hidden: true,
+                disabled: !isEditEnabled,
+                value: IntentEnum.Insert,
+            },
+        ].filter(option => !option.hidden) as IntentOption[]
+    }, [edit, config?.experimentalAgenticChatEnabled, isDotComUser, omniBoxEnabled])
+
+    // Get available (non-disabled) options
+    const availableOptions = useMemo(
+        () => intentOptions.filter(option => !option.disabled),
+        [intentOptions]
     )
 
-    // Memoize the handler to avoid recreating on each render
-    const handleItemClick = useCallback(
-        (close: () => void) => (item: ChatMessage['intent']) => {
-            manuallySelectIntent(item)
-            close()
+    // Initialize with the provided intent or fallback to chat
+    const [currentSelectedIntent, setCurrentSelectedIntent] = useState(() => {
+        const mappedIntent = INTENT_MAPPING[_intent || 'chat']
+        // Check if the intent is available and not disabled
+        const isValidIntent = intentOptions.some(
+            option => option.value === mappedIntent && !option.disabled
+        )
+        return isValidIntent ? mappedIntent : IntentEnum.Chat
+    })
+
+    // Handle intent selection
+    const handleSelectIntent = useCallback(
+        (intent: ChatMessage['intent'], close?: () => void) => {
+            manuallySelectIntent(intent)
+            setCurrentSelectedIntent(INTENT_MAPPING[intent || 'chat'])
+            close?.()
         },
         [manuallySelectIntent]
     )
 
-    // Handle keyboard shortcut to cycle through intent options
-    const handleKeyDown = useCallback(
-        (event: KeyboardEvent) => {
-            // Check for ⌘. (Command+Period on macOS, Ctrl+Period on other platforms)
+    // Handle keyboard shortcut
+    useEffect(() => {
+        // Only enable shortcut if there are multiple available options
+        if (availableOptions.length <= 1) return
+
+        const handleKeyDown = (event: KeyboardEvent) => {
             if ((isMac ? event.metaKey : event.ctrlKey) && event.key === '.') {
                 event.preventDefault()
-                // Find the current index and select the next intent option
-                const currentIntent = intent || 'chat'
-                const currentIndex = intentOptions.findIndex(option => option.intent === currentIntent)
-                const nextIndex = (currentIndex + 1) % intentOptions.length
-                manuallySelectIntent(intentOptions[nextIndex].intent)
-            }
-        },
-        [intent, intentOptions, manuallySelectIntent]
-    )
 
-    // Add event listener for keyboard shortcut
-    useEffect(() => {
-        document.addEventListener('keydown', handleKeyDown)
-        return () => {
-            document.removeEventListener('keydown', handleKeyDown)
+                // Find current index in available options
+                const currentIndex = availableOptions.findIndex(
+                    option => option.value === currentSelectedIntent
+                )
+
+                // Select next option in the list
+                const nextIndex = (currentIndex + 1) % availableOptions.length
+                handleSelectIntent(availableOptions[nextIndex].intent)
+            }
         }
-    }, [handleKeyDown])
+
+        document.addEventListener('keydown', handleKeyDown)
+        return () => document.removeEventListener('keydown', handleKeyDown)
+    }, [availableOptions, currentSelectedIntent, handleSelectIntent])
 
     return (
         <ToolbarPopoverItem
@@ -158,7 +162,24 @@ export const ModeSelectorField: React.FunctionComponent<{
             aria-label="switch-mode"
             popoverContent={close => (
                 <div className="tw-flex tw-flex-col tw-max-h-[500px] tw-overflow-auto">
-                    <ModeList onClick={handleItemClick(close)} intentOptions={intentOptions} />
+                    <Command>
+                        <CommandList className="tw-p-2">
+                            {intentOptions.map(option => (
+                                <CommandItem
+                                    key={option.intent}
+                                    onSelect={() => handleSelectIntent(option.intent, close)}
+                                    disabled={option.disabled}
+                                    className="tw-flex tw-text-left tw-justify-between tw-rounded-sm tw-cursor-pointer tw-px-4"
+                                >
+                                    <div className="tw-flex tw-gap-4">
+                                        <option.icon className="tw-size-8 tw-mt-1" />
+                                        {option.title}
+                                    </div>
+                                    {option.badge && <Badge>{option.badge}</Badge>}
+                                </CommandItem>
+                            ))}
+                        </CommandList>
+                    </Command>
                 </div>
             )}
             popoverContentProps={{
@@ -168,31 +189,7 @@ export const ModeSelectorField: React.FunctionComponent<{
                 },
             }}
         >
-            {INTENT_MAPPING[intent || 'chat'] || IntentEnum.Chat}
+            {currentSelectedIntent}
         </ToolbarPopoverItem>
     )
 }
-
-export const ModeList: FC<{
-    onClick: (intent?: ChatMessage['intent']) => void
-    intentOptions: IntentOption[]
-}> = ({ onClick, intentOptions }) => (
-    <Command>
-        <CommandList className="tw-p-2">
-            {intentOptions.map(option => (
-                <CommandItem
-                    key={option.intent || 'auto'}
-                    onSelect={() => onClick(option.intent)}
-                    disabled={option.disabled}
-                    className="tw-flex tw-text-left tw-justify-between tw-rounded-sm tw-cursor-pointer tw-px-4"
-                >
-                    <div className="tw-flex tw-gap-4">
-                        <option.icon className="tw-size-8 tw-mt-1" />
-                        {option.title}
-                    </div>
-                    {option.badge && <Badge>{option.badge}</Badge>}
-                </CommandItem>
-            ))}
-        </CommandList>
-    </Command>
-)

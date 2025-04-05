@@ -10,12 +10,15 @@ import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.project.Project
 import com.intellij.util.net.HttpConfigurable
+import com.sourcegraph.cody.agent.protocol_generated.ClientCapabilities
+import com.sourcegraph.cody.agent.protocol_generated.WebviewNativeConfig
 import com.sourcegraph.cody.auth.SourcegraphServerPath
 import com.sourcegraph.cody.config.CodyApplicationSettings
 import com.sourcegraph.cody.listeners.CodyFileEditorListener
 import com.sourcegraph.cody.statusbar.CodyStatusService
 import com.sourcegraph.cody.ui.web.WebUIService
 import com.sourcegraph.common.CodyBundle
+import com.sourcegraph.utils.CodyIdeUtil
 import java.util.Timer
 import java.util.TimerTask
 import java.util.concurrent.CompletableFuture
@@ -77,20 +80,23 @@ class CodyAgentService(private val project: Project) : Disposable {
     // Normally we do not need to specify endpoint or token used for starting an agent.
     // Agent will automatically pick up the last used one or the default.
     // Custom endpoint and token are used in tests.
-    return startAgent(endpoint = null, token = null, secondsTimeout)
+    val autoedit =
+        if (CodyIdeUtil.isRD()) ClientCapabilities.AutoeditEnum.None
+        else ClientCapabilities.AutoeditEnum.Enabled
+    return startAgent(
+        clientCapabilities.copy(autoedit = autoedit), endpoint = null, token = null, secondsTimeout)
   }
 
   fun startAgent(
+      capabilities: ClientCapabilities,
       endpoint: SourcegraphServerPath?,
       token: String?,
       secondsTimeout: Long = 45
   ): CompletableFuture<CodyAgent> {
-    WebUIService.getInstance(project).reset()
-
     ApplicationManager.getApplication().executeOnPooledThread {
       try {
         val future =
-            CodyAgent.create(project, endpoint, token).exceptionally { err ->
+            CodyAgent.create(project, capabilities, endpoint, token).exceptionally { err ->
               val msg = "Creating agent unsuccessful: ${err.localizedMessage}"
               logger.error(msg)
               throw (CodyAgentException(msg))
@@ -147,8 +153,28 @@ class CodyAgentService(private val project: Project) : Disposable {
 
   fun restartAgent(secondsTimeout: Long = 90): CompletableFuture<CodyAgent> {
     synchronized(this) {
-      stopAgent()
-      return startAgent(secondsTimeout)
+      if (!codyAgent.isDone) {
+        return codyAgent
+      }
+
+      val newCodyAgent = CompletableFuture<CodyAgent>()
+
+      try {
+        val stopFuture = stopAgent() ?: CompletableFuture.completedFuture(null)
+        stopFuture
+            .thenCompose { startAgent(secondsTimeout) }
+            .thenAccept { agent -> newCodyAgent.complete(agent) }
+            .exceptionally { exception ->
+              newCodyAgent.completeExceptionally(exception)
+              null
+            }
+      } catch (e: Exception) {
+        newCodyAgent.completeExceptionally(e)
+      } finally {
+        codyAgent = newCodyAgent
+      }
+
+      return newCodyAgent
     }
   }
 
@@ -159,6 +185,34 @@ class CodyAgentService(private val project: Project) : Disposable {
 
   companion object {
     private val logger = Logger.getInstance(CodyAgent::class.java)
+
+    val clientCapabilities =
+        ClientCapabilities(
+            authentication = ClientCapabilities.AuthenticationEnum.Enabled,
+            autoedit = ClientCapabilities.AutoeditEnum.Enabled,
+            autoeditInlineDiff = ClientCapabilities.AutoeditInlineDiffEnum.None,
+            autoeditAsideDiff = ClientCapabilities.AutoeditAsideDiffEnum.Diff,
+            edit = ClientCapabilities.EditEnum.Enabled,
+            editWorkspace = ClientCapabilities.EditWorkspaceEnum.Enabled,
+            codeLenses = ClientCapabilities.CodeLensesEnum.Enabled,
+            disabledMentionsProviders = listOf("symbol"),
+            showDocument = ClientCapabilities.ShowDocumentEnum.Enabled,
+            ignore = ClientCapabilities.IgnoreEnum.Enabled,
+            untitledDocuments = ClientCapabilities.UntitledDocumentsEnum.Enabled,
+            codeActions = ClientCapabilities.CodeActionsEnum.Enabled,
+            shell = ClientCapabilities.ShellEnum.Enabled,
+            globalState = ClientCapabilities.GlobalStateEnum.`Server-managed`,
+            secrets = ClientCapabilities.SecretsEnum.`Client-managed`,
+            webview = ClientCapabilities.WebviewEnum.Native,
+            webviewNativeConfig =
+                WebviewNativeConfig(
+                    view = WebviewNativeConfig.ViewEnum.Multiple,
+                    cspSource = "'self' https://*.sourcegraphstatic.com",
+                    webviewBundleServingPrefix = "https://file+.sourcegraphstatic.com",
+                ),
+            webviewMessages = ClientCapabilities.WebviewMessagesEnum.`String-encoded`,
+            accountSwitchingInWebview = ClientCapabilities.AccountSwitchingInWebviewEnum.Enabled,
+            showWindowMessage = ClientCapabilities.ShowWindowMessageEnum.Request)
 
     val agentError: AtomicReference<String?> = AtomicReference(null)
 

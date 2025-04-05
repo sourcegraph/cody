@@ -1,9 +1,11 @@
 import type { Tool } from '@anthropic-ai/sdk/resources'
 import type { Span } from '@opentelemetry/api'
-import type { ContextItem } from '@sourcegraph/cody-shared'
+import type {} from '@sourcegraph/cody-shared/src/chat/transcript/messages'
+import type { ContextItemToolState } from '@sourcegraph/cody-shared/src/codebase-context/messages'
 import type { ContextRetriever } from '../ContextRetriever'
+import { MCPManager } from './MCPManager'
 import { diagnosticTool } from './diagnostic'
-import { editTool } from './edit'
+import { editTool } from './editor'
 import { getFileTool } from './file'
 import { getCodebaseSearchTool } from './search'
 import { shellTool } from './shell'
@@ -12,13 +14,8 @@ export type AgentID = string
 
 export interface AgentTool {
     spec: Tool
-    // validate: (input: any) => string | undefined
-    invoke: (input: any) => Promise<AgentToolResult>
-}
-
-export interface AgentToolResult {
-    text: string
-    contextItems?: ContextItem[]
+    invoke: (input: any) => Promise<Omit<ContextItemToolState, 'toolId'>>
+    disabled?: boolean
 }
 
 export class AgentToolGroup {
@@ -32,11 +29,15 @@ export class AgentToolGroup {
     private static readonly instance: Map<AgentID, AgentToolGroup> = new Map()
 
     public readonly agentId: AgentID
-    public readonly tools: AgentTool[]
+    private readonly _tools: AgentTool[]
 
     constructor(agentId: AgentID, tools: AgentTool[]) {
         this.agentId = agentId
-        this.tools = tools
+        this._tools = tools
+    }
+
+    public get tools(): AgentTool[] {
+        return this._tools.filter(tool => !tool.disabled)
     }
 
     public getToolByName(name: string): AgentTool | undefined {
@@ -60,9 +61,10 @@ export class AgentToolGroup {
     ): Promise<AgentToolGroup> {
         const baseInstance = AgentToolGroup.getInstance(agentId)
         const searchTool = await getCodebaseSearchTool(contextRetriever, span)
+        const mcpTools = MCPManager.tools
 
         // Create a new instance with all the tools
-        return new AgentToolGroup(agentId, [...baseInstance.tools, searchTool])
+        return new AgentToolGroup(agentId, [...baseInstance.tools, searchTool, ...mcpTools])
     }
 
     public static async getToolsByAgentId(

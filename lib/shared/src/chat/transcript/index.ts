@@ -41,3 +41,5 @@ export function serializeChatMessage(chatMessage: ChatMessage): SerializedChatMe
         content: chatMessage.content,
     }
 }
+
+export * from './lightweight-history'

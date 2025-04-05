@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { deserialize, serialize, splitToWords } from './atMentionsSerializer'
+import {
+    DYNAMIC_MENTION_TO_HYDRATABLE,
+    deserialize,
+    serialize,
+    splitToWords,
+} from './atMentionsSerializer'
 import type { SerializedPromptEditorValue } from './editorState'
 
 describe('atMentionsSerializer', () => {
@@ -268,6 +273,27 @@ describe('atMentionsSerializer', () => {
         it('handles mentions with surrounding whitespace', () => {
             const input = 'explain\tcody://tabs\nand more'
             expect(splitToWords(input)).toEqual(['explain\t', 'cody://tabs', '\nand more'])
+        })
+
+        it('handles trailing apostrophes', () => {
+            const input = "explain cody://tabs's"
+            expect(splitToWords(input)).toEqual(['explain ', 'cody://tabs', "'s"])
+        })
+
+        it('handles all dynamic selectors', () => {
+            for (const v of Object.values(DYNAMIC_MENTION_TO_HYDRATABLE)) {
+                const input = `a ${v} b`
+                expect(splitToWords(input)).toEqual(['a ', v, ' b'])
+            }
+        })
+
+        it('handles all dynamic selectors with apostrophes', () => {
+            for (const v of Object.values(DYNAMIC_MENTION_TO_HYDRATABLE)) {
+                for (const c of ["'", '`']) {
+                    const input = `a ${v + c} b`
+                    expect(splitToWords(input)).toEqual(['a ', v, c + ' b'])
+                }
+            }
         })
     })
 

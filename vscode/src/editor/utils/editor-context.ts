@@ -32,6 +32,7 @@ import { URI } from 'vscode-uri'
 import { getOpenTabsUris } from '.'
 import { toVSCodeRange } from '../../common/range'
 import { repoNameResolver } from '../../repository/repo-name-resolver'
+import { getEditor } from '../active-editor'
 import { findWorkspaceFiles } from './findWorkspaceFiles'
 
 // Some matches we don't want to ignore because they might be valid code (for example `bin/` in Dart)
@@ -124,10 +125,10 @@ export async function getFileContextFiles(options: FileContextItemsOptions): Pro
     const results = fuzzysort.go(query, urisWithRelative, {
         key: 'relative',
         limit: maxResults,
-        // We add a threshold for performance as per fuzzysort’s
+        // We add a threshold for performance as per fuzzysort's
         // recommendations. Testing with sg/sg path strings, somewhere over 10k
         // threshold is where it seems to return results that make no sense. VS
-        // Code’s own fuzzy finder seems to cap out much higher. To be safer and
+        // Code's own fuzzy finder seems to cap out much higher. To be safer and
         // to account for longer paths from even deeper source trees we use
         // 100k. We may want to revisit this number if we get reports of missing
         // file results from very large repos.
@@ -213,19 +214,21 @@ export async function getSymbolContextFiles(
             )
         )
 
-        return symbolsOrError.flatMap<ContextItemSymbol>(item =>
-            item.symbols.map(symbol => ({
-                type: 'symbol',
-                repoName: item.repository.name,
-                remoteRepositoryName: item.repository.name,
-                uri: URI.file(`${item.repository.name}/${symbol.location.resource.path}`),
-                isIgnored: ignoredRepoNames.get(item.repository.name),
-                source: ContextItemSource.User,
-                symbolName: symbol.name,
-                // TODO [VK] Support other symbols kind
-                kind: 'function',
-            }))
-        )
+        return symbolsOrError
+            .flatMap<ContextItemSymbol>(item =>
+                item.symbols.map(symbol => ({
+                    type: 'symbol',
+                    repoName: item.repository.name,
+                    remoteRepositoryName: item.repository.name,
+                    uri: URI.file(`${item.repository.name}/${symbol.location.resource.path}`),
+                    isIgnored: ignoredRepoNames.get(item.repository.name),
+                    source: ContextItemSource.User,
+                    symbolName: symbol.name,
+                    // TODO [VK] Support other symbols kind
+                    kind: 'function',
+                }))
+            )
+            .slice(0, maxResults)
     }
 
     // doesn't support cancellation tokens :(
@@ -285,7 +288,8 @@ export async function getSymbolContextFiles(
  * Filters out large files over 1MB to avoid expensive parsing.
  */
 export async function getOpenTabsContextFile(): Promise<ContextItemFile[]> {
-    return await filterContextItemFiles(
+    const currentFile = getEditor().active?.document.uri
+    const files = await filterContextItemFiles(
         (
             await Promise.all(
                 getOpenTabsUris().map(uri =>
@@ -294,6 +298,18 @@ export async function getOpenTabsContextFile(): Promise<ContextItemFile[]> {
             )
         ).flat()
     )
+
+    // Put current file at the top if it exists
+    if (currentFile) {
+        const currentFileIndex = files.findIndex(f => f.uri.toString() === currentFile.toString())
+        if (currentFileIndex > 0) {
+            const currentFileItem = files[currentFileIndex]
+            files.splice(currentFileIndex, 1)
+            files.unshift(currentFileItem)
+        }
+    }
+
+    return files
 }
 
 async function createContextFileFromUri(

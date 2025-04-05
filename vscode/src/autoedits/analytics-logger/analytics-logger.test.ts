@@ -20,7 +20,9 @@ import { getDecorationInfo } from '../renderer/diff-utils'
 import { AutoeditAnalyticsLogger } from './analytics-logger'
 import {
     type AutoeditRequestID,
+    autoeditAcceptReason,
     autoeditDiscardReason,
+    autoeditRejectReason,
     autoeditSource,
     autoeditTriggerKind,
 } from './types'
@@ -99,7 +101,7 @@ describe('AutoeditAnalyticsLogger', () => {
                     totalChars: 10,
                     prefixChars: 5,
                     suffixChars: 5,
-                    retrieverStats: {},
+                    retrieverStats: [],
                 },
             },
         })
@@ -134,11 +136,17 @@ describe('AutoeditAnalyticsLogger', () => {
         autoeditLogger.markAsSuggested(requestId)
 
         if (finalPhase === 'accepted') {
-            autoeditLogger.markAsAccepted(requestId)
+            autoeditLogger.markAsAccepted({
+                requestId,
+                acceptReason: autoeditAcceptReason.acceptCommand,
+            })
         }
 
         if (finalPhase === 'rejected') {
-            autoeditLogger.markAsRejected(requestId)
+            autoeditLogger.markAsRejected({
+                requestId,
+                rejectReason: autoeditRejectReason.dismissCommand,
+            })
         }
 
         return requestId
@@ -170,7 +178,10 @@ describe('AutoeditAnalyticsLogger', () => {
         })
 
         // Invalid transition attempt
-        autoeditLogger.markAsAccepted(requestId)
+        autoeditLogger.markAsAccepted({
+            requestId,
+            acceptReason: autoeditAcceptReason.acceptCommand,
+        })
 
         expect(recordSpy).toHaveBeenCalledTimes(3)
         expect(recordSpy).toHaveBeenNthCalledWith(1, 'cody.autoedit', 'suggested', expect.any(Object))
@@ -188,6 +199,7 @@ describe('AutoeditAnalyticsLogger', () => {
             },
             "interactionID": "stable-id-for-tests-2",
             "metadata": {
+              "acceptReason": 1,
               "contextSummary.duration": 1.234,
               "contextSummary.prefixChars": 5,
               "contextSummary.suffixChars": 5,
@@ -222,7 +234,7 @@ describe('AutoeditAnalyticsLogger', () => {
               "contextSummary": {
                 "duration": 1.234,
                 "prefixChars": 5,
-                "retrieverStats": {},
+                "retrieverStats": [],
                 "strategy": "none",
                 "suffixChars": 5,
                 "totalChars": 10,
@@ -345,7 +357,10 @@ describe('AutoeditAnalyticsLogger', () => {
 
         // Both calls below are invalid transitions, so the logger logs debug events
         autoeditLogger.markAsSuggested(requestId)
-        autoeditLogger.markAsRejected(requestId)
+        autoeditLogger.markAsRejected({
+            requestId,
+            rejectReason: autoeditRejectReason.dismissCommand,
+        })
 
         expect(recordSpy).toHaveBeenCalledTimes(2)
         expect(recordSpy).toHaveBeenNthCalledWith(1, 'cody.autoedit', 'invalidTransitionToSuggested', {
