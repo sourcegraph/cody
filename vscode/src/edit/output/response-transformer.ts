@@ -112,8 +112,12 @@ export function responseTransformer(
     if (!isMessageInProgress) {
         if (task.mode === 'insert') {
             // For insertions, we want to always ensure we include a new line at the end of the response
+            // unless we have a selection range that is empty. This is the case when we have an `add`
+            // intent such as a smart apply insert and there it doesn't make sense to include a new line.
             // We do not attempt to match indentation, as we don't have any original text to compare to
-            return decodedText.endsWith('\n') ? decodedText : decodedText + '\n'
+            return decodedText.endsWith('\n') || task.selectionRange.isEmpty
+                ? decodedText
+                : decodedText + '\n'
         }
 
         return formatToMatchOriginal(decodedText, task.original, task.fixupFile.uri)
