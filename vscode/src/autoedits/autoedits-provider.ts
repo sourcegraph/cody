@@ -57,6 +57,7 @@ import { areSameUriDocs, isPredictedTextAlreadyInSuffix } from './utils'
 const AUTOEDIT_CONTEXT_STRATEGY = 'auto-edit'
 const RESET_SUGGESTION_ON_CURSOR_CHANGE_AFTER_INTERVAL_MS = 60 * 1000
 const ON_SELECTION_CHANGE_DEFAULT_DEBOUNCE_INTERVAL_MS = 10
+const RESET_TEXT_EDITOR_VISIBLE_RANGE_CHANGE_DEBOUNCE_INTERVAL_MS = 5 * 1000
 export const AUTOEDIT_INITIAL_DEBOUNCE_INTERVAL_MS = 10
 
 interface AutoeditEditItem extends AutocompleteEditItem {
@@ -89,6 +90,10 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
     private lastManualTriggerTimestamp = Number.MIN_SAFE_INTEGER
 
     private readonly onSelectionChangeDebounced: DebouncedFunc<typeof this.onSelectionChange>
+    private lastVisibleChangeTimeStamp: number | undefined
+    private readonly onTextEditorVisibleRangeChangeDebounced: DebouncedFunc<
+        typeof this.onTextEditorVisibleRangeChange
+    >
 
     public readonly rendererManager: AutoEditsRendererManager
     private readonly modelAdapter: AutoeditsModelAdapter
@@ -143,6 +148,12 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
             ON_SELECTION_CHANGE_DEFAULT_DEBOUNCE_INTERVAL_MS
         )
 
+        this.onTextEditorVisibleRangeChangeDebounced = debounce(
+            (event: vscode.TextEditorVisibleRangesChangeEvent) =>
+                this.onTextEditorVisibleRangeChange(event),
+            AUTOEDIT_INITIAL_DEBOUNCE_INTERVAL_MS
+        )
+
         this.disposables.push(
             this.requestManager,
             this.contextMixer,
@@ -151,7 +162,10 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
             vscode.window.onDidChangeTextEditorSelection(this.onSelectionChangeDebounced),
             vscode.workspace.onDidChangeTextDocument(event => {
                 this.onDidChangeTextDocument(event)
-            })
+            }),
+            vscode.window.onDidChangeTextEditorVisibleRanges(
+                this.onTextEditorVisibleRangeChangeDebounced
+            )
         )
 
         this.statusBar = statusBar
@@ -179,6 +193,24 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
     private onDidChangeTextDocument(event: vscode.TextDocumentChangeEvent): void {
         if (event.document.uri.scheme === 'file') {
             this.lastTextChangeTimeStamp = performance.now()
+        }
+    }
+
+    private async onTextEditorVisibleRangeChange(
+        _event: vscode.TextEditorVisibleRangesChangeEvent
+    ): Promise<void> {
+        const now = Date.now()
+
+        if (
+            this.lastVisibleChangeTimeStamp === undefined ||
+            now - this.lastVisibleChangeTimeStamp >
+                RESET_TEXT_EDITOR_VISIBLE_RANGE_CHANGE_DEBOUNCE_INTERVAL_MS
+        ) {
+            // Trigger inline suggest request but reject it promptly. The goal is to warm-up
+            // the prompt cache for future requests from the same document.
+            await vscode.commands.executeCommand('editor.action.inlineSuggest.trigger')
+            await vscode.commands.executeCommand('cody.supersuggest.dismiss')
+            this.lastVisibleChangeTimeStamp = now
         }
     }
 
