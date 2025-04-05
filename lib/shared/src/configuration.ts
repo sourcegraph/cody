@@ -111,6 +111,9 @@ interface RawClientConfiguration {
     debugFilter: RegExp | null
     debugVerbose: boolean
     telemetryLevel: 'all' | 'off' | 'agent'
+    
+    braintrustApiKey?: string
+    braintrustProjectName?: string
 
     serverEndpoint?: string
     customHeaders?: Record<string, string>

@@ -12,6 +12,7 @@ import { TimestampTelemetryProcessor } from '@sourcegraph/telemetry/dist/process
 import type { CodyIDE } from '../configuration'
 import { GraphQLTelemetryExporter } from '../sourcegraph-api/telemetry/GraphQLTelemetryExporter'
 import { MockServerTelemetryExporter } from '../sourcegraph-api/telemetry/MockServerTelemetryExporter'
+import { BraintrustTelemetryExporter } from '../sourcegraph-api/telemetry/BraintrustTelemetryExporter'
 
 import type { BillingCategory, BillingProduct } from '.'
 import { currentAuthStatusOrNotReadyYet } from '../auth/authStatus'
@@ -72,14 +73,39 @@ export class TelemetryRecorderProvider extends BaseTelemetryRecorderProvider<
         const cap = clientCapabilities()
         const clientName = cap.telemetryClientName || `${cap.agentIDE}.Cody`
 
+        // Create exporters based on configuration
+        const exporters: TelemetryExporter[] = []
+
+        // Add GraphQL exporter for Sourcegraph telemetry
+        if (process.env.CODY_TELEMETRY_EXPORTER === 'testing') {
+            exporters.push(TESTING_TELEMETRY_EXPORTER.withAnonymousUserID(config.clientState.anonymousUserID))
+        } else {
+            exporters.push(new GraphQLTelemetryExporter())
+        }
+
+        // Add Braintrust exporter if API key is provided
+        if (config.configuration.braintrustApiKey) {
+            exporters.push(
+                new BraintrustTelemetryExporter(
+                    config.configuration.braintrustApiKey,
+                    config.configuration.braintrustProjectName
+                )
+            )
+        }
+
+        // Create a multi-exporter that sends events to all configured exporters
+        const multiExporter: TelemetryExporter = {
+            async exportEvents(events: TelemetryEventInput[]): Promise<void> {
+                await Promise.all(exporters.map(exporter => exporter.exportEvents(events)))
+            }
+        }
+
         super(
             {
                 client: clientName,
                 clientVersion: cap.agentExtensionVersion,
             },
-            process.env.CODY_TELEMETRY_EXPORTER === 'testing'
-                ? TESTING_TELEMETRY_EXPORTER.withAnonymousUserID(config.clientState.anonymousUserID)
-                : new GraphQLTelemetryExporter(),
+            multiExporter,
             [
                 new ConfigurationMetadataProcessor(),
                 // Generate timestamps when recording events, instead of serverside
