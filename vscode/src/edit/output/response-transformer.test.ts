@@ -69,7 +69,7 @@ describe('Smart Apply Response Extraction', () => {
             mode: 'insert',
             selectionRange: { isEmpty: true },
             original: '',
-            fixupFile: { uri: {} as any }
+            fixupFile: { uri: {} as any },
         } as any
 
         const result = responseTransformer(text, task, false)
@@ -84,7 +84,7 @@ describe('Smart Apply Response Extraction', () => {
             mode: 'insert',
             selectionRange: { isEmpty: false },
             original: 'existing content',
-            fixupFile: { uri: {} as any }
+            fixupFile: { uri: {} as any },
         } as any
 
         const result = responseTransformer(text, task, false)
