@@ -1,4 +1,9 @@
-import { isAbortError } from '@sourcegraph/cody-shared'
+import {
+    addAuthHeaders,
+    currentResolvedConfig,
+    getClientInfoParams,
+    isAbortError,
+} from '@sourcegraph/cody-shared'
 import type * as vscode from 'vscode'
 import { type CloseEvent, type ErrorEvent, type MessageEvent, WebSocket } from 'ws'
 import { autoeditsProviderConfig } from '../autoedits-config'
@@ -147,13 +152,27 @@ export class FireworksWebSocketAdapter extends FireworksAdapter implements vscod
     }
 
     private async connect(): Promise<WebSocket> {
-        return new Promise((resolve, reject) => {
-            if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-                resolve(this.ws)
-                return
-            }
+        if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+            return this.ws
+        }
 
-            const ws = new WebSocket(this.webSocketEndpoint)
+        // Use sourcegraph authentication token
+        const { auth } = await currentResolvedConfig()
+        const clientInfoParams = getClientInfoParams()
+        const query = new URLSearchParams(clientInfoParams)
+        const url = new URL(`/.api/completions/code?${query.toString()}`, auth.serverEndpoint)
+        const headers = new Headers({})
+        await addAuthHeaders(auth, headers, url)
+
+        const token = headers.get('Authorization')
+
+        return new Promise((resolve, reject) => {
+            const protocol = `${clientInfoParams['client-name']}-${clientInfoParams['client-version']}`
+            const ws = new WebSocket(this.webSocketEndpoint, protocol, {
+                headers: {
+                    authorization: token === null ? undefined : token,
+                },
+            })
             ws.addEventListener('open', () => {
                 autoeditsOutputChannelLogger.logDebug(
                     LOG_FILTER_LABEL,

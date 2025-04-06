@@ -1,4 +1,4 @@
-import { ps } from '@sourcegraph/cody-shared'
+import { mockResolvedConfig, ps } from '@sourcegraph/cody-shared'
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { type AddressInfo, WebSocketServer } from 'ws'
@@ -37,6 +37,9 @@ describe('FireworksWebsocketAdapter', () => {
     const messageFn = vi.fn()
 
     beforeAll(() => {
+        mockResolvedConfig({
+            auth: { credentials: { token: 'test_token' }, serverEndpoint: 'https://example.com' },
+        })
         server.addListener('connection', client => {
             client.addEventListener('message', event => {
                 const request = JSON.parse(event.data as string)
