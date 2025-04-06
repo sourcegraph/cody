@@ -63,6 +63,11 @@ export class DefaultSelectionProvider implements SmartApplySelectionProvider {
     }: SelectionPromptProviderArgs): Promise<string> {
         const documentRange = new vscode.Range(0, 0, document.lineCount - 1, 0)
         const documentText = PromptString.fromDocumentText(document, documentRange)
+        // If the document is empty, we should insert the code without call to LLM
+        // to decide what to choose as we do with the custom model that returns early
+        if (!documentText.toString()) {
+            return 'INSERT'
+        }
         const tokenCount = await TokenCounterUtils.countPromptString(documentText)
 
         if (tokenCount > contextWindow.input) {
