@@ -3,7 +3,7 @@ import semver from 'semver'
 import { authStatus } from '../auth/authStatus'
 import type { AuthStatus } from '../auth/types'
 import { logError } from '../logger'
-import { distinctUntilChanged, pick, promiseFactoryToObservable } from '../misc/observable'
+import { distinctUntilChanged, pick, promiseFactoryToObservable, retry } from '../misc/observable'
 import {
     firstResultFromOperation,
     pendingOperation,
@@ -77,7 +77,8 @@ export const siteVersion: Observable<SiteAndCodyAPIVersions | null | typeof pend
                             siteVersion,
                             codyAPIVersion: inferCodyApiVersion(siteVersion, isDotCom(authStatus)),
                         }
-                    })
+                    }),
+                    retry(3)
                 )
             }
         ),
