@@ -17,6 +17,7 @@ import com.sourcegraph.cody.auth.CodyAuthService
 import com.sourcegraph.cody.auth.CodySecureStore
 import com.sourcegraph.cody.auth.SourcegraphServerPath
 import com.sourcegraph.cody.config.CodyApplicationSettings
+import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigRenderOptions
 import com.typesafe.config.ConfigValueFactory
@@ -24,6 +25,7 @@ import java.nio.file.Path
 import java.nio.file.Paths
 import java.util.concurrent.CompletableFuture
 import kotlin.io.path.readText
+import kotlin.io.path.writeText
 import org.jetbrains.annotations.Contract
 import org.jetbrains.annotations.VisibleForTesting
 
@@ -167,29 +169,51 @@ object ConfigUtil {
             "cody.experimental.foldingRanges" to "indentation-based",
             "cody.advanced.agent.ide.productCode" to getIntellijProductCode())
 
-    try {
-      val text =
-          try {
-            getSettingsFile(project).readText()
-          } catch (e: Exception) {
-            logger.info("No user defined settings file found. Proceeding with empty custom config")
-            ""
-          }
-
-      var config = ConfigFactory.parseString(text).resolve()
-      val globalConfig = ConfigFactory.parseString(GlobalCodySettings.getConfigJson()).resolve()
-      additionalProperties.forEach { (key, value) ->
-        config = config.withValue(key, ConfigValueFactory.fromAnyRef(value))
-      }
-
-      return config
-          .withFallback(globalConfig)
+    return try {
+      val (config, fallbackConfig) = deriveConfigAndFallbackConfig(project, additionalProperties)
+      config
+          .withFallback(fallbackConfig)
           .root()
           .render(ConfigRenderOptions.defaults().setComments(false).setOriginComments(false))
     } catch (e: Exception) {
       logger.error("Failed to parse Cody config", e)
-      return ""
+      ""
     }
+  }
+
+  @JvmStatic
+  fun addSettings(project: Project, settings: Map<String, String>) {
+    try {
+      val (config, fallbackConfig) = deriveConfigAndFallbackConfig(project, settings)
+      val newText =
+          config
+              .withFallback(fallbackConfig)
+              .root()
+              .render(ConfigRenderOptions.defaults().setOriginComments(false).setComments(false))
+      getSettingsFile(project).writeText(newText)
+    } catch (e: Exception) {
+      logger.error("Failed to add settings", e)
+    }
+  }
+
+  private fun deriveConfigAndFallbackConfig(
+      project: Project,
+      settings: Map<String, Any>
+  ): Pair<Config, Config> {
+    val text =
+        try {
+          getSettingsFile(project).readText()
+        } catch (e: Exception) {
+          logger.info("No user defined settings file found. Proceeding with empty custom config")
+          ""
+        }
+
+    var config = ConfigFactory.parseString(text).resolve()
+    val globalConfig = ConfigFactory.parseString(GlobalCodySettings.getConfigJson()).resolve()
+    settings.forEach { (key, value) ->
+      config = config.withValue(key, ConfigValueFactory.fromAnyRef(value))
+    }
+    return Pair(config, globalConfig)
   }
 
   @JvmStatic

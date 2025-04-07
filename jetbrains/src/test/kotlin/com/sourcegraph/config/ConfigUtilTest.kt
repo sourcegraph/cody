@@ -1,7 +1,9 @@
 import com.google.gson.JsonParser
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
+import com.intellij.util.io.readText
 import com.sourcegraph.config.ConfigUtil
 import com.sourcegraph.utils.CodyEditorUtil
+import kotlin.test.assertContains
 
 class ConfigUtils : BasePlatformTestCase() {
 
@@ -57,6 +59,55 @@ class ConfigUtils : BasePlatformTestCase() {
     assertNotNull(result)
     val parsed = JsonParser.parseString(result).asJsonObject
     assertEquals(2 + 1, parsed.size()) // +1 for the additional folding property
+  }
+
+  fun testAddSettings_addASetting() {
+
+    val input =
+        """
+    {
+
+    }
+    """
+    setCodySettingsJsonContent(input)
+    ConfigUtil.addSettings(project, mapOf("cody.suggestions.mode" to "auto-edit (Beta)"))
+
+    val result = ConfigUtil.getSettingsFile(project).readText()
+    assertContains(result, "auto-edit (Beta)")
+  }
+
+  fun testAddSettings_overrideASetting() {
+    val input =
+        """
+    {
+       // This is a comment
+      "cody.debug": true,
+      "cody.suggestions.mode": "autocomplete"
+    }
+    """
+    setCodySettingsJsonContent(input)
+    ConfigUtil.addSettings(project, mapOf("cody.suggestions.mode" to "auto-edit (Beta)"))
+
+    val result = ConfigUtil.getSettingsFile(project).readText()
+    assertContains(result, "auto-edit (Beta)")
+    assertContains(result, "\"cody.debug\" : true")
+    assertDoesntContain(result, listOf("autocomplete"))
+  }
+
+  fun testAddSettings_persistExistingSettings() {
+    val input =
+        """
+    {
+       // This is a comment
+      "cody.debug": true,
+    }
+    """
+    setCodySettingsJsonContent(input)
+    ConfigUtil.addSettings(project, mapOf("cody.suggestions.mode" to "auto-edit (Beta)"))
+
+    val result = ConfigUtil.getSettingsFile(project).readText()
+    assertContains(result, "auto-edit (Beta)")
+    assertContains(result, "\"cody.debug\" : true")
   }
 
   private fun setCodySettingsJsonContent(codySettingsContent: String) {

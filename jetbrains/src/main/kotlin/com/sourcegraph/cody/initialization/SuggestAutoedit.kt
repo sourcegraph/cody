@@ -16,6 +16,7 @@ import com.sourcegraph.cody.agent.protocol.GetFeatureFlag.CodyAutoeditJetBrainsE
 import com.sourcegraph.cody.config.actions.OpenCodySettingsEditorAction
 import com.sourcegraph.common.CodyBundle
 import com.sourcegraph.common.NotificationGroups
+import com.sourcegraph.config.ConfigUtil
 import java.util.concurrent.CompletableFuture
 
 class SuggestAutoedit(private val isDotcom: Boolean) : Activity {
@@ -55,6 +56,7 @@ class SuggestAutoeditNotification(project: Project) :
     addAction(
         NotificationAction.createExpiring(
             CodyBundle.getString("AutoeditSuggestionNotification.configure")) { _, _ ->
+              ConfigUtil.addSettings(project, mapOf("cody.suggestions.mode" to "auto-edit (Beta)"))
             })
 
     addAction(
