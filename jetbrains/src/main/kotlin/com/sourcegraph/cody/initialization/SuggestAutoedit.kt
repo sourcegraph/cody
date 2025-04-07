@@ -4,10 +4,16 @@ import com.intellij.notification.Notification
 import com.intellij.notification.NotificationAction
 import com.intellij.notification.NotificationType
 import com.intellij.notification.impl.NotificationFullContent
+import com.intellij.openapi.actionSystem.ActionManager
+import com.intellij.openapi.actionSystem.ActionPlaces
+import com.intellij.openapi.actionSystem.AnActionEvent
+import com.intellij.openapi.actionSystem.Presentation
+import com.intellij.openapi.actionSystem.impl.SimpleDataContext
 import com.intellij.openapi.project.Project
 import com.sourcegraph.Icons
 import com.sourcegraph.cody.agent.CodyAgentService
 import com.sourcegraph.cody.agent.protocol.GetFeatureFlag.CodyAutoeditJetBrainsExperimentEnabledFeatureFlag
+import com.sourcegraph.cody.config.actions.OpenCodySettingsEditorAction
 import com.sourcegraph.common.CodyBundle
 import com.sourcegraph.common.NotificationGroups
 import java.util.concurrent.CompletableFuture
@@ -27,7 +33,7 @@ class SuggestAutoedit(private val isDotcom: Boolean) : Activity {
             .featureFlags_getFeatureFlag(CodyAutoeditJetBrainsExperimentEnabledFeatureFlag)
             .thenAccept { featureFlag ->
               if (featureFlag == true || true) {
-                SuggestAutoeditNotification().notify(project)
+                SuggestAutoeditNotification(project).notify(project)
               }
             }
       }
@@ -35,7 +41,7 @@ class SuggestAutoedit(private val isDotcom: Boolean) : Activity {
   }
 }
 
-class SuggestAutoeditNotification :
+class SuggestAutoeditNotification(project: Project) :
     Notification(
         NotificationGroups.CODY_AUTH,
         CodyBundle.getString("AutoeditSuggestionNotification.title"),
@@ -48,8 +54,21 @@ class SuggestAutoeditNotification :
 
     addAction(
         NotificationAction.createExpiring(
-            CodyBundle.getString("AutoeditSuggestionNotification.button")) { _, _ ->
+            CodyBundle.getString("AutoeditSuggestionNotification.configure")) { _, _ ->
+            })
 
+    addAction(
+        NotificationAction.createSimple(
+            CodyBundle.getString("AutoeditSuggestionNotification.openFile")) {
+              val anActionEvent =
+                  AnActionEvent(
+                      null,
+                      SimpleDataContext.getProjectContext(project),
+                      ActionPlaces.UNKNOWN,
+                      Presentation(),
+                      ActionManager.getInstance(),
+                      0)
+              OpenCodySettingsEditorAction().actionPerformed(anActionEvent)
             })
   }
 }
