@@ -9,8 +9,10 @@ import {
     combineLatest,
     distinctUntilChanged,
     featureFlagProvider,
+    firstValueFrom,
     isDotCom,
     isS2,
+    skipPendingOperation,
     switchMap,
     telemetryRecorder,
 } from '@sourcegraph/cody-shared'
@@ -155,7 +157,10 @@ function isSmartApplyInstantModeEnabled(): Observable<boolean> {
 }
 
 async function getSmartApplyModel(authStatus: AuthStatus): Promise<EditModel | undefined> {
-    if (isSmartApplyInstantModeEnabled()) {
+    const isInstantModeEnabled = await firstValueFrom(
+        isSmartApplyInstantModeEnabled().pipe(skipPendingOperation())
+    )
+    if (isInstantModeEnabled) {
         return SMART_APPLY_MODEL_IDENTIFIERS.FireworksQwenCodeDefault
     }
     if (isDotCom(authStatus) || isS2(authStatus)) {
