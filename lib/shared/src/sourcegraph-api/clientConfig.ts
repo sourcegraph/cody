@@ -178,7 +178,7 @@ export class ClientConfigSingleton {
 
         // Determine based on the site version if /.api/client-config is available.
         return graphqlClient
-            .getSiteVersion(signal)
+            .getSiteVersion()
             .then(siteVersion => {
                 signal?.throwIfAborted()
                 if (isError(siteVersion)) {
