@@ -1,4 +1,4 @@
-import type { CodeToReplaceData } from '@sourcegraph/cody-shared'
+import type { CodeToReplaceData, DocumentContext } from '@sourcegraph/cody-shared'
 import * as uui from 'uuid'
 
 import * as vscode from 'vscode'
@@ -35,7 +35,8 @@ export function isHotStreakResponse(
 export async function* processHotStreakResponses(
     responseGenerator: AsyncGenerator<ModelResponse>,
     document: vscode.TextDocument,
-    codeToReplaceData: CodeToReplaceData
+    codeToReplaceData: CodeToReplaceData,
+    docContext: DocumentContext
 ): AsyncGenerator<PredictionResult> {
     let linesAlreadyChunked = 0
     let hotStreakID = null
@@ -116,6 +117,11 @@ export async function* processHotStreakResponses(
                 // We are emitting a hot streak prediction. This means that all future response should be treated as hot streaks.
                 hotStreakID = uui.v4() as AutoeditHotStreakID
             }
+
+            // TODO: Get updatedDocContext by inserting the prediction thus far into the document.
+            // Use that to also update the codeToReplaceData.
+            // Return these and use the updated values in `provideInlineCompletionItems`
+
             yield {
                 response: {
                     ...response,

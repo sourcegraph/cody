@@ -5,6 +5,7 @@ import * as vscode from 'vscode'
 import {
     type ChatClient,
     type ClientCapabilities,
+    type DocumentContext,
     clientCapabilities,
     currentResolvedConfig,
     tokensToChars,
@@ -354,6 +355,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                 position,
                 prompt,
                 codeToReplaceData,
+                docContext,
                 abortSignal,
             })
 
@@ -690,12 +692,14 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
         document,
         position,
         codeToReplaceData,
+        docContext,
         prompt,
         abortSignal,
     }: {
         document: vscode.TextDocument
         position: vscode.Position
         codeToReplaceData: CodeToReplaceData
+        docContext: DocumentContext
         prompt: AutoeditsPrompt
         abortSignal: AbortSignal
     }): Promise<AsyncGenerator<PredictionResult>> {
@@ -711,7 +715,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
             timeoutMs: autoeditsProviderConfig.timeoutMs,
         })
 
-        return processHotStreakResponses(responseGenerator, document, codeToReplaceData)
+        return processHotStreakResponses(responseGenerator, document, codeToReplaceData, docContext)
     }
 
     private hasDoneMockPrediction = false
@@ -719,12 +723,14 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
         document,
         position,
         codeToReplaceData,
+        docContext,
         prompt,
         abortSignal,
     }: {
         document: vscode.TextDocument
         position: vscode.Position
         codeToReplaceData: CodeToReplaceData
+        docContext: DocumentContext
         prompt: AutoeditsPrompt
         abortSignal: AbortSignal
     }): Promise<PredictionResult> {
@@ -753,7 +759,12 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                     this.hasDoneMockPrediction = true
                     const generator = createMockResponseGenerator(prediction)
                     return this.requestManager.request(requestParams, async () => {
-                        return processHotStreakResponses(generator, document, codeToReplaceData)
+                        return processHotStreakResponses(
+                            generator,
+                            document,
+                            codeToReplaceData,
+                            docContext
+                        )
                     })
                 }
             }
@@ -766,6 +777,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                 codeToReplaceData,
                 prompt,
                 abortSignal: signal,
+                docContext,
             })
         })
     }
