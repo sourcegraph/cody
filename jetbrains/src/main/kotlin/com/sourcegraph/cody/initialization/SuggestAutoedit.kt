@@ -4,7 +4,6 @@ import com.intellij.notification.Notification
 import com.intellij.notification.NotificationAction
 import com.intellij.notification.NotificationType
 import com.intellij.notification.impl.NotificationFullContent
-import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.project.Project
 import com.sourcegraph.Icons
 import com.sourcegraph.cody.agent.CodyAgentService
@@ -13,7 +12,7 @@ import com.sourcegraph.common.CodyBundle
 import com.sourcegraph.common.NotificationGroups
 import java.util.concurrent.CompletableFuture
 
-class SuggestAutoedit(val isDotcom: Boolean) : Activity {
+class SuggestAutoedit(private val isDotcom: Boolean) : Activity {
 
   override fun runActivity(project: Project) {
     CodyAgentService.withAgent(project) {
@@ -22,13 +21,16 @@ class SuggestAutoedit(val isDotcom: Boolean) : Activity {
             it.server.graphql_currentUserIsPro(null)
           } else CompletableFuture.completedFuture(true)
 
-      it.server
-          .featureFlags_getFeatureFlag(CodyAutoeditJetBrainsExperimentEnabledFeatureFlag)
-          .thenCombine(isProOrEnterpriseFuture) { featureFlag, isProOrEnterprise ->
-            if (isProOrEnterprise && featureFlag == true) {
-              SuggestAutoeditNotification().notify(project)
+      isProOrEnterpriseFuture.thenAccept { isProOrEnterprise ->
+        if (!isProOrEnterprise) return@thenAccept
+        it.server
+            .featureFlags_getFeatureFlag(CodyAutoeditJetBrainsExperimentEnabledFeatureFlag)
+            .thenAccept { featureFlag ->
+              if (featureFlag == true || true) {
+                SuggestAutoeditNotification().notify(project)
+              }
             }
-          }
+      }
     }
   }
 }
@@ -45,12 +47,9 @@ class SuggestAutoeditNotification :
     icon = Icons.SourcegraphLogo
 
     addAction(
-        object : NotificationAction(CodyBundle.getString("AutoeditSuggestionNotification.button")) {
-          override fun actionPerformed(anActionEvent: AnActionEvent, notification: Notification) {
-            println("configure and restart")
-          }
-        })
+        NotificationAction.createExpiring(
+            CodyBundle.getString("AutoeditSuggestionNotification.button")) { _, _ ->
 
-    configureDoNotAskOption("autoedit-notification", "Don’t show again")
+            })
   }
 }
