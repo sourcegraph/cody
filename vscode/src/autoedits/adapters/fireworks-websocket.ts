@@ -164,7 +164,10 @@ export class FireworksWebSocketAdapter extends FireworksAdapter implements vscod
         const headers = new Headers({})
         await addAuthHeaders(auth, headers, url)
 
-        const token = headers.get('Authorization')
+        let token = headers.get('Authorization')
+        if (token?.startsWith('token')) {
+            token = 'Bearer ' + token.split(' ')[1]
+        }
 
         return new Promise((resolve, reject) => {
             const protocol = `${clientInfoParams['client-name']}-${clientInfoParams['client-version']}`
