@@ -31,7 +31,7 @@ describe('DeepCody', () => {
         authenticated: true,
     }
 
-    const mockRetrievedResult = [
+    const mockRretrievedResult = [
         {
             type: 'file',
             uri: URI.file('/path/to/repo/newfile.ts'),
@@ -83,7 +83,7 @@ describe('DeepCody', () => {
         } as unknown as ChatClient
 
         mockContextRetriever = {
-            retrieveContext: vi.fn().mockResolvedValue(mockRetrievedResult),
+            retrieveContext: vi.fn().mockResolvedValue(mockRretrievedResult),
         } as unknown as ContextRetriever
 
         CodyToolProvider.initialize(mockContextRetriever)
@@ -102,7 +102,7 @@ describe('DeepCody', () => {
         mockStatusCallback = vi.fn()
         mockRequestCallback = vi.fn().mockResolvedValue(true)
 
-        vi.spyOn(featureFlagProvider, 'evaluateFeatureFlag').mockReturnValue(Observable.of(false))
+        vi.spyOn(featureFlagProvider, 'evaluatedFeatureFlag').mockReturnValue(Observable.of(false))
         vi.spyOn(modelsService, 'isStreamDisabled').mockReturnValue(false)
         vi.spyOn(ChatBuilder, 'resolvedModelForChat').mockReturnValue(
             Observable.of('anthropic::2023-06-01::claude-3.5-sonnet')
@@ -115,7 +115,7 @@ describe('DeepCody', () => {
         vi.spyOn(modelsService, 'observeContextWindowByID').mockReturnValue(
             Observable.of({ input: 10000, output: 1000 })
         )
-        mockContextRetriever.retrieveContext = vi.fn().mockResolvedValue(mockRetrievedResult)
+        mockContextRetriever.retrieveContext = vi.fn().mockResolvedValue(mockRretrievedResult)
 
         vi.spyOn(initialContext, 'getCorpusContextItemsForEditorState').mockReturnValue(
             Observable.of([

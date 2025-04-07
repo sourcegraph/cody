@@ -171,15 +171,15 @@ export function syncModels({
                                         distinctUntilChanged()
                                     )
                                     return combineLatest(
-                                        featureFlagProvider.evaluateFeatureFlag(
+                                        featureFlagProvider.evaluatedFeatureFlag(
                                             FeatureFlag.CodyEarlyAccess
                                         ),
-                                        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.DeepCody),
-                                        featureFlagProvider.evaluateFeatureFlag(
+                                        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.DeepCody),
+                                        featureFlagProvider.evaluatedFeatureFlag(
                                             FeatureFlag.CodyChatDefaultToClaude35Haiku
                                         ),
                                         enableToolCody,
-                                        featureFlagProvider.evaluateFeatureFlag(
+                                        featureFlagProvider.evaluatedFeatureFlag(
                                             FeatureFlag.EnhancedContextWindow
                                         )
                                     ).pipe(

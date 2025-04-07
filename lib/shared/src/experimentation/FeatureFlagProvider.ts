@@ -165,13 +165,13 @@ export interface FeatureFlagProvider {
      * reload their editor to get the changed behavior if the feature flag value changes on the
      * server.
      */
-    evaluateFeatureFlag(flag: FeatureFlag): Observable<boolean>
+    evaluatedFeatureFlag(flag: FeatureFlag): Observable<boolean>
 
     /**
      * Get a feature flag's current value once by performing a roundtrip to the server. The caller
      * MUST treat the value as ephemeral (i.e., only valid at the instant it was fetched).
      *
-     * @deprecated Use {@link FeatureFlagProvider.evaluateFeatureFlag} instead. It's important to
+     * @deprecated Use {@link FeatureFlagProvider.evaluatedFeatureFlag} instead. It's important to
      * *watch* feature flag values and change behavior if the feature flag value changes, not just
      * to read the value once (and require the user to reload their editor, for example, to pick up
      * new behavior).
@@ -210,7 +210,7 @@ export class FeatureFlagProviderImpl implements FeatureFlagProvider {
         distinctUntilChanged()
     )
 
-    private evaluateFeatureFlags: Observable<Record<string, boolean>> = combineLatest(
+    private evaluatedFeatureFlags: Observable<Record<string, boolean>> = combineLatest(
         this.relevantAuthStatusChanges,
         this.refreshes
     ).pipe(
@@ -219,7 +219,7 @@ export class FeatureFlagProviderImpl implements FeatureFlagProvider {
             promiseFactoryToObservable(signal =>
                 process.env.DISABLE_FEATURE_FLAGS
                     ? Promise.resolve({})
-                    : graphqlClient.evaluateFeatureFlags(Object.values(FeatureFlag), signal)
+                    : graphqlClient.getEvaluatedFeatureFlags(signal)
             ).pipe(
                 map(resultOrError => {
                     if (isError(resultOrError)) {
@@ -247,15 +247,15 @@ export class FeatureFlagProviderImpl implements FeatureFlagProvider {
 
     /**
      * @deprecated See {@link FeatureFlagProvider.evaluateFeatureFlagEphemerally} for notes. Use
-     * {@link FeatureFlagProvider.evaluateFeatureFlag} instead.
+     * {@link FeatureFlagProvider.evaluatedFeatureFlag} instead.
      */
     public async evaluateFeatureFlagEphemerally(flagName: FeatureFlag): Promise<boolean> {
         return wrapInActiveSpan(`FeatureFlagProvider.evaluateFeatureFlag.${flagName}`, () =>
-            firstValueFrom(this.evaluateFeatureFlag(flagName))
+            firstValueFrom(this.evaluatedFeatureFlag(flagName))
         )
     }
 
-    private featureFlagCache: Partial<Record<FeatureFlag, StoredLastValue<boolean>>> = {}
+    private evaluatedFeatureFlagCache: Partial<Record<FeatureFlag, StoredLastValue<boolean>>> = {}
 
     /**
      * Observe the evaluated value of a feature flag.
@@ -263,12 +263,13 @@ export class FeatureFlagProviderImpl implements FeatureFlagProvider {
      * @param forceRefresh - When set to true, forces a refresh of the feature flag value. Useful for new feature flags that are frequently toggled.
      * @returns An Observable that emits the current value of the feature flag
      */
-    public evaluateFeatureFlag(flagName: FeatureFlag, forceRefresh = false): Observable<boolean> {
-        let entry = this.featureFlagCache[flagName]
+    public evaluatedFeatureFlag(flagName: FeatureFlag, forceRefresh = false): Observable<boolean> {
+        let entry = this.evaluatedFeatureFlagCache[flagName]
 
         if (!entry || forceRefresh) {
-            // Whenever the auth status changes, we need to call `evaluateFeatureFlags` on the GraphQL
-            // endpoint, because our endpoint or authentication may have changed.
+            // Whenever the auth status changes, we need to call `evaluateFeatureFlag` on the GraphQL
+            // endpoint, because our endpoint or authentication may have changed, and
+            // `getEvaluatedFeatureFlags` only returns the set of recently evaluated feature flags.
             entry = storeLastValue(
                 combineLatest(this.relevantAuthStatusChanges, this.refreshes)
                     .pipe(
@@ -276,9 +277,28 @@ export class FeatureFlagProviderImpl implements FeatureFlagProvider {
                         // to cache the previous value while we are refreshing it. That is a choice that
                         // may not always be correct, but it's probably more desirable for more feature
                         // flags. We can make the cache retrieval behavior configurable if needed.
-                        switchMap(_ =>
+                        switchMap(([authStatus]) =>
                             concat(
-                                this.evaluateFeatureFlags.pipe(
+                                promiseFactoryToObservable(async signal => {
+                                    if (process.env.DISABLE_FEATURE_FLAGS) {
+                                        return false
+                                    }
+
+                                    const cachedValue =
+                                        this.cache[authStatus.endpoint]?.[flagName.toString()]
+                                    if (cachedValue !== undefined) {
+                                        // We'll immediately return the cached value and then start observing
+                                        // for updates.
+                                        return cachedValue
+                                    }
+
+                                    const result = await graphqlClient.evaluateFeatureFlag(
+                                        flagName,
+                                        signal
+                                    )
+                                    return isError(result) ? false : result ?? false
+                                }),
+                                this.evaluatedFeatureFlags.pipe(
                                     map(featureFlags => Boolean(featureFlags[flagName.toString()]))
                                 )
                             )
@@ -286,7 +306,7 @@ export class FeatureFlagProviderImpl implements FeatureFlagProvider {
                     )
                     .pipe(distinctUntilChanged(), shareReplay())
             )
-            this.featureFlagCache[flagName] = entry
+            this.evaluatedFeatureFlagCache[flagName] = entry
         }
 
         return entry.observable
@@ -297,16 +317,16 @@ export class FeatureFlagProviderImpl implements FeatureFlagProvider {
     }
 
     public dispose(): void {
-        for (const [, entry] of Object.entries(this.featureFlagCache)) {
+        for (const [, entry] of Object.entries(this.evaluatedFeatureFlagCache)) {
             entry.subscription.unsubscribe()
         }
-        this.featureFlagCache = {}
+        this.evaluatedFeatureFlagCache = {}
     }
 }
 
 const noopFeatureFlagProvider: FeatureFlagProvider = {
     evaluateFeatureFlagEphemerally: async () => false,
-    evaluateFeatureFlag: () => Observable.of(false),
+    evaluatedFeatureFlag: () => Observable.of(false),
     getExposedExperiments: () => ({}),
     refresh: () => {},
 }
