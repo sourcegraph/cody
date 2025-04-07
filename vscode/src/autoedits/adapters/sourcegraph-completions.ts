@@ -27,6 +27,7 @@ export class SourcegraphCompletionsAdapter implements AutoeditsModelAdapter {
     dispose() {}
 
     async getModelResponse(options: AutoeditModelOptions): Promise<AsyncGenerator<ModelResponse>> {
+        console.log('CALLING GET MODEL RESPONSE')
         try {
             const maxTokens = getMaxOutputTokensForAutoedits(options.codeToRewrite)
             const messages: Message[] = getSourcegraphCompatibleChatPrompt({

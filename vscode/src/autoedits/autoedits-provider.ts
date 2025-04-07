@@ -214,6 +214,9 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
     ): Promise<AutoeditsResult | null> {
         let stopLoading: (() => void) | undefined
         const startedAt = getTimeNowInMillis()
+        if (startedAt !== undefined) {
+            return null
+        }
 
         if (inlineCompletionContext.selectedCompletionInfo !== undefined) {
             const { range, text } = inlineCompletionContext.selectedCompletionInfo
