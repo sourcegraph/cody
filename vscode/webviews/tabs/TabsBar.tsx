@@ -360,8 +360,7 @@ TabButton.displayName = 'TabButton'
  */
 function useTabs(input: Pick<TabsBarProps, 'user'>): TabConfig[] {
     const IDE = input.user.IDE
-
-    const extensionAPI = useExtensionAPI<'userHistory'>()
+    const extensionAPI = useExtensionAPI()
 
     return useMemo<TabConfig[]>(
         () =>

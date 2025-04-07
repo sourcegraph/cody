@@ -10,11 +10,11 @@ import {
 export async function downloadChatHistory(
     extensionAPI: Pick<WebviewToExtensionAPI, 'userHistory'>
 ): Promise<void> {
-    const userHistory = await firstResultFromOperation(extensionAPI.userHistory())
-    const chatHistory: SerializedChatTranscript[] | null = userHistory
+    const userHistory = await firstResultFromOperation(extensionAPI.userHistory(true))
+    const chatHistory: SerializedChatTranscript[] | null = userHistory?.chat
         ? Object.values(userHistory.chat)
         : null
-    if (!chatHistory) {
+    if (!chatHistory || chatHistory.length === 0) {
         return
     }
     const json = JSON.stringify(chatHistory, null, 2)
