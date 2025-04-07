@@ -9,6 +9,7 @@ import com.intellij.openapi.actionSystem.ActionPlaces
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.Presentation
 import com.intellij.openapi.actionSystem.impl.SimpleDataContext
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
 import com.sourcegraph.Icons
 import com.sourcegraph.cody.agent.CodyAgentService
@@ -57,6 +58,7 @@ class SuggestAutoeditNotification(project: Project) :
         NotificationAction.createExpiring(
             CodyBundle.getString("AutoeditSuggestionNotification.configure")) { _, _ ->
               ConfigUtil.addSettings(project, mapOf("cody.suggestions.mode" to "auto-edit (Beta)"))
+              ApplicationManager.getApplication().restart()
             })
 
     addAction(
