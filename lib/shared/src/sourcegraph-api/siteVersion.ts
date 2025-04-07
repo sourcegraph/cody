@@ -65,24 +65,26 @@ export const siteVersion: Observable<SiteAndCodyAPIVersions | null | typeof pend
                 }
 
                 return promiseFactoryToObservable(signal => graphqlClient.getSiteVersion(signal)).pipe(
-                    map((siteVersion): SiteAndCodyAPIVersions | null => {
-                        if (isError(siteVersion)) {
-                            logError(
-                                'siteVersion',
-                                `Failed to get site version from ${authStatus.endpoint}: ${siteVersion}`
-                            )
-                            return null
-                        }
-                        return {
-                            siteVersion,
-                            codyAPIVersion: inferCodyApiVersion(siteVersion, isDotCom(authStatus)),
-                        }
-                    }),
-                    retry(3)
+                    map((siteVersion): SiteAndCodyAPIVersions | Error => {
+                        return isError(siteVersion)
+                            ? siteVersion
+                            : {
+                                  siteVersion,
+                                  codyAPIVersion: inferCodyApiVersion(siteVersion, isDotCom(authStatus)),
+                              }
+                    })
                 )
             }
         ),
-        map(result => (isError(result) ? null : result)) // the operation catches its own errors, so errors will never get here
+        retry(3),
+        map(siteVersion => {
+            if (isError(siteVersion)) {
+                logError('siteVersion', `Failed to get site version: ${siteVersion}`)
+                return null
+            }
+
+            return siteVersion
+        })
     )
 
 // Only emit when authenticated
