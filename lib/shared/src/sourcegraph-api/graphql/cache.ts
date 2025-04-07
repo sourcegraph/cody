@@ -80,6 +80,7 @@ export class ObservableInvalidatedGraphQLResultCacheFactory {
         this.subscription = observable.subscribe({
             next: () => {
                 for (const cache of this.caches) {
+                    console.log('INVALIDATING CACHE', cache)
                     cache.invalidate()
                 }
             },
