@@ -2,9 +2,10 @@ import type { FC } from 'react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 
 import type { Message, SerializedChatMessage } from '@sourcegraph/cody-shared'
+
 import type { FireworksChatMessage } from '../../../src/autoedits/adapters/utils'
+import { getModelResponse } from '../../../src/autoedits/debug-panel/autoedit-data-sdk'
 import type { AutoeditRequestDebugState } from '../../../src/autoedits/debug-panel/debug-store'
-import { getModelResponse } from '../autoedit-data-sdk'
 
 // Use a union type of the existing message types from the codebase
 type MessageType = Message | SerializedChatMessage | FireworksChatMessage
@@ -19,7 +20,7 @@ export const PromptSection: FC<{ entry: AutoeditRequestDebugState }> = ({ entry 
     const modelResponse = getModelResponse(entry)
 
     // Extract prompt data from request body
-    const requestBody = modelResponse?.requestBody
+    const requestBody = modelResponse?.requestBody as any
 
     // Format the prompt content
     const formattedPrompt = formatPrompt()

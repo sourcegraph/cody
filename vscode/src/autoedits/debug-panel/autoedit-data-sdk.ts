@@ -1,6 +1,6 @@
-import type { SuccessModelResponse } from '../../src/autoedits/adapters/base'
-import type { AutoeditRequestDebugState } from '../../src/autoedits/debug-panel/debug-store'
-import { DISCARD_REASONS, getDetailedTimingInfo } from './autoedit-ui-utils'
+import type { ModelResponse, SuccessModelResponse } from '../adapters/base'
+import { getDetailedTimingInfo } from './autoedit-latency-utils'
+import type { AutoeditRequestDebugState } from './debug-store'
 
 export const extractAutoeditData = (entry: AutoeditRequestDebugState) => {
     const phase = entry.state.phase
@@ -134,6 +134,22 @@ export const getPositionInfo = (entry: AutoeditRequestDebugState): string => {
         return `${line}:${character}`
     }
     return ''
+}
+
+/**
+ * Map of discard reason codes to human-readable messages
+ */
+export const DISCARD_REASONS: Record<number, string> = {
+    1: 'Client Aborted',
+    2: 'Empty Prediction',
+    3: 'Prediction Equals Code to Rewrite',
+    4: 'Recent Edits',
+    5: 'Suffix Overlap',
+    6: 'Empty Prediction After Inline Completion Extraction',
+    7: 'No Active Editor',
+    8: 'Conflicting Decoration With Edits',
+    9: 'Not Enough Lines in Editor',
+    10: 'Stale Throttled Request',
 }
 
 /**
@@ -278,7 +294,7 @@ export const getFullResponseBody = (entry: AutoeditRequestDebugState): any | nul
 /**
  * Get the complete model response if available
  */
-export const getModelResponse = (entry: AutoeditRequestDebugState): any | null => {
+export const getModelResponse = (entry: AutoeditRequestDebugState): ModelResponse | null => {
     if ('modelResponse' in entry.state) {
         return entry.state.modelResponse
     }

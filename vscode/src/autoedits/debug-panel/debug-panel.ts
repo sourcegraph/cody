@@ -108,12 +108,10 @@ export class AutoeditDebugPanel {
      * Updates the content of the panel with the latest auto-edit requests.
      */
     private async updateContent(): Promise<void> {
-        const entries = autoeditDebugStore.getAutoeditRequestDebugStates()
-
         // Send the updated entries to the webview using the type-safe protocol
         this.postMessageToWebview({
             type: 'updateEntries',
-            entries,
+            ...autoeditDebugStore.getDebugState(),
         })
 
         // If no HTML content is set yet, set the initial HTML
