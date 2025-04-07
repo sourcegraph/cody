@@ -11,7 +11,6 @@ import com.intellij.openapi.wm.ToolWindowManager;
 import com.sourcegraph.Icons;
 import com.sourcegraph.cody.CodyToolWindowFactory;
 import com.sourcegraph.cody.auth.CodyAuthService;
-import com.sourcegraph.cody.config.CodyApplicationSettings;
 import com.sourcegraph.cody.initialization.Activity;
 import com.sourcegraph.common.NotificationGroups;
 import com.sourcegraph.common.ui.DumbAwareEDTAction;
@@ -21,8 +20,7 @@ public class CodyAuthNotificationActivity implements Activity {
 
   @Override
   public void runActivity(@NotNull Project project) {
-    if (!CodyApplicationSettings.getInstance().isGetStartedNotificationDismissed()
-        && !CodyAuthService.getInstance(project).isActivated()) {
+    if (!CodyAuthService.getInstance(project).isActivated()) {
       showOpenCodySidebarNotification(project);
     }
   }
