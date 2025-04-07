@@ -1624,6 +1624,9 @@ export class SourcegraphGraphQLAPIClient {
             throw new Error('SourcegraphGraphQLAPIClient config not set')
         }
         const config = await firstValueFrom(this.config)
+        if (signal?.aborted) {
+            console.log('DEBUG: Signal is aborted, about to throw')
+        }
         signal?.throwIfAborted()
 
         const headers = new Headers(config.configuration?.customHeaders as HeadersInit | undefined)
@@ -1757,6 +1760,7 @@ function catchHTTPError(
         // URL.
         if (isAbortError(error)) {
             if (!timeoutSignal.aborted) {
+                console.log('ABORT ERROR', error)
                 throw error
             }
             error = `ETIMEDOUT: timed out after ${DEFAULT_TIMEOUT_MSEC}ms`
