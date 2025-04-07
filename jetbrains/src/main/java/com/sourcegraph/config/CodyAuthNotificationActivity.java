@@ -51,17 +51,8 @@ public class CodyAuthNotificationActivity implements Activity {
           }
         };
 
-    AnAction neverShowAgainAction =
-        new DumbAwareEDTAction("Never Show Again") {
-          @Override
-          public void actionPerformed(@NotNull AnActionEvent anActionEvent) {
-            notification.expire();
-            CodyApplicationSettings.getInstance().setGetStartedNotificationDismissed(true);
-          }
-        };
     notification.setIcon(Icons.CodyLogo);
     notification.addAction(openCodySidebar);
-    notification.addAction(neverShowAgainAction);
     Notifications.Bus.notify(notification);
   }
 }
