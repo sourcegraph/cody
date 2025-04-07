@@ -159,7 +159,7 @@ describe('AutoeditsProvider', () => {
               "contextSummary": {
                 "duration": 0,
                 "prefixChars": 10,
-                "retrieverStats": {},
+                "retrieverStats": [],
                 "strategy": "auto-edit",
                 "suffixChars": 0,
                 "totalChars": 10,
@@ -222,7 +222,7 @@ describe('AutoeditsProvider', () => {
               "contextSummary": {
                 "duration": 0,
                 "prefixChars": 10,
-                "retrieverStats": {},
+                "retrieverStats": [],
                 "strategy": "auto-edit",
                 "suffixChars": 0,
                 "totalChars": 10,
@@ -292,7 +292,7 @@ describe('AutoeditsProvider', () => {
               "contextSummary": {
                 "duration": 0,
                 "prefixChars": 10,
-                "retrieverStats": {},
+                "retrieverStats": [],
                 "strategy": "auto-edit",
                 "suffixChars": 0,
                 "totalChars": 10,

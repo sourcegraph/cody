@@ -102,7 +102,7 @@ describe('AutoeditAnalyticsLogger', () => {
                     totalChars: 10,
                     prefixChars: 5,
                     suffixChars: 5,
-                    retrieverStats: {},
+                    retrieverStats: [],
                 },
             },
         })
@@ -236,7 +236,7 @@ describe('AutoeditAnalyticsLogger', () => {
               "contextSummary": {
                 "duration": 1.234,
                 "prefixChars": 5,
-                "retrieverStats": {},
+                "retrieverStats": [],
                 "strategy": "none",
                 "suffixChars": 5,
                 "totalChars": 10,

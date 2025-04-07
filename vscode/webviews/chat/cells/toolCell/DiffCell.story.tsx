@@ -5,75 +5,46 @@ import { URI } from 'vscode-uri'
 import { VSCodeWebview } from '../../../storybook/VSCodeStoryDecorator'
 import { DiffCell } from './DiffCell'
 
-// Extended version of ContextItemToolState with diff-specific fields for storybook
-interface DiffContextItemToolState extends ContextItemToolState {
-    // Custom fields for DiffCell stories
-    changes: Array<{
-        type: 'unchanged' | 'added' | 'removed'
-        content: string
-        lineNumber: number
-    }>
-    total?: {
-        added: number
-        removed: number
-        modified: number
-    }
-    uri: URI
-}
-
-const diffStoryMock: DiffContextItemToolState = {
+const diffStoryMock: ContextItemToolState = {
     type: 'tool-state',
     toolId: 'diff-mock-1',
     toolName: 'diff',
     outputType: 'file-diff',
     uri: URI.file('path/to/ToolsStatus.tsx'),
     status: UIToolStatus.Pending,
-    changes: [
-        { type: 'unchanged', content: '@@ -127,9 +127,9 @@', lineNumber: 127 },
-        {
-            type: 'unchanged',
-            content: '    if (seconds < 3600) return `${Math.floor(seconds / 60)}m ${seconds % 60}s`',
-            lineNumber: 128,
-        },
-        {
-            type: 'unchanged',
-            content: '    return `${Math.floor(seconds / 3600)}h ${Math.floor((seconds % 3600) / 60)}m`',
-            lineNumber: 129,
-        },
-        { type: 'unchanged', content: '}', lineNumber: 130 },
-        { type: 'unchanged', content: '', lineNumber: 131 },
-        { type: 'removed', content: 'export default function JobMonitor() {', lineNumber: 132 },
-        {
-            type: 'added',
-            content: 'export default function ToolsStatus({ tools }: ToolsStatusProps) {',
-            lineNumber: 132,
-        },
-        {
-            type: 'unchanged',
-            content: '  const [expanded, setExpanded] = useState(false)',
-            lineNumber: 133,
-        },
-        {
-            type: 'unchanged',
-            content: '  const [selectedJob, setSelectedJob] = useState<string | null>',
-            lineNumber: 134,
-        },
-        {
-            type: 'unchanged',
-            content: "  const [activeTab, setActiveTab] = useState<string>('logs')",
-            lineNumber: 135,
-        },
-        {
-            type: 'unchanged',
-            content: '  const [jobs, setJobs] = useState<Job[]>(mockJobs)',
-            lineNumber: 136,
-        },
+    metadata: [
+        `async function deleteEditHistoryItem(
+      uri: vscode.Uri,
+      content: string,
+      timestamp?: string
+  ): Promise<string> {
+      // Remove the history item after reverting
+      historyStore.delete(uri.toString())
+      // Update the source control panel display
+      updateEditHistoryGroup()
+      const contentBuffer = new TextEncoder().encode(content)
+      await vscode.workspace.fs.writeFile(uri, contentBuffer)
+      const msg = 'Edit history item deleted'
+      vscode.window.showInformationMessage(msg)
+      return msg
+  }`,
+        `async function deleteEditHistoryItem(
+      uri: vscode.Uri,
+      content: string,
+      timestamp?: string
+  ): Promise<string> {
+      // Remove the history item after reverting
+      historyStore.delete(uri.toString())
+
+      // Update the source control panel display
+      updateEditHistoryGroup()
+
+      const contentBuffer = new TextEncoder().encode(content)
+      await vscode.workspace.fs.writeFile(uri, contentBuffer)
+      return 'Reverted changes to ' + displayPath(uri)
+  }
+  `,
     ],
-    total: {
-        added: 6,
-        removed: 69,
-        modified: 98,
-    },
 }
 
 const meta: Meta<typeof DiffCell> = {
@@ -120,37 +91,33 @@ export const CustomClassName: Story = {
     },
 }
 
+export const ErrorState: Story = {
+    args: {
+        item: {
+            ...diffStoryMock,
+            status: UIToolStatus.Error,
+        },
+        defaultOpen: true,
+        onFileLinkClicked: uri => console.log('File link clicked:', uri.toString()),
+    },
+}
+
 export const LargeDiff: Story = {
     args: {
         item: {
+            ...diffStoryMock,
             type: 'tool-state',
             toolId: 'large-diff-mock',
             toolName: 'diff',
             outputType: 'file-diff',
             uri: URI.file('path/to/LargeComponent.tsx'),
             status: UIToolStatus.Done,
-            total: {
-                added: 42,
-                removed: 15,
-                modified: 108,
-            },
-            changes: [
-                { type: 'unchanged', content: '@@ -127,9 +127,9 @@', lineNumber: 127 },
-                ...Array(30)
-                    .fill(0)
-                    .map((_, i) => {
-                        const type: 'unchanged' | 'added' | 'removed' =
-                            i % 3 === 0 ? 'unchanged' : i % 3 === 1 ? 'added' : 'removed'
-                        return {
-                            type,
-                            content: `const line${i} = ${
-                                i % 3 === 1 ? '"new implementation"' : '"old implementation"'
-                            }`,
-                            lineNumber: 128 + i,
-                        }
-                    }),
+            metadata: [
+                // Multiple the content to simulate a large diff
+                diffStoryMock.metadata![0].repeat(20),
+                diffStoryMock.metadata![1].repeat(20),
             ],
-        } as DiffContextItemToolState,
+        } as ContextItemToolState,
         defaultOpen: true,
         onFileLinkClicked: uri => console.log('File link clicked:', uri.toString()),
     },

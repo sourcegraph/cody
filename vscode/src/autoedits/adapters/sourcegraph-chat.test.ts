@@ -51,7 +51,8 @@ describe('SourcegraphChatAdapter', () => {
 
         mockChatClient.chat = mockChat
 
-        await adapter.getModelResponse(options)
+        const generator = await adapter.getModelResponse(options)
+        await generator.next()
 
         // Extract just the first two arguments for verification
         const [messages, chatOptions] = mockChat.mock.calls[0]
@@ -99,6 +100,7 @@ describe('SourcegraphChatAdapter', () => {
         const mockChat = vi.fn().mockRejectedValue(error)
         mockChatClient.chat = mockChat
 
-        await expect(adapter.getModelResponse(options)).rejects.toThrow(error)
+        const generator = await adapter.getModelResponse(options)
+        await expect(generator.next()).rejects.toThrow(error)
     })
 })

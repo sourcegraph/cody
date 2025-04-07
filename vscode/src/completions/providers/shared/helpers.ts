@@ -95,7 +95,7 @@ export async function getAutocompleteProviderFromServerSideModelConfig({
 
     vi.spyOn(modelsService, 'modelsChanges', 'get').mockReturnValue(
         Observable.of({
-            primaryModels: mockedConfig.models.map(createModelFromServerModel),
+            primaryModels: mockedConfig.models.map(model => createModelFromServerModel(model, false)),
             localModels: [],
             preferences: {
                 defaults: defaultModelPreferencesFromServerModelsConfig(mockedConfig),

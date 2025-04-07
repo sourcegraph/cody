@@ -40,9 +40,9 @@ export class SearchHandler implements AgentHandler {
         const currentFile = getEditor()?.active?.document?.uri || workspaceRoot
         const repoName = currentFile ? await getFirstRepoNameContainingUri(currentFile) : undefined
 
-        const currentRepoBoost = repoName ? `boost:repo(${repoName})` : ''
+        const currentRepoBoost = repoName ? `repo:boost(${repoName})` : ''
         const myProjectsBoost = (await isValidVersion({ minimumVersion: '6.0.0' }))
-            ? 'boost:relevant.repos()'
+            ? 'repo:boost.relevant()'
             : ''
 
         const query = `content:"${escapeNLSQuery(

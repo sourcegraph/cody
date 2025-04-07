@@ -9,7 +9,7 @@ object AccountsMigration {
     codyAccountManager.getAccounts().forEach { oldAccount ->
       val token = codyAccountManager.getTokenForAccount(oldAccount)
       if (token != null) {
-        CodySecureStore.getInstance().writeToSecureStore(oldAccount.server.url, token)
+        CodySecureStore.writeToSecureStore(oldAccount.server.url, token)
       }
     }
   }

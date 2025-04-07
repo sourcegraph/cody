@@ -366,6 +366,13 @@ export class TestClient extends MessageHandler {
             this.taskDelete.fire(params)
         })
 
+        this.registerNotification('autocomplete/didHide', () => {
+            this.autocompleteHide.fire(null)
+        })
+        this.registerNotification('autocomplete/didTrigger', () => {
+            this.autocompleteTrigger.fire(null)
+        })
+
         this.registerNotification('webview/postMessage', params => {
             this.webviewMessages.push(params)
             this.webviewMessagesEmitter.fire(params)
@@ -655,6 +662,11 @@ export class TestClient extends MessageHandler {
     public onDidUpdateTask = this.taskUpdate.event
     public taskDelete = new vscode.EventEmitter<EditTask>()
     public onDidDeleteTask = this.taskDelete.event
+    public autocompleteHide = new vscode.EventEmitter()
+    public onDidHideAutocomplete = this.autocompleteHide.event
+    public autocompleteTrigger = new vscode.EventEmitter()
+    public onDidTriggerAutocomplete = this.autocompleteTrigger.event
+
     public webviewMessages: WebviewPostMessageParams[] = []
     public webviewMessagesEmitter = new vscode.EventEmitter<WebviewPostMessageParams>()
 

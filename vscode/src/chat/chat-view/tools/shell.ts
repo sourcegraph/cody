@@ -1,5 +1,10 @@
 import { spawn } from 'node:child_process'
-import { type UITerminalLine, UITerminalOutputType, UIToolStatus } from '@sourcegraph/cody-shared'
+import {
+    type UITerminalLine,
+    UITerminalOutputType,
+    UIToolStatus,
+    telemetryRecorder,
+} from '@sourcegraph/cody-shared'
 import {
     ContextItemSource,
     type ContextItemToolState,
@@ -37,7 +42,8 @@ class CommandError extends Error {
 export const shellTool: AgentTool = {
     spec: {
         name: 'run_terminal_command',
-        description: 'Run an arbitrary terminal command at the root of the users project.',
+        description:
+            'Run an arbitrary terminal command at the root of the users project. E.g. `ls -la` for listing files, or `find` for searching latest version of the codebase files locally.',
         input_schema: zodToolSchema(RunTerminalCommandSchema),
     },
     invoke: async (input: RunTerminalCommandInput) => {
@@ -49,6 +55,15 @@ export const shellTool: AgentTool = {
         }
 
         try {
+            telemetryRecorder.recordEvent('cody.runTerminalCommand', 'accepted', {
+                billingMetadata: {
+                    product: 'cody',
+                    category: 'billable',
+                },
+                privateMetadata: {
+                    input_args: JSON.stringify(validInput),
+                },
+            })
             const commandResult = await runShellCommand(validInput.command, {
                 cwd: workspaceFolder.uri.path,
             })
@@ -110,7 +125,7 @@ export async function runShellCommand(
     options: CommandOptions = {}
 ): Promise<CommandResult> {
     const { cwd = process.cwd(), env = process.env } = options
-    const timeout = 10_000
+    const timeout = 15_000
     const maxBuffer = 1024 * 1024 * 10
     const encoding = 'utf8'
 
@@ -192,7 +207,7 @@ function createShellToolState(
     error?: string
 ): ContextItemToolState {
     const toolId = `shell-${Date.now()}`
-    const status = error ? UIToolStatus.Error : sterr ? UIToolStatus.Info : UIToolStatus.Done
+    const status = error ? UIToolStatus.Error : sterr ? UIToolStatus.Error : UIToolStatus.Done
     let content = error ?? stdout
     if (sterr) {
         content += `<sterr>${sterr}</sterr>`
@@ -205,7 +220,7 @@ function createShellToolState(
         outputType,
         title: command,
         content,
-        description: 'Bash',
+        description: 'Terminal',
         icon: 'terminal',
         status,
         source: ContextItemSource.Agentic,

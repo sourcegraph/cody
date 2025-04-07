@@ -42,6 +42,7 @@ export class FireworksWebSocketAdapter implements AutoeditsModelAdapter {
     private ws: WebSocket | undefined
     private messageId = 0
     private callbackQueue: Record<string, MessageCallback> = {}
+    private pendingConnectPromise: Promise<WebSocket> | null = null
 
     constructor() {
         const webSocketEndpoint =
@@ -56,7 +57,9 @@ export class FireworksWebSocketAdapter implements AutoeditsModelAdapter {
     dispose() {
         if (this.ws) {
             this.ws.close()
+            this.ws = undefined
         }
+        this.pendingConnectPromise = null
     }
 
     async getModelResponse(option: AutoeditModelOptions): Promise<AsyncGenerator<ModelResponse>> {
@@ -168,7 +171,7 @@ export class FireworksWebSocketAdapter implements AutoeditsModelAdapter {
         }
 
         const messageId = 'm_' + this.messageId++
-        const messageQueue: WebSocketMessage[] = []
+        const messageQueue: (WebSocketMessage | Error)[] = []
         let queueResolver: (() => void) | null = null
 
         if (messageId in this.callbackQueue) {
@@ -178,19 +181,15 @@ export class FireworksWebSocketAdapter implements AutoeditsModelAdapter {
             )
         }
 
+        const pushToQueue = (message: WebSocketMessage | Error) => {
+            messageQueue.push(message)
+            queueResolver?.()
+            queueResolver = null
+        }
+
         this.callbackQueue[messageId] = {
-            resolve: message => {
-                messageQueue.push(message)
-                queueResolver?.()
-                queueResolver = null
-            },
-            reject: (error: Error) => {
-                autoeditsOutputChannelLogger.logError(LOG_FILTER_LABEL, 'WebSocket error', {
-                    verbose: error,
-                })
-                queueResolver?.()
-                queueResolver = null
-            },
+            resolve: pushToQueue,
+            reject: pushToQueue,
             signal: abortSignal,
         }
 
@@ -201,6 +200,11 @@ export class FireworksWebSocketAdapter implements AutoeditsModelAdapter {
             'x-message-headers': requestHeaders,
         })
 
+        if (abortSignal.aborted) {
+            delete this.callbackQueue[messageId]
+            throw new Error('abort signal received, message not sent')
+        }
+
         // Initiate the request
         this.ws?.send(data)
 
@@ -208,45 +212,6 @@ export class FireworksWebSocketAdapter implements AutoeditsModelAdapter {
             responseBody: {},
             prediction: '',
             done: false,
-        }
-        const processFireworksResponse = (message: WebSocketMessage): ModelResponse => {
-            if (!message.body) {
-                throw new Error('Processing WebSocket response: no body')
-            }
-            state.responseBody = message.body
-
-            if (state.responseBody.data === '[DONE]') {
-                // Notify the message loop to stop
-                state.done = true
-                return {
-                    type: 'success',
-                    stopReason: AutoeditStopReason.RequestFinished,
-                    prediction: state.prediction,
-                    responseHeaders: message.headers,
-                    responseBody: state.responseBody,
-                    requestHeaders,
-                    requestUrl: url,
-                }
-            }
-
-            try {
-                const predictionChunk = extractPrediction(state.responseBody.data) || ''
-                state.prediction += predictionChunk
-                return {
-                    type: 'partial',
-                    stopReason: AutoeditStopReason.StreamingChunk,
-                    prediction: state.prediction,
-                    requestHeaders,
-                    requestUrl: url,
-                }
-            } catch (parseError) {
-                autoeditsOutputChannelLogger.logError(
-                    LOG_FILTER_LABEL,
-                    `Failed to parse stream data: ${parseError}`,
-                    { verbose: body }
-                )
-                throw new Error(`Failed to parse stream data: ${parseError}`)
-            }
         }
 
         try {
@@ -260,7 +225,13 @@ export class FireworksWebSocketAdapter implements AutoeditsModelAdapter {
 
                 while (messageQueue.length > 0) {
                     const message = messageQueue.shift()!
-                    yield processFireworksResponse(message)
+                    if (message instanceof Error) {
+                        throw message
+                    }
+                    yield this.processFireworksResponse(message, state, extractPrediction, {
+                        requestHeaders,
+                        requestUrl: url,
+                    })
                 }
             }
         } finally {
@@ -268,13 +239,66 @@ export class FireworksWebSocketAdapter implements AutoeditsModelAdapter {
         }
     }
 
-    private async connect(): Promise<WebSocket> {
-        return new Promise((resolve, reject) => {
-            if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-                resolve(this.ws)
-                return
-            }
+    private processFireworksResponse(
+        message: WebSocketMessage,
+        state: Pick<SuccessModelResponse, 'responseBody' | 'prediction'> & { done: boolean },
+        extractPrediction: (body: FireworksResponse) => string,
+        requestParams: {
+            requestHeaders: Record<string, string>
+            requestUrl: string
+        }
+    ): ModelResponse {
+        if (!message.body) {
+            throw new Error('Processing WebSocket response: no body')
+        }
+        state.responseBody = message.body
 
+        if (state.responseBody.data === '[DONE]') {
+            // Notify the message loop to stop
+            state.done = true
+            return {
+                type: 'success',
+                stopReason: AutoeditStopReason.RequestFinished,
+                prediction: state.prediction,
+                responseHeaders: message.headers,
+                responseBody: state.responseBody,
+                requestHeaders: requestParams.requestHeaders,
+                requestUrl: requestParams.requestUrl,
+            }
+        }
+
+        try {
+            const predictionChunk = extractPrediction(state.responseBody.data) || ''
+            state.prediction += predictionChunk
+            return {
+                type: 'partial',
+                stopReason: AutoeditStopReason.StreamingChunk,
+                prediction: state.prediction,
+                requestHeaders: requestParams.requestHeaders,
+                requestUrl: requestParams.requestUrl,
+            }
+        } catch (parseError) {
+            autoeditsOutputChannelLogger.logError(
+                LOG_FILTER_LABEL,
+                `Failed to parse stream data: ${parseError}`,
+                { verbose: state.responseBody.data }
+            )
+            throw new Error(`Failed to parse stream data: ${parseError}`)
+        }
+    }
+
+    private async connect(): Promise<WebSocket> {
+        if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+            // Already an open connection, use this
+            return this.ws
+        }
+
+        if (this.pendingConnectPromise) {
+            // Reuse the pending connection to avoid creating multiple connections
+            return this.pendingConnectPromise
+        }
+
+        this.pendingConnectPromise = new Promise<WebSocket>((resolve, reject) => {
             const ws = new WebSocket(this.webSocketEndpoint)
             ws.addEventListener('open', () => {
                 autoeditsOutputChannelLogger.logDebug(
@@ -282,6 +306,7 @@ export class FireworksWebSocketAdapter implements AutoeditsModelAdapter {
                     `successfully connected to ${this.webSocketEndpoint}`
                 )
                 this.ws = ws
+                this.pendingConnectPromise = null
                 resolve(this.ws)
             })
             ws.addEventListener('error', (event: ErrorEvent) => {
@@ -293,6 +318,7 @@ export class FireworksWebSocketAdapter implements AutoeditsModelAdapter {
                     console.error(`error from ${this.webSocketEndpoint}: ${event.message}`)
                     console.error(event)
                 }
+                this.pendingConnectPromise = null
                 reject(event)
             })
             ws.addEventListener('close', (event: CloseEvent) => {
@@ -304,6 +330,7 @@ export class FireworksWebSocketAdapter implements AutoeditsModelAdapter {
                     console.error(`${this.webSocketEndpoint} connection closed`)
                     console.error(event)
                 }
+                this.pendingConnectPromise = null
                 setTimeout(() => this.reconnect(), SOCKET_RECONNECT_DELAY_MS)
             })
             ws.addEventListener('message', (event: MessageEvent) => {
@@ -341,11 +368,13 @@ export class FireworksWebSocketAdapter implements AutoeditsModelAdapter {
                 }
             })
         })
+
+        return this.pendingConnectPromise
     }
 
     private reconnect() {
-        ;(async () => {
-            await this.connect()
-        })()
+        this.ws = undefined
+        this.pendingConnectPromise = null
+        this.pendingConnectPromise = this.connect()
     }
 }
