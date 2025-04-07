@@ -64,7 +64,7 @@ export const siteVersion: Observable<SiteAndCodyAPIVersions | null | typeof pend
                     return Observable.of(null)
                 }
 
-                return promiseFactoryToObservable(signal => graphqlClient.getSiteVersion(signal)).pipe(
+                return promiseFactoryToObservable(signal => graphqlClient.getSiteVersion()).pipe(
                     map((siteVersion): SiteAndCodyAPIVersions | null => {
                         if (isError(siteVersion)) {
                             logError(
