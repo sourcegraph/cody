@@ -3,13 +3,14 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vites
 
 import { documentAndPosition } from '../completions/test-helpers'
 
-import type { SuccessModelResponse } from './adapters/base'
+import { AutoeditStopReason, type ModelResponse, type SuccessModelResponse } from './adapters/base'
 import { autoeditSource } from './analytics-logger'
 import { type AutoeditRequestManagerParams, RequestManager } from './request-manager'
 
-function createSuccessResponse(prediction: string): SuccessModelResponse {
+function createSuccessResponse(prediction: string): ModelResponse {
     return {
         type: 'success',
+        stopReason: AutoeditStopReason.RequestFinished,
         source: autoeditSource.network,
         prediction,
         requestUrl: 'https://test.com',
@@ -49,9 +50,9 @@ describe('Autoedits RequestManager', () => {
         const params = createRequestParams`function hello() {█`
         const prediction = '\n  console.log("Hello, world!");\n}'
 
-        const mockRequest = vi.fn().mockImplementation(async () => {
+        const mockRequest = vi.fn().mockImplementation(async function* () {
             await vi.advanceTimersByTimeAsync(100)
-            return createSuccessResponse(prediction)
+            yield createSuccessResponse(prediction)
         })
 
         const responsePromise = requestManager.request(params, mockRequest)

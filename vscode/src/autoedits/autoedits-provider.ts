@@ -19,7 +19,12 @@ import type { AutocompleteEditItem, AutoeditChanges } from '../jsonrpc/agent-pro
 import { isRunningInsideAgent } from '../jsonrpc/isRunningInsideAgent'
 import type { FixupController } from '../non-stop/FixupController'
 import type { CodyStatusBar } from '../services/StatusBar'
-import type { AutoeditsModelAdapter, AutoeditsPrompt, ModelResponse } from './adapters/base'
+import {
+    AutoeditStopReason,
+    type AutoeditsModelAdapter,
+    type AutoeditsPrompt,
+    type ModelResponse,
+} from './adapters/base'
 import { createAutoeditsModelAdapter } from './adapters/create-adapter'
 import {
     type AutoeditRequestID,
@@ -348,6 +353,11 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                 return null
             }
 
+            if (predictionResult.type === 'partial') {
+                // We ignore streamed responses right now
+                return null
+            }
+
             const initialPrediction = predictionResult.prediction
 
             autoeditAnalyticsLogger.markAsLoaded({
@@ -673,6 +683,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                 if (prediction) {
                     return {
                         type: 'success',
+                        stopReason: AutoeditStopReason.RequestFinished,
                         prediction,
                         responseHeaders: {},
                         responseBody: {},
@@ -691,15 +702,17 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
             abortSignal,
         }
 
-        return this.requestManager.request(requestParams, async signal => {
+        const userId = (await currentResolvedConfig()).clientState.anonymousUserID
+        return this.requestManager.request(requestParams, signal => {
             return this.modelAdapter.getModelResponse({
                 url: autoeditsProviderConfig.url,
                 model: autoeditsProviderConfig.model,
                 prompt,
                 codeToRewrite: codeToReplaceData.codeToRewrite,
-                userId: (await currentResolvedConfig()).clientState.anonymousUserID,
+                userId,
                 isChatModel: autoeditsProviderConfig.isChatModel,
                 abortSignal: signal,
+                timeoutMs: autoeditsProviderConfig.timeoutMs,
             })
         })
     }
