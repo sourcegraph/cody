@@ -22,7 +22,13 @@ import java.util.concurrent.CompletableFuture
 
 class SuggestAutoedit(private val isDotcom: Boolean) : Activity {
 
+  companion object {
+    val autoeditSetting = "cody.suggestions.mode" to "auto-edit (Beta)"
+  }
+
   override fun runActivity(project: Project) {
+    if (ConfigUtil.getSetting(project, autoeditSetting.first) == autoeditSetting.second) return
+
     CodyAgentService.withAgent(project) {
       val isProOrEnterpriseFuture =
           if (isDotcom) {
@@ -34,7 +40,7 @@ class SuggestAutoedit(private val isDotcom: Boolean) : Activity {
         it.server
             .featureFlags_getFeatureFlag(CodyAutoeditJetBrainsExperimentEnabledFeatureFlag)
             .thenAccept { featureFlag ->
-              if (featureFlag == true || true) {
+              if (featureFlag == true) {
                 SuggestAutoeditNotification(project).notify(project)
               }
             }
@@ -57,7 +63,7 @@ class SuggestAutoeditNotification(project: Project) :
     addAction(
         NotificationAction.createExpiring(
             CodyBundle.getString("AutoeditSuggestionNotification.configure")) { _, _ ->
-              ConfigUtil.addSettings(project, mapOf("cody.suggestions.mode" to "auto-edit (Beta)"))
+              ConfigUtil.addSettings(project, mapOf(SuggestAutoedit.autoeditSetting))
               ApplicationManager.getApplication().restart()
             })
 

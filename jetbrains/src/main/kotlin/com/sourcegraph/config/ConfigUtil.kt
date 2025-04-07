@@ -18,6 +18,7 @@ import com.sourcegraph.cody.auth.CodySecureStore
 import com.sourcegraph.cody.auth.SourcegraphServerPath
 import com.sourcegraph.cody.config.CodyApplicationSettings
 import com.typesafe.config.Config
+import com.typesafe.config.ConfigException
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigRenderOptions
 import com.typesafe.config.ConfigValueFactory
@@ -196,18 +197,21 @@ object ConfigUtil {
     }
   }
 
+  @JvmStatic
+  fun getSetting(project: Project, settingName: String): String? {
+    val text = getSettingsFileText(project)
+    return try {
+      ConfigFactory.parseString(text).resolve().getString(settingName)
+    } catch (e: ConfigException.Missing) {
+      null
+    }
+  }
+
   private fun deriveConfigAndFallbackConfig(
       project: Project,
       settings: Map<String, Any>
   ): Pair<Config, Config> {
-    val text =
-        try {
-          getSettingsFile(project).readText()
-        } catch (e: Exception) {
-          logger.info("No user defined settings file found. Proceeding with empty custom config")
-          ""
-        }
-
+    val text = getSettingsFileText(project)
     val oldConfigEntrySet = ConfigFactory.parseString(text).resolve().root().entries
     val globalConfig = ConfigFactory.parseString(GlobalCodySettings.getConfigJson()).resolve()
     var config = ConfigFactory.empty()
@@ -216,6 +220,14 @@ object ConfigUtil {
     }
     return Pair(config, globalConfig)
   }
+
+  private fun getSettingsFileText(project: Project) =
+      try {
+        getSettingsFile(project).readText()
+      } catch (e: Exception) {
+        logger.info("No user defined settings file found. Proceeding with empty custom config")
+        ""
+      }
 
   @JvmStatic
   @Contract(pure = true)
