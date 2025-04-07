@@ -752,8 +752,7 @@ export class SourcegraphGraphQLAPIClient {
         return this.siteVersionCache.get(signal, signal =>
             this.fetchSourcegraphAPI<APIResponse<SiteVersionResponse>>(
                 CURRENT_SITE_VERSION_QUERY,
-                {},
-                signal
+                {}
             ).then(response =>
                 extractDataOrError(
                     response,
