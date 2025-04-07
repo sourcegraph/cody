@@ -8,7 +8,7 @@ import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.project.Project
 import com.sourcegraph.Icons
 import com.sourcegraph.cody.agent.CodyAgentService
-import com.sourcegraph.cody.agent.protocol.GetFeatureFlag.CodyAutoeditExperimentEnabledFeatureFlag
+import com.sourcegraph.cody.agent.protocol.GetFeatureFlag.CodyAutoeditJetBrainsExperimentEnabledFeatureFlag
 import com.sourcegraph.common.CodyBundle
 import com.sourcegraph.common.NotificationGroups
 import java.util.concurrent.CompletableFuture
@@ -22,8 +22,9 @@ class SuggestAutoedit(val isDotcom: Boolean) : Activity {
             it.server.graphql_currentUserIsPro(null)
           } else CompletableFuture.completedFuture(true)
 
-      it.server.featureFlags_getFeatureFlag(CodyAutoeditExperimentEnabledFeatureFlag).thenCombine(
-          isProOrEnterpriseFuture) { featureFlag, isProOrEnterprise ->
+      it.server
+          .featureFlags_getFeatureFlag(CodyAutoeditJetBrainsExperimentEnabledFeatureFlag)
+          .thenCombine(isProOrEnterpriseFuture) { featureFlag, isProOrEnterprise ->
             if (isProOrEnterprise && featureFlag == true) {
               SuggestAutoeditNotification().notify(project)
             }
