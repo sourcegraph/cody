@@ -16,7 +16,7 @@ import {
 import { getVSCodeAPI } from '../utils/VSCodeApi'
 import { View } from './types'
 
-import { type AuthenticatedAuthStatus, CodyIDE, isDefined, FeatureFlag } from '@sourcegraph/cody-shared'
+import { type AuthenticatedAuthStatus, CodyIDE, FeatureFlag, isDefined } from '@sourcegraph/cody-shared'
 import { type FC, Fragment, forwardRef, memo, useCallback, useMemo, useState } from 'react'
 import { Tooltip, TooltipContent, TooltipTrigger } from '../components/shadcn/ui/tooltip'
 import { useConfig } from '../utils/useConfig'
@@ -417,12 +417,14 @@ function useTabs(input: Pick<TabsBarProps, 'user'>): TabConfig[] {
                         Icon: BookTextIcon,
                         changesView: true,
                     },
-                    isMcpEnabled ? {
-                        view: View.Settings,
-                        title: 'Settings',
-                        Icon: Settings2Icon,
-                        changesView: true,
-                    } : null,
+                    isMcpEnabled
+                        ? {
+                              view: View.Settings,
+                              title: 'Settings',
+                              Icon: Settings2Icon,
+                              changesView: true,
+                          }
+                        : null,
                 ] as (TabConfig | null)[]
             ).filter(isDefined),
         [IDE, extensionAPI, isMcpEnabled]
