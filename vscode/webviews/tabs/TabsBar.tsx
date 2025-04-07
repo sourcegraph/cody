@@ -16,10 +16,11 @@ import {
 import { getVSCodeAPI } from '../utils/VSCodeApi'
 import { View } from './types'
 
-import { type AuthenticatedAuthStatus, CodyIDE, isDefined } from '@sourcegraph/cody-shared'
+import { type AuthenticatedAuthStatus, CodyIDE, isDefined, FeatureFlag } from '@sourcegraph/cody-shared'
 import { type FC, Fragment, forwardRef, memo, useCallback, useMemo, useState } from 'react'
 import { Tooltip, TooltipContent, TooltipTrigger } from '../components/shadcn/ui/tooltip'
 import { useConfig } from '../utils/useConfig'
+import { useFeatureFlag } from '../utils/useFeatureFlags'
 
 import { useExtensionAPI } from '@sourcegraph/prompt-editor'
 import { isEqual } from 'lodash'
@@ -360,7 +361,7 @@ TabButton.displayName = 'TabButton'
  */
 function useTabs(input: Pick<TabsBarProps, 'user'>): TabConfig[] {
     const IDE = input.user.IDE
-
+    const isMcpEnabled = useFeatureFlag(FeatureFlag.NextAgenticChatInternal)
     const extensionAPI = useExtensionAPI<'userHistory'>()
 
     return useMemo<TabConfig[]>(
@@ -416,14 +417,14 @@ function useTabs(input: Pick<TabsBarProps, 'user'>): TabConfig[] {
                         Icon: BookTextIcon,
                         changesView: true,
                     },
-                    {
+                    isMcpEnabled ? {
                         view: View.Settings,
                         title: 'Settings',
                         Icon: Settings2Icon,
                         changesView: true,
-                    },
+                    } : null,
                 ] as (TabConfig | null)[]
             ).filter(isDefined),
-        [IDE, extensionAPI]
+        [IDE, extensionAPI, isMcpEnabled]
     )
 }
