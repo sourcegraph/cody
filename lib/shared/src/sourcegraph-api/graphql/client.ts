@@ -1132,7 +1132,7 @@ export class SourcegraphGraphQLAPIClient {
         { minimumVersion, insider = true }: { minimumVersion: string; insider?: boolean },
         signal?: AbortSignal
     ): Promise<boolean> {
-        const version = await this.getSiteVersion()
+        const version = await this.getSiteVersion(signal)
         if (isError(version)) {
             return false
         }
