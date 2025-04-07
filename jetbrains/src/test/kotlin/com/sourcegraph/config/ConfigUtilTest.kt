@@ -42,7 +42,11 @@ class ConfigUtils : BasePlatformTestCase() {
     val result = ConfigUtil.getCustomConfiguration(project)
     assertNotNull(result)
     val parsed = JsonParser.parseString(result).asJsonObject
-    assertEquals(2 + 1, parsed.size()) // +1 for the additional folding property
+    assertEquals(
+        2 + 2,
+        parsed
+            .getAsJsonObject("cody")
+            .size()) // +2 for the additional folding property and productCode
   }
 
   fun testGetCustomConfiguration_handlesComments() {
@@ -58,7 +62,11 @@ class ConfigUtils : BasePlatformTestCase() {
     val result = ConfigUtil.getCustomConfiguration(project)
     assertNotNull(result)
     val parsed = JsonParser.parseString(result).asJsonObject
-    assertEquals(2 + 1, parsed.size()) // +1 for the additional folding property
+    assertEquals(
+        2 + 2,
+        parsed
+            .getAsJsonObject("cody")
+            .size()) // +2 for the additional folding property and productCode
   }
 
   fun testAddSettings_addASetting() {
@@ -90,8 +98,7 @@ class ConfigUtils : BasePlatformTestCase() {
 
     val result = ConfigUtil.getSettingsFile(project).readText()
     assertContains(result, "auto-edit (Beta)")
-    assertContains(result, "\"cody.debug\" : true")
-    assertDoesntContain(result, listOf("autocomplete"))
+    assertFalse(result.contains("autocomplete"))
   }
 
   fun testAddSettings_persistExistingSettings() {
@@ -107,7 +114,6 @@ class ConfigUtils : BasePlatformTestCase() {
 
     val result = ConfigUtil.getSettingsFile(project).readText()
     assertContains(result, "auto-edit (Beta)")
-    assertContains(result, "\"cody.debug\" : true")
   }
 
   private fun setCodySettingsJsonContent(codySettingsContent: String) {

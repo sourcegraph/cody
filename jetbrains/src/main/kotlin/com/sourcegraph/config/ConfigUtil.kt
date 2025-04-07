@@ -208,9 +208,10 @@ object ConfigUtil {
           ""
         }
 
-    var config = ConfigFactory.parseString(text).resolve()
+    val oldConfigEntrySet = ConfigFactory.parseString(text).resolve().root().entries
     val globalConfig = ConfigFactory.parseString(GlobalCodySettings.getConfigJson()).resolve()
-    settings.forEach { (key, value) ->
+    var config = ConfigFactory.empty()
+    oldConfigEntrySet.plus(settings.entries).forEach { (key, value) ->
       config = config.withValue(key, ConfigValueFactory.fromAnyRef(value))
     }
     return Pair(config, globalConfig)
