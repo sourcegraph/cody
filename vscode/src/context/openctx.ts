@@ -120,12 +120,9 @@ export function getOpenCtxProviders(
             switchMap(authenticated =>
                 authenticated
                     ? promiseFactoryToObservable(signal =>
-                          graphqlClient.isValidSiteVersion(
-                              {
-                                  minimumVersion: '5.7.0',
-                              },
-                              signal
-                          )
+                          graphqlClient.isValidSiteVersion({
+                              minimumVersion: '5.7.0',
+                          })
                       )
                     : Observable.of(false)
             )

@@ -29,10 +29,7 @@ suite('Chat', function () {
     this.beforeEach(() => beforeIntegrationTest())
     this.afterEach(() => afterIntegrationTest())
 
-    // TODO: This test is flaky and occasionally throws an uncaught AbortError.
-    // Example failure: https://github.com/sourcegraph/cody/actions/runs/14273152078/job/40010754961#step:11:108
-    // Issue to fix: https://github.com/sourcegraph/cody/issues/7673
-    test.skip('sends and receives a message', async () => {
+    test('sends and receives a message', async () => {
         await vscode.commands.executeCommand('cody.chat.newEditorPanel')
         const chatView = await getChatViewProvider()
         await chatView.handleUserMessage({
