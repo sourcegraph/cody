@@ -101,6 +101,7 @@ describe('server sent models', async () => {
             chat: serverOpus.modelRef,
             fastChat: serverTitan.modelRef,
             codeCompletion: serverClaude.modelRef,
+            unlimitedChat: serverOpus.modelRef,
         },
     }
 
@@ -268,6 +269,7 @@ describe('syncModels', () => {
                         chat: 'qux::a::a',
                         fastChat: 'qux::a::a',
                         codeCompletion: 'qux::a::a',
+                        unlimitedChat: 'qux::a::a',
                     },
                     providers: [],
                     revision: '',
@@ -332,6 +334,7 @@ describe('syncModels', () => {
                         chat: 'zzz::a::a',
                         fastChat: 'zzz::a::a',
                         codeCompletion: 'zzz::a::a',
+                        unlimitedChat: 'zzz::a::a',
                     },
                     providers: [],
                     revision: '',
@@ -416,6 +419,7 @@ describe('syncModels', () => {
                 chat: serverSonnet.modelRef,
                 fastChat: serverSonnet.modelRef,
                 codeCompletion: serverSonnet.modelRef,
+                unlimitedChat: serverSonnet.modelRef,
             },
         }
 
@@ -489,6 +493,7 @@ describe('syncModels', () => {
                 chat: serverSonnet.modelRef,
                 fastChat: serverSonnet.modelRef,
                 codeCompletion: serverSonnet.modelRef,
+                unlimitedChat: serverSonnet.modelRef,
             },
         }
         const mockFetchServerSideModels = vi.fn(() => Promise.resolve(SERVER_MODELS))

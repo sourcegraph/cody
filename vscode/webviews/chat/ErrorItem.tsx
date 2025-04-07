@@ -1,6 +1,6 @@
-import { FeatureFlag, featureFlagProvider } from '@sourcegraph/cody-shared'
-import { type ChatError, RateLimitError } from '@sourcegraph/cody-shared'
 import React, { useCallback, useMemo } from 'react'
+
+import { type ChatError, RateLimitError } from '@sourcegraph/cody-shared'
 import { Tooltip, TooltipContent, TooltipTrigger } from '../components/shadcn/ui/tooltip'
 import type {
     HumanMessageInitialContextInfo as InitialContextInfo,
@@ -137,28 +137,13 @@ const RateLimitErrorItem: React.FunctionComponent<{
         },
         [postMessage, tier, telemetryRecorder]
     )
-    let ctaText = canUpgrade ? 'Upgrade to Cody Pro' : 'Unable to Send Message'
-    React.useEffect(() => {
-        const subscription = featureFlagProvider
-            .evaluateFeatureFlag(FeatureFlag.FallbackToFlash)
-            .subscribe(enabled => {
-                if (enabled) {
-                    ctaText = userInfo?.isCodyProUser
-                        ? 'Upgrade to Cody Enterprise'
-                        : !canUpgrade
-                          ? 'Usage limit of premium models reached, switching the model to Gemini Flash.'
-                          : 'Upgrade to Cody Pro'
-                }
-            })
-        return () => subscription.unsubscribe()
-    }, [userInfo, canUpgrade, ctaText])
 
     return (
         <div className={styles.errorItem}>
             {canUpgrade && <div className={styles.icon}>⚡️</div>}
             <div className={styles.body}>
                 <header>
-                    <h1>{ctaText}</h1>
+                    <h1>{canUpgrade ? 'Upgrade to Cody Pro' : 'Unable to Send Message'}</h1>
                     <p>
                         {error.userMessage}
                         {canUpgrade &&

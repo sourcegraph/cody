@@ -195,7 +195,8 @@ export function syncModels({
                                             FeatureFlag.EnhancedContextWindow
                                         ),
                                         featureFlagProvider.evaluateFeatureFlag(
-                                            FeatureFlag.FallbackToFlash
+                                            FeatureFlag.FallbackToFlash,
+                                            true
                                         )
                                     ).pipe(
                                         switchMap(
@@ -355,54 +356,88 @@ export function syncModels({
                                                     !isFreeUser(authStatus, userProductSubscription)
                                                 ) {
                                                     if (authStatus.rateLimited) {
-                                                        // Disable all the non-fast models
+                                                        // Disable all the models
+
+                                                        // Check if there are any unlimited models
+                                                        const hasUnlimitedModels =
+                                                            data.primaryModels.some(model =>
+                                                                model.tags.includes(ModelTag.Unlimited)
+                                                            )
+
                                                         data.primaryModels = data.primaryModels.map(
                                                             model => {
-                                                                if (
-                                                                    !model.tags.includes(ModelTag.Speed)
-                                                                ) {
-                                                                    return { ...model, disabled: true }
+                                                                if (hasUnlimitedModels) {
+                                                                    // If we have unlimited models, disable everything else
+                                                                    if (
+                                                                        !model.tags.includes(
+                                                                            ModelTag.Unlimited
+                                                                        )
+                                                                    ) {
+                                                                        return {
+                                                                            ...model,
+                                                                            disabled: true,
+                                                                        }
+                                                                    }
+                                                                } else {
+                                                                    // If no unlimited models, disable everything except speed
+                                                                    if (
+                                                                        !model.tags.includes(
+                                                                            ModelTag.Speed
+                                                                        )
+                                                                    ) {
+                                                                        return {
+                                                                            ...model,
+                                                                            disabled: true,
+                                                                        }
+                                                                    }
                                                                 }
                                                                 return model
                                                             }
                                                         )
 
-                                                        // Set Gemini Flash as the selected model
-                                                        const modelToFallback =
-                                                            'google::v1::gemini-2.0-flash'
+                                                        if (data.preferences) {
+                                                            // Set Gemini Flash as the selected model
+                                                            // 'google::v1::gemini-2.0-flash'
+                                                            const modelToFallback =
+                                                                data.preferences.defaults
+                                                                    .unlimitedChat ||
+                                                                'google::v1::gemini-2.0-flash'
 
-                                                        // Try to use Gemini Flash first, if not available fallback to any fast model
-                                                        let defaultModel = data.primaryModels.find(
-                                                            model => model.id === modelToFallback
-                                                        )
-                                                        if (!defaultModel) {
-                                                            defaultModel = data.primaryModels.find(
-                                                                model =>
-                                                                    model.tags.includes(ModelTag.Speed)
+                                                            // Try to use Gemini Flash first, if not available fallback to any fast model
+                                                            let defaultModel = data.primaryModels.find(
+                                                                model => model.id === modelToFallback
                                                             )
-                                                        }
+                                                            if (!defaultModel) {
+                                                                defaultModel = data.primaryModels.find(
+                                                                    model =>
+                                                                        model.tags.includes(
+                                                                            ModelTag.Speed
+                                                                        )
+                                                                )
+                                                            }
 
-                                                        // Set the default model
-                                                        if (defaultModel && data.preferences) {
-                                                            rateLimitState.chatModel =
-                                                                data.preferences.defaults.chat || ''
-                                                            rateLimitState.editModel =
-                                                                data.preferences.defaults.edit || ''
+                                                            // Set the default model
+                                                            if (defaultModel) {
+                                                                rateLimitState.chatModel =
+                                                                    data.preferences.defaults.chat || ''
+                                                                rateLimitState.editModel =
+                                                                    data.preferences.defaults.edit || ''
 
-                                                            data.preferences.defaults.chat =
-                                                                defaultModel.id
-                                                            data.preferences.defaults.edit =
-                                                                defaultModel.id
+                                                                data.preferences.defaults.chat =
+                                                                    defaultModel.id
+                                                                data.preferences.defaults.edit =
+                                                                    defaultModel.id
 
-                                                            telemetryRecorder.recordEvent(
-                                                                'cody.rateLimit',
-                                                                'hit',
-                                                                {
-                                                                    privateMetadata: {
-                                                                        chatModel: defaultModel.id,
-                                                                    },
-                                                                }
-                                                            )
+                                                                telemetryRecorder.recordEvent(
+                                                                    'cody.rateLimit',
+                                                                    'hit',
+                                                                    {
+                                                                        privateMetadata: {
+                                                                            chatModel: defaultModel.id,
+                                                                        },
+                                                                    }
+                                                                )
+                                                            }
                                                         }
                                                     } else {
                                                         // Re-enable all models
@@ -713,6 +748,7 @@ export function defaultModelPreferencesFromServerModelsConfig(
         autocomplete: config.defaultModels.codeCompletion,
         chat: config.defaultModels.chat,
         edit: config.defaultModels.chat,
+        unlimitedChat: config.defaultModels.unlimitedChat,
     }
 }
 

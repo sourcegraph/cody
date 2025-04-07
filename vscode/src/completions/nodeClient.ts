@@ -161,8 +161,7 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                                 e.message,
                                 upgradeIsAvailable,
                                 limit ? Number.parseInt(limit, 10) : undefined,
-                                retryAfter,
-                                false // Set fallbackToFlash to false initially
+                                retryAfter
                             )
 
                             // Check feature flag and handle rate limit error if enabled
@@ -374,8 +373,7 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                                     await response.text(),
                                     upgradeIsAvailable,
                                     limit ? Number.parseInt(limit, 10) : undefined,
-                                    retryAfter,
-                                    fallbackToFlash
+                                    retryAfter
                                 )
                                 handleRateLimitError(error)
                                 throw error

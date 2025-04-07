@@ -180,6 +180,7 @@ interface DefaultModels {
     chat: ModelRefStr
     fastChat: ModelRefStr
     codeCompletion: ModelRefStr
+    unlimitedChat: ModelRefStr
 }
 
 // TODO(PRIME-323): Do a proper review of the data model we will use to describe
