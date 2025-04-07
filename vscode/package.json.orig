@@ -1068,23 +1068,11 @@
           "enum": ["all", "off", "agent"],
           "enumDescriptions": [
             "Send all telemetry events",
-            "Donu0027t send any telemetry events",
+            "Don't send any telemetry events",
             "Only send telemetry events from the agent"
           ],
           "default": "all",
           "description": "Controls the level of telemetry events sent to Sourcegraph."
-        },
-        "cody.braintrustApiKey": {
-          "order": 3,
-          "type": "string",
-          "description": "API key for Braintrust logging. If provided, telemetry events will also be sent to Braintrust."
-        },
-        "cody.braintrustProjectName": {
-          "order": 4,
-          "type": "string",
-          "default": "Cody",
-          "description": "Project name for Braintrust logging. Only used if braintrustApiKey is provided."
-        },
         },
         "cody.braintrustApiKey": {
           "order": 3,

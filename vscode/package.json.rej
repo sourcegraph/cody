@@ -1,0 +1,37 @@
+--- package.json.orig	2025-04-04 02:35:00.000000000 +0000
++++ package.json	2025-04-04 02:35:00.000000000 +0000
+@@ -1063,15 +1063,27 @@
+           "markdownDescription": "Regular expression to filter debug output. If empty, defaults to '.*', which prints all messages."
+         },
+         "cody.telemetry.level": {
+-          "order": 99,
+-          "type": "string",
+-          "enum": ["all", "off"],
++          "order": 2,
++          "type": "string", 
++          "enum": ["all", "off", "agent"],
+           "enumDescriptions": [
+-            "Sends usage data and errors.",
+-            "[Enterprise-only] Disables all extension telemetry."
++            "Send all telemetry events",
++            "Don't send any telemetry events",
++            "Only send telemetry events from the agent"
+           ],
+-          "markdownDescription": "Controls the telemetry about Cody usage and errors for users connected to Enterprise instances. This setting only takes effect for Sourcegraph Enterprise users. For users connected to sourcegraph.com, this option is always enabled. See [Cody usage and privacy notice](https://about.sourcegraph.com/terms/cody-notice).",
+-          "default": "all"
++          "default": "all",
++          "description": "Controls the level of telemetry events sent to Sourcegraph."
++        },
++        "cody.braintrustApiKey": {
++          "order": 3,
++          "type": "string",
++          "description": "API key for Braintrust logging. If provided, telemetry events will also be sent to Braintrust."
++        },
++        "cody.braintrustProjectName": {
++          "order": 4,
++          "type": "string",
++          "default": "Cody",
++          "description": "Project name for Braintrust logging. Only used if braintrustApiKey is provided."
+         },
+         "cody.autocomplete.advanced.provider": {
+           "type": "string",
