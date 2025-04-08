@@ -111,8 +111,11 @@ export async function* processHotStreakResponses(
                 maxSuffixLength: docContext.maxSuffixLength,
             })
 
+            // TODO: `codeToReplaceData` is not fully accurate.
+            // This is because it relies on `document.getText` for determining prefixes/suffixes
+            // `getText` runs on the active document, it does not support a virtual document that we can amend
             const adjustedCodeToReplace = getCodeToReplaceData({
-                docContext,
+                docContext: updatedDocContext,
                 document,
                 position: predictionChunkRange.start,
                 tokenBudget: {

@@ -213,10 +213,8 @@ export class RequestManager implements vscode.Disposable {
 
             // Check that the rewrite area is still present in the document
             // This is a good indicator that the item is still valid
-            const rewriteArea =
-                item.codeToReplaceData.prefixInArea +
-                item.codeToReplaceData.codeToRewrite +
-                item.codeToReplaceData.suffixInArea
+            // TODO: It would be preferable to use `codeToReplaceData` here.
+            const rewriteArea = item.docContext.prefix + '\n' + item.docContext.suffix
 
             if (documentText.includes(rewriteArea)) {
                 matchingItems.push(item)

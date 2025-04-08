@@ -396,6 +396,7 @@ export class AutoEditsDefaultRendererManager
             }
 
             editor.selection = new vscode.Selection(nextCursorPosition, nextCursorPosition)
+            editor.revealRange(editor.selection)
         }
     }
 
