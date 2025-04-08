@@ -56,6 +56,7 @@ export enum FeatureFlag {
     CodyAutocompleteContextExperimentVariant4 = 'cody-autocomplete-context-experiment-variant-4',
     CodyAutocompleteContextExperimentControl = 'cody-autocomplete-context-experiment-control',
 
+    CodySmartApplyInstantModeEnabled = 'cody-smart-apply-instant-mode-enabled',
     CodySmartApplyExperimentEnabledFeatureFlag = 'cody-smart-apply-experiment-enabled-flag',
     CodySmartApplyExperimentVariant1 = 'cody-smart-apply-experiment-variant-1',
     CodySmartApplyExperimentVariant2 = 'cody-smart-apply-experiment-variant-2',
