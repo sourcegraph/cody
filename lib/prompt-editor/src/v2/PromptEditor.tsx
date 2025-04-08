@@ -6,7 +6,6 @@ import {
     FILE_RANGE_TOOLTIP_LABEL,
     NO_SYMBOL_MATCHES_HELP_LABEL,
     REMOTE_DIRECTORY_PROVIDER_URI,
-    REMOTE_FILE_PROVIDER_URI,
     SYMBOL_CONTEXT_MENTION_PROVIDER,
     type SerializedContextItem,
     type SerializedPromptEditorState,
@@ -95,10 +94,6 @@ interface PromptEditorRefAPI {
 
 const SUGGESTION_LIST_LENGTH_LIMIT = 20
 
-// These providers are hidden from the UI but still needed for functionality
-// like remote file and directoryaccess
-const hiddenProviders = [REMOTE_FILE_PROVIDER_URI, REMOTE_DIRECTORY_PROVIDER_URI]
-
 /**
  * The component for composing and editing prompts.
  */
@@ -166,15 +161,9 @@ export const PromptEditor: FunctionComponent<Props> = ({
                         return items
                     }
 
-                    // Filter out any hidden context providers
-                    const providers = menuData.providers.filter(
-                        (provider: ContextMentionProviderMetadata) =>
-                            !hiddenProviders.includes(provider.id)
-                    )
-
                     // With a query, show only matching items
                     if (query) {
-                        return [...filteredInitialContextItems, ...providers, ...items]
+                        return [...filteredInitialContextItems, ...menuData.providers, ...items]
                     }
 
                     // Filter out any frequently used items that are already in filteredInitialContextItems
@@ -192,7 +181,7 @@ export const PromptEditor: FunctionComponent<Props> = ({
                     return [
                         ...filteredInitialContextItems,
                         ...uniqueFrequentlyUsedItems,
-                        ...providers,
+                        ...menuData.providers,
                         ...items,
                     ]
                 })
