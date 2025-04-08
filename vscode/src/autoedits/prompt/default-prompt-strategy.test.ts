@@ -12,7 +12,7 @@ import { documentAndPosition } from '../../completions/test-helpers'
 
 import type { UserPromptArgs } from './base'
 import { DefaultUserPromptStrategy } from './default-prompt-strategy'
-import { getCodeToReplace } from './prompt-utils'
+import { getCodeToReplaceData } from './prompt-utils'
 
 describe('DefaultUserPromptStrategy', () => {
     const promptProvider = new DefaultUserPromptStrategy()
@@ -64,7 +64,7 @@ describe('DefaultUserPromptStrategy', () => {
             },
         }
 
-        const codeToReplace = getCodeToReplace({
+        const codeToReplaceData = getCodeToReplaceData({
             docContext,
             document,
             position,
@@ -178,7 +178,7 @@ describe('DefaultUserPromptStrategy', () => {
 
         return {
             context,
-            codeToReplaceData: codeToReplace.data,
+            codeToReplaceData,
             document,
             tokenBudget,
         }

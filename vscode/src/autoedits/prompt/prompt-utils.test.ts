@@ -10,7 +10,7 @@ import { getCurrentDocContext } from '../../completions/get-current-doc-context'
 import { documentAndPosition, mockNotebookAndPosition } from '../../completions/test-helpers'
 import {
     type CurrentFilePromptOptions,
-    getCodeToReplace,
+    getCodeToReplaceData,
     getCompletionsPromptWithSystemPrompt,
     getContextItemsInTokenBudget,
     getContextPromptWithPath,
@@ -78,7 +78,7 @@ describe('getCurrentFilePromptComponents', () => {
             maxSuffixLength,
         })
 
-        const codeToReplace = getCodeToReplace({
+        const codeToReplaceData = getCodeToReplaceData({
             docContext,
             position,
             document,
@@ -92,7 +92,7 @@ describe('getCurrentFilePromptComponents', () => {
 
         const result = getCurrentFilePromptComponents({
             document,
-            codeToReplaceDataRaw: codeToReplace.data,
+            codeToReplaceDataRaw: codeToReplaceData,
         })
         expect(result.fileWithMarkerPrompt.toString()).toBe(dedent`
             (\`test.ts\`)
@@ -145,7 +145,7 @@ describe('getCurrentFilePromptComponents', () => {
             maxSuffixLength: 30,
         })
 
-        const codeToReplace = getCodeToReplace({
+        const codeToReplaceData = getCodeToReplaceData({
             docContext,
             position,
             document,
@@ -159,7 +159,7 @@ describe('getCurrentFilePromptComponents', () => {
 
         const result = getCurrentFilePromptComponents({
             document,
-            codeToReplaceDataRaw: codeToReplace.data,
+            codeToReplaceDataRaw: codeToReplaceData,
         })
         expect(result.fileWithMarkerPrompt.toString()).toBe(dedent`
             (\`test.ts\`)
@@ -233,7 +233,7 @@ describe('getCodeToReplaceData', () => {
             },
         }
 
-        const result = getCodeToReplace(options).data
+        const result = getCodeToReplaceData(options)
 
         // Verify the results
         expect(result.codeToRewrite).toBe('console.log("cell1 code")')
@@ -293,7 +293,7 @@ describe('getCodeToReplaceData', () => {
             },
         }
 
-        const result = getCodeToReplace(options).data
+        const result = getCodeToReplaceData(options)
 
         // Verify the results
         expect(result.codeToRewrite).toBe('console.log("cell1 code")')
@@ -327,7 +327,7 @@ describe('getCodeToReplaceData', () => {
             },
         }
 
-        const result = getCodeToReplace(options).data
+        const result = getCodeToReplaceData(options)
 
         // Verify the results
         expect(result.codeToRewrite).toBe('line2\nline3line4\nline5\n')
@@ -363,7 +363,7 @@ describe('getCodeToReplaceData', () => {
             },
         }
 
-        const result = getCodeToReplace(options).data
+        const result = getCodeToReplaceData(options)
 
         expect(result.codeToRewritePrefix).toBe('line2\n')
         expect(result.codeToRewriteSuffix).toBe('line3\nline4\n')
@@ -395,7 +395,7 @@ describe('getCodeToReplaceData', () => {
             },
         }
 
-        const result = getCodeToReplace(options).data
+        const result = getCodeToReplaceData(options)
 
         expect(result.codeToRewrite).toBe('const foo = bar')
         expect(result.codeToRewritePrefix).toBe('const foo = ')
@@ -428,7 +428,7 @@ describe('getCodeToReplaceData', () => {
             },
         }
 
-        const result = getCodeToReplace(options).data
+        const result = getCodeToReplaceData(options)
 
         expect(result.codeToRewrite).toBe('line1\nline2\n')
         expect(result.codeToRewritePrefix).toBe('')
@@ -461,7 +461,7 @@ describe('getCodeToReplaceData', () => {
             },
         }
 
-        const result = getCodeToReplace(options).data
+        const result = getCodeToReplaceData(options)
 
         expect(result.codeToRewrite).toBe('line2\nline3')
         expect(result.codeToRewritePrefix).toBe('line2\nline3')
@@ -496,7 +496,7 @@ describe('getCodeToReplaceData', () => {
             },
         }
 
-        const result = getCodeToReplace(options).data
+        const result = getCodeToReplaceData(options)
 
         expect(result.codeToRewrite).toBe('line3\nline4\nline5\nline6\nline7')
         expect(result.codeToRewritePrefix).toBe('line3\nline4\nline5\n')
@@ -534,7 +534,7 @@ describe('getCodeToReplaceData', () => {
             },
         }
 
-        const result = getCodeToReplace(options).data
+        const result = getCodeToReplaceData(options)
 
         // Verify truncation behavior
         expect(result.prefixBeforeArea).toBe('')
@@ -573,7 +573,7 @@ describe('getCodeToReplaceData', () => {
             },
         }
 
-        const result = getCodeToReplace(options).data
+        const result = getCodeToReplaceData(options)
 
         // Verify truncation behavior
         expect(result.prefixBeforeArea).toBe('')
@@ -607,7 +607,7 @@ describe('getCodeToReplaceData', () => {
             },
         }
 
-        const result = getCodeToReplace(options).data
+        const result = getCodeToReplaceData(options)
 
         expect(result.codeToRewrite).toBe('line1\nline2\nline3\n')
         expect(result.codeToRewritePrefix).toBe('line1\n')

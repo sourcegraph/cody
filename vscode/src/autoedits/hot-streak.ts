@@ -4,12 +4,7 @@ import * as uui from 'uuid'
 import * as vscode from 'vscode'
 
 import { getDocContextAfterRewrite } from '../completions/get-current-doc-context'
-import {
-    AutoeditStopReason,
-    type ModelResponse,
-    type PartialModelResponse,
-    type SuccessModelResponse,
-} from './adapters/base'
+import { AutoeditStopReason, type ModelResponse } from './adapters/base'
 import type { AutoeditHotStreakID } from './analytics-logger'
 import { autoeditsProviderConfig } from './autoedits-config'
 import {
@@ -17,7 +12,7 @@ import {
     type SuggestedPredictionResult,
     getDecorationInfoFromPrediction,
 } from './autoedits-provider'
-import { getCodeToReplace } from './prompt/prompt-utils'
+import { getCodeToReplaceData } from './prompt/prompt-utils'
 import { getDiffChangeBoundaries } from './renderer/diff-utils'
 
 /**
@@ -26,18 +21,6 @@ import { getDiffChangeBoundaries } from './renderer/diff-utils'
  * The suggestion should also produce a valid diff that is suitable to be chunked.
  */
 export const HOT_STREAK_LINES_THRESHOLD = 5
-
-export function isHotStreakResponse(
-    response: ModelResponse,
-    startedHotStreak = false
-): response is SuccessModelResponse | PartialModelResponse {
-    if (startedHotStreak) {
-        // If we have already started emitted hot-streak suggestions, then we should treat all responses as hot-streaks
-        return response.type === 'partial' || response.type === 'success'
-    }
-    // Otherwise only attempt doing so for partial responses.
-    return response.type === 'partial'
-}
 
 export async function* processHotStreakResponses(
     responseGenerator: AsyncGenerator<ModelResponse>,
@@ -141,7 +124,7 @@ export async function* processHotStreakResponses(
                 maxSuffixLength: docContext.maxSuffixLength,
             })
 
-            const adjustedCodeToReplace = getCodeToReplace({
+            const adjustedCodeToReplace = getCodeToReplaceData({
                 docContext,
                 document,
                 position: adjustedPredictionRange.start,
@@ -150,7 +133,7 @@ export async function* processHotStreakResponses(
                     codeToRewritePrefixLines: 0,
                     codeToRewriteSuffixLines: currentLineCount - 1,
                 },
-            }).data
+            })
 
             const firstLineNumberOfDiff =
                 firstLineOfDiff.type === 'removed'
@@ -171,6 +154,8 @@ export async function* processHotStreakResponses(
                     prediction: trimmedPrediction,
                     stopReason: AutoeditStopReason.HotStreak,
                 },
+                uri: document.uri.toString(),
+                position,
                 docContext: updatedDocContext,
                 codeToReplaceData: adjustedCodeToReplace,
                 hotStreak: {
@@ -191,6 +176,8 @@ export async function* processHotStreakResponses(
         yield {
             type: 'suggested',
             response,
+            uri: document.uri.toString(),
+            position,
             docContext,
             codeToReplaceData,
         }

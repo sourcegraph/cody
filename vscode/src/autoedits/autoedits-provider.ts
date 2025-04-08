@@ -47,7 +47,7 @@ import { processHotStreakResponses } from './hot-streak'
 import { createMockResponseGenerator } from './mock-response-generator'
 import { autoeditsOutputChannelLogger } from './output-channel-logger'
 import { PromptCacheOptimizedV1 } from './prompt/prompt-cache-optimized-v1'
-import { type CodeToReplaceData, getCodeToReplace } from './prompt/prompt-utils'
+import { type CodeToReplaceData, getCodeToReplaceData } from './prompt/prompt-utils'
 import type { DecorationInfo } from './renderer/decorators/base'
 import { DefaultDecorator } from './renderer/decorators/default-decorator'
 import { InlineDiffDecorator } from './renderer/decorators/inline-diff-decorator'
@@ -83,6 +83,8 @@ export interface SuggestedPredictionResult {
     type: 'suggested'
     response: SuccessModelResponse | PartialModelResponse
     cacheId: AutoeditCacheID
+    uri: string
+    position: vscode.Position
     docContext: DocumentContext
     codeToReplaceData: CodeToReplaceData
     hotStreak?: {
@@ -294,12 +296,12 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                 maxSuffixLength: tokensToChars(autoeditsProviderConfig.tokenLimit.suffixTokens),
             })
 
-            let codeToReplaceData = getCodeToReplace({
+            let codeToReplaceData = getCodeToReplaceData({
                 docContext,
                 document,
                 position,
                 tokenBudget: autoeditsProviderConfig.tokenLimit,
-            }).data
+            })
             const requestId = autoeditAnalyticsLogger.createRequest({
                 startedAt,
                 codeToReplaceData,

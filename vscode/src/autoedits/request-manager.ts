@@ -86,7 +86,7 @@ export class RequestManager implements vscode.Disposable {
 
         // 3. Create a new request if we couldn't reuse anything and the request is not aborted
         const request = new InflightRequest(params)
-        this.inflightRequests.set(request.cacheKey, request)
+        this.inflightRequests.set(request.key, request)
 
         // Cancel any irrelevant requests based on the current request
         this.cancelIrrelevantRequests()
@@ -127,8 +127,6 @@ export class RequestManager implements vscode.Disposable {
                 const cachedResult: CacheEntry = {
                     ...result,
                     cacheId: cacheId,
-                    uri: params.uri,
-                    position: params.position,
                 }
                 this.cache.set(cacheId, cachedResult)
 
@@ -145,7 +143,7 @@ export class RequestManager implements vscode.Disposable {
         } catch (error) {
             request.reject(error as Error)
         } finally {
-            this.inflightRequests.delete(request.cacheKey)
+            this.inflightRequests.delete(request.key)
         }
     }
 
@@ -156,13 +154,17 @@ export class RequestManager implements vscode.Disposable {
     private findMatchingInflightRequest(
         params: AutoeditRequestManagerParams
     ): InflightRequest | undefined {
-        const key = createCacheKey(params)
+        const key = createRequestKey({
+            uri: params.uri,
+            documentVersion: params.document.version,
+            position: params.position,
+        })
 
         for (const request of this.inflightRequests.values() as Generator<InflightRequest>) {
             if (request.isResolved) continue // Skip already resolved requests with same key
 
             // TODO: uncomment this once we have a way to leverage requests with slightly different positions
-            if (request.cacheKey === key /** || request.coversSameArea(params) */) {
+            if (request.key === key /** || request.coversSameArea(params) */) {
                 return request
             }
         }
@@ -272,7 +274,7 @@ export class RequestManager implements vscode.Disposable {
                             source: autoeditSource.inFlightRequest,
                         },
                     })
-                    this.inflightRequests.delete(inflightRequest.cacheKey)
+                    this.inflightRequests.delete(inflightRequest.key)
                 }
             }
         }
@@ -304,7 +306,7 @@ export class RequestManager implements vscode.Disposable {
                         stopReason: AutoeditStopReason.IrrelevantInFlightRequest,
                     },
                 })
-                this.inflightRequests.delete(request.cacheKey)
+                this.inflightRequests.delete(request.key)
             }
         }
     }
@@ -325,10 +327,14 @@ export class InflightRequest {
     public startedAt = performance.now()
     public isResolved = false
     public abortController: AbortController
-    public cacheKey: string
+    public key: string
 
     constructor(public params: AutoeditRequestManagerParams) {
-        this.cacheKey = createCacheKey(params)
+        this.key = createRequestKey({
+            uri: params.uri,
+            documentVersion: params.document.version,
+            position: params.position,
+        })
         // TODO: decouple the autoedit provider abort signal from the one used by the request manager
         // so that we can keep some older requests alive for recycling.
         this.abortController = forkSignal(params.abortSignal)
@@ -363,17 +369,12 @@ export class InflightRequest {
     }
 }
 
-interface RequestCacheKeyParams {
+interface RequestKeyParams {
     uri: string
-    codeToReplaceData: CodeToReplaceData
+    documentVersion: number
     position: vscode.Position
 }
 
-/**
- * Creates a stable cache key that can be used to directly retrieve and purge items from the cache.
- */
-function createCacheKey({ uri, codeToReplaceData, position }: RequestCacheKeyParams): string {
-    const { prefixInArea, suffixInArea, codeToRewrite } = codeToReplaceData
-    const responseText = `${prefixInArea}${codeToRewrite}${suffixInArea}`
-    return `${uri}:${responseText}:${position.line}`
+function createRequestKey({ uri, documentVersion, position }: RequestKeyParams): string {
+    return `${uri}:${documentVersion}:${position.line}`
 }
