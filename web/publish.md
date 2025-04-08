@@ -6,16 +6,19 @@ This document outlines the steps to publish the `@sourcegraph/cody-web` package.
 - Access to publish to the @sourcegraph organization on npm.
 - `pnpm login` using credentials from [1pass](https://start.1password.com/open/i?a=HEDEDSLHPBFGRBTKAKJWE23XX4&v=dnrhbauihkhjs5ag6vszsme45a&i=oye4u4faaxmxxesugzqxojr4q4&h=team-sourcegraph.1password.com).
 
+## Versioning Guidelines
+
+- For each new regular release, update the minor version (X.Y.Z → X.Y+1.0)
+- For bug fixes and patches between the releases, update the patch version (X.Y.Z → X.Y.Z+1)
+
 ## Step 1: Update Versions
 
-1. Update the version number in `./package.json`:
+1. In the cody repo go to the `web` folder (i.e. `cd cody/web`), Update the version number in `./package.json`:
 
 2. In the Sourcegraph repository:
    ```bash
    # cd ../sourcegraph
-   # Update the version in both clients
    # In client/web-sveltekit/package.json, update @sourcegraph/cody-web version
-   # In client/web/package.json, update @sourcegraph/cody-web version
    ```
 
 ## Step 2: Test Locally
@@ -24,6 +27,7 @@ Before publishing, it's important to test the package locally within the Sourceg
 
 1. Build the package:
    ```bash
+   cd cody/web
    pnpm build
    ```
 
@@ -34,12 +38,16 @@ Before publishing, it's important to test the package locally within the Sourceg
 
 3. In the Sourcegraph repository:
    ```bash
+   cd sourcegraph
    cd client/web-sveltekit/ && pnpm link @sourcegraph/cody-web --global && cd ../web && pnpm link @sourcegraph/cody-web --global && cd ../../
    ```
 
 4. Add the following configuration to `sg.config.overwrite.yaml`:
    ```yaml
    commands:
+    web-standalone-http:
+      install: |
+        pnpm run generate
     web-sveltekit-server:
       install: |
         pnpm run generate
@@ -50,7 +58,13 @@ Before publishing, it's important to test the package locally within the Sourceg
    sg start web-standalone
    ```
 
-6. Verify that the package works as expected in the Sourcegraph client.
+6. If you encounter login issues with web-standalone, try the following:
+   - Manually comment out the `pnpm install` commands in the `sg.config.yaml` file
+   - Then run `sg start` directly
+
+7. Verify that the package works as expected in the Sourcegraph client:
+   - Go to code search and verify all Cody components are working correctly (prompt interface, model selector, etc.)
+   - Test Cody with a file to ensure it works properly
 
 ## Step 3: Commit Changes in Cody Repository
 
