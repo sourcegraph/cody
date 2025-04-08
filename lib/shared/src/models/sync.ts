@@ -395,8 +395,6 @@ export function syncModels({
                                                         )
 
                                                         if (data.preferences) {
-                                                            // Set Gemini Flash as the selected model
-                                                            // 'google::v1::gemini-2.0-flash'
                                                             const modelToFallback =
                                                                 data.preferences.defaults
                                                                     .unlimitedChat ||
