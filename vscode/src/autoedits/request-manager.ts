@@ -26,8 +26,13 @@ export interface AutoeditRequestManagerParams {
     abortSignal: AbortSignal
 }
 
+interface CacheEntry extends SuggestedPredictionResult {
+    uri: string
+    position: vscode.Position
+}
+
 export class RequestManager implements vscode.Disposable {
-    private cache = new LRUCache<AutoeditCacheID, SuggestedPredictionResult>({
+    private cache = new LRUCache<AutoeditCacheID, CacheEntry>({
         max: 50,
     })
     private readonly inflightRequests = new LRUCache<string, InflightRequest>({ max: 20 })
@@ -48,9 +53,7 @@ export class RequestManager implements vscode.Disposable {
     ): Promise<PredictionResult> {
         // 1. First check the cache for exact matches
         const cachedResponse = this.checkCache(params)
-        console.log('UMPOX GETTING CACHED REPSONSE')
         if (cachedResponse) {
-            console.log('got cached response', cachedResponse)
             return cachedResponse
         }
 
@@ -121,12 +124,13 @@ export class RequestManager implements vscode.Disposable {
                 }
 
                 const cacheId = uuid.v4() as AutoeditCacheID
-                this.cache.set(cacheId, { ...result, cacheId } as SuggestedPredictionResult)
-
-                const cachedResult: SuggestedPredictionResult = {
+                const cachedResult: CacheEntry = {
                     ...result,
                     cacheId: cacheId,
+                    uri: params.uri,
+                    position: params.position,
                 }
+                this.cache.set(cacheId, cachedResult)
 
                 // A promise will never resolve more than once, so we don't need
                 // to check if the request was already fulfilled.
@@ -166,17 +170,22 @@ export class RequestManager implements vscode.Disposable {
         return undefined
     }
 
-    public checkCache(params: AutoeditRequestManagerParams): SuggestedPredictionResult | null {
+    public checkCache(params: AutoeditRequestManagerParams): CacheEntry | null {
         const matches = this.getValidCacheItemsForDocument(params.document)
+        if (matches.length === 0) {
+            // No matches found
+            return null
+        }
 
         // Find match with closest range.start
-        let closestMatch: SuggestedPredictionResult | null = null
+        let closestMatch: CacheEntry | null = null
         let closestDistance = Number.MAX_SAFE_INTEGER
+        const maxDistance = 5 // Avoid matching too far from the cursor
 
         for (const match of matches) {
-            const distance = Math.abs(match.range.start.line - params.position.line)
+            const distance = Math.abs(match.codeToReplaceData.range.start.line - params.position.line)
 
-            if (distance < closestDistance) {
+            if (distance < closestDistance && distance <= maxDistance) {
                 closestDistance = distance
                 closestMatch = match
             }
@@ -185,23 +194,24 @@ export class RequestManager implements vscode.Disposable {
         return closestMatch
     }
 
-    public getValidCacheItemsForDocument(document: vscode.TextDocument): SuggestedPredictionResult[] {
+    public getValidCacheItemsForDocument(document: vscode.TextDocument): CacheEntry[] {
         const documentText = document.getText()
-        const matchingItems: SuggestedPredictionResult[] = []
+        const matchingItems: CacheEntry[] = []
 
         for (const key of [...this.cache.keys()]) {
             const item = this.cache.get(key)
-            if (!item) {
-                // TODO: Check item.uri is for this document
+            if (!item || item.uri !== document.uri.toString()) {
                 continue
             }
 
-            const itemWindow =
+            // Check that the rewrite area is still present in the document
+            // This is a good indicator that the item is still valid
+            const rewriteArea =
                 item.codeToReplaceData.prefixInArea +
                 item.codeToReplaceData.codeToRewrite +
                 item.codeToReplaceData.suffixInArea
 
-            if (documentText.includes(itemWindow)) {
+            if (documentText.includes(rewriteArea)) {
                 matchingItems.push(item)
             }
         }
@@ -215,8 +225,8 @@ export class RequestManager implements vscode.Disposable {
     }: {
         hotStreakID: AutoeditHotStreakID
         position: vscode.Position
-    }): SuggestedPredictionResult | null {
-        let closestItem: SuggestedPredictionResult | null = null
+    }): CacheEntry | null {
+        let closestItem: CacheEntry | null = null
         let minDistance = Number.MAX_SAFE_INTEGER
 
         for (const key of [...this.cache.keys()]) {
@@ -226,7 +236,6 @@ export class RequestManager implements vscode.Disposable {
                 continue
             }
 
-            console.log('FOUND FOR ITEMS', item, hotStreakID)
             const distance = item.hotStreak.cursorPosition.line - position.line
             if (distance < minDistance) {
                 minDistance = distance
@@ -347,7 +356,7 @@ export class InflightRequest {
     public coversSameArea(params: AutoeditRequestManagerParams): boolean {
         return (
             params.uri === this.params.uri &&
-            // params.documentVersion === this.params.documentVersion &&
+            params.document.version === this.params.document.version &&
             params.position.line - this.params.position.line >= 0 &&
             params.position.line - this.params.position.line <= 1
         )

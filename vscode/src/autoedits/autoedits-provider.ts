@@ -81,9 +81,8 @@ export interface AbortedPredictionResult {
 
 export interface SuggestedPredictionResult {
     type: 'suggested'
-    cacheId: AutoeditCacheID
     response: SuccessModelResponse | PartialModelResponse
-    range: vscode.Range
+    cacheId: AutoeditCacheID
     docContext: DocumentContext
     codeToReplaceData: CodeToReplaceData
     hotStreak?: {

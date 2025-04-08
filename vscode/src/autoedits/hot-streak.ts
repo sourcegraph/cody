@@ -171,7 +171,6 @@ export async function* processHotStreakResponses(
                     prediction: trimmedPrediction,
                     stopReason: AutoeditStopReason.HotStreak,
                 },
-                range: adjustedPredictionRange,
                 docContext: updatedDocContext,
                 codeToReplaceData: adjustedCodeToReplace,
                 hotStreak: {
@@ -192,7 +191,6 @@ export async function* processHotStreakResponses(
         yield {
             type: 'suggested',
             response,
-            range: codeToReplaceData.range,
             docContext,
             codeToReplaceData,
         }
