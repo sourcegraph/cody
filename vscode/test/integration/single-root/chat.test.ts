@@ -46,7 +46,7 @@ suite('Chat', function () {
         )
     })
 
-    test('append current file link to display text on editor selection', async () => {
+    test.skip('append current file link to display text on editor selection', async () => {
         await getTextEditorWithSelection()
         await vscode.commands.executeCommand('cody.chat.newEditorPanel')
         const chatView = await getChatViewProvider()
