@@ -1679,7 +1679,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 {
                     mentionMenuData: query => {
                         return featureFlagProvider
-                            .evaluateFeatureFlag(FeatureFlag.CodyExperimentalPromptEditor)
+                            .evaluatedFeatureFlag(FeatureFlag.CodyExperimentalPromptEditor)
                             .pipe(
                                 switchMap((experimentalPromptEditor: boolean) =>
                                     getMentionMenuData({
@@ -1759,7 +1759,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     // Existing tools endpoint - update to include MCP tools
                     mcpSettings: () => {
                         return featureFlagProvider
-                            .evaluateFeatureFlag(FeatureFlag.NextAgenticChatInternal)
+                            .evaluatedFeatureFlag(FeatureFlag.NextAgenticChatInternal)
                             .pipe(
                                 // Simplify the flow with map and distinctUntilChanged
                                 distinctUntilChanged(),
