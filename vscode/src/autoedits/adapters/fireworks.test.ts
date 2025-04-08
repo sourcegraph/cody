@@ -129,7 +129,7 @@ describe('FireworksAdapter', () => {
         mockFetchSpy.mockResolvedValueOnce({
             status: 200,
             headers: new Headers(),
-            text: () => Promise.resolve(JSON.stringify(expectedResponse)),
+            json: () => Promise.resolve({ choices: [{ message: { content: expectedResponse } }] }),
         })
 
         const responseGenerator = await adapter.getModelResponse(options)
@@ -148,7 +148,7 @@ describe('FireworksAdapter', () => {
         mockFetchSpy.mockResolvedValueOnce({
             status: 200,
             headers: new Headers(),
-            text: () => Promise.resolve(JSON.stringify(expectedResponse)),
+            json: () => Promise.resolve({ choices: [{ text: expectedResponse }] }),
         })
 
         const responseGenerator = await adapter.getModelResponse(nonChatOptions)
