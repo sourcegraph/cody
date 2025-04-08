@@ -34,7 +34,6 @@ import type { AutoeditClientCapabilities } from '../autoedits-provider'
 import { autoeditsOutputChannelLogger } from '../output-channel-logger'
 import type { RequestManager } from '../request-manager'
 import type { AutoEditDecorations, AutoEditsDecorator, DecorationInfo } from './decorators/base'
-import { NextCursorManager } from './next-cursor-manager'
 import {
     type AutoEditRenderOutput,
     AutoEditsRenderOutput,
@@ -114,7 +113,6 @@ export class AutoEditsDefaultRendererManager
     protected activeRequestId: AutoeditRequestID | null = null
     protected disposables: vscode.Disposable[] = []
     protected decorator: AutoEditsDecorator | null = null
-    protected nextCursorManager = new NextCursorManager()
 
     /**
      * The amount of time before we consider a suggestion to be "visible" to the user.
