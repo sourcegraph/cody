@@ -19,8 +19,8 @@ import { getDecorationInfo } from '../renderer/diff-utils'
 
 import { AutoeditAnalyticsLogger } from './analytics-logger'
 import {
-    type AutoeditRequestID,
     type AutoeditCacheID,
+    type AutoeditRequestID,
     autoeditAcceptReason,
     autoeditDiscardReason,
     autoeditRejectReason,
@@ -117,7 +117,7 @@ describe('AutoeditAnalyticsLogger', () => {
             prompt: modelOptions.prompt,
             codeToReplaceData: codeToReplace,
             docContext,
-            cursorPosition: position,
+            editPosition: position,
             modelResponse: {
                 type: 'success',
                 stopReason: AutoeditStopReason.RequestFinished,

@@ -238,7 +238,7 @@ export class RequestManager implements vscode.Disposable {
                 continue
             }
 
-            const distance = item.cursorPosition.line - position.line
+            const distance = item.editPosition.line - position.line
             if (distance < minDistance) {
                 minDistance = distance
                 closestItem = item

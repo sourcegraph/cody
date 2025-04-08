@@ -98,10 +98,11 @@ export interface SuggestedPredictionResult {
      */
     uri: string
     /**
-     * Cursor position for this prediction.
+     * Edit position for this prediction.
      * This is the location of the first change in the prediction.
+     * This is used to provide "next cursor" suggestions
      */
-    cursorPosition: vscode.Position
+    editPosition: vscode.Position
     /**
      * Document context for this prediction.
      * This may differ from the original document context if the prediction is a hot-streak.
@@ -420,7 +421,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                 modelResponse: predictionResult.response,
                 docContext: predictionDocContext,
                 codeToReplaceData: predictionCodeToReplaceData,
-                cursorPosition: predictionResult.cursorPosition,
+                editPosition: predictionResult.editPosition,
                 payload: {
                     // TODO: make it required
                     source: predictionResult.response.source ?? autoeditSource.network,

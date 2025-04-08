@@ -388,8 +388,8 @@ export class AutoEditsDefaultRendererManager
         if (activeRequest.hotStreakId) {
             const nextCursorPosition = this.requestManager.getNearestHotStreakItem({
                 hotStreakID: activeRequest.hotStreakId,
-                position: activeRequest.cursorPosition,
-            })?.cursorPosition
+                position: activeRequest.editPosition,
+            })?.editPosition
 
             if (!nextCursorPosition) {
                 return

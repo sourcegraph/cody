@@ -390,7 +390,7 @@ function createSuccessResponse(
             responseBody: {},
         },
         uri,
-        cursorPosition: new vscode.Position(0, 0),
+        editPosition: new vscode.Position(0, 0),
         docContext,
         codeToReplaceData,
     }

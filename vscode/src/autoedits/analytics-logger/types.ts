@@ -242,7 +242,7 @@ export interface LoadedState extends Omit<ContextLoadedState, 'phase' | 'payload
     modelResponse: ModelResponse
     cacheId: AutoeditCacheID
     hotStreakId?: AutoeditHotStreakID
-    cursorPosition: vscode.Position
+    editPosition: vscode.Position
     payload: ContextLoadedState['payload'] & {
         /**
          * An ID to uniquely identify a suggest autoedit. Note: It is possible for this ID to be part

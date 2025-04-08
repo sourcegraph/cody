@@ -167,7 +167,7 @@ export class AutoeditAnalyticsLogger {
         modelResponse,
         codeToReplaceData,
         docContext,
-        cursorPosition,
+        editPosition,
     }: {
         modelResponse: SuccessModelResponse | PartialModelResponse
         codeToReplaceData: CodeToReplaceData
@@ -176,7 +176,7 @@ export class AutoeditAnalyticsLogger {
         cacheId: AutoeditCacheID
         hotStreakId?: AutoeditHotStreakID
         prompt: AutoeditsPrompt
-        cursorPosition: vscode.Position
+        editPosition: vscode.Position
         payload: Required<
             Pick<LoadedState['payload'], 'source' | 'isFuzzyMatch' | 'prediction' | 'codeToRewrite'>
         >
@@ -194,7 +194,7 @@ export class AutoeditAnalyticsLogger {
                 docContext,
                 cacheId,
                 hotStreakId,
-                cursorPosition,
+                editPosition,
                 payload: {
                     ...request.payload,
                     id: stableId,

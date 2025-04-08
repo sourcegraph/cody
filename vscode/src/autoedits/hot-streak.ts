@@ -141,7 +141,7 @@ export async function* processHotStreakResponses(
                     stopReason: AutoeditStopReason.HotStreak,
                 },
                 uri: document.uri.toString(),
-                cursorPosition: editPosition,
+                editPosition,
                 docContext: updatedDocContext,
                 codeToReplaceData: adjustedCodeToReplace,
                 hotStreakId,
@@ -170,7 +170,7 @@ export async function* processHotStreakResponses(
                 type: 'suggested',
                 response,
                 uri: document.uri.toString(),
-                cursorPosition: position,
+                editPosition: position,
                 docContext,
                 codeToReplaceData,
             }
@@ -192,7 +192,7 @@ export async function* processHotStreakResponses(
             type: 'suggested',
             response,
             uri: document.uri.toString(),
-            cursorPosition: editPosition,
+            editPosition,
             docContext,
             codeToReplaceData,
         }
