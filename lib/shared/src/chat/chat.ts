@@ -72,7 +72,7 @@ export class ChatClient {
                 cacheEnabled,
                 content,
             })),
-        }
+        } as CompletionParameters
 
         return this.completions.stream(completionParams, requestParams, abortSignal)
     }

@@ -139,6 +139,8 @@ object Constants {
   const val unauthenticated = "unauthenticated"
   const val unchanged = "unchanged"
   const val unified = "unified"
+  const val unlimited = "unlimited"
+  const val unlimitedChat = "unlimitedChat"
   const val use = "use"
   const val user = "user"
   const val vision = "vision"

@@ -8,10 +8,13 @@ import type {
     SuggestedPredictionResult,
 } from './autoedits-provider'
 
-import type { CodeToReplaceData, DocumentContext } from '@sourcegraph/cody-shared'
+import type { DocumentContext } from '@sourcegraph/cody-shared'
 import { forkSignal } from '../completions/utils'
 import { AutoeditStopReason } from './adapters/base'
-import { type AutoeditCacheID, type AutoeditHotStreakID, autoeditSource } from './analytics-logger'
+import type { AutoeditCacheID, AutoeditHotStreakID } from './analytics-logger'
+import { autoeditSource } from './analytics-logger'
+import type { CodeToReplaceData } from './prompt/prompt-utils'
+import { isNotRecyclable, isRequestNotRelevant } from './request-recycling'
 
 export interface AutoeditRequestManagerParams {
     requestUrl: string
@@ -27,6 +30,9 @@ export class RequestManager implements vscode.Disposable {
         max: 50,
     })
     private readonly inflightRequests = new LRUCache<string, InflightRequest>({ max: 20 })
+
+    /** Track the latest request to help determine if other requests are still relevant */
+    private latestRequestParams: AutoeditRequestManagerParams | null = null
 
     /**
      * Execute a request or use a cached/in-flight result if available
@@ -84,6 +90,7 @@ export class RequestManager implements vscode.Disposable {
         // Start processing the request in the background
         this.processRequestInBackground(request, makeRequest, params)
 
+        // Return the promise to the client immediately and handle request completion in promise callbacks.
         return request.promise
     }
 
@@ -126,6 +133,9 @@ export class RequestManager implements vscode.Disposable {
 
                 // Always recycle the response even if we already resolved
                 this.recycleResponseForInflightRequests(request, cachedResult)
+
+                // After processing a completed request, check if any other requests are now irrelevant
+                this.cancelIrrelevantRequests()
             }
         } catch (error) {
             request.reject(error as Error)
@@ -146,7 +156,8 @@ export class RequestManager implements vscode.Disposable {
         for (const request of this.inflightRequests.values() as Generator<InflightRequest>) {
             if (request.isResolved) continue // Skip already resolved requests with same key
 
-            if (request.cacheKey === key || request.coversSameArea(params)) {
+            // TODO: uncomment this once we have a way to leverage requests with slightly different positions
+            if (request.cacheKey === key /** || request.coversSameArea(params) */) {
                 return request
             }
         }
@@ -227,21 +238,67 @@ export class RequestManager implements vscode.Disposable {
         return closestItem
     }
 
-    /**
-     * Try to recycle a completed request's response for other in-flight requests
-     */
     private recycleResponseForInflightRequests(
         completedRequest: InflightRequest,
         result: PredictionResult
     ): void {
-        // TODO: Implement
+        for (const inflightRequest of this.inflightRequests.values() as Generator<InflightRequest>) {
+            // Skip the request that just completed
+            if (inflightRequest === completedRequest) {
+                continue
+            }
+
+            if (!inflightRequest.isResolved) {
+                const reasonNotToRecycle = isNotRecyclable(
+                    completedRequest,
+                    inflightRequest,
+                    result.response
+                )
+
+                if (!reasonNotToRecycle && result.type === 'suggested') {
+                    inflightRequest.abortNetworkRequest()
+                    inflightRequest.resolve({
+                        ...result,
+                        response: {
+                            ...result.response,
+                            source: autoeditSource.inFlightRequest,
+                        },
+                    })
+                    this.inflightRequests.delete(inflightRequest.cacheKey)
+                }
+            }
+        }
     }
 
     /**
      * Cancel any in-flight requests that are no longer relevant compared to the latest request
      */
     private cancelIrrelevantRequests(): void {
-        // TODO: Implement
+        if (!this.latestRequestParams) {
+            return
+        }
+
+        const inflightRequests = Array.from(this.inflightRequests.values() as Generator<InflightRequest>)
+
+        for (const request of inflightRequests) {
+            if (request.isResolved) {
+                continue
+            }
+
+            const notRelevantReason = isRequestNotRelevant(request.params, this.latestRequestParams)
+            if (notRelevantReason) {
+                request.abortNetworkRequest()
+                request.resolve({
+                    type: 'aborted',
+                    response: {
+                        type: 'aborted',
+                        requestUrl: request.params.requestUrl,
+                        stopReason: AutoeditStopReason.IrrelevantInFlightRequest,
+                    },
+                })
+                this.inflightRequests.delete(request.cacheKey)
+            }
+        }
     }
 
     public dispose(): void {
@@ -253,7 +310,7 @@ export class RequestManager implements vscode.Disposable {
     }
 }
 
-class InflightRequest {
+export class InflightRequest {
     public promise: Promise<PredictionResult>
     public resolve: (result: PredictionResult) => void
     public reject: (error: Error) => void
