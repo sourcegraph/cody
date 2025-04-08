@@ -40,7 +40,7 @@ export class FireworksAdapter implements AutoeditsModelAdapter {
                             return response.choices?.[0]?.text ?? ''
                         },
                     }),
-                    option.timeoutMs,
+                    10000,
                     abortController
                 ),
                 error => {
@@ -67,7 +67,7 @@ export class FireworksAdapter implements AutoeditsModelAdapter {
     private getMessageBody(options: AutoeditModelOptions): AutoeditsRequestBody {
         const maxTokens = getMaxOutputTokensForAutoedits(options.codeToRewrite)
         const baseParams: FireworksCompatibleRequestParams = {
-            stream: true,
+            stream: false,
             model: options.model,
             temperature: 0.1,
             max_tokens: maxTokens,

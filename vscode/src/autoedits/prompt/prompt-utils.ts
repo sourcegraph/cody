@@ -64,6 +64,44 @@ export function getPromptForTheContextSource(
     return ps`${instructionPrompt}\n${prompt}`
 }
 
+export function getCurrentFileLongSuggestionPrompt({
+    document,
+    codeToReplaceDataRaw,
+}: {
+    document: vscode.TextDocument
+    codeToReplaceDataRaw: CodeToReplaceData
+    includeCursor?: boolean
+}): PromptString {
+    const filePath = getCurrentFilePath(document)
+    const codeToReplaceData = PromptString.fromAutoEditCodeToReplaceData(
+        codeToReplaceDataRaw,
+        document.uri
+    )
+
+    const codeToRewrite = ps`${codeToReplaceData.codeToRewritePrefix}${constants.LONG_SUGGESTION_USER_CURSOR_MARKER}${codeToReplaceData.codeToRewriteSuffix}`
+
+    const areaPrompt = joinPromptsWithNewlineSeparator([
+        trimNewLineCharIfExists(codeToReplaceData.prefixInArea),
+        constants.LONG_SUGGESTION_EDITABLE_REGION_START_MARKER,
+        trimNewLineCharIfExists(codeToRewrite),
+        constants.LONG_SUGGESTION_EDITABLE_REGION_END_MARKER,
+        trimNewLineCharIfExists(codeToReplaceData.suffixInArea),
+    ])
+
+    const fileWithMarkerPrompt = getCurrentFileContextPromptWithPath(
+        filePath,
+        joinPromptsWithNewlineSeparator([constants.FILE_TAG_OPEN, areaPrompt, constants.FILE_TAG_CLOSE])
+    )
+    return fileWithMarkerPrompt
+}
+
+function trimNewLineCharIfExists(prompt: PromptString): PromptString {
+    if (prompt.toString().endsWith('\n')) {
+        return prompt.slice(0, -1)
+    }
+    return prompt
+}
+
 export function getCurrentFilePromptComponents({
     document,
     codeToReplaceDataRaw,
