@@ -17,6 +17,7 @@ import type { CodeToReplaceData } from './prompt/prompt-utils'
 import { isNotRecyclable, isRequestNotRelevant } from './request-recycling'
 
 export interface AutoeditRequestManagerParams {
+    document: vscode.TextDocument
     requestUrl: string
     uri: string
     codeToReplaceData: CodeToReplaceData
@@ -166,16 +167,13 @@ export class RequestManager implements vscode.Disposable {
     }
 
     public checkCache(params: AutoeditRequestManagerParams): SuggestedPredictionResult | null {
-        const fuzzyMatches = this.fuzzyMatchCodeToReplace(params.codeToReplaceData)
-        if (fuzzyMatches.length === 0) {
-            return null
-        }
+        const matches = this.getValidCacheItemsForDocument(params.document)
 
         // Find match with closest range.start
         let closestMatch: SuggestedPredictionResult | null = null
         let closestDistance = Number.MAX_SAFE_INTEGER
 
-        for (const match of fuzzyMatches) {
+        for (const match of matches) {
             const distance = Math.abs(match.range.start.line - params.position.line)
 
             if (distance < closestDistance) {
@@ -187,27 +185,28 @@ export class RequestManager implements vscode.Disposable {
         return closestMatch
     }
 
-    public fuzzyMatchCodeToReplace(codeToReplaceData: CodeToReplaceData): SuggestedPredictionResult[] {
-        const targetLines = codeToReplaceData.codeToRewrite.split('\n')
-        const targetLineSet = new Set(targetLines)
-
-        const minOverlapThreshold = 3
-        const matchingEntries: SuggestedPredictionResult[] = []
+    public getValidCacheItemsForDocument(document: vscode.TextDocument): SuggestedPredictionResult[] {
+        const documentText = document.getText()
+        const matchingItems: SuggestedPredictionResult[] = []
 
         for (const key of [...this.cache.keys()]) {
             const item = this.cache.get(key)
             if (!item) {
+                // TODO: Check item.uri is for this document
                 continue
             }
-            const itemLines = item.codeToReplaceData.codeToRewrite.split('\n')
-            const overlapCount = itemLines.filter(line => targetLineSet.has(line)).length
 
-            if (overlapCount >= minOverlapThreshold) {
-                matchingEntries.push(item)
+            const itemWindow =
+                item.codeToReplaceData.prefixInArea +
+                item.codeToReplaceData.codeToRewrite +
+                item.codeToReplaceData.suffixInArea
+
+            if (documentText.includes(itemWindow)) {
+                matchingItems.push(item)
             }
         }
 
-        return matchingEntries
+        return matchingItems
     }
 
     public getNearestHotStreakItem({

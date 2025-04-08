@@ -746,6 +746,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
         abortSignal: AbortSignal
     }): Promise<PredictionResult> {
         const requestParams: AutoeditRequestManagerParams = {
+            document,
             requestUrl: autoeditsProviderConfig.url,
             uri: document.uri.toString(),
             codeToReplaceData,

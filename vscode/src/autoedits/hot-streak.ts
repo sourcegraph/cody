@@ -83,11 +83,7 @@ export async function* processHotStreakResponses(
             // We need to adjust the prediction range to match the prediction so far.
             // This ensures we don't diff the partial prediction against the full codeToRewrite
             const adjustedPredictionRange = new vscode.Range(
-                // Hack to fix the off-by-one error. Needs proper fixing
-                codeToReplaceData.range.start.translate(
-                    linesAlreadyChunked,
-                    linesAlreadyChunked > 0 ? 1 : 0
-                ),
+                codeToReplaceData.range.start.translate(linesAlreadyChunked),
                 codeToReplaceData.range.start.translate(linesAlreadyChunked + currentLineCount)
             )
 
@@ -138,7 +134,7 @@ export async function* processHotStreakResponses(
             // to reflect this.
             const updatedDocContext = getDocContextAfterRewrite({
                 document,
-                position,
+                position: adjustedPredictionRange.start,
                 rewriteRange: prefixRange,
                 rewrittenCode: prefix,
                 maxPrefixLength: docContext.maxPrefixLength,
@@ -151,6 +147,7 @@ export async function* processHotStreakResponses(
                 position: adjustedPredictionRange.start,
                 tokenBudget: {
                     ...autoeditsProviderConfig.tokenLimit,
+                    codeToRewritePrefixLines: 0,
                     codeToRewriteSuffixLines: currentLineCount - 1,
                 },
             }).data
