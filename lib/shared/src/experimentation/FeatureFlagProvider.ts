@@ -5,6 +5,7 @@ import { logError } from '../logger'
 import {
     type StoredLastValue,
     combineLatest,
+    concat,
     debounceTime,
     distinctUntilChanged,
     firstValueFrom,
@@ -55,6 +56,7 @@ export enum FeatureFlag {
     CodyAutocompleteContextExperimentVariant4 = 'cody-autocomplete-context-experiment-variant-4',
     CodyAutocompleteContextExperimentControl = 'cody-autocomplete-context-experiment-control',
 
+    CodySmartApplyInstantModeEnabled = 'cody-smart-apply-instant-mode-enabled',
     CodySmartApplyExperimentEnabledFeatureFlag = 'cody-smart-apply-experiment-enabled-flag',
     CodySmartApplyExperimentVariant1 = 'cody-smart-apply-experiment-variant-1',
     CodySmartApplyExperimentVariant2 = 'cody-smart-apply-experiment-variant-2',
@@ -147,6 +149,9 @@ export enum FeatureFlag {
     // Extend context window for Cody Clients
     EnhancedContextWindow = 'enhanced-context-window',
 
+    // Fallback to Flash when rate limited
+    FallbackToFlash = 'fallback-to-flash',
+
     /**
      * Internal use only. Enables the next agentic chat experience.
      * This is not for external use and should not be exposed to users.
@@ -178,7 +183,6 @@ export interface FeatureFlagProvider {
     evaluateFeatureFlagEphemerally(flag: FeatureFlag): Promise<boolean>
 
     getExposedExperiments(serverEndpoint: string): Record<string, boolean>
-
     refresh(): void
 }
 
@@ -210,21 +214,6 @@ export class FeatureFlagProviderImpl implements FeatureFlagProvider {
         distinctUntilChanged()
     )
 
-    private async loadFeatureFlags(signal: AbortSignal): Promise<Record<string, boolean> | Error> {
-        const siteVersion = await graphqlClient.getSiteVersion()
-        // New API is available from 6.2 onwards
-        if (
-            siteVersion === 'dev' ||
-            (!isError(siteVersion) &&
-                siteVersion.startsWith('6.') &&
-                !siteVersion.startsWith('6.0') &&
-                !siteVersion.startsWith('6.1'))
-        ) {
-            return graphqlClient.evaluateFeatureFlags(Object.values(FeatureFlag), signal)
-        }
-        return graphqlClient.getEvaluatedFeatureFlags(signal)
-    }
-
     private evaluateFeatureFlags: Observable<Record<string, boolean>> = combineLatest(
         this.relevantAuthStatusChanges,
         this.refreshes
@@ -232,7 +221,9 @@ export class FeatureFlagProviderImpl implements FeatureFlagProvider {
         debounceTime(0),
         switchMap(([authStatus]) =>
             promiseFactoryToObservable(signal =>
-                process.env.DISABLE_FEATURE_FLAGS ? Promise.resolve({}) : this.loadFeatureFlags(signal)
+                process.env.DISABLE_FEATURE_FLAGS
+                    ? Promise.resolve({})
+                    : graphqlClient.evaluateFeatureFlags(Object.values(FeatureFlag), signal)
             ).pipe(
                 map(resultOrError => {
                     if (isError(resultOrError)) {
@@ -290,8 +281,10 @@ export class FeatureFlagProviderImpl implements FeatureFlagProvider {
                         // may not always be correct, but it's probably more desirable for more feature
                         // flags. We can make the cache retrieval behavior configurable if needed.
                         switchMap(_ =>
-                            this.evaluateFeatureFlags.pipe(
-                                map(featureFlags => Boolean(featureFlags[flagName.toString()]))
+                            concat(
+                                this.evaluateFeatureFlags.pipe(
+                                    map(featureFlags => Boolean(featureFlags[flagName.toString()]))
+                                )
                             )
                         )
                     )

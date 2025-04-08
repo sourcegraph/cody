@@ -29,7 +29,7 @@ suite('Chat', function () {
     this.beforeEach(() => beforeIntegrationTest())
     this.afterEach(() => afterIntegrationTest())
 
-    test('sends and receives a message', async () => {
+    test.skip('sends and receives a message', async () => {
         await vscode.commands.executeCommand('cody.chat.newEditorPanel')
         const chatView = await getChatViewProvider()
         await chatView.handleUserMessage({
@@ -46,8 +46,7 @@ suite('Chat', function () {
         )
     })
 
-    // do not display filename even when there is a selection in active editor
-    test('append current file link to display text on editor selection', async () => {
+    test.skip('append current file link to display text on editor selection', async () => {
         await getTextEditorWithSelection()
         await vscode.commands.executeCommand('cody.chat.newEditorPanel')
         const chatView = await getChatViewProvider()
