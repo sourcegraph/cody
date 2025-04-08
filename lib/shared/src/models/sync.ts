@@ -194,7 +194,7 @@ export function syncModels({
                                         featureFlagProvider.evaluatedFeatureFlag(
                                             FeatureFlag.EnhancedContextWindow
                                         ),
-                                        featureFlagProvider.evaluateFeatureFlag(
+                                        featureFlagProvider.evaluatedFeatureFlag(
                                             FeatureFlag.FallbackToFlash
                                         )
                                     ).pipe(
