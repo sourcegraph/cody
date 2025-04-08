@@ -4,6 +4,7 @@ export enum ModelUsage {
     Chat = 'chat',
     Edit = 'edit',
     Autocomplete = 'autocomplete',
+    Unlimited = 'unlimitedChat',
 }
 
 // Utility to narrow a model type to a specific model usage
