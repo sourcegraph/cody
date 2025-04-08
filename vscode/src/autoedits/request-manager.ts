@@ -1,16 +1,17 @@
 import { LRUCache } from 'lru-cache'
+import * as uuid from 'uuid'
 import type * as vscode from 'vscode'
 
-import type { PredictionResult } from './autoedits-provider'
+import type {
+    AbortedPredictionResult,
+    PredictionResult,
+    SuggestedPredictionResult,
+} from './autoedits-provider'
 
 import type { CodeToReplaceData, DocumentContext } from '@sourcegraph/cody-shared'
 import { forkSignal } from '../completions/utils'
-import {
-    AutoeditStopReason,
-    type PartialModelResponse,
-    type SuccessModelResponse,
-} from './adapters/base'
-import { type AutoeditHotStreakID, autoeditSource } from './analytics-logger'
+import { AutoeditStopReason } from './adapters/base'
+import { type AutoeditCacheID, type AutoeditHotStreakID, autoeditSource } from './analytics-logger'
 
 export interface AutoeditRequestManagerParams {
     requestUrl: string
@@ -21,12 +22,8 @@ export interface AutoeditRequestManagerParams {
     abortSignal: AbortSignal
 }
 
-interface CacheEntry extends PredictionResult {
-    response: SuccessModelResponse | PartialModelResponse
-}
-
 export class RequestManager implements vscode.Disposable {
-    private cache = new LRUCache<string, CacheEntry>({
+    private cache = new LRUCache<AutoeditCacheID, SuggestedPredictionResult>({
         max: 50,
     })
     private readonly inflightRequests = new LRUCache<string, InflightRequest>({ max: 20 })
@@ -36,32 +33,39 @@ export class RequestManager implements vscode.Disposable {
      */
     public async request(
         params: AutoeditRequestManagerParams,
-        makeRequest: (abortSignal: AbortSignal) => Promise<AsyncGenerator<PredictionResult>>
+        makeRequest: (
+            abortSignal: AbortSignal
+        ) => Promise<
+            AsyncGenerator<Omit<SuggestedPredictionResult, 'cacheId'> | AbortedPredictionResult>
+        >
     ): Promise<PredictionResult> {
         // 1. First check the cache for exact matches
         const cachedResponse = this.checkCache(params)
+        console.log('UMPOX GETTING CACHED REPSONSE')
         if (cachedResponse) {
+            console.log('got cached response', cachedResponse)
             return cachedResponse
         }
 
         // 2. Then check for a matching in-flight request
         const inflightRequest = this.findMatchingInflightRequest(params)
         if (inflightRequest) {
-            const { response, ...rest } = await inflightRequest.promise
-            if (response.type === 'success') {
+            const result = await inflightRequest.promise
+            if (result.type === 'suggested') {
                 return {
+                    ...result,
                     response: {
-                        ...response,
+                        ...result.response,
                         source: autoeditSource.inFlightRequest,
                     },
-                    ...rest,
                 }
             }
-            return { response, ...rest }
+            return result
         }
 
         if (params.abortSignal.aborted) {
             return {
+                type: 'aborted',
                 response: {
                     type: 'aborted',
                     stopReason: AutoeditStopReason.RequestAborted,
@@ -85,43 +89,43 @@ export class RequestManager implements vscode.Disposable {
 
     private async processRequestInBackground(
         request: InflightRequest,
-        makeRequest: (abortSignal: AbortSignal) => Promise<AsyncGenerator<PredictionResult>>,
+        makeRequest: (
+            abortSignal: AbortSignal
+        ) => Promise<
+            AsyncGenerator<Omit<SuggestedPredictionResult, 'cacheId'> | AbortedPredictionResult>
+        >,
         params: AutoeditRequestManagerParams
     ): Promise<void> {
         try {
             for await (const result of await makeRequest(request.abortController.signal)) {
-                const { response, hotStreak } = result
-                if (response.type === 'aborted') {
+                if (result.type === 'aborted') {
                     request.resolve(result)
                     continue
                 }
 
                 if (
-                    response.type === 'partial' &&
-                    response.stopReason !== AutoeditStopReason.HotStreak
+                    result.response.type === 'partial' &&
+                    result.response.stopReason !== AutoeditStopReason.HotStreak
                 ) {
                     // Partial response that we haven't made into a hot-streak
                     // Continue streaming
                     continue
                 }
 
-                let cacheKey = request.cacheKey
-                if (hotStreak) {
-                    // Hot streak means one request can provide many cache items.
-                    // Use the cursor position of this hot streak suggestion to create a unique cache key.
-                    cacheKey = createCacheKey({
-                        ...params,
-                        position: hotStreak.cursorPosition,
-                    })
+                const cacheId = uuid.v4() as AutoeditCacheID
+                this.cache.set(cacheId, { ...result, cacheId } as SuggestedPredictionResult)
+
+                const cachedResult: SuggestedPredictionResult = {
+                    ...result,
+                    cacheId: cacheId,
                 }
-                this.cache.set(cacheKey, result as CacheEntry)
 
                 // A promise will never resolve more than once, so we don't need
                 // to check if the request was already fulfilled.
-                request.resolve(result)
+                request.resolve(cachedResult)
 
                 // Always recycle the response even if we already resolved
-                this.recycleResponseForInflightRequests(request, result)
+                this.recycleResponseForInflightRequests(request, cachedResult)
             }
         } catch (error) {
             request.reject(error as Error)
@@ -130,8 +134,8 @@ export class RequestManager implements vscode.Disposable {
         }
     }
 
-    public removeFromCache(params: RequestCacheKeyParams): void {
-        this.cache.delete(createCacheKey(params))
+    public removeFromCache(id: AutoeditCacheID): void {
+        this.cache.delete(id)
     }
 
     private findMatchingInflightRequest(
@@ -150,16 +154,59 @@ export class RequestManager implements vscode.Disposable {
         return undefined
     }
 
-    public checkCache(params: AutoeditRequestManagerParams): CacheEntry | null {
-        const cached = this.cache.get(createCacheKey(params))
-        return cached ?? null
+    public checkCache(params: AutoeditRequestManagerParams): SuggestedPredictionResult | null {
+        const fuzzyMatches = this.fuzzyMatchCodeToReplace(params.codeToReplaceData)
+        if (fuzzyMatches.length === 0) {
+            return null
+        }
+
+        // Find match with closest range.start
+        let closestMatch: SuggestedPredictionResult | null = null
+        let closestDistance = Number.MAX_SAFE_INTEGER
+
+        for (const match of fuzzyMatches) {
+            const distance = Math.abs(match.range.start.line - params.position.line)
+
+            if (distance < closestDistance) {
+                closestDistance = distance
+                closestMatch = match
+            }
+        }
+
+        return closestMatch
+    }
+
+    public fuzzyMatchCodeToReplace(codeToReplaceData: CodeToReplaceData): SuggestedPredictionResult[] {
+        const targetLines = codeToReplaceData.codeToRewrite.split('\n')
+        const targetLineSet = new Set(targetLines)
+
+        const minOverlapThreshold = 3
+        const matchingEntries: SuggestedPredictionResult[] = []
+
+        for (const key of [...this.cache.keys()]) {
+            const item = this.cache.get(key)
+            if (!item) {
+                continue
+            }
+            const itemLines = item.codeToReplaceData.codeToRewrite.split('\n')
+            const overlapCount = itemLines.filter(line => targetLineSet.has(line)).length
+
+            if (overlapCount >= minOverlapThreshold) {
+                matchingEntries.push(item)
+            }
+        }
+
+        return matchingEntries
     }
 
     public getNearestHotStreakItem({
         hotStreakID,
         position,
-    }: { hotStreakID: AutoeditHotStreakID; position: vscode.Position }): CacheEntry | null {
-        let closestItem: CacheEntry | null = null
+    }: {
+        hotStreakID: AutoeditHotStreakID
+        position: vscode.Position
+    }): SuggestedPredictionResult | null {
+        let closestItem: SuggestedPredictionResult | null = null
         let minDistance = Number.MAX_SAFE_INTEGER
 
         for (const key of [...this.cache.keys()]) {

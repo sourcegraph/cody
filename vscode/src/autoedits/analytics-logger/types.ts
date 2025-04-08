@@ -5,7 +5,7 @@ import type { DocumentContext } from '@sourcegraph/cody-shared'
 import type { ContextSummary } from '../../completions/context/context-mixer'
 import type { CodeGenEventMetadata } from '../../services/CharactersLogger'
 import type { ModelResponse } from '../adapters/base'
-import type { PredictionResult } from '../autoedits-provider'
+import type { SuggestedPredictionResult } from '../autoedits-provider'
 import type { CodeToReplaceData } from '../prompt/prompt-utils'
 import type { DecorationStats } from '../renderer/diff-utils'
 import type { AutoEditRenderOutput } from '../renderer/render-output'
@@ -159,6 +159,11 @@ export type AutoeditSuggestionID = string & { readonly _brand: 'AutoeditSuggesti
 export type AutoeditRequestID = string & { readonly _brand: 'AutoeditRequestID' }
 
 /**
+ * A stable ID for a cache entry.
+ */
+export type AutoeditCacheID = string & { readonly _brand: 'AutoeditCacheID' }
+
+/**
  * A stable ID for a chain of hot-streak suggestions.
  * Used to support jumping between hot-streak suggestions.
  */
@@ -236,7 +241,8 @@ export interface LoadedState extends Omit<ContextLoadedState, 'phase' | 'payload
     loadedAt: number
     /** Model response metadata for the debug panel */
     modelResponse: ModelResponse
-    hotStreak: PredictionResult['hotStreak']
+    hotStreak: SuggestedPredictionResult['hotStreak']
+    cacheId: AutoeditCacheID
     payload: ContextLoadedState['payload'] & {
         /**
          * An ID to uniquely identify a suggest autoedit. Note: It is possible for this ID to be part

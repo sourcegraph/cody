@@ -12,7 +12,11 @@ import {
 } from './adapters/base'
 import type { AutoeditHotStreakID } from './analytics-logger'
 import { autoeditsProviderConfig } from './autoedits-config'
-import { type PredictionResult, getDecorationInfoFromPrediction } from './autoedits-provider'
+import {
+    type AbortedPredictionResult,
+    type SuggestedPredictionResult,
+    getDecorationInfoFromPrediction,
+} from './autoedits-provider'
 import { getCodeToReplace } from './prompt/prompt-utils'
 import { getDiffChangeBoundaries } from './renderer/diff-utils'
 
@@ -41,7 +45,7 @@ export async function* processHotStreakResponses(
     codeToReplaceData: CodeToReplaceData,
     docContext: DocumentContext,
     position: vscode.Position
-): AsyncGenerator<PredictionResult> {
+): AsyncGenerator<Omit<SuggestedPredictionResult, 'cacheId'> | AbortedPredictionResult> {
     let linesAlreadyChunked = 0
     let hotStreakID = null
 
@@ -93,6 +97,8 @@ export async function* processHotStreakResponses(
                 adjustedPredictionRange
             )
 
+            // We want: start line of the diff (first edit/cursor position)
+            // end line of the diff - used to determine if we can chunk the diff
             const diffChangeBoundaries = getDiffChangeBoundaries(diff)
             if (!diffChangeBoundaries) {
                 // Diff doesn't have any changes, so we can't emit a hot streak prediction
@@ -105,6 +111,7 @@ export async function* processHotStreakResponses(
                     ? lastLineOfDiff.originalLineNumber
                     : lastLineOfDiff.modifiedLineNumber
             if (
+                response.type === 'partial' &&
                 lastLineOfDiff.type !== 'unchanged' &&
                 lastLineNumberOfDiff === adjustedPredictionRange.end.line
             ) {
@@ -161,23 +168,37 @@ export async function* processHotStreakResponses(
             linesAlreadyChunked = linesAlreadyChunked + currentLineCount
 
             yield {
+                type: 'suggested',
                 response: {
                     ...response,
                     prediction: trimmedPrediction,
                     stopReason: AutoeditStopReason.HotStreak,
                 },
+                range: adjustedPredictionRange,
+                docContext: updatedDocContext,
+                codeToReplaceData: adjustedCodeToReplace,
                 hotStreak: {
                     id: hotStreakID,
-                    range: adjustedPredictionRange,
                     cursorPosition: editPosition,
-                    docContext: updatedDocContext,
-                    codeToReplaceData: adjustedCodeToReplace,
                 },
             }
+            continue
         }
 
-        yield { response }
-        // This is useful so that we can support "jumping" to this suggestion from a different part of the document.
+        // No hot-streak, yield responses
+        if (response.type === 'aborted') {
+            // No hot-streak, yield response.
+            yield { type: 'aborted', response }
+            return
+        }
+
+        yield {
+            type: 'suggested',
+            response,
+            range: codeToReplaceData.range,
+            docContext,
+            codeToReplaceData,
+        }
     }
 }
 

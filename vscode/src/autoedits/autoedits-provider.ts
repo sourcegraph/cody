@@ -20,14 +20,16 @@ import type { AutocompleteEditItem, AutoeditChanges } from '../jsonrpc/agent-pro
 import { isRunningInsideAgent } from '../jsonrpc/isRunningInsideAgent'
 import type { FixupController } from '../non-stop/FixupController'
 import type { CodyStatusBar } from '../services/StatusBar'
-import {
-    AutoeditStopReason,
-    type AutoeditsModelAdapter,
-    type AutoeditsPrompt,
-    type ModelResponse,
+import type {
+    AbortedModelResponse,
+    AutoeditsModelAdapter,
+    AutoeditsPrompt,
+    PartialModelResponse,
+    SuccessModelResponse,
 } from './adapters/base'
 import { createAutoeditsModelAdapter } from './adapters/create-adapter'
 import {
+    type AutoeditCacheID,
     type AutoeditHotStreakID,
     type AutoeditRequestID,
     type AutoeditRequestStateForAgentTesting,
@@ -72,16 +74,25 @@ interface AutoeditEditItem extends AutocompleteEditItem {
     id: AutoeditRequestID
 }
 
-export interface PredictionResult {
-    response: ModelResponse
+export interface AbortedPredictionResult {
+    type: 'aborted'
+    response: AbortedModelResponse
+}
+
+export interface SuggestedPredictionResult {
+    type: 'suggested'
+    cacheId: AutoeditCacheID
+    response: SuccessModelResponse | PartialModelResponse
+    range: vscode.Range
+    docContext: DocumentContext
+    codeToReplaceData: CodeToReplaceData
     hotStreak?: {
         id: AutoeditHotStreakID
-        range: vscode.Range
         cursorPosition: vscode.Position
-        docContext: DocumentContext
-        codeToReplaceData: CodeToReplaceData
     }
 }
+
+export type PredictionResult = SuggestedPredictionResult | AbortedPredictionResult
 
 export interface AutoeditsResult {
     /** @deprecated Use `inlineCompletionItems` instead. */
@@ -355,7 +366,8 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                 abortSignal,
             })
 
-            if (abortSignal?.aborted || predictionResult.response.type === 'aborted') {
+            if (abortSignal?.aborted || predictionResult.type === 'aborted') {
+                // TODO: Remove type from `predictionResult.response`, use only stop reasons
                 autoeditsOutputChannelLogger.logDebugIfVerbose(
                     'provideInlineCompletionItems',
                     'client aborted after getPrediction'
@@ -368,24 +380,18 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                 return null
             }
 
-            if (
-                predictionResult.response.stopReason !== AutoeditStopReason.HotStreak &&
-                predictionResult.response.stopReason !== AutoeditStopReason.RequestFinished
-            ) {
-                // Ignore partial responses that we cannot use
-                return null
-            }
+            docContext = predictionResult.docContext
+            codeToReplaceData = predictionResult.codeToReplaceData
 
             const initialPrediction = predictionResult.response.prediction
 
-            if (predictionResult.hotStreak) {
-                // A hot-streak prediction is partial, so we need to update the docContext and codeToReplaceData
-                docContext = predictionResult.hotStreak.docContext
-                codeToReplaceData = predictionResult.hotStreak.codeToReplaceData
-            }
-
+            console.log('GOT PREDICTION RESULT', {
+                cacheId: predictionResult.cacheId,
+                prediction: initialPrediction,
+            })
             autoeditAnalyticsLogger.markAsLoaded({
                 requestId,
+                cacheId: predictionResult.cacheId,
                 prompt,
                 modelResponse: predictionResult.response,
                 hotStreak: predictionResult.hotStreak,
@@ -701,7 +707,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
         docContext: DocumentContext
         prompt: AutoeditsPrompt
         abortSignal: AbortSignal
-    }): Promise<AsyncGenerator<PredictionResult>> {
+    }): Promise<AsyncGenerator<Omit<SuggestedPredictionResult, 'cacheId'> | AbortedPredictionResult>> {
         const userId = (await currentResolvedConfig()).clientState.anonymousUserID
         const responseGenerator = await this.modelAdapter.getModelResponse({
             url: autoeditsProviderConfig.url,

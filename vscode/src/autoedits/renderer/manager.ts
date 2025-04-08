@@ -359,11 +359,7 @@ export class AutoEditsDefaultRendererManager
             return this.rejectActiveEdit(autoeditRejectReason.acceptActiveEdit)
         }
 
-        this.requestManager.removeFromCache({
-            uri: activeRequest.document.uri.toString(),
-            codeToReplaceData: activeRequest.codeToReplaceData,
-            position: activeRequest.position,
-        })
+        this.requestManager.removeFromCache(activeRequest.cacheId)
 
         // Reset the testing promise when accepting
         this.testing_completionSuggestedPromise = undefined
@@ -410,11 +406,7 @@ export class AutoEditsDefaultRendererManager
         const { activeRequest, decorator } = this
 
         if (activeRequest) {
-            this.requestManager.removeFromCache({
-                uri: activeRequest.document.uri.toString(),
-                codeToReplaceData: activeRequest.codeToReplaceData,
-                position: activeRequest.position,
-            })
+            this.requestManager.removeFromCache(activeRequest.cacheId)
         }
 
         // Reset the testing promise when rejecting
