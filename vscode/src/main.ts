@@ -763,15 +763,18 @@ function registerAutoEdits({
         return
     }
 
+    // todo: how to check if we are running for JB client?
+    const autoeditExperimentFeatureFlag = isRunningInsideAgent()
+        ? FeatureFlag.CodyAutoeditJetBrainsExperimentEnabledFeatureFlag
+        : FeatureFlag.CodyAutoEditExperimentEnabledFeatureFlag
+
     disposables.push(
         autoeditDebugStore,
         subscriptionDisposable(
             combineLatest(
                 resolvedConfig,
                 authStatus,
-                featureFlagProvider.evaluateFeatureFlag(
-                    FeatureFlag.CodyAutoEditExperimentEnabledFeatureFlag
-                ),
+                featureFlagProvider.evaluateFeatureFlag(autoeditExperimentFeatureFlag),
                 featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutoEditInlineRendering),
                 featureFlagProvider.evaluateFeatureFlag(
                     FeatureFlag.CodyAutoEditUseWebSocketForFireworksConnections

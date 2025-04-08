@@ -64,6 +64,7 @@ export enum FeatureFlag {
     CodySmartApplyPrefetching = 'cody-smart-apply-prefetching',
 
     CodyAutoEditExperimentEnabledFeatureFlag = 'cody-autoedit-experiment-enabled-flag',
+    CodyAutoeditJetBrainsExperimentEnabledFeatureFlag = 'cody-autoedit-jetbrains-experiment-enabled-flag',
 
     // Enables inline rendering of autoedit suggestions
     CodyAutoEditInlineRendering = 'cody-autoedit-inline-rendering',
