@@ -145,12 +145,14 @@ jobs:
         run: |
           $vscodeDir = "$env:USERPROFILE\.vscode"
           New-Item -ItemType Directory -Path $vscodeDir -Force | Out-Null
-          $json = @'
-          {
-            "disable-hardware-acceleration": true
-          }
-          '@
-          $json | Set-Content -Path "$vscodeDir\argv.json" -Encoding UTF8
+          
+          # Create JSON object and convert to string
+          $settings = @{ "disable-hardware-acceleration" = $true }
+          $json = ConvertTo-Json $settings -Compress
+          
+          # Write to file using Out-File with encoding parameter
+          $json | Out-File -FilePath "$vscodeDir\argv.json" -Encoding ascii -NoNewline
+          
           pnpm -C vscode run test:integration
       - name: Run tests (mac)
         run: |
