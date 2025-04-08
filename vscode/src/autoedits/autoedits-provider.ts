@@ -42,7 +42,7 @@ import { autoeditsOnboarding } from './autoedit-onboarding'
 import { autoeditsProviderConfig } from './autoedits-config'
 import { FilterPredictionBasedOnRecentEdits } from './filter-prediction-edits'
 import { autoeditsOutputChannelLogger } from './output-channel-logger'
-import { PromptCacheOptimizedV1 } from './prompt/prompt-cache-optimized-v1'
+import { LongTermPromptStrategy } from './prompt/long-prompt-experimental'
 import { type CodeToReplaceData, getCodeToReplaceData } from './prompt/prompt-utils'
 import { getCurrentFilePath } from './prompt/prompt-utils'
 import type { DecorationInfo } from './renderer/decorators/base'
@@ -111,7 +111,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
     private readonly requestManager = new RequestManager()
     public readonly smartThrottleService = new SmartThrottleService()
 
-    private readonly promptStrategy = new PromptCacheOptimizedV1()
+    private readonly promptStrategy = new LongTermPromptStrategy()
     public readonly filterPrediction = new FilterPredictionBasedOnRecentEdits()
     private readonly contextMixer = new ContextMixer({
         strategyFactory: new DefaultContextStrategyFactory(Observable.of(AUTOEDIT_CONTEXT_STRATEGY)),
