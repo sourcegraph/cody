@@ -26,10 +26,7 @@ export interface AutoeditRequestManagerParams {
     abortSignal: AbortSignal
 }
 
-interface CacheEntry extends SuggestedPredictionResult {
-    uri: string
-    position: vscode.Position
-}
+interface CacheEntry extends SuggestedPredictionResult {}
 
 export class RequestManager implements vscode.Disposable {
     private cache = new LRUCache<AutoeditCacheID, CacheEntry>({
@@ -233,12 +230,12 @@ export class RequestManager implements vscode.Disposable {
 
         for (const key of [...this.cache.keys()]) {
             const item = this.cache.get(key)
-            if (!item || item.hotStreak?.id !== hotStreakID) {
+            if (!item || item.hotStreakId !== hotStreakID) {
                 // Skip items that don't match the hot streak ID
                 continue
             }
 
-            const distance = item.hotStreak.cursorPosition.line - position.line
+            const distance = item.cursorPosition.line - position.line
             if (distance < minDistance) {
                 minDistance = distance
                 closestItem = item

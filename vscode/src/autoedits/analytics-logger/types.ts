@@ -5,7 +5,6 @@ import type { DocumentContext } from '@sourcegraph/cody-shared'
 import type { ContextSummary } from '../../completions/context/context-mixer'
 import type { CodeGenEventMetadata } from '../../services/CharactersLogger'
 import type { ModelResponse } from '../adapters/base'
-import type { SuggestedPredictionResult } from '../autoedits-provider'
 import type { CodeToReplaceData } from '../prompt/prompt-utils'
 import type { DecorationStats } from '../renderer/diff-utils'
 import type { AutoEditRenderOutput } from '../renderer/render-output'
@@ -100,7 +99,7 @@ export const autoeditSource = {
     cache: 2,
     /** Autoedit originated from a in-flight request. */
     inFlightRequest: 3,
-    /** Autoedit originated from a hot streak. */
+    /** Autoedit originated from a hot streak chain. */
     hotStreak: 4,
 } as const
 
@@ -241,8 +240,9 @@ export interface LoadedState extends Omit<ContextLoadedState, 'phase' | 'payload
     loadedAt: number
     /** Model response metadata for the debug panel */
     modelResponse: ModelResponse
-    hotStreak: SuggestedPredictionResult['hotStreak']
     cacheId: AutoeditCacheID
+    hotStreakId?: AutoeditHotStreakID
+    cursorPosition: vscode.Position
     payload: ContextLoadedState['payload'] & {
         /**
          * An ID to uniquely identify a suggest autoedit. Note: It is possible for this ID to be part

@@ -22,6 +22,11 @@ import { getDiffChangeBoundaries } from './renderer/diff-utils'
  */
 export const HOT_STREAK_LINES_THRESHOLD = 5
 
+/**
+ * Process a stream of model responses and attempt to emit a "hot-streak" suggestion.
+ * A hot-streak is where we emit suggestions before the model is done generating.
+ * This allows us to use a large rewrite window whilst still achieving low latency responses.
+ */
 export async function* processHotStreakResponses(
     responseGenerator: AsyncGenerator<ModelResponse>,
     document: vscode.TextDocument,
@@ -30,32 +35,29 @@ export async function* processHotStreakResponses(
     position: vscode.Position
 ): AsyncGenerator<Omit<SuggestedPredictionResult, 'cacheId'> | AbortedPredictionResult> {
     let linesAlreadyChunked = 0
-    let hotStreakID = null
+    let hotStreakId = null
 
     for await (const response of responseGenerator) {
-        const shouldHotStreak = hotStreakID
+        const shouldHotStreak = hotStreakId
             ? // If we have already started emitted hot-streak suggestions, then we should treat all responses as hot-streaks
               response.type === 'partial' || response.type === 'success'
             : // Otherwise only attempt doing so for partial responses.
               response.type === 'partial'
 
         if (shouldHotStreak && response.type !== 'aborted') {
-            const lineTrimmedPrediction = trimPredictionToLastFullLine(
-                response.prediction,
-                linesAlreadyChunked
-            )
-            const [prefix, trimmedPrediction] = trimProcessedTextFromPrediction(
-                lineTrimmedPrediction,
-                linesAlreadyChunked
-            )
+            const { prefix, prefixRange, predictionChunk, predictionChunkRange } =
+                trimPredictionForHotStreak(
+                    response.prediction,
+                    codeToReplaceData.range,
+                    linesAlreadyChunked
+                )
 
-            if (!trimmedPrediction) {
+            if (!predictionChunk) {
                 // No complete lines yet, continue
                 continue
             }
 
-            const lines = trimmedPrediction.split('\n')
-            const currentLineCount = lines.length - 1 // excluding the final new line
+            const currentLineCount = predictionChunk.split('\n').length - 1 // excluding the final new line
             const reachedHotStreakThreshold = currentLineCount > HOT_STREAK_LINES_THRESHOLD
             if (response.type === 'partial' && !reachedHotStreakThreshold) {
                 // We haven't reached the hot streak threshold and we still have more lines to process
@@ -63,18 +65,7 @@ export async function* processHotStreakResponses(
                 continue
             }
 
-            // We need to adjust the prediction range to match the prediction so far.
-            // This ensures we don't diff the partial prediction against the full codeToRewrite
-            const adjustedPredictionRange = new vscode.Range(
-                codeToReplaceData.range.start.translate(linesAlreadyChunked),
-                codeToReplaceData.range.start.translate(linesAlreadyChunked + currentLineCount)
-            )
-
-            const diff = getDecorationInfoFromPrediction(
-                document,
-                trimmedPrediction,
-                adjustedPredictionRange
-            )
+            const diff = getDecorationInfoFromPrediction(document, predictionChunk, predictionChunkRange)
 
             // We want: start line of the diff (first edit/cursor position)
             // end line of the diff - used to determine if we can chunk the diff
@@ -92,7 +83,7 @@ export async function* processHotStreakResponses(
             if (
                 response.type === 'partial' &&
                 lastLineOfDiff.type !== 'unchanged' &&
-                lastLineNumberOfDiff === adjustedPredictionRange.end.line
+                lastLineNumberOfDiff === predictionChunkRange.end.line
             ) {
                 // We only emit a hot streak prediction when the final line of the prediction range is unchanged.
                 // This ensures that the diff is appropriately chunked.
@@ -102,22 +93,17 @@ export async function* processHotStreakResponses(
                 continue
             }
 
-            if (!hotStreakID) {
+            if (!hotStreakId) {
                 // We are emitting a hot streak prediction. This means that all future response should be treated as hot streaks.
-                hotStreakID = uui.v4() as AutoeditHotStreakID
+                hotStreakId = uui.v4() as AutoeditHotStreakID
             }
-
-            const prefixRange = new vscode.Range(
-                codeToReplaceData.range.start,
-                adjustedPredictionRange.start
-            )
 
             // The hot streak prediction excludes part of the prefix. This means that it fundamentally relies
             // on the prefix existing in the document to be a valid suggestion. We need to update the docContext
             // to reflect this.
             const updatedDocContext = getDocContextAfterRewrite({
                 document,
-                position: adjustedPredictionRange.start,
+                position: predictionChunkRange.start,
                 rewriteRange: prefixRange,
                 rewrittenCode: prefix,
                 maxPrefixLength: docContext.maxPrefixLength,
@@ -127,7 +113,7 @@ export async function* processHotStreakResponses(
             const adjustedCodeToReplace = getCodeToReplaceData({
                 docContext,
                 document,
-                position: adjustedPredictionRange.start,
+                position: predictionChunkRange.start,
                 tokenBudget: {
                     ...autoeditsProviderConfig.tokenLimit,
                     codeToRewritePrefixLines: 0,
@@ -151,17 +137,14 @@ export async function* processHotStreakResponses(
                 type: 'suggested',
                 response: {
                     ...response,
-                    prediction: trimmedPrediction,
+                    prediction: predictionChunk,
                     stopReason: AutoeditStopReason.HotStreak,
                 },
                 uri: document.uri.toString(),
-                position,
+                cursorPosition: editPosition,
                 docContext: updatedDocContext,
                 codeToReplaceData: adjustedCodeToReplace,
-                hotStreak: {
-                    id: hotStreakID,
-                    cursorPosition: editPosition,
-                },
+                hotStreakId,
             }
             continue
         }
@@ -173,24 +156,84 @@ export async function* processHotStreakResponses(
             return
         }
 
+        const diff = getDecorationInfoFromPrediction(
+            document,
+            response.prediction,
+            codeToReplaceData.range
+        )
+
+        const diffChangeBoundaries = getDiffChangeBoundaries(diff)
+        if (!diffChangeBoundaries) {
+            // This is the final response (no hot-streak) and we have no diff.
+            // We will yield a suggestion but it will be handled downstream and will not be shown to the user.
+            yield {
+                type: 'suggested',
+                response,
+                uri: document.uri.toString(),
+                cursorPosition: position,
+                docContext,
+                codeToReplaceData,
+            }
+            // Diff doesn't have any changes, so we can't emit a hot streak prediction
+            continue
+        }
+
+        // Retrieve the editPosition for the full (non hot-streak) response
+        // This is important because the final edit could be at the very end of the range and far away from the users'
+        // cursor positon. In that case it would be better to show a next cursor suggestion rather than a full suggestion.
+        const [firstLineOfDiff] = diffChangeBoundaries
+        const firstLineNumberOfDiff =
+            firstLineOfDiff.type === 'removed'
+                ? firstLineOfDiff.originalLineNumber
+                : firstLineOfDiff.modifiedLineNumber
+        const editPosition = document.lineAt(firstLineNumberOfDiff).range.end
+
         yield {
             type: 'suggested',
             response,
             uri: document.uri.toString(),
-            position,
+            cursorPosition: editPosition,
             docContext,
             codeToReplaceData,
         }
     }
 }
 
-/**
- * Trims a prediction string to the last complete line
- * @param prediction The streamed prediction that might end mid-line
- * @returns The prediction trimmed to the last complete line
- */
-function trimPredictionToLastFullLine(prediction: string, previousChunksLines: number): string {
-    // If the prediction is empty, return it as is
+function trimPredictionForHotStreak(
+    prediction: string,
+    range: vscode.Range,
+    linesAlreadyChunked: number
+): {
+    prefix: string
+    prefixRange: vscode.Range
+    predictionChunk: string
+    predictionChunkRange: vscode.Range
+} {
+    const trimmedPrediction = trimPredictionToLastFullLine(prediction)
+    const [prefix, predictionChunk] = trimProcessedTextFromPrediction(
+        trimmedPrediction,
+        linesAlreadyChunked
+    )
+
+    const chunkLineCount = predictionChunk.split('\n').length - 1 // excluding the final new line
+    const prefixRange = new vscode.Range(range.start, range.start.translate(linesAlreadyChunked))
+
+    // We need to adjust the prediction range to match the prediction so far.
+    // This ensures we don't diff the partial prediction against the full codeToRewrite
+    const predictionChunkRange = new vscode.Range(
+        prefixRange.end,
+        range.start.translate(linesAlreadyChunked + chunkLineCount)
+    )
+
+    return {
+        prefix,
+        prefixRange,
+        predictionChunk,
+        predictionChunkRange,
+    }
+}
+
+function trimPredictionToLastFullLine(prediction: string): string {
     if (!prediction) {
         return prediction
     }
@@ -200,11 +243,9 @@ function trimPredictionToLastFullLine(prediction: string, previousChunksLines: n
         return prediction
     }
 
-    // Find the last newline character
     const lastNewlineIndex = prediction.lastIndexOf('\n')
-
-    // If there's no newline, we can't trim to a complete line
     if (lastNewlineIndex === -1) {
+        // If there's no newline, we can't trim to a complete line
         return ''
     }
 

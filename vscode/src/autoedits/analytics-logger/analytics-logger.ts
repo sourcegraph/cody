@@ -25,7 +25,6 @@ import type { CodeToReplaceData } from '../prompt/prompt-utils'
 import type { DecorationInfo } from '../renderer/decorators/base'
 import { getDecorationStats } from '../renderer/diff-utils'
 
-import type { SuggestedPredictionResult } from '../autoedits-provider'
 import { autoeditDebugStore } from '../debug-panel/debug-store'
 import type { AutoEditRenderOutput } from '../renderer/render-output'
 import { autoeditIdRegistry } from './suggestion-id-registry'
@@ -34,6 +33,7 @@ import {
     type AutoeditAcceptReasonMetadata,
     type AutoeditCacheID,
     type AutoeditDiscardReasonMetadata,
+    type AutoeditHotStreakID,
     type AutoeditRejectReasonMetadata,
     type AutoeditRequestID,
     type ContextLoadedState,
@@ -161,20 +161,22 @@ export class AutoeditAnalyticsLogger {
     public markAsLoaded({
         requestId,
         cacheId,
+        hotStreakId,
         prompt,
         payload,
         modelResponse,
         codeToReplaceData,
-        hotStreak,
         docContext,
+        cursorPosition,
     }: {
         modelResponse: SuccessModelResponse | PartialModelResponse
         codeToReplaceData: CodeToReplaceData
         docContext: DocumentContext
-        hotStreak: SuggestedPredictionResult['hotStreak']
         requestId: AutoeditRequestID
         cacheId: AutoeditCacheID
+        hotStreakId?: AutoeditHotStreakID
         prompt: AutoeditsPrompt
+        cursorPosition: vscode.Position
         payload: Required<
             Pick<LoadedState['payload'], 'source' | 'isFuzzyMatch' | 'prediction' | 'codeToRewrite'>
         >
@@ -190,8 +192,9 @@ export class AutoeditAnalyticsLogger {
                 modelResponse,
                 codeToReplaceData,
                 docContext,
-                hotStreak,
                 cacheId,
+                hotStreakId,
+                cursorPosition,
                 payload: {
                     ...request.payload,
                     id: stableId,

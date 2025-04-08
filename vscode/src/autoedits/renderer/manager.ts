@@ -385,13 +385,12 @@ export class AutoEditsDefaultRendererManager
             editBuilder.replace(activeRequest.codeToReplaceData.range, activeRequest.prediction)
         })
 
-        if (activeRequest.hotStreak) {
+        if (activeRequest.hotStreakId) {
             const nextCursorPosition = this.requestManager.getNearestHotStreakItem({
-                hotStreakID: activeRequest.hotStreak.id,
-                position: activeRequest.hotStreak.cursorPosition,
-            })?.hotStreak?.cursorPosition
+                hotStreakID: activeRequest.hotStreakId,
+                position: activeRequest.cursorPosition,
+            })?.cursorPosition
 
-            console.log('GOT NEXT CURSOR POSITION?', nextCursorPosition)
             if (!nextCursorPosition) {
                 return
             }
