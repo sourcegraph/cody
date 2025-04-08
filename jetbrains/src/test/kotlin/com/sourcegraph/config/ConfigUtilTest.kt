@@ -1,7 +1,6 @@
 import com.google.gson.JsonParser
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
 import com.sourcegraph.config.ConfigUtil
-import com.sourcegraph.utils.CodyEditorUtil
 
 class ConfigUtils : BasePlatformTestCase() {
 
@@ -13,8 +12,7 @@ class ConfigUtils : BasePlatformTestCase() {
       "cody.suggestions.mode": "autocomplete"
     }
     """
-    setCodySettingsJsonContent(input)
-    val result = ConfigUtil.getCustomConfiguration(project)
+    val result = ConfigUtil.getCustomConfiguration(project, input)
     val parsed = JsonParser.parseString(result).asJsonObject
 
     assertEquals(
@@ -36,8 +34,7 @@ class ConfigUtils : BasePlatformTestCase() {
       "cody.suggestions.mode": "autocomplete"
     }
     """
-    setCodySettingsJsonContent(input)
-    val result = ConfigUtil.getCustomConfiguration(project)
+    val result = ConfigUtil.getCustomConfiguration(project, input)
     assertNotNull(result)
     val parsed = JsonParser.parseString(result).asJsonObject
     assertEquals(2 + 1, parsed.size()) // +1 for the additional folding property
@@ -52,15 +49,9 @@ class ConfigUtils : BasePlatformTestCase() {
       "cody.suggestions.mode": "autocomplete"
     }
     """
-    setCodySettingsJsonContent(input)
-    val result = ConfigUtil.getCustomConfiguration(project)
+    val result = ConfigUtil.getCustomConfiguration(project, input)
     assertNotNull(result)
     val parsed = JsonParser.parseString(result).asJsonObject
     assertEquals(2 + 1, parsed.size()) // +1 for the additional folding property
-  }
-
-  private fun setCodySettingsJsonContent(codySettingsContent: String) {
-    val uriString = ConfigUtil.getSettingsFile(project).toUri().toString()
-    CodyEditorUtil.createFileOrScratchFromUntitled(project, uriString, codySettingsContent)
   }
 }
