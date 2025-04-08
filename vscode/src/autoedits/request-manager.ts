@@ -3,6 +3,7 @@ import type * as vscode from 'vscode'
 
 import type { PredictionResult } from './autoedits-provider'
 
+import type { CodeToReplaceData, DocumentContext } from '@sourcegraph/cody-shared'
 import { forkSignal } from '../completions/utils'
 import {
     AutoeditStopReason,
@@ -14,7 +15,8 @@ import { type AutoeditHotStreakID, autoeditSource } from './analytics-logger'
 export interface AutoeditRequestManagerParams {
     requestUrl: string
     uri: string
-    documentVersion: number
+    codeToReplaceData: CodeToReplaceData
+    docContext: DocumentContext
     position: vscode.Position
     abortSignal: AbortSignal
 }
@@ -167,6 +169,7 @@ export class RequestManager implements vscode.Disposable {
                 continue
             }
 
+            console.log('FOUND FOR ITEMS', item, hotStreakID)
             const distance = item.hotStreak.cursorPosition.line - position.line
             if (distance < minDistance) {
                 minDistance = distance
@@ -241,7 +244,7 @@ class InflightRequest {
     public coversSameArea(params: AutoeditRequestManagerParams): boolean {
         return (
             params.uri === this.params.uri &&
-            params.documentVersion === this.params.documentVersion &&
+            // params.documentVersion === this.params.documentVersion &&
             params.position.line - this.params.position.line >= 0 &&
             params.position.line - this.params.position.line <= 1
         )
@@ -250,10 +253,15 @@ class InflightRequest {
 
 interface RequestCacheKeyParams {
     uri: string
-    documentVersion?: number
+    codeToReplaceData: CodeToReplaceData
     position: vscode.Position
 }
 
-function createCacheKey({ uri, position }: RequestCacheKeyParams): string {
-    return `${uri}:${position.line}`
+/**
+ * Creates a stable cache key that can be used to directly retrieve and purge items from the cache.
+ */
+function createCacheKey({ uri, codeToReplaceData, position }: RequestCacheKeyParams): string {
+    const { prefixInArea, suffixInArea, codeToRewrite } = codeToReplaceData
+    const responseText = `${prefixInArea}${codeToRewrite}${suffixInArea}`
+    return `${uri}:${responseText}:${position.line}`
 }

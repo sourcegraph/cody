@@ -3,6 +3,7 @@ import * as uui from 'uuid'
 
 import * as vscode from 'vscode'
 
+import { getDocContextAfterRewrite } from '../completions/get-current-doc-context'
 import {
     AutoeditStopReason,
     type ModelResponse,
@@ -10,7 +11,9 @@ import {
     type SuccessModelResponse,
 } from './adapters/base'
 import type { AutoeditHotStreakID } from './analytics-logger'
+import { autoeditsProviderConfig } from './autoedits-config'
 import { type PredictionResult, getDecorationInfoFromPrediction } from './autoedits-provider'
+import { getCodeToReplace } from './prompt/prompt-utils'
 import { getDiffChangeBoundaries } from './renderer/diff-utils'
 
 /**
@@ -36,7 +39,8 @@ export async function* processHotStreakResponses(
     responseGenerator: AsyncGenerator<ModelResponse>,
     document: vscode.TextDocument,
     codeToReplaceData: CodeToReplaceData,
-    docContext: DocumentContext
+    docContext: DocumentContext,
+    position: vscode.Position
 ): AsyncGenerator<PredictionResult> {
     let linesAlreadyChunked = 0
     let hotStreakID = null
@@ -47,11 +51,17 @@ export async function* processHotStreakResponses(
               response.type === 'partial' || response.type === 'success'
             : // Otherwise only attempt doing so for partial responses.
               response.type === 'partial'
+
         if (shouldHotStreak && response.type !== 'aborted') {
-            const trimmedPrediction = trimPredictionForHotStreak(
+            const lineTrimmedPrediction = trimPredictionToLastFullLine(
                 response.prediction,
                 linesAlreadyChunked
             )
+            const [prefix, trimmedPrediction] = trimProcessedTextFromPrediction(
+                lineTrimmedPrediction,
+                linesAlreadyChunked
+            )
+
             if (!trimmedPrediction) {
                 // No complete lines yet, continue
                 continue
@@ -69,7 +79,11 @@ export async function* processHotStreakResponses(
             // We need to adjust the prediction range to match the prediction so far.
             // This ensures we don't diff the partial prediction against the full codeToRewrite
             const adjustedPredictionRange = new vscode.Range(
-                codeToReplaceData.range.start.translate(linesAlreadyChunked),
+                // Hack to fix the off-by-one error. Needs proper fixing
+                codeToReplaceData.range.start.translate(
+                    linesAlreadyChunked,
+                    linesAlreadyChunked > 0 ? 1 : 0
+                ),
                 codeToReplaceData.range.start.translate(linesAlreadyChunked + currentLineCount)
             )
 
@@ -102,25 +116,49 @@ export async function* processHotStreakResponses(
                 continue
             }
 
-            const firstLineNumberOfDiff =
-                firstLineOfDiff.type === 'removed'
-                    ? firstLineOfDiff.originalLineNumber
-                    : firstLineOfDiff.modifiedLineNumber
-            // We use the first line of the diff as the next cursor position.
-            // This is useful so that we can support "jumping" to this suggestion from a different part of the document.
-            const nextCursorPosition = document.lineAt(firstLineNumberOfDiff).range.end
-
-            // Track the number of lines we have processed, this is used to trim the prediction accordingly in the next response.
-            linesAlreadyChunked = linesAlreadyChunked + currentLineCount
-
             if (!hotStreakID) {
                 // We are emitting a hot streak prediction. This means that all future response should be treated as hot streaks.
                 hotStreakID = uui.v4() as AutoeditHotStreakID
             }
 
-            // TODO: Get updatedDocContext by inserting the prediction thus far into the document.
-            // Use that to also update the codeToReplaceData.
-            // Return these and use the updated values in `provideInlineCompletionItems`
+            const prefixRange = new vscode.Range(
+                codeToReplaceData.range.start,
+                adjustedPredictionRange.start
+            )
+
+            // The hot streak prediction excludes part of the prefix. This means that it fundamentally relies
+            // on the prefix existing in the document to be a valid suggestion. We need to update the docContext
+            // to reflect this.
+            const updatedDocContext = getDocContextAfterRewrite({
+                document,
+                position,
+                rewriteRange: prefixRange,
+                rewrittenCode: prefix,
+                maxPrefixLength: docContext.maxPrefixLength,
+                maxSuffixLength: docContext.maxSuffixLength,
+            })
+
+            const adjustedCodeToReplace = getCodeToReplace({
+                docContext,
+                document,
+                position: adjustedPredictionRange.start,
+                tokenBudget: {
+                    ...autoeditsProviderConfig.tokenLimit,
+                    codeToRewriteSuffixLines: currentLineCount - 1,
+                },
+            }).data
+
+            const firstLineNumberOfDiff =
+                firstLineOfDiff.type === 'removed'
+                    ? firstLineOfDiff.originalLineNumber
+                    : firstLineOfDiff.modifiedLineNumber
+
+            // We use the first line of the diff as the next cursor position.
+            // This is useful so that we can support "jumping" to this suggestion from a different part of the document
+            const editPosition = document.lineAt(firstLineNumberOfDiff).range.end
+
+            // Track the number of lines we have processed, this is used to trim the prediction accordingly in the next response.
+            linesAlreadyChunked = linesAlreadyChunked + currentLineCount
 
             yield {
                 response: {
@@ -130,14 +168,16 @@ export async function* processHotStreakResponses(
                 },
                 hotStreak: {
                     id: hotStreakID,
-                    adjustedRange: adjustedPredictionRange,
-                    cursorPosition: nextCursorPosition,
+                    range: adjustedPredictionRange,
+                    cursorPosition: editPosition,
+                    docContext: updatedDocContext,
+                    codeToReplaceData: adjustedCodeToReplace,
                 },
             }
         }
 
-        // Pass through all other response types unchanged
         yield { response }
+        // This is useful so that we can support "jumping" to this suggestion from a different part of the document.
     }
 }
 
@@ -146,22 +186,19 @@ export async function* processHotStreakResponses(
  * @param prediction The streamed prediction that might end mid-line
  * @returns The prediction trimmed to the last complete line
  */
-function trimPredictionForHotStreak(prediction: string, previousChunksLines: number): string {
+function trimPredictionToLastFullLine(prediction: string, previousChunksLines: number): string {
     // If the prediction is empty, return it as is
     if (!prediction) {
         return prediction
     }
 
-    const lines = prediction.split('\n')
-    const suffixTrimmedPrediction = lines.slice(previousChunksLines).join('\n')
-
     // If the prediction ends with a newline, it's already complete
-    if (suffixTrimmedPrediction.endsWith('\n')) {
-        return suffixTrimmedPrediction
+    if (prediction.endsWith('\n')) {
+        return prediction
     }
 
     // Find the last newline character
-    const lastNewlineIndex = suffixTrimmedPrediction.lastIndexOf('\n')
+    const lastNewlineIndex = prediction.lastIndexOf('\n')
 
     // If there's no newline, we can't trim to a complete line
     if (lastNewlineIndex === -1) {
@@ -169,5 +206,20 @@ function trimPredictionForHotStreak(prediction: string, previousChunksLines: num
     }
 
     // Return everything up to and including the last newline
-    return suffixTrimmedPrediction.substring(0, lastNewlineIndex + 1)
+    return prediction.substring(0, lastNewlineIndex + 1)
+}
+
+function trimProcessedTextFromPrediction(
+    prediction: string,
+    previousChunksLines: number
+): [string, string] {
+    // If the prediction is empty, return it as is
+    if (!prediction) {
+        return ['', prediction]
+    }
+
+    const lines = prediction.split('\n')
+    const prefix = lines.slice(0, previousChunksLines).join('\n')
+    const remainingPrediction = lines.slice(previousChunksLines).join('\n')
+    return [prefix, remainingPrediction]
 }

@@ -361,8 +361,8 @@ export class AutoEditsDefaultRendererManager
 
         this.requestManager.removeFromCache({
             uri: activeRequest.document.uri.toString(),
-            documentVersion: activeRequest.document.version,
-            position: activeRequest.hotStreak?.cursorPosition || activeRequest.position,
+            codeToReplaceData: activeRequest.codeToReplaceData,
+            position: activeRequest.position,
         })
 
         // Reset the testing promise when accepting
@@ -397,6 +397,7 @@ export class AutoEditsDefaultRendererManager
                 position: activeRequest.hotStreak.cursorPosition,
             })?.hotStreak?.cursorPosition
 
+            console.log('GOT NEXT CURSOR POSITION?', nextCursorPosition)
             if (!nextCursorPosition) {
                 return
             }
@@ -411,7 +412,7 @@ export class AutoEditsDefaultRendererManager
         if (activeRequest) {
             this.requestManager.removeFromCache({
                 uri: activeRequest.document.uri.toString(),
-                documentVersion: activeRequest.document.version,
+                codeToReplaceData: activeRequest.codeToReplaceData,
                 position: activeRequest.position,
             })
         }

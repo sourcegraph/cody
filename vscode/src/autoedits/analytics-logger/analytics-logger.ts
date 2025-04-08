@@ -25,7 +25,7 @@ import type { CodeToReplaceData } from '../prompt/prompt-utils'
 import type { DecorationInfo } from '../renderer/decorators/base'
 import { getDecorationStats } from '../renderer/diff-utils'
 
-import type { PredictionResult } from '../autoedits-provider'
+import { PredictionResult } from '../autoedits-provider'
 import { autoeditDebugStore } from '../debug-panel/debug-store'
 import type { AutoEditRenderOutput } from '../renderer/render-output'
 import { autoeditIdRegistry } from './suggestion-id-registry'
@@ -164,9 +164,11 @@ export class AutoeditAnalyticsLogger {
         modelResponse,
         codeToReplaceData,
         hotStreak,
+        docContext,
     }: {
         modelResponse: SuccessModelResponse | PartialModelResponse
         codeToReplaceData: CodeToReplaceData
+        docContext: DocumentContext
         hotStreak: PredictionResult['hotStreak']
         requestId: AutoeditRequestID
         prompt: AutoeditsPrompt
@@ -184,6 +186,7 @@ export class AutoeditAnalyticsLogger {
                 loadedAt,
                 modelResponse,
                 codeToReplaceData,
+                docContext,
                 hotStreak,
                 payload: {
                     ...request.payload,

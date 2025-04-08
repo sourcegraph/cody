@@ -74,13 +74,12 @@ interface AutoeditEditItem extends AutocompleteEditItem {
 
 export interface PredictionResult {
     response: ModelResponse
-    /**
-     * Metadata to process a hot-streak completion.
-     */
     hotStreak?: {
         id: AutoeditHotStreakID
-        adjustedRange: vscode.Range
+        range: vscode.Range
         cursorPosition: vscode.Position
+        docContext: DocumentContext
+        codeToReplaceData: CodeToReplaceData
     }
 }
 
@@ -278,22 +277,19 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                 'provideInlineCompletionItems',
                 'Calculating getCurrentDocContext...'
             )
-            const docContext = getCurrentDocContext({
+            let docContext = getCurrentDocContext({
                 document,
                 position,
                 maxPrefixLength: tokensToChars(autoeditsProviderConfig.tokenLimit.prefixTokens),
                 maxSuffixLength: tokensToChars(autoeditsProviderConfig.tokenLimit.suffixTokens),
             })
 
-            let {
-                data: codeToReplaceData,
-                adjustCodeToReplaceDataForRange: adjustCodeToReplaceForRange,
-            } = getCodeToReplace({
+            let codeToReplaceData = getCodeToReplace({
                 docContext,
                 document,
                 position,
                 tokenBudget: autoeditsProviderConfig.tokenLimit,
-            })
+            }).data
             const requestId = autoeditAnalyticsLogger.createRequest({
                 startedAt,
                 codeToReplaceData,
@@ -372,10 +368,6 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                 return null
             }
 
-            if (predictionResult.hotStreak) {
-                codeToReplaceData = adjustCodeToReplaceForRange(predictionResult.hotStreak.adjustedRange)
-            }
-
             if (
                 predictionResult.response.stopReason !== AutoeditStopReason.HotStreak &&
                 predictionResult.response.stopReason !== AutoeditStopReason.RequestFinished
@@ -386,11 +378,18 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
 
             const initialPrediction = predictionResult.response.prediction
 
+            if (predictionResult.hotStreak) {
+                // A hot-streak prediction is partial, so we need to update the docContext and codeToReplaceData
+                docContext = predictionResult.hotStreak.docContext
+                codeToReplaceData = predictionResult.hotStreak.codeToReplaceData
+            }
+
             autoeditAnalyticsLogger.markAsLoaded({
                 requestId,
                 prompt,
                 modelResponse: predictionResult.response,
                 hotStreak: predictionResult.hotStreak,
+                docContext,
                 codeToReplaceData,
                 payload: {
                     // TODO: make it required
@@ -715,7 +714,13 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
             timeoutMs: autoeditsProviderConfig.timeoutMs,
         })
 
-        return processHotStreakResponses(responseGenerator, document, codeToReplaceData, docContext)
+        return processHotStreakResponses(
+            responseGenerator,
+            document,
+            codeToReplaceData,
+            docContext,
+            position
+        )
     }
 
     private hasDoneMockPrediction = false
@@ -737,7 +742,8 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
         const requestParams: AutoeditRequestManagerParams = {
             requestUrl: autoeditsProviderConfig.url,
             uri: document.uri.toString(),
-            documentVersion: document.version,
+            codeToReplaceData,
+            docContext,
             position,
             abortSignal,
         }
@@ -763,7 +769,8 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                             generator,
                             document,
                             codeToReplaceData,
-                            docContext
+                            docContext,
+                            position
                         )
                     })
                 }
