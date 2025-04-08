@@ -36,8 +36,7 @@ export function getModelInfo(modelID: string): {
     provider: string
     title: string
 } {
-    // allow for both `provider::model` and `provider/model` formats
-    const [providerID, ...rest] = modelID.split(/[:\/]{2}|\//)
+    const [providerID, ...rest] = modelID.split('/')
     const provider = getProviderName(providerID)
     const title = (rest.at(-1) || '').replace(/-/g, ' ')
     return { provider, title }

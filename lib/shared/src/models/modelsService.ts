@@ -626,12 +626,7 @@ export class ModelsService {
 
     public getModelByID(modelID: string, models = this.models): Model | undefined {
         // TODO(sqs)#observe: remove synchronous access here, return an Observable<Model|undefined> instead
-        // split on :: or / to get the model id
-        // e.g. "openai::v1::gpt-4o-mini" or "openai/gpt-4o-mini"
-        const modelParameters = modelID.split(/[:\/]{2}|\//)
-        const modelId = modelParameters.at(-1) || ''
-
-        return models.find(m => m.id.endsWith(modelId))
+        return this.models.find(m => m.id === modelID)
     }
 
     public getAllModelsWithSubstring(modelSubstring: string): Model[] {
