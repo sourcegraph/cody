@@ -8,6 +8,7 @@ import {
     type EventSource,
     type SiteAndCodyAPIVersions,
     firstResultFromOperation,
+    logError,
     modelsService,
     siteVersion,
     skipPendingOperation,
@@ -310,13 +311,18 @@ export class EditManager implements vscode.Disposable {
             this.options.fixupController.startDecorator(task)
             const provider = this.getProviderForTask(task)
             await provider.startStreamingEdit()
-        } catch (error: any) {
-            // If there's an error, cancel the task
-            this.options.fixupController.cancel(task)
+        } catch (error: unknown) {
+            const errorObject =
+                error instanceof Error
+                    ? error
+                    : new Error(typeof error === 'string' ? error : String(error))
+            // If there's an error, abort the task by sending an error event
+            this.options.fixupController.error(task.id, errorObject)
+
+            logError('startStreamingEditTask error:', errorObject.message)
             void vscode.window.showErrorMessage(
-                `Error performing the ${task.intent} edit task. Check the logs for more details.`
+                `Error performing the ${task.intent} task. Check the logs for more details.`
             )
-            throw error
         }
     }
 
