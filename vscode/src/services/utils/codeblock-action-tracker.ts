@@ -141,37 +141,28 @@ export async function handleCodeFromInsertAtCursor(text: string): Promise<void> 
     await vscode.workspace.applyEdit(workspaceEdit)
 }
 
-function getSmartApplyExperimentModel(
-    defaultModel: EditModel | undefined
-): Observable<EditModel | undefined> {
+function isSmartApplyInstantModeEnabled(): Observable<boolean> {
     return combineLatest(
-        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodySmartApplyExperimentEnabledFeatureFlag),
-        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodySmartApplyExperimentVariant1),
-        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodySmartApplyExperimentVariant2),
-        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodySmartApplyExperimentVariant3)
+        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodySmartApplyInstantModeEnabled)
     ).pipe(
-        switchMap(([isExperimentEnabled, isVariant1Enabled, isVariant2Enabled, isVariant3Enabled]) => {
-            // We run fine tuning experiment for VSC client only.
-            // We disable for all agent clients like the JetBrains plugin.
-            if (!isExperimentEnabled) {
-                return Observable.of(defaultModel)
+        switchMap(([isEnabled]) => {
+            // If the instant mode is enabled, return true to use qwen model.
+            if (isEnabled) {
+                return Observable.of(true)
             }
-            if (isVariant1Enabled) {
-                return Observable.of(SMART_APPLY_MODEL_IDENTIFIERS.FireworksQwenCodeDefault)
-            }
-            if (isVariant2Enabled) {
-                return Observable.of(SMART_APPLY_MODEL_IDENTIFIERS.FireworksQwenCodeVariant2)
-            }
-            if (isVariant3Enabled) {
-                return Observable.of(SMART_APPLY_MODEL_IDENTIFIERS.FireworksQwenCodeVariant3)
-            }
-            return Observable.of(defaultModel)
+            return Observable.of(false)
         }),
         distinctUntilChanged()
     )
 }
 
 async function getSmartApplyModel(authStatus: AuthStatus): Promise<EditModel | undefined> {
+    const isInstantModeEnabled = await firstValueFrom(
+        isSmartApplyInstantModeEnabled().pipe(skipPendingOperation())
+    )
+    if (isInstantModeEnabled) {
+        return SMART_APPLY_MODEL_IDENTIFIERS.FireworksQwenCodeDefault
+    }
     if (isDotCom(authStatus) || isS2(authStatus)) {
         const defaultModel: EditModel = 'anthropic/claude-3-5-sonnet-20240620'
         /**
@@ -179,12 +170,8 @@ async function getSmartApplyModel(authStatus: AuthStatus): Promise<EditModel | u
          * as it is the most reliable model for smart apply from our testing.
          * We choose the model based on the feature flag but default to the sonnet model if the flag is not enabled or as default model.
          */
-        const smartApplyModel = await firstValueFrom(
-            getSmartApplyExperimentModel(defaultModel).pipe(skipPendingOperation())
-        )
-        return smartApplyModel
+        return defaultModel
     }
-
     // We cannot be sure what model we're using for enterprise, we will let this fall through
     // to the default edit/smart apply behaviour where we use the configured enterprise model.
     return undefined

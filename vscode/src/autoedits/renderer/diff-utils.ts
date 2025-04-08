@@ -537,6 +537,21 @@ export function isOnlyAddingTextForModifiedLines(modifiedLines: ModifiedLineInfo
     return true
 }
 
+export function isOnlyAddingText(decorationInfo: DecorationInfo): boolean {
+    // Check if there are no removed lines
+    if (decorationInfo.removedLines.length > 0) {
+        return false
+    }
+
+    // Check if modified lines only have additions (no deletions)
+    if (!isOnlyAddingTextForModifiedLines(decorationInfo.modifiedLines)) {
+        return false
+    }
+
+    // If we have added lines or modified lines with only additions, then we're only adding text
+    return decorationInfo.addedLines.length > 0 || decorationInfo.modifiedLines.length > 0
+}
+
 /**
  * Checks if the only changes for modified lines are additions of text.
  */

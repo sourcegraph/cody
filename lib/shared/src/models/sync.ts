@@ -1,5 +1,6 @@
 import { Observable, interval, map } from 'observable-fns'
-import { type AuthStatus, isCodyProUser } from '../auth/types'
+import { currentAuthStatusOrNotReadyYet, mockAuthStatus } from '../auth/authStatus'
+import { type AuthStatus, isCodyProUser, isFreeUser } from '../auth/types'
 import type { ClientConfiguration } from '../configuration'
 import { clientCapabilities } from '../configuration/clientCapabilities'
 import { cenv } from '../configuration/environment'
@@ -21,9 +22,11 @@ import { pendingOperation, switchMapReplayOperation } from '../misc/observableOp
 import { ANSWER_TOKENS } from '../prompt/constants'
 import type { CodyClientConfig } from '../sourcegraph-api/clientConfig'
 import { isDotCom } from '../sourcegraph-api/environments'
+import type { RateLimitError } from '../sourcegraph-api/errors'
 import type { CodyLLMSiteConfiguration } from '../sourcegraph-api/graphql/client'
 import { RestClient } from '../sourcegraph-api/rest/client'
 import type { UserProductSubscription } from '../sourcegraph-api/userProductSubscription'
+import { telemetryRecorder } from '../telemetry-v2/singleton'
 import { CHAT_INPUT_TOKEN_BUDGET } from '../token/constants'
 import { isError } from '../utils'
 import { DEEP_CODY_MODEL, TOOL_CODY_MODEL } from './client'
@@ -40,6 +43,15 @@ import { getEnterpriseContextWindow } from './utils'
 const EMPTY_PREFERENCES: DefaultsAndUserPreferencesForEndpoint = { defaults: {}, selected: {} }
 export const INPUT_TOKEN_FLAG_OFF: number = 45_000
 const MISTRAL_ADJUSTMENT_FACTOR: number = 0.85
+interface RateLimitState {
+    chatModel: string | undefined
+    editModel: string | undefined
+}
+
+const rateLimitState: RateLimitState = {
+    chatModel: undefined,
+    editModel: undefined,
+}
 
 /**
  * Observe the list of all available models.
@@ -181,6 +193,9 @@ export function syncModels({
                                         enableToolCody,
                                         featureFlagProvider.evaluatedFeatureFlag(
                                             FeatureFlag.EnhancedContextWindow
+                                        ),
+                                        featureFlagProvider.evaluateFeatureFlag(
+                                            FeatureFlag.FallbackToFlash
                                         )
                                     ).pipe(
                                         switchMap(
@@ -190,6 +205,7 @@ export function syncModels({
                                                 defaultToHaiku,
                                                 isToolCodyEnabled,
                                                 enhancedContextWindowFlag,
+                                                fallbackToFlashFlag,
                                             ]) => {
                                                 if (serverModelsConfig) {
                                                     // Remove deprecated models from the list, filter out waitlisted models for Enterprise.
@@ -323,6 +339,139 @@ export function syncModels({
                                                 ) {
                                                     data.preferences!.defaults.chat = haikuModel.id
                                                 }
+                                                /**
+                                                 * Handle rate limiting for paid users
+                                                 *
+                                                 * When rate limited:
+                                                 * 1. Disables all non-fast models (models without Speed tag)
+                                                 * 2. Saves current model preferences for later restoration
+                                                 * 3. Forces default model to Gemini Flash for both chat and edit
+                                                 *
+                                                 * When rate limit is lifted:
+                                                 * - Restores previously saved model preferences
+                                                 */
+                                                if (
+                                                    fallbackToFlashFlag &&
+                                                    !isFreeUser(authStatus, userProductSubscription)
+                                                ) {
+                                                    if (authStatus.rateLimited) {
+                                                        // Disable all the models
+
+                                                        // Check if there are any unlimited models
+                                                        const hasUnlimitedModels =
+                                                            data.primaryModels.some(model =>
+                                                                model.tags.includes(ModelTag.Unlimited)
+                                                            )
+
+                                                        data.primaryModels = data.primaryModels.map(
+                                                            model => {
+                                                                if (hasUnlimitedModels) {
+                                                                    // If we have unlimited models, disable everything else
+                                                                    if (
+                                                                        !model.tags.includes(
+                                                                            ModelTag.Unlimited
+                                                                        )
+                                                                    ) {
+                                                                        return {
+                                                                            ...model,
+                                                                            disabled: true,
+                                                                        }
+                                                                    }
+                                                                } else {
+                                                                    // If no unlimited models, disable everything except speed
+                                                                    if (
+                                                                        !model.tags.includes(
+                                                                            ModelTag.Speed
+                                                                        )
+                                                                    ) {
+                                                                        return {
+                                                                            ...model,
+                                                                            disabled: true,
+                                                                        }
+                                                                    }
+                                                                }
+                                                                return model
+                                                            }
+                                                        )
+
+                                                        if (data.preferences) {
+                                                            const modelToFallback =
+                                                                data.preferences.defaults
+                                                                    .unlimitedChat ||
+                                                                'google::v1::gemini-2.0-flash'
+
+                                                            // Try to use Gemini Flash first, if not available fallback to any fast model
+                                                            let defaultModel = data.primaryModels.find(
+                                                                model => model.id === modelToFallback
+                                                            )
+                                                            if (!defaultModel) {
+                                                                defaultModel = data.primaryModels.find(
+                                                                    model =>
+                                                                        model.tags.includes(
+                                                                            ModelTag.Speed
+                                                                        )
+                                                                )
+                                                            }
+
+                                                            // Set the default model
+                                                            if (defaultModel) {
+                                                                rateLimitState.chatModel =
+                                                                    data.preferences.defaults.chat || ''
+                                                                rateLimitState.editModel =
+                                                                    data.preferences.defaults.edit || ''
+
+                                                                data.preferences.defaults.chat =
+                                                                    defaultModel.id
+                                                                data.preferences.defaults.edit =
+                                                                    defaultModel.id
+
+                                                                telemetryRecorder.recordEvent(
+                                                                    'cody.rateLimit',
+                                                                    'hit',
+                                                                    {
+                                                                        privateMetadata: {
+                                                                            chatModel: defaultModel.id,
+                                                                        },
+                                                                    }
+                                                                )
+                                                            }
+                                                        }
+                                                    } else {
+                                                        // Re-enable all models
+                                                        data.primaryModels = data.primaryModels.map(
+                                                            model => {
+                                                                if (
+                                                                    !model.tags.includes(ModelTag.Speed)
+                                                                ) {
+                                                                    return {
+                                                                        ...model,
+                                                                        disabled: false,
+                                                                    }
+                                                                }
+                                                                return model
+                                                            }
+                                                        )
+                                                        const originalChatModel =
+                                                            data.primaryModels.find(
+                                                                model =>
+                                                                    model.id === rateLimitState.chatModel
+                                                            )
+                                                        const originalEditModel =
+                                                            data.primaryModels.find(
+                                                                model =>
+                                                                    model.id === rateLimitState.editModel
+                                                            )
+                                                        if (originalChatModel && data.preferences) {
+                                                            data.preferences.defaults.chat =
+                                                                originalChatModel.id
+                                                        }
+                                                        if (originalEditModel && data.preferences) {
+                                                            data.preferences.defaults.edit =
+                                                                originalEditModel.id
+                                                        }
+                                                    }
+                                                }
+
                                                 data.primaryModels = data.primaryModels.map(model => {
                                                     if (
                                                         model.modelRef ===
@@ -390,26 +539,31 @@ export function syncModels({
                 return serverModelsConfig
             })
         )
-
-    return combineLatest(localModels, remoteModelsData, userModelPreferences).pipe(
+    return combineLatest(localModels, remoteModelsData, userModelPreferences, authStatus).pipe(
         map(
-            ([localModels, remoteModelsData, userModelPreferences]):
+            ([localModels, remoteModelsData, userModelPreferences, currentAuthStatus]):
                 | ModelsData
-                | typeof pendingOperation =>
-                remoteModelsData === pendingOperation
-                    ? pendingOperation
-                    : {
-                          localModels,
-                          primaryModels: isError(remoteModelsData)
-                              ? []
-                              : normalizeModelList(remoteModelsData.primaryModels),
-                          preferences: isError(remoteModelsData)
-                              ? userModelPreferences
-                              : resolveModelPreferences(
-                                    remoteModelsData.preferences,
-                                    userModelPreferences
-                                ),
-                      }
+                | typeof pendingOperation => {
+                if (remoteModelsData === pendingOperation) {
+                    return pendingOperation
+                }
+
+                // Calculate isRateLimited directly from the current authStatus
+                const isRateLimited = !!(
+                    'rateLimited' in currentAuthStatus && currentAuthStatus.rateLimited
+                )
+
+                return {
+                    localModels,
+                    primaryModels: isError(remoteModelsData)
+                        ? []
+                        : normalizeModelList(remoteModelsData.primaryModels),
+                    preferences: isError(remoteModelsData)
+                        ? userModelPreferences
+                        : resolveModelPreferences(remoteModelsData.preferences, userModelPreferences),
+                    isRateLimited,
+                }
+            }
         ),
         distinctUntilChanged(),
         tap(modelsData => {
@@ -591,5 +745,17 @@ export function defaultModelPreferencesFromServerModelsConfig(
         autocomplete: config.defaultModels.codeCompletion,
         chat: config.defaultModels.chat,
         edit: config.defaultModels.chat,
+        unlimitedChat: config.defaultModels.unlimitedChat,
+    }
+}
+
+export function handleRateLimitError(error: RateLimitError): void {
+    const currentStatus = currentAuthStatusOrNotReadyYet()
+    if (currentStatus?.authenticated) {
+        const updatedStatus: AuthStatus = {
+            ...currentStatus,
+            rateLimited: true,
+        }
+        mockAuthStatus(updatedStatus)
     }
 }

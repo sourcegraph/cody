@@ -5,9 +5,11 @@ import type { CodeCompletionsParams, PromptString } from '@sourcegraph/cody-shar
 import type { AutoeditSourceMetadata } from '../analytics-logger/types'
 import type { AutoeditsRequestBody } from './utils'
 
+// TODO: convert it to numbered enum to propagate with our analytics events for all instances
 export enum AutoeditStopReason {
     StreamingChunk = 'cody-streaming-chunk',
     RequestAborted = 'cody-request-aborted',
+    IrrelevantInFlightRequest = 'cody-irrelevant-in-flight-request',
     RequestFinished = 'cody-request-finished',
 }
 
@@ -57,7 +59,7 @@ export interface PartialModelResponse extends ModelResponseShared {
 
 export interface AbortedModelResponse extends ModelResponseShared {
     type: 'aborted'
-    stopReason: AutoeditStopReason.RequestAborted
+    stopReason: AutoeditStopReason.RequestAborted | AutoeditStopReason.IrrelevantInFlightRequest
 }
 
 export type ModelResponse = SuccessModelResponse | PartialModelResponse | AbortedModelResponse
