@@ -710,7 +710,7 @@
       {
         "command": "cody.supersuggest.accept",
         "key": "tab",
-        "when": "editorTextFocus && cody.activated && cody.supersuggest.active"
+        "when": "editorTextFocus && cody.activated && cody.supersuggest.active && !cody.nextCursorSuggested"
       },
       {
         "command": "cody.supersuggest.dismiss",
@@ -721,6 +721,11 @@
         "command": "cody.supersuggest.testExample",
         "key": "ctrl+alt+enter",
         "when": "cody.activated && config.cody.suggestions.mode == 'auto-edit (Beta)'"
+      },
+      {
+        "command": "cody.nextCursor.accept",
+        "key": "tab",
+        "when": "cody.activated && config.cody.suggestions.mode == 'auto-edit (Beta)' && cody.nextCursorSuggested"
       }
     ],
     "submenus": [
