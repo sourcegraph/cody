@@ -595,7 +595,7 @@
       {
         "command": "cody.command.autoedit-manual-trigger",
         "title": "Autoedits Manual Trigger",
-        "enablement": "cody.activated && config.cody.suggestions.mode == 'auto-edit (Beta)'"
+        "enablement": "cody.activated && config.cody.suggestions.mode == 'auto-edit'"
       },
       {
         "command": "cody.command.autoedit.open-debug-panel",
@@ -720,7 +720,7 @@
       {
         "command": "cody.supersuggest.testExample",
         "key": "ctrl+alt+enter",
-        "when": "cody.activated && config.cody.suggestions.mode == 'auto-edit (Beta)'"
+        "when": "cody.activated && config.cody.suggestions.mode == 'auto-edit'"
       }
     ],
     "submenus": [
@@ -963,7 +963,7 @@
         },
         "cody.suggestions.mode": {
           "type": "string",
-          "enum": ["autocomplete", "auto-edit (Beta)", "off"],
+          "enum": ["autocomplete", "auto-edit", "off"],
           "enumDescriptions": [
             "Suggests standard code completions as you type.",
             "Suggests advanced context-aware code edits as you navigate the codebase. Experimental feature for Pro and Enterprise users.",

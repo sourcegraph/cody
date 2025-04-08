@@ -11,7 +11,7 @@ data class ExtensionConfiguration(
   val anonymousUserID: String? = null,
   val autocompleteAdvancedProvider: String? = null,
   val autocompleteAdvancedModel: String? = null,
-  val suggestionsMode: SuggestionsModeEnum? = null, // Oneof: autocomplete, auto-edit (Beta), off
+  val suggestionsMode: SuggestionsModeEnum? = null, // Oneof: autocomplete, auto-edit, off
   val debug: Boolean? = null,
   val verboseDebug: Boolean? = null,
   val telemetryClientName: String? = null,
@@ -23,7 +23,7 @@ data class ExtensionConfiguration(
 
   enum class SuggestionsModeEnum {
     @SerializedName("autocomplete") Autocomplete,
-    @SerializedName("auto-edit (Beta)") `Auto-edit-Beta`,
+    @SerializedName("auto-edit") `Auto-edit`,
     @SerializedName("off") Off,
   }
 }

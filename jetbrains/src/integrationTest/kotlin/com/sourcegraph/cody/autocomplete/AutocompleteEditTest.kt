@@ -21,7 +21,7 @@ class AutocompleteEditTest : BaseAutocompleteTest() {
   companion object {
     private val codySettingsContent =
         """{
-          |  "cody.suggestions.mode": "auto-edit (Beta)"
+          |  "cody.suggestions.mode": "auto-edit"
           |}
           |"""
             .trimMargin()
