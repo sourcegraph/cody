@@ -16,6 +16,7 @@ jobs:
     timeout-minutes: 20
     permissions:
       contents: write # for publishing the release
+      id-token: write
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v3
@@ -43,6 +44,15 @@ jobs:
           fi
       - run: pnpm build
       - run: pnpm run test
+      # Auth for integration tests to send metrics to data team
+      - id: auth
+        uses: google-github-actions/auth@v2
+        # Skip auth if PR is from a fork
+        if: ${{ !github.event.pull_request.head.repo.fork }}
+        with:
+          workload_identity_provider: ${{ secrets.DATA_TEAM_PROVIDER_NAME }}
+          service_account: ${{ secrets.DATA_TEAM_SA_EMAIL }}
+      - uses: google-github-actions/setup-gcloud@v2
       - run: xvfb-run -a pnpm -C vscode run test:integration
       - run: xvfb-run -a pnpm -C vscode run test:e2e
         env:
