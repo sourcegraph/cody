@@ -17,9 +17,10 @@ import type { CodeToReplaceData } from './prompt/prompt-utils'
 import { isNotRecyclable, isRequestNotRelevant } from './request-recycling'
 
 export interface AutoeditRequestManagerParams {
-    document: vscode.TextDocument
     requestUrl: string
-    uri: string
+    documentUri: string
+    documentText: string
+    documentVersion: number
     codeToReplaceData: CodeToReplaceData
     docContext: DocumentContext
     position: vscode.Position
@@ -58,7 +59,7 @@ export class RequestManager implements vscode.Disposable {
         const inflightRequest = this.findMatchingInflightRequest(params)
         if (inflightRequest) {
             const result = await inflightRequest.promise
-            if (result.type === 'suggested') {
+            if (result.type === 'suggested' && result.response.type === 'success') {
                 return {
                     ...result,
                     response: {
@@ -125,7 +126,10 @@ export class RequestManager implements vscode.Disposable {
                     ...result,
                     cacheId: cacheId,
                 }
-                this.cache.set(cacheId, cachedResult)
+                this.cache.set(cacheId, {
+                    ...cachedResult,
+                    response: { ...result.response, source: autoeditSource.cache },
+                })
 
                 // A promise will never resolve more than once, so we don't need
                 // to check if the request was already fulfilled.
@@ -152,8 +156,8 @@ export class RequestManager implements vscode.Disposable {
         params: AutoeditRequestManagerParams
     ): InflightRequest | undefined {
         const key = createRequestKey({
-            uri: params.uri,
-            documentVersion: params.document.version,
+            documentUri: params.documentUri,
+            documentVersion: params.documentVersion,
             position: params.position,
         })
 
@@ -170,7 +174,7 @@ export class RequestManager implements vscode.Disposable {
     }
 
     public checkCache(params: AutoeditRequestManagerParams): CacheEntry | null {
-        const matches = this.getValidCacheItemsForDocument(params.document)
+        const matches = this.getValidCacheItemsForDocument(params.documentText, params.documentUri)
         if (matches.length === 0) {
             // No matches found
             return null
@@ -193,13 +197,12 @@ export class RequestManager implements vscode.Disposable {
         return closestMatch
     }
 
-    public getValidCacheItemsForDocument(document: vscode.TextDocument): CacheEntry[] {
-        const documentText = document.getText()
+    public getValidCacheItemsForDocument(documentText: string, documentUri: string): CacheEntry[] {
         const matchingItems: CacheEntry[] = []
 
         for (const key of [...this.cache.keys()]) {
             const item = this.cache.get(key)
-            if (!item || item.uri !== document.uri.toString()) {
+            if (!item || item.uri !== documentUri) {
                 continue
             }
 
@@ -328,8 +331,8 @@ export class InflightRequest {
 
     constructor(public params: AutoeditRequestManagerParams) {
         this.key = createRequestKey({
-            uri: params.uri,
-            documentVersion: params.document.version,
+            documentUri: params.documentUri,
+            documentVersion: params.documentVersion,
             position: params.position,
         })
         // TODO: decouple the autoedit provider abort signal from the one used by the request manager
@@ -358,20 +361,17 @@ export class InflightRequest {
      */
     public coversSameArea(params: AutoeditRequestManagerParams): boolean {
         return (
-            params.uri === this.params.uri &&
-            params.document.version === this.params.document.version &&
+            params.documentUri === this.params.documentUri &&
+            params.documentVersion === this.params.documentVersion &&
             params.position.line - this.params.position.line >= 0 &&
             params.position.line - this.params.position.line <= 1
         )
     }
 }
 
-interface RequestKeyParams {
-    uri: string
-    documentVersion: number
-    position: vscode.Position
-}
+interface RequestKeyParams
+    extends Pick<AutoeditRequestManagerParams, 'documentUri' | 'documentVersion' | 'position'> {}
 
-function createRequestKey({ uri, documentVersion, position }: RequestKeyParams): string {
-    return `${uri}:${documentVersion}:${position.line}`
+function createRequestKey({ documentUri, documentVersion, position }: RequestKeyParams): string {
+    return `${documentUri}:${documentVersion}:${position.line}`
 }
