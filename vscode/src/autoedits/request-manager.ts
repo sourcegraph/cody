@@ -27,10 +27,8 @@ export interface AutoeditRequestManagerParams {
     abortSignal: AbortSignal
 }
 
-interface CacheEntry extends SuggestedPredictionResult {}
-
 export class RequestManager implements vscode.Disposable {
-    private cache = new LRUCache<AutoeditCacheID, CacheEntry>({
+    private cache = new LRUCache<AutoeditCacheID, SuggestedPredictionResult>({
         max: 50,
     })
     private readonly inflightRequests = new LRUCache<string, InflightRequest>({ max: 20 })
@@ -122,7 +120,7 @@ export class RequestManager implements vscode.Disposable {
                 }
 
                 const cacheId = uuid.v4() as AutoeditCacheID
-                const cachedResult: CacheEntry = {
+                const cachedResult: SuggestedPredictionResult = {
                     ...result,
                     cacheId: cacheId,
                 }
@@ -173,7 +171,11 @@ export class RequestManager implements vscode.Disposable {
         return undefined
     }
 
-    public checkCache(params: AutoeditRequestManagerParams): CacheEntry | null {
+    /**
+     * Check the cache fuzzily for a match.
+     * Looks for items that are still valid in the document and are within a certain distance from the cursor
+     */
+    public checkCache(params: AutoeditRequestManagerParams): SuggestedPredictionResult | null {
         const matches = this.getValidCacheItemsForDocument(params.documentText, params.documentUri)
         if (matches.length === 0) {
             // No matches found
@@ -181,7 +183,7 @@ export class RequestManager implements vscode.Disposable {
         }
 
         // Find match with closest range.start
-        let closestMatch: CacheEntry | null = null
+        let closestMatch: SuggestedPredictionResult | null = null
         let closestDistance = Number.MAX_SAFE_INTEGER
         const maxDistance = 5 // Avoid matching too far from the cursor
 
@@ -197,8 +199,11 @@ export class RequestManager implements vscode.Disposable {
         return closestMatch
     }
 
-    public getValidCacheItemsForDocument(documentText: string, documentUri: string): CacheEntry[] {
-        const matchingItems: CacheEntry[] = []
+    public getValidCacheItemsForDocument(
+        documentText: string,
+        documentUri: string
+    ): SuggestedPredictionResult[] {
+        const matchingItems: SuggestedPredictionResult[] = []
 
         for (const key of [...this.cache.keys()]) {
             const item = this.cache.get(key)
@@ -227,8 +232,8 @@ export class RequestManager implements vscode.Disposable {
     }: {
         hotStreakID: AutoeditHotStreakID
         position: vscode.Position
-    }): CacheEntry | null {
-        let closestItem: CacheEntry | null = null
+    }): SuggestedPredictionResult | null {
+        let closestItem: SuggestedPredictionResult | null = null
         let minDistance = Number.MAX_SAFE_INTEGER
 
         for (const key of [...this.cache.keys()]) {

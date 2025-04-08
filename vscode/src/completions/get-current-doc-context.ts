@@ -259,36 +259,36 @@ export function insertIntoDocContext(params: InsertIntoDocContextParams): Docume
 
 interface GetDocContextAfterRewriteParams {
     document: vscode.TextDocument
-    rewriteRange: vscode.Range
-    rewrittenCode: string
+    replacementRange: vscode.Range
+    injectedContent: string
     position: vscode.Position
     maxPrefixLength: number
     maxSuffixLength: number
 }
 
 export function getDocContextAfterRewrite(params: GetDocContextAfterRewriteParams): DocumentContext {
-    const { document, rewriteRange, rewrittenCode, position, maxPrefixLength, maxSuffixLength } = params
+    const { document, replacementRange, injectedContent, position, maxPrefixLength, maxSuffixLength } =
+        params
 
-    const prefix = document.getText(new vscode.Range(new vscode.Position(0, 0), rewriteRange.start))
-    const suffix = document.getText(
-        new vscode.Range(rewriteRange.end, document.positionAt(document.getText().length))
+    const originalPrefix = document.getText(
+        new vscode.Range(new vscode.Position(0, 0), replacementRange.start)
+    )
+    const originalSuffix = document.getText(
+        new vscode.Range(replacementRange.end, document.positionAt(document.getText().length))
     )
 
-    // Calculate the complete prefix and suffix based on the provided position
-    const completePrefixAfterRewrite = prefix + rewrittenCode
-    const completeSuffixAfterRewrite = suffix
+    const updatedDocumentPrefix = originalPrefix + injectedContent
+    const updatedDocumentSuffix = originalSuffix
 
-    // Calculate the truncated prefix and suffix for the context
-    const completePrefixLines = lines(completePrefixAfterRewrite)
-    const completeSuffixLines = lines(completeSuffixAfterRewrite)
+    const prefixLines = lines(updatedDocumentPrefix)
+    const suffixLines = lines(updatedDocumentSuffix)
 
-    // Use existing helpers to truncate based on character limits
-    const updatedPrefix = getPrefix({
-        offset: completePrefixAfterRewrite.length,
+    const truncatedPrefix = getPrefix({
+        offset: updatedDocumentPrefix.length,
         maxPrefixLength,
-        prefixLines: completePrefixLines,
+        prefixLines,
     })
-    const updatedSuffix = getSuffixWithCharLimit(completeSuffixLines, maxSuffixLength)
+    const truncatedSuffix = getSuffixWithCharLimit(suffixLines, maxSuffixLength)
 
     return getDerivedDocContext({
         maxPrefixLength,
@@ -296,11 +296,11 @@ export function getDocContextAfterRewrite(params: GetDocContextAfterRewriteParam
         position,
         languageId: document.languageId,
         documentDependentContext: {
-            prefix: updatedPrefix,
-            suffix: updatedSuffix,
+            prefix: truncatedPrefix,
+            suffix: truncatedSuffix,
             injectedPrefix: null,
-            completePrefix: completePrefixAfterRewrite,
-            completeSuffix: completeSuffixAfterRewrite,
+            completePrefix: updatedDocumentPrefix,
+            completeSuffix: updatedDocumentSuffix,
         },
     })
 }

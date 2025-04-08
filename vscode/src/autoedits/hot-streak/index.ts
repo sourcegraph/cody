@@ -1,19 +1,20 @@
 import type { CodeToReplaceData, DocumentContext } from '@sourcegraph/cody-shared'
 import * as uui from 'uuid'
 
-import * as vscode from 'vscode'
+import type * as vscode from 'vscode'
 
-import { getDocContextAfterRewrite } from '../completions/get-current-doc-context'
-import { AutoeditStopReason, type ModelResponse } from './adapters/base'
-import type { AutoeditHotStreakID } from './analytics-logger'
-import { autoeditsProviderConfig } from './autoedits-config'
+import { getDocContextAfterRewrite } from '../../completions/get-current-doc-context'
+import { AutoeditStopReason, type ModelResponse } from '../adapters/base'
+import type { AutoeditHotStreakID } from '../analytics-logger'
+import { autoeditsProviderConfig } from '../autoedits-config'
 import {
     type AbortedPredictionResult,
     type SuggestedPredictionResult,
     getDecorationInfoFromPrediction,
-} from './autoedits-provider'
-import { getCodeToReplaceData } from './prompt/prompt-utils'
-import { getDiffChangeBoundaries } from './renderer/diff-utils'
+} from '../autoedits-provider'
+import { getCodeToReplaceData } from '../prompt/prompt-utils'
+import { getDiffChangeBoundaries } from '../renderer/diff-utils'
+import { trimPredictionForHotStreak } from './utils'
 
 /**
  * Number of lines that should be accumulated before attempting a hot streak suggestion.
@@ -104,8 +105,8 @@ export async function* processHotStreakResponses(
             const updatedDocContext = getDocContextAfterRewrite({
                 document,
                 position: predictionChunkRange.start,
-                rewriteRange: prefixRange,
-                rewrittenCode: prefix,
+                replacementRange: prefixRange,
+                injectedContent: prefix,
                 maxPrefixLength: docContext.maxPrefixLength,
                 maxSuffixLength: docContext.maxSuffixLength,
             })
@@ -178,9 +179,6 @@ export async function* processHotStreakResponses(
             continue
         }
 
-        // Retrieve the editPosition for the full (non hot-streak) response
-        // This is important because the final edit could be at the very end of the range and far away from the users'
-        // cursor positon. In that case it would be better to show a next cursor suggestion rather than a full suggestion.
         const [firstLineOfDiff] = diffChangeBoundaries
         const firstLineNumberOfDiff =
             firstLineOfDiff.type === 'removed'
@@ -192,78 +190,13 @@ export async function* processHotStreakResponses(
             type: 'suggested',
             response,
             uri: document.uri.toString(),
-            editPosition,
             docContext,
             codeToReplaceData,
+            // Note that an `editPosition` is returned here regardless of whether the suggestion is a hot-streak.
+            // This is so this can still be used as a "next cursor" prediction source for a scenario where we have
+            // a long rewrite window but the only change is at the bottom, far away from the users' cursor.
+            // In these scenarios we should show a next cursor suggestion instead of the code suggestion.
+            editPosition,
         }
     }
-}
-
-function trimPredictionForHotStreak(
-    prediction: string,
-    range: vscode.Range,
-    linesAlreadyChunked: number
-): {
-    prefix: string
-    prefixRange: vscode.Range
-    predictionChunk: string
-    predictionChunkRange: vscode.Range
-} {
-    const trimmedPrediction = trimPredictionToLastFullLine(prediction)
-    const [prefix, predictionChunk] = trimProcessedTextFromPrediction(
-        trimmedPrediction,
-        linesAlreadyChunked
-    )
-
-    const chunkLineCount = predictionChunk.split('\n').length - 1 // excluding the final new line
-    const prefixRange = new vscode.Range(range.start, range.start.translate(linesAlreadyChunked))
-
-    // We need to adjust the prediction range to match the prediction so far.
-    // This ensures we don't diff the partial prediction against the full codeToRewrite
-    const predictionChunkRange = new vscode.Range(
-        prefixRange.end,
-        range.start.translate(linesAlreadyChunked + chunkLineCount)
-    )
-
-    return {
-        prefix,
-        prefixRange,
-        predictionChunk,
-        predictionChunkRange,
-    }
-}
-
-function trimPredictionToLastFullLine(prediction: string): string {
-    if (!prediction) {
-        return prediction
-    }
-
-    // If the prediction ends with a newline, it's already complete
-    if (prediction.endsWith('\n')) {
-        return prediction
-    }
-
-    const lastNewlineIndex = prediction.lastIndexOf('\n')
-    if (lastNewlineIndex === -1) {
-        // If there's no newline, we can't trim to a complete line
-        return ''
-    }
-
-    // Return everything up to and including the last newline
-    return prediction.substring(0, lastNewlineIndex + 1)
-}
-
-function trimProcessedTextFromPrediction(
-    prediction: string,
-    previousChunksLines: number
-): [string, string] {
-    // If the prediction is empty, return it as is
-    if (!prediction) {
-        return ['', prediction]
-    }
-
-    const lines = prediction.split('\n')
-    const prefix = lines.slice(0, previousChunksLines).join('\n')
-    const remainingPrediction = lines.slice(previousChunksLines).join('\n')
-    return [prefix, remainingPrediction]
 }
