@@ -93,7 +93,8 @@ object ConfigUtil {
   fun getAgentConfiguration(
       project: Project,
       endpoint: SourcegraphServerPath? = null,
-      token: String? = null
+      token: String? = null,
+      customConfigContent: String? = null
   ): ExtensionConfiguration {
 
     return ExtensionConfiguration(
@@ -106,7 +107,7 @@ object ConfigUtil {
             UserLevelConfig.getAutocompleteProviderType()?.vscodeSettingString(),
         debug = isCodyDebugEnabled(),
         verboseDebug = isCodyVerboseDebugEnabled(),
-        customConfigurationJson = getCustomConfiguration(project),
+        customConfigurationJson = getCustomConfiguration(project, customConfigContent),
     )
   }
 
@@ -158,7 +159,7 @@ object ConfigUtil {
   }
 
   @JvmStatic
-  fun getCustomConfiguration(project: Project): String {
+  fun getCustomConfiguration(project: Project, customConfigContent: String?): String {
     // Needed by Edit commands to trigger smart-selection; without it things break.
     // So it isn't optional in JetBrains clients, which do not offer language-neutral solutions
     // to this problem; instead we hardwire it to use the indentation-based provider.
@@ -170,7 +171,7 @@ object ConfigUtil {
     try {
       val text =
           try {
-            getSettingsFile(project).readText()
+            customConfigContent ?: getSettingsFile(project).readText()
           } catch (e: Exception) {
             logger.info("No user defined settings file found. Proceeding with empty custom config")
             ""

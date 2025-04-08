@@ -22,7 +22,8 @@ class CodySettingsFileChangeListener(private val project: Project) : FileDocumen
     if (currentFile == configFile) {
       // TODO(CODY-5682): Adjust the agent to handle config changes without requiring a restart.
       CodyAgentService.withAgentRestartIfNeeded(project) {
-        it.server.extensionConfiguration_change(ConfigUtil.getAgentConfiguration(project))
+        it.server.extensionConfiguration_change(
+            ConfigUtil.getAgentConfiguration(project, customConfigContent = document.text))
       }
     }
   }
