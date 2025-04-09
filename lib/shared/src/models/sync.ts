@@ -195,7 +195,8 @@ export function syncModels({
                                             FeatureFlag.EnhancedContextWindow
                                         ),
                                         featureFlagProvider.evaluateFeatureFlag(
-                                            FeatureFlag.FallbackToFlash
+                                            FeatureFlag.FallbackToFlash,
+                                            true
                                         )
                                     ).pipe(
                                         switchMap(
@@ -239,16 +240,6 @@ export function syncModels({
                                                             serverModelsConfig
                                                         )
                                                 }
-
-                                                // NOTE: Calling `registerModelsFromVSCodeConfiguration()` doesn't
-                                                // entirely make sense in a world where LLM models are managed
-                                                // server-side. However, this is how Cody can be extended to use locally
-                                                // running LLMs such as Ollama. (Though some more testing is needed.)
-                                                // See:
-                                                // https://sourcegraph.com/blog/local-code-completion-with-ollama-and-cody
-                                                data.primaryModels.push(
-                                                    ...getModelsFromVSCodeConfiguration(config)
-                                                )
 
                                                 // TODO(sqs): remove waitlist from localStorage when user has access
                                                 if (isDotComUser && hasEarlyAccess) {
@@ -471,6 +462,16 @@ export function syncModels({
                                                         }
                                                     }
                                                 }
+
+                                                // NOTE: Calling `registerModelsFromVSCodeConfiguration()` doesn't
+                                                // entirely make sense in a world where LLM models are managed
+                                                // server-side. However, this is how Cody can be extended to use locally
+                                                // running LLMs such as Ollama (BYOK). (Though some more testing is needed.)
+                                                // See:
+                                                // https://sourcegraph.com/blog/local-code-completion-with-ollama-and-cody
+                                                data.primaryModels.push(
+                                                    ...getModelsFromVSCodeConfiguration(config)
+                                                )
 
                                                 data.primaryModels = data.primaryModels.map(model => {
                                                     if (
