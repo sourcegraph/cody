@@ -60,6 +60,7 @@ describe('AgentWorkspaceConfiguration', () => {
     beforeEach(() => {
         config = new AgentWorkspaceConfiguration(
             [],
+            () => undefined,
             () => clientInfo,
             () => extensionConfig
         )

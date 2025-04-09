@@ -12,20 +12,22 @@ import com.jetbrains.jsonSchema.impl.JsonSchemaVersion
 import com.sourcegraph.cody.agent.CodyAgentService
 import com.sourcegraph.common.ui.DumbAwareEDTAction
 import com.sourcegraph.config.ConfigUtil
+import com.sourcegraph.config.ConfigUtil.getSettingsFile
 import com.sourcegraph.utils.CodyEditorUtil
+import kotlin.io.path.exists
 import kotlin.io.path.name
+import kotlin.io.path.pathString
 
 class OpenCodySettingsEditorAction : DumbAwareEDTAction("Open Cody Settings Editor") {
   override fun actionPerformed(e: AnActionEvent) {
     val project = e.project ?: return
 
     val settingsVf =
-        CodyEditorUtil.createFileOrScratchFromUntitled(
-            project, ConfigUtil.getSettingsFile(project).toUri().toString(), content = "{\n  \n}")
-            ?: run {
-              logger.warn("Could not create settings file")
-              return
-            }
+        if (getSettingsFile(project).exists()) {
+          CodyEditorUtil.findFileOrScratch(project, getSettingsFile(project).pathString)
+        } else {
+          ConfigUtil.setCustomConfiguration(project, customConfigContent = "{\n  \n}")
+        } ?: return
 
     CodyEditorUtil.showDocument(project, settingsVf)
 

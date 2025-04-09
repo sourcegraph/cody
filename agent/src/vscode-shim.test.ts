@@ -389,6 +389,7 @@ describe('vscode.workspace.getConfiguration', () => {
     beforeEach(() => {
         configuration = new AgentWorkspaceConfiguration(
             [],
+            () => undefined,
             () => clientInfo,
             () => extensionConfig
         )

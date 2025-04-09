@@ -48,8 +48,6 @@ export class AutoEditBetaOnboarding implements vscode.Disposable {
                 )
                 .then(answer => {
                     if (answer === 'Configure auto-edits') {
-                        console.log('[m] configure...')
-
                         vscode.workspace
                             .getConfiguration()
                             .update(
@@ -58,7 +56,7 @@ export class AutoEditBetaOnboarding implements vscode.Disposable {
                                 vscode.ConfigurationTarget.Global
                             )
                     } else if (answer === 'Open cody__settings.json') {
-                        console.log('[m] open...')
+                        // todo: open cody_settings.json
                     }
                 })
         }

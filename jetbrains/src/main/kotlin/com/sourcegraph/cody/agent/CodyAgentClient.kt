@@ -35,6 +35,7 @@ import com.sourcegraph.cody.vscode.InlineCompletionTriggerKind
 import com.sourcegraph.common.BrowserOpener
 import com.sourcegraph.common.NotificationGroups
 import com.sourcegraph.common.ui.SimpleDumbAwareEDTAction
+import com.sourcegraph.config.ConfigUtil
 import com.sourcegraph.utils.CodyEditorUtil
 import java.nio.file.Paths
 import java.util.concurrent.CompletableFuture
@@ -282,6 +283,13 @@ class CodyAgentClient(private val project: Project, private val webview: NativeW
   fun debug_message(params: DebugMessage) {
     if (!project.isDisposed) {
       CodyConsole.getInstance(project).addMessage(params)
+    }
+  }
+
+  @JsonNotification("extensionConfiguration/didUpdate")
+  fun extensionConfiguration_didUpdate(params: String) {
+    if (!project.isDisposed) {
+      ConfigUtil.setCustomConfiguration(project, params)
     }
   }
 
