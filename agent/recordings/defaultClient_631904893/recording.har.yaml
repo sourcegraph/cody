@@ -2119,11 +2119,11 @@ log:
         send: 0
         ssl: -1
         wait: 801
-    - _id: 16e5bc1c8e22aaed9695f5b3c6df5883
+    - _id: 5a9352d17ae3c0541b7d607b6eec5bc5
       _order: 0
       cache: {}
       request:
-        bodySize: 2056
+        bodySize: 2028
         cookies: []
         headers:
           - name: accept-encoding
@@ -2136,7 +2136,7 @@ log:
           - name: content-type
             value: application/json
           - name: traceparent
-            value: 00-ad6110134836ce709de9e0f11a55259f-e1f76d4d56facf1b-01
+            value: 00-60f3b6122020e10bba0419f5ac56d26c-dbb309a1ee23dcf8-01
           - name: user-agent
             value: defaultclient/v1 (Node.js v20.4.0)
           - name: x-requested-with
@@ -2152,7 +2152,7 @@ log:
           textJSON:
             maxTokensToSample: 4000
             messages:
-              - speaker: human
+              - speaker: system
                 text: >-
                   You are Cody, an AI coding assistant from Sourcegraph.If your
                   answer contains fenced code blocks in Markdown, include the
@@ -2160,8 +2160,6 @@ log:
                   structure: ```$LANGUAGE:$FILEPATH```
 
                   For executable terminal commands: enclose each command in individual "bash" language code block without comments and new lines inside.
-              - speaker: assistant
-                text: I am Cody, an AI coding assistant from Sourcegraph.
               - speaker: human
                 text: >
                   Codebase context from file path src/animal.ts: /*
@@ -2191,11 +2189,14 @@ log:
                 text: Ok.
               - speaker: human
                 text: >-
+                  Answer positively without apologizing. 
+
+
                   You have access to the provided codebase context.
 
 
                   Question: Explain what @src/animal.ts:1-6 ( @src/animal.ts ) does in simple terms. Assume the audience is a beginner programmer who has just learned the language features and basic syntax. Focus on explaining: 1) The purpose of the code 2) What input(s) it takes 3) What output(s) it produces 4) How it achieves its purpose through the logic and algorithm. 5) Any important logic flows or data transformations happening. Use simple language a beginner could understand. Include enough detail to give a full picture of what the code aims to accomplish without getting too technical. Format the explanation in coherent paragraphs, using proper punctuation and grammar. Write the explanation assuming no prior context about the code is known. Do not make assumptions about variables or functions not shown in the shared code. Start the answer with the name of the code that is being explained.
-            model: mistral::v1::mixtral-8x7b-instruct
+            model: anthropic::2024-10-22::claude-3-5-sonnet-latest
             temperature: 0
             topK: -1
             topP: -1
@@ -2208,14 +2209,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=8&client-name=defaultclient&client-version=v1
       response:
-        bodySize: 5876
+        bodySize: 3023
         content:
           mimeType: text/event-stream
-          size: 5876
+          size: 3023
           text: >+
             event: completion
 
-            data: {"deltaText":"Sure! This is the TypeScript code for defining an interface named `Animal`. Here's an explanation for it:\n\nThe Animal Interface\n-------------------\n\nThe `Animal` interface defines the required properties and methods for an object that represents an animal. In simple terms, it outlines what an animal **should have** or **should do**. In this case, an animal has a `name` property (a string), a `makeAnimalSound()` method (returns a string), and an `isMammal` property (a boolean value). Interfaces in TypeScript are used to ensure consistency and cohesion in object-oriented programming. Here, the `Animal` interface can be used for type checking and ensuring that any objects implementing this interface will have the essential properties and methods of an animal.\n\nPurpose, Inputs, and Outputs\n----------------------------\n\nThe `Animal` interface doesn't have any specific inputs or outputs, as it deals with defining the structure for object types. When using this interface in your code, if you create an object implementing it, the object would be expected to provide a `name`, implement the `makeAnimalSound()` method, and set the `isMammal` property.\n\nThe primary purpose of this `Animal` interface is to give guidance and maintain consistency in the code and between objects representing animals. This aids in better code organization, code understanding, and developer communication.\n\nIn essence, this interface gives us a blueprint for creating structurally consistent animal objects. It helps ensure that wherever we use this `Animal` interface, the core traits of an animal (its `name`, `makeAnimalSound()` method, and `isMammal` property) will be properly addressed.\n\nAchieving the Purpose\n--------------------\n\nBy declaring the `Animal` interface, you create a pattern that other parts of the codebase can adhere to when building objects intended to emulate animal entities. This enables developers to manage and visualize all animal objects with similar structures, ensuring every animal object shares the same building blocks.\n\nUsing this interface, you can create an instance of an object representing a specific animal and ensure it has the required properties and methods (`name`, `makeAnimalSound()`, and `isMammal`). This consistency guarantees clear and predictable functionality while dealing with the animal objects throughout the codebase.\n\nTo sum up, the `Animal` interface, as shown in the code, lays the foundation for declaring the necessary structure and functionality of an animal object. It doesn't produce any specific outputs or handle particular inputs but rather guides developers to build objects that fit a common animal pattern, enhancing communication, manageability, and functionality."}
+            data: {"deltaText":"The Animal Interface (src/animal.ts)\n\nThis code defines a blueprint called `Animal` that acts as a template for creating different types of animals in the program. It's like a contract that says \"any animal we create must have these specific characteristics and behaviors.\"\n\nThe interface specifies three required properties that any animal must have:\n1. A `name` property that holds the animal's name as text (string)\n2. A `makeAnimalSound()` method that, when called, will return a string representing the sound the animal makes (like \"meow\" or \"woof\")\n3. An `isMammal` property that is either true or false (boolean), indicating whether the animal is a mammal or not\n\nThis interface doesn't contain any actual implementation - it's just a template. When someone wants to create a specific animal (like a cat or dog), they would need to create a new class that \"implements\" this Animal interface and provides actual values and code for all three of these requirements.\n\nFor example, if someone wanted to create a Cat class using this interface, they would need to:\n- Give it a name property\n- Write code for the makeAnimalSound() method that returns \"meow\"\n- Set isMammal to true\n\nThe purpose of this interface is to ensure consistency across different types of animals in the program and make sure they all have the same basic structure. It's like creating a standardized form that all animals must fill out to be part of the system.","stopReason":"end_turn"}
 
 
             event: done
@@ -2225,7 +2226,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Fri, 07 Mar 2025 18:54:34 GMT
+            value: Wed, 09 Apr 2025 14:17:03 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -2249,13 +2250,13 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1320
+        headersSize: 1368
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-03-07T18:54:32.732Z
-      time: 4075
+      startedDateTime: 2025-04-09T14:16:57.327Z
+      time: 11930
       timings:
         blocked: -1
         connect: -1
@@ -2263,12 +2264,12 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 4075
-    - _id: 6ab1509e468689cc2d8c1b8dbedf4adc
+        wait: 11930
+    - _id: 4ecea904afe1ba00e7ad78bd06e19a3c
       _order: 0
       cache: {}
       request:
-        bodySize: 1852
+        bodySize: 1824
         cookies: []
         headers:
           - name: accept-encoding
@@ -2281,7 +2282,7 @@ log:
           - name: content-type
             value: application/json
           - name: traceparent
-            value: 00-b8d7e39f2ded58ad90352a0aaf468e25-13ed8312e7105df4-01
+            value: 00-e9468437babc3639f95f1f55293842d5-c1fe728c78d33476-01
           - name: user-agent
             value: defaultclient/v1 (Node.js v20.4.0)
           - name: x-requested-with
@@ -2297,7 +2298,7 @@ log:
           textJSON:
             maxTokensToSample: 4000
             messages:
-              - speaker: human
+              - speaker: system
                 text: >-
                   You are Cody, an AI coding assistant from Sourcegraph.If your
                   answer contains fenced code blocks in Markdown, include the
@@ -2305,8 +2306,6 @@ log:
                   structure: ```$LANGUAGE:$FILEPATH```
 
                   For executable terminal commands: enclose each command in individual "bash" language code block without comments and new lines inside.
-              - speaker: assistant
-                text: I am Cody, an AI coding assistant from Sourcegraph.
               - speaker: human
                 text: >
                   Codebase context from file path src/animal.ts: /*
@@ -2336,11 +2335,14 @@ log:
                 text: Ok.
               - speaker: human
                 text: >-
+                  Answer positively without apologizing. 
+
+
                   You have access to the provided codebase context.
 
 
                   Question: Please review and analyze @src/animal.ts:1-6 ( @src/animal.ts ) and identify potential areas for improvement related to code smells, readability, maintainability, performance, security, etc. Do not list issues already addressed in the given code. Focus on providing up to 5 constructive suggestions that could make the code more robust, efficient, or align with best practices. For each suggestion, provide a brief explanation of the potential benefits. After listing any recommendations, summarize if you found notable opportunities to enhance the code quality overall or if the code generally follows sound design principles. If no issues found, reply 'There are no errors.'
-            model: mistral::v1::mixtral-8x7b-instruct
+            model: anthropic::2024-10-22::claude-3-5-sonnet-latest
             temperature: 0
             topK: -1
             topP: -1
@@ -2353,14 +2355,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=8&client-name=defaultclient&client-version=v1
       response:
-        bodySize: 5649
+        bodySize: 3146
         content:
           mimeType: text/event-stream
-          size: 5649
+          size: 3146
           text: >+
             event: completion
 
-            data: {"deltaText":"Based on my analysis of the provided code, here are some suggestions for potential improvements:\n\n1. **Add a type annotation for the `makeAnimalSound()` method return type.** Although the code does not include an implementation for this method, it would be a good practice to provide type annotations for all methods that return a value. This can help prevent errors and improve the maintainability of the code.\n\n```typescript\nmakeAnimalSound(): string\n```\n\n2. **Consider capitalizing the `isMammal` property name accordingly.** In TypeScript, property names should use camelCase, so it would be more appropriate to name this property `isMammal`.\n\n```typescript\ninterface Animal {\n    name: string\n    makeAnimalSound(): string\n    isMammal: boolean\n}\n```\n\n3. **Add a constructor to initialize the properties.** This can help ensure that instances of the `Animal` interface are always initialized with the correct values.\n\n```typescript\ninterface Animal {\n    name: string\n    makeAnimalSound(): string\n    isMammal: boolean\n\n    constructor(name: string, isMammal: boolean) {\n        this.name = name\n        this.isMammal = isMammal\n    }\n}\n```\n\n4. **Add JSDoc comments to provide more context for users of the `Animal` interface.** JSDoc comments can help developers understand how to use the interface and what its properties and methods are used for.\n\n```typescript\n/**\n * An interface representing an animal.\n */\ninterface Animal {\n    /**\n     * The animal's name.\n     */\n    name: string\n\n    /**\n     * A method that the animal uses to make a sound.\n     */\n    makeAnimalSound(): string\n\n    /**\n     * A boolean indicating whether the animal is a mammal.\n     */\n    isMammal: boolean\n\n    /**\n     * Constructs a new `Animal` instance.\n     *\n     * @param name The animal's name.\n     * @param isMammal A boolean indicating whether the animal is a mammal.\n     */\n    constructor(name: string, isMammal: boolean)\n}\n```\n\n5. **Consider separating the `Animal` interface into separate interfaces or classes.** Depending on the complexity of the application, it may be more appropriate to split the `Animal` interface into smaller, more focused interfaces or classes. This can help improve the modularity and maintainability of the code.\n\nOverall, the provided code is well-written and generally follows sound design principles. However, implementing these suggestions can help make the code more robust, efficient, and align with best practices."}
+            data: {"deltaText":"Here are 4 constructive suggestions to enhance the Animal interface:\n\n1. Add JSDoc documentation above the interface to describe its purpose and requirements. This would improve code maintainability and help other developers understand how to properly implement the interface:\n\n```typescript:src/animal.ts\n/**\n * Represents a generic animal with basic properties and behaviors\n */\nexport interface Animal {\n```\n\n2. Consider adding readonly modifier to name property since it's likely an immutable characteristic. This provides better type safety and communicates intent:\n\n```typescript:src/animal.ts\nexport interface Animal {\n    readonly name: string\n```\n\n3. Add optional age property since it's a common animal attribute that implementing classes may want to track:\n\n```typescript:src/animal.ts\nexport interface Animal {\n    name: string\n    age?: number\n```\n\n4. Consider splitting makeAnimalSound() into a separate behavior interface (ISoundMaker) to follow Interface Segregation Principle. This allows for more flexible composition of animal behaviors:\n\n```typescript:src/animal.ts\nexport interface ISoundMaker {\n    makeAnimalSound(): string\n}\n\nexport interface Animal extends ISoundMaker {\n```\n\nSummary: While the current interface provides a good basic structure, there are opportunities to improve type safety, documentation, and modularity. The suggestions aim to make the code more maintainable and aligned with SOLID principles while maintaining its simplicity. The existing code follows sound design principles by keeping the interface focused and using clear naming conventions.","stopReason":"end_turn"}
 
 
             event: done
@@ -2370,7 +2372,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Fri, 07 Mar 2025 18:54:38 GMT
+            value: Wed, 09 Apr 2025 14:17:11 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -2394,13 +2396,13 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1320
+        headersSize: 1368
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-03-07T18:54:36.836Z
-      time: 4182
+      startedDateTime: 2025-04-09T14:17:09.384Z
+      time: 7929
       timings:
         blocked: -1
         connect: -1
@@ -2408,7 +2410,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 4182
+        wait: 7929
     - _id: f1b1cde4cd57488b7f0137954f0302f5
       _order: 0
       cache: {}
