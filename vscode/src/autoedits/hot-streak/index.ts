@@ -110,7 +110,7 @@ export async function* processHotStreakResponses({
             if (
                 response.type === 'partial' &&
                 lastLineOfDiff.type !== 'unchanged' &&
-                lastLineNumberOfDiff === remainingPredictionRange.end.line
+                lastLineNumberOfDiff === remainingPredictionRange.end.line - 1
             ) {
                 // We only emit a hot streak prediction when the final line of the prediction range is unchanged.
                 // This ensures that the diff is appropriately chunked.
