@@ -181,7 +181,9 @@ public class FindService implements Disposable {
       popup.getWindow().dispose();
     }
 
-    mainPanel.dispose();
+    if (mainPanel != null) {
+      mainPanel.dispose();
+    }
   }
 
   // We manually emit an action defined by the material UI theme to hide the overlay it opens
