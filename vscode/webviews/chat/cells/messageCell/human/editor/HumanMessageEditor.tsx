@@ -29,6 +29,7 @@ import {
     useState,
 } from 'react'
 import type { UserAccountInfo } from '../../../../../Chat'
+import { useChatContext } from '../../../../../chat/ChatContext'
 import { type ClientActionListener, useClientActionListener } from '../../../../../client/clientState'
 import { promptModeToIntent } from '../../../../../prompts/PromptsTab'
 import { useTelemetryRecorder } from '../../../../../utils/telemetry'
@@ -42,6 +43,9 @@ import { Toolbar } from './toolbar/Toolbar'
 /**
  * A component to compose and edit human chat messages and the settings associated with them.
  */
+// Track if the current input is from a prompt - shared across instances
+let isCurrentInputFromPrompt = false
+
 export const HumanMessageEditor: FunctionComponent<{
     models: Model[]
     userInfo: UserAccountInfo
@@ -77,6 +81,12 @@ export const HumanMessageEditor: FunctionComponent<{
 
     intent?: ChatMessage['intent']
     manuallySelectIntent: (intent: ChatMessage['intent']) => void
+
+    savedIntentBeforePrompt?: ChatMessage['intent']
+    setSavedIntentBeforePrompt?: (intent: ChatMessage['intent']) => void
+    isPromptInput?: boolean | undefined
+    setIsPromptInput?: (value: boolean) => void
+    determineIntent?: (proposedIntent?: ChatMessage['intent']) => ChatMessage['intent']
 }> = ({
     models,
     userInfo,
@@ -97,8 +107,43 @@ export const HumanMessageEditor: FunctionComponent<{
     onEditorFocusChange: parentOnEditorFocusChange,
     intent,
     manuallySelectIntent,
+    savedIntentBeforePrompt,
+    setSavedIntentBeforePrompt,
+    isPromptInput,
+    setIsPromptInput,
+    determineIntent,
 }) => {
     const telemetryRecorder = useTelemetryRecorder()
+
+    /**
+     * Intent management for prompt templates
+     *
+     * The flow for handling intents with prompts:
+     * 1. When a prompt is selected:
+     *    - Current intent is saved using setSavedIntentBeforePrompt
+     *    - isPromptInput flag is set to true
+     *    - The prompt's specific intent is applied
+     *
+     * 2. When the user submits after using a prompt:
+     *    - isPromptInput flag is reset to false
+     *    - The original intent is restored from savedIntentBeforePrompt
+     *
+     * This ensures that temporary intent changes from prompts don't persist
+     * after the prompt is used.
+     */
+    const {
+        setIsPromptInput: contextSetIsPromptInput,
+        savedIntentBeforePrompt: contextSavedIntentBeforePrompt,
+        setSavedIntentBeforePrompt: contextSetSavedIntentBeforePrompt,
+    } = useChatContext()
+
+    // Create effective state variables that use props first, then fall back to context
+    // This ensures we always have access to these values, even if the props chain breaks
+    const effectiveSetIsPromptInput = setIsPromptInput || contextSetIsPromptInput
+    const effectiveSavedIntentBeforePrompt =
+        savedIntentBeforePrompt !== undefined ? savedIntentBeforePrompt : contextSavedIntentBeforePrompt
+    const effectiveSetSavedIntentBeforePrompt =
+        setSavedIntentBeforePrompt || contextSetSavedIntentBeforePrompt
 
     const editorRef = useRef<PromptEditorRefAPI>(null)
     useImperativeHandle(parentEditorRef, (): PromptEditorRefAPI | null => editorRef.current)
@@ -124,7 +169,12 @@ export const HumanMessageEditor: FunctionComponent<{
           : 'submittable'
 
     const onSubmitClick = useCallback(
-        (intent?: ChatMessage['intent'], forceSubmit?: boolean): void => {
+        (
+            intent?: ChatMessage['intent'],
+            forceSubmit?: boolean,
+            isDirectPromptInput?: boolean,
+            originalIntent?: ChatMessage['intent']
+        ): void => {
             if (!forceSubmit && submitState === 'emptyEditorValue') {
                 return
             }
@@ -139,7 +189,21 @@ export const HumanMessageEditor: FunctionComponent<{
             }
 
             const value = editorRef.current.getSerializedValue()
-            parentOnSubmit(intent)
+
+            let intentToUse = intent
+
+            // If this is not a prompt input and we don't have an explicit intent,
+            // use the saved intent from before the prompt
+            if (!isCurrentInputFromPrompt && effectiveSavedIntentBeforePrompt) {
+                intentToUse = effectiveSavedIntentBeforePrompt
+                manuallySelectIntent(effectiveSavedIntentBeforePrompt)
+            }
+
+            // Reset the prompt input flag after submission
+            isCurrentInputFromPrompt = false
+            effectiveSetIsPromptInput(false)
+
+            parentOnSubmit(intentToUse)
 
             telemetryRecorder.recordEvent('cody.humanMessageEditor', 'submit', {
                 metadata: {
@@ -147,7 +211,7 @@ export const HumanMessageEditor: FunctionComponent<{
                     isEdit: isSent ? 1 : 0,
                     messageLength: value.text.length,
                     contextItems: value.contextItems.length,
-                    intent: [undefined, 'chat', 'search'].findIndex(i => i === intent),
+                    intent: [undefined, 'chat', 'search'].findIndex(i => i === intentToUse),
                 },
                 billingMetadata: {
                     product: 'cody',
@@ -155,7 +219,17 @@ export const HumanMessageEditor: FunctionComponent<{
                 },
             })
         },
-        [submitState, parentOnSubmit, onStop, telemetryRecorder.recordEvent, isFirstMessage, isSent]
+        [
+            submitState,
+            parentOnSubmit,
+            onStop,
+            telemetryRecorder.recordEvent,
+            isFirstMessage,
+            isSent,
+            effectiveSavedIntentBeforePrompt,
+            effectiveSetIsPromptInput,
+            manuallySelectIntent,
+        ]
     )
 
     const omniBoxEnabled = useOmniBox()
@@ -295,6 +369,16 @@ export const HumanMessageEditor: FunctionComponent<{
                 let promptIntent: ChatMessage['intent'] = undefined
 
                 if (setPromptAsInput) {
+                    isCurrentInputFromPrompt = true
+                    effectiveSetIsPromptInput(true)
+
+                    if (intent) {
+                        if (intent === 'edit') {
+                            intent = 'chat'
+                        }
+                        effectiveSetSavedIntentBeforePrompt(intent)
+                    }
+
                     // set the intent
                     promptIntent = promptModeToIntent(setPromptAsInput.mode)
 
@@ -340,6 +424,8 @@ export const HumanMessageEditor: FunctionComponent<{
                 manuallySelectIntent,
                 extensionAPI.hydratePromptMessage,
                 extensionAPI.defaultContext,
+                effectiveSetIsPromptInput,
+                effectiveSetSavedIntentBeforePrompt,
             ]
         )
     )

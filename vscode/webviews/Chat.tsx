@@ -12,6 +12,7 @@ import {
 } from '@sourcegraph/cody-shared'
 
 import styles from './Chat.module.css'
+import { ChatContext } from './chat/ChatContext'
 import { Transcript, focusLastHumanMessageEditor } from './chat/Transcript'
 import { WelcomeMessage } from './chat/components/WelcomeMessage'
 import { WelcomeNotice } from './chat/components/WelcomeNotice'
@@ -38,6 +39,7 @@ interface ChatboxProps {
 }
 
 const LAST_SELECTED_INTENT_KEY = 'last-selected-intent'
+const SAVED_INTENT_BEFORE_PROMPT_KEY = 'saved-intent-before-prompt'
 
 export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>> = ({
     messageInProgress,
@@ -60,6 +62,13 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
         ChatMessage['intent']
     >(LAST_SELECTED_INTENT_KEY, 'chat')
 
+    const [savedIntentBeforePrompt, setSavedIntentBeforePrompt] = useLocalStorage<ChatMessage['intent']>(
+        SAVED_INTENT_BEFORE_PROMPT_KEY,
+        'chat'
+    )
+
+    const [isPromptInput, setIsPromptInput] = useLocalStorage<boolean>('is-prompt-input-active', false)
+
     const copyButtonOnSubmit = useCallback(
         (text: string, eventType: 'Button' | 'Keydown' = 'Button') => {
             const op = 'copy'
@@ -75,6 +84,18 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             })
         },
         [vscodeAPI]
+    )
+
+    const determineIntent = useCallback(
+        (proposedIntent?: ChatMessage['intent']): ChatMessage['intent'] => {
+            // If this is not a prompt input and we have a saved intent, restore it
+            if (!isPromptInput && savedIntentBeforePrompt) {
+                return savedIntentBeforePrompt
+            }
+
+            return proposedIntent || 'chat'
+        },
+        [isPromptInput, savedIntentBeforePrompt]
     )
 
     const insertButtonOnSubmit = useMemo(() => {
@@ -209,7 +230,14 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     const [activeChatContext, setActiveChatContext] = useState<Context>()
 
     return (
-        <>
+        <ChatContext.Provider
+            value={{
+                isPromptInput,
+                setIsPromptInput,
+                savedIntentBeforePrompt,
+                setSavedIntentBeforePrompt,
+            }}
+        >
             {!chatEnabled && (
                 <div className={styles.chatDisabled}>
                     Cody chat is disabled by your Sourcegraph site administrator
@@ -228,8 +256,13 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                 chatEnabled={chatEnabled}
                 postMessage={postMessage}
                 guardrails={guardrails}
+                isPromptInput={isPromptInput}
+                setIsPromptInput={setIsPromptInput}
                 manuallySelectedIntent={lastManuallySelectedIntent}
                 setManuallySelectedIntent={setLastManuallySelectedIntent}
+                savedIntentBeforePrompt={savedIntentBeforePrompt}
+                setSavedIntentBeforePrompt={setSavedIntentBeforePrompt}
+                determineIntent={determineIntent}
             />
             {transcript.length === 0 && showWelcomeMessage && (
                 <>
@@ -245,7 +278,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             {scrollableParent && (
                 <ScrollDown scrollableParent={scrollableParent} onClick={handleScrollDownClick} />
             )}
-        </>
+        </ChatContext.Provider>
     )
 }
 

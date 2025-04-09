@@ -46,6 +46,11 @@ const meta: Meta<typeof Transcript> = {
         manuallySelectedIntent: null,
         setManuallySelectedIntent: () => {},
         guardrails: new MockNoGuardrails(),
+        savedIntentBeforePrompt: null,
+        setSavedIntentBeforePrompt: () => {},
+        isPromptInput: false,
+        setIsPromptInput: () => {},
+        determineIntent: () => null,
     } satisfies ComponentProps<typeof Transcript>,
 
     decorators: [

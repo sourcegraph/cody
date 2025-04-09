@@ -67,6 +67,11 @@ interface TranscriptProps {
 
     manuallySelectedIntent: ChatMessage['intent']
     setManuallySelectedIntent: (intent: ChatMessage['intent']) => void
+    savedIntentBeforePrompt: ChatMessage['intent']
+    setSavedIntentBeforePrompt: (intent: ChatMessage['intent']) => void
+    isPromptInput: boolean | undefined
+    setIsPromptInput: (isPromptInput: boolean) => void
+    determineIntent: (proposedIntent?: ChatMessage['intent']) => ChatMessage['intent']
 }
 
 export const Transcript: FC<TranscriptProps> = props => {
@@ -85,6 +90,11 @@ export const Transcript: FC<TranscriptProps> = props => {
         smartApply,
         manuallySelectedIntent,
         setManuallySelectedIntent,
+        savedIntentBeforePrompt,
+        setSavedIntentBeforePrompt,
+        isPromptInput,
+        setIsPromptInput,
+        determineIntent,
     } = props
 
     const interactions = useMemo(
@@ -164,6 +174,11 @@ export const Transcript: FC<TranscriptProps> = props => {
                         onAddToFollowupChat={onAddToFollowupChat}
                         manuallySelectedIntent={manuallySelectedIntent}
                         setManuallySelectedIntent={setManuallySelectedIntent}
+                        savedIntentBeforePrompt={savedIntentBeforePrompt}
+                        setSavedIntentBeforePrompt={setSavedIntentBeforePrompt}
+                        isPromptInput={isPromptInput}
+                        setIsPromptInput={setIsPromptInput}
+                        determineIntent={determineIntent}
                     />
                 ))}
             </LastEditorContext.Provider>
@@ -262,6 +277,12 @@ interface TranscriptInteractionProps
     }) => void
     manuallySelectedIntent: ChatMessage['intent']
     setManuallySelectedIntent: (intent: ChatMessage['intent']) => void
+
+    savedIntentBeforePrompt: ChatMessage['intent']
+    setSavedIntentBeforePrompt: (intent: ChatMessage['intent']) => void
+    isPromptInput: boolean | undefined
+    setIsPromptInput: (isPromptInput: boolean) => void
+    determineIntent: (proposedIntent?: ChatMessage['intent']) => ChatMessage['intent']
 }
 
 const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
@@ -282,6 +303,11 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
         editorRef: parentEditorRef,
         manuallySelectedIntent,
         setManuallySelectedIntent,
+        savedIntentBeforePrompt,
+        setSavedIntentBeforePrompt,
+        isPromptInput,
+        setIsPromptInput,
+        determineIntent,
     } = props
 
     const { activeChatContext, setActiveChatContext } = props
@@ -326,6 +352,8 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                 traceparent,
             }
 
+            const resolvedIntent = determineIntent(manuallySelectedIntent)
+
             if (action === 'edit') {
                 // Remove search context chips from the next input so that the user cannot
                 // reference search results that don't exist anymore.
@@ -340,13 +368,16 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                 editHumanMessage({
                     messageIndexInTranscript: humanMessage.index,
                     ...commonProps,
-                    manuallySelectedIntent: manuallySelectedIntent,
+                    manuallySelectedIntent: resolvedIntent,
                 })
             } else {
                 submitHumanMessage({
                     ...commonProps,
-                    manuallySelectedIntent: manuallySelectedIntent,
+                    manuallySelectedIntent: resolvedIntent,
                 })
+            }
+            if (props.setIsPromptInput) {
+                props.setIsPromptInput(false)
             }
         },
         [
@@ -355,6 +386,11 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
             isLastSentInteraction,
             lastEditorRef,
             manuallySelectedIntent,
+            savedIntentBeforePrompt,
+            setSavedIntentBeforePrompt,
+            isPromptInput,
+            setIsPromptInput,
+            determineIntent,
         ]
     )
 
