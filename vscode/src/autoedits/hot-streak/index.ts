@@ -146,12 +146,20 @@ export async function* processHotStreakResponses({
                 documentSnapshot = wrapVSCodeTextDocument(mutableDocument)
             }
 
+            // It is important that we use the correct position when updating docContext, as
+            // this is also used to help determine if we can make a valid inline completion or not.
+            // Currently we only support inline completions from the first suggestion.
+            // TODO: Use the correct updated position for hot-streak suggestions. If it is a completion it should be
+            // at the end of the insertText, otherwise it should be unchanged.
+            const updatedDocPosition =
+                processedPredictionLines === 0 ? position : remainingPredictionRange.start
+
             // The hot streak prediction excludes part of the prefix. This means that it fundamentally relies
             // on the prefix existing in the document to be a valid suggestion. We need to update the docContext
             // to reflect this.
             const updatedDocContext = getCurrentDocContext({
                 document: documentSnapshot,
-                position: remainingPredictionRange.start,
+                position: updatedDocPosition,
                 maxPrefixLength: docContext.maxPrefixLength,
                 maxSuffixLength: docContext.maxSuffixLength,
             })
