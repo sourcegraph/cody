@@ -40,6 +40,8 @@ interface CodyAgentClient {
   fun autocomplete_didTrigger(params: Null?)
   @JsonNotification("debug/message")
   fun debug_message(params: DebugMessage)
+  @JsonNotification("extensionConfiguration/didUpdate")
+  fun extensionConfiguration_didUpdate(params: String)
   @JsonNotification("editTask/didUpdate")
   fun editTask_didUpdate(params: EditTask)
   @JsonNotification("editTask/didDelete")

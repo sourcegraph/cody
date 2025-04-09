@@ -5,11 +5,13 @@ import { type ClientConfiguration, CodyIDE } from '@sourcegraph/cody-shared'
 
 import { defaultConfigurationValue } from '../../vscode/src/configuration-keys'
 
+import type { Agent } from './agent'
 import type { ClientInfo, ExtensionConfiguration } from './protocol-alias'
 
 export class AgentWorkspaceConfiguration implements vscode.WorkspaceConfiguration {
     constructor(
         private prefix: string[],
+        private agent: () => Agent | undefined,
         private clientInfo: () => ClientInfo | undefined,
         private extensionConfig: () => ExtensionConfiguration | undefined,
         private dictionary: any = {}
@@ -18,6 +20,7 @@ export class AgentWorkspaceConfiguration implements vscode.WorkspaceConfiguratio
     public withPrefix(prefix: string): AgentWorkspaceConfiguration {
         return new AgentWorkspaceConfiguration(
             this.prefix.concat(prefix),
+            this.agent,
             this.clientInfo,
             this.extensionConfig,
             this.dictionary
@@ -198,6 +201,6 @@ export class AgentWorkspaceConfiguration implements vscode.WorkspaceConfiguratio
         _overrideInLanguage?: boolean | undefined
     ): Promise<void> {
         this.put(section, value)
-        return Promise.resolve()
+        return this.agent()?.notify('extensionConfiguration/didUpdate', JSON.stringify(this.dictionary))
     }
 }

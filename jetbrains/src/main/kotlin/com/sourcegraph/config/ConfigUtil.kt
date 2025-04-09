@@ -11,12 +11,14 @@ import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.fileEditor.TextEditor
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ProjectManager
+import com.intellij.openapi.vfs.VirtualFile
 import com.sourcegraph.cody.agent.CodyAgentService
 import com.sourcegraph.cody.agent.protocol_generated.ExtensionConfiguration
 import com.sourcegraph.cody.auth.CodyAuthService
 import com.sourcegraph.cody.auth.CodySecureStore
 import com.sourcegraph.cody.auth.SourcegraphServerPath
 import com.sourcegraph.cody.config.CodyApplicationSettings
+import com.sourcegraph.utils.CodyEditorUtil
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigRenderOptions
 import com.typesafe.config.ConfigValueFactory
@@ -192,6 +194,18 @@ object ConfigUtil {
       return ""
     }
   }
+
+  @JvmStatic
+  fun setCustomConfiguration(project: Project, customConfigContent: String): VirtualFile? =
+      CodyEditorUtil.createFileOrScratchFromUntitled(
+          project,
+          getSettingsFile(project).toUri().toString(),
+          content = customConfigContent,
+          overwrite = true)
+          ?: run {
+            logger.warn("Could not create settings file")
+            return null
+          }
 
   @JvmStatic
   @Contract(pure = true)
