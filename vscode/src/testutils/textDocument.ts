@@ -61,7 +61,7 @@ function createTextLine(text: string, range: Range): TextLine {
         lineNumber: range.start.line,
         text,
         range,
-        rangeIncludingLineBreak: range.with({ end: range.end.translate({ characterDelta: 1 }) }),
+        rangeIncludingLineBreak: new vsCodeMocks.Range(range.start.line, 0, range.end.line + 1, 0),
 
         firstNonWhitespaceCharacterIndex: text.match(/^\s*/)![0].length,
         isEmptyOrWhitespace: /^\s*$/.test(text),
