@@ -626,7 +626,7 @@ export class ModelsService {
 
     public getModelByID(modelID: string, models = this.models): Model | undefined {
         // TODO(sqs)#observe: remove synchronous access here, return an Observable<Model|undefined> instead
-        return this.models.find(m => m.id === modelID)
+        return models.find(m => m.id === modelID)
     }
 
     public getAllModelsWithSubstring(modelSubstring: string): Model[] {
