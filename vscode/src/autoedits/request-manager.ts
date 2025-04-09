@@ -47,11 +47,9 @@ export class RequestManager implements vscode.Disposable {
             AsyncGenerator<Omit<SuggestedPredictionResult, 'cacheId'> | AbortedPredictionResult>
         >
     ): Promise<PredictionResult> {
-        console.log('request for line', params.position.line)
         // 1. First check the cache for exact matches
         const cachedResponse = this.checkCache(params)
         if (cachedResponse) {
-            console.log('cache hit')
             return cachedResponse
         }
 

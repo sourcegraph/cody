@@ -2,7 +2,7 @@ import type { CodeToReplaceData, DocumentContext } from '@sourcegraph/cody-share
 import * as uui from 'uuid'
 import { TextDocument } from 'vscode-languageserver-textdocument'
 
-import * as vscode from 'vscode'
+import type * as vscode from 'vscode'
 
 import { getCurrentDocContext } from '../../completions/get-current-doc-context'
 import { wrapVSCodeTextDocument } from '../../testutils/textDocument'
@@ -118,24 +118,13 @@ export async function* processHotStreakResponses(
                     document.getText()
                 )
 
-                const rangeWithoutTheLastEmptyLine = new vscode.Range(
-                    processedPredictionRange.start,
-                    document.validatePosition(
-                        // Do not touch the last line of the range which represents the new line character only.
-                        new vscode.Position(
-                            processedPredictionRange.end.line - 1,
-                            Number.MAX_SAFE_INTEGER
-                        )
-                    )
-                )
-
                 // The hot streak suggestion excludes part of the full prediction. This means that it fundamentally relies
                 // on the processed part of the prediction existing in the document to be a valid suggestion.
                 // We need to update the document to reflect this, so that later docContext and codeToReplaceData
                 // are accurate.
                 TextDocument.update(
                     mutableDocument,
-                    [{ range: rangeWithoutTheLastEmptyLine, text: processedPrediction }],
+                    [{ range: processedPredictionRange, text: processedPrediction }],
                     document.version + 1
                 )
                 documentSnapshot = wrapVSCodeTextDocument(mutableDocument)

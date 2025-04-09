@@ -20,7 +20,7 @@ function trimPredictionToLastFullLine(prediction: string): string {
     return prediction.substring(0, lastNewlineIndex + 1)
 }
 
-function trimProcessedTextFromPrediction(
+export function trimProcessedTextFromPrediction(
     prediction: string,
     previousChunksLines: number
 ): [string, string] {
@@ -30,7 +30,14 @@ function trimProcessedTextFromPrediction(
     }
 
     const lines = prediction.split('\n')
-    const prefix = lines.slice(0, previousChunksLines).join('\n')
+    const prefix =
+        previousChunksLines === 0
+            ? ''
+            : // Add newline to the prefix because split('\n') removes all newlines
+              // and join('\n') only adds them between lines, not at the end.
+              // We need to preserve the final newline to maintain complete lines
+              // for accurate range calculations in trimPredictionForHotStreak.
+              lines.slice(0, previousChunksLines).join('\n') + '\n'
     const remainingPrediction = lines.slice(previousChunksLines).join('\n')
     return [prefix, remainingPrediction]
 }
