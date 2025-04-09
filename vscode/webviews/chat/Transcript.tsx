@@ -303,9 +303,6 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
         editorRef: parentEditorRef,
         manuallySelectedIntent,
         setManuallySelectedIntent,
-        savedIntentBeforePrompt,
-        setSavedIntentBeforePrompt,
-        isPromptInput,
         setIsPromptInput,
         determineIntent,
     } = props
@@ -376,8 +373,8 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                     manuallySelectedIntent: resolvedIntent,
                 })
             }
-            if (props.setIsPromptInput) {
-                props.setIsPromptInput(false)
+            if (setIsPromptInput) {
+                setIsPromptInput(false)
             }
         },
         [
@@ -386,11 +383,8 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
             isLastSentInteraction,
             lastEditorRef,
             manuallySelectedIntent,
-            savedIntentBeforePrompt,
-            setSavedIntentBeforePrompt,
-            isPromptInput,
-            setIsPromptInput,
             determineIntent,
+            setIsPromptInput,
         ]
     )
 
