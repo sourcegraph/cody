@@ -28,6 +28,7 @@ This is a log of all notable changes to Cody for VS Code.
 #### Chat
 
 - Improve tool input handling with JSON repair and validation [#7604](https://github.com/sourcegraph/cody/pull/7604)
+- Feat(models) Set new context limits (CODY-5022) [#7556](https://github.com/sourcegraph/cody/pull/7556)
 
 #### Guardrails
 
@@ -46,11 +47,16 @@ This is a log of all notable changes to Cody for VS Code.
 #### Agentic-Chat
 
 - Improve the UI for pinning the model when Agentic mode is selected (CODY-5449) [#7591](https://github.com/sourcegraph/cody/pull/7591)
+- [Backport M84] fix(agentic chat): Put the settings tab behind a feature flag [#7688](https://github.com/sourcegraph/cody/pull/7688)
+- Fix(agentic chat): Update Sonnet model ID check in syncModels [#7633](https://github.com/sourcegraph/cody/pull/7633)
+- Fix(agent mode): select mode at start up [#7616](https://github.com/sourcegraph/cody/pull/7616)
+- Fix(agent mode): initial context not included as context [#7588](https://github.com/sourcegraph/cody/pull/7588)
 
 #### Autoedit
 
 - Skip automatically enrollment when running in other clients [#7643](https://github.com/sourcegraph/cody/pull/7643)
 - Fix case where no completion provider would be registered for non VS Code clients [#7640](https://github.com/sourcegraph/cody/pull/7640)
+- (auto-edit): Add session level stats such as prompt caching hit rate [#7537](https://github.com/sourcegraph/cody/pull/7537)
 
 #### Chat
 
@@ -77,6 +83,18 @@ This is a log of all notable changes to Cody for VS Code.
 #### Vscode
 
 - update release workflows to auth before integration tests [#7700](https://github.com/sourcegraph/cody/pull/7700)
+- [Backport M84] Fix flaky tests caused by too often refresh of siteVersion #7691 [#7695](https://github.com/sourcegraph/cody/pull/7695)
+- [Backport M84] Backport #7654 and #7669 to m84 [#7681](https://github.com/sourcegraph/cody/pull/7681)
+- [Backport M84] Replace tiktoken with gpt-tokenizer [#7667](https://github.com/sourcegraph/cody/pull/7667)
+- Add head dump command to Cody debug options [#7646](https://github.com/sourcegraph/cody/pull/7646)
+- Fix: backwards compatibility for evaluateFeatureFlags [#7639](https://github.com/sourcegraph/cody/pull/7639)
+- Cleanup unused PromptMigration UI components [#7615](https://github.com/sourcegraph/cody/pull/7615)
+- Update tree-sitter to v0.24.5 [#7605](https://github.com/sourcegraph/cody/pull/7605)
+- Sentry service refactoring [#7601](https://github.com/sourcegraph/cody/pull/7601)
+- Tests should use its own temp keystore [#7567](https://github.com/sourcegraph/cody/pull/7567)
+- Rename boost: field in NLS queries [#7564](https://github.com/sourcegraph/cody/pull/7564)
+- Remove the "Commands are now prompts" welcome dialog. [#7536](https://github.com/sourcegraph/cody/pull/7536)
+- Feat: Add Dockerfile that installs cody from source [#7513](https://github.com/sourcegraph/cody/pull/7513)
 
 #### Web
 
@@ -101,35 +119,6 @@ This is a log of all notable changes to Cody for VS Code.
 #### Chat
 
 - Remove loading dots from context display [#7557](https://github.com/sourcegraph/cody/pull/7557)
-
-### Reverts
-
-  There were no reverts for this release
-
-### Uncategorized
-
-#### Others
-
-- [Backport M84] Fix flaky tests caused by too often refresh of siteVersion #7691 [#7695](https://github.com/sourcegraph/cody/pull/7695)
-- [Backport M84] fix(agentic chat): Put the settings tab behind a feature flag [#7688](https://github.com/sourcegraph/cody/pull/7688)
-- [Backport M84] Backport #7654 and #7669 to m84 [#7681](https://github.com/sourcegraph/cody/pull/7681)
-- [Backport M84] Replace tiktoken with gpt-tokenizer [#7667](https://github.com/sourcegraph/cody/pull/7667)
-- Changelog for 1.82.0 [#7656](https://github.com/sourcegraph/cody/pull/7656)
-- Add head dump command to Cody debug options [#7646](https://github.com/sourcegraph/cody/pull/7646)
-- Fix: backwards compatibility for evaluateFeatureFlags [#7639](https://github.com/sourcegraph/cody/pull/7639)
-- Fix(agentic chat): Update Sonnet model ID check in syncModels [#7633](https://github.com/sourcegraph/cody/pull/7633)
-- Fix(agent mode): select mode at start up [#7616](https://github.com/sourcegraph/cody/pull/7616)
-- Cleanup unused PromptMigration UI components [#7615](https://github.com/sourcegraph/cody/pull/7615)
-- Changelog for 1.80.1 [#7612](https://github.com/sourcegraph/cody/pull/7612)
-- Update tree-sitter to v0.24.5 [#7605](https://github.com/sourcegraph/cody/pull/7605)
-- Sentry service refactoring [#7601](https://github.com/sourcegraph/cody/pull/7601)
-- Fix(agent mode): initial context not included as context [#7588](https://github.com/sourcegraph/cody/pull/7588)
-- Tests should use its own temp keystore [#7567](https://github.com/sourcegraph/cody/pull/7567)
-- Rename boost: field in NLS queries [#7564](https://github.com/sourcegraph/cody/pull/7564)
-- Feat(models) Set new context limits (CODY-5022) [#7556](https://github.com/sourcegraph/cody/pull/7556)
-- (auto-edit): Add session level stats such as prompt caching hit rate [#7537](https://github.com/sourcegraph/cody/pull/7537)
-- Remove the "Commands are now prompts" welcome dialog. [#7536](https://github.com/sourcegraph/cody/pull/7536)
-- Feat: Add Dockerfile that installs cody from source [#7513](https://github.com/sourcegraph/cody/pull/7513)
 
 
 ## 1.82.0
