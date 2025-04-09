@@ -94,6 +94,7 @@ interface TestClientParams {
     onWindowRequest?: (params: ShowWindowMessageParams) => Promise<string>
     extraConfiguration?: Record<string, any>
     capabilities?: ClientCapabilities
+    secretStorageEntries?: Record<string, string>
 }
 
 export function setupRecording(): void {
@@ -205,6 +206,14 @@ export class TestClient extends MessageHandler {
 
         this.name = params.name
         this.info = this.getClientInfo(params.capabilities)
+
+        for (const [key, value] of Object.entries(params.secretStorageEntries ?? {})) {
+            this.secrets.store(key, value)
+        }
+
+        this.secrets.onDidChange(event => {
+            this.notify('secrets/didChange', { key: event.key })
+        })
 
         this.registerNotification('progress/start', message => {
             this.progressStartEvents.fire(message)
@@ -976,9 +985,7 @@ ${patch}`
             workspaceRootPath: this.params.workspaceRootUri.fsPath,
             capabilities: {
                 ...capabilities,
-                // The test client doesn't implement secrets/didChange, so we need to use the
-                // stateless secrets store.
-                secrets: 'stateless',
+                secrets: 'client-managed',
             },
             extensionConfiguration: {
                 anonymousUserID: `${this.name}abcde1234`,
