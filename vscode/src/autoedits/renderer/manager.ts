@@ -391,6 +391,10 @@ export class AutoEditsDefaultRendererManager
                 position: activeRequest.editPosition,
             })?.editPosition
 
+            console.log('tried to find next cursor position', {
+                nextLineNumber: nextCursorPosition?.line,
+            })
+
             if (!nextCursorPosition) {
                 return
             }

@@ -514,7 +514,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
             ) {
                 autoeditsOutputChannelLogger.logDebugIfVerbose(
                     'provideInlineCompletionItems',
-                    'skip because the prediction equals to code to rewrite'
+                    'skip because the prediction overlaps with the suffix'
                 )
                 autoeditAnalyticsLogger.markAsDiscarded({
                     requestId,

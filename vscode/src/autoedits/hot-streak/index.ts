@@ -1,9 +1,11 @@
 import type { CodeToReplaceData, DocumentContext } from '@sourcegraph/cody-shared'
 import * as uui from 'uuid'
+import { TextDocument } from 'vscode-languageserver-textdocument'
 
-import type * as vscode from 'vscode'
+import * as vscode from 'vscode'
 
-import { getDocContextAfterRewrite } from '../../completions/get-current-doc-context'
+import { getCurrentDocContext } from '../../completions/get-current-doc-context'
+import { wrapVSCodeTextDocument } from '../../testutils/textDocument'
 import { AutoeditStopReason, type ModelResponse } from '../adapters/base'
 import type { AutoeditHotStreakID } from '../analytics-logger'
 import { autoeditsProviderConfig } from '../autoedits-config'
@@ -35,7 +37,7 @@ export async function* processHotStreakResponses(
     docContext: DocumentContext,
     position: vscode.Position
 ): AsyncGenerator<Omit<SuggestedPredictionResult, 'cacheId'> | AbortedPredictionResult> {
-    let linesAlreadyChunked = 0
+    let processedPredictionLines = 0
     let hotStreakId = null
 
     for await (const response of responseGenerator) {
@@ -46,19 +48,23 @@ export async function* processHotStreakResponses(
               response.type === 'partial'
 
         if (shouldHotStreak && response.type !== 'aborted') {
-            const { prefix, prefixRange, predictionChunk, predictionChunkRange } =
-                trimPredictionForHotStreak(
-                    response.prediction,
-                    codeToReplaceData.range,
-                    linesAlreadyChunked
-                )
+            const {
+                processedPrediction,
+                processedPredictionRange,
+                remainingPrediction,
+                remainingPredictionRange,
+            } = trimPredictionForHotStreak({
+                fullPrediction: response.prediction,
+                fullPredictionRange: codeToReplaceData.range,
+                processedPredictionLines: processedPredictionLines,
+            })
 
-            if (!predictionChunk) {
+            if (!remainingPrediction) {
                 // No complete lines yet, continue
                 continue
             }
 
-            const currentLineCount = predictionChunk.split('\n').length - 1 // excluding the final new line
+            const currentLineCount = remainingPrediction.split('\n').length - 1 // excluding the final new line
             const reachedHotStreakThreshold = currentLineCount > HOT_STREAK_LINES_THRESHOLD
             if (response.type === 'partial' && !reachedHotStreakThreshold) {
                 // We haven't reached the hot streak threshold and we still have more lines to process
@@ -66,7 +72,11 @@ export async function* processHotStreakResponses(
                 continue
             }
 
-            const diff = getDecorationInfoFromPrediction(document, predictionChunk, predictionChunkRange)
+            const diff = getDecorationInfoFromPrediction(
+                document,
+                remainingPrediction,
+                remainingPredictionRange
+            )
 
             // We want: start line of the diff (first edit/cursor position)
             // end line of the diff - used to determine if we can chunk the diff
@@ -84,7 +94,7 @@ export async function* processHotStreakResponses(
             if (
                 response.type === 'partial' &&
                 lastLineOfDiff.type !== 'unchanged' &&
-                lastLineNumberOfDiff === predictionChunkRange.end.line
+                lastLineNumberOfDiff === remainingPredictionRange.end.line
             ) {
                 // We only emit a hot streak prediction when the final line of the prediction range is unchanged.
                 // This ensures that the diff is appropriately chunked.
@@ -99,25 +109,52 @@ export async function* processHotStreakResponses(
                 hotStreakId = uui.v4() as AutoeditHotStreakID
             }
 
+            let documentSnapshot = document
+            if (processedPrediction.length !== 0) {
+                const mutableDocument = TextDocument.create(
+                    document.uri.toString(),
+                    document.languageId,
+                    document.version,
+                    document.getText()
+                )
+
+                const rangeWithoutTheLastEmptyLine = new vscode.Range(
+                    processedPredictionRange.start,
+                    document.validatePosition(
+                        // Do not touch the last line of the range which represents the new line character only.
+                        new vscode.Position(
+                            processedPredictionRange.end.line - 1,
+                            Number.MAX_SAFE_INTEGER
+                        )
+                    )
+                )
+
+                // The hot streak suggestion excludes part of the full prediction. This means that it fundamentally relies
+                // on the processed part of the prediction existing in the document to be a valid suggestion.
+                // We need to update the document to reflect this, so that later docContext and codeToReplaceData
+                // are accurate.
+                TextDocument.update(
+                    mutableDocument,
+                    [{ range: rangeWithoutTheLastEmptyLine, text: processedPrediction }],
+                    document.version + 1
+                )
+                documentSnapshot = wrapVSCodeTextDocument(mutableDocument)
+            }
+
             // The hot streak prediction excludes part of the prefix. This means that it fundamentally relies
             // on the prefix existing in the document to be a valid suggestion. We need to update the docContext
             // to reflect this.
-            const updatedDocContext = getDocContextAfterRewrite({
-                document,
-                position: predictionChunkRange.start,
-                replacementRange: prefixRange,
-                injectedContent: prefix,
+            const updatedDocContext = getCurrentDocContext({
+                document: documentSnapshot,
+                position: remainingPredictionRange.start,
                 maxPrefixLength: docContext.maxPrefixLength,
                 maxSuffixLength: docContext.maxSuffixLength,
             })
 
-            // TODO: `codeToReplaceData` is not fully accurate.
-            // This is because it relies on `document.getText` for determining prefixes/suffixes
-            // `getText` runs on the active document, it does not support a virtual document that we can amend
             const adjustedCodeToReplace = getCodeToReplaceData({
                 docContext: updatedDocContext,
-                document,
-                position: predictionChunkRange.start,
+                document: documentSnapshot,
+                position: remainingPredictionRange.start,
                 tokenBudget: {
                     ...autoeditsProviderConfig.tokenLimit,
                     codeToRewritePrefixLines: 0,
@@ -132,19 +169,19 @@ export async function* processHotStreakResponses(
 
             // We use the first line of the diff as the next cursor position.
             // This is useful so that we can support "jumping" to this suggestion from a different part of the document
-            const editPosition = document.lineAt(firstLineNumberOfDiff).range.end
+            const editPosition = documentSnapshot.lineAt(firstLineNumberOfDiff).range.end
 
             // Track the number of lines we have processed, this is used to trim the prediction accordingly in the next response.
-            linesAlreadyChunked = linesAlreadyChunked + currentLineCount
+            processedPredictionLines = processedPredictionLines + currentLineCount
 
             yield {
                 type: 'suggested',
                 response: {
                     ...response,
-                    prediction: predictionChunk,
+                    prediction: remainingPrediction,
                     stopReason: AutoeditStopReason.HotStreak,
                 },
-                uri: document.uri.toString(),
+                uri: documentSnapshot.uri.toString(),
                 editPosition,
                 docContext: updatedDocContext,
                 codeToReplaceData: adjustedCodeToReplace,

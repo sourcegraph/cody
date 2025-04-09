@@ -35,36 +35,43 @@ function trimProcessedTextFromPrediction(
     return [prefix, remainingPrediction]
 }
 
-export function trimPredictionForHotStreak(
-    prediction: string,
-    range: vscode.Range,
-    linesAlreadyChunked: number
-): {
-    prefix: string
-    prefixRange: vscode.Range
-    predictionChunk: string
-    predictionChunkRange: vscode.Range
+export function trimPredictionForHotStreak({
+    fullPrediction,
+    fullPredictionRange,
+    processedPredictionLines,
+}: {
+    fullPrediction: string
+    fullPredictionRange: vscode.Range
+    processedPredictionLines: number
+}): {
+    processedPrediction: string
+    processedPredictionRange: vscode.Range
+    remainingPrediction: string
+    remainingPredictionRange: vscode.Range
 } {
-    const trimmedPrediction = trimPredictionToLastFullLine(prediction)
-    const [prefix, predictionChunk] = trimProcessedTextFromPrediction(
+    const trimmedPrediction = trimPredictionToLastFullLine(fullPrediction)
+    const [processedPrediction, remainingPrediction] = trimProcessedTextFromPrediction(
         trimmedPrediction,
-        linesAlreadyChunked
+        processedPredictionLines
     )
 
-    const chunkLineCount = predictionChunk.split('\n').length - 1 // excluding the final new line
-    const prefixRange = new vscode.Range(range.start, range.start.translate(linesAlreadyChunked))
+    const chunkLineCount = remainingPrediction.split('\n').length - 1 // excluding the final new line
+    const processedPredictionRange = new vscode.Range(
+        fullPredictionRange.start,
+        fullPredictionRange.start.translate(processedPredictionLines)
+    )
 
     // We need to adjust the prediction range to match the prediction so far.
     // This ensures we don't diff the partial prediction against the full codeToRewrite
-    const predictionChunkRange = new vscode.Range(
-        prefixRange.end,
-        range.start.translate(linesAlreadyChunked + chunkLineCount)
+    const remainingPredictionRange = new vscode.Range(
+        processedPredictionRange.end,
+        fullPredictionRange.start.translate(processedPredictionLines + chunkLineCount)
     )
 
     return {
-        prefix,
-        prefixRange,
-        predictionChunk,
-        predictionChunkRange,
+        processedPrediction,
+        processedPredictionRange,
+        remainingPrediction,
+        remainingPredictionRange,
     }
 }

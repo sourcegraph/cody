@@ -4,6 +4,7 @@ import { URI } from 'vscode-uri'
 
 import { vsCodeMocks } from './mocks'
 
+// TODO: move this out of the testutils folder since it's used in the autoedit hot-streak implementation.
 export function wrapVSCodeTextDocument(doc: TextDocument): VSCodeTextDocument {
     const uri = URI.parse(doc.uri)
     return {
@@ -25,15 +26,22 @@ export function wrapVSCodeTextDocument(doc: TextDocument): VSCodeTextDocument {
         },
         lineAt(position: number | Position): TextLine {
             const line = typeof position === 'number' ? position : position.line
-            const lines = doc.getText().split('\n')
-            const text = lines[line]
+            const text = this.getText(
+                new vsCodeMocks.Range(
+                    new vsCodeMocks.Position(line, 0),
+                    new vsCodeMocks.Position(line, Number.MAX_SAFE_INTEGER)
+                )
+            )
             return createTextLine(text, new vsCodeMocks.Range(line, 0, line, text.length))
         },
         getWordRangeAtPosition(): Range {
             throw new Error('Method not implemented.')
         },
-        validateRange(): Range {
-            throw new Error('Method not implemented.')
+        validateRange(range: Range): Range {
+            return new vsCodeMocks.Range(
+                this.validatePosition(range.start),
+                this.validatePosition(range.end)
+            )
         },
         validatePosition(position: Position): Position {
             const line = Math.max(0, Math.min(position.line, this.lineCount - 1))
