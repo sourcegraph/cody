@@ -1,22 +1,13 @@
 import type { CodeToReplaceData, DocumentContext } from '@sourcegraph/cody-shared'
 import * as uui from 'uuid'
-import { TextDocument } from 'vscode-languageserver-textdocument'
 
 import type * as vscode from 'vscode'
 
-import { getCurrentDocContext } from '../../completions/get-current-doc-context'
-import { wrapVSCodeTextDocument } from '../../editor/utils/virtual-text-document'
 import { AutoeditStopReason, type ModelResponse } from '../adapters/base'
 import type { AutoeditHotStreakID } from '../analytics-logger'
-import { autoeditsProviderConfig } from '../autoedits-config'
-import {
-    type AbortedPredictionResult,
-    type SuggestedPredictionResult,
-    getDecorationInfoFromPrediction,
-} from '../autoedits-provider'
-import { getCodeToReplaceData } from '../prompt/prompt-utils'
-import { getDiffChangeBoundaries } from '../renderer/diff-utils'
-import { trimPredictionForHotStreak } from './utils'
+import type { AbortedPredictionResult, SuggestedPredictionResult } from '../autoedits-provider'
+import { getSuggestedDiffForChunk } from './utils/suggested-diff'
+import { trimPredictionForHotStreak } from './utils/trim-prediction'
 
 /**
  * Number of lines that should be accumulated before attempting a hot streak suggestion.
@@ -53,7 +44,7 @@ export async function* processHotStreakResponses({
 }: ProcessHotStreakResponsesParams): AsyncGenerator<
     Omit<SuggestedPredictionResult, 'cacheId'> | AbortedPredictionResult
 > {
-    let processedPredictionLines = 0
+    let processedPrediction = ''
     let hotStreakId = null
 
     for await (const response of responseGenerator) {
@@ -64,23 +55,22 @@ export async function* processHotStreakResponses({
               response.type === 'partial'
 
         if (options.hotStreakEnabled && canHotStreak && response.type !== 'aborted') {
-            const {
+            const predictionChunk = trimPredictionForHotStreak({
+                latestFullPrediction: response.prediction,
                 processedPrediction,
-                processedPredictionRange,
-                remainingPrediction,
-                remainingPredictionRange,
-            } = trimPredictionForHotStreak({
-                fullPrediction: response.prediction,
-                fullPredictionRange: codeToReplaceData.range,
-                processedPredictionLines: processedPredictionLines,
+                document,
+                docContext,
+                position,
+                codeToReplaceData,
+                response,
             })
 
-            if (!remainingPrediction) {
+            if (!predictionChunk) {
                 // No complete lines yet, continue
                 continue
             }
 
-            const currentLineCount = remainingPrediction.split('\n').length - 1 // excluding the final new line
+            const currentLineCount = predictionChunk.text.split('\n').length - 1 // excluding the final new line
             const reachedHotStreakThreshold = currentLineCount > HOT_STREAK_LINES_THRESHOLD
             if (response.type === 'partial' && !reachedHotStreakThreshold) {
                 // We haven't reached the hot streak threshold and we still have more lines to process
@@ -88,35 +78,9 @@ export async function* processHotStreakResponses({
                 continue
             }
 
-            const diff = getDecorationInfoFromPrediction(
-                document,
-                remainingPrediction,
-                remainingPredictionRange
-            )
-
-            // We want: start line of the diff (first edit/cursor position)
-            // end line of the diff - used to determine if we can chunk the diff
-            const diffChangeBoundaries = getDiffChangeBoundaries(diff)
-            if (!diffChangeBoundaries) {
-                // Diff doesn't have any changes, so we can't emit a hot streak prediction
-                continue
-            }
-
-            const [firstLineOfDiff, lastLineOfDiff] = diffChangeBoundaries
-            const lastLineNumberOfDiff =
-                lastLineOfDiff.type === 'removed'
-                    ? lastLineOfDiff.originalLineNumber
-                    : lastLineOfDiff.modifiedLineNumber
-            if (
-                response.type === 'partial' &&
-                lastLineOfDiff.type !== 'unchanged' &&
-                lastLineNumberOfDiff === remainingPredictionRange.end.line - 1
-            ) {
-                // We only emit a hot streak prediction when the final line of the prediction range is unchanged.
-                // This ensures that the diff is appropriately chunked.
-                // Example: If the last line of the range was removed, it may be that the LLM is actually replacing
-                // this line with another one in the next chunk.
-                // TODO: Add tests for this
+            const suggestedDiff = getSuggestedDiffForChunk(response, predictionChunk)
+            if (!suggestedDiff) {
+                // We can't suggest this diff, keep streaming and try again with the next response
                 continue
             }
 
@@ -125,81 +89,33 @@ export async function* processHotStreakResponses({
                 hotStreakId = uui.v4() as AutoeditHotStreakID
             }
 
-            let documentSnapshot = document
-            if (processedPrediction.length !== 0) {
-                const mutableDocument = TextDocument.create(
-                    document.uri.toString(),
-                    document.languageId,
-                    document.version,
-                    document.getText()
-                )
-
-                // The hot streak suggestion excludes part of the full prediction. This means that it fundamentally relies
-                // on the processed part of the prediction existing in the document to be a valid suggestion.
-                // We need to update the document to reflect this, so that later docContext and codeToReplaceData
-                // are accurate.
-                TextDocument.update(
-                    mutableDocument,
-                    [{ range: processedPredictionRange, text: processedPrediction }],
-                    document.version + 1
-                )
-                documentSnapshot = wrapVSCodeTextDocument(mutableDocument)
-            }
-
-            // It is important that we use the correct position when updating docContext, as
-            // this is also used to help determine if we can make a valid inline completion or not.
-            // Currently we only support inline completions from the first suggestion.
-            // TODO: Use the correct updated position for hot-streak suggestions. If it is a completion it should be
-            // at the end of the insertText, otherwise it should be unchanged.
-            const updatedDocPosition =
-                processedPredictionLines === 0 ? position : remainingPredictionRange.start
-
-            // The hot streak prediction excludes part of the prefix. This means that it fundamentally relies
-            // on the prefix existing in the document to be a valid suggestion. We need to update the docContext
-            // to reflect this.
-            const updatedDocContext = getCurrentDocContext({
-                document: documentSnapshot,
-                position: updatedDocPosition,
-                maxPrefixLength: docContext.maxPrefixLength,
-                maxSuffixLength: docContext.maxSuffixLength,
-            })
-
-            const adjustedCodeToReplace = getCodeToReplaceData({
-                docContext: updatedDocContext,
-                document: documentSnapshot,
-                position: remainingPredictionRange.start,
-                tokenBudget: {
-                    ...autoeditsProviderConfig.tokenLimit,
-                    codeToRewritePrefixLines: 0,
-                    codeToRewriteSuffixLines: currentLineCount - 1,
-                },
-            })
-
-            const firstLineNumberOfDiff =
-                firstLineOfDiff.type === 'removed'
-                    ? firstLineOfDiff.originalLineNumber
-                    : firstLineOfDiff.modifiedLineNumber
-
             // We use the first line of the diff as the next cursor position.
             // This is useful so that we can support "jumping" to this suggestion from a different part of the document
-            const editPosition = documentSnapshot.lineAt(firstLineNumberOfDiff).range.end
+            const editPosition = predictionChunk.documentSnapshot.lineAt(
+                suggestedDiff.firstChange.lineNumber
+            ).range.end
 
             // Track the number of lines we have processed, this is used to trim the prediction accordingly in the next response.
-            processedPredictionLines = processedPredictionLines + currentLineCount
+            processedPrediction = processedPrediction + predictionChunk.text
 
             yield {
                 type: 'suggested',
                 response: {
                     ...response,
-                    prediction: remainingPrediction,
+                    prediction: predictionChunk.text,
                     stopReason: AutoeditStopReason.HotStreak,
                 },
-                uri: documentSnapshot.uri.toString(),
+                uri: predictionChunk.documentSnapshot.uri.toString(),
                 editPosition,
-                docContext: updatedDocContext,
-                codeToReplaceData: adjustedCodeToReplace,
+                docContext: predictionChunk.docContext,
+                codeToReplaceData: predictionChunk.codeToReplaceData,
                 hotStreakId,
             }
+            continue
+        }
+
+        if (response.type === 'partial') {
+            // No hot-streak for this partial response, keep streaming
             continue
         }
 
@@ -210,16 +126,18 @@ export async function* processHotStreakResponses({
             return
         }
 
-        const diff = getDecorationInfoFromPrediction(
-            document,
-            response.prediction,
-            codeToReplaceData.range
-        )
+        const suggestedDiff = getSuggestedDiffForChunk(response, {
+            documentSnapshot: document,
+            text: response.prediction,
+            range: codeToReplaceData.range,
+            codeToReplaceData,
+            docContext,
+        })
 
-        const diffChangeBoundaries = getDiffChangeBoundaries(diff)
-        if (!diffChangeBoundaries) {
-            // This is the final response (no hot-streak) and we have no diff.
-            // We will yield a suggestion but it will be handled downstream and will not be shown to the user.
+        if (!suggestedDiff) {
+            // This is the final response and we haven't been able to emit a hot-streak suggestion.
+            // Even though we do not have a suggested diff, we still want to emit this suggestion.
+            // It will be handled downstream, not shown to the user but marked correctly for telemetry purposes
             yield {
                 type: 'suggested',
                 response,
@@ -228,16 +146,8 @@ export async function* processHotStreakResponses({
                 docContext,
                 codeToReplaceData,
             }
-            // Diff doesn't have any changes, so we can't emit a hot streak prediction
-            continue
+            return
         }
-
-        const [firstLineOfDiff] = diffChangeBoundaries
-        const firstLineNumberOfDiff =
-            firstLineOfDiff.type === 'removed'
-                ? firstLineOfDiff.originalLineNumber
-                : firstLineOfDiff.modifiedLineNumber
-        const editPosition = document.lineAt(firstLineNumberOfDiff).range.end
 
         yield {
             type: 'suggested',
@@ -249,7 +159,7 @@ export async function* processHotStreakResponses({
             // This is so this can still be used as a "next cursor" prediction source for a scenario where we have
             // a long rewrite window but the only change is at the bottom, far away from the users' cursor.
             // In these scenarios we should show a next cursor suggestion instead of the code suggestion.
-            editPosition,
+            editPosition: document.lineAt(suggestedDiff.firstChange.lineNumber).range.end,
         }
     }
 }

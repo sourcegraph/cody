@@ -4,7 +4,13 @@ import * as vscode from 'vscode'
 
 import { getNewLineChar } from '../../completions/text-processing'
 
-import type { DecorationInfo, DecorationLineInfo, LineChange, ModifiedLineInfo } from './decorators/base'
+import type {
+    DecorationInfo,
+    DecorationLineInfo,
+    LineChange,
+    ModifiedLineInfo,
+    UnchangedLineInfo,
+} from './decorators/base'
 
 /**
  * Generates decoration information by computing the differences between two texts.
@@ -597,12 +603,12 @@ export function sortDiff(diff: DecorationInfo): DecorationLineInfo[] {
     return sortedDiff
 }
 
+type DiffChange = Exclude<DecorationLineInfo, UnchangedLineInfo>
+
 /**
  * Given a diff, will return the first and last lines that have changes.
  */
-export function getDiffChangeBoundaries(
-    diff: DecorationInfo
-): [DecorationLineInfo, DecorationLineInfo] | null {
+export function getDiffChangeBoundaries(diff: DecorationInfo): [DiffChange, DiffChange] | null {
     const sortedDiff = sortDiff(diff)
     const firstRelevantLine = sortedDiff.find(line => line.type !== 'unchanged')
     const lastRelevantLine = sortedDiff.findLast(line => line.type !== 'unchanged')
