@@ -756,7 +756,6 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
         )
     }
 
-    private hasDoneMockPrediction = false
     private async getPrediction({
         document,
         position,
@@ -795,9 +794,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                     codeToReplaceData
                 )
 
-                if (prediction && !this.hasDoneMockPrediction) {
-                    // TODO: Remove
-                    this.hasDoneMockPrediction = true
+                if (prediction) {
                     const generator = createMockResponseGenerator(prediction)
                     return this.requestManager.request(requestParams, async () => {
                         return processHotStreakResponses(

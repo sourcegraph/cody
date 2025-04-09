@@ -2,9 +2,8 @@ import type { EndOfLine, Position, Range, TextLine, TextDocument as VSCodeTextDo
 import type { TextDocument } from 'vscode-languageserver-textdocument'
 import { URI } from 'vscode-uri'
 
-import { vsCodeMocks } from './mocks'
+import { vsCodeMocks } from '../../testutils/mocks'
 
-// TODO: move this out of the testutils folder since it's used in the autoedit hot-streak implementation.
 export function wrapVSCodeTextDocument(doc: TextDocument): VSCodeTextDocument {
     const uri = URI.parse(doc.uri)
     return {

@@ -110,8 +110,6 @@ export class RequestManager implements vscode.Disposable {
                     continue
                 }
 
-                // console.log('result', JSON.stringify(result, null, 2))
-
                 if (
                     result.response.type === 'partial' &&
                     result.response.stopReason !== AutoeditStopReason.HotStreak
@@ -131,7 +129,6 @@ export class RequestManager implements vscode.Disposable {
                     response: { ...result.response, source: autoeditSource.cache },
                 })
 
-                // console.log('resolving request', JSON.stringify(cachedResult, null, 2))
                 // A promise will never resolve more than once, so we don't need
                 // to check if the request was already fulfilled.
                 request.resolve(cachedResult)
@@ -216,11 +213,12 @@ export class RequestManager implements vscode.Disposable {
 
             // Check that the rewrite area is still present in the document
             // This is a good indicator that the item is still valid
-            // TODO: It would be preferable to use `codeToReplaceData` here.
-            const rewriteArea = item.docContext.prefix + item.docContext.suffix
+            const rewriteArea =
+                item.codeToReplaceData.prefixInArea +
+                item.codeToReplaceData.codeToRewrite +
+                item.codeToReplaceData.suffixInArea
 
             if (documentText.includes(rewriteArea)) {
-                console.log('found match', JSON.stringify(item, null, 2))
                 matchingItems.push(item)
             }
         }

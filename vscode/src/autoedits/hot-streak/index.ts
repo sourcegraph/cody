@@ -5,7 +5,7 @@ import { TextDocument } from 'vscode-languageserver-textdocument'
 import type * as vscode from 'vscode'
 
 import { getCurrentDocContext } from '../../completions/get-current-doc-context'
-import { wrapVSCodeTextDocument } from '../../testutils/textDocument'
+import { wrapVSCodeTextDocument } from '../../editor/utils/virtual-text-document'
 import { AutoeditStopReason, type ModelResponse } from '../adapters/base'
 import type { AutoeditHotStreakID } from '../analytics-logger'
 import { autoeditsProviderConfig } from '../autoedits-config'
