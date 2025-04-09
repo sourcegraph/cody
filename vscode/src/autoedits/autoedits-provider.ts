@@ -130,6 +130,12 @@ export type AutoeditClientCapabilities = Pick<
     'autoedit' | 'autoeditInlineDiff' | 'autoeditAsideDiff'
 >
 
+interface AutoeditsFeatures {
+    hotStreakEnabled: boolean
+    shouldRenderInline: boolean
+    allowUsingWebSocket: boolean
+}
+
 /**
  * Provides inline completions and auto-edit functionality.
  *
@@ -158,14 +164,16 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
     })
     private readonly statusBar: CodyStatusBar
     private readonly capabilities: AutoeditClientCapabilities
+    private readonly features: AutoeditsFeatures
 
     constructor(
         chatClient: ChatClient,
         fixupController: FixupController,
         statusBar: CodyStatusBar,
-        options: { shouldRenderInline: boolean; allowUsingWebSocket?: boolean }
+        features: AutoeditsFeatures
     ) {
         this.capabilities = this.getClientCapabilities()
+        this.features = features
 
         // Initialise the canvas renderer for image generation.
         initImageSuggestionService()
@@ -177,10 +185,10 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
             providerName: autoeditsProviderConfig.provider,
             isChatModel: autoeditsProviderConfig.isChatModel,
             chatClient: chatClient,
-            allowUsingWebSocket: options.allowUsingWebSocket,
+            allowUsingWebSocket: this.features.allowUsingWebSocket,
         })
 
-        this.rendererManager = options.shouldRenderInline
+        this.rendererManager = this.features.shouldRenderInline
             ? new AutoEditsInlineRendererManager(
                   editor => new InlineDiffDecorator(editor),
                   fixupController,
@@ -747,13 +755,16 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
             timeoutMs: autoeditsProviderConfig.timeoutMs,
         })
 
-        return processHotStreakResponses(
+        return processHotStreakResponses({
             responseGenerator,
             document,
             codeToReplaceData,
             docContext,
-            position
-        )
+            position,
+            options: {
+                hotStreakEnabled: this.features.hotStreakEnabled,
+            },
+        })
     }
 
     private async getPrediction({
@@ -795,15 +806,18 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                 )
 
                 if (prediction) {
-                    const generator = createMockResponseGenerator(prediction)
+                    const responseGenerator = createMockResponseGenerator(prediction)
                     return this.requestManager.request(requestParams, async () => {
-                        return processHotStreakResponses(
-                            generator,
+                        return processHotStreakResponses({
+                            responseGenerator,
                             document,
                             codeToReplaceData,
                             docContext,
-                            position
-                        )
+                            position,
+                            options: {
+                                hotStreakEnabled: this.features.hotStreakEnabled,
+                            },
+                        })
                     })
                 }
             }

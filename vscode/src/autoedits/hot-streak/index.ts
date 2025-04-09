@@ -25,29 +25,45 @@ import { trimPredictionForHotStreak } from './utils'
  */
 export const HOT_STREAK_LINES_THRESHOLD = 5
 
+export interface ProcessHotStreakResponsesParams {
+    responseGenerator: AsyncGenerator<ModelResponse>
+    document: vscode.TextDocument
+    codeToReplaceData: CodeToReplaceData
+    docContext: DocumentContext
+    position: vscode.Position
+    options: {
+        // If hot-streak is actually enabled. If it is not, we will not attempt to emit
+        // any hot-streak suggestions and wait for the final response.
+        hotStreakEnabled?: boolean
+    }
+}
+
 /**
  * Process a stream of model responses and attempt to emit a "hot-streak" suggestion.
  * A hot-streak is where we emit suggestions before the model is done generating.
  * This allows us to use a large rewrite window whilst still achieving low latency responses.
  */
-export async function* processHotStreakResponses(
-    responseGenerator: AsyncGenerator<ModelResponse>,
-    document: vscode.TextDocument,
-    codeToReplaceData: CodeToReplaceData,
-    docContext: DocumentContext,
-    position: vscode.Position
-): AsyncGenerator<Omit<SuggestedPredictionResult, 'cacheId'> | AbortedPredictionResult> {
+export async function* processHotStreakResponses({
+    responseGenerator,
+    document,
+    codeToReplaceData,
+    docContext,
+    position,
+    options,
+}: ProcessHotStreakResponsesParams): AsyncGenerator<
+    Omit<SuggestedPredictionResult, 'cacheId'> | AbortedPredictionResult
+> {
     let processedPredictionLines = 0
     let hotStreakId = null
 
     for await (const response of responseGenerator) {
-        const shouldHotStreak = hotStreakId
+        const canHotStreak = hotStreakId
             ? // If we have already started emitted hot-streak suggestions, then we should treat all responses as hot-streaks
               response.type === 'partial' || response.type === 'success'
             : // Otherwise only attempt doing so for partial responses.
               response.type === 'partial'
 
-        if (shouldHotStreak && response.type !== 'aborted') {
+        if (options.hotStreakEnabled && canHotStreak && response.type !== 'aborted') {
             const {
                 processedPrediction,
                 processedPredictionRange,
