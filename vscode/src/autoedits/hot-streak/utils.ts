@@ -55,7 +55,9 @@ export function trimPredictionForHotStreak({
         processedPredictionLines
     )
 
-    const chunkLineCount = remainingPrediction.split('\n').length - 1 // excluding the final new line
+    // excluding the final new line because the remaining prediction is not complete
+    // and we might get more changes to this line in the next response chunk
+    const chunkLineCount = remainingPrediction.split('\n').length - 1
     const processedPredictionRange = new vscode.Range(
         fullPredictionRange.start,
         fullPredictionRange.start.translate(processedPredictionLines)
