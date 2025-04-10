@@ -284,7 +284,7 @@ export class ModelsService {
             featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyDeepSeekChat)
         )
             .pipe(
-                tap(([data, shouldEditDefaultToGpt4oMini, shouldChatDefaultToDeepSeek]) => {
+                tap(async ([data, shouldEditDefaultToGpt4oMini, shouldChatDefaultToDeepSeek]) => {
                     if (data === pendingOperation) {
                         return
                     }
@@ -340,7 +340,7 @@ export class ModelsService {
                         ...allSitePrefs,
                         [currentAuthStatus().endpoint]: currentAccountPrefs,
                     }
-                    this.storage?.setModelPreferences(updated)
+                    await this.storage?.setModelPreferences(updated)
                 })
             )
             .subscribe({})
