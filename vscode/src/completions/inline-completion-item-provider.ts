@@ -8,6 +8,7 @@ import {
     type IsIgnored,
     RateLimitError,
     authStatus,
+    clientCapabilities,
     contextFiltersProvider,
     featureFlagProvider,
     isAuthError,
@@ -65,7 +66,6 @@ import {
 } from './suggested-autocomplete-items-cache'
 import { indentation } from './text-processing'
 import type { ProvideInlineCompletionItemsTracer, ProvideInlineCompletionsItemTraceData } from './tracer'
-import { clientCapabilities } from '@sourcegraph/cody-shared/dist'
 
 interface AutocompleteResult extends vscode.InlineCompletionList {
     logId: CompletionLogID

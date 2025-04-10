@@ -160,7 +160,6 @@ export function isTokenOrEndpointChange(newConfig: ExtensionConfiguration): bool
 
 const configuration = new AgentWorkspaceConfiguration(
     [],
-    () => agent,
     () => clientInfo,
     () => extensionConfiguration
 )
