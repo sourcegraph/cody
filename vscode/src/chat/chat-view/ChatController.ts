@@ -52,7 +52,6 @@ import {
     isDotCom,
     isError,
     isRateLimitError,
-    isS2,
     logError,
     modelsService,
     pendingOperation,
@@ -82,9 +81,8 @@ import { type Span, context } from '@opentelemetry/api'
 import { captureException } from '@sentry/core'
 import type { SubMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { resolveAuth } from '@sourcegraph/cody-shared/src/configuration/auth-resolver'
-import type { McpServer } from '@sourcegraph/cody-shared/src/llm-providers/mcp/types'
 import type { TelemetryEventParameters } from '@sourcegraph/telemetry'
-import { Observable, Subject, map } from 'observable-fns'
+import { Subject, map } from 'observable-fns'
 import type { URI } from 'vscode-uri'
 import { View } from '../../../webviews/tabs/types'
 import { redirectToEndpointLogin, showSignInMenu, showSignOutMenu, signOut } from '../../auth/auth'
@@ -142,7 +140,6 @@ import { getChatPanelTitle, isAgentTesting } from './chat-helpers'
 import { OmniboxTelemetry } from './handlers/OmniboxTelemetry'
 import { getAgent, getAgentName } from './handlers/registry'
 import { getPromptsMigrationInfo, startPromptsMigration } from './prompts-migration'
-import { MCPManager } from './tools/MCPManager'
 
 export interface ChatControllerOptions {
     extensionUri: vscode.Uri
@@ -567,13 +564,9 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
 
     private async getConfigForWebview(): Promise<ConfigurationSubsetForWebview & LocalEnv> {
         const { configuration, auth } = await currentResolvedConfig()
-        const [experimentalPromptEditorEnabled, internalAgenticChatEnabled] = await Promise.all([
-            firstValueFrom(
-                featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyExperimentalPromptEditor)
-            ),
-            firstValueFrom(featureFlagProvider.evaluateFeatureFlag(FeatureFlag.NextAgenticChatInternal)),
-        ])
-        const experimentalAgenticChatEnabled = internalAgenticChatEnabled && isS2(auth.serverEndpoint)
+        const experimentalPromptEditorEnabled = await firstValueFrom(
+            featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyExperimentalPromptEditor)
+        )
         const sidebarViewOnly = this.extensionClient.capabilities?.webviewNativeConfig?.view === 'single'
         const isEditorViewType = this.webviewPanelOrView?.viewType === 'cody.editorPanel'
         const webviewType = isEditorViewType && !sidebarViewOnly ? 'editor' : 'sidebar'
@@ -587,7 +580,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             serverEndpoint: auth.serverEndpoint,
             endpointHistory: [...endpoints],
             experimentalNoodle: configuration.experimentalNoodle,
-            // Disable smart apply codeblock toolbar when agentic chat is enabled.
             smartApply: this.isSmartApplyEnabled(),
             hasEditCapability: this.hasEditCapability(),
             webviewType,
@@ -595,7 +587,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             internalDebugContext: configuration.internalDebugContext,
             allowEndpointChange: configuration.overrideServerEndpoint === undefined,
             experimentalPromptEditorEnabled,
-            experimentalAgenticChatEnabled,
             attribution,
         }
     }
@@ -702,7 +693,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
 
                 this.chatBuilder.setSelectedModel(model)
 
-                const chatAgent = getAgentName(manuallySelectedIntent, model)
+                const chatAgent = getAgentName(model)
 
                 this.chatBuilder.addHumanMessage({
                     text: inputText,
@@ -863,9 +854,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                         // In future work, we should remove this special-casing and unify
                         // how new messages are posted to the transcript.
 
-                        if (manuallySelectedIntent === 'agentic') {
-                            this.saveSession()
-                        } else if (
+                        if (
                             messageInProgress &&
                             (['search', 'insert', 'edit'].includes(messageInProgress?.intent ?? '') ||
                                 messageInProgress?.search ||
@@ -1754,24 +1743,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                         userProductSubscription.pipe(
                             map(value => (value === pendingOperation ? null : value))
                         ),
-                    // Existing tools endpoint - update to include MCP tools
-                    mcpSettings: () => {
-                        return featureFlagProvider
-                            .evaluateFeatureFlag(FeatureFlag.NextAgenticChatInternal)
-                            .pipe(
-                                // Simplify the flow with map and distinctUntilChanged
-                                distinctUntilChanged(),
-                                startWith(null),
-                                // When disabled, return an empty array
-                                switchMap(experimentalAgentMode => {
-                                    if (!experimentalAgentMode) {
-                                        return Observable.of([] as McpServer[])
-                                    }
-                                    // When enabled, get servers from the manager
-                                    return MCPManager.observable
-                                })
-                            )
-                    },
                 }
             )
         )

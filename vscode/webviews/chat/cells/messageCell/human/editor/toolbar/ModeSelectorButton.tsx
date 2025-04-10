@@ -1,6 +1,6 @@
 import type { ChatMessage } from '@sourcegraph/cody-shared'
 import { isMacOS } from '@sourcegraph/cody-shared'
-import { BetweenHorizonalEnd, MessageSquare, Pencil, Search, Sparkle } from 'lucide-react'
+import { BetweenHorizonalEnd, MessageSquare, Pencil, Search } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Badge } from '../../../../../../components/shadcn/ui/badge'
 import { Command, CommandItem, CommandList } from '../../../../../../components/shadcn/ui/command'
@@ -11,7 +11,6 @@ import { useConfig } from '../../../../../../utils/useConfig'
 const isMac = isMacOS()
 
 export enum IntentEnum {
-    Agentic = 'Agent',
     Chat = 'Chat',
     Search = 'Search',
     Edit = 'Edit',
@@ -20,7 +19,6 @@ export enum IntentEnum {
 
 // Mapping between ChatMessage intent and IntentEnum for faster lookups
 export const INTENT_MAPPING: Record<string, IntentEnum> = {
-    agentic: IntentEnum.Agentic,
     chat: IntentEnum.Chat,
     search: IntentEnum.Search,
     edit: IntentEnum.Edit,
@@ -48,13 +46,11 @@ export const ModeSelectorField: React.FunctionComponent<{
 }> = ({ isDotComUser, className, _intent = 'chat', omniBoxEnabled, manuallySelectIntent }) => {
     const {
         clientCapabilities: { edit },
-        config,
     } = useConfig()
 
     // Generate intent options based on current configuration
     const intentOptions = useMemo(() => {
         const isEditEnabled = edit !== 'none'
-        const agenticChatEnabled = !!config?.experimentalAgenticChatEnabled
 
         return [
             {
@@ -71,16 +67,6 @@ export const ModeSelectorField: React.FunctionComponent<{
                 hidden: !omniBoxEnabled,
                 disabled: isDotComUser,
                 value: IntentEnum.Search,
-            },
-            {
-                title: 'Agent',
-                badge: agenticChatEnabled ? 'Experimental' : 'Pro',
-                icon: Sparkle,
-                intent: 'agentic',
-                // Hide agentic option if not enabled or if edit not enabled
-                hidden: !agenticChatEnabled || !isEditEnabled,
-                disabled: !agenticChatEnabled || !isEditEnabled,
-                value: IntentEnum.Agentic,
             },
             {
                 title: 'Edit Code',
@@ -101,7 +87,7 @@ export const ModeSelectorField: React.FunctionComponent<{
                 value: IntentEnum.Insert,
             },
         ].filter(option => !option.hidden) as IntentOption[]
-    }, [edit, config?.experimentalAgenticChatEnabled, isDotComUser, omniBoxEnabled])
+    }, [edit, isDotComUser, omniBoxEnabled])
 
     // Get available (non-disabled) options
     const availableOptions = useMemo(

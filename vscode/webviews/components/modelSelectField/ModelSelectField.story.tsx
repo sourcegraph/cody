@@ -92,14 +92,3 @@ export const EnterpriseUser: Story = {
         serverSentModelsEnabled: true,
     },
 }
-
-// The model selector's value is always Claude 3.7 Sonnet in agentic mode
-export const AgenticMode: Story = {
-    args: {
-        userInfo: {
-            isDotComUser: true,
-            isCodyProUser: true,
-        },
-        intent: 'agentic',
-    },
-}

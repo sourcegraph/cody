@@ -1,10 +1,4 @@
-import {
-    type ChatMessage,
-    type Model,
-    ModelTag,
-    type ModelsData,
-    isCodyProModel,
-} from '@sourcegraph/cody-shared'
+import { type Model, ModelTag, isCodyProModel } from '@sourcegraph/cody-shared'
 import { isMacOS } from '@sourcegraph/cody-shared'
 import { DeepCodyAgentID, ToolCodyModelName } from '@sourcegraph/cody-shared/src/models/client'
 import { clsx } from 'clsx'
@@ -41,12 +35,9 @@ export const ModelSelectField: React.FunctionComponent<{
     onCloseByEscape?: () => void
     className?: string
 
-    intent?: ChatMessage['intent']
-
     /** For storybooks only. */
     __storybook__open?: boolean
     modelSelectorRef?: React.MutableRefObject<{ open: () => void; close: () => void } | null>
-    modelsData?: ModelsData
 }> = ({
     models,
     onModelSelect: parentOnModelSelect,
@@ -54,10 +45,8 @@ export const ModelSelectField: React.FunctionComponent<{
     userInfo,
     onCloseByEscape,
     className,
-    intent,
     __storybook__open,
     modelSelectorRef,
-    modelsData,
 }) => {
     const telemetryRecorder = useTelemetryRecorder()
 
@@ -130,7 +119,7 @@ export const ModelSelectField: React.FunctionComponent<{
     const options = useMemo<SelectListOption[]>(
         () =>
             models.map(m => {
-                const availability = modelAvailability(userInfo, serverSentModelsEnabled, m, intent)
+                const availability = modelAvailability(userInfo, serverSentModelsEnabled, m)
                 return {
                     value: m.id,
                     title: (
@@ -148,7 +137,7 @@ export const ModelSelectField: React.FunctionComponent<{
                     tooltip: getTooltip(m, availability),
                 } satisfies SelectListOption
             }),
-        [models, userInfo, serverSentModelsEnabled, intent]
+        [models, userInfo, serverSentModelsEnabled]
     )
     const optionsByGroup: { group: string; options: SelectListOption[] }[] = useMemo(() => {
         return optionByGroup(options)
@@ -195,16 +184,6 @@ export const ModelSelectField: React.FunctionComponent<{
                     className={`focus:tw-outline-none ${styles.chatModelPopover}`}
                     data-testid="chat-model-popover"
                 >
-                    {intent === 'agentic' && (
-                        <div className="tw-pl-5 tw-pr-3 tw-py-1.5 tw-text-sm tw-text-foreground tw-flex tw-justify-center">
-                            <div className="tw-flex tw-items-start tw-gap-2 tw-bg-muted tw-px-2 tw-py-0.5 tw-rounded">
-                                <AlertTriangleIcon className="tw-w-[16px] tw-h-[16px] tw-mt-[2px]" />
-                                <span className="tw-leading-4 tw-font-semibold">
-                                    Only Claude 3.7 Sonnet is currently available in Agent Mode
-                                </span>
-                            </div>
-                        </div>
-                    )}
                     <CommandList
                         className="model-selector-popover tw-max-h-[80vh] tw-overflow-y-auto"
                         data-testid="chat-model-popover-option"
@@ -322,8 +301,7 @@ type ModelAvailability = 'available' | 'needs-cody-pro' | 'not-selectable-on-ent
 function modelAvailability(
     userInfo: Pick<UserAccountInfo, 'isCodyProUser' | 'isDotComUser'>,
     serverSentModelsEnabled: boolean,
-    model: Model,
-    intent?: ChatMessage['intent']
+    model: Model
 ): ModelAvailability {
     if (model.disabled) {
         return 'not-selectable-on-enterprise'
@@ -334,10 +312,7 @@ function modelAvailability(
     if (isCodyProModel(model) && userInfo.isDotComUser && !userInfo.isCodyProUser) {
         return 'needs-cody-pro'
     }
-    // For agentic mode, only allow models with the AgenticCompatible tag (Claude 3.7 Sonnet)
-    if (intent === 'agentic' && !model.tags.includes(ModelTag.Default)) {
-        return 'not-selectable-on-enterprise'
-    }
+
     return 'available'
 }
 

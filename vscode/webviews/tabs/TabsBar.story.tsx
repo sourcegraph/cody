@@ -61,11 +61,3 @@ export const PromptsTab: Story = {
         user: mockUser,
     },
 }
-
-export const SettingsTab: Story = {
-    args: {
-        currentView: View.Settings,
-        setView: () => {},
-        user: mockUser,
-    },
-}
