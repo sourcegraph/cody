@@ -3,7 +3,11 @@ import { describe, expect, it } from 'vitest'
 import * as vscode from 'vscode'
 import { getCurrentDocContext } from '../../../completions/get-current-doc-context'
 import { documentAndPosition } from '../../../completions/test-helpers'
-import { AutoeditStopReason, PartialModelResponse, SuccessModelResponse } from '../../adapters/base'
+import {
+    AutoeditStopReason,
+    type PartialModelResponse,
+    type SuccessModelResponse,
+} from '../../adapters/base'
 import { createCodeToReplaceDataForTest } from '../../prompt/test-helper'
 import {
     type TrimPredictionForHotStreakParams,
@@ -18,7 +22,7 @@ export function isEvenOrOdd(numberToChange: number): boolean {█
         return true
     }
     throw new Error('Out of RAM')
-}`.trim()
+}\n`.trimStart()
 
 function createSuggestedResponse(
     prediction: string,
@@ -150,7 +154,8 @@ describe('trimPredictionForHotStreak', () => {
                       return true
                   }
                   throw new Error('Out of RAM')
-              }"
+              }
+              "
             `)
         })
     })
@@ -186,14 +191,15 @@ describe('trimPredictionForHotStreak', () => {
               "
             `)
             expect(result.docContext.prefix + result.docContext.suffix).toMatchInlineSnapshot(`
-                "export function isEvenOrOdd(numberToChange: number): boolean {
-                    // Check if numberToChange is 0
-                    if (numberToChange === 0) {
-                        return true
-                    }
-                    throw new Error('Out of RAM')
-                }"
-              `)
+              "export function isEvenOrOdd(numberToChange: number): boolean {
+                  // Check if numberToChange is 0
+                  if (numberToChange === 0) {
+                      return true
+                  }
+                  throw new Error('Out of RAM')
+              }
+              "
+            `)
         })
 
         it('handles a second prediction', () => {
@@ -231,7 +237,8 @@ describe('trimPredictionForHotStreak', () => {
                       return true
                   }
                   throw new Error('Out of RAM')
-              }"
+              }
+              "
             `)
         })
 
@@ -244,7 +251,7 @@ describe('trimPredictionForHotStreak', () => {
                             return true
                         }
                         throw new Error('Out of RAM')
-                    }
+                    }\n
                 `,
                 processedPrediction: dedent`
                     export function isEvenOrOdd(target: number): boolean {
@@ -253,12 +260,13 @@ describe('trimPredictionForHotStreak', () => {
                 responseType: 'partial',
             })
             const result = trimPredictionForHotStreak(fullPrediction) as TrimPredictionForHotStreakResult
-            expect(result.range).toEqual(new vscode.Range(2, 0, 6, 0))
+            expect(result.range).toEqual(new vscode.Range(2, 0, 7, 0))
             expect(result.text).toMatchInlineSnapshot(`
               "    if (target === 0) {
                       return true
                   }
                   throw new Error('Out of RAM')
+              }
               "
             `)
             expect(result.codeToReplaceData.codeToRewrite).toMatchInlineSnapshot(`
@@ -266,6 +274,7 @@ describe('trimPredictionForHotStreak', () => {
                       return true
                   }
                   throw new Error('Out of RAM')
+              }
               "
             `)
             expect(result.docContext.prefix + result.docContext.suffix).toMatchInlineSnapshot(`
@@ -275,7 +284,8 @@ describe('trimPredictionForHotStreak', () => {
                       return true
                   }
                   throw new Error('Out of RAM')
-              }"
+              }
+              "
             `)
         })
     })

@@ -25,13 +25,10 @@ export function wrapVSCodeTextDocument(doc: TextDocument): VSCodeTextDocument {
         },
         lineAt(position: number | Position): TextLine {
             const line = typeof position === 'number' ? position : position.line
-            const text = this.getText(
-                new vsCodeMocks.Range(
-                    new vsCodeMocks.Position(line, 0),
-                    new vsCodeMocks.Position(line, Number.MAX_SAFE_INTEGER)
-                )
-            )
-            return createTextLine(text, new vsCodeMocks.Range(line, 0, line, text.length))
+            const lines = doc.getText().split('\n')
+            const text = lines[line]
+            const isLastLine = line === this.lineCount - 1
+            return createTextLine(text, new vsCodeMocks.Range(line, 0, line, text.length), isLastLine)
         },
         getWordRangeAtPosition(): Range {
             throw new Error('Method not implemented.')
@@ -55,12 +52,14 @@ export function wrapVSCodeTextDocument(doc: TextDocument): VSCodeTextDocument {
     }
 }
 
-function createTextLine(text: string, range: Range): TextLine {
+function createTextLine(text: string, range: Range, isLastLine: boolean): TextLine {
     return {
         lineNumber: range.start.line,
         text,
         range,
-        rangeIncludingLineBreak: new vsCodeMocks.Range(range.start.line, 0, range.end.line + 1, 0),
+        rangeIncludingLineBreak: isLastLine
+            ? range
+            : new vsCodeMocks.Range(range.start.line, 0, range.end.line + 1, 0),
 
         firstNonWhitespaceCharacterIndex: text.match(/^\s*/)![0].length,
         isEmptyOrWhitespace: /^\s*$/.test(text),
