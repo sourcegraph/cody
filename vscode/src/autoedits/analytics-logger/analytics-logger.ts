@@ -531,18 +531,17 @@ export class AutoeditAnalyticsLogger {
     }
 
     public logFeedback(feedbackData: AutoeditFeedbackData): void {
-        const { metadata, privateMetadata } = splitSafeMetadata(feedbackData)
-
         this.writeAutoeditEvent({
             action: 'feedback-submitted',
             logDebugArgs: [`Feedback submitted for file: ${feedbackData.file_path}`],
             telemetryParams: {
                 version: 0,
                 metadata: {
-                    ...metadata,
                     recordsPrivateMetadataTranscript: 1,
                 },
-                privateMetadata,
+                privateMetadata: {
+                    inlineCompletionItemContext: feedbackData,
+                },
                 billingMetadata: {
                     product: 'cody',
                     category: 'core',

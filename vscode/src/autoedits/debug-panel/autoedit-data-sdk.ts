@@ -259,7 +259,7 @@ export const formatTriggerKind = (triggerKind?: number): string => {
  */
 export const getPrediction = (entry: AutoeditRequestDebugState): string | null => {
     if ('prediction' in entry.state && typeof entry.state.prediction === 'string') {
-        return entry.state.prediction.trim()
+        return entry.state.prediction
     }
     return null
 }
