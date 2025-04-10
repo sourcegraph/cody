@@ -138,7 +138,7 @@ describe('trimPredictionForHotStreak', () => {
             const result = trimPredictionForHotStreak(
                 partialPrediction
             ) as TrimPredictionForHotStreakResult
-            expect(result.range).toEqual(new vscode.Range(0, 0, 1, 0))
+            expect(result.codeToReplaceData.range).toEqual(new vscode.Range(0, 0, 1, 0))
             expect(result.text).toMatchInlineSnapshot(`
               "export function isEvenOrOdd(target: number): boolean {
               "
@@ -173,7 +173,7 @@ describe('trimPredictionForHotStreak', () => {
                 processedPrediction: '',
             })
             const result = trimPredictionForHotStreak(fullPrediction) as TrimPredictionForHotStreakResult
-            expect(result.range).toEqual(new vscode.Range(0, 0, 5, 0))
+            expect(result.codeToReplaceData.range).toEqual(new vscode.Range(0, 0, 5, 0))
             expect(result.text).toMatchInlineSnapshot(`
               "export function isEvenOrOdd(target: number): boolean {
                   // Check if target is 0
@@ -217,7 +217,7 @@ describe('trimPredictionForHotStreak', () => {
                 `,
             })
             const result = trimPredictionForHotStreak(fullPrediction) as TrimPredictionForHotStreakResult
-            expect(result.range).toEqual(new vscode.Range(2, 0, 5, 0))
+            expect(result.codeToReplaceData.range).toEqual(new vscode.Range(2, 0, 5, 0))
             expect(result.text).toMatchInlineSnapshot(`
               "    if (target === 0) {
                       return true
@@ -260,7 +260,7 @@ describe('trimPredictionForHotStreak', () => {
                 responseType: 'partial',
             })
             const result = trimPredictionForHotStreak(fullPrediction) as TrimPredictionForHotStreakResult
-            expect(result.range).toEqual(new vscode.Range(2, 0, 7, 0))
+            expect(result.codeToReplaceData.range).toEqual(new vscode.Range(2, 0, 7, 0))
             expect(result.text).toMatchInlineSnapshot(`
               "    if (target === 0) {
                       return true

@@ -129,7 +129,6 @@ export async function* processHotStreakResponses({
         const suggestedDiff = getSuggestedDiffForChunk(response, {
             documentSnapshot: document,
             text: response.prediction,
-            range: codeToReplaceData.range,
             codeToReplaceData,
             docContext,
         })

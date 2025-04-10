@@ -40,7 +40,6 @@ export interface TrimPredictionForHotStreakParams {
 
 export interface TrimPredictionForHotStreakResult {
     text: string
-    range: vscode.Range
     codeToReplaceData: CodeToReplaceData
     docContext: DocumentContext
     documentSnapshot: vscode.TextDocument
@@ -118,6 +117,11 @@ export function trimPredictionForHotStreak({
         maxSuffixLength: docContext.maxSuffixLength,
     })
 
+    // const remainingPrefixLines = Math.max(
+    //     autoeditsProviderConfig.tokenLimit.codeToRewritePrefixLines - processedLines,
+    //     0
+    // )
+    // const remainingSuffixLines = Math.max(chunkLineCount - remainingPrefixLines + 1, 0)
     const adjustedCodeToReplace = getCodeToReplaceData({
         docContext: updatedDocContext,
         document: documentSnapshot,
@@ -131,7 +135,6 @@ export function trimPredictionForHotStreak({
 
     return {
         text: remainingPrediction,
-        range: remainingPredictionRange,
         codeToReplaceData: adjustedCodeToReplace,
         docContext: updatedDocContext,
         documentSnapshot,
