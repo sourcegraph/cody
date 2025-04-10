@@ -557,6 +557,17 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
         [humanMessage, manuallySelectedIntent, setManuallySelectedIntent]
     )
 
+    const onRegenerate = useCallback(
+        (code: string, language?: string) => {
+            if (assistantMessage) {
+                regenerateCodeBlock({ code, language, index: assistantMessage.index })
+            } else {
+                console.warn('tried to regenerate a code block, but there is no assistant message')
+            }
+        },
+        [assistantMessage]
+    )
+
     const isAgenticMode = useMemo(
         () => humanMessage?.manuallySelectedIntent === 'agentic' || humanMessage?.intent === 'agentic',
         [humanMessage?.intent, humanMessage?.manuallySelectedIntent]
@@ -638,6 +649,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                         message={assistantMessage}
                         copyButtonOnSubmit={copyButtonOnSubmit}
                         insertButtonOnSubmit={insertButtonOnSubmit}
+                        onRegenerate={onRegenerate}
                         postMessage={postMessage}
                         guardrails={guardrails}
                         humanMessage={humanMessageInfo}
@@ -679,6 +691,23 @@ export function focusLastHumanMessageEditor(): void {
     if (container && container instanceof HTMLElement && editorScrollItemInContainer) {
         container.scrollTop = editorScrollItemInContainer.offsetTop - container.offsetTop
     }
+}
+
+export function regenerateCodeBlock({
+    code,
+    language,
+    index,
+}: {
+    code: string
+    language?: string
+    index: number
+}) {
+    getVSCodeAPI().postMessage({
+        command: 'regenerateCodeBlock',
+        code,
+        language,
+        index,
+    })
 }
 
 export function editHumanMessage({

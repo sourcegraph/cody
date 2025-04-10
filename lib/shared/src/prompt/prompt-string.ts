@@ -193,22 +193,32 @@ export class PromptString {
         ])
     }
 
-    public replace(searchValue: string | RegExp, replaceValue: PromptString): PromptString {
+    public replace(
+        searchValue: string | PromptString | RegExp,
+        replaceValue: PromptString
+    ): PromptString {
+        const unpackedSearchValue =
+            searchValue instanceof PromptString ? internal_toString(searchValue) : searchValue
         const stringReplaceValue = internal_toString(replaceValue)
         const references = internal_toReferences(replaceValue)
 
         return internal_createPromptString(
-            internal_toString(this).replace(searchValue, stringReplaceValue),
+            internal_toString(this).replace(unpackedSearchValue, stringReplaceValue),
             [...internal_toReferences(this), ...references]
         )
     }
 
-    public replaceAll(searchValue: string | RegExp, replaceValue: PromptString): PromptString {
+    public replaceAll(
+        searchValue: string | PromptString | RegExp,
+        replaceValue: PromptString
+    ): PromptString {
+        const unpackedSearchValue =
+            searchValue instanceof PromptString ? internal_toString(searchValue) : searchValue
         const stringReplaceValue = internal_toString(replaceValue)
         const references = internal_toReferences(replaceValue)
 
         return internal_createPromptString(
-            internal_toString(this).replaceAll(searchValue, stringReplaceValue),
+            internal_toString(this).replaceAll(unpackedSearchValue, stringReplaceValue),
             [...internal_toReferences(this), ...references]
         )
     }
@@ -450,6 +460,10 @@ export class PromptString {
     // TODO: Lift the results of the matches so they're also PromptStrings.
     public match(regexp: RegExp): RegExpMatchArray | null {
         return internal_toString(this).match(regexp)
+    }
+
+    public endsWith(s: string): boolean {
+        return internal_toString(this).endsWith(s)
     }
 }
 

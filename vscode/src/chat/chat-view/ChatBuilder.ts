@@ -380,8 +380,25 @@ export class ChatBuilder {
         this.changeNotifications.next()
     }
 
+    public replaceInMessage(index: number, search: PromptString, replacement: PromptString): boolean {
+        const message = this.messages[index]
+        if (!message) {
+            return false
+        }
+        if (message.text?.includes(search)) {
+            if (!replacement.endsWith('\n')) {
+                // Our markdown parser needs the codeblock end fence at column 0.
+                replacement = ps`${replacement}\n`
+            }
+            const updatedText = message.text?.replace(search, replacement)
+            message.text = updatedText
+            this.changeNotifications.next()
+            return true
+        }
+        return false
+    }
+
     /**
-     * Compute text representation from message parts
      * Intelligently combines text parts and tool results
      */
     private computeTextFromParts(parts: MessagePart[], speaker: 'human' | 'assistant'): PromptString {

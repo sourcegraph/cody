@@ -16,6 +16,7 @@ interface RichMarkdownProps {
     onCopy?: (code: string) => void
     onInsert?: (code: string, newFile?: boolean) => void
     onExecute?: (command: string) => void
+    onRegenerate?: (code: string, language: string | undefined) => void
     smartApply?: CodeBlockActionsProps['smartApply']
     className?: string
     hasEditIntent: boolean
@@ -85,6 +86,7 @@ export const RichMarkdown: React.FC<RichMarkdownProps> = ({
     onCopy,
     onInsert,
     onExecute,
+    onRegenerate,
     smartApply,
     className,
     hasEditIntent,
@@ -269,6 +271,7 @@ export const RichMarkdown: React.FC<RichMarkdownProps> = ({
                     onCopy={onCopy}
                     onInsert={onInsert}
                     onExecute={isShellCommand ? onExecute : undefined}
+                    onRegenerate={onRegenerate}
                     smartApply={smartApply}
                 >
                     {children}
