@@ -20,6 +20,11 @@ const PROPS: Omit<ComponentProps<typeof Transcript>, 'transcript'> = {
     manuallySelectedIntent: undefined,
     setManuallySelectedIntent: () => {},
     guardrails: new MockNoGuardrails(),
+    savedIntentBeforePrompt: undefined,
+    setSavedIntentBeforePrompt: () => {},
+    isPromptInput: false,
+    setIsPromptInput: () => {},
+    determineIntent: () => null,
 }
 
 vi.mock('../utils/VSCodeApi', () => ({

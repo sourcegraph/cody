@@ -192,7 +192,8 @@ export function syncModels({
                                         ),
                                         enableToolCody,
                                         featureFlagProvider.evaluateFeatureFlag(
-                                            FeatureFlag.EnhancedContextWindow
+                                            FeatureFlag.EnhancedContextWindow,
+                                            true
                                         ),
                                         featureFlagProvider.evaluateFeatureFlag(
                                             FeatureFlag.FallbackToFlash
