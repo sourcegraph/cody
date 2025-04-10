@@ -41,7 +41,7 @@ interface CodyAgentClient {
   @JsonNotification("debug/message")
   fun debug_message(params: DebugMessage)
   @JsonNotification("extensionConfiguration/didUpdate")
-  fun extensionConfiguration_didUpdate(params: String)
+  fun extensionConfiguration_didUpdate(params: Any)
   @JsonNotification("editTask/didUpdate")
   fun editTask_didUpdate(params: EditTask)
   @JsonNotification("editTask/didDelete")

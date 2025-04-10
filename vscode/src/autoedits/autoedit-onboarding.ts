@@ -9,22 +9,14 @@ import {
     telemetryRecorder,
 } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
-import { isRunningInsideAgent } from '../jsonrpc/isRunningInsideAgent'
 import { localStorage } from '../services/LocalStorageProvider'
 import { isUserEligibleForAutoeditsFeature } from './create-autoedits-provider'
 
 export class AutoEditBetaOnboarding implements vscode.Disposable {
     private featureFlagAutoEditExperimental = storeLastValue(
-        featureFlagProvider.evaluateFeatureFlag(this.getClientDependentFFObservable())
+        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutoEditExperimentEnabledFeatureFlag)
     )
 
-    private getClientDependentFFObservable() {
-        if (isRunningInsideAgent()) {
-            // todo: how to check if we are running for JB client?
-            return FeatureFlag.CodyAutoeditJetBrainsExperimentEnabledFeatureFlag
-        }
-        return FeatureFlag.CodyAutoEditExperimentEnabledFeatureFlag
-    }
 
     public async enrollUserToAutoEditBetaIfEligible(): Promise<void> {
         const isUserEligibleForAutoeditBeta = await this.isUserEligibleForAutoeditBetaOverride()
