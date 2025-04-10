@@ -207,7 +207,10 @@ export class GraphQLResultCache<V> {
 
         this.fetchTimeMsec = now
 
-        const thisFetch = fetcher(this.aborts.signal)
+        const thisFetch = fetcher(this.aborts.signal).catch(error => {
+            return error instanceof Error ? error : new Error(String(error))
+        })
+
         void (async () => {
             try {
                 const result = await thisFetch
