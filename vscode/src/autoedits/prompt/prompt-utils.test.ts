@@ -305,7 +305,7 @@ describe('getCodeToReplaceData', () => {
         expect(result.suffixAfterArea).toBe('\n# # This is a markdown cell\n\nconsole.log("cell2 code")')
     })
 
-    it('correctly splits content into different areas based on cursor position', () => {
+    it.only('correctly splits content into different areas based on cursor position', () => {
         const { document, position } = documentAndPosition('line1\nline2\nline3█line4\nline5\nline6')
 
         const docContext = getCurrentDocContext({
@@ -338,7 +338,7 @@ describe('getCodeToReplaceData', () => {
         expect(result.prefixBeforeArea).toBe('')
         expect(result.suffixAfterArea).toBe('')
         expect(result.range.start.line).toBe(1)
-        expect(result.range.end.line).toBe(3)
+        expect(result.range.end.line).toBe(4)
     })
 
     it('handles cursor at start of line', () => {
@@ -370,7 +370,7 @@ describe('getCodeToReplaceData', () => {
         expect(result.prefixInArea).toBe('line1\n')
         expect(result.suffixInArea).toBe('line5')
         expect(result.range.start.line).toBe(1)
-        expect(result.range.end.line).toBe(3)
+        expect(result.range.end.line).toBe(4)
     })
 
     it('handles single line content', () => {

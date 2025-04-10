@@ -71,6 +71,8 @@ export function isEvenOrOdd(numberToChange: number): boolean {█
 }
 `
 
+const MOCK_CODE_WITHOUT_CURSOR = MOCK_CODE.replaceAll('█', '')
+
 const MOCK_PREDICTION = `
 export function isEvenOrOdd(target: number): boolean {
     if (target === 0) {
@@ -153,7 +155,7 @@ describe('processHotStreakResponses', () => {
         expect(finalResponse.type).toBe('suggested')
         expect(finalResponse.response.prediction).toBe(MOCK_PREDICTION)
         expect(finalResponse.response.stopReason).toBe(AutoeditStopReason.RequestFinished) // No hot-streak
-        expect(finalResponse.codeToReplaceData.codeToRewrite).toBe(MOCK_CODE)
+        expect(finalResponse.codeToReplaceData.codeToRewrite).toBe(MOCK_CODE_WITHOUT_CURSOR)
     })
 
     it('does emit hot streaks when enabled', async () => {

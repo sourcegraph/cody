@@ -2,10 +2,14 @@ import type { EndOfLine, Position, Range, TextLine, TextDocument as VSCodeTextDo
 import type { TextDocument } from 'vscode-languageserver-textdocument'
 import { URI } from 'vscode-uri'
 
+import { DocumentOffsets } from '@sourcegraph/cody-shared'
+
 import { vsCodeMocks } from '../../testutils/mocks'
 
 export function wrapVSCodeTextDocument(doc: TextDocument): VSCodeTextDocument {
     const uri = URI.parse(doc.uri)
+    const offsets = new DocumentOffsets({ content: doc.getText() })
+
     return {
         uri,
         languageId: doc.languageId,
@@ -23,15 +27,49 @@ export function wrapVSCodeTextDocument(doc: TextDocument): VSCodeTextDocument {
             const pos = doc.positionAt(offset)
             return new vsCodeMocks.Position(pos.line, pos.character)
         },
-        lineAt(position: number | Position): TextLine {
+        // Copy-pasted implementation from AgentTextDocument.ts
+        lineAt(position: Position | number): TextLine {
             const line = typeof position === 'number' ? position : position.line
             const text = this.getText(
                 new vsCodeMocks.Range(
                     new vsCodeMocks.Position(line, 0),
-                    new vsCodeMocks.Position(line, Number.MAX_SAFE_INTEGER)
+                    new vsCodeMocks.Position(line, offsets.lineLengthExcludingNewline(line))
                 )
             )
-            return createTextLine(text, new vsCodeMocks.Range(line, 0, line, text.length))
+            let firstNonWhitespaceCharacterIndex = 0
+            while (
+                firstNonWhitespaceCharacterIndex < text.length &&
+                /\s/.test(text[firstNonWhitespaceCharacterIndex])
+            ) {
+                firstNonWhitespaceCharacterIndex++
+            }
+            console.log('text', JSON.stringify(text))
+            console.log('text.length', text.length)
+            console.log('newLineLength', offsets.newlineLength(line))
+            console.log(
+                'rangeIncludingLineBreak',
+                JSON.stringify(
+                    new vsCodeMocks.Range(
+                        new vsCodeMocks.Position(line, 0),
+                        new vsCodeMocks.Position(line, text.length + offsets.newlineLength(line))
+                    )
+                )
+            )
+            console.log('-------------------')
+            return {
+                lineNumber: line,
+                firstNonWhitespaceCharacterIndex,
+                isEmptyOrWhitespace: firstNonWhitespaceCharacterIndex === text.length,
+                range: new vsCodeMocks.Range(
+                    new vsCodeMocks.Position(line, 0),
+                    new vsCodeMocks.Position(line, text.length)
+                ),
+                rangeIncludingLineBreak: new vsCodeMocks.Range(
+                    new vsCodeMocks.Position(line, 0),
+                    new vsCodeMocks.Position(line, text.length + offsets.newlineLength(line))
+                ),
+                text,
+            }
         },
         getWordRangeAtPosition(): Range {
             throw new Error('Method not implemented.')
@@ -52,18 +90,6 @@ export function wrapVSCodeTextDocument(doc: TextDocument): VSCodeTextDocument {
 
             return new vsCodeMocks.Position(line, character)
         },
-    }
-}
-
-function createTextLine(text: string, range: Range): TextLine {
-    return {
-        lineNumber: range.start.line,
-        text,
-        range,
-        rangeIncludingLineBreak: new vsCodeMocks.Range(range.start.line, 0, range.end.line + 1, 0),
-
-        firstNonWhitespaceCharacterIndex: text.match(/^\s*/)![0].length,
-        isEmptyOrWhitespace: /^\s*$/.test(text),
     }
 }
 

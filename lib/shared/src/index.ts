@@ -188,6 +188,7 @@ export {
 } from './editor/displayPath'
 export { forceHydration, hydrateAfterPostMessage } from './editor/hydrateAfterPostMessage'
 export * from './editor/utils'
+export * from './editor/offsets'
 export {
     FeatureFlag,
     type FeatureFlagProvider,

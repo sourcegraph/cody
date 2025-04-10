@@ -1,4 +1,7 @@
-import type { Position, ProtocolTextDocument } from './protocol-alias'
+// TODO: figure out how to reuse this in the agent and vscode packages
+// if we add vscode to the tsconfig project references to import protocol
+// types, we get a circular dependency error.
+import type { Position } from 'vscode'
 
 /**
  * Utility class to convert line/character positions into offsets.
@@ -6,7 +9,7 @@ import type { Position, ProtocolTextDocument } from './protocol-alias'
 export class DocumentOffsets {
     private lines: number[] = []
     private content: string
-    constructor(public readonly document: ProtocolTextDocument) {
+    constructor(public readonly document: { content?: null | string }) {
         this.content = document?.content || ''
         this.lines.push(0)
         let index = 0

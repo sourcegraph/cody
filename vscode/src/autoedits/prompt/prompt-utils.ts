@@ -153,6 +153,16 @@ export function getCodeToReplaceData(options: CurrentFilePromptOptions): CodeToR
     // Helper function to create position from line number
     const positionAtLineStart = (line: number) => new vscode.Position(line, 0)
     const positionAtLineEnd = (line: number) => document.lineAt(line).rangeIncludingLineBreak.end
+    console.log(
+        JSON.stringify(
+            {
+                line: document.lineAt(codeToRewriteEnd).text,
+                positionAtLineEnd: positionAtLineEnd(codeToRewriteEnd),
+            },
+            null,
+            2
+        )
+    )
 
     // Create ranges for different sections
     const ranges = {

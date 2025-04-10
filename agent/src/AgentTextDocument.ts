@@ -1,10 +1,11 @@
 import type * as vscode from 'vscode'
 
+import { DocumentOffsets } from '@sourcegraph/cody-shared'
+
 import { ProtocolTextDocumentWithUri } from '../../vscode/src/jsonrpc/TextDocumentWithUri'
-import type * as protocol from './protocol-alias'
 
 import { getLanguageForFileName } from './language'
-import { DocumentOffsets } from './offsets'
+import type * as protocol from './protocol-alias'
 import * as vscode_shim from './vscode-shim'
 
 // TODO: implement with vscode-languageserver-textdocument The reason we don't

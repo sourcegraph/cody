@@ -1,13 +1,13 @@
 import { describe, expect, it } from 'vitest'
+import type { Position } from 'vscode'
 import { DocumentOffsets } from './offsets'
-import type { Position, ProtocolTextDocument } from './protocol-alias'
 
 describe('DocumentOffsets', () => {
     const content = `line 1
 line 2
 line 3`
     const lines = content.split('\n')
-    const document = { content } as any as ProtocolTextDocument
+    const document = { content }
     const docOffsets = new DocumentOffsets(document)
 
     it('counts the number of lines correctly', () => {
@@ -33,7 +33,7 @@ line 3`
     })
 
     it('converts position to offset correctly', () => {
-        const position: Position = { line: 1, character: 3 }
+        const position: Position = { line: 1, character: 3 } as unknown as Position
         expect(docOffsets.offset(position)).toBe(10)
     })
 
@@ -43,7 +43,7 @@ line 3`
     })
 
     it('handles out of bounds line numbers', () => {
-        const position: Position = { line: 100, character: 3 }
+        const position: Position = { line: 100, character: 3 } as unknown as Position
         expect(docOffsets.offset(position)).toBe(20)
     })
 
