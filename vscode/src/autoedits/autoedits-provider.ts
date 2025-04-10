@@ -42,6 +42,8 @@ import { autoeditsOnboarding } from './autoedit-onboarding'
 import { autoeditsProviderConfig } from './autoedits-config'
 import { FilterPredictionBasedOnRecentEdits } from './filter-prediction-edits'
 import { autoeditsOutputChannelLogger } from './output-channel-logger'
+import type { AutoeditsUserPromptStrategy } from './prompt/base'
+import { createPromptProvider } from './prompt/create-prompt-provider'
 import { type CodeToReplaceData, getCodeToReplaceData } from './prompt/prompt-utils'
 import { getCurrentFilePath } from './prompt/prompt-utils'
 import type { DecorationInfo } from './renderer/decorators/base'
@@ -60,8 +62,6 @@ import { type AutoeditRequestManagerParams, RequestManager } from './request-man
 import { shrinkPredictionUntilSuffix } from './shrink-prediction'
 import { SmartThrottleService } from './smart-throttle'
 import { areSameUriDocs, isPredictedTextAlreadyInSuffix } from './utils'
-import { AutoeditsUserPromptStrategy } from './prompt/base'
-import { createPromptProvider } from './prompt/create-prompt-provider'
 
 const AUTOEDIT_CONTEXT_STRATEGY = 'auto-edit'
 const RESET_SUGGESTION_ON_CURSOR_CHANGE_AFTER_INTERVAL_MS = 60 * 1000
@@ -138,7 +138,9 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
 
         autoeditsOutputChannelLogger.logDebug('Constructor', 'Constructing AutoEditsProvider')
 
-        this.promptStrategy = createPromptProvider({ promptProvider: autoeditsProviderConfig.promptProvider })
+        this.promptStrategy = createPromptProvider({
+            promptProvider: autoeditsProviderConfig.promptProvider,
+        })
 
         this.modelAdapter = createAutoeditsModelAdapter({
             providerName: autoeditsProviderConfig.provider,

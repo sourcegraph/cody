@@ -8,34 +8,33 @@ import {
     getContextItemMappingWithTokenLimit,
     getContextItemsForIdentifier,
     getCurrentFileLongSuggestionPrompt,
-    getLintErrorsPrompt,
-    getPromptForTheContextSource,
+    // getLintErrorsPrompt,
+    // getPromptForTheContextSource,
     getPromptWithNewline,
     getRecentEditsPrompt,
-    getRecentlyViewedSnippetsPrompt,
+    // getRecentlyViewedSnippetsPrompt,
     joinPromptsWithNewlineSeparator,
 } from './prompt-utils'
 
 export class LongTermPromptStrategy extends AutoeditsUserPromptStrategy {
-
     getUserPrompt({ context, tokenBudget, codeToReplaceData, document }: UserPromptArgs): PromptString {
         const contextItemMapping = getContextItemMappingWithTokenLimit(
             context,
             tokenBudget.contextSpecificTokenLimit
         )
-        const recentViewsPrompt = getPromptForTheContextSource(
-            contextItemMapping.get(RetrieverIdentifier.RecentViewPortRetriever) || [],
-            constants.LONG_TERM_SNIPPET_VIEWS_INSTRUCTION,
-            getRecentlyViewedSnippetsPrompt
-        )
+        // const recentViewsPrompt = getPromptForTheContextSource(
+        //     contextItemMapping.get(RetrieverIdentifier.RecentViewPortRetriever) || [],
+        //     constants.LONG_TERM_SNIPPET_VIEWS_INSTRUCTION,
+        //     getRecentlyViewedSnippetsPrompt
+        // )
         const { shortTermEditsPrompt, longTermEditsPrompt } = this.getRecentEditsPrompt(
             contextItemMapping.get(RetrieverIdentifier.RecentEditsRetriever) || []
         )
-        const lintErrorsPrompt = getPromptForTheContextSource(
-            contextItemMapping.get(RetrieverIdentifier.DiagnosticsRetriever) || [],
-            constants.LINT_ERRORS_INSTRUCTION,
-            getLintErrorsPrompt
-        )
+        // const lintErrorsPrompt = getPromptForTheContextSource(
+        //     contextItemMapping.get(RetrieverIdentifier.DiagnosticsRetriever) || [],
+        //     constants.LINT_ERRORS_INSTRUCTION,
+        //     getLintErrorsPrompt
+        // )
 
         const areaPrompt = getCurrentFileLongSuggestionPrompt({
             document,
@@ -45,10 +44,10 @@ export class LongTermPromptStrategy extends AutoeditsUserPromptStrategy {
 
         const promptParts = [
             getPromptWithNewline(constants.LONG_SUGGESTION_BASE_USER_PROMPT),
-            getPromptWithNewline(recentViewsPrompt),
+            // getPromptWithNewline(recentViewsPrompt),
             getPromptWithNewline(longTermEditsPrompt),
             getPromptWithNewline(areaPrompt),
-            getPromptWithNewline(lintErrorsPrompt),
+            // getPromptWithNewline(lintErrorsPrompt),
             getPromptWithNewline(shortTermEditsPrompt),
             constants.LONG_SUGGESTION_FINAL_USER_PROMPT,
         ]
