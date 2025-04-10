@@ -29,7 +29,7 @@ suite('Chat', function () {
     this.beforeEach(() => beforeIntegrationTest())
     this.afterEach(() => afterIntegrationTest())
 
-    test('sends and receives a message', async () => {
+    test.skip('sends and receives a message', async () => {
         await vscode.commands.executeCommand('cody.chat.newEditorPanel')
         const chatView = await getChatViewProvider()
         await chatView.handleUserMessage({

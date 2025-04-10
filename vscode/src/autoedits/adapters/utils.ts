@@ -14,6 +14,7 @@ export interface FireworksCompatibleRequestParams {
         content: string
     }
     rewrite_speculation?: boolean
+    adaptive_speculation?: boolean
     user?: string
 }
 

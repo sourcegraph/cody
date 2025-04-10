@@ -42,7 +42,6 @@ import { autoeditsOnboarding } from './autoedit-onboarding'
 import { autoeditsProviderConfig } from './autoedits-config'
 import { FilterPredictionBasedOnRecentEdits } from './filter-prediction-edits'
 import { autoeditsOutputChannelLogger } from './output-channel-logger'
-import { LongTermPromptStrategy } from './prompt/long-prompt-experimental'
 import { type CodeToReplaceData, getCodeToReplaceData } from './prompt/prompt-utils'
 import { getCurrentFilePath } from './prompt/prompt-utils'
 import type { DecorationInfo } from './renderer/decorators/base'
@@ -61,6 +60,8 @@ import { type AutoeditRequestManagerParams, RequestManager } from './request-man
 import { shrinkPredictionUntilSuffix } from './shrink-prediction'
 import { SmartThrottleService } from './smart-throttle'
 import { areSameUriDocs, isPredictedTextAlreadyInSuffix } from './utils'
+import { AutoeditsUserPromptStrategy } from './prompt/base'
+import { createPromptProvider } from './prompt/create-prompt-provider'
 
 const AUTOEDIT_CONTEXT_STRATEGY = 'auto-edit'
 const RESET_SUGGESTION_ON_CURSOR_CHANGE_AFTER_INTERVAL_MS = 60 * 1000
@@ -111,7 +112,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
     private readonly requestManager = new RequestManager()
     public readonly smartThrottleService = new SmartThrottleService()
 
-    private readonly promptStrategy = new LongTermPromptStrategy()
+    private readonly promptStrategy: AutoeditsUserPromptStrategy
     public readonly filterPrediction = new FilterPredictionBasedOnRecentEdits()
     private readonly contextMixer = new ContextMixer({
         strategyFactory: new DefaultContextStrategyFactory(Observable.of(AUTOEDIT_CONTEXT_STRATEGY)),
@@ -136,6 +137,9 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
         autoeditsOnboarding.markUserAsAutoEditBetaEnrolled()
 
         autoeditsOutputChannelLogger.logDebug('Constructor', 'Constructing AutoEditsProvider')
+
+        this.promptStrategy = createPromptProvider({ promptProvider: autoeditsProviderConfig.promptProvider })
+
         this.modelAdapter = createAutoeditsModelAdapter({
             providerName: autoeditsProviderConfig.provider,
             isChatModel: autoeditsProviderConfig.isChatModel,
