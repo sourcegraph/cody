@@ -12,7 +12,7 @@ import {
     telemetryRecorder,
 } from '@sourcegraph/cody-shared'
 import type { TelemetryEventParameters } from '@sourcegraph/telemetry'
-
+import { convertAutocompleteContextSnippetForTelemetry } from '../../../src/completions/analytics-logger'
 import { getOtherCompletionProvider } from '../../completions/analytics-logger'
 import { lines } from '../../completions/text-processing'
 import { charactersLogger } from '../../services/CharactersLogger'
@@ -45,6 +45,7 @@ import {
     type SuggestedState,
     validRequestTransitions,
 } from './types'
+import type { AutoeditFeedbackData } from './types'
 
 /**
  * Using the validTransitions definition, we can derive which "from phases" lead to a given next phase,
@@ -61,6 +62,7 @@ type AutoeditEventAction =
     | 'accepted'
     | 'discarded'
     | 'error'
+    | 'feedback-submitted'
     | `invalidTransitionTo${Capitalize<Phase>}`
 
 const AUTOEDIT_EVENT_BILLING_CATEGORY: Partial<Record<AutoeditEventAction, BillingCategory>> = {
@@ -150,7 +152,7 @@ export class AutoeditAnalyticsLogger {
         this.tryTransitionTo(requestId, 'contextLoaded', request => ({
             ...request,
             contextLoadedAt: getTimeNowInMillis(),
-            context,
+            context: convertAutocompleteContextSnippetForTelemetry(context),
             payload: {
                 ...request.payload,
                 contextSummary: payload.contextSummary,
@@ -526,6 +528,27 @@ export class AutoeditAnalyticsLogger {
             }, this.ERROR_THROTTLE_INTERVAL_MS)
         }
         this.errorCounts.set(messageKey, currentCount + 1)
+    }
+
+    public logFeedback(feedbackData: AutoeditFeedbackData): void {
+        const { metadata, privateMetadata } = splitSafeMetadata(feedbackData)
+
+        this.writeAutoeditEvent({
+            action: 'feedback-submitted',
+            logDebugArgs: [`Feedback submitted for file: ${feedbackData.file_path}`],
+            telemetryParams: {
+                version: 0,
+                metadata: {
+                    ...metadata,
+                    recordsPrivateMetadataTranscript: 1,
+                },
+                privateMetadata,
+                billingMetadata: {
+                    product: 'cody',
+                    category: 'core',
+                },
+            },
+        })
     }
 }
 

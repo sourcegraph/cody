@@ -1,3 +1,4 @@
+import type { InlineCompletionItemRetrievedContext } from '../../completions/analytics-logger'
 import type { ModelResponse, SuccessModelResponse } from '../adapters/base'
 import { getDetailedTimingInfo } from './autoedit-latency-utils'
 import type { AutoeditRequestDebugState } from './debug-store'
@@ -117,16 +118,9 @@ export const getCodeToRewrite = (entry: AutoeditRequestDebugState): string | und
     return undefined
 }
 
-export const getContext = (entry: AutoeditRequestDebugState): Array<Record<string, any>> => {
+export const getContext = (entry: AutoeditRequestDebugState): InlineCompletionItemRetrievedContext[] => {
     if ('context' in entry.state) {
-        const context = entry.state.context
-        const transformedContext = context.map(item => ({
-            filePath: item.uri?.path || '',
-            identifier: item.identifier,
-            content: item.content,
-            metadata: item.metadata,
-        }))
-        return transformedContext
+        return entry.state.context
     }
     return []
 }
