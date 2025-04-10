@@ -137,6 +137,7 @@ import { countGeneratedCode } from '../utils'
 import { ChatBuilder, prepareChatMessage } from './ChatBuilder'
 import { chatHistory } from './ChatHistoryManager'
 import { CodyChatEditorViewType } from './ChatsController'
+import { CodeBlockRegenerator, RegenerateRequestParams } from './CodeBlockRegenerator'
 import type { ContextRetriever } from './ContextRetriever'
 import { InitDoer } from './InitDoer'
 import { getChatPanelTitle, isAgentTesting } from './chat-helpers'
@@ -672,29 +673,9 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         this.initDoer.signalInitialized()
     }
 
-    // TODO: Actually talk to the LLM here.
-    async regenerateCodeBlock(
-        abort: AbortSignal,
-        {
-            requestID,
-            code,
-            language,
-        }: {
-            requestID: string
-            code: PromptString
-            language: PromptString | undefined
-        }
-    ): Promise<PromptString> {
-        return new Promise((resolve, reject) => {
-            abort.addEventListener('abort', () => reject(new Error('Aborted')))
-            setTimeout(() => {
-                const chs: string[] = []
-                for (const ch of code.toString()) {
-                    chs.unshift(ch)
-                }
-                resolve(PromptString.unsafe_fromLLMResponse(chs.join('')))
-            }, 1000)
-        })
+    async regenerateCodeBlock(params: RegenerateRequestParams): Promise<PromptString> {
+        const regenerator = new CodeBlockRegenerator(this.chatClient)
+        return await regenerator.regenerate(params)
     }
 
     /**
@@ -1239,7 +1220,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         language: PromptString | undefined
         index: number
     }): Promise<void> {
-        const abortSignal = this.startNewSubmitOrEditOperation()
+        const abort = this.startNewSubmitOrEditOperation()
 
         telemetryRecorder.recordEvent('cody.regenerateCodeBlock', 'clicked', {
             billingMetadata: {
@@ -1248,21 +1229,36 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             },
         })
 
+        // TODO: Add trace spans around this operation
+
         try {
             // TODO: We should stream some indicators from the generation into
             // the page.
-            const newCode = await this.regenerateCodeBlock(abortSignal, { requestID, code, language })
+            const model: ChatModel | undefined = await wrapInActiveSpan('chat.resolveModel', () =>
+                firstResultFromOperation(ChatBuilder.resolvedModelForChat(this.chatBuilder), abort)
+            )
+            if (!model) {
+                throw new Error('no chat model selected')
+            }
+            const newCode = await this.regenerateCodeBlock({
+                abort,
+                code,
+                language,
+                model,
+                requestID,
+            })
             // Paste up the chat transcript replacing `code` with `newCode`
             if (this.chatBuilder.replaceInMessage(index, code, newCode)) {
                 // Post the updated transcript to the webview
-                // TODO: Do we need this, because the chatbuilder notifies about an update?
                 this.postViewTranscript()
+                // Save the newly generated code to the transcript.
+                await this.saveSession()
             }
         } catch (error) {
             if (isAbortErrorOrSocketHangUp(error)) {
                 return
             }
-            this.postError(new Error('Failed to regenerate code'), 'transcript')
+            this.postError(new Error(`Failed to regenerate code: ${error}`), 'system')
         }
     }
 
