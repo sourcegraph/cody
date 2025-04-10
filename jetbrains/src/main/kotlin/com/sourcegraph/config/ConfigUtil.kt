@@ -196,16 +196,19 @@ object ConfigUtil {
   }
 
   @JvmStatic
-  fun setCustomConfiguration(project: Project, customConfigContent: String): VirtualFile? =
-      CodyEditorUtil.createFileOrScratchFromUntitled(
-          project,
-          getSettingsFile(project).toUri().toString(),
-          content = customConfigContent,
-          overwrite = true)
-          ?: run {
-            logger.warn("Could not create settings file")
-            return null
-          }
+  fun setCustomConfiguration(project: Project, customConfigContent: String): VirtualFile? {
+    val config = ConfigFactory.parseString(customConfigContent).resolve()
+    val content =
+        config
+            .root()
+            .render(ConfigRenderOptions.defaults().setComments(false).setOriginComments(false))
+    return CodyEditorUtil.createFileOrScratchFromUntitled(
+        project, getSettingsFile(project).toUri().toString(), content = content, overwrite = true)
+        ?: run {
+          logger.warn("Could not create settings file")
+          return null
+        }
+  }
 
   @JvmStatic
   @Contract(pure = true)

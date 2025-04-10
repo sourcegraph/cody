@@ -1,7 +1,6 @@
 package com.sourcegraph.cody.config.actions
 
 import com.intellij.openapi.actionSystem.AnActionEvent
-import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.util.io.write
@@ -51,7 +50,7 @@ class OpenCodySettingsEditorAction : DumbAwareEDTAction("Open Cody Settings Edit
               /* applicationDefined = */ false,
               listOf(
                   UserDefinedJsonSchemaConfiguration.Item(
-                      "*/${ConfigUtil.getSettingsFile(project).name}",
+                      "*/${getSettingsFile(project).name}",
                       /* isPattern = */ true,
                       /* isDirectory = */ false)))
 
@@ -63,9 +62,5 @@ class OpenCodySettingsEditorAction : DumbAwareEDTAction("Open Cody Settings Edit
       schemaMapping.addConfiguration(schemaConfig)
       JsonSchemaService.Impl.get(project).reset()
     }
-  }
-
-  companion object {
-    private val logger = Logger.getInstance(OpenCodySettingsEditorAction::class.java)
   }
 }
