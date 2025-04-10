@@ -8,7 +8,7 @@ import type { Attribution } from '@sourcegraph/cody-shared/src/guardrails'
 import { LRUCache } from 'lru-cache'
 import { RefreshCwIcon } from 'lucide-react'
 import type React from 'react'
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import styles from '../chat/ChatMessageContent/ChatMessageContent.module.css'
 import { GuardrailsStatus } from './GuardrailsStatus'
 
@@ -18,6 +18,7 @@ interface GuardrailsApplicatorProps {
     fileName?: string
     guardrails: Guardrails
     isCodeComplete: boolean
+    onRegenerate?: (code: string, language?: string) => void
     children: (props: GuardrailsRenderProps) => React.ReactNode
 }
 
@@ -157,6 +158,7 @@ export const GuardrailsApplicator: React.FC<GuardrailsApplicatorProps> = ({
     fileName,
     guardrails,
     isCodeComplete,
+    onRegenerate,
     children,
 }: GuardrailsApplicatorProps) => {
     // State which can trigger updating the guardrails status indicator.
@@ -231,6 +233,10 @@ export const GuardrailsApplicator: React.FC<GuardrailsApplicatorProps> = ({
         )
     }
 
+    const handleRegenerate = useCallback(() => {
+        onRegenerate?.(code, language)
+    }, [onRegenerate, code, language])
+
     const statusDisplay = (
         <GuardrailsStatus
             status={guardrailsResult.status}
@@ -249,6 +255,19 @@ export const GuardrailsApplicator: React.FC<GuardrailsApplicatorProps> = ({
                         <RefreshCwIcon size={14} />
                     </div>
                     <span className="tw-hidden xs:tw-block">Retry</span>
+                </button>
+            )}
+            {guardrailsResult.status === GuardrailsCheckStatus.Failed && (
+                <button
+                    className={styles.button}
+                    type="button"
+                    onClick={handleRegenerate}
+                    title="Try regenerating code"
+                >
+                    <div className={styles.iconContainer}>
+                        <RefreshCwIcon size={14} />
+                    </div>
+                    <span className="tw-hidden xs:tw-block">Regenerate</span>
                 </button>
             )}
         </GuardrailsStatus>

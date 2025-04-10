@@ -555,6 +555,17 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 localStorage.setDevicePixelRatio(message.devicePixelRatio)
                 break
             }
+            case 'regenerateCodeBlock': {
+                await this.handleRegenerateCodeBlock({
+                    requestID: uuid.v4(),
+                    code: PromptString.unsafe_fromLLMResponse(message.code),
+                    language: message.language
+                        ? PromptString.unsafe_fromLLMResponse(message.language)
+                        : undefined,
+                    index: message.index,
+                })
+                break
+            }
         }
     }
 
@@ -659,6 +670,31 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
 
         void this.saveSession()
         this.initDoer.signalInitialized()
+    }
+
+    // TODO: Actually talk to the LLM here.
+    async regenerateCodeBlock(
+        abort: AbortSignal,
+        {
+            requestID,
+            code,
+            language,
+        }: {
+            requestID: string
+            code: PromptString
+            language: PromptString | undefined
+        }
+    ): Promise<PromptString> {
+        return new Promise((resolve, reject) => {
+            abort.addEventListener('abort', () => reject(new Error('Aborted')))
+            setTimeout(() => {
+                const chs: string[] = []
+                for (const ch of code.toString()) {
+                    chs.unshift(ch)
+                }
+                resolve(PromptString.unsafe_fromLLMResponse(chs.join('')))
+            }, 1000)
+        })
     }
 
     /**
@@ -1186,6 +1222,47 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 return
             }
             this.postError(new Error('Failed to edit prompt'), 'transcript')
+        }
+    }
+
+    /**
+     * Regenerates a single code block in the transcript.
+     */
+    async handleRegenerateCodeBlock({
+        requestID,
+        code,
+        language,
+        index,
+    }: {
+        requestID: string
+        code: PromptString
+        language: PromptString | undefined
+        index: number
+    }): Promise<void> {
+        const abortSignal = this.startNewSubmitOrEditOperation()
+
+        telemetryRecorder.recordEvent('cody.regenerateCodeBlock', 'clicked', {
+            billingMetadata: {
+                product: 'cody',
+                category: 'billable',
+            },
+        })
+
+        try {
+            // TODO: We should stream some indicators from the generation into
+            // the page.
+            const newCode = await this.regenerateCodeBlock(abortSignal, { requestID, code, language })
+            // Paste up the chat transcript replacing `code` with `newCode`
+            if (this.chatBuilder.replaceInMessage(index, code, newCode)) {
+                // Post the updated transcript to the webview
+                // TODO: Do we need this, because the chatbuilder notifies about an update?
+                this.postViewTranscript()
+            }
+        } catch (error) {
+            if (isAbortErrorOrSocketHangUp(error)) {
+                return
+            }
+            this.postError(new Error('Failed to regenerate code'), 'transcript')
         }
     }
 

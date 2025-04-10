@@ -8,7 +8,8 @@ import styles from './SubMessageCell.module.css'
 export const SubMessageCell: FunctionComponent<{
     piece: SubMessage
     guardrails: Guardrails
-}> = ({ piece, guardrails }) => {
+    onRegenerate: (code: string, language: string | undefined) => void
+}> = ({ piece, guardrails, onRegenerate }) => {
     return (
         <>
             {piece.text && (
@@ -17,6 +18,7 @@ export const SubMessageCell: FunctionComponent<{
                     isMessageLoading={false}
                     humanMessage={null}
                     guardrails={guardrails}
+                    onRegenerate={onRegenerate}
                 />
             )}
 

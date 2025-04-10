@@ -71,6 +71,7 @@ export type WebviewMessage =
           parameters: WebviewRecordEventParameters
       }
     | ({ command: 'submit' } & WebviewSubmitMessage)
+    | ({ command: 'regenerateCodeBlock' } & WebviewRegenerateCodeBlockMessage)
     | { command: 'restoreHistory'; chatID: string }
     | { command: 'links'; value: string }
     | { command: 'openURI'; uri: Uri; range?: RangeData | undefined | null }
@@ -248,6 +249,12 @@ interface WebviewEditMessage extends WebviewContextMessage {
 
 interface WebviewContextMessage {
     contextItems?: ContextItem[] | undefined | null
+}
+
+interface WebviewRegenerateCodeBlockMessage {
+    code: string
+    language?: string
+    index: number
 }
 
 export interface ExtensionTranscriptMessage {

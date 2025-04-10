@@ -24,6 +24,7 @@ export interface CodeBlockActionsProps {
         onAccept: (id: string) => void
         onReject: (id: string) => void
     }
+    onRegenerate: (code: string, language: string | undefined) => void
 }
 
 interface ChatMessageContentProps {
@@ -33,6 +34,7 @@ interface ChatMessageContentProps {
 
     copyButtonOnSubmit?: CodeBlockActionsProps['copyButtonOnSubmit']
     insertButtonOnSubmit?: CodeBlockActionsProps['insertButtonOnSubmit']
+    onRegenerate: (code: string, language: string | undefined) => void
 
     smartApply?: CodeBlockActionsProps['smartApply']
 
@@ -52,6 +54,7 @@ export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps
     humanMessage,
     copyButtonOnSubmit,
     insertButtonOnSubmit,
+    onRegenerate,
     guardrails,
     className,
     smartApply,
@@ -103,6 +106,7 @@ export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps
                 onCopy={onCopy}
                 onInsert={onInsert}
                 onExecute={onExecute}
+                onRegenerate={onRegenerate}
                 smartApply={smartApply}
                 className={clsx(styles.content, className)}
                 hasEditIntent={humanMessage?.intent === 'edit'}

@@ -24,6 +24,7 @@ interface RichCodeBlockProps {
     onCopy?: (code: string) => void
     onInsert?: (code: string, newFile?: boolean) => void
     onExecute?: (command: string) => void
+    onRegenerate?: (code: string, language: string | undefined) => void
     smartApply?: CodeBlockActionsProps['smartApply']
     className?: string
     children?: React.ReactNode
@@ -51,6 +52,7 @@ export const RichCodeBlock: React.FC<RichCodeBlockProps> = ({
     onCopy,
     onInsert,
     onExecute,
+    onRegenerate,
     smartApply,
     className,
     children,
@@ -166,6 +168,7 @@ export const RichCodeBlock: React.FC<RichCodeBlockProps> = ({
             fileName={fileName}
             guardrails={guardrails}
             isCodeComplete={isCodeComplete}
+            onRegenerate={onRegenerate}
         >
             {({ showCode, guardrailsStatus, guardrailsStatusDisplay }) => (
                 <div className={clsx('tw-overflow-hidden', className)}>
