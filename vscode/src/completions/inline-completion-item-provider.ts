@@ -65,6 +65,7 @@ import {
 } from './suggested-autocomplete-items-cache'
 import { indentation } from './text-processing'
 import type { ProvideInlineCompletionItemsTracer, ProvideInlineCompletionsItemTraceData } from './tracer'
+import { clientCapabilities } from '@sourcegraph/cody-shared/dist'
 
 interface AutocompleteResult extends vscode.InlineCompletionList {
     logId: CompletionLogID
@@ -144,7 +145,7 @@ export class InlineCompletionItemProvider
     }: CodyCompletionItemProviderConfig) {
         // Show the autoedit onboarding message if the user hasn't enabled autoedits
         // but is eligible to use them as an alternative to autocomplete
-        if (isRunningInsideAgent()) {
+        if (clientCapabilities().autoeditSuggestToEnroll) {
             // We do not currently automatically opt users into auto-edit if we are running inside Agent.
             // This is because Agent support is still experimental and is only ready for dogfooding right now.
             autoeditsOnboarding.suggestToEnrollUserToAutoEditBetaIfEligible()
