@@ -28,15 +28,17 @@ export const FeedbackSection: FC<FeedbackSectionProps> = ({ entry }) => {
     }
 
     const feedbackJson = {
+        source: 'feedback',
         file_path: filePath,
         prefix: codeToReplaceData.prefixBeforeArea + codeToReplaceData.prefixInArea,
         suffix: codeToReplaceData.suffixInArea + codeToReplaceData.suffixAfterArea,
         code_to_rewrite_prefix: codeToReplaceData.codeToRewritePrefix,
         code_to_rewrite_suffix: codeToReplaceData.codeToRewriteSuffix,
+        context: context,
         chosen: expectedCode,
         rejected: prediction,
         assertions: assertions,
-        context: context,
+        is_reviewed: false,
     }
 
     const handleCopyJson = () => {
