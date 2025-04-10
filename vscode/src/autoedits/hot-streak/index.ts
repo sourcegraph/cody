@@ -6,8 +6,7 @@ import type * as vscode from 'vscode'
 import { AutoeditStopReason, type ModelResponse } from '../adapters/base'
 import type { AutoeditHotStreakID } from '../analytics-logger'
 import type { AbortedPredictionResult, SuggestedPredictionResult } from '../autoedits-provider'
-import { getHotStreakChunk } from './utils/get-chunk'
-import { getSuggestedDiffForChunk } from './utils/suggested-diff'
+import { getHotStreakChunk, getStableSuggestion } from './get-chunk'
 
 /**
  * Number of lines that should be accumulated before attempting a hot streak suggestion.
@@ -78,8 +77,6 @@ export async function* processHotStreakResponses({
             // Track the number of lines we have processed, this is used to trim the prediction accordingly in the next response.
             processedPrediction = processedPrediction + predictionChunk.text
 
-            console.log('UMPOX YIELDING', { predictionChunk })
-
             yield {
                 type: 'suggested',
                 response: {
@@ -90,9 +87,8 @@ export async function* processHotStreakResponses({
                 uri: predictionChunk.documentSnapshot.uri.toString(),
                 // We use the first line of the diff as the next cursor position.
                 // This is useful so that we can support "jumping" to this suggestion from a different part of the document
-                editPosition: predictionChunk.documentSnapshot.lineAt(
-                    predictionChunk.firstChangeLineNumber
-                ).range.end,
+                editPosition: predictionChunk.documentSnapshot.lineAt(predictionChunk.firstLineChanged)
+                    .range.end,
                 docContext: predictionChunk.docContext,
                 codeToReplaceData: predictionChunk.codeToReplaceData,
                 hotStreakId,
@@ -112,16 +108,16 @@ export async function* processHotStreakResponses({
             return
         }
 
-        const suggestedDiff = getSuggestedDiffForChunk(response, {
-            documentSnapshot: document,
-            text: response.prediction,
+        const suggestion = getStableSuggestion({
+            range: codeToReplaceData.range,
+            prediction: response.prediction,
+            document,
             codeToReplaceData,
-            docContext,
         })
 
-        if (!suggestedDiff) {
+        if (!suggestion) {
             // This is the final response and we haven't been able to emit a hot-streak suggestion.
-            // Even though we do not have a suggested diff, we still want to emit this suggestion.
+            // Even though we do not have a useful suggestion, we still want to emit this response.
             // It will be handled downstream, not shown to the user but marked correctly for telemetry purposes
             yield {
                 type: 'suggested',
@@ -134,9 +130,6 @@ export async function* processHotStreakResponses({
             return
         }
 
-        console.log('UMPOX SUGGESTED', {
-            suggestedDiff,
-        })
         yield {
             type: 'suggested',
             response,
@@ -147,7 +140,7 @@ export async function* processHotStreakResponses({
             // This is so this can still be used as a "next cursor" prediction source for a scenario where we have
             // a long rewrite window but the only change is at the bottom, far away from the users' cursor.
             // In these scenarios we should show a next cursor suggestion instead of the code suggestion.
-            editPosition: document.lineAt(suggestedDiff.firstChange.lineNumber).range.end,
+            editPosition: document.lineAt(suggestion.firstLineChanged).range.end,
         }
     }
 }

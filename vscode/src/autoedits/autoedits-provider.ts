@@ -932,6 +932,11 @@ export function getDecorationInfoFromPrediction(
         prediction +
         currentFileText.slice(document.offsetAt(range.end))
 
+    console.log('DIFFING TEXT:', {
+        before: currentFileText,
+        after: predictedFileText,
+    })
+
     const decorationInfo = getDecorationInfo(currentFileText, predictedFileText)
     return decorationInfo
 }
