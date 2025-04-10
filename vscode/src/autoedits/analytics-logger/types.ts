@@ -1,6 +1,6 @@
 import type * as vscode from 'vscode'
 
-import type { DocumentContext } from '@sourcegraph/cody-shared'
+import type { AutocompleteContextSnippet, DocumentContext } from '@sourcegraph/cody-shared'
 
 import type { ContextSummary } from '../../completions/context/context-mixer'
 import type { CodeGenEventMetadata } from '../../services/CharactersLogger'
@@ -170,6 +170,9 @@ export interface StartedState extends AutoeditBaseState {
     /** Time (ms) when we started computing or requesting the suggestion. */
     startedAt: number
 
+    /** The relative file path of the document being edited. */
+    filePath: string
+
     /** Metadata required to show a suggestion based on `requestId` only. */
     codeToReplaceData: CodeToReplaceData
     document: vscode.TextDocument
@@ -212,6 +215,8 @@ export interface ContextLoadedState extends Omit<StartedState, 'phase' | 'payloa
     phase: 'contextLoaded'
     /** Timestamp when the context for the autoedit was loaded. */
     contextLoadedAt: number
+    /** Context snippets used by the autoedit model to create a prompt */
+    context: AutocompleteContextSnippet[]
     payload: StartedState['payload'] & {
         /**
          * Information about the context retrieval process that lead to this autoedit request. Refer

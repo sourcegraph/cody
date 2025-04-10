@@ -15,6 +15,7 @@ import { ContextInfoSection } from '../sections/ContextInfoSection'
 import { NetworkRequestSection, NetworkResponseSection } from '../sections/NetworkRequestSection'
 import { PromptSection } from '../sections/PromptSection'
 import { TimelineSection } from '../sections/TimelineSection'
+import { FeedbackSection } from './FeedbackSection'
 import { SideBySideDiff } from './side-by-side-diff/SideBySideDiff'
 
 export const AutoeditDetailView: FC<{
@@ -29,7 +30,7 @@ export const AutoeditDetailView: FC<{
     const [activeTab, setActiveTab] = useState('timeline')
 
     // Extract all relevant data in one place using the SDK
-    const { phase, filePath, discardReason, position, prediction, codeToRewrite, triggerKind } =
+    const { phase, fileName, discardReason, position, prediction, codeToRewrite, triggerKind } =
         AutoeditDataSDK.extractAutoeditData(entry)
 
     return (
@@ -83,7 +84,7 @@ export const AutoeditDetailView: FC<{
 
                 <div>
                     <h2 className="tw-text-lg tw-font-semibold tw-truncate">
-                        {filePath}
+                        {fileName}
                         {position ? `:${position?.line + 1}:${position?.character + 1}` : ''}
                     </h2>
 
@@ -159,6 +160,9 @@ export const AutoeditDetailView: FC<{
                         <TabButton value="config" activeTab={activeTab}>
                             Config
                         </TabButton>
+                        <TabButton value="feedback" activeTab={activeTab}>
+                            Feedback
+                        </TabButton>
                     </TabsPrimitive.List>
                 </div>
 
@@ -189,6 +193,10 @@ export const AutoeditDetailView: FC<{
 
                     <TabsPrimitive.Content value="code-to-rewrite-data" className="tw-space-y-8">
                         <CodeToRewriteDataSection entry={entry} />
+                    </TabsPrimitive.Content>
+
+                    <TabsPrimitive.Content value="feedback" className="tw-space-y-8">
+                        <FeedbackSection entry={entry} />
                     </TabsPrimitive.Content>
                 </div>
             </TabsPrimitive.Root>

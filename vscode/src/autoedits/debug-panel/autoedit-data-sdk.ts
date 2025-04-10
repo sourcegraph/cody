@@ -6,6 +6,7 @@ export const extractAutoeditData = (entry: AutoeditRequestDebugState) => {
     const phase = entry.state.phase
     const discardReason = getDiscardReason(entry)
     const filePath = getFilePath(entry)
+    const fileName = getFileName(entry)
     const codeToRewrite = getCodeToRewrite(entry)
     const prediction = getPrediction(entry)
     const triggerKind = getTriggerKind(entry)
@@ -17,11 +18,13 @@ export const extractAutoeditData = (entry: AutoeditRequestDebugState) => {
     const document = getDocument(entry)
     const position = getPosition(entry)
     const modelResponse = getModelResponse(entry)
+    const context = getContext(entry)
 
     return {
         phase,
         discardReason,
         filePath,
+        fileName,
         codeToRewrite,
         prediction,
         triggerKind,
@@ -33,6 +36,7 @@ export const extractAutoeditData = (entry: AutoeditRequestDebugState) => {
         document,
         position,
         modelResponse,
+        context,
     }
 }
 
@@ -78,9 +82,16 @@ export const getModel = (entry: AutoeditRequestDebugState): string | null => {
 }
 
 /**
- * Extracts the file path from an autoedit entry
+ * Extracts the relative file path from an autoedit entry relative to workspace root.
  */
 export const getFilePath = (entry: AutoeditRequestDebugState): string => {
+    return entry.state.filePath
+}
+
+/**
+ * Extracts the file name from an autoedit entry
+ */
+export const getFileName = (entry: AutoeditRequestDebugState): string => {
     if ('document' in entry.state && entry.state.document) {
         // Access the URI property of the document which should contain the path
         // Using optional chaining to safely access properties
@@ -104,6 +115,20 @@ export const getCodeToRewrite = (entry: AutoeditRequestDebugState): string | und
         return entry.state.codeToReplaceData.codeToRewrite
     }
     return undefined
+}
+
+export const getContext = (entry: AutoeditRequestDebugState): Array<Record<string, any>> => {
+    if ('context' in entry.state) {
+        const context = entry.state.context
+        const transformedContext = context.map(item => ({
+            filePath: item.uri?.path || '',
+            identifier: item.identifier,
+            content: item.content,
+            metadata: item.metadata,
+        }))
+        return transformedContext
+    }
+    return []
 }
 
 /**
@@ -305,6 +330,7 @@ export const AutoeditDataSDK = {
     extractAutoeditData,
     getStartTime,
     getFilePath,
+    getFileName,
     getCodeToRewrite,
     getTriggerKind,
     getPositionInfo,

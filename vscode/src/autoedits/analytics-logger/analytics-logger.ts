@@ -25,6 +25,7 @@ import type { CodeToReplaceData } from '../prompt/prompt-utils'
 import type { DecorationInfo } from '../renderer/decorators/base'
 import { getDecorationStats } from '../renderer/diff-utils'
 
+import type { AutocompleteContextSnippet } from '../../../../lib/shared/src/completions/types'
 import { autoeditDebugStore } from '../debug-panel/debug-store'
 import type { AutoEditRenderOutput } from '../renderer/render-output'
 import { autoeditIdRegistry } from './suggestion-id-registry'
@@ -90,6 +91,7 @@ export class AutoeditAnalyticsLogger {
      */
     public createRequest({
         startedAt,
+        filePath,
         payload,
         codeToReplaceData,
         document,
@@ -97,6 +99,7 @@ export class AutoeditAnalyticsLogger {
         docContext,
     }: {
         startedAt: number
+        filePath: string
         codeToReplaceData: CodeToReplaceData
         document: vscode.TextDocument
         position: vscode.Position
@@ -113,6 +116,7 @@ export class AutoeditAnalyticsLogger {
             requestId,
             phase: 'started',
             startedAt,
+            filePath,
             codeToReplaceData,
             document,
             position,
@@ -136,14 +140,17 @@ export class AutoeditAnalyticsLogger {
 
     public markAsContextLoaded({
         requestId,
+        context,
         payload,
     }: {
         requestId: AutoeditRequestID
+        context: AutocompleteContextSnippet[]
         payload: Pick<ContextLoadedState['payload'], 'contextSummary'>
     }): void {
         this.tryTransitionTo(requestId, 'contextLoaded', request => ({
             ...request,
             contextLoadedAt: getTimeNowInMillis(),
+            context,
             payload: {
                 ...request.payload,
                 contextSummary: payload.contextSummary,
