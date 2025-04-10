@@ -94,6 +94,8 @@ interface TestClientParams {
     onWindowRequest?: (params: ShowWindowMessageParams) => Promise<string>
     extraConfiguration?: Record<string, any>
     capabilities?: ClientCapabilities
+    secretStorageEntries?: Record<string, string>
+    simulateSystemDelays?: boolean
 }
 
 export function setupRecording(): void {
@@ -187,6 +189,12 @@ export class TestClient extends MessageHandler {
     public expectedEvents: string[] = []
     public secrets = new AgentStatelessSecretStorage()
 
+    async simulateSystemDelays() {
+        if (this.params.simulateSystemDelays) {
+            await new Promise(resolve => setTimeout(resolve, Math.random() * 1500))
+        }
+    }
+
     get serverEndpoint(): string {
         return this.params.credentials.serverEndpoint
     }
@@ -205,6 +213,14 @@ export class TestClient extends MessageHandler {
 
         this.name = params.name
         this.info = this.getClientInfo(params.capabilities)
+
+        for (const [key, value] of Object.entries(params.secretStorageEntries ?? {})) {
+            this.secrets.store(key, value)
+        }
+
+        this.secrets.onDidChange(event => {
+            this.notify('secrets/didChange', { key: event.key })
+        })
 
         this.registerNotification('progress/start', message => {
             this.progressStartEvents.fire(message)
@@ -231,13 +247,16 @@ export class TestClient extends MessageHandler {
             })
         })
         this.registerRequest('secrets/get', async ({ key }) => {
+            await this.simulateSystemDelays()
             return this.secrets.get(key) ?? null
         })
         this.registerRequest('secrets/store', async ({ key, value }) => {
+            await this.simulateSystemDelays()
             await this.secrets.store(key, value)
             return null
         })
         this.registerRequest('secrets/delete', async ({ key }) => {
+            await this.simulateSystemDelays()
             await this.secrets.delete(key)
             return null
         })
@@ -976,9 +995,7 @@ ${patch}`
             workspaceRootPath: this.params.workspaceRootUri.fsPath,
             capabilities: {
                 ...capabilities,
-                // The test client doesn't implement secrets/didChange, so we need to use the
-                // stateless secrets store.
-                secrets: 'stateless',
+                secrets: 'client-managed',
             },
             extensionConfiguration: {
                 anonymousUserID: `${this.name}abcde1234`,
@@ -991,6 +1008,7 @@ ${patch}`
                     // Symf is disabled for all agent integration tests because
                     // it makes the tests more stable.
                     'cody.experimental.symf.enabled': false,
+                    'cody.experimental.telemetry.enabled': false,
                     ...this.params.extraConfiguration,
                 },
                 debug: false,
