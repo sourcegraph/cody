@@ -6,8 +6,8 @@ import type * as vscode from 'vscode'
 import { AutoeditStopReason, type ModelResponse } from '../adapters/base'
 import type { AutoeditHotStreakID } from '../analytics-logger'
 import type { AbortedPredictionResult, SuggestedPredictionResult } from '../autoedits-provider'
+import { getHotStreakChunk } from './utils/get-chunk'
 import { getSuggestedDiffForChunk } from './utils/suggested-diff'
-import { trimPredictionForHotStreak } from './utils/trim-prediction'
 
 /**
  * Number of lines that should be accumulated before attempting a hot streak suggestion.
@@ -55,7 +55,7 @@ export async function* processHotStreakResponses({
               response.type === 'partial'
 
         if (options.hotStreakEnabled && canHotStreak && response.type !== 'aborted') {
-            const predictionChunk = trimPredictionForHotStreak({
+            const predictionChunk = getHotStreakChunk({
                 latestFullPrediction: response.prediction,
                 processedPrediction,
                 document,
@@ -66,21 +66,7 @@ export async function* processHotStreakResponses({
             })
 
             if (!predictionChunk) {
-                // No complete lines yet, continue
-                continue
-            }
-
-            const currentLineCount = predictionChunk.text.split('\n').length - 1 // excluding the final new line
-            const reachedHotStreakThreshold = currentLineCount > HOT_STREAK_LINES_THRESHOLD
-            if (response.type === 'partial' && !reachedHotStreakThreshold) {
-                // We haven't reached the hot streak threshold and we still have more lines to process
-                // Continue streaming
-                continue
-            }
-
-            const suggestedDiff = getSuggestedDiffForChunk(response, predictionChunk)
-            if (!suggestedDiff) {
-                // We can't suggest this diff, keep streaming and try again with the next response
+                // Cannot emit a prediction
                 continue
             }
 
@@ -89,14 +75,10 @@ export async function* processHotStreakResponses({
                 hotStreakId = uui.v4() as AutoeditHotStreakID
             }
 
-            // We use the first line of the diff as the next cursor position.
-            // This is useful so that we can support "jumping" to this suggestion from a different part of the document
-            const editPosition = predictionChunk.documentSnapshot.lineAt(
-                suggestedDiff.firstChange.lineNumber
-            ).range.end
-
             // Track the number of lines we have processed, this is used to trim the prediction accordingly in the next response.
             processedPrediction = processedPrediction + predictionChunk.text
+
+            console.log('UMPOX YIELDING', { predictionChunk })
 
             yield {
                 type: 'suggested',
@@ -106,7 +88,11 @@ export async function* processHotStreakResponses({
                     stopReason: AutoeditStopReason.HotStreak,
                 },
                 uri: predictionChunk.documentSnapshot.uri.toString(),
-                editPosition,
+                // We use the first line of the diff as the next cursor position.
+                // This is useful so that we can support "jumping" to this suggestion from a different part of the document
+                editPosition: predictionChunk.documentSnapshot.lineAt(
+                    predictionChunk.firstChangeLineNumber
+                ).range.end,
                 docContext: predictionChunk.docContext,
                 codeToReplaceData: predictionChunk.codeToReplaceData,
                 hotStreakId,
@@ -148,6 +134,9 @@ export async function* processHotStreakResponses({
             return
         }
 
+        console.log('UMPOX SUGGESTED', {
+            suggestedDiff,
+        })
         yield {
             type: 'suggested',
             response,
