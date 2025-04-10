@@ -1,3 +1,4 @@
+import type { AutoeditFeedbackData } from '../analytics-logger/types'
 import type { AutoeditRequestDebugState } from './debug-store'
 import type { AutoeditSessionStats, StatisticsEntry } from './session-stats'
 
@@ -11,13 +12,10 @@ export type AutoeditDebugMessageFromExtension = {
 export type AutoeditDebugMessageFromWebview =
     | { type: 'ready' }
     | {
-        type: 'submitFeedback'
-        entry: AutoeditRequestDebugState
-        feedback: {
-            expectedCode: string
-            assertions: string
-        }
-    }
+          type: 'submitFeedback'
+          entry: AutoeditRequestDebugState
+          feedback: AutoeditFeedbackData
+      }
 
 export interface VSCodeAutoeditDebugWrapper {
     postMessage: (message: AutoeditDebugMessageFromWebview) => void

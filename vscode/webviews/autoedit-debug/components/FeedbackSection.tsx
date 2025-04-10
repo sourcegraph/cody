@@ -2,9 +2,10 @@ import * as Form from '@radix-ui/react-form'
 import { ChevronDown, ChevronRight } from 'lucide-react'
 import type { FC } from 'react'
 import { useState } from 'react'
+import type { AutoeditFeedbackData } from '../../../src/autoedits/analytics-logger/types'
 import { AutoeditDataSDK } from '../../../src/autoedits/debug-panel/autoedit-data-sdk'
-import type { AutoeditRequestDebugState } from '../../../src/autoedits/debug-panel/debug-store'
 import type { VSCodeAutoeditDebugWrapper } from '../../../src/autoedits/debug-panel/debug-protocol'
+import type { AutoeditRequestDebugState } from '../../../src/autoedits/debug-panel/debug-store'
 import { Label } from '../../components/shadcn/ui/label'
 
 interface FeedbackSectionProps {
@@ -30,7 +31,7 @@ export const FeedbackSection: FC<FeedbackSectionProps> = ({ entry, vscode }) => 
         )
     }
 
-    const feedbackJson = {
+    const feedbackJson: AutoeditFeedbackData = {
         source: 'feedback',
         file_path: filePath,
         prefix: codeToReplaceData.prefixBeforeArea + codeToReplaceData.prefixInArea,
@@ -59,10 +60,7 @@ export const FeedbackSection: FC<FeedbackSectionProps> = ({ entry, vscode }) => 
         vscode.postMessage({
             type: 'submitFeedback',
             entry,
-            feedback: {
-                expectedCode,
-                assertions
-            }
+            feedback: feedbackJson,
         })
         setIsSubmitting(false)
     }

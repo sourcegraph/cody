@@ -1,11 +1,11 @@
 import { type FC, useCallback, useEffect, useMemo, useState } from 'react'
 
+import type { VSCodeAutoeditDebugWrapper } from '../../src/autoedits/debug-panel/debug-protocol'
 import type { AutoeditRequestDebugState } from '../../src/autoedits/debug-panel/debug-store'
 import type {
     AutoeditSessionStats,
     StatisticsEntry,
 } from '../../src/autoedits/debug-panel/session-stats'
-import type { VSCodeAutoeditDebugWrapper } from '../../src/autoedits/debug-panel/debug-protocol'
 
 import { extractPhaseInfo } from '../../src/autoedits/debug-panel/autoedit-latency-utils'
 import { AutoeditDetailView } from './components/AutoeditDetailView'

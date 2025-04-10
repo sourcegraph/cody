@@ -1,7 +1,12 @@
 import * as vscode from 'vscode'
 
 import { manipulateWebviewHTML } from '../../chat/chat-view/ChatController'
-import type { AutoeditDebugMessageFromExtension, AutoeditDebugMessageFromWebview } from './debug-protocol'
+import { autoeditAnalyticsLogger } from '../analytics-logger/analytics-logger'
+import type { AutoeditFeedbackData } from '../analytics-logger/types'
+import type {
+    AutoeditDebugMessageFromExtension,
+    AutoeditDebugMessageFromWebview,
+} from './debug-protocol'
 import type { AutoeditRequestDebugState } from './debug-store'
 
 import { autoeditDebugStore } from './debug-store'
@@ -47,7 +52,7 @@ export class AutoeditDebugPanel {
         // Handle messages from the webview
         this.panel.webview.onDidReceiveMessage(
             (message: AutoeditDebugMessageFromWebview) => {
-                console.log("Received message for submitting: ", message)
+                console.log('Received message for submitting: ', message)
                 switch (message.type) {
                     case 'ready':
                         // Send the initial data when the webview is ready
@@ -66,14 +71,13 @@ export class AutoeditDebugPanel {
 
     private handleFeedbackSubmission(
         entry: AutoeditRequestDebugState,
-        feedback: { expectedCode: string; assertions: string }
+        feedback: AutoeditFeedbackData
     ): void {
-        // TODO: Implement feedback submission logic
-        console.log('Received feedback submission:', { entry, feedback })
-        // Here you can:
-        // 1. Send the feedback to your backend
-        // 2. Update the debug store
-        // 3. Show a notification to the user
+        // Log the feedback using the analytics logger
+        autoeditAnalyticsLogger.logFeedback(feedback)
+
+        // Show a notification to the user
+        void vscode.window.showInformationMessage('Feedback submitted successfully')
     }
 
     /**

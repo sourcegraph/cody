@@ -2,6 +2,8 @@ import { type DebouncedFunc, debounce } from 'lodash'
 import { Observable } from 'observable-fns'
 import * as vscode from 'vscode'
 
+import { type Attributes, metrics } from '@opentelemetry/api'
+import type { Histogram } from '@opentelemetry/api'
 import {
     type ChatClient,
     type ClientCapabilities,
@@ -9,9 +11,6 @@ import {
     currentResolvedConfig,
     tokensToChars,
 } from '@sourcegraph/cody-shared'
-
-import { type Attributes, metrics } from '@opentelemetry/api'
-import type { Histogram } from '@opentelemetry/api'
 import type { CompletionBookkeepingEvent } from '../completions/analytics-logger'
 import { ContextRankingStrategy } from '../completions/context/completions-context-ranker'
 import { ContextMixer } from '../completions/context/context-mixer'
