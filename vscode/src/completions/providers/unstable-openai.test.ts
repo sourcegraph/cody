@@ -18,7 +18,7 @@ import { BYOK_MODEL_ID_FOR_LOGS } from './shared/provider'
 describe('unstable-openai autocomplete provider', () => {
     beforeEach(async () => {
         mockLocalStorage()
-        vi.spyOn(featureFlagProvider, 'evaluateFeatureFlag').mockReturnValue(Observable.of(false))
+        vi.spyOn(featureFlagProvider, 'evaluatedFeatureFlag').mockReturnValue(Observable.of(false))
     })
 
     describe('supports unstable-openai ID', () => {

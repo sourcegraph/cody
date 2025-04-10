@@ -76,7 +76,7 @@ export class OpenTelemetryService {
 
         this.configSubscription = combineLatest(
             resolvedConfig,
-            featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteTracing),
+            featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyAutocompleteTracing),
             externalAuthRefresh.pipe(startWith(undefined))
         ).subscribe(([{ configuration, auth }, codyAutocompleteTracingFlag]) => {
             this.reconfigurePromiseMutex = this.reconfigurePromiseMutex

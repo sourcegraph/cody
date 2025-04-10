@@ -19,13 +19,13 @@ const skipQueryRewriteForDeepCody = true
 
 export class DeepCodyHandler extends ChatHandler implements AgentHandler {
     private featureDeepCodyRateLimitBase = storeLastValue(
-        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.DeepCodyRateLimitBase)
+        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.DeepCodyRateLimitBase)
     )
     private featureDeepCodyRateLimitMultiplier = storeLastValue(
-        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.DeepCodyRateLimitMultiplier)
+        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.DeepCodyRateLimitMultiplier)
     )
     private featureSessionLimit = storeLastValue(
-        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.AgenticContextSessionLimit)
+        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.AgenticContextSessionLimit)
     )
 
     override async computeContext(

@@ -91,7 +91,7 @@ export class SmartApplyManager implements vscode.Disposable {
         this.disposables.push(
             subscriptionDisposable(
                 featureFlagProvider
-                    .evaluateFeatureFlag(FeatureFlag.CodySmartApplyPrefetching)
+                    .evaluatedFeatureFlag(FeatureFlag.CodySmartApplyPrefetching)
                     .subscribe(isPrefetchingEnabled => {
                         this.isPrefetchingEnabled = Boolean(isPrefetchingEnabled)
                     })

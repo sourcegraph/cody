@@ -31,7 +31,7 @@ export interface WebviewToExtensionAPI {
     /**
      * Get the evaluated value of a feature flag.
      */
-    evaluateFeatureFlag(flag: FeatureFlag): Observable<boolean | undefined>
+    evaluatedFeatureFlag(flag: FeatureFlag): Observable<boolean | undefined>
 
     /**
      * Observe the results of querying prompts in the Prompt Library. For backcompat, it also
@@ -125,7 +125,7 @@ export function createExtensionAPI(
     return {
         mentionMenuData: proxyExtensionAPI(messageAPI, 'mentionMenuData'),
         frequentlyUsedContextItems: proxyExtensionAPI(messageAPI, 'frequentlyUsedContextItems'),
-        evaluateFeatureFlag: proxyExtensionAPI(messageAPI, 'evaluateFeatureFlag'),
+        evaluatedFeatureFlag: proxyExtensionAPI(messageAPI, 'evaluatedFeatureFlag'),
         prompts: proxyExtensionAPI(messageAPI, 'prompts'),
         promptTags: proxyExtensionAPI(messageAPI, 'promptTags'),
         getCurrentUserId: proxyExtensionAPI(messageAPI, 'getCurrentUserId'),

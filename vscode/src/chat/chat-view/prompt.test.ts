@@ -3,12 +3,14 @@ import {
     CLIENT_CAPABILITIES_FIXTURE,
     type ContextItem,
     ContextItemSource,
+    FeatureFlag,
     type Message,
     ModelUsage,
     type ModelsData,
     contextFiltersProvider,
     createModel,
     getChatPreamble,
+    graphqlClient,
     mockAuthStatus,
     mockClientCapabilities,
     mockResolvedConfig,
@@ -42,6 +44,11 @@ describe('DefaultPrompter', () => {
         })
         vi.spyOn(localStorage, 'getEnrollmentHistory').mockReturnValue(false)
         vi.spyOn(contextFiltersProvider, 'isUriIgnored').mockResolvedValue(false)
+        vi.spyOn(graphqlClient, 'getEvaluatedFeatureFlags').mockResolvedValue({
+            [FeatureFlag.CodyUnifiedPrompts]: true,
+            [FeatureFlag.CodyAutocompleteTracing]: true,
+            [FeatureFlag.CodyPromptCachingOnMessages]: false,
+        })
         mockAuthStatus(AUTH_STATUS_FIXTURE_AUTHED)
         mockClientCapabilities(CLIENT_CAPABILITIES_FIXTURE)
     })

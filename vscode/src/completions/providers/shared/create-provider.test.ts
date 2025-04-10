@@ -42,7 +42,7 @@ const EMPTY_MODELS_DATA: ModelsData = {
 describe('createProvider', () => {
     beforeEach(async () => {
         mockLocalStorage()
-        vi.spyOn(featureFlagProvider, 'evaluateFeatureFlag').mockReturnValue(Observable.of(false))
+        vi.spyOn(featureFlagProvider, 'evaluatedFeatureFlag').mockReturnValue(Observable.of(false))
     })
 
     describe('local settings', () => {

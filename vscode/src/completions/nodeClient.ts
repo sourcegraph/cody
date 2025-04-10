@@ -166,7 +166,7 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
 
                             // Check feature flag and handle rate limit error if enabled
                             featureFlagProvider
-                                .evaluateFeatureFlag(FeatureFlag.FallbackToFlash)
+                                .evaluatedFeatureFlag(FeatureFlag.FallbackToFlash)
                                 .subscribe(fallbackToFlash => {
                                     if (fallbackToFlash) {
                                         handleRateLimitError(error)
@@ -359,7 +359,7 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                     signal,
                 })
                 featureFlagProvider
-                    .evaluateFeatureFlag(FeatureFlag.FallbackToFlash)
+                    .evaluatedFeatureFlag(FeatureFlag.FallbackToFlash)
                     .subscribe(async (fallbackToFlash: boolean) => {
                         if (fallbackToFlash) {
                             if (response.status === 429) {

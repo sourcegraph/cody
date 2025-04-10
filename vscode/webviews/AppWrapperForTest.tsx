@@ -80,7 +80,7 @@ export const AppWrapperForTest: FunctionComponent<{ children: ReactNode }> = ({ 
                                             ].filter(f => f.uri.path.includes(queryTextLower)),
                             }
                         }),
-                    evaluateFeatureFlag: flag => {
+                    evaluatedFeatureFlag: flag => {
                         switch (flag) {
                             case FeatureFlag.CodyExperimentalPromptEditor:
                                 // Do not enable the experimental prompt editor in tests (yet).

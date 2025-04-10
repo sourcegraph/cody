@@ -17,7 +17,7 @@ import {
 describe('anthropic autocomplete provider', () => {
     beforeEach(async () => {
         mockLocalStorage()
-        vi.spyOn(featureFlagProvider, 'evaluateFeatureFlag').mockReturnValue(Observable.of(false))
+        vi.spyOn(featureFlagProvider, 'evaluatedFeatureFlag').mockReturnValue(Observable.of(false))
     })
 
     const claudeInstantAssertion = {
@@ -208,7 +208,7 @@ describe('anthropic autocomplete provider', () => {
 describe('anthropic/aws-bedrock autocomplete provider', () => {
     beforeEach(async () => {
         mockLocalStorage()
-        vi.spyOn(featureFlagProvider, 'evaluateFeatureFlag').mockReturnValue(Observable.of(false))
+        vi.spyOn(featureFlagProvider, 'evaluatedFeatureFlag').mockReturnValue(Observable.of(false))
     })
 
     const claudeInstantAssertion = {

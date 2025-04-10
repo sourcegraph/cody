@@ -143,7 +143,7 @@ export async function handleCodeFromInsertAtCursor(text: string): Promise<void> 
 
 function isSmartApplyInstantModeEnabled(): Observable<boolean> {
     return combineLatest(
-        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodySmartApplyInstantModeEnabled)
+        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodySmartApplyInstantModeEnabled)
     ).pipe(
         switchMap(([isEnabled]) => {
             // If the instant mode is enabled, return true to use qwen model.

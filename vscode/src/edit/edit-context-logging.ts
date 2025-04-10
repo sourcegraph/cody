@@ -80,11 +80,11 @@ interface SmartApplyLoggingContext {
 
 export class EditLoggingFeatureFlagManager implements vscode.Disposable {
     private featureFlagSmartApplyContextDataCollection = storeLastValue(
-        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.SmartApplyContextDataCollectionFlag)
+        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.SmartApplyContextDataCollectionFlag)
     )
 
     private featureFlagEditContextDataCollection = storeLastValue(
-        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.EditContextDataCollectionFlag)
+        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.EditContextDataCollectionFlag)
     )
 
     public isSmartApplyContextDataCollectionFlagEnabled(): boolean {
