@@ -67,7 +67,7 @@ export class FireworksAdapter implements AutoeditsModelAdapter {
     private getMessageBody(options: AutoeditModelOptions): AutoeditsRequestBody {
         const maxTokens = getMaxOutputTokensForAutoedits(options.codeToRewrite)
         const baseParams: FireworksCompatibleRequestParams = {
-            stream: false,
+            stream: true,
             model: options.model,
             temperature: 0.1,
             max_tokens: maxTokens,

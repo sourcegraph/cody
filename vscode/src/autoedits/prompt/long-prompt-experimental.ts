@@ -18,7 +18,6 @@ import {
 
 export class LongTermPromptStrategy extends AutoeditsUserPromptStrategy {
 
-
     getUserPrompt({ context, tokenBudget, codeToReplaceData, document }: UserPromptArgs): PromptString {
         const contextItemMapping = getContextItemMappingWithTokenLimit(
             context,
@@ -54,7 +53,7 @@ export class LongTermPromptStrategy extends AutoeditsUserPromptStrategy {
             constants.LONG_SUGGESTION_FINAL_USER_PROMPT,
         ]
 
-        const finalPrompt = PromptString.join(promptParts, ps``)
+        const finalPrompt = PromptString.join(promptParts, ps`\n`)
         return finalPrompt
     }
 
