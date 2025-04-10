@@ -1,5 +1,10 @@
 import { createSSEIterator, fetch, isAbortError, isNodeResponse } from '@sourcegraph/cody-shared'
-import { AutoeditStopReason, type ModelResponse, type SuccessModelResponse } from '../base'
+import {
+    AutoeditStopReason,
+    type ModelResponse,
+    ModelResponseShared,
+    type SuccessModelResponse,
+} from '../base'
 import type { AutoeditsRequestBody } from '../utils'
 
 export interface FireworksResponse {
@@ -27,6 +32,12 @@ export async function* getFireworksModelResponse({
         Authorization: `Bearer ${apiKey}`,
         ...(isStreamingRequest ? { 'Accept-Encoding': 'gzip;q=0' } : {}),
         ...customHeaders,
+    }
+
+    const sharedResponse: Omit<ModelResponseShared, 'type' | 'stopReason'> = {
+        requestUrl: url,
+        requestHeaders,
+        requestBody: body,
     }
 
     try {
@@ -62,21 +73,19 @@ export async function* getFireworksModelResponse({
             for await (const { data } of sseIterator) {
                 if (abortSignal.aborted) {
                     yield {
+                        ...sharedResponse,
                         type: 'aborted',
                         stopReason: AutoeditStopReason.RequestAborted,
-                        requestHeaders: requestHeaders,
-                        requestUrl: url,
                     }
                     return
                 }
 
                 if (data === '[DONE]') {
                     yield {
+                        ...sharedResponse,
                         type: 'success',
                         stopReason: AutoeditStopReason.RequestFinished,
                         prediction: state.prediction,
-                        requestHeaders: requestHeaders,
-                        requestUrl: url,
                         responseHeaders,
                         responseBody: state.responseBody,
                     }
@@ -89,11 +98,10 @@ export async function* getFireworksModelResponse({
                     if (predictionChunk) {
                         state.prediction += predictionChunk
                         yield {
+                            ...sharedResponse,
                             type: 'partial',
                             stopReason: AutoeditStopReason.StreamingChunk,
                             prediction: state.prediction,
-                            requestHeaders: requestHeaders,
-                            requestUrl: url,
                         }
                     }
                 } catch (parseError) {
@@ -112,21 +120,19 @@ export async function* getFireworksModelResponse({
         }
 
         yield {
+            ...sharedResponse,
             type: 'success',
             stopReason: AutoeditStopReason.RequestFinished,
             prediction,
             responseBody,
             responseHeaders,
-            requestHeaders,
-            requestUrl: url,
         }
     } catch (error) {
         if (isAbortError(error)) {
             yield {
+                ...sharedResponse,
                 type: 'aborted',
                 stopReason: AutoeditStopReason.RequestAborted,
-                requestHeaders,
-                requestUrl: url,
             }
             return
         }
