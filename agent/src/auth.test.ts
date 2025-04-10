@@ -11,7 +11,8 @@ import { TestWorkspace } from './TestWorkspace'
 describe(
     'Auth',
     {
-        timeout: 5000,
+        // Set SIMULATE_SYSTEM_DELAYS to true to simulate system delays, e.g. during accessing system storage
+        timeout: process.env.SIMULATE_SYSTEM_DELAYS === 'true' ? 12000 : 5000,
         // Repeat to find race conditions. Set to 0 when recording for faster execution.
         repeats: process.env.CODY_RECORDING_MODE ? 0 : 10,
     },
@@ -45,6 +46,7 @@ describe(
             workspaceRootUri: workspace.rootUri,
             name: 'auth',
             credentials: INITIAL_CREDENTIALS,
+            simulateSystemDelays: process.env.SIMULATE_SYSTEM_DELAYS === 'true',
         })
 
         beforeAll(async () => {

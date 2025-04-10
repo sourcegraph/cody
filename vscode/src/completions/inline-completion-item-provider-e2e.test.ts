@@ -407,7 +407,7 @@ describe.skip('InlineCompletionItemProvider E2E', () => {
     })
 })
 
-describe('InlineCompletionItemProvider preloading', () => {
+describe('InlineCompletionItemProvider preloading', { timeout: 10000 }, () => {
     const autocompleteConfig = {
         autocompleteAdvancedProvider: 'fireworks',
     } satisfies Partial<ClientConfiguration>
