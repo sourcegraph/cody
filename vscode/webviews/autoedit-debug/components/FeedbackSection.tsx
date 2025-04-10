@@ -4,17 +4,20 @@ import type { FC } from 'react'
 import { useState } from 'react'
 import { AutoeditDataSDK } from '../../../src/autoedits/debug-panel/autoedit-data-sdk'
 import type { AutoeditRequestDebugState } from '../../../src/autoedits/debug-panel/debug-store'
+import type { VSCodeAutoeditDebugWrapper } from '../../../src/autoedits/debug-panel/debug-protocol'
 import { Label } from '../../components/shadcn/ui/label'
 
 interface FeedbackSectionProps {
     entry: AutoeditRequestDebugState
+    vscode: VSCodeAutoeditDebugWrapper
 }
 
-export const FeedbackSection: FC<FeedbackSectionProps> = ({ entry }) => {
+export const FeedbackSection: FC<FeedbackSectionProps> = ({ entry, vscode }) => {
     const [expectedCode, setExpectedCode] = useState('')
     const [assertions, setAssertions] = useState('')
     const [copySuccess, setCopySuccess] = useState(false)
     const [isJsonExpanded, setIsJsonExpanded] = useState(false)
+    const [isSubmitting, setIsSubmitting] = useState(false)
 
     const codeToReplaceData = entry.state.codeToReplaceData
     const { filePath, prediction, context } = AutoeditDataSDK.extractAutoeditData(entry)
@@ -49,6 +52,19 @@ export const FeedbackSection: FC<FeedbackSectionProps> = ({ entry }) => {
                 setTimeout(() => setCopySuccess(false), 2000)
             })
             .catch(err => console.error('Failed to copy text: ', err))
+    }
+
+    const handleSubmit = () => {
+        setIsSubmitting(true)
+        vscode.postMessage({
+            type: 'submitFeedback',
+            entry,
+            feedback: {
+                expectedCode,
+                assertions
+            }
+        })
+        setIsSubmitting(false)
     }
 
     return (
@@ -98,15 +114,27 @@ export const FeedbackSection: FC<FeedbackSectionProps> = ({ entry }) => {
                             </>
                         )}
                     </button>
-                    <button
-                        type="button"
-                        onClick={handleCopyJson}
-                        className="tw-text-xs tw-text-gray-600 hover:tw-text-gray-800 dark:tw-text-gray-400 dark:hover:tw-text-gray-200 tw-rounded tw-px-2 tw-py-1 tw-bg-gray-100 hover:tw-bg-gray-200 dark:tw-bg-gray-700 dark:hover:tw-bg-gray-600 tw-transition-colors tw-duration-150"
-                        title="Copy JSON to clipboard"
-                        aria-label="Copy JSON to clipboard"
-                    >
-                        {copySuccess ? 'Copied!' : 'Copy'}
-                    </button>
+                    <div className="tw-flex tw-gap-2">
+                        <button
+                            type="button"
+                            onClick={handleCopyJson}
+                            className="tw-text-xs tw-text-gray-600 hover:tw-text-gray-800 dark:tw-text-gray-400 dark:hover:tw-text-gray-200 tw-rounded tw-px-2 tw-py-1 tw-bg-gray-100 hover:tw-bg-gray-200 dark:tw-bg-gray-700 dark:hover:tw-bg-gray-600 tw-transition-colors tw-duration-150"
+                            title="Copy JSON to clipboard"
+                            aria-label="Copy JSON to clipboard"
+                        >
+                            {copySuccess ? 'Copied!' : 'Copy'}
+                        </button>
+                        <button
+                            type="button"
+                            onClick={handleSubmit}
+                            disabled={isSubmitting}
+                            className="tw-text-xs tw-text-white tw-bg-blue-600 hover:tw-bg-blue-700 dark:tw-bg-blue-500 dark:hover:tw-bg-blue-600 tw-rounded tw-px-4 tw-py-1 tw-transition-colors tw-duration-150 disabled:tw-opacity-50 disabled:tw-cursor-not-allowed"
+                            title="Submit feedback"
+                            aria-label="Submit feedback"
+                        >
+                            {isSubmitting ? 'Submitting...' : 'Submit'}
+                        </button>
+                    </div>
                 </div>
                 {isJsonExpanded && (
                     <pre className="tw-bg-gray-100 tw-dark:tw-bg-gray-800 tw-p-4 tw-rounded tw-text-sm tw-font-mono tw-overflow-auto">

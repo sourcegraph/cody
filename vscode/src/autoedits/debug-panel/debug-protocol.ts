@@ -8,7 +8,16 @@ export type AutoeditDebugMessageFromExtension = {
     statsForLastNRequests: StatisticsEntry[]
 }
 
-export type AutoeditDebugMessageFromWebview = { type: 'ready' }
+export type AutoeditDebugMessageFromWebview =
+    | { type: 'ready' }
+    | {
+        type: 'submitFeedback'
+        entry: AutoeditRequestDebugState
+        feedback: {
+            expectedCode: string
+            assertions: string
+        }
+    }
 
 export interface VSCodeAutoeditDebugWrapper {
     postMessage: (message: AutoeditDebugMessageFromWebview) => void
