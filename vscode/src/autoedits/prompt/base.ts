@@ -42,7 +42,7 @@ export abstract class AutoeditsUserPromptStrategy {
         const context = IS_AGENT_TESTING ? [] : userPromptArgs.context
         const prompt = this.getUserPrompt({ ...userPromptArgs, context })
 
-        const adjustedPrompt: AutoeditsPrompt =isChatModel
+        const adjustedPrompt: AutoeditsPrompt = isChatModel
             ? { systemMessage: SYSTEM_PROMPT, userMessage: prompt }
             : { userMessage: getCompletionsPromptWithSystemPrompt(SYSTEM_PROMPT, prompt) }
 

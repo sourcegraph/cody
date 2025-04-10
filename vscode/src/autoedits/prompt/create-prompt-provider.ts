@@ -1,10 +1,10 @@
+import type { AutoEditsModelConfig } from '@sourcegraph/cody-shared'
+import type { AutoeditsUserPromptStrategy } from './base'
 import { LongTermPromptStrategy } from './long-prompt-experimental'
-import { AutoEditsModelConfig } from '@sourcegraph/cody-shared'
-import { AutoeditsUserPromptStrategy } from './base'
 import { PromptCacheOptimizedV1 } from './prompt-cache-optimized-v1'
 
 export function createPromptProvider({
-    promptProvider
+    promptProvider,
 }: {
     promptProvider?: AutoEditsModelConfig['promptProvider']
 }): AutoeditsUserPromptStrategy {
