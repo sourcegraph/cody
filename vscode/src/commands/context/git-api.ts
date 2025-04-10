@@ -1,14 +1,115 @@
-import * as vscode from 'vscode'
-
 import {
     type ContextItem,
     ContextItemSource,
     TokenCounterUtils,
     displayPath,
 } from '@sourcegraph/cody-shared'
+import * as vscode from 'vscode'
 import { logError } from '../../output-channel-logger'
 import type { Repository } from '../../repository/builtinGitExtension'
 import { doesFileExist } from '../utils/workspace-files'
+
+import { exec } from 'node:child_process'
+import { promisify } from 'node:util'
+
+const execAsync = promisify(exec)
+
+/**
+ * Get untracked and unstaged files from a git repository.
+ *
+ * @param gitRepo - The git repository object.
+ * @returns A promise that resolves to an array of file objects representing untracked, unstaged files.
+ * @throws If there is an error retrieving the untracked files.
+ */
+export async function getUntrackedUnstagedFiles(gitRepo: Repository): Promise<{ uri: vscode.Uri }[]> {
+    try {
+        const rootPath = gitRepo.rootUri.fsPath
+
+        const { stdout } = await execAsync('git ls-files --others --exclude-standard', {
+            cwd: rootPath,
+        })
+
+        if (!stdout.trim()) {
+            return []
+        }
+
+        const untrackedFiles = stdout
+            .split('\n')
+            .filter(line => line.trim().length > 0)
+            .map(filePath => {
+                const fileUri = vscode.Uri.joinPath(gitRepo.rootUri, filePath.trim())
+                return { uri: fileUri }
+            })
+
+        return untrackedFiles
+    } catch (error) {
+        logError('getUntrackedUnstagedFiles', 'failed', { verbose: error })
+        // Return empty array instead of throwing to maintain graceful handling
+        return []
+    }
+}
+
+/**
+ * Get the diff content for all unstaged files (both tracked and untracked).
+ *
+ * @param gitRepo - The git repository object.
+ * @returns A promise that resolves to a string containing the diff content.
+ * @throws If there is an error retrieving the diff content.
+ */
+export async function getAllUnstagedFileChanges(gitRepo: Repository): Promise<string> {
+    try {
+        const rootPath = gitRepo.rootUri.fsPath
+
+        // Get diff for tracked unstaged files
+        const trackedUnstagedDiff = await gitRepo.diff(false) // false means unstaged changes
+
+        // Get all untracked unstaged files
+        const untrackedUnstagedFiles = await getUntrackedUnstagedFiles(gitRepo)
+
+        if (untrackedUnstagedFiles.length === 0) {
+            return trackedUnstagedDiff // If no untracked files, just return tracked changes
+        }
+
+        // Get diff for untracked files by comparing them with /dev/null
+        const untrackedDiffs = await Promise.all(
+            untrackedUnstagedFiles.map(async file => {
+                try {
+                    // Get paths relative to the git repository root
+                    const absoluteFilePath = file.uri.fsPath
+                    const repoRootUri = gitRepo.rootUri
+                    const absoluteRepoPath = repoRootUri.fsPath
+
+                    const path = require('node:path')
+                    const relativePath = path.relative(absoluteRepoPath, absoluteFilePath)
+
+                    // Use git diff command with /dev/null to show full file content as added
+                    const { stdout } = await execAsync(
+                        `git diff --no-index -- /dev/null "${relativePath}"`,
+                        {
+                            cwd: rootPath,
+                        }
+                    )
+                    return stdout.trim()
+                } catch (error) {
+                    // Git exits with code 1 if files differ, which throws an error in exec
+                    // We need to extract the stdout from the error
+                    if (error instanceof Error && 'stdout' in error) {
+                        const stdout = (error as any).stdout as string
+                        return stdout.trim()
+                    }
+                    throw error
+                }
+            })
+        )
+
+        // Filter out empty diffs and combine all diffs
+        const allDiffs = [trackedUnstagedDiff, ...untrackedDiffs.filter(diff => diff.trim().length > 0)]
+        return allDiffs.join('\n')
+    } catch (error) {
+        logError('getAllUnstagedFileChanges', 'failed', { verbose: error })
+        throw new Error('Failed to get all unstaged file changes.')
+    }
+}
 
 /**
  * Generates context files from the git diff and git log of a given repository.
@@ -43,23 +144,36 @@ export async function getContextFilesFromGitApi(
  */
 export async function getContextFilesFromGitDiff(gitRepo: Repository): Promise<ContextItem[]> {
     try {
-        // Get the list of files that currently have staged and unstaged changes.
-        const [stagedFiles, unstagedFiles] = await Promise.all([
+        // Get the list of files that currently have staged and tracked unstaged changes.
+        const [stagedFiles, trackedUnstagedFiles] = await Promise.all([
             gitRepo.diffIndexWithHEAD(),
             gitRepo.diffWithHEAD(),
         ])
 
+        const untrackedUnstagedFiles = await getUntrackedUnstagedFiles(gitRepo)
+        const unstagedFiles = [...trackedUnstagedFiles, ...untrackedUnstagedFiles]
         // Get the diff output for staged changes if there is any,
         // otherwise, get the diff output for unstaged changes.
         const hasStagedChanges = Boolean(stagedFiles?.length)
-        const command = `git diff${hasStagedChanges ? ' --cached' : ''}`
+        let command = undefined
+        if (hasStagedChanges) {
+            command = 'git diff --cached'
+        } else {
+            command = 'git diff'
+        }
 
         // A list of file uris to use for comparison with the diff output.
         const diffFiles = hasStagedChanges ? stagedFiles : unstagedFiles
 
         // Split diff output by files: diff --git a/$FILE b/$FILE\n$DIFF
-        const diffOutput = await gitRepo?.diff(hasStagedChanges)
-        const diffOutputByFiles = diffOutput.split(/diff --git a\/.+? b\//).filter(Boolean)
+        let diffOutput = undefined
+        if (hasStagedChanges) {
+            diffOutput = await gitRepo?.diff(true)
+        } else {
+            diffOutput = await getAllUnstagedFileChanges(gitRepo)
+        }
+        const diffOutputSplit = diffOutput.trim().split(/diff --git a\/.+? b\//)
+        const diffOutputByFiles = diffOutputSplit.filter(Boolean)
         // Compare the diff files to the diff output to ensure they match,
         // if the numbers are different, we can't trust the diff output were split correctly.
         if (!diffFiles.length || !diffOutput || diffOutputByFiles.length !== diffFiles.length) {
