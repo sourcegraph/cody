@@ -29,13 +29,13 @@ export function getSuggestedDiffForChunk(
 
     const [firstLineOfDiff, lastLineOfDiff] = diffChangeBoundaries
     const firstLineNumberOfDiff =
-        firstLineOfDiff.type === 'removed'
-            ? firstLineOfDiff.originalLineNumber
-            : firstLineOfDiff.modifiedLineNumber
+        firstLineOfDiff.type === 'added'
+            ? firstLineOfDiff.modifiedLineNumber
+            : firstLineOfDiff.originalLineNumber
     const lastLineNumberOfDiff =
-        lastLineOfDiff.type === 'removed'
-            ? lastLineOfDiff.originalLineNumber
-            : lastLineOfDiff.modifiedLineNumber
+        lastLineOfDiff.type === 'added'
+            ? lastLineOfDiff.modifiedLineNumber
+            : lastLineOfDiff.originalLineNumber
 
     if (response.type === 'partial' && lastLineNumberOfDiff === chunk.range.end.line - 1) {
         // We only emit a hot streak prediction when the final line of the prediction range is unchanged.
