@@ -3,37 +3,37 @@ import { filter, map } from 'observable-fns'
 import * as vscode from 'vscode'
 
 import {
+    type ChatClient,
+    ClientConfigSingleton,
+    type ConfigurationInput,
+    DOTCOM_URL,
+    type DefaultCodyCommands,
+    FeatureFlag,
+    NEVER,
+    PromptString,
+    type ResolvedConfiguration,
+    type SourcegraphGuardrailsClient,
     authStatus,
     catchError,
-    type ChatClient,
     clientCapabilities,
-    ClientConfigSingleton,
     combineLatest,
-    type ConfigurationInput,
     contextFiltersProvider,
     createDisposables,
     currentAuthStatus,
     currentUserProductSubscription,
-    type DefaultCodyCommands,
     distinctUntilChanged,
-    DOTCOM_URL,
-    FeatureFlag,
     featureFlagProvider,
     fromVSCodeEvent,
     graphqlClient,
     isDotCom,
     modelsService,
-    NEVER,
-    PromptString,
     resolvedConfig,
-    type ResolvedConfiguration,
     setClientCapabilities,
     setClientNameVersion,
     setEditorWindowIsFocused,
     setLogger,
     setOpenCtxControllerObservable,
     setResolvedConfigurationObservable,
-    type SourcegraphGuardrailsClient,
     startWith,
     subscriptionDisposable,
     switchMap,
@@ -61,7 +61,12 @@ import { ChatsController, CodyChatEditorViewType } from './chat/chat-view/ChatsC
 import { ContextRetriever } from './chat/chat-view/ContextRetriever'
 import { SourcegraphRemoteFileProvider } from './chat/chat-view/sourcegraphRemoteFile'
 import { MCPManager } from './chat/chat-view/tools/MCPManager'
-import { ACCOUNT_LIMITS_INFO_URL, ACCOUNT_UPGRADE_URL, CODY_FEEDBACK_URL, CODY_OLLAMA_DOCS_URL } from './chat/protocol'
+import {
+    ACCOUNT_LIMITS_INFO_URL,
+    ACCOUNT_UPGRADE_URL,
+    CODY_FEEDBACK_URL,
+    CODY_OLLAMA_DOCS_URL,
+} from './chat/protocol'
 import { CodeActionProvider } from './code-actions/CodeActionProvider'
 import { commandControllerInit, executeCodyCommand } from './commands/CommandsController'
 import { GhostHintDecorator } from './commands/GhostHintDecorator'
@@ -103,11 +108,15 @@ import { showFeedbackSupportQuickPick } from './services/FeedbackOptions'
 import { displayHistoryQuickPick } from './services/HistoryChat'
 import { localStorage } from './services/LocalStorageProvider'
 import { NetworkDiagnostics } from './services/NetworkDiagnostics'
-import { secretStorage, VSCodeSecretStorage } from './services/SecretStorageProvider'
+import { VSCodeSecretStorage, secretStorage } from './services/SecretStorageProvider'
 import { registerSidebarCommands } from './services/SidebarCommands'
 import { CodyStatusBar } from './services/StatusBar'
 import { createOrUpdateTelemetryRecorderProvider } from './services/telemetry-v2'
-import { enableVerboseDebugMode, exportOutputLog, openCodyOutputChannel } from './services/utils/export-logs'
+import {
+    enableVerboseDebugMode,
+    exportOutputLog,
+    openCodyOutputChannel,
+} from './services/utils/export-logs'
 import { dumpCodyHeapSnapshot } from './services/utils/heap-dump'
 import { openCodyIssueReporter } from './services/utils/issue-reporter'
 import { SupercompletionProvider } from './supercompletions/supercompletion-provider'
@@ -759,7 +768,9 @@ function registerAutoEdits({
             combineLatest(
                 resolvedConfig,
                 authStatus,
-                featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutoEditExperimentEnabledFeatureFlag),
+                featureFlagProvider.evaluateFeatureFlag(
+                    FeatureFlag.CodyAutoEditExperimentEnabledFeatureFlag
+                ),
                 featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutoEditInlineRendering),
                 featureFlagProvider.evaluateFeatureFlag(
                     FeatureFlag.CodyAutoEditUseWebSocketForFireworksConnections

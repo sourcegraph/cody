@@ -17,7 +17,6 @@ export class AutoEditBetaOnboarding implements vscode.Disposable {
         featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutoEditExperimentEnabledFeatureFlag)
     )
 
-
     public async enrollUserToAutoEditBetaIfEligible(): Promise<void> {
         const isUserEligibleForAutoeditBeta = await this.isUserEligibleForAutoeditBetaOverride()
         if (isUserEligibleForAutoeditBeta) {
