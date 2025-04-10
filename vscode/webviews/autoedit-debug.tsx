@@ -88,6 +88,7 @@ function App() {
                 entries={state?.entries ?? []}
                 sessionStats={state?.sessionStats}
                 statsForLastNRequests={state?.statsForLastNRequests ?? []}
+                vscode={vscode}
             />
         </div>
     )

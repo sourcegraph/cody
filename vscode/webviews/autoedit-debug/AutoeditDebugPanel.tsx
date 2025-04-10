@@ -1,5 +1,6 @@
 import { type FC, useCallback, useEffect, useMemo, useState } from 'react'
 
+import type { VSCodeAutoeditDebugWrapper } from '../../src/autoedits/debug-panel/debug-protocol'
 import type { AutoeditRequestDebugState } from '../../src/autoedits/debug-panel/debug-store'
 import type {
     AutoeditSessionStats,
@@ -31,7 +32,8 @@ export const AutoeditDebugPanel: FC<{
     entries: AutoeditRequestDebugState[]
     sessionStats?: AutoeditSessionStats
     statsForLastNRequests: StatisticsEntry[]
-}> = ({ entries, sessionStats, statsForLastNRequests }) => {
+    vscode: VSCodeAutoeditDebugWrapper
+}> = ({ entries, sessionStats, statsForLastNRequests, vscode }) => {
     const [phaseFilter, setPhaseFilter] = useState<string>('All Phases')
     const [currentView, setCurrentView] = useState<'requests' | 'stats'>('requests')
 
@@ -246,6 +248,7 @@ export const AutoeditDebugPanel: FC<{
                     onClose={handleClose}
                     hasPrevious={hasPrevious}
                     hasNext={hasNext}
+                    vscode={vscode}
                 />
             </div>
         </div>
