@@ -387,13 +387,17 @@ export class AutoEditsDefaultRendererManager
 
         if (activeRequest.hotStreakId) {
             const nextCursorPosition = this.requestManager.getNearestHotStreakItem({
-                hotStreakID: activeRequest.hotStreakId,
+                hotStreakId: activeRequest.hotStreakId,
                 position: activeRequest.editPosition,
             })?.editPosition
 
             if (!nextCursorPosition) {
                 return
             }
+
+            // Store this hot-streak ID so that we can use it when searching in the cache
+            // after the cursor moves
+            this.requestManager.lastAcceptedHotStreakId = activeRequest.hotStreakId
 
             editor.selection = new vscode.Selection(nextCursorPosition, nextCursorPosition)
             editor.revealRange(editor.selection, vscode.TextEditorRevealType.InCenterIfOutsideViewport)

@@ -37,6 +37,13 @@ export class RequestManager implements vscode.Disposable {
     private latestRequestParams: AutoeditRequestManagerParams | null = null
 
     /**
+     * Keeps track of the last accepted hot-streak suggestion.
+     * Used to reliably retrieve the next hot-streak suggestion when retrieving
+     * from the cache.
+     */
+    public lastAcceptedHotStreakId: AutoeditHotStreakID | undefined
+
+    /**
      * Execute a request or use a cached/in-flight result if available
      */
     public async request(
@@ -176,6 +183,19 @@ export class RequestManager implements vscode.Disposable {
      * Looks for items that are still valid in the document and are within a certain distance from the cursor
      */
     public checkCache(params: AutoeditRequestManagerParams): SuggestedPredictionResult | null {
+        if (this.lastAcceptedHotStreakId) {
+            const hotStreakId = this.lastAcceptedHotStreakId
+
+            // Always reset the hot-streak ID. If we don't find a match, a new request
+            // will be triggered anyway.
+            this.lastAcceptedHotStreakId = undefined
+
+            return this.getNearestHotStreakItem({
+                hotStreakId,
+                position: params.position,
+            })
+        }
+
         const matches = this.getValidCacheItemsForDocument(params.documentText, params.documentUri)
         if (matches.length === 0) {
             // No matches found
@@ -227,10 +247,10 @@ export class RequestManager implements vscode.Disposable {
     }
 
     public getNearestHotStreakItem({
-        hotStreakID,
+        hotStreakId,
         position,
     }: {
-        hotStreakID: AutoeditHotStreakID
+        hotStreakId: AutoeditHotStreakID
         position: vscode.Position
     }): SuggestedPredictionResult | null {
         let closestItem: SuggestedPredictionResult | null = null
@@ -238,7 +258,7 @@ export class RequestManager implements vscode.Disposable {
 
         for (const key of [...this.cache.keys()]) {
             const item = this.cache.get(key)
-            if (!item || item.hotStreakId !== hotStreakID) {
+            if (!item || item.hotStreakId !== hotStreakId) {
                 // Skip items that don't match the hot streak ID
                 continue
             }
