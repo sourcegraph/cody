@@ -4,6 +4,7 @@ import type * as vscode from 'vscode'
 
 import type {
     AbortedPredictionResult,
+    IgnoredPredictionResult,
     PredictionResult,
     SuggestedPredictionResult,
 } from './autoedits-provider'
@@ -51,7 +52,11 @@ export class RequestManager implements vscode.Disposable {
         makeRequest: (
             abortSignal: AbortSignal
         ) => Promise<
-            AsyncGenerator<Omit<SuggestedPredictionResult, 'cacheId'> | AbortedPredictionResult>
+            AsyncGenerator<
+                | Omit<SuggestedPredictionResult, 'cacheId'>
+                | IgnoredPredictionResult
+                | AbortedPredictionResult
+            >
         >
     ): Promise<PredictionResult> {
         // 1. First check the cache for exact matches
@@ -106,7 +111,11 @@ export class RequestManager implements vscode.Disposable {
         makeRequest: (
             abortSignal: AbortSignal
         ) => Promise<
-            AsyncGenerator<Omit<SuggestedPredictionResult, 'cacheId'> | AbortedPredictionResult>
+            AsyncGenerator<
+                | Omit<SuggestedPredictionResult, 'cacheId'>
+                | IgnoredPredictionResult
+                | AbortedPredictionResult
+            >
         >,
         params: AutoeditRequestManagerParams
     ): Promise<void> {
@@ -127,21 +136,27 @@ export class RequestManager implements vscode.Disposable {
                 }
 
                 const cacheId = uuid.v4() as AutoeditCacheID
-                const cachedResult: SuggestedPredictionResult = {
-                    ...result,
-                    cacheId: cacheId,
+                const resolvedResult =
+                    result.type === 'suggested'
+                        ? {
+                              ...result,
+                              cacheId: cacheId,
+                          }
+                        : result
+
+                if (resolvedResult.type === 'suggested') {
+                    this.cache.set(cacheId, {
+                        ...resolvedResult,
+                        response: { ...resolvedResult.response, source: autoeditSource.cache },
+                    })
                 }
-                this.cache.set(cacheId, {
-                    ...cachedResult,
-                    response: { ...result.response, source: autoeditSource.cache },
-                })
 
                 // A promise will never resolve more than once, so we don't need
                 // to check if the request was already fulfilled.
-                request.resolve(cachedResult)
+                request.resolve(resolvedResult)
 
                 // Always recycle the response even if we already resolved
-                this.recycleResponseForInflightRequests(request, cachedResult)
+                this.recycleResponseForInflightRequests(request, resolvedResult)
 
                 // After processing a completed request, check if any other requests are now irrelevant
                 this.cancelIrrelevantRequests()

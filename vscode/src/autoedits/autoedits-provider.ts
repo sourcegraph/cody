@@ -82,6 +82,12 @@ export interface AbortedPredictionResult {
     response: AbortedModelResponse
 }
 
+/* A prediction result that has no valid changes to use */
+export interface IgnoredPredictionResult {
+    type: 'ignored'
+    response: SuccessModelResponse | PartialModelResponse
+}
+
 export interface SuggestedPredictionResult {
     type: 'suggested'
     response: SuccessModelResponse | PartialModelResponse
@@ -118,7 +124,10 @@ export interface SuggestedPredictionResult {
     codeToReplaceData: CodeToReplaceData
 }
 
-export type PredictionResult = SuggestedPredictionResult | AbortedPredictionResult
+export type PredictionResult =
+    | SuggestedPredictionResult
+    | IgnoredPredictionResult
+    | AbortedPredictionResult
 
 export interface AutoeditsResult {
     /** @deprecated Use `inlineCompletionItems` instead. */
@@ -440,6 +449,15 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                     startedAt,
                     requestId,
                     discardReason: 'clientAborted',
+                })
+                return null
+            }
+
+            if (predictionResult.type === 'ignored') {
+                this.discardSuggestion({
+                    startedAt,
+                    requestId,
+                    discardReason: 'predictionEqualsCodeToRewrite',
                 })
                 return null
             }
@@ -777,7 +795,13 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
         docContext: DocumentContext
         prompt: AutoeditsPrompt
         abortSignal: AbortSignal
-    }): Promise<AsyncGenerator<Omit<SuggestedPredictionResult, 'cacheId'> | AbortedPredictionResult>> {
+    }): Promise<
+        AsyncGenerator<
+            | Omit<SuggestedPredictionResult, 'cacheId'>
+            | IgnoredPredictionResult
+            | AbortedPredictionResult
+        >
+    > {
         const userId = (await currentResolvedConfig()).clientState.anonymousUserID
         const responseGenerator = await this.modelAdapter.getModelResponse({
             url: autoeditsProviderConfig.url,

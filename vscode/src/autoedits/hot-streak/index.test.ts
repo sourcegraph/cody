@@ -173,8 +173,7 @@ describe('processHotStreakResponses', () => {
             results.push(result)
         }
 
-        // Chunked into multiple results
-        expect(results.length).toBe(2)
+        expect(results.length).toBe(5)
 
         const firstResponse = results[0] as SuggestedPredictionResult
         expect(firstResponse.type).toBe('suggested')
@@ -183,15 +182,6 @@ describe('processHotStreakResponses', () => {
           export function isEvenOrOdd(target: number): boolean {
               if (target === 0) {
                   return true
-              }
-              if (target === 1) {
-                  return false
-              }
-              if (target === 2) {
-                  return true
-              }
-              if (target === 3) {
-                  return false
               }
           "
         `)
@@ -230,37 +220,28 @@ describe('processHotStreakResponses', () => {
         const lastResponse = results[1] as SuggestedPredictionResult
         expect(lastResponse.type).toBe('suggested')
         expect(lastResponse.response.prediction).toMatchInlineSnapshot(`
-          "    if (target === 4) {
-                  return true
-              }
-              if (target === 5) {
+          "    if (target === 1) {
                   return false
               }
-              throw new Error('Out of RAM')
-          }
+              if (target === 2) {
+                  return true
           "
         `)
 
-        const window =
-            lastResponse.codeToReplaceData.prefixBeforeArea +
-            lastResponse.codeToReplaceData.prefixInArea +
-            lastResponse.codeToReplaceData.codeToRewrite +
-            lastResponse.codeToReplaceData.suffixInArea +
-            lastResponse.codeToReplaceData.suffixAfterArea
-        expect(window).toMatchInlineSnapshot(`
+        expect(getCodeToReplaceWindow(lastResponse.codeToReplaceData)).toMatchInlineSnapshot(`
           "
           export function isEvenOrOdd(target: number): boolean {
               if (target === 0) {
                   return true
               }
-              if (target === 1) {
+              }
+              // Check if target is 1
+              if (numberToChange === 1) {
                   return false
               }
-              if (target === 2) {
+              // Check if target is 2
+              if (numberToChange === 2) {
                   return true
-              }
-              if (target === 3) {
-                  return false
               }
               // Check if target is 3
               if (numberToChange === 3) {
@@ -385,7 +366,7 @@ describe('processHotStreakResponses', () => {
             results.push(result)
         }
 
-        // Chunked into multiple results
+        // Only the first change is returned, the rest is unchanged
         expect(results.length).toBe(1)
 
         const firstResponse = results[0] as SuggestedPredictionResult

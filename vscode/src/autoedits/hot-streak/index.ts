@@ -5,7 +5,11 @@ import type * as vscode from 'vscode'
 
 import { AutoeditStopReason, type ModelResponse } from '../adapters/base'
 import type { AutoeditHotStreakID } from '../analytics-logger'
-import type { AbortedPredictionResult, SuggestedPredictionResult } from '../autoedits-provider'
+import type {
+    AbortedPredictionResult,
+    IgnoredPredictionResult,
+    SuggestedPredictionResult,
+} from '../autoedits-provider'
 import { getHotStreakChunk, getStableSuggestion } from './get-chunk'
 
 /**
@@ -41,7 +45,7 @@ export async function* processHotStreakResponses({
     position,
     options,
 }: ProcessHotStreakResponsesParams): AsyncGenerator<
-    Omit<SuggestedPredictionResult, 'cacheId'> | AbortedPredictionResult
+    Omit<SuggestedPredictionResult, 'cacheId'> | IgnoredPredictionResult | AbortedPredictionResult
 > {
     let processedPrediction = ''
     let hotStreakId = null
@@ -78,8 +82,15 @@ export async function* processHotStreakResponses({
             processedPrediction = processedPrediction + predictionChunk.text
 
             if (!predictionChunk.firstLineChanged) {
-                // TODO: Add IgnoredPrediction type so we can propogate this up to autoedits provider
-                throw new Error('Unreachable')
+                yield {
+                    type: 'ignored',
+                    response: {
+                        ...response,
+                        prediction: predictionChunk.text,
+                        stopReason: AutoeditStopReason.HotStreak,
+                    },
+                }
+                continue
             }
 
             yield {
@@ -122,17 +133,7 @@ export async function* processHotStreakResponses({
         })
 
         if (!suggestion || !suggestion.firstLineChanged) {
-            // This is the final response and we haven't been able to emit a hot-streak suggestion.
-            // Even though we do not have a useful suggestion, we still want to emit this response.
-            // It will be handled downstream, not shown to the user but marked correctly for telemetry purposes
-            yield {
-                type: 'suggested', // TODO: Emit ignored suggestion instead
-                response,
-                uri: document.uri.toString(),
-                editPosition: codeToReplaceData.range.start,
-                docContext,
-                codeToReplaceData,
-            }
+            yield { type: 'ignored', response }
             return
         }
 
