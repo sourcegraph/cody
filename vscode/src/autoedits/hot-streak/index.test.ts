@@ -292,7 +292,7 @@ describe('processHotStreakResponses', () => {
                 run_batch_job(sanitized_mu, sanitized_dn, sanitized_ts, sanitized_n, sanitized_h, sanitized_pid)
 
             if __name__ == '__main__':
-                main()`
+                main()\n`
 
         // The second hot streak prediction ends with the last line of the document code.
         // But the codeToReplaceData.range.end is at the start of the last line, which means

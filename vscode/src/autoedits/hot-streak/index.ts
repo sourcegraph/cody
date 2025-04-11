@@ -12,13 +12,6 @@ import type {
 } from '../autoedits-provider'
 import { getHotStreakChunk, getStableSuggestion } from './get-chunk'
 
-/**
- * Number of lines that should be accumulated before attempting a hot streak suggestion.
- * Note: Reaching this number does not guarantee a hot streak suggestion will be emitted.
- * The suggestion should also produce a valid diff that is suitable to be chunked.
- */
-export const HOT_STREAK_LINES_THRESHOLD = 5
-
 export interface ProcessHotStreakResponsesParams {
     responseGenerator: AsyncGenerator<ModelResponse>
     document: vscode.TextDocument
@@ -93,11 +86,7 @@ export async function* processHotStreakResponses({
                 continue
             }
 
-            // TODO: Can we omit trimEnd?
-            if (
-                predictionChunk.text.trimEnd() ===
-                predictionChunk.codeToReplaceData.codeToRewrite.trimEnd()
-            ) {
+            if (predictionChunk.text === predictionChunk.codeToReplaceData.codeToRewrite) {
                 // The adjusted codeToRewrite is the same as the prediction.
                 // We should not emit this prediction
                 yield {

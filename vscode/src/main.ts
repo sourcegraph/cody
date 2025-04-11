@@ -801,7 +801,7 @@ function registerAutoEdits({
                                 chatClient,
                                 autoeditFeatureFlagEnabled,
                                 autoeditInlineRenderingEnabled,
-                                autoeditHotStreakEnabled: true,
+                                autoeditHotStreakEnabled,
                                 autoeditUseWebSocketEnabled,
                                 fixupController,
                                 statusBar,
