@@ -2,7 +2,7 @@ import { createSSEIterator, fetch, isAbortError, isNodeResponse } from '@sourceg
 import {
     AutoeditStopReason,
     type ModelResponse,
-    ModelResponseShared,
+    type ModelResponseShared,
     type SuccessModelResponse,
 } from '../base'
 import type { AutoeditsRequestBody } from '../utils'
