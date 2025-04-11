@@ -43,6 +43,7 @@ class ProtocolTextDocumentTest : BasePlatformTestCase() {
   }
 
   fun test_emptySelection() {
+    // Just a test
     val protocolTextFile = ProtocolTextDocumentExt.fromVirtualEditorFile(myFixture.editor, file)
     assert(protocolTextFile!!.uri.startsWith("file://"))
     assert(protocolTextFile.uri.contains("/cody-test"))
