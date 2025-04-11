@@ -10,6 +10,7 @@ import {
 } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 import { PromptBuilder } from '../../../../prompt-builder'
+import { SMART_APPLY_REPLACE_STRATEGY } from '../../constants'
 import { getSelectionFromModel } from '../selection'
 import {
     LLM_PARAMETERS,
@@ -45,9 +46,9 @@ const DEFAULT_SELECTION_PROMPT = {
         Follow these specific rules:
         - You should think step-by-step, first looking inside the <${SMART_APPLY_TOPICS.FILE_CONTENTS}></${SMART_APPLY_TOPICS.FILE_CONTENTS}> XML tags to see if there is any code that should be replaced.
         - If you find code that should be replaced, respond with the original code enclosed within <${SMART_APPLY_TOPICS.REPLACE}></${SMART_APPLY_TOPICS.REPLACE}> XML tags.
-        - If you cannot find any code that should be replaced, and believe this code should be inserted into the file, respond with "<${SMART_APPLY_TOPICS.REPLACE}>INSERT</${SMART_APPLY_TOPICS.REPLACE}>"
-        - If you believe that the entire contents of the file should be replaced, respond with "<${SMART_APPLY_TOPICS.REPLACE}>ENTIRE_FILE</${SMART_APPLY_TOPICS.REPLACE}>"
-        - If you are unsure, respond with "<${SMART_APPLY_TOPICS.REPLACE}>ENTIRE_FILE</${SMART_APPLY_TOPICS.REPLACE}>". We will execute another prompt to apply the change correctly to this file.
+        - If you cannot find any code that should be replaced, and believe this code should be inserted into the file, respond with "<${SMART_APPLY_TOPICS.REPLACE}>${SMART_APPLY_REPLACE_STRATEGY.INSERT}</${SMART_APPLY_TOPICS.REPLACE}>"
+        - If you believe that the entire contents of the file should be replaced, respond with "<${SMART_APPLY_TOPICS.REPLACE}>${SMART_APPLY_REPLACE_STRATEGY.ENTIRE_FILE}</${SMART_APPLY_TOPICS.REPLACE}>"
+        - If you are unsure, respond with "<${SMART_APPLY_TOPICS.REPLACE}>${SMART_APPLY_REPLACE_STRATEGY.ENTIRE_FILE}</${SMART_APPLY_TOPICS.REPLACE}>". We will execute another prompt to apply the change correctly to this file.
     `,
 }
 
@@ -63,6 +64,11 @@ export class DefaultSelectionProvider implements SmartApplySelectionProvider {
     }: SelectionPromptProviderArgs): Promise<string> {
         const documentRange = new vscode.Range(0, 0, document.lineCount - 1, 0)
         const documentText = PromptString.fromDocumentText(document, documentRange)
+        // If the document is empty, we should insert the code without call to LLM
+        // to decide what to choose as we do with the custom model that returns early
+        if (!documentText.toString()) {
+            return SMART_APPLY_REPLACE_STRATEGY.INSERT.toString()
+        }
         const tokenCount = await TokenCounterUtils.countPromptString(documentText)
 
         if (tokenCount > contextWindow.input) {

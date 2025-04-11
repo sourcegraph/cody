@@ -26,3 +26,8 @@ export const SMART_APPLY_MODEL_IDENTIFIERS = {
     FireworksQwenCodeVariant2: 'fireworks::v1::smart-apply-qwen-variant-2',
     FireworksQwenCodeVariant3: 'fireworks::v1::smart-apply-qwen-variant-3',
 }
+
+export const SMART_APPLY_REPLACE_STRATEGY = {
+    INSERT: ps`INSERT`,
+    ENTIRE_FILE: ps`ENTIRE_FILE`,
+}

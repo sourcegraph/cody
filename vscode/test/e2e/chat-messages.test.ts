@@ -66,7 +66,6 @@ test('chat assistant response code buttons', async ({ page, nap, sidebar }, test
     expect(charCountersAfterPaste).toContain(`"cody_chat_inserted": ${codeToPaste.length}`)
     expect(charCountersAfterPaste).toContain('"cody_chat": 1')
 
-    await actionsDropdown.click()
     await executeCommandInPalette(page, 'cody.command.insertCodeToCursor')
     await nap()
     await executeCommandInPalette(page, 'cody.debug.logCharacterCounters')
@@ -96,6 +95,7 @@ test('chat assistant response code buttons', async ({ page, nap, sidebar }, test
         copyClickedEvent: copyClickedEvent?.parameters,
         insertClickedEvent: insertClickedEvent?.parameters,
     }
+
     // We expect events being logged for the copy and insert button clicks.
     expect(JSON.stringify(chatEventsParameters, null, 2)).toMatchSnapshot()
 })
@@ -108,3 +108,35 @@ async function getLastCharactersCountOutput(testTitle: string) {
 
     return outputChannel.slice(charsCounterIndex)
 }
+
+test('chat assistant smart apply on an empty file without extra newlines', async ({
+    page,
+    nap,
+    sidebar,
+}) => {
+    await sidebarSignin(page, sidebar)
+
+    await sidebarExplorer(page).click()
+    await page.getByRole('treeitem', { name: 'smartApply.py' }).locator('a').dblclick()
+    await page.getByRole('tab', { name: 'smartApply.py' }).hover()
+
+    // Create a chat panel and ask for a code snippet
+    const [chatPanel, chatInput] = await createEmptyChatPanel(page)
+    await chatInput.fill('show me a code snippet')
+
+    await chatInput.press('Enter')
+
+    // Wait for the assistant response
+    const messageRows = chatMessageRows(chatPanel)
+    const assistantRow = messageRows.nth(2)
+    await expect(assistantRow).toContainText('Hello! Here is a code snippet:')
+    await expect(assistantRow).toContainText('def fib(n):')
+
+    // Find and click the smart apply button
+    const smartApplyButton = assistantRow.getByRole('button', { name: 'Apply' })
+    await expect(smartApplyButton).toBeVisible()
+    await smartApplyButton.click()
+
+    const lastLine = await page.locator('.view-lines .view-line').last()
+    expect(lastLine).toContainText('return fib(n-1) + fib(n-2)')
+})
