@@ -7,7 +7,6 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.ReadAction
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.diagnostic.Logger
-import com.intellij.openapi.diagnostic.debug
 import com.intellij.openapi.fileChooser.FileChooserFactory
 import com.intellij.openapi.fileChooser.FileSaverDescriptor
 import com.intellij.openapi.fileEditor.FileEditorManager
@@ -16,6 +15,7 @@ import com.intellij.openapi.project.guessProjectDir
 import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.vfs.VirtualFile
 import com.jetbrains.rd.util.firstOrNull
+import com.sourcegraph.Icons
 import com.sourcegraph.cody.agent.protocol.WebviewCreateWebviewPanelParams
 import com.sourcegraph.cody.agent.protocol_extensions.ProtocolTextDocumentExt
 import com.sourcegraph.cody.agent.protocol_generated.*
@@ -226,7 +226,15 @@ class CodyAgentClient(private val project: Project, private val webview: NativeW
 
     val selectedItem: CompletableFuture<String?> = CompletableFuture()
     params.items?.map { item ->
-      notification.addAction(SimpleDumbAwareEDTAction(item) { selectedItem.complete(item) })
+      notification.addAction(
+          SimpleDumbAwareEDTAction(item) {
+            selectedItem.complete(item)
+            // The API does not allow us to handle multiple triggers of actions for the same
+            // notifications
+            // (either the same action, nor two different actions for a single notification).
+            // Hence, we need to expire the notification on any action.
+            notification.expire()
+          })
     }
     notification.addAction(
         SimpleDumbAwareEDTAction("Dismiss") {
@@ -235,6 +243,7 @@ class CodyAgentClient(private val project: Project, private val webview: NativeW
         })
 
     Notifications.Bus.notify(notification)
+    notification.setIcon(Icons.SourcegraphLogo)
     notification.notify(project)
 
     return selectedItem
