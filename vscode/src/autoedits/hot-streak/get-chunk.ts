@@ -30,12 +30,13 @@ interface StableSuggestionParams {
     prediction: string
     document: vscode.TextDocument
     codeToReplaceData: CodeToReplaceData
+    response: SuccessModelResponse | PartialModelResponse
 }
 
 interface StableSuggestion {
     suggestionText: string
     suggestionRange: vscode.Range
-    firstLineChanged: number
+    firstLineChanged: number | null
 }
 
 /**
@@ -50,6 +51,7 @@ export function getStableSuggestion({
     prediction,
     document,
     codeToReplaceData,
+    response,
 }: StableSuggestionParams): StableSuggestion | null {
     const originalLines = document.getText(range).split('\n')
     const shrinkedPrediction = shrinkPredictionUntilSuffix({
@@ -77,7 +79,9 @@ export function getStableSuggestion({
                 continue
             }
 
-            if (state.diffIncludesChange && state.diffLines.length >= HOT_STREAK_LINES_THRESHOLD) {
+            const meetsLineThreshold =
+                response.type === 'success' || state.diffLines.length >= HOT_STREAK_LINES_THRESHOLD
+            if (state.diffIncludesChange && meetsLineThreshold) {
                 state.canSuggestDiff = true
                 // We already have a change further up in the diff.
                 // As we have now reached an unchanged "stable" hunk, it means we can reliably
@@ -116,12 +120,6 @@ export function getStableSuggestion({
         state.diffLines.push(...parts)
     }
 
-    if (!state.canSuggestDiff) {
-        // Cannot suggest diff. Either because we didn't find a stable unchanged hunk.
-        // Or because we didn't find any changes in the diff.
-        return null
-    }
-
     const suggestionText = state.diffLines.join('\n') + '\n'
     const lineDelta = state.insertedLineCount - state.deletedLineCount
     const suggestionRange = new vscode.Range(
@@ -129,8 +127,11 @@ export function getStableSuggestion({
         range.start.translate(state.diffLines.length + lineDelta)
     )
 
-    if (state.firstLineChanged === null) {
-        throw new Error('Expected unreachable: Found a suggested diff with no changes')
+    // If we have finished the response we always want to emit this response,
+    // even if it includes no changes or if it ends on an change
+    const canSuggest = response.type === 'success' || state.canSuggestDiff
+    if (!canSuggest) {
+        return null
     }
 
     return {
@@ -155,7 +156,7 @@ export interface HotStreakChunk {
     codeToReplaceData: CodeToReplaceData
     docContext: DocumentContext
     documentSnapshot: vscode.TextDocument
-    firstLineChanged: number
+    firstLineChanged: number | null
 }
 
 /**
@@ -201,6 +202,7 @@ export function getHotStreakChunk({
         prediction: remainingPrediction,
         document,
         codeToReplaceData,
+        response,
     })
     if (!suggestion) {
         return null

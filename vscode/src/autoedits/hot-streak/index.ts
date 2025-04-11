@@ -77,6 +77,11 @@ export async function* processHotStreakResponses({
             // Track the number of lines we have processed, this is used to trim the prediction accordingly in the next response.
             processedPrediction = processedPrediction + predictionChunk.text
 
+            if (!predictionChunk.firstLineChanged) {
+                // TODO: Add IgnoredPrediction type so we can propogate this up to autoedits provider
+                throw new Error('Unreachable')
+            }
+
             yield {
                 type: 'suggested',
                 response: {
@@ -113,17 +118,18 @@ export async function* processHotStreakResponses({
             prediction: response.prediction,
             document,
             codeToReplaceData,
+            response,
         })
 
-        if (!suggestion) {
+        if (!suggestion || !suggestion.firstLineChanged) {
             // This is the final response and we haven't been able to emit a hot-streak suggestion.
             // Even though we do not have a useful suggestion, we still want to emit this response.
             // It will be handled downstream, not shown to the user but marked correctly for telemetry purposes
             yield {
-                type: 'suggested',
+                type: 'suggested', // TODO: Emit ignored suggestion instead
                 response,
                 uri: document.uri.toString(),
-                editPosition: position,
+                editPosition: codeToReplaceData.range.start,
                 docContext,
                 codeToReplaceData,
             }

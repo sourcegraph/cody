@@ -315,9 +315,7 @@ describe('getHotStreakChunk', () => {
         `)
     })
 
-    // TODO: Need to allow lines after after when response if finished.
-    // We ignore this because we don't support ending on a change
-    it.skip('prediction with lines added after the range', () => {
+    it('suggests a prediction ending on a change when the response is of type success', () => {
         const { document, position } = documentAndPosition(MOCK_EXISTING_CODE)
         const params = createTestParams({
             document,
@@ -360,18 +358,14 @@ describe('getHotStreakChunk', () => {
                     export function log(message: string) {
                         // Log a message
                         console.log(message)
-                    }\n
+                    }
                 `,
             processedPrediction: '',
+            responseType: 'success',
         })
         const result = getHotStreakChunk(params) as HotStreakChunk
         expect(result.text).toMatchInlineSnapshot(`
-          "export function log(message: string) {
-              // Log a message
-              console.log(message)
-          }
-
-          export function isEvenOrOdd(numberToChange: number): boolean {
+          "export function isEvenOrOdd(numberToChange: number): boolean {
               // Check if numberToChange is 0
               if (numberToChange === 0) {
                   return true
@@ -380,6 +374,36 @@ describe('getHotStreakChunk', () => {
               // Check if numberToChange is 1
               if (numberToChange === 1) {
                   return false
+              }
+
+              // Check if numberToChange is 2
+              if (numberToChange === 2) {
+                  return true
+              }
+
+              // Check if numberToChange is 3
+              if (numberToChange === 3) {
+                  return false
+              }
+
+              // Check if numberToChange is 4
+              if (numberToChange === 4) {
+                  return true
+              }
+
+              // Check if numberToChange is 5
+              if (numberToChange === 5) {
+                  return false
+              }
+
+              throw new Error('Out of RAM')
+          }
+
+          export function log(message: string) {
+              // Log a message
+              console.log(message)
+          }
+
           "
         `)
         expect(result.codeToReplaceData.codeToRewrite).toMatchInlineSnapshot(`
@@ -392,6 +416,30 @@ describe('getHotStreakChunk', () => {
               // Check if numberToChange is 1
               if (numberToChange === 1) {
                   return false
+              }
+
+              // Check if numberToChange is 2
+              if (numberToChange === 2) {
+                  return true
+              }
+
+              // Check if numberToChange is 3
+              if (numberToChange === 3) {
+                  return false
+              }
+
+              // Check if numberToChange is 4
+              if (numberToChange === 4) {
+                  return true
+              }
+
+              // Check if numberToChange is 5
+              if (numberToChange === 5) {
+                  return false
+              }
+
+              throw new Error('Out of RAM')
+          }
           "
         `)
     })
