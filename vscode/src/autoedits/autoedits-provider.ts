@@ -2,6 +2,8 @@ import { type DebouncedFunc, debounce } from 'lodash'
 import { Observable } from 'observable-fns'
 import * as vscode from 'vscode'
 
+import { type Attributes, metrics } from '@opentelemetry/api'
+import type { Histogram } from '@opentelemetry/api'
 import {
     type ChatClient,
     type ClientCapabilities,
@@ -9,9 +11,6 @@ import {
     currentResolvedConfig,
     tokensToChars,
 } from '@sourcegraph/cody-shared'
-
-import { type Attributes, metrics } from '@opentelemetry/api'
-import type { Histogram } from '@opentelemetry/api'
 import type { CompletionBookkeepingEvent } from '../completions/analytics-logger'
 import { ContextRankingStrategy } from '../completions/context/completions-context-ranker'
 import { ContextMixer } from '../completions/context/context-mixer'
@@ -45,6 +44,7 @@ import { FilterPredictionBasedOnRecentEdits } from './filter-prediction-edits'
 import { autoeditsOutputChannelLogger } from './output-channel-logger'
 import { PromptCacheOptimizedV1 } from './prompt/prompt-cache-optimized-v1'
 import { type CodeToReplaceData, getCodeToReplaceData } from './prompt/prompt-utils'
+import { getCurrentFilePath } from './prompt/prompt-utils'
 import type { DecorationInfo } from './renderer/decorators/base'
 import { DefaultDecorator } from './renderer/decorators/default-decorator'
 import { InlineDiffDecorator } from './renderer/decorators/inline-diff-decorator'
@@ -304,6 +304,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
             const { codeToRewrite } = codeToReplaceData
             const requestId = autoeditAnalyticsLogger.createRequest({
                 startedAt,
+                filePath: getCurrentFilePath(document).toString(),
                 codeToReplaceData,
                 position,
                 docContext,
@@ -343,6 +344,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
             }
             autoeditAnalyticsLogger.markAsContextLoaded({
                 requestId,
+                context,
                 payload: { contextSummary },
             })
 

@@ -4,6 +4,7 @@ import * as vscode from 'vscode'
 
 import {
     type AutocompleteContextSnippet,
+    type AutocompleteContextSnippetMetadata,
     type BillingCategory,
     type BillingProduct,
     currentAuthStatusAuthed,
@@ -67,12 +68,13 @@ declare const CompletionLogID: unique symbol
 export type CompletionItemID = string & { _opaque: typeof CompletionItemID }
 declare const CompletionItemID: unique symbol
 
-interface InlineCompletionItemRetrievedContext {
+export interface InlineCompletionItemRetrievedContext {
     identifier: string
     content: string
     filePath: string
     startLine?: number
     endLine?: number
+    metadata?: AutocompleteContextSnippetMetadata
 }
 
 interface InlineContextItemsParams extends GitIdentifiersForFile {
@@ -772,18 +774,25 @@ function getInlineContextItemContext(
         suffix: docContext.completeSuffix.slice(0, MAX_PREFIX_SUFFIX_SIZE_BYTES),
         triggerLine: position.line,
         triggerCharacter: position.character,
-        context: inlineContextParams.context.map(snippet => ({
-            identifier: snippet.identifier,
-            content: snippet.content,
-            filePath: displayPathWithoutWorkspaceFolderPrefix(snippet.uri),
-            metadata: snippet.metadata,
-            ...(snippet.type !== 'base' && {
-                startLine: snippet.startLine,
-                endLine: snippet.endLine,
-            }),
-        })),
+        context: convertAutocompleteContextSnippetForTelemetry(inlineContextParams.context),
     }
 }
+
+export function convertAutocompleteContextSnippetForTelemetry(
+    snippets: AutocompleteContextSnippet[]
+): InlineCompletionItemRetrievedContext[] {
+    return snippets.map(snippet => ({
+        identifier: snippet.identifier,
+        content: snippet.content,
+        filePath: displayPathWithoutWorkspaceFolderPrefix(snippet.uri),
+        metadata: snippet.metadata,
+        ...(snippet.type !== 'base' && {
+            startLine: snippet.startLine,
+            endLine: snippet.endLine,
+        }),
+    }))
+}
+
 function suggestionDocumentDiffTracker(
     interactionId: CompletionAnalyticsID,
     document: vscode.TextDocument,
