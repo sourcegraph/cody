@@ -78,14 +78,16 @@ export function getCurrentFileLongSuggestionPrompt({
         document.uri
     )
 
+    const prefix = ps`${codeToReplaceData.prefixBeforeArea}${codeToReplaceData.prefixInArea}`
     const codeToRewrite = ps`${codeToReplaceData.codeToRewritePrefix}${constants.LONG_SUGGESTION_USER_CURSOR_MARKER}${codeToReplaceData.codeToRewriteSuffix}`
+    const suffix = ps`${codeToReplaceData.suffixInArea}${codeToReplaceData.suffixAfterArea}`
 
     const areaPrompt = joinPromptsWithNewlineSeparator([
-        trimNewLineCharIfExists(codeToReplaceData.prefixInArea),
+        trimNewLineCharIfExists(prefix),
         constants.LONG_SUGGESTION_EDITABLE_REGION_START_MARKER,
         trimNewLineCharIfExists(codeToRewrite),
         constants.LONG_SUGGESTION_EDITABLE_REGION_END_MARKER,
-        trimNewLineCharIfExists(codeToReplaceData.suffixInArea),
+        trimNewLineCharIfExists(suffix),
     ])
 
     const fileWithMarkerPrompt = getCurrentFileContextPromptWithPath(

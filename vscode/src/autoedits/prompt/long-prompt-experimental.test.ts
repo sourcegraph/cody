@@ -56,8 +56,8 @@ describe('LongTermPromptStrategy', () => {
             const tokenBudget: AutoEditsTokenLimit = {
                 prefixTokens: 10,
                 suffixTokens: 10,
-                maxPrefixLinesInArea: 20,
-                maxSuffixLinesInArea: 20,
+                maxPrefixLinesInArea: 4,
+                maxSuffixLinesInArea: 4,
                 codeToRewritePrefixLines: 3,
                 codeToRewriteSuffixLines: 3,
                 contextSpecificTokenLimit: {
@@ -194,10 +194,11 @@ describe('LongTermPromptStrategy', () => {
             const userPromptData = getUserPromptData({ shouldIncludeContext: false })
             const prompt = strategy.getUserPrompt(userPromptData)
             expect(prompt.toString()).toMatchInlineSnapshot(`
-              "Help me finish a coding change. You will see snippets from current open files in my editor, files I have recently viewed, the file I am editing, then a history of my recent codebase changes, then current compiler and linter errors, content I copied from my codebase. You will then rewrite the code between the <|editable_region_start|> and <|editable_region_end|> tags:
+              "Help me finish a coding change. You will see snippets from current open files in my editor, files I have recently viewed, the file I am editing, then a history of my recent codebase changes, then current compiler and linter errors, content I copied from my codebase. You will then rewrite the code between the <|editable_region_start|> and <|editable_region_end|> tags, to match what you think I would do next in the codebase. <|user_cursor_is_here|> indicates the position of the cursor in the the current file. Note: I might have stopped in the middle of typing.
 
 
 
+              The file currently open:
               (\`test.ts\`)
               <file>
               line 37
@@ -242,7 +243,7 @@ describe('LongTermPromptStrategy', () => {
             const userPromptData = getUserPromptData({ shouldIncludeContext: true })
             const prompt = strategy.getUserPrompt(userPromptData)
             expect(prompt.toString()).toMatchInlineSnapshot(`
-              "Help me finish a coding change. You will see snippets from current open files in my editor, files I have recently viewed, the file I am editing, then a history of my recent codebase changes, then current compiler and linter errors, content I copied from my codebase. You will then rewrite the code between the <|editable_region_start|> and <|editable_region_end|> tags:
+              "Help me finish a coding change. You will see snippets from current open files in my editor, files I have recently viewed, the file I am editing, then a history of my recent codebase changes, then current compiler and linter errors, content I copied from my codebase. You will then rewrite the code between the <|editable_region_start|> and <|editable_region_end|> tags, to match what you think I would do next in the codebase. <|user_cursor_is_here|> indicates the position of the cursor in the the current file. Note: I might have stopped in the middle of typing.
 
               Code snippets I have recently viewed, roughly from oldest to newest. Some may be irrelevant to the change:
               <recently_viewed_snippets>
@@ -280,6 +281,7 @@ describe('LongTermPromptStrategy', () => {
               recent edits context 2
               </diff_history>
 
+              The file currently open:
               (\`test.ts\`)
               <file>
               line 37

@@ -36,17 +36,19 @@ export class LongTermPromptStrategy extends AutoeditsUserPromptStrategy {
             getLintErrorsPrompt
         )
 
-        const areaPrompt = getCurrentFileLongSuggestionPrompt({
+        const filePromptWithMarkers = getCurrentFileLongSuggestionPrompt({
             document,
             codeToReplaceDataRaw: codeToReplaceData,
             includeCursor: true,
         })
 
+        const currentFilePrompt = ps`${constants.CURRENT_FILE_INSTRUCTION}\n${filePromptWithMarkers}`
+
         const promptParts = [
             getPromptWithNewline(constants.LONG_SUGGESTION_BASE_USER_PROMPT),
             getPromptWithNewline(recentViewsPrompt),
             getPromptWithNewline(longTermEditsPrompt),
-            getPromptWithNewline(areaPrompt),
+            getPromptWithNewline(currentFilePrompt),
             getPromptWithNewline(lintErrorsPrompt),
             getPromptWithNewline(shortTermEditsPrompt),
             constants.LONG_SUGGESTION_FINAL_USER_PROMPT,
