@@ -35,7 +35,7 @@ testWithGitRemote('initial context - enterprise repo', async ({ page, sidebar, s
     await expect(chatInputMentions(lastChatInput)).toHaveText(['host.example/user/myrepo'])
 })
 
-testWithGitRemote.only('initial context - file', async ({ page, sidebar, server }) => {
+testWithGitRemote('initial context - file', async ({ page, sidebar, server }) => {
     mockEnterpriseRepoMapping(server, 'host.example/user/myrepo')
 
     await sidebarSignin(page, sidebar)
@@ -50,15 +50,15 @@ testWithGitRemote.only('initial context - file', async ({ page, sidebar, server 
     await selectLineRangeInEditorTab(page, 2, 4)
     await expect(chatInputMentions(lastChatInput)).toHaveText([
         'main.c',
-        'current selection',
+        'main.c:2-4',
         'host.example/user/myrepo',
     ])
 
-    // selecting another range keeps 'current selection' mention
+    // selecting another range modifies the 'current selection' mention
     await selectLineRangeInEditorTab(page, 1, 3)
     await expect(chatInputMentions(lastChatInput)).toHaveText([
         'main.c',
-        'current selection',
+        'main.c:1-3',
         'host.example/user/myrepo',
     ])
 
