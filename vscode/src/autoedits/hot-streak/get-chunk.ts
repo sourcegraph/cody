@@ -19,6 +19,7 @@ import { trimPredictionToLastFullLine } from './utils'
  */
 export const HOT_STREAK_LINES_THRESHOLD = 5
 
+// Helper enum for code readability when handling slices
 enum SliceKind {
     Unchanged = 0,
     Inserted = 1,
@@ -75,7 +76,8 @@ export function getStableSuggestion({
             state.diffLines.push(...parts)
 
             if (parts.every(part => part.length === 0)) {
-                // Empty unchanged hunk. This is not a stable hunk.
+                // Empty unchanged hunk (e.g. an empty line)
+                // This isn't stable enough to emit a suggestion
                 continue
             }
 

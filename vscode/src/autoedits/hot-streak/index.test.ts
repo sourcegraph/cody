@@ -367,7 +367,7 @@ describe('processHotStreakResponses', () => {
         }
 
         // Only the first change is returned, the rest is unchanged
-        expect(results.length).toBe(1)
+        expect(results.length).toBe(2)
 
         const firstResponse = results[0] as SuggestedPredictionResult
         expect(firstResponse.type).toBe('suggested')
@@ -383,7 +383,12 @@ describe('processHotStreakResponses', () => {
 
               args = parser.parse_args()
 
+
           "
         `)
+
+        // The second response is ignored as there is no change in the diff
+        const secondResponse = results[1] as SuggestedPredictionResult
+        expect(secondResponse.type).toBe('ignored')
     })
 })

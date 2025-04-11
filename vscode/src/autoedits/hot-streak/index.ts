@@ -93,6 +93,24 @@ export async function* processHotStreakResponses({
                 continue
             }
 
+            // TODO: Can we omit trimEnd?
+            if (
+                predictionChunk.text.trimEnd() ===
+                predictionChunk.codeToReplaceData.codeToRewrite.trimEnd()
+            ) {
+                // The adjusted codeToRewrite is the same as the prediction.
+                // We should not emit this prediction
+                yield {
+                    type: 'ignored',
+                    response: {
+                        ...response,
+                        prediction: predictionChunk.text,
+                        stopReason: AutoeditStopReason.HotStreak,
+                    },
+                }
+                continue
+            }
+
             yield {
                 type: 'suggested',
                 response: {
