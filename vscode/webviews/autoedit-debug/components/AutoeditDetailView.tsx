@@ -198,7 +198,7 @@ export const AutoeditDetailView: FC<{
                     </TabsPrimitive.Content>
 
                     <TabsPrimitive.Content value="feedback" className="tw-space-y-8">
-                        <FeedbackSection entry={entry} vscode={vscode} />
+                        <FeedbackSection entry={entry} />
                     </TabsPrimitive.Content>
                 </div>
             </TabsPrimitive.Root>
