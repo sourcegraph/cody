@@ -400,7 +400,7 @@ export class AutoEditsDefaultRendererManager
             this.requestManager.lastAcceptedHotStreakId = activeRequest.hotStreakId
 
             editor.selection = new vscode.Selection(nextCursorPosition, nextCursorPosition)
-            editor.revealRange(editor.selection, vscode.TextEditorRevealType.InCenterIfOutsideViewport)
+            editor.revealRange(editor.selection, vscode.TextEditorRevealType.Default)
         }
     }
 

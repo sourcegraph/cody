@@ -6,8 +6,7 @@ import type * as vscode from 'vscode'
 import { AutoeditStopReason, type ModelResponse } from '../adapters/base'
 import type { AutoeditHotStreakID } from '../analytics-logger'
 import type { AbortedPredictionResult, SuggestedPredictionResult } from '../autoedits-provider'
-import { getSuggestedDiffForChunk } from './utils/suggested-diff'
-import { trimPredictionForHotStreak } from './utils/trim-prediction'
+import { getHotStreakChunk, getStableSuggestion } from './get-chunk'
 
 /**
  * Number of lines that should be accumulated before attempting a hot streak suggestion.
@@ -55,7 +54,7 @@ export async function* processHotStreakResponses({
               response.type === 'partial'
 
         if (options.hotStreakEnabled && canHotStreak && response.type !== 'aborted') {
-            const predictionChunk = trimPredictionForHotStreak({
+            const predictionChunk = getHotStreakChunk({
                 latestFullPrediction: response.prediction,
                 processedPrediction,
                 document,
@@ -66,21 +65,7 @@ export async function* processHotStreakResponses({
             })
 
             if (!predictionChunk) {
-                // No complete lines yet, continue
-                continue
-            }
-
-            const currentLineCount = predictionChunk.text.split('\n').length - 1 // excluding the final new line
-            const reachedHotStreakThreshold = currentLineCount > HOT_STREAK_LINES_THRESHOLD
-            if (response.type === 'partial' && !reachedHotStreakThreshold) {
-                // We haven't reached the hot streak threshold and we still have more lines to process
-                // Continue streaming
-                continue
-            }
-
-            const suggestedDiff = getSuggestedDiffForChunk(response, predictionChunk)
-            if (!suggestedDiff) {
-                // We can't suggest this diff, keep streaming and try again with the next response
+                // Cannot emit a prediction
                 continue
             }
 
@@ -89,14 +74,13 @@ export async function* processHotStreakResponses({
                 hotStreakId = uui.v4() as AutoeditHotStreakID
             }
 
-            // We use the first line of the diff as the next cursor position.
-            // This is useful so that we can support "jumping" to this suggestion from a different part of the document
-            const editPosition = predictionChunk.documentSnapshot.lineAt(
-                suggestedDiff.firstChange.lineNumber
-            ).range.end
-
             // Track the number of lines we have processed, this is used to trim the prediction accordingly in the next response.
             processedPrediction = processedPrediction + predictionChunk.text
+
+            if (!predictionChunk.firstLineChanged) {
+                // TODO: Add IgnoredPrediction type so we can propogate this up to autoedits provider
+                throw new Error('Unreachable')
+            }
 
             yield {
                 type: 'suggested',
@@ -106,7 +90,10 @@ export async function* processHotStreakResponses({
                     stopReason: AutoeditStopReason.HotStreak,
                 },
                 uri: predictionChunk.documentSnapshot.uri.toString(),
-                editPosition,
+                // We use the first line of the diff as the next cursor position.
+                // This is useful so that we can support "jumping" to this suggestion from a different part of the document
+                editPosition: predictionChunk.documentSnapshot.lineAt(predictionChunk.firstLineChanged)
+                    .range.end,
                 docContext: predictionChunk.docContext,
                 codeToReplaceData: predictionChunk.codeToReplaceData,
                 hotStreakId,
@@ -126,22 +113,23 @@ export async function* processHotStreakResponses({
             return
         }
 
-        const suggestedDiff = getSuggestedDiffForChunk(response, {
-            documentSnapshot: document,
-            text: response.prediction,
+        const suggestion = getStableSuggestion({
+            range: codeToReplaceData.range,
+            prediction: response.prediction,
+            document,
             codeToReplaceData,
-            docContext,
+            response,
         })
 
-        if (!suggestedDiff) {
+        if (!suggestion || !suggestion.firstLineChanged) {
             // This is the final response and we haven't been able to emit a hot-streak suggestion.
-            // Even though we do not have a suggested diff, we still want to emit this suggestion.
+            // Even though we do not have a useful suggestion, we still want to emit this response.
             // It will be handled downstream, not shown to the user but marked correctly for telemetry purposes
             yield {
-                type: 'suggested',
+                type: 'suggested', // TODO: Emit ignored suggestion instead
                 response,
                 uri: document.uri.toString(),
-                editPosition: position,
+                editPosition: codeToReplaceData.range.start,
                 docContext,
                 codeToReplaceData,
             }
@@ -158,7 +146,7 @@ export async function* processHotStreakResponses({
             // This is so this can still be used as a "next cursor" prediction source for a scenario where we have
             // a long rewrite window but the only change is at the bottom, far away from the users' cursor.
             // In these scenarios we should show a next cursor suggestion instead of the code suggestion.
-            editPosition: document.lineAt(suggestedDiff.firstChange.lineNumber).range.end,
+            editPosition: document.lineAt(suggestion.firstLineChanged).range.end,
         }
     }
 }
