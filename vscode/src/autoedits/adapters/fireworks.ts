@@ -12,6 +12,8 @@ import {
 } from './utils'
 
 export class FireworksAdapter implements AutoeditsModelAdapter {
+    private readonly defaultTimeoutMs = 5000
+
     async getModelResponse(option: AutoeditModelOptions): Promise<AsyncGenerator<ModelResponse>> {
         const requestBody = this.getMessageBody(option)
         try {
@@ -40,7 +42,7 @@ export class FireworksAdapter implements AutoeditsModelAdapter {
                             return response.choices?.[0]?.text ?? ''
                         },
                     }),
-                    option.timeoutMs,
+                    option.timeoutMs ?? this.defaultTimeoutMs,
                     abortController
                 ),
                 error => {
@@ -80,6 +82,8 @@ export class FireworksAdapter implements AutoeditsModelAdapter {
                 type: 'content',
                 content: options.codeToRewrite,
             },
+            rewrite_speculation: true,
+            adaptive_speculation: true,
             user: options.userId || undefined,
         }
 

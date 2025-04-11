@@ -42,7 +42,8 @@ import { autoeditsOnboarding } from './autoedit-onboarding'
 import { autoeditsProviderConfig } from './autoedits-config'
 import { FilterPredictionBasedOnRecentEdits } from './filter-prediction-edits'
 import { autoeditsOutputChannelLogger } from './output-channel-logger'
-import { PromptCacheOptimizedV1 } from './prompt/prompt-cache-optimized-v1'
+import type { AutoeditsUserPromptStrategy } from './prompt/base'
+import { createPromptProvider } from './prompt/create-prompt-provider'
 import { type CodeToReplaceData, getCodeToReplaceData } from './prompt/prompt-utils'
 import { getCurrentFilePath } from './prompt/prompt-utils'
 import type { DecorationInfo } from './renderer/decorators/base'
@@ -111,7 +112,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
     private readonly requestManager = new RequestManager()
     public readonly smartThrottleService = new SmartThrottleService()
 
-    private readonly promptStrategy = new PromptCacheOptimizedV1()
+    private readonly promptStrategy: AutoeditsUserPromptStrategy
     public readonly filterPrediction = new FilterPredictionBasedOnRecentEdits()
     private readonly contextMixer = new ContextMixer({
         strategyFactory: new DefaultContextStrategyFactory(Observable.of(AUTOEDIT_CONTEXT_STRATEGY)),
@@ -136,6 +137,11 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
         autoeditsOnboarding.markUserAsAutoEditBetaEnrolled()
 
         autoeditsOutputChannelLogger.logDebug('Constructor', 'Constructing AutoEditsProvider')
+
+        this.promptStrategy = createPromptProvider({
+            promptProvider: autoeditsProviderConfig.promptProvider,
+        })
+
         this.modelAdapter = createAutoeditsModelAdapter({
             providerName: autoeditsProviderConfig.provider,
             isChatModel: autoeditsProviderConfig.isChatModel,
