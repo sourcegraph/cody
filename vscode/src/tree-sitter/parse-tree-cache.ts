@@ -52,8 +52,20 @@ export async function parseDocument(document: TextDocument): Promise<void> {
     updateParseTreeCache(document, parser)
 }
 
+let parsingTime: number = 0;
+
 export function updateParseTreeCache(document: TextDocument, parser: WrappedParser): void {
+    // const start2 = process.hrtime()
+    const start = performance.now();
     const tree = parser.safeParse(document.getText())
+    // const end2 = process.hrtime(start2);
+    const end = performance.now();
+    const time = end - start;
+    
+    parsingTime += time;
+   // console.error(`Execution time: ${time} milliseconds (${end2[0] * 1000 + end2[1] / 1000000}) for ${document.uri.toString()} Total time: ${parsingTime}`);
+    
+
     parseTreesPerFile.set(document.uri.toString(), tree)
 }
 
@@ -122,5 +134,11 @@ export function parseAllVisibleDocuments(): Promise<unknown> {
     for (const editor of vscode.window.visibleTextEditors) {
         promises.push(parseDocument(editor.document))
     }
-    return Promise.all(promises)
+    
+    let promisesAll = Promise.all(promises)
+
+    console.error(`Total parsing time: ${parsingTime} ms.`);
+    parsingTime = 0;
+
+    return promisesAll
 }
