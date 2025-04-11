@@ -9,6 +9,7 @@ data class ClientCapabilities(
   val autoedit: AutoeditEnum? = null, // Oneof: none, enabled
   val autoeditInlineDiff: AutoeditInlineDiffEnum? = null, // Oneof: none, insertions-only, deletions-only, insertions-and-deletions
   val autoeditAsideDiff: AutoeditAsideDiffEnum? = null, // Oneof: none, image, diff
+  val autoeditSuggestToEnroll: AutoeditSuggestToEnrollEnum? = null, // Oneof: none, enabled
   val chat: ChatEnum? = null, // Oneof: none, streaming
   val git: GitEnum? = null, // Oneof: none, enabled
   val progressBars: ProgressBarsEnum? = null, // Oneof: none, enabled
@@ -55,6 +56,11 @@ data class ClientCapabilities(
     @SerializedName("none") None,
     @SerializedName("image") Image,
     @SerializedName("diff") Diff,
+  }
+
+  enum class AutoeditSuggestToEnrollEnum {
+    @SerializedName("none") None,
+    @SerializedName("enabled") Enabled,
   }
 
   enum class ChatEnum {

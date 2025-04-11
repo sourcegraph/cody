@@ -6,6 +6,7 @@ import { type ClientConfiguration, CodyIDE } from '@sourcegraph/cody-shared'
 import { defaultConfigurationValue } from '../../vscode/src/configuration-keys'
 
 import type { ClientInfo, ExtensionConfiguration } from './protocol-alias'
+import * as vscode_shim from './vscode-shim'
 
 export class AgentWorkspaceConfiguration implements vscode.WorkspaceConfiguration {
     constructor(
@@ -198,6 +199,6 @@ export class AgentWorkspaceConfiguration implements vscode.WorkspaceConfiguratio
         _overrideInLanguage?: boolean | undefined
     ): Promise<void> {
         this.put(section, value)
-        return Promise.resolve()
+        return vscode_shim.onDidChangeConfiguration.cody_fireAsync({ affectsConfiguration: () => true })
     }
 }

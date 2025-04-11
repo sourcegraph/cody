@@ -106,6 +106,7 @@ import type {
 } from './protocol-alias'
 import * as vscode_shim from './vscode-shim'
 import { vscodeLocation, vscodeRange } from './vscode-type-converters'
+import { extensionConfiguration } from './vscode-shim'
 
 /** The VS Code extension's `activate` function. */
 type ExtensionActivate = (
@@ -379,6 +380,12 @@ export class Agent extends MessageHandler implements ExtensionClient {
     ) {
         super(params.conn)
         vscode_shim.setAgent(this)
+
+        vscode_shim.onDidChangeConfiguration.event(() => {
+            const config = vscode_shim.workspace.getConfiguration()
+            this.notify('extensionConfiguration/didUpdate', JSON.stringify((config as any).dictionary))
+        })
+
         this.registerRequest('initialize', async clientInfo => {
             vscode.languages.registerFoldingRangeProvider(
                 '*',
@@ -1536,6 +1543,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
         config: ExtensionConfiguration,
         params?: { forceAuthentication: boolean }
     ): Promise<AuthStatus> {
+        if (config == extensionConfiguration) return firstNonPendingAuthStatus()
         const isAuthChange = vscode_shim.isTokenOrEndpointChange(config)
         vscode_shim.setExtensionConfiguration(config)
 
