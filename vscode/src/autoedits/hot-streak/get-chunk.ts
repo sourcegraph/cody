@@ -102,29 +102,23 @@ export function getStableSuggestion({
         if (kind === SliceKind.Deleted) {
             // Deleted hunk.
             // Track the deleted line count, but do not add it to the diffLines
-            state.insertedLineCount += parts.length
+            state.deletedLineCount += parts.length
             continue
         }
 
         if (kind === SliceKind.Inserted) {
             // Inserted hunk.
             // Track the inserted line count and add it to the diffLines
-            state.deletedLineCount += parts.length
+            state.insertedLineCount += parts.length
             state.diffLines.push(...parts)
-            continue
         }
-
-        // Inserted hunk.
-        // Track the inserted line count and add it to the diffLines
-        state.deletedLineCount += parts.length
-        state.diffLines.push(...parts)
     }
 
     const suggestionText = state.diffLines.join('\n') + '\n'
     const lineDelta = state.insertedLineCount - state.deletedLineCount
     const suggestionRange = new vscode.Range(
         range.start,
-        range.start.translate(state.diffLines.length + lineDelta)
+        range.start.translate(state.diffLines.length - lineDelta)
     )
 
     // If we have finished the response we always want to emit this response,
