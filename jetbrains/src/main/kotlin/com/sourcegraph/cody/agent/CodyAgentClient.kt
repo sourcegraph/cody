@@ -2,7 +2,6 @@ package com.sourcegraph.cody.agent
 
 import com.intellij.notification.Notification
 import com.intellij.notification.NotificationType
-import com.intellij.notification.Notifications
 import com.intellij.openapi.actionSystem.*
 import com.intellij.openapi.actionSystem.impl.SimpleDataContext
 import com.intellij.openapi.application.ApplicationManager
@@ -246,7 +245,6 @@ class CodyAgentClient(private val project: Project, private val webview: NativeW
           selectedItem.complete(null)
         })
 
-    Notifications.Bus.notify(notification)
     notification.setIcon(Icons.SourcegraphLogo)
     notification.notify(project)
 
