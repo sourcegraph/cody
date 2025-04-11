@@ -29,7 +29,11 @@ describe('AutoEditsDefaultRendererManager', () => {
             maxSuffixLength: 100,
         })
         const codeToReplaceData = getCodeToReplaceForRenderer`${documentText}`
-        const decorationInfo = getDecorationInfoFromPrediction(document, prediction, codeToReplaceData)
+        const decorationInfo = getDecorationInfoFromPrediction(
+            document,
+            prediction,
+            codeToReplaceData.range
+        )
         return {
             requestId: 'test-request-id' as AutoeditRequestID,
             prediction,

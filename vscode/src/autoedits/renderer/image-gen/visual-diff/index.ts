@@ -1,6 +1,6 @@
 import type * as vscode from 'vscode'
 import type { DecorationInfo } from '../../decorators/base'
-import { isOnlyAddingTextForModifiedLines } from '../../diff-utils'
+import { isOnlyAddingTextForModifiedLines, sortDiff } from '../../diff-utils'
 import { getDiffTargetPosition } from '../utils'
 import { blockify } from './blockify'
 import type { DiffMode, VisualDiff, VisualDiffLine } from './types'
@@ -32,30 +32,7 @@ export function makeVisualDiff(
  * It also supports transforming the diff into a unified diff.
  */
 export function prepareVisualDiff(decorationInfo: DecorationInfo, mode: DiffMode): VisualDiff {
-    const sortedDiff = [
-        ...decorationInfo.addedLines,
-        ...decorationInfo.modifiedLines,
-        ...decorationInfo.unchangedLines,
-        ...decorationInfo.removedLines,
-    ].sort((a, b) => {
-        const aLine = a.type === 'removed' ? a.originalLineNumber : a.modifiedLineNumber
-        const bLine = b.type === 'removed' ? b.originalLineNumber : b.modifiedLineNumber
-
-        if (aLine === bLine) {
-            // We have a conflict, this is because the same line number has been used for both added and removed lines.
-            // To make a visually appealing diff, we need to ensure that we order these conflicts like so:
-            // removed -> added -> modified -> unchanged
-            const typeOrder = {
-                removed: 0,
-                added: 1,
-                modified: 2,
-                unchanged: 3,
-            }
-            return typeOrder[a.type] - typeOrder[b.type]
-        }
-
-        return aLine - bLine
-    })
+    const sortedDiff = sortDiff(decorationInfo)
 
     // We do not care about unchanged lines above or below the first relevant lines
     const firstRelevantLine = sortedDiff.findIndex(line => line.type !== 'unchanged')

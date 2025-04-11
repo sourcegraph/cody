@@ -5,7 +5,7 @@ import { TextDocument } from 'vscode-languageserver-textdocument'
 
 import { type CompletionResponse, testFileUri } from '@sourcegraph/cody-shared'
 
-import { wrapVSCodeTextDocument } from '../testutils/textDocument'
+import { wrapVSCodeTextDocument } from '../editor/utils/virtual-text-document'
 import { Uri } from '../testutils/uri'
 
 export * from '../tree-sitter/test-helpers'

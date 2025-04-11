@@ -19,6 +19,7 @@ import { getDecorationInfo } from '../renderer/diff-utils'
 
 import { AutoeditAnalyticsLogger } from './analytics-logger'
 import {
+    type AutoeditCacheID,
     type AutoeditRequestID,
     autoeditAcceptReason,
     autoeditDiscardReason,
@@ -45,7 +46,7 @@ describe('AutoeditAnalyticsLogger', () => {
         maxSuffixLength: 1000,
     })
 
-    const codeToReplaceData = getCodeToReplaceData({
+    const codeToReplace = getCodeToReplaceData({
         docContext,
         position,
         document,
@@ -77,7 +78,7 @@ describe('AutoeditAnalyticsLogger', () => {
             docContext,
             document,
             position,
-            codeToReplaceData,
+            codeToReplaceData: codeToReplace,
             payload: {
                 languageId: 'typescript',
                 model: 'autoedit-model',
@@ -112,7 +113,11 @@ describe('AutoeditAnalyticsLogger', () => {
 
         autoeditLogger.markAsLoaded({
             requestId,
+            cacheId: uuid.v4() as AutoeditCacheID,
             prompt: modelOptions.prompt,
+            codeToReplaceData: codeToReplace,
+            docContext,
+            editPosition: position,
             modelResponse: {
                 type: 'success',
                 stopReason: AutoeditStopReason.RequestFinished,
@@ -126,6 +131,7 @@ describe('AutoeditAnalyticsLogger', () => {
                 prediction,
                 source: autoeditSource.network,
                 isFuzzyMatch: false,
+                codeToRewrite: 'Code to rewrite',
             },
         })
 
@@ -199,7 +205,7 @@ describe('AutoeditAnalyticsLogger', () => {
               "category": "billable",
               "product": "cody",
             },
-            "interactionID": "stable-id-for-tests-2",
+            "interactionID": "stable-id-for-tests-3",
             "metadata": {
               "acceptReason": 1,
               "contextSummary.duration": 1.234,
@@ -251,7 +257,7 @@ describe('AutoeditAnalyticsLogger', () => {
                 "unchangedLines": 1,
               },
               "gatewayLatency": undefined,
-              "id": "stable-id-for-tests-2",
+              "id": "stable-id-for-tests-3",
               "inlineCompletionStats": undefined,
               "languageId": "typescript",
               "model": "autoedit-model",

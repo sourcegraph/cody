@@ -11,9 +11,9 @@ import {
 } from '@sourcegraph/cody-shared'
 
 import { telemetryRecorder } from '@sourcegraph/cody-shared'
+import { withPosixPaths } from '../editor/utils/virtual-text-document'
 import { mockLocalStorage } from '../services/LocalStorageProvider'
 import { DEFAULT_VSCODE_SETTINGS } from '../testutils/mocks'
-import { withPosixPaths } from '../testutils/textDocument'
 import { SupportedLanguage } from '../tree-sitter/grammars'
 import { updateParseTreeCache } from '../tree-sitter/parse-tree-cache'
 import { getParser, resetParsersCache } from '../tree-sitter/parser'

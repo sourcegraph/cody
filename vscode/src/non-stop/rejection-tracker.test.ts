@@ -2,7 +2,7 @@ import { testFileUri } from '@sourcegraph/cody-shared'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import * as vscode from 'vscode'
 import { document } from '../completions/test-helpers'
-import { range } from '../testutils/textDocument'
+import { range } from '../editor/utils/virtual-text-document'
 import { trackRejection } from './rejection-tracker'
 
 const singleCharacterChange: vscode.TextDocumentContentChangeEvent = {

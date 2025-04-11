@@ -2,7 +2,7 @@ import type { EndOfLine, Position, Range, TextLine, TextDocument as VSCodeTextDo
 import type { TextDocument } from 'vscode-languageserver-textdocument'
 import { URI } from 'vscode-uri'
 
-import { vsCodeMocks } from './mocks'
+import { vsCodeMocks } from '../../testutils/mocks'
 
 export function wrapVSCodeTextDocument(doc: TextDocument): VSCodeTextDocument {
     const uri = URI.parse(doc.uri)
@@ -27,13 +27,17 @@ export function wrapVSCodeTextDocument(doc: TextDocument): VSCodeTextDocument {
             const line = typeof position === 'number' ? position : position.line
             const lines = doc.getText().split('\n')
             const text = lines[line]
-            return createTextLine(text, new vsCodeMocks.Range(line, 0, line, text.length))
+            const isLastLine = line === this.lineCount - 1
+            return createTextLine(text, new vsCodeMocks.Range(line, 0, line, text.length), isLastLine)
         },
         getWordRangeAtPosition(): Range {
             throw new Error('Method not implemented.')
         },
-        validateRange(): Range {
-            throw new Error('Method not implemented.')
+        validateRange(range: Range): Range {
+            return new vsCodeMocks.Range(
+                this.validatePosition(range.start),
+                this.validatePosition(range.end)
+            )
         },
         validatePosition(position: Position): Position {
             const line = Math.max(0, Math.min(position.line, this.lineCount - 1))
@@ -48,12 +52,14 @@ export function wrapVSCodeTextDocument(doc: TextDocument): VSCodeTextDocument {
     }
 }
 
-function createTextLine(text: string, range: Range): TextLine {
+function createTextLine(text: string, range: Range, isLastLine: boolean): TextLine {
     return {
         lineNumber: range.start.line,
         text,
         range,
-        rangeIncludingLineBreak: range.with({ end: range.end.translate({ characterDelta: 1 }) }),
+        rangeIncludingLineBreak: isLastLine
+            ? range
+            : new vsCodeMocks.Range(range.start.line, 0, range.end.line + 1, 0),
 
         firstNonWhitespaceCharacterIndex: text.match(/^\s*/)![0].length,
         isEmptyOrWhitespace: /^\s*$/.test(text),

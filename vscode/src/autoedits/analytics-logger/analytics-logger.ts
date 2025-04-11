@@ -19,7 +19,7 @@ import { charactersLogger } from '../../services/CharactersLogger'
 import { upstreamHealthProvider } from '../../services/UpstreamHealthProvider'
 import { captureException, shouldErrorBeReported } from '../../services/sentry/sentry'
 import { splitSafeMetadata } from '../../services/telemetry-v2'
-import type { AutoeditsPrompt, SuccessModelResponse } from '../adapters/base'
+import type { AutoeditsPrompt, PartialModelResponse, SuccessModelResponse } from '../adapters/base'
 import { autoeditsOutputChannelLogger } from '../output-channel-logger'
 import type { CodeToReplaceData } from '../prompt/prompt-utils'
 import type { DecorationInfo } from '../renderer/decorators/base'
@@ -31,7 +31,9 @@ import { autoeditIdRegistry } from './suggestion-id-registry'
 import {
     type AcceptedState,
     type AutoeditAcceptReasonMetadata,
+    type AutoeditCacheID,
     type AutoeditDiscardReasonMetadata,
+    type AutoeditHotStreakID,
     type AutoeditRejectReasonMetadata,
     type AutoeditRequestID,
     type ContextLoadedState,
@@ -158,14 +160,26 @@ export class AutoeditAnalyticsLogger {
      */
     public markAsLoaded({
         requestId,
+        cacheId,
+        hotStreakId,
         prompt,
         payload,
         modelResponse,
+        codeToReplaceData,
+        docContext,
+        editPosition,
     }: {
-        modelResponse: SuccessModelResponse
+        modelResponse: SuccessModelResponse | PartialModelResponse
+        codeToReplaceData: CodeToReplaceData
+        docContext: DocumentContext
         requestId: AutoeditRequestID
+        cacheId: AutoeditCacheID
+        hotStreakId?: AutoeditHotStreakID
         prompt: AutoeditsPrompt
-        payload: Required<Pick<LoadedState['payload'], 'source' | 'isFuzzyMatch' | 'prediction'>>
+        editPosition: vscode.Position
+        payload: Required<
+            Pick<LoadedState['payload'], 'source' | 'isFuzzyMatch' | 'prediction' | 'codeToRewrite'>
+        >
     }): void {
         const { prediction, source, isFuzzyMatch } = payload
         const stableId = autoeditIdRegistry.getOrCreate(prompt, prediction)
@@ -176,6 +190,11 @@ export class AutoeditAnalyticsLogger {
                 ...request,
                 loadedAt,
                 modelResponse,
+                codeToReplaceData,
+                docContext,
+                cacheId,
+                hotStreakId,
+                editPosition,
                 payload: {
                     ...request.payload,
                     id: stableId,
@@ -183,7 +202,8 @@ export class AutoeditAnalyticsLogger {
                     prediction: isDotComAuthed() && prediction.length < 300 ? prediction : undefined,
                     source,
                     isFuzzyMatch,
-                    responseHeaders: modelResponse.responseHeaders,
+                    responseHeaders:
+                        'responseHeaders' in modelResponse ? modelResponse.responseHeaders : {},
                     latency: Math.floor(loadedAt - request.startedAt),
                 },
             }

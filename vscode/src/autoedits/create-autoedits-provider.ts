@@ -51,6 +51,7 @@ interface AutoeditsItemProviderArgs {
     chatClient: ChatClient
     autoeditFeatureFlagEnabled: boolean
     autoeditInlineRenderingEnabled: boolean
+    autoeditHotStreakEnabled: boolean
     autoeditUseWebSocketEnabled: boolean
     fixupController: FixupController
     statusBar: CodyStatusBar
@@ -63,6 +64,7 @@ export function createAutoEditsProvider({
     chatClient,
     autoeditFeatureFlagEnabled,
     autoeditInlineRenderingEnabled,
+    autoeditHotStreakEnabled,
     autoeditUseWebSocketEnabled,
     fixupController,
     statusBar,
@@ -111,6 +113,7 @@ export function createAutoEditsProvider({
             const provider = new AutoeditsProvider(chatClient, fixupController, statusBar, {
                 shouldRenderInline,
                 allowUsingWebSocket: autoeditUseWebSocketEnabled,
+                hotStreakEnabled: autoeditHotStreakEnabled,
             })
             return [
                 vscode.commands.registerCommand('cody.command.autoedit-manual-trigger', async () =>
