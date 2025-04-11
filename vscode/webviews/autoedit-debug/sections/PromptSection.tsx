@@ -64,7 +64,7 @@ export const PromptSection: FC<{ entry: AutoeditRequestDebugState }> = ({ entry 
     // Format the prompt based on its type
     function formatPrompt(): string {
         if (!requestBody) {
-            return 'No prompt data available'
+            return 'Prompt is only available for loaded requests'
         }
 
         try {
@@ -149,7 +149,17 @@ export const PromptSection: FC<{ entry: AutoeditRequestDebugState }> = ({ entry 
 
     // Don't render anything if there's no prompt data
     if (!modelResponse?.requestBody) {
-        return null
+        return (
+            <div className="tw-mb-4 tw-flex tw-flex-col tw-h-full">
+                <div className="tw-flex tw-justify-end tw-items-center tw-mb-2">
+                    <div className="tw-flex tw-space-x-2">
+                        <div className="tw-text-xs tw-text-gray-600">
+                            Prompt is only available for loaded requests
+                        </div>
+                    </div>
+                </div>
+            </div>
+        )
     }
 
     // CSS classes for prompt text - always using full height now
