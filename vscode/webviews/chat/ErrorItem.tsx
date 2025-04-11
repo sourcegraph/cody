@@ -1,6 +1,6 @@
 import React, { useCallback, useMemo } from 'react'
 
-import { type ChatError, RateLimitError } from '@sourcegraph/cody-shared'
+import { type ChatError, FeatureFlag, RateLimitError } from '@sourcegraph/cody-shared'
 import { Tooltip, TooltipContent, TooltipTrigger } from '../components/shadcn/ui/tooltip'
 import type {
     HumanMessageInitialContextInfo as InitialContextInfo,
@@ -12,6 +12,7 @@ import type { ApiPostMessage } from '../Chat'
 
 import { Button } from '../components/shadcn/ui/button'
 import { createWebviewTelemetryRecorder } from '../utils/telemetry'
+import { useFeatureFlag } from '../utils/useFeatureFlags'
 import styles from './ErrorItem.module.css'
 
 /**
@@ -138,14 +139,29 @@ const RateLimitErrorItem: React.FunctionComponent<{
         [postMessage, tier, telemetryRecorder]
     )
 
+    let ctaText = canUpgrade ? 'Upgrade to Cody Pro' : 'Unable to Send Message'
+
+    const fallbackToFlash = useFeatureFlag(FeatureFlag.FallbackToFlash)
+
+    if (fallbackToFlash) {
+        if (userInfo?.isCodyProUser) {
+            ctaText = 'Upgrade to Cody Enterprise'
+        } else if (!canUpgrade) {
+            ctaText = 'Usage limit of premium models reached, switching the model to Gemini Flash.'
+        }
+    }
+
     return (
         <div className={styles.errorItem}>
             {canUpgrade && <div className={styles.icon}>⚡️</div>}
             <div className={styles.body}>
                 <header>
-                    <h1>{canUpgrade ? 'Upgrade to Cody Pro' : 'Unable to Send Message'}</h1>
+                    <h1>{ctaText}</h1>
                     <p>
                         {error.userMessage}
+                        {fallbackToFlash &&
+                            !canUpgrade &&
+                            ' You can continue using Gemini Flash, or other standard models.'}
                         {canUpgrade &&
                             ' Upgrade to Cody Pro for unlimited autocomplete suggestions, and increased limits for chat messages and commands.'}
                     </p>
