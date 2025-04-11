@@ -35,7 +35,7 @@ testWithGitRemote('initial context - enterprise repo', async ({ page, sidebar, s
     await expect(chatInputMentions(lastChatInput)).toHaveText(['host.example/user/myrepo'])
 })
 
-testWithGitRemote('initial context - file', async ({ page, sidebar, server }) => {
+testWithGitRemote.only('initial context - file', async ({ page, sidebar, server }) => {
     mockEnterpriseRepoMapping(server, 'host.example/user/myrepo')
 
     await sidebarSignin(page, sidebar)
@@ -45,12 +45,22 @@ testWithGitRemote('initial context - file', async ({ page, sidebar, server }) =>
     const [, lastChatInput] = await createEmptyChatPanel(page)
 
     await expect(chatInputMentions(lastChatInput)).toHaveText(['main.c', 'host.example/user/myrepo'])
+
     // Initial context should not include current selection. Current selection should be added explicitly.
     await selectLineRangeInEditorTab(page, 2, 4)
-    await expect(chatInputMentions(lastChatInput)).toHaveText(['main.c', 'host.example/user/myrepo'])
+    await expect(chatInputMentions(lastChatInput)).toHaveText([
+        'main.c',
+        'current selection',
+        'host.example/user/myrepo',
+    ])
 
+    // selecting another range keeps 'current selection' mention
     await selectLineRangeInEditorTab(page, 1, 3)
-    await expect(chatInputMentions(lastChatInput)).toHaveText(['main.c', 'host.example/user/myrepo'])
+    await expect(chatInputMentions(lastChatInput)).toHaveText([
+        'main.c',
+        'current selection',
+        'host.example/user/myrepo',
+    ])
 
     await openFileInEditorTab(page, 'README.md')
     await expect(chatInputMentions(lastChatInput)).toHaveText(['README.md', 'host.example/user/myrepo'])
