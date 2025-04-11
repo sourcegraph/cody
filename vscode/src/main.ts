@@ -61,7 +61,6 @@ import { CodyToolProvider } from './chat/agentic/CodyToolProvider'
 import { ChatsController, CodyChatEditorViewType } from './chat/chat-view/ChatsController'
 import { ContextRetriever } from './chat/chat-view/ContextRetriever'
 import { SourcegraphRemoteFileProvider } from './chat/chat-view/sourcegraphRemoteFile'
-import { MCPManager } from './chat/chat-view/tools/MCPManager'
 import {
     ACCOUNT_LIMITS_INFO_URL,
     ACCOUNT_UPGRADE_URL,
@@ -319,34 +318,6 @@ const register = async (
     // user has clicked on "Setup". Awaiting on this promise will make the Cody
     // extension timeout during activation.
     resolvedConfig.pipe(take(1)).subscribe(({ auth }) => showSetupNotification(auth))
-
-    // Initialize MCP Manager based on the feature flag
-    let mcpManager: MCPManager | undefined
-    disposables.push(
-        subscriptionDisposable(
-            featureFlagProvider
-                .evaluateFeatureFlag(FeatureFlag.NextAgenticChatInternal)
-                .pipe(distinctUntilChanged())
-                .subscribe(async isEnabled => {
-                    if (isEnabled) {
-                        // Initialize MCP Manager if feature flag is enabled
-                        if (!mcpManager) {
-                            mcpManager = await MCPManager.init()
-                            if (mcpManager) {
-                                logDebug('main', 'MCPManager initialized')
-                            }
-                        }
-                    } else {
-                        // Dispose MCP Manager if feature flag is disabled
-                        if (mcpManager) {
-                            await mcpManager.dispose()
-                            mcpManager = undefined
-                            logDebug('main', 'MCPManager disposed')
-                        }
-                    }
-                })
-        )
-    )
 
     // Save config for `deactivate` handler.
     disposables.push(
