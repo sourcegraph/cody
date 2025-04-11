@@ -35,6 +35,8 @@ object ConfigUtil {
   const val CODE_SEARCH_DISPLAY_NAME = "Code Search"
   const val SOURCEGRAPH_DISPLAY_NAME = "Sourcegraph"
   private const val FEATURE_FLAGS_ENV_VAR = "CODY_JETBRAINS_FEATURES"
+  private val renderOptions =
+      ConfigRenderOptions.defaults().setComments(false).setOriginComments(false)
 
   private val logger = Logger.getInstance(ConfigUtil::class.java)
 
@@ -185,10 +187,7 @@ object ConfigUtil {
         config = config.withValue(key, ConfigValueFactory.fromAnyRef(value))
       }
 
-      return config
-          .withFallback(globalConfig)
-          .root()
-          .render(ConfigRenderOptions.defaults().setComments(false).setOriginComments(false))
+      return config.withFallback(globalConfig).root().render(renderOptions)
     } catch (e: Exception) {
       logger.error("Failed to parse Cody config", e)
       return ""
@@ -197,15 +196,8 @@ object ConfigUtil {
 
   @JvmStatic
   fun setCustomConfiguration(project: Project, customConfigContent: String): VirtualFile? {
-    val oldConfig = ConfigFactory.parseString(getSettingsFile(project).readText()).resolve()
-    val newConfig = ConfigFactory.parseString(customConfigContent).resolve()
-    if (oldConfig == newConfig) {
-      return null
-    }
-    val content =
-        newConfig
-            .root()
-            .render(ConfigRenderOptions.defaults().setComments(false).setOriginComments(false))
+    val config = ConfigFactory.parseString(customConfigContent).resolve()
+    val content = config.root().render(renderOptions)
     return CodyEditorUtil.createFileOrScratchFromUntitled(
         project, getSettingsFile(project).toUri().toString(), content = content, overwrite = true)
         ?: run {
