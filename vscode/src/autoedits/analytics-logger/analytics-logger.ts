@@ -12,7 +12,7 @@ import {
     telemetryRecorder,
 } from '@sourcegraph/cody-shared'
 import type { TelemetryEventParameters } from '@sourcegraph/telemetry'
-
+import { convertAutocompleteContextSnippetForTelemetry } from '../../../src/completions/analytics-logger'
 import { getOtherCompletionProvider } from '../../completions/analytics-logger'
 import { lines } from '../../completions/text-processing'
 import { charactersLogger } from '../../services/CharactersLogger'
@@ -25,6 +25,7 @@ import type { CodeToReplaceData } from '../prompt/prompt-utils'
 import type { DecorationInfo } from '../renderer/decorators/base'
 import { getDecorationStats } from '../renderer/diff-utils'
 
+import type { AutocompleteContextSnippet } from '../../../../lib/shared/src/completions/types'
 import { autoeditDebugStore } from '../debug-panel/debug-store'
 import type { AutoEditRenderOutput } from '../renderer/render-output'
 import { autoeditIdRegistry } from './suggestion-id-registry'
@@ -46,6 +47,7 @@ import {
     type SuggestedState,
     validRequestTransitions,
 } from './types'
+import type { AutoeditFeedbackData } from './types'
 
 /**
  * Using the validTransitions definition, we can derive which "from phases" lead to a given next phase,
@@ -62,6 +64,7 @@ type AutoeditEventAction =
     | 'accepted'
     | 'discarded'
     | 'error'
+    | 'feedback-submitted'
     | `invalidTransitionTo${Capitalize<Phase>}`
 
 const AUTOEDIT_EVENT_BILLING_CATEGORY: Partial<Record<AutoeditEventAction, BillingCategory>> = {
@@ -92,6 +95,7 @@ export class AutoeditAnalyticsLogger {
      */
     public createRequest({
         startedAt,
+        filePath,
         payload,
         codeToReplaceData,
         document,
@@ -99,6 +103,7 @@ export class AutoeditAnalyticsLogger {
         docContext,
     }: {
         startedAt: number
+        filePath: string
         codeToReplaceData: CodeToReplaceData
         document: vscode.TextDocument
         position: vscode.Position
@@ -115,6 +120,7 @@ export class AutoeditAnalyticsLogger {
             requestId,
             phase: 'started',
             startedAt,
+            filePath,
             codeToReplaceData,
             document,
             position,
@@ -138,14 +144,17 @@ export class AutoeditAnalyticsLogger {
 
     public markAsContextLoaded({
         requestId,
+        context,
         payload,
     }: {
         requestId: AutoeditRequestID
+        context: AutocompleteContextSnippet[]
         payload: Pick<ContextLoadedState['payload'], 'contextSummary'>
     }): void {
         this.tryTransitionTo(requestId, 'contextLoaded', request => ({
             ...request,
             contextLoadedAt: getTimeNowInMillis(),
+            context: convertAutocompleteContextSnippetForTelemetry(context),
             payload: {
                 ...request.payload,
                 contextSummary: payload.contextSummary,
@@ -539,6 +548,26 @@ export class AutoeditAnalyticsLogger {
             }, this.ERROR_THROTTLE_INTERVAL_MS)
         }
         this.errorCounts.set(messageKey, currentCount + 1)
+    }
+
+    public logFeedback(feedbackData: AutoeditFeedbackData): void {
+        this.writeAutoeditEvent({
+            action: 'feedback-submitted',
+            logDebugArgs: [`Feedback submitted for file: ${feedbackData.file_path}`],
+            telemetryParams: {
+                version: 0,
+                metadata: {
+                    recordsPrivateMetadataTranscript: 1,
+                },
+                privateMetadata: {
+                    inlineCompletionItemContext: feedbackData,
+                },
+                billingMetadata: {
+                    product: 'cody',
+                    category: 'core',
+                },
+            },
+        })
     }
 }
 

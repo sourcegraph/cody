@@ -1,7 +1,7 @@
 import type * as vscode from 'vscode'
 
 import type { DocumentContext } from '@sourcegraph/cody-shared'
-
+import type { InlineCompletionItemRetrievedContext } from '../../../src/completions/analytics-logger'
 import type { ContextSummary } from '../../completions/context/context-mixer'
 import type { CodeGenEventMetadata } from '../../services/CharactersLogger'
 import type { ModelResponse } from '../adapters/base'
@@ -183,6 +183,9 @@ export interface StartedState extends AutoeditBaseState {
     /** Time (ms) when we started computing or requesting the suggestion. */
     startedAt: number
 
+    /** The relative file path of the document being edited. */
+    filePath: string
+
     /** Metadata required to show a suggestion based on `requestId` only. */
     codeToReplaceData: CodeToReplaceData
     document: vscode.TextDocument
@@ -225,6 +228,8 @@ export interface ContextLoadedState extends Omit<StartedState, 'phase' | 'payloa
     phase: 'contextLoaded'
     /** Timestamp when the context for the autoedit was loaded. */
     contextLoadedAt: number
+    /** Context snippets used by the autoedit model to create a prompt */
+    context: InlineCompletionItemRetrievedContext[]
     payload: StartedState['payload'] & {
         /**
          * Information about the context retrieval process that lead to this autoedit request. Refer
@@ -392,4 +397,18 @@ export type AutoeditRequestState = PhaseStates[keyof PhaseStates]
 export interface AutoeditRequestStateForAgentTesting {
     phase?: Phase
     read?: boolean
+}
+
+export interface AutoeditFeedbackData {
+    source: 'feedback'
+    file_path: string
+    prefix: string
+    suffix: string
+    code_to_rewrite_prefix: string
+    code_to_rewrite_suffix: string
+    context: InlineCompletionItemRetrievedContext[]
+    chosen: string
+    rejected: string
+    assertions: string
+    is_reviewed: boolean
 }

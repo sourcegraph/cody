@@ -3,7 +3,7 @@ import type { URI } from 'vscode-uri'
 
 export type AutocompleteContextSnippetMetadataFields = Record<string, number | string>
 
-interface AutocompleteContextSnippetMetadata {
+export interface AutocompleteContextSnippetMetadata {
     /**
      * This field is relevant for user action context sources such as `recent-edit`, `recent-copy` and `recent-viewport`.
      * It indicates the time in milliseconds since the action was performed (eg: time Since the last edit).
