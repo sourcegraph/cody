@@ -47,7 +47,7 @@ export class AutoEditBetaOnboarding implements vscode.Disposable {
                                 vscode.ConfigurationTarget.Global
                             )
                     } else if (answer === 'Open cody__settings.json') {
-                        // todo: open cody_settings.json
+                        vscode.commands.executeCommand('cody.settings.extension')
                     }
                 })
         }
