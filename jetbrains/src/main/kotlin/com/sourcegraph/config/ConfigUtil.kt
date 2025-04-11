@@ -197,9 +197,13 @@ object ConfigUtil {
 
   @JvmStatic
   fun setCustomConfiguration(project: Project, customConfigContent: String): VirtualFile? {
-    val config = ConfigFactory.parseString(customConfigContent).resolve()
+    val oldConfig = ConfigFactory.parseString(getSettingsFile(project).readText()).resolve()
+    val newConfig = ConfigFactory.parseString(customConfigContent).resolve()
+    if (oldConfig == newConfig) {
+      return null
+    }
     val content =
-        config
+        newConfig
             .root()
             .render(ConfigRenderOptions.defaults().setComments(false).setOriginComments(false))
     return CodyEditorUtil.createFileOrScratchFromUntitled(

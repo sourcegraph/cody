@@ -379,6 +379,12 @@ export class Agent extends MessageHandler implements ExtensionClient {
     ) {
         super(params.conn)
         vscode_shim.setAgent(this)
+
+        vscode_shim.onDidChangeConfiguration.event(() => {
+            const config = vscode_shim.workspace.getConfiguration()
+            this.notify('extensionConfiguration/didUpdate', JSON.stringify((config as any).dictionary))
+        })
+
         this.registerRequest('initialize', async clientInfo => {
             vscode.languages.registerFoldingRangeProvider(
                 '*',

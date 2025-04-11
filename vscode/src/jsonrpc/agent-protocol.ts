@@ -415,7 +415,7 @@ export type ServerNotifications = {
 
     'debug/message': [DebugMessage]
 
-    'extensionConfiguration/didUpdate': [any]
+    'extensionConfiguration/didUpdate': [string]
 
     // Certain properties of the task are updated:
     // - State
