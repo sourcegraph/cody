@@ -107,8 +107,8 @@ export function trimPredictionForHotStreak({
     // at the end of the insertText, otherwise it should be unchanged.
     const updatedDocPosition = processedLines === 0 ? position : remainingPredictionRange.start
 
-    // The hot streak prediction excludes part of the prefix. This means that it fundamentally relies
-    // on the prefix existing in the document to be a valid suggestion. We need to update the docContext
+    // The hot streak prediction excludes part of the processedPrediction. This means that it fundamentally relies
+    // on the processedPrediction existing in the document to be a valid suggestion. We need to update the docContext
     // to reflect this.
     const updatedDocContext = getCurrentDocContext({
         document: documentSnapshot,

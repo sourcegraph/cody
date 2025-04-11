@@ -1,5 +1,8 @@
-import type { CodeToReplaceData } from '@sourcegraph/cody-shared'
+import dedent from 'dedent'
 import { describe, expect, it } from 'vitest'
+
+import type { CodeToReplaceData } from '@sourcegraph/cody-shared'
+
 import { type ProcessHotStreakResponsesParams, processHotStreakResponses } from '.'
 import { getCurrentDocContext } from '../../completions/get-current-doc-context'
 import { documentAndPosition } from '../../completions/test-helpers'
@@ -107,7 +110,10 @@ function getCodeToReplaceWindow(codeToReplaceData: CodeToReplaceData): string {
     )
 }
 
-function createHotStreakParams(code: string): ProcessHotStreakResponsesParams {
+function createHotStreakParams(
+    code: string,
+    responseGenerator: AsyncGenerator<ModelResponse>
+): ProcessHotStreakResponsesParams {
     const { document, position } = documentAndPosition(code)
     const codeToReplaceData = createCodeToReplaceDataForTest(code, {
         maxPrefixLength: 1000,
@@ -124,8 +130,6 @@ function createHotStreakParams(code: string): ProcessHotStreakResponsesParams {
         maxSuffixLength: 1000,
     })
 
-    const responseGenerator = createModelResponseGenerator(MOCK_PREDICTION.split('\n'))
-
     return {
         responseGenerator,
         document,
@@ -140,7 +144,8 @@ function createHotStreakParams(code: string): ProcessHotStreakResponsesParams {
 
 describe('processHotStreakResponses', () => {
     it('does not emit hot streaks if disabled', async () => {
-        const params = createHotStreakParams(MOCK_CODE)
+        const responseGenerator = createModelResponseGenerator(MOCK_PREDICTION.split('\n'))
+        const params = createHotStreakParams(MOCK_CODE, responseGenerator)
         const resultGenerator = processHotStreakResponses({
             ...params,
             options: { hotStreakEnabled: false },
@@ -159,7 +164,8 @@ describe('processHotStreakResponses', () => {
     })
 
     it('does emit hot streaks when enabled', async () => {
-        const params = createHotStreakParams(MOCK_CODE)
+        const responseGenerator = createModelResponseGenerator(MOCK_PREDICTION.split('\n'))
+        const params = createHotStreakParams(MOCK_CODE, responseGenerator)
         const resultGenerator = processHotStreakResponses(params)
 
         const results = []
@@ -270,6 +276,132 @@ describe('processHotStreakResponses', () => {
               }
               throw new Error('Out of RAM')
           }
+          "
+        `)
+    })
+
+    it('does not emit hot streak if its suffix is already in the code', async () => {
+        const documentText = dedent`import argparse
+
+            def run_batch_job(sanitized_mu, sanitized_dn, sanitized_ts, sanitized_n, sanitized_h, sanitized_pid):
+                # Placeholder function for running the batch job
+                print(f"Running batch job with:\nModel URL: {sanitized_mu}\nDataset Name: {sanitized_dn}\n"
+                    f"Training Script: {sanitized_ts}\nIterations: {sanitized_n}\n"
+                    f"Hyperparameters: {sanitized_h}\nProject ID: {sanitized_pid}")
+
+            def main():
+                parser = argparse.ArgumentParser(description='Run batch job process.')
+                parser.add_argument('--use_cached_model', action='store_true', he█)
+                parser.add_argument('--num_iterations', type=int)
+                parser.add_argument('--model_url')
+                parser.add_argument('--dataset_name')
+                parser.add_argument('--training_script')
+                parser.add_argument('--hyperparameters')
+                parser.add_argument('--project_id')
+
+                args = parser.parse_args()
+
+                sanitized_mu = args.model_url or input("Enter the model URL: ")
+                sanitized_dn = args.dataset_name or input("Enter the dataset name: ")
+                sanitized_ts = args.training_script or input("Enter the path to the training script: ")
+                sanitized_h = args.hyperparameters or input("Enter the hyperparameters for batch job (in JSON format): ")
+                sanitized_n = args.num_iterations or input("Enter the number of iterations: ")
+                sanitized_pid = args.project_id or input("Enter the project ID: ")
+
+                run_batch_job(sanitized_mu, sanitized_dn, sanitized_ts, sanitized_n, sanitized_h, sanitized_pid)
+
+            if __name__ == '__main__':
+                main()`
+
+        // The second hot streak prediction ends with the last line of the document code.
+        // But the codeToReplaceData.range.end is at the start of the last line, which means
+        // the decoration info will consider the last line to be modified with the last line
+        // context insertion.
+        //
+        // This creates a hot-streak item that we later will move the cursor to. And this item
+        // will be hidden by the autoedit-provider because the end of the prediction matches
+        // text that is already in the document.
+        //
+        // To fix that we can check for the suffix match before emiting the hot-streak item.
+        const predictionText = dedent`
+                parser = argparse.ArgumentParser(description='Run batch job process.')
+                parser.add_argument('--use_cached_model', action='store_true', help='Use cached model')
+                parser.add_argument('--num_iterations', type=int, help='Number of iterations')
+                parser.add_argument('--model_url', help='Model URL')
+                parser.add_argument('--dataset_name', help='Dataset name')
+                parser.add_argument('--training_script', help='Path to training script')
+                parser.add_argument('--hyperparameters', help='Hyperparameters for batch job (in JSON format)')
+                parser.add_argument('--project_id', help='Project ID')
+
+                args = parser.parse_args()
+
+            █    sanitized_mu = args.model_url or input("Enter the model URL: ")
+                sanitized_dn = args.dataset_name or input("Enter the dataset name: ")
+                sanitized_ts = args.training_script or input("Enter the path to the training script: ")
+                sanitized_h = args.hyperparameters or input("Enter the hyperparameters for batch job (in JSON format): ")
+                sanitized_n = args.num_iterations or input("Enter the number of iterations: ")
+                sanitized_pid = args.project_id or input("Enter the project ID: ")
+
+                run_batch_job(sanitized_mu, sanitized_dn, sanitized_ts, sanitized_n, sanitized_h, sanitized_pid)
+
+            if __name__ == '__main__':
+                main()`
+
+        const responseGenerator = async function* (
+            predictions: string[]
+        ): AsyncGenerator<ModelResponse> {
+            let cumulativePrediction = ''
+
+            // Yield all but the last prediction as partial responses
+            for (let i = 0; i < predictions.length - 1; i++) {
+                cumulativePrediction += predictions[i]
+                yield {
+                    type: 'partial',
+                    prediction: cumulativePrediction,
+                    stopReason: AutoeditStopReason.StreamingChunk,
+                    requestHeaders: {},
+                    requestUrl: 'test-url',
+                }
+            }
+
+            if (predictions.length > 0) {
+                cumulativePrediction += predictions[predictions.length - 1]
+                yield {
+                    type: 'success',
+                    prediction: cumulativePrediction,
+                    stopReason: AutoeditStopReason.RequestFinished,
+                    responseBody: {},
+                    requestHeaders: {},
+                    responseHeaders: {},
+                    requestUrl: 'test-url',
+                }
+            }
+        }
+        const params = createHotStreakParams(documentText, responseGenerator(predictionText.split('█')))
+        const resultGenerator = processHotStreakResponses(params)
+
+        const results = []
+        for await (const result of resultGenerator) {
+            results.push(result)
+        }
+
+        // Chunked into multiple results
+        expect(results.length).toBe(1)
+
+        const firstResponse = results[0] as SuggestedPredictionResult
+        expect(firstResponse.type).toBe('suggested')
+        expect(firstResponse.response.prediction).toMatchInlineSnapshot(`
+          "parser = argparse.ArgumentParser(description='Run batch job process.')
+              parser.add_argument('--use_cached_model', action='store_true', help='Use cached model')
+              parser.add_argument('--num_iterations', type=int, help='Number of iterations')
+              parser.add_argument('--model_url', help='Model URL')
+              parser.add_argument('--dataset_name', help='Dataset name')
+              parser.add_argument('--training_script', help='Path to training script')
+              parser.add_argument('--hyperparameters', help='Hyperparameters for batch job (in JSON format)')
+              parser.add_argument('--project_id', help='Project ID')
+
+              args = parser.parse_args()
+
           "
         `)
     })

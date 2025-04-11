@@ -2,10 +2,12 @@ import type { PartialModelResponse, SuccessModelResponse } from '../../adapters/
 import { getDecorationInfoFromPrediction } from '../../autoedits-provider'
 import type { DecorationInfo, DecorationLineInfo } from '../../renderer/decorators/base'
 import { sortDiff } from '../../renderer/diff-utils'
+import { shrinkPredictionUntilSuffix } from '../../shrink-prediction'
+import { isPredictedTextAlreadyInSuffix } from '../../utils'
 import type { TrimPredictionForHotStreakResult } from './trim-prediction'
 
 export interface SuggestedDiff {
-    diff: DecorationInfo
+    decorationInfo: DecorationInfo
     firstChange: {
         lineNumber: number
     }
@@ -23,16 +25,38 @@ export function getSuggestedDiffForChunk(
     response: SuccessModelResponse | PartialModelResponse,
     chunk: TrimPredictionForHotStreakResult
 ): SuggestedDiff | null {
-    const diff = getDecorationInfoFromPrediction(
-        chunk.documentSnapshot,
-        chunk.text,
-        chunk.codeToReplaceData.range
+    const { documentSnapshot, text, codeToReplaceData } = chunk
+
+    const shrinkedPrediction = shrinkPredictionUntilSuffix({
+        prediction: text,
+        codeToReplaceData,
+    })
+
+    // Shrink the prediction to avoid emitting a hot-streak item
+    // that later will be hidden by the autoedit-provider because the end of the prediction matches
+    // suffxi that is already in the document.
+    const decorationInfo = getDecorationInfoFromPrediction(
+        documentSnapshot,
+        shrinkedPrediction,
+        codeToReplaceData.range
     )
 
-    const sortedDiff = sortDiff(diff)
-    const firstChange = sortedDiff.find(line => line.type !== 'unchanged')
+    const sortedDecorationInfo = sortDiff(decorationInfo)
+    const firstChange = sortedDecorationInfo.find(line => line.type !== 'unchanged')
     if (!firstChange) {
         // No changes in the diff, we cannot suggest it
+        return null
+    }
+
+    // Check if the suffix is already in the document
+    // TODO: reduce this logic between the auto-edit provider and the hot-streak utils
+    if (
+        isPredictedTextAlreadyInSuffix({
+            decorationInfo,
+            codeToRewrite: codeToReplaceData.codeToRewrite,
+            suffix: codeToReplaceData.suffixInArea + codeToReplaceData.suffixAfterArea,
+        })
+    ) {
         return null
     }
 
@@ -41,7 +65,7 @@ export function getSuggestedDiffForChunk(
 
     if (response.type === 'success') {
         return {
-            diff,
+            decorationInfo,
             firstChange: {
                 lineNumber: firstChangeLineNumber,
             },
@@ -49,8 +73,8 @@ export function getSuggestedDiffForChunk(
     }
 
     const diffAtBoundary = getDiffAtLine(
-        sortedDiff,
-        chunk.codeToReplaceData.range.end.line - 1 // Excluding the final new line
+        sortedDecorationInfo,
+        codeToReplaceData.range.end.line - 1 // Excluding the final new line
     )
     if (diffAtBoundary?.type !== 'unchanged') {
         console.log('IGNORING BECAUSE DIFF BOUNDARY IS CHANGED', diffAtBoundary)
@@ -62,7 +86,7 @@ export function getSuggestedDiffForChunk(
     }
 
     return {
-        diff,
+        decorationInfo,
         firstChange: {
             lineNumber: firstChangeLineNumber,
         },
