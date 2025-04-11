@@ -7,16 +7,15 @@ import {
     autoeditDiscardReason,
 } from '../../../src/autoedits/analytics-logger/types'
 import { AutoeditDataSDK } from '../../../src/autoedits/debug-panel/autoedit-data-sdk'
-import type { VSCodeAutoeditDebugWrapper } from '../../../src/autoedits/debug-panel/debug-protocol'
 import type { AutoeditRequestDebugState } from '../../../src/autoedits/debug-panel/debug-store'
 import { Label } from '../../components/shadcn/ui/label'
+import { vscode } from '../webview-api'
 
 interface FeedbackSectionProps {
     entry: AutoeditRequestDebugState
-    vscode: VSCodeAutoeditDebugWrapper
 }
 
-export const FeedbackSection: FC<FeedbackSectionProps> = ({ entry, vscode }) => {
+export const FeedbackSection: FC<FeedbackSectionProps> = ({ entry }) => {
     const [expectedCode, setExpectedCode] = useState('')
     const [assertions, setAssertions] = useState('')
     const [copySuccess, setCopySuccess] = useState(false)

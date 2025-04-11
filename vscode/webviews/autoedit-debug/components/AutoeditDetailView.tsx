@@ -3,7 +3,6 @@ import { ChevronLeft, ChevronRight, X } from 'lucide-react'
 import type { FC } from 'react'
 import { useState } from 'react'
 
-import type { VSCodeAutoeditDebugWrapper } from '../../../src/autoedits/debug-panel/debug-protocol'
 import type { AutoeditRequestDebugState } from '../../../src/autoedits/debug-panel/debug-store'
 import { Badge } from '../../components/shadcn/ui/badge'
 import { Button } from '../../components/shadcn/ui/button'
@@ -27,8 +26,7 @@ export const AutoeditDetailView: FC<{
     onClose: () => void
     hasPrevious: boolean
     hasNext: boolean
-    vscode: VSCodeAutoeditDebugWrapper
-}> = ({ entries, entry, onPrevious, onNext, onClose, hasPrevious, hasNext, vscode }) => {
+}> = ({ entries, entry, onPrevious, onNext, onClose, hasPrevious, hasNext }) => {
     const [activeTab, setActiveTab] = useState('timeline')
 
     // Extract all relevant data in one place using the SDK
@@ -200,7 +198,7 @@ export const AutoeditDetailView: FC<{
                     </TabsPrimitive.Content>
 
                     <TabsPrimitive.Content value="feedback" className="tw-space-y-8">
-                        <FeedbackSection entry={entry} vscode={vscode} />
+                        <FeedbackSection entry={entry} />
                     </TabsPrimitive.Content>
                 </div>
             </TabsPrimitive.Root>

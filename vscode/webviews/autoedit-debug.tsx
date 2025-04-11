@@ -2,13 +2,10 @@ import './autoedit-debug/autoedit-debug.css'
 import { useEffect, useState } from 'react'
 import { createRoot } from 'react-dom/client'
 
-import type {
-    AutoeditDebugMessageFromExtension,
-    VSCodeAutoeditDebugWrapper,
-} from '../src/autoedits/debug-panel/debug-protocol'
+import type { AutoeditDebugMessageFromExtension } from '../src/autoedits/debug-panel/debug-protocol'
 
 import { AutoeditDebugPanel } from './autoedit-debug/AutoeditDebugPanel'
-import { getVSCodeAPI } from './utils/VSCodeApi'
+import { vscode } from './autoedit-debug/webview-api'
 
 /**
  * Transforms array-formatted VS Code Range objects back into proper Range objects with start and end properties.
@@ -54,8 +51,6 @@ function transformRanges(obj: any): any {
     return obj
 }
 
-const vscode = getVSCodeAPI() as unknown as VSCodeAutoeditDebugWrapper
-
 function App() {
     const [state, setState] = useState<Omit<AutoeditDebugMessageFromExtension, 'type'> | null>(null)
 
@@ -93,7 +88,6 @@ function App() {
                 entries={state?.entries ?? []}
                 sessionStats={state?.sessionStats}
                 statsForLastNRequests={state?.statsForLastNRequests ?? []}
-                vscode={vscode}
             />
         </div>
     )
