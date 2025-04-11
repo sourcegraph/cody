@@ -378,7 +378,7 @@ test.extend<ExpectedV2Events>({
     await selectLineRangeInEditorTab(page, 2, 5)
 
     const [, lastChatInput] = await createEmptyChatPanel(page)
-    await expect(chatInputMentions(lastChatInput)).toHaveText(['buzz.ts'], {
+    await expect(chatInputMentions(lastChatInput)).toHaveText(['buzz.ts:2-5'], {
         timeout: 3_000,
     })
 
