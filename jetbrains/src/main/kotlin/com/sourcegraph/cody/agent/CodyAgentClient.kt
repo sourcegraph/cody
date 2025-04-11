@@ -3,6 +3,8 @@ package com.sourcegraph.cody.agent
 import com.intellij.notification.Notification
 import com.intellij.notification.NotificationType
 import com.intellij.notification.Notifications
+import com.intellij.openapi.actionSystem.*
+import com.intellij.openapi.actionSystem.impl.SimpleDataContext
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.ReadAction
 import com.intellij.openapi.application.runInEdt
@@ -24,6 +26,7 @@ import com.sourcegraph.cody.auth.CodySecureStore
 import com.sourcegraph.cody.auth.SourcegraphServerPath
 import com.sourcegraph.cody.autocomplete.CodyAutocompleteManager
 import com.sourcegraph.cody.autoedit.AutoeditManager
+import com.sourcegraph.cody.config.actions.OpenCodySettingsEditorAction
 import com.sourcegraph.cody.edit.EditService
 import com.sourcegraph.cody.edit.lenses.LensesService
 import com.sourcegraph.cody.error.CodyConsole
@@ -290,6 +293,21 @@ class CodyAgentClient(private val project: Project, private val webview: NativeW
   fun extensionConfiguration_didUpdate(params: String) {
     if (!project.isDisposed) {
       ConfigUtil.setCustomConfiguration(project, params)
+    }
+  }
+
+  @JsonNotification("extensionConfiguration/openSettings")
+  fun extensionConfiguration_openSettings(params: Null?) {
+    if (!project.isDisposed) {
+      val actionEvent =
+          AnActionEvent(
+              null,
+              SimpleDataContext.getProjectContext(project),
+              ActionPlaces.UNKNOWN,
+              Presentation(),
+              ActionManager.getInstance(),
+              0)
+      OpenCodySettingsEditorAction().actionPerformed(actionEvent)
     }
   }
 
