@@ -2,9 +2,10 @@ import type { FC } from 'react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 
 import type { Message, SerializedChatMessage } from '@sourcegraph/cody-shared'
+
 import type { FireworksChatMessage } from '../../../src/autoedits/adapters/utils'
+import { getModelResponse } from '../../../src/autoedits/debug-panel/autoedit-data-sdk'
 import type { AutoeditRequestDebugState } from '../../../src/autoedits/debug-panel/debug-store'
-import { getModelResponse } from '../autoedit-data-sdk'
 
 // Use a union type of the existing message types from the codebase
 type MessageType = Message | SerializedChatMessage | FireworksChatMessage
@@ -19,7 +20,7 @@ export const PromptSection: FC<{ entry: AutoeditRequestDebugState }> = ({ entry 
     const modelResponse = getModelResponse(entry)
 
     // Extract prompt data from request body
-    const requestBody = modelResponse?.requestBody
+    const requestBody = modelResponse?.requestBody as any
 
     // Format the prompt content
     const formattedPrompt = formatPrompt()
@@ -63,7 +64,7 @@ export const PromptSection: FC<{ entry: AutoeditRequestDebugState }> = ({ entry 
     // Format the prompt based on its type
     function formatPrompt(): string {
         if (!requestBody) {
-            return 'No prompt data available'
+            return 'Prompt is only available for loaded requests'
         }
 
         try {
@@ -148,7 +149,17 @@ export const PromptSection: FC<{ entry: AutoeditRequestDebugState }> = ({ entry 
 
     // Don't render anything if there's no prompt data
     if (!modelResponse?.requestBody) {
-        return null
+        return (
+            <div className="tw-mb-4 tw-flex tw-flex-col tw-h-full">
+                <div className="tw-flex tw-justify-end tw-items-center tw-mb-2">
+                    <div className="tw-flex tw-space-x-2">
+                        <div className="tw-text-xs tw-text-gray-600">
+                            Prompt is only available for loaded requests
+                        </div>
+                    </div>
+                </div>
+            </div>
+        )
     }
 
     // CSS classes for prompt text - always using full height now

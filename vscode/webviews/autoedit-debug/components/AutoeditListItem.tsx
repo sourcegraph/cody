@@ -3,29 +3,29 @@ import type { FC } from 'react'
 import React from 'react'
 
 import type { Phase } from '../../../src/autoedits/analytics-logger/types'
+import { AutoeditDataSDK } from '../../../src/autoedits/debug-panel/autoedit-data-sdk'
+import type { getDetailedTimingInfo } from '../../../src/autoedits/debug-panel/autoedit-latency-utils'
 import type { AutoeditRequestDebugState } from '../../../src/autoedits/debug-panel/debug-store'
 import { Badge } from '../../components/shadcn/ui/badge'
-import { AutoeditDataSDK } from '../autoedit-data-sdk'
-import { formatTime, type getDetailedTimingInfo, getStatusColor } from '../autoedit-ui-utils'
+import { getStatusColor } from '../phase-colors'
 
 // Sub-component for header section
 const EntryHeader: FC<{
     phase: Phase
     triggerKind: string
     timingInfo: ReturnType<typeof getDetailedTimingInfo>
-    timestamp: number
     onToggleDetailedTiming: () => void
-    showDetailedTiming: boolean
-}> = ({ phase, triggerKind, timingInfo, timestamp, onToggleDetailedTiming, showDetailedTiming }) => (
+}> = ({ phase, triggerKind, timingInfo, onToggleDetailedTiming }) => (
     <div className="tw-flex tw-items-center tw-justify-between tw-w-full">
         <div className="tw-flex tw-items-center tw-gap-2">
             <Badge className={getStatusColor(phase)}>{phase}</Badge>
             <span className="tw-text-xs tw-text-gray-500 tw-dark:tw-text-gray-400">{triggerKind}</span>
         </div>
-        <div className="tw-flex tw-items-center tw-gap-3">
+        <div className="tw-flex tw-items-center tw-gap-2">
+            <span className="tw-text-xs tw-text-gray-500 tw-dark:tw-text-gray-400">Total:</span>
             <button
                 type="button"
-                className="tw-text-xs tw-font-medium tw-text-gray-600 tw-dark:tw-text-gray-300 hover:tw-underline"
+                className="tw-text-xs tw-font-medium tw-text-gray-600 tw-dark:tw-text-gray-300 hover:tw-underline tw-text-left"
                 onClick={e => {
                     e.stopPropagation()
                     onToggleDetailedTiming()
@@ -34,9 +34,6 @@ const EntryHeader: FC<{
             >
                 {timingInfo.predictionDuration || '—'}
             </button>
-            <span className="tw-text-xs tw-text-gray-500 tw-dark:tw-text-gray-400">
-                {formatTime(timestamp)}
-            </span>
         </div>
     </div>
 )
@@ -66,66 +63,47 @@ const DetailedTiming: FC<{
 
 // Sub-component for file info
 const FileInfo: FC<{
-    filePath: string
+    fileName: string
     positionInfo: string
-    languageId: string | null
-}> = ({ filePath, positionInfo, languageId }) => (
-    <div className="tw-flex tw-items-center tw-text-sm tw-text-gray-700 tw-dark:tw-text-gray-300">
-        <span className="tw-font-medium">{filePath}</span>
-        {positionInfo && (
-            <>
-                <span className="tw-mx-2">•</span>
-                <span>{positionInfo}</span>
-            </>
+    inferenceTime?: string | null
+    envoyUpstreamServiceTime?: string | null
+}> = ({ fileName, positionInfo, inferenceTime, envoyUpstreamServiceTime }) => (
+    <div className="tw-flex tw-items-center tw-justify-between tw-w-full tw-text-sm tw-text-gray-700 tw-dark:tw-text-gray-300">
+        <div className="tw-flex tw-items-center">
+            <span className="tw-font-medium">
+                {`${fileName} ${positionInfo ? `:${positionInfo}` : ''}`}
+            </span>
+        </div>
+        {inferenceTime && (
+            <div className="tw-flex tw-items-center tw-gap-2">
+                <span className="tw-text-xs tw-text-gray-500 tw-dark:tw-text-gray-400">Inference:</span>
+                <span className="tw-text-xs tw-font-medium tw-text-gray-600 tw-dark:tw-text-gray-300">
+                    {inferenceTime}
+                </span>
+            </div>
         )}
-        {languageId && (
-            <>
-                <span className="tw-mx-2">•</span>
-                <span className="tw-italic tw-text-xs tw-text-gray-500">{languageId}</span>
-            </>
+        {!inferenceTime && envoyUpstreamServiceTime && (
+            <div className="tw-flex tw-items-center tw-gap-2">
+                <span className="tw-text-xs tw-text-gray-500 tw-dark:tw-text-gray-400">
+                    Envoy Latency:
+                </span>
+                <span className="tw-text-xs tw-font-medium tw-text-gray-600 tw-dark:tw-text-gray-300">
+                    {envoyUpstreamServiceTime}
+                </span>
+            </div>
         )}
     </div>
 )
 
 // Sub-component for code preview
-const CodePreview: FC<{
-    codeText: string
-    codeType: string
-    decorationStats: string | null
-    isCodeTruncated: boolean
-    onToggleTruncation: (e: React.MouseEvent) => void
-}> = ({ codeText, codeType, decorationStats, isCodeTruncated, onToggleTruncation }) => {
+const CodePreview: FC<{ codeText: string }> = ({ codeText }) => {
+    // Always truncate code text to 80 characters
     const truncatedText = codeText.length > 80 ? codeText.substring(0, 80) + '...' : codeText
 
     return (
         <div className="tw-flex tw-flex-col tw-gap-1">
-            <div className="tw-flex tw-justify-between tw-items-center">
-                <span className="tw-text-xs tw-font-medium tw-text-gray-500 tw-dark:tw-text-gray-400">
-                    {codeType === 'code-to-rewrite'
-                        ? 'Code to Rewrite'
-                        : codeType === 'prediction'
-                          ? 'Prediction'
-                          : 'No Code'}
-                </span>
-                <div className="tw-flex tw-items-center tw-gap-2">
-                    {codeText.length > 80 && (
-                        <button
-                            type="button"
-                            className="tw-text-xs tw-text-blue-500 hover:tw-underline"
-                            onClick={onToggleTruncation}
-                        >
-                            {isCodeTruncated ? 'Show more' : 'Show less'}
-                        </button>
-                    )}
-                    {decorationStats && (
-                        <span className="tw-text-xs tw-text-gray-500 tw-dark:tw-text-gray-400">
-                            {decorationStats}
-                        </span>
-                    )}
-                </div>
-            </div>
             <div className="tw-font-mono tw-text-xs tw-text-gray-600 tw-dark:tw-text-gray-400 tw-bg-gray-50 tw-dark:tw-bg-gray-800/80 tw-px-2 tw-py-1 tw-rounded tw-whitespace-normal tw-break-all">
-                {isCodeTruncated ? truncatedText : codeText}
+                {truncatedText}
             </div>
         </div>
     )
@@ -142,28 +120,29 @@ export const AutoeditListItem: FC<AutoeditEntryItemProps> = ({ entry, isSelected
     // Extract all data from entry using the SDK
     const {
         phase,
-        filePath,
+        fileName,
         codeToRewrite = '',
         triggerKind,
         positionInfo,
         discardReason,
-        languageId,
-        decorationStats,
         timing,
     } = AutoeditDataSDK.extractAutoeditData(entry)
 
     // State management
     const [showDetailedTiming, setShowDetailedTiming] = React.useState(false)
-    const [isCodeTruncated, setIsCodeTruncated] = React.useState(codeToRewrite.length > 200)
 
     // Calculate card classes based on selection state
     const cardClasses = `
-        tw-border tw-border-gray-200 tw-dark:tw-border-gray-700
+        tw-border ${
+            isSelected
+                ? 'tw-border-blue-300 tw-dark:tw-border-blue-700'
+                : 'tw-border-gray-200 tw-dark:tw-border-gray-700'
+        }
         tw-rounded-md tw-mb-2 tw-overflow-hidden tw-cursor-pointer
-        tw-transition-colors tw-duration-150
+        focus-visible:tw-outline-none
         ${
             isSelected
-                ? 'tw-bg-blue-50 tw-dark:tw-bg-blue-900/20 tw-border-blue-300 tw-dark:tw-border-blue-700'
+                ? 'tw-bg-blue-50 tw-dark:tw-bg-blue-900/20'
                 : 'tw-bg-white tw-dark:tw-bg-gray-800 hover:tw-bg-gray-50 dark:hover:tw-bg-gray-700/50'
         }
     `
@@ -182,17 +161,21 @@ export const AutoeditListItem: FC<AutoeditEntryItemProps> = ({ entry, isSelected
                     e.preventDefault()
                 }
             }}
+            onFocus={e => {
+                // Prevent focus-related styling changes that might cause flickering
+                if (!isSelected) {
+                    onSelect(entry.state.requestId)
+                }
+            }}
         >
             <div className="tw-px-4 tw-py-3 tw-w-full">
                 <div className="tw-grid tw-grid-cols-1 tw-w-full tw-gap-2">
-                    {/* Header with status, timestamp, and latency */}
+                    {/* Header with status, and latency */}
                     <EntryHeader
                         phase={phase}
                         triggerKind={triggerKind}
                         timingInfo={timing}
-                        timestamp={entry.updatedAt}
                         onToggleDetailedTiming={() => setShowDetailedTiming(!showDetailedTiming)}
-                        showDetailedTiming={showDetailedTiming}
                     />
 
                     {/* Detailed timing information (collapsible) */}
@@ -201,19 +184,15 @@ export const AutoeditListItem: FC<AutoeditEntryItemProps> = ({ entry, isSelected
                     )}
 
                     {/* File and position info */}
-                    <FileInfo filePath={filePath} positionInfo={positionInfo} languageId={languageId} />
+                    <FileInfo
+                        fileName={fileName}
+                        positionInfo={positionInfo}
+                        inferenceTime={timing.inferenceTime}
+                        envoyUpstreamServiceTime={timing.envoyUpstreamServiceTime}
+                    />
 
                     {/* Code preview */}
-                    <CodePreview
-                        codeText={codeToRewrite}
-                        codeType={'code-to-rewrite'}
-                        decorationStats={decorationStats}
-                        isCodeTruncated={isCodeTruncated}
-                        onToggleTruncation={e => {
-                            e.stopPropagation()
-                            setIsCodeTruncated(!isCodeTruncated)
-                        }}
-                    />
+                    <CodePreview codeText={codeToRewrite} />
 
                     {/* Discard reason if applicable */}
                     {discardReason && (

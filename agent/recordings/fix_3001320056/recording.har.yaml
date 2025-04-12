@@ -111,7 +111,7 @@ log:
           - name: content-type
             value: application/json
           - name: traceparent
-            value: 00-1414abb2e73e5209d4ae024fe24151a3-2b550495366fbd64-01
+            value: 00-605c5ac0981606ee63975f37285ee7a7-4f7f0d352bdf2128-01
           - name: user-agent
             value: fix/v1 (Node.js v20.4.0)
           - name: x-requested-with
@@ -198,10 +198,10 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=8&client-name=fix&client-version=v1
       response:
-        bodySize: 497
+        bodySize: 455
         content:
           mimeType: text/event-stream
-          size: 497
+          size: 455
           text: >+
             event: completion
 
@@ -215,7 +215,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 06 Mar 2025 02:26:56 GMT
+            value: Fri, 07 Mar 2025 18:53:58 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -244,8 +244,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-03-06T02:26:54.999Z
-      time: 1826
+      startedDateTime: 2025-03-07T18:53:56.876Z
+      time: 1525
       timings:
         blocked: -1
         connect: -1
@@ -253,7 +253,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 1826
+        wait: 1525
     - _id: f1b1cde4cd57488b7f0137954f0302f5
       _order: 0
       cache: {}

@@ -4,6 +4,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonSyntaxException;
+import com.intellij.openapi.Disposable;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.ui.jcef.JBCefBrowserBase;
 import com.intellij.ui.jcef.JBCefJSQuery;
@@ -17,9 +18,9 @@ import javax.swing.*;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public class JavaToJSBridge {
+public class JavaToJSBridge implements Disposable {
   private final JBCefBrowserBase browser;
-  private final JBCefJSQuery query;
+  private JBCefJSQuery query;
   private final Lock lock;
   private Function<String, JBCefJSQuery.Response> handler = null;
 
@@ -116,5 +117,13 @@ public class JavaToJSBridge {
               }
             })
         .start();
+  }
+
+  @Override
+  public void dispose() {
+    if (query != null) {
+      query.dispose();
+      query = null;
+    }
   }
 }

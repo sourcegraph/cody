@@ -16,6 +16,7 @@ interface BaseAutoeditsProviderConfig {
     url: string
     tokenLimit: AutoEditsTokenLimit
     isChatModel: boolean
+    timeoutMs: number
 }
 
 export interface AutoeditsProviderConfig extends BaseAutoeditsProviderConfig {
@@ -24,8 +25,8 @@ export interface AutoeditsProviderConfig extends BaseAutoeditsProviderConfig {
 }
 
 const defaultTokenLimit = {
-    prefixTokens: 2500,
-    suffixTokens: 2500,
+    prefixTokens: 500,
+    suffixTokens: 500,
     maxPrefixLinesInArea: 11,
     maxSuffixLinesInArea: 4,
     codeToRewritePrefixLines: 1,
@@ -34,8 +35,8 @@ const defaultTokenLimit = {
         [RetrieverIdentifier.RecentEditsRetriever]: 1500,
         [RetrieverIdentifier.JaccardSimilarityRetriever]: 0,
         [RetrieverIdentifier.RecentCopyRetriever]: 500,
-        [RetrieverIdentifier.DiagnosticsRetriever]: 500,
-        [RetrieverIdentifier.RecentViewPortRetriever]: 2500,
+        [RetrieverIdentifier.DiagnosticsRetriever]: 250,
+        [RetrieverIdentifier.RecentViewPortRetriever]: 1000,
     },
 } as const satisfies AutoEditsTokenLimit
 
@@ -50,6 +51,7 @@ function getBaseProviderConfig(): BaseAutoeditsProviderConfig {
             url: 'https://cody-gateway.sourcegraph.com/v1/completions/fireworks',
             tokenLimit: defaultTokenLimit,
             isChatModel: false,
+            timeoutMs: 10_000,
         }
     }
 
@@ -59,6 +61,7 @@ function getBaseProviderConfig(): BaseAutoeditsProviderConfig {
         tokenLimit: defaultTokenLimit,
         url: '',
         isChatModel: false,
+        timeoutMs: 10_000,
     }
 }
 
@@ -81,6 +84,7 @@ function getAutoeditsProviderConfig(): AutoeditsProviderConfig {
         url: baseConfig.url ?? '',
         tokenLimit: baseConfig.tokenLimit,
         isChatModel: baseConfig.isChatModel,
+        timeoutMs: baseConfig.timeoutMs,
     }
 }
 

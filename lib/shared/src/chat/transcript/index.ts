@@ -38,5 +38,8 @@ export function serializeChatMessage(chatMessage: ChatMessage): SerializedChatMe
         processes: chatMessage.processes,
         agent: chatMessage.agent,
         subMessages: chatMessage.subMessages,
+        content: chatMessage.content,
     }
 }
+
+export * from './lightweight-history'

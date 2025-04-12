@@ -1,52 +1,44 @@
 import * as Dialog from '@radix-ui/react-dialog'
 import * as Tabs from '@radix-ui/react-tabs'
+
 import clsx from 'clsx'
 import {
     BookTextIcon,
+    ColumnsIcon,
     DownloadIcon,
     HistoryIcon,
     type LucideProps,
-    PlusIcon,
+    MessageSquarePlusIcon,
+    MessagesSquareIcon,
+    Settings2Icon,
     Trash2Icon,
 } from 'lucide-react'
 import { getVSCodeAPI } from '../utils/VSCodeApi'
 import { View } from './types'
 
-import { type AuthenticatedAuthStatus, CodyIDE, type Model, isDefined } from '@sourcegraph/cody-shared'
-import {
-    type FC,
-    Fragment,
-    type FunctionComponent,
-    forwardRef,
-    memo,
-    useCallback,
-    useEffect,
-    useMemo,
-    useRef,
-    useState,
-} from 'react'
+import { type AuthenticatedAuthStatus, CodyIDE, FeatureFlag, isDefined } from '@sourcegraph/cody-shared'
+import { type FC, Fragment, forwardRef, memo, useCallback, useMemo, useState } from 'react'
 import { Tooltip, TooltipContent, TooltipTrigger } from '../components/shadcn/ui/tooltip'
 import { useConfig } from '../utils/useConfig'
+import { useFeatureFlag } from '../utils/useFeatureFlags'
 
 import { useExtensionAPI } from '@sourcegraph/prompt-editor'
 import { isEqual } from 'lodash'
 import type { UserAccountInfo } from '../Chat'
 import { downloadChatHistory } from '../chat/downloadChatHistory'
 import { UserMenu } from '../components/UserMenu'
-import { ModelSelectField } from '../components/modelSelectField/ModelSelectField'
 import { Button } from '../components/shadcn/ui/button'
-import { useClientConfig } from '../utils/useClientConfig'
 import styles from './TabsBar.module.css'
 import { getCreateNewChatCommand } from './utils'
 
 interface TabsBarProps {
-    models?: Model[]
     user: UserAccountInfo
     currentView: View
     setView: (view: View) => void
     endpointHistory: string[]
     // Whether to show the Sourcegraph Teams upgrade CTA or not.
     isWorkspacesUpgradeCtaEnabled?: boolean
+    showOpenInEditor?: boolean
 }
 
 type IconComponent = React.ForwardRefExoticComponent<
@@ -75,27 +67,18 @@ interface TabConfig {
     Icon: IconComponent
     view: View
     title: string
-    tooltip?: React.ReactNode
     command?: string
     changesView?: boolean
     subActions?: TabSubAction[]
 }
 
 export const TabsBar = memo<TabsBarProps>(props => {
-    const { currentView, setView, user, endpointHistory, models } = props
+    const { currentView, setView, user, endpointHistory, showOpenInEditor } = props
     const { isCodyProUser, IDE } = user
+    const tabItems = useTabs({ user })
     const {
         config: { webviewType, multipleWebviewsEnabled, allowEndpointChange },
     } = useConfig()
-
-    const newChatCommand = getCreateNewChatCommand({
-        IDE,
-        webviewType,
-        multipleWebviewsEnabled,
-    })
-
-    const tabItems = useTabs({ user }, newChatCommand, currentView)
-
     const currentViewSubActions = tabItems.find(tab => tab.view === currentView)?.subActions ?? []
 
     const handleClick = useCallback(
@@ -128,114 +111,101 @@ export const TabsBar = memo<TabsBarProps>(props => {
         [setView]
     )
 
-    // Create a ref to access the ModelSelectField methods
-    const modelSelectorRef = useRef<{ open: () => void; close: () => void } | null>(null)
-
-    // Set up keyboard event listener
-    useEffect(() => {
-        const handleKeyDown = (event: KeyboardEvent) => {
-            if (event.metaKey) {
-                // Open model dropdown
-                if (event.key.toLowerCase() === 'm') {
-                    event.preventDefault()
-                    event.stopPropagation()
-                    modelSelectorRef?.current?.open()
-                }
-            }
-        }
-
-        const handleKeyUp = (event: KeyboardEvent) => {
-            if (event.key === 'Escape') {
-                event.preventDefault()
-                event.stopPropagation()
-                modelSelectorRef?.current?.close()
-            }
-        }
-
-        // Add global event listener
-        window.addEventListener('keyup', handleKeyUp)
-        window.addEventListener('keydown', handleKeyDown)
-
-        // Clean up
-        return () => {
-            window.removeEventListener('keydown', handleKeyDown)
-            window.removeEventListener('keyup', handleKeyUp)
-        }
-    }, [])
     return (
         <div className={clsx(styles.tabsRoot, { [styles.tabsRootCodyWeb]: IDE === CodyIDE.Web })}>
             <Tabs.List aria-label="cody-webview" className={styles.tabsContainer}>
                 <div className={styles.tabs}>
-                    {currentView === View.Chat && (
-                        <ModelSelectFieldToolbarItem
-                            models={models}
-                            userInfo={user}
-                            modelSelectorRef={modelSelectorRef}
-                            className="tw-mr-1"
+                    {tabItems.map(({ Icon, view, command, title, changesView }) => (
+                        <Tabs.Trigger key={view} value={view} asChild={true}>
+                            <TabButton
+                                Icon={Icon}
+                                view={view}
+                                title={title}
+                                IDE={IDE}
+                                isActive={currentView === view}
+                                onClick={() => handleClick(view, command, changesView)}
+                                data-testid={`tab-${view}`}
+                            />
+                        </Tabs.Trigger>
+                    ))}
+                    <div className="tw-flex tw-ml-auto">
+                        <TabButton
+                            prominent
+                            Icon={MessageSquarePlusIcon}
+                            title={'New Chat'}
+                            IDE={IDE}
+                            tooltipExtra={IDE === CodyIDE.VSCode && '(⇧⌥/)'}
+                            view={View.Chat}
+                            data-testid="new-chat-button"
+                            onClick={() =>
+                                handleSubActionClick({
+                                    changesView: View.Chat,
+                                    command: getCreateNewChatCommand({
+                                        IDE,
+                                        webviewType,
+                                        multipleWebviewsEnabled,
+                                    }),
+                                })
+                            }
                         />
-                    )}
-                    {webviewType !== 'editor' && (
-                        <div className="tw-flex tw-ml-auto">
-                            {tabItems.map(({ Icon, view, command, title, changesView, tooltip }) => (
-                                <Tabs.Trigger key={view} value={view} asChild={true}>
-                                    <TabButton
-                                        Icon={Icon}
-                                        view={view}
-                                        title={title}
-                                        IDE={IDE}
-                                        isActive={currentView === view}
-                                        onClick={() => handleClick(view, command, changesView)}
-                                        data-testid={`tab-${view}`}
-                                        tooltipExtra={tooltip}
-                                        alwaysShowTitle={false}
-                                    />
-                                </Tabs.Trigger>
-                            ))}
-                            {IDE !== CodyIDE.Web && (
-                                <UserMenu
-                                    authStatus={user.user as AuthenticatedAuthStatus}
-                                    isProUser={isCodyProUser}
-                                    endpointHistory={endpointHistory}
-                                    allowEndpointChange={allowEndpointChange}
-                                    className="!tw-opacity-100 tw-h-full"
-                                    isWorkspacesUpgradeCtaEnabled={props.isWorkspacesUpgradeCtaEnabled}
+                        {showOpenInEditor && (
+                            <TabButton
+                                prominent
+                                Icon={ColumnsIcon}
+                                title={'Open in Editor'}
+                                IDE={IDE}
+                                view={View.Chat}
+                                data-testid="open-in-editor-button"
+                                onClick={() =>
+                                    handleSubActionClick({
+                                        changesView: View.Chat,
+                                        command: 'cody.chat.moveToEditor',
+                                    })
+                                }
+                            />
+                        )}
+                        {IDE !== CodyIDE.Web && (
+                            <UserMenu
+                                authStatus={user.user as AuthenticatedAuthStatus}
+                                isProUser={isCodyProUser}
+                                endpointHistory={endpointHistory}
+                                allowEndpointChange={allowEndpointChange}
+                                className="!tw-opacity-100 tw-h-full"
+                                isWorkspacesUpgradeCtaEnabled={props.isWorkspacesUpgradeCtaEnabled}
+                                IDE={IDE}
+                            />
+                        )}
+                    </div>
+                </div>
+                <div className={styles.subTabs}>
+                    {currentViewSubActions.map(subAction => (
+                        <Fragment key={`${subAction.command}/${subAction.uri ?? ''}`}>
+                            {subAction.confirmation ? (
+                                <ActionButtonWithConfirmation
+                                    title={subAction.title}
+                                    Icon={subAction.Icon}
                                     IDE={IDE}
+                                    alwaysShowTitle={true}
+                                    tooltipExtra={subAction.tooltipExtra}
+                                    dialogTitle={subAction.confirmation.title}
+                                    dialogDescription={subAction.confirmation.description}
+                                    dialogConfirmAction={subAction.confirmation.confirmationAction}
+                                    onConfirm={() => handleSubActionClick(subAction)}
+                                />
+                            ) : (
+                                <TabButton
+                                    Icon={subAction.Icon}
+                                    title={subAction.title}
+                                    IDE={IDE}
+                                    uri={subAction.uri}
+                                    alwaysShowTitle={true}
+                                    tooltipExtra={subAction.tooltipExtra}
+                                    onClick={() => handleSubActionClick(subAction)}
                                 />
                             )}
-                        </div>
-                    )}
+                        </Fragment>
+                    ))}
                 </div>
-                {webviewType !== 'editor' && (
-                    <div className={styles.subTabs}>
-                        {currentViewSubActions.map(subAction => (
-                            <Fragment key={`${subAction.command}/${subAction.uri ?? ''}`}>
-                                {subAction.confirmation ? (
-                                    <ActionButtonWithConfirmation
-                                        title={subAction.title}
-                                        Icon={subAction.Icon}
-                                        IDE={IDE}
-                                        alwaysShowTitle={true}
-                                        tooltipExtra={subAction.tooltipExtra}
-                                        dialogTitle={subAction.confirmation.title}
-                                        dialogDescription={subAction.confirmation.description}
-                                        dialogConfirmAction={subAction.confirmation.confirmationAction}
-                                        onConfirm={() => handleSubActionClick(subAction)}
-                                    />
-                                ) : (
-                                    <TabButton
-                                        Icon={subAction.Icon}
-                                        title={subAction.title}
-                                        IDE={IDE}
-                                        uri={subAction.uri}
-                                        alwaysShowTitle={true}
-                                        tooltipExtra={subAction.tooltipExtra}
-                                        onClick={() => handleSubActionClick(subAction)}
-                                    />
-                                )}
-                            </Fragment>
-                        ))}
-                    </div>
-                )}
             </Tabs.List>
         </div>
     )
@@ -389,13 +359,9 @@ TabButton.displayName = 'TabButton'
  * Returns list of tabs and its sub-action buttons, used later as configuration for
  * tabs rendering in chat header.
  */
-function useTabs(
-    input: Pick<TabsBarProps, 'user'>,
-    newChatCommand: string,
-    currentView: View
-): TabConfig[] {
+function useTabs(input: Pick<TabsBarProps, 'user'>): TabConfig[] {
     const IDE = input.user.IDE
-
+    const isMcpEnabled = useFeatureFlag(FeatureFlag.NextAgenticChatInternal)
     const extensionAPI = useExtensionAPI<'userHistory'>()
 
     return useMemo<TabConfig[]>(
@@ -404,9 +370,8 @@ function useTabs(
                 [
                     {
                         view: View.Chat,
-                        title: currentView === View.Chat ? 'New Chat' : 'Chat',
-                        Icon: PlusIcon,
-                        command: currentView === View.Chat ? newChatCommand : null,
+                        title: 'Chat',
+                        Icon: MessagesSquareIcon,
                         changesView: true,
                     },
                     {
@@ -452,49 +417,16 @@ function useTabs(
                         Icon: BookTextIcon,
                         changesView: true,
                     },
+                    isMcpEnabled
+                        ? {
+                              view: View.Settings,
+                              title: 'Settings',
+                              Icon: Settings2Icon,
+                              changesView: true,
+                          }
+                        : null,
                 ] as (TabConfig | null)[]
             ).filter(isDefined),
-        [IDE, extensionAPI, newChatCommand, currentView]
-    )
-}
-
-const ModelSelectFieldToolbarItem: FunctionComponent<{
-    models?: Model[]
-    userInfo: UserAccountInfo
-    className?: string
-    modelSelectorRef: React.MutableRefObject<{ open: () => void; close: () => void } | null>
-}> = ({ userInfo, className, models, modelSelectorRef }) => {
-    const clientConfig = useClientConfig()
-    const serverSentModelsEnabled = !!clientConfig?.modelsAPIEnabled
-
-    const api = useExtensionAPI()
-
-    const onModelSelect = useCallback(
-        (model: Model) => {
-            api.setChatModel(model.id).subscribe({
-                error: error => console.error('setChatModel:', error),
-            })
-        },
-        [api.setChatModel]
-    )
-
-    if (!models) {
-        return null
-    }
-
-    return (
-        !!models?.length &&
-        (userInfo.isDotComUser || serverSentModelsEnabled) && (
-            <ModelSelectField
-                models={models}
-                onModelSelect={onModelSelect}
-                serverSentModelsEnabled={serverSentModelsEnabled}
-                userInfo={userInfo}
-                className={clsx('tw-pl-2', className)}
-                data-testid="chat-model-selector"
-                modelSelectorRef={modelSelectorRef}
-                onCloseByEscape={() => modelSelectorRef?.current?.close()}
-            />
-        )
+        [IDE, extensionAPI, isMcpEnabled]
     )
 }

@@ -1,6 +1,7 @@
 import { type PromptString, contextFiltersProvider } from '@sourcegraph/cody-shared'
 import type { AutocompleteContextSnippet } from '@sourcegraph/cody-shared'
 import type { AutocompleteContextSnippetMetadataFields } from '@sourcegraph/cody-shared'
+import { LRUCache } from 'lru-cache'
 import * as vscode from 'vscode'
 import { autoeditsOutputChannelLogger } from '../../../../autoedits/output-channel-logger'
 import type { ContextRetriever, ContextRetrieverOptions } from '../../../types'
@@ -9,7 +10,7 @@ import type {
     DiffHunk,
     RecentEditsRetrieverDiffStrategy,
 } from './recent-edits-diff-helpers/recent-edits-diff-strategy'
-import { RecentEditsTracker } from './recent-edits-tracker'
+import { RecentEditsTracker, getCacheKeyForTrackedDocument } from './recent-edits-tracker'
 
 interface DiffHunkWithStrategy extends DiffHunk {
     diffStrategyMetadata: AutocompleteContextSnippetMetadataFields
@@ -34,6 +35,7 @@ export class RecentEditsRetriever implements vscode.Disposable, ContextRetriever
     public identifier = RetrieverIdentifier.RecentEditsRetriever
     private readonly diffStrategyList: RecentEditsRetrieverDiffStrategy[]
     private readonly recentEditsTracker: RecentEditsTracker
+    private cache: LRUCache<string, DiffHunkWithStrategy[]>
 
     constructor(
         options: RecentEditsRetrieverOptions,
@@ -42,6 +44,7 @@ export class RecentEditsRetriever implements vscode.Disposable, ContextRetriever
             'onDidChangeTextDocument' | 'onDidRenameFiles' | 'onDidDeleteFiles' | 'onDidOpenTextDocument'
         > = vscode.workspace
     ) {
+        this.cache = new LRUCache({ max: 500 })
         this.recentEditsTracker = new RecentEditsTracker(options.maxAgeMs, workspace)
         this.diffStrategyList = options.diffStrategyList
     }
@@ -134,6 +137,11 @@ export class RecentEditsRetriever implements vscode.Disposable, ContextRetriever
         if (!trackedDocument || trackedDocument.changes.length === 0) {
             return null
         }
+        const cacheKey = getCacheKeyForTrackedDocument(trackedDocument)
+        const cached = this.cache.get(cacheKey)
+        if (cached) {
+            return cached
+        }
         const diffHunks: DiffHunkWithStrategy[] = []
         for (const diffStrategy of this.diffStrategyList) {
             const hunks = diffStrategy.getDiffHunks({
@@ -148,6 +156,7 @@ export class RecentEditsRetriever implements vscode.Disposable, ContextRetriever
                 })
             }
         }
+        this.cache.set(cacheKey, diffHunks)
         return diffHunks
     }
 

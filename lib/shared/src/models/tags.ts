@@ -36,4 +36,6 @@ export enum ModelTag {
     Vision = 'vision', // Model supports vision capabilities
     Reasoning = 'reasoning', // Model supports reasoning capabilities
     Tools = 'tools', // Model supports tools capabilities
+    Default = 'default', // Default Model
+    Unlimited = 'unlimited', // Models with unlimited usage when rate limited
 }

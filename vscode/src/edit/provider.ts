@@ -7,6 +7,7 @@ import {
     BotResponseMultiplexer,
     DEFAULT_EVENT_SOURCE,
     EventSourceTelemetryMetadataMapping,
+    type SiteAndCodyAPIVersions,
     Typewriter,
     currentAuthStatus,
     currentSiteVersion,
@@ -40,11 +41,11 @@ import { PROMPT_TOPICS, SMART_APPLY_MODEL_IDENTIFIERS } from './prompt/constants
 import { SmartApplyCustomEditPromptBuilder } from './prompt/smart-apply/apply/smart-apply-custom'
 import type { EditPromptBuilder } from './prompt/type'
 import { EditIntentTelemetryMetadataMapping, EditModeTelemetryMetadataMapping } from './types'
-import { isStreamedIntent } from './utils/edit-intent'
 
 interface EditProviderOptions extends EditManagerOptions {
     task: FixupTask
     fixupController: FixupController
+    siteVersion: SiteAndCodyAPIVersions | null
 }
 
 /**
@@ -79,6 +80,7 @@ export class EditProvider {
     private insertionInProgress = false
     private promptBuilder: EditPromptBuilder
     private modelParameterProvider: ModelParameterProvider
+    private siteVersion: SiteAndCodyAPIVersions | null = null
     private cache = new LRUCache<string, StreamSession>({ max: 20 })
 
     constructor(public config: EditProviderOptions) {
@@ -92,6 +94,7 @@ export class EditProvider {
             this.modelParameterProvider = new DefaultModelParameterProvider()
             this.promptBuilder = new DefaultEditPromptBuilder()
         }
+        this.siteVersion = this.config.siteVersion
     }
 
     /**
@@ -201,7 +204,7 @@ export class EditProvider {
             const editTimeToFirstTokenSpan = tracer.startSpan('cody.edit.provider.timeToFirstToken')
             const model = this.config.task.model
             const contextWindow = modelsService.getContextWindowByID(model)
-            const versions = await currentSiteVersion()
+            const versions = this.siteVersion ?? (await currentSiteVersion())
 
             if (isError(versions)) {
                 this.handleError(versions)
@@ -352,6 +355,26 @@ export class EditProvider {
         return session.streamingPromise
     }
 
+    // Applies a Guardrails check, if necessary, and resolves to `true` if
+    // the edit should proceed. Handles cancelling the task if the attribution
+    // check failed. Only call this once when a task is complete, because it
+    // can initiate a snippet attribution request.
+    private async checkGuardrails(task: FixupTask, response: string): Promise<boolean> {
+        try {
+            if (await this.config.guardrails.canPresentToUser(task.original, response ?? '')) {
+                return true
+            }
+            this.config.fixupController.cancel(task)
+            return false
+        } catch (error) {
+            this.config.fixupController.error(
+                task.id,
+                error instanceof Error ? error : new Error(`${error}`)
+            )
+            return false
+        }
+    }
+
     private async handleResponse(response: string, isMessageInProgress: boolean): Promise<void> {
         // Error state: The response finished but we didn't receive any text
         if (!response && !isMessageInProgress) {
@@ -363,9 +386,9 @@ export class EditProvider {
             return
         }
 
-        // If the response finished and we didn't receive a test file name suggestion,
-        // we will create one manually before inserting the response to the new test file
         if (this.config.task.intent === 'test' && !this.config.task.destinationFile) {
+            // If the response finished and we didn't receive a test file name suggestion,
+            // we will create one manually before inserting the response to the new test file
             if (isMessageInProgress) {
                 return
             }
@@ -374,6 +397,11 @@ export class EditProvider {
 
         if (!isMessageInProgress) {
             const { task } = this.config
+
+            if (!(await this.checkGuardrails(task, response))) {
+                return
+            }
+
             const legacyMetadata = {
                 intent: EditIntentTelemetryMetadataMapping[task.intent] || task.intent,
                 mode: EditModeTelemetryMetadataMapping[task.mode] || task.mode,
@@ -401,7 +429,7 @@ export class EditProvider {
             })
         }
 
-        if (isStreamedIntent(this.config.task.intent)) {
+        if (this.config.task.isStreamed) {
             this.queueInsertion(response, isMessageInProgress)
         } else {
             this.handleFixupEdit(response, isMessageInProgress)

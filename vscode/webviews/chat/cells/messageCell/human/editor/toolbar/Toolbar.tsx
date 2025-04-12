@@ -5,13 +5,16 @@ import {
     type ContextItemMedia,
     type Model,
     ModelTag,
+    isMacOS,
 } from '@sourcegraph/cody-shared'
 import clsx from 'clsx'
-import { type FunctionComponent, useCallback, useMemo } from 'react'
+import { type FunctionComponent, useCallback, useEffect, useMemo, useRef } from 'react'
 import type { UserAccountInfo } from '../../../../../../Chat'
+import { ModelSelectField } from '../../../../../../components/modelSelectField/ModelSelectField'
 import { PromptSelectField } from '../../../../../../components/promptSelectField/PromptSelectField'
 import toolbarStyles from '../../../../../../components/shadcn/ui/toolbar.module.css'
 import { useActionSelect } from '../../../../../../prompts/PromptsTab'
+import { useClientConfig } from '../../../../../../utils/useClientConfig'
 import { MediaUploadButton } from './MediaUploadButton'
 import { ModeSelectorField } from './ModeSelectorButton'
 import { SubmitButton, type SubmitButtonState } from './SubmitButton'
@@ -87,6 +90,28 @@ export const Toolbar: FunctionComponent<{
         return (!isDotCom || isBYOK) && isVision
     }, [userInfo?.isDotComUser, models?.[0]])
 
+    const modelSelectorRef = useRef<{ open: () => void; close: () => void } | null>(null)
+
+    // Set up keyboard event listener
+    useEffect(() => {
+        const handleKeyboardShortcuts = (event: KeyboardEvent) => {
+            // Model selector (⌘M on Mac, ctrl+M on other platforms)
+            // metaKey is set to cmd(⌘) on macOS, and windows key on other platforms
+            if ((isMacOS() ? event.metaKey : event.ctrlKey) && event.key.toLowerCase() === 'm') {
+                event.preventDefault()
+                modelSelectorRef?.current?.open()
+            }
+
+            // Close dropdowns on Escape
+            else if (event.key === 'Escape') {
+                modelSelectorRef?.current?.close()
+            }
+        }
+
+        window.addEventListener('keydown', handleKeyboardShortcuts)
+        return () => window.removeEventListener('keydown', handleKeyboardShortcuts)
+    }, [])
+
     if (models?.length < 2) {
         return null
     }
@@ -115,15 +140,23 @@ export const Toolbar: FunctionComponent<{
                     />
                 )}
                 <PromptSelectFieldToolbarItem focusEditor={focusEditor} className="tw-ml-1 tw-mr-1" />
-                {!userInfo?.isDotComUser && omniBoxEnabled && (
-                    <ModeSelectorField
-                        className={className}
-                        omniBoxEnabled={omniBoxEnabled}
-                        intent={intent}
-                        isDotComUser={userInfo?.isDotComUser}
-                        manuallySelectIntent={manuallySelectIntent}
-                    />
-                )}
+                <ModeSelectorField
+                    className={className}
+                    omniBoxEnabled={omniBoxEnabled}
+                    _intent={intent}
+                    isDotComUser={userInfo?.isDotComUser}
+                    isCodyProUser={userInfo?.isCodyProUser}
+                    manuallySelectIntent={manuallySelectIntent}
+                />
+                <ModelSelectFieldToolbarItem
+                    models={models}
+                    userInfo={userInfo}
+                    focusEditor={focusEditor}
+                    modelSelectorRef={modelSelectorRef}
+                    className="tw-mr-1"
+                    extensionAPI={extensionAPI}
+                    intent={intent}
+                />
             </div>
             <div className="tw-flex-1 tw-flex tw-justify-end">
                 <SubmitButton onClick={onSubmitClick} state={submitState} />
@@ -147,4 +180,55 @@ const PromptSelectFieldToolbarItem: FunctionComponent<{
     )
 
     return <PromptSelectField onSelect={onSelect} onCloseByEscape={focusEditor} className={className} />
+}
+
+const ModelSelectFieldToolbarItem: FunctionComponent<{
+    models: Model[]
+    userInfo: UserAccountInfo
+    focusEditor?: () => void
+    className?: string
+    extensionAPI: WebviewToExtensionAPI
+    modelSelectorRef: React.MutableRefObject<{ open: () => void; close: () => void } | null>
+    intent?: ChatMessage['intent']
+}> = ({ userInfo, focusEditor, className, models, extensionAPI, modelSelectorRef, intent }) => {
+    const clientConfig = useClientConfig()
+    const serverSentModelsEnabled = !!clientConfig?.modelsAPIEnabled
+
+    const agenticModel = useMemo(() => models.find(m => m.tags.includes(ModelTag.Default)), [models])
+
+    // If in agentic mode, ensure the agentic model is selected
+    useEffect(() => {
+        if (intent === 'agentic' && agenticModel && models[0]?.id !== agenticModel.id) {
+            extensionAPI.setChatModel(agenticModel.id).subscribe({
+                error: error => console.error('Failed to set chat model:', error),
+            })
+        }
+    }, [intent, agenticModel, models, extensionAPI.setChatModel])
+
+    const onModelSelect = useCallback(
+        (model: Model) => {
+            extensionAPI.setChatModel(model.id).subscribe({
+                error: error => console.error('setChatModel:', error),
+            })
+            focusEditor?.()
+        },
+        [extensionAPI.setChatModel, focusEditor]
+    )
+
+    return (
+        !!models?.length &&
+        (userInfo.isDotComUser || serverSentModelsEnabled) && (
+            <ModelSelectField
+                models={models}
+                onModelSelect={onModelSelect}
+                serverSentModelsEnabled={serverSentModelsEnabled}
+                userInfo={userInfo}
+                className={className}
+                data-testid="chat-model-selector"
+                modelSelectorRef={modelSelectorRef}
+                onCloseByEscape={() => modelSelectorRef?.current?.close()}
+                intent={intent}
+            />
+        )
+    )
 }

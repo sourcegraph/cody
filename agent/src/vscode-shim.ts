@@ -31,6 +31,7 @@ import type * as vscode from 'vscode'
 //     at Object.<anonymous> (/snapshot/dist/agent.js)
 //     at Module._compile (pkg/prelude/bootstrap.js:1926:22)
 // </VERY IMPORTANT>
+import type { AutoeditsProvider } from '../../vscode/src/autoedits/autoedits-provider'
 import type { InlineCompletionItemProvider } from '../../vscode/src/completions/inline-completion-item-provider'
 import type { API, GitExtension, Repository } from '../../vscode/src/repository/builtinGitExtension'
 import { AgentEventEmitter as EventEmitter } from '../../vscode/src/testutils/AgentEventEmitter'
@@ -559,7 +560,11 @@ function outputChannel(name: string): vscode.LogOutputChannel {
             const formattedMessage = args.length
                 ? String(message).replace(/{(\d+)}/g, (match, num) => args[num]?.toString() ?? match)
                 : message
-            agent.notify('debug/message', { channel: name, message: formattedMessage, level })
+            agent.notify('debug/message', {
+                channel: name,
+                message: formattedMessage,
+                level,
+            })
         }
     }
     return {
@@ -1108,12 +1113,64 @@ _commands?.registerCommand?.(
         return _window.showTextDocument(uriPath, options)
     }
 )
+_commands?.registerCommand?.('editor.action.inlineSuggest.hide', () => {
+    agent?.notify('autocomplete/didHide', null)
+})
+_commands?.registerCommand?.('editor.action.inlineSuggest.trigger', () => {
+    agent?.notify('autocomplete/didTrigger', null)
+})
 
 function promisify(value: any): Promise<any> {
     return value instanceof Promise ? value : Promise.resolve(value)
 }
 
 export const commands = _commands as typeof vscode.commands
+
+// SCM namespace export
+export namespace scm {
+    /**
+     * The {@link SourceControlInputBox input box} for the last source control
+     * created by the extension.
+     *
+     * @deprecated Use SourceControl.inputBox instead
+     */
+    export const inputBox: vscode.SourceControlInputBox = {
+        value: '',
+        placeholder: '',
+        visible: true,
+        enabled: false,
+    }
+
+    /**
+     * Creates a new {@link SourceControl source control} instance.
+     *
+     * @param id An `id` for the source control. Something short, e.g.: `git`.
+     * @param label A human-readable string for the source control. E.g.: `Git`.
+     * @param rootUri An optional Uri of the root of the source control. E.g.: `Uri.parse(workspaceRoot)`.
+     * @return An instance of {@link SourceControl source control}.
+     */
+    export function createSourceControl(id: string, label: string, rootUri?: Uri): vscode.SourceControl {
+        return {
+            id,
+            label,
+            rootUri,
+            inputBox: inputBox,
+            count: undefined,
+            quickDiffProvider: undefined,
+            commitTemplate: undefined,
+            acceptInputCommand: undefined,
+            statusBarCommands: [],
+            createResourceGroup: () => ({
+                id: 'id',
+                label: 'label',
+                hideWhenEmpty: false,
+                dispose: () => {},
+                resourceStates: [],
+            }),
+            dispose: () => {},
+        }
+    }
+}
 
 const _env: Partial<typeof vscode.env> = {
     uriScheme: 'file',
@@ -1128,7 +1185,9 @@ const _env: Partial<typeof vscode.env> = {
     },
     openExternal: (uri: vscode.Uri): Thenable<boolean> => {
         // Handle the case where the user is trying to authenticate with redirect URI.
-        if (uri.toString()?.includes('user/settings/tokens/new/callback?requestFrom')) {
+        if (
+            decodeURIComponent(uri.toString())?.includes('user/settings/tokens/new/callback?requestFrom')
+        ) {
             agent?.authenticationHandler?.handleCallback(uri)
             return Promise.resolve(true)
         }
@@ -1160,12 +1219,13 @@ const removeCodeLensProvider = new EventEmitter<vscode.CodeLensProvider>()
 export const onDidRegisterNewCodeLensProvider = newCodeLensProvider.event
 export const onDidUnregisterNewCodeLensProvider = removeCodeLensProvider.event
 
-let latestCompletionProvider: InlineCompletionItemProvider | undefined
-let resolveFirstCompletionProvider: (provider: InlineCompletionItemProvider) => void = () => {}
-const firstCompletionProvider = new Promise<InlineCompletionItemProvider>(resolve => {
+type CompletionProvider = InlineCompletionItemProvider | AutoeditsProvider
+let latestCompletionProvider: CompletionProvider | undefined
+let resolveFirstCompletionProvider: (provider: CompletionProvider) => void = () => {}
+const firstCompletionProvider = new Promise<CompletionProvider>(resolve => {
     resolveFirstCompletionProvider = resolve
 })
-export function completionProvider(): Promise<InlineCompletionItemProvider> {
+export function completionProvider(): Promise<CompletionProvider> {
     if (latestCompletionProvider) {
         return Promise.resolve(latestCompletionProvider)
     }

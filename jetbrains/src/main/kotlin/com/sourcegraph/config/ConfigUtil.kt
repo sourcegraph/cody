@@ -12,7 +12,6 @@ import com.intellij.openapi.fileEditor.TextEditor
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ProjectManager
 import com.sourcegraph.cody.agent.CodyAgentService
-import com.sourcegraph.cody.agent.protocol_generated.Date
 import com.sourcegraph.cody.agent.protocol_generated.ExtensionConfiguration
 import com.sourcegraph.cody.auth.CodyAuthService
 import com.sourcegraph.cody.auth.CodySecureStore
@@ -169,18 +168,28 @@ object ConfigUtil {
             "cody.experimental.foldingRanges" to "indentation-based",
             "cody.advanced.agent.ide.productCode" to getIntellijProductCode())
 
-    return try {
-      val text = customConfigContent ?: getSettingsFile(project).readText()
+    try {
+      val text =
+          try {
+            customConfigContent ?: getSettingsFile(project).readText()
+          } catch (e: Exception) {
+            logger.info("No user defined settings file found. Proceeding with empty custom config")
+            ""
+          }
+
       var config = ConfigFactory.parseString(text).resolve()
+      val globalConfig = ConfigFactory.parseString(GlobalCodySettings.getConfigJson()).resolve()
       additionalProperties.forEach { (key, value) ->
         config = config.withValue(key, ConfigValueFactory.fromAnyRef(value))
       }
-      config
+
+      return config
+          .withFallback(globalConfig)
           .root()
           .render(ConfigRenderOptions.defaults().setComments(false).setOriginComments(false))
     } catch (e: Exception) {
-      logger.info("No user defined settings file found. Proceeding with empty custom config")
-      ""
+      logger.error("Failed to parse Cody config", e)
+      return ""
     }
   }
 

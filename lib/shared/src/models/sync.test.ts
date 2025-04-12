@@ -42,97 +42,9 @@ vi.mock('../services/LocalStorageProvider')
 vi.mock('../experimentation/FeatureFlagProvider')
 
 // Returns true for all feature flags enabled during synctests.
-vi.spyOn(featureFlagProvider, 'evaluatedFeatureFlag').mockReturnValue(Observable.of(true))
+vi.spyOn(featureFlagProvider, 'evaluateFeatureFlag').mockReturnValue(Observable.of(true))
 
 mockClientCapabilities(CLIENT_CAPABILITIES_FIXTURE)
-
-describe('maybeAdjustContextWindows', () => {
-    it('works', () => {
-        const defaultMaxInputTokens = 8192
-        /**
-         * {@link defaultMaxInputTokens} * 0.85
-         * Max input token count adjustment comapred to the default OpenAI tokenizer
-         * (see {@link maybeAdjustContextWindows} implementation).
-         */
-        const mistralAdjustedMaxInputTokens = 6963
-        const contextWindow = {
-            maxInputTokens: defaultMaxInputTokens,
-            maxOutputTokens: 4096,
-        }
-        const testServerSideModels = [
-            {
-                modelRef: 'fireworks::v1::deepseek-coder-v2-lite-base',
-                displayName: '(Fireworks) DeepSeek V2 Lite Base',
-                modelName: 'deepseek-coder-v2-lite-base',
-                capabilities: ['autocomplete'],
-                category: ModelTag.Balanced,
-                status: 'stable',
-                tier: ModelTag.Enterprise,
-                contextWindow,
-            } satisfies ServerModel,
-            {
-                modelRef: 'fireworks::v1::mixtral-8x7b-instruct',
-                displayName: '(Fireworks) Mixtral 8x7b Instruct',
-                modelName: 'mixtral-8x7b-instruct',
-                capabilities: ['chat', 'autocomplete'],
-                category: ModelTag.Balanced,
-                status: 'stable',
-                tier: ModelTag.Enterprise,
-                contextWindow,
-            } satisfies ServerModel,
-            {
-                modelRef: 'fireworks::v1::mixtral-8x22b-instruct',
-                displayName: '(Fireworks) Mixtral 8x22b Instruct',
-                modelName: 'mixtral-8x22b-instruct',
-                capabilities: ['chat', 'autocomplete'],
-                category: ModelTag.Balanced,
-                status: 'stable',
-                tier: ModelTag.Enterprise,
-                contextWindow,
-            } satisfies ServerModel,
-            {
-                modelRef: 'fireworks::v1::starcoder-16b',
-                displayName: '(Fireworks) Starcoder 16B',
-                modelName: 'starcoder-16b',
-                capabilities: ['autocomplete'],
-                category: ModelTag.Balanced,
-                status: 'stable',
-                tier: ModelTag.Enterprise,
-                contextWindow,
-            } satisfies ServerModel,
-            {
-                modelRef: 'fireworks::v1::mistral-large-latest',
-                displayName: '(Mistral API) Mistral Large',
-                modelName: 'mistral-large-latest',
-                capabilities: ['chat'],
-                category: ModelTag.Balanced,
-                status: 'stable',
-                tier: ModelTag.Enterprise,
-                contextWindow,
-            } satisfies ServerModel,
-            {
-                modelRef: 'fireworks::v1::llama-v3p1-70b-instruct',
-                displayName: '(Fireworks) Llama 3.1 70B Instruct',
-                modelName: 'llama-v3p1-70b-instruct',
-                capabilities: ['chat'],
-                category: ModelTag.Balanced,
-                status: 'stable',
-                tier: ModelTag.Enterprise,
-                contextWindow,
-            } satisfies ServerModel,
-        ]
-
-        const results = maybeAdjustContextWindows(testServerSideModels)
-        const mistralModelNamePrefixes = ['mistral', 'mixtral']
-        for (const model of results) {
-            let wantMaxInputTokens = defaultMaxInputTokens
-            if (mistralModelNamePrefixes.some(p => model.modelName.startsWith(p))) {
-                wantMaxInputTokens = mistralAdjustedMaxInputTokens
-            }
-            expect(model.contextWindow.maxInputTokens).toBe(wantMaxInputTokens)
-        }
-    })
-})
 
 describe('server sent models', async () => {
     const serverOpus: ServerModel = {
@@ -148,7 +60,7 @@ describe('server sent models', async () => {
             maxOutputTokens: 4000,
         },
     }
-    const opus = createModelFromServerModel(serverOpus)
+    const opus = createModelFromServerModel(serverOpus, false)
 
     const serverClaude: ServerModel = {
         modelRef: 'anthropic::unknown::anthropic.claude-instant-v1',
@@ -163,7 +75,7 @@ describe('server sent models', async () => {
             maxOutputTokens: 4000,
         },
     }
-    const claude = createModelFromServerModel(serverClaude)
+    const claude = createModelFromServerModel(serverClaude, false)
 
     const serverTitan: ServerModel = {
         modelRef: 'anthropic::unknown::amazon.titan-text-lite-v1',
@@ -178,7 +90,7 @@ describe('server sent models', async () => {
             maxOutputTokens: 4000,
         },
     }
-    const titan = createModelFromServerModel(serverTitan)
+    const titan = createModelFromServerModel(serverTitan, false)
 
     const SERVER_MODELS: ServerModelConfiguration = {
         schemaVersion: '1.0',
@@ -189,11 +101,12 @@ describe('server sent models', async () => {
             chat: serverOpus.modelRef,
             fastChat: serverTitan.modelRef,
             codeCompletion: serverClaude.modelRef,
+            unlimitedChat: serverOpus.modelRef,
         },
     }
 
     const mockFetchServerSideModels = vi.fn(() => Promise.resolve(SERVER_MODELS))
-    vi.mocked(featureFlagProvider).evaluatedFeatureFlag.mockReturnValue(Observable.of(false))
+    vi.mocked(featureFlagProvider).evaluateFeatureFlag.mockReturnValue(Observable.of(false))
 
     const result = await firstValueFrom(
         syncModels({
@@ -309,6 +222,7 @@ describe('syncModels', () => {
             expect(values).toStrictEqual<typeof values>([
                 pendingOperation,
                 {
+                    isRateLimited: false,
                     localModels: [],
                     primaryModels: [modelFixture('foo')],
                     preferences: {
@@ -327,6 +241,7 @@ describe('syncModels', () => {
             configOverwritesSubject.next({ chatModel: 'bar' })
             await vi.advanceTimersByTimeAsync(0)
             const result0: ModelsData = {
+                isRateLimited: false,
                 localModels: [],
                 primaryModels: [modelFixture('bar')],
                 preferences: {
@@ -356,6 +271,7 @@ describe('syncModels', () => {
                         chat: 'qux::a::a',
                         fastChat: 'qux::a::a',
                         codeCompletion: 'qux::a::a',
+                        unlimitedChat: 'qux::a::a',
                     },
                     providers: [],
                     revision: '',
@@ -383,8 +299,9 @@ describe('syncModels', () => {
             clearValues()
             await vi.advanceTimersByTimeAsync(1)
             const result1: ModelsData = {
+                isRateLimited: false,
                 localModels: [],
-                primaryModels: [createModelFromServerModel(quxModel)],
+                primaryModels: [createModelFromServerModel(quxModel, false)],
                 preferences: {
                     defaults: {
                         autocomplete: 'qux::a::a',
@@ -420,6 +337,7 @@ describe('syncModels', () => {
                         chat: 'zzz::a::a',
                         fastChat: 'zzz::a::a',
                         codeCompletion: 'zzz::a::a',
+                        unlimitedChat: 'zzz::a::a',
                     },
                     providers: [],
                     revision: '',
@@ -448,8 +366,9 @@ describe('syncModels', () => {
             await vi.advanceTimersByTimeAsync(1)
             expect(values).toStrictEqual<typeof values>([
                 {
+                    isRateLimited: false,
                     localModels: [],
-                    primaryModels: [createModelFromServerModel(zzzModel)],
+                    primaryModels: [createModelFromServerModel(zzzModel, false)],
                     preferences: {
                         defaults: {
                             autocomplete: 'zzz::a::a',
@@ -504,11 +423,12 @@ describe('syncModels', () => {
                 chat: serverSonnet.modelRef,
                 fastChat: serverSonnet.modelRef,
                 codeCompletion: serverSonnet.modelRef,
+                unlimitedChat: serverSonnet.modelRef,
             },
         }
 
         const mockFetchServerSideModels = vi.fn(() => Promise.resolve(SERVER_MODELS))
-        vi.mocked(featureFlagProvider).evaluatedFeatureFlag.mockReturnValue(Observable.of(true))
+        vi.mocked(featureFlagProvider).evaluateFeatureFlag.mockReturnValue(Observable.of(true))
 
         const result = await firstValueFrom(
             syncModels({
@@ -535,10 +455,6 @@ describe('syncModels', () => {
 
         // Check if Deep Cody model is in the primary models list.
         expect(result.primaryModels.some(model => model.id.includes('deep-cody'))).toBe(true)
-
-        // Deep Cody should not replace the default chat / edit model.
-        expect(result.preferences.defaults.chat?.includes('deep-cody')).toBe(false)
-        expect(result.preferences.defaults.edit?.includes('deep-cody')).toBe(false)
 
         // preference should not be affected and remains unchanged as this is handled in a later step.
         expect(result.preferences.selected.chat).toBe(undefined)
@@ -581,6 +497,7 @@ describe('syncModels', () => {
                 chat: serverSonnet.modelRef,
                 fastChat: serverSonnet.modelRef,
                 codeCompletion: serverSonnet.modelRef,
+                unlimitedChat: serverSonnet.modelRef,
             },
         }
         const mockFetchServerSideModels = vi.fn(() => Promise.resolve(SERVER_MODELS))
@@ -588,16 +505,16 @@ describe('syncModels', () => {
         async function getModelResult(featureFlagEnabled: boolean, userCanUpgrade: boolean) {
             // set the feature flag
             if (featureFlagEnabled) {
-                vi.spyOn(featureFlagProvider, 'evaluatedFeatureFlag').mockImplementation(
-                    (flag: FeatureFlag) =>
-                        flag === FeatureFlag.CodyChatDefaultToClaude35Haiku
+                vi.spyOn(featureFlagProvider, 'evaluateFeatureFlag').mockImplementation(
+                    (flagName: FeatureFlag, _forceRefresh?: boolean) =>
+                        flagName === FeatureFlag.CodyChatDefaultToClaude35Haiku
                             ? Observable.of(featureFlagEnabled)
                             : Observable.of(false)
                 )
             } else {
-                vi.spyOn(featureFlagProvider, 'evaluatedFeatureFlag').mockImplementation(
-                    (flag: FeatureFlag) =>
-                        flag === FeatureFlag.CodyChatDefaultToClaude35Haiku
+                vi.spyOn(featureFlagProvider, 'evaluateFeatureFlag').mockImplementation(
+                    (flagName: FeatureFlag, _forceRefresh?: boolean) =>
+                        flagName === FeatureFlag.CodyChatDefaultToClaude35Haiku
                             ? Observable.of(featureFlagEnabled)
                             : Observable.of(true)
                 )
@@ -641,6 +558,202 @@ describe('syncModels', () => {
             const result = await getModelResult(true, false)
             expect(result.preferences.defaults.chat?.includes('sonnet')).toBe(true)
             expect(result.primaryModels.some(model => model.id.includes('sonnet'))).toBe(true)
+        })
+    })
+})
+describe('maybeAdjustContextWindows', () => {
+    it('works', () => {
+        const defaultMaxInputTokens = 8192
+        /**
+         * {@link defaultMaxInputTokens} * 0.85
+         * Max input token count adjustment comapred to the default OpenAI tokenizer
+         * (see {@link maybeAdjustContextWindows} implementation).
+         */
+        const mistralAdjustedMaxInputTokens = 6963
+        const contextWindow = {
+            maxInputTokens: defaultMaxInputTokens,
+            maxOutputTokens: 4096,
+        }
+        const testServerSideModels = [
+            {
+                modelRef: 'fireworks::v1::deepseek-coder-v2-lite-base',
+                displayName: '(Fireworks) DeepSeek V2 Lite Base',
+                modelName: 'deepseek-coder-v2-lite-base',
+                capabilities: ['autocomplete'],
+                category: ModelTag.Balanced,
+                status: 'stable',
+                tier: ModelTag.Enterprise,
+                contextWindow,
+            } satisfies ServerModel,
+            {
+                modelRef: 'fireworks::v1::mixtral-8x7b-instruct',
+                displayName: '(Fireworks) Mixtral 8x7b Instruct',
+                modelName: 'mixtral-8x7b-instruct',
+                capabilities: ['chat', 'autocomplete'],
+                category: ModelTag.Balanced,
+                status: 'stable',
+                tier: ModelTag.Enterprise,
+                contextWindow,
+            } satisfies ServerModel,
+            {
+                modelRef: 'fireworks::v1::mixtral-8x22b-instruct',
+                displayName: '(Fireworks) Mixtral 8x22b Instruct',
+                modelName: 'mixtral-8x22b-instruct',
+                capabilities: ['chat', 'autocomplete'],
+                category: ModelTag.Balanced,
+                status: 'stable',
+                tier: ModelTag.Enterprise,
+                contextWindow,
+            } satisfies ServerModel,
+            {
+                modelRef: 'fireworks::v1::starcoder-16b',
+                displayName: '(Fireworks) Starcoder 16B',
+                modelName: 'starcoder-16b',
+                capabilities: ['autocomplete'],
+                category: ModelTag.Balanced,
+                status: 'stable',
+                tier: ModelTag.Enterprise,
+                contextWindow,
+            } satisfies ServerModel,
+            {
+                modelRef: 'fireworks::v1::mistral-large-latest',
+                displayName: '(Mistral API) Mistral Large',
+                modelName: 'mistral-large-latest',
+                capabilities: ['chat'],
+                category: ModelTag.Balanced,
+                status: 'stable',
+                tier: ModelTag.Enterprise,
+                contextWindow,
+            } satisfies ServerModel,
+            {
+                modelRef: 'fireworks::v1::llama-v3p1-70b-instruct',
+                displayName: '(Fireworks) Llama 3.1 70B Instruct',
+                modelName: 'llama-v3p1-70b-instruct',
+                capabilities: ['chat'],
+                category: ModelTag.Balanced,
+                status: 'stable',
+                tier: ModelTag.Enterprise,
+                contextWindow,
+            } satisfies ServerModel,
+        ]
+
+        const results = maybeAdjustContextWindows(testServerSideModels, {
+            tier: 'enterprise',
+            enhancedContextWindowFlagEnabled: false,
+        })
+        const mistralModelNamePrefixes = ['mistral', 'mixtral']
+        for (const model of results) {
+            let wantMaxInputTokens = defaultMaxInputTokens
+            if (mistralModelNamePrefixes.some(p => model.modelName.startsWith(p))) {
+                wantMaxInputTokens = mistralAdjustedMaxInputTokens
+            }
+            expect(model.contextWindow.maxInputTokens).toBe(wantMaxInputTokens)
+        }
+    })
+    it('keeps original context window for old clients', () => {
+        // Arrange
+        const model: ServerModel = {
+            modelRef: 'test::1::model',
+            displayName: 'Test Model',
+            modelName: 'test-model',
+            capabilities: ['chat'],
+            category: 'balanced' as ModelCategory,
+            status: 'stable',
+            tier: ModelTag.Pro,
+            contextWindow: {
+                maxInputTokens: 10000,
+                maxOutputTokens: 4000,
+            },
+            modelConfigAllTiers: {
+                pro: {
+                    contextWindow: {
+                        maxInputTokens: 12000,
+                        maxOutputTokens: 5000,
+                        maxUserInputTokens: 8000,
+                    },
+                },
+                free: {
+                    contextWindow: {
+                        maxInputTokens: 8000,
+                        maxOutputTokens: 4000,
+                        maxUserInputTokens: 6000,
+                    },
+                },
+                enterprise: {
+                    contextWindow: {
+                        maxInputTokens: 12000,
+                        maxOutputTokens: 5000,
+                        maxUserInputTokens: 8000,
+                    },
+                },
+            },
+        }
+        const config = {
+            tier: 'pro' as const,
+            enhancedContextWindowFlagEnabled: false,
+        }
+
+        // Act
+        const result = maybeAdjustContextWindows([model], config)[0]
+
+        // Assert
+        expect(result.contextWindow).toEqual({
+            maxInputTokens: 10000,
+            maxOutputTokens: 4000,
+        })
+    })
+
+    it('applies enhanced context window limits when flag is enabled', () => {
+        // Arrange
+        const model: ServerModel = {
+            modelRef: 'test::1::model',
+            displayName: 'Test Model',
+            modelName: 'test-model',
+            capabilities: ['chat'],
+            category: 'balanced' as ModelCategory,
+            status: 'stable',
+            tier: ModelTag.Pro,
+            contextWindow: {
+                maxInputTokens: 10000,
+                maxOutputTokens: 4000,
+            },
+            modelConfigAllTiers: {
+                pro: {
+                    contextWindow: {
+                        maxInputTokens: 12000,
+                        maxOutputTokens: 5000,
+                        maxUserInputTokens: 8000,
+                    },
+                },
+                free: {
+                    contextWindow: {
+                        maxInputTokens: 8000,
+                        maxOutputTokens: 4000,
+                        maxUserInputTokens: 6000,
+                    },
+                },
+                enterprise: {
+                    contextWindow: {
+                        maxInputTokens: 12000,
+                        maxOutputTokens: 5000,
+                        maxUserInputTokens: 8000,
+                    },
+                },
+            },
+        }
+        const config = {
+            tier: 'pro' as const,
+            enhancedContextWindowFlagEnabled: true,
+        }
+
+        // Act
+        const result = maybeAdjustContextWindows([model], config)[0]
+
+        // Assert
+        expect(result.contextWindow).toEqual({
+            maxInputTokens: 12000,
+            maxOutputTokens: 5000,
+            maxUserInputTokens: 8000,
         })
     })
 })

@@ -1,7 +1,7 @@
 import type { CodeCompletionsClient } from '@sourcegraph/cody-shared'
 import { ps } from '@sourcegraph/cody-shared'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
-import type { AutoeditModelOptions } from './base'
+import type { AutoeditModelOptions, SuccessModelResponse } from './base'
 import { SourcegraphCompletionsAdapter } from './sourcegraph-completions'
 import { getMaxOutputTokensForAutoedits } from './utils'
 
@@ -18,6 +18,8 @@ describe('SourcegraphCompletionsAdapter', () => {
         codeToRewrite: 'const x = 1',
         userId: 'test-user',
         isChatModel: false,
+        abortSignal: new AbortController().signal,
+        timeoutMs: 10_000,
     }
 
     beforeEach(() => {
@@ -78,8 +80,13 @@ describe('SourcegraphCompletionsAdapter', () => {
         // @ts-ignore - accessing private property for testing
         adapter.client = { complete: mockComplete }
 
-        const response = await adapter.getModelResponse(options)
-        expect(response.prediction).toBe('part1part2')
+        const responseGenerator = await adapter.getModelResponse(options)
+        const responses = []
+        for await (const response of responseGenerator) {
+            responses.push(response)
+        }
+        const lastResponse = responses[responses.length - 1]
+        expect((lastResponse as SuccessModelResponse).prediction).toBe('part1part2')
     })
 
     it('handles errors correctly', async () => {

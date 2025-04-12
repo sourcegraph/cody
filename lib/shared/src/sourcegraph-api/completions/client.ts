@@ -56,11 +56,18 @@ export abstract class SourcegraphCompletionsClient {
     }
 
     protected sendEvents(events: Event[], cb: CompletionCallbacks, span?: Span): void {
+        // If no events are provided, log a warning but don't throw an error
+        if (!events || events.length === 0) {
+            const warning = 'No usage data detected for completion request'
+            console.warn(warning)
+            return
+        }
+
         for (const event of events) {
             switch (event.type) {
                 case 'completion': {
                     span?.addEvent('yield', { stopReason: event.stopReason })
-                    cb.onChange(event.completion)
+                    cb.onChange(event.completion, event.content)
                     break
                 }
                 case 'error': {
@@ -149,8 +156,13 @@ export abstract class SourcegraphCompletionsClient {
             )
         }
         const callbacks: CompletionCallbacks = {
-            onChange(text) {
-                send({ type: 'change', text })
+            onChange(text, content) {
+                const value: CompletionGeneratorValue = { type: 'change', text }
+                // Include the content field if it exists (contains delta_tool_calls)
+                if (content) {
+                    value.content = content
+                }
+                send(value)
             },
             onComplete() {
                 send({ type: 'complete' })

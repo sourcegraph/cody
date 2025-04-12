@@ -1,4 +1,5 @@
 import { type Message, type PromptString, charsToTokens } from '@sourcegraph/cody-shared'
+import type { InceptionLabsRequestParams } from './inceptionlabs'
 
 export interface FireworksCompatibleRequestParams {
     stream: boolean
@@ -32,6 +33,7 @@ export interface FireworksCompletionModelRequestParams extends FireworksCompatib
 export type AutoeditsRequestBody =
     | FireworksChatModelRequestParams
     | FireworksCompletionModelRequestParams
+    | InceptionLabsRequestParams
 
 export function getMaxOutputTokensForAutoedits(codeToRewrite: string): number {
     const MAX_NEW_GENERATED_TOKENS = 512
@@ -61,40 +63,4 @@ export function getSourcegraphCompatibleChatPrompt(param: {
     }
     prompt.push({ speaker: 'human', text: param.userMessage })
     return prompt
-}
-
-export async function getModelResponse(
-    url: string,
-    body: string,
-    apiKey: string,
-    customHeaders: Record<string, string> = {}
-): Promise<{
-    data: any
-    requestHeaders: Record<string, string>
-    responseHeaders: Record<string, string>
-    url: string
-}> {
-    const requestHeaders = {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${apiKey}`,
-        ...customHeaders,
-    }
-    const response = await fetch(url, {
-        method: 'POST',
-        headers: requestHeaders,
-        body: body,
-    })
-    if (response.status !== 200) {
-        const errorText = await response.text()
-        throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`)
-    }
-
-    // Extract headers into a plain object
-    const responseHeaders: Record<string, string> = {}
-    response.headers.forEach((value, key) => {
-        responseHeaders[key] = value
-    })
-
-    const data = await response.json()
-    return { data, requestHeaders, responseHeaders, url }
 }

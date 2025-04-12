@@ -1,48 +1,26 @@
 import type { ChatClient, Message } from '@sourcegraph/cody-shared'
 import { autoeditsOutputChannelLogger } from '../output-channel-logger'
-import type { AutoeditModelOptions, AutoeditsModelAdapter, ModelResponse } from './base'
+import {
+    type AutoeditModelOptions,
+    AutoeditStopReason,
+    type AutoeditsModelAdapter,
+    type ModelResponse,
+} from './base'
 import { getMaxOutputTokensForAutoedits, getSourcegraphCompatibleChatPrompt } from './utils'
 
 export class SourcegraphChatAdapter implements AutoeditsModelAdapter {
     constructor(private readonly chatClient: ChatClient) {}
+    dispose() {}
 
-    async getModelResponse(option: AutoeditModelOptions): Promise<ModelResponse> {
+    async getModelResponse(option: AutoeditModelOptions): Promise<AsyncGenerator<ModelResponse>> {
         try {
             const maxTokens = getMaxOutputTokensForAutoedits(option.codeToRewrite)
             const messages: Message[] = getSourcegraphCompatibleChatPrompt({
                 systemMessage: option.prompt.systemMessage,
                 userMessage: option.prompt.userMessage,
             })
-            const stream = await this.chatClient.chat(
-                messages,
-                {
-                    model: option.model,
-                    maxTokensToSample: maxTokens,
-                    temperature: 0.1,
-                    prediction: {
-                        type: 'content',
-                        content: option.codeToRewrite,
-                    },
-                },
-                new AbortController().signal
-            )
 
-            let accumulated = ''
-            for await (const msg of stream) {
-                if (msg.type === 'change') {
-                    const newText = msg.text.slice(accumulated.length)
-                    accumulated += newText
-                } else if (msg.type === 'complete' || msg.type === 'error') {
-                    break
-                }
-            }
-
-            // For direct API calls without HTTP headers, we return an empty object
-            return {
-                prediction: accumulated,
-                responseHeaders: {},
-                requestUrl: option.url,
-            }
+            return this.handleChatStream(option, messages, maxTokens)
         } catch (error) {
             autoeditsOutputChannelLogger.logError(
                 'getModelResponse',
@@ -52,6 +30,54 @@ export class SourcegraphChatAdapter implements AutoeditsModelAdapter {
                 }
             )
             throw error
+        }
+    }
+
+    private async *handleChatStream(
+        option: AutoeditModelOptions,
+        messages: Message[],
+        maxTokens: number
+    ): AsyncGenerator<ModelResponse> {
+        const stream = await this.chatClient.chat(
+            messages,
+            {
+                model: option.model,
+                maxTokensToSample: maxTokens,
+                temperature: 0.1,
+                prediction: {
+                    type: 'content',
+                    content: option.codeToRewrite,
+                },
+            },
+            option.abortSignal
+        )
+
+        let accumulated = ''
+        for await (const msg of stream) {
+            if (msg.type === 'change') {
+                const newText = msg.text.slice(accumulated.length)
+                accumulated += newText
+                yield {
+                    type: 'partial',
+                    stopReason: AutoeditStopReason.StreamingChunk,
+                    prediction: accumulated,
+                    requestUrl: option.url,
+                    requestHeaders: {},
+                }
+            } else if (msg.type === 'complete' || msg.type === 'error') {
+                break
+            }
+        }
+
+        // For direct API calls without HTTP headers, we return an empty object
+        yield {
+            type: 'success',
+            stopReason: AutoeditStopReason.RequestFinished,
+            prediction: accumulated,
+            responseHeaders: {},
+            responseBody: {},
+            requestUrl: option.url,
+            requestHeaders: {},
         }
     }
 }

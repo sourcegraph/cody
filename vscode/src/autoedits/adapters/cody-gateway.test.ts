@@ -7,6 +7,7 @@ import {
     mockResolvedConfig,
     ps,
 } from '@sourcegraph/cody-shared'
+import * as shared from '@sourcegraph/cody-shared'
 
 import type { AutoeditModelOptions } from './base'
 import { CodyGatewayAdapter } from './cody-gateway'
@@ -24,9 +25,11 @@ describe('CodyGatewayAdapter', () => {
         codeToRewrite: 'const x = 1',
         userId: 'test-user',
         isChatModel: true,
+        abortSignal: new AbortController().signal,
+        timeoutMs: 10_000,
     }
 
-    const mockFetch = vi.fn()
+    const mockFetchSpy = vi.spyOn(shared, 'fetch') as any
 
     beforeEach(() => {
         mockClientCapabilities(CLIENT_CAPABILITIES_FIXTURE)
@@ -37,9 +40,8 @@ describe('CodyGatewayAdapter', () => {
                 serverEndpoint: DOTCOM_URL.toString(),
             },
         })
-        global.fetch = mockFetch
         adapter = new CodyGatewayAdapter()
-        mockFetch.mockReset()
+        mockFetchSpy.mockReset()
     })
 
     afterAll(() => {
@@ -48,30 +50,33 @@ describe('CodyGatewayAdapter', () => {
 
     it('sends correct request parameters for chat model', async () => {
         // Mock successful response
-        mockFetch.mockResolvedValueOnce({
+        mockFetchSpy.mockResolvedValueOnce({
             status: 200,
             headers: new Headers(),
             json: () => Promise.resolve({ choices: [{ message: { content: 'response' } }] }),
         })
 
-        await adapter.getModelResponse(options)
+        const generator = await adapter.getModelResponse(options)
+        await generator.next() // Start the generator to trigger the API call
 
         // Verify the fetch call
-        expect(mockFetch).toHaveBeenCalledWith(options.url, {
+        expect(mockFetchSpy).toHaveBeenCalledWith(options.url, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 Authorization: expect.stringContaining('sgd_'),
                 'X-Sourcegraph-Feature': 'code_completions',
+                'Accept-Encoding': 'gzip;q=0',
             },
             body: expect.stringContaining('"model":"anthropic/claude-2"'),
+            signal: expect.any(AbortSignal),
         })
 
         // Verify request body structure
-        const requestBody = JSON.parse(mockFetch.mock.calls[0][1].body)
+        const requestBody = JSON.parse(mockFetchSpy.mock.calls[0][1].body)
         expect(requestBody).toEqual(
             expect.objectContaining({
-                stream: false,
+                stream: true,
                 model: options.model,
                 temperature: 0.1,
                 response_format: { type: 'text' },
@@ -88,18 +93,19 @@ describe('CodyGatewayAdapter', () => {
     it('sends correct request parameters for completions model', async () => {
         const nonChatOptions = { ...options, isChatModel: false }
 
-        mockFetch.mockResolvedValueOnce({
+        mockFetchSpy.mockResolvedValueOnce({
             status: 200,
             headers: new Headers(),
             json: () => Promise.resolve({ choices: [{ text: 'response' }] }),
         })
 
-        await adapter.getModelResponse(nonChatOptions)
+        const generator = await adapter.getModelResponse(nonChatOptions)
+        await generator.next() // Start the generator to trigger the API call
 
-        const requestBody = JSON.parse(mockFetch.mock.calls[0][1].body)
+        const requestBody = JSON.parse(mockFetchSpy.mock.calls[0][1].body)
         expect(requestBody).toEqual(
             expect.objectContaining({
-                stream: false,
+                stream: true,
                 model: options.model,
                 temperature: 0.1,
                 response_format: { type: 'text' },
@@ -114,12 +120,13 @@ describe('CodyGatewayAdapter', () => {
     })
 
     it('handles error responses correctly', async () => {
-        mockFetch.mockResolvedValueOnce({
+        mockFetchSpy.mockResolvedValueOnce({
             status: 400,
             headers: new Headers(),
             text: () => Promise.resolve('Bad Request'),
         })
 
-        await expect(adapter.getModelResponse(options)).rejects.toThrow('HTTP error!')
+        const generator = await adapter.getModelResponse(options)
+        await expect(generator.next()).rejects.toThrow('HTTP error!')
     })
 })

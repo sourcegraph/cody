@@ -4,8 +4,10 @@ import {
     type ChatMessage,
     type ChatModel,
     type ContextItem,
+    type MessagePart,
     type ModelContextWindow,
     type ProcessingStep,
+    PromptString,
     type RankedContext,
     type SerializedChatInteraction,
     type SerializedChatTranscript,
@@ -150,6 +152,16 @@ export class ChatBuilder {
             }
         })
 
+        this.changeNotifications.next()
+    }
+
+    private setLastMessageContent(content: MessagePart[]): void {
+        const lastMessage = this.messages.at(-1)
+        if (!lastMessage) {
+            throw new Error('no last message')
+        }
+
+        lastMessage.content = content
         this.changeNotifications.next()
     }
 
@@ -329,6 +341,63 @@ export class ChatBuilder {
             interactions,
         }
         return result
+    }
+
+    /**
+     * Unified method to append any message part to any speaker.
+     * Handles creating new messages or appending to existing ones.
+     */
+    public appendMessagePart(
+        part: MessagePart,
+        speaker: 'human' | 'assistant',
+        model?: ChatModel
+    ): void {
+        const lastMessage = this.messages.at(-1)
+        const isNewMessage = !lastMessage || lastMessage.speaker !== speaker
+
+        const content = [part]
+        const text = this.computeTextFromParts(content, speaker)
+
+        if (isNewMessage) {
+            // Create a new message for this part
+
+            if (speaker === 'human') {
+                this.addHumanMessage({ content, text })
+            } else {
+                this.addBotMessage({ content, text }, model || ChatBuilder.NO_MODEL)
+            }
+        } else {
+            // Append to existing message
+            const existingContent = lastMessage.content || []
+            const updatedContent = [...existingContent, part]
+            this.setLastMessageContent(updatedContent)
+            // Update the text for the last message
+            if (text) {
+                lastMessage.text = text
+            }
+        }
+
+        this.changeNotifications.next()
+    }
+
+    /**
+     * Compute text representation from message parts
+     * Intelligently combines text parts and tool results
+     */
+    private computeTextFromParts(parts: MessagePart[], speaker: 'human' | 'assistant'): PromptString {
+        const textParts: string[] = []
+
+        for (const part of parts) {
+            if (part.type === 'text' && !!part.text) {
+                textParts.push((part as { type: 'text'; text: string }).text)
+            }
+        }
+
+        const joinedText = textParts.join('\n').trim()
+        if (speaker === 'human') {
+            return PromptString.unsafe_fromUserQuery(joinedText)
+        }
+        return PromptString.unsafe_fromLLMResponse(joinedText)
     }
 }
 

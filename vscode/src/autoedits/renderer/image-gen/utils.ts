@@ -36,7 +36,7 @@ export function getEndColumnForLine(line: vscode.TextLine, document: vscode.Text
 export function getDiffTargetPosition(
     diff: VisualDiff,
     document: vscode.TextDocument
-): { line: number; offset: number } {
+): { line: number; column: number } {
     const incomingLines = getLines(diff, 'incoming')
     const editorLines = incomingLines
         .filter(line => line.modifiedLineNumber < document.lineCount)
@@ -48,5 +48,5 @@ export function getDiffTargetPosition(
     // The image should not overlap with any code in the file, so we take the longest associated line length
     const targetRenderColumn = Math.max(...editorLines.map(line => getEndColumnForLine(line, document)))
 
-    return { line: startLine, offset: targetRenderColumn }
+    return { line: startLine, column: targetRenderColumn }
 }

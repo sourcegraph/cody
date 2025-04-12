@@ -1,10 +1,11 @@
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { ps } from '@sourcegraph/cody-shared'
+import * as shared from '@sourcegraph/cody-shared'
 
 import * as autoeditsConfig from '../autoedits-config'
 
-import type { AutoeditModelOptions } from './base'
+import type { AutoeditModelOptions, SuccessModelResponse } from './base'
 import { FireworksAdapter } from './fireworks'
 
 describe('FireworksAdapter', () => {
@@ -20,6 +21,8 @@ describe('FireworksAdapter', () => {
         codeToRewrite: 'const x = 1',
         userId: 'test-user',
         isChatModel: true,
+        abortSignal: new AbortController().signal,
+        timeoutMs: 10_000,
     }
 
     const apiKey = 'test-api-key'
@@ -30,12 +33,11 @@ describe('FireworksAdapter', () => {
         ...options,
     }
 
-    const mockFetch = vi.fn()
+    const mockFetchSpy = vi.spyOn(shared, 'fetch') as any
 
     beforeEach(() => {
-        global.fetch = mockFetch
         adapter = new FireworksAdapter()
-        mockFetch.mockReset()
+        mockFetchSpy.mockReset()
     })
 
     afterAll(() => {
@@ -43,27 +45,30 @@ describe('FireworksAdapter', () => {
     })
 
     it('sends correct request parameters for chat model', async () => {
-        mockFetch.mockResolvedValueOnce({
+        mockFetchSpy.mockResolvedValueOnce({
             status: 200,
             headers: new Headers(),
             json: () => Promise.resolve({ choices: [{ message: { content: 'response' } }] }),
         })
 
-        await adapter.getModelResponse(options)
+        const generator = await adapter.getModelResponse(options)
+        await generator.next() // Start the generator to trigger the API call
 
-        expect(mockFetch).toHaveBeenCalledWith(options.url, {
+        expect(mockFetchSpy).toHaveBeenCalledWith(options.url, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 Authorization: `Bearer ${apiKey}`,
+                'Accept-Encoding': 'gzip;q=0',
             },
             body: expect.stringContaining('"model":"accounts/fireworks/models/llama-v2-7b"'),
+            signal: expect.any(AbortSignal),
         })
 
-        const requestBody = JSON.parse(mockFetch.mock.calls[0][1].body)
+        const requestBody = JSON.parse(mockFetchSpy.mock.calls[0][1].body)
         expect(requestBody).toEqual(
             expect.objectContaining({
-                stream: false,
+                stream: true,
                 model: options.model,
                 temperature: 0.1,
                 max_tokens: expect.any(Number),
@@ -81,18 +86,19 @@ describe('FireworksAdapter', () => {
     it('sends correct request parameters for completions model', async () => {
         const nonChatOptions = { ...options, isChatModel: false }
 
-        mockFetch.mockResolvedValueOnce({
+        mockFetchSpy.mockResolvedValueOnce({
             status: 200,
             headers: new Headers(),
             json: () => Promise.resolve({ choices: [{ text: 'response' }] }),
         })
 
-        await adapter.getModelResponse(nonChatOptions)
+        const generator = await adapter.getModelResponse(nonChatOptions)
+        await generator.next() // Start the generator to trigger the API call
 
-        const requestBody = JSON.parse(mockFetch.mock.calls[0][1].body)
+        const requestBody = JSON.parse(mockFetchSpy.mock.calls[0][1].body)
         expect(requestBody).toEqual(
             expect.objectContaining({
-                stream: false,
+                stream: true,
                 model: options.model,
                 temperature: 0.1,
                 max_tokens: expect.any(Number),
@@ -108,38 +114,51 @@ describe('FireworksAdapter', () => {
     })
 
     it('handles error responses correctly', async () => {
-        mockFetch.mockResolvedValueOnce({
+        mockFetchSpy.mockResolvedValueOnce({
             status: 400,
             headers: new Headers(),
             text: () => Promise.resolve('Bad Request'),
         })
 
-        await expect(adapter.getModelResponse(options)).rejects.toThrow()
+        const generator = await adapter.getModelResponse(options)
+        await expect(generator.next()).rejects.toThrow()
     })
 
     it('returns correct response for chat model', async () => {
         const expectedResponse = 'modified code'
-        mockFetch.mockResolvedValueOnce({
+        mockFetchSpy.mockResolvedValueOnce({
             status: 200,
             headers: new Headers(),
             json: () => Promise.resolve({ choices: [{ message: { content: expectedResponse } }] }),
         })
 
-        const response = await adapter.getModelResponse(options)
-        expect(response.prediction).toBe(expectedResponse)
+        const responseGenerator = await adapter.getModelResponse(options)
+        const responses = []
+        for await (const response of responseGenerator) {
+            responses.push(response)
+        }
+        const lastResponse = responses[responses.length - 1]
+        expect((lastResponse as SuccessModelResponse).prediction).toBe(expectedResponse)
     })
 
     it('returns correct response for completions model', async () => {
         const expectedResponse = 'modified code'
         const nonChatOptions = { ...options, isChatModel: false }
 
-        mockFetch.mockResolvedValueOnce({
+        mockFetchSpy.mockResolvedValueOnce({
             status: 200,
             headers: new Headers(),
             json: () => Promise.resolve({ choices: [{ text: expectedResponse }] }),
         })
 
-        const response = await adapter.getModelResponse(nonChatOptions)
-        expect(response.prediction).toBe(expectedResponse)
+        const responseGenerator = await adapter.getModelResponse(nonChatOptions)
+        const responses = []
+        for await (const response of responseGenerator) {
+            responses.push(response)
+        }
+
+        expect(responses.length).toBeGreaterThan(0)
+        const lastResponse = responses[responses.length - 1]
+        expect(lastResponse.type !== 'aborted' ? lastResponse.prediction : null).toBe(expectedResponse)
     })
 })

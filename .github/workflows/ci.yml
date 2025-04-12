@@ -93,12 +93,23 @@ jobs:
         runner: ${{ fromJson(needs.fast_tests_matrix_prep.outputs.matrix) }}
     runs-on: ${{ matrix.runner }}-latest
     timeout-minutes: 15
+    permissions:
+      id-token: write
+      contents: read
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version-file: .tool-versions
       - uses: pnpm/action-setup@fe02b34f77f8bc703788d5817da081398fad5dd2 # SECURITY: pin third-party action hashes
+      - id: auth
+        uses: google-github-actions/auth@v2
+        # Skip auth if PR is from a fork
+        if: ${{ !github.event.pull_request.head.repo.fork }}
+        with:
+          workload_identity_provider: ${{ secrets.DATA_TEAM_PROVIDER_NAME }}
+          service_account: ${{ secrets.DATA_TEAM_SA_EMAIL }}
+      - uses: google-github-actions/setup-gcloud@v2
       - run: echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
         shell: bash
         id: pnpm-cache
@@ -117,10 +128,37 @@ jobs:
         with:
           path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
           key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
-      - run: xvfb-run -a pnpm -C vscode run test:integration
+        # commands before `xvfb-run -a pnpm run test` avoid these ERROR messages:
+        # - Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
+        # - Exiting GPU process due to errors during initialization
+      - name: Run tests (ubuntu)
+        run: |
+          export XDG_RUNTIME_DIR=/run/user/$(id -u)
+          export DBUS_SESSION_BUS_ADDRESS=unix:path=$XDG_RUNTIME_DIR/bus
+          dbus-daemon --session --address=$DBUS_SESSION_BUS_ADDRESS --nofork --nopidfile --syslog-only &
+          mkdir ~/.vscode && echo '{ "disable-hardware-acceleration": true }' > ~/.vscode/argv.json
+          xvfb-run -a pnpm -C vscode run test:integration
         if: matrix.runner == 'ubuntu'
-      - run: pnpm -C vscode run test:integration
-        if: matrix.runner == 'windows' || matrix.runner == 'macos'
+      - name: Run tests (windows)
+        if: matrix.runner == 'windows'
+        shell: powershell
+        run: |
+          $vscodeDir = "$env:USERPROFILE\.vscode"
+          New-Item -ItemType Directory -Path $vscodeDir -Force | Out-Null
+          
+          # Create JSON object and convert to string
+          $settings = @{ "disable-hardware-acceleration" = $true }
+          $json = ConvertTo-Json $settings -Compress
+          
+          # Write to file using Out-File with encoding parameter
+          $json | Out-File -FilePath "$vscodeDir\argv.json" -Encoding ascii -NoNewline
+          
+          pnpm -C vscode run test:integration
+      - name: Run tests (mac)
+        run: |
+          mkdir ~/.vscode && echo '{ "disable-hardware-acceleration": true }' > ~/.vscode/argv.json
+          pnpm -C vscode run test:integration
+        if: matrix.runner == 'macos'
 
   # Sets a variable that is used to determine the matrix to run slow tests (e2e) on.
   # Everything runs on ubuntu, only commits to main run on macos and windows.

@@ -51,11 +51,12 @@ class CodyFixHighlightPass(val file: PsiFile, val editor: Editor) :
             .filter { it.severity == HighlightSeverity.ERROR }
             .map { highlight ->
               try {
-                if (progress.isCanceled) {
+                val uri = ProtocolTextDocumentExt.vscNormalizedUriFor(file.virtualFile)
+
+                if (progress.isCanceled || uri == null) {
                   return@map CompletableFuture.completedFuture(emptyList<CodeActionQuickFix>())
                 }
 
-                val uri = ProtocolTextDocumentExt.uriFor(file.virtualFile)
                 val range =
                     document.codyRange(highlight.startOffset, highlight.endOffset)
                         ?: return@map CompletableFuture.completedFuture(
@@ -80,7 +81,7 @@ class CodyFixHighlightPass(val file: PsiFile, val editor: Editor) :
                 } else {
                   val result = CompletableFuture<List<CodeActionQuickFix>>()
 
-                  CodyAgentService.withAgentRestartIfNeeded(file.project) { agent ->
+                  CodyAgentService.withAgent(file.project) { agent ->
                     agent.server
                         .diagnostics_publish(Diagnostics_PublishParams(listOf(diagnostic)))
                         .get()

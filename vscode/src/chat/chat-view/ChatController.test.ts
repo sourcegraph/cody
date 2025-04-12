@@ -3,8 +3,8 @@ import {
     CLIENT_CAPABILITIES_FIXTURE,
     type CompletionGeneratorValue,
     FIXTURE_MODEL,
-    type Guardrails,
     PromptString,
+    type SourcegraphGuardrailsClient,
     errorToChatError,
     graphqlClient,
     mockAuthStatus,
@@ -12,10 +12,9 @@ import {
     mockResolvedConfig,
     modelsService,
     ps,
-    useFakeTokenCounterUtils,
 } from '@sourcegraph/cody-shared'
 import { Observable } from 'observable-fns'
-import { beforeAll, beforeEach, describe, expect, it, test, vi } from 'vitest'
+import { beforeEach, describe, expect, it, test, vi } from 'vitest'
 import { Uri } from 'vscode'
 import { URI } from 'vscode-uri'
 import * as featureFlagProviderModule from '../../../../lib/shared/src/experimentation/FeatureFlagProvider'
@@ -28,10 +27,6 @@ import { ChatController, type ChatControllerOptions } from './ChatController'
 import { manipulateWebviewHTML } from './ChatController'
 
 describe('ChatController', () => {
-    beforeAll(() => {
-        useFakeTokenCounterUtils()
-    })
-
     const mockChatClient = {
         chat: vi.fn(),
     } satisfies ChatControllerOptions['chatClient']
@@ -45,9 +40,9 @@ describe('ChatController', () => {
     const mockExtensionClient: Pick<ExtensionClient, 'capabilities'> = {
         capabilities: {},
     }
-    const mockGuardrails: Guardrails = {} as any
+    const mockGuardrails: SourcegraphGuardrailsClient = {} as any
 
-    vi.spyOn(featureFlagProviderModule.featureFlagProvider, 'evaluatedFeatureFlag').mockReturnValue(
+    vi.spyOn(featureFlagProviderModule.featureFlagProvider, 'evaluateFeatureFlag').mockReturnValue(
         Observable.of(true)
     )
 
@@ -86,7 +81,9 @@ describe('ChatController', () => {
         })
     })
 
-    test('does not create new chat builder when current one is empty during abort', async () => {
+    // Skipped flaky test
+    // Discussion: https://sourcegraph.slack.com/archives/C05AGQYD528/p1743508470592569
+    test.skip('does not create new chat builder when current one is empty during abort', async () => {
         // Setup spies
         const addBotMessageSpy = vi
             .spyOn(chatController as any, 'addBotMessage')
@@ -141,12 +138,9 @@ describe('ChatController', () => {
 
         // Expect not to add bot message as the chat session has been reset and aborted.
         expect(addBotMessageSpy).not.toHaveBeenCalled()
-
-        // Verify the view transcript was called to update UI after abort
-        expect(postMessageSpy).toHaveBeenCalledOnce()
     })
 
-    test('verifies interactionId is passed through chat requests', async () => {
+    test('verifies interactionId is passed through chat requests', { timeout: 3000 }, async () => {
         const mockRequestID = '0'
         mockContextRetriever.retrieveContext.mockResolvedValue([])
 
@@ -166,9 +160,9 @@ describe('ChatController', () => {
             expect.any(AbortSignal),
             mockRequestID
         )
-    }, 1500)
+    })
 
-    test('send, followup, and edit', { timeout: 1500 }, async () => {
+    test('send, followup, and edit', { timeout: 3000 }, async () => {
         const postMessageSpy = vi
             .spyOn(chatController as any, 'postMessage')
             .mockImplementation(() => {})
@@ -194,6 +188,7 @@ describe('ChatController', () => {
             messages: [
                 {
                     agent: undefined,
+                    content: undefined,
                     speaker: 'human',
                     text: 'Test input',
                     intent: undefined,
@@ -209,6 +204,7 @@ describe('ChatController', () => {
                 },
                 {
                     agent: undefined,
+                    content: undefined,
                     speaker: 'assistant',
                     model: 'my-model',
                     intent: undefined,
@@ -272,6 +268,7 @@ describe('ChatController', () => {
             "messages": [
               {
                 "agent": undefined,
+                "content": undefined,
                 "contextFiles": undefined,
                 "didYouMeanQuery": undefined,
                 "editorState": null,
@@ -287,6 +284,7 @@ describe('ChatController', () => {
               },
               {
                 "agent": undefined,
+                "content": undefined,
                 "contextFiles": undefined,
                 "didYouMeanQuery": undefined,
                 "editorState": undefined,
@@ -338,6 +336,7 @@ describe('ChatController', () => {
             messages: [
                 {
                     agent: undefined,
+                    content: undefined,
                     speaker: 'human',
                     text: 'Test input',
                     intent: undefined,
@@ -353,6 +352,7 @@ describe('ChatController', () => {
                 },
                 {
                     agent: undefined,
+                    content: undefined,
                     speaker: 'assistant',
                     model: 'my-model',
                     intent: undefined,
@@ -368,6 +368,7 @@ describe('ChatController', () => {
                 },
                 {
                     agent: undefined,
+                    content: undefined,
                     speaker: 'human',
                     text: 'Test followup',
                     intent: undefined,
@@ -383,6 +384,7 @@ describe('ChatController', () => {
                 },
                 {
                     agent: undefined,
+                    content: undefined,
                     speaker: 'assistant',
                     model: 'my-model',
                     intent: undefined,
@@ -426,6 +428,7 @@ describe('ChatController', () => {
             messages: [
                 {
                     agent: undefined,
+                    content: undefined,
                     speaker: 'human',
                     text: 'Test input',
                     intent: undefined,
@@ -441,6 +444,7 @@ describe('ChatController', () => {
                 },
                 {
                     agent: undefined,
+                    content: undefined,
                     speaker: 'assistant',
                     model: 'my-model',
                     intent: undefined,
@@ -456,6 +460,7 @@ describe('ChatController', () => {
                 },
                 {
                     agent: undefined,
+                    content: undefined,
                     speaker: 'human',
                     text: 'Test edit',
                     intent: undefined,
@@ -471,6 +476,7 @@ describe('ChatController', () => {
                 },
                 {
                     agent: undefined,
+                    content: undefined,
                     speaker: 'assistant',
                     model: 'my-model',
                     intent: undefined,

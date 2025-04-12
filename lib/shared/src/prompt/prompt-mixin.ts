@@ -10,17 +10,6 @@ const CONTEXT_PREAMBLE = ps`You have access to the provided codebase context. `
  * The preamble for preventing known models from hedging.
  */
 const HEDGES_PREVENTION = ps`Answer positively without apologizing. `
-/**
- * Answer guidelines for the Deep Cody model.
- */
-const AGENTIC_CHAT = ps`Explain your reasoning in detail for coding questions. `
-
-/**
- * Incompatible Models with Agentic Instructions
- * Note: The chat-preview model series has limitations with detailed reasoning
- * and chain-of-thought processes, necessitating their exclusion
- */
-const agenticBlockedModels = ['chat-preview']
 
 /**
  * Prompt mixins elaborate every prompt presented to the LLM.
@@ -48,17 +37,6 @@ export class PromptMixin {
         const apologiticModels = ['3-5-sonnet', '3.5-sonnet']
         if (modelID && apologiticModels.some(model => modelID.includes(model))) {
             mixins.push(PromptMixin.hedging)
-        }
-
-        // Handle agent-specific prompts
-        if (
-            humanMessage.agent === 'deep-cody' &&
-            !newMixins.length &&
-            !agenticBlockedModels.some(m => modelID?.includes(m))
-        ) {
-            // Adding hedging prevention prompt for Deep Cody as it's now pined to Sonnet.
-            mixins.push(PromptMixin.hedging)
-            mixins.push(new PromptMixin(AGENTIC_CHAT))
         }
 
         // Add new mixins to the list of mixins to be prepended to the next human message.

@@ -64,10 +64,15 @@ export function getPromptForTheContextSource(
     return ps`${instructionPrompt}\n${prompt}`
 }
 
-export function getCurrentFilePromptComponents(
-    document: vscode.TextDocument,
+export function getCurrentFilePromptComponents({
+    document,
+    codeToReplaceDataRaw,
+    includeCursor,
+}: {
+    document: vscode.TextDocument
     codeToReplaceDataRaw: CodeToReplaceData
-): {
+    includeCursor?: boolean
+}): {
     fileWithMarkerPrompt: PromptString
     areaPrompt: PromptString
 } {
@@ -77,30 +82,34 @@ export function getCurrentFilePromptComponents(
         document.uri
     )
 
-    const fileWithMarker = joinPromptsWithNewlineSeparator(
+    const fileWithMarker = joinPromptsWithNewlineSeparator([
         codeToReplaceData.prefixBeforeArea,
         constants.AREA_FOR_CODE_MARKER,
-        codeToReplaceData.suffixAfterArea
-    )
+        codeToReplaceData.suffixAfterArea,
+    ])
 
     const fileWithMarkerPrompt = getCurrentFileContextPromptWithPath(
         filePath,
-        joinPromptsWithNewlineSeparator(
+        joinPromptsWithNewlineSeparator([
             constants.FILE_TAG_OPEN,
             fileWithMarker,
-            constants.FILE_TAG_CLOSE
-        )
+            constants.FILE_TAG_CLOSE,
+        ])
     )
 
-    const areaPrompt = joinPromptsWithNewlineSeparator(
+    const codeToRewrite = includeCursor
+        ? ps`${codeToReplaceData.codeToRewritePrefix}<CURSOR_IS_HERE>${codeToReplaceData.codeToRewriteSuffix}`
+        : codeToReplaceData.codeToRewrite
+
+    const areaPrompt = joinPromptsWithNewlineSeparator([
         constants.AREA_FOR_CODE_MARKER_OPEN,
         codeToReplaceData.prefixInArea,
         constants.CODE_TO_REWRITE_TAG_OPEN,
-        codeToReplaceData.codeToRewrite,
+        codeToRewrite,
         constants.CODE_TO_REWRITE_TAG_CLOSE,
         codeToReplaceData.suffixInArea,
-        constants.AREA_FOR_CODE_MARKER_CLOSE
-    )
+        constants.AREA_FOR_CODE_MARKER_CLOSE,
+    ])
 
     return {
         fileWithMarkerPrompt,
@@ -186,7 +195,7 @@ export function getCodeToReplaceData(options: CurrentFilePromptOptions): CodeToR
     }
 }
 
-function getCurrentFilePath(document: vscode.TextDocument): PromptString {
+export function getCurrentFilePath(document: vscode.TextDocument): PromptString {
     const uri =
         document.uri.scheme === 'vscode-notebook-cell'
             ? getActiveNotebookUri() ?? document.uri
@@ -270,7 +279,7 @@ export function getLintErrorsPrompt(contextItems: AutocompleteContextSnippet[]):
         const snippetContents = snippets.map(
             item => PromptString.fromAutocompleteContextSnippet(item).content
         )
-        const combinedContent = PromptString.join(snippetContents, ps`\n\n`)
+        const combinedContent = joinPromptsWithNewlineSeparator(snippetContents, ps`\n\n`)
         const promptWithPath = getContextPromptWithPath(
             PromptString.fromDisplayPath(uri),
             combinedContent
@@ -278,12 +287,12 @@ export function getLintErrorsPrompt(contextItems: AutocompleteContextSnippet[]):
         combinedPrompts.push(promptWithPath)
     }
 
-    const lintErrorsPrompt = PromptString.join(combinedPrompts, ps`\n\n`)
-    return joinPromptsWithNewlineSeparator(
+    const lintErrorsPrompt = joinPromptsWithNewlineSeparator(combinedPrompts, ps`\n\n`)
+    return joinPromptsWithNewlineSeparator([
         constants.LINT_ERRORS_TAG_OPEN,
         lintErrorsPrompt,
-        constants.LINT_ERRORS_TAG_CLOSE
-    )
+        constants.LINT_ERRORS_TAG_CLOSE,
+    ])
 }
 
 export function getRecentCopyPrompt(contextItems: AutocompleteContextSnippet[]): PromptString {
@@ -300,12 +309,12 @@ export function getRecentCopyPrompt(contextItems: AutocompleteContextSnippet[]):
             PromptString.fromAutocompleteContextSnippet(item).content
         )
     )
-    const recentCopyPrompt = PromptString.join(recentCopyPrompts, ps`\n\n`)
-    return joinPromptsWithNewlineSeparator(
+    const recentCopyPrompt = joinPromptsWithNewlineSeparator(recentCopyPrompts, ps`\n\n`)
+    return joinPromptsWithNewlineSeparator([
         constants.RECENT_COPY_TAG_OPEN,
         recentCopyPrompt,
-        constants.RECENT_COPY_TAG_CLOSE
-    )
+        constants.RECENT_COPY_TAG_CLOSE,
+    ])
 }
 
 export function getRecentEditsPrompt(contextItems: AutocompleteContextSnippet[]): PromptString {
@@ -323,12 +332,12 @@ export function getRecentEditsPrompt(contextItems: AutocompleteContextSnippet[])
             PromptString.fromAutocompleteContextSnippet(item).content
         )
     )
-    const recentEditsPrompt = PromptString.join(recentEditsPrompts, ps`\n`)
-    return joinPromptsWithNewlineSeparator(
+    const recentEditsPrompt = joinPromptsWithNewlineSeparator(recentEditsPrompts)
+    return joinPromptsWithNewlineSeparator([
         constants.RECENT_EDITS_TAG_OPEN,
         recentEditsPrompt,
-        constants.RECENT_EDITS_TAG_CLOSE
-    )
+        constants.RECENT_EDITS_TAG_CLOSE,
+    ])
 }
 
 export function getRecentlyViewedSnippetsPrompt(
@@ -343,22 +352,22 @@ export function getRecentlyViewedSnippetsPrompt(
         return ps``
     }
     const recentViewedSnippetPrompts = recentViewedSnippets.map(item =>
-        joinPromptsWithNewlineSeparator(
+        joinPromptsWithNewlineSeparator([
             constants.SNIPPET_TAG_OPEN,
             getContextPromptWithPath(
                 PromptString.fromDisplayPath(item.uri),
                 PromptString.fromAutocompleteContextSnippet(item).content
             ),
-            constants.SNIPPET_TAG_CLOSE
-        )
+            constants.SNIPPET_TAG_CLOSE,
+        ])
     )
 
-    const snippetsPrompt = PromptString.join(recentViewedSnippetPrompts, ps`\n`)
-    return joinPromptsWithNewlineSeparator(
+    const snippetsPrompt = joinPromptsWithNewlineSeparator(recentViewedSnippetPrompts)
+    return joinPromptsWithNewlineSeparator([
         constants.RECENT_SNIPPET_VIEWS_TAG_OPEN,
         snippetsPrompt,
-        constants.RECENT_SNIPPET_VIEWS_TAG_CLOSE
-    )
+        constants.RECENT_SNIPPET_VIEWS_TAG_CLOSE,
+    ])
 }
 
 export function getJaccardSimilarityPrompt(contextItems: AutocompleteContextSnippet[]): PromptString {
@@ -370,23 +379,22 @@ export function getJaccardSimilarityPrompt(contextItems: AutocompleteContextSnip
         return ps``
     }
     const jaccardSimilarityPrompts = jaccardSimilarity.map(item =>
-        joinPromptsWithNewlineSeparator(
+        joinPromptsWithNewlineSeparator([
             constants.SNIPPET_TAG_OPEN,
             getContextPromptWithPath(
                 PromptString.fromDisplayPath(item.uri),
                 PromptString.fromAutocompleteContextSnippet(item).content
             ),
-            constants.SNIPPET_TAG_CLOSE
-        )
+            constants.SNIPPET_TAG_CLOSE,
+        ])
     )
 
-    const snippetsPrompt = PromptString.join(jaccardSimilarityPrompts, ps`\n`)
-
-    return joinPromptsWithNewlineSeparator(
+    const snippetsPrompt = joinPromptsWithNewlineSeparator(jaccardSimilarityPrompts)
+    return joinPromptsWithNewlineSeparator([
         constants.EXTRACTED_CODE_SNIPPETS_TAG_OPEN,
         snippetsPrompt,
-        constants.EXTRACTED_CODE_SNIPPETS_TAG_CLOSE
-    )
+        constants.EXTRACTED_CODE_SNIPPETS_TAG_CLOSE,
+    ])
 }
 
 //  Helper functions
@@ -464,6 +472,10 @@ export function getRecentEditsContextPromptWithPath(
     return ps`${filePath}\n${content}`
 }
 
-export function joinPromptsWithNewlineSeparator(...args: PromptString[]): PromptString {
-    return PromptString.join(args, ps`\n`)
+export function joinPromptsWithNewlineSeparator(
+    prompts: PromptString[],
+    separator = ps`\n`
+): PromptString {
+    const validPrompts = prompts.filter(args => args.length > 0)
+    return PromptString.join(validPrompts, separator)
 }

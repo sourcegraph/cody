@@ -35,7 +35,7 @@ class CompletionProviderConfig {
             FeatureFlag.CodyAutocompleteTracing,
         ]
         this.prefetchSubscription = combineLatest(
-            ...featureFlagsUsed.map(flag => featureFlagProvider.evaluatedFeatureFlag(flag))
+            ...featureFlagsUsed.map(flag => featureFlagProvider.evaluateFeatureFlag(flag))
         ).subscribe({})
     }
 
@@ -75,7 +75,7 @@ class CompletionProviderConfig {
         const defaultContextStrategy = 'jaccard-similarity'
 
         return featureFlagProvider
-            .evaluatedFeatureFlag(FeatureFlag.CodyAutocompleteContextExperimentBaseFeatureFlag)
+            .evaluateFeatureFlag(FeatureFlag.CodyAutocompleteContextExperimentBaseFeatureFlag)
             .pipe(
                 switchMap(isContextExperimentFlagEnabled => {
                     if (isRunningInsideAgent() || !isContextExperimentFlagEnabled) {
@@ -83,19 +83,19 @@ class CompletionProviderConfig {
                     }
 
                     return combineLatest(
-                        featureFlagProvider.evaluatedFeatureFlag(
+                        featureFlagProvider.evaluateFeatureFlag(
                             FeatureFlag.CodyAutocompleteContextExperimentVariant1
                         ),
-                        featureFlagProvider.evaluatedFeatureFlag(
+                        featureFlagProvider.evaluateFeatureFlag(
                             FeatureFlag.CodyAutocompleteContextExperimentVariant2
                         ),
-                        featureFlagProvider.evaluatedFeatureFlag(
+                        featureFlagProvider.evaluateFeatureFlag(
                             FeatureFlag.CodyAutocompleteContextExperimentVariant3
                         ),
-                        featureFlagProvider.evaluatedFeatureFlag(
+                        featureFlagProvider.evaluateFeatureFlag(
                             FeatureFlag.CodyAutocompleteContextExperimentVariant4
                         ),
-                        featureFlagProvider.evaluatedFeatureFlag(
+                        featureFlagProvider.evaluateFeatureFlag(
                             FeatureFlag.CodyAutocompleteContextExperimentControl
                         )
                     ).pipe(
@@ -125,7 +125,7 @@ class CompletionProviderConfig {
 
     public get completionDataCollectionFlag(): Observable<boolean> {
         return featureFlagProvider
-            .evaluatedFeatureFlag(FeatureFlag.CodyAutocompleteDataCollectionFlag)
+            .evaluateFeatureFlag(FeatureFlag.CodyAutocompleteDataCollectionFlag)
             .pipe(distinctUntilChanged())
     }
 }

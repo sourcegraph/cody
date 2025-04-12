@@ -1,5 +1,6 @@
 import { Observable, interval, map } from 'observable-fns'
-import type { AuthStatus } from '../auth/types'
+import { currentAuthStatusOrNotReadyYet, mockAuthStatus } from '../auth/authStatus'
+import { type AuthStatus, isCodyProUser, isFreeUser } from '../auth/types'
 import type { ClientConfiguration } from '../configuration'
 import { clientCapabilities } from '../configuration/clientCapabilities'
 import { cenv } from '../configuration/environment'
@@ -21,12 +22,14 @@ import { pendingOperation, switchMapReplayOperation } from '../misc/observableOp
 import { ANSWER_TOKENS } from '../prompt/constants'
 import type { CodyClientConfig } from '../sourcegraph-api/clientConfig'
 import { isDotCom } from '../sourcegraph-api/environments'
+import type { RateLimitError } from '../sourcegraph-api/errors'
 import type { CodyLLMSiteConfiguration } from '../sourcegraph-api/graphql/client'
 import { RestClient } from '../sourcegraph-api/rest/client'
 import type { UserProductSubscription } from '../sourcegraph-api/userProductSubscription'
+import { telemetryRecorder } from '../telemetry-v2/singleton'
 import { CHAT_INPUT_TOKEN_BUDGET } from '../token/constants'
 import { isError } from '../utils'
-import { TOOL_CODY_MODEL, ToolCodyModelName, getExperimentalClientModelByFeatureFlag } from './client'
+import { DEEP_CODY_MODEL, TOOL_CODY_MODEL } from './client'
 import { type Model, type ServerModel, createModel, createModelFromServerModel } from './model'
 import type {
     DefaultsAndUserPreferencesForEndpoint,
@@ -38,6 +41,17 @@ import { ModelUsage } from './types'
 import { getEnterpriseContextWindow } from './utils'
 
 const EMPTY_PREFERENCES: DefaultsAndUserPreferencesForEndpoint = { defaults: {}, selected: {} }
+export const INPUT_TOKEN_FLAG_OFF: number = 45_000
+const MISTRAL_ADJUSTMENT_FACTOR: number = 0.85
+interface RateLimitState {
+    chatModel: string | undefined
+    editModel: string | undefined
+}
+
+const rateLimitState: RateLimitState = {
+    chatModel: undefined,
+    editModel: undefined,
+}
 
 /**
  * Observe the list of all available models.
@@ -148,11 +162,11 @@ export function syncModels({
                 const serverModelsConfig: Observable<
                     RemoteModelsData | Error | typeof pendingOperation
                 > = clientConfig.pipe(
-                    switchMapReplayOperation(maybeClientConfig => {
+                    switchMapReplayOperation(maybeServerSideClientConfig => {
                         // NOTE: isDotComUser to enable server-side models for DotCom users,
                         // as the modelsAPIEnabled is default to return false on DotCom to avoid older clients
                         // that also share the same check from breaking.
-                        if (isDotComUser || maybeClientConfig?.modelsAPIEnabled) {
+                        if (isDotComUser || maybeServerSideClientConfig?.modelsAPIEnabled) {
                             logDebug('ModelsService', 'new models API enabled')
                             return promiseFactoryToObservable(signal =>
                                 fetchServerSideModels_(config, signal)
@@ -163,46 +177,27 @@ export function syncModels({
                                         primaryModels: [],
                                     }
 
-                                    if (serverModelsConfig) {
-                                        // Remove deprecated models from the list, filter out waitlisted models for Enterprise.
-                                        const filteredModels = serverModelsConfig?.models.filter(
-                                            m =>
-                                                m.status !== 'deprecated' &&
-                                                (isDotComUser || m.status !== 'waitlist')
-                                        )
-                                        data.primaryModels.push(
-                                            ...maybeAdjustContextWindows(filteredModels).map(
-                                                createModelFromServerModel
-                                            )
-                                        )
-                                        data.preferences!.defaults =
-                                            defaultModelPreferencesFromServerModelsConfig(
-                                                serverModelsConfig
-                                            )
-                                    }
-
-                                    // NOTE: Calling `registerModelsFromVSCodeConfiguration()` doesn't
-                                    // entirely make sense in a world where LLM models are managed
-                                    // server-side. However, this is how Cody can be extended to use locally
-                                    // running LLMs such as Ollama. (Though some more testing is needed.)
-                                    // See:
-                                    // https://sourcegraph.com/blog/local-code-completion-with-ollama-and-cody
-                                    data.primaryModels.push(...getModelsFromVSCodeConfiguration(config))
-
                                     // For DotCom users with early access or on the waitlist, replace the waitlist tag with the appropriate tags.
                                     const enableToolCody: Observable<boolean> = resolvedConfig.pipe(
                                         map(c => !!c.configuration.experimentalMinionAnthropicKey),
                                         distinctUntilChanged()
                                     )
                                     return combineLatest(
-                                        featureFlagProvider.evaluatedFeatureFlag(
+                                        featureFlagProvider.evaluateFeatureFlag(
                                             FeatureFlag.CodyEarlyAccess
                                         ),
-                                        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.DeepCody),
-                                        featureFlagProvider.evaluatedFeatureFlag(
+                                        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.DeepCody),
+                                        featureFlagProvider.evaluateFeatureFlag(
                                             FeatureFlag.CodyChatDefaultToClaude35Haiku
                                         ),
-                                        enableToolCody
+                                        enableToolCody,
+                                        featureFlagProvider.evaluateFeatureFlag(
+                                            FeatureFlag.EnhancedContextWindow,
+                                            true /** force refresh */
+                                        ),
+                                        featureFlagProvider.evaluateFeatureFlag(
+                                            FeatureFlag.FallbackToFlash
+                                        )
                                     ).pipe(
                                         switchMap(
                                             ([
@@ -210,7 +205,52 @@ export function syncModels({
                                                 hasAgenticChatFlag,
                                                 defaultToHaiku,
                                                 isToolCodyEnabled,
+                                                enhancedContextWindowFlag,
+                                                fallbackToFlashFlag,
                                             ]) => {
+                                                if (serverModelsConfig) {
+                                                    // Remove deprecated models from the list, filter out waitlisted models for Enterprise.
+                                                    const filteredModels =
+                                                        serverModelsConfig?.models.filter(
+                                                            m =>
+                                                                m.status !== 'deprecated' &&
+                                                                (isDotComUser || m.status !== 'waitlist')
+                                                        )
+                                                    data.primaryModels.push(
+                                                        ...maybeAdjustContextWindows(filteredModels, {
+                                                            tier: isDotComUser
+                                                                ? isCodyProUser(
+                                                                      authStatus,
+                                                                      userProductSubscription
+                                                                  )
+                                                                    ? 'pro'
+                                                                    : 'free'
+                                                                : 'enterprise',
+                                                            enhancedContextWindowFlagEnabled:
+                                                                enhancedContextWindowFlag,
+                                                        }).map(model =>
+                                                            createModelFromServerModel(
+                                                                model,
+                                                                enhancedContextWindowFlag
+                                                            )
+                                                        )
+                                                    )
+                                                    data.preferences!.defaults =
+                                                        defaultModelPreferencesFromServerModelsConfig(
+                                                            serverModelsConfig
+                                                        )
+                                                }
+
+                                                // NOTE: Calling `registerModelsFromVSCodeConfiguration()` doesn't
+                                                // entirely make sense in a world where LLM models are managed
+                                                // server-side. However, this is how Cody can be extended to use locally
+                                                // running LLMs such as Ollama. (Though some more testing is needed.)
+                                                // See:
+                                                // https://sourcegraph.com/blog/local-code-completion-with-ollama-and-cody
+                                                data.primaryModels.push(
+                                                    ...getModelsFromVSCodeConfiguration(config)
+                                                )
+
                                                 // TODO(sqs): remove waitlist from localStorage when user has access
                                                 if (isDotComUser && hasEarlyAccess) {
                                                     data.primaryModels = data.primaryModels.map(
@@ -248,11 +288,13 @@ export function syncModels({
                                                 const isAgenticChatEnabled =
                                                     hasAgenticChatFlag ||
                                                     (isDotComUser && !isCodyFreeUser)
+                                                // Handle agentic chat features
                                                 const haikuModel = data.primaryModels.find(m =>
                                                     m.id.includes('5-haiku')
                                                 )
+                                                // Look for any sonnet model to add Deep Cody.
                                                 const sonnetModel = data.primaryModels.find(m =>
-                                                    m.id.includes('5-sonnet')
+                                                    m.id.includes('sonnet')
                                                 )
                                                 const hasDeepCody = data.primaryModels.some(m =>
                                                     m.id.includes('deep-cody')
@@ -263,24 +305,29 @@ export function syncModels({
                                                     sonnetModel &&
                                                     haikuModel
                                                 ) {
-                                                    clientModels.push(
-                                                        getExperimentalClientModelByFeatureFlag(
-                                                            FeatureFlag.DeepCody
-                                                        )!
-                                                    )
-                                                }
-
-                                                const hasToolCody = data.primaryModels.some(m =>
-                                                    m.id.includes(ToolCodyModelName)
-                                                )
-                                                if (!hasToolCody && isToolCodyEnabled) {
-                                                    clientModels.push(TOOL_CODY_MODEL)
+                                                    // Add Deep Cody
+                                                    clientModels.push(DEEP_CODY_MODEL)
+                                                    // Add Tool Cody
+                                                    if (isToolCodyEnabled) {
+                                                        clientModels.push(TOOL_CODY_MODEL)
+                                                    }
                                                 }
 
                                                 // Add the client models to the list of models.
                                                 data.primaryModels.push(
-                                                    ...maybeAdjustContextWindows(clientModels).map(
-                                                        createModelFromServerModel
+                                                    ...maybeAdjustContextWindows(clientModels, {
+                                                        tier: isDotComUser
+                                                            ? isCodyProUser(
+                                                                  authStatus,
+                                                                  userProductSubscription
+                                                              )
+                                                                ? 'pro'
+                                                                : 'free'
+                                                            : 'enterprise',
+                                                        // the feature flag is for serverModels, so it's always false for client models
+                                                        enhancedContextWindowFlagEnabled: false,
+                                                    }).map(model =>
+                                                        createModelFromServerModel(model, false)
                                                     )
                                                 )
 
@@ -293,7 +340,151 @@ export function syncModels({
                                                 ) {
                                                     data.preferences!.defaults.chat = haikuModel.id
                                                 }
+                                                /**
+                                                 * Handle rate limiting for paid users
+                                                 *
+                                                 * When rate limited:
+                                                 * 1. Disables all non-fast models (models without Speed tag)
+                                                 * 2. Saves current model preferences for later restoration
+                                                 * 3. Forces default model to Gemini Flash for both chat and edit
+                                                 *
+                                                 * When rate limit is lifted:
+                                                 * - Restores previously saved model preferences
+                                                 */
+                                                if (
+                                                    fallbackToFlashFlag &&
+                                                    !isFreeUser(authStatus, userProductSubscription)
+                                                ) {
+                                                    if (authStatus.rateLimited) {
+                                                        // Disable all the models
 
+                                                        // Check if there are any unlimited models
+                                                        const hasUnlimitedModels =
+                                                            data.primaryModels.some(model =>
+                                                                model.tags.includes(ModelTag.Unlimited)
+                                                            )
+
+                                                        data.primaryModels = data.primaryModels.map(
+                                                            model => {
+                                                                if (hasUnlimitedModels) {
+                                                                    // If we have unlimited models, disable everything else
+                                                                    if (
+                                                                        !model.tags.includes(
+                                                                            ModelTag.Unlimited
+                                                                        )
+                                                                    ) {
+                                                                        return {
+                                                                            ...model,
+                                                                            disabled: true,
+                                                                        }
+                                                                    }
+                                                                } else {
+                                                                    // If no unlimited models, disable everything except speed
+                                                                    if (
+                                                                        !model.tags.includes(
+                                                                            ModelTag.Speed
+                                                                        )
+                                                                    ) {
+                                                                        return {
+                                                                            ...model,
+                                                                            disabled: true,
+                                                                        }
+                                                                    }
+                                                                }
+                                                                return model
+                                                            }
+                                                        )
+
+                                                        if (data.preferences) {
+                                                            const modelToFallback =
+                                                                data.preferences.defaults
+                                                                    .unlimitedChat ||
+                                                                'google::v1::gemini-2.0-flash'
+
+                                                            // Try to use Gemini Flash first, if not available fallback to any fast model
+                                                            let defaultModel = data.primaryModels.find(
+                                                                model => model.id === modelToFallback
+                                                            )
+                                                            if (!defaultModel) {
+                                                                defaultModel = data.primaryModels.find(
+                                                                    model =>
+                                                                        model.tags.includes(
+                                                                            ModelTag.Speed
+                                                                        )
+                                                                )
+                                                            }
+
+                                                            // Set the default model
+                                                            if (defaultModel) {
+                                                                rateLimitState.chatModel =
+                                                                    data.preferences.defaults.chat || ''
+                                                                rateLimitState.editModel =
+                                                                    data.preferences.defaults.edit || ''
+
+                                                                data.preferences.defaults.chat =
+                                                                    defaultModel.id
+                                                                data.preferences.defaults.edit =
+                                                                    defaultModel.id
+
+                                                                telemetryRecorder.recordEvent(
+                                                                    'cody.rateLimit',
+                                                                    'hit',
+                                                                    {
+                                                                        privateMetadata: {
+                                                                            chatModel: defaultModel.id,
+                                                                        },
+                                                                    }
+                                                                )
+                                                            }
+                                                        }
+                                                    } else {
+                                                        // Re-enable all models
+                                                        data.primaryModels = data.primaryModels.map(
+                                                            model => {
+                                                                if (
+                                                                    !model.tags.includes(ModelTag.Speed)
+                                                                ) {
+                                                                    return {
+                                                                        ...model,
+                                                                        disabled: false,
+                                                                    }
+                                                                }
+                                                                return model
+                                                            }
+                                                        )
+                                                        const originalChatModel =
+                                                            data.primaryModels.find(
+                                                                model =>
+                                                                    model.id === rateLimitState.chatModel
+                                                            )
+                                                        const originalEditModel =
+                                                            data.primaryModels.find(
+                                                                model =>
+                                                                    model.id === rateLimitState.editModel
+                                                            )
+                                                        if (originalChatModel && data.preferences) {
+                                                            data.preferences.defaults.chat =
+                                                                originalChatModel.id
+                                                        }
+                                                        if (originalEditModel && data.preferences) {
+                                                            data.preferences.defaults.edit =
+                                                                originalEditModel.id
+                                                        }
+                                                    }
+                                                }
+
+                                                data.primaryModels = data.primaryModels.map(model => {
+                                                    if (
+                                                        model.modelRef ===
+                                                        data.preferences!.defaults.chat
+                                                    ) {
+                                                        return {
+                                                            ...model,
+                                                            tags: [...model.tags, ModelTag.Default],
+                                                        }
+                                                    }
+                                                    return model
+                                                })
                                                 return Observable.of(data)
                                             }
                                         )
@@ -349,26 +540,31 @@ export function syncModels({
                 return serverModelsConfig
             })
         )
-
-    return combineLatest(localModels, remoteModelsData, userModelPreferences).pipe(
+    return combineLatest(localModels, remoteModelsData, userModelPreferences, authStatus).pipe(
         map(
-            ([localModels, remoteModelsData, userModelPreferences]):
+            ([localModels, remoteModelsData, userModelPreferences, currentAuthStatus]):
                 | ModelsData
-                | typeof pendingOperation =>
-                remoteModelsData === pendingOperation
-                    ? pendingOperation
-                    : {
-                          localModels,
-                          primaryModels: isError(remoteModelsData)
-                              ? []
-                              : normalizeModelList(remoteModelsData.primaryModels),
-                          preferences: isError(remoteModelsData)
-                              ? userModelPreferences
-                              : resolveModelPreferences(
-                                    remoteModelsData.preferences,
-                                    userModelPreferences
-                                ),
-                      }
+                | typeof pendingOperation => {
+                if (remoteModelsData === pendingOperation) {
+                    return pendingOperation
+                }
+
+                // Calculate isRateLimited directly from the current authStatus
+                const isRateLimited = !!(
+                    'rateLimited' in currentAuthStatus && currentAuthStatus.rateLimited
+                )
+
+                return {
+                    localModels,
+                    primaryModels: isError(remoteModelsData)
+                        ? []
+                        : normalizeModelList(remoteModelsData.primaryModels),
+                    preferences: isError(remoteModelsData)
+                        ? userModelPreferences
+                        : resolveModelPreferences(remoteModelsData.preferences, userModelPreferences),
+                    isRateLimited,
+                }
+            }
         ),
         distinctUntilChanged(),
         tap(modelsData => {
@@ -481,34 +677,64 @@ async function fetchServerSideModels(
 }
 
 /**
- * maybeAdjustContextWindows adjusts the context window input tokens for specific models to prevent
- * context window overflow caused by token count discrepancies.
+ * Adjusts context windows for models based on user tier and model characteristics.
  *
- * Currently, the OpenAI tokenizer is used by default for all models. However, it often
- * counts tokens incorrectly for non-OpenAI models (e.g., Mistral), leading to over-counting
- * and potentially causing completion requests to fail due to exceeding the context window.
+ * This function:
+ * 1. Applies tokenizer-specific adjustments (e.g., for Mistral models)
+ * 2. Enforces tier-specific context window limits (free, pro, enterprise)
+ * 3. Sets appropriate output token limits based on model capabilities
  *
- * The proper fix would be to use model-specific tokenizers, but this would require significant
- * refactoring. As a temporary workaround, this function reduces the `maxInputTokens` for specific
- * models to mitigate the risk of context window overflow.
- *
- * @param {ServerModel[]} models - An array of models from the site config.
- * @returns {ServerModel[]} - The array of models with adjusted context windows where applicable.
+ * @param models - Array of models to adjust
+ * @param isPro - Whether the user has a pro subscription
+ * @param isFree - Whether the user has a free subscription
+ * @returns Array of models with adjusted context windows
  */
-export const maybeAdjustContextWindows = (models: ServerModel[]): ServerModel[] =>
-    models.map(model => {
-        let maxInputTokens = model.contextWindow.maxInputTokens
-        if (/^mi(x|s)tral/.test(model.modelName)) {
+export const maybeAdjustContextWindows = (
+    models: ServerModel[],
+    config: { tier: 'free' | 'pro' | 'enterprise'; enhancedContextWindowFlagEnabled: boolean }
+): ServerModel[] => {
+    // Compile regex once
+    const mistralRegex = /^mi(x|s)tral/
+
+    // Apply restrictions to all models
+    return models.map(model => {
+        let { maxInputTokens, maxOutputTokens } = model.contextWindow
+
+        // Apply Mistral-specific adjustment
+        if (mistralRegex.test(model.modelName)) {
             // Adjust the context window size for Mistral models because the OpenAI tokenizer undercounts tokens in English
             // compared to the Mistral tokenizer. Based on our observations, the OpenAI tokenizer usually undercounts by about 13%.
             // We reduce the context window by 15% (0.85 multiplier) to provide a safety buffer and prevent potential overflow.
             // Note: In other languages, the OpenAI tokenizer might actually overcount tokens. As a result, we accept the risk
             // of using a slightly smaller context window than what's available for those languages.
-            maxInputTokens = Math.round(model.contextWindow.maxInputTokens * 0.85)
+            maxInputTokens = Math.round(maxInputTokens * MISTRAL_ADJUSTMENT_FACTOR)
         }
-        return { ...model, contextWindow: { ...model.contextWindow, maxInputTokens } }
-    })
 
+        // Keep the code block the same for the old clients
+        if (
+            config.enhancedContextWindowFlagEnabled === undefined ||
+            !config.enhancedContextWindowFlagEnabled
+        ) {
+            return { ...model, contextWindow: { ...model.contextWindow, maxInputTokens } }
+        }
+
+        // Apply enhanced context window limits if the flag is on
+        const ctWindow = model.modelConfigAllTiers
+            ? model.modelConfigAllTiers[config.tier].contextWindow
+            : { maxInputTokens, maxOutputTokens }
+
+        // Return model with adjusted context window
+        return {
+            ...model,
+            contextWindow: {
+                ...model.contextWindow,
+                maxInputTokens: ctWindow.maxInputTokens,
+                maxOutputTokens: ctWindow.maxOutputTokens,
+                maxUserInputTokens: ctWindow.maxUserInputTokens,
+            },
+        }
+    })
+}
 function deepClone<T>(value: T): T {
     return JSON.parse(JSON.stringify(value)) as T
 }
@@ -520,5 +746,17 @@ export function defaultModelPreferencesFromServerModelsConfig(
         autocomplete: config.defaultModels.codeCompletion,
         chat: config.defaultModels.chat,
         edit: config.defaultModels.chat,
+        unlimitedChat: config.defaultModels.unlimitedChat,
+    }
+}
+
+export function handleRateLimitError(error: RateLimitError): void {
+    const currentStatus = currentAuthStatusOrNotReadyYet()
+    if (currentStatus?.authenticated) {
+        const updatedStatus: AuthStatus = {
+            ...currentStatus,
+            rateLimited: true,
+        }
+        mockAuthStatus(updatedStatus)
     }
 }

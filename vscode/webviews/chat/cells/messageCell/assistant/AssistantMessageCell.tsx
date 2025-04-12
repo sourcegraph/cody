@@ -25,7 +25,6 @@ import {
 } from '../../../ChatMessageContent/ChatMessageContent'
 import { ErrorItem, RequestErrorItem } from '../../../ErrorItem'
 import { type Interaction, editHumanMessage } from '../../../Transcript'
-import { LoadingDots } from '../../../components/LoadingDots'
 import { BaseMessageCell } from '../BaseMessageCell'
 import { SearchResults } from './SearchResults'
 import { SubMessageCell } from './SubMessageCell'
@@ -46,11 +45,13 @@ export const AssistantMessageCell: FunctionComponent<{
     copyButtonOnSubmit?: CodeBlockActionsProps['copyButtonOnSubmit']
     insertButtonOnSubmit?: CodeBlockActionsProps['insertButtonOnSubmit']
 
-    smartApplyEnabled?: boolean
     smartApply?: CodeBlockActionsProps['smartApply']
 
+    isThoughtProcessOpened?: boolean
+    setThoughtProcessOpened?: (open: boolean) => void
+
     postMessage?: ApiPostMessage
-    guardrails?: Guardrails
+    guardrails: Guardrails
     onSelectedFiltersUpdate: (filters: NLSSearchDynamicFilter[]) => void
     isLastSentInteraction: boolean
 }> = memo(
@@ -66,9 +67,10 @@ export const AssistantMessageCell: FunctionComponent<{
         postMessage,
         guardrails,
         smartApply,
-        smartApplyEnabled,
         onSelectedFiltersUpdate,
         isLastSentInteraction: isLastInteraction,
+        isThoughtProcessOpened,
+        setThoughtProcessOpened,
     }) => {
         const displayMarkdown = useMemo(
             () => (message.text ? reformatBotMessageForChat(message.text).toString() : ''),
@@ -100,13 +102,13 @@ export const AssistantMessageCell: FunctionComponent<{
                                 />
                             )
                         ) : null}
-                        {omniboxEnabled && !isLoading && message.search && (
+                        {omniboxEnabled && !isLoading && message.search ? (
                             <SearchResults
                                 message={message as ChatMessageWithSearch}
                                 onSelectedFiltersUpdate={onSelectedFiltersUpdate}
                                 enableContextSelection={isLastInteraction}
                             />
-                        )}
+                        ) : null}
                         {!isSearchIntent && displayMarkdown ? (
                             <ChatMessageContent
                                 displayMarkdown={displayMarkdown}
@@ -115,8 +117,9 @@ export const AssistantMessageCell: FunctionComponent<{
                                 insertButtonOnSubmit={insertButtonOnSubmit}
                                 guardrails={guardrails}
                                 humanMessage={humanMessage}
-                                smartApplyEnabled={smartApplyEnabled}
                                 smartApply={smartApply}
+                                isThoughtProcessOpened={!!isThoughtProcessOpened}
+                                setThoughtProcessOpened={setThoughtProcessOpened}
                             />
                         ) : (
                             isLoading &&
@@ -128,29 +131,29 @@ export const AssistantMessageCell: FunctionComponent<{
                                             to "think". Recommended for complex reasoning & coding tasks.
                                         </p>
                                     )}
-                                    <LoadingDots />
                                 </div>
                             )
                         )}
                         {message.subMessages?.length &&
                             message.subMessages.length > 0 &&
                             message.subMessages.map((piece, i) => (
-                                // biome-ignore lint/suspicious/noArrayIndexKey:
-                                <SubMessageCell key={`piece-${i}`} piece={piece} />
+                                <SubMessageCell
+                                    // biome-ignore lint/suspicious/noArrayIndexKey:
+                                    key={`piece-${i}`}
+                                    piece={piece}
+                                    guardrails={guardrails}
+                                />
                             ))}
                     </>
                 }
                 footer={
-                    chatEnabled &&
-                    humanMessage && (
+                    isAborted ? (
                         <div className="tw-py-3 tw-flex tw-flex-col tw-gap-2">
-                            {isAborted && (
-                                <div className="tw-text-sm tw-text-muted-foreground tw-mt-4">
-                                    Output stream stopped
-                                </div>
-                            )}
+                            <div className="tw-text-sm tw-text-muted-foreground tw-mt-4">
+                                Output stream stopped
+                            </div>
                         </div>
-                    )
+                    ) : null
                 }
             />
         )

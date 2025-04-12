@@ -28,7 +28,7 @@ import { localStorage } from '../../services/LocalStorageProvider'
 const PROMPTS_MIGRATION_KEY = 'CODY_PROMPTS_COMMANDS_MIGRATION'
 const PROMPTS_MIGRATION_STATUS = new Subject<PromptsMigrationStatus>()
 const PROMPTS_MIGRATION_RESULT = PROMPTS_MIGRATION_STATUS.pipe(
-    startWith({ type: 'initial_migration' } as PromptsMigrationStatus),
+    startWith({ type: 'migration_skip' } as PromptsMigrationStatus),
     distinctUntilChanged(),
     shareReplay()
 )

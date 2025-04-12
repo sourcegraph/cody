@@ -8,6 +8,7 @@ import com.sourcegraph.config.ConfigUtil
 class CodyEnableAutocompleteAction : DumbAwareEDTAction("Enable Cody Autocomplete") {
   override fun actionPerformed(e: AnActionEvent) {
     CodyApplicationSettings.instance.isCodyAutocompleteEnabled = true
+    e.project?.let { CodyStatusService.resetApplication(it) }
   }
 
   override fun update(e: AnActionEvent) {

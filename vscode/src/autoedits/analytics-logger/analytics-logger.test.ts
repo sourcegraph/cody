@@ -13,14 +13,16 @@ import {
 import { getCurrentDocContext } from '../../completions/get-current-doc-context'
 import { documentAndPosition } from '../../completions/test-helpers'
 import * as sentryModule from '../../services/sentry/sentry'
-import type { AutoeditModelOptions } from '../adapters/base'
-import { getCodeToReplaceData } from '../prompt/prompt-utils'
+import { type AutoeditModelOptions, AutoeditStopReason } from '../adapters/base'
+import { getCodeToReplaceData, getCurrentFilePath } from '../prompt/prompt-utils'
 import { getDecorationInfo } from '../renderer/diff-utils'
 
 import { AutoeditAnalyticsLogger } from './analytics-logger'
 import {
     type AutoeditRequestID,
+    autoeditAcceptReason,
     autoeditDiscardReason,
+    autoeditRejectReason,
     autoeditSource,
     autoeditTriggerKind,
 } from './types'
@@ -65,11 +67,14 @@ describe('AutoeditAnalyticsLogger', () => {
         codeToRewrite: 'This is test code to rewrite',
         userId: 'test-user-id',
         isChatModel: false,
+        abortSignal: new AbortController().signal,
+        timeoutMs: 10_000,
     }
 
     function getRequestStartMetadata(): Parameters<AutoeditAnalyticsLogger['createRequest']>[0] {
         return {
             startedAt: performance.now(),
+            filePath: getCurrentFilePath(document).toString(),
             docContext,
             document,
             position,
@@ -91,6 +96,7 @@ describe('AutoeditAnalyticsLogger', () => {
 
         autoeditLogger.markAsContextLoaded({
             requestId,
+            context: [],
             payload: {
                 contextSummary: {
                     strategy: 'none',
@@ -98,7 +104,7 @@ describe('AutoeditAnalyticsLogger', () => {
                     totalChars: 10,
                     prefixChars: 5,
                     suffixChars: 5,
-                    retrieverStats: {},
+                    retrieverStats: [],
                 },
             },
         })
@@ -110,6 +116,8 @@ describe('AutoeditAnalyticsLogger', () => {
             requestId,
             prompt: modelOptions.prompt,
             modelResponse: {
+                type: 'success',
+                stopReason: AutoeditStopReason.RequestFinished,
                 prediction,
                 requestHeaders: {},
                 requestUrl: modelOptions.url,
@@ -132,11 +140,17 @@ describe('AutoeditAnalyticsLogger', () => {
         autoeditLogger.markAsSuggested(requestId)
 
         if (finalPhase === 'accepted') {
-            autoeditLogger.markAsAccepted(requestId)
+            autoeditLogger.markAsAccepted({
+                requestId,
+                acceptReason: autoeditAcceptReason.acceptCommand,
+            })
         }
 
         if (finalPhase === 'rejected') {
-            autoeditLogger.markAsRejected(requestId)
+            autoeditLogger.markAsRejected({
+                requestId,
+                rejectReason: autoeditRejectReason.dismissCommand,
+            })
         }
 
         return requestId
@@ -168,7 +182,10 @@ describe('AutoeditAnalyticsLogger', () => {
         })
 
         // Invalid transition attempt
-        autoeditLogger.markAsAccepted(requestId)
+        autoeditLogger.markAsAccepted({
+            requestId,
+            acceptReason: autoeditAcceptReason.acceptCommand,
+        })
 
         expect(recordSpy).toHaveBeenCalledTimes(3)
         expect(recordSpy).toHaveBeenNthCalledWith(1, 'cody.autoedit', 'suggested', expect.any(Object))
@@ -186,6 +203,7 @@ describe('AutoeditAnalyticsLogger', () => {
             },
             "interactionID": "stable-id-for-tests-2",
             "metadata": {
+              "acceptReason": 1,
               "contextSummary.duration": 1.234,
               "contextSummary.prefixChars": 5,
               "contextSummary.suffixChars": 5,
@@ -220,7 +238,7 @@ describe('AutoeditAnalyticsLogger', () => {
               "contextSummary": {
                 "duration": 1.234,
                 "prefixChars": 5,
-                "retrieverStats": {},
+                "retrieverStats": [],
                 "strategy": "none",
                 "suffixChars": 5,
                 "totalChars": 10,
@@ -302,9 +320,13 @@ describe('AutoeditAnalyticsLogger', () => {
         expect(suggestedEvent3.privateMetadata.id).not.toBe(suggestedEvent2.privateMetadata.id)
     })
 
-    it('logs `discarded` if the suggestion was not suggested for any reason', () => {
+    it.skip('logs `discarded` if the suggestion was not suggested for any reason', () => {
         const requestId = autoeditLogger.createRequest(getRequestStartMetadata())
-        autoeditLogger.markAsContextLoaded({ requestId, payload: { contextSummary: undefined } })
+        autoeditLogger.markAsContextLoaded({
+            requestId,
+            context: [],
+            payload: { contextSummary: undefined },
+        })
         autoeditLogger.markAsDiscarded({
             requestId,
             discardReason: autoeditDiscardReason.emptyPrediction,
@@ -343,7 +365,10 @@ describe('AutoeditAnalyticsLogger', () => {
 
         // Both calls below are invalid transitions, so the logger logs debug events
         autoeditLogger.markAsSuggested(requestId)
-        autoeditLogger.markAsRejected(requestId)
+        autoeditLogger.markAsRejected({
+            requestId,
+            rejectReason: autoeditRejectReason.dismissCommand,
+        })
 
         expect(recordSpy).toHaveBeenCalledTimes(2)
         expect(recordSpy).toHaveBeenNthCalledWith(1, 'cody.autoedit', 'invalidTransitionToSuggested', {

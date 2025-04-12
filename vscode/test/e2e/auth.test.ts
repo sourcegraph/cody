@@ -20,8 +20,6 @@ test.extend<ExpectedV2Events>({
         'cody.auth:connected',
         'cody.auth.logout:clicked',
         'cody.auth:disconnected',
-        'cody.interactiveTutorial:attemptingStart',
-        'cody.experiment.interactiveTutorial:enrolled',
         'cody.signInNotification:shown',
     ],
 })('requires a valid auth token and allows logouts', async ({ page, sidebar }) => {
@@ -45,7 +43,9 @@ test.extend<ExpectedV2Events>({
     await expect(sidebar!.getByText('Invalid access token.')).not.toBeVisible()
     await expect(sidebar!.getByText('Sign in to Sourcegraph')).not.toBeVisible()
     await expect(sidebar!.getByLabel('Chat message')).toBeVisible()
-    await expect(sidebar!.getByTestId('tab-chat')).toBeVisible()
+    // await page.waitForTimeout(5000)
+    // page.pause()
+    await expect(sidebar!.getByTestId('new-chat-button')).toBeVisible()
 
     // Sign out.
     await signOut(page)
@@ -126,8 +126,6 @@ test.extend<ExpectedV2Events>({
         'cody.auth:connected',
         'cody.userMenu:open',
         'cody.auth:disconnected',
-        'cody.interactiveTutorial:attemptingStart',
-        'cody.experiment.interactiveTutorial:enrolled',
         'cody.signInNotification:shown',
     ],
 })
@@ -149,7 +147,7 @@ test.extend<ExpectedV2Events>({
         await expect(sidebar!.getByLabel('Chat message')).toBeVisible()
 
         // Open the User Dropdown menu
-        await expect(sidebar!.getByTestId('tab-chat')).toBeVisible()
+        await expect(sidebar!.getByRole('button', { name: /New Chat/i })).toBeVisible()
         await sidebar!.getByLabel('Account Menu Button').click({ delay: 2000 })
 
         const codeWebview = sidebar!.getByLabel('cody-webview')

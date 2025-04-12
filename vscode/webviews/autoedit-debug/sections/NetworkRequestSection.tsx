@@ -1,5 +1,9 @@
 import type { FC } from 'react'
 
+import {
+    getModelResponse,
+    getSuccessModelResponse,
+} from '../../../src/autoedits/debug-panel/autoedit-data-sdk'
 import type { AutoeditRequestDebugState } from '../../../src/autoedits/debug-panel/debug-store'
 import { JsonViewer } from '../components/JsonViewer'
 
@@ -11,7 +15,7 @@ export const NetworkRequestSection: FC<{
     }
 
     // Extract modelResponse if available
-    const modelResponse = 'modelResponse' in entry.state ? entry.state.modelResponse : null
+    const modelResponse = getModelResponse(entry)
 
     return (
         <div className="tw-grid tw-grid-cols-2 tw-gap-4">
@@ -29,7 +33,7 @@ export const NetworkRequestSection: FC<{
             {modelResponse?.requestHeaders && (
                 <div className="tw-col-span-2">
                     <h4 className="tw-text-sm tw-font-medium tw-mb-2">Request Headers</h4>
-                    <div className="tw-bg-gray-100 tw-dark:tw-bg-gray-800 tw-p-3 tw-rounded tw-text-xs tw-max-h-60 tw-overflow-y-auto">
+                    <div className="tw-bg-gray-100 tw-dark:tw-bg-gray-800 tw-p-3 tw-rounded tw-text-xs tw-max-h-160 tw-overflow-y-auto">
                         {Object.entries(modelResponse.requestHeaders).map(([key, value]) => (
                             <div key={key} className="tw-mb-1">
                                 <span className="tw-font-medium">{key}:</span>{' '}
@@ -58,7 +62,7 @@ export const NetworkResponseSection: FC<{
     }
 
     // Extract modelResponse if available
-    const modelResponse = 'modelResponse' in entry.state ? entry.state.modelResponse : null
+    const modelResponse = getSuccessModelResponse(entry)
 
     return (
         <div className="tw-grid tw-grid-cols-2 tw-gap-4">

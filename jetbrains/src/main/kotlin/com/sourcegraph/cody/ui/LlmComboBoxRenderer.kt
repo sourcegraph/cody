@@ -2,7 +2,7 @@ package com.sourcegraph.cody.ui
 
 import com.intellij.ui.CellRendererPanel
 import com.intellij.util.ui.JBUI
-import com.sourcegraph.cody.Icons
+import com.sourcegraph.Icons
 import com.sourcegraph.cody.agent.protocol_extensions.displayName
 import com.sourcegraph.cody.agent.protocol_extensions.getIcon
 import com.sourcegraph.cody.agent.protocol_generated.ModelAvailabilityStatus

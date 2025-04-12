@@ -1,0 +1,7 @@
+# Dependencies - will be installed during build
+**/node_modules/
+node_modules/
+
+# Git directories
+.git/
+**/.git/

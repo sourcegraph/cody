@@ -1,11 +1,11 @@
 import type { Meta, StoryObj } from '@storybook/react'
-import { VSCodeStandaloneComponent } from '../../../storybook/VSCodeStoryDecorator'
+import { VSCodeWebview } from '../../../storybook/VSCodeStoryDecorator'
 import ApprovalCell from './ApprovalCell'
 
 const meta: Meta<typeof ApprovalCell> = {
     title: 'cody/ApprovalCell',
     component: ApprovalCell,
-    decorators: [VSCodeStandaloneComponent],
+    decorators: [VSCodeWebview],
 }
 
 export default meta

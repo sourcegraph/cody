@@ -28,7 +28,7 @@ const defaultContextSummary = {
     totalChars: 3,
     prefixChars: 0,
     suffixChars: 3,
-    retrieverStats: {},
+    retrieverStats: [],
 } satisfies ContextSummary
 
 const { document, position } = documentAndPosition('const foo = █')

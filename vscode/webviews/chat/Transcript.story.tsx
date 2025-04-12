@@ -18,6 +18,7 @@ import { useArgs, useCallback, useEffect, useRef, useState } from '@storybook/pr
 import type { ComponentProps } from 'react'
 import { URI } from 'vscode-uri'
 import { VSCodeWebview } from '../storybook/VSCodeStoryDecorator'
+import { MockNoGuardrails } from '../utils/guardrails'
 import { __ContextCellStorybookContext } from './cells/contextCell/ContextCell'
 
 const meta: Meta<typeof Transcript> = {
@@ -42,6 +43,9 @@ const meta: Meta<typeof Transcript> = {
         chatEnabled: true,
         models: FIXTURE_MODELS,
         setActiveChatContext: () => {},
+        manuallySelectedIntent: null,
+        setManuallySelectedIntent: () => {},
+        guardrails: new MockNoGuardrails(),
     } satisfies ComponentProps<typeof Transcript>,
 
     decorators: [
@@ -360,5 +364,37 @@ export const WithToolUseResponse: StoryObj<typeof meta> = {
 export const WithCode: StoryObj<typeof meta> = {
     args: {
         transcript: transcriptFixture([...FIXTURE_TRANSCRIPT.generateCode]),
+    },
+}
+
+export const LoadingDotsState: StoryObj<typeof meta> = {
+    render: () => {
+        const [args] = useArgs<Required<NonNullable<(typeof meta)['args']>>>()
+
+        return (
+            <div className="tw-flex tw-flex-col tw-gap-4">
+                <Transcript
+                    {...args}
+                    transcript={transcriptFixture([
+                        {
+                            speaker: 'human',
+                            text: ps`Loading Dots in Transcript`,
+                            contextFiles: [],
+                        },
+                        { speaker: 'assistant', text: ps`Of course! What's your question?` },
+                        {
+                            speaker: 'human',
+                            text: ps`How do I implement a loading indicator in React?`,
+                            contextFiles: [],
+                        },
+                    ])}
+                    messageInProgress={{
+                        speaker: 'assistant',
+                        model: 'my-llm',
+                        text: ps`To imp`,
+                    }}
+                />
+            </div>
+        )
     },
 }

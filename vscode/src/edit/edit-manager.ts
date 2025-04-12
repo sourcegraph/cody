@@ -6,8 +6,12 @@ import {
     DEFAULT_EVENT_SOURCE,
     type EditModel,
     type EventSource,
+    type SiteAndCodyAPIVersions,
     firstResultFromOperation,
     modelsService,
+    siteVersion,
+    skipPendingOperation,
+    subscriptionDisposable,
     telemetryRecorder,
 } from '@sourcegraph/cody-shared'
 
@@ -20,9 +24,10 @@ import { ACTIVE_TASK_STATES } from '../non-stop/codelenses/constants'
 import { splitSafeMetadata } from '../services/telemetry-v2'
 
 import { EditLoggingFeatureFlagManager, getEditLoggingContext } from './edit-context-logging'
+import type { EditGuardrails } from './edit-guardrails'
 import type { ExecuteEditArguments, ExecuteEditResult } from './execute'
 import { EditProvider } from './provider'
-import { getEditIntent } from './utils/edit-intent'
+import { getEditIntent, isStreamedIntent } from './utils/edit-intent'
 import { getEditMode } from './utils/edit-mode'
 import { getEditLineSelection, getEditSmartSelection } from './utils/edit-selection'
 
@@ -30,6 +35,7 @@ export interface EditManagerOptions {
     editor: VSCodeEditor
     fixupController: FixupController
     chatClient: ChatClient
+    guardrails: EditGuardrails
 }
 
 // EditManager handles translating specific edit intents (document, edit) into
@@ -38,6 +44,7 @@ export interface EditManagerOptions {
 export class EditManager implements vscode.Disposable {
     private disposables: vscode.Disposable[] = []
     private editProviders = new WeakMap<FixupTask, EditProvider>()
+    private siteVersion: SiteAndCodyAPIVersions | null = null
 
     public editLoggingFeatureFlagManager = new EditLoggingFeatureFlagManager()
 
@@ -68,7 +75,13 @@ export class EditManager implements vscode.Disposable {
                 provider.startStreamingEdit()
             }
         )
-
+        this.disposables.push(
+            subscriptionDisposable(
+                siteVersion.pipe(skipPendingOperation()).subscribe(version => {
+                    this.siteVersion = version
+                })
+            )
+        )
         this.disposables.push(this.options.fixupController, editCommand, startCommand)
     }
 
@@ -76,7 +89,7 @@ export class EditManager implements vscode.Disposable {
         let provider = this.editProviders.get(task)
 
         if (!provider) {
-            provider = new EditProvider({ task, ...this.options })
+            provider = new EditProvider({ task, siteVersion: this.siteVersion, ...this.options })
             this.editProviders.set(task, provider)
         }
 
@@ -171,6 +184,8 @@ export class EditManager implements vscode.Disposable {
             }
         }
 
+        const canStream = !(await this.options.guardrails.shouldHideCodeBeforeAttribution())
+
         if (configuration.instruction && configuration.instruction.trim().length > 0) {
             return this.createTaskAndCheckForDuplicates({
                 document,
@@ -178,6 +193,7 @@ export class EditManager implements vscode.Disposable {
                 userContextFiles: configuration.userContextFiles ?? [],
                 selectionRange: expandedRange || range,
                 intent,
+                isStreamed: canStream && isStreamedIntent(intent),
                 mode,
                 model,
                 rules: configuration.rules ?? null,
@@ -199,6 +215,7 @@ export class EditManager implements vscode.Disposable {
             model,
             configuration.rules ?? null,
             intent,
+            canStream,
             source,
             telemetryMetadata
         )

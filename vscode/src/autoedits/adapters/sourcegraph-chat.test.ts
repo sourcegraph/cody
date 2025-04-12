@@ -1,7 +1,7 @@
 import { ps } from '@sourcegraph/cody-shared'
 import type { ChatClient } from '@sourcegraph/cody-shared'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
-import type { AutoeditModelOptions } from './base'
+import type { AutoeditModelOptions, SuccessModelResponse } from './base'
 import { SourcegraphChatAdapter } from './sourcegraph-chat'
 import { getMaxOutputTokensForAutoedits } from './utils'
 
@@ -19,6 +19,8 @@ describe('SourcegraphChatAdapter', () => {
         codeToRewrite: 'const x = 1',
         userId: 'test-user',
         isChatModel: true,
+        abortSignal: new AbortController().signal,
+        timeoutMs: 10_000,
     }
 
     beforeEach(() => {
@@ -49,7 +51,8 @@ describe('SourcegraphChatAdapter', () => {
 
         mockChatClient.chat = mockChat
 
-        await adapter.getModelResponse(options)
+        const generator = await adapter.getModelResponse(options)
+        await generator.next()
 
         // Extract just the first two arguments for verification
         const [messages, chatOptions] = mockChat.mock.calls[0]
@@ -83,8 +86,13 @@ describe('SourcegraphChatAdapter', () => {
 
         mockChatClient.chat = mockChat
 
-        const response = await adapter.getModelResponse(options)
-        expect(response.prediction).toBe('part1part2')
+        const responseGenerator = await adapter.getModelResponse(options)
+        const responses = []
+        for await (const response of responseGenerator) {
+            responses.push(response)
+        }
+        const lastResponse = responses[responses.length - 1]
+        expect((lastResponse as SuccessModelResponse).prediction).toBe('part1part2')
     })
 
     it('handles errors correctly', async () => {
@@ -92,6 +100,7 @@ describe('SourcegraphChatAdapter', () => {
         const mockChat = vi.fn().mockRejectedValue(error)
         mockChatClient.chat = mockChat
 
-        await expect(adapter.getModelResponse(options)).rejects.toThrow(error)
+        const generator = await adapter.getModelResponse(options)
+        await expect(generator.next()).rejects.toThrow(error)
     })
 })

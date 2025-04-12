@@ -21,11 +21,11 @@ import { ignoreReason, showCodyIgnoreNotification } from '../cody-ignore/notific
 import { localStorage } from '../services/LocalStorageProvider'
 import { autocompleteStageCounterLogger } from '../services/autocomplete-stage-counter-logger'
 import { recordExposedExperimentsToSpan } from '../services/open-telemetry/utils'
-import { isInTutorial } from '../tutorial/helpers'
 
 import { AuthError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
-import { AutoEditOnboarding } from '../autoedits/autoedit-onboarding'
+import { autoeditsOnboarding } from '../autoedits/autoedit-onboarding'
 import { ContextRankingStrategy } from '../completions/context/completions-context-ranker'
+import { isRunningInsideAgent } from '../jsonrpc/isRunningInsideAgent'
 import type { CompletionBookkeepingEvent, CompletionItemID, CompletionLogID } from './analytics-logger'
 import * as CompletionAnalyticsLogger from './analytics-logger'
 import { completionProviderConfig } from './completion-provider-config'
@@ -144,9 +144,7 @@ export class InlineCompletionItemProvider
     }: CodyCompletionItemProviderConfig) {
         // Show the autoedit onboarding message if the user hasn't enabled autoedits
         // but is eligible to use them as an alternative to autocomplete
-        const autoeditsOnboarding = new AutoEditOnboarding()
-        autoeditsOnboarding.showAutoEditOnboardingIfEligible()
-        this.disposables.push(autoeditsOnboarding)
+        autoeditsOnboarding.enrollUserToAutoEditBetaIfEligible()
 
         // This is a static field to allow for easy access in the static `configuration` getter.
         // There must only be one instance of this class at a time.
@@ -165,7 +163,7 @@ export class InlineCompletionItemProvider
         this.disposables.push(
             subscriptionDisposable(
                 featureFlagProvider
-                    .evaluatedFeatureFlag(FeatureFlag.CodyAutocompleteTracing)
+                    .evaluateFeatureFlag(FeatureFlag.CodyAutocompleteTracing)
                     .subscribe(shouldSample => {
                         this.shouldSample = Boolean(shouldSample)
                     })
@@ -716,11 +714,6 @@ export class InlineCompletionItemProvider
         // Mark as seen, so we don't show again after this.
         void localStorage.set(key, 'true')
 
-        if (isInTutorial(request.document)) {
-            // Do nothing, the user is already working through the tutorial
-            return
-        }
-
         // Show inline decoration.
         this.firstCompletionDecoration.show(request)
     }
@@ -880,6 +873,12 @@ export class InlineCompletionItemProvider
     }
 
     public async manuallyTriggerCompletion(): Promise<void> {
+        if (isRunningInsideAgent()) {
+            // Client manage their own shortcuts and logic for manually triggering a completion
+            this.lastManualCompletionTimestamp = Date.now()
+            return
+        }
+
         await vscode.commands.executeCommand('editor.action.inlineSuggest.hide')
         this.lastManualCompletionTimestamp = Date.now()
         await vscode.commands.executeCommand('editor.action.inlineSuggest.trigger')

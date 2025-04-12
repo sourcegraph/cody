@@ -1,4 +1,5 @@
 import type { ClientRequest } from 'node:http'
+import type { Socket } from 'node:net'
 import type { EventEmitter } from 'node:stream'
 import {
     NEVER,
@@ -27,26 +28,11 @@ interface NetworkDiagnosticsDeps {
     authProvider: AuthProvider
 }
 
-interface RequestEventHandlers {
-    onResponse: (res: any) => void
-    onTimeout: () => void
-    onError: (error: Error) => void
-    onClose: () => void
-}
-
-interface SocketEventHandlers {
-    onConnect: () => void
-    onClose: () => void
-    onError: (error: Error) => void
-}
-
 let GLOBAL_REQUEST_COUNTER = 0
 
 export class NetworkDiagnostics implements vscode.Disposable {
     private static singleton: NetworkDiagnostics | null = null
     private disposables: vscode.Disposable[] = []
-    // We use a weak map here to prevent dangling requests
-    private requestTimings = new WeakMap<ClientRequest, RequestTimings>()
     private _statusBar: Subject<CodyStatusBar | null> = new Subject()
     private outputChannel: vscode.LogOutputChannel
 
@@ -81,140 +67,85 @@ export class NetworkDiagnostics implements vscode.Disposable {
         return NetworkDiagnostics.singleton
     }
 
-    private createRequestEventHandlers(
-        req: ClientRequest,
-        url: string | URL | undefined | null,
-        protocol: string,
-        agent: string | undefined | null
-    ): RequestEventHandlers {
-        return {
-            onResponse: res => {
-                const responseCleanup = this.setupResponseEvents(req, res)
-                this.disposables.push(new vscode.Disposable(responseCleanup))
-            },
-            onTimeout: () => {
-                const requestTimings = this.requestTimings.get(req)
-                if (requestTimings) {
-                    requestTimings.timeout = new Date()
-                }
-            },
-            onError: error => {
-                const requestTimings = this.requestTimings.get(req)
-                if (requestTimings) {
-                    requestTimings.error = new Date()
-                    requestTimings.errorValue = error
-                }
-            },
-            onClose: () => {
-                const requestTimings = this.requestTimings.get(req)
-                if (!requestTimings) {
-                    return
-                }
-                requestTimings.close = new Date()
-                this.logRequestCompletion(requestTimings, url, protocol, agent)
-            },
+    private setupResponseEvents(res: any, requestTimings: RequestTimings) {
+        requestTimings.response = {
+            start: new Date(),
+            statusCode: res.statusCode,
+            statusMessage: res.statusMessage,
         }
-    }
 
-    private createSocketEventHandlers(req: ClientRequest): SocketEventHandlers {
-        return {
-            onConnect: () => {
-                const reqTiming = this.requestTimings.get(req)
-                if (reqTiming?.socket) {
-                    reqTiming.socket.connect = new Date()
-                }
-            },
-            onClose: () => {
-                const socketTimings = this.requestTimings.get(req)?.socket
-                if (socketTimings) {
-                    socketTimings.close = new Date()
-                }
-            },
-            onError: error => {
-                const socketTimings = this.requestTimings.get(req)?.socket
-                if (socketTimings) {
-                    socketTimings.error = new Date()
-                    socketTimings.errorValue = error
-                }
-            },
-        }
-    }
-
-    private setupResponseEvents(req: ClientRequest, res: any): () => void {
-        const onResClose = () => {
-            const responseTimings = this.requestTimings.get(req)?.response
+        res.once('close', () => {
+            const responseTimings = requestTimings.response
             if (responseTimings) {
                 responseTimings.close = new Date()
             }
-        }
-
-        const onResError = (error: Error) => {
-            const responseTimings = this.requestTimings.get(req)?.response
+        })
+        res.once('error', (error: Error) => {
+            const responseTimings = requestTimings.response
             if (responseTimings) {
                 responseTimings.error = new Date()
                 responseTimings.errorValue = error
             }
-        }
-
-        res.once('close', onResClose)
-        res.once('error', onResError)
-
-        const requestTimings = this.requestTimings.get(req)
-        if (requestTimings) {
-            requestTimings.response = {
-                start: new Date(),
-                statusCode: res.statusCode,
-                statusMessage: res.statusMessage,
-            }
-        }
-
-        return () => {
-            res.removeListener('close', onResClose)
-            res.removeListener('error', onResError)
-        }
+        })
     }
 
     private setupRequestEvents(
         req: ClientRequest,
         url: string | URL | undefined | null,
         protocol: string,
-        agent: string | undefined | null
-    ): () => void {
-        const handlers = this.createRequestEventHandlers(req, url, protocol, agent)
-
-        req.once('response', handlers.onResponse)
-        req.once('timeout', handlers.onTimeout)
-        req.once('error', handlers.onError)
-        req.once('close', handlers.onClose)
-
-        return () => {
-            req.removeListener('response', handlers.onResponse)
-            req.removeListener('timeout', handlers.onTimeout)
-            req.removeListener('error', handlers.onError)
-            req.removeListener('close', handlers.onClose)
-        }
+        agent: string | undefined | null,
+        requestTimings: RequestTimings
+    ) {
+        req.once('response', res => {
+            this.setupResponseEvents(res, requestTimings)
+        })
+        req.once('timeout', () => {
+            requestTimings.timeout = new Date()
+        })
+        req.once('error', error => {
+            requestTimings.error = new Date()
+            requestTimings.errorValue = error
+        })
+        req.once('close', () => {
+            requestTimings.close = new Date()
+            this.logRequestCompletion(requestTimings, url, protocol, agent)
+        })
     }
 
-    private setupSocketEvents(req: ClientRequest): (socket: any) => void {
+    private setupSocketEvents(
+        req: ClientRequest,
+        requestTimings: RequestTimings
+    ): (socket: Socket) => void {
         return socket => {
-            const handlers = this.createSocketEventHandlers(req)
+            requestTimings.socket = { start: new Date() }
 
-            socket.once('connect', handlers.onConnect)
-            socket.once('close', handlers.onClose)
-            socket.once('error', handlers.onError)
-
-            const reqTiming = this.requestTimings.get(req)
-            if (reqTiming) {
-                reqTiming.socket = { start: new Date() }
+            const onSocketConnect = () => {
+                if (requestTimings.socket) {
+                    requestTimings.socket.connect = new Date()
+                }
+            }
+            const onSocketClose = () => {
+                if (requestTimings.socket) {
+                    requestTimings.socket.close = new Date()
+                }
+            }
+            const onSocketError = (error: Error) => {
+                if (requestTimings.socket) {
+                    requestTimings.socket.error = new Date()
+                    requestTimings.socket.errorValue = error
+                }
             }
 
-            this.disposables.push(
-                new vscode.Disposable(() => {
-                    socket.removeListener('connect', handlers.onConnect)
-                    socket.removeListener('close', handlers.onClose)
-                    socket.removeListener('error', handlers.onError)
-                })
-            )
+            socket.once('connect', onSocketConnect)
+            socket.once('close', onSocketClose)
+            socket.once('error', onSocketError)
+
+            // Socket can be reused, so we have to remove the listeners when the request closes
+            req.once('close', () => {
+                socket.removeListener('connect', onSocketConnect)
+                socket.removeListener('close', onSocketClose)
+                socket.removeListener('error', onSocketError)
+            })
         }
     }
 
@@ -271,23 +202,15 @@ export class NetworkDiagnostics implements vscode.Disposable {
                 })
             )
 
-            const requestHandler = ({ agent, protocol, url, req }: NetEventMap['request'][number]) => {
+            netEvents.on('request', ({ agent, protocol, url, req }) => {
                 const reqId = GLOBAL_REQUEST_COUNTER++
+                const requestTimings = { id: reqId, start: new Date() }
+
                 this.outputChannel.trace(log('Request Created', { id: reqId, url, protocol, agent }))
-                this.requestTimings.set(req, { id: reqId, start: new Date() })
 
-                const cleanupRequest = this.setupRequestEvents(req, url, protocol, agent)
-                req.once('socket', this.setupSocketEvents(req))
-
-                this.disposables.push(new vscode.Disposable(cleanupRequest))
-            }
-
-            netEvents.on('request', requestHandler)
-            disposables.push(
-                new vscode.Disposable(() => {
-                    netEvents.off('request', requestHandler)
-                })
-            )
+                this.setupRequestEvents(req, url, protocol, agent, requestTimings)
+                req.once('socket', this.setupSocketEvents(req, requestTimings))
+            })
         }
 
         return disposables

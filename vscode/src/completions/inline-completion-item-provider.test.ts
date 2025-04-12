@@ -138,14 +138,14 @@ describe('InlineCompletionItemProvider', () => {
 
         // Advance time, but not enough for the completion to be considered visible
         vi.advanceTimersByTime(500)
-        expect(spy).toHaveBeenCalledTimes(0)
+        expect(spy.mock.calls.filter(event => event[0] === 'cody.completion')).toHaveLength(0)
 
         // Advance time to make the completion visible (total 750ms)
         vi.advanceTimersByTime(250)
 
         // Check if telemetry event is recorded
         CompletionAnalyticsLogger.logSuggestionEvents(true)
-        expect(spy).toHaveBeenCalledTimes(1)
+        expect(spy.mock.calls.filter(event => event[0] === 'cody.completion')).toHaveLength(1)
         expect(spy).toHaveBeenCalledWith(
             'cody.completion',
             'suggested',
@@ -486,11 +486,11 @@ describe('InlineCompletionItemProvider', () => {
                 )
 
                 vi.advanceTimersByTime(500)
-                expect(spy).toHaveBeenCalledTimes(0) // Not waited long enough
+                expect(spy.mock.calls.filter(event => event[0] === 'cody.completion')).toHaveLength(0) // Not waited long enough
 
                 vi.advanceTimersByTime(250) // 500 + 250 = 750ms (time until completion is considered visible)
                 CompletionAnalyticsLogger.logSuggestionEvents(true)
-                expect(spy).toHaveBeenCalledTimes(1)
+                expect(spy.mock.calls.filter(event => event[0] === 'cody.completion')).toHaveLength(1)
                 expect(spy).toHaveBeenCalledWith(
                     'cody.completion',
                     'suggested',
@@ -525,7 +525,7 @@ describe('InlineCompletionItemProvider', () => {
 
                 vi.advanceTimersByTime(250) // 500 + 250 = 750ms (time until completion is considered visible)
                 CompletionAnalyticsLogger.logSuggestionEvents(true)
-                expect(spy).toHaveBeenCalledTimes(1)
+                expect(spy.mock.calls.filter(event => event[0] === 'cody.completion')).toHaveLength(1)
                 expect(spy).toHaveBeenCalledWith(
                     'cody.completion',
                     'suggested',
@@ -560,7 +560,7 @@ describe('InlineCompletionItemProvider', () => {
 
                 vi.advanceTimersByTime(250) // 500 + 250 = 750ms (time until completion is considered visible)
                 CompletionAnalyticsLogger.logSuggestionEvents(true)
-                expect(spy).toHaveBeenCalledTimes(1)
+                expect(spy.mock.calls.filter(event => event[0] === 'cody.completion')).toHaveLength(1)
                 expect(spy).toHaveBeenCalledWith(
                     'cody.completion',
                     'suggested',

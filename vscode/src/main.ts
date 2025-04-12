@@ -10,10 +10,10 @@ import {
     DOTCOM_URL,
     type DefaultCodyCommands,
     FeatureFlag,
-    type Guardrails,
     NEVER,
     PromptString,
     type ResolvedConfiguration,
+    type SourcegraphGuardrailsClient,
     authStatus,
     catchError,
     clientCapabilities,
@@ -61,6 +61,7 @@ import { CodyToolProvider } from './chat/agentic/CodyToolProvider'
 import { ChatsController, CodyChatEditorViewType } from './chat/chat-view/ChatsController'
 import { ContextRetriever } from './chat/chat-view/ContextRetriever'
 import { SourcegraphRemoteFileProvider } from './chat/chat-view/sourcegraphRemoteFile'
+import { MCPManager } from './chat/chat-view/tools/MCPManager'
 import {
     ACCOUNT_LIMITS_INFO_URL,
     ACCOUNT_UPGRADE_URL,
@@ -87,6 +88,7 @@ import { createInlineCompletionItemProvider } from './completions/create-inline-
 import { getConfiguration } from './configuration'
 import { observeOpenCtxController } from './context/openctx'
 import { logGlobalStateEmissions } from './dev/helpers'
+import { EditGuardrails } from './edit/edit-guardrails'
 import { EditManager } from './edit/edit-manager'
 import { SmartApplyManager } from './edit/smart-apply-manager'
 import { manageDisplayPathEnvInfoForExtension } from './editor/displayPathEnvInfo'
@@ -116,6 +118,7 @@ import {
     exportOutputLog,
     openCodyOutputChannel,
 } from './services/utils/export-logs'
+import { dumpCodyHeapSnapshot } from './services/utils/heap-dump'
 import { openCodyIssueReporter } from './services/utils/issue-reporter'
 import { SupercompletionProvider } from './supercompletions/supercompletion-provider'
 import { parseAllVisibleDocuments, updateParseTreeOnEdit } from './tree-sitter/parse-tree-cache'
@@ -272,7 +275,12 @@ const register = async (
     )
     const fixupController = new FixupController(platform.extensionClient)
     const ghostHintDecorator = new GhostHintDecorator({ fixupController })
-    const editManager = new EditManager({ chatClient, editor, fixupController })
+    const editManager = new EditManager({
+        chatClient,
+        editor,
+        fixupController,
+        guardrails: new EditGuardrails(guardrails),
+    })
     const smartApplyManager = new SmartApplyManager({ editManager, chatClient })
 
     CodyToolProvider.initialize(contextRetriever)
@@ -291,8 +299,6 @@ const register = async (
     )
 
     registerAutocomplete(platform, statusBar, disposables)
-    const tutorialSetup = tryRegisterTutorial(context, disposables)
-
     await registerCodyCommands({ statusBar, chatClient, fixupController, disposables, context })
     registerAuthCommands(disposables)
     registerChatCommands(disposables)
@@ -314,6 +320,34 @@ const register = async (
     // extension timeout during activation.
     resolvedConfig.pipe(take(1)).subscribe(({ auth }) => showSetupNotification(auth))
 
+    // Initialize MCP Manager based on the feature flag
+    let mcpManager: MCPManager | undefined
+    disposables.push(
+        subscriptionDisposable(
+            featureFlagProvider
+                .evaluateFeatureFlag(FeatureFlag.NextAgenticChatInternal)
+                .pipe(distinctUntilChanged())
+                .subscribe(async isEnabled => {
+                    if (isEnabled) {
+                        // Initialize MCP Manager if feature flag is enabled
+                        if (!mcpManager) {
+                            mcpManager = await MCPManager.init()
+                            if (mcpManager) {
+                                logDebug('main', 'MCPManager initialized')
+                            }
+                        }
+                    } else {
+                        // Dispose MCP Manager if feature flag is disabled
+                        if (mcpManager) {
+                            await mcpManager.dispose()
+                            mcpManager = undefined
+                            logDebug('main', 'MCPManager disposed')
+                        }
+                    }
+                })
+        )
+    )
+
     // Save config for `deactivate` handler.
     disposables.push(
         subscriptionDisposable(
@@ -322,8 +356,6 @@ const register = async (
             })
         )
     )
-
-    await tutorialSetup
 
     return vscode.Disposable.from(...disposables)
 }
@@ -483,7 +515,7 @@ async function registerCodyCommands({
     disposables.push(
         subscriptionDisposable(
             featureFlagProvider
-                .evaluatedFeatureFlag(FeatureFlag.CodyUnifiedPrompts)
+                .evaluateFeatureFlag(FeatureFlag.CodyUnifiedPrompts)
                 .pipe(
                     createDisposables(codyUnifiedPromptsFlag => {
                         // Commands that are available only if unified prompts feature is enabled.
@@ -705,22 +737,9 @@ async function registerDebugCommands(
         vscode.commands.registerCommand('cody.debug.export.logs', () => exportOutputLog(context.logUri)),
         vscode.commands.registerCommand('cody.debug.outputChannel', () => openCodyOutputChannel()),
         vscode.commands.registerCommand('cody.debug.enable.all', () => enableVerboseDebugMode()),
-        vscode.commands.registerCommand('cody.debug.reportIssue', () => openCodyIssueReporter())
+        vscode.commands.registerCommand('cody.debug.reportIssue', () => openCodyIssueReporter()),
+        vscode.commands.registerCommand('cody.debug.heapDump', () => dumpCodyHeapSnapshot())
     )
-}
-
-async function tryRegisterTutorial(
-    context: vscode.ExtensionContext,
-    disposables: vscode.Disposable[]
-): Promise<void> {
-    if (!isRunningInsideAgent()) {
-        // TODO: The interactive tutorial is currently VS Code specific, both in terms of features and keyboard shortcuts.
-        // Consider opening this up to support dynamic content via Cody Agent.
-        // This would allow us the present the same tutorial but with client-specific steps.
-        // Alternatively, clients may not wish to use this tutorial and instead opt for something more suitable for their environment.
-        const { registerInteractiveTutorial } = await import('./tutorial')
-        registerInteractiveTutorial(context).then(disposable => disposables.push(...disposable))
-    }
 }
 
 function registerAutoEdits({
@@ -736,16 +755,27 @@ function registerAutoEdits({
     disposables: vscode.Disposable[]
     context: vscode.ExtensionContext
 }): void {
+    const { autoedit } = clientCapabilities()
+    const autoeditDisabledForClient =
+        isRunningInsideAgent() && (autoedit === undefined || autoedit === 'none')
+    if (autoeditDisabledForClient) {
+        // Do not attempt to register autoedits for clients that have not opted in to use autoedit.
+        return
+    }
+
     disposables.push(
         autoeditDebugStore,
         subscriptionDisposable(
             combineLatest(
                 resolvedConfig,
                 authStatus,
-                featureFlagProvider.evaluatedFeatureFlag(
+                featureFlagProvider.evaluateFeatureFlag(
                     FeatureFlag.CodyAutoEditExperimentEnabledFeatureFlag
                 ),
-                featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyAutoEditInlineRendering)
+                featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutoEditInlineRendering),
+                featureFlagProvider.evaluateFeatureFlag(
+                    FeatureFlag.CodyAutoEditUseWebSocketForFireworksConnections
+                )
             )
                 .pipe(
                     distinctUntilChanged((a, b) => {
@@ -761,6 +791,7 @@ function registerAutoEdits({
                             authStatus,
                             autoeditFeatureFlagEnabled,
                             autoeditInlineRenderingEnabled,
+                            autoeditUseWebSocketEnabled,
                         ]) => {
                             return createAutoEditsProvider({
                                 config,
@@ -768,6 +799,7 @@ function registerAutoEdits({
                                 chatClient,
                                 autoeditFeatureFlagEnabled,
                                 autoeditInlineRenderingEnabled,
+                                autoeditUseWebSocketEnabled,
                                 fixupController,
                                 statusBar,
                                 context,
@@ -846,7 +878,7 @@ interface RegisterChatOptions {
     context: vscode.ExtensionContext
     platform: PlatformContext
     chatClient: ChatClient
-    guardrails: Guardrails
+    guardrails: SourcegraphGuardrailsClient
     editor: VSCodeEditor
     contextRetriever: ContextRetriever
 }

@@ -102,6 +102,8 @@ interface CodyAgentServer {
   fun testing_closestPostData(params: Testing_ClosestPostDataParams): CompletableFuture<Testing_ClosestPostDataResult>
   @JsonRequest("testing/memoryUsage")
   fun testing_memoryUsage(params: Null?): CompletableFuture<Testing_MemoryUsageResult>
+  @JsonRequest("testing/heapdump")
+  fun testing_heapdump(params: Null?): CompletableFuture<Null?>
   @JsonRequest("testing/awaitPendingPromises")
   fun testing_awaitPendingPromises(params: Null?): CompletableFuture<Null?>
   @JsonRequest("testing/workspaceDocuments")
@@ -114,12 +116,14 @@ interface CodyAgentServer {
   fun testing_reset(params: Null?): CompletableFuture<Null?>
   @JsonRequest("testing/autocomplete/completionEvent")
   fun testing_autocomplete_completionEvent(params: CompletionItemParams): CompletableFuture<CompletionBookkeepingEvent?>
+  @JsonRequest("testing/autocomplete/autoeditEvent")
+  fun testing_autocomplete_autoeditEvent(params: CompletionItemParams): CompletableFuture<AutoeditRequestStateForAgentTesting?>
   @JsonRequest("testing/autocomplete/awaitPendingVisibilityTimeout")
   fun testing_autocomplete_awaitPendingVisibilityTimeout(params: Null?): CompletableFuture<CompletionItemID?>
   @JsonRequest("testing/autocomplete/setCompletionVisibilityDelay")
   fun testing_autocomplete_setCompletionVisibilityDelay(params: Testing_Autocomplete_SetCompletionVisibilityDelayParams): CompletableFuture<Null?>
   @JsonRequest("testing/autocomplete/providerConfig")
-  fun testing_autocomplete_providerConfig(params: Null?): CompletableFuture<Testing_Autocomplete_ProviderConfigResult>
+  fun testing_autocomplete_providerConfig(params: Null?): CompletableFuture<Testing_Autocomplete_ProviderConfigResult?>
   @JsonRequest("extensionConfiguration/change")
   fun extensionConfiguration_change(params: ExtensionConfiguration): CompletableFuture<ProtocolAuthStatus?>
   @JsonRequest("extensionConfiguration/status")
