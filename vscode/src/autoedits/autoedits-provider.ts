@@ -411,6 +411,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                     startedAt,
                     requestId,
                     discardReason: 'staleThrottledRequest',
+                    prediction: initialPrediction,
                 })
                 return null
             }
@@ -420,6 +421,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                     startedAt,
                     requestId,
                     discardReason: 'emptyPrediction',
+                    prediction: initialPrediction,
                 })
                 return null
             }
@@ -440,6 +442,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                     startedAt,
                     requestId,
                     discardReason: 'predictionEqualsCodeToRewrite',
+                    prediction: initialPrediction,
                 })
                 return null
             }
@@ -455,6 +458,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                     startedAt,
                     requestId,
                     discardReason: 'recentEdits',
+                    prediction: initialPrediction,
                 })
                 return null
             }
@@ -476,6 +480,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                     startedAt,
                     requestId,
                     discardReason: 'suffixOverlap',
+                    prediction: initialPrediction,
                 })
                 return null
             }
@@ -498,6 +503,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                     startedAt,
                     requestId,
                     discardReason: 'emptyPredictionAfterInlineCompletionExtraction',
+                    prediction: initialPrediction,
                 })
                 return null
             }
@@ -508,6 +514,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                     startedAt,
                     requestId,
                     discardReason: 'noActiveEditor',
+                    prediction: initialPrediction,
                 })
                 return null
             }
@@ -669,10 +676,12 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
         startedAt,
         discardReason,
         requestId,
+        prediction,
     }: {
         requestId: AutoeditRequestID
         startedAt: number
         discardReason: keyof typeof autoeditDiscardReason
+        prediction?: string
     }) {
         autoeditsOutputChannelLogger.logDebugIfVerbose(
             'provideInlineCompletionItems',
@@ -681,6 +690,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
         autoeditAnalyticsLogger.markAsDiscarded({
             requestId,
             discardReason: autoeditDiscardReason[discardReason],
+            prediction,
         })
         this.suggestionLatencyMetric.record(getTimeNowInMillis() - startedAt, {
             status: 'discarded',
