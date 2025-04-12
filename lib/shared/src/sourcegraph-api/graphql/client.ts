@@ -1746,7 +1746,8 @@ function catchHTTPError(
             'catchHTTPError',
             `accessing Sourcegraph HTTP API: ${code}${error} (${url})`
         )
-        return new Error('Oops, we encountered a timeout error, please retry the request')
+
+        return new Error(`Oops, we encountered a timeout error, please retry the request ${error}`)
     }
 }
 

@@ -66,7 +66,6 @@ test('chat assistant response code buttons', async ({ page, nap, sidebar }, test
     expect(charCountersAfterPaste).toContain(`"cody_chat_inserted": ${codeToPaste.length}`)
     expect(charCountersAfterPaste).toContain('"cody_chat": 1')
 
-    await actionsDropdown.click()
     await executeCommandInPalette(page, 'cody.command.insertCodeToCursor')
     await nap()
     await executeCommandInPalette(page, 'cody.debug.logCharacterCounters')
