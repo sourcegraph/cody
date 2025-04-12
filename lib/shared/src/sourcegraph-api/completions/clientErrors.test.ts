@@ -14,6 +14,37 @@ describe('ClientErrorsTransformer', () => {
         expect(ClientErrorsTransformer.transform(error, traceId)).toContain(traceId)
     })
 
+    it('transforms Error objects in place', () => {
+        const errorObj = new Error('Test error')
+        const result = ClientErrorsTransformer.transform(errorObj)
+
+        // Should return the same object instance
+        expect(result).toBe(errorObj)
+        // Message should be unchanged since we have no transformers that match
+        expect(result.message).toBe('Test error')
+    })
+
+    it('preserves Error object properties', () => {
+        // Create a custom error with additional properties
+        class CustomError extends Error {
+            constructor(
+                message: string,
+                public readonly customProp: string
+            ) {
+                super(message)
+                this.name = 'CustomError'
+            }
+        }
+
+        const errorObj = new CustomError('Rate limit exceeded', 'custom value')
+        const result = ClientErrorsTransformer.transform(errorObj)
+
+        // Should preserve the error type and custom properties
+        expect(result).toBeInstanceOf(CustomError)
+        expect(result.name).toBe('CustomError')
+        expect((result as CustomError).customProp).toBe('custom value')
+    })
+
     describe('specific error transformations', () => {
         it('transforms gateway error with content missing', () => {
             const errorMessage = `'Sourcegraph Cody Gateway: unexpected status code 400: {
@@ -127,7 +158,7 @@ describe('ClientErrorsTransformer', () => {
         })
 
         it('transforms 400 non-empty content', () => {
-            const errorMessage = `Stream processing failed: Error: 400 {"type":"error", "error": 
+            const errorMessage = `Stream processing failed: Error: 400 {"type":"error", "error":
             ("type" "invalid_request_error" "message": "messages.0: all messages must have non-empty content except for the optional final assistant message")}`
             const simplifiedErrorMessage =
                 'messages.0: all messages must have non-empty content except for the optional final assistant message'

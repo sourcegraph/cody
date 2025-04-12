@@ -31,11 +31,29 @@ export namespace ClientErrorsTransformer {
     /**
      * Transforms an error message by passing it through all registered transformers.
      * Each transformer can modify the result of previous transformers in a chain.
-     * @param error - The original error message to transform
-     * @returns The transformed error message
+     * @param error - The original error or error message to transform
+     * @param traceId - Optional trace ID to include in the error message
+     * @returns The original error with a transformed message, or a transformed error message string
      */
-    export function transform(error: string, traceId?: string): string {
-        let result = error
+    export function transform<T extends Error | string>(error: T, traceId?: string): T {
+        // If error is an Error object, modify its message property in place
+        if (error instanceof Error) {
+            let result = error.message
+
+            for (const entry of transformers) {
+                const transformed = entry.transformer(result, traceId)
+                if (transformed) {
+                    result = transformed
+                }
+            }
+
+            // Modify the error message in place
+            error.message = result
+            return error
+        }
+
+        // Handle string error messages as well if we don't receive full error objects
+        let result = error as string
 
         for (const entry of transformers) {
             const transformed = entry.transformer(result, traceId)
@@ -44,7 +62,7 @@ export namespace ClientErrorsTransformer {
             }
         }
 
-        return result
+        return result as T
     }
 }
 

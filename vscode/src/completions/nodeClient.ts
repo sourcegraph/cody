@@ -83,16 +83,13 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                 if (!didSendError) {
                     recordErrorToSpan(span, error)
 
-                    const simplifiedErrorMessage = ClientErrorsTransformer.transform(
-                        error.message,
+                    // Transform the error message
+                    const transformedError = ClientErrorsTransformer.transform(
+                        error,
                         span.spanContext().traceId
                     )
-                    const errorMessage = new Error(simplifiedErrorMessage)
-                    // pass the error name to the new error object
-                    // so that the client can handle it properly
-                    // (e.g. show a different error message for rate limit errors)
-                    errorMessage.name = error.name
-                    cb.onError(errorMessage, statusCode)
+                    // Use the original error with the transformed message
+                    cb.onError(transformedError, statusCode)
 
                     didSendMessage = true
                     didSendError = true
