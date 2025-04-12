@@ -10,10 +10,10 @@ import {
     DOTCOM_URL,
     type DefaultCodyCommands,
     FeatureFlag,
-    type Guardrails,
     NEVER,
     PromptString,
     type ResolvedConfiguration,
+    type SourcegraphGuardrailsClient,
     authStatus,
     catchError,
     clientCapabilities,
@@ -61,6 +61,7 @@ import { CodyToolProvider } from './chat/agentic/CodyToolProvider'
 import { ChatsController, CodyChatEditorViewType } from './chat/chat-view/ChatsController'
 import { ContextRetriever } from './chat/chat-view/ContextRetriever'
 import { SourcegraphRemoteFileProvider } from './chat/chat-view/sourcegraphRemoteFile'
+import { MCPManager } from './chat/chat-view/tools/MCPManager'
 import {
     ACCOUNT_LIMITS_INFO_URL,
     ACCOUNT_UPGRADE_URL,
@@ -87,12 +88,14 @@ import { createInlineCompletionItemProvider } from './completions/create-inline-
 import { getConfiguration } from './configuration'
 import { observeOpenCtxController } from './context/openctx'
 import { logGlobalStateEmissions } from './dev/helpers'
+import { EditGuardrails } from './edit/edit-guardrails'
 import { EditManager } from './edit/edit-manager'
 import { SmartApplyManager } from './edit/smart-apply-manager'
 import { manageDisplayPathEnvInfoForExtension } from './editor/displayPathEnvInfo'
 import { VSCodeEditor } from './editor/vscode-editor'
 import type { PlatformContext } from './extension.common'
 import { configureExternalServices } from './external-services'
+import { isRunningInsideAgent } from './jsonrpc/isRunningInsideAgent'
 import { FixupController } from './non-stop/FixupController'
 import { CodyProExpirationNotifications } from './notifications/cody-pro-expiration'
 import { showSetupNotification } from './notifications/setup-notification'
@@ -115,6 +118,7 @@ import {
     exportOutputLog,
     openCodyOutputChannel,
 } from './services/utils/export-logs'
+import { dumpCodyHeapSnapshot } from './services/utils/heap-dump'
 import { openCodyIssueReporter } from './services/utils/issue-reporter'
 import { SupercompletionProvider } from './supercompletions/supercompletion-provider'
 import { parseAllVisibleDocuments, updateParseTreeOnEdit } from './tree-sitter/parse-tree-cache'
@@ -271,7 +275,12 @@ const register = async (
     )
     const fixupController = new FixupController(platform.extensionClient)
     const ghostHintDecorator = new GhostHintDecorator({ fixupController })
-    const editManager = new EditManager({ chatClient, editor, fixupController })
+    const editManager = new EditManager({
+        chatClient,
+        editor,
+        fixupController,
+        guardrails: new EditGuardrails(guardrails),
+    })
     const smartApplyManager = new SmartApplyManager({ editManager, chatClient })
 
     CodyToolProvider.initialize(contextRetriever)
@@ -310,6 +319,34 @@ const register = async (
     // user has clicked on "Setup". Awaiting on this promise will make the Cody
     // extension timeout during activation.
     resolvedConfig.pipe(take(1)).subscribe(({ auth }) => showSetupNotification(auth))
+
+    // Initialize MCP Manager based on the feature flag
+    let mcpManager: MCPManager | undefined
+    disposables.push(
+        subscriptionDisposable(
+            featureFlagProvider
+                .evaluateFeatureFlag(FeatureFlag.NextAgenticChatInternal)
+                .pipe(distinctUntilChanged())
+                .subscribe(async isEnabled => {
+                    if (isEnabled) {
+                        // Initialize MCP Manager if feature flag is enabled
+                        if (!mcpManager) {
+                            mcpManager = await MCPManager.init()
+                            if (mcpManager) {
+                                logDebug('main', 'MCPManager initialized')
+                            }
+                        }
+                    } else {
+                        // Dispose MCP Manager if feature flag is disabled
+                        if (mcpManager) {
+                            await mcpManager.dispose()
+                            mcpManager = undefined
+                            logDebug('main', 'MCPManager disposed')
+                        }
+                    }
+                })
+        )
+    )
 
     // Save config for `deactivate` handler.
     disposables.push(
@@ -478,7 +515,7 @@ async function registerCodyCommands({
     disposables.push(
         subscriptionDisposable(
             featureFlagProvider
-                .evaluatedFeatureFlag(FeatureFlag.CodyUnifiedPrompts)
+                .evaluateFeatureFlag(FeatureFlag.CodyUnifiedPrompts)
                 .pipe(
                     createDisposables(codyUnifiedPromptsFlag => {
                         // Commands that are available only if unified prompts feature is enabled.
@@ -700,7 +737,8 @@ async function registerDebugCommands(
         vscode.commands.registerCommand('cody.debug.export.logs', () => exportOutputLog(context.logUri)),
         vscode.commands.registerCommand('cody.debug.outputChannel', () => openCodyOutputChannel()),
         vscode.commands.registerCommand('cody.debug.enable.all', () => enableVerboseDebugMode()),
-        vscode.commands.registerCommand('cody.debug.reportIssue', () => openCodyIssueReporter())
+        vscode.commands.registerCommand('cody.debug.reportIssue', () => openCodyIssueReporter()),
+        vscode.commands.registerCommand('cody.debug.heapDump', () => dumpCodyHeapSnapshot())
     )
 }
 
@@ -717,16 +755,27 @@ function registerAutoEdits({
     disposables: vscode.Disposable[]
     context: vscode.ExtensionContext
 }): void {
+    const { autoedit } = clientCapabilities()
+    const autoeditDisabledForClient =
+        isRunningInsideAgent() && (autoedit === undefined || autoedit === 'none')
+    if (autoeditDisabledForClient) {
+        // Do not attempt to register autoedits for clients that have not opted in to use autoedit.
+        return
+    }
+
     disposables.push(
         autoeditDebugStore,
         subscriptionDisposable(
             combineLatest(
                 resolvedConfig,
                 authStatus,
-                featureFlagProvider.evaluatedFeatureFlag(
+                featureFlagProvider.evaluateFeatureFlag(
                     FeatureFlag.CodyAutoEditExperimentEnabledFeatureFlag
                 ),
-                featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyAutoEditInlineRendering)
+                featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutoEditInlineRendering),
+                featureFlagProvider.evaluateFeatureFlag(
+                    FeatureFlag.CodyAutoEditUseWebSocketForFireworksConnections
+                )
             )
                 .pipe(
                     distinctUntilChanged((a, b) => {
@@ -742,6 +791,7 @@ function registerAutoEdits({
                             authStatus,
                             autoeditFeatureFlagEnabled,
                             autoeditInlineRenderingEnabled,
+                            autoeditUseWebSocketEnabled,
                         ]) => {
                             return createAutoEditsProvider({
                                 config,
@@ -749,6 +799,7 @@ function registerAutoEdits({
                                 chatClient,
                                 autoeditFeatureFlagEnabled,
                                 autoeditInlineRenderingEnabled,
+                                autoeditUseWebSocketEnabled,
                                 fixupController,
                                 statusBar,
                                 context,
@@ -827,7 +878,7 @@ interface RegisterChatOptions {
     context: vscode.ExtensionContext
     platform: PlatformContext
     chatClient: ChatClient
-    guardrails: Guardrails
+    guardrails: SourcegraphGuardrailsClient
     editor: VSCodeEditor
     contextRetriever: ContextRetriever
 }

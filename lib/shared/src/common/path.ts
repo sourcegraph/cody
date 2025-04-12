@@ -96,6 +96,9 @@ function pathFunctions(isWindows: boolean, sep: '\\' | '/', caseSensitive: boole
             return path
         },
         basename(path: string, suffix?: string): string {
+            if (path === '') {
+                return ''
+            }
             if (path.endsWith(sep)) {
                 path = path.slice(0, -1)
             }

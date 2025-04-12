@@ -3,16 +3,18 @@ import { type FC, useState } from 'react'
 
 import type { AutoeditRequestDebugState } from '../../../src/autoedits/debug-panel/debug-store'
 
-import { getNetworkLatencyInfo } from '../autoedit-data-sdk'
+import { getNetworkLatencyInfo } from '../../../src/autoedits/debug-panel/autoedit-data-sdk'
 import {
+    type PhaseInfo,
+    type PhaseNames,
     calculateTimelineWidths,
     calculateTotalDuration,
     createPhaseKey,
     createSegmentKey,
-    createTimelineSegments,
     extractPhaseInfo,
     formatLatency,
-} from '../autoedit-ui-utils'
+} from '../../../src/autoedits/debug-panel/autoedit-latency-utils'
+import { getPhaseColor } from '../phase-colors'
 
 interface TimelineSectionProps {
     entry: AutoeditRequestDebugState
@@ -125,7 +127,9 @@ export const TimelineSection: FC<TimelineSectionProps> = ({ entry }) => {
                                 {/* Color indicator */}
                                 <div className="tw-flex tw-justify-center">
                                     <div
-                                        className={`${phase.color} tw-w-4 tw-h-4 tw-rounded-md tw-flex-shrink-0`}
+                                        className={`${getPhaseColor(
+                                            phase.name
+                                        )} tw-w-4 tw-h-4 tw-rounded-md tw-flex-shrink-0`}
                                     />
                                 </div>
 
@@ -208,4 +212,35 @@ export const TimelineSection: FC<TimelineSectionProps> = ({ entry }) => {
             )}
         </div>
     )
+}
+
+/**
+ * Create segments between phases for visualization
+ */
+const createTimelineSegments = (phases: PhaseInfo[]) => {
+    const segments: Array<{
+        name: string
+        startTime: number
+        endTime: number
+        duration: number
+        startPhaseName: string
+        color: string
+    }> = []
+
+    // Create a segment between each consecutive phase
+    for (let i = 0; i < phases.length - 1; i++) {
+        const startPhase = phases[i]
+        const endPhase = phases[i + 1]
+
+        segments.push({
+            name: endPhase.name,
+            startPhaseName: startPhase.name,
+            startTime: startPhase.time || 0,
+            endTime: endPhase.time || 0,
+            duration: (endPhase.time || 0) - (startPhase.time || 0),
+            color: getPhaseColor(endPhase.name as PhaseNames),
+        })
+    }
+
+    return segments
 }

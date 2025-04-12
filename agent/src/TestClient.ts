@@ -6,7 +6,12 @@ import { createPatch } from 'diff'
 import { execSync, spawn } from 'node:child_process'
 import fspromises from 'node:fs/promises'
 import path from 'node:path'
-import { type ContextItem, type SerializedChatMessage, logError } from '@sourcegraph/cody-shared'
+import {
+    type ClientCapabilities,
+    type ContextItem,
+    type SerializedChatMessage,
+    logError,
+} from '@sourcegraph/cody-shared'
 import dedent from 'dedent'
 import { applyPatch } from 'fast-myers-diff'
 import * as vscode from 'vscode'
@@ -88,6 +93,7 @@ interface TestClientParams {
     telemetryExporter?: 'testing' | 'graphql' // defaults to testing, which doesn't send telemetry
     onWindowRequest?: (params: ShowWindowMessageParams) => Promise<string>
     extraConfiguration?: Record<string, any>
+    capabilities?: ClientCapabilities
 }
 
 export function setupRecording(): void {
@@ -198,7 +204,7 @@ export class TestClient extends MessageHandler {
         super(conn)
 
         this.name = params.name
-        this.info = this.getClientInfo()
+        this.info = this.getClientInfo(params.capabilities)
 
         this.registerNotification('progress/start', message => {
             this.progressStartEvents.fire(message)
@@ -358,6 +364,13 @@ export class TestClient extends MessageHandler {
         })
         this.registerNotification('editTask/didDelete', params => {
             this.taskDelete.fire(params)
+        })
+
+        this.registerNotification('autocomplete/didHide', () => {
+            this.autocompleteHide.fire(null)
+        })
+        this.registerNotification('autocomplete/didTrigger', () => {
+            this.autocompleteTrigger.fire(null)
         })
 
         this.registerNotification('webview/postMessage', params => {
@@ -649,6 +662,11 @@ export class TestClient extends MessageHandler {
     public onDidUpdateTask = this.taskUpdate.event
     public taskDelete = new vscode.EventEmitter<EditTask>()
     public onDidDeleteTask = this.taskDelete.event
+    public autocompleteHide = new vscode.EventEmitter()
+    public onDidHideAutocomplete = this.autocompleteHide.event
+    public autocompleteTrigger = new vscode.EventEmitter()
+    public onDidTriggerAutocomplete = this.autocompleteTrigger.event
+
     public webviewMessages: WebviewPostMessageParams[] = []
     public webviewMessagesEmitter = new vscode.EventEmitter<WebviewPostMessageParams>()
 
@@ -950,14 +968,14 @@ ${patch}`
         })
     }
 
-    private getClientInfo(): ClientInfo {
+    private getClientInfo(capabilities: ClientCapabilities = allClientCapabilitiesEnabled): ClientInfo {
         return {
             name: this.name,
             version: 'v1',
             workspaceRootUri: this.params.workspaceRootUri.toString(),
             workspaceRootPath: this.params.workspaceRootUri.fsPath,
             capabilities: {
-                ...allClientCapabilitiesEnabled,
+                ...capabilities,
                 // The test client doesn't implement secrets/didChange, so we need to use the
                 // stateless secrets store.
                 secrets: 'stateless',

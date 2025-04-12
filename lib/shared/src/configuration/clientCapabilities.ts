@@ -64,6 +64,32 @@ export interface ClientCapabilities {
     completions?: 'none' | undefined | null
 
     /**
+     * If `enabled` edit suggestions will be provided from `autocomplete/execute`
+     */
+    autoedit?: 'none' | 'enabled' | undefined | null
+
+    /**
+     * The inline diff decorations that the client supports when rendering auto-edit suggestions.
+     * - 'none': the client does not support rendering an inline diff.
+     * - 'insertions-only': the client can render inline decorations for insertions only, similar to completions.
+     * - 'deletions-only': the client can render inline decorations for deletions only.
+     * - 'insertions-and-deletions': the client can render inline decorations for both insertions and deletions.
+     */
+    autoeditInlineDiff?: 'none' | 'insertions-only' | 'deletions-only' | 'insertions-and-deletions'
+
+    /**
+     * The aside diff decorations that the client supports when rendering auto-edit suggestions.
+     * - 'none': the client does not support rendering diffs to the side
+     * - 'image': the client supports rendering an image showing the diff to the side.
+     * - 'diff': the client has its own method of rendering a diff to the side.
+     *
+     * Note: If `image` is provided, the generated image will differ depending on the `autoeditTextDecorations` capability.
+     * This is because it is preferred that deletions are shown inline in the editor. If the client does not support rendering
+     * deletions inline, then an unified diff will be generated for the image.
+     */
+    autoeditAsideDiff?: 'none' | 'image' | 'diff'
+
+    /**
      * When 'streaming', handles 'chat/updateMessageInProgress' streaming notifications.
      */
     chat?: 'none' | 'streaming' | undefined | null
@@ -201,6 +227,7 @@ export function clientCapabilities(): ClientCapabilitiesWithLegacyFields {
     }
     return {
         ..._value.agentCapabilities,
+        edit: _value.agentCapabilities?.edit ?? 'enabled',
         agentIDE: _value.configuration.agentIDE ?? CodyIDE.VSCode,
         isVSCode: !_value.configuration.agentIDE || _value.configuration.agentIDE === CodyIDE.VSCode,
         isCodyWeb: _value.configuration.agentIDE === CodyIDE.Web,

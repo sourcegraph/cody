@@ -28,6 +28,15 @@ jobs:
           run_install: true
       - run: pnpm build
       - run: pnpm run test
+      # Auth for integration tests to send metrics to data team
+      - id: auth
+        uses: google-github-actions/auth@v2
+        # Skip auth if PR is from a fork
+        if: ${{ !github.event.pull_request.head.repo.fork }}
+        with:
+          workload_identity_provider: ${{ secrets.DATA_TEAM_PROVIDER_NAME }}
+          service_account: ${{ secrets.DATA_TEAM_SA_EMAIL }}
+      - uses: google-github-actions/setup-gcloud@v2
       - run: xvfb-run -a pnpm -C vscode run test:integration
       - run: xvfb-run -a pnpm -C vscode run test:e2e
         env:
@@ -42,8 +51,9 @@ jobs:
           echo "Webview Bundle Size: $WEBVIEW_BUNDLE_SIZE_MB MB"
         env:
           GITHUB_ENV: $GITHUB_ENV
-      - name: Authenticate to Google Cloud
-        id: auth
+      # This is for BigQuery data upload
+      - name: Authenticate to Google Cloud for BigQuery
+        id: bigquery_auth
         uses: "google-github-actions/auth@v2"
         with:
           project_id: "cody-core-dev"

@@ -16,15 +16,17 @@ import {
     type DefaultChatCommands,
     type EventSource,
     FeatureFlag,
-    type Guardrails,
+    GuardrailsMode,
     ModelTag,
     ModelUsage,
     type NLSSearchDynamicFilter,
     type ProcessingStep,
     PromptString,
+    type RateLimitError,
     type SerializedChatInteraction,
     type SerializedChatTranscript,
     type SerializedPromptEditorState,
+    type SourcegraphGuardrailsClient,
     addMessageListenersForExtensionAPI,
     authStatus,
     cenv,
@@ -42,6 +44,7 @@ import {
     forceHydration,
     getDefaultSystemPrompt,
     graphqlClient,
+    handleRateLimitError,
     hydrateAfterPostMessage,
     isAbortErrorOrSocketHangUp,
     isContextWindowLimitError,
@@ -59,11 +62,13 @@ import {
     reformatBotMessageForChat,
     resolvedConfig,
     serializeChatMessage,
+    serializeContextItem,
     shareReplay,
     skip,
     skipPendingOperation,
     startWith,
     subscriptionDisposable,
+    switchMap,
     telemetryRecorder,
     tracer,
     truncatePromptString,
@@ -77,8 +82,9 @@ import { type Span, context } from '@opentelemetry/api'
 import { captureException } from '@sentry/core'
 import type { SubMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { resolveAuth } from '@sourcegraph/cody-shared/src/configuration/auth-resolver'
+import type { McpServer } from '@sourcegraph/cody-shared/src/llm-providers/mcp/types'
 import type { TelemetryEventParameters } from '@sourcegraph/telemetry'
-import { Subject, map } from 'observable-fns'
+import { Observable, Subject, map } from 'observable-fns'
 import type { URI } from 'vscode-uri'
 import { View } from '../../../webviews/tabs/types'
 import { redirectToEndpointLogin, showSignInMenu, showSignOutMenu, signOut } from '../../auth/auth'
@@ -90,6 +96,10 @@ import type { startTokenReceiver } from '../../auth/token-receiver'
 import { getCurrentUserId } from '../../auth/user'
 import { getContextFileFromUri } from '../../commands/context/file-path'
 import { getContextFileFromCursor } from '../../commands/context/selection'
+import {
+    getFrequentlyUsedContextItems,
+    saveFrequentlyUsedContextItems,
+} from '../../context/frequentlyUsed'
 import { getEditor } from '../../editor/active-editor'
 import type { VSCodeEditor } from '../../editor/vscode-editor'
 import type { ExtensionClient } from '../../extension-client'
@@ -98,6 +108,7 @@ import { logDebug, outputChannelLogger } from '../../output-channel-logger'
 import { hydratePromptText } from '../../prompts/prompt-hydration'
 import { listPromptTags, mergedPromptsAndLegacyCommands } from '../../prompts/prompts'
 import { workspaceFolderForRepo } from '../../repository/remoteRepos'
+import { repoNameResolver } from '../../repository/repo-name-resolver'
 import { authProvider } from '../../services/AuthProvider'
 import { AuthProviderSimplified } from '../../services/AuthProviderSimplified'
 import { localStorage } from '../../services/LocalStorageProvider'
@@ -131,6 +142,7 @@ import { getChatPanelTitle, isAgentTesting } from './chat-helpers'
 import { OmniboxTelemetry } from './handlers/OmniboxTelemetry'
 import { getAgent, getAgentName } from './handlers/registry'
 import { getPromptsMigrationInfo, startPromptsMigration } from './prompts-migration'
+import { MCPManager } from './tools/MCPManager'
 
 export interface ChatControllerOptions {
     extensionUri: vscode.Uri
@@ -138,7 +150,7 @@ export interface ChatControllerOptions {
     contextRetriever: Pick<ContextRetriever, 'retrieveContext' | 'computeDidYouMean'>
     extensionClient: Pick<ExtensionClient, 'capabilities'>
     editor: VSCodeEditor
-    guardrails: Guardrails
+    guardrails: SourcegraphGuardrailsClient
     startTokenReceiver?: typeof startTokenReceiver
 }
 
@@ -183,7 +195,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
 
     private readonly editor: ChatControllerOptions['editor']
     private readonly extensionClient: ChatControllerOptions['extensionClient']
-    private readonly guardrails: Guardrails
+    private readonly guardrails: SourcegraphGuardrailsClient
 
     private readonly startTokenReceiver: typeof startTokenReceiver | undefined
 
@@ -346,17 +358,25 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 break
             }
             case 'openFileLink':
-                if (message?.uri?.scheme?.startsWith('http')) {
-                    this.openRemoteFile(message.uri, true)
-                    return
+                {
+                    if (message?.uri?.scheme?.startsWith('http')) {
+                        this.openRemoteFile(message.uri, true)
+                        return
+                    }
+
+                    // Determine if we're in the sidebar view
+                    const isInSidebar =
+                        this._webviewPanelOrView && !('viewColumn' in this._webviewPanelOrView)
+
+                    vscode.commands.executeCommand('vscode.open', message.uri, {
+                        selection: message.range,
+                        preserveFocus: true,
+                        background: false,
+                        preview: true,
+                        // Use the active column if in sidebar, otherwise use Beside
+                        viewColumn: isInSidebar ? vscode.ViewColumn.Active : vscode.ViewColumn.Beside,
+                    })
                 }
-                vscode.commands.executeCommand('vscode.open', message.uri, {
-                    selection: message.range,
-                    preserveFocus: true,
-                    background: false,
-                    preview: true,
-                    viewColumn: vscode.ViewColumn.Beside,
-                })
                 break
             case 'openRemoteFile':
                 this.openRemoteFile(message.uri, message.tryLocal ?? false)
@@ -549,11 +569,9 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         const { configuration, auth } = await currentResolvedConfig()
         const [experimentalPromptEditorEnabled, internalAgenticChatEnabled] = await Promise.all([
             firstValueFrom(
-                featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyExperimentalPromptEditor)
+                featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyExperimentalPromptEditor)
             ),
-            firstValueFrom(
-                featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.NextAgenticChatInternal)
-            ),
+            firstValueFrom(featureFlagProvider.evaluateFeatureFlag(FeatureFlag.NextAgenticChatInternal)),
         ])
         const experimentalAgenticChatEnabled = internalAgenticChatEnabled && isS2(auth.serverEndpoint)
         const sidebarViewOnly = this.extensionClient.capabilities?.webviewNativeConfig?.view === 'single'
@@ -561,6 +579,8 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         const webviewType = isEditorViewType && !sidebarViewOnly ? 'editor' : 'sidebar'
         const uiKindIsWeb = (cenv.CODY_OVERRIDE_UI_KIND ?? vscode.env.uiKind) === vscode.UIKind.Web
         const endpoints = localStorage.getEndpointHistory() ?? []
+        const attribution =
+            (await ClientConfigSingleton.getInstance().getConfig())?.attribution ?? GuardrailsMode.Off
 
         return {
             uiKindIsWeb,
@@ -576,6 +596,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             allowEndpointChange: configuration.overrideServerEndpoint === undefined,
             experimentalPromptEditorEnabled,
             experimentalAgenticChatEnabled,
+            attribution,
         }
     }
 
@@ -726,7 +747,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             command,
             manuallySelectedIntent,
             model,
-            chatAgent,
         }: Parameters<typeof this.handleUserMessage>[0],
         span: Span
     ): Promise<void> {
@@ -745,7 +765,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             sessionID: this.chatBuilder.sessionID,
             traceId: span.spanContext().traceId,
             promptText: inputText,
-            chatAgent,
         })
         recorder.recordChatQuestionSubmitted(mentions)
 
@@ -753,11 +772,13 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
 
         this.postEmptyMessageInProgress(model)
 
-        const agent = getAgent(model, chatAgent ?? model, {
+        const agent = getAgent(model, manuallySelectedIntent, {
             contextRetriever: this.contextRetriever,
             editor: this.editor,
             chatClient: this.chatClient,
         })
+
+        this.setFrequentlyUsedContextItemsToStorage(mentions)
 
         recorder.setIntentInfo({
             userSpecifiedIntent: manuallySelectedIntent ?? 'chat',
@@ -842,7 +863,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                         // In future work, we should remove this special-casing and unify
                         // how new messages are posted to the transcript.
 
-                        if (chatAgent === 'agentic') {
+                        if (manuallySelectedIntent === 'agentic') {
                             this.saveSession()
                         } else if (
                             messageInProgress &&
@@ -884,6 +905,50 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             }
             recordErrorToSpan(span, error as Error)
         }
+    }
+
+    private async setFrequentlyUsedContextItemsToStorage(mentions: ContextItem[]) {
+        const authStatus = currentAuthStatus()
+        const activeEditor = getEditor().active
+
+        const repoName = activeEditor?.document.uri
+            ? (
+                  await firstResultFromOperation(
+                      repoNameResolver.getRepoNamesContainingUri(activeEditor.document.uri)
+                  )
+              ).at(0)
+            : null
+
+        if (authStatus.authenticated) {
+            saveFrequentlyUsedContextItems({
+                items: mentions
+                    .filter(item => item.source === ContextItemSource.User)
+                    .map(item => serializeContextItem(item)),
+                authStatus,
+                codebases: repoName ? [repoName] : [],
+            })
+        }
+    }
+    private async getFrequentlyUsedContextItemsFromStorage() {
+        const authStatus = currentAuthStatus()
+        const activeEditor = getEditor().active
+
+        const repoName = activeEditor?.document.uri
+            ? (
+                  await firstResultFromOperation(
+                      repoNameResolver.getRepoNamesContainingUri(activeEditor.document.uri)
+                  )
+              ).at(0)
+            : null
+
+        if (authStatus.authenticated) {
+            return getFrequentlyUsedContextItems({
+                authStatus,
+                codebases: repoName ? [repoName] : [],
+            })
+        }
+
+        return []
     }
 
     private async openRemoteFile(uri: vscode.Uri, tryLocal?: boolean) {
@@ -1335,6 +1400,10 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
      * Display error message in webview as part of the chat transcript, or as a system banner alongside the chat.
      */
     private postError(error: Error, type?: MessageErrorType): void {
+        if (isRateLimitError(error)) {
+            handleRateLimitError(error as RateLimitError)
+        }
+
         logDebug('ChatController: postError', error.message)
         // Add error to transcript
         if (type === 'transcript') {
@@ -1607,15 +1676,26 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 }),
                 {
                     mentionMenuData: query => {
-                        return getMentionMenuData({
-                            disableProviders:
-                                this.extensionClient.capabilities?.disabledMentionsProviders || [],
-                            query: query,
-                            chatBuilder: this.chatBuilder,
-                        })
+                        return featureFlagProvider
+                            .evaluateFeatureFlag(FeatureFlag.CodyExperimentalPromptEditor)
+                            .pipe(
+                                switchMap((experimentalPromptEditor: boolean) =>
+                                    getMentionMenuData({
+                                        disableProviders:
+                                            this.extensionClient.capabilities
+                                                ?.disabledMentionsProviders || [],
+                                        query: query,
+                                        chatBuilder: this.chatBuilder,
+                                        experimentalPromptEditor,
+                                    })
+                                )
+                            )
+                    },
+                    frequentlyUsedContextItems: () => {
+                        return promiseFactoryToObservable(this.getFrequentlyUsedContextItemsFromStorage)
                     },
                     clientActionBroadcast: () => this.clientBroadcast,
-                    evaluatedFeatureFlag: flag => featureFlagProvider.evaluatedFeatureFlag(flag),
+                    evaluateFeatureFlag: flag => featureFlagProvider.evaluateFeatureFlag(flag),
                     hydratePromptMessage: (promptText, initialContext) =>
                         promiseFactoryToObservable(() =>
                             hydratePromptText(promptText, initialContext ?? [])
@@ -1669,11 +1749,29 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     authStatus: () => authStatus,
                     transcript: () =>
                         this.chatBuilder.changes.pipe(map(chat => chat.getDehydratedMessages())),
-                    userHistory: () => chatHistory.changes,
+                    userHistory: () => chatHistory.lightweightChanges,
                     userProductSubscription: () =>
                         userProductSubscription.pipe(
                             map(value => (value === pendingOperation ? null : value))
                         ),
+                    // Existing tools endpoint - update to include MCP tools
+                    mcpSettings: () => {
+                        return featureFlagProvider
+                            .evaluateFeatureFlag(FeatureFlag.NextAgenticChatInternal)
+                            .pipe(
+                                // Simplify the flow with map and distinctUntilChanged
+                                distinctUntilChanged(),
+                                startWith(null),
+                                // When disabled, return an empty array
+                                switchMap(experimentalAgentMode => {
+                                    if (!experimentalAgentMode) {
+                                        return Observable.of([] as McpServer[])
+                                    }
+                                    // When enabled, get servers from the manager
+                                    return MCPManager.observable
+                                })
+                            )
+                    },
                 }
             )
         )

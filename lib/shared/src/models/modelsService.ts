@@ -59,10 +59,23 @@ export type ModelStatus =
 export type ModelTier = ModelTag.Free | ModelTag.Pro | ModelTag.Enterprise
 /** Must match types on github.com/sourcegraph/sourcegraph/-/blob/internal/modelconfig/types/model.go */
 export type ModelCapability = 'chat' | 'autocomplete' | 'edit' | 'vision' | 'reasoning' | 'tools'
+/** Must match types on github.com/sourcegraph/sourcegraph/-/blob/internal/modelconfig/types/model.go */
+export type ModelConfigAllTiers = {
+    [key in ModelTier]: ModelConfigByTier
+}
 
+/** Matching github.com/sourcegraph/sourcegraph/-/blob/internal/modelconfig/types/model.go */
+export interface ModelConfigByTier {
+    contextWindow: ContextWindow
+}
+
+/** Matching github.com/sourcegraph/sourcegraph/-/blob/internal/modelconfig/types/model.go */
 export interface ContextWindow {
     maxInputTokens: number
     maxOutputTokens: number
+    // maxUserInputTokens is the maximum number of tokens user puts into the chat message.
+    // It is part of the input context window (maxInputTokens)
+    maxUserInputTokens?: number
 }
 
 export interface ClientSideConfig {
@@ -167,6 +180,7 @@ interface DefaultModels {
     chat: ModelRefStr
     fastChat: ModelRefStr
     codeCompletion: ModelRefStr
+    unlimitedChat: ModelRefStr
 }
 
 // TODO(PRIME-323): Do a proper review of the data model we will use to describe
@@ -213,6 +227,9 @@ export interface ModelsData {
 
     /** Preferences for the current endpoint. */
     preferences: DefaultsAndUserPreferencesForEndpoint
+
+    /** Rate limit status. */
+    isRateLimited?: boolean
 }
 
 const EMPTY_MODELS_DATA: ModelsData = {
@@ -263,8 +280,8 @@ export class ModelsService {
 
         this.syncPreferencesSubscription = combineLatest(
             this.modelsChanges,
-            featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyEditDefaultToGpt4oMini),
-            featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyDeepSeekChat)
+            featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyEditDefaultToGpt4oMini),
+            featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyDeepSeekChat)
         )
             .pipe(
                 tap(([data, shouldEditDefaultToGpt4oMini, shouldChatDefaultToDeepSeek]) => {

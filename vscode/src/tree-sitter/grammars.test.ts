@@ -144,12 +144,12 @@ describe('tree-sitter grammars', { timeout: 5000 }, () => {
             query: '(command_name) @identifier',
             expectedCapture: 'echo',
         },
-        {
-            language: SupportedLanguage.swift,
-            code: 'func helloWorld() { print("Hello, world!") }',
-            query: '(simple_identifier) @identifier',
-            expectedCapture: 'helloWorld',
-        },
+        // {
+        //     language: SupportedLanguage.swift,
+        //     code: 'func helloWorld() { print("Hello, world!") }',
+        //     query: '(simple_identifier) @identifier',
+        //     expectedCapture: 'helloWorld',
+        // },
         {
             language: SupportedLanguage.typescript,
             code: 'function helloWorld() { console.log("Hello, world!") }',

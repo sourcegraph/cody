@@ -74,6 +74,7 @@ export class FixupTask {
         public readonly userContextItems: ContextItem[],
         /* The intent of the edit, derived from the source of the command. */
         public readonly intent: EditIntent,
+        public readonly isStreamed: boolean,
         /* The range being edited. This range is tracked and updates as the user (or Cody) edits code. */
         public selectionRange: vscode.Range,
         /* The mode indicates how code should be inserted */

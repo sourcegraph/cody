@@ -64,7 +64,9 @@ export async function hydratePromptText(
     const promptText = PromptString.unsafe_fromUserQuery(promptRawText)
 
     // Match any general cody mentions in the prompt text with cody:// prefix
-    const promptTextMentionMatches = promptText.toString().match(/cody:\/\/[^\s.,;:]+/gm) ?? []
+    // This should be the same as AT_MENTION_REGEX in the atMentionsSerializer.ts
+    const promptTextMentionMatches =
+        promptText.toString().match(/(cody:\/\/(?:serialized[^_]+_|[a-zA-Z0-9-]+))/gm) ?? []
 
     let hydratedPromptText = promptText
     const contextItemsMap = new Map<string, ContextItem>()
@@ -116,9 +118,11 @@ async function hydrateWithCurrentSelection(
     initialContext: PromptHydrationInitialContext
 ): Promise<[PromptString, ContextItem[]]> {
     // Check if initial context already contains current file with selection (Cody Web case)
-    const initialContextFile = initialContext.find(item => item.type === 'file' && item.range)
+    const initialContextFile = initialContext.find(item => item.type === 'file')
 
-    const currentSelection = initialContextFile ?? (await getSelectionOrFileContext())[0]
+    const currentSelection = initialContextFile?.range
+        ? initialContextFile
+        : (await getSelectionOrFileContext())[0] ?? initialContextFile
 
     // TODO (vk): Add support for error notification if prompt hydration fails
     if (!currentSelection) {

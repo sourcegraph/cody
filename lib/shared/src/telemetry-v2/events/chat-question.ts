@@ -73,11 +73,7 @@ export const events = [
                         // V2 telemetry exports privateMetadata only for DotCom users
                         // the condition below is an additional safeguard measure
                         promptText: recordTranscript
-                            ? truncatePromptString(
-                                  params.promptText,
-                                  CHAT_INPUT_TOKEN_BUDGET,
-                                  tokenCounterUtils
-                              )
+                            ? truncatePromptString(params.promptText, CHAT_INPUT_TOKEN_BUDGET)
                             : undefined,
                         gitMetadata,
                         chatAgent: params.chatAgent,
@@ -151,11 +147,7 @@ export const events = [
                         // V2 telemetry exports privateMetadata only for S2 & Dotcom users. The condition below is an additional safeguard measure.
                         // Check `SRC_TELEMETRY_SENSITIVEMETADATA_ADDITIONAL_ALLOWED_EVENT_TYPES` env to learn more.
                         promptText: recordTranscript
-                            ? truncatePromptString(
-                                  params.promptText,
-                                  CHAT_INPUT_TOKEN_BUDGET,
-                                  tokenCounterUtils
-                              )
+                            ? truncatePromptString(params.promptText, CHAT_INPUT_TOKEN_BUDGET)
                             : undefined,
                         chatAgent: params.chatAgent,
                     },

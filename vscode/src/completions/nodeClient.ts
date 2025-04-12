@@ -10,6 +10,7 @@ import {
     type CompletionParameters,
     type CompletionRequestParameters,
     type CompletionResponse,
+    FeatureFlag,
     NeedsAuthChallengeError,
     NetworkError,
     RateLimitError,
@@ -18,10 +19,12 @@ import {
     addClientInfoParams,
     addCodyClientIdentificationHeaders,
     currentResolvedConfig,
+    featureFlagProvider,
     getActiveTraceAndSpanId,
     getSerializedParams,
     getTraceparentHeaders,
     globalAgentRef,
+    handleRateLimitError,
     isCustomAuthChallengeResponse,
     isError,
     logError,
@@ -149,7 +152,7 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                     //
                     // If the request failed with a rate limit error, wraps the
                     // error in RateLimitError.
-                    function handleError(e: Error): void {
+                    async function handleError(e: Error): Promise<void> {
                         log?.onError(e.message, e)
 
                         if (statusCode === 429) {
@@ -164,6 +167,7 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                                 ? getHeader(res.headers['x-ratelimit-limit'])
                                 : undefined
 
+                            // Get feature flag value synchronously
                             const error = new RateLimitError(
                                 'chat messages and commands',
                                 e.message,
@@ -171,6 +175,17 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                                 limit ? Number.parseInt(limit, 10) : undefined,
                                 retryAfter
                             )
+
+                            // Check feature flag and handle rate limit error if enabled
+                            featureFlagProvider
+                                .evaluateFeatureFlag(FeatureFlag.FallbackToFlash)
+                                .subscribe(fallbackToFlash => {
+                                    if (fallbackToFlash) {
+                                        handleRateLimitError(error)
+                                    }
+                                })
+
+                            // Call error callback with rate limit error
                             onErrorOnce(error, statusCode)
                         } else {
                             onErrorOnce(e, statusCode)
@@ -246,7 +261,19 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                         didSendMessage = true
                         didReceiveAnyEvent = didReceiveAnyEvent || parseResult.events.length > 0
                         log?.onEvents(parseResult.events)
-                        this.sendEvents(parseResult.events, cb, span)
+
+                        // Ensure we have usage data for the completion request
+                        if (parseResult.events.length > 0) {
+                            this.sendEvents(parseResult.events, cb, span)
+                        } else {
+                            // Log a warning but don't fail the request if no events were detected
+                            logError(
+                                'SourcegraphNodeCompletionsClient',
+                                'No events detected in parseResult',
+                                { verbose: { bufferText } }
+                            )
+                        }
+
                         bufferText = parseResult.remainingBuffer
                     })
                     res.on('error', e => handleError(e))
@@ -276,22 +303,25 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                     ? { traceId: traceSpan.traceId, spanId: traceSpan.spanId }
                     : undefined
                 if (!didReceiveAnyEvent) {
+                    const errorMsg =
+                        'Connection closed without receiving any events (this may be due to an outage with the upstream LLM provider)'
                     logError(
                         'SourcegraphNodeCompletionsClient',
                         "request.on('close')",
-                        'Connection closed without receiving any events (this may be due to an outage with the upstream LLM provider)',
+                        errorMsg,
                         `trace-and-span: ${JSON.stringify(traceInfo)}`,
                         { verbose: { bufferText } }
                     )
-                    onErrorOnce(
-                        new Error(
-                            `Connection closed without receiving any events (this may be due to an outage with the upstream LLM provider) ${JSON.stringify(
-                                traceInfo
-                            )}`
-                        )
+                    onErrorOnce(new Error(`${errorMsg} ${JSON.stringify(traceInfo)}`))
+                } else if (!didSendMessage) {
+                    // We received events but didn't send any messages to the callback
+                    logError(
+                        'SourcegraphNodeCompletionsClient',
+                        "request.on('close')",
+                        'Received events but did not send any messages to callback',
+                        `trace-and-span: ${JSON.stringify(traceInfo)}`,
+                        { verbose: { bufferText } }
                     )
-                }
-                if (!didSendMessage) {
                     onErrorOnce(
                         new Error(`Connection unexpectedly closed: ${JSON.stringify(traceInfo)}`)
                     )
@@ -342,6 +372,28 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                     body: JSON.stringify(serializedParams),
                     signal,
                 })
+                featureFlagProvider
+                    .evaluateFeatureFlag(FeatureFlag.FallbackToFlash)
+                    .subscribe(async (fallbackToFlash: boolean) => {
+                        if (fallbackToFlash) {
+                            if (response.status === 429) {
+                                const upgradeIsAvailable =
+                                    response.headers.get('x-is-cody-pro-user') === 'false' &&
+                                    typeof response.headers.get('x-is-cody-pro-user') !== 'undefined'
+                                const retryAfter = response.headers.get('retry-after')
+                                const limit = response.headers.get('x-ratelimit-limit')
+                                const error = new RateLimitError(
+                                    'chat messages and commands',
+                                    await response.text(),
+                                    upgradeIsAvailable,
+                                    limit ? Number.parseInt(limit, 10) : undefined,
+                                    retryAfter
+                                )
+                                handleRateLimitError(error)
+                                throw error
+                            }
+                        }
+                    })
                 if (!response.ok) {
                     const errorMessage = await response.text()
                     throw new NetworkError(

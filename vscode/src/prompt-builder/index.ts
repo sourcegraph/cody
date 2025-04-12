@@ -55,7 +55,7 @@ export class PromptBuilder {
     private constructor(private readonly tokenCounter: TokenCounter) {}
 
     private readonly hasCacheFeatureFlag = storeLastValue(
-        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyPromptCachingOnMessages)
+        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyPromptCachingOnMessages)
     )
     private readonly _isCacheEnabled: PromptCachingSetting = {
         featureFlag: false,
@@ -88,10 +88,12 @@ export class PromptBuilder {
      */
     private buildContextMessages(): Message[] {
         const contextMessages: Message[] = []
-
+        // NOTE: Remove tool-state context items from the list of context items,
+        // as we are turning them into part of chat messages.
+        const filteredContextItems = this.contextItems.filter(i => i.type !== 'tool-state')
         if (this.isCacheEnabled) {
             // Filter valid context items (ignoring 'media') and collect their texts.
-            const texts = this.contextItems.reduce<PromptString[]>((acc, item) => {
+            const texts = filteredContextItems.reduce<PromptString[]>((acc, item) => {
                 const msg = renderContextItem(item)
                 if (msg) {
                     if (item.type === 'media') {
@@ -113,7 +115,7 @@ export class PromptBuilder {
             }
         } else {
             // For each valid context item, include both ASSISTANT_MESSAGE and the message.
-            for (const item of this.contextItems) {
+            for (const item of filteredContextItems) {
                 const msg = renderContextItem(item)
                 if (msg) {
                     contextMessages.push(ASSISTANT_MESSAGE, msg)
@@ -204,7 +206,7 @@ export class PromptBuilder {
             // ignored on a client to always be treated as ignored.
             if (
                 item.type === 'file' &&
-                (item.uri.scheme === 'https' || item.uri.scheme === 'http') &&
+                (item?.uri?.scheme === 'https' || item?.uri?.scheme === 'http') &&
                 item.repoName &&
                 (await contextFiltersProvider.isRepoNameIgnored(item.repoName))
             ) {

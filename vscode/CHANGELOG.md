@@ -4,6 +4,376 @@ This is a log of all notable changes to Cody for VS Code.
 
 <!--- {/_ CHANGELOG_START _/} -->
 
+## 1.84.0
+
+### Features
+
+#### Agent
+
+- Update node binaries used by agent to v22.14.0 [#7679](https://github.com/sourcegraph/cody/pull/7679)
+
+#### Agent-Mode
+
+- Implement Model Context Protocol (MCP) integration [#7606](https://github.com/sourcegraph/cody/pull/7606)
+
+#### Agentic-Chat
+
+- Agent Mode Telemetry (CODY-5592) [#7623](https://github.com/sourcegraph/cody/pull/7623)
+
+#### Auto-Edit
+
+- support aborting websocket request in fireworks-websocket adapter #CODY-5483 [#7549](https://github.com/sourcegraph/cody/pull/7549)
+- Support triggering auto-edits on selection change in all clients [#7465](https://github.com/sourcegraph/cody/pull/7465)
+
+#### Chat
+
+- Improve tool input handling with JSON repair and validation [#7604](https://github.com/sourcegraph/cody/pull/7604)
+- Feat(models) Set new context limits (CODY-5022) [#7556](https://github.com/sourcegraph/cody/pull/7556)
+
+#### Guardrails
+
+- Perform Guardrails checks for edits. [#7563](https://github.com/sourcegraph/cody/pull/7563)
+
+#### Tabs
+
+- Move "Open in Editor" button to secondary position [#7632](https://github.com/sourcegraph/cody/pull/7632)
+
+#### Webview
+
+- Improve webview performance with lightweight history [#7593](https://github.com/sourcegraph/cody/pull/7593)
+
+### Fix
+
+#### Agentic-Chat
+
+- Improve the UI for pinning the model when Agentic mode is selected (CODY-5449) [#7591](https://github.com/sourcegraph/cody/pull/7591)
+- [Backport M84] fix(agentic chat): Put the settings tab behind a feature flag [#7688](https://github.com/sourcegraph/cody/pull/7688)
+- Fix(agentic chat): Update Sonnet model ID check in syncModels [#7633](https://github.com/sourcegraph/cody/pull/7633)
+- Fix(agent mode): select mode at start up [#7616](https://github.com/sourcegraph/cody/pull/7616)
+- Fix(agent mode): initial context not included as context [#7588](https://github.com/sourcegraph/cody/pull/7588)
+
+#### Autoedit
+
+- Skip automatically enrollment when running in other clients [#7643](https://github.com/sourcegraph/cody/pull/7643)
+- Fix case where no completion provider would be registered for non VS Code clients [#7640](https://github.com/sourcegraph/cody/pull/7640)
+- (auto-edit): Add session level stats such as prompt caching hit rate [#7537](https://github.com/sourcegraph/cody/pull/7537)
+
+#### Chat
+
+- Stop the Guardrails shimmer effect when checks are done [#7628](https://github.com/sourcegraph/cody/pull/7628)
+- Completely disable Swift tree-sitter parsing due to VS Code 1.98+ crash [#7598](https://github.com/sourcegraph/cody/pull/7598)
+- Label the button that runs shell commands "Execute" instead of "Execute in Terminal" [#7594](https://github.com/sourcegraph/cody/pull/7594)
+
+#### Ci
+
+- Update SCIP upload command in GitHub Actions [#7595](https://github.com/sourcegraph/cody/pull/7595)
+
+#### Completion
+
+- handle completion requests with no events [#7585](https://github.com/sourcegraph/cody/pull/7585)
+
+#### Guardrails
+
+- In enforced mode, hide smart apply, etc. actions until attribution complete [#7579](https://github.com/sourcegraph/cody/pull/7579)
+
+#### Tests
+
+- disable flaky chat test [#7705](https://github.com/sourcegraph/cody/pull/7705)
+
+#### Vscode
+
+- update release workflows to auth before integration tests [#7700](https://github.com/sourcegraph/cody/pull/7700)
+- [Backport M84] Fix flaky tests caused by too often refresh of siteVersion #7691 [#7695](https://github.com/sourcegraph/cody/pull/7695)
+- [Backport M84] Backport #7654 and #7669 to m84 [#7681](https://github.com/sourcegraph/cody/pull/7681)
+- [Backport M84] Replace tiktoken with gpt-tokenizer [#7667](https://github.com/sourcegraph/cody/pull/7667)
+- Add head dump command to Cody debug options [#7646](https://github.com/sourcegraph/cody/pull/7646)
+- Fix: backwards compatibility for evaluateFeatureFlags [#7639](https://github.com/sourcegraph/cody/pull/7639)
+- Cleanup unused PromptMigration UI components [#7615](https://github.com/sourcegraph/cody/pull/7615)
+- Update tree-sitter to v0.24.5 [#7605](https://github.com/sourcegraph/cody/pull/7605)
+- Sentry service refactoring [#7601](https://github.com/sourcegraph/cody/pull/7601)
+- Tests should use its own temp keystore [#7567](https://github.com/sourcegraph/cody/pull/7567)
+- Rename boost: field in NLS queries [#7564](https://github.com/sourcegraph/cody/pull/7564)
+- Remove the "Commands are now prompts" welcome dialog. [#7536](https://github.com/sourcegraph/cody/pull/7536)
+- Feat: Add Dockerfile that installs cody from source [#7513](https://github.com/sourcegraph/cody/pull/7513)
+
+#### Web
+
+- De-dup Guardrails attribution requests and route results back to the page [#7583](https://github.com/sourcegraph/cody/pull/7583)
+
+### Chore
+
+#### Chat
+
+- Remove the default context on the first message for agentic chat [#7505](https://github.com/sourcegraph/cody/pull/7505)
+
+#### Ci
+
+- add gcloud auth that was removed [#7689](https://github.com/sourcegraph/cody/pull/7689)
+
+#### Tests
+
+- Skip flaky test [#7644](https://github.com/sourcegraph/cody/pull/7644)
+
+### Refactor
+
+#### Chat
+
+- Remove loading dots from context display [#7557](https://github.com/sourcegraph/cody/pull/7557)
+
+
+## 1.82.0
+
+### Features
+
+#### Auto-Edit
+
+- Change the identifier from experimental to beta [#7547](https://github.com/sourcegraph/cody/pull/7547)
+- implement smart-throttle [#7525](https://github.com/sourcegraph/cody/pull/7525)
+- Handle accept events correctly when document changes match the active request [#7483](https://github.com/sourcegraph/cody/pull/7483)
+- Add beta onboarding for auto-edit [#7478](https://github.com/sourcegraph/cody/pull/7478)
+- add basic client cache [#7541](https://github.com/sourcegraph/cody/pull/7541)
+- Enable Agent support [#7311](https://github.com/sourcegraph/cody/pull/7311)
+- Add longer duration for persistence tracking for longer suggestion prediction [#7544](https://github.com/sourcegraph/cody/pull/7544)
+
+#### Chat
+
+- Improve tool input handling with JSON repair and validation [#7614](https://github.com/sourcegraph/cody/pull/7614)
+- Open file in active column when in sidebar view [#7535](https://github.com/sourcegraph/cody/pull/7535)
+- loading indicator for chat in progress [#7502](https://github.com/sourcegraph/cody/pull/7502)
+- Feat(agentic chat): add internal feature flag [#7479](https://github.com/sourcegraph/cody/pull/7479)
+- Feat(agent mode): Display modified lines count in DiffCell [#7543](https://github.com/sourcegraph/cody/pull/7543)
+
+#### Guardrails
+
+- Perform Guardrails checks for edits. [#7563](https://github.com/sourcegraph/cody/pull/7563)
+- Various UX changes, Guardrails for Cody Web, adds an (unused) enforcement mode [#7527](https://github.com/sourcegraph/cody/pull/7527)
+
+#### Telemetry
+
+- Add sessionID epoch timestamp to chat question event [#7425](https://github.com/sourcegraph/cody/pull/7425)
+
+#### Vscode
+
+- prioritize 'flash' model over 'flash-lite' [#7386](https://github.com/sourcegraph/cody/pull/7386)
+- Improve webview performance with lightweight history [#7596](https://github.com/sourcegraph/cody/pull/7596)
+- Store all cody keyring secrets in a single entry [#7532](https://github.com/sourcegraph/cody/pull/7532)
+- Use current file as fallback for current selection prompt hydration [#7531](https://github.com/sourcegraph/cody/pull/7531)
+- Fix cody agent model listing command [#7529](https://github.com/sourcegraph/cody/pull/7529)
+- Fix uri conversions on Windows [#7528](https://github.com/sourcegraph/cody/pull/7528)
+- Set correct client capabilities for edit prompts [#7526](https://github.com/sourcegraph/cody/pull/7526)
+- chat: Remove the arrow icon [#7511](https://github.com/sourcegraph/cody/pull/7511)
+- Pass full filepath in prompt to the LLM. [#7472](https://github.com/sourcegraph/cody/pull/7472)
+- CODY-5327: caching diagnostics information in diagnostic retriever [#7431](https://github.com/sourcegraph/cody/pull/7431)
+- Mention Menu Reordering [#7393](https://github.com/sourcegraph/cody/pull/7393)
+- Commit message gen: it is now able to handle a case when the user is not in the root directory [#7387](https://github.com/sourcegraph/cody/pull/7387)
+- Chore: migrate feature flags evaluation to new batch api [#7380](https://github.com/sourcegraph/cody/pull/7380)
+- [Backport M82] Add head dump command to Cody debug options [#7650](https://github.com/sourcegraph/cody/pull/7650)
+- Consistent capitalization of 'Guardrails' in UI text [#7566](https://github.com/sourcegraph/cody/pull/7566)
+- Add Cody Web Publish Document [#7560](https://github.com/sourcegraph/cody/pull/7560)
+- Change update checker action to directly update Cody plugin [#7545](https://github.com/sourcegraph/cody/pull/7545)
+
+### Fix
+
+#### Agentic
+
+- Improve error handling and tool execution robustness [#7512](https://github.com/sourcegraph/cody/pull/7512)
+- Fix tool result rendering for first message [#7491](https://github.com/sourcegraph/cody/pull/7491)
+- agentic -> agent dropdown title [#7489](https://github.com/sourcegraph/cody/pull/7489)
+- Fix(Agent Mode): Exclude tool-state context items from prompt [#7569](https://github.com/sourcegraph/cody/pull/7569)
+- Fix(agent mode): Include initial context in conversation loop [#7551](https://github.com/sourcegraph/cody/pull/7551)
+- Fix(agent mode): editor gets reset issue [#7550](https://github.com/sourcegraph/cody/pull/7550)
+- Fix(agent mode): remove dangling tool_call from assistant messages [#7534](https://github.com/sourcegraph/cody/pull/7534)
+- Fix: at mentions should allow more special characters [#7500](https://github.com/sourcegraph/cody/pull/7500)
+- [Backport M82] fix(agentic chat): Update Sonnet model ID check in syncModels [#7634](https://github.com/sourcegraph/cody/pull/7634)
+- [Backport M82] fix(agent mode): select mode at start up [#7617](https://github.com/sourcegraph/cody/pull/7617)
+- [Backport M82] feat(models) Set new context limits (CODY-5022) [#7608](https://github.com/sourcegraph/cody/pull/7608)
+- [Backport M82] fix(agent mode): initial context not included as context [#7589](https://github.com/sourcegraph/cody/pull/7589)
+
+#### Auto-Edit
+
+- Do not swtich user to if already enrolled to beta [#7487](https://github.com/sourcegraph/cody/pull/7487)
+- Remove unnecessary prompt whitespace [#7481](https://github.com/sourcegraph/cody/pull/7481)
+
+#### Chat
+
+- Completely disable Swift tree-sitter parsing due to VS Code 1.98+ crash [#7610](https://github.com/sourcegraph/cody/pull/7610)
+- Display file path in chat file cell [#7530](https://github.com/sourcegraph/cody/pull/7530)
+- Temporarily disable Swift tree-sitter parsing due to VSCode 1.98+ compatibility issue [#7520](https://github.com/sourcegraph/cody/pull/7520)
+- update openctx error handling [#7495](https://github.com/sourcegraph/cody/pull/7495)
+- prevent keyboard shortcut from selecting disabled chat modes [#7463](https://github.com/sourcegraph/cody/pull/7463)
+
+#### Completion
+
+- handle completion requests with no events [#7586](https://github.com/sourcegraph/cody/pull/7586)
+
+#### Guardrails
+
+- In enforced mode, hide smart apply, etc. actions until attribution complete [#7581](https://github.com/sourcegraph/cody/pull/7581)
+- Update indicator when joining an in-flight request [#7554](https://github.com/sourcegraph/cody/pull/7554)
+
+#### Vscode
+
+- Ensure file link clicks work in ToolStatusCell [#7496](https://github.com/sourcegraph/cody/pull/7496)
+- Improve placeholder text in chat input [#7490](https://github.com/sourcegraph/cody/pull/7490)
+- Extract terminal lines outside of conditional render in ToolStatusCell [#7488](https://github.com/sourcegraph/cody/pull/7488)
+- backwards compatibility for evaluateFeatureFlags [#7655](https://github.com/sourcegraph/cody/pull/7655)
+- Hide agentic mode when edit is not enabled [#7555](https://github.com/sourcegraph/cody/pull/7555)
+- handle empty path in basename function [#7574](https://github.com/sourcegraph/cody/pull/7574)
+
+### Chore
+
+#### Agent
+
+- release agent-v5.5.17 [#7391](https://github.com/sourcegraph/cody/pull/7391)
+
+#### Chat
+
+- Remove the expanded content for the files [#7506](https://github.com/sourcegraph/cody/pull/7506)
+
+#### Release
+
+- fix release notes step [#7570](https://github.com/sourcegraph/cody/pull/7570)
+
+### Refactor
+
+#### Chat
+
+- Remove loading dots from context display [#7597](https://github.com/sourcegraph/cody/pull/7597)
+
+### Reverts
+
+- revert [#-1](https://github.com/sourcegraph/cody/pull/7507)
+
+## 1.80.1
+
+### Fix
+
+#### Chat
+
+- Completely disable Swift tree-sitter parsing due to VS Code 1.98+ crash [#7609](https://github.com/sourcegraph/cody/pull/7609)
+
+### Reverts
+
+There were no reverts for this release
+
+### Uncategorized
+
+#### Others
+
+- Changelog for 1.80.0 [#7572](https://github.com/sourcegraph/cody/pull/7572)
+
+## 1.80.0
+
+### Features
+
+#### Auto-Edit
+
+- Handle accept events correctly when document changes match the active request [#7498](https://github.com/sourcegraph/cody/pull/7498)
+- Add beta onboarding for auto-edit [#7482](https://github.com/sourcegraph/cody/pull/7482)
+- Add optimized prompt structure to leverage the prompt cache [#7453](https://github.com/sourcegraph/cody/pull/7453)
+- experimental inceptionlabs adapter [#7418](https://github.com/sourcegraph/cody/pull/7418)
+
+#### Chat
+
+- Set the model selector to Claude 3.7 in Agentic mode (CODY-5388) [#7437](https://github.com/sourcegraph/cody/pull/7437)
+- Disable smart apply toolbar in agentic chat [#7435](https://github.com/sourcegraph/cody/pull/7435)
+
+#### Models
+
+- Increase context window limits (CODY-5022) [#7398](https://github.com/sourcegraph/cody/pull/7398)
+
+#### Smart-Apply
+
+- Fix the smart apply prompt role from system to assistant [#7420](https://github.com/sourcegraph/cody/pull/7420)
+
+### Fix
+
+#### Agentic
+
+- Improved Message Building in Agentic Chat [#7449](https://github.com/sourcegraph/cody/pull/7449)
+
+#### Agentic-Chat
+
+- Improve error handling and tool execution robustne… [#7518](https://github.com/sourcegraph/cody/pull/7518)
+- Fix tool result rendering for first message [#7491](https://github.com/sourcegraph/cody/pull/7491)
+- new UI components [#7457](https://github.com/sourcegraph/cody/pull/7457)
+- add internal feature flag [#7479](https://github.com/sourcegraph/cody/pull/7479)
+- use different models for first turn and subsequent turns [#7436](https://github.com/sourcegraph/cody/pull/7436)
+- add tool status UI and thought process toggle [#7415](https://github.com/sourcegraph/cody/pull/7415)
+
+#### Auto-Edit
+
+- Do not swtich user to if already enrolled to beta [#7487](https://github.com/sourcegraph/cody/pull/7487)
+
+#### Chat
+
+- persist and allow manual selection of intent mode [#7432](https://github.com/sourcegraph/cody/pull/7432)
+- Improve excluded context warning message [#7372](https://github.com/sourcegraph/cody/pull/7372)
+- Fix current selection in ContextRetriever [#7443](https://github.com/sourcegraph/cody/pull/7443)
+
+#### Completions
+
+- Add api-version check for completions endpoint [#7447](https://github.com/sourcegraph/cody/pull/7447)
+
+#### Edit
+
+- initialize edit tool history for S2 only [#7434](https://github.com/sourcegraph/cody/pull/7434)
+- Add longer duration for persistence tracking for longer suggestion prediction [#7548](https://github.com/sourcegraph/cody/pull/7548)
+
+#### Input
+
+- unify hover text on dropdowns to all be strings [#7426](https://github.com/sourcegraph/cody/pull/7426)
+
+#### Models
+
+- prevent reasoning models from being set as default model [#7461](https://github.com/sourcegraph/cody/pull/7461)
+- Update context limit logic [#7450](https://github.com/sourcegraph/cody/pull/7450)
+
+#### Vscode
+
+- Ensure file link clicks work in ToolStatusCell [#7516](https://github.com/sourcegraph/cody/pull/7516)
+- Extract terminal lines outside of conditional render in ToolStatusCell [#7514](https://github.com/sourcegraph/cody/pull/7514)
+- Improve placeholder text in chat input [#7490](https://github.com/sourcegraph/cody/pull/7490)
+
+### Chore
+
+- remove compatibility override after experimental release [#7459](https://github.com/sourcegraph/cody/pull/7459)
+- Remove NLS from cody-bench [#7458](https://github.com/sourcegraph/cody/pull/7458)
+- Cache diffs from recent edits [#7424](https://github.com/sourcegraph/cody/pull/7424)
+- Update subscription type when switching acc without endpoint change [#7451](https://github.com/sourcegraph/cody/pull/7451)
+
+#### Auto-Edit
+
+- ensure aborts are propagated to the provider [#7440](https://github.com/sourcegraph/cody/pull/7440)
+- fix accept/reject analytics events [#7427](https://github.com/sourcegraph/cody/pull/7427)
+- add inference time to the debug panel [#7419](https://github.com/sourcegraph/cody/pull/7419)
+
+#### Release
+
+- fix release notes step [#7571](https://github.com/sourcegraph/cody/pull/7571)
+
+#### Telemetry
+
+- Stop logging discarded autoedit events [#7381](https://github.com/sourcegraph/cody/pull/7381)
+- Remove `billingMetadata` from auth telemetry event [#7286](https://github.com/sourcegraph/cody/pull/7286)
+
+#### Tutorial
+
+- re-add gitignore [#7467](https://github.com/sourcegraph/cody/pull/7467)
+- Remove interactive tutorial [#7430](https://github.com/sourcegraph/cody/pull/7430)
+
+### Reverts
+
+- Revert "Fix assertion error from webview (closes #2845) [#2845](https://github.com/sourcegraph/cody/pull/7257)
+
+## 1.78.2
+
+### Fix
+
+#### Chat
+
+- Temporarily disable Swift tree-sitter parsing due to VSCode 1.98+ compatibility issue [#7521](https://github.com/sourcegraph/cody/pull/7521)
+
 ## 1.78.1
 
 ### Fix
@@ -11,7 +381,6 @@ This is a log of all notable changes to Cody for VS Code.
 #### Models
 
 - Prevent reasoning models from being set as default model [#7473](https://github.com/sourcegraph/cody/pull/7473)
-
 
 ## 1.78.0
 
@@ -107,8 +476,6 @@ This is a log of all notable changes to Cody for VS Code.
 ### Reverts
 
 - Revert part of [#7344](https://github.com/sourcegraph/cody/pull/7344) to support Sourcegraph instances 6.1.0+ that do not support API version 8. (cfb30bbf41f31774fe2813d12740943d28a7da72)
-
-
 
 ## 1.76.0
 

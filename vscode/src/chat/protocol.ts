@@ -196,6 +196,7 @@ export type ExtensionMessage =
       }
     | ({ type: 'transcript' } & ExtensionTranscriptMessage)
     | { type: 'view'; view: View }
+    | { type: 'rateLimit'; isRateLimited: boolean }
     | { type: 'errors'; errors: string }
     | {
           type: 'clientAction'
@@ -271,6 +272,7 @@ export interface ConfigurationSubsetForWebview
     allowEndpointChange: boolean
     experimentalPromptEditorEnabled: boolean
     experimentalAgenticChatEnabled: boolean
+    attribution: 'none' | 'permissive' | 'enforced'
 }
 
 /**

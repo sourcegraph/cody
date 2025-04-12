@@ -1,8 +1,8 @@
 import { X } from 'lucide-react'
 import type { FC } from 'react'
 
+import { DISCARD_REASONS } from '../../../src/autoedits/debug-panel/autoedit-data-sdk'
 import type { AutoeditRequestDebugState } from '../../../src/autoedits/debug-panel/debug-store'
-import { DISCARD_REASONS } from '../autoedit-ui-utils'
 
 interface DiscardInfoSectionProps {
     entry: AutoeditRequestDebugState

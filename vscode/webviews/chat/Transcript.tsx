@@ -47,6 +47,7 @@ import ApprovalCell from './cells/agenticCell/ApprovalCell'
 import { ContextCell } from './cells/contextCell/ContextCell'
 import { DidYouMeanNotice } from './cells/messageCell/assistant/DidYouMean'
 import { ToolStatusCell } from './cells/toolCell/ToolStatusCell'
+import { LoadingDots } from './components/LoadingDots'
 import { LastEditorContext } from './context'
 
 interface TranscriptProps {
@@ -57,13 +58,12 @@ interface TranscriptProps {
     models: Model[]
     userInfo: UserAccountInfo
     messageInProgress: ChatMessage | null
-    guardrails?: Guardrails
+    guardrails: Guardrails
     postMessage?: ApiPostMessage
 
     copyButtonOnSubmit: CodeBlockActionsProps['copyButtonOnSubmit']
     insertButtonOnSubmit?: CodeBlockActionsProps['insertButtonOnSubmit']
     smartApply?: CodeBlockActionsProps['smartApply']
-    smartApplyEnabled?: boolean
 
     manuallySelectedIntent: ChatMessage['intent']
     setManuallySelectedIntent: (intent: ChatMessage['intent']) => void
@@ -83,14 +83,13 @@ export const Transcript: FC<TranscriptProps> = props => {
         copyButtonOnSubmit,
         insertButtonOnSubmit,
         smartApply,
-        smartApplyEnabled,
         manuallySelectedIntent,
         setManuallySelectedIntent,
     } = props
 
     const interactions = useMemo(
-        () => transcriptToInteractionPairs(transcript, messageInProgress),
-        [transcript, messageInProgress]
+        () => transcriptToInteractionPairs(transcript, messageInProgress, manuallySelectedIntent),
+        [transcript, messageInProgress, manuallySelectedIntent]
     )
 
     const lastHumanEditorRef = useRef<PromptEditorRefAPI | null>(null)
@@ -157,8 +156,11 @@ export const Transcript: FC<TranscriptProps> = props => {
                             messageInProgress && interactions.at(i - 1)?.assistantMessage?.isLoading
                         )}
                         smartApply={smartApply}
-                        smartApplyEnabled={smartApplyEnabled}
-                        editorRef={i === interactions.length - 1 ? lastHumanEditorRef : undefined}
+                        editorRef={
+                            interaction.humanMessage.index === -1 && !messageInProgress
+                                ? lastHumanEditorRef
+                                : undefined
+                        }
                         onAddToFollowupChat={onAddToFollowupChat}
                         manuallySelectedIntent={manuallySelectedIntent}
                         setManuallySelectedIntent={setManuallySelectedIntent}
@@ -180,7 +182,8 @@ export interface Interaction {
 
 export function transcriptToInteractionPairs(
     transcript: ChatMessage[],
-    assistantMessageInProgress: ChatMessage | null
+    assistantMessageInProgress: ChatMessage | null,
+    manuallySelectedIntent: ChatMessage['intent']
 ): Interaction[] {
     const pairs: Interaction[] = []
     const transcriptLength = transcript.length
@@ -196,10 +199,15 @@ export function transcriptToInteractionPairs(
             assistantMessage &&
             assistantMessage.error === undefined &&
             assistantMessageInProgress &&
-            (isLastPair || assistantMessage.text === undefined)
+            isLastPair
 
         pairs.push({
-            humanMessage: { ...humanMessage, index: i, isUnsentFollowup: false },
+            humanMessage: {
+                ...humanMessage,
+                index: i,
+                isUnsentFollowup: false,
+                intent: humanMessage.intent ?? null,
+            },
             assistantMessage: assistantMessage
                 ? { ...assistantMessage, index: i + 1, isLoading: !!isLoading }
                 : null,
@@ -219,11 +227,16 @@ export function transcriptToInteractionPairs(
     if (!transcript.length || shouldAddFollowup) {
         pairs.push({
             humanMessage: {
-                index: pairs.length * 2,
+                // Always using a fixed index for the last/followup editor ensures it will be reused
+                // across renders and not recreated when transcript length changes.
+                // This is a hack to avoid the editor getting reset during Agent mode.
+                index: lastHumanMessage?.intent === 'agentic' ? -1 : pairs.length * 2,
                 speaker: 'human',
                 isUnsentFollowup: true,
-                // If the last submitted message was a search, default to chat for the followup.
+                // If the last submitted message was a search, default to chat for the followup. Else,
+                // keep the manually selected intent, if any, or the last human message's intent.
                 intent: lastHumanMessage?.intent === 'search' ? 'chat' : lastHumanMessage?.intent,
+                manuallySelectedIntent,
             },
             assistantMessage: null,
         })
@@ -266,7 +279,6 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
         insertButtonOnSubmit,
         copyButtonOnSubmit,
         smartApply,
-        smartApplyEnabled,
         editorRef: parentEditorRef,
         manuallySelectedIntent,
         setManuallySelectedIntent,
@@ -280,7 +292,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
     const usingToolCody = assistantMessage?.model?.includes(ToolCodyModelName)
 
     const onUserAction = useCallback(
-        (action: 'edit' | 'submit', intentFromSubmit?: ChatMessage['intent']) => {
+        (action: 'edit' | 'submit') => {
             // Start the span as soon as the user initiates the action
             const startMark = performance.mark('startSubmit')
             const spanManager = new SpanManager('cody-webview')
@@ -311,7 +323,6 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
 
             const commonProps = {
                 editorValue,
-                manuallySelectedIntent: intentFromSubmit || manuallySelectedIntent,
                 traceparent,
             }
 
@@ -329,10 +340,12 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                 editHumanMessage({
                     messageIndexInTranscript: humanMessage.index,
                     ...commonProps,
+                    manuallySelectedIntent: manuallySelectedIntent,
                 })
             } else {
                 submitHumanMessage({
                     ...commonProps,
+                    manuallySelectedIntent: manuallySelectedIntent,
                 })
             }
         },
@@ -345,19 +358,13 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
         ]
     )
 
-    const onEditSubmit = useCallback(
-        (intentFromSubmit?: ChatMessage['intent']): void => {
-            onUserAction('edit', intentFromSubmit)
-        },
-        [onUserAction]
-    )
+    const onEditSubmit = useCallback((): void => {
+        onUserAction('edit')
+    }, [onUserAction])
 
-    const onFollowupSubmit = useCallback(
-        (intentFromSubmit?: ChatMessage['intent']): void => {
-            onUserAction('submit', intentFromSubmit)
-        },
-        [onUserAction]
-    )
+    const onFollowupSubmit = useCallback((): void => {
+        onUserAction('submit')
+    }, [onUserAction])
 
     const omniboxEnabled = useOmniBox() && !usingToolCody
 
@@ -392,6 +399,20 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
     useEffect(() => {
         setIsLoading(assistantMessage?.isLoading)
     }, [assistantMessage])
+
+    const humanMessageText = humanMessage.text
+    const smartApplyWithInstruction = useMemo(() => {
+        if (!smartApply) return undefined
+        return {
+            ...smartApply,
+            onSubmit(params: Parameters<typeof smartApply.onSubmit>[0]) {
+                return smartApply.onSubmit({
+                    ...params,
+                    instruction: params.instruction ?? humanMessageText,
+                })
+            },
+        }
+    }, [smartApply, humanMessageText])
 
     useEffect(() => {
         if (!assistantMessage) return
@@ -499,15 +520,16 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
         return null
     }, [humanMessage, assistantMessage, isContextLoading])
 
-    const onHumanMessageSubmit = useCallback(
-        (intent?: ChatMessage['intent']) => {
-            if (humanMessage.isUnsentFollowup) {
-                return onFollowupSubmit(intent)
-            }
-            onEditSubmit(intent)
-        },
-        [humanMessage.isUnsentFollowup, onFollowupSubmit, onEditSubmit]
-    )
+    const onHumanMessageSubmit = useCallback(() => {
+        if (humanMessage.isUnsentFollowup) {
+            onFollowupSubmit()
+        } else {
+            onEditSubmit()
+        }
+        // Set the unsent followup flag to false after submitting
+        // to makes sure the last editor for Agent mode gets reset.
+        humanMessage.isUnsentFollowup = false
+    }, [humanMessage, onFollowupSubmit, onEditSubmit])
 
     const onSelectedFiltersUpdate = useCallback(
         (selectedFilters: NLSSearchDynamicFilter[]) => {
@@ -520,7 +542,8 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
     )
 
     const editAndSubmitSearch = useCallback(
-        (text: string) =>
+        (text: string) => {
+            setManuallySelectedIntent('search')
             editHumanMessage({
                 messageIndexInTranscript: humanMessage.index,
                 editorValue: {
@@ -528,86 +551,82 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                     contextItems: [],
                     editorState: serializedPromptEditorStateFromText(text),
                 },
-                manuallySelectedIntent: 'search',
-            }),
-        [humanMessage]
+                manuallySelectedIntent,
+            })
+        },
+        [humanMessage, manuallySelectedIntent, setManuallySelectedIntent]
     )
 
-    const isAgenticMode = useMemo(() => manuallySelectedIntent === 'agentic', [manuallySelectedIntent])
+    const isAgenticMode = useMemo(
+        () => humanMessage?.manuallySelectedIntent === 'agentic' || humanMessage?.intent === 'agentic',
+        [humanMessage?.intent, humanMessage?.manuallySelectedIntent]
+    )
 
-    const toolResultContent = useMemo(() => {
-        if (!isAgenticMode || !humanMessage?.index) {
-            return undefined
-        }
-        return humanMessage?.content?.some(p => p.type === 'tool_result')
-    }, [isAgenticMode, humanMessage?.index, humanMessage?.content])
-
-    const toolCallContent = useMemo(() => {
-        if (!isAgenticMode || !humanMessage?.index) {
-            return undefined
-        }
+    const agentToolCalls = useMemo(() => {
         return assistantMessage?.contextFiles?.filter(f => f.type === 'tool-state')
-    }, [isAgenticMode, assistantMessage?.contextFiles, humanMessage?.index])
+    }, [assistantMessage?.contextFiles])
 
     return (
         <>
-            {/* Shows tool contents instead of editor if any */}
-            {!toolResultContent && (
-                <HumanMessageCell
-                    key={humanMessage.index}
-                    userInfo={userInfo}
-                    models={models}
-                    chatEnabled={chatEnabled}
-                    message={humanMessage}
-                    isFirstMessage={humanMessage.index === 0}
-                    isSent={!humanMessage.isUnsentFollowup}
-                    isPendingPriorResponse={priorAssistantMessageIsLoading}
-                    onSubmit={onHumanMessageSubmit}
-                    onStop={onStop}
-                    isFirstInteraction={isFirstInteraction}
-                    isLastInteraction={isLastInteraction}
-                    isEditorInitiallyFocused={isLastInteraction}
-                    editorRef={humanEditorRef}
-                    className={!isFirstInteraction && isLastInteraction ? 'tw-mt-auto' : ''}
-                    intent={manuallySelectedIntent}
-                    manuallySelectIntent={setManuallySelectedIntent}
-                />
+            {/* Show loading state on the last interaction */}
+            {isLastInteraction && priorAssistantMessageIsLoading && <LoadingDots />}
+            <HumanMessageCell
+                key={humanMessage.index}
+                userInfo={userInfo}
+                models={models}
+                chatEnabled={chatEnabled}
+                message={humanMessage}
+                isFirstMessage={humanMessage.index === 0}
+                isSent={!humanMessage.isUnsentFollowup}
+                isPendingPriorResponse={priorAssistantMessageIsLoading}
+                onSubmit={onHumanMessageSubmit}
+                onStop={onStop}
+                isFirstInteraction={isFirstInteraction}
+                isLastInteraction={isLastInteraction}
+                isEditorInitiallyFocused={isLastInteraction}
+                editorRef={humanEditorRef}
+                className={!isFirstInteraction && isLastInteraction ? 'tw-mt-auto' : ''}
+                intent={manuallySelectedIntent}
+                manuallySelectIntent={setManuallySelectedIntent}
+            />
+            {!isAgenticMode && (
+                <>
+                    {omniboxEnabled && assistantMessage?.didYouMeanQuery && (
+                        <DidYouMeanNotice
+                            query={assistantMessage?.didYouMeanQuery}
+                            disabled={!!assistantMessage?.isLoading}
+                            switchToSearch={() =>
+                                editAndSubmitSearch(assistantMessage?.didYouMeanQuery ?? '')
+                            }
+                        />
+                    )}
+                    {!usingToolCody && !isSearchIntent && humanMessage.agent && (
+                        <AgenticContextCell
+                            key={`${humanMessage.index}-${humanMessage.intent}-process`}
+                            isContextLoading={isContextLoading}
+                            processes={humanMessage?.processes ?? undefined}
+                        />
+                    )}
+                    {humanMessage.agent && assistantMessage?.isLoading && (
+                        <ApprovalCell vscodeAPI={vscodeAPI} />
+                    )}
+                    {!usingToolCody &&
+                        !(humanMessage.agent && isContextLoading) &&
+                        (humanMessage.contextFiles || assistantMessage || isContextLoading) &&
+                        !isSearchIntent && (
+                            <ContextCell
+                                key={`${humanMessage.index}-${humanMessage.intent}-context`}
+                                contextItems={humanMessage.contextFiles}
+                                contextAlternatives={humanMessage.contextAlternatives}
+                                model={assistantMessage?.model}
+                                isForFirstMessage={humanMessage.index === 0}
+                                isContextLoading={isContextLoading}
+                                defaultOpen={isContextLoading && humanMessage.agent === DeepCodyAgentID}
+                                agent={humanMessage?.agent ?? undefined}
+                            />
+                        )}
+                </>
             )}
-            {!isAgenticMode && omniboxEnabled && assistantMessage?.didYouMeanQuery && (
-                <DidYouMeanNotice
-                    query={assistantMessage?.didYouMeanQuery}
-                    disabled={!!assistantMessage?.isLoading}
-                    switchToSearch={() => editAndSubmitSearch(assistantMessage?.didYouMeanQuery ?? '')}
-                />
-            )}
-            {!usingToolCody && !isSearchIntent && humanMessage.agent && (
-                <AgenticContextCell
-                    key={`${humanMessage.index}-${humanMessage.intent}-process`}
-                    isContextLoading={isContextLoading}
-                    processes={humanMessage?.processes ?? undefined}
-                />
-            )}
-            {!isSearchIntent &&
-                humanMessage.agent &&
-                isContextLoading &&
-                assistantMessage?.isLoading && <ApprovalCell vscodeAPI={vscodeAPI} />}
-
-            {!isAgenticMode &&
-                !usingToolCody &&
-                !(humanMessage.agent && isContextLoading) &&
-                (humanMessage.contextFiles || assistantMessage || isContextLoading) &&
-                !isSearchIntent && (
-                    <ContextCell
-                        key={`${humanMessage.index}-${humanMessage.intent}-context`}
-                        contextItems={humanMessage.contextFiles}
-                        contextAlternatives={humanMessage.contextAlternatives}
-                        model={assistantMessage?.model}
-                        isForFirstMessage={humanMessage.index === 0}
-                        isContextLoading={isContextLoading}
-                        defaultOpen={isContextLoading && humanMessage.agent === DeepCodyAgentID}
-                        agent={humanMessage?.agent ?? undefined}
-                    />
-                )}
             {assistantMessage &&
                 (!isContextLoading ||
                     (assistantMessage.subMessages && assistantMessage.subMessages.length > 0)) && (
@@ -622,16 +641,16 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                         postMessage={postMessage}
                         guardrails={guardrails}
                         humanMessage={humanMessageInfo}
-                        isLoading={assistantMessage.isLoading}
-                        smartApply={smartApply}
-                        smartApplyEnabled={smartApplyEnabled && !isAgenticMode}
+                        isLoading={isLastSentInteraction && assistantMessage.isLoading}
+                        smartApply={isAgenticMode ? undefined : smartApplyWithInstruction}
                         onSelectedFiltersUpdate={onSelectedFiltersUpdate}
                         isLastSentInteraction={isLastSentInteraction}
                         setThoughtProcessOpened={setThoughtProcessOpened}
                         isThoughtProcessOpened={isThoughtProcessOpened}
                     />
                 )}
-            {toolCallContent?.map(tool => (
+            {/* Shows tool contents instead of editor if any */}
+            {agentToolCalls?.map(tool => (
                 <ToolStatusCell
                     key={tool.toolId}
                     title={tool.toolName}

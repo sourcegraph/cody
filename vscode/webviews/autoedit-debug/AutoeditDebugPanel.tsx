@@ -1,11 +1,16 @@
 import { type FC, useCallback, useEffect, useMemo, useState } from 'react'
 
 import type { AutoeditRequestDebugState } from '../../src/autoedits/debug-panel/debug-store'
+import type {
+    AutoeditSessionStats,
+    StatisticsEntry,
+} from '../../src/autoedits/debug-panel/session-stats'
 
-import { extractPhaseInfo } from './autoedit-ui-utils'
+import { extractPhaseInfo } from '../../src/autoedits/debug-panel/autoedit-latency-utils'
 import { AutoeditDetailView } from './components/AutoeditDetailView'
 import { AutoeditListItem } from './components/AutoeditListItem'
 import { EmptyState } from './components/EmptyState'
+import { SessionStatsPage } from './session-stats/SessionStatsPage'
 
 // All possible phases for filtering
 const ALL_PHASES = [
@@ -22,8 +27,13 @@ const ALL_PHASES = [
     'Discarded',
 ]
 
-export const AutoeditDebugPanel: FC<{ entries: AutoeditRequestDebugState[] }> = ({ entries }) => {
+export const AutoeditDebugPanel: FC<{
+    entries: AutoeditRequestDebugState[]
+    sessionStats?: AutoeditSessionStats
+    statsForLastNRequests: StatisticsEntry[]
+}> = ({ entries, sessionStats, statsForLastNRequests }) => {
     const [phaseFilter, setPhaseFilter] = useState<string>('All Phases')
+    const [currentView, setCurrentView] = useState<'requests' | 'stats'>('requests')
 
     // Filter entries based on the selected phase
     const filteredEntries = useMemo(() => {
@@ -74,6 +84,11 @@ export const AutoeditDebugPanel: FC<{ entries: AutoeditRequestDebugState[] }> = 
         setPhaseFilter(event.target.value)
     }, [])
 
+    // Toggle between requests and stats views
+    const toggleView = useCallback(() => {
+        setCurrentView(currentView === 'requests' ? 'stats' : 'requests')
+    }, [currentView])
+
     // Get current index for navigation
     const currentIndex = useMemo(() => {
         if (!selectedEntryId) return -1
@@ -122,35 +137,65 @@ export const AutoeditDebugPanel: FC<{ entries: AutoeditRequestDebugState[] }> = 
         return () => window.removeEventListener('keydown', handleKeyDown)
     }, [selectedEntryId, handlePrevious, handleNext, hasPrevious, hasNext])
 
-    if (entries.length === 0) {
+    if (entries.length === 0 && currentView === 'requests') {
         return <EmptyState />
     }
 
-    // Phase filter dropdown
-    const phaseFilterDropdown = (
-        <div className="tw-mb-4 tw-flex tw-items-center tw-gap-2">
-            <label htmlFor="phase-filter" className="tw-text-sm tw-font-medium">
-                Filter by phase:
-            </label>
-            <select
-                id="phase-filter"
-                className="tw-rounded tw-border tw-border-gray-300 tw-py-1 tw-px-2 tw-text-sm tw-dark:tw-border-gray-700 tw-dark:tw-bg-gray-800"
-                value={phaseFilter}
-                onChange={handlePhaseFilterChange}
-            >
-                {ALL_PHASES.map(phase => (
-                    <option key={phase} value={phase}>
-                        {phase}
-                    </option>
-                ))}
-            </select>
-            {phaseFilter !== 'All Phases' && (
-                <div className="tw-text-sm tw-text-gray-500">
-                    Showing {filteredEntries.length} of {entries.length} entries
+    // Header with view toggle and phase filter
+    const headerControls = (
+        <div className="tw-mb-4 tw-flex tw-flex-wrap tw-items-center tw-justify-between tw-gap-2">
+            <div className="tw-flex tw-items-center tw-gap-2">
+                <button
+                    type="button"
+                    className="tw-rounded tw-bg-gray-200 tw-py-1 tw-px-3 tw-text-sm tw-font-medium hover:tw-bg-gray-300 tw-dark:tw-bg-gray-700 tw-dark:hover:tw-bg-gray-600"
+                    onClick={toggleView}
+                >
+                    {currentView === 'requests' ? 'View Session Stats' : 'View Requests'}
+                </button>
+                <span className="tw-text-sm tw-font-medium">
+                    {currentView === 'requests' ? 'Requests' : 'Session Statistics'}
+                </span>
+            </div>
+
+            {currentView === 'requests' && (
+                <div className="tw-flex tw-items-center tw-gap-2">
+                    <label htmlFor="phase-filter" className="tw-text-sm tw-font-medium">
+                        Filter by phase:
+                    </label>
+                    <select
+                        id="phase-filter"
+                        className="tw-rounded tw-border tw-border-gray-300 tw-py-1 tw-px-2 tw-text-sm tw-dark:tw-border-gray-700 tw-dark:tw-bg-gray-800"
+                        value={phaseFilter}
+                        onChange={handlePhaseFilterChange}
+                    >
+                        {ALL_PHASES.map(phase => (
+                            <option key={phase} value={phase}>
+                                {phase}
+                            </option>
+                        ))}
+                    </select>
+                    {phaseFilter !== 'All Phases' && (
+                        <div className="tw-text-sm tw-text-gray-500">
+                            Showing {filteredEntries.length} of {entries.length} entries
+                        </div>
+                    )}
                 </div>
             )}
         </div>
     )
+
+    // If stats view is selected, render the stats page
+    if (currentView === 'stats') {
+        return (
+            <div className="tw-h-full tw-overflow-y-auto">
+                {headerControls}
+                <SessionStatsPage
+                    sessionStats={sessionStats}
+                    statsForLastNRequests={statsForLastNRequests}
+                />
+            </div>
+        )
+    }
 
     // Render the entries list component to avoid duplication
     const entriesList = (
@@ -176,7 +221,7 @@ export const AutoeditDebugPanel: FC<{ entries: AutoeditRequestDebugState[] }> = 
     if (!selectedEntry) {
         return (
             <div className="tw-h-full tw-overflow-y-auto">
-                {phaseFilterDropdown}
+                {headerControls}
                 {entriesList}
             </div>
         )
@@ -187,13 +232,14 @@ export const AutoeditDebugPanel: FC<{ entries: AutoeditRequestDebugState[] }> = 
         <div className="tw-flex tw-h-full tw-overflow-hidden">
             {/* List panel (left side) */}
             <div className="tw-w-2/5 tw-overflow-y-auto tw-border-r tw-border-gray-200 tw-dark:tw-border-gray-700 tw-pr-2">
-                {phaseFilterDropdown}
+                {headerControls}
                 {entriesList}
             </div>
 
             {/* Detail panel (right side) */}
             <div className="tw-w-3/5 tw-overflow-y-auto tw-p-4">
                 <AutoeditDetailView
+                    entries={entries}
                     entry={selectedEntry}
                     onPrevious={handlePrevious}
                     onNext={handleNext}

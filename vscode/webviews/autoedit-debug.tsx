@@ -2,14 +2,10 @@ import './autoedit-debug/autoedit-debug.css'
 import { useEffect, useState } from 'react'
 import { createRoot } from 'react-dom/client'
 
-import type {
-    AutoeditDebugMessageFromExtension,
-    VSCodeAutoeditDebugWrapper,
-} from '../src/autoedits/debug-panel/debug-protocol'
-import type { AutoeditRequestDebugState } from '../src/autoedits/debug-panel/debug-store'
+import type { AutoeditDebugMessageFromExtension } from '../src/autoedits/debug-panel/debug-protocol'
 
 import { AutoeditDebugPanel } from './autoedit-debug/AutoeditDebugPanel'
-import { getVSCodeAPI } from './utils/VSCodeApi'
+import { vscode } from './autoedit-debug/webview-api'
 
 /**
  * Transforms array-formatted VS Code Range objects back into proper Range objects with start and end properties.
@@ -55,10 +51,8 @@ function transformRanges(obj: any): any {
     return obj
 }
 
-const vscode = getVSCodeAPI() as unknown as VSCodeAutoeditDebugWrapper
-
 function App() {
-    const [entries, setEntries] = useState<AutoeditRequestDebugState[]>([])
+    const [state, setState] = useState<Omit<AutoeditDebugMessageFromExtension, 'type'> | null>(null)
 
     useEffect(() => {
         // Listen for messages from VS Code
@@ -70,7 +64,11 @@ function App() {
 
                 // Sort entries by updatedAt in descending order (newest first)
                 const sortedEntries = [...processedEntries].sort((a, b) => b.updatedAt - a.updatedAt)
-                setEntries(sortedEntries)
+                setState({
+                    entries: sortedEntries,
+                    sessionStats: message.sessionStats,
+                    statsForLastNRequests: message.statsForLastNRequests,
+                })
             }
         }
 
@@ -86,7 +84,11 @@ function App() {
 
     return (
         <div className="tw-h-full tw-w-full tw-p-4">
-            <AutoeditDebugPanel entries={entries} />
+            <AutoeditDebugPanel
+                entries={state?.entries ?? []}
+                sessionStats={state?.sessionStats}
+                statsForLastNRequests={state?.statsForLastNRequests ?? []}
+            />
         </div>
     )
 }

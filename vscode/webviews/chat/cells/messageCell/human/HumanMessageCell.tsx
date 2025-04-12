@@ -50,6 +50,17 @@ interface HumanMessageCellProps {
  * A component that displays a chat message from the human.
  */
 export const HumanMessageCell: FC<HumanMessageCellProps> = ({ message, ...otherProps }) => {
+    // Don't render the editor if the message text is explicitly undefined or empty,
+    // and it's been sent already and it's not the last interaction (i.e. there is a tool result response).
+    if (
+        (message.text === undefined || (message.text && message.text.length === 0)) &&
+        otherProps.isSent &&
+        !otherProps.isLastInteraction &&
+        message.intent === 'agentic'
+    ) {
+        return null
+    }
+
     const messageJSON = JSON.stringify(message)
 
     const initialEditorState = useMemo(
@@ -96,7 +107,7 @@ const HumanMessageCellContent = memo<HumanMessageCellContent>(props => {
                     placeholder={
                         isFirstMessage
                             ? 'Ask anything. Use @ to specify context...'
-                            : 'Ask a followup...'
+                            : 'Use @ to add more context...'
                     }
                     isFirstMessage={isFirstMessage}
                     isSent={isSent}

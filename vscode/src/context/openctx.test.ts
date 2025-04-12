@@ -42,7 +42,7 @@ describe('getOpenCtxProviders', () => {
     const mockClientConfig = Observable.of(dummyClientConfigForTest)
 
     test('dotcom user', async () => {
-        vi.spyOn(featureFlagProvider, 'evaluatedFeatureFlag').mockReturnValue(Observable.of(false))
+        vi.spyOn(featureFlagProvider, 'evaluateFeatureFlag').mockReturnValue(Observable.of(false))
         vi.spyOn(graphqlClient, 'isValidSiteVersion').mockReturnValue(Promise.resolve(true))
 
         const providers = await firstValueFrom(
@@ -53,7 +53,7 @@ describe('getOpenCtxProviders', () => {
     })
 
     test('enterprise user', async () => {
-        vi.spyOn(featureFlagProvider, 'evaluatedFeatureFlag').mockReturnValue(Observable.of(false))
+        vi.spyOn(featureFlagProvider, 'evaluateFeatureFlag').mockReturnValue(Observable.of(false))
         vi.spyOn(graphqlClient, 'isValidSiteVersion').mockReturnValue(Promise.resolve(true))
 
         const providers = await firstValueFrom(
@@ -69,7 +69,7 @@ describe('getOpenCtxProviders', () => {
     })
 
     test('should include gitMentionsProvider when feature flag is true', async () => {
-        vi.spyOn(featureFlagProvider, 'evaluatedFeatureFlag').mockReturnValue(Observable.of(true))
+        vi.spyOn(featureFlagProvider, 'evaluateFeatureFlag').mockReturnValue(Observable.of(true))
         vi.spyOn(graphqlClient, 'isValidSiteVersion').mockReturnValue(Promise.resolve(true))
 
         const providers = await firstValueFrom(

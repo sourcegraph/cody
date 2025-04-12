@@ -10,7 +10,7 @@ import {
     UIToolStatus,
     isDefined,
     logDebug,
-    wrapInActiveSpan,
+    telemetryRecorder,
 } from '@sourcegraph/cody-shared'
 import type { ContextItemToolState } from '@sourcegraph/cody-shared/src/codebase-context/messages'
 import { URI } from 'vscode-uri'
@@ -36,7 +36,7 @@ interface ToolResult {
 
 /**
  * Base AgenticHandler class that manages tool execution state
- * and implements the core agentic conversation loop
+ * and implements the core agentic conversation loop when Agent Mode is enabled.
  */
 export class AgenticHandler extends ChatHandler implements AgentHandler {
     public static readonly id = 'agentic-chat'
@@ -55,8 +55,19 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
     }
 
     public async handle(req: AgentRequest, delegate: AgentHandlerDelegate): Promise<void> {
-        const { chatBuilder, span, recorder, signal } = req
+        const { requestID, chatBuilder, inputText, editorState, span, recorder, signal, mentions } = req
         const sessionID = chatBuilder.sessionID
+
+        // Includes initial context mentioned by user
+        const contextResult = await this.computeContext(
+            requestID,
+            { text: inputText, mentions },
+            editorState,
+            chatBuilder,
+            delegate,
+            signal
+        )
+        const contextItems = contextResult?.contextItems ?? []
 
         // Initialize available tools
         this.tools = await AgentToolGroup.getToolsByAgentId(this.contextRetriever, span)
@@ -65,9 +76,10 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
 
         logDebug('AgenticHandler', `Starting agent session ${sessionID}`)
 
+        recorder.recordChatQuestionExecuted(contextItems, { addMetadata: true, current: span })
         try {
             // Run the main conversation loop
-            await this.runConversationLoop(chatBuilder, delegate, recorder, span, signal)
+            await this.runConversationLoop(chatBuilder, delegate, recorder, span, signal, contextItems)
         } catch (error) {
             this.handleError(sessionID, error, delegate, signal)
         } finally {
@@ -85,7 +97,8 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
         delegate: AgentHandlerDelegate,
         recorder: AgentRequest['recorder'],
         span: Span,
-        parentSignal: AbortSignal
+        parentSignal: AbortSignal,
+        contextItems: ContextItem[] = []
     ): Promise<void> {
         let turnCount = 0
 
@@ -99,6 +112,7 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
         // Main conversation loop
         while (turnCount < this.MAX_TURN && !loopController.signal?.aborted) {
             const model = turnCount === 0 ? AGENT_MODELS.ExtendedThinking : AGENT_MODELS.Base
+
             try {
                 // Get LLM response
                 const { botResponse, toolCalls } = await this.requestLLM(
@@ -107,7 +121,8 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
                     recorder,
                     span,
                     signal,
-                    model
+                    model,
+                    contextItems
                 )
 
                 // No tool calls means we're done
@@ -121,9 +136,13 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
                 const content = Array.from(toolCalls.values())
                 delegate.postMessageInProgress(botResponse)
 
-                const results = await this.executeTools(content)
-                const toolResults = results.map(result => result.tool_result).filter(isDefined)
-                const toolOutputs = results.map(result => result.output).filter(isDefined)
+                const results = await this.executeTools(content, model).catch(() => {
+                    logDebug('AgenticHandler', 'Error executing tools')
+                    return []
+                })
+
+                const toolResults = results?.map(result => result.tool_result).filter(isDefined)
+                const toolOutputs = results?.map(result => result.output).filter(isDefined)
 
                 botResponse.contextFiles = toolOutputs
 
@@ -161,25 +180,35 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
         recorder: AgentRequest['recorder'],
         span: Span,
         signal: AbortSignal,
-        model: string
+        model: string,
+        contextItems: ContextItem[]
     ): Promise<{ botResponse: ChatMessage; toolCalls: Map<string, ToolCallContentPart> }> {
         // Create prompt
         const prompter = new AgenticChatPrompter(this.SYSTEM_PROMPT)
-        const prompt = await prompter.makePrompt(chatBuilder)
-        recorder.recordChatQuestionExecuted([], { addMetadata: true, current: span })
-
+        const prompt = await prompter.makePrompt(chatBuilder, contextItems)
+        // No longer recording chat question executed telemetry in agentic handlers
+        // This is now only done when user submits a query
+        logDebug('AgenticHandler', 'Prompt created', { verbose: prompt })
         // Prepare API call parameters
         const params = {
             maxTokensToSample: 8000,
             messages: JSON.stringify(prompt),
-            tools: this.tools.map(tool => ({
-                type: 'function',
-                function: {
-                    name: tool.spec.name,
-                    description: tool.spec.description,
-                    parameters: tool.spec.input_schema,
-                },
-            })),
+            // Ensure unique tool names by using a Map keyed by tool name
+            tools: Array.from(
+                new Map(
+                    this.tools.map(tool => [
+                        tool.spec.name,
+                        {
+                            type: 'function',
+                            function: {
+                                name: tool.spec.name,
+                                description: tool.spec.description,
+                                parameters: tool.spec.input_schema,
+                            },
+                        },
+                    ])
+                ).values()
+            ),
             stream: true,
             model,
         }
@@ -270,20 +299,44 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
     /**
      * Execute tools from LLM response
      */
-    protected async executeTools(toolCalls: ToolCallContentPart[]): Promise<ToolResult[]> {
+    protected async executeTools(
+        toolCalls: ToolCallContentPart[],
+        model: string
+    ): Promise<ToolResult[]> {
         try {
             logDebug('AgenticHandler', `Executing ${toolCalls.length} tools`)
-            // Execute all tools concurrently
-            const results = await Promise.all(
+            // Execute all tools concurrently and filter out any undefined/null results
+            const results = await Promise.allSettled(
                 toolCalls.map(async toolCall => {
-                    logDebug('AgenticHandler', `Executing ${toolCall.tool_call?.name}`, {
-                        verbose: toolCall,
-                    })
-                    return this.executeSingleTool(toolCall)
+                    try {
+                        telemetryRecorder.recordEvent('cody.tool-use', 'selected', {
+                            billingMetadata: {
+                                product: 'cody',
+                                category: 'billable',
+                            },
+                            privateMetadata: {
+                                model,
+                                input_args: JSON.stringify(toolCall.tool_call?.arguments),
+                                tool_name: toolCall.tool_call?.name,
+                                type: 'builtin',
+                            },
+                        })
+                        logDebug('AgenticHandler', `Executing ${toolCall.tool_call?.name}`, {
+                            verbose: toolCall,
+                        })
+                        return await this.executeSingleTool(toolCall, model)
+                    } catch (error) {
+                        logDebug('AgenticHandler', `Error executing tool ${toolCall.tool_call?.name}`, {
+                            verbose: error,
+                        })
+                        return null // Return null for failed tool executions
+                    }
                 })
             )
-
-            return results.filter(isDefined)
+            // Filter out rejected promises and null/undefined results
+            return results
+                .filter(result => result.status === 'fulfilled' && result.value)
+                .map(result => (result as PromiseFulfilledResult<ToolResult>).value)
         } catch (error) {
             logDebug('AgenticHandler', 'Error executing tools', { verbose: error })
             return []
@@ -294,10 +347,12 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
      * Execute a single tool and handle success/failure
      */
     protected async executeSingleTool(
-        toolCall: ToolCallContentPart
+        toolCall: ToolCallContentPart,
+        model: string
     ): Promise<ToolResult | undefined | null> {
         // Find the appropriate tool
-        const tool = this.tools.find(t => t.spec.name === toolCall.tool_call.name)
+        const enabledTools = this.tools.filter(tool => !tool.disabled)
+        const tool = enabledTools.find(t => t.spec.name === toolCall.tool_call.name)
         if (!tool) return undefined
 
         const tool_result: ToolResultContentPart = {
@@ -317,11 +372,45 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
         // Update status to pending *before* execution
         try {
             const args = parseToolCallArgs(toolCall.tool_call.arguments)
-            const result = await tool.invoke(args)
+            const result = await tool.invoke(args).catch(error => {
+                telemetryRecorder.recordEvent('cody.tool-use', 'failed', {
+                    billingMetadata: {
+                        product: 'cody',
+                        category: 'billable',
+                    },
+                    privateMetadata: {
+                        model,
+                        input_args: JSON.stringify(toolCall.tool_call?.arguments),
+                        tool_name: toolCall.tool_call?.name,
+                        type: 'builtin',
+                    },
+                })
+                logDebug('AgenticHandler', `Error executing tool ${toolCall.tool_call.name}`, {
+                    verbose: error,
+                })
+                return null
+            })
+
+            if (result === null) {
+                throw new Error(`Tool ${toolCall.tool_call.name} failed`)
+            }
 
             tool_result.tool_result.content = result.content || 'Empty result'
 
             logDebug('AgenticHandler', `Executed ${toolCall.tool_call.name}`, { verbose: result })
+
+            telemetryRecorder.recordEvent('cody.tool-use', 'executed', {
+                billingMetadata: {
+                    product: 'cody',
+                    category: 'billable',
+                },
+                privateMetadata: {
+                    model,
+                    input_args: JSON.stringify(toolCall.tool_call?.arguments),
+                    tool_name: toolCall.tool_call?.name,
+                    type: 'builtin',
+                },
+            })
 
             return {
                 tool_result,
@@ -333,6 +422,18 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
             }
         } catch (error) {
             tool_result.tool_result.content = String(error)
+            telemetryRecorder.recordEvent('cody.tool-use', 'failed', {
+                billingMetadata: {
+                    product: 'cody',
+                    category: 'billable',
+                },
+                privateMetadata: {
+                    model,
+                    input_args: JSON.stringify(toolCall.tool_call?.arguments),
+                    tool_name: toolCall.tool_call?.name,
+                    type: 'builtin',
+                },
+            })
             logDebug('AgenticHandler', `${toolCall.tool_call.name} failed`, { verbose: error })
             return {
                 tool_result,
@@ -379,31 +480,41 @@ class AgenticChatPrompter {
     }
 
     public async makePrompt(chat: ChatBuilder, context: ContextItem[] = []): Promise<Message[]> {
-        return wrapInActiveSpan('AgenticChat.prompter', async () => {
-            const promptBuilder = await PromptBuilder.create(contextWindow)
+        const builder = await PromptBuilder.create(contextWindow)
 
-            // Add preamble messages
-            if (!promptBuilder.tryAddToPrefix([this.preamble])) {
-                throw new Error(`Preamble length exceeded context window ${contextWindow.input}`)
-            }
+        // Add preamble messages
+        if (!builder.tryAddToPrefix([this.preamble])) {
+            throw new Error(`Preamble length exceeded context window ${contextWindow.input}`)
+        }
 
-            // Add existing chat transcript messages
-            const transcript = chat.getDehydratedMessages()
-            const reversedTranscript = [...transcript].reverse()
+        // Add existing chat transcript messages
+        const transcript = chat.getDehydratedMessages()
+        const reversedTranscript = [...transcript].reverse()
 
-            promptBuilder.tryAddMessages(reversedTranscript)
+        builder.tryAddMessages(reversedTranscript)
 
-            if (context.length > 0) {
-                await promptBuilder.tryAddContext('user', context)
-            }
+        if (context.length) {
+            const { added } = await builder.tryAddContext('user', transformItems(context))
+            chat.setLastMessageContext(added)
+        }
 
-            const historyItems = reversedTranscript
-                .flatMap(m => (m.contextFiles ? [...m.contextFiles].reverse() : []))
-                .filter(isDefined)
+        const historyItems = reversedTranscript
+            .flatMap(m => (m.contextFiles ? [...m.contextFiles].reverse() : []))
+            .filter(isDefined)
 
-            await promptBuilder.tryAddContext('history', historyItems.reverse())
-
-            return promptBuilder.build()
-        })
+        if (historyItems.length) {
+            await builder.tryAddContext('history', transformItems(historyItems))
+        }
+        return builder.build()
     }
+}
+function transformItems(items: ContextItem[]): ContextItem[] {
+    return items
+        .filter(item => item.type !== 'tool-state')
+        ?.map(i => {
+            if (i.type === 'file' && !i.range) {
+                i.content = i.content?.concat('\n<<EOF>>')
+            }
+            return i
+        })
 }

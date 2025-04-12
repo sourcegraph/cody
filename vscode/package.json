@@ -3,7 +3,7 @@
   "name": "cody-ai",
   "private": true,
   "displayName": "Cody: AI Code Assistant",
-  "version": "1.78.1",
+  "version": "1.84.0",
   "publisher": "sourcegraph",
   "license": "Apache-2.0",
   "icon": "resources/sourcegraph.png",
@@ -558,6 +558,12 @@
         "title": "Report Issue"
       },
       {
+        "command": "cody.debug.heapDump",
+        "category": "Cody Debug",
+        "group": "Debug",
+        "title": "Heap Dump"
+      },
+      {
         "command": "cody.copy.version",
         "category": "Cody Debug",
         "group": "Debug",
@@ -589,7 +595,7 @@
       {
         "command": "cody.command.autoedit-manual-trigger",
         "title": "Autoedits Manual Trigger",
-        "enablement": "cody.activated && config.cody.suggestions.mode == 'auto-edit (Experimental)'"
+        "enablement": "cody.activated && config.cody.suggestions.mode == 'auto-edit'"
       },
       {
         "command": "cody.command.autoedit.open-debug-panel",
@@ -714,7 +720,7 @@
       {
         "command": "cody.supersuggest.testExample",
         "key": "ctrl+alt+enter",
-        "when": "cody.activated && config.cody.suggestions.mode == 'auto-edit (Experimental)'"
+        "when": "cody.activated && config.cody.suggestions.mode == 'auto-edit'"
       }
     ],
     "submenus": [
@@ -957,7 +963,7 @@
         },
         "cody.suggestions.mode": {
           "type": "string",
-          "enum": ["autocomplete", "auto-edit (Experimental)", "off"],
+          "enum": ["autocomplete", "auto-edit", "off"],
           "enumDescriptions": [
             "Suggests standard code completions as you type.",
             "Suggests advanced context-aware code edits as you navigate the codebase. Experimental feature for Pro and Enterprise users.",
@@ -1055,17 +1061,6 @@
           "order": 99,
           "type": "string",
           "markdownDescription": "Regular expression to filter debug output. If empty, defaults to '.*', which prints all messages."
-        },
-        "cody.telemetry.level": {
-          "order": 99,
-          "type": "string",
-          "enum": ["all", "off"],
-          "enumDescriptions": [
-            "Sends usage data and errors.",
-            "[Enterprise-only] Disables all extension telemetry."
-          ],
-          "markdownDescription": "Controls the telemetry about Cody usage and errors for users connected to Enterprise instances. This setting only takes effect for Sourcegraph Enterprise users. For users connected to sourcegraph.com, this option is always enabled. See [Cody usage and privacy notice](https://about.sourcegraph.com/terms/cody-notice).",
-          "default": "all"
         },
         "cody.autocomplete.advanced.provider": {
           "type": "string",
@@ -1400,10 +1395,12 @@
     "@openctx/vscode-lib": "^0.0.26",
     "@opentelemetry/api": "^1.7.0",
     "@opentelemetry/core": "^1.18.1",
+    "@opentelemetry/exporter-metrics-otlp-http": "^0.45.1",
     "@opentelemetry/exporter-trace-otlp-http": "^0.45.1",
     "@opentelemetry/instrumentation": "^0.45.1",
     "@opentelemetry/instrumentation-http": "^0.45.1",
     "@opentelemetry/resources": "^1.18.1",
+    "@opentelemetry/sdk-metrics": "^1.18.1",
     "@opentelemetry/sdk-trace-base": "^1.18.1",
     "@opentelemetry/sdk-trace-node": "^1.18.1",
     "@opentelemetry/semantic-conventions": "^1.18.1",
@@ -1453,6 +1450,7 @@
     "hpagent": "^1.2.0",
     "ini": "^4.1.2",
     "js-levenshtein": "^1.1.6",
+    "jsonrepair": "^3.12.0",
     "lexical": "^0.17.0",
     "lodash": "^4.17.21",
     "lru-cache": "^10.0.0",

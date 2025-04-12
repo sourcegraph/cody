@@ -1,9 +1,8 @@
-import { CodyIDE } from '@sourcegraph/cody-shared'
+import type { CodyIDE } from '@sourcegraph/cody-shared'
 import type { FunctionComponent } from 'react'
 import { PromptList } from '../../components/promptList/PromptList'
 import { useActionSelect } from '../../prompts/PromptsTab'
 import type { View } from '../../tabs'
-import { PromptMigrationWidget } from './../../components/promptsMigration/PromptsMigration'
 import { LastConversation } from './LastConversation'
 
 const localStorageKey = 'chat.welcome-message-dismissed'
@@ -23,9 +22,6 @@ export const WelcomeMessage: FunctionComponent<WelcomeMessageProps> = ({ setView
     return (
         <div className="tw-flex-1 tw-flex tw-flex-col tw-items-start tw-w-full tw-px-8 tw-gap-6 tw-transition-all tw-relative">
             <div className="tw-flex tw-flex-col tw-gap-4 tw-w-full">
-                {IDE !== CodyIDE.Web && (
-                    <PromptMigrationWidget dismissible={true} className="tw-w-full" />
-                )}
                 <PromptList
                     showSearch={false}
                     showFirstNItems={4}
