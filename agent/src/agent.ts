@@ -105,8 +105,8 @@ import type {
     TextEdit,
 } from './protocol-alias'
 import * as vscode_shim from './vscode-shim'
-import { vscodeLocation, vscodeRange } from './vscode-type-converters'
 import { extensionConfiguration } from './vscode-shim'
+import { vscodeLocation, vscodeRange } from './vscode-type-converters'
 
 /** The VS Code extension's `activate` function. */
 type ExtensionActivate = (
