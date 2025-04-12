@@ -1543,7 +1543,10 @@ export class Agent extends MessageHandler implements ExtensionClient {
         config: ExtensionConfiguration,
         params?: { forceAuthentication: boolean }
     ): Promise<AuthStatus> {
-        if (config == extensionConfiguration) return firstNonPendingAuthStatus()
+        if (!(params?.forceAuthentication === true) && config === extensionConfiguration) {
+            return firstNonPendingAuthStatus()
+        }
+
         const isAuthChange = vscode_shim.isTokenOrEndpointChange(config)
         vscode_shim.setExtensionConfiguration(config)
 
