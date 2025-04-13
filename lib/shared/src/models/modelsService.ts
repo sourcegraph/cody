@@ -606,7 +606,7 @@ export class ModelsService {
      */
     public getContextWindowByID(modelID: string, models = this.models): ModelContextWindow {
         // TODO(sqs)#observe: remove synchronous access here, return an Observable<ModelContextWindow> instead
-        const model = this.getModelByID(modelID, models)
+        const model = models.find(m => m.id === modelID)
         return model
             ? model.contextWindow
             : { input: CHAT_INPUT_TOKEN_BUDGET, output: CHAT_OUTPUT_TOKEN_BUDGET }
@@ -624,9 +624,9 @@ export class ModelsService {
         )
     }
 
-    public getModelByID(modelID: string, models = this.models): Model | undefined {
+    public getModelByID(modelID: string): Model | undefined {
         // TODO(sqs)#observe: remove synchronous access here, return an Observable<Model|undefined> instead
-        return models.find(m => m.id === modelID)
+        return this.models.find(m => m.id === modelID)
     }
 
     public getAllModelsWithSubstring(modelSubstring: string): Model[] {
