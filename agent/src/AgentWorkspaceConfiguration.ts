@@ -119,26 +119,14 @@ export class AgentWorkspaceConfiguration implements vscode.WorkspaceConfiguratio
             },
         }
 
-        function mergeWithBaseConfig(config: any) {
-            for (const [key, value] of Object.entries(config)) {
-                if (typeof value === 'object' && !Array.isArray(value)) {
-                    const existing = _.get(baseConfig, key) ?? {}
-                    const merged = _.merge(existing, value)
-                    _.set(baseConfig, key, merged)
-                } else {
-                    _.set(baseConfig, key, value)
-                }
-            }
-        }
-
         const customConfiguration = config?.customConfiguration
         if (customConfiguration) {
-            mergeWithBaseConfig(customConfiguration)
+            mergeWithBaseConfig(baseConfig, customConfiguration)
         }
 
         const fromCustomConfigurationJson = config?.customConfigurationJson
         if (fromCustomConfigurationJson) {
-            mergeWithBaseConfig(JSON.parse(fromCustomConfigurationJson))
+            mergeWithBaseConfig(baseConfig, JSON.parse(fromCustomConfigurationJson))
         }
 
         const fromBaseConfig = _.get(baseConfig, section)
@@ -204,5 +192,17 @@ export class AgentWorkspaceConfiguration implements vscode.WorkspaceConfiguratio
 
         this.put(section, value)
         return vscode_shim.onDidChangeConfiguration.cody_fireAsync({ affectsConfiguration: () => true })
+    }
+}
+
+export function mergeWithBaseConfig(baseConfig: any, config: any) {
+    for (const [key, value] of Object.entries(config)) {
+        if (typeof value === 'object' && !Array.isArray(value)) {
+            const existing = _.get(baseConfig, key) ?? {}
+            const merged = _.merge(existing, value)
+            _.set(baseConfig, key, merged)
+        } else {
+            _.set(baseConfig, key, value)
+        }
     }
 }

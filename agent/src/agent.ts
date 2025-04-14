@@ -78,7 +78,7 @@ import { AgentFixupControls } from './AgentFixupControls'
 import { AgentProviders } from './AgentProviders'
 import { AgentClientManagedSecretStorage, AgentStatelessSecretStorage } from './AgentSecretStorage'
 import { AgentWebviewPanel, AgentWebviewPanels } from './AgentWebviewPanel'
-import { AgentWorkspaceConfiguration } from './AgentWorkspaceConfiguration'
+import { AgentWorkspaceConfiguration, mergeWithBaseConfig } from './AgentWorkspaceConfiguration'
 import { AgentWorkspaceDocuments } from './AgentWorkspaceDocuments'
 import { registerNativeWebviewHandlers, resolveWebviewView } from './NativeWebview'
 import type { PollyRequestError } from './cli/command-jsonrpc-stdio'
@@ -105,6 +105,7 @@ import type {
     TextEdit,
 } from './protocol-alias'
 import * as vscode_shim from './vscode-shim'
+import { extensionConfiguration } from './vscode-shim'
 import { vscodeLocation, vscodeRange } from './vscode-type-converters'
 
 /** The VS Code extension's `activate` function. */
@@ -382,7 +383,9 @@ export class Agent extends MessageHandler implements ExtensionClient {
 
         vscode_shim.onDidChangeConfiguration.event(() => {
             const config = vscode_shim.workspace.getConfiguration()
-            this.notify('extensionConfiguration/didUpdate', JSON.stringify((config as any).dictionary))
+            const customConfig = JSON.parse(extensionConfiguration?.customConfigurationJson ?? '')
+            mergeWithBaseConfig(customConfig, (config as any).dictionary)
+            this.notify('extensionConfiguration/didUpdate', JSON.stringify(customConfig))
         })
 
         this.registerRequest('initialize', async clientInfo => {
