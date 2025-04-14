@@ -10,14 +10,11 @@ import { wrapVSCodeTextDocument } from '../../editor/utils/virtual-text-document
 import { autoeditsProviderConfig } from '../autoedits-config'
 import { getCodeToReplaceData } from '../prompt/prompt-utils'
 import { shrinkPredictionUntilSuffix } from '../shrink-prediction'
+import {
+    SHOULD_ATTEMPT_HOT_STREAK_CHUNK_THRESHOLD,
+    SHOULD_USE_HOT_STREAK_CHUNK_THRESHOLD,
+} from './constants'
 import { trimPredictionToLastFullLine } from './utils'
-
-/**
- * Number of lines that should be accumulated before attempting a hot streak suggestion.
- * Note: Reaching this number does not guarantee a hot streak suggestion will be emitted.
- * The suggestion should also produce a valid diff that is suitable to be chunked.
- */
-export const HOT_STREAK_LINES_THRESHOLD = 5
 
 // Helper enum for code readability when handling slices
 enum SliceKind {
@@ -89,7 +86,8 @@ export function getStableSuggestion({
             }
 
             const meetsLineThreshold =
-                response.type === 'success' || state.predictionLines.length >= HOT_STREAK_LINES_THRESHOLD
+                response.type === 'success' ||
+                state.predictionLines.length >= SHOULD_USE_HOT_STREAK_CHUNK_THRESHOLD
             if (state.predictionIncludesChange && meetsLineThreshold) {
                 state.canSuggestDiff = true
                 // We already have a change further up in the diff.
@@ -204,6 +202,12 @@ export function getHotStreakChunk({
     )
 
     const predictionLines = lines(remainingPrediction).length - 1
+    const meetsLineThreshold =
+        response.type === 'success' || predictionLines >= SHOULD_ATTEMPT_HOT_STREAK_CHUNK_THRESHOLD
+    if (!meetsLineThreshold) {
+        return null
+    }
+
     const expectedDiffRange = new vscode.Range(
         codeToReplaceData.range.start.translate(processedLines),
         codeToReplaceData.range.start.translate(processedLines + predictionLines)
