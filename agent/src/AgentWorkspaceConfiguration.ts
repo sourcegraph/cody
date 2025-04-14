@@ -198,6 +198,10 @@ export class AgentWorkspaceConfiguration implements vscode.WorkspaceConfiguratio
         _configurationTarget?: boolean | vscode.ConfigurationTarget | null | undefined,
         _overrideInLanguage?: boolean | undefined
     ): Promise<void> {
+        if (this.get(section) === value) {
+            return Promise.resolve()
+        }
+
         this.put(section, value)
         return vscode_shim.onDidChangeConfiguration.cody_fireAsync({ affectsConfiguration: () => true })
     }

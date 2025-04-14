@@ -105,7 +105,6 @@ import type {
     TextEdit,
 } from './protocol-alias'
 import * as vscode_shim from './vscode-shim'
-import { extensionConfiguration } from './vscode-shim'
 import { vscodeLocation, vscodeRange } from './vscode-type-converters'
 
 /** The VS Code extension's `activate` function. */
@@ -1543,10 +1542,6 @@ export class Agent extends MessageHandler implements ExtensionClient {
         config: ExtensionConfiguration,
         params?: { forceAuthentication: boolean }
     ): Promise<AuthStatus> {
-        if (!(params?.forceAuthentication === true) && config === extensionConfiguration) {
-            return firstNonPendingAuthStatus()
-        }
-
         const isAuthChange = vscode_shim.isTokenOrEndpointChange(config)
         vscode_shim.setExtensionConfiguration(config)
 
