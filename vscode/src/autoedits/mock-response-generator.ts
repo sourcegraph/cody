@@ -41,6 +41,8 @@ export async function* createMockResponseGenerator(prediction: string): AsyncGen
             type: 'partial',
             stopReason: AutoeditStopReason.StreamingChunk,
             prediction: partialPrediction,
+            responseHeaders: {},
+            responseBody: {},
             ...commonProps,
         }
         emittedLines = newEmittedLines

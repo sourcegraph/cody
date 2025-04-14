@@ -27,6 +27,8 @@ async function* createModelResponseGenerator(
             stopReason: AutoeditStopReason.StreamingChunk,
             requestHeaders: {},
             requestUrl: 'test-url',
+            responseHeaders: {},
+            responseBody: {},
         }
     }
 
@@ -342,6 +344,8 @@ describe('processHotStreakResponses', () => {
                     stopReason: AutoeditStopReason.StreamingChunk,
                     requestHeaders: {},
                     requestUrl: 'test-url',
+                    responseHeaders: {},
+                    responseBody: {},
                 }
             }
 

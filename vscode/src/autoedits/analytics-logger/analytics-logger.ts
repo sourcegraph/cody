@@ -47,7 +47,7 @@ import {
     type SuggestedState,
     validRequestTransitions,
 } from './types'
-import type { AutoeditFeedbackData } from './types'
+import type { AutoeditFeedbackData, HotStreakChunk } from './types'
 
 /**
  * Using the validTransitions definition, we can derive which "from phases" lead to a given next phase,
@@ -217,6 +217,28 @@ export class AutoeditAnalyticsLogger {
                 },
             }
         })
+    }
+
+    public recordHotStreakLoaded({
+        requestId,
+        hotStreakId,
+        chunk,
+    }: {
+        requestId: AutoeditRequestID
+        hotStreakId: AutoeditHotStreakID
+        chunk: Omit<HotStreakChunk, 'loadedAt'>
+    }) {
+        const request = this.activeRequests.get(requestId)
+        if (request && 'hotStreakId' in request && request.hotStreakId === hotStreakId) {
+            const hotStreakChunks = request.hotStreakChunks ?? []
+            hotStreakChunks.push({
+                loadedAt: getTimeNowInMillis(),
+                prediction: chunk.prediction,
+                modelResponse: chunk.modelResponse,
+                fullPrediction: chunk.fullPrediction,
+            })
+            this.activeRequests.set(requestId, { ...request, hotStreakChunks })
+        }
     }
 
     public markAsPostProcessed({

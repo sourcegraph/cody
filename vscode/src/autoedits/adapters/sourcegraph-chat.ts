@@ -63,6 +63,8 @@ export class SourcegraphChatAdapter implements AutoeditsModelAdapter {
                     prediction: accumulated,
                     requestUrl: option.url,
                     requestHeaders: {},
+                    responseHeaders: {},
+                    responseBody: {},
                 }
             } else if (msg.type === 'complete' || msg.type === 'error') {
                 break
