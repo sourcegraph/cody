@@ -226,7 +226,7 @@ export const getInput = async (
                     return
                 }
 
-                modelsService.setSelectedModel(ModelUsage.Edit, acceptedItem.model)
+                await modelsService.setSelectedModel(ModelUsage.Edit, acceptedItem.model)
                 activeModelItem = acceptedItem
                 activeModel = acceptedItem.model
                 activeModelContextWindow = getContextWindowOnModelChange(acceptedItem.model)

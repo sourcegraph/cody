@@ -54,61 +54,153 @@ export class Dog implements Animal {
 `;
 
 exports[`Agent > Commands > commands/explain 1`] = `
-"The Animal Interface (src/animal.ts)
+"The code is an interface named "Animal" written in TypeScript. An interface in TypeScript is a blueprint for an object, defining what an object should look like. An interface like this one in the code defines the structure for an animal object.
 
-This code defines a blueprint called \`Animal\` that acts as a template for creating different types of animals in the program. It's like a contract that says "any animal we create must have these specific characteristics and behaviors."
+The "Animal" interface has three properties:
 
-The interface specifies three required properties that any animal must have:
-1. A \`name\` property that holds the animal's name as text (string)
-2. A \`makeAnimalSound()\` method that, when called, will return a string representing the sound the animal makes (like "meow" or "woof")
-3. An \`isMammal\` property that is either true or false (boolean), indicating whether the animal is a mammal or not
+1. "name" of type string,
+2. "makeAnimalSound" of type function that returns a string,
+3. "isMammal" of type boolean.
 
-This interface doesn't contain any actual implementation - it's just a template. When someone wants to create a specific animal (like a cat or dog), they would need to create a new class that "implements" this Animal interface and provides actual values and code for all three of these requirements.
+This code does not actually do anything; it defines the shape of an animal object. It is used to ensure that any object that is claimed to be of type "Animal" has the required properties.
 
-For example, if someone wanted to create a Cat class using this interface, they would need to:
-- Give it a name property
-- Write code for the makeAnimalSound() method that returns "meow"
-- Set isMammal to true
+For example, if another piece of code creates an object called "myAnimal" and claims it is of type "Animal", this code will ensure that myAnimal has the required properties of name, makeAnimalSound, and isMammal.
 
-The purpose of this interface is to ensure consistency across different types of animals in the program and make sure they all have the same basic structure. It's like creating a standardized form that all animals must fill out to be part of the system."
+To sum up, this code is an interface named "Animal" that defines the structure of an animal object, including a name, a function to make an animal sound, and a boolean to indicate whether the animal is a mammal. It is used as a blueprint to ensure that any object that is claimed to be of type "Animal" has the required properties."
 `;
 
 exports[`Agent > Commands > commands/smell 1`] = `
-"Here are 4 constructive suggestions to enhance the Animal interface:
+"Based on the provided code, I've identified some potential areas for improvement. Here are my recommendations:
 
-1. Add JSDoc documentation above the interface to describe its purpose and requirements. This would improve code maintainability and help other developers understand how to properly implement the interface:
+1. Add docstrings for better code readability and self-documentation.
 
-\`\`\`typescript:src/animal.ts
+Benefit: Providing short explanations for the interface properties and methods will make it easier for any developer who encounters this code to understand its purpose and functionality.
+
+\`\`\`ts
 /**
- * Represents a generic animal with basic properties and behaviors
+ * Animal interface
  */
 export interface Animal {
-\`\`\`
+  /**
+   * The animal's name
+   */
+  name: string
 
-2. Consider adding readonly modifier to name property since it's likely an immutable characteristic. This provides better type safety and communicates intent:
+  /**
+   * The animal's sound
+   */
+  makeAnimalSound(): string
 
-\`\`\`typescript:src/animal.ts
-export interface Animal {
-    readonly name: string
-\`\`\`
-
-3. Add optional age property since it's a common animal attribute that implementing classes may want to track:
-
-\`\`\`typescript:src/animal.ts
-export interface Animal {
-    name: string
-    age?: number
-\`\`\`
-
-4. Consider splitting makeAnimalSound() into a separate behavior interface (ISoundMaker) to follow Interface Segregation Principle. This allows for more flexible composition of animal behaviors:
-
-\`\`\`typescript:src/animal.ts
-export interface ISoundMaker {
-    makeAnimalSound(): string
+  /**
+   * A boolean to indicate whether the animal is a mammal
+   */
+  isMammal: boolean
 }
-
-export interface Animal extends ISoundMaker {
 \`\`\`
 
-Summary: While the current interface provides a good basic structure, there are opportunities to improve type safety, documentation, and modularity. The suggestions aim to make the code more maintainable and aligned with SOLID principles while maintaining its simplicity. The existing code follows sound design principles by keeping the interface focused and using clear naming conventions."
+2. Make the method \`makeAnimalSound()\` abstract, as it should be implemented by inheriting classes.
+
+Benefit: Defining this method as abstract will enforce concrete implementations in derived classes, ensuring proper customization and emphasizing their responsibilities.
+
+\`\`\`ts
+/**
+ * Animal interface
+ */
+export interface Animal {
+  /**
+   * The animal's name
+   */
+  name: string
+
+  /**
+   * Abstract method for making an animal sound
+   */
+  makeAnimalSound(): abstract;
+
+  /**
+   * A boolean to indicate whether the animal is a mammal
+   */
+  isMammal: boolean
+}
+\`\`\`
+
+3. Add typing information for the return type of \`makeAnimalSound()\`.
+
+Benefit: By specifying the return type, you make it clear to developers what they can expect when utilizing this method, enhancing code maintainability and consistency.
+
+\`\`\`ts
+/**
+ * Animal interface
+ */
+export interface Animal {
+  /**
+   * The animal's name
+   */
+  name: string
+
+  /**
+   * Abstract method for making an animal sound
+   */
+  makeAnimalSound(): string;
+
+  /**
+   * A boolean to indicate whether the animal is a mammal
+   */
+  isMammal: boolean
+}
+\`\`\`
+
+4. Add the property \`readonly\` to the \`name\` attribute, as it is unlikely to be modified after the instance creation.
+
+Benefit: Declaring the property readonly increases code readability, clarity, and safety, preventing accidental changes.
+
+\`\`\`ts
+/**
+ * Animal interface
+ */
+export interface Animal {
+  /**
+   * The animal's name (read-only)
+   */
+  readonly name: string
+
+  /**
+   * Abstract method for making an animal sound
+   */
+  makeAnimalSound(): string;
+
+  /**
+   * A boolean to indicate whether the animal is a mammal
+   */
+  isMammal: boolean
+}
+\`\`\`
+
+5. Consider renaming the \`isMammal\` attribute to \`isMammalian\`.
+
+Benefit: This change will make the name more consistent with English grammar rules, improving the code's readability and adherence to best practices.
+
+\`\`\`ts
+/**
+ * Animal interface
+ */
+export interface Animal {
+  /**
+   * The animal's name (read-only)
+   */
+  readonly name: string
+
+  /**
+   * Abstract method for making an animal sound
+   */
+  makeAnimalSound(): string;
+
+  /**
+   * A boolean to indicate whether the animal is mammalian
+   */
+  isMammalian: boolean
+}
+\`\`\`
+
+Overall, the code you provided follows good design principles. However, implementing the suggestions above would enhance its readability, maintainability, and consistency."
 `;

@@ -2,6 +2,7 @@ import { statSync } from 'node:fs'
 import { resolve } from 'node:path'
 
 import { defineProjectWithDefaults } from '../.config/viteShared'
+import { TEST_ERROR_REPORTER } from './src/TestErrorReporter'
 
 const shimFromAgentDirectory = resolve(process.cwd(), 'src', 'vscode-shim')
 const shimFromRootDirectory = resolve(process.cwd(), 'agent', 'src', 'vscode-shim')
@@ -18,13 +19,24 @@ function shimDirectory(): string {
     return shimFromAgentDirectory
 }
 
-export default defineProjectWithDefaults(__dirname, {
-    resolve: {
-        alias: { vscode: shimDirectory() },
-    },
+const errorReporterConfig = {
     test: {
-        env: {
-            CODY_SHIM_TESTING: 'true',
+        reporters: ['default', TEST_ERROR_REPORTER],
+        globals: true,
+    },
+}
+
+export default defineProjectWithDefaults(
+    __dirname,
+    {
+        resolve: {
+            alias: { vscode: shimDirectory() },
+        },
+        test: {
+            env: {
+                CODY_SHIM_TESTING: 'true',
+            },
         },
     },
-})
+    errorReporterConfig
+)

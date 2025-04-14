@@ -36,7 +36,7 @@ describe(
         it('starts up with default endpoint and credentials if they are present in the secure store', async () => {
             const newClient = TestClient.create({
                 workspaceRootUri: workspace.rootUri,
-                name: 'unauthed',
+                name: 'unauthed-stored',
                 credentials: TESTING_CREDENTIALS.dotcomUnauthed,
                 secretStorageEntries: {
                     [TESTING_CREDENTIALS.dotcom.serverEndpoint]:
@@ -48,7 +48,8 @@ describe(
             const authStatus = await newClient.request('extensionConfiguration/status', null)
             expect(authStatus?.authenticated).toBe(true)
             expect(authStatus?.endpoint).toBe(TESTING_CREDENTIALS.dotcom.serverEndpoint)
-            newClient.afterAll()
+
+            await newClient.afterAll()
         })
 
         it('authenticates to same endpoint using valid credentials', async () => {
