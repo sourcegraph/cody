@@ -175,7 +175,7 @@ describe('processHotStreakResponses', () => {
             results.push(result)
         }
 
-        expect(results.length).toBe(5)
+        expect(results.length).toBe(4)
 
         const firstResponse = results[0] as SuggestedPredictionResult
         expect(firstResponse.type).toBe('suggested')
@@ -235,7 +235,6 @@ describe('processHotStreakResponses', () => {
           export function isEvenOrOdd(target: number): boolean {
               if (target === 0) {
                   return true
-              }
               }
               // Check if target is 1
               if (numberToChange === 1) {
@@ -386,7 +385,6 @@ describe('processHotStreakResponses', () => {
               parser.add_argument('--project_id', help='Project ID')
 
               args = parser.parse_args()
-
 
           "
         `)

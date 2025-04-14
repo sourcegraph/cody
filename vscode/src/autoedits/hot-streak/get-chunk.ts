@@ -155,6 +155,7 @@ export function getStableSuggestion({
 export interface GetHotStreakChunkParams {
     latestFullPrediction: string
     processedPrediction: string
+    processedRange: vscode.Range
     document: vscode.TextDocument
     docContext: DocumentContext
     codeToReplaceData: CodeToReplaceData
@@ -178,6 +179,7 @@ export interface HotStreakChunk {
 export function getHotStreakChunk({
     latestFullPrediction,
     processedPrediction,
+    processedRange,
     response,
     document,
     docContext,
@@ -194,12 +196,6 @@ export function getHotStreakChunk({
         // No complete lines to process
         return null
     }
-
-    const processedRange = new vscode.Range(
-        codeToReplaceData.range.start,
-        // If we have processed lines, we need to reflect this in the range
-        codeToReplaceData.range.start.translate(processedLines)
-    )
 
     const predictionLines = lines(remainingPrediction).length - 1
     const meetsLineThreshold =

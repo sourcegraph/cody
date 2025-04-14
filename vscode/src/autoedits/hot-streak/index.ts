@@ -46,6 +46,7 @@ export async function* processHotStreakResponses({
     }
 > {
     let processedPrediction = ''
+    let processedRange = new vscode.Range(codeToReplaceData.range.start, codeToReplaceData.range.start)
     let hotStreakId = null
 
     for await (const response of responseGenerator) {
@@ -59,6 +60,7 @@ export async function* processHotStreakResponses({
             const predictionChunk = getHotStreakChunk({
                 latestFullPrediction: response.prediction,
                 processedPrediction,
+                processedRange,
                 document,
                 docContext,
                 position,
@@ -78,6 +80,10 @@ export async function* processHotStreakResponses({
 
             // Track the number of lines we have processed, this is used to trim the prediction accordingly in the next response.
             processedPrediction = processedPrediction + predictionChunk.text
+            processedRange = new vscode.Range(
+                processedRange.start,
+                predictionChunk.codeToReplaceData.range.end
+            )
 
             if (!predictionChunk.firstLineChanged) {
                 yield {
