@@ -20,20 +20,15 @@ import com.intellij.openapi.project.ProjectManager
 import com.intellij.openapi.util.Key
 import com.intellij.openapi.util.TextRange
 import com.intellij.openapi.vfs.LocalFileSystem
-import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.VirtualFileManager
 import com.intellij.util.concurrency.annotations.RequiresEdt
 import com.sourcegraph.cody.agent.protocol_extensions.toOffsetRange
 import com.sourcegraph.cody.agent.protocol_generated.Range
+import com.sourcegraph.common.CodyFileUri
 import com.sourcegraph.config.ConfigUtil
 import com.sourcegraph.utils.ThreadingUtil.runInEdtAndGet
-import java.net.URISyntaxException
-import java.net.URLDecoder
-import kotlin.io.path.createDirectories
-import kotlin.io.path.createFile
-import kotlin.io.path.exists
-import kotlin.io.path.toPath
+import kotlin.io.path.*
 
 object CodyEditorUtil {
   private val logger = Logger.getInstance(CodyEditorUtil::class.java)
@@ -179,60 +174,46 @@ object CodyEditorUtil {
     }
   }
 
-  @JvmStatic
-  fun fixUriString(uriString: String): String {
-    if (uriString.startsWith("untitled://")) {
-      // IntelliJ does not support in-memory files so we are using scratch files instead
-      return uriString.substringAfterLast(':').trimStart('/', '\\')
-    } else {
-      // Check `ProtocolTextDocumentExt.normalizeToVscUriFormat` for explanation
-      val patchedUri = uriString.replace("file://wsl.localhost/", "file:////wsl.localhost/")
-      return if (patchedUri.startsWith("file://")) patchedUri else "file://$patchedUri"
-    }
-  }
-
   fun findFileOrScratch(project: Project, uriString: String): VirtualFile? {
-    val fixedUri = fixUriString(uriString)
-    if (uriString.startsWith("untitled://")) {
+    val uri = CodyFileUri.parse(uriString)
+    if (uri.isUntitled) {
       return ScratchRootType.getInstance()
-          .findFile(project, fixedUri, ScratchFileService.Option.existing_only)
+          .findFile(project, uri.toString(), ScratchFileService.Option.existing_only)
     } else {
-      val uri = VfsUtil.toUri(fixedUri) ?: return null
-      return VirtualFileManager.getInstance().refreshAndFindFileByNioPath(uri.toPath())
+      val path = uri.toPath() ?: return null
+      return VirtualFileManager.getInstance().refreshAndFindFileByNioPath(path)
     }
   }
 
-  fun createFileOrScratchFromUntitled(
+  fun createFileOrUseExisting(
       project: Project,
       uriString: String,
       content: String? = null
   ): VirtualFile? {
-    try {
-      val fileUri = VfsUtil.toUri(fixUriString(uriString)) ?: return null
-      if (!fileUri.toPath().exists()) {
-        fileUri.toPath().parent?.createDirectories()
-        fileUri.toPath().createFile()
-        val vf = LocalFileSystem.getInstance().refreshAndFindFileByNioFile(fileUri.toPath())
+    val uri = CodyFileUri.parse(uriString)
+    val path = uri.toPath() ?: return null
+    if (!path.exists()) {
+      path.parent?.createDirectories()
+      path.createFile()
+      val vf = LocalFileSystem.getInstance().refreshAndFindFileByNioFile(path)
 
-        content?.let {
-          WriteCommandAction.runWriteCommandAction(project) {
-            vf?.setBinaryContent(it.toByteArray())
-          }
-        }
+      content?.let {
+        WriteCommandAction.runWriteCommandAction(project) { vf?.setBinaryContent(it.toByteArray()) }
       }
-
-      return LocalFileSystem.getInstance().refreshAndFindFileByNioFile(fileUri.toPath())
-    } catch (e: URISyntaxException) {
-      val fileName = uriString.substringAfterLast(':').trimStart('/', '\\')
-      val fileType = FileTypeRegistry.getInstance().getFileTypeByFileName(fileName)
-      val language = LanguageUtil.getFileTypeLanguage(fileType) ?: PlainTextLanguage.INSTANCE
-      return ScratchRootType.getInstance()
-          .createScratchFile(
-              project,
-              URLDecoder.decode(fileName, "UTF-8"),
-              language,
-              content ?: "",
-              ScratchFileService.Option.create_if_missing)
+      return vf
     }
+    return VirtualFileManager.getInstance().refreshAndFindFileByNioPath(path)
+  }
+
+  fun createScratchOrUseExisting(
+      project: Project,
+      fileName: String,
+      content: String? = null,
+  ): VirtualFile? {
+    val fileType = FileTypeRegistry.getInstance().getFileTypeByFileName(fileName)
+    val language = LanguageUtil.getFileTypeLanguage(fileType) ?: PlainTextLanguage.INSTANCE
+    return ScratchRootType.getInstance()
+        .createScratchFile(
+            project, fileName, language, content ?: "", ScratchFileService.Option.create_if_missing)
   }
 }

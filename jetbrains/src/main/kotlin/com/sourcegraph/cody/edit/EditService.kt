@@ -73,7 +73,7 @@ class EditService(val project: Project) {
         is CreateFileOperation -> {
           logger.info("Workspace edit operation created a file: ${op.uri}")
           val file =
-              CodyEditorUtil.createFileOrScratchFromUntitled(project, op.uri, content = "")
+              CodyEditorUtil.createFileOrUseExisting(project, op.uri, content = "")
                   ?: return false
           CodyEditorUtil.showDocument(project, file)
         }

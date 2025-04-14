@@ -20,7 +20,7 @@ class OpenCodySettingsEditorAction : DumbAwareEDTAction("Open Cody Settings Edit
     val project = e.project ?: return
 
     val settingsVf =
-        CodyEditorUtil.createFileOrScratchFromUntitled(
+        CodyEditorUtil.createFileOrUseExisting(
             project, ConfigUtil.getSettingsFile(project).toUri().toString(), content = "{\n  \n}")
             ?: run {
               logger.warn("Could not create settings file")

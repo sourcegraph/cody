@@ -128,7 +128,7 @@ class CodyAgentClient(private val project: Project, private val webview: NativeW
       params: UntitledTextDocument
   ): CompletableFuture<ProtocolTextDocument?> {
     return acceptOnEventThreadAndGet {
-      val vf = CodyEditorUtil.createFileOrScratchFromUntitled(project, params.uri, params.content)
+      val vf = CodyEditorUtil.createFileOrUseExisting(project, params.uri, params.content)
       vf?.let { ProtocolTextDocumentExt.fromVirtualFile(it) }
     }
   }
