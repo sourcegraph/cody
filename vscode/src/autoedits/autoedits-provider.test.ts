@@ -127,7 +127,7 @@ describe('AutoeditsProvider', () => {
               "category": "billable",
               "product": "cody",
             },
-            "interactionID": "stable-id-for-tests-7",
+            "interactionID": "stable-id-for-tests-3",
             "metadata": {
               "acceptReason": 1,
               "contextSummary.duration": 0,
@@ -166,7 +166,7 @@ describe('AutoeditsProvider', () => {
               },
               "decorationStats": undefined,
               "gatewayLatency": undefined,
-              "id": "stable-id-for-tests-7",
+              "id": "stable-id-for-tests-3",
               "inlineCompletionStats": {
                 "charCount": 2,
                 "lineCount": 2,
@@ -190,7 +190,7 @@ describe('AutoeditsProvider', () => {
               "category": "core",
               "product": "cody",
             },
-            "interactionID": "stable-id-for-tests-7",
+            "interactionID": "stable-id-for-tests-3",
             "metadata": {
               "acceptReason": 1,
               "contextSummary.duration": 0,
@@ -229,7 +229,7 @@ describe('AutoeditsProvider', () => {
               },
               "decorationStats": undefined,
               "gatewayLatency": undefined,
-              "id": "stable-id-for-tests-7",
+              "id": "stable-id-for-tests-3",
               "inlineCompletionStats": {
                 "charCount": 2,
                 "lineCount": 2,
@@ -267,7 +267,7 @@ describe('AutoeditsProvider', () => {
               "category": "billable",
               "product": "cody",
             },
-            "interactionID": "stable-id-for-tests-7",
+            "interactionID": "stable-id-for-tests-3",
             "metadata": {
               "contextSummary.duration": 0,
               "contextSummary.prefixChars": 10,
@@ -299,7 +299,7 @@ describe('AutoeditsProvider', () => {
               },
               "decorationStats": undefined,
               "gatewayLatency": undefined,
-              "id": "stable-id-for-tests-7",
+              "id": "stable-id-for-tests-3",
               "inlineCompletionStats": {
                 "charCount": 2,
                 "lineCount": 2,

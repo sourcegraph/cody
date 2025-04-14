@@ -3,6 +3,7 @@ import * as uui from 'uuid'
 
 import * as vscode from 'vscode'
 
+import { getNewLineChar } from '../../completions/text-processing'
 import { AutoeditStopReason, type ModelResponse } from '../adapters/base'
 import type { AutoeditHotStreakID } from '../analytics-logger'
 import type {
@@ -10,6 +11,7 @@ import type {
     IgnoredPredictionResult,
     SuggestedPredictionResult,
 } from '../autoedits-provider'
+import { isDuplicatingTextFromRewriteArea } from '../utils'
 import { getHotStreakChunk, getStableSuggestion } from './get-chunk'
 
 export interface ProcessHotStreakResponsesParams {
@@ -89,7 +91,14 @@ export async function* processHotStreakResponses({
                 continue
             }
 
-            if (predictionChunk.text === predictionChunk.codeToReplaceData.codeToRewrite) {
+            const newLineChar = getNewLineChar(predictionChunk.codeToReplaceData.codeToRewrite)
+            if (
+                predictionChunk.text === predictionChunk.codeToReplaceData.codeToRewrite ||
+                isDuplicatingTextFromRewriteArea({
+                    addedText: predictionChunk.addedLines.join(newLineChar),
+                    codeToReplaceData: predictionChunk.codeToReplaceData,
+                })
+            ) {
                 // The adjusted codeToRewrite is the same as the prediction.
                 // We should not emit this prediction
                 yield {
@@ -144,7 +153,7 @@ export async function* processHotStreakResponses({
             response,
         })
 
-        if (!suggestion || !suggestion.firstLineChanged) {
+        if (!suggestion || suggestion.firstLineChanged === null) {
             yield { type: 'ignored', response }
             return
         }

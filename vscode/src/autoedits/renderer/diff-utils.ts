@@ -4,7 +4,13 @@ import * as vscode from 'vscode'
 
 import { getNewLineChar } from '../../completions/text-processing'
 
-import type { DecorationInfo, DecorationLineInfo, LineChange, ModifiedLineInfo } from './decorators/base'
+import type {
+    AddedLineInfo,
+    DecorationInfo,
+    DecorationLineInfo,
+    LineChange,
+    ModifiedLineInfo,
+} from './decorators/base'
 
 /**
  * Generates decoration information by computing the differences between two texts.
@@ -595,4 +601,8 @@ export function sortDiff(diff: DecorationInfo): DecorationLineInfo[] {
     })
 
     return sortedDiff
+}
+
+export function getAddedLines(decorationInfo: DecorationInfo): AddedLineInfo[] {
+    return decorationInfo.addedLines.sort((a, b) => a.modifiedLineNumber - b.modifiedLineNumber)
 }

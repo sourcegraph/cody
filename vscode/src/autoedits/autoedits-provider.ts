@@ -17,6 +17,7 @@ import { ContextRankingStrategy } from '../completions/context/completions-conte
 import { ContextMixer } from '../completions/context/context-mixer'
 import { DefaultContextStrategyFactory } from '../completions/context/context-strategy'
 import { getCurrentDocContext } from '../completions/get-current-doc-context'
+import { getNewLineChar } from '../completions/text-processing'
 import { defaultVSCodeExtensionClient } from '../extension-client'
 import type { AutocompleteEditItem, AutoeditChanges } from '../jsonrpc/agent-protocol'
 import { isRunningInsideAgent } from '../jsonrpc/isRunningInsideAgent'
@@ -54,7 +55,7 @@ import { getCurrentFilePath } from './prompt/prompt-utils'
 import type { DecorationInfo } from './renderer/decorators/base'
 import { DefaultDecorator } from './renderer/decorators/default-decorator'
 import { InlineDiffDecorator } from './renderer/decorators/inline-diff-decorator'
-import { getDecorationInfo } from './renderer/diff-utils'
+import { getAddedLines, getDecorationInfo } from './renderer/diff-utils'
 import { initImageSuggestionService } from './renderer/image-gen'
 import { AutoEditsInlineRendererManager } from './renderer/inline-manager'
 import { AutoEditsDefaultRendererManager, type AutoEditsRendererManager } from './renderer/manager'
@@ -66,7 +67,7 @@ import type { AutoEditRenderOutput } from './renderer/render-output'
 import { type AutoeditRequestManagerParams, RequestManager } from './request-manager'
 import { shrinkPredictionUntilSuffix } from './shrink-prediction'
 import { SmartThrottleService } from './smart-throttle'
-import { areSameUriDocs, isPredictedTextAlreadyInSuffix } from './utils'
+import { areSameUriDocs, isDuplicatingTextFromRewriteArea } from './utils'
 
 const AUTOEDIT_CONTEXT_STRATEGY = 'auto-edit'
 const RESET_SUGGESTION_ON_CURSOR_CHANGE_AFTER_INTERVAL_MS = 60 * 1000
@@ -547,18 +548,17 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
             )
 
             if (
-                isPredictedTextAlreadyInSuffix({
-                    codeToRewrite: predictionCodeToReplaceData.codeToRewrite,
-                    decorationInfo,
-                    suffix:
-                        predictionCodeToReplaceData.suffixInArea +
-                        predictionCodeToReplaceData.suffixAfterArea,
+                isDuplicatingTextFromRewriteArea({
+                    addedText: getAddedLines(decorationInfo)
+                        .map(line => line.text)
+                        .join(getNewLineChar(predictionCodeToReplaceData.codeToRewrite)),
+                    codeToReplaceData: predictionCodeToReplaceData,
                 })
             ) {
                 this.discardSuggestion({
                     startedAt,
                     requestId,
-                    discardReason: 'suffixOverlap',
+                    discardReason: 'rewriteAreaOverlap',
                 })
                 return null
             }

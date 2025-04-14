@@ -111,7 +111,7 @@ export const autoeditDiscardReason = {
     emptyPrediction: 2,
     predictionEqualsCodeToRewrite: 3,
     recentEdits: 4,
-    suffixOverlap: 5,
+    rewriteAreaOverlap: 5,
     emptyPredictionAfterInlineCompletionExtraction: 6,
     noActiveEditor: 7,
     conflictingDecorationWithEdits: 8,

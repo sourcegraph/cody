@@ -22,8 +22,8 @@ export const HOT_STREAK_LINES_THRESHOLD = 5
 // Helper enum for code readability when handling slices
 enum SliceKind {
     Unchanged = 0,
-    Inserted = 1,
-    Deleted = -1,
+    Added = 1,
+    Removed = -1,
 }
 
 interface StableSuggestionParams {
@@ -38,6 +38,8 @@ interface StableSuggestion {
     suggestionText: string
     suggestionRange: vscode.Range
     firstLineChanged: number | null
+    addedLines: string[]
+    removedLines: string[]
 }
 
 /**
@@ -61,10 +63,15 @@ export function getStableSuggestion({
     })
     const predictionLines = shrinkedPrediction.split('\n')
 
+    // TODO (umpox): `calcSlices` is useful here as it splits the diff into change hunks.
+    // It would be preferable if this would use the exact same diff logic as `getDecorationInfo`.
+    // We should consider splitting the diff from `decorationInfo` and then supporting deriving the hunks from it for this usecase.
+    // Note: `calcSlices` is just a thin wrapper around the same `diff` function we use in `getDecorationInfo`.
+    // Code: https://github.com/gliese1337/fast-myers-diff/blob/7cc1419ca3e8453c0828d93921c23d875ebf622a/src/index.ts#L325-L336
     const slices = calcSlices(originalLines, predictionLines)
     const state = {
-        insertedLineCount: 0,
-        deletedLineCount: 0,
+        addedLines: [] as string[],
+        removedLines: [] as string[],
         diffLines: [] as string[],
         diffIncludesChange: false,
         firstLineChanged: null as number | null,
@@ -101,23 +108,23 @@ export function getStableSuggestion({
             state.firstLineChanged = range.start.line + state.diffLines.length
         }
 
-        if (kind === SliceKind.Deleted) {
+        if (kind === SliceKind.Removed) {
             // Deleted hunk.
             // Track the deleted line count, but do not add it to the diffLines
-            state.deletedLineCount += parts.length
+            state.removedLines.push(...parts)
             continue
         }
 
-        if (kind === SliceKind.Inserted) {
+        if (kind === SliceKind.Added) {
             // Inserted hunk.
             // Track the inserted line count and add it to the diffLines
-            state.insertedLineCount += parts.length
+            state.addedLines.push(...parts)
             state.diffLines.push(...parts)
         }
     }
 
     const suggestionText = state.diffLines.join('\n') + '\n'
-    const lineDelta = state.insertedLineCount - state.deletedLineCount
+    const lineDelta = state.addedLines.length - state.removedLines.length
     const suggestionRange = new vscode.Range(
         range.start,
         range.start.translate(state.diffLines.length - lineDelta)
@@ -134,6 +141,8 @@ export function getStableSuggestion({
         suggestionText,
         suggestionRange,
         firstLineChanged: state.firstLineChanged,
+        addedLines: state.addedLines,
+        removedLines: state.removedLines,
     }
 }
 
@@ -149,6 +158,8 @@ export interface GetHotStreakChunkParams {
 
 export interface HotStreakChunk {
     text: string
+    addedLines: string[]
+    deletedLines: string[]
     codeToReplaceData: CodeToReplaceData
     docContext: DocumentContext
     documentSnapshot: vscode.TextDocument
@@ -257,6 +268,8 @@ export function getHotStreakChunk({
 
     return {
         text: changeText,
+        addedLines: suggestion.addedLines,
+        deletedLines: suggestion.removedLines,
         codeToReplaceData: adjustedCodeToReplace,
         docContext: updatedDocContext,
         documentSnapshot,
