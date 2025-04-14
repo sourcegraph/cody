@@ -2,6 +2,7 @@ import { GuardrailsCheckStatus } from '@sourcegraph/cody-shared'
 import { clsx } from 'clsx'
 import { AlertTriangleIcon, CheckCircleIcon, FileIcon, LoaderIcon } from 'lucide-react'
 import type React from 'react'
+import type { MouseEventHandler } from 'react'
 import styles from '../chat/ChatMessageContent/ChatMessageContent.module.css'
 
 interface GuardrailsStatusProps {
@@ -10,6 +11,7 @@ interface GuardrailsStatusProps {
     filename?: string
     tooltip?: string
     className?: string
+    onSuccessAuxClick?: MouseEventHandler<Element>
 }
 
 /**
@@ -22,6 +24,7 @@ export const GuardrailsStatus: React.FC<GuardrailsStatusProps> = ({
     filename,
     tooltip,
     className,
+    onSuccessAuxClick,
 }) => {
     const containerClasses = clsx(
         'tw-flex tw-items-center tw-gap-1',
@@ -45,7 +48,7 @@ export const GuardrailsStatus: React.FC<GuardrailsStatusProps> = ({
                 </div>
             )}
             {status === GuardrailsCheckStatus.Success && (
-                <div className={styles.status} title={filename}>
+                <div className={styles.status} title={filename} onAuxClick={onSuccessAuxClick}>
                     <CheckCircleIcon
                         size={14}
                         className={clsx(

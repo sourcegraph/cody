@@ -237,12 +237,22 @@ export const GuardrailsApplicator: React.FC<GuardrailsApplicatorProps> = ({
         onRegenerate?.(code, language)
     }, [onRegenerate, code, language])
 
+    const onSuccessAuxClick = useCallback(
+        (event: React.MouseEvent<Element>) => {
+            if (event.shiftKey) {
+                handleRegenerate()
+            }
+        },
+        [handleRegenerate]
+    )
+
     const statusDisplay = (
         <GuardrailsStatus
             status={guardrailsResult.status}
             filename={fileName}
             tooltip={tooltip}
             className={styles.metadataContainer}
+            onSuccessAuxClick={onSuccessAuxClick}
         >
             {guardrailsResult.status === GuardrailsCheckStatus.Error && (
                 <button
