@@ -1,6 +1,5 @@
 import {
     MockServerTelemetryRecorderProvider,
-    NoOpTelemetryRecorderProvider,
     TelemetryRecorderProvider,
     clientCapabilities,
     resolvedConfig,
@@ -9,13 +8,15 @@ import {
     telemetryRecorderProvider,
     updateGlobalTelemetryInstances,
 } from '@sourcegraph/cody-shared'
-import { TimestampTelemetryProcessor } from '@sourcegraph/telemetry/dist/processors/timestamp'
 
 import type { Disposable } from 'vscode'
 import { logDebug } from '../output-channel-logger'
 import { localStorage } from './LocalStorageProvider'
 
 const debugLogLabel = 'telemetry-v2'
+export const ALLOWED_DEV_EVENTS: { feature: string; action: string }[] = [
+    { feature: 'cody.autoedit', action: 'feedback-submitted' },
+]
 
 /**
  * Initializes or configures new event-recording globals, which leverage the
@@ -31,11 +32,6 @@ export function createOrUpdateTelemetryRecorderProvider(
 ): Disposable {
     return subscriptionDisposable(
         resolvedConfig.subscribe(({ configuration, auth, clientState, isReinstall }) => {
-            // Add timestamp processor for realistic data in output for dev or no-op scenarios
-            const defaultNoOpProvider = new NoOpTelemetryRecorderProvider([
-                new TimestampTelemetryProcessor(),
-            ])
-
             const initialize = telemetryRecorderProvider === undefined
 
             /**
@@ -50,8 +46,18 @@ export function createOrUpdateTelemetryRecorderProvider(
                     })
                 )
             } else if (isExtensionModeDevOrTest) {
-                logDebug(debugLogLabel, 'using no-op exports')
-                updateGlobalTelemetryInstances(defaultNoOpProvider)
+                logDebug(
+                    debugLogLabel,
+                    'using telemetry recorder for dev mode (whitelisted events only)'
+                )
+                updateGlobalTelemetryInstances(
+                    new TelemetryRecorderProvider({
+                        configuration,
+                        auth,
+                        clientState,
+                        allowedEvents: ALLOWED_DEV_EVENTS,
+                    })
+                )
             } else {
                 updateGlobalTelemetryInstances(
                     new TelemetryRecorderProvider({ configuration, auth, clientState })
