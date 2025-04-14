@@ -70,17 +70,17 @@ export function getStableSuggestion({
     // Code: https://github.com/gliese1337/fast-myers-diff/blob/7cc1419ca3e8453c0828d93921c23d875ebf622a/src/index.ts#L325-L336
     const slices = calcSlices(originalLines, predictionLines)
     const state = {
+        predictionLines: [] as string[],
+        predictionIncludesChange: false,
         addedLines: [] as string[],
         removedLines: [] as string[],
-        diffLines: [] as string[],
-        diffIncludesChange: false,
         firstLineChanged: null as number | null,
         canSuggestDiff: false,
     }
 
     for (const [kind, parts] of slices) {
         if (kind === SliceKind.Unchanged) {
-            state.diffLines.push(...parts)
+            state.predictionLines.push(...parts)
 
             if (parts.every(part => part.length === 0)) {
                 // Empty unchanged hunk (e.g. an empty line)
@@ -89,8 +89,8 @@ export function getStableSuggestion({
             }
 
             const meetsLineThreshold =
-                response.type === 'success' || state.diffLines.length >= HOT_STREAK_LINES_THRESHOLD
-            if (state.diffIncludesChange && meetsLineThreshold) {
+                response.type === 'success' || state.predictionLines.length >= HOT_STREAK_LINES_THRESHOLD
+            if (state.predictionIncludesChange && meetsLineThreshold) {
                 state.canSuggestDiff = true
                 // We already have a change further up in the diff.
                 // As we have now reached an unchanged "stable" hunk, it means we can reliably
@@ -103,9 +103,9 @@ export function getStableSuggestion({
             continue
         }
 
-        state.diffIncludesChange = true
+        state.predictionIncludesChange = true
         if (!state.firstLineChanged) {
-            state.firstLineChanged = range.start.line + state.diffLines.length
+            state.firstLineChanged = range.start.line + state.predictionLines.length
         }
 
         if (kind === SliceKind.Removed) {
@@ -119,15 +119,23 @@ export function getStableSuggestion({
             // Inserted hunk.
             // Track the inserted line count and add it to the diffLines
             state.addedLines.push(...parts)
-            state.diffLines.push(...parts)
+            state.predictionLines.push(...parts)
         }
     }
 
-    const suggestionText = state.diffLines.join('\n') + '\n'
-    const lineDelta = state.addedLines.length - state.removedLines.length
+    // We always expect that a prediction ends with a new line, if the prediction we derived from the diff
+    // does not end with a new line, we add one.
+    const suggestionText =
+        state.predictionLines.at(-1) === ''
+            ? state.predictionLines.join('\n')
+            : state.predictionLines.join('\n') + '\n'
+    const linesAffected = suggestionText.split('\n').length - 1
+    const linesAdded = state.addedLines.length - 1
+    const linesRemoved = state.removedLines.length - 1
+    const lineDelta = linesAdded - linesRemoved
     const suggestionRange = new vscode.Range(
         range.start,
-        range.start.translate(state.diffLines.length - lineDelta)
+        range.start.translate(linesAffected - lineDelta)
     )
 
     // If we have finished the response we always want to emit this response,
@@ -198,10 +206,7 @@ export function getHotStreakChunk({
     const predictionLines = lines(remainingPrediction).length - 1
     const expectedDiffRange = new vscode.Range(
         codeToReplaceData.range.start.translate(processedLines),
-        new vscode.Position(
-            codeToReplaceData.range.start.line + processedLines + predictionLines - 1,
-            Number.MAX_SAFE_INTEGER
-        )
+        codeToReplaceData.range.start.translate(processedLines + predictionLines)
     )
 
     const suggestion = getStableSuggestion({

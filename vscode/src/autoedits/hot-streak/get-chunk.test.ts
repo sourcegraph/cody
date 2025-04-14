@@ -204,7 +204,6 @@ describe('getHotStreakChunk', () => {
               if (target === 0) {
                   return true
               }
-
           "
         `)
         expect(result.codeToReplaceData.codeToRewrite).toMatchInlineSnapshot(`
@@ -213,7 +212,6 @@ describe('getHotStreakChunk', () => {
               if (numberToChange === 0) {
                   return true
               }
-
           "
         `)
     })
@@ -403,7 +401,6 @@ describe('getHotStreakChunk', () => {
               // Log a message
               console.log(message)
           }
-
           "
         `)
         expect(result.codeToReplaceData.codeToRewrite).toMatchInlineSnapshot(`
