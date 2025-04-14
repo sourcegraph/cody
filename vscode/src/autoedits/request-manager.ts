@@ -2,22 +2,19 @@ import { LRUCache } from 'lru-cache'
 import * as uuid from 'uuid'
 import type * as vscode from 'vscode'
 
-import type {
-    AbortedPredictionResult,
-    IgnoredPredictionResult,
-    PredictionResult,
-    SuggestedPredictionResult,
-} from './autoedits-provider'
+import type { PredictionResult, SuggestedPredictionResult } from './autoedits-provider'
 
 import type { DocumentContext } from '@sourcegraph/cody-shared'
 import { forkSignal } from '../completions/utils'
 import { AutoeditStopReason } from './adapters/base'
-import type { AutoeditCacheID, AutoeditHotStreakID } from './analytics-logger'
-import { autoeditSource } from './analytics-logger'
+import type { AutoeditCacheID, AutoeditHotStreakID, AutoeditRequestID } from './analytics-logger'
+import { autoeditAnalyticsLogger, autoeditSource } from './analytics-logger'
+import type { processHotStreakResponses } from './hot-streak'
 import type { CodeToReplaceData } from './prompt/prompt-utils'
 import { isNotRecyclable, isRequestNotRelevant } from './request-recycling'
 
 export interface AutoeditRequestManagerParams {
+    requestId: AutoeditRequestID
     requestUrl: string
     documentUri: string
     documentText: string
@@ -49,15 +46,7 @@ export class RequestManager implements vscode.Disposable {
      */
     public async request(
         params: AutoeditRequestManagerParams,
-        makeRequest: (
-            abortSignal: AbortSignal
-        ) => Promise<
-            AsyncGenerator<
-                | Omit<SuggestedPredictionResult, 'cacheId'>
-                | IgnoredPredictionResult
-                | AbortedPredictionResult
-            >
-        >
+        makeRequest: (abortSignal: AbortSignal) => Promise<ReturnType<typeof processHotStreakResponses>>
     ): Promise<PredictionResult> {
         // 1. First check the cache for exact matches
         const cachedResponse = this.checkCache(params)
@@ -108,15 +97,7 @@ export class RequestManager implements vscode.Disposable {
 
     private async processRequestInBackground(
         request: InflightRequest,
-        makeRequest: (
-            abortSignal: AbortSignal
-        ) => Promise<
-            AsyncGenerator<
-                | Omit<SuggestedPredictionResult, 'cacheId'>
-                | IgnoredPredictionResult
-                | AbortedPredictionResult
-            >
-        >,
+        makeRequest: (abortSignal: AbortSignal) => Promise<ReturnType<typeof processHotStreakResponses>>,
         params: AutoeditRequestManagerParams
     ): Promise<void> {
         try {
@@ -149,6 +130,19 @@ export class RequestManager implements vscode.Disposable {
                         ...resolvedResult,
                         response: { ...resolvedResult.response, source: autoeditSource.cache },
                     })
+
+                    if (resolvedResult.hotStreakId) {
+                        // For autoedit debug panel
+                        autoeditAnalyticsLogger.recordHotStreakLoaded({
+                            requestId: request.params.requestId,
+                            hotStreakId: resolvedResult.hotStreakId,
+                            chunk: {
+                                prediction: resolvedResult.response.prediction,
+                                modelResponse: resolvedResult.response,
+                                fullPrediction: resolvedResult.fullPrediction,
+                            },
+                        })
+                    }
                 }
 
                 // A promise will never resolve more than once, so we don't need

@@ -424,6 +424,7 @@ function createRequestParams(
     })
 
     return {
+        requestId: 'test-request-id' as any,
         documentUri: document.uri.toString(),
         documentText: document.getText(),
         documentVersion,

@@ -102,6 +102,8 @@ export async function* getFireworksModelResponse({
                             type: 'partial',
                             stopReason: AutoeditStopReason.StreamingChunk,
                             prediction: state.prediction,
+                            responseHeaders,
+                            responseBody: state.responseBody,
                         }
                     }
                 } catch (parseError) {

@@ -438,6 +438,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                 'Calculating prediction from getPrediction...'
             )
             const predictionResult = await this.getPrediction({
+                requestId,
                 document,
                 position,
                 prompt,
@@ -797,13 +798,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
         docContext: DocumentContext
         prompt: AutoeditsPrompt
         abortSignal: AbortSignal
-    }): Promise<
-        AsyncGenerator<
-            | Omit<SuggestedPredictionResult, 'cacheId'>
-            | IgnoredPredictionResult
-            | AbortedPredictionResult
-        >
-    > {
+    }): Promise<ReturnType<typeof processHotStreakResponses>> {
         const userId = (await currentResolvedConfig()).clientState.anonymousUserID
         const responseGenerator = await this.modelAdapter.getModelResponse({
             url: autoeditsProviderConfig.url,
@@ -829,6 +824,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
     }
 
     private async getPrediction({
+        requestId,
         document,
         position,
         codeToReplaceData,
@@ -836,6 +832,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
         prompt,
         abortSignal,
     }: {
+        requestId: AutoeditRequestID
         document: vscode.TextDocument
         position: vscode.Position
         codeToReplaceData: CodeToReplaceData
@@ -844,6 +841,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
         abortSignal: AbortSignal
     }): Promise<PredictionResult> {
         const requestParams: AutoeditRequestManagerParams = {
+            requestId,
             requestUrl: autoeditsProviderConfig.url,
             documentUri: document.uri.toString(),
             documentText: document.getText(),
@@ -868,7 +866,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
 
                 if (prediction) {
                     const responseGenerator = createMockResponseGenerator(prediction)
-                    return this.requestManager.request(requestParams, async () => {
+                    return this.requestManager.request(requestParams, async signal => {
                         return processHotStreakResponses({
                             responseGenerator,
                             document,

@@ -1,7 +1,7 @@
 import type { CodeToReplaceData, DocumentContext } from '@sourcegraph/cody-shared'
 import * as uui from 'uuid'
 
-import type * as vscode from 'vscode'
+import * as vscode from 'vscode'
 
 import { AutoeditStopReason, type ModelResponse } from '../adapters/base'
 import type { AutoeditHotStreakID } from '../analytics-logger'
@@ -38,7 +38,10 @@ export async function* processHotStreakResponses({
     position,
     options,
 }: ProcessHotStreakResponsesParams): AsyncGenerator<
-    Omit<SuggestedPredictionResult, 'cacheId'> | IgnoredPredictionResult | AbortedPredictionResult
+    (Omit<SuggestedPredictionResult, 'cacheId'> | IgnoredPredictionResult | AbortedPredictionResult) & {
+        /** For autoedit debug panel */
+        fullPrediction?: string
+    }
 > {
     let processedPrediction = ''
     let hotStreakId = null
@@ -110,11 +113,13 @@ export async function* processHotStreakResponses({
                 uri: predictionChunk.documentSnapshot.uri.toString(),
                 // We use the first line of the diff as the next cursor position.
                 // This is useful so that we can support "jumping" to this suggestion from a different part of the document
-                editPosition: predictionChunk.documentSnapshot.lineAt(predictionChunk.firstLineChanged)
-                    .range.end,
+                editPosition: predictionChunk.documentSnapshot.validatePosition(
+                    new vscode.Position(predictionChunk.firstLineChanged, Number.MAX_SAFE_INTEGER)
+                ),
                 docContext: predictionChunk.docContext,
                 codeToReplaceData: predictionChunk.codeToReplaceData,
                 hotStreakId,
+                fullPrediction: response.prediction,
             }
             continue
         }
@@ -154,7 +159,10 @@ export async function* processHotStreakResponses({
             // This is so this can still be used as a "next cursor" prediction source for a scenario where we have
             // a long rewrite window but the only change is at the bottom, far away from the users' cursor.
             // In these scenarios we should show a next cursor suggestion instead of the code suggestion.
-            editPosition: document.lineAt(suggestion.firstLineChanged).range.end,
+            editPosition: document.validatePosition(
+                new vscode.Position(suggestion.firstLineChanged, Number.MAX_SAFE_INTEGER)
+            ),
+            fullPrediction: response.prediction,
         }
     }
 }

@@ -239,6 +239,13 @@ export interface ContextLoadedState extends Omit<StartedState, 'phase' | 'payloa
     }
 }
 
+export interface HotStreakChunk {
+    prediction: string
+    loadedAt: number
+    modelResponse: ModelResponse
+    fullPrediction?: string
+}
+
 export interface LoadedState extends Omit<ContextLoadedState, 'phase' | 'payload'> {
     phase: 'loaded'
     /** Timestamp when the suggestion completed generation/loading. */
@@ -247,6 +254,7 @@ export interface LoadedState extends Omit<ContextLoadedState, 'phase' | 'payload
     modelResponse: ModelResponse
     cacheId: AutoeditCacheID
     hotStreakId?: AutoeditHotStreakID
+    hotStreakChunks?: HotStreakChunk[]
     editPosition: vscode.Position
     payload: ContextLoadedState['payload'] & {
         /**
