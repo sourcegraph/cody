@@ -40,7 +40,7 @@ export class FireworksAdapter implements AutoeditsModelAdapter {
                             return response.choices?.[0]?.text ?? ''
                         },
                     }),
-                    option.timeoutMs,
+                    10000,
                     abortController
                 ),
                 error => {
