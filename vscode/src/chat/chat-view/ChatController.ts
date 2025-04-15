@@ -80,6 +80,7 @@ import * as vscode from 'vscode'
 
 import { type Span, context } from '@opentelemetry/api'
 import { captureException } from '@sentry/core'
+import { ChatHistoryType } from '@sourcegraph/cody-shared/src/chat/transcript'
 import type { SubMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { resolveAuth } from '@sourcegraph/cody-shared/src/configuration/auth-resolver'
 import type { McpServer } from '@sourcegraph/cody-shared/src/llm-providers/mcp/types'
@@ -1749,8 +1750,10 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     authStatus: () => authStatus,
                     transcript: () =>
                         this.chatBuilder.changes.pipe(map(chat => chat.getDehydratedMessages())),
-                    userHistory: fullHistory =>
-                        fullHistory ? chatHistory.changes : chatHistory.lightweightChanges,
+                    userHistory: type =>
+                        type === ChatHistoryType.Full
+                            ? chatHistory.changes
+                            : chatHistory.lightweightChanges,
                     userProductSubscription: () =>
                         userProductSubscription.pipe(
                             map(value => (value === pendingOperation ? null : value))

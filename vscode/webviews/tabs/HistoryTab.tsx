@@ -13,9 +13,10 @@ import { getVSCodeAPI } from '../utils/VSCodeApi'
 import { View } from './types'
 import { getCreateNewChatCommand } from './utils'
 
-import type {
-    LightweightChatHistory,
-    LightweightChatTranscript,
+import {
+    ChatHistoryType,
+    type LightweightChatHistory,
+    type LightweightChatTranscript,
 } from '@sourcegraph/cody-shared/src/chat/transcript'
 import styles from './HistoryTab.module.css'
 
@@ -201,8 +202,8 @@ export const HistoryTabWithData: React.FC<HistoryTabProps & { chats: Lightweight
 }
 
 function useUserHistory(
-    getFullHistory = false
+    type = ChatHistoryType.Lightweight
 ): LightweightChatHistory | UserLocalHistory | null | undefined {
     const userHistory = useExtensionAPI().userHistory
-    return useObservable(useMemo(() => userHistory(getFullHistory), [userHistory, getFullHistory])).value
+    return useObservable(useMemo(() => userHistory(type), [userHistory, type])).value
 }
