@@ -27,7 +27,7 @@ export async function beforeIntegrationTest(): Promise<void> {
     }
     if (!isAuthenticated()) {
         // Try waiting a bit longer.
-        await new Promise(resolve => setTimeout(resolve, 1000))
+        await new Promise(resolve => setTimeout(resolve, 2500))
         if (!isAuthenticated()) {
             throw new Error(
                 `Failed to authenticate for integration test (auth status is ${JSON.stringify(

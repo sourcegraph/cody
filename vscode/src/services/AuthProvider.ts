@@ -170,10 +170,13 @@ class AuthProvider implements vscode.Disposable {
 
         // Keep context updated with auth status.
         this.subscriptions.push(
-            authStatus.subscribe(authStatus => {
+            authStatus.subscribe(async authStatus => {
                 try {
                     this.lastEndpoint = authStatus.endpoint
-                    vscode.commands.executeCommand('authStatus.update', authStatus)
+                    // if has command:
+                    if ((await vscode.commands.getCommands(true)).includes('authStatus.update')) {
+                        vscode.commands.executeCommand('authStatus.update', authStatus)
+                    }
                     vscode.commands.executeCommand(
                         'setContext',
                         'cody.activated',

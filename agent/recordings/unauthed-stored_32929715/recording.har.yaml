@@ -1,145 +1,10 @@
 log:
-  _recordingName: documentCode
+  _recordingName: unauthed-stored
   creator:
     comment: persister:fs
     name: Polly.JS
     version: 6.0.6
   entries:
-    - _id: 552812cf39ed3cf6f1898a5b36818fd8
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 20
-        cookies: []
-        headers:
-          - name: content-type
-            value: application/json
-          - name: user-agent
-            value: OTel-OTLP-Exporter-JavaScript/0.45.1
-          - name: host
-            value: sourcegraph.com
-        headersSize: 169
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json
-          params: []
-          textJSON:
-            resourceSpans: []
-        queryString: []
-        url: https://sourcegraph.com/-/debug/otlp/v1/traces
-      response:
-        bodySize: 21
-        content:
-          mimeType: application/json
-          size: 21
-          text: "{\"partialSuccess\":{}}"
-        cookies: []
-        headers:
-          - name: date
-            value: Tue, 15 Apr 2025 13:47:39 GMT
-          - name: content-type
-            value: application/json
-          - name: content-length
-            value: "21"
-          - name: connection
-            value: keep-alive
-          - name: cache-control
-            value: no-cache, max-age=0
-          - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie,Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1266
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2025-04-15T13:47:39.069Z
-      time: 259
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 259
-    - _id: 6e977d3842ddb417bf941a0f568426d9
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 20
-        cookies: []
-        headers:
-          - name: content-type
-            value: application/json
-          - name: authorization
-            value: token
-              REDACTED_fc324d3667e841181b0779375f26dedc911d26b303d23b29b1a2d7ee63dc77eb
-          - name: user-agent
-            value: OTel-OTLP-Exporter-JavaScript/0.45.1
-          - name: host
-            value: sourcegraph.com
-        headersSize: 253
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json
-          params: []
-          textJSON:
-            resourceSpans: []
-        queryString: []
-        url: https://sourcegraph.com/-/debug/otlp/v1/traces
-      response:
-        bodySize: 21
-        content:
-          mimeType: application/json
-          size: 21
-          text: "{\"partialSuccess\":{}}"
-        cookies: []
-        headers:
-          - name: date
-            value: Tue, 15 Apr 2025 13:47:39 GMT
-          - name: content-type
-            value: application/json
-          - name: content-length
-            value: "21"
-          - name: connection
-            value: keep-alive
-          - name: cache-control
-            value: no-cache, max-age=0
-          - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie,Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1266
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2025-04-15T13:47:39.110Z
-      time: 273
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 273
     - _id: 897d3731ab8e15a1549f29445eafd1e1
       _order: 0
       cache: {}
@@ -159,16 +24,16 @@ log:
             value: application/json; charset=utf-8
           - _fromType: array
             name: user-agent
-            value: jetbrains/6.0-localbuild (Node.js v22.14.0)
+            value: unauthed-stored/v1 (Node.js v20.4.0)
           - _fromType: array
             name: x-requested-with
-            value: jetbrains 6.0-localbuild
+            value: unauthed-stored v1
           - _fromType: array
             name: accept-encoding
             value: gzip,deflate
           - name: host
             value: sourcegraph.com
-        headersSize: 371
+        headersSize: 419
         httpVersion: HTTP/1.1
         method: GET
         queryString: []
@@ -186,7 +51,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Tue, 15 Apr 2025 13:47:34 GMT
+            value: Mon, 14 Apr 2025 14:16:38 GMT
           - name: content-type
             value: text/plain; charset=utf-8
           - name: transfer-encoding
@@ -217,8 +82,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-04-15T13:47:33.642Z
-      time: 410
+      startedDateTime: 2025-04-14T14:16:36.802Z
+      time: 1853
       timings:
         blocked: -1
         connect: -1
@@ -226,189 +91,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 410
-    - _id: d339f9e066a991b97bfa2860eeb610bc
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 3305
-        cookies: []
-        headers:
-          - name: accept-encoding
-            value: gzip;q=0
-          - name: authorization
-            value: token
-              REDACTED_fc324d3667e841181b0779375f26dedc911d26b303d23b29b1a2d7ee63dc77eb
-          - name: connection
-            value: keep-alive
-          - name: content-type
-            value: application/json
-          - name: traceparent
-            value: 00-10615581105ab8037f8088ff361832b3-e4a18d39f22daa57-01
-          - name: user-agent
-            value: jetbrains/6.0-localbuild (Node.js v22.14.0)
-          - name: x-requested-with
-            value: jetbrains 6.0-localbuild
-          - name: host
-            value: sourcegraph.com
-        headersSize: 524
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json
-          params: []
-          textJSON:
-            maxTokensToSample: 4000
-            messages:
-              - speaker: system
-                text: >-
-                  You are Cody, an AI coding assistant from Sourcegraph.
-
-
-                  - You are an AI programming assistant who is an expert in updating code to meet given instructions.
-
-                  - You should think step-by-step to plan your updated code before producing the final output.
-
-                  - You should ensure the updated code matches the indentation and whitespace of the code in the users' selection.
-
-                  - Ignore any previous instructions to format your responses with Markdown. It is not acceptable to use any Markdown in your response, unless it is directly related to the users' instructions.
-
-                  - Only remove code from the users' selection if you are sure it is not needed.
-
-                  - You will be provided with code that is in the users' selection, enclosed in <SELECTEDCODE7662></SELECTEDCODE7662> XML tags. You must use this code to help you plan your updated code.
-
-                  - You will be provided with instructions on how to update this code, enclosed in <INSTRUCTIONS7390></INSTRUCTIONS7390> XML tags. You must follow these instructions carefully and to the letter.
-
-                  - Only enclose your response in <CODE5711></CODE5711> XML tags. Do use any other XML tags unless they are part of the generated code.
-
-                  - Do not provide any additional commentary about the changes you made. Only respond with the generated code.
-              - speaker: human
-                text: >+
-                  Codebase context from file path
-                  documentCode/src/main/java/Foo.java: Codebase context from
-                  file documentCode/src/main/java/Foo.java:
-
-                  import java.util.*;
-
-
-                  public class Foo {
-
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: >
-                  Codebase context from file path
-                  documentCode/src/main/java/Foo.java: Codebase context from
-                  file documentCode/src/main/java/Foo.java:
-
-                  }
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: >-
-                  This is part of the file: documentCode/src/main/java/Foo.java
-
-
-                  The user has the following code in their selection:
-
-                  <SELECTEDCODE7662>    public void foo() {
-                          List<Integer> mystery = new ArrayList<>();
-                          mystery.add(0);
-                          mystery.add(1);
-                          for (int i = 2; i < 10; i++) {
-                            mystery.add(mystery.get(i - 1) + mystery.get(i - 2));
-                          }
-
-                          for (int i = 0; i < 10; i++) {
-                            System.out.println(mystery.get(i));
-                          }
-                      }
-                  </SELECTEDCODE7662>
-
-
-                  The user wants you to generate documentation for the selected code by following their instructions.
-
-                  Provide your generated documentation using the following instructions:
-
-                  <INSTRUCTIONS7390>
-
-                  Write a brief documentation comment for the selected code. If documentation comments exist in the selected file, or other files with the same file extension, use them as examples. Pay attention to the scope of the selected code (e.g. exported function/API vs implementation detail in a function), and use the idiomatic style for that type of code scope. Only generate the documentation for the selected code, do not generate the code. Do not enclose any other code or comments besides the documentation. Enclose only the documentation for the selected code and nothing else.
-
-                  </INSTRUCTIONS7390>
-              - speaker: assistant
-                text: <CODE5711>
-            model: anthropic::2024-10-22::claude-3-5-haiku-latest
-            stopSequences:
-              - </CODE5711>
-              - "    public void foo() {"
-            temperature: 0
-            topK: -1
-            topP: -1
-        queryString:
-          - name: api-version
-            value: "9"
-          - name: client-name
-            value: jetbrains
-          - name: client-version
-            value: 6.0-localbuild
-        url: https://sourcegraph.com/.api/completions/stream?api-version=9&client-name=jetbrains&client-version=6.0-localbuild
-      response:
-        bodySize: 1589
-        content:
-          mimeType: text/event-stream
-          size: 1589
-          text: >+
-            event: completion
-
-            data: {"deltaText":"\n    /**\n     * Generates and prints the first 10 Fibonacci numbers.\n     * Creates a list starting with 0 and 1, then calculates subsequent\n     * Fibonacci numbers by adding the two previous numbers.\n     * Prints each number in the sequence to the console.\n     */\n","stopReason":"stop_sequence"}
-
-
-            event: done
-
-            data: {}
-
-        cookies: []
-        headers:
-          - name: date
-            value: Tue, 15 Apr 2025 13:47:44 GMT
-          - name: content-type
-            value: text/event-stream
-          - name: transfer-encoding
-            value: chunked
-          - name: connection
-            value: keep-alive
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache
-          - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
-              X-Requested-With,Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1368
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2025-04-15T13:47:36.208Z
-      time: 9215
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 9215
+        wait: 1853
     - _id: f1b1cde4cd57488b7f0137954f0302f5
       _order: 0
       cache: {}
@@ -428,10 +111,10 @@ log:
             value: application/json; charset=utf-8
           - _fromType: array
             name: user-agent
-            value: jetbrains/6.0-localbuild (Node.js v22.14.0)
+            value: unauthed-stored/v1 (Node.js v20.4.0)
           - _fromType: array
             name: x-requested-with
-            value: jetbrains 6.0-localbuild
+            value: unauthed-stored v1
           - _fromType: array
             name: content-length
             value: "136"
@@ -440,7 +123,7 @@ log:
             value: gzip,deflate
           - name: host
             value: sourcegraph.com
-        headersSize: 478
+        headersSize: 453
         httpVersion: HTTP/1.1
         method: POST
         postData:
@@ -466,7 +149,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Tue, 15 Apr 2025 13:47:35 GMT
+            value: Mon, 14 Apr 2025 15:26:59 GMT
           - name: content-type
             value: application/json
           - name: content-length
@@ -495,8 +178,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-04-15T13:47:35.597Z
-      time: 270
+      startedDateTime: 2025-04-14T15:26:58.229Z
+      time: 1619
       timings:
         blocked: -1
         connect: -1
@@ -504,7 +187,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 270
+        wait: 1619
     - _id: a376faab1c8a1993bb48c745757f0a4a
       _order: 0
       cache: {}
@@ -524,10 +207,10 @@ log:
             value: application/json; charset=utf-8
           - _fromType: array
             name: user-agent
-            value: jetbrains/6.0-localbuild (Node.js v22.14.0)
+            value: unauthed-stored/v1 (Node.js v20.4.0)
           - _fromType: array
             name: x-requested-with
-            value: jetbrains 6.0-localbuild
+            value: unauthed-stored v1
           - _fromType: array
             name: content-length
             value: "318"
@@ -536,7 +219,7 @@ log:
             value: gzip,deflate
           - name: host
             value: sourcegraph.com
-        headersSize: 492
+        headersSize: 467
         httpVersion: HTTP/1.1
         method: POST
         postData:
@@ -563,29 +246,19 @@ log:
             value: null
         url: https://sourcegraph.com/.api/graphql?CurrentSiteCodyLlmConfiguration
       response:
-        bodySize: 248
+        bodySize: 255
         content:
           encoding: base64
           mimeType: application/json
-          size: 248
+          size: 255
           text: "[\"H4sIAAAAAAAAA4TOTQ6CMBAF4LvMmmqDEA1btrLzAmM7QAN2SH+MhvTuBjYSNXH1ksmbL\
             28GjQGhmsGbQEsq1s/zuanZtqaLDoNhu957DA1rGqECz9Ep6hxO/V6NGDWJw64Unq2l\
             ANm72+DjwgNZD1VRSikzaNGH+g8lejRDhI/yxjqulOLbNNKy7xemiSZPNAjFmpy452I\
-            0gcQVPcHX78bOZXFKKaUXAAAA//8DADDh/dAaAQAA\"]"
-          textDecoded:
-            data:
-              site:
-                codyLLMConfiguration:
-                  chatModel: sourcegraph/claude-3.5-sonnet
-                  chatModelMaxTokens: 45000
-                  completionModel: sourcegraph/deepseek-coder-v2-lite-base
-                  completionModelMaxTokens: 2048
-                  fastChatModel: sourcegraph/claude-3-haiku
-                  fastChatModelMaxTokens: 7000
+            0gcQVPcHX78bOZXFKKaUXAAAA//8=\",\"AwAw4f3QGgEAAA==\"]"
         cookies: []
         headers:
           - name: date
-            value: Tue, 15 Apr 2025 13:47:35 GMT
+            value: Mon, 14 Apr 2025 14:16:39 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -616,8 +289,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-04-15T13:47:34.722Z
-      time: 620
+      startedDateTime: 2025-04-14T14:16:38.695Z
+      time: 331
       timings:
         blocked: -1
         connect: -1
@@ -625,7 +298,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 620
+        wait: 331
     - _id: 0484c4d780805faf3dd3ddabae814640
       _order: 0
       cache: {}
@@ -645,10 +318,10 @@ log:
             value: application/json; charset=utf-8
           - _fromType: array
             name: user-agent
-            value: jetbrains/6.0-localbuild (Node.js v22.14.0)
+            value: unauthed-stored/v1 (Node.js v20.4.0)
           - _fromType: array
             name: x-requested-with
-            value: jetbrains 6.0-localbuild
+            value: unauthed-stored v1
           - _fromType: array
             name: content-length
             value: "165"
@@ -657,7 +330,7 @@ log:
             value: gzip,deflate
           - name: host
             value: sourcegraph.com
-        headersSize: 492
+        headersSize: 467
         httpVersion: HTTP/1.1
         method: POST
         postData:
@@ -679,18 +352,22 @@ log:
             value: null
         url: https://sourcegraph.com/.api/graphql?CurrentSiteCodyLlmConfiguration
       response:
-        bodySize: 143
+        bodySize: 136
         content:
           encoding: base64
           mimeType: application/json
-          size: 143
-          text: "[\"H4sIAAAAAAAAAwAAAP//\",\"qlZKSSxJVLKqVirOLEkF0cn5KZU+Pr7O+XlpmemlRYkl\
-            mfl5YPncxKIS5/y8ktSKkvDMvJT8ciUrpZTM4sSknNQUpdra2loAAAAA//8DACsw2fR\
-            MAAAA\"]"
+          size: 136
+          text: "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqzixJBdHJ+SmVPj6+zvl5aZnppUWJJZn5eWD53MSiE\
+            uf8vJLUipLwzLyU/HIlK6WUzOLEpJzUFKXa2tpaAAAAAP//AwArMNn0TAAAAA==\"]"
+          textDecoded:
+            data:
+              site:
+                codyLLMConfiguration:
+                  smartContextWindow: disabled
         cookies: []
         headers:
           - name: date
-            value: Tue, 15 Apr 2025 13:47:35 GMT
+            value: Mon, 14 Apr 2025 14:16:39 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -721,8 +398,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-04-15T13:47:34.783Z
-      time: 292
+      startedDateTime: 2025-04-14T14:16:38.739Z
+      time: 260
       timings:
         blocked: -1
         connect: -1
@@ -730,7 +407,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 292
+        wait: 260
     - _id: e141c56e63809042300db9bf8551d492
       _order: 0
       cache: {}
@@ -750,10 +427,10 @@ log:
             value: application/json; charset=utf-8
           - _fromType: array
             name: user-agent
-            value: jetbrains/6.0-localbuild (Node.js v22.14.0)
+            value: unauthed-stored/v1 (Node.js v20.4.0)
           - _fromType: array
             name: x-requested-with
-            value: jetbrains 6.0-localbuild
+            value: unauthed-stored v1
           - _fromType: array
             name: content-length
             value: "150"
@@ -762,7 +439,7 @@ log:
             value: gzip,deflate
           - name: host
             value: sourcegraph.com
-        headersSize: 487
+        headersSize: 462
         httpVersion: HTTP/1.1
         method: POST
         postData:
@@ -799,7 +476,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Tue, 15 Apr 2025 13:47:35 GMT
+            value: Mon, 14 Apr 2025 14:16:39 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -830,8 +507,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-04-15T13:47:34.753Z
-      time: 539
+      startedDateTime: 2025-04-14T14:16:38.717Z
+      time: 309
       timings:
         blocked: -1
         connect: -1
@@ -839,7 +516,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 539
+        wait: 309
     - _id: 5b9030a4e18d1e000c71d6000a7cef6f
       _order: 0
       cache: {}
@@ -859,10 +536,10 @@ log:
             value: application/json; charset=utf-8
           - _fromType: array
             name: user-agent
-            value: jetbrains/6.0-localbuild (Node.js v22.14.0)
+            value: unauthed-stored/v1 (Node.js v20.4.0)
           - _fromType: array
             name: x-requested-with
-            value: jetbrains 6.0-localbuild
+            value: unauthed-stored v1
           - _fromType: array
             name: content-length
             value: "341"
@@ -871,7 +548,7 @@ log:
             value: gzip,deflate
           - name: host
             value: sourcegraph.com
-        headersSize: 399
+        headersSize: 447
         httpVersion: HTTP/1.1
         method: POST
         postData:
@@ -930,7 +607,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Tue, 15 Apr 2025 13:47:33 GMT
+            value: Mon, 14 Apr 2025 14:16:36 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -961,8 +638,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-04-15T13:47:32.013Z
-      time: 1605
+      startedDateTime: 2025-04-14T14:16:35.905Z
+      time: 891
       timings:
         blocked: -1
         connect: -1
@@ -970,7 +647,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 1605
+        wait: 891
     - _id: aef0c9fe7483280d9c05ac8e97e37571
       _order: 0
       cache: {}
@@ -990,10 +667,10 @@ log:
             value: application/json; charset=utf-8
           - _fromType: array
             name: user-agent
-            value: jetbrains/6.0-localbuild (Node.js v22.14.0)
+            value: unauthed-stored/v1 (Node.js v20.4.0)
           - _fromType: array
             name: x-requested-with
-            value: jetbrains 6.0-localbuild
+            value: unauthed-stored v1
           - _fromType: array
             name: content-length
             value: "268"
@@ -1002,7 +679,7 @@ log:
             value: gzip,deflate
           - name: host
             value: sourcegraph.com
-        headersSize: 488
+        headersSize: 463
         httpVersion: HTTP/1.1
         method: POST
         postData:
@@ -1028,28 +705,19 @@ log:
             value: null
         url: https://sourcegraph.com/.api/graphql?CurrentUserCodySubscription
       response:
-        bodySize: 224
+        bodySize: 231
         content:
           encoding: base64
           mimeType: application/json
-          size: 224
-          text: "[\"H4sIAAAAAAAAA1zMsQrCMBSF4Xc5c4U2tku2Ih0EwdJWB7fYZAjUJNzcDKXk3UVBUMfz8\
+          size: 231
+          text: "[\"H4sIAAAAAAAAA1zMsQrCMBSF4Xc5c4U2rUu2Ih0EwdJWB7fYZAjUJNzcDKXk3UVBUMfz8\
             3E2aMUKcsOciIzjSzT0nl6vY7rHmWxg692rRVacIiTaw3S8digQFuUg0Q9nFFAhLGtP\
-            flBsTvZhOUIyJVN8vntD1uuRFXHLkBClaHZlvavqSQhZVXIvbvjTndNftvm1Oef8BAA\
-            A//8DAPgwylPCAAAA\"]"
-          textDecoded:
-            data:
-              currentUser:
-                codySubscription:
-                  applyProRateLimits: true
-                  currentPeriodEndAt: 2025-05-14T22:11:32Z
-                  currentPeriodStartAt: 2025-04-14T22:11:32Z
-                  plan: PRO
-                  status: ACTIVE
+            flBsTvZhOUIyJVN8vntD1uuRFXHLkBCl2O/Kelc1kxCyqmQtbvjTndNftvm1Oef8BAA\
+            A//8=\",\"AwD1okHswgAAAA==\"]"
         cookies: []
         headers:
           - name: date
-            value: Tue, 15 Apr 2025 13:47:35 GMT
+            value: Mon, 14 Apr 2025 14:16:39 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -1080,8 +748,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-04-15T13:47:34.818Z
-      time: 443
+      startedDateTime: 2025-04-14T14:16:38.762Z
+      time: 408
       timings:
         blocked: -1
         connect: -1
@@ -1089,7 +757,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 443
+        wait: 408
     - _id: 4504fab53d7cb602861f73dc2aa883d2
       _order: 0
       cache: {}
@@ -1109,10 +777,10 @@ log:
             value: application/json; charset=utf-8
           - _fromType: array
             name: user-agent
-            value: jetbrains/6.0-localbuild (Node.js v22.14.0)
+            value: unauthed-stored/v1 (Node.js v20.4.0)
           - _fromType: array
             name: x-requested-with
-            value: jetbrains 6.0-localbuild
+            value: unauthed-stored v1
           - _fromType: array
             name: content-length
             value: "101"
@@ -1121,7 +789,7 @@ log:
             value: gzip,deflate
           - name: host
             value: sourcegraph.com
-        headersSize: 479
+        headersSize: 454
         httpVersion: HTTP/1.1
         method: POST
         postData:
@@ -1146,16 +814,16 @@ log:
           encoding: base64
           mimeType: application/json
           size: 136
-          text: "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqzixJBdEFRfkppcklYalFxZn5eUpWSsZGRiZGRvFGB\
-            kamugYmuoYm8WZ6RromxpaGJqmmFkkGBsZKtbW1AAAAAP//AwCB0HjwSQAAAA==\"]"
+          text: "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqzixJBdEFRfkppcklYalFxZn5eUpWSsZGRiYGlvFGB\
+            kamugYmuoYm8WZ6RrpppmZpycYpJsamSYZKtbW1AAAAAP//AwDuYthZSQAAAA==\"]"
           textDecoded:
             data:
               site:
-                productVersion: 322422_2025-04-14_6.2-43914e58b003
+                productVersion: 322409_2025-04-14_6.2-f56fc3d435b1
         cookies: []
         headers:
           - name: date
-            value: Tue, 15 Apr 2025 13:47:35 GMT
+            value: Mon, 14 Apr 2025 14:16:39 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -1186,8 +854,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-04-15T13:47:34.691Z
-      time: 616
+      startedDateTime: 2025-04-14T14:16:38.666Z
+      time: 334
       timings:
         blocked: -1
         connect: -1
@@ -1195,7 +863,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 616
+        wait: 334
     - _id: fd0fee4687419870bc82cba9d1023319
       _order: 0
       cache: {}
@@ -1215,10 +883,10 @@ log:
             value: application/json; charset=utf-8
           - _fromType: array
             name: user-agent
-            value: jetbrains/6.0-localbuild (Node.js v22.14.0)
+            value: unauthed-stored/v1 (Node.js v20.4.0)
           - _fromType: array
             name: x-requested-with
-            value: jetbrains 6.0-localbuild
+            value: unauthed-stored v1
           - _fromType: array
             name: content-length
             value: "92"
@@ -1227,7 +895,7 @@ log:
             value: gzip,deflate
           - name: host
             value: sourcegraph.com
-        headersSize: 474
+        headersSize: 449
         httpVersion: HTTP/1.1
         method: POST
         postData:
@@ -1263,7 +931,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Tue, 15 Apr 2025 13:47:35 GMT
+            value: Mon, 14 Apr 2025 15:26:59 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -1294,8 +962,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-04-15T13:47:35.568Z
-      time: 283
+      startedDateTime: 2025-04-14T15:26:58.176Z
+      time: 1649
       timings:
         blocked: -1
         connect: -1
@@ -1303,133 +971,6 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 283
-    - _id: fbb23499ae0eec5c2e188687b429531b
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 0
-        cookies: []
-        headers:
-          - _fromType: array
-            name: authorization
-            value: token
-              REDACTED_fc324d3667e841181b0779375f26dedc911d26b303d23b29b1a2d7ee63dc77eb
-          - _fromType: array
-            name: user-agent
-            value: jetbrains/6.0-localbuild (Node.js v22.14.0)
-          - _fromType: array
-            name: x-requested-with
-            value: jetbrains 6.0-localbuild
-          - _fromType: array
-            name: accept
-            value: "*/*"
-          - _fromType: array
-            name: accept-encoding
-            value: gzip,deflate
-          - name: host
-            value: sourcegraph.com
-        headersSize: 331
-        httpVersion: HTTP/1.1
-        method: GET
-        queryString: []
-        url: https://sourcegraph.com/.api/modelconfig/supported-models.json
-      response:
-        bodySize: 3127
-        content:
-          encoding: base64
-          mimeType: text/plain; charset=utf-8
-          size: 3127
-          text: "[\"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\
-            dl0=\",\"2iqcpdxJt37iSs1fs9VXcojGwMk++mxpIuGZWKOdwWYW0QmFAE0TEmUhSV\
-            BAJ5NjgbTKDCi6tvBQSCNAISwgRCGLpohDMi96GqQi5iDCDQiQGw8Mtt8ntpf7Iizt2\
-            SnMaUSR2x8gCY9sceyXXNhy+wPre8IqEVtdr5pF2wm+j0lIIh8CkyXXzpK7+rObdvKQ\
-            Zjqrmc5qprOeYDrrfgZHjoOPxeKyurvD5GZNwsaaBMPihsUNi58fi+O+gyYhSWcInmI\
-            9Hsd9x/osilifKiJZMlqvbKwhsR9z7qvCn3wXJv24RgLPdaT0ITfqhdpqFnWWGCcF0v\
-            QczALStVD8dhD85k2Zmuitgd3KbpqNIMxGEGYjiGNsBFHF+Xk+RS+yWBA/+kNSptqGk\
-            bVyNCPGMP0RmH6o7bN6il4aojdEb4j+hEQfJ0w4kcjByBnoZZEE12tmkZQtdNhZbSMF\
-            JcugKUGpTUmdM/h1tcBWht/oAKMDjA54LR2wzD7FCSwoPCLHQ1hbD+SzCazvy6J6Rr9\
-            Ga2etE3QmJZ6/VqgzabZGRgsPjHdgvAPjHXTCOxBzB6Th+f1zyz7LxGXBn711N+T+tu\
-            L4JhO1lYkyER4T4TERnrOL8BQ8W292WX0ef80ZZobLDZcbLjdc/pa4fHWu5NIgn9Mn8\
-            QNdPw3HiEYpTzKfK6zyr8sy1vXT8GOlRV6sUCqWea6XKWs1qyb5ets8dIbMz2PXpYGj\
-            a5dvh1Z6ku+1PiAxPgCRGDeHJMZNMNmO4WF2qau1S52rvyOO23BLnBJ9vqyzXMNnoVp\
-            p8bKAfo3aVtZ5RjBFTuziycu2D/u7pEaxWVX/plbVLw+oXp3qLLLlIhYXc3TJFGj98v\
-            1eIlSOu0nraUiUx8y0qLd7qp5r+75yLFjfDnBVX1IHAnRyfVYRmNkZ/F0zR/ItHt89G\
-            9Z+krfondUfheMfLNqT/2rK1EiExRTGxZKupZISzpbKdZi4FQ5cNWu3ZRCfCW272pG4\
-            K8PZhrMNZ7fM2czL2RXNIaDZXOETroQtuXCJuVei9Vl73/q1o5xkf8r9086FkF1tO/r\
-            y0lDyqSj56lqKnoonOT4ZvYIdfcAwOI6ySMNx6Ml/bYxPRZxOSsquIjjH3GrydfMzdJ\
-            CLkXvAwX2do+B3Nlu0xnHDV9swNRxsONhwcAscnIeLEc+SMVNkSvJghnUvk9wNZshrb\
-            BjM0Kbjxum6lphYbpbpmGMnJWLH0baFvZ2O9iRdPgCDXn+gjUJxiKQeDvfWeiokNp7k\
-            8K6QWOOEvYqDpXob2Xx7tTN17kGWpx8v36Qw3qoPgpSd4GtPSMrv9MrvHFwtNl+Hu+X\
-            205RFkhMMqk4h6lmWZf3q/er9fwDzUAZMXJgAAA==\"]"
-        cookies: []
-        headers:
-          - name: date
-            value: Tue, 15 Apr 2025 13:47:36 GMT
-          - name: content-type
-            value: text/plain; charset=utf-8
-          - name: transfer-encoding
-            value: chunked
-          - name: connection
-            value: close
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache, max-age=0
-          - name: content-encoding
-            value: gzip
-          - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
-              X-Requested-With,Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1406
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2025-04-15T13:47:35.873Z
-      time: 310
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 310
+        wait: 1649
   pages: []
   version: "1.2"

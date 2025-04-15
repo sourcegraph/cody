@@ -4,12 +4,10 @@ import { TESTING_CREDENTIALS } from '../../vscode/src/testutils/testing-credenti
 import { TestClient } from './TestClient'
 import { TestWorkspace } from './TestWorkspace'
 
-// TODO: fix the flakiness and reenabled it back
-// https://linear.app/sourcegraph/issue/CODY-4546/fix-the-flaky-agentsrcunauthedteststs-and-reenabled-it-back
-describe.skip(
+describe(
     'Initializing the agent without credentials',
     {
-        timeout: 5000,
+        timeout: 8000,
     },
     () => {
         const workspace = new TestWorkspace(path.join(__dirname, '__tests__', 'auth'))
@@ -35,23 +33,23 @@ describe.skip(
             expect(authStatus?.endpoint).toBe(TESTING_CREDENTIALS.dotcomUnauthed.serverEndpoint)
         })
 
-        it('starts up with default andpoint and credentials if they are present in the secure store', async () => {
+        it('starts up with default endpoint and credentials if they are present in the secure store', async () => {
             const newClient = TestClient.create({
                 workspaceRootUri: workspace.rootUri,
-                name: 'unauthed',
+                name: 'unauthed-stored',
                 credentials: TESTING_CREDENTIALS.dotcomUnauthed,
+                secretStorageEntries: {
+                    [TESTING_CREDENTIALS.dotcom.serverEndpoint]:
+                        TESTING_CREDENTIALS.dotcom.token ?? TESTING_CREDENTIALS.dotcom.redactedToken,
+                },
             })
-
-            newClient.secrets.store(
-                TESTING_CREDENTIALS.dotcom.serverEndpoint,
-                TESTING_CREDENTIALS.dotcom.token ?? 'invalid'
-            )
 
             await newClient.beforeAll({ serverEndpoint: undefined }, { expectAuthenticated: true })
             const authStatus = await newClient.request('extensionConfiguration/status', null)
             expect(authStatus?.authenticated).toBe(true)
             expect(authStatus?.endpoint).toBe(TESTING_CREDENTIALS.dotcom.serverEndpoint)
-            newClient.afterAll()
+
+            await newClient.afterAll()
         })
 
         it('authenticates to same endpoint using valid credentials', async () => {

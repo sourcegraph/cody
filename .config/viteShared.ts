@@ -33,7 +33,8 @@ const defaultUserConfig: UserConfig = { logLevel: 'warn' }
 
 export function defineProjectWithDefaults(
     dir: string,
-    config: UserWorkspaceConfig
+    config: UserWorkspaceConfig,
+    additionalConfig: Record<string, any> = {}
 ): UserWorkspaceConfig {
     const name = basename(dir)
     if (!config.test) {
@@ -44,7 +45,7 @@ export function defineProjectWithDefaults(
     }
 
     return mergeConfig(
-        mergeConfig(defaultProjectConfig, defaultUserConfig),
+        mergeConfig(mergeConfig(defaultProjectConfig, defaultUserConfig), additionalConfig),
         defineProject(config) as UserWorkspaceConfig
     )
 }
