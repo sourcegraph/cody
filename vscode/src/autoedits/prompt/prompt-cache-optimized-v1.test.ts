@@ -210,7 +210,6 @@ describe('PromptCacheOptimizedV1', () => {
               line 44
               line 45
               line 46
-
               <code_to_rewrite>
               line 47
               line 48
@@ -219,7 +218,6 @@ describe('PromptCacheOptimizedV1', () => {
               line 51
               line 52
               line 53
-
               </code_to_rewrite>
               line 54
               line 55
@@ -232,8 +230,8 @@ describe('PromptCacheOptimizedV1', () => {
               line 62
               line 63
               line 64
-
               </area_around_code_to_rewrite>
+
               Continue where I left off and finish my change by rewriting "code_to_rewrite":"
             `)
         })
@@ -299,7 +297,6 @@ describe('PromptCacheOptimizedV1', () => {
               line 44
               line 45
               line 46
-
               <code_to_rewrite>
               line 47
               line 48
@@ -308,7 +305,6 @@ describe('PromptCacheOptimizedV1', () => {
               line 51
               line 52
               line 53
-
               </code_to_rewrite>
               line 54
               line 55
@@ -321,8 +317,8 @@ describe('PromptCacheOptimizedV1', () => {
               line 62
               line 63
               line 64
-
               </area_around_code_to_rewrite>
+
               <diff_history>
               test0.ts
               recent edits context 1

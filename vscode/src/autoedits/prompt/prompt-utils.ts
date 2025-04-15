@@ -141,15 +141,17 @@ export function getCurrentFilePromptComponents({
         ? ps`${codeToReplaceData.codeToRewritePrefix}<CURSOR_IS_HERE>${codeToReplaceData.codeToRewriteSuffix}`
         : codeToReplaceData.codeToRewrite
 
-    const areaPrompt = joinPromptsWithNewlineSeparator([
-        constants.AREA_FOR_CODE_MARKER_OPEN,
+    const areaPromptParts = [
+        getPromptWithNewline(constants.AREA_FOR_CODE_MARKER_OPEN),
         codeToReplaceData.prefixInArea,
-        constants.CODE_TO_REWRITE_TAG_OPEN,
+        getPromptWithNewline(constants.CODE_TO_REWRITE_TAG_OPEN),
         codeToRewrite,
-        constants.CODE_TO_REWRITE_TAG_CLOSE,
+        getPromptWithNewline(constants.CODE_TO_REWRITE_TAG_CLOSE),
         codeToReplaceData.suffixInArea,
-        constants.AREA_FOR_CODE_MARKER_CLOSE,
-    ])
+        getPromptWithNewline(constants.AREA_FOR_CODE_MARKER_CLOSE),
+    ]
+
+    const areaPrompt = PromptString.join(areaPromptParts, ps``)
 
     return {
         fileWithMarkerPrompt,
