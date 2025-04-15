@@ -20,9 +20,7 @@ class CodySettingsFileChangeListener(private val project: Project) : FileDocumen
         LocalFileSystem.getInstance()
             .refreshAndFindFileByNioFile(ConfigUtil.getSettingsFile(project))
     if (currentFile == configFile) {
-      // TODO: it seams that some of the settings changes (like enabling/disabling
-      // autocomplete)
-      // requires agent restart to take effect.
+      // TODO(CODY-5682): Adjust the agent to handle config changes without requiring a restart.
       CodyAgentService.withAgentRestartIfNeeded(project) {
         it.server.extensionConfiguration_change(
             ConfigUtil.getAgentConfiguration(project, customConfigContent = document.text))

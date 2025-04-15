@@ -10,5 +10,6 @@ data class Model(
   val title: String,
   val tags: List<ModelTag>? = null,
   val modelRef: ModelRef? = null,
+  val disabled: Boolean? = null,
 )
 

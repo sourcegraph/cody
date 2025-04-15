@@ -5,8 +5,17 @@ import type { CodeCompletionsParams, PromptString } from '@sourcegraph/cody-shar
 import type { AutoeditSourceMetadata } from '../analytics-logger/types'
 import type { AutoeditsRequestBody } from './utils'
 
+// TODO: convert it to numbered enum to propagate with our analytics events for all instances
+export enum AutoeditStopReason {
+    StreamingChunk = 'cody-streaming-chunk',
+    RequestAborted = 'cody-request-aborted',
+    IrrelevantInFlightRequest = 'cody-irrelevant-in-flight-request',
+    RequestFinished = 'cody-request-finished',
+}
+
 export type ModelResponseShared = {
-    type: 'success' | 'aborted'
+    type: 'success' | 'partial' | 'aborted'
+    stopReason: AutoeditStopReason
     /** URL used to make the request to the model API */
     requestUrl: string
     /** Optional request headers sent to the model API */
@@ -20,6 +29,7 @@ export type ModelResponseShared = {
 
 export interface SuccessModelResponse extends ModelResponseShared {
     type: 'success'
+    stopReason: AutoeditStopReason.RequestFinished
     prediction: string
     /**
      * Response headers received from the model API
@@ -37,14 +47,25 @@ export interface SuccessModelResponse extends ModelResponseShared {
     source?: AutoeditSourceMetadata
 }
 
-export interface AbortedModelResponse extends ModelResponseShared {
-    type: 'aborted'
+/**
+ * Represents a partial response from the model API
+ * This is used for streaming responses
+ */
+export interface PartialModelResponse extends ModelResponseShared {
+    type: 'partial'
+    stopReason: AutoeditStopReason.StreamingChunk
+    prediction: string
 }
 
-export type ModelResponse = SuccessModelResponse | AbortedModelResponse
+export interface AbortedModelResponse extends ModelResponseShared {
+    type: 'aborted'
+    stopReason: AutoeditStopReason.RequestAborted | AutoeditStopReason.IrrelevantInFlightRequest
+}
+
+export type ModelResponse = SuccessModelResponse | PartialModelResponse | AbortedModelResponse
 
 export interface AutoeditsModelAdapter extends vscode.Disposable {
-    getModelResponse(args: AutoeditModelOptions): Promise<ModelResponse>
+    getModelResponse(args: AutoeditModelOptions): Promise<AsyncGenerator<ModelResponse>>
 }
 
 /**
@@ -71,4 +92,5 @@ export interface AutoeditModelOptions {
     userId: string | null
     isChatModel: boolean
     abortSignal: AbortSignal
+    timeoutMs: number
 }

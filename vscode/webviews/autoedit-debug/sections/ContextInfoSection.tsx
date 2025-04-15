@@ -105,50 +105,47 @@ export const ContextInfoSection: FC<{ entry: AutoeditRequestDebugState }> = ({ e
                 </div>
 
                 {/* Retriever Statistics Grid */}
-                {'retrieverStats' in contextSummary &&
-                    Object.keys(contextSummary.retrieverStats).length > 0 && (
-                        <div className="tw-mt-8">
-                            <h3 className="tw-font-medium tw-mb-2 tw-text-base">Retriever Statistics</h3>
-                            <div className="tw-overflow-x-auto tw-border tw-border-gray-200 tw-dark:tw-border-gray-700 tw-rounded-md">
-                                {/* Column Headers */}
-                                <div className="tw-grid tw-grid-cols-[minmax(150px,auto)_repeat(4,minmax(100px,auto))] tw-gap-3 tw-p-2 tw-bg-gray-100 tw-dark:tw-bg-gray-800 tw-font-medium tw-text-xs tw-text-gray-700 tw-dark:tw-text-gray-300 tw-border-b tw-border-gray-200 tw-dark:tw-border-gray-700">
-                                    <div>Retriever</div>
-                                    <div>Suggested Items</div>
-                                    <div>Retrieved Items</div>
-                                    <div>Characters</div>
-                                    <div>Duration</div>
-                                </div>
-
-                                {/* Retriever Rows */}
-                                {Object.entries(contextSummary.retrieverStats).map(
-                                    ([identifier, stats], index) => (
-                                        <div
-                                            key={identifier}
-                                            className={`tw-grid tw-grid-cols-[minmax(150px,auto)_repeat(4,minmax(100px,auto))] tw-gap-3 tw-p-2 tw-items-center ${
-                                                index % 2 === 0
-                                                    ? 'tw-bg-white tw-dark:tw-bg-gray-900'
-                                                    : 'tw-bg-gray-50 tw-dark:tw-bg-gray-800/50'
-                                            }`}
-                                        >
-                                            <div className="tw-font-medium tw-text-sm">{identifier}</div>
-                                            <div className="tw-text-xs tw-text-gray-600 tw-dark:tw-text-gray-400">
-                                                {stats.suggestedItems}
-                                            </div>
-                                            <div className="tw-text-xs tw-text-gray-600 tw-dark:tw-text-gray-400">
-                                                {stats.retrievedItems}
-                                            </div>
-                                            <div className="tw-text-xs tw-text-gray-600 tw-dark:tw-text-gray-400">
-                                                {formatChars(stats.retrieverChars)}
-                                            </div>
-                                            <div className="tw-text-xs tw-text-gray-600 tw-dark:tw-text-gray-400">
-                                                {formatDuration(stats.duration)}
-                                            </div>
-                                        </div>
-                                    )
-                                )}
+                {'retrieverStats' in contextSummary && contextSummary.retrieverStats.length > 0 && (
+                    <div className="tw-mt-8">
+                        <h3 className="tw-font-medium tw-mb-2 tw-text-base">Retriever Statistics</h3>
+                        <div className="tw-overflow-x-auto tw-border tw-border-gray-200 tw-dark:tw-border-gray-700 tw-rounded-md">
+                            {/* Column Headers */}
+                            <div className="tw-grid tw-grid-cols-[minmax(150px,auto)_repeat(4,minmax(100px,auto))] tw-gap-3 tw-p-2 tw-bg-gray-100 tw-dark:tw-bg-gray-800 tw-font-medium tw-text-xs tw-text-gray-700 tw-dark:tw-text-gray-300 tw-border-b tw-border-gray-200 tw-dark:tw-border-gray-700">
+                                <div>Retriever</div>
+                                <div>Suggested Items</div>
+                                <div>Retrieved Items</div>
+                                <div>Characters</div>
+                                <div>Duration</div>
                             </div>
+
+                            {/* Retriever Rows */}
+                            {contextSummary.retrieverStats.map((stats, index) => (
+                                <div
+                                    key={stats.name}
+                                    className={`tw-grid tw-grid-cols-[minmax(150px,auto)_repeat(4,minmax(100px,auto))] tw-gap-3 tw-p-2 tw-items-center ${
+                                        index % 2 === 0
+                                            ? 'tw-bg-white tw-dark:tw-bg-gray-900'
+                                            : 'tw-bg-gray-50 tw-dark:tw-bg-gray-800/50'
+                                    }`}
+                                >
+                                    <div className="tw-font-medium tw-text-sm">{stats.name}</div>
+                                    <div className="tw-text-xs tw-text-gray-600 tw-dark:tw-text-gray-400">
+                                        {stats.suggestedItems}
+                                    </div>
+                                    <div className="tw-text-xs tw-text-gray-600 tw-dark:tw-text-gray-400">
+                                        {stats.retrievedItems}
+                                    </div>
+                                    <div className="tw-text-xs tw-text-gray-600 tw-dark:tw-text-gray-400">
+                                        {formatChars(stats.retrieverChars)}
+                                    </div>
+                                    <div className="tw-text-xs tw-text-gray-600 tw-dark:tw-text-gray-400">
+                                        {formatDuration(stats.duration)}
+                                    </div>
+                                </div>
+                            ))}
                         </div>
-                    )}
+                    </div>
+                )}
             </div>
         </div>
     )

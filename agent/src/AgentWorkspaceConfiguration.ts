@@ -96,7 +96,8 @@ export class AgentWorkspaceConfiguration implements vscode.WorkspaceConfiguratio
                         model: config?.autocompleteAdvancedModel ?? null,
                         provider: config?.autocompleteAdvancedProvider ?? null,
                     },
-                    enabled: true,
+                    // If suggestionsMode is set, honor that, otherwise default to true
+                    enabled: config?.suggestionsMode ? config.suggestionsMode === 'autocomplete' : true,
                 },
                 suggestions: {
                     mode: config?.suggestionsMode || 'autocomplete',

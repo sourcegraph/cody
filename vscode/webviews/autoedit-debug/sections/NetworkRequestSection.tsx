@@ -1,7 +1,10 @@
 import type { FC } from 'react'
 
+import {
+    getModelResponse,
+    getSuccessModelResponse,
+} from '../../../src/autoedits/debug-panel/autoedit-data-sdk'
 import type { AutoeditRequestDebugState } from '../../../src/autoedits/debug-panel/debug-store'
-import { getSuccessModelResponse } from '../autoedit-data-sdk'
 import { JsonViewer } from '../components/JsonViewer'
 
 export const NetworkRequestSection: FC<{
@@ -12,7 +15,7 @@ export const NetworkRequestSection: FC<{
     }
 
     // Extract modelResponse if available
-    const modelResponse = 'modelResponse' in entry.state ? entry.state.modelResponse : null
+    const modelResponse = getModelResponse(entry)
 
     return (
         <div className="tw-grid tw-grid-cols-2 tw-gap-4">

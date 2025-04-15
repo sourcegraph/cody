@@ -22,6 +22,7 @@ import {
     type NLSSearchDynamicFilter,
     type ProcessingStep,
     PromptString,
+    type RateLimitError,
     type SerializedChatInteraction,
     type SerializedChatTranscript,
     type SerializedPromptEditorState,
@@ -43,6 +44,7 @@ import {
     forceHydration,
     getDefaultSystemPrompt,
     graphqlClient,
+    handleRateLimitError,
     hydrateAfterPostMessage,
     isAbortErrorOrSocketHangUp,
     isContextWindowLimitError,
@@ -80,8 +82,9 @@ import { type Span, context } from '@opentelemetry/api'
 import { captureException } from '@sentry/core'
 import type { SubMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { resolveAuth } from '@sourcegraph/cody-shared/src/configuration/auth-resolver'
+import type { McpServer } from '@sourcegraph/cody-shared/src/llm-providers/mcp/types'
 import type { TelemetryEventParameters } from '@sourcegraph/telemetry'
-import { Subject, map } from 'observable-fns'
+import { Observable, Subject, map } from 'observable-fns'
 import type { URI } from 'vscode-uri'
 import { View } from '../../../webviews/tabs/types'
 import { redirectToEndpointLogin, showSignInMenu, showSignOutMenu, signOut } from '../../auth/auth'
@@ -139,6 +142,7 @@ import { getChatPanelTitle, isAgentTesting } from './chat-helpers'
 import { OmniboxTelemetry } from './handlers/OmniboxTelemetry'
 import { getAgent, getAgentName } from './handlers/registry'
 import { getPromptsMigrationInfo, startPromptsMigration } from './prompts-migration'
+import { MCPManager } from './tools/MCPManager'
 
 export interface ChatControllerOptions {
     extensionUri: vscode.Uri
@@ -1396,6 +1400,10 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
      * Display error message in webview as part of the chat transcript, or as a system banner alongside the chat.
      */
     private postError(error: Error, type?: MessageErrorType): void {
+        if (isRateLimitError(error)) {
+            handleRateLimitError(error as RateLimitError)
+        }
+
         logDebug('ChatController: postError', error.message)
         // Add error to transcript
         if (type === 'transcript') {
@@ -1746,6 +1754,24 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                         userProductSubscription.pipe(
                             map(value => (value === pendingOperation ? null : value))
                         ),
+                    // Existing tools endpoint - update to include MCP tools
+                    mcpSettings: () => {
+                        return featureFlagProvider
+                            .evaluateFeatureFlag(FeatureFlag.NextAgenticChatInternal)
+                            .pipe(
+                                // Simplify the flow with map and distinctUntilChanged
+                                distinctUntilChanged(),
+                                startWith(null),
+                                // When disabled, return an empty array
+                                switchMap(experimentalAgentMode => {
+                                    if (!experimentalAgentMode) {
+                                        return Observable.of([] as McpServer[])
+                                    }
+                                    // When enabled, get servers from the manager
+                                    return MCPManager.observable
+                                })
+                            )
+                    },
                 }
             )
         )

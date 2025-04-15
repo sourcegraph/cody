@@ -34,7 +34,7 @@ import org.jetbrains.annotations.Nullable;
  * href="https://sourcegraph.com/github.com/JetBrains/intellij-community/-/blob/platform/lang-impl/src/com/intellij/find/impl/FindPopupPanel.java">FindPopupPanel.java</a>
  */
 public class FindPopupPanel extends BorderLayoutPanel implements Disposable {
-  private final JavaToJSBridge javaToJSBridge;
+  private JavaToJSBridge javaToJSBridge;
   private final SourcegraphJBCefBrowser browser;
   private final PreviewPanel previewPanel;
   private final BrowserAndLoadingPanel browserAndLoadingPanel;
@@ -222,6 +222,10 @@ public class FindPopupPanel extends BorderLayoutPanel implements Disposable {
   public void dispose() {
     if (browser != null) {
       browser.dispose();
+    }
+    if (javaToJSBridge != null) {
+      javaToJSBridge.dispose();
+      javaToJSBridge = null;
     }
 
     previewPanel.dispose();

@@ -3,10 +3,11 @@ import type { FC } from 'react'
 import React from 'react'
 
 import type { Phase } from '../../../src/autoedits/analytics-logger/types'
+import { AutoeditDataSDK } from '../../../src/autoedits/debug-panel/autoedit-data-sdk'
+import type { getDetailedTimingInfo } from '../../../src/autoedits/debug-panel/autoedit-latency-utils'
 import type { AutoeditRequestDebugState } from '../../../src/autoedits/debug-panel/debug-store'
 import { Badge } from '../../components/shadcn/ui/badge'
-import { AutoeditDataSDK } from '../autoedit-data-sdk'
-import { type getDetailedTimingInfo, getStatusColor } from '../autoedit-ui-utils'
+import { getStatusColor } from '../phase-colors'
 
 // Sub-component for header section
 const EntryHeader: FC<{
@@ -62,14 +63,15 @@ const DetailedTiming: FC<{
 
 // Sub-component for file info
 const FileInfo: FC<{
-    filePath: string
+    fileName: string
     positionInfo: string
     inferenceTime?: string | null
-}> = ({ filePath, positionInfo, inferenceTime }) => (
+    envoyUpstreamServiceTime?: string | null
+}> = ({ fileName, positionInfo, inferenceTime, envoyUpstreamServiceTime }) => (
     <div className="tw-flex tw-items-center tw-justify-between tw-w-full tw-text-sm tw-text-gray-700 tw-dark:tw-text-gray-300">
         <div className="tw-flex tw-items-center">
             <span className="tw-font-medium">
-                {`${filePath} ${positionInfo ? `:${positionInfo}` : ''}`}
+                {`${fileName} ${positionInfo ? `:${positionInfo}` : ''}`}
             </span>
         </div>
         {inferenceTime && (
@@ -80,36 +82,26 @@ const FileInfo: FC<{
                 </span>
             </div>
         )}
+        {!inferenceTime && envoyUpstreamServiceTime && (
+            <div className="tw-flex tw-items-center tw-gap-2">
+                <span className="tw-text-xs tw-text-gray-500 tw-dark:tw-text-gray-400">
+                    Envoy Latency:
+                </span>
+                <span className="tw-text-xs tw-font-medium tw-text-gray-600 tw-dark:tw-text-gray-300">
+                    {envoyUpstreamServiceTime}
+                </span>
+            </div>
+        )}
     </div>
 )
 
 // Sub-component for code preview
-const CodePreview: FC<{
-    codeText: string
-    codeType: string
-    decorationStats: string | null
-}> = ({ codeText, codeType, decorationStats }) => {
+const CodePreview: FC<{ codeText: string }> = ({ codeText }) => {
     // Always truncate code text to 80 characters
     const truncatedText = codeText.length > 80 ? codeText.substring(0, 80) + '...' : codeText
 
     return (
         <div className="tw-flex tw-flex-col tw-gap-1">
-            <div className="tw-flex tw-justify-between tw-items-center">
-                <span className="tw-text-xs tw-font-medium tw-text-gray-500 tw-dark:tw-text-gray-400">
-                    {codeType === 'code-to-rewrite'
-                        ? 'Code to Rewrite'
-                        : codeType === 'prediction'
-                          ? 'Prediction'
-                          : 'No Code'}
-                </span>
-                <div className="tw-flex tw-items-center tw-gap-2">
-                    {decorationStats && (
-                        <span className="tw-text-xs tw-text-gray-500 tw-dark:tw-text-gray-400">
-                            {decorationStats}
-                        </span>
-                    )}
-                </div>
-            </div>
             <div className="tw-font-mono tw-text-xs tw-text-gray-600 tw-dark:tw-text-gray-400 tw-bg-gray-50 tw-dark:tw-bg-gray-800/80 tw-px-2 tw-py-1 tw-rounded tw-whitespace-normal tw-break-all">
                 {truncatedText}
             </div>
@@ -128,12 +120,11 @@ export const AutoeditListItem: FC<AutoeditEntryItemProps> = ({ entry, isSelected
     // Extract all data from entry using the SDK
     const {
         phase,
-        filePath,
+        fileName,
         codeToRewrite = '',
         triggerKind,
         positionInfo,
         discardReason,
-        decorationStats,
         timing,
     } = AutoeditDataSDK.extractAutoeditData(entry)
 
@@ -194,17 +185,14 @@ export const AutoeditListItem: FC<AutoeditEntryItemProps> = ({ entry, isSelected
 
                     {/* File and position info */}
                     <FileInfo
-                        filePath={filePath}
+                        fileName={fileName}
                         positionInfo={positionInfo}
                         inferenceTime={timing.inferenceTime}
+                        envoyUpstreamServiceTime={timing.envoyUpstreamServiceTime}
                     />
 
                     {/* Code preview */}
-                    <CodePreview
-                        codeText={codeToRewrite}
-                        codeType={'code-to-rewrite'}
-                        decorationStats={decorationStats}
-                    />
+                    <CodePreview codeText={codeToRewrite} />
 
                     {/* Discard reason if applicable */}
                     {discardReason && (

@@ -46,7 +46,6 @@ suite('Chat', function () {
         )
     })
 
-    // do not display filename even when there is a selection in active editor
     test('append current file link to display text on editor selection', async () => {
         await getTextEditorWithSelection()
         await vscode.commands.executeCommand('cody.chat.newEditorPanel')

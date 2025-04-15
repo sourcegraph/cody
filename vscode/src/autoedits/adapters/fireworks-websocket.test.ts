@@ -1,4 +1,4 @@
-import { ps } from '@sourcegraph/cody-shared'
+import { mockResolvedConfig, ps } from '@sourcegraph/cody-shared'
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { type AddressInfo, WebSocketServer } from 'ws'
@@ -20,6 +20,7 @@ describe('FireworksWebsocketAdapter', () => {
         userId: 'test-user',
         isChatModel: true,
         abortSignal: new AbortController().signal,
+        timeoutMs: 10_000,
     }
 
     const server = new WebSocketServer({ port: 0 })
@@ -37,6 +38,9 @@ describe('FireworksWebsocketAdapter', () => {
     const messageFn = vi.fn()
 
     beforeAll(() => {
+        mockResolvedConfig({
+            auth: { credentials: { token: 'test_token' }, serverEndpoint: 'https://example.com' },
+        })
         server.addListener('connection', client => {
             client.addEventListener('message', event => {
                 const request = JSON.parse(event.data as string)
@@ -63,29 +67,17 @@ describe('FireworksWebsocketAdapter', () => {
                 'x-message-id': 'm_0',
                 'x-message-headers': {},
                 'x-message-body': {
-                    choices: [{ message: { content: 'response' } }],
+                    data: {
+                        choices: [{ message: { content: 'response' } }],
+                    },
                 },
                 'x-message-status': 200,
                 'x-message-status-text': 'OK',
             })
         )
-        await adapter.getModelResponse(options)
-    })
-
-    it('send times out', async () => {
-        messageFn.mockImplementation(() => {
-            vi.advanceTimersByTime(4000)
-            return JSON.stringify({
-                'x-message-id': 'm_0',
-                'x-message-headers': JSON.stringify({}),
-                'x-message-body': JSON.stringify({
-                    choices: [{ message: { content: 'response' } }],
-                }),
-            })
-        })
-        expect(() => adapter.getModelResponse(options)).rejects.toThrow(
-            'timeout in sending message to fireworks'
-        )
+        const generator = await adapter.getModelResponse(options)
+        const result = await generator.next()
+        expect(result.value.prediction).toBe('response')
     })
 
     it('model request aborted before send', async () => {
@@ -96,10 +88,8 @@ describe('FireworksWebsocketAdapter', () => {
         }
 
         controller.abort()
-
-        expect(() => adapter.getModelResponse(testOptions)).rejects.toThrow(
-            'abort signal received, message not sent'
-        )
+        const generator = await adapter.getModelResponse(testOptions)
+        await expect(() => generator.next()).rejects.toThrow('abort signal received, message not sent')
         expect(messageFn).toBeCalledTimes(0)
     })
 
@@ -123,8 +113,8 @@ describe('FireworksWebsocketAdapter', () => {
                 'x-message-status-text': 'OK',
             })
         })
-
-        expect(() => adapter.getModelResponse(testOptions)).rejects.toThrow(
+        const generator = await adapter.getModelResponse(testOptions)
+        await expect(() => generator.next()).rejects.toThrow(
             'abort signal received, message not handled'
         )
     })

@@ -13,8 +13,8 @@ import {
 import { getCurrentDocContext } from '../../completions/get-current-doc-context'
 import { documentAndPosition } from '../../completions/test-helpers'
 import * as sentryModule from '../../services/sentry/sentry'
-import type { AutoeditModelOptions } from '../adapters/base'
-import { getCodeToReplaceData } from '../prompt/prompt-utils'
+import { type AutoeditModelOptions, AutoeditStopReason } from '../adapters/base'
+import { getCodeToReplaceData, getCurrentFilePath } from '../prompt/prompt-utils'
 import { getDecorationInfo } from '../renderer/diff-utils'
 
 import { AutoeditAnalyticsLogger } from './analytics-logger'
@@ -68,11 +68,13 @@ describe('AutoeditAnalyticsLogger', () => {
         userId: 'test-user-id',
         isChatModel: false,
         abortSignal: new AbortController().signal,
+        timeoutMs: 10_000,
     }
 
     function getRequestStartMetadata(): Parameters<AutoeditAnalyticsLogger['createRequest']>[0] {
         return {
             startedAt: performance.now(),
+            filePath: getCurrentFilePath(document).toString(),
             docContext,
             document,
             position,
@@ -94,6 +96,7 @@ describe('AutoeditAnalyticsLogger', () => {
 
         autoeditLogger.markAsContextLoaded({
             requestId,
+            context: [],
             payload: {
                 contextSummary: {
                     strategy: 'none',
@@ -101,7 +104,7 @@ describe('AutoeditAnalyticsLogger', () => {
                     totalChars: 10,
                     prefixChars: 5,
                     suffixChars: 5,
-                    retrieverStats: {},
+                    retrieverStats: [],
                 },
             },
         })
@@ -114,6 +117,7 @@ describe('AutoeditAnalyticsLogger', () => {
             prompt: modelOptions.prompt,
             modelResponse: {
                 type: 'success',
+                stopReason: AutoeditStopReason.RequestFinished,
                 prediction,
                 requestHeaders: {},
                 requestUrl: modelOptions.url,
@@ -234,7 +238,7 @@ describe('AutoeditAnalyticsLogger', () => {
               "contextSummary": {
                 "duration": 1.234,
                 "prefixChars": 5,
-                "retrieverStats": {},
+                "retrieverStats": [],
                 "strategy": "none",
                 "suffixChars": 5,
                 "totalChars": 10,
@@ -318,7 +322,11 @@ describe('AutoeditAnalyticsLogger', () => {
 
     it.skip('logs `discarded` if the suggestion was not suggested for any reason', () => {
         const requestId = autoeditLogger.createRequest(getRequestStartMetadata())
-        autoeditLogger.markAsContextLoaded({ requestId, payload: { contextSummary: undefined } })
+        autoeditLogger.markAsContextLoaded({
+            requestId,
+            context: [],
+            payload: { contextSummary: undefined },
+        })
         autoeditLogger.markAsDiscarded({
             requestId,
             discardReason: autoeditDiscardReason.emptyPrediction,

@@ -126,6 +126,7 @@ export const AppWrapperForTest: FunctionComponent<{ children: ReactNode }> = ({ 
                     transcript: () => Observable.of(FIXTURE_TRANSCRIPT.explainCode),
                     userHistory: () => Observable.of(null),
                     userProductSubscription: () => Observable.of(null),
+                    mcpSettings: () => Observable.of(null),
                 },
             } satisfies Wrapper<ComponentProps<typeof ExtensionAPIProviderForTestsOnly>['value']>,
             {

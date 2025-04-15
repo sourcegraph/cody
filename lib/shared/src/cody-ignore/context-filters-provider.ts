@@ -217,11 +217,16 @@ export class ContextFiltersProvider implements vscode.Disposable {
         if (isDotCom(currentAuthStatus())) {
             return false
         }
-        await this.fetchIfNeeded()
-
-        if (allowedSchemes.has(uri.scheme) || this.hasAllowEverythingFilters()) {
+        if (!uri || allowedSchemes.has(uri.scheme)) {
             return false
         }
+
+        await this.fetchIfNeeded()
+
+        if (this.hasAllowEverythingFilters()) {
+            return false
+        }
+
         if (this.hasIgnoreEverythingFilters()) {
             return 'has-ignore-everything-filters'
         }
