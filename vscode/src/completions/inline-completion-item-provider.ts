@@ -145,10 +145,12 @@ export class InlineCompletionItemProvider
     }: CodyCompletionItemProviderConfig) {
         // Show the autoedit onboarding message if the user hasn't enabled autoedits
         // but is eligible to use them as an alternative to autocomplete
-        if (clientCapabilities().autoeditSuggestToEnroll) {
+        if (isRunningInsideAgent()) {
             // We do not currently automatically opt users into auto-edit if we are running inside Agent.
             // This is because Agent support is still experimental and is only ready for dogfooding right now.
-            autoeditsOnboarding.suggestToEnrollUserToAutoEditBetaIfEligible()
+            if (clientCapabilities().autoeditSuggestToEnroll) {
+                autoeditsOnboarding.suggestToEnrollUserToAutoEditBetaIfEligible()
+            }
         } else {
             autoeditsOnboarding.enrollUserToAutoEditBetaIfEligible()
         }
