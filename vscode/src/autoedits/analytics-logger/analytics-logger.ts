@@ -344,14 +344,17 @@ export class AutoeditAnalyticsLogger {
     public markAsDiscarded({
         requestId,
         discardReason,
+        prediction,
     }: {
         requestId: AutoeditRequestID
         discardReason: AutoeditDiscardReasonMetadata
+        prediction?: string
     }): void {
         const result = this.tryTransitionTo(requestId, 'discarded', request => {
             return {
                 ...request,
                 discardedAt: getTimeNowInMillis(),
+                prediction,
                 payload: {
                     ...request.payload,
                     discardReason,

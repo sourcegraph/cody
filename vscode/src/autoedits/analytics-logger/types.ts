@@ -354,6 +354,8 @@ export interface DiscardedState extends Omit<StartedState, 'phase' | 'payload'> 
     discardedAt: number
     /** Timestamp when the suggestion was logged to our analytics backend. This is to avoid double-logging. */
     suggestionLoggedAt?: number
+    /** The prediction that was discarded. This is only available after the loaded state */
+    prediction?: string
     payload: StartedState['payload'] & {
         discardReason: AutoeditDiscardReasonMetadata
     }

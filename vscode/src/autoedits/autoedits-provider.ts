@@ -42,7 +42,8 @@ import { autoeditsOnboarding } from './autoedit-onboarding'
 import { autoeditsProviderConfig } from './autoedits-config'
 import { FilterPredictionBasedOnRecentEdits } from './filter-prediction-edits'
 import { autoeditsOutputChannelLogger } from './output-channel-logger'
-import { PromptCacheOptimizedV1 } from './prompt/prompt-cache-optimized-v1'
+import type { AutoeditsUserPromptStrategy } from './prompt/base'
+import { createPromptProvider } from './prompt/create-prompt-provider'
 import { type CodeToReplaceData, getCodeToReplaceData } from './prompt/prompt-utils'
 import { getCurrentFilePath } from './prompt/prompt-utils'
 import type { DecorationInfo } from './renderer/decorators/base'
@@ -111,7 +112,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
     private readonly requestManager = new RequestManager()
     public readonly smartThrottleService = new SmartThrottleService()
 
-    private readonly promptStrategy = new PromptCacheOptimizedV1()
+    private readonly promptStrategy: AutoeditsUserPromptStrategy
     public readonly filterPrediction = new FilterPredictionBasedOnRecentEdits()
     private readonly contextMixer = new ContextMixer({
         strategyFactory: new DefaultContextStrategyFactory(Observable.of(AUTOEDIT_CONTEXT_STRATEGY)),
@@ -136,6 +137,11 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
         autoeditsOnboarding.markUserAsAutoEditBetaEnrolled()
 
         autoeditsOutputChannelLogger.logDebug('Constructor', 'Constructing AutoEditsProvider')
+
+        this.promptStrategy = createPromptProvider({
+            promptProvider: autoeditsProviderConfig.promptProvider,
+        })
+
         this.modelAdapter = createAutoeditsModelAdapter({
             providerName: autoeditsProviderConfig.provider,
             isChatModel: autoeditsProviderConfig.isChatModel,
@@ -405,6 +411,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                     startedAt,
                     requestId,
                     discardReason: 'staleThrottledRequest',
+                    prediction: initialPrediction,
                 })
                 return null
             }
@@ -414,6 +421,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                     startedAt,
                     requestId,
                     discardReason: 'emptyPrediction',
+                    prediction: initialPrediction,
                 })
                 return null
             }
@@ -434,6 +442,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                     startedAt,
                     requestId,
                     discardReason: 'predictionEqualsCodeToRewrite',
+                    prediction: initialPrediction,
                 })
                 return null
             }
@@ -449,6 +458,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                     startedAt,
                     requestId,
                     discardReason: 'recentEdits',
+                    prediction: initialPrediction,
                 })
                 return null
             }
@@ -470,6 +480,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                     startedAt,
                     requestId,
                     discardReason: 'suffixOverlap',
+                    prediction: initialPrediction,
                 })
                 return null
             }
@@ -492,6 +503,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                     startedAt,
                     requestId,
                     discardReason: 'emptyPredictionAfterInlineCompletionExtraction',
+                    prediction: initialPrediction,
                 })
                 return null
             }
@@ -502,6 +514,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                     startedAt,
                     requestId,
                     discardReason: 'noActiveEditor',
+                    prediction: initialPrediction,
                 })
                 return null
             }
@@ -663,10 +676,12 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
         startedAt,
         discardReason,
         requestId,
+        prediction,
     }: {
         requestId: AutoeditRequestID
         startedAt: number
         discardReason: keyof typeof autoeditDiscardReason
+        prediction?: string
     }) {
         autoeditsOutputChannelLogger.logDebugIfVerbose(
             'provideInlineCompletionItems',
@@ -675,6 +690,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
         autoeditAnalyticsLogger.markAsDiscarded({
             requestId,
             discardReason: autoeditDiscardReason[discardReason],
+            prediction,
         })
         this.suggestionLatencyMetric.record(getTimeNowInMillis() - startedAt, {
             status: 'discarded',

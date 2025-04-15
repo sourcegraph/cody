@@ -54,6 +54,8 @@ export interface AutoEditsModelConfig {
         | 'cody-gateway'
         | 'sourcegraph'
         | 'inceptionlabs'
+    /** The specific prompt provider to use for auto-edit. This is used to override the default prompt provider from the configuration */
+    promptProvider?: 'long-suggestion-prompt-provider'
     /** The specific model identifier to use for auto-edit */
     model: string
     /** The endpoint URL for the provider's API */
