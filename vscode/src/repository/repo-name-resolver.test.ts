@@ -27,7 +27,11 @@ describe('getRepoNamesContainingUri', () => {
     function prepareEnterpriseMocks(resolvedValue: string | null) {
         const repoNameResolver = new RepoNameResolver()
         mockAuthStatus(AUTH_STATUS_FIXTURE_AUTHED)
-        mockResolvedConfig({ auth: {} })
+        mockResolvedConfig({
+            auth: {
+                serverEndpoint: 'https://example.com',
+            },
+        })
         mockClientCapabilities(CLIENT_CAPABILITIES_FIXTURE)
 
         vi.spyOn(remoteUrlsFromParentDirs, 'gitRemoteUrlsForUri').mockResolvedValue([

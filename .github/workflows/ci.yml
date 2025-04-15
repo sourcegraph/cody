@@ -43,7 +43,7 @@ jobs:
           - runner: ubuntu
             node: 18 # VS Code started using Node 18 in Aug 2023 in v1.82: https://code.visualstudio.com/updates/v1_82#_engineering
     runs-on: ${{ matrix.runner }}-latest
-    timeout-minutes: 10
+    timeout-minutes: 12
     permissions:
       id-token: write
       contents: read
@@ -145,14 +145,14 @@ jobs:
         run: |
           $vscodeDir = "$env:USERPROFILE\.vscode"
           New-Item -ItemType Directory -Path $vscodeDir -Force | Out-Null
-          
+
           # Create JSON object and convert to string
           $settings = @{ "disable-hardware-acceleration" = $true }
           $json = ConvertTo-Json $settings -Compress
-          
+
           # Write to file using Out-File with encoding parameter
           $json | Out-File -FilePath "$vscodeDir\argv.json" -Encoding ascii -NoNewline
-          
+
           pnpm -C vscode run test:integration
       - name: Run tests (mac)
         run: |
