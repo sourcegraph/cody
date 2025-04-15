@@ -148,7 +148,7 @@ export class InlineCompletionItemProvider
         if (isRunningInsideAgent()) {
             // We do not currently automatically opt users into auto-edit if we are running inside Agent.
             // This is because Agent support is still experimental and is only ready for dogfooding right now.
-            if (clientCapabilities().autoeditSuggestToEnroll) {
+            if (clientCapabilities().autoeditSuggestToEnroll === 'enabled') {
                 autoeditsOnboarding.suggestToEnrollUserToAutoEditBetaIfEligible()
             }
         } else {
