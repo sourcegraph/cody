@@ -1,7 +1,7 @@
 import type { Guardrails, PromptString } from '@sourcegraph/cody-shared'
 import { clsx } from 'clsx'
 import type React from 'react'
-import { useCallback, useMemo } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { RichMarkdown } from '../../components/RichMarkdown'
 import { getVSCodeAPI } from '../../utils/VSCodeApi'
 import { useConfig } from '../../utils/useConfig'
@@ -89,6 +89,15 @@ export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps
         [copyButtonOnSubmit]
     )
 
+    const [regeneratingCodeBlocks, setRegeneratingCodeBlocks] = useState<Set<string>>(new Set())
+    const onRegenerateUpdateGeneratingBlocks = useCallback(
+        (code: string, language: string | undefined) => {
+            setRegeneratingCodeBlocks((prev: Set<string>) => new Set(prev).add(code))
+            onRegenerate(code, language)
+        },
+        [onRegenerate]
+    )
+
     return (
         <div data-testid="chat-message-content">
             {setThoughtProcessOpened && thinkContent.length > 0 && (
@@ -102,11 +111,12 @@ export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps
             <RichMarkdown
                 markdown={displayContent}
                 isLoading={isMessageLoading}
+                regeneratingCodeBlocks={regeneratingCodeBlocks}
                 guardrails={guardrails}
                 onCopy={onCopy}
                 onInsert={onInsert}
                 onExecute={onExecute}
-                onRegenerate={onRegenerate}
+                onRegenerate={onRegenerateUpdateGeneratingBlocks}
                 smartApply={smartApply}
                 className={clsx(styles.content, className)}
                 hasEditIntent={humanMessage?.intent === 'edit'}
