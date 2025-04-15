@@ -50,7 +50,7 @@ describe('Cache abort behavior', () => {
         cache.invalidate()
         expect(fetchCount).toBe(1) // Call happened immediately
         // This depends on the fetch implementation using the abort signal...
-        await expect(promise).rejects.toThrow('aborted')
+        expect(await promise).toStrictEqual(new AbortError('aborted'))
     })
 
     test('fetching is aborted if all request abort', async () => {
@@ -85,8 +85,8 @@ describe('Cache abort behavior', () => {
         controller1.abort()
         controller2.abort()
 
-        await expect(promise1).rejects.toThrow('aborted')
-        await expect(promise2).rejects.toThrow('aborted')
+        expect(await promise1).toStrictEqual(new AbortError('aborted'))
+        expect(await promise2).toStrictEqual(new AbortError('aborted'))
     })
 
     test('fetching continues unless all fetchers abort', async () => {

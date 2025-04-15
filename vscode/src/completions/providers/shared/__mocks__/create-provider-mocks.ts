@@ -319,5 +319,6 @@ const serverSentModelsMock = {
         chat: 'anthropic::2023-06-01::claude-3.5-sonnet',
         fastChat: 'anthropic::2023-06-01::claude-3-haiku',
         codeCompletion: 'fireworks::v1::deepseek-coder-v2-lite-base',
+        unlimitedChat: 'google::v1::gemini-1.5-pro-latest',
     },
 } as const satisfies ServerModelConfiguration

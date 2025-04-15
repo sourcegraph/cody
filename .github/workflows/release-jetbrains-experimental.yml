@@ -42,3 +42,10 @@ jobs:
         env:
           PUBLISH_TOKEN: ${{ secrets.JETBRAINS_MARKETPLACE_PUBLISH_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.PRIVATE_SG_ACCESS_TOKEN }}
+      - name: Upload the report
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: publish-report
+          path: jetbrains/build/reports/problems/
+          compression-level: 9

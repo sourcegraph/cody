@@ -195,7 +195,7 @@ export function getCodeToReplaceData(options: CurrentFilePromptOptions): CodeToR
     }
 }
 
-function getCurrentFilePath(document: vscode.TextDocument): PromptString {
+export function getCurrentFilePath(document: vscode.TextDocument): PromptString {
     const uri =
         document.uri.scheme === 'vscode-notebook-cell'
             ? getActiveNotebookUri() ?? document.uri

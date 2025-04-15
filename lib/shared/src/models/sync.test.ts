@@ -101,6 +101,7 @@ describe('server sent models', async () => {
             chat: serverOpus.modelRef,
             fastChat: serverTitan.modelRef,
             codeCompletion: serverClaude.modelRef,
+            unlimitedChat: serverOpus.modelRef,
         },
     }
 
@@ -221,6 +222,7 @@ describe('syncModels', () => {
             expect(values).toStrictEqual<typeof values>([
                 pendingOperation,
                 {
+                    isRateLimited: false,
                     localModels: [],
                     primaryModels: [modelFixture('foo')],
                     preferences: {
@@ -239,6 +241,7 @@ describe('syncModels', () => {
             configOverwritesSubject.next({ chatModel: 'bar' })
             await vi.advanceTimersByTimeAsync(0)
             const result0: ModelsData = {
+                isRateLimited: false,
                 localModels: [],
                 primaryModels: [modelFixture('bar')],
                 preferences: {
@@ -268,6 +271,7 @@ describe('syncModels', () => {
                         chat: 'qux::a::a',
                         fastChat: 'qux::a::a',
                         codeCompletion: 'qux::a::a',
+                        unlimitedChat: 'qux::a::a',
                     },
                     providers: [],
                     revision: '',
@@ -295,6 +299,7 @@ describe('syncModels', () => {
             clearValues()
             await vi.advanceTimersByTimeAsync(1)
             const result1: ModelsData = {
+                isRateLimited: false,
                 localModels: [],
                 primaryModels: [createModelFromServerModel(quxModel, false)],
                 preferences: {
@@ -332,6 +337,7 @@ describe('syncModels', () => {
                         chat: 'zzz::a::a',
                         fastChat: 'zzz::a::a',
                         codeCompletion: 'zzz::a::a',
+                        unlimitedChat: 'zzz::a::a',
                     },
                     providers: [],
                     revision: '',
@@ -360,6 +366,7 @@ describe('syncModels', () => {
             await vi.advanceTimersByTimeAsync(1)
             expect(values).toStrictEqual<typeof values>([
                 {
+                    isRateLimited: false,
                     localModels: [],
                     primaryModels: [createModelFromServerModel(zzzModel, false)],
                     preferences: {
@@ -416,6 +423,7 @@ describe('syncModels', () => {
                 chat: serverSonnet.modelRef,
                 fastChat: serverSonnet.modelRef,
                 codeCompletion: serverSonnet.modelRef,
+                unlimitedChat: serverSonnet.modelRef,
             },
         }
 
@@ -489,6 +497,7 @@ describe('syncModels', () => {
                 chat: serverSonnet.modelRef,
                 fastChat: serverSonnet.modelRef,
                 codeCompletion: serverSonnet.modelRef,
+                unlimitedChat: serverSonnet.modelRef,
             },
         }
         const mockFetchServerSideModels = vi.fn(() => Promise.resolve(SERVER_MODELS))
@@ -497,15 +506,15 @@ describe('syncModels', () => {
             // set the feature flag
             if (featureFlagEnabled) {
                 vi.spyOn(featureFlagProvider, 'evaluateFeatureFlag').mockImplementation(
-                    (flag: FeatureFlag) =>
-                        flag === FeatureFlag.CodyChatDefaultToClaude35Haiku
+                    (flagName: FeatureFlag, _forceRefresh?: boolean) =>
+                        flagName === FeatureFlag.CodyChatDefaultToClaude35Haiku
                             ? Observable.of(featureFlagEnabled)
                             : Observable.of(false)
                 )
             } else {
                 vi.spyOn(featureFlagProvider, 'evaluateFeatureFlag').mockImplementation(
-                    (flag: FeatureFlag) =>
-                        flag === FeatureFlag.CodyChatDefaultToClaude35Haiku
+                    (flagName: FeatureFlag, _forceRefresh?: boolean) =>
+                        flagName === FeatureFlag.CodyChatDefaultToClaude35Haiku
                             ? Observable.of(featureFlagEnabled)
                             : Observable.of(true)
                 )

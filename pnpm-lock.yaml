@@ -11,6 +11,7 @@ neverBuiltDependencies:
 overrides:
   tslib: 2.1.0
   '@lexical/react': https://storage.googleapis.com/sourcegraph-assets/npm/lexical-react-sourcegraph-fork-31065486.tgz
+  pkce-challenge: 3.0.0
 
 patchedDependencies:
   highlight.js@11.8.0:
@@ -43,8 +44,8 @@ importers:
         specifier: ^8.2.0
         version: 8.2.0
       web-tree-sitter:
-        specifier: ^0.21.0
-        version: 0.21.0
+        specifier: ^0.24.5
+        version: 0.24.5
       win-ca:
         specifier: ^3.5.1
         version: 3.5.1
@@ -427,15 +428,15 @@ importers:
       env-paths:
         specifier: ^2.2.1
         version: 2.2.1
+      gpt-tokenizer:
+        specifier: ^2.9.0
+        version: 2.9.0
       immer:
         specifier: ^10.1.1
         version: 10.1.1
       isomorphic-fetch:
         specifier: ^3.0.0
         version: 3.0.0
-      js-tiktoken:
-        specifier: ^1.0.14
-        version: 1.0.14
       lexical:
         specifier: ^0.17.0
         version: 0.17.0
@@ -515,6 +516,9 @@ importers:
       '@opentelemetry/core':
         specifier: ^1.18.1
         version: 1.18.1(@opentelemetry/api@1.7.0)
+      '@opentelemetry/exporter-metrics-otlp-http':
+        specifier: ^0.45.1
+        version: 0.45.1(@opentelemetry/api@1.7.0)
       '@opentelemetry/exporter-trace-otlp-http':
         specifier: ^0.45.1
         version: 0.45.1(@opentelemetry/api@1.7.0)
@@ -525,6 +529,9 @@ importers:
         specifier: ^0.45.1
         version: 0.45.1(@opentelemetry/api@1.7.0)
       '@opentelemetry/resources':
+        specifier: ^1.18.1
+        version: 1.18.1(@opentelemetry/api@1.7.0)
+      '@opentelemetry/sdk-metrics':
         specifier: ^1.18.1
         version: 1.18.1(@opentelemetry/api@1.7.0)
       '@opentelemetry/sdk-trace-base':
@@ -3551,7 +3558,7 @@ packages:
       eventsource: 3.0.5
       express: 5.0.1
       express-rate-limit: 7.5.0(express@5.0.1)
-      pkce-challenge: 4.1.0
+      pkce-challenge: 3.0.0
       raw-body: 3.0.0
       zod: 3.23.8
       zod-to-json-schema: 3.24.3(zod@3.23.8)
@@ -3721,6 +3728,20 @@ packages:
     dependencies:
       '@opentelemetry/api': 1.7.0
       '@opentelemetry/semantic-conventions': 1.27.0
+    dev: false
+
+  /@opentelemetry/exporter-metrics-otlp-http@0.45.1(@opentelemetry/api@1.7.0):
+    resolution: {integrity: sha512-DvyXkjHIrnQ9ESj8tDrGFzRtVIGOzZpmi80YZdTlwr6TMQzvg4UgHQcGo6wj7ZGzdwAJ7057OgAcDUd+/O/Erg==}
+    engines: {node: '>=14'}
+    peerDependencies:
+      '@opentelemetry/api': ^1.3.0
+    dependencies:
+      '@opentelemetry/api': 1.7.0
+      '@opentelemetry/core': 1.18.1(@opentelemetry/api@1.7.0)
+      '@opentelemetry/otlp-exporter-base': 0.45.1(@opentelemetry/api@1.7.0)
+      '@opentelemetry/otlp-transformer': 0.45.1(@opentelemetry/api@1.7.0)
+      '@opentelemetry/resources': 1.18.1(@opentelemetry/api@1.7.0)
+      '@opentelemetry/sdk-metrics': 1.18.1(@opentelemetry/api@1.7.0)
     dev: false
 
   /@opentelemetry/exporter-trace-otlp-http@0.45.1(@opentelemetry/api@1.7.0):
@@ -4310,7 +4331,7 @@ packages:
       '@types/react-dom':
         optional: true
     dependencies:
-      '@babel/runtime': 7.24.5
+      '@babel/runtime': 7.26.0
       '@radix-ui/primitive': 1.0.1
       '@radix-ui/react-compose-refs': 1.0.1(@types/react@18.2.37)(react@18.2.0)
       '@radix-ui/react-context': 1.0.1(@types/react@18.2.37)(react@18.2.0)
@@ -8269,6 +8290,7 @@ packages:
 
   /base64-js@1.5.1:
     resolution: {integrity: sha512-AKpaYlHn8t4SVbOHCy+b5+KKgvR4vrsD8vbvrbiQJps7fKDTkjkDry6ji0rUJjC0kzbNePLwzxq8iypo41qeWA==}
+    dev: true
 
   /base@0.11.2:
     resolution: {integrity: sha512-5T6P4xPgpp0YDFvSWwEZ4NoE3aM4QBQXDzmVbraCkFj8zHM+mba8SyqB5DbZWyR7mYHo6Y7BdQo3MoA4m0TeQg==}
@@ -11079,6 +11101,10 @@ packages:
     engines: {node: '>= 0.4'}
     dev: false
 
+  /gpt-tokenizer@2.9.0:
+    resolution: {integrity: sha512-YSpexBL/k4bfliAzMrRqn3M6+it02LutVyhVpDeMKrC/O9+pCe/5s8U2hYKa2vFLD5/vHhsKc8sOn/qGqII8Kg==}
+    dev: false
+
   /graceful-fs@4.2.11:
     resolution: {integrity: sha512-RbJ5/jmFcNNCcDV5o9eTnBLJ/HszWV0P73bc+Ff4nS/rJj+YaS6IGyiOL0VoBYX+l1Wrl3k63h/KrH+nhJ0XvQ==}
 
@@ -12133,12 +12159,6 @@ packages:
   /js-levenshtein@1.1.6:
     resolution: {integrity: sha512-X2BB11YZtrRqY4EnQcLX5Rh373zbK4alC1FW7D7MBhL2gtcC17cTnr6DmfHZeS0s2rTHjUTMMHfG7gO8SSdw+g==}
     engines: {node: '>=0.10.0'}
-
-  /js-tiktoken@1.0.14:
-    resolution: {integrity: sha512-Pk3l3WOgM9joguZY2k52+jH82RtABRgB5RdGFZNUGbOKGMVlNmafcPA3b0ITcCZPu1L9UclP1tne6aw7ZI4Myg==}
-    dependencies:
-      base64-js: 1.5.1
-    dev: false
 
   /js-tokens@4.0.0:
     resolution: {integrity: sha512-RdJUflcE3cUzKiMqQgsCu06FPu9UdIJO0beYbPhHN4k6apgJtifcoCtT9bcxOpYBtpD2kCM6Sbzg4CausW/PKQ==}
@@ -14429,9 +14449,10 @@ packages:
       pngjs: 6.0.0
     dev: true
 
-  /pkce-challenge@4.1.0:
-    resolution: {integrity: sha512-ZBmhE1C9LcPoH9XZSdwiPtbPHZROwAnMy+kIFQVrnMCxY4Cudlz3gBOpzilgc0jOgRaiT3sIWfpMomW2ar2orQ==}
-    engines: {node: '>=16.20.0'}
+  /pkce-challenge@3.0.0:
+    resolution: {integrity: sha512-sQ8sJJJuLhA5pFnoxayMCrFnBMNj7DDpa+TWxOXl4B24oXHlVSADi/3Bowm66QuzWkBuF6DhmaelCdlC2JKwsg==}
+    dependencies:
+      crypto-js: 4.2.0
     dev: false
 
   /pkg-dir@3.0.0:
@@ -17922,8 +17943,8 @@ packages:
     engines: {node: '>= 14'}
     dev: false
 
-  /web-tree-sitter@0.21.0:
-    resolution: {integrity: sha512-iJ+QJ6ikN9D9cG7Kh6q3KtAstYFUQbYZ8OjuPEJYWfj2kLrmp5I3C2n6WjE1Y3jvj7nJbkcrJytJGWUEhCxn+g==}
+  /web-tree-sitter@0.24.5:
+    resolution: {integrity: sha512-+J/2VSHN8J47gQUAvF8KDadrfz6uFYVjxoxbKWDoXVsH2u7yLdarCnIURnrMA6uSRkgX3SdmqM5BOoQjPdSh5w==}
     dev: false
 
   /webauthn4js@3.0.0:

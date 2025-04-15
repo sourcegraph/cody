@@ -1,6 +1,7 @@
 import type { FC } from 'react'
 import 'highlight.js/styles/github.css'
 import hljs from 'highlight.js/lib/core'
+import { useState } from 'react'
 
 import type {
     DecorationInfo,
@@ -23,8 +24,24 @@ for (const [name, language] of Object.entries(SYNTAX_HIGHLIGHTING_LANGUAGES)) {
 export const SideBySideDiff: FC<{
     sideBySideDiffDecorationInfo: DecorationInfo
     languageId: string
-}> = ({ sideBySideDiffDecorationInfo, languageId }) => {
+    codeToRewrite: string
+    prediction: string
+}> = ({ sideBySideDiffDecorationInfo, languageId, codeToRewrite, prediction }) => {
     const sideBySideLines = buildSideBySideLines(sideBySideDiffDecorationInfo, languageId)
+    const [leftCopySuccess, setLeftCopySuccess] = useState(false)
+    const [rightCopySuccess, setRightCopySuccess] = useState(false)
+
+    const handleCopy = (text: string, setSuccess: (success: boolean) => void) => {
+        if (text) {
+            navigator.clipboard
+                .writeText(text)
+                .then(() => {
+                    setSuccess(true)
+                    setTimeout(() => setSuccess(false), 2000)
+                })
+                .catch(err => console.error('Failed to copy text: ', err))
+        }
+    }
 
     return (
         <div className="tw-overflow-x-auto">
@@ -32,9 +49,35 @@ export const SideBySideDiff: FC<{
                 <thead>
                     <tr className="tw-border-b tw-border-gray-300 tw-bg-gray-50">
                         <th className="tw-w-12 tw-text-right tw-pr-2 tw-sticky tw-left-0 tw-z-10 tw-bg-gray-50" />
-                        <th className="tw-w-[calc(50%-24px)] tw-text-left">Code To Rewrite</th>
+                        <th className="tw-w-[calc(50%-24px)] tw-text-left">
+                            <div className="tw-flex tw-items-center tw-gap-2">
+                                <span>Code To Rewrite</span>
+                                <button
+                                    type="button"
+                                    onClick={() => handleCopy(codeToRewrite, setLeftCopySuccess)}
+                                    className="tw-text-xs tw-text-gray-600 hover:tw-text-gray-800 dark:tw-text-gray-400 dark:hover:tw-text-gray-200 tw-rounded tw-px-2 tw-py-1 tw-bg-gray-100 hover:tw-bg-gray-200 dark:tw-bg-gray-700 dark:hover:tw-bg-gray-600 tw-transition-colors tw-duration-150"
+                                    title="Copy code to rewrite"
+                                    aria-label="Copy code to rewrite"
+                                >
+                                    {leftCopySuccess ? 'Copied!' : 'Copy'}
+                                </button>
+                            </div>
+                        </th>
                         <th className="tw-w-12 tw-text-right tw-pr-2" />
-                        <th className="tw-w-[calc(50%-24px)] tw-text-left">Prediction</th>
+                        <th className="tw-w-[calc(50%-24px)] tw-text-left">
+                            <div className="tw-flex tw-items-center tw-gap-2">
+                                <span>Prediction</span>
+                                <button
+                                    type="button"
+                                    onClick={() => handleCopy(prediction, setRightCopySuccess)}
+                                    className="tw-text-xs tw-text-gray-600 hover:tw-text-gray-800 dark:tw-text-gray-400 dark:hover:tw-text-gray-200 tw-rounded tw-px-2 tw-py-1 tw-bg-gray-100 hover:tw-bg-gray-200 dark:tw-bg-gray-700 dark:hover:tw-bg-gray-600 tw-transition-colors tw-duration-150"
+                                    title="Copy prediction"
+                                    aria-label="Copy prediction"
+                                >
+                                    {rightCopySuccess ? 'Copied!' : 'Copy'}
+                                </button>
+                            </div>
+                        </th>
                     </tr>
                 </thead>
                 <tbody>

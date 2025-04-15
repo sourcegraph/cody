@@ -11,8 +11,6 @@ data class CodyApplicationSettings(
     var isCodyAutocompleteEnabled: Boolean = true,
     var isCodyDebugEnabled: Boolean = false,
     var isCodyVerboseDebugEnabled: Boolean = false,
-    var isGetStartedNotificationDismissed: Boolean = false,
-    var isNotLoggedInNotificationDismissed: Boolean = false,
     var anonymousUserId: String? = null,
     var isInstallEventLogged: Boolean = false,
     var isCustomAutocompleteColorEnabled: Boolean = false,
@@ -20,7 +18,6 @@ data class CodyApplicationSettings(
     var isLookupAutocompleteEnabled: Boolean = true,
     var isCodyUIHintsEnabled: Boolean = false,
     var blacklistedLanguageIds: List<String> = listOf(),
-    var isOnboardingGuidanceDismissed: Boolean = false,
     var shouldAcceptNonTrustedCertificatesAutomatically: Boolean = false,
     var shouldCheckForUpdates: Boolean = true,
     var isOffScreenRenderingEnabled: Boolean = true,
@@ -32,8 +29,6 @@ data class CodyApplicationSettings(
     this.isCodyAutocompleteEnabled = state.isCodyAutocompleteEnabled
     this.isCodyDebugEnabled = state.isCodyDebugEnabled
     this.isCodyVerboseDebugEnabled = state.isCodyVerboseDebugEnabled
-    this.isGetStartedNotificationDismissed = state.isGetStartedNotificationDismissed
-    this.isNotLoggedInNotificationDismissed = state.isNotLoggedInNotificationDismissed
     this.anonymousUserId = state.anonymousUserId
     this.isInstallEventLogged = state.isInstallEventLogged
     this.isCustomAutocompleteColorEnabled = state.isCustomAutocompleteColorEnabled
@@ -41,7 +36,6 @@ data class CodyApplicationSettings(
     this.isLookupAutocompleteEnabled = state.isLookupAutocompleteEnabled
     this.isCodyUIHintsEnabled = state.isCodyUIHintsEnabled
     this.blacklistedLanguageIds = state.blacklistedLanguageIds
-    this.isOnboardingGuidanceDismissed = state.isOnboardingGuidanceDismissed
     this.shouldAcceptNonTrustedCertificatesAutomatically =
         state.shouldAcceptNonTrustedCertificatesAutomatically
     this.shouldCheckForUpdates = state.shouldCheckForUpdates

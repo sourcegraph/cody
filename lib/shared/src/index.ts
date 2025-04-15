@@ -24,6 +24,7 @@ enableImmerMapSetSupport()
 // Add anything else here that needs to be used outside of this library.
 
 export * from './models/modelsService'
+export { handleRateLimitError } from './models/sync'
 export {
     type Model,
     type ServerModel,
@@ -364,9 +365,7 @@ export {
 } from './mentions/api'
 export {
     TokenCounter,
-    getTokenCounterUtils,
     TokenCounterUtils,
-    useFakeTokenCounterUtils,
 } from './token/counter'
 export { CORPUS_CONTEXT_ALLOCATION as ENHANCED_CONTEXT_ALLOCATION } from './token/constants'
 export { tokensToChars, charsToTokens } from './token/utils'

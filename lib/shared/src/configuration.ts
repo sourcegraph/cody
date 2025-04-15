@@ -73,6 +73,10 @@ export interface AutoEditsModelConfig {
      * WebSocket proxy is no longer necessary.
      */
     webSocketEndpoint?: string
+    /**
+     * Timeout for the request in milliseconds.
+     */
+    timeoutMs: number
 }
 
 export interface NetConfiguration {
@@ -235,7 +239,7 @@ export enum CodyAutoSuggestionMode {
     /**
      * The suggestion mode where suggestions come from the Cody AI agent chat API.
      */
-    Autoedit = 'auto-edit (Beta)',
+    Autoedit = 'auto-edit',
     /**
      * Disable Cody suggestions altogether.
      */

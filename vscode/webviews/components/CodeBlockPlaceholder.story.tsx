@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react'
 
+import { GuardrailsCheckStatus } from '@sourcegraph/cody-shared'
 import React from 'react'
 import { CodeBlockPlaceholder } from './CodeBlockPlaceholder'
 
@@ -65,6 +66,6 @@ export const Animated: Story = {
             return () => clearInterval(timer)
         }, [index])
 
-        return <CodeBlockPlaceholder text={text} />
+        return <CodeBlockPlaceholder text={text} status={GuardrailsCheckStatus.Checking} />
     },
 }

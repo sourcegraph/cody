@@ -20,7 +20,7 @@ class CodyAuthService(val project: Project) {
 
   fun setActivated(isActivated: Boolean) {
     this.isActivated = isActivated
-    if (isActivated && !isIntegrationTestModeEnabled())
+    if (isActivated && !isIntegrationTestModeEnabled() && !project.isDisposed)
         FindService.getInstance(project).refreshConfiguration()
   }
 

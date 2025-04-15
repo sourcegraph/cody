@@ -708,7 +708,7 @@ export class SourcegraphGraphQLAPIClient {
     private readonly siteVersionCache: GraphQLResultCache<string>
 
     public static withGlobalConfig(): SourcegraphGraphQLAPIClient {
-        return new SourcegraphGraphQLAPIClient(resolvedConfig)
+        return new SourcegraphGraphQLAPIClient(resolvedConfig.pipe(distinctUntilChanged()))
     }
 
     /**
