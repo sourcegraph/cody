@@ -1,10 +1,11 @@
 import type { CodyIDE } from '@sourcegraph/cody-shared'
-import { useExtensionAPI, useObservable } from '@sourcegraph/prompt-editor'
-import { HistoryIcon } from 'lucide-react'
+import { ArrowRightIcon, HistoryIcon } from 'lucide-react'
 import type { FunctionComponent } from 'react'
 import { useMemo } from 'react'
 import { getRelativeChatPeriod } from '../../../src/common/time-date'
 import { Button } from '../../components/shadcn/ui/button'
+import { Card, CardContent } from '../../components/shadcn/ui/card'
+import { useUserHistory } from '../../components/useUserHistory'
 import { View } from '../../tabs/types'
 import { getVSCodeAPI } from '../../utils/VSCodeApi'
 
@@ -13,38 +14,35 @@ interface LastConversationProps {
     IDE: CodyIDE
 }
 
-function useUserHistory() {
-    const userHistory = useExtensionAPI().userHistory
-    return useObservable(useMemo(() => userHistory(), [userHistory])).value
-}
-
-export const LastConversation: FunctionComponent<LastConversationProps> = ({ setView, IDE }) => {
+export const LastConversation: FunctionComponent<LastConversationProps> = ({ setView }) => {
     const userHistory = useUserHistory()
 
     const lastChat = useMemo(() => {
-        if (!userHistory?.chat) {
+        if (!userHistory) {
             return null
         }
-        const chats = Object.values(userHistory.chat)
-            .filter(chat => chat.interactions.length > 0)
-            .sort(
-                (a, b) =>
-                    new Date(b.lastInteractionTimestamp).getTime() -
-                    new Date(a.lastInteractionTimestamp).getTime()
-            )
-        return chats[0] || null
+
+        // Convert to array once and sort by timestamp
+        return (
+            Object.values(userHistory)
+                .filter(chat => chat.firstHumanMessageText?.trim())
+                .sort(
+                    (a, b) =>
+                        new Date(b.lastInteractionTimestamp).getTime() -
+                        new Date(a.lastInteractionTimestamp).getTime()
+                )[0] || null
+        )
     }, [userHistory])
 
-    if (!lastChat) {
+    // Early return if no chat history exists
+    if (!lastChat?.chatTitle?.trim()) {
         return null
     }
 
-    const lastMessage =
-        lastChat.interactions[lastChat.interactions.length - 1]?.humanMessage?.text?.trim() || ''
-    const displayText = lastChat.chatTitle?.trim() || lastMessage
-    const truncatedText = displayText.length > 50 ? displayText.slice(0, 47) + '...' : displayText
+    const displayText = lastChat.chatTitle?.trim()
     const timePeriod = getRelativeChatPeriod(new Date(lastChat.lastInteractionTimestamp))
 
+    // Handler functions
     const handleClick = () => {
         getVSCodeAPI().postMessage({
             command: 'restoreHistory',
@@ -53,19 +51,36 @@ export const LastConversation: FunctionComponent<LastConversationProps> = ({ set
         setView(View.Chat)
     }
 
+    const handleViewAllClick = () => setView(View.History)
+
     return (
-        <Button
-            variant="outline"
-            className="tw-w-full tw-flex tw-items-center tw-gap-2 tw-px-3 tw-py-2 tw-text-left tw-border-gray-500/20 dark:tw-border-gray-600/40"
-            onClick={handleClick}
-        >
-            <HistoryIcon size={16} className="tw-text-foreground/80" />
-            <div className="tw-flex-1 tw-min-w-0">
-                <div className="tw-text-sm tw-font-medium tw-text-foreground/80 tw-truncate">
-                    {truncatedText}
-                </div>
-                <div className="tw-text-xs tw-text-foreground/60">{timePeriod}</div>
+        <div>
+            <div className="tw-mb-4 tw-flex tw-items-center tw-justify-end tw-border-1 tw-border-[var(--vscode-dropdown-border, transparent)]">
+                <Button variant="ghost" size="sm" className="tw-pl-2" onClick={handleViewAllClick}>
+                    View all
+                    <ArrowRightIcon size={14} className="tw-ml-2" />
+                </Button>
             </div>
-        </Button>
+            <Card
+                className="tw-overflow-hidden tw-transition-all hover:tw-bg-muted/5 tw-cursor-pointer"
+                onClick={handleClick}
+            >
+                <CardContent className="tw-p-4">
+                    <div className="tw-flex tw-items-start">
+                        <div className="tw-flex-1 tw-space-y-1 tw-overflow-y-auto">
+                            <h3 className="tw-font-normal tw-text-left tw-truncate tw-w-full">
+                                {displayText}
+                            </h3>
+                            <p className="tw-line-clamp-1 tw-text-sm tw-text-muted-foreground">
+                                <div className="tw-inline-flex tw-items-center tw-text-xs tw-text-muted-foreground">
+                                    <HistoryIcon size={12} className="tw-inline-block tw-mr-1" />
+                                    {timePeriod}
+                                </div>
+                            </p>
+                        </div>
+                    </div>
+                </CardContent>
+            </Card>
+        </div>
     )
 }

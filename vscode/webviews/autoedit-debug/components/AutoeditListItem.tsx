@@ -63,15 +63,15 @@ const DetailedTiming: FC<{
 
 // Sub-component for file info
 const FileInfo: FC<{
-    filePath: string
+    fileName: string
     positionInfo: string
     inferenceTime?: string | null
     envoyUpstreamServiceTime?: string | null
-}> = ({ filePath, positionInfo, inferenceTime, envoyUpstreamServiceTime }) => (
+}> = ({ fileName, positionInfo, inferenceTime, envoyUpstreamServiceTime }) => (
     <div className="tw-flex tw-items-center tw-justify-between tw-w-full tw-text-sm tw-text-gray-700 tw-dark:tw-text-gray-300">
         <div className="tw-flex tw-items-center">
             <span className="tw-font-medium">
-                {`${filePath} ${positionInfo ? `:${positionInfo}` : ''}`}
+                {`${fileName} ${positionInfo ? `:${positionInfo}` : ''}`}
             </span>
         </div>
         {inferenceTime && (
@@ -120,7 +120,7 @@ export const AutoeditListItem: FC<AutoeditEntryItemProps> = ({ entry, isSelected
     // Extract all data from entry using the SDK
     const {
         phase,
-        filePath,
+        fileName,
         codeToRewrite = '',
         triggerKind,
         positionInfo,
@@ -185,7 +185,7 @@ export const AutoeditListItem: FC<AutoeditEntryItemProps> = ({ entry, isSelected
 
                     {/* File and position info */}
                     <FileInfo
-                        filePath={filePath}
+                        fileName={fileName}
                         positionInfo={positionInfo}
                         inferenceTime={timing.inferenceTime}
                         envoyUpstreamServiceTime={timing.envoyUpstreamServiceTime}

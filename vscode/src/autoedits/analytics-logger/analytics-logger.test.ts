@@ -14,7 +14,7 @@ import { getCurrentDocContext } from '../../completions/get-current-doc-context'
 import { documentAndPosition } from '../../completions/test-helpers'
 import * as sentryModule from '../../services/sentry/sentry'
 import { type AutoeditModelOptions, AutoeditStopReason } from '../adapters/base'
-import { getCodeToReplaceData } from '../prompt/prompt-utils'
+import { getCodeToReplaceData, getCurrentFilePath } from '../prompt/prompt-utils'
 import { getDecorationInfo } from '../renderer/diff-utils'
 
 import { AutoeditAnalyticsLogger } from './analytics-logger'
@@ -74,6 +74,7 @@ describe('AutoeditAnalyticsLogger', () => {
     function getRequestStartMetadata(): Parameters<AutoeditAnalyticsLogger['createRequest']>[0] {
         return {
             startedAt: performance.now(),
+            filePath: getCurrentFilePath(document).toString(),
             docContext,
             document,
             position,
@@ -95,6 +96,7 @@ describe('AutoeditAnalyticsLogger', () => {
 
         autoeditLogger.markAsContextLoaded({
             requestId,
+            context: [],
             payload: {
                 contextSummary: {
                     strategy: 'none',
@@ -320,7 +322,11 @@ describe('AutoeditAnalyticsLogger', () => {
 
     it.skip('logs `discarded` if the suggestion was not suggested for any reason', () => {
         const requestId = autoeditLogger.createRequest(getRequestStartMetadata())
-        autoeditLogger.markAsContextLoaded({ requestId, payload: { contextSummary: undefined } })
+        autoeditLogger.markAsContextLoaded({
+            requestId,
+            context: [],
+            payload: { contextSummary: undefined },
+        })
         autoeditLogger.markAsDiscarded({
             requestId,
             discardReason: autoeditDiscardReason.emptyPrediction,

@@ -151,6 +151,16 @@ function createVSCodeAPI(input: {
             // Special override for Cody Web
             if (message.command === 'command' && message.id === 'cody.chat.new') {
                 void createNewChat()
+
+                // force a view update
+                for (const callback of onMessageCallbacks) {
+                    callback({
+                        type: 'transcript',
+                        messages: [],
+                        isMessageInProgress: false,
+                        chatID: message.id,
+                    })
+                }
                 return
             }
             void client.rpc.sendRequest('webview/receiveMessage', {

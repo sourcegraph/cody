@@ -306,16 +306,14 @@ export class FireworksWebSocketAdapter implements AutoeditsModelAdapter {
         const headers = new Headers({})
         await addAuthHeaders(auth, headers, url)
 
-        let token = headers.get('Authorization')
-        if (token?.startsWith('token')) {
-            token = 'Bearer ' + token.split(' ')[1]
-        }
+        const token = headers.get('Authorization')
 
         this.pendingConnectPromise = new Promise((resolve, reject) => {
             const protocol = `${clientInfoParams['client-name']}-${clientInfoParams['client-version']}`
             const ws = new WebSocket(this.webSocketEndpoint, protocol, {
                 headers: {
                     authorization: token === null ? undefined : token,
+                    'X-Sourcegraph-Endpoint': auth.serverEndpoint,
                 },
             })
             ws.addEventListener('open', () => {
