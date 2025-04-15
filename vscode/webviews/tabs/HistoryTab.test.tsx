@@ -5,6 +5,16 @@ import { describe, expect, test, vi } from 'vitest'
 import { AppWrapperForTest } from '../AppWrapperForTest'
 import { HistoryTabWithData } from './HistoryTab'
 
+// Mock VSCodeApi
+vi.mock('../utils/VSCodeApi', () => ({
+    getVSCodeAPI: vi.fn().mockReturnValue({
+        postMessage: vi.fn(),
+        onMessage: vi.fn().mockReturnValue(() => {}),
+        setState: vi.fn(),
+        getState: vi.fn(),
+    }),
+}))
+
 // Create a proper mock for extensionAPI
 const createMockExtensionAPI = (): WebviewToExtensionAPI => ({
     mentionMenuData: vi.fn(),
@@ -28,6 +38,7 @@ const createMockExtensionAPI = (): WebviewToExtensionAPI => ({
     userHistory: vi.fn().mockReturnValue(null),
     userProductSubscription: vi.fn().mockReturnValue(null),
     frequentlyUsedContextItems: vi.fn().mockReturnValue([]),
+    mcpSettings: () => new Observable(() => {}),
 })
 
 describe('HistoryTabWithData', () => {
