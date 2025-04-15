@@ -320,9 +320,6 @@ export class EditManager implements vscode.Disposable {
             this.options.fixupController.error(task.id, errorObject)
 
             logError('EditManager', 'startStreamingEditTask', errorObject)
-            void vscode.window.showErrorMessage(
-                `Error performing the ${task.intent} task. Check the logs for more details.`
-            )
         }
     }
 
