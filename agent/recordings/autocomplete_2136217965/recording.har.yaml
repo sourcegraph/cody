@@ -94,6 +94,175 @@ log:
         send: 0
         ssl: -1
         wait: 228
+    - _id: 54c13387d9af8adabcdeadd76c3d8376
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 1317
+        cookies: []
+        headers:
+          - name: accept
+            value: "*/*"
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_fc324d3667e841181b0779375f26dedc911d26b303d23b29b1a2d7ee63dc77eb
+          - name: connection
+            value: close
+          - name: content-length
+            value: "1317"
+          - name: content-type
+            value: application/json; charset=utf-8
+          - name: user-agent
+            value: autocomplete/v1 (Node.js v20.10.0)
+          - name: x-requested-with
+            value: autocomplete v1
+          - name: x-timeout-ms
+            value: "7000"
+          - name: host
+            value: sourcegraph.com
+        headersSize: 444
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json; charset=utf-8
+          params: []
+          textJSON:
+            maxTokensToSample: 256
+            messages:
+              - speaker: human
+                text: >-
+                  #src/sum.ts
+
+                  export function sum(a: number, b: number): number {
+                      
+                  }
+
+
+
+                  #src/mergeSort.ts
+
+                  function mergeSort(arr: number[]): number[] {
+                      if (arr.length <= 1) {
+                          return arr
+                      }
+
+                      const mid = Math.floor(arr.length / 2)
+                      const left = arr.slice(0, mid)
+                      const right = arr.slice(mid)
+
+                      return merge(mergeSort(left), mergeSort(right))
+                  }
+
+
+                  function merge(left: number[], right: number[]): number[] {
+                      let result: number[] = []
+                      let leftIndex = 0
+                      let rightIndex = 0
+
+                      while (leftIndex < left.length && rightIndex < right.length) {
+                          if (left[leftIndex] < right[rightIndex]) {
+                              result.push(left[leftIndex])
+                              leftIndex++
+                          } else {
+                              result.push(right[rightIndex])
+                              rightIndex++
+                          }
+                      }
+
+                      return result.concat(left.slice(leftIndex)).concat(right.slice(rightIndex))
+                  }
+
+
+
+                  #src/bubbleSort.ts
+
+                  <｜fim▁begin｜>function bubbleSort(arr: number[]): number[] {
+                      <｜fim▁hole｜>
+                  }
+
+                  <｜fim▁end｜>
+            model: fireworks/deepseek-coder-v2-lite-base
+            stopSequences:
+              - "\n\n"
+              - "\n\r\n"
+              - <｜fim▁begin｜>
+              - <｜fim▁hole｜>
+              - <｜fim▁end｜>, <|eos_token|>
+            stream: true
+            temperature: 0.2
+            timeoutMs: 7000
+            topK: 0
+        queryString:
+          - name: client-name
+            value: autocomplete
+          - name: client-version
+            value: v1
+        url: https://sourcegraph.com/.api/completions/code?client-name=autocomplete&client-version=v1
+      response:
+        bodySize: 4180
+        content:
+          mimeType: text/event-stream
+          size: 4180
+          text: >+
+            event: completion
+
+            data: {"completion":"for (let i = 0; i < arr.length; i++) {\n        for (let j = 0; j < arr.length - i - 1; j++) {\n            if (arr[j] > arr[j + 1]) {\n                let temp = arr[j]\n                arr[j] = arr[j + 1]\n                arr[j + 1] = temp\n            }\n        }\n    }\n    return arr","stopReason":"stop"}
+
+
+            event: done
+
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Mon, 09 Dec 2024 14:47:54 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: close
+          - name: retry-after
+            value: "588"
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: observed-calculated-ip-from-forwarded-for
+            value: 80.82.18.146
+          - name: observed-x-forwarded-for
+            value: 80.82.18.146
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1498
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-12-09T14:47:52.771Z
+      time: 1748
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 1748
     - _id: 400657813b3b22c276b690ec67125fb6
       _order: 0
       cache: {}
@@ -221,129 +390,6 @@ log:
         send: 0
         ssl: -1
         wait: 683
-    - _id: a7fb4ecbcf8640cd530c4173b92ca934
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 421
-        cookies: []
-        headers:
-          - _fromType: array
-            name: accept
-            value: application/json
-          - _fromType: array
-            name: accept-encoding
-            value: gzip;q=0
-          - _fromType: array
-            name: authorization
-            value: token
-              REDACTED_fc324d3667e841181b0779375f26dedc911d26b303d23b29b1a2d7ee63dc77eb
-          - _fromType: array
-            name: content-type
-            value: application/json; charset=utf-8
-          - _fromType: array
-            name: user-agent
-            value: autocomplete/v1 (Node.js v23.7.0)
-          - _fromType: array
-            name: x-requested-with
-            value: autocomplete v1
-          - _fromType: array
-            name: x-timeout-ms
-            value: "7000"
-          - _fromType: array
-            name: content-length
-            value: "421"
-          - name: host
-            value: sourcegraph.com
-        headersSize: 436
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json; charset=utf-8
-          params: []
-          textJSON:
-            maxTokensToSample: 256
-            messages:
-              - speaker: human
-                text: |-
-                  
-
-                  #src/bubbleSort.ts
-                  <｜fim▁begin｜>function bubbleSort(arr: number[]): number[] {
-                      <｜fim▁hole｜>
-                  }
-                  <｜fim▁end｜>
-            model: fireworks/deepseek-coder-v2-lite-base
-            stopSequences:
-              - "\n\n"
-              - "\n\r\n"
-              - <｜fim▁begin｜>
-              - <｜fim▁hole｜>
-              - <｜fim▁end｜>, <|eos_token|>
-            stream: true
-            temperature: 0.2
-            timeoutMs: 7000
-            topK: 0
-        queryString:
-          - name: client-name
-            value: autocomplete
-          - name: client-version
-            value: v1
-        url: https://sourcegraph.com/.api/completions/code?client-name=autocomplete&client-version=v1
-      response:
-        bodySize: 199
-        content:
-          mimeType: text/event-stream
-          size: 199
-          text: |+
-            event: completion
-            data: {"completion":"return arr;","stopReason":"stop"}
-
-            event: done
-            data: {}
-
-        cookies: []
-        headers:
-          - name: date
-            value: Sat, 12 Apr 2025 21:21:33 GMT
-          - name: content-type
-            value: text/event-stream
-          - name: transfer-encoding
-            value: chunked
-          - name: connection
-            value: close
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache
-          - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
-              X-Requested-With,Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1363
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2025-04-12T21:21:32.258Z
-      time: 881
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 881
     - _id: f1b1cde4cd57488b7f0137954f0302f5
       _order: 0
       cache: {}

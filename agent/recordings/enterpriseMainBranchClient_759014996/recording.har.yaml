@@ -92,41 +92,35 @@ log:
         send: 0
         ssl: -1
         wait: 303
-    - _id: 7d7c54eb7903b56d7932bc18c6f89dd0
+    - _id: 5b4a930c5a97ee546cb6b9a4a4a8edce
       _order: 0
       cache: {}
       request:
-        bodySize: 419
+        bodySize: 811
         cookies: []
         headers:
-          - _fromType: array
-            name: accept
-            value: application/json
-          - _fromType: array
-            name: accept-encoding
+          - name: accept
+            value: "*/*"
+          - name: accept-encoding
             value: gzip;q=0
-          - _fromType: array
-            name: authorization
+          - name: authorization
             value: token
               REDACTED_1858aad0e1ff07ae26d4042086acb9da455866ad617afd2cb9ab9419e1be1104
-          - _fromType: array
-            name: content-type
+          - name: connection
+            value: close
+          - name: content-length
+            value: "811"
+          - name: content-type
             value: application/json; charset=utf-8
-          - _fromType: array
-            name: user-agent
-            value: enterprisemainbranchclient/v1 (Node.js v23.7.0)
-          - _fromType: array
-            name: x-requested-with
+          - name: user-agent
+            value: enterprisemainbranchclient/v1 (Node.js v20.10.0)
+          - name: x-requested-with
             value: enterprisemainbranchclient v1
-          - _fromType: array
-            name: x-timeout-ms
+          - name: x-timeout-ms
             value: "7000"
-          - _fromType: array
-            name: content-length
-            value: "419"
           - name: host
             value: sourcegraph.sourcegraph.com
-        headersSize: 502
+        headersSize: 509
         httpVersion: HTTP/1.1
         method: POST
         postData:
@@ -137,7 +131,29 @@ log:
             messages:
               - speaker: human
                 text: >-
-                  
+                  #src/squirrel.ts
+
+                  /**
+                   * Squirrel is an interface that mocks something completely unrelated to squirrels.
+                   * It is related to the implementation of precise code navigation in Sourcegraph.
+                   */
+                  export interface Squirrel {}
+
+
+
+                  #src/animal.ts
+
+                  /* SELECTION_START */
+
+                  export interface Animal {
+                      name: string
+                      makeAnimalSound(): string
+                      isMammal: boolean
+                  }
+
+                  /* SELECTION_END */
+
+
 
                   #src/sum.ts
 
@@ -164,13 +180,13 @@ log:
             value: v1
         url: https://sourcegraph.sourcegraph.com/.api/completions/code?client-name=enterprisemainbranchclient&client-version=v1
       response:
-        bodySize: 203
+        bodySize: 254
         content:
           mimeType: text/event-stream
-          size: 203
+          size: 254
           text: |+
             event: completion
-            data: {"completion":"return a + b;","stopReason":"stop"}
+            data: {"completion":"return a + b","stopReason":"stop"}
 
             event: done
             data: {}
@@ -178,7 +194,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Sat, 12 Apr 2025 21:21:27 GMT
+            value: Mon, 09 Dec 2024 14:47:35 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -191,6 +207,10 @@ log:
             value: ""
           - name: cache-control
             value: no-cache
+          - name: observed-calculated-ip-from-forwarded-for
+            value: 34.117.155.115
+          - name: observed-x-forwarded-for
+            value: 80.82.18.146, 172.68.159.57, 34.117.155.115
           - name: vary
             value: Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
               Cookie
@@ -202,13 +222,13 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1406
+        headersSize: 1340
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-04-12T21:21:26.846Z
-      time: 719
+      startedDateTime: 2024-12-09T14:47:35.049Z
+      time: 637
       timings:
         blocked: -1
         connect: -1
@@ -216,7 +236,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 719
+        wait: 637
     - _id: 5d0e29776bf0857beffb22b778ce488b
       _order: 0
       cache: {}
