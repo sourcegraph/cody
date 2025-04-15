@@ -55,7 +55,7 @@ export function createOrUpdateTelemetryRecorderProvider(
                         configuration,
                         auth,
                         clientState,
-                        allowedEvents: ALLOWED_DEV_EVENTS,
+                        allowedDevEvents: ALLOWED_DEV_EVENTS,
                     })
                 )
             } else {

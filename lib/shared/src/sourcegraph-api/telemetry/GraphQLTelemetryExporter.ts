@@ -12,13 +12,15 @@ import { graphqlClient } from '../graphql/client'
  * event-logging mutations if the instance is older than 5.2.0.
  */
 export class GraphQLTelemetryExporter implements TelemetryExporter {
-    constructor(private readonly allowedEvents?: { feature: string; action: string }[]) {}
+    constructor(private readonly allowedDevEvents?: { feature: string; action: string }[]) {}
 
     private isEventAllowed(event: TelemetryEventInput): boolean {
-        return (
-            this.allowedEvents?.some(
-                allowed => allowed.feature === event.feature && allowed.action === event.action
-            ) ?? true
+        if (this.allowedDevEvents === undefined) {
+            return true
+        }
+
+        return this.allowedDevEvents.some(
+            allowed => allowed.feature === event.feature && allowed.action === event.action
         )
     }
 

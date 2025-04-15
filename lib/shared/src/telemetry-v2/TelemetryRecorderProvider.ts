@@ -72,7 +72,7 @@ export class TelemetryRecorderProvider extends BaseTelemetryRecorderProvider<
              * List of events to allow. If not provided, all events will be allowed.
              * Used in development mode to only export whitelisted events.
              */
-            allowedEvents?: { feature: string; action: string }[]
+            allowedDevEvents?: { feature: string; action: string }[]
         }
     ) {
         const cap = clientCapabilities()
@@ -85,7 +85,7 @@ export class TelemetryRecorderProvider extends BaseTelemetryRecorderProvider<
             },
             process.env.CODY_TELEMETRY_EXPORTER === 'testing'
                 ? TESTING_TELEMETRY_EXPORTER.withAnonymousUserID(config.clientState.anonymousUserID)
-                : new GraphQLTelemetryExporter(config.allowedEvents),
+                : new GraphQLTelemetryExporter(config.allowedDevEvents),
             [
                 new ConfigurationMetadataProcessor(),
                 // Generate timestamps when recording events, instead of serverside
