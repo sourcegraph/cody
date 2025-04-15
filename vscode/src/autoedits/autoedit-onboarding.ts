@@ -25,7 +25,6 @@ export class AutoEditBetaOnboarding implements vscode.Disposable {
     }
 
     public async suggestToEnrollUserToAutoEditBetaIfEligible(): Promise<void> {
-        await localStorage.set('cody-auto-edit-beta-onboard', false) // todo: remove me
         const isUserEligibleForAutoeditBeta = await this.isUserEligibleForAutoeditBetaOverride()
         if (isUserEligibleForAutoeditBeta) {
             vscode.window
