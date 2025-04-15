@@ -24,16 +24,14 @@ import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.VirtualFileManager
 import com.intellij.util.concurrency.annotations.RequiresEdt
+import com.intellij.util.io.createFile
 import com.sourcegraph.cody.agent.protocol_extensions.toOffsetRange
 import com.sourcegraph.cody.agent.protocol_generated.Range
 import com.sourcegraph.config.ConfigUtil
 import com.sourcegraph.utils.ThreadingUtil.runInEdtAndGet
 import java.net.URISyntaxException
 import java.net.URLDecoder
-import kotlin.io.path.createDirectories
-import kotlin.io.path.createFile
-import kotlin.io.path.exists
-import kotlin.io.path.toPath
+import kotlin.io.path.*
 
 object CodyEditorUtil {
   private val logger = Logger.getInstance(CodyEditorUtil::class.java)
@@ -205,12 +203,14 @@ object CodyEditorUtil {
   fun createFileOrScratchFromUntitled(
       project: Project,
       uriString: String,
-      content: String? = null
+      content: String? = null,
+      overwrite: Boolean = false
   ): VirtualFile? {
     try {
       val fileUri = VfsUtil.toUri(fixUriString(uriString)) ?: return null
-      if (!fileUri.toPath().exists()) {
+      if (overwrite || fileUri.toPath().notExists()) {
         fileUri.toPath().parent?.createDirectories()
+        fileUri.toPath().deleteIfExists()
         fileUri.toPath().createFile()
         val vf = LocalFileSystem.getInstance().refreshAndFindFileByNioFile(fileUri.toPath())
 

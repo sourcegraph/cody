@@ -415,6 +415,9 @@ export type ServerNotifications = {
 
     'debug/message': [DebugMessage]
 
+    'extensionConfiguration/didUpdate': [string]
+    'extensionConfiguration/openSettings': [null]
+
     // Certain properties of the task are updated:
     // - State
     // - The associated range has changed because the document was edited
