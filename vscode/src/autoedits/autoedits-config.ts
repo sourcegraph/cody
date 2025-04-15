@@ -12,6 +12,7 @@ import { getConfiguration } from '../configuration'
 
 interface BaseAutoeditsProviderConfig {
     provider: AutoEditsModelConfig['provider']
+    promptProvider?: AutoEditsModelConfig['promptProvider']
     model: string
     url: string
     tokenLimit: AutoEditsTokenLimit
@@ -80,6 +81,7 @@ function getAutoeditsProviderConfig(): AutoeditsProviderConfig {
         experimentalAutoeditsConfigOverride: userConfig,
         isMockResponseFromCurrentDocumentTemplateEnabled,
         provider: baseConfig.provider,
+        promptProvider: baseConfig.promptProvider,
         model: baseConfig.model,
         url: baseConfig.url ?? '',
         tokenLimit: baseConfig.tokenLimit,

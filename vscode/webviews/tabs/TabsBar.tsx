@@ -378,37 +378,36 @@ function useTabs(input: Pick<TabsBarProps, 'user'>): TabConfig[] {
                         view: View.History,
                         title: 'History',
                         Icon: HistoryIcon,
-                        subActions: [
-                            {
-                                title: 'Export',
-                                Icon: DownloadIcon,
-                                command: 'cody.chat.history.export',
-                                callback: () => downloadChatHistory(extensionAPI),
-                            },
-                            {
-                                title: 'Delete all',
-                                Icon: Trash2Icon,
-                                command: 'cody.chat.history.clear',
+                        subActions:
+                            IDE === CodyIDE.Web
+                                ? [
+                                      {
+                                          title: 'Export',
+                                          Icon: DownloadIcon,
+                                          command: 'cody.chat.history.export',
+                                          callback: () => downloadChatHistory(extensionAPI),
+                                      },
+                                      {
+                                          title: 'Delete all',
+                                          Icon: Trash2Icon,
+                                          command: 'cody.chat.history.clear',
 
-                                // Show Cody Chat UI confirmation modal with this message only for
-                                // Cody Web. All other IDE either implements their own native confirmation UI
-                                // or don't have confirmation UI at all.
-                                confirmation:
-                                    IDE === CodyIDE.Web
-                                        ? {
+                                          // Show Cody Chat UI confirmation modal with this message only for
+                                          // Cody Web. All other IDE either implements their own native confirmation UI
+                                          // or don't have confirmation UI at all.
+                                          confirmation: {
                                               title: 'Are you sure you want to delete all of your chats?',
                                               description:
                                                   'You will not be able to recover them once deleted.',
                                               confirmationAction: 'Delete all chats',
-                                          }
-                                        : undefined,
-
-                                // We don't have a way to request user confirmation in Cody Agent
-                                // (vscode.window.showWarningMessage is overridable there), so bypass
-                                // confirmation in cody agent and use confirmation UI above.
-                                arg: IDE === CodyIDE.VSCode ? undefined : 'clear-all-no-confirm',
-                            },
-                        ].filter(isDefined),
+                                          },
+                                          // We don't have a way to request user confirmation in Cody Agent
+                                          // (vscode.window.showWarningMessage is overridable there), so bypass
+                                          // confirmation in cody agent and use confirmation UI above.
+                                          arg: 'clear-all-no-confirm',
+                                      },
+                                  ].filter(isDefined)
+                                : undefined,
                         changesView: true,
                     },
                     {
