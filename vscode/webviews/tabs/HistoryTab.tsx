@@ -320,12 +320,16 @@ export const HistoryTabWithData: React.FC<HistoryTabProps & { chats: Lightweight
                     const id = chat.lastInteractionTimestamp
                     const chatTitle = chat.chatTitle
                     const lastMessage = chat.firstHumanMessageText
-                    // We're already filtering out deleted chats in filteredChats
+                    // Show the last interaction timestamp in a human-readable format
+                    const timestamp = new Date(chat.lastInteractionTimestamp)
+                        .toLocaleString()
+                        .replace('T', ', ')
+                        .replace('Z', '')
 
                     return (
                         <CommandItem
                             key={id}
-                            className={`tw-text-left tw-truncate tw-w-full tw-rounded-md tw-text-sm ${styles.historyItem} tw-overflow-hidden tw-text-sidebar-foreground`}
+                            className={`tw-text-left tw-truncate tw-w-full tw-rounded-md tw-text-sm ${styles.historyItem} tw-overflow-hidden tw-text-sidebar-foreground tw-align-baseline`}
                             onSelect={() =>
                                 vscodeAPI.postMessage({
                                     command: 'restoreHistory',
@@ -333,7 +337,10 @@ export const HistoryTabWithData: React.FC<HistoryTabProps & { chats: Lightweight
                                 })
                             }
                         >
-                            <span className="tw-truncate tw-w-full">{chatTitle || lastMessage}</span>
+                            <div className="tw-truncate tw-w-full tw-flex tw-flex-col tw-gap-2">
+                                <div>{chatTitle || lastMessage}</div>
+                                <div className="tw-text-left tw-text-muted-foreground">{timestamp}</div>
+                            </div>
                             <Button
                                 variant="outline"
                                 title="Delete chat history"
