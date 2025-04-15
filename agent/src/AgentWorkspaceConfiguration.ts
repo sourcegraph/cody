@@ -5,14 +5,15 @@ import { type ClientConfiguration, CodyIDE } from '@sourcegraph/cody-shared'
 
 import { defaultConfigurationValue } from '../../vscode/src/configuration-keys'
 
+import type { AgentEventEmitter } from '../../vscode/src/testutils/AgentEventEmitter'
 import type { ClientInfo, ExtensionConfiguration } from './protocol-alias'
-import * as vscode_shim from './vscode-shim'
 
 export class AgentWorkspaceConfiguration implements vscode.WorkspaceConfiguration {
     constructor(
         private prefix: string[],
         private clientInfo: () => ClientInfo | undefined,
         private extensionConfig: () => ExtensionConfiguration | undefined,
+        private onDidChange: AgentEventEmitter<vscode.ConfigurationChangeEvent> | undefined = undefined,
         private dictionary: any = {}
     ) {}
 
@@ -21,6 +22,7 @@ export class AgentWorkspaceConfiguration implements vscode.WorkspaceConfiguratio
             this.prefix.concat(prefix),
             this.clientInfo,
             this.extensionConfig,
+            this.onDidChange,
             this.dictionary
         )
     }
@@ -203,6 +205,8 @@ export class AgentWorkspaceConfiguration implements vscode.WorkspaceConfiguratio
         }
 
         this.put(section, value)
-        return vscode_shim.onDidChangeConfiguration.cody_fireAsync({ affectsConfiguration: () => true })
+        if (this.onDidChange) {
+            await this.onDidChange.cody_fireAsync({ affectsConfiguration: () => true })
+        }
     }
 }
