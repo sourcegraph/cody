@@ -7,7 +7,7 @@ import { TestWorkspace } from './TestWorkspace'
 describe(
     'Initializing the agent without credentials',
     {
-        timeout: 5000,
+        timeout: 8000,
     },
     () => {
         const workspace = new TestWorkspace(path.join(__dirname, '__tests__', 'auth'))

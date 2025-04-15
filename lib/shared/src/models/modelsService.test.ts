@@ -4,6 +4,7 @@ import { currentAuthStatus, mockAuthStatus } from '../auth/authStatus'
 import { AUTH_STATUS_FIXTURE_AUTHED, type AuthenticatedAuthStatus } from '../auth/types'
 import { FeatureFlag, featureFlagProvider } from '../experimentation/FeatureFlagProvider'
 import { firstValueFrom } from '../misc/observable'
+import { firstResultFromOperation } from '../misc/observableOperation'
 import { DOTCOM_URL } from '../sourcegraph-api/environments'
 import * as userProductSubscriptionModule from '../sourcegraph-api/userProductSubscription'
 import type { UserProductSubscription } from '../sourcegraph-api/userProductSubscription'
@@ -166,7 +167,16 @@ describe('modelsService', () => {
         })
 
         function modelsServiceWithModels(models: Model[]): ModelsService {
-            const modelsService = new ModelsService()
+            const modelsService = new ModelsService(
+                Observable.of({
+                    primaryModels: models,
+                    localModels: [],
+                    preferences: {
+                        defaults: {},
+                        selected: {},
+                    },
+                })
+            )
             modelsService.setStorage(new TestLocalStorageForModelPreferences())
             return modelsService
         }
@@ -177,6 +187,7 @@ describe('modelsService', () => {
             vi.spyOn(userProductSubscriptionModule, 'userProductSubscription', 'get').mockReturnValue(
                 Observable.of(codyProSub)
             )
+            vi.spyOn(featureFlagProvider, 'evaluateFeatureFlag').mockReturnValue(Observable.of(true))
             modelsService = modelsServiceWithModels([
                 model1chat,
                 model2chat,
@@ -187,22 +198,16 @@ describe('modelsService', () => {
         })
 
         it('allows setting default models per type', async () => {
-            vi.spyOn(modelsService, 'modelsChanges', 'get').mockReturnValue(
-                Observable.of(EMPTY_MODELS_DATA)
-            )
             await modelsService.setSelectedModel(ModelUsage.Chat, model2chat)
             await modelsService.setSelectedModel(ModelUsage.Edit, model4edit)
-
-            vi.spyOn(modelsService, 'modelsChanges', 'get').mockReturnValue(
-                Observable.of({
-                    localModels: [],
-                    primaryModels: [model2chat, model4edit],
-                    preferences: storage?.getModelPreferences()[currentAuthStatus().endpoint]!,
-                })
-            )
             // Skip the reasoning model since it's not compatible with edit.
             // Fallback to the first chat model that's available.
-            expect(await firstValueFrom(modelsService.getDefaultEditModel())).toBe(model2chat.id)
+            const prefsAfter = await firstResultFromOperation(modelsService.modelPreferences)
+            const selectedModel = prefsAfter[freeUserAuthStatus.endpoint]?.selected
+            expect(selectedModel.edit).toBe(model4edit.id)
+            expect(selectedModel.chat).toBe(model2chat.id)
+
+            expect(await firstValueFrom(modelsService.getDefaultEditModel())).toBe(model3all.id)
             expect(await firstValueFrom(modelsService.getDefaultChatModel())).toBe(model2chat.id)
         })
 
@@ -700,12 +705,14 @@ describe('modelsService', () => {
             )
             modelsService.setStorage(storage)
 
-            const defaultEditModelId = await firstValueFrom(modelsService.getDefaultEditModel())
-            expect(defaultEditModelId).toBe('gpt-4o-mini')
+            // await new Promise(resolve => setTimeout(resolve, 1000))
 
-            const prefsAfter = storage.getModelPreferences()
+            const prefsAfter = await firstResultFromOperation(modelsService.modelPreferences)
             const selectedEditModel = prefsAfter[freeUserAuthStatus.endpoint]?.selected?.edit
             expect(selectedEditModel).toBe('gpt-4o-mini')
+
+            const defaultEditModelId = await firstValueFrom(modelsService.getDefaultEditModel())
+            expect(defaultEditModelId).toBe('gpt-4o-mini')
         })
 
         it('does not overwrite user preferences if already enrolled', async () => {
@@ -715,7 +722,7 @@ describe('modelsService', () => {
                     selected: { edit: 'other-edit-model' },
                 },
             })
-            storage.getEnrollmentHistory(FeatureFlag.CodyEditDefaultToGpt4oMini)
+            expect(storage.tryToEnroll(FeatureFlag.CodyEditDefaultToGpt4oMini)).toBe(true)
 
             modelsService = new ModelsService(
                 Observable.of({
@@ -729,12 +736,12 @@ describe('modelsService', () => {
             )
             modelsService.setStorage(storage)
 
-            const defaultEditModelId = await firstValueFrom(modelsService.getDefaultEditModel())
-            expect(defaultEditModelId).toBe('other-edit-model')
-
-            const prefsAfter = storage.getModelPreferences()
+            const prefsAfter = await firstResultFromOperation(modelsService.modelPreferences)
             const selectedEditModel = prefsAfter[freeUserAuthStatus.endpoint]?.selected?.edit
             expect(selectedEditModel).toBe('other-edit-model')
+
+            const defaultEditModelId = await firstValueFrom(modelsService.getDefaultEditModel())
+            expect(defaultEditModelId).toBe('other-edit-model')
         })
     })
 })

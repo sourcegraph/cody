@@ -261,15 +261,13 @@ class LocalStorage implements LocalStorageForModelPreferences {
     }
 
     /**
-     * Gets the enrollment history for a feature from the storage.
-     *
      * Checks if the given feature name exists in the stored enrollment
      * history array.
      *
-     * If not, add the feature to the memory, but return false after adding the feature
+     * If not, add the feature to the memory, but return true after adding the feature
      * so that the caller can log the first enrollment event.
      */
-    public getEnrollmentHistory(featureName: string): boolean {
+    public tryToEnroll(featureName: string): boolean {
         const history = this.storage.get<string[]>(this.CODY_ENROLLMENT_HISTORY, []) || []
         const hasEnrolled = history?.includes(featureName) || false
         // Log the first enrollment event
@@ -277,7 +275,7 @@ class LocalStorage implements LocalStorageForModelPreferences {
             history.push(featureName)
             this.set(this.CODY_ENROLLMENT_HISTORY, history)
         }
-        return hasEnrolled
+        return !hasEnrolled
     }
 
     /**

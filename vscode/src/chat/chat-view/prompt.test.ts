@@ -40,7 +40,7 @@ describe('DefaultPrompter', () => {
                 serverEndpoint: 'https://sourcegraph.com/.api/graphql',
             },
         })
-        vi.spyOn(localStorage, 'getEnrollmentHistory').mockReturnValue(false)
+        vi.spyOn(localStorage, 'tryToEnroll').mockReturnValue(true)
         vi.spyOn(contextFiltersProvider, 'isUriIgnored').mockResolvedValue(false)
         mockAuthStatus(AUTH_STATUS_FIXTURE_AUTHED)
         mockClientCapabilities(CLIENT_CAPABILITIES_FIXTURE)
