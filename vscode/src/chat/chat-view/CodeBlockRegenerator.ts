@@ -39,7 +39,7 @@ export class CodeBlockRegenerator {
                     params.language ?? ''
                 }\n${
                     params.code
-                }\n${fence}\n\nJust provide the updated code without preamble commentary or Markdown ${fence}. If you can't do it, please explain the problem in one line of plain text prose.`,
+                }\n${fence}\n\nProvide the updated code without preamble commentary. Use a Markdown ${fence} as shown above. If you can't do it, please explain the problem in one line of plain text prose.`,
             },
         ]
         return this.sendLLMRequest(params.requestID, prompt, params.model, params.abort)
