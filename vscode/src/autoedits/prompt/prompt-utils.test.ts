@@ -117,14 +117,16 @@ describe('getCurrentFilePromptComponents', () => {
         expect(result.areaPrompt.toString()).toMatchInlineSnapshot(`
           "<area_around_code_to_rewrite>
           prefix-line
+
           <code_to_rewrite>
           prefix-line
           cursorline
           suffix-line
+
           </code_to_rewrite>
           suffix-line
-          </area_around_code_to_rewrite>
-          "
+
+          </area_around_code_to_rewrite>"
         `)
     })
 
@@ -168,14 +170,16 @@ describe('getCurrentFilePromptComponents', () => {
         expect(result.areaPrompt.toString()).toMatchInlineSnapshot(`
           "<area_around_code_to_rewrite>
           prefix-line
+
           <code_to_rewrite>
           prefix-line
           cursorline
           suffix-line
+
           </code_to_rewrite>
           suffix-line
-          </area_around_code_to_rewrite>
-          "
+
+          </area_around_code_to_rewrite>"
         `)
     })
 })

@@ -282,6 +282,7 @@ describe('DefaultUserPromptStrategy', () => {
           line 44
           line 45
           line 46
+
           <code_to_rewrite>
           line 47
           line 48
@@ -290,6 +291,7 @@ describe('DefaultUserPromptStrategy', () => {
           line 51
           line 52
           line 53
+
           </code_to_rewrite>
           line 54
           line 55
@@ -302,8 +304,8 @@ describe('DefaultUserPromptStrategy', () => {
           line 62
           line 63
           line 64
-          </area_around_code_to_rewrite>
 
+          </area_around_code_to_rewrite>
 
           Continue where I left off and finish my change by rewriting "code_to_rewrite":"
         `)
@@ -331,6 +333,7 @@ describe('DefaultUserPromptStrategy', () => {
           line 44
           line 45
           line 46
+
           <code_to_rewrite>
           line 47
           line 48
@@ -339,6 +342,7 @@ describe('DefaultUserPromptStrategy', () => {
           line 51
           line 52
           line 53
+
           </code_to_rewrite>
           line 54
           line 55
@@ -351,8 +355,8 @@ describe('DefaultUserPromptStrategy', () => {
           line 62
           line 63
           line 64
-          </area_around_code_to_rewrite>
 
+          </area_around_code_to_rewrite>
 
           Continue where I left off and finish my change by rewriting "code_to_rewrite":"
         `)
