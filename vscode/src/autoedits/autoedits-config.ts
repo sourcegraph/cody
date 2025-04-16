@@ -11,7 +11,7 @@ import {
 
 import { RetrieverIdentifier } from '../completions/context/utils'
 import { getConfiguration } from '../configuration'
-import { hotStreakEnabledInSettings } from './hot-streak/utils'
+import { isHotStreakEnabledInSettings } from './hot-streak/utils'
 
 interface BaseAutoeditsProviderConfig {
     provider: AutoEditsModelConfig['provider']
@@ -94,7 +94,7 @@ function getAutoeditsProviderConfig(
     const baseConfig =
         userConfig ??
         getBaseProviderConfig({
-            hotStreakEnabled: options.hotStreakEnabled || hotStreakEnabledInSettings(),
+            hotStreakEnabled: options.hotStreakEnabled || isHotStreakEnabledInSettings(),
         })
 
     return {

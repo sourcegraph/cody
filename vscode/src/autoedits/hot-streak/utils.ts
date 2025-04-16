@@ -20,7 +20,7 @@ export function trimPredictionToLastFullLine(prediction: string): string {
     return prediction.substring(0, lastNewlineIndex + 1)
 }
 
-export function hotStreakEnabledInSettings() {
+export function isHotStreakEnabledInSettings() {
     return vscode.workspace
         .getConfiguration()
         .get<boolean>('cody.experimental.autoedit.use-hot-streak', false)
