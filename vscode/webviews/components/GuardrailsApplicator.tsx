@@ -245,7 +245,7 @@ export const GuardrailsApplicator: React.FC<GuardrailsApplicatorProps> = ({
                 handleRegenerate()
             }
         },
-        [handleRegenerate]
+        [isMessageLoading, handleRegenerate]
     )
 
     const statusDisplay = (

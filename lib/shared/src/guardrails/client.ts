@@ -34,14 +34,6 @@ export class SourcegraphGuardrailsClient {
             return result
         }
 
-        // DONOTCOMMIT testing randomly fail 2/3rds of Guardrails checks
-        if (Math.random() > 0.33) {
-            return {
-                limitHit: true,
-                repositories: [{ name: 'test-repo-A' }, { name: 'test-repo-B' }],
-            }
-        }
-
         return {
             limitHit: result.limitHit,
             repositories: result.nodes.map(repo => ({ name: repo.repositoryName })),

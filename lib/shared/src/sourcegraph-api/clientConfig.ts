@@ -327,8 +327,6 @@ export class ClientConfigSingleton {
                         `server-set configuration specifies "${clientConfig.attribution}" attribution, but this client only supports "none", "permissive" or "enforced". Consider upgrading this client.`
                     )
                 }
-                // DONOTCOMMIT, force enforced mode for development
-                clientConfig.attribution = 'enforced'
                 setLatestCodyAPIVersion(clientConfig?.latestSupportedCompletionsStreamAPIVersion)
                 return clientConfig
             })
