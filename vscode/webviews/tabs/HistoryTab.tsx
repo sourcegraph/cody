@@ -1,6 +1,7 @@
-'use client'
+;('use client')
 
 import { CodyIDE, type WebviewToExtensionAPI } from '@sourcegraph/cody-shared'
+import type { LightweightChatTranscript } from '@sourcegraph/cody-shared/src/chat/transcript'
 import { DownloadIcon, HistoryIcon, MessageSquarePlusIcon, Trash2Icon, TrashIcon } from 'lucide-react'
 import type React from 'react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
@@ -9,13 +10,11 @@ import { LoadingDots } from '../chat/components/LoadingDots'
 import { downloadChatHistory } from '../chat/downloadChatHistory'
 import { Button } from '../components/shadcn/ui/button'
 import { Command, CommandInput, CommandItem, CommandList } from '../components/shadcn/ui/command'
+import { useUserHistory } from '../components/useUserHistory'
 import { getVSCodeAPI } from '../utils/VSCodeApi'
 import styles from './HistoryTab.module.css'
 import { View } from './types'
 import { getCreateNewChatCommand } from './utils'
-
-import type { LightweightChatTranscript } from '@sourcegraph/cody-shared/src/chat/transcript'
-import { useUserHistory } from '../components/useUserHistory'
 
 interface HistoryTabProps {
     IDE: CodyIDE
