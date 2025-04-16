@@ -1,6 +1,5 @@
 import type { Guardrails } from '@sourcegraph/cody-shared'
 import { clsx } from 'clsx'
-import { LRUCache } from 'lru-cache'
 import type { Code, Root } from 'mdast'
 import type React from 'react'
 import type { Plugin } from 'unified'
@@ -64,16 +63,6 @@ export const remarkAttachCompletedCodeBlocks: Plugin<[], Root> = () => {
     }
 }
 
-const highlightedMarkdownCache = new LRUCache<
-    string,
-    {
-        language: string | undefined
-        plainText: string
-    }
->({
-    max: 100,
-})
-
 /**
  * RichMarkdown renders markdown content with enhanced code blocks.
  * It customizes the markdown renderer to use RichCodeBlock for code blocks,
@@ -113,68 +102,28 @@ export const RichMarkdown: React.FC<RichMarkdownProps> = ({
 
             // Get the cached highlighting result (if there is a key, and if the result is cached)
             const {
-                'data-source-text': cacheKey,
+                'data-source-text': sourceText,
                 'data-is-code-complete': isThisBlockComplete,
                 'data-file-path': filePath,
                 'data-language': language,
             } = (codeNode?.properties as TerminatedCodeData['hProperties'] | undefined) || {
                 'data-is-code-complete': false,
             }
-            let cached = cacheKey && highlightedMarkdownCache.get(cacheKey)
 
-            if (!cached) {
-                try {
-                    // First get the raw text content (for copying and executing)
-                    const extractText = (node: any): string => {
-                        if (typeof node === 'string') return node
-                        if (!node) return ''
-                        if (node.type === 'text' && node.value) return node.value
-                        if (node.children) {
-                            return node.children.map(extractText).join('')
-                        }
-                        return ''
-                    }
-                    const plainText = extractText(node)
-
-                    cached = {
-                        language,
-                        plainText,
-                    }
-
-                    if (cacheKey && isThisBlockComplete) {
-                        highlightedMarkdownCache.set(cacheKey, cached)
-                    }
-                } catch (error) {
-                    // Fallback to simple code display if there's an error
-                    console.error('Error processing code block:', error)
-                    const fallbackCode = String(children).replace(/\n$/, '')
-                    const fallbackLanguage = className?.replace(/language-/, '') || undefined
-
-                    return guardrails.shouldHideCodeBeforeAttribution ? (
-                        <pre>Error processing code block.</pre>
-                    ) : (
-                        <pre>
-                            <code className={clsx(fallbackLanguage && `language-${fallbackLanguage}`)}>
-                                {fallbackCode}
-                            </code>
-                        </pre>
-                    )
-                }
-            }
+            const plainText = sourceText ?? ''
 
             // Determine if this is a shell command
-            const isShellCommand = cached.language === 'bash' || cached.language === 'sh'
+            const isShellCommand = language === 'bash' || language === 'sh'
 
             // Render with our RichCodeBlock component
             return (
                 <RichCodeBlock
                     hasEditIntent={hasEditIntent}
-                    code={cached.plainText}
-                    language={cached.language}
+                    code={plainText}
+                    language={language}
                     fileName={filePath}
                     isCodeComplete={
-                        !regeneratingCodeBlocks.has(cached.plainText) &&
-                        (isThisBlockComplete || !isLoading)
+                        !regeneratingCodeBlocks.has(plainText) && (isThisBlockComplete || !isLoading)
                     }
                     isShellCommand={isShellCommand}
                     guardrails={guardrails}
