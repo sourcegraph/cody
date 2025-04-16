@@ -317,8 +317,7 @@ describe('Autoedit', () => {
                 expect(result.insertText).toMatchInlineSnapshot(`
                   "export function sumAge(a: Person, b: Person): number {
                       return a.age + b.age
-                  }
-                  "
+                  }"
                 `)
 
                 const { aside, inline } = result.render
@@ -398,8 +397,7 @@ describe('Autoedit', () => {
                 expect(result.insertText).toMatchInlineSnapshot(`
                   "export function sumAge(a: Person, b: Person): number {
                       return a.age + b.age
-                  }
-                  "
+                  }"
                 `)
 
                 const { aside, inline } = result.render
@@ -485,8 +483,7 @@ describe('Autoedit', () => {
                 expect(result.insertText).toMatchInlineSnapshot(`
                   "export function sumAge(a: Person, b: Person): number {
                       return a.age + b.age
-                  }
-                  "
+                  }"
                 `)
 
                 const { aside, inline } = result.render
@@ -561,8 +558,7 @@ describe('Autoedit', () => {
                 expect(result.insertText).toMatchInlineSnapshot(`
                   "export function sumAge(a: Person, b: Person): number {
                       return a.age + b.age
-                  }
-                  "
+                  }"
                 `)
 
                 const { aside, inline } = result.render

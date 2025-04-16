@@ -94,7 +94,7 @@ log:
         send: 0
         ssl: -1
         wait: 243
-    - _id: 68c9d8fe71e1ff604dd047626ca061e2
+    - _id: eb0d07c46c319fd236ceeba2b2347b8a
       _order: 0
       cache: {}
       request:
@@ -163,10 +163,10 @@ log:
                       
                   }
 
-
                   </code_to_rewrite>
 
                   </area_around_code_to_rewrite>
+
 
                   Continue where I left off and finish my change by rewriting "code_to_rewrite":
 
@@ -189,14 +189,14 @@ log:
             value: v1
         url: https://demo.sourcegraph.com/.api/completions/code?client-name=autoedit-completions&client-version=v1
       response:
-        bodySize: 490
+        bodySize: 370
         content:
           mimeType: text/event-stream
-          size: 490
+          size: 370
           text: >+
             event: completion
 
-            data: {"completion":"export function sum(a: number, b: number): number {\n    return a + b;\n}\n","stopReason":"stop"}
+            data: {"completion":"export function sum(a: number, b: number): number {\n    return a + b;\n}","stopReason":"stop"}
 
 
             event: done
@@ -206,7 +206,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Fri, 21 Mar 2025 12:22:03 GMT
+            value: Wed, 16 Apr 2025 15:46:04 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -235,8 +235,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-03-21T12:22:02.980Z
-      time: 492
+      startedDateTime: 2025-04-16T15:46:03.500Z
+      time: 563
       timings:
         blocked: -1
         connect: -1
@@ -244,8 +244,8 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 492
-    - _id: 4cba714fc35aa2f5883f2035e7c0cb4d
+        wait: 563
+    - _id: 14faebbf7c4637e4832052755ff754de
       _order: 0
       cache: {}
       request:
@@ -314,10 +314,10 @@ log:
                       
                   }
 
-
                   </code_to_rewrite>
 
                   </area_around_code_to_rewrite>
+
 
                   Continue where I left off and finish my change by rewriting "code_to_rewrite":
 
@@ -340,14 +340,89 @@ log:
             value: v1
         url: https://demo.sourcegraph.com/.api/completions/code?client-name=autoedit-completions&client-version=v1
       response:
-        bodySize: 3241
+        bodySize: 3275
         content:
           mimeType: text/event-stream
-          size: 3241
+          size: 3275
           text: >+
             event: completion
 
-            data: {"completion":"function bubbleSort(arr: number[]): number[] {\n    const n = arr.length;\n    for (let i = 0; i < n - 1; i++) {\n        for (let j = 0; j < n - i - 1; j++) {\n            if (arr[j] > arr[j + 1]) {\n                // Swap arr[j] and arr[j + 1]\n                const temp = arr[j];\n                arr[j] = arr[j + 1];\n                arr[j + 1] = temp;\n            }\n        }\n    }\n    return arr;\n}\n","stopReason":"stop"}
+            data: {"completion":"function bubbleSort(arr: number[]): number[] {\n"}
+
+
+            event: completion
+
+            data: {"completion":"function bubbleSort(arr: number[]): number[] {\n    const n = arr."}
+
+
+            event: completion
+
+            data: {"completion":"function bubbleSort(arr: number[]): number[] {\n    const n = arr.length;\n    for ("}
+
+
+            event: completion
+
+            data: {"completion":"function bubbleSort(arr: number[]): number[] {\n    const n = arr.length;\n    for (let i = 0;"}
+
+
+            event: completion
+
+            data: {"completion":"function bubbleSort(arr: number[]): number[] {\n    const n = arr.length;\n    for (let i = 0; i \u003c n - 1;"}
+
+
+            event: completion
+
+            data: {"completion":"function bubbleSort(arr: number[]): number[] {\n    const n = arr.length;\n    for (let i = 0; i \u003c n - 1; i++) {\n        for ("}
+
+
+            event: completion
+
+            data: {"completion":"function bubbleSort(arr: number[]): number[] {\n    const n = arr.length;\n    for (let i = 0; i \u003c n - 1; i++) {\n        for (let j = 0; j \u003c n"}
+
+
+            event: completion
+
+            data: {"completion":"function bubbleSort(arr: number[]): number[] {\n    const n = arr.length;\n    for (let i = 0; i \u003c n - 1; i++) {\n        for (let j = 0; j \u003c n - i - 1; j++) {\n            if"}
+
+
+            event: completion
+
+            data: {"completion":"function bubbleSort(arr: number[]): number[] {\n    const n = arr.length;\n    for (let i = 0; i \u003c n - 1; i++) {\n        for (let j = 0; j \u003c n - i - 1; j++) {\n            if (arr[j] \u003e"}
+
+
+            event: completion
+
+            data: {"completion":"function bubbleSort(arr: number[]): number[] {\n    const n = arr.length;\n    for (let i = 0; i \u003c n - 1; i++) {\n        for (let j = 0; j \u003c n - i - 1; j++) {\n            if (arr[j] \u003e arr[j + 1]) {"}
+
+
+            event: completion
+
+            data: {"completion":"function bubbleSort(arr: number[]): number[] {\n    const n = arr.length;\n    for (let i = 0; i \u003c n - 1; i++) {\n        for (let j = 0; j \u003c n - i - 1; j++) {\n            if (arr[j] \u003e arr[j + 1]) {\n                // Swap arr[j] and"}
+
+
+            event: completion
+
+            data: {"completion":"function bubbleSort(arr: number[]): number[] {\n    const n = arr.length;\n    for (let i = 0; i \u003c n - 1; i++) {\n        for (let j = 0; j \u003c n - i - 1; j++) {\n            if (arr[j] \u003e arr[j + 1]) {\n                // Swap arr[j] and arr[j + 1]\n                const temp"}
+
+
+            event: completion
+
+            data: {"completion":"function bubbleSort(arr: number[]): number[] {\n    const n = arr.length;\n    for (let i = 0; i \u003c n - 1; i++) {\n        for (let j = 0; j \u003c n - i - 1; j++) {\n            if (arr[j] \u003e arr[j + 1]) {\n                // Swap arr[j] and arr[j + 1]\n                const temp = arr[j];\n                arr"}
+
+
+            event: completion
+
+            data: {"completion":"function bubbleSort(arr: number[]): number[] {\n    const n = arr.length;\n    for (let i = 0; i \u003c n - 1; i++) {\n        for (let j = 0; j \u003c n - i - 1; j++) {\n            if (arr[j] \u003e arr[j + 1]) {\n                // Swap arr[j] and arr[j + 1]\n                const temp = arr[j];\n                arr[j] = arr[j + 1];\n                arr[j"}
+
+
+            event: error
+
+            data: {"error":"context deadline exceeded"}
+
+
+            event: attribution-error
+
+            data: {"error":"get attributions: context deadline exceeded"}
 
 
             event: done
@@ -357,7 +432,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Fri, 21 Mar 2025 12:22:04 GMT
+            value: Wed, 16 Apr 2025 15:46:04 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -386,8 +461,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-03-21T12:22:03.585Z
-      time: 2200
+      startedDateTime: 2025-04-16T15:46:04.103Z
+      time: 5256
       timings:
         blocked: -1
         connect: -1
@@ -395,12 +470,12 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 2200
-    - _id: bf869b1dbc581ec9e8f21f1a189ffb2d
+        wait: 5256
+    - _id: 0d2f65704cabcfcad30e003d340a2367
       _order: 0
       cache: {}
       request:
-        bodySize: 1359
+        bodySize: 1357
         cookies: []
         headers:
           - _fromType: array
@@ -427,7 +502,7 @@ log:
             value: "5000"
           - _fromType: array
             name: content-length
-            value: "1359"
+            value: "1357"
           - name: host
             value: demo.sourcegraph.com
         headersSize: 460
@@ -466,7 +541,6 @@ log:
                   }
 
 
-
                   </code_to_rewrite>
 
                   function sumInts(a: number, b: number): number {
@@ -474,8 +548,8 @@ log:
                   }
 
 
-
                   </area_around_code_to_rewrite>
+
 
                   Continue where I left off and finish my change by rewriting "code_to_rewrite":
 
@@ -499,14 +573,14 @@ log:
             value: v1
         url: https://demo.sourcegraph.com/.api/completions/code?client-name=autoedit-completions&client-version=v1
       response:
-        bodySize: 442
+        bodySize: 438
         content:
           mimeType: text/event-stream
-          size: 442
+          size: 438
           text: >+
             event: completion
 
-            data: {"completion":"function sumStrings(a: String, b: String): number {\n    return parseInt(a) + parseInt(b);\n}\n\n","stopReason":"stop"}
+            data: {"completion":"function sumStrings(a: String, b: String): number {\n    return parseInt(a) + parseInt(b);\n}\n","stopReason":"stop"}
 
 
             event: done
@@ -516,7 +590,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Fri, 21 Mar 2025 13:20:28 GMT
+            value: Wed, 16 Apr 2025 15:46:09 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -545,8 +619,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-03-21T13:20:27.851Z
-      time: 441
+      startedDateTime: 2025-04-16T15:46:09.440Z
+      time: 537
       timings:
         blocked: -1
         connect: -1
@@ -554,164 +628,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 441
-    - _id: 3b9c8527b1f1fac0be9bfb9692dd5fcd
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 1342
-        cookies: []
-        headers:
-          - _fromType: array
-            name: accept
-            value: application/json
-          - _fromType: array
-            name: accept-encoding
-            value: gzip;q=0
-          - _fromType: array
-            name: authorization
-            value: token
-              REDACTED_69e9f79ce29352d014eeb80b56510341844eb82ad9abac7cab3631c7e873e4ce
-          - _fromType: array
-            name: content-type
-            value: application/json; charset=utf-8
-          - _fromType: array
-            name: user-agent
-            value: autoedit-completions/v1 (Node.js v20.4.0)
-          - _fromType: array
-            name: x-requested-with
-            value: autoedit-completions v1
-          - _fromType: array
-            name: x-timeout-ms
-            value: "5000"
-          - _fromType: array
-            name: content-length
-            value: "1342"
-          - name: host
-            value: demo.sourcegraph.com
-        headersSize: 460
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json; charset=utf-8
-          params: []
-          textJSON:
-            maxTokensToSample: 530
-            messages:
-              - speaker: human
-                text: >-
-                  You are an intelligent programmer and an expert at coding.
-                  Your goal is to help a colleague finish a code change.
-
-
-                  User: Help me finish a coding change. You will see snippets from current open files in my editor, files I have recently viewed, the file I am editing, then a history of my recent codebase changes, then current compiler and linter errors, content I copied from my codebase. You will then rewrite the <code_to_rewrite>, to match what you think I would do next in the codebase. Note: I might have stopped in the middle of typing.
-
-                  Code snippets just I viewed:
-
-                  The file currently open:(`src/two-completions.ts`)
-
-                  <file>
-
-                  <<<AREA_AROUND_CODE_TO_REWRITE_WILL_BE_INSERTED_HERE>>>
-
-                  </file>
-
-                  <area_around_code_to_rewrite>
-
-                  function sumStrings(a: String, b: String): number {
-                      return parseInt(a) +
-                  }
-
-
-
-                  <code_to_rewrite>
-
-                  function sumInts(a: number, b: number): number {
-                      return a +
-                  }
-
-
-                  </code_to_rewrite>
-
-                  </area_around_code_to_rewrite>
-
-                  Continue where I left off and finish my change by rewriting "code_to_rewrite":
-
-
-                  Assistant:
-            model: fireworks::v1::autoedits-deepseek-lite-default
-            prediction:
-              content: |
-                function sumInts(a: number, b: number): number {
-                    return a +
-                }
-              type: content
-            stream: true
-            temperature: 0.1
-            timeoutMs: 5000
-        queryString:
-          - name: client-name
-            value: autoedit-completions
-          - name: client-version
-            value: v1
-        url: https://demo.sourcegraph.com/.api/completions/code?client-name=autoedit-completions&client-version=v1
-      response:
-        bodySize: 377
-        content:
-          mimeType: text/event-stream
-          size: 377
-          text: >+
-            event: completion
-
-            data: {"completion":"function sumInts(a: number, b: number): number {\n    return a + b\n}\n","stopReason":"stop"}
-
-
-            event: done
-
-            data: {}
-
-        cookies: []
-        headers:
-          - name: date
-            value: Fri, 21 Mar 2025 13:20:28 GMT
-          - name: content-type
-            value: text/event-stream
-          - name: transfer-encoding
-            value: chunked
-          - name: connection
-            value: close
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache
-          - name: vary
-            value: Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
-              Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1230
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2025-03-21T13:20:28.341Z
-      time: 489
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 489
+        wait: 537
     - _id: 404a28d2461ea66da470804476c21f26
       _order: 0
       cache: {}

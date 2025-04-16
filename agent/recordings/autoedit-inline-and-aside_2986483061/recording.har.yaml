@@ -94,11 +94,11 @@ log:
         send: 0
         ssl: -1
         wait: 212
-    - _id: 70c2bc810c55b54801abeb1904001d6c
+    - _id: 83fb658bcbc6df6f57b88a385670c231
       _order: 0
       cache: {}
       request:
-        bodySize: 1383
+        bodySize: 1379
         cookies: []
         headers:
           - _fromType: array
@@ -125,7 +125,7 @@ log:
             value: "5000"
           - _fromType: array
             name: content-length
-            value: "1383"
+            value: "1379"
           - name: host
             value: demo.sourcegraph.com
         headersSize: 475
@@ -160,7 +160,6 @@ log:
                   interface Person {
                       name: string
                       age: number
-
                   <code_to_rewrite>
 
                   }
@@ -168,13 +167,12 @@ log:
 
                   export function sumAge(humanA: Human, humanB: Human): number {
                       return humanA.age + humanB.age
-
                   </code_to_rewrite>
 
                   }
 
-
                   </area_around_code_to_rewrite>
+
 
                   Continue where I left off and finish my change by rewriting "code_to_rewrite":
 
@@ -198,14 +196,14 @@ log:
             value: v1
         url: https://demo.sourcegraph.com/.api/completions/code?client-name=autoedit-inline-and-aside&client-version=v1
       response:
-        bodySize: 565
+        bodySize: 561
         content:
           mimeType: text/event-stream
-          size: 565
+          size: 561
           text: >+
             event: completion
 
-            data: {"completion":"}\n\nexport function sumAge(humanA: Person, humanB: Person): number {\n    return humanA.age + humanB.age\n","stopReason":"stop"}
+            data: {"completion":"}\n\nexport function sumAge(humanA: Person, humanB: Person): number {\n    return humanA.age + humanB.age","stopReason":"stop"}
 
 
             event: done
@@ -215,7 +213,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Fri, 21 Mar 2025 12:18:37 GMT
+            value: Wed, 16 Apr 2025 15:46:17 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -244,8 +242,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-03-21T12:18:37.172Z
-      time: 409
+      startedDateTime: 2025-04-16T15:46:16.786Z
+      time: 513
       timings:
         blocked: -1
         connect: -1
@@ -253,12 +251,12 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 409
-    - _id: 7757314656be9ff338f5815f9daf7dcf
+        wait: 513
+    - _id: 447355c4b7d04fd8d5001b4fc3e3cec7
       _order: 0
       cache: {}
       request:
-        bodySize: 1304
+        bodySize: 1302
         cookies: []
         headers:
           - _fromType: array
@@ -285,7 +283,7 @@ log:
             value: "5000"
           - _fromType: array
             name: content-length
-            value: "1304"
+            value: "1302"
           - name: host
             value: demo.sourcegraph.com
         headersSize: 475
@@ -323,7 +321,6 @@ log:
                   }
 
 
-
                   <code_to_rewrite>
 
                   export function sumAge(a: Human, a: Human): number {
@@ -331,10 +328,10 @@ log:
 
                   }
 
-
                   </code_to_rewrite>
 
                   </area_around_code_to_rewrite>
+
 
                   Continue where I left off and finish my change by rewriting "code_to_rewrite":
 
@@ -357,14 +354,14 @@ log:
             value: v1
         url: https://demo.sourcegraph.com/.api/completions/code?client-name=autoedit-inline-and-aside&client-version=v1
       response:
-        bodySize: 598
+        bodySize: 594
         content:
           mimeType: text/event-stream
-          size: 598
+          size: 594
           text: >+
             event: completion
 
-            data: {"completion":"export function sumAge(a: Person, b: Person): number {\n    return a.age + b.age\n}\n","stopReason":"stop"}
+            data: {"completion":"export function sumAge(a: Person, b: Person): number {\n    return a.age + b.age\n}","stopReason":"stop"}
 
 
             event: done
@@ -374,7 +371,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Fri, 21 Mar 2025 12:18:38 GMT
+            value: Wed, 16 Apr 2025 15:46:17 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -403,8 +400,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-03-21T12:18:37.720Z
-      time: 551
+      startedDateTime: 2025-04-16T15:46:17.430Z
+      time: 526
       timings:
         blocked: -1
         connect: -1
@@ -412,7 +409,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 551
+        wait: 526
     - _id: 404a28d2461ea66da470804476c21f26
       _order: 0
       cache: {}
