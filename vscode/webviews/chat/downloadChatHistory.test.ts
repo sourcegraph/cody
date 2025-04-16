@@ -4,6 +4,10 @@ import { Observable } from 'observable-fns'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { downloadChatHistory } from './downloadChatHistory'
 
+// Mock document and URL objects before they're used
+global.document = { createElement: vi.fn() } as any
+global.URL = { createObjectURL: vi.fn(), revokeObjectURL: vi.fn() } as any
+
 // Mock the useExtensionAPI function
 vi.mock('@sourcegraph/prompt-editor', () => ({
     MOCK_API: {},
