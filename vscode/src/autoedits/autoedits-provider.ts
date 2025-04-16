@@ -768,7 +768,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
 
         const userId = (await currentResolvedConfig()).clientState.anonymousUserID
         return this.requestManager.request(requestParams, signal => {
-            const startedAt = performance.now()
+            const startedAt = getTimeNowInMillis()
             return this.modelAdapter
                 .getModelResponse({
                     url: autoeditsProviderConfig.url,
@@ -781,7 +781,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                     timeoutMs: autoeditsProviderConfig.timeoutMs,
                 })
                 .then(response => {
-                    this.modelCallLatencyMetric.record(performance.now() - startedAt, {
+                    this.modelCallLatencyMetric.record(getTimeNowInMillis() - startedAt, {
                         adapter: this.modelAdapter.constructor.name,
                         model: autoeditsProviderConfig.model,
                     })
