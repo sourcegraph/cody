@@ -769,21 +769,24 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
         const userId = (await currentResolvedConfig()).clientState.anonymousUserID
         return this.requestManager.request(requestParams, signal => {
             const startedAt = performance.now()
-            const respone = this.modelAdapter.getModelResponse({
-                url: autoeditsProviderConfig.url,
-                model: autoeditsProviderConfig.model,
-                prompt,
-                codeToRewrite: codeToReplaceData.codeToRewrite,
-                userId,
-                isChatModel: autoeditsProviderConfig.isChatModel,
-                abortSignal: signal,
-                timeoutMs: autoeditsProviderConfig.timeoutMs,
-            })
-            this.modelCallLatencyMetric.record(performance.now() - startedAt, {
-                adapter: this.modelAdapter.constructor.name,
-                model: autoeditsProviderConfig.model,
-            })
-            return respone
+            return this.modelAdapter
+                .getModelResponse({
+                    url: autoeditsProviderConfig.url,
+                    model: autoeditsProviderConfig.model,
+                    prompt,
+                    codeToRewrite: codeToReplaceData.codeToRewrite,
+                    userId,
+                    isChatModel: autoeditsProviderConfig.isChatModel,
+                    abortSignal: signal,
+                    timeoutMs: autoeditsProviderConfig.timeoutMs,
+                })
+                .then(response => {
+                    this.modelCallLatencyMetric.record(performance.now() - startedAt, {
+                        adapter: this.modelAdapter.constructor.name,
+                        model: autoeditsProviderConfig.model,
+                    })
+                    return response
+                })
         })
     }
 
