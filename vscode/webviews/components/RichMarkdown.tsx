@@ -68,7 +68,6 @@ const highlightedMarkdownCache = new LRUCache<
     string,
     {
         language: string | undefined
-        highlightedHtml: string
         plainText: string
     }
 >({
@@ -137,101 +136,8 @@ export const RichMarkdown: React.FC<RichMarkdownProps> = ({
                     }
                     const plainText = extractText(node)
 
-                    // Then get the HTML content with syntax highlighting already applied by rehype-highlight
-                    const highlightedHtml = node.children
-                        ? node.children
-                              .map((child: any) => {
-                                  // Handle direct string nodes (shouldn't happen at this level, but just in case)
-                                  if (typeof child === 'string') return child
-
-                                  // Handle text nodes (like punctuation characters)
-                                  if (child.type === 'text' && child.value) {
-                                      return child.value
-                                  }
-
-                                  // This is where the magic happens - rehype-highlight has already
-                                  // processed this code and added span elements with class names
-                                  // for syntax highlighting
-                                  if (child.type === 'element' && child.properties) {
-                                      const childProps = child.properties
-                                      const childChildren = child.children
-
-                                      if (childChildren) {
-                                          // Recursively extract content from child nodes
-                                          const processNode = (node: any): string => {
-                                              // Handle string literals
-                                              if (typeof node === 'string') return node
-
-                                              // Handle null/undefined
-                                              if (!node) return ''
-
-                                              // Handle text nodes (like punctuation symbols)
-                                              if (node.type === 'text' && node.value) {
-                                                  return node.value
-                                              }
-
-                                              // Handle element nodes
-                                              if (node.type === 'element' && node.properties) {
-                                                  const props = node.properties
-                                                  const className =
-                                                      typeof props.className === 'string'
-                                                          ? props.className
-                                                          : Array.isArray(props.className)
-                                                            ? props.className.join(' ')
-                                                            : ''
-
-                                                  if (node.children) {
-                                                      const content = node.children
-                                                          .map(processNode)
-                                                          .join('')
-                                                      return `<span class="${className}">${content}</span>`
-                                                  }
-
-                                                  return `<span class="${className}"></span>`
-                                              }
-
-                                              // Fallback for any other node type
-                                              if (node.value) return node.value
-                                              if (node.children) {
-                                                  return node.children.map(processNode).join('')
-                                              }
-
-                                              return ''
-                                          }
-
-                                          const childContent = childChildren.map(processNode).join('')
-
-                                          const className =
-                                              typeof childProps.className === 'string'
-                                                  ? childProps.className
-                                                  : Array.isArray(childProps.className)
-                                                    ? childProps.className.join(' ')
-                                                    : ''
-
-                                          return `<span class="${className}">${childContent}</span>`
-                                      }
-                                  }
-
-                                  // Handle any other node type
-                                  if (child.value) return child.value
-                                  if (child.children) {
-                                      return child.children
-                                          .map((c: any) => {
-                                              if (typeof c === 'string') return c
-                                              if (c.value) return c.value
-                                              return ''
-                                          })
-                                          .join('')
-                                  }
-
-                                  return ''
-                              })
-                              .join('')
-                        : plainText // TODO: we need to HTML escape this plainText
-
                     cached = {
                         language,
-                        highlightedHtml,
                         plainText,
                     }
 
