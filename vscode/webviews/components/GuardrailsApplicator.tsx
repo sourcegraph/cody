@@ -17,6 +17,7 @@ interface GuardrailsApplicatorProps {
     language?: string
     fileName?: string
     guardrails: Guardrails
+    isMessageLoading: boolean
     isCodeComplete: boolean
     onRegenerate?: (code: string, language?: string) => void
     children: (props: GuardrailsRenderProps) => React.ReactNode
@@ -157,6 +158,7 @@ export const GuardrailsApplicator: React.FC<GuardrailsApplicatorProps> = ({
     language,
     fileName,
     guardrails,
+    isMessageLoading,
     isCodeComplete,
     onRegenerate,
     children,
@@ -239,7 +241,7 @@ export const GuardrailsApplicator: React.FC<GuardrailsApplicatorProps> = ({
 
     const onSuccessAuxClick = useCallback(
         (event: React.MouseEvent<Element>) => {
-            if (event.shiftKey) {
+            if (!isMessageLoading && event.shiftKey) {
                 handleRegenerate()
             }
         },
@@ -267,19 +269,24 @@ export const GuardrailsApplicator: React.FC<GuardrailsApplicatorProps> = ({
                     <span className="tw-hidden xs:tw-block">Retry</span>
                 </button>
             )}
-            {guardrailsResult.status === GuardrailsCheckStatus.Failed && (
-                <button
-                    className={styles.button}
-                    type="button"
-                    onClick={handleRegenerate}
-                    title="Try regenerating code"
-                >
-                    <div className={styles.iconContainer}>
-                        <RefreshCwIcon size={14} />
-                    </div>
-                    <span className="tw-hidden xs:tw-block">Regenerate</span>
-                </button>
-            )}
+            {
+                // We only display the regenerate button when loading the whole
+                // message is done. Otherwise continued streaming output would
+                // clobber the regenerated code.
+                guardrailsResult.status === GuardrailsCheckStatus.Failed && !isMessageLoading && (
+                    <button
+                        className={styles.button}
+                        type="button"
+                        onClick={handleRegenerate}
+                        title="Try regenerating code"
+                    >
+                        <div className={styles.iconContainer}>
+                            <RefreshCwIcon size={14} />
+                        </div>
+                        <span className="tw-hidden xs:tw-block">Regenerate</span>
+                    </button>
+                )
+            }
         </GuardrailsStatus>
     )
 

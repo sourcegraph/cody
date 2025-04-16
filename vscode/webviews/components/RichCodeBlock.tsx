@@ -18,7 +18,8 @@ interface RichCodeBlockProps {
     code: string // Raw text for copying/executing without HTML markup
     language?: string
     fileName?: string
-    isCodeComplete: boolean
+    isMessageLoading: boolean // Whether the whole message is done loading
+    isCodeComplete: boolean // Whether this code block has been completed
     isShellCommand: boolean
     guardrails: Guardrails
     onCopy?: (code: string) => void
@@ -46,6 +47,7 @@ export const RichCodeBlock: React.FC<RichCodeBlockProps> = ({
     code,
     language,
     fileName,
+    isMessageLoading,
     isCodeComplete,
     isShellCommand,
     guardrails,
@@ -167,6 +169,7 @@ export const RichCodeBlock: React.FC<RichCodeBlockProps> = ({
             language={language}
             fileName={fileName}
             guardrails={guardrails}
+            isMessageLoading={isMessageLoading}
             isCodeComplete={isCodeComplete}
             onRegenerate={onRegenerate}
         >

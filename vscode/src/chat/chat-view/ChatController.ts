@@ -558,7 +558,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             }
             case 'regenerateCodeBlock': {
                 await this.handleRegenerateCodeBlock({
-                    requestID: uuid.v4(),
+                    requestID: message.id,
                     code: PromptString.unsafe_fromLLMResponse(message.code),
                     language: message.language
                         ? PromptString.unsafe_fromLLMResponse(message.language)
@@ -1232,14 +1232,16 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         // TODO: Add trace spans around this operation
 
         try {
-            // TODO: We should stream some indicators from the generation into
-            // the page.
             const model: ChatModel | undefined = await wrapInActiveSpan('chat.resolveModel', () =>
                 firstResultFromOperation(ChatBuilder.resolvedModelForChat(this.chatBuilder), abort)
             )
             if (!model) {
                 throw new Error('no chat model selected')
             }
+            this.postMessage({
+                type: 'clientAction',
+                regenerateStatus: { id: requestID, status: 'regenerating' },
+            })
             const newCode = await this.regenerateCodeBlock({
                 abort,
                 code,
@@ -1254,7 +1256,19 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 // Save the newly generated code to the transcript.
                 await this.saveSession()
             }
+            this.postMessage({
+                type: 'clientAction',
+                regenerateStatus: { id: requestID, status: 'done' },
+            })
         } catch (error) {
+            this.postMessage({
+                type: 'clientAction',
+                regenerateStatus: {
+                    id: requestID,
+                    status: 'error',
+                    error: `${error}`,
+                },
+            })
             if (isAbortErrorOrSocketHangUp(error)) {
                 return
             }

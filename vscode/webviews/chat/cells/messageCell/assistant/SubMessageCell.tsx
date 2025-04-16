@@ -3,13 +3,15 @@ import type { SubMessage } from '@sourcegraph/cody-shared/src/chat/transcript/me
 import { WrenchIcon } from 'lucide-react'
 import type { FunctionComponent } from 'react'
 import { ChatMessageContent } from '../../../ChatMessageContent/ChatMessageContent'
+import type { RegeneratingCodeBlockState } from '../../../Transcript'
 import styles from './SubMessageCell.module.css'
 
 export const SubMessageCell: FunctionComponent<{
     piece: SubMessage
     guardrails: Guardrails
     onRegenerate: (code: string, language: string | undefined) => void
-}> = ({ piece, guardrails, onRegenerate }) => {
+    regeneratingCodeBlocks: RegeneratingCodeBlockState[]
+}> = ({ piece, guardrails, onRegenerate, regeneratingCodeBlocks }) => {
     return (
         <>
             {piece.text && (
@@ -19,6 +21,7 @@ export const SubMessageCell: FunctionComponent<{
                     humanMessage={null}
                     guardrails={guardrails}
                     onRegenerate={onRegenerate}
+                    regeneratingCodeBlocks={regeneratingCodeBlocks}
                 />
             )}
 

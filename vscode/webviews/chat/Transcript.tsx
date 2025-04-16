@@ -40,7 +40,9 @@ import { HumanMessageCell } from './cells/messageCell/human/HumanMessageCell'
 
 import { type Context, type Span, context, trace } from '@opentelemetry/api'
 import { DeepCodyAgentID, ToolCodyModelName } from '@sourcegraph/cody-shared/src/models/client'
+import * as uuid from 'uuid'
 import { isCodeSearchContextItem } from '../../src/context/openctx/codeSearch'
+import { useClientActionListener } from '../client/clientState'
 import { useLocalStorage } from '../components/hooks'
 import { AgenticContextCell } from './cells/agenticCell/AgenticContextCell'
 import ApprovalCell from './cells/agenticCell/ApprovalCell'
@@ -262,6 +264,12 @@ interface TranscriptInteractionProps
     }) => void
     manuallySelectedIntent: ChatMessage['intent']
     setManuallySelectedIntent: (intent: ChatMessage['intent']) => void
+}
+
+export type RegeneratingCodeBlockState = {
+    id: string
+    code: string
+    error: string | undefined
 }
 
 const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
@@ -557,10 +565,49 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
         [humanMessage, manuallySelectedIntent, setManuallySelectedIntent]
     )
 
+    // We track, ephemerally, the code blocks that are being regenerated so
+    // we can show an accurate loading indicator or error message on those
+    // blocks.
+    const [regeneratingCodeBlocks, setRegeneratingCodeBlocks] = useState<RegeneratingCodeBlockState[]>(
+        []
+    )
+    useClientActionListener(
+        { isActive: true, selector: event => Boolean(event.regenerateStatus) },
+        useCallback(event => {
+            setRegeneratingCodeBlocks(blocks => {
+                switch (event.regenerateStatus?.status) {
+                    case 'done': {
+                        // A block is done, so remove it from the list of generating blocks.
+                        const regenerateStatus = event.regenerateStatus
+                        return blocks.filter(block => block.id !== regenerateStatus.id).slice()
+                    }
+                    case 'error': {
+                        // A block errored, so remove it from the list of generating blocks.
+                        const regenerateStatus = event.regenerateStatus
+                        return blocks
+                            .map(block =>
+                                block.id === regenerateStatus.id
+                                    ? { ...block, error: regenerateStatus.error }
+                                    : block
+                            )
+                            .slice()
+                    }
+                    default:
+                        return blocks
+                }
+            })
+        }, [])
+    )
+
     const onRegenerate = useCallback(
         (code: string, language?: string) => {
             if (assistantMessage) {
-                regenerateCodeBlock({ code, language, index: assistantMessage.index })
+                const id = uuid.v4()
+                regenerateCodeBlock({ id, code, language, index: assistantMessage.index })
+                setRegeneratingCodeBlocks(blocks => [
+                    { id, index: assistantMessage.index, code, error: undefined },
+                    ...blocks,
+                ])
             } else {
                 console.warn('tried to regenerate a code block, but there is no assistant message')
             }
@@ -650,6 +697,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                         copyButtonOnSubmit={copyButtonOnSubmit}
                         insertButtonOnSubmit={insertButtonOnSubmit}
                         onRegenerate={onRegenerate}
+                        regeneratingCodeBlocks={regeneratingCodeBlocks}
                         postMessage={postMessage}
                         guardrails={guardrails}
                         humanMessage={humanMessageInfo}
@@ -694,16 +742,19 @@ export function focusLastHumanMessageEditor(): void {
 }
 
 export function regenerateCodeBlock({
+    id,
     code,
     language,
     index,
 }: {
+    id: string
     code: string
     language?: string
     index: number
 }) {
     getVSCodeAPI().postMessage({
         command: 'regenerateCodeBlock',
+        id,
         code,
         language,
         index,

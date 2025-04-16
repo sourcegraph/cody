@@ -210,6 +210,11 @@ export type ExtensionMessage =
               | { text: string; mode?: PromptMode | undefined | null; autoSubmit: boolean }
               | undefined
               | null
+          regenerateStatus?:
+              | { id: string; status: 'regenerating' | 'done' }
+              | { id: string; status: 'error'; error: string }
+              | undefined
+              | null
       }
     | ({ type: 'attribution' } & ExtensionAttributionMessage)
     | { type: 'rpc/response'; message: ResponseMessage }
@@ -252,6 +257,7 @@ interface WebviewContextMessage {
 }
 
 interface WebviewRegenerateCodeBlockMessage {
+    id: string
     code: string
     language?: string
     index: number
