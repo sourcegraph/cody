@@ -44,13 +44,18 @@ const defaultTokenLimit = {
     },
 } as const satisfies AutoEditsTokenLimit
 
+let hotStreakEnabled = false
+featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutoEditHotStreak).subscribe(value => {
+    hotStreakEnabled = value
+    autoeditsProviderConfig = getAutoeditsProviderConfig()
+})
+
 /**
  * Retrieves the base configuration for the AutoEdits provider based on authentication status.
  */
-function getBaseProviderConfig(
-    options: AutoeditsProviderConfigOptions = {}
-): BaseAutoeditsProviderConfig {
-    const tokenLimit = options.hotStreakEnabled
+function getBaseProviderConfig(): BaseAutoeditsProviderConfig {
+    const shouldHotStreak = hotStreakEnabled || isHotStreakEnabledInSettings()
+    const tokenLimit = shouldHotStreak
         ? // Hot-streak can handle much longer suffixes
           { ...defaultTokenLimit, codeToRewriteSuffixLines: 30 }
         : defaultTokenLimit
@@ -76,26 +81,16 @@ function getBaseProviderConfig(
     }
 }
 
-interface AutoeditsProviderConfigOptions {
-    hotStreakEnabled?: boolean
-}
-
 /**
  * Retrieves the configuration for the AutoEdits provider by combining user settings with default values.
  */
-function getAutoeditsProviderConfig(
-    options: AutoeditsProviderConfigOptions = {}
-): AutoeditsProviderConfig {
+function getAutoeditsProviderConfig(): AutoeditsProviderConfig {
     const isMockResponseFromCurrentDocumentTemplateEnabled = vscode.workspace
         .getConfiguration()
         .get<boolean>('cody.experimental.autoedit.use-mock-responses', false)
 
     const userConfig = getConfiguration().experimentalAutoEditConfigOverride
-    const baseConfig =
-        userConfig ??
-        getBaseProviderConfig({
-            hotStreakEnabled: options.hotStreakEnabled || isHotStreakEnabledInSettings(),
-        })
+    const baseConfig = userConfig ?? getBaseProviderConfig()
 
     return {
         experimentalAutoeditsConfigOverride: userConfig,
@@ -119,10 +114,3 @@ export let autoeditsProviderConfig = getAutoeditsProviderConfig()
 authStatus.subscribe(() => {
     autoeditsProviderConfig = getAutoeditsProviderConfig()
 })
-
-// Recompute autoedits config on relevant feature flag change
-featureFlagProvider
-    .evaluateFeatureFlag(FeatureFlag.CodyAutoEditHotStreak)
-    .subscribe(hotStreakEnabled => {
-        autoeditsProviderConfig = getAutoeditsProviderConfig({ hotStreakEnabled })
-    })
