@@ -5,7 +5,6 @@ import {
     type AutoEditsTokenLimit,
     FeatureFlag,
     authStatus,
-    combineLatest,
     featureFlagProvider,
     isDotComAuthed,
 } from '@sourcegraph/cody-shared'
@@ -116,13 +115,14 @@ function getAutoeditsProviderConfig(
  */
 export let autoeditsProviderConfig = getAutoeditsProviderConfig()
 
-combineLatest(
-    // Recompute autoedits config on auth status change.
-    authStatus,
-    // Recompute autoedits config on relevant feature flag change
-    featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutoEditHotStreak)
-).subscribe(([_auth, hotStreakEnabled]) => {
-    autoeditsProviderConfig = getAutoeditsProviderConfig({
-        hotStreakEnabled: hotStreakEnabled,
-    })
+// Recompute autoedits config on auth status change.
+authStatus.subscribe(() => {
+    autoeditsProviderConfig = getAutoeditsProviderConfig()
 })
+
+// Recompute autoedits config on relevant feature flag change
+featureFlagProvider
+    .evaluateFeatureFlag(FeatureFlag.CodyAutoEditHotStreak)
+    .subscribe(hotStreakEnabled => {
+        autoeditsProviderConfig = getAutoeditsProviderConfig({ hotStreakEnabled })
+    })
