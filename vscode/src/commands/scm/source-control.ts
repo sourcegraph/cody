@@ -119,11 +119,29 @@ export class CodySourceControl implements vscode.Disposable {
                 repository.getGlobalConfig('commit.template'),
             ])
 
-            this.commitTemplate = scm?.commitTemplate ?? localTemplate ?? globalTemplate
+            // Store the template path
+            const templatePath = scm?.commitTemplate ?? localTemplate ?? globalTemplate
+
+            // If we have a template path, try to read the template file
+            if (templatePath) {
+                try {
+                    // Convert the template path to a URI
+                    const templateUri = vscode.Uri.file(templatePath)
+                    // Read the template file content
+                    const templateContent = await vscode.workspace.fs.readFile(templateUri)
+                    // Decode the template file content
+                    this.commitTemplate = new TextDecoder('utf-8').decode(templateContent)
+                } catch (error) {
+                    // If we can't read the template file, just use the path as the template
+                    this.commitTemplate = templatePath
+                    console.error(`Failed to read commit template file: ${templatePath}`, error)
+                }
+            }
         }
 
         // Open the vscode source control view to show the progress.
         void vscode.commands.executeCommand('workbench.view.scm')
+
         // Focus the workbench view to show the progress.
         void vscode.commands.executeCommand('workbench.scm.focus')
 
@@ -134,7 +152,7 @@ export class CodySourceControl implements vscode.Disposable {
                 cancellable: true,
             },
             async (progress, token) => {
-                this.stream(repository, sourceControlInputbox, progress, token, scm?.commitTemplate)
+                this.stream(repository, sourceControlInputbox, progress, token, this.commitTemplate)
             }
         )
     }
