@@ -21,6 +21,7 @@ import type { FixupController } from '../non-stop/FixupController'
 import type { CodyStatusBar } from '../services/StatusBar'
 import { AutoeditsProvider } from './autoedits-provider'
 import { AutoeditDebugPanel } from './debug-panel/debug-panel'
+import { hotStreakEnabledInSettings } from './hot-streak/utils'
 import { autoeditsOutputChannelLogger } from './output-channel-logger'
 
 const AUTOEDITS_NON_ELIGIBILITY_MESSAGES = {
@@ -112,8 +113,8 @@ export function createAutoEditsProvider({
                 isRunningInsideAgent()
             const provider = new AutoeditsProvider(chatClient, fixupController, statusBar, {
                 shouldRenderInline,
+                shouldHotStreak: autoeditHotStreakEnabled || hotStreakEnabledInSettings(),
                 allowUsingWebSocket: autoeditUseWebSocketEnabled,
-                hotStreakEnabled: autoeditHotStreakEnabled,
             })
             return [
                 vscode.commands.registerCommand('cody.command.autoedit-manual-trigger', async () =>

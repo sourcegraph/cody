@@ -63,12 +63,12 @@ function createSuggestedResponse(
 function createTestParams({
     document,
     position,
-    latestFullPrediction,
+    prediction,
     responseType = 'partial',
 }: {
     document: vscode.TextDocument
     position: vscode.Position
-    latestFullPrediction: string
+    prediction: string
     responseType?: 'success' | 'partial'
 }): GetHotStreakChunkParams {
     const codeToReplaceData = createCodeToReplaceDataForTest(MOCK_EXISTING_CODE, {
@@ -81,11 +81,11 @@ function createTestParams({
     })
 
     return {
-        prediction: latestFullPrediction,
+        prediction: prediction,
         document,
         position,
         codeToReplaceData,
-        response: createSuggestedResponse(latestFullPrediction, responseType),
+        response: createSuggestedResponse(prediction, responseType),
     }
 }
 
@@ -95,7 +95,7 @@ describe('getHotStreakChunk', () => {
         const params = createTestParams({
             document,
             position,
-            latestFullPrediction: '',
+            prediction: '',
         })
         const result = getHotStreakChunk(params)
         expect(result).toBe(null)
@@ -106,7 +106,7 @@ describe('getHotStreakChunk', () => {
         const params = createTestParams({
             document,
             position,
-            latestFullPrediction: dedent`
+            prediction: dedent`
                     export function isEvenOrOdd(numberToChange: number): boolean {
                         // Check if numberToChange is 0
                         if (numberToChange === 0) {
@@ -128,7 +128,7 @@ describe('getHotStreakChunk', () => {
         const params = createTestParams({
             document,
             position,
-            latestFullPrediction: dedent`
+            prediction: dedent`
                         // Check if numberToChange is 1
                         if (numberToChange === 1) {
                             return false
@@ -144,7 +144,7 @@ describe('getHotStreakChunk', () => {
         const params = createTestParams({
             document,
             position,
-            latestFullPrediction: dedent`
+            prediction: dedent`
                     export function isEvenOrOdd(target: number): boolean {
                         // Check if target is 0
                         if (target === 0) {
@@ -176,7 +176,7 @@ describe('getHotStreakChunk', () => {
         const params = createTestParams({
             document,
             position,
-            latestFullPrediction: dedent`
+            prediction: dedent`
                     export function isEvenOrOdd(target: number): boolean {
                         // Check if target is 0
                         if (target === 0) {
@@ -216,7 +216,7 @@ describe('getHotStreakChunk', () => {
         const params = createTestParams({
             document,
             position,
-            latestFullPrediction: dedent`
+            prediction: dedent`
                     export function log(message: string) {
                         // Log a message
                         console.log(message)
@@ -271,7 +271,7 @@ describe('getHotStreakChunk', () => {
         const params = createTestParams({
             document,
             position,
-            latestFullPrediction: dedent`
+            prediction: dedent`
                     export function isEvenOrOdd(numberToChange: number): boolean {
                         // Check if numberToChange is 0
                         if (numberToChange === 0) {

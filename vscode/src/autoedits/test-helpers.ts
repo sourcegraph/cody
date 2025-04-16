@@ -109,7 +109,7 @@ export async function autoeditResultFor(
         existingProvider ??
         new AutoeditsProvider(chatClient, fixupController, mockStatusBar, {
             shouldRenderInline: true,
-            hotStreakEnabled: true,
+            shouldHotStreak: true,
             allowUsingWebSocket: false,
         })
 

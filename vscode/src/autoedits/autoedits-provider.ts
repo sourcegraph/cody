@@ -145,8 +145,8 @@ export type AutoeditClientCapabilities = Pick<
 >
 
 interface AutoeditsFeatures {
-    hotStreakEnabled: boolean
     shouldRenderInline: boolean
+    shouldHotStreak: boolean
     allowUsingWebSocket: boolean
 }
 
@@ -834,7 +834,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
             docContext,
             position,
             options: {
-                hotStreakEnabled: this.features.hotStreakEnabled,
+                hotStreakEnabled: this.features.shouldHotStreak,
             },
         })
     }
@@ -890,7 +890,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                             docContext,
                             position,
                             options: {
-                                hotStreakEnabled: this.features.hotStreakEnabled,
+                                hotStreakEnabled: this.features.shouldHotStreak,
                             },
                         })
                     })

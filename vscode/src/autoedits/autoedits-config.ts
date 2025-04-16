@@ -3,12 +3,16 @@ import * as vscode from 'vscode'
 import {
     type AutoEditsModelConfig,
     type AutoEditsTokenLimit,
+    FeatureFlag,
     authStatus,
+    combineLatest,
+    featureFlagProvider,
     isDotComAuthed,
 } from '@sourcegraph/cody-shared'
 
 import { RetrieverIdentifier } from '../completions/context/utils'
 import { getConfiguration } from '../configuration'
+import { hotStreakEnabledInSettings } from './hot-streak/utils'
 
 interface BaseAutoeditsProviderConfig {
     provider: AutoEditsModelConfig['provider']
@@ -44,13 +48,20 @@ const defaultTokenLimit = {
 /**
  * Retrieves the base configuration for the AutoEdits provider based on authentication status.
  */
-function getBaseProviderConfig(): BaseAutoeditsProviderConfig {
+function getBaseProviderConfig(
+    options: AutoeditsProviderConfigOptions = {}
+): BaseAutoeditsProviderConfig {
+    const tokenLimit = options.hotStreakEnabled
+        ? // Hot-streak can handle much longer suffixes
+          { ...defaultTokenLimit, codeToRewriteSuffixLines: 30 }
+        : defaultTokenLimit
+
     if (isDotComAuthed()) {
         return {
             provider: 'cody-gateway',
             model: 'autoedits-deepseek-lite-default',
             url: 'https://cody-gateway.sourcegraph.com/v1/completions/fireworks',
-            tokenLimit: defaultTokenLimit,
+            tokenLimit,
             isChatModel: false,
             timeoutMs: 10_000,
         }
@@ -59,23 +70,33 @@ function getBaseProviderConfig(): BaseAutoeditsProviderConfig {
     return {
         provider: 'sourcegraph',
         model: 'fireworks::v1::autoedits-deepseek-lite-default',
-        tokenLimit: defaultTokenLimit,
+        tokenLimit,
         url: '',
         isChatModel: false,
         timeoutMs: 10_000,
     }
 }
 
+interface AutoeditsProviderConfigOptions {
+    hotStreakEnabled?: boolean
+}
+
 /**
  * Retrieves the configuration for the AutoEdits provider by combining user settings with default values.
  */
-function getAutoeditsProviderConfig(): AutoeditsProviderConfig {
+function getAutoeditsProviderConfig(
+    options: AutoeditsProviderConfigOptions = {}
+): AutoeditsProviderConfig {
     const isMockResponseFromCurrentDocumentTemplateEnabled = vscode.workspace
         .getConfiguration()
         .get<boolean>('cody.experimental.autoedit.use-mock-responses', false)
 
     const userConfig = getConfiguration().experimentalAutoEditConfigOverride
-    const baseConfig = userConfig ?? getBaseProviderConfig()
+    const baseConfig =
+        userConfig ??
+        getBaseProviderConfig({
+            hotStreakEnabled: options.hotStreakEnabled || hotStreakEnabledInSettings(),
+        })
 
     return {
         experimentalAutoeditsConfigOverride: userConfig,
@@ -95,7 +116,13 @@ function getAutoeditsProviderConfig(): AutoeditsProviderConfig {
  */
 export let autoeditsProviderConfig = getAutoeditsProviderConfig()
 
-// Recompute autoedits config on auth status change.
-authStatus.subscribe(() => {
-    autoeditsProviderConfig = getAutoeditsProviderConfig()
+combineLatest(
+    // Recompute autoedits config on auth status change.
+    authStatus,
+    // Recompute autoedits config on relevant feature flag change
+    featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutoEditHotStreak)
+).subscribe(([_auth, hotStreakEnabled]) => {
+    autoeditsProviderConfig = getAutoeditsProviderConfig({
+        hotStreakEnabled: hotStreakEnabled,
+    })
 })

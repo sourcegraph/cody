@@ -1,3 +1,5 @@
+import * as vscode from 'vscode'
+
 export function trimPredictionToLastFullLine(prediction: string): string {
     if (!prediction) {
         return prediction
@@ -16,4 +18,10 @@ export function trimPredictionToLastFullLine(prediction: string): string {
 
     // Return everything up to and including the last newline
     return prediction.substring(0, lastNewlineIndex + 1)
+}
+
+export function hotStreakEnabledInSettings() {
+    return vscode.workspace
+        .getConfiguration()
+        .get<boolean>('cody.experimental.autoedit.use-hot-streak', false)
 }
