@@ -114,19 +114,17 @@ describe('getCurrentFilePromptComponents', () => {
 
             </file>
         `)
-        expect(result.areaPrompt.toString()).toBe(dedent`
-            <area_around_code_to_rewrite>
-            prefix-line
-
-            <code_to_rewrite>
-            prefix-line
-            cursorline
-            suffix-line
-
-            </code_to_rewrite>
-            suffix-line
-
-            </area_around_code_to_rewrite>
+        expect(result.areaPrompt.toString()).toMatchInlineSnapshot(`
+          "<area_around_code_to_rewrite>
+          prefix-line
+          <code_to_rewrite>
+          prefix-line
+          cursorline
+          suffix-line
+          </code_to_rewrite>
+          suffix-line
+          </area_around_code_to_rewrite>
+          "
         `)
     })
 
@@ -167,19 +165,17 @@ describe('getCurrentFilePromptComponents', () => {
             <<<AREA_AROUND_CODE_TO_REWRITE_WILL_BE_INSERTED_HERE>>>
             </file>
         `)
-        expect(result.areaPrompt.toString()).toBe(dedent`
-            <area_around_code_to_rewrite>
-            prefix-line
-
-            <code_to_rewrite>
-            prefix-line
-            cursorline
-            suffix-line
-
-            </code_to_rewrite>
-            suffix-line
-
-            </area_around_code_to_rewrite>
+        expect(result.areaPrompt.toString()).toMatchInlineSnapshot(`
+          "<area_around_code_to_rewrite>
+          prefix-line
+          <code_to_rewrite>
+          prefix-line
+          cursorline
+          suffix-line
+          </code_to_rewrite>
+          suffix-line
+          </area_around_code_to_rewrite>
+          "
         `)
     })
 })

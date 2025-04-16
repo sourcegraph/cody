@@ -3,14 +3,19 @@ import * as uui from 'uuid'
 
 import * as vscode from 'vscode'
 
+import { TextDocument } from 'vscode-languageserver-textdocument'
+import { getCurrentDocContext } from '../../completions/get-current-doc-context'
 import { getNewLineChar } from '../../completions/text-processing'
+import { wrapVSCodeTextDocument } from '../../editor/utils/virtual-text-document'
 import { AutoeditStopReason, type ModelResponse } from '../adapters/base'
 import type { AutoeditHotStreakID } from '../analytics-logger'
+import { autoeditsProviderConfig } from '../autoedits-config'
 import type {
     AbortedPredictionResult,
     IgnoredPredictionResult,
     SuggestedPredictionResult,
 } from '../autoedits-provider'
+import { getCodeToReplaceData } from '../prompt/prompt-utils'
 import { isDuplicatingTextFromRewriteArea } from '../utils'
 import { getHotStreakChunk, getStableSuggestion } from './get-chunk'
 
@@ -34,7 +39,7 @@ export interface ProcessHotStreakResponsesParams {
  */
 export async function* processHotStreakResponses({
     responseGenerator,
-    document,
+    document: originalDocument,
     codeToReplaceData,
     docContext,
     position,
@@ -45,9 +50,14 @@ export async function* processHotStreakResponses({
         fullPrediction?: string
     }
 > {
-    let processedPrediction = ''
-    let processedRange = new vscode.Range(codeToReplaceData.range.start, codeToReplaceData.range.start)
     let hotStreakId = null
+    let virtualDocument = TextDocument.create(
+        originalDocument.uri.toString(),
+        originalDocument.languageId,
+        originalDocument.version,
+        originalDocument.getText()
+    )
+    const document = wrapVSCodeTextDocument(virtualDocument)
 
     for await (const response of responseGenerator) {
         const canHotStreak = hotStreakId
@@ -58,11 +68,8 @@ export async function* processHotStreakResponses({
 
         if (options.hotStreakEnabled && canHotStreak && response.type !== 'aborted') {
             const predictionChunk = getHotStreakChunk({
-                latestFullPrediction: response.prediction,
-                processedPrediction,
-                processedRange,
+                prediction: response.prediction,
                 document,
-                docContext,
                 position,
                 codeToReplaceData,
                 response,
@@ -72,18 +79,6 @@ export async function* processHotStreakResponses({
                 // Cannot emit a prediction
                 continue
             }
-
-            if (!hotStreakId) {
-                // We are emitting a hot streak prediction. This means that all future response should be treated as hot streaks.
-                hotStreakId = uui.v4() as AutoeditHotStreakID
-            }
-
-            // Track the number of lines we have processed, this is used to trim the prediction accordingly in the next response.
-            processedPrediction = processedPrediction + predictionChunk.text
-            processedRange = new vscode.Range(
-                processedRange.start,
-                predictionChunk.codeToReplaceData.range.end
-            )
 
             if (!predictionChunk.firstLineChanged) {
                 yield {
@@ -97,12 +92,34 @@ export async function* processHotStreakResponses({
                 continue
             }
 
-            const newLineChar = getNewLineChar(predictionChunk.codeToReplaceData.codeToRewrite)
+            // The hot streak prediction excludes part of the prefix. This means that it fundamentally relies
+            // on the prefix existing in the document to be a valid suggestion. We need to update the docContext
+            // to reflect this.
+            const updatedDocContext = getCurrentDocContext({
+                document,
+                position: predictionChunk.range.start,
+                maxPrefixLength: docContext.maxPrefixLength,
+                maxSuffixLength: docContext.maxSuffixLength,
+            })
+
+            const adjustedCodeToReplace = getCodeToReplaceData({
+                docContext: updatedDocContext,
+                document,
+                position: predictionChunk.range.start,
+                tokenBudget: {
+                    ...autoeditsProviderConfig.tokenLimit,
+                    codeToRewritePrefixLines: 0,
+                    codeToRewriteSuffixLines:
+                        predictionChunk.range.end.line - predictionChunk.range.start.line - 1,
+                },
+            })
+
+            const newLineChar = getNewLineChar(adjustedCodeToReplace.codeToRewrite)
             if (
-                predictionChunk.text === predictionChunk.codeToReplaceData.codeToRewrite ||
+                predictionChunk.text === adjustedCodeToReplace.codeToRewrite ||
                 isDuplicatingTextFromRewriteArea({
                     addedText: predictionChunk.addedLines.join(newLineChar),
-                    codeToReplaceData: predictionChunk.codeToReplaceData,
+                    codeToReplaceData: adjustedCodeToReplace,
                 })
             ) {
                 // The adjusted codeToRewrite is the same as the prediction.
@@ -118,6 +135,20 @@ export async function* processHotStreakResponses({
                 continue
             }
 
+            if (!hotStreakId) {
+                // We are emitting a hot streak prediction. This means that all future response should be treated as hot streaks.
+                hotStreakId = uui.v4() as AutoeditHotStreakID
+            }
+
+            // Update the virtual document with the latest prediction.
+            // This is required as each subsequent prediction ultimately relies on the previous
+            // prediction being accepted
+            virtualDocument = TextDocument.update(
+                virtualDocument,
+                [{ range: predictionChunk.range, text: predictionChunk.text }],
+                document.version + 1
+            )
+
             yield {
                 type: 'suggested',
                 response: {
@@ -125,14 +156,12 @@ export async function* processHotStreakResponses({
                     prediction: predictionChunk.text,
                     stopReason: AutoeditStopReason.HotStreak,
                 },
-                uri: predictionChunk.documentSnapshot.uri.toString(),
+                uri: document.uri.toString(),
                 // We use the first line of the diff as the next cursor position.
                 // This is useful so that we can support "jumping" to this suggestion from a different part of the document
-                editPosition: predictionChunk.documentSnapshot.validatePosition(
-                    new vscode.Position(predictionChunk.firstLineChanged, Number.MAX_SAFE_INTEGER)
-                ),
-                docContext: predictionChunk.docContext,
-                codeToReplaceData: predictionChunk.codeToReplaceData,
+                editPosition: document.lineAt(predictionChunk.firstLineChanged).range.end,
+                docContext: updatedDocContext,
+                codeToReplaceData: adjustedCodeToReplace,
                 hotStreakId,
                 fullPrediction: response.prediction,
             }

@@ -65,13 +65,11 @@ function createTestParams({
     document,
     position,
     latestFullPrediction,
-    processedPrediction,
     responseType = 'partial',
 }: {
     document: vscode.TextDocument
     position: vscode.Position
     latestFullPrediction: string
-    processedPrediction: string
     responseType?: 'success' | 'partial'
 }): GetHotStreakChunkParams {
     const docContext = getCurrentDocContext({
@@ -90,8 +88,7 @@ function createTestParams({
     })
 
     return {
-        latestFullPrediction,
-        processedPrediction,
+        prediction: latestFullPrediction,
         document,
         position,
         codeToReplaceData,
@@ -107,30 +104,6 @@ describe('getHotStreakChunk', () => {
             document,
             position,
             latestFullPrediction: '',
-            processedPrediction: '',
-        })
-        const result = getHotStreakChunk(params)
-        expect(result).toBe(null)
-    })
-
-    it('no latest prediction with a processed prediction', () => {
-        const { document, position } = documentAndPosition(MOCK_EXISTING_CODE)
-        const params = createTestParams({
-            document,
-            position,
-            latestFullPrediction: '',
-            processedPrediction: dedent`
-                    export function isEvenOrOdd(numberToChange: number): boolean {
-                        // Check if numberToChange is 0
-                        if (numberToChange === 0) {
-                            return true
-                        }
-
-                        // Check if numberToChange is 1
-                        if (numberToChange === 1) {
-                            return false
-                        }\n
-                `,
         })
         const result = getHotStreakChunk(params)
         expect(result).toBe(null)
@@ -153,7 +126,6 @@ describe('getHotStreakChunk', () => {
                             return false
                         }\n
                 `,
-            processedPrediction: '',
         })
         const result = getHotStreakChunk(params)
         expect(result).toBe(null)
@@ -169,14 +141,6 @@ describe('getHotStreakChunk', () => {
                         if (numberToChange === 1) {
                             return false
                         }\n
-                `,
-            processedPrediction: dedent`
-                    export function isEvenOrOdd(target: number): boolean {
-                        // Check if target is 0
-                        if (target === 0) {
-                            return true
-                        }\n
-                \n
                 `,
         })
         const result = getHotStreakChunk(params)
@@ -195,7 +159,6 @@ describe('getHotStreakChunk', () => {
                             return true
                         }\n
                 `,
-            processedPrediction: '',
         })
         const result = getHotStreakChunk(params) as HotStreakChunk
         expect(result.text).toMatchInlineSnapshot(`
@@ -206,7 +169,7 @@ describe('getHotStreakChunk', () => {
               }
           "
         `)
-        expect(result.codeToReplaceData.codeToRewrite).toMatchInlineSnapshot(`
+        expect(document.getText(result.range)).toMatchInlineSnapshot(`
           "export function isEvenOrOdd(numberToChange: number): boolean {
               // Check if numberToChange is 0
               if (numberToChange === 0) {
@@ -236,7 +199,6 @@ describe('getHotStreakChunk', () => {
                             return false
                         }\n
                 `,
-            processedPrediction: '',
         })
         const result = getHotStreakChunk(params) as HotStreakChunk
         expect(result.text).toMatchInlineSnapshot(`
@@ -247,7 +209,7 @@ describe('getHotStreakChunk', () => {
               }
           "
         `)
-        expect(result.codeToReplaceData.codeToRewrite).toMatchInlineSnapshot(`
+        expect(document.getText(result.range)).toMatchInlineSnapshot(`
           "export function isEvenOrOdd(numberToChange: number): boolean {
               // Check if numberToChange is 0
               if (numberToChange === 0) {
@@ -279,7 +241,6 @@ describe('getHotStreakChunk', () => {
                             return false
                         }\n
                 `,
-            processedPrediction: '',
         })
         const result = getHotStreakChunk(params) as HotStreakChunk
         expect(result.text).toMatchInlineSnapshot(`
@@ -299,7 +260,7 @@ describe('getHotStreakChunk', () => {
                   return false
           "
         `)
-        expect(result.codeToReplaceData.codeToRewrite).toMatchInlineSnapshot(`
+        expect(document.getText(result.range)).toMatchInlineSnapshot(`
           "export function isEvenOrOdd(numberToChange: number): boolean {
               // Check if numberToChange is 0
               if (numberToChange === 0) {
@@ -358,7 +319,6 @@ describe('getHotStreakChunk', () => {
                         console.log(message)
                     }
                 `,
-            processedPrediction: '',
             responseType: 'success',
         })
         const result = getHotStreakChunk(params) as HotStreakChunk
@@ -403,7 +363,7 @@ describe('getHotStreakChunk', () => {
           }
           "
         `)
-        expect(result.codeToReplaceData.codeToRewrite).toMatchInlineSnapshot(`
+        expect(document.getText(result.range)).toMatchInlineSnapshot(`
           "export function isEvenOrOdd(numberToChange: number): boolean {
               // Check if numberToChange is 0
               if (numberToChange === 0) {

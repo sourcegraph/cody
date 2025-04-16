@@ -1,14 +1,9 @@
-import type { CodeToReplaceData, DocumentContext } from '@sourcegraph/cody-shared'
+import type { CodeToReplaceData } from '@sourcegraph/cody-shared'
 import { calcSlices } from 'fast-myers-diff'
 import * as vscode from 'vscode'
 import { lines } from '../../completions/text-processing'
 import type { PartialModelResponse, SuccessModelResponse } from '../adapters/base'
 
-import { TextDocument } from 'vscode-languageserver-textdocument'
-import { getCurrentDocContext } from '../../completions/get-current-doc-context'
-import { wrapVSCodeTextDocument } from '../../editor/utils/virtual-text-document'
-import { autoeditsProviderConfig } from '../autoedits-config'
-import { getCodeToReplaceData } from '../prompt/prompt-utils'
 import { shrinkPredictionUntilSuffix } from '../shrink-prediction'
 import {
     SHOULD_ATTEMPT_HOT_STREAK_CHUNK_THRESHOLD,
@@ -24,9 +19,9 @@ enum SliceKind {
 }
 
 interface StableSuggestionParams {
+    document: vscode.TextDocument
     range: vscode.Range
     prediction: string
-    document: vscode.TextDocument
     codeToReplaceData: CodeToReplaceData
     response: SuccessModelResponse | PartialModelResponse
 }
@@ -127,10 +122,9 @@ export function getStableSuggestion({
         state.predictionLines.at(-1) === ''
             ? state.predictionLines.join('\n')
             : state.predictionLines.join('\n') + '\n'
+
     const linesAffected = suggestionText.split('\n').length - 1
-    const linesAdded = state.addedLines.length - 1
-    const linesRemoved = state.removedLines.length - 1
-    const lineDelta = linesAdded - linesRemoved
+    const lineDelta = state.addedLines.length - state.removedLines.length
     const suggestionRange = new vscode.Range(
         range.start,
         range.start.translate(linesAffected - lineDelta)
@@ -153,11 +147,8 @@ export function getStableSuggestion({
 }
 
 export interface GetHotStreakChunkParams {
-    latestFullPrediction: string
-    processedPrediction: string
-    processedRange: vscode.Range
+    prediction: string
     document: vscode.TextDocument
-    docContext: DocumentContext
     codeToReplaceData: CodeToReplaceData
     position: vscode.Position
     response: SuccessModelResponse | PartialModelResponse
@@ -165,11 +156,9 @@ export interface GetHotStreakChunkParams {
 
 export interface HotStreakChunk {
     text: string
+    range: vscode.Range
     addedLines: string[]
     deletedLines: string[]
-    codeToReplaceData: CodeToReplaceData
-    docContext: DocumentContext
-    documentSnapshot: vscode.TextDocument
     firstLineChanged: number | null
 }
 
@@ -177,21 +166,13 @@ export interface HotStreakChunk {
  * Produces a hot-streak chunk and associated metadata from the latest full prediction.
  */
 export function getHotStreakChunk({
-    latestFullPrediction,
-    processedPrediction,
-    processedRange,
+    prediction,
     response,
     document,
-    docContext,
     codeToReplaceData,
-    position,
 }: GetHotStreakChunkParams): HotStreakChunk | null {
-    const processedLines = processedPrediction.length > 0 ? lines(processedPrediction).length - 1 : 0
-    const trimmedPrediction =
-        response.type === 'success'
-            ? response.prediction
-            : trimPredictionToLastFullLine(latestFullPrediction)
-    const remainingPrediction = lines(trimmedPrediction).slice(processedLines).join('\n')
+    const remainingPrediction =
+        response.type === 'success' ? response.prediction : trimPredictionToLastFullLine(prediction)
     if (remainingPrediction.length === 0) {
         // No complete lines to process
         return null
@@ -205,8 +186,8 @@ export function getHotStreakChunk({
     }
 
     const expectedDiffRange = new vscode.Range(
-        codeToReplaceData.range.start.translate(processedLines),
-        codeToReplaceData.range.start.translate(processedLines + predictionLines)
+        codeToReplaceData.range.start,
+        codeToReplaceData.range.start.translate(predictionLines)
     )
 
     const suggestion = getStableSuggestion({
@@ -220,64 +201,11 @@ export function getHotStreakChunk({
         return null
     }
 
-    const { suggestionRange: changeRange, suggestionText: changeText, firstLineChanged } = suggestion
-
-    let documentSnapshot = document
-    if (processedPrediction.length !== 0) {
-        const mutableDocument = TextDocument.create(
-            document.uri.toString(),
-            document.languageId,
-            document.version,
-            document.getText()
-        )
-
-        // The hot streak suggestion excludes part of the full prediction. This means that it fundamentally relies
-        // on the processed part of the prediction existing in the document to be a valid suggestion.
-        // We need to update the document to reflect this, so that later docContext and codeToReplaceData
-        // are accurate.
-        TextDocument.update(
-            mutableDocument,
-            [{ range: processedRange, text: processedPrediction }],
-            document.version + 1
-        )
-        documentSnapshot = wrapVSCodeTextDocument(mutableDocument)
-    }
-
-    // It is important that we use the correct position when updating docContext, as
-    // this is also used to help determine if we can make a valid inline completion or not.
-    // Currently we only support inline completions from the first suggestion.
-    // TODO: Use the correct updated position for hot-streak suggestions. If it is a completion it should be
-    // at the end of the insertText, otherwise it should be unchanged.
-    const updatedDocPosition = processedPrediction.length === 0 ? position : changeRange.start
-
-    // The hot streak prediction excludes part of the prefix. This means that it fundamentally relies
-    // on the prefix existing in the document to be a valid suggestion. We need to update the docContext
-    // to reflect this.
-    const updatedDocContext = getCurrentDocContext({
-        document: documentSnapshot,
-        position: updatedDocPosition,
-        maxPrefixLength: docContext.maxPrefixLength,
-        maxSuffixLength: docContext.maxSuffixLength,
-    })
-
-    const adjustedCodeToReplace = getCodeToReplaceData({
-        docContext: updatedDocContext,
-        document: documentSnapshot,
-        position: changeRange.start,
-        tokenBudget: {
-            ...autoeditsProviderConfig.tokenLimit,
-            codeToRewritePrefixLines: 0,
-            codeToRewriteSuffixLines: changeRange.end.line - changeRange.start.line - 1,
-        },
-    })
-
     return {
-        text: changeText,
+        text: suggestion.suggestionText,
+        range: suggestion.suggestionRange,
+        firstLineChanged: suggestion.firstLineChanged,
         addedLines: suggestion.addedLines,
         deletedLines: suggestion.removedLines,
-        codeToReplaceData: adjustedCodeToReplace,
-        docContext: updatedDocContext,
-        documentSnapshot,
-        firstLineChanged,
     }
 }
