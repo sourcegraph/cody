@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest'
 import type * as vscode from 'vscode'
 
 import dedent from 'dedent'
-import { getCurrentDocContext } from '../../completions/get-current-doc-context'
 import { documentAndPosition } from '../../completions/test-helpers'
 import {
     AutoeditStopReason,
@@ -72,12 +71,6 @@ function createTestParams({
     latestFullPrediction: string
     responseType?: 'success' | 'partial'
 }): GetHotStreakChunkParams {
-    const docContext = getCurrentDocContext({
-        document,
-        position,
-        maxPrefixLength: 1000,
-        maxSuffixLength: 1000,
-    })
     const codeToReplaceData = createCodeToReplaceDataForTest(MOCK_EXISTING_CODE, {
         maxPrefixLength: 1000,
         maxSuffixLength: 1000,
@@ -92,7 +85,6 @@ function createTestParams({
         document,
         position,
         codeToReplaceData,
-        docContext,
         response: createSuggestedResponse(latestFullPrediction, responseType),
     }
 }

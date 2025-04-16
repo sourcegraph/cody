@@ -9,7 +9,7 @@ import { forkSignal } from '../completions/utils'
 import { AutoeditStopReason } from './adapters/base'
 import type { AutoeditCacheID, AutoeditHotStreakID, AutoeditRequestID } from './analytics-logger'
 import { autoeditAnalyticsLogger, autoeditSource } from './analytics-logger'
-import type { processHotStreakResponses } from './hot-streak'
+import type { ProcessedHotStreakResponse } from './hot-streak'
 import type { CodeToReplaceData } from './prompt/prompt-utils'
 import { isNotRecyclable, isRequestNotRelevant } from './request-recycling'
 
@@ -46,7 +46,7 @@ export class RequestManager implements vscode.Disposable {
      */
     public async request(
         params: AutoeditRequestManagerParams,
-        makeRequest: (abortSignal: AbortSignal) => Promise<ReturnType<typeof processHotStreakResponses>>
+        makeRequest: (abortSignal: AbortSignal) => Promise<AsyncGenerator<ProcessedHotStreakResponse>>
     ): Promise<PredictionResult> {
         // 1. First check the cache for exact matches
         const cachedResponse = this.checkCache(params)
@@ -97,7 +97,7 @@ export class RequestManager implements vscode.Disposable {
 
     private async processRequestInBackground(
         request: InflightRequest,
-        makeRequest: (abortSignal: AbortSignal) => Promise<ReturnType<typeof processHotStreakResponses>>,
+        makeRequest: (abortSignal: AbortSignal) => Promise<AsyncGenerator<ProcessedHotStreakResponse>>,
         params: AutoeditRequestManagerParams
     ): Promise<void> {
         try {

@@ -32,6 +32,15 @@ export interface ProcessHotStreakResponsesParams {
     }
 }
 
+export type ProcessedHotStreakResponse = (
+    | Omit<SuggestedPredictionResult, 'cacheId'>
+    | IgnoredPredictionResult
+    | AbortedPredictionResult
+) & {
+    /** For autoedit debug panel */
+    fullPrediction?: string
+}
+
 /**
  * Process a stream of model responses and attempt to emit a "hot-streak" suggestion.
  * A hot-streak is where we emit suggestions before the model is done generating.
@@ -44,12 +53,7 @@ export async function* processHotStreakResponses({
     docContext,
     position,
     options,
-}: ProcessHotStreakResponsesParams): AsyncGenerator<
-    (Omit<SuggestedPredictionResult, 'cacheId'> | IgnoredPredictionResult | AbortedPredictionResult) & {
-        /** For autoedit debug panel */
-        fullPrediction?: string
-    }
-> {
+}: ProcessHotStreakResponsesParams): AsyncGenerator<ProcessedHotStreakResponse> {
     let hotStreakId = null
     let virtualDocument = TextDocument.create(
         originalDocument.uri.toString(),
@@ -177,6 +181,22 @@ export async function* processHotStreakResponses({
         if (response.type === 'aborted') {
             // No hot-streak, yield response.
             yield { type: 'aborted', response }
+            return
+        }
+
+        if (!options.hotStreakEnabled) {
+            yield {
+                type: 'suggested',
+                response,
+                uri: document.uri.toString(),
+                docContext,
+                codeToReplaceData,
+                // Note: We still emit a position when hot streak is disabled, but it is not an accurate
+                // `editPosition`. This is just so we can maintain a single type whilst the feature flag is used.
+                // The `editPosition` here will never actually be used.
+                editPosition: position,
+                fullPrediction: response.prediction,
+            }
             return
         }
 

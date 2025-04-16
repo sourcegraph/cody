@@ -46,7 +46,7 @@ import { AutoeditCompletionItem } from './autoedit-completion-item'
 import { autoeditsOnboarding } from './autoedit-onboarding'
 import { autoeditsProviderConfig } from './autoedits-config'
 import { FilterPredictionBasedOnRecentEdits } from './filter-prediction-edits'
-import { processHotStreakResponses } from './hot-streak'
+import { type ProcessedHotStreakResponse, processHotStreakResponses } from './hot-streak'
 import { createMockResponseGenerator } from './mock-response-generator'
 import { autoeditsOutputChannelLogger } from './output-channel-logger'
 import type { AutoeditsUserPromptStrategy } from './prompt/base'
@@ -814,7 +814,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
         docContext: DocumentContext
         prompt: AutoeditsPrompt
         abortSignal: AbortSignal
-    }): Promise<ReturnType<typeof processHotStreakResponses>> {
+    }): Promise<AsyncGenerator<ProcessedHotStreakResponse>> {
         const userId = (await currentResolvedConfig()).clientState.anonymousUserID
         const responseGenerator = await this.modelAdapter.getModelResponse({
             url: autoeditsProviderConfig.url,
