@@ -178,7 +178,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
     private readonly modelAdapter: AutoeditsModelAdapter
     private readonly requestManager = new RequestManager()
     public readonly smartThrottleService = new SmartThrottleService()
-    protected nextCursorManager = new NextCursorManager()
+    protected nextCursorManager = new NextCursorManager(this.requestManager)
 
     private readonly promptStrategy: AutoeditsUserPromptStrategy
     public readonly filterPrediction = new FilterPredictionBasedOnRecentEdits()
@@ -485,19 +485,6 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                 return null
             }
 
-            if (this.shouldDeferToNextCursorSuggestion({ prediction: predictionResult, position })) {
-                this.discardSuggestion({
-                    startedAt,
-                    requestId,
-                    discardReason: 'nextCursorSuggestionShownInstead',
-                })
-                // Restore the hotStreakId, this was cleared once we returned the item from the cache.
-                // We are defering this item so we need to reuse it for the next suggestion
-                this.requestManager.lastAcceptedHotStreakId = predictionResult.hotStreakId
-                this.nextCursorManager.suggest(document.uri, predictionResult.editPosition)
-                return null
-            }
-
             const initialPrediction = predictionResult.response.prediction
             const predictionDocContext = predictionResult.docContext
             const predictionCodeToReplaceData = predictionResult.codeToReplaceData
@@ -648,6 +635,24 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                         ? renderOutput.updatedDecorationInfo
                         : decorationInfo,
             })
+
+            if (this.shouldDeferToNextCursorSuggestion({ prediction: predictionResult, position })) {
+                this.discardSuggestion({
+                    startedAt,
+                    requestId,
+                    discardReason: 'nextCursorSuggestionShownInstead',
+                })
+
+                this.nextCursorManager.suggest({
+                    uri: document.uri,
+                    position: predictionResult.editPosition,
+                    hotStreakId: predictionResult.hotStreakId,
+                })
+                return null
+            }
+
+            // We're about to render a suggestion, so discard any next cursor suggestions
+            this.nextCursorManager.discard()
 
             if (!isRunningInsideAgent()) {
                 // Since VS Code has no callback as to when a completion is shown, we assume
@@ -967,6 +972,11 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
         prediction: SuggestedPredictionResult
         position: vscode.Position
     }): boolean {
+        if (!this.features.shouldHotStreak) {
+            // Only support next cursor suggestions when hot-streak is enabled
+            return false
+        }
+
         const distance = prediction.editPosition.line - position.line
         return distance > this.NEXT_CURSOR_SUGGESTION_THRESHOLD
     }

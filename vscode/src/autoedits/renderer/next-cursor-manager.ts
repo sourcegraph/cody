@@ -1,4 +1,6 @@
 import * as vscode from 'vscode'
+import type { AutoeditHotStreakID } from '../analytics-logger'
+import type { RequestManager } from '../request-manager'
 
 const NEXT_CURSOR_DECORATION = {
     decoration: vscode.window.createTextEditorDecorationType({ isWholeLine: true }),
@@ -16,23 +18,35 @@ const NEXT_CURSOR_DECORATION = {
     },
 }
 
+interface CursorSuggestion {
+    uri: vscode.Uri
+    position: vscode.Position
+    /**
+     * If this suggestion is part of a hot-streak, we need to know about the id.
+     * This is so we can update the request-manager just before we move the cursor.
+     * That way, we can guarantee that the cursor change will retrieve the correct item from the cache.
+     */
+    hotStreakId?: AutoeditHotStreakID
+}
+
 /**
  * Manages next cursor suggestions.
  * Displays decorations and handles accepting the suggestion.
  */
 export class NextCursorManager implements vscode.Disposable {
     private disposables: vscode.Disposable[] = []
-    private activeCursorSuggestion: { uri: vscode.Uri; position: vscode.Position } | null = null
+    private activeCursorSuggestion: CursorSuggestion | null = null
 
-    constructor() {
+    constructor(protected requestManager: RequestManager) {
         this.disposables.push(
-            vscode.commands.registerCommand(
-                'cody.nextCursor.suggest',
-                (uri: vscode.Uri, position: vscode.Position) =>
-                    this.showNextCursorSuggestion(uri, position)
+            vscode.commands.registerCommand('cody.nextCursor.suggest', (suggestion: CursorSuggestion) =>
+                this.showNextCursorSuggestion(suggestion)
             ),
             vscode.commands.registerCommand('cody.nextCursor.accept', () =>
                 this.acceptNextCursorSuggestion()
+            ),
+            vscode.commands.registerCommand('cody.nextCursor.discard', () =>
+                this.hideNextCursorSuggestion()
             ),
             vscode.workspace.onDidChangeTextDocument(event => this.hideNextCursorSuggestion()),
             vscode.window.onDidChangeActiveTextEditor(activeEditor => {
@@ -58,28 +72,38 @@ export class NextCursorManager implements vscode.Disposable {
         )
     }
 
-    public suggest(uri: vscode.Uri, position: vscode.Position): void {
+    public suggest(suggestion: CursorSuggestion): void {
         // Proxy through to the VS Code command so this can be easily adopted for Agent.
-        vscode.commands.executeCommand('cody.nextCursor.suggest', uri, position)
+        vscode.commands.executeCommand('cody.nextCursor.suggest', suggestion)
     }
 
     public accept(): void {
+        console.log('UMPOX ACCEPTING CURSOR PREDICTION', {
+            uri: this.activeCursorSuggestion?.uri,
+            position: this.activeCursorSuggestion?.position,
+            hotStreakId: this.activeCursorSuggestion?.hotStreakId,
+        })
         // Proxy through to the VS Code command so this can be easily adopted for Agent.
         vscode.commands.executeCommand('cody.nextCursor.accept')
     }
 
-    private showNextCursorSuggestion(uri: vscode.Uri, position: vscode.Position): void {
-        const editor = this.getEditorForUri(uri)
+    public discard(): void {
+        // Proxy through to the VS Code command so this can be easily adopted for Agent.
+        vscode.commands.executeCommand('cody.nextCursor.discard')
+    }
+
+    private showNextCursorSuggestion(suggestion: CursorSuggestion): void {
+        const editor = this.getEditorForUri(suggestion.uri)
         if (!editor) {
             return
         }
 
-        this.activeCursorSuggestion = { uri, position }
+        this.activeCursorSuggestion = suggestion
         // We set VS Code state so we can override the Tab command to execute `cody.nextCursor.accept` instead.
         void vscode.commands.executeCommand('setContext', 'cody.nextCursorSuggested', true)
         editor.setDecorations(NEXT_CURSOR_DECORATION.decoration, [
             {
-                range: new vscode.Range(position.line, 0, position.line, 0),
+                range: new vscode.Range(suggestion.position.line, 0, suggestion.position.line, 0),
                 renderOptions: NEXT_CURSOR_DECORATION.renderOptions,
             },
         ])
@@ -93,6 +117,12 @@ export class NextCursorManager implements vscode.Disposable {
         const editor = this.getEditorForUri(this.activeCursorSuggestion.uri)
         if (!editor) {
             return
+        }
+
+        if (this.activeCursorSuggestion.hotStreakId) {
+            // If we have a hot-streak ID attached to this suggestion, we need to ensure it is set in the request manager,
+            // so that we can guarantee it will be retrieved in the next call to `provideInlineCompletionItems`.
+            this.requestManager.lastAcceptedHotStreakId = this.activeCursorSuggestion.hotStreakId
         }
 
         editor.selection = new vscode.Selection(

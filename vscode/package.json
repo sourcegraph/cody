@@ -715,7 +715,7 @@
       {
         "command": "cody.supersuggest.dismiss",
         "key": "escape",
-        "when": "editorTextFocus && cody.activated && cody.supersuggest.active"
+        "when": "editorTextFocus && cody.activated && cody.supersuggest.active && !cody.nextCursorSuggested"
       },
       {
         "command": "cody.supersuggest.testExample",
@@ -725,6 +725,11 @@
       {
         "command": "cody.nextCursor.accept",
         "key": "tab",
+        "when": "cody.activated && config.cody.suggestions.mode == 'auto-edit' && cody.nextCursorSuggested"
+      },
+      {
+        "command": "cody.nextCursor.discard",
+        "key": "escape",
         "when": "cody.activated && config.cody.suggestions.mode == 'auto-edit' && cody.nextCursorSuggested"
       }
     ],
