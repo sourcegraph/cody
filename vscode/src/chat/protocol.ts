@@ -259,7 +259,7 @@ interface WebviewContextMessage {
 interface WebviewRegenerateCodeBlockMessage {
     id: string
     code: string
-    language?: string
+    language?: string | undefined | null
     index: number
 }
 
