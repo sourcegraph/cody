@@ -137,6 +137,7 @@ import { countGeneratedCode } from '../utils'
 import { ChatBuilder, prepareChatMessage } from './ChatBuilder'
 import { chatHistory } from './ChatHistoryManager'
 import { CodyChatEditorViewType } from './ChatsController'
+import { CodeBlockRegenerator, type RegenerateRequestParams } from './CodeBlockRegenerator'
 import type { ContextRetriever } from './ContextRetriever'
 import { InitDoer } from './InitDoer'
 import { getChatPanelTitle, isAgentTesting } from './chat-helpers'
@@ -555,6 +556,17 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 localStorage.setDevicePixelRatio(message.devicePixelRatio)
                 break
             }
+            case 'regenerateCodeBlock': {
+                await this.handleRegenerateCodeBlock({
+                    requestID: message.id,
+                    code: PromptString.unsafe_fromLLMResponse(message.code),
+                    language: message.language
+                        ? PromptString.unsafe_fromLLMResponse(message.language)
+                        : undefined,
+                    index: message.index,
+                })
+                break
+            }
         }
     }
 
@@ -659,6 +671,11 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
 
         void this.saveSession()
         this.initDoer.signalInitialized()
+    }
+
+    async regenerateCodeBlock(params: RegenerateRequestParams): Promise<PromptString> {
+        const regenerator = new CodeBlockRegenerator(this.chatClient)
+        return await regenerator.regenerate(params)
     }
 
     /**
@@ -1186,6 +1203,76 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 return
             }
             this.postError(new Error('Failed to edit prompt'), 'transcript')
+        }
+    }
+
+    /**
+     * Regenerates a single code block in the transcript.
+     */
+    async handleRegenerateCodeBlock({
+        requestID,
+        code,
+        language,
+        index,
+    }: {
+        requestID: string
+        code: PromptString
+        language: PromptString | undefined
+        index: number
+    }): Promise<void> {
+        const abort = this.startNewSubmitOrEditOperation()
+
+        telemetryRecorder.recordEvent('cody.regenerateCodeBlock', 'clicked', {
+            billingMetadata: {
+                product: 'cody',
+                category: 'billable',
+            },
+        })
+
+        // TODO: Add trace spans around this operation
+
+        try {
+            const model: ChatModel | undefined = await wrapInActiveSpan('chat.resolveModel', () =>
+                firstResultFromOperation(ChatBuilder.resolvedModelForChat(this.chatBuilder), abort)
+            )
+            if (!model) {
+                throw new Error('no chat model selected')
+            }
+            this.postMessage({
+                type: 'clientAction',
+                regenerateStatus: { id: requestID, status: 'regenerating' },
+            })
+            const newCode = await this.regenerateCodeBlock({
+                abort,
+                code,
+                language,
+                model,
+                requestID,
+            })
+            // Paste up the chat transcript replacing `code` with `newCode`
+            if (this.chatBuilder.replaceInMessage(index, code, newCode)) {
+                // Post the updated transcript to the webview
+                this.postViewTranscript()
+                // Save the newly generated code to the transcript.
+                await this.saveSession()
+            }
+            this.postMessage({
+                type: 'clientAction',
+                regenerateStatus: { id: requestID, status: 'done' },
+            })
+        } catch (error) {
+            this.postMessage({
+                type: 'clientAction',
+                regenerateStatus: {
+                    id: requestID,
+                    status: 'error',
+                    error: `${error}`,
+                },
+            })
+            if (isAbortErrorOrSocketHangUp(error)) {
+                return
+            }
+            this.postError(new Error(`Failed to regenerate code: ${error}`), 'system')
         }
     }
 
