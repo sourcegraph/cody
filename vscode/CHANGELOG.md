@@ -68,7 +68,7 @@ This is a log of all notable changes to Cody for VS Code.
 
 ### Reverts
 
-- Revert "fix: backwards compatibility for evaluateFeatureFlags" [#-1](https://github.com/sourcegraph/cody/pull/7680)
+- Revert "fix: backwards compatibility for evaluateFeatureFlags" [#7680](https://github.com/sourcegraph/cody/pull/7680)
 
 #### Vscode
 
