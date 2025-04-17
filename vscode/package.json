@@ -1383,6 +1383,41 @@
           "fontPath": "resources/cody-icons.woff",
           "fontCharacter": "\\004A"
         }
+      },
+      "command-keyboard-icon": {
+        "description": "Command keyboard icon",
+        "default": {
+          "fontPath": "resources/cody-icons.woff",
+          "fontCharacter": "\\004B"
+        }
+      },
+      "option-keyboard-icon": {
+        "description": "Option keyboard icon",
+        "default": {
+          "fontPath": "resources/cody-icons.woff",
+          "fontCharacter": "\\004C"
+        }
+      },
+      "k-keyboard-icon": {
+        "description": "K keyboard icon",
+        "default": {
+          "fontPath": "resources/cody-icons.woff",
+          "fontCharacter": "\\004D"
+        }
+      },
+      "l-keyboard-icon": {
+        "description": "L keyboard icon",
+        "default": {
+          "fontPath": "resources/cody-icons.woff",
+          "fontCharacter": "\\004E"
+        }
+      },
+      "tab-keyboard-icon": {
+        "description": "Tab keyboard icon",
+        "default": {
+          "fontPath": "resources/cody-icons.woff",
+          "fontCharacter": "\\004F"
+        }
       }
     }
   },

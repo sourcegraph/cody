@@ -1,13 +1,50 @@
 import * as vscode from 'vscode'
 
-const decoration: vscode.DecorationInstanceRenderOptions = {
-    after: {
-        contentText: 'M',
-        // @ts-ignore
-        fontFamily: '"sourcegraph.cody-ai/cody-icons.woff"',
-        verticalAlign: 'bottom',
-    },
+/**
+ * The corresponding font character for the tab icon in the cody-icons font.
+ */
+const TAB_FONT_ICON = '\\004F'
+
+interface RenderableDecoration {
+    decoration: vscode.TextEditorDecorationType
+    renderOptions: vscode.DecorationInstanceRenderOptions
 }
+
+/**
+ * Shared decoration style
+ */
+const DECORATION_STYLE: vscode.ThemableDecorationAttachmentRenderOptions = {
+    color: new vscode.ThemeColor('editorSuggestWidget.foreground'),
+    backgroundColor: new vscode.ThemeColor('editorSuggestWidget.background'),
+    border: '1px solid',
+    borderColor: new vscode.ThemeColor('editorSuggestWidget.border'),
+}
+
+const NEXT_CURSOR_DECORATIONS: RenderableDecoration[] = [
+    {
+        // Icon decoration
+        decoration: vscode.window.createTextEditorDecorationType({ isWholeLine: true }),
+        renderOptions: {
+            after: {
+                ...DECORATION_STYLE,
+                contentText: TAB_FONT_ICON,
+                // @ts-ignore - fontFamily is an undocumented property
+                fontFamily: '"sourcegraph.cody-ai/resources/cody-icons.woff"',
+                verticalAlign: 'bottom',
+            },
+        },
+    },
+    {
+        // Text decoration
+        decoration: vscode.window.createTextEditorDecorationType({ isWholeLine: true }),
+        renderOptions: {
+            after: {
+                ...DECORATION_STYLE,
+                contentText: 'Jump here',
+            },
+        },
+    },
+]
 
 /**
  * Manages next cursor suggestions.
@@ -16,9 +53,6 @@ const decoration: vscode.DecorationInstanceRenderOptions = {
 export class NextCursorManager implements vscode.Disposable {
     private disposables: vscode.Disposable[] = []
     private activeCursorSuggestion: { uri: vscode.Uri; position: vscode.Position } | null = null
-    private readonly nextCursorDecoration = vscode.window.createTextEditorDecorationType({
-        isWholeLine: true,
-    })
 
     constructor() {
         this.disposables.push(
@@ -73,9 +107,11 @@ export class NextCursorManager implements vscode.Disposable {
         this.activeCursorSuggestion = { uri, position }
         // We set VS Code state so we can override the Tab command to execute `cody.nextCursor.accept` instead.
         void vscode.commands.executeCommand('setContext', 'cody.nextCursorSuggested', true)
-        editor.setDecorations(this.nextCursorDecoration, [
-            { range: new vscode.Range(position.line, 0, position.line, 0), renderOptions: decoration },
-        ])
+        for (const { decoration, renderOptions } of NEXT_CURSOR_DECORATIONS) {
+            editor.setDecorations(decoration, [
+                { range: new vscode.Range(position.line, 0, position.line, 0), renderOptions },
+            ])
+        }
     }
 
     private acceptNextCursorSuggestion(): void {
@@ -108,7 +144,9 @@ export class NextCursorManager implements vscode.Disposable {
         this.activeCursorSuggestion = null
         // Reset VS Code state so the Tab command will be used for accepting any auto-edit suggestions
         void vscode.commands.executeCommand('setContext', 'cody.nextCursorSuggested', false)
-        editor.setDecorations(this.nextCursorDecoration, [])
+        for (const { decoration } of NEXT_CURSOR_DECORATIONS) {
+            editor.setDecorations(decoration, [])
+        }
     }
 
     private getEditorForUri(uri: vscode.Uri): vscode.TextEditor | undefined {
@@ -118,7 +156,6 @@ export class NextCursorManager implements vscode.Disposable {
     }
 
     public dispose(): void {
-        this.nextCursorDecoration.dispose()
         for (const disposable of this.disposables) {
             disposable.dispose()
         }

@@ -15,7 +15,12 @@ Contains the [cody-icons](font) font, used by the VS Code extension to show Cody
 | `G`       | ![G icon](svg-originals/G.svg) | 0047           | gemini-logo           |
 | `H`       | ![H icon](svg-originals/H.svg) | 0048           | new-comment-icon      |
 | `I`       | ![I icon](svg-originals/I.svg) | 0049           | discord-logo          |
-| `J`       | ![I icon](svg-originals/J.svg) | 004A           | cody-logo-heavy-slash |
+| `J`       | ![J icon](svg-originals/J.svg) | 004A           | cody-logo-heavy-slash |
+| `K`       | ![K icon](svg-originals/K.svg) | 004B           | command-keyboard-icon |
+| `L`       | ![L icon](svg-originals/L.svg) | 004C           | option-keyboard-icon  |
+| `M`       | ![M icon](svg-originals/M.svg) | 004D           | k-keyboard-icon       |
+| `N`       | ![N icon](svg-originals/N.svg) | 004E           | l-keyboard-icon       |
+| `O`       | ![O icon](svg-originals/O.svg) | 004F           | tab-keyboard-icon     |
 
 ## Preparing the Images
 
