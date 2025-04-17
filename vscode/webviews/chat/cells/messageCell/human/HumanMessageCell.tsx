@@ -55,8 +55,7 @@ export const HumanMessageCell: FC<HumanMessageCellProps> = ({ message, ...otherP
     if (
         (message.text === undefined || (message.text && message.text.length === 0)) &&
         otherProps.isSent &&
-        !otherProps.isLastInteraction &&
-        message.intent === 'agentic'
+        !otherProps.isLastInteraction
     ) {
         return null
     }

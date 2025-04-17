@@ -50,11 +50,11 @@ describe('HumanMessageCell', () => {
     })
 
     it('passes a custom intent to the HumanMessageEditor', () => {
-        render(<HumanMessageCell {...defaultProps} intent="agentic" />)
+        render(<HumanMessageCell {...defaultProps} intent="search" />)
 
         // Check that the custom intent was passed to HumanMessageEditor
         const intentElement = screen.getByTestId('intent')
-        expect(intentElement.textContent).toBe('agentic')
+        expect(intentElement.textContent).toBe('search')
     })
 
     it('passes the manuallySelectIntent callback to HumanMessageEditor', async () => {

@@ -41,7 +41,6 @@ describe('ModeSelectorField', () => {
 
     const defaultConfigMock = {
         config: {
-            experimentalAgenticChatEnabled: false,
             experimentalPromptEditorEnabled: true,
             experimentalNoodle: true,
             internalDebugContext: false,
@@ -131,44 +130,10 @@ describe('ModeSelectorField', () => {
         expect(screen.queryByText('Search')).not.toBeInTheDocument()
     })
 
-    it('hides agentic option when feature flag is disabled', () => {
+    it('displays search intent in model dropdown title - flag on', () => {
         render(
             <TestWrapper>
-                <ModeSelectorField {...defaultProps} />
-            </TestWrapper>
-        )
-
-        // Open the dropdown
-        fireEvent.click(screen.getByRole('combobox'))
-
-        // Agent option should not be visible
-        expect(screen.queryByText('Agent')).not.toBeInTheDocument()
-    })
-
-    it('hides agentic intent even when it was last selected if flag is not on', () => {
-        render(
-            <TestWrapper>
-                <ModeSelectorField {...defaultProps} _intent="agentic" omniBoxEnabled={true} />
-            </TestWrapper>
-        )
-
-        expect(screen.getByText('Chat')).toBeInTheDocument()
-        expect(screen.queryByText('Agent')).not.toBeInTheDocument()
-        // Open the dropdown to check if the option is still hidden
-        fireEvent.click(screen.getByRole('combobox'))
-        expect(screen.queryByText('Agent')).not.toBeInTheDocument()
-    })
-
-    it('displays agentic intent in model dropdown title - flag on', () => {
-        //  Set the feature flag to true
-        const props = {
-            ...defaultConfigMock,
-            config: { ...defaultConfigMock.config, experimentalAgenticChatEnabled: true },
-        }
-        vi.spyOn(useConfigModule, 'useConfig').mockReturnValue(props)
-        render(
-            <TestWrapper>
-                <ModeSelectorField {...defaultProps} _intent="agentic" omniBoxEnabled={true} />
+                <ModeSelectorField {...defaultProps} _intent="search" omniBoxEnabled={true} />
             </TestWrapper>
         )
 

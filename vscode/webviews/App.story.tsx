@@ -32,7 +32,6 @@ export const dummyVSCodeAPI: VSCodeWrapper = {
                 hasEditCapability: false,
                 allowEndpointChange: true,
                 experimentalPromptEditorEnabled: false,
-                experimentalAgenticChatEnabled: false,
                 attribution: 'none',
             },
             clientCapabilities: CLIENT_CAPABILITIES_FIXTURE,

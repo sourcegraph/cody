@@ -28,12 +28,6 @@ export const WithSearchSelected: Story = {
     },
 }
 
-export const WithAgenticSelected: Story = {
-    args: {
-        _intent: 'agentic',
-    },
-}
-
 export const DotComUser: Story = {
     args: {
         isDotComUser: true,
