@@ -63,20 +63,6 @@
         "complexity": 4.0,
       },
       {
-        "prefix": "function binary_search(array, target, min, max){\n  if (max < min) {",
-        "suffix": "  }\n}",
-        "ground_truth": "    return -1;\n  }\n  \n  let mid = Math.floor((min + max) / 2);\n  \n  if (array[mid] > target) {\n    return binary_search(array, target, min, mid - 1);\n  } else if (array[mid] < target) {\n    return binary_search(array, target, mid + 1, max);\n  } else {\n    return mid;\n  }",
-        "context": "% Erlang binary search implementation\n",
-        "complexity": 5.6,
-      },
-      {
-        "prefix": "debounce :: (a -> IO ()) -> Int -> IO (a -> IO ())\ndebounce f delay = do",
-        "suffix": "  return debouncedF",
-        "ground_truth": "  timeoutRef <- newIORef Nothing\n  let debouncedF x = do\n        mt <- readIORef timeoutRef\n        case mt of\n          Just t -> cancelTimeout t\n          Nothing -> return ()\n        t <- setTimeout delay (f x)\n        writeIORef timeoutRef (Just t)",
-        "context": "-- Haskell debounce implementation\n",
-        "complexity": 6.4,
-      },
-      {
         "prefix": "CREATE TABLE users (",
         "suffix": ");",
         "ground_truth": "  id SERIAL PRIMARY KEY,\n  name VARCHAR(100) NOT NULL,\n  email VARCHAR(100) UNIQUE,\n  created_at TIMESTAMP DEFAULT NOW()",
