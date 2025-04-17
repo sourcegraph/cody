@@ -13,7 +13,8 @@ import styles from '../chat/ChatMessageContent/ChatMessageContent.module.css'
 import { GuardrailsStatus } from './GuardrailsStatus'
 
 interface GuardrailsApplicatorProps {
-    code: string
+    plainCode: string
+    markdownCode: string
     language?: string
     fileName?: string
     guardrails: Guardrails
@@ -154,7 +155,8 @@ const guardrailsCache = new GuardrailsCache()
  * consistent UI state across component re-renders.
  */
 export const GuardrailsApplicator: React.FC<GuardrailsApplicatorProps> = ({
-    code,
+    plainCode,
+    markdownCode,
     language,
     fileName,
     guardrails,
@@ -169,7 +171,7 @@ export const GuardrailsApplicator: React.FC<GuardrailsApplicatorProps> = ({
         // TypeScript can't tie the knot of the setGuardrailsResult type if we
         // use setGuardrailsResult here. Instead, we rely on the effect below
         // collecting the asynchronous result if necessary.
-        guardrailsCache.getStatus(guardrails, isCodeComplete, code, language, () => {})
+        guardrailsCache.getStatus(guardrails, isCodeComplete, plainCode, language, () => {})
     )
 
     // Performs a guardrails check, if necessary. This is cheap to call
@@ -179,7 +181,7 @@ export const GuardrailsApplicator: React.FC<GuardrailsApplicatorProps> = ({
     // checks complete.
     useEffect(() => {
         if (isCodeComplete) {
-            if (!guardrails.needsAttribution({ code, language })) {
+            if (!guardrails.needsAttribution({ code: plainCode, language })) {
                 setGuardrailsResult({
                     status: GuardrailsCheckStatus.Skipped,
                 })
@@ -189,13 +191,13 @@ export const GuardrailsApplicator: React.FC<GuardrailsApplicatorProps> = ({
                 guardrailsCache.getStatus(
                     guardrails,
                     isCodeComplete,
-                    code,
+                    plainCode,
                     language,
                     setGuardrailsResult
                 )
             )
         }
-    }, [guardrails, isCodeComplete, code, language])
+    }, [guardrails, isCodeComplete, plainCode, language])
 
     const hideCode =
         guardrails.shouldHideCodeBeforeAttribution &&
@@ -228,16 +230,22 @@ export const GuardrailsApplicator: React.FC<GuardrailsApplicatorProps> = ({
     // network error)
     const handleRetry = () => {
         // Delete the old result.
-        guardrailsCache.delete(guardrails, code)
+        guardrailsCache.delete(guardrails, plainCode)
         // Set status to the best available (loading) state and update it later.
         setGuardrailsResult(
-            guardrailsCache.getStatus(guardrails, isCodeComplete, code, language, setGuardrailsResult)
+            guardrailsCache.getStatus(
+                guardrails,
+                isCodeComplete,
+                plainCode,
+                language,
+                setGuardrailsResult
+            )
         )
     }
 
     const handleRegenerate = useCallback(() => {
-        onRegenerate?.(code, language)
-    }, [onRegenerate, code, language])
+        onRegenerate?.(markdownCode, language)
+    }, [onRegenerate, markdownCode, language])
 
     const onSuccessAuxClick = useCallback(
         (event: React.MouseEvent<Element>) => {

@@ -111,7 +111,16 @@ export const RichMarkdown: React.FC<RichMarkdownProps> = ({
                 'data-is-code-complete': false,
             }
 
-            const plainText = sourceText ?? ''
+            const extractText = (node: any): string => {
+                if (typeof node === 'string') return node
+                if (!node) return ''
+                if (node.type === 'text' && node.value) return node.value
+                if (node.children) {
+                    return node.children.map(extractText).join('')
+                }
+                return ''
+            }
+            const plainText = extractText(node)
 
             // Determine if this is a shell command
             const isShellCommand = language === 'bash' || language === 'sh'
@@ -124,7 +133,8 @@ export const RichMarkdown: React.FC<RichMarkdownProps> = ({
             return (
                 <RichCodeBlock
                     hasEditIntent={hasEditIntent}
-                    code={plainText}
+                    plainCode={plainText}
+                    markdownCode={sourceText ?? ''}
                     language={language}
                     fileName={filePath}
                     isMessageLoading={isMessageLoading}
