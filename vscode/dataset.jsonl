@@ -28,13 +28,6 @@
       "complexity": 4.7
     },
     {
-      "prefix": "SELECT * FROM users WHERE",
-      "suffix": "ORDER BY created_at DESC LIMIT 10;",
-      "ground_truth": " age > 18 AND status = 'active'",
-      "context": "-- Database query for active adult users\n\n",
-      "complexity": 2.8
-    },
-    {
       "prefix": "class BinaryTree {",
       "suffix": "}\n\nconst tree = new BinaryTree();",
       "ground_truth": "  constructor() {\n    this.root = null;\n  }\n  \n  insert(value) {\n    // Implementation\n  }",
