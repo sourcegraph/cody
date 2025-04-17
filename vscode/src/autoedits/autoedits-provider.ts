@@ -651,7 +651,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                 return null
             }
 
-            // We're about to render a suggestion, so discard any next cursor suggestions
+            // Ensure any next cursor suggestion is discarded before we render a suggestion.
             this.nextCursorManager.discard()
 
             if (!isRunningInsideAgent()) {

@@ -48,26 +48,34 @@ export class NextCursorManager implements vscode.Disposable {
             vscode.commands.registerCommand('cody.nextCursor.discard', () =>
                 this.hideNextCursorSuggestion()
             ),
-            vscode.workspace.onDidChangeTextDocument(event => this.hideNextCursorSuggestion()),
+            vscode.workspace.onDidChangeTextDocument(() => this.hideNextCursorSuggestion()),
             vscode.window.onDidChangeActiveTextEditor(activeEditor => {
                 if (!this.activeCursorSuggestion || !activeEditor) {
                     return
                 }
 
-                if (
-                    this.activeCursorSuggestion.uri.toString() !== activeEditor.document.uri.toString()
-                ) {
-                    this.hideNextCursorSuggestion()
+                const suggestionUri = this.activeCursorSuggestion.uri.toString()
+                const activeUri = activeEditor.document.uri.toString()
+                if (suggestionUri === activeUri) {
+                    // Same editor, do nothing
+                    return
                 }
+
+                this.hideNextCursorSuggestion()
             }),
             vscode.workspace.onDidCloseTextDocument(closedDocument => {
                 if (!this.activeCursorSuggestion) {
                     return
                 }
 
-                if (this.activeCursorSuggestion.uri.toString() === closedDocument.uri.toString()) {
-                    this.hideNextCursorSuggestion()
+                const suggestionUri = this.activeCursorSuggestion.uri.toString()
+                const closedUri = closedDocument.uri.toString()
+                if (suggestionUri === closedUri) {
+                    // Same editor, do nothing
+                    return
                 }
+
+                this.hideNextCursorSuggestion()
             })
         )
     }
@@ -78,11 +86,6 @@ export class NextCursorManager implements vscode.Disposable {
     }
 
     public accept(): void {
-        console.log('UMPOX ACCEPTING CURSOR PREDICTION', {
-            uri: this.activeCursorSuggestion?.uri,
-            position: this.activeCursorSuggestion?.position,
-            hotStreakId: this.activeCursorSuggestion?.hotStreakId,
-        })
         // Proxy through to the VS Code command so this can be easily adopted for Agent.
         vscode.commands.executeCommand('cody.nextCursor.accept')
     }
