@@ -34,6 +34,7 @@ import type { AutoeditClientCapabilities } from '../autoedits-provider'
 import { autoeditsOutputChannelLogger } from '../output-channel-logger'
 import type { RequestManager } from '../request-manager'
 import type { AutoEditDecorations, AutoEditsDecorator, DecorationInfo } from './decorators/base'
+import { NextCursorManager } from './next-cursor-manager'
 import {
     type AutoEditRenderOutput,
     AutoEditsRenderOutput,
@@ -113,6 +114,7 @@ export class AutoEditsDefaultRendererManager
     protected activeRequestId: AutoeditRequestID | null = null
     protected disposables: vscode.Disposable[] = []
     protected decorator: AutoEditsDecorator | null = null
+    protected nextCursorManager = new NextCursorManager()
 
     /**
      * The amount of time before we consider a suggestion to be "visible" to the user.
@@ -391,6 +393,7 @@ export class AutoEditsDefaultRendererManager
                 position: activeRequest.editPosition,
             })?.editPosition
 
+            console.log('GOT NEXT CURSOR POSITION?', nextCursorPosition)
             if (!nextCursorPosition) {
                 return
             }
@@ -399,8 +402,7 @@ export class AutoEditsDefaultRendererManager
             // after the cursor moves
             this.requestManager.lastAcceptedHotStreakId = activeRequest.hotStreakId
 
-            editor.selection = new vscode.Selection(nextCursorPosition, nextCursorPosition)
-            editor.revealRange(editor.selection, vscode.TextEditorRevealType.Default)
+            this.nextCursorManager.suggest(editor.document.uri, nextCursorPosition)
         }
     }
 
