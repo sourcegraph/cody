@@ -491,6 +491,9 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                     requestId,
                     discardReason: 'nextCursorSuggestionShownInstead',
                 })
+                // Restore the hotStreakId, this was cleared once we returned the item from the cache.
+                // We are defering this item so we need to reuse it for the next suggestion
+                this.requestManager.lastAcceptedHotStreakId = predictionResult.hotStreakId
                 this.nextCursorManager.suggest(document.uri, predictionResult.editPosition)
                 return null
             }

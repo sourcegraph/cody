@@ -4,12 +4,14 @@ const NEXT_CURSOR_DECORATION = {
     decoration: vscode.window.createTextEditorDecorationType({ isWholeLine: true }),
     renderOptions: {
         after: {
+            contentText: 'Tab to Jump',
             color: new vscode.ThemeColor('editorWidget.foreground'),
             backgroundColor: new vscode.ThemeColor('editorWidget.background'),
-            borderColor: new vscode.ThemeColor('editorWidget.border'),
+            borderColor: '#FF7867',
             border: '1px solid',
             margin: '0 0 0 1em',
-            contentText: 'Tab to Jump',
+            padding: '1px 3px',
+            textDecoration: 'none; border-radius: 3px;',
         },
     },
 }
