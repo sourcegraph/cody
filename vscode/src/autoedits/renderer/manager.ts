@@ -368,16 +368,8 @@ export class AutoEditsDefaultRendererManager
             acceptReason,
         })
 
-        if (activeRequest.hotStreakId) {
-            // We are in a hot-streak chain, we should move the cursor to this item for when we accept it
-            editor.selection = new vscode.Selection(
-                activeRequest.editPosition,
-                activeRequest.editPosition
-            )
-        }
-
-        // Store this hot-streak ID so that we can use it when searching in the cache
-        // after the cursor moves
+        // If we have a hot-streak ID, store it so that we can use it when searching in the cache
+        // in the next call to `provideInlineCompletionItems`.
         this.requestManager.lastAcceptedHotStreakId = activeRequest.hotStreakId
 
         if (isRunningInsideAgent()) {
