@@ -236,12 +236,6 @@ export interface ModelsData {
     isRateLimited?: boolean
 }
 
-const EMPTY_MODELS_DATA: ModelsData = {
-    localModels: [],
-    preferences: { defaults: {}, selected: {} },
-    primaryModels: [],
-}
-
 export interface LocalStorageForModelPreferences {
     getEnrollmentHistory(featureName: string): boolean
     getModelPreferences(): DefaultsAndUserPreferencesByEndpoint
@@ -274,9 +268,7 @@ export class ModelsService {
         if (testing__mockModelsChanges) {
             this.modelsChanges = testing__mockModelsChanges
         }
-        this.storedValue = storeLastValue(
-            this.modelsChanges.pipe(map(data => (data === pendingOperation ? EMPTY_MODELS_DATA : data)))
-        )
+        this.storedValue = storeLastValue(this.modelsChanges)
     }
 
     public setStorage(storage: LocalStorageForModelPreferences): void {
@@ -289,10 +281,6 @@ export class ModelsService {
         )
             .pipe(
                 tap(([data, shouldEditDefaultToGpt4oMini, shouldChatDefaultToDeepSeek]) => {
-                    if (data === pendingOperation) {
-                        return
-                    }
-
                     // Ensures we only change user preferences once
                     // when they join the A/B test.
                     const isEnrolled = this.storage?.getEnrollmentHistory(
@@ -359,7 +347,7 @@ export class ModelsService {
      * An observable that emits all available models upon subscription and whenever there are
      * changes.
      */
-    public modelsChanges: Observable<ModelsData | typeof pendingOperation> = syncModels({
+    public modelsChanges: Observable<ModelsData> = syncModels({
         resolvedConfig: resolvedConfig.pipe(
             map((config): SyncModelConfiguration => config),
             distinctUntilChanged()
@@ -380,14 +368,12 @@ export class ModelsService {
         return data ? data.primaryModels.concat(data.localModels) : []
     }
 
-    private getModelsByType(usage: ModelUsage): Observable<Model[] | typeof pendingOperation> {
+    private getModelsByType(usage: ModelUsage): Observable<Model[]> {
         return this.modelsChanges.pipe(
             map(models => {
-                return models === pendingOperation
-                    ? pendingOperation
-                    : [...models.primaryModels, ...models.localModels].filter(model =>
-                          model.usage.includes(usage)
-                      )
+                return [...models.primaryModels, ...models.localModels].filter(model =>
+                    model.usage.includes(usage)
+                )
             }),
             distinctUntilChanged()
         )
@@ -402,7 +388,7 @@ export class ModelsService {
     public getModels(type: ModelUsage): Observable<Model[] | typeof pendingOperation> {
         return combineLatest(this.modelsChanges, this.getDefaultModel(type)).pipe(
             map(([data, currentModel]) => {
-                if (data === pendingOperation || currentModel === pendingOperation) {
+                if (currentModel === pendingOperation) {
                     return pendingOperation
                 }
                 const models = data.primaryModels
@@ -436,11 +422,7 @@ export class ModelsService {
             userProductSubscription
         ).pipe(
             map(([models, modelsData, authStatus, userProductSubscription]) => {
-                if (
-                    models === pendingOperation ||
-                    modelsData === pendingOperation ||
-                    userProductSubscription === pendingOperation
-                ) {
+                if (userProductSubscription === pendingOperation) {
                     return pendingOperation
                 }
 
@@ -545,7 +527,7 @@ export class ModelsService {
     public isModelAvailable(model: string | Model): Observable<boolean | typeof pendingOperation> {
         return combineLatest(authStatus, this.modelsChanges, userProductSubscription).pipe(
             map(([authStatus, modelsData, userProductSubscription]) =>
-                modelsData === pendingOperation || userProductSubscription === pendingOperation
+                userProductSubscription === pendingOperation
                     ? pendingOperation
                     : this._isModelAvailable(modelsData, authStatus, userProductSubscription, model)
             ),
@@ -616,11 +598,7 @@ export class ModelsService {
         modelID: string
     ): Observable<ModelContextWindow | typeof pendingOperation> {
         return this.modelsChanges.pipe(
-            map(data =>
-                data === pendingOperation
-                    ? pendingOperation
-                    : this.getContextWindowByID(modelID, data.primaryModels.concat(data.localModels))
-            )
+            map(data => this.getContextWindowByID(modelID, data.primaryModels.concat(data.localModels)))
         )
     }
 

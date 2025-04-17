@@ -1805,10 +1805,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                             return isError(response) ? [] : response.repositories.nodes
                         }),
                     promptTags: () => promiseFactoryToObservable(signal => listPromptTags(signal)),
-                    models: () =>
-                        modelsService.modelsChanges.pipe(
-                            map(models => (models === pendingOperation ? null : models))
-                        ),
+                    models: () => modelsService.modelsChanges,
                     chatModels: () =>
                         modelsService.getModels(ModelUsage.Chat).pipe(
                             startWith([]),
