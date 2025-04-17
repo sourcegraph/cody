@@ -111,6 +111,8 @@ export class SourcegraphCompletionsAdapter implements AutoeditsModelAdapter {
                 prediction,
                 requestUrl,
                 requestHeaders,
+                responseHeaders,
+                responseBody,
             }
         }
 

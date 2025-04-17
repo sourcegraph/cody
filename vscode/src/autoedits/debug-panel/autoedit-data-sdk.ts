@@ -1,5 +1,5 @@
 import type { InlineCompletionItemRetrievedContext } from '../../completions/analytics-logger'
-import type { ModelResponse, SuccessModelResponse } from '../adapters/base'
+import type { ModelResponse, PartialModelResponse, SuccessModelResponse } from '../adapters/base'
 import { getDetailedTimingInfo } from './autoedit-latency-utils'
 import type { AutoeditRequestDebugState } from './debug-store'
 
@@ -289,9 +289,30 @@ export const getNetworkLatencyInfo = (
 
 export const getSuccessModelResponse = (
     entry: AutoeditRequestDebugState
-): SuccessModelResponse | null => {
-    if ('modelResponse' in entry.state && entry.state.modelResponse.type === 'success') {
+): SuccessModelResponse | PartialModelResponse | null => {
+    if (
+        'modelResponse' in entry.state &&
+        (entry.state.modelResponse.type === 'success' || entry.state.modelResponse.type === 'partial')
+    ) {
         return entry.state.modelResponse
+    }
+    return null
+}
+
+/**
+ * Get hot streak chunks if available
+ */
+export const getHotStreakChunks = (
+    entry: AutoeditRequestDebugState
+):
+    | { prediction: string; loadedAt: number; modelResponse: ModelResponse; fullPrediction?: string }[]
+    | null => {
+    if (
+        'hotStreakChunks' in entry.state &&
+        Array.isArray(entry.state.hotStreakChunks) &&
+        entry.state.hotStreakChunks.length > 0
+    ) {
+        return entry.state.hotStreakChunks
     }
     return null
 }
@@ -341,4 +362,5 @@ export const AutoeditDataSDK = {
     getNetworkLatencyInfo,
     getFullResponseBody,
     getModelResponse,
+    getHotStreakChunks,
 }

@@ -99,6 +99,8 @@ export const autoeditSource = {
     cache: 2,
     /** Autoedit originated from a in-flight request. */
     inFlightRequest: 3,
+    /** Autoedit originated from a hot streak chain. */
+    hotStreak: 4,
 } as const
 
 /** We use numeric keys to send these to the analytics backend */
@@ -109,7 +111,7 @@ export const autoeditDiscardReason = {
     emptyPrediction: 2,
     predictionEqualsCodeToRewrite: 3,
     recentEdits: 4,
-    suffixOverlap: 5,
+    rewriteAreaOverlap: 5,
     emptyPredictionAfterInlineCompletionExtraction: 6,
     noActiveEditor: 7,
     conflictingDecorationWithEdits: 8,
@@ -154,6 +156,17 @@ export type AutoeditSuggestionID = string & { readonly _brand: 'AutoeditSuggesti
  * An ephemeral ID for a single "request" from creation to acceptance or rejection.
  */
 export type AutoeditRequestID = string & { readonly _brand: 'AutoeditRequestID' }
+
+/**
+ * A stable ID for a cache entry.
+ */
+export type AutoeditCacheID = string & { readonly _brand: 'AutoeditCacheID' }
+
+/**
+ * A stable ID for a chain of hot-streak suggestions.
+ * Used to support jumping between hot-streak suggestions.
+ */
+export type AutoeditHotStreakID = string & { readonly _brand: 'AutoeditHotStreakID' }
 
 /**
  * The base fields common to all request states. We track ephemeral times and
@@ -226,12 +239,23 @@ export interface ContextLoadedState extends Omit<StartedState, 'phase' | 'payloa
     }
 }
 
+export interface HotStreakChunk {
+    prediction: string
+    loadedAt: number
+    modelResponse: ModelResponse
+    fullPrediction?: string
+}
+
 export interface LoadedState extends Omit<ContextLoadedState, 'phase' | 'payload'> {
     phase: 'loaded'
     /** Timestamp when the suggestion completed generation/loading. */
     loadedAt: number
     /** Model response metadata for the debug panel */
     modelResponse: ModelResponse
+    cacheId: AutoeditCacheID
+    hotStreakId?: AutoeditHotStreakID
+    hotStreakChunks?: HotStreakChunk[]
+    editPosition: vscode.Position
     payload: ContextLoadedState['payload'] & {
         /**
          * An ID to uniquely identify a suggest autoedit. Note: It is possible for this ID to be part

@@ -772,6 +772,7 @@ function registerAutoEdits({
                     FeatureFlag.CodyAutoEditExperimentEnabledFeatureFlag
                 ),
                 featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutoEditInlineRendering),
+                featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutoEditHotStreak),
                 featureFlagProvider.evaluateFeatureFlag(
                     FeatureFlag.CodyAutoEditUseWebSocketForFireworksConnections
                 )
@@ -790,6 +791,7 @@ function registerAutoEdits({
                             authStatus,
                             autoeditFeatureFlagEnabled,
                             autoeditInlineRenderingEnabled,
+                            autoeditHotStreakEnabled,
                             autoeditUseWebSocketEnabled,
                         ]) => {
                             return createAutoEditsProvider({
@@ -798,6 +800,7 @@ function registerAutoEdits({
                                 chatClient,
                                 autoeditFeatureFlagEnabled,
                                 autoeditInlineRenderingEnabled,
+                                autoeditHotStreakEnabled,
                                 autoeditUseWebSocketEnabled,
                                 fixupController,
                                 statusBar,
