@@ -4,7 +4,13 @@ import * as vscode from 'vscode'
 
 import { getNewLineChar } from '../../completions/text-processing'
 
-import type { DecorationInfo, DecorationLineInfo, LineChange, ModifiedLineInfo } from './decorators/base'
+import type {
+    AddedLineInfo,
+    DecorationInfo,
+    DecorationLineInfo,
+    LineChange,
+    ModifiedLineInfo,
+} from './decorators/base'
 
 /**
  * Generates decoration information by computing the differences between two texts.
@@ -562,4 +568,41 @@ export function isOnlyRemovingTextForModifiedLines(modifiedLines: ModifiedLineIn
         }
     }
     return true
+}
+
+/**
+ * Sorts a diff by line number.
+ * Handles preferred sorting order when encountering line number conflicts
+ */
+export function sortDiff(diff: DecorationInfo): DecorationLineInfo[] {
+    const sortedDiff = [
+        ...diff.addedLines,
+        ...diff.modifiedLines,
+        ...diff.unchangedLines,
+        ...diff.removedLines,
+    ].sort((a, b) => {
+        const aLine = a.type === 'removed' ? a.originalLineNumber : a.modifiedLineNumber
+        const bLine = b.type === 'removed' ? b.originalLineNumber : b.modifiedLineNumber
+
+        if (aLine === bLine) {
+            // We have a conflict, this is because the same line number has been used for both added and removed lines.
+            // To make a visually appealing diff, we need to ensure that we order these conflicts like so:
+            // removed -> added -> modified -> unchanged
+            const typeOrder = {
+                removed: 0,
+                added: 1,
+                modified: 2,
+                unchanged: 3,
+            }
+            return typeOrder[a.type] - typeOrder[b.type]
+        }
+
+        return aLine - bLine
+    })
+
+    return sortedDiff
+}
+
+export function getAddedLines(decorationInfo: DecorationInfo): AddedLineInfo[] {
+    return decorationInfo.addedLines.sort((a, b) => a.modifiedLineNumber - b.modifiedLineNumber)
 }

@@ -2,8 +2,8 @@ import dedent from 'dedent'
 import { describe, expect, it } from 'vitest'
 
 import { document } from '../../completions/test-helpers'
+import { range } from '../../editor/utils/virtual-text-document'
 import { vsCodeMocks } from '../../testutils/mocks'
-import { range } from '../../testutils/textDocument'
 
 import { findRangeByLine, getDocumentSections } from './document-sections'
 

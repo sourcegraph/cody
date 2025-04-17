@@ -361,7 +361,6 @@ export const HumanMessageEditor: FunctionComponent<{
         // Remove tree type if streaming is not supported.
         const excludedTypes = new Set([
             'open-link',
-            'current-selection',
             ...(currentChatModel?.tags?.includes(ModelTag.StreamDisabled) ? ['tree'] : []),
         ])
 

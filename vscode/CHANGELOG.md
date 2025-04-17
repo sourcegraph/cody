@@ -4,6 +4,83 @@ This is a log of all notable changes to Cody for VS Code.
 
 <!--- {/_ CHANGELOG_START _/} -->
 
+## 1.86.0
+
+### Features
+
+#### Agent
+
+- Manually cleanup listeners from the socket [#7669](https://github.com/sourcegraph/cody/pull/7669)
+- Update node binaries used by agent to v22.14.0 [#7668](https://github.com/sourcegraph/cody/pull/7668)
+
+#### Auto-Edit
+
+- add session stats page to the debug panel [#7690](https://github.com/sourcegraph/cody/pull/7690)
+- Use user's token for authorization when opening a new websocket connection [#7672](https://github.com/sourcegraph/cody/pull/7672)
+- reuse inflight requests [#7661](https://github.com/sourcegraph/cody/pull/7661)
+- add context summary latency to auto-edit dashboard [#7630](https://github.com/sourcegraph/cody/pull/7630)
+
+#### Autoedit
+
+- Support response streaming [#7590](https://github.com/sourcegraph/cody/pull/7590)
+
+#### Chat
+
+- Implement rate limit detection and model switching in Cody clients (CODY-5204) [#7367](https://github.com/sourcegraph/cody/pull/7367)
+
+#### Smart-Apply
+
+- Ship instant smart apply model [#7682](https://github.com/sourcegraph/cody/pull/7682)
+
+#### Telemetry
+
+- introduce opentelemetry metrics to cody #CODY-5585 [#7647](https://github.com/sourcegraph/cody/pull/7647)
+
+### Fix
+
+#### Telemetry
+
+- remove telemetry option from VSCode [#7636](https://github.com/sourcegraph/cody/pull/7636)
+
+#### Tests
+
+- disable flaky chat test [#7705](https://github.com/sourcegraph/cody/pull/7705)
+
+### Chore
+
+#### Chat
+
+- Improve the feature flag evaluation process [#7664](https://github.com/sourcegraph/cody/pull/7664)
+- Put the settings tab behind a feature flag [#7686](https://github.com/sourcegraph/cody/pull/7686)
+
+#### Ci
+
+- Fix agent bindings [#7692](https://github.com/sourcegraph/cody/pull/7692)
+- add gcloud auth that was removed [#7670](https://github.com/sourcegraph/cody/pull/7670)
+
+#### Cody-Web
+
+- Improve cody web publishing documentation [#7694](https://github.com/sourcegraph/cody/pull/7694)
+
+#### Core
+
+- Fix unhandled AbortError errors [#7714](https://github.com/sourcegraph/cody/pull/7714)
+
+### Reverts
+
+- Revert "fix: backwards compatibility for evaluateFeatureFlags" [#7680](https://github.com/sourcegraph/cody/pull/7680)
+
+#### Vscode
+
+- update release workflows to auth before integration tests [#7697](https://github.com/sourcegraph/cody/pull/7697)
+- Change 'auto-edit (Beta)' to 'auto-edit' [#7708](https://github.com/sourcegraph/cody/pull/7708)
+- Fix flaky tests caused by too often refresh of siteVersion [#7691](https://github.com/sourcegraph/cody/pull/7691)
+- Chore: Skip flaky integration test [#7674](https://github.com/sourcegraph/cody/pull/7674)
+- Replace tiktoken with gpt-tokenizer [#7662](https://github.com/sourcegraph/cody/pull/7662)
+- Refreshing icon after enabling autocomplete [#7660](https://github.com/sourcegraph/cody/pull/7660)
+- Fix memory leak in network diagnostics code [#7654](https://github.com/sourcegraph/cody/pull/7654)
+- Crash occurred when user tries to save new code file [#7645](https://github.com/sourcegraph/cody/pull/7645)
+
 ## 1.84.0
 
 ### Features

@@ -15,15 +15,18 @@ import { GuardrailsApplicator } from './GuardrailsApplicator'
 
 interface RichCodeBlockProps {
     hasEditIntent: boolean
-    code: string // Raw text for copying/executing without HTML markup
+    plainCode: string // Raw text for copying/executing without HTML markup
+    markdownCode: string // The exact Markdown source string including the ``` fences
     language?: string
     fileName?: string
-    isCodeComplete: boolean
+    isMessageLoading: boolean // Whether the whole message is done loading
+    isCodeComplete: boolean // Whether this code block has been completed
     isShellCommand: boolean
     guardrails: Guardrails
     onCopy?: (code: string) => void
     onInsert?: (code: string, newFile?: boolean) => void
     onExecute?: (command: string) => void
+    onRegenerate?: (code: string, language: string | undefined) => void
     smartApply?: CodeBlockActionsProps['smartApply']
     className?: string
     children?: React.ReactNode
@@ -42,15 +45,18 @@ const prefetchedEdits = new LRUCache<string, boolean>({ max: 100 })
  */
 export const RichCodeBlock: React.FC<RichCodeBlockProps> = ({
     hasEditIntent,
-    code,
+    plainCode,
+    markdownCode,
     language,
     fileName,
+    isMessageLoading,
     isCodeComplete,
     isShellCommand,
     guardrails,
     onCopy,
     onInsert,
     onExecute,
+    onRegenerate,
     smartApply,
     className,
     children,
@@ -62,7 +68,7 @@ export const RichCodeBlock: React.FC<RichCodeBlockProps> = ({
     // Smart apply is only applicable if the code is complete. These properties
     // will be stable (undefined) until the code is complete, skipping any
     // updates caused by incomplete code as it is streamed.
-    const smartApplyCode = smartApply && isCodeComplete && !isShellCommand ? code : undefined
+    const smartApplyCode = smartApply && isCodeComplete && !isShellCommand ? plainCode : undefined
     const smartApplyFilename = smartApply && isCodeComplete && !isShellCommand ? fileName : undefined
     const thisTaskId = useMemo(() => {
         if (!smartApplyCode) {
@@ -128,14 +134,14 @@ export const RichCodeBlock: React.FC<RichCodeBlockProps> = ({
     )
 
     const onExecuteThisScript = useCallback(() => {
-        onExecute?.(code)
-    }, [onExecute, code])
+        onExecute?.(plainCode)
+    }, [onExecute, plainCode])
 
     const additionsDeletions = smartApply ? (
         <div className={styles.buttonContainer}>
             {createAdditionsDeletions({
                 hasEditIntent,
-                preText: code,
+                preText: plainCode,
             })}
         </div>
     ) : undefined
@@ -145,7 +151,7 @@ export const RichCodeBlock: React.FC<RichCodeBlockProps> = ({
             {isCodeComplete &&
                 createEditButtons({
                     isVSCode: config.clientCapabilities.isVSCode,
-                    preText: code,
+                    preText: plainCode,
                     copyButtonOnSubmit: onCopy,
                     onInsert,
                     onSmartApply,
@@ -161,17 +167,20 @@ export const RichCodeBlock: React.FC<RichCodeBlockProps> = ({
 
     return (
         <GuardrailsApplicator
-            code={code} // Use raw code for guardrails checks
+            plainCode={plainCode} // Use plain text code for guardrails checks
+            markdownCode={markdownCode} // Use markdown for regeneration, we must replace the exact string in the transcript
             language={language}
             fileName={fileName}
             guardrails={guardrails}
+            isMessageLoading={isMessageLoading}
             isCodeComplete={isCodeComplete}
+            onRegenerate={onRegenerate}
         >
             {({ showCode, guardrailsStatus, guardrailsStatusDisplay }) => (
                 <div className={clsx('tw-overflow-hidden', className)}>
                     {!showCode ? (
                         // When code shouldn't be show, display a placeholder
-                        <CodeBlockPlaceholder text={code} status={guardrailsStatus} />
+                        <CodeBlockPlaceholder text={plainCode} status={guardrailsStatus} />
                     ) : (
                         // Otherwise show the actual code with syntax highlighting
                         <pre className={styles.content}>{children}</pre>

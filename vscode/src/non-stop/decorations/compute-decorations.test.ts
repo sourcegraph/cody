@@ -3,7 +3,7 @@ import * as vscode from 'vscode'
 
 import { document } from '../../completions/test-helpers'
 import type { FixupTask } from '../FixupTask'
-import { computeOngoingDecorations } from './compute-decorations'
+import { computeAppliedDecorations, computeOngoingDecorations } from './compute-decorations'
 
 describe('computeOngoingDecorations', () => {
     it('marks the first line as active, and future lines as unvisited when no full lines yet', () => {
@@ -20,7 +20,7 @@ describe('computeOngoingDecorations', () => {
         expect(decorations?.unvisitedLines).toStrictEqual([{ range: new vscode.Range(1, 0, 1, 0) }])
     })
 
-    it('marks the first line as active when full line receivedt', () => {
+    it('marks the first line as active when full line received', () => {
         const doc = document('Hello\nWorld')
         const mockTask = {
             original: doc.getText(),
@@ -102,5 +102,29 @@ describe('computeOngoingDecorations', () => {
         const decorations = computeOngoingDecorations(mockTask)
         expect(decorations?.currentLine).toStrictEqual({ range: new vscode.Range(2, 0, 2, 0) })
         expect(decorations?.unvisitedLines).toStrictEqual([])
+    })
+
+    it('inserts content into empty document', () => {
+        const doc = document('')
+        const mockTask = {
+            original: doc.getText(),
+            replacement: 'Hello\nWorld\n',
+            selectionRange: new vscode.Range(0, 0, 1, 0),
+            document: doc,
+            mode: 'insert',
+            insertionPoint: new vscode.Position(0, 0),
+        } as FixupTask
+
+        const decorations = computeOngoingDecorations(mockTask)
+        expect(decorations?.currentLine).toStrictEqual({ range: new vscode.Range(0, 0, 0, 0) })
+        expect(decorations?.unvisitedLines).toStrictEqual([])
+        const appliedDecorations = computeAppliedDecorations(mockTask)
+        expect(appliedDecorations?.linesAdded).toStrictEqual([
+            { range: new vscode.Range(0, 0, 0, 0) },
+            { range: new vscode.Range(1, 0, 1, 0) },
+            { range: new vscode.Range(2, 0, 2, 0) },
+        ])
+        expect(appliedDecorations?.linesRemoved).toStrictEqual([])
+        expect(appliedDecorations?.unvisitedLines).toStrictEqual([])
     })
 })
