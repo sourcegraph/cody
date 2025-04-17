@@ -1,5 +1,14 @@
 import * as vscode from 'vscode'
 
+const decoration: vscode.DecorationInstanceRenderOptions = {
+    after: {
+        contentText: 'M',
+        // @ts-ignore
+        fontFamily: '"sourcegraph.cody-ai/cody-icons.woff"',
+        verticalAlign: 'bottom',
+    },
+}
+
 /**
  * Manages next cursor suggestions.
  * Displays decorations and handles accepting the suggestion.
@@ -9,7 +18,6 @@ export class NextCursorManager implements vscode.Disposable {
     private activeCursorSuggestion: { uri: vscode.Uri; position: vscode.Position } | null = null
     private readonly nextCursorDecoration = vscode.window.createTextEditorDecorationType({
         isWholeLine: true,
-        after: { contentText: 'tab - Jump to Edit' },
     })
 
     constructor() {
@@ -66,7 +74,7 @@ export class NextCursorManager implements vscode.Disposable {
         // We set VS Code state so we can override the Tab command to execute `cody.nextCursor.accept` instead.
         void vscode.commands.executeCommand('setContext', 'cody.nextCursorSuggested', true)
         editor.setDecorations(this.nextCursorDecoration, [
-            { range: new vscode.Range(position.line, 0, position.line, 0) },
+            { range: new vscode.Range(position.line, 0, position.line, 0), renderOptions: decoration },
         ])
     }
 
