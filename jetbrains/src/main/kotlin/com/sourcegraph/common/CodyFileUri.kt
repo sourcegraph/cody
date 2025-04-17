@@ -1,37 +1,41 @@
 package com.sourcegraph.common
 
 import com.intellij.openapi.vfs.VfsUtil
+import com.intellij.util.withPath
 import java.net.URI
 import java.net.URLDecoder
-import java.net.URLEncoder
+import java.nio.file.InvalidPathException
+import java.nio.file.Path
+import java.nio.file.Paths
+import kotlin.io.path.Path
 import kotlin.io.path.toPath
 
-class CodyFileUri private constructor(val scheme: String, val filePath: String) {
+class CodyFileUri private constructor(val originalScheme: String, val uri: URI) {
   val isUntitled: Boolean
-    get() = scheme == "untitled"
+    get() = originalScheme == "untitled"
 
-  val encodedFilePath: String
-    get() = encode(filePath)
-
-  override fun toString(): String {
-    val encodedPath = encode(filePath).trimStart('/')
-    val extraSlash = if (encodedPath.startsWith("wsl.localhost")) "/" else ""
-    return "file:///$extraSlash$encodedPath"
+  fun toPath(basePath: String?): Path {
+    var path = uri.toPath()
+    if (!path.isAbsolute && basePath != null) {
+      val fixedPath = Paths.get(path.toString().trimStart('/', '\\'))
+      path = Paths.get(basePath).resolve(fixedPath)
+    }
+    return path.normalize()
   }
 
-  private fun encode(input: String): String {
-    return URLEncoder.encode(input, "UTF-8")
-        .replace("+", "%20")
-        .replace("%2F", "/")
-        .replace("%3A", ":")
-        .replace("%5C", "\\")
-  }
+  fun toPath(): Path = uri.toPath()
 
-  fun toUri(): URI? = VfsUtil.toUri(toString())
-
-  fun toPath(): java.nio.file.Path? = toUri()?.toPath()
+  override fun toString() = uri.toString()
 
   companion object {
+    private fun getPath(path: String): Path? {
+      return try {
+        Paths.get(path)
+      } catch (e: InvalidPathException) {
+        null
+      }
+    }
+
     fun parse(input: String): CodyFileUri {
       if (input.isEmpty()) throw IllegalArgumentException("input cannot be empty")
 
@@ -40,24 +44,29 @@ class CodyFileUri private constructor(val scheme: String, val filePath: String) 
         processedInput = URLDecoder.decode(processedInput, "UTF-8")
       }
 
-      val regex = Regex("^(file:|untitled:|)?(/{0,3})(.+)$")
-      val matchResult = regex.find(processedInput)
+      var uri: URI
+      val scheme: String
+      val path = getPath(processedInput)
+      if (path != null) {
+        uri = path.toUri()
+        scheme = ""
+      } else {
+        val colonIndex = processedInput.indexOf(':')
+        scheme = processedInput.substring(0, colonIndex)
+        processedInput = "file:///${processedInput.substring(colonIndex + 1).trimStart('/')}"
 
-      if (matchResult != null) {
-        val scheme = matchResult.groupValues[1].trimEnd(':')
-        if (scheme.isNotEmpty() && scheme != "file" && scheme != "untitled") {
-          throw IllegalArgumentException("Invalid scheme: $scheme")
+        uri =
+            VfsUtil.toUri(processedInput)
+                ?: throw IllegalArgumentException("input is not valid uri")
+        if (uri.path == null) {
+          uri = uri.withPath("/" + uri.schemeSpecificPart)
         }
-        val slashes = matchResult.groupValues[2]
-        val path = matchResult.groupValues[3].replace('\\', '/')
-        val isWindows = path.length >= 2 && path[1] == ':'
-        val rootSlash = slashes.length == 3
-        val extraSlash = if (!isWindows && rootSlash) "/" else ""
-
-        return CodyFileUri(scheme.ifEmpty { "file" }, "$extraSlash$path")
+        if (uri.path.contains("wsl.localhost")) {
+          uri = uri.withPath("////" + uri.path.trimStart('/'))
+        }
       }
 
-      throw IllegalArgumentException("Invalid input format: $input")
+      return CodyFileUri(scheme, uri)
     }
   }
 }

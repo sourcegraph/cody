@@ -180,7 +180,7 @@ object CodyEditorUtil {
       return ScratchRootType.getInstance()
           .findFile(project, uri.toString(), ScratchFileService.Option.existing_only)
     } else {
-      val path = uri.toPath() ?: return null
+      val path = uri.toPath(project.basePath)
       return VirtualFileManager.getInstance().refreshAndFindFileByNioPath(path)
     }
   }
@@ -190,10 +190,9 @@ object CodyEditorUtil {
       uriString: String,
       content: String? = null
   ): VirtualFile? {
-    val uri = CodyFileUri.parse(uriString)
-    val path = uri.toPath() ?: return null
+    val path = CodyFileUri.parse(uriString).toPath(project.basePath)
     if (!path.exists()) {
-      path.parent?.createDirectories()
+      path.parent.createDirectories()
       path.createFile()
       val vf = LocalFileSystem.getInstance().refreshAndFindFileByNioFile(path)
 
