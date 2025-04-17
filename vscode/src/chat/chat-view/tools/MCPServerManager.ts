@@ -13,6 +13,7 @@ import type {
 } from '@sourcegraph/cody-shared/src/llm-providers/mcp/types'
 import { Subject } from 'observable-fns'
 import * as vscode from 'vscode'
+import { CodyToolProvider } from '../../../chat/agentic/CodyToolProvider'
 import type { AgentTool } from '.'
 
 import type { MCPConnectionManager } from './MCPConnectionManager'
@@ -55,6 +56,17 @@ export class MCPServerManager {
             logDebug('MCPServerManager', `Fetched ${tools.length} tools for ${serverName}`, {
                 verbose: { tools },
             })
+            
+            // Register tools with CodyToolProvider
+            try {
+                CodyToolProvider.registerMcpTools(serverName, tools)
+                logDebug('MCPServerManager', `Registered ${tools.length} tools with CodyToolProvider`)
+            } catch (error) {
+                logDebug('MCPServerManager', `Failed to register tools with CodyToolProvider: ${error}`, {
+                    verbose: { error },
+                })
+            }
+            
             await this.registerAgentTools(serverName, tools)
             return tools
         } catch (error) {

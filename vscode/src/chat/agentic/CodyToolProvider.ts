@@ -8,12 +8,17 @@ import {
     openctxController,
     ps,
     switchMap,
+    type ContextItem,
+    ContextItemSource,
 } from '@sourcegraph/cody-shared'
+import type { McpTool } from '@sourcegraph/cody-shared/src/llm-providers/mcp/types'
 import { map } from 'observable-fns'
 import type { ContextRetriever } from '../chat-view/ContextRetriever'
-import { type CodyTool, type CodyToolConfig, OpenCtxTool, TOOL_CONFIGS } from './CodyTool'
+import { CodyTool, type CodyToolConfig, OpenCtxTool, TOOL_CONFIGS } from './CodyTool'
 import { toolboxManager } from './ToolboxManager'
 import { OPENCTX_TOOL_CONFIG } from './config'
+import type { Span } from '@opentelemetry/api'
+import { URI } from 'vscode-uri'
 
 type Retriever = Pick<ContextRetriever, 'retrieveContext'>
 
@@ -111,6 +116,60 @@ class ToolFactory {
             .filter(isDefined)
     }
 
+    public createMcpTools(mcpTools: McpTool[], serverName: string): CodyTool[] {
+        return mcpTools
+            .map(tool => {
+                const toolName = `${serverName}_${tool.name}`
+                // Create a proper tool configuration
+                const toolConfig: CodyToolConfig = {
+                    title: tool.name,
+                    tags: {
+                        tag: PromptString.unsafe_fromUserQuery(toolName),
+                        subTag: ps`call`,
+                    },
+                    prompt: {
+                        instruction: PromptString.unsafe_fromUserQuery(tool.description || ''),
+                        placeholder: ps`ARGS`,
+                        examples: [],
+                    },
+                }
+                
+                // Create a class that extends CodyTool for this MCP tool
+                class McpToolInstance extends CodyTool {
+                    constructor() {
+                        super(toolConfig)
+                    }
+                    
+                    public async execute(span: Span, queries: string[]): Promise<ContextItem[]> {
+                        span.addEvent('executeMcpTool')
+                        if (!queries.length) {
+                            return []
+                        }
+                        
+                        // The actual execution will be handled by MCPServerManager
+                        // This is just a placeholder that returns an empty context item
+                        return [{
+                            type: 'file',
+                            content: `MCP tool ${tool.name} called with: ${queries.join(', ')}`,
+                            uri: URI.file(`mcp-tool-${serverName}-${tool.name}`),
+                            source: ContextItemSource.Agentic,
+                            title: tool.name,
+                        }]
+                    }
+                }
+                
+                // Register the tool
+                this.register({
+                    name: toolName,
+                    ...toolConfig,
+                    createInstance: () => new McpToolInstance(),
+                })
+                
+                return this.createTool(toolName)
+            })
+            .filter(isDefined)
+    }
+
     private generateToolName(provider: ContextMentionProviderMetadata): string {
         const suffix = provider.id.includes('modelcontextprotocol') ? 'MCP' : ''
         return (
@@ -185,6 +244,18 @@ export class CodyToolProvider {
 
     public static getTools(): CodyTool[] {
         return CodyToolProvider.instance?.factory.getInstances() ?? []
+    }
+
+    /**
+     * Register MCP tools from a server
+     * @param serverName The name of the MCP server
+     * @param tools The list of MCP tools to register
+     */
+    public static registerMcpTools(serverName: string, tools: McpTool[]): CodyTool[] {
+        if (!CodyToolProvider.instance) {
+            return []
+        }
+        return CodyToolProvider.instance.factory.createMcpTools(tools, serverName)
     }
 
     private static setupOpenCtxProviderListener(): void {
