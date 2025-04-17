@@ -1,870 +1,149 @@
 [
     {
-      "prefix": "def calculate_area(shape):\n  if isinstance(shape, Circle):",
-      "suffix": "\n  else:\n    raise ValueError(\"Unsupported shape\")",
-      "ground_truth": "0.5 * shape.base * shape.height",
-      "context": "import math\n\nclass Shape:\n  pass\n\nclass Circle(Shape):",
-      "complexity": 6.5
-    },
-    {
-      "prefix": "async function processUserData(user: User, config: Config) {",
-      "suffix": ");\n}\n\nconst result = await processUserData(currentUser, appConfig);",
-      "ground_truth": "user, userProfile, permissions, analytics.getTrackingInfo()",
-      "context": "interface User {\n  id: string;\n  role: string;\n}\n\ninterface Config {",
-      "complexity": 8.0
-    },
-    {
-      "prefix": "function sum(arr) {",
-      "suffix": "}\n\nconst total = sum([1, 2, 3, 4]);",
-      "ground_truth": "return arr.reduce((a, b) => a + b, 0);",
-      "context": "// Utility functions for array operations\n\n",
-      "complexity": 3.2
-    },
-    {
-      "prefix": "def find_max(nums):\n  if not nums:",
-      "suffix": "\n  return max_val",
-      "ground_truth": "  return None\n  max_val = nums[0]\n  for n in nums[1:]:\n    if n > max_val:\n      max_val = n",
-      "context": "# Algorithm implementation\n\n",
-      "complexity": 4.7
-    },
-    {
-      "prefix": "class BinaryTree {",
-      "suffix": "}\n\nconst tree = new BinaryTree();",
-      "ground_truth": "  constructor() {\n    this.root = null;\n  }\n  \n  insert(value) {\n    // Implementation\n  }",
-      "context": "// Data structures implementation\n\n",
-      "complexity": 7.1
-    },
-    {
-      "prefix": "def quick_sort(arr):\n  if len(arr) <= 1:",
-      "suffix": "\n  return left + [pivot] + right",
-      "ground_truth": "    return arr\n  pivot = arr[0]\n  left = [x for x in arr[1:] if x < pivot]\n  right = [x for x in arr[1:] if x >= pivot]\n  return quick_sort(left) + [pivot] + quick_sort(right)",
-      "context": "# Sorting algorithms\n\n",
-      "complexity": 6.9
-    },
-    {
-      "prefix": "const fetchData = async () => {",
-      "suffix": "}\n\nfetchData().then(data => console.log(data));",
-      "ground_truth": "  try {\n    const response = await fetch('api/data');\n    return await response.json();\n  } catch (error) {\n    console.error(error);\n  }",
-      "context": "// API data fetching function\n\n",
-      "complexity": 5.3
-    },
-    {
-      "prefix": "def fibonacci(n):\n  if n <= 1:",
-      "suffix": "\n\nfor i in range(10):\n  print(fibonacci(i))",
-      "ground_truth": "    return n\n  return fibonacci(n-1) + fibonacci(n-2)",
-      "context": "# Recursive function example\n\n",
-      "complexity": 4.5
-    },
-    {
-      "prefix": "void merge(int arr[], int l, int m, int r) {",
-      "suffix": "}\n\nvoid mergeSort(int arr[], int l, int r) { /* ... */ }",
-      "ground_truth": "  int n1 = m - l + 1;\n  int n2 = r - m;\n  \n  // Create temp arrays\n  int L[n1], R[n2];\n  \n  // Copy data\n  for(int i = 0; i < n1; i++)\n    L[i] = arr[l + i];\n  for(int j = 0; j < n2; j++)\n    R[j] = arr[m + 1 + j];",
-      "context": "// Implementation of merge sort algorithm\n\n",
-      "complexity": 7.8
-    },
-    {
-      "prefix": "function validateEmail(email) {",
-      "suffix": "}\n\nconsole.log(validateEmail('test@example.com'));",
-      "ground_truth": "  const regex = /^\\S+@\\S+\\.\\S+$/;\n  return regex.test(email);",
-      "context": "// Form validation utilities\n\n",
-      "complexity": 4.0
-    },
-    {
-      "prefix": "def binary_search(arr, target):\n  left, right = 0, len(arr) - 1\n  while left <= right:",
-      "suffix": "\n  return -1  # Target not found",
-      "ground_truth": "    mid = (left + right) // 2\n    if arr[mid] == target:\n      return mid\n    elif arr[mid] < target:\n      left = mid + 1\n    else:\n      right = mid - 1",
-      "context": "# Search algorithm implementation\n\n",
-      "complexity": 5.6
-    },
-    {
-      "prefix": "function debounce(func, wait) {",
-      "suffix": "}\n\nconst debouncedSearch = debounce(searchFunction, 300);",
-      "ground_truth": "  let timeout;\n  return function(...args) {\n    clearTimeout(timeout);\n    timeout = setTimeout(() => func.apply(this, args), wait);\n  };",
-      "context": "// Utility function for handling frequent events\n\n",
-      "complexity": 6.4
-    },
-    {
-      "prefix": "CREATE TABLE users (",
-      "suffix": ");",
-      "ground_truth": "  id INT PRIMARY KEY,\n  username VARCHAR(50) NOT NULL,\n  email VARCHAR(100) UNIQUE,\n  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP",
-      "context": "-- Database schema definition\n\n",
-      "complexity": 3.5
-    },
-    {
-      "prefix": "class Node:\n  def __init__(self, value):",
-      "suffix": "\n\nroot = Node(10)",
-      "ground_truth": "    self.value = value\n    self.left = None\n    self.right = None",
-      "context": "# Binary tree implementation\n\n",
-      "complexity": 3.2
-    },
-    {
-      "prefix": "function memoize(fn) {",
-      "suffix": "}\n\nconst memoizedFactorial = memoize(factorial);",
-      "ground_truth": "  const cache = {};\n  return function(...args) {\n    const key = JSON.stringify(args);\n    if (key in cache) return cache[key];\n    const result = fn.apply(this, args);\n    cache[key] = result;\n    return result;\n  };",
-      "context": "// Higher-order function for optimization\n\n",
-      "complexity": 7.3
-    },
-    {
-      "prefix": "def count_words(text):\n  if not text:",
-      "suffix": "\n  return result",
-      "ground_truth": "    return {}\n  words = text.lower().split()\n  result = {}\n  for word in words:\n    result[word] = result.get(word, 0) + 1",
-      "context": "# Text processing utility\n\n",
-      "complexity": 4.8
-    },
-    {
-      "prefix": "import java.util.*;\n\npublic class Graph {",
-      "suffix": "}\n\nGraph g = new Graph(5);",
-      "ground_truth": "  private int V;\n  private List<Integer>[] adj;\n  \n  public Graph(int v) {\n    V = v;\n    adj = new ArrayList[v];\n    for (int i = 0; i < v; i++)\n      adj[i] = new ArrayList<>();\n  }",
-      "context": "// Graph data structure implementation\n\n",
-      "complexity": 6.7
-    },
-    {
-      "prefix": "def calculate_tax(income):\n  if income < 10000:",
-      "suffix": "\n  return tax",
-      "ground_truth": "    return 0\n  elif income < 50000:\n    tax = income * 0.1\n  else:\n    tax = 5000 + (income - 50000) * 0.2",
-      "context": "# Tax calculation function\n\n",
-      "complexity": 4.2
-    },
-    {
-      "prefix": "const Router = require('express').Router();\n\nRouter.get('/users',",
-      "suffix": ");\n\nmodule.exports = Router;",
-      "ground_truth": " async (req, res) => {\n  try {\n    const users = await User.find();\n    res.json(users);\n  } catch (err) {\n    res.status(500).json({ error: err.message });\n  }",
-      "context": "// Express.js API route handlers\n\n",
-      "complexity": 5.9
-    },
-    {
-      "prefix": "def matrix_multiply(A, B):",
-      "suffix": "\n  return C",
-      "ground_truth": "  n = len(A)\n  C = [[0 for _ in range(n)] for _ in range(n)]\n  for i in range(n):\n    for j in range(n):\n      for k in range(n):\n        C[i][j] += A[i][k] * B[k][j]",
-      "context": "# Matrix operations implementation\n\n",
-      "complexity": 7.5
-    },
-    {
-      "prefix": "function throttle(func, limit) {",
-      "suffix": "}\n\nwindow.addEventListener('resize', throttle(handleResize, 100));",
-      "ground_truth": "  let inThrottle;\n  return function(...args) {\n    if (!inThrottle) {\n      func.apply(this, args);\n      inThrottle = true;\n      setTimeout(() => inThrottle = false, limit);\n    }\n  }",
-      "context": "// Performance optimization utility\n\n",
-      "complexity": 6.2
-    },
-    {
-      "prefix": "class Stack<T> {",
-      "suffix": "}\n\nlet stack = new Stack<number>();",
-      "ground_truth": "  private items: T[] = [];\n  \n  push(item: T): void {\n    this.items.push(item);\n  }\n  \n  pop(): T | undefined {\n    return this.items.pop();\n  }\n  \n  peek(): T | undefined {\n    return this.items[this.items.length - 1];\n  }",
-      "context": "// Generic data structure implementation\n\n",
-      "complexity": 5.8
-    },
-    {
-      "prefix": "function isPalindrome(str) {",
-      "suffix": "}\n\nconsole.log(isPalindrome('racecar'));",
-      "ground_truth": "  str = str.toLowerCase().replace(/[^a-z0-9]/g, '');\n  return str === str.split('').reverse().join('');",
-      "context": "// String utility function\n\n",
-      "complexity": 3.9
-    },
-    {
-      "prefix": "def generate_prime_numbers(n):",
-      "suffix": "\n  return primes",
-      "ground_truth": "  sieve = [True] * (n + 1)\n  p = 2\n  while p * p <= n:\n    if sieve[p]:\n      for i in range(p * p, n + 1, p):\n        sieve[i] = False\n    p += 1\n  primes = [p for p in range(2, n + 1) if sieve[p]]",
-      "context": "# Prime number generation using Sieve of Eratosthenes\n\n",
-      "complexity": 7.0
-    },
-    {
-      "prefix": "const mergeSort = (arr) => {",
-      "suffix": "};\n\nconst sortedArray = mergeSort([3, 1, 4, 1, 5, 9]);",
-      "ground_truth": "  if (arr.length <= 1) return arr;\n  const mid = Math.floor(arr.length / 2);\n  const left = mergeSort(arr.slice(0, mid));\n  const right = mergeSort(arr.slice(mid));\n  return merge(left, right);",
-      "context": "// Recursive sorting algorithm implementation\n\n",
-      "complexity": 6.8
-    },
-    {
-      "prefix": "def read_file(filename):\n  try:",
-      "suffix": "\n  except Exception as e:\n    print(f\"Error: {e}\")",
-      "ground_truth": "    with open(filename, 'r') as f:\n      data = f.read()\n    return data",
-      "context": "# File handling utility\n\n",
-      "complexity": 3.4
-    },
-    {
-      "prefix": "interface Vehicle {",
-      "suffix": "}\n\nclass Car implements Vehicle { }",
-      "ground_truth": "  make: string;\n  model: string;\n  year: number;\n  start(): void;\n  stop(): void;",
-      "context": "// TypeScript interface definition\n\n",
-      "complexity": 4.1
-    },
-    {
-      "prefix": "def dijkstra(graph, start):",
-      "suffix": "\n  return distances",
-      "ground_truth": "  distances = {node: float('infinity') for node in graph}\n  distances[start] = 0\n  pq = [(0, start)]\n  while pq:\n    current_distance, current_node = heapq.heappop(pq)\n    if current_distance > distances[current_node]:\n      continue\n    for neighbor, weight in graph[current_node].items():\n      distance = current_distance + weight\n      if distance < distances[neighbor]:\n        distances[neighbor] = distance\n        heapq.heappush(pq, (distance, neighbor))",
-      "context": "import heapq\n\n# Graph shortest path algorithm\n\n",
-      "complexity": 8.5
-    },
-    {
-      "prefix": "function curry(fn) {",
-      "suffix": "}\n\nconst add = curry((a, b, c) => a + b + c);",
-      "ground_truth": "  return function curried(...args) {\n    if (args.length >= fn.length) {\n      return fn.apply(this, args);\n    }\n    return function(...more) {\n      return curried.apply(this, args.concat(more));\n    };\n  };",
-      "context": "// Functional programming utility\n\n",
-      "complexity": 7.7
-    },
-    {
-      "prefix": "def gcd(a, b):",
-      "suffix": "\n\nprint(gcd(48, 18))",
-      "ground_truth": "  while b:\n    a, b = b, a % b\n  return a",
-      "context": "# Greatest common divisor function\n\n",
-      "complexity": 3.6
-    },
-    {
-      "prefix": "function createObservable() {",
-      "suffix": "}\n\nconst observable = createObservable();",
-      "ground_truth": "  const observers = [];\n  return {\n    subscribe: fn => {\n      observers.push(fn);\n      return () => {\n        observers.splice(observers.indexOf(fn), 1);\n      };\n    },\n    notify: data => {\n      observers.forEach(fn => fn(data));\n    }\n  };",
-      "context": "// Observer pattern implementation\n\n",
-      "complexity": 6.3
-    },
-    {
-      "prefix": "def insertion_sort(arr):",
-      "suffix": "\n  return arr",
-      "ground_truth": "  for i in range(1, len(arr)):\n    key = arr[i]\n    j = i - 1\n    while j >= 0 and arr[j] > key:\n      arr[j + 1] = arr[j]\n      j -= 1\n    arr[j + 1] = key",
-      "context": "# Simple sorting algorithm\n\n",
-      "complexity": 5.0
-    },
-    {
-      "prefix": "function deepClone(obj) {",
-      "suffix": "}\n\nconst cloned = deepClone(originalObject);",
-      "ground_truth": "  if (obj === null || typeof obj !== 'object') return obj;\n  const copy = Array.isArray(obj) ? [] : {};\n  for (let key in obj) {\n    if (obj.hasOwnProperty(key)) {\n      copy[key] = deepClone(obj[key]);\n    }\n  }\n  return copy;",
-      "context": "// Object utility function\n\n",
-      "complexity": 6.6
-    },
-    {
-      "prefix": "def find_longest_substring(s):",
-      "suffix": "\n  return max_length",
-      "ground_truth": "  start = max_length = 0\n  used_chars = {}\n  \n  for i, char in enumerate(s):\n    if char in used_chars and start <= used_chars[char]:\n      start = used_chars[char] + 1\n    else:\n      max_length = max(max_length, i - start + 1)\n    used_chars[char] = i",
-      "context": "# String algorithm problem\n\n",
-      "complexity": 7.4
-    },
-    {
-      "prefix": "import React, { useState, useEffect } from 'react';\n\nfunction UserProfile({ userId }) {",
-      "suffix": "}\n\nexport default UserProfile;",
-      "ground_truth": "  const [user, setUser] = useState(null);\n  const [loading, setLoading] = useState(true);\n\n  useEffect(() => {\n    fetch(`/api/users/${userId}`)\n      .then(res => res.json())\n      .then(data => {\n        setUser(data);\n        setLoading(false);\n      });\n  }, [userId]);\n\n  if (loading) return <div>Loading...</div>;\n  return <div>{user.name}</div>;",
-      "context": "// React functional component\n\n",
-      "complexity": 6.9
-    },
-    {
-      "prefix": "def knapsack(weights, values, capacity):",
-      "suffix": "\n  return dp[n][capacity]",
-      "ground_truth": "  n = len(weights)\n  dp = [[0 for _ in range(capacity + 1)] for _ in range(n + 1)]\n  \n  for i in range(1, n + 1):\n    for w in range(1, capacity + 1):\n      if weights[i-1] <= w:\n        dp[i][w] = max(values[i-1] + dp[i-1][w-weights[i-1]], dp[i-1][w])\n      else:\n        dp[i][w] = dp[i-1][w]",
-      "context": "# Dynamic programming problem\n\n",
-      "complexity": 8.2
-    },
-    {
-      "prefix": "const compose = (...fns) =>",
-      "suffix": ";\n\nconst enhance = compose(doubleThen, increment);",
-      "ground_truth": " x => fns.reduceRight((acc, fn) => fn(acc), x)",
-      "context": "// Functional composition utility\n\n",
-      "complexity": 5.2
-    },
-    {
-      "prefix": "def levenshtein_distance(s1, s2):",
-      "suffix": "\n  return dp[len(s1)][len(s2)]",
-      "ground_truth": "  m, n = len(s1), len(s2)\n  dp = [[0 for _ in range(n + 1)] for _ in range(m + 1)]\n  \n  for i in range(m + 1):\n    dp[i][0] = i\n  for j in range(n + 1):\n    dp[0][j] = j\n  \n  for i in range(1, m + 1):\n    for j in range(1, n + 1):\n      if s1[i-1] == s2[j-1]:\n        dp[i][j] = dp[i-1][j-1]\n      else:\n        dp[i][j] = 1 + min(dp[i-1][j], dp[i][j-1], dp[i-1][j-1])",
-      "context": "# String comparison algorithm\n\n",
-      "complexity": 7.9
-    },
-    {
-      "prefix": "function binarySearch(arr, target) {",
-      "suffix": "}\n\nconsole.log(binarySearch([1, 2, 3, 4, 5], 3));",
-      "ground_truth": "  let left = 0;\n  let right = arr.length - 1;\n  \n  while (left <= right) {\n    const mid = Math.floor((left + right) / 2);\n    if (arr[mid] === target) return mid;\n    if (arr[mid] < target) left = mid + 1;\n    else right = mid - 1;\n  }\n  \n  return -1;",
-      "context": "// Binary search implementation in JavaScript\n\n",
-      "complexity": 5.4
-    },
-    {
-      "prefix": "def rotate_matrix(matrix):",
-      "suffix": "\n  return matrix",
-      "ground_truth": "  n = len(matrix)\n  for i in range(n // 2):\n    for j in range(i, n - i - 1):\n      temp = matrix[i][j]\n      matrix[i][j] = matrix[n - j - 1][i]\n      matrix[n - j - 1][i] = matrix[n - i - 1][n - j - 1]\n      matrix[n - i - 1][n - j - 1] = matrix[j][n - i - 1]\n      matrix[j][n - i - 1] = temp",
-      "context": "# Matrix manipulation algorithm\n\n",
-      "complexity": 7.6
-    },
-    {
-      "prefix": "public class Singleton {",
-      "suffix": "}\n\nSingleton instance = Singleton.getInstance();",
-      "ground_truth": "  private static Singleton instance;\n  \n  private Singleton() {}\n  \n  public static synchronized Singleton getInstance() {\n    if (instance == null) {\n      instance = new Singleton();\n    }\n    return instance;\n  }",
-      "context": "// Design pattern implementation\n\n",
-      "complexity": 5.7
-    },
-    {
-      "prefix": "def merge_sort(arr):\n  if len(arr) <= 1:",
-      "suffix": "\n  return merge(left, right)",
-      "ground_truth": "    return arr\n  mid = len(arr) // 2\n  left = merge_sort(arr[:mid])\n  right = merge_sort(arr[mid:])",
-      "context": "# Divide and conquer sorting algorithm\n\n",
-      "complexity": 5.5
-    },
-    {
-      "prefix": "class Promise {",
-      "suffix": "}\n\nnew Promise((resolve, reject) => { /* ... */ });",
-      "ground_truth": "  constructor(executor) {\n    this.state = 'pending';\n    this.value = undefined;\n    this.reason = undefined;\n    this.onResolvedCallbacks = [];\n    this.onRejectedCallbacks = [];\n    \n    const resolve = value => {\n      if (this.state === 'pending') {\n        this.state = 'fulfilled';\n        this.value = value;\n        this.onResolvedCallbacks.forEach(fn => fn());\n      }\n    };\n    \n    const reject = reason => {\n      if (this.state === 'pending') {\n        this.state = 'rejected';\n        this.reason = reason;\n        this.onRejectedCallbacks.forEach(fn => fn());\n      }\n    };\n    \n    try {\n      executor(resolve, reject);\n    } catch (error) {\n      reject(error);\n    }\n  }",
-      "context": "// JavaScript Promise implementation\n\n",
-      "complexity": 9.1
-    },
-    {
-      "prefix": "def breadth_first_search(graph, start):",
-      "suffix": "\n  return visited",
-      "ground_truth": "  visited = set()\n  queue = [start]\n  visited.add(start)\n  \n  while queue:\n    vertex = queue.pop(0)\n    for neighbor in graph[vertex]:\n      if neighbor not in visited:\n        visited.add(neighbor)\n        queue.append(neighbor)",
-      "context": "from collections import deque\n\n# Graph traversal algorithm\n\n",
-      "complexity": 6.0
-    },
-    {
-      "prefix": "function createStore(reducer, initialState) {",
-      "suffix": "}\n\nconst store = createStore(rootReducer, {});",
-      "ground_truth": "  let state = initialState;\n  let listeners = [];\n  \n  function getState() {\n    return state;\n  }\n  \n  function subscribe(listener) {\n    listeners.push(listener);\n    return () => {\n      listeners = listeners.filter(l => l !== listener);\n    };\n  }\n  \n  function dispatch(action) {\n    state = reducer(state, action);\n    listeners.forEach(listener => listener());\n    return action;\n  }\n  \n  dispatch({});\n  \n  return { getState, subscribe, dispatch };",
-      "context": "// Redux-like state management implementation\n\n",
-      "complexity": 8.4
-    },
-    {
-      "prefix": "def find_min_coins(coins, amount):",
-      "suffix": "\n  return dp[amount] if dp[amount] != float('inf') else -1",
-      "ground_truth": "  dp = [float('inf')] * (amount + 1)\n  dp[0] = 0\n  \n  for coin in coins:\n    for x in range(coin, amount + 1):\n      dp[x] = min(dp[x], dp[x - coin] + 1)",
-      "context": "# Dynamic programming coin change problem\n\n",
-      "complexity": 7.2
-    },
-    {
-      "prefix": "function createLinkedList() {",
-      "suffix": "}\n\nconst list = createLinkedList();",
-      "ground_truth": "  let head = null;\n  \n  return {\n    append: function(value) {\n      const newNode = { value, next: null };\n      if (!head) {\n        head = newNode;\n        return;\n      }\n      let current = head;\n      while (current.next) {\n        current = current.next;\n      }\n      current.next = newNode;\n    },\n    getHead: function() {\n      return head;\n    }\n  };",
-      "context": "// Data structure implementation\n\n",
-      "complexity": 6.1
-    },
-    {
-      "prefix": "def lru_cache(capacity):",
-      "suffix": "\n  return cache",
-      "ground_truth": "  cache = OrderedDict()\n  \n  def get(key):\n    if key not in cache:\n      return -1\n    cache.move_to_end(key)\n    return cache[key]\n  \n  def put(key, value):\n    if key in cache:\n      cache.move_to_end(key)\n    cache[key] = value\n    if len(cache) > capacity:\n      cache.popitem(last=False)",
-      "context": "from collections import OrderedDict\n\n# Cache implementation\n\n",
-      "complexity": 7.8
-    },
-    {
-      "prefix": "const pipe = (...fns) =>",
-      "suffix": ";\n\nconst processData = pipe(validate, transform, save);",
-      "ground_truth": " x => fns.reduce((acc, fn) => fn(acc), x)",
-      "context": "// Functional programming utility\n\n",
-      "complexity": 4.9
-    },
-    {
-      "prefix": "def bubble_sort(arr):",
-      "suffix": "\n  return arr",
-      "ground_truth": "  n = len(arr)\n  for i in range(n):\n    for j in range(0, n - i - 1):\n      if arr[j] > arr[j + 1]:\n        arr[j], arr[j + 1] = arr[j + 1], arr[j]",
-      "context": "# Simple sorting algorithm\n\n",
-      "complexity": 4.3
-    },
-    {
-      "prefix": "function createElement(type, props, ...children) {",
-      "suffix": "}\n\nconst element = createElement('div', { className: 'container' }, 'Hello');",
-      "ground_truth": "  return {\n    type,\n    props: {\n      ...props,\n      children: children.map(child =>\n        typeof child === 'object' ? child : createTextElement(child)\n      )\n    }\n  };\n  \n  function createTextElement(text) {\n    return {\n      type: 'TEXT_ELEMENT',\n      props: {\n        nodeValue: text,\n        children: []\n      }\n    };\n  }",
-      "context": "// Virtual DOM implementation\n\n",
-      "complexity": 8.0
-    },
-        {
-      "prefix": "def calculate_area(shape):\n  if isinstance(shape, Circle):",
-      "suffix": "\n  else:\n    raise ValueError(\"Unsupported shape\")",
-      "ground_truth": "0.5 * shape.base * shape.height",
-      "context": "import math\n\nclass Shape:\n  pass\n\nclass Circle(Shape):",
-      "complexity": 6.5
-    },
-    {
-      "prefix": "async function processUserData(user: User, config: Config) {",
-      "suffix": ");\n}\n\nconst result = await processUserData(currentUser, appConfig);",
-      "ground_truth": "user, userProfile, permissions, analytics.getTrackingInfo()",
-      "context": "interface User {\n  id: string;\n  role: string;\n}\n\ninterface Config {",
-      "complexity": 8.0
-    },
-    {
-      "prefix": "function sum(arr) {",
-      "suffix": "}\n\nconst total = sum([1, 2, 3, 4]);",
-      "ground_truth": "return arr.reduce((a, b) => a + b, 0);",
-      "context": "// Utility functions for array operations\n\n",
-      "complexity": 3.2
-    },
-    {
-      "prefix": "def find_max(nums):\n  if not nums:",
-      "suffix": "\n  return max_val",
-      "ground_truth": "  return None\n  max_val = nums[0]\n  for n in nums[1:]:\n    if n > max_val:\n      max_val = n",
-      "context": "# Algorithm implementation\n\n",
-      "complexity": 4.7
-    },
-    {
-      "prefix": "SELECT * FROM users WHERE",
-      "suffix": "ORDER BY created_at DESC LIMIT 10;",
-      "ground_truth": " age > 18 AND status = 'active'",
-      "context": "-- Database query for active adult users\n\n",
-      "complexity": 2.8
-    },
-    {
-      "prefix": "class BinaryTree {",
-      "suffix": "}\n\nconst tree = new BinaryTree();",
-      "ground_truth": "  constructor() {\n    this.root = null;\n  }\n  \n  insert(value) {\n    // Implementation\n  }",
-      "context": "// Data structures implementation\n\n",
-      "complexity": 7.1
-    },
-    {
-      "prefix": "def quick_sort(arr):\n  if len(arr) <= 1:",
-      "suffix": "\n  return left + [pivot] + right",
-      "ground_truth": "    return arr\n  pivot = arr[0]\n  left = [x for x in arr[1:] if x < pivot]\n  right = [x for x in arr[1:] if x >= pivot]\n  return quick_sort(left) + [pivot] + quick_sort(right)",
-      "context": "# Sorting algorithms\n\n",
-      "complexity": 6.9
-    },
-    {
-      "prefix": "const fetchData = async () => {",
-      "suffix": "}\n\nfetchData().then(data => console.log(data));",
-      "ground_truth": "  try {\n    const response = await fetch('api/data');\n    return await response.json();\n  } catch (error) {\n    console.error(error);\n  }",
-      "context": "// API data fetching function\n\n",
-      "complexity": 5.3
-    },
-    {
-      "prefix": "SELECT COUNT(*) as total, department FROM employees",
-      "suffix": "HAVING COUNT(*) > 5;",
-      "ground_truth": " GROUP BY department",
-      "context": "-- SQL query for department statistics\n\n",
-      "complexity": 3.0
-    },
-    {
-      "prefix": "def fibonacci(n):\n  if n <= 1:",
-      "suffix": "\n\nfor i in range(10):\n  print(fibonacci(i))",
-      "ground_truth": "    return n\n  return fibonacci(n-1) + fibonacci(n-2)",
-      "context": "# Recursive function example\n\n",
-      "complexity": 4.5
-    },
-    {
-      "prefix": "void merge(int arr[], int l, int m, int r) {",
-      "suffix": "}\n\nvoid mergeSort(int arr[], int l, int r) { /* ... */ }",
-      "ground_truth": "  int n1 = m - l + 1;\n  int n2 = r - m;\n  \n  // Create temp arrays\n  int L[n1], R[n2];\n  \n  // Copy data\n  for(int i = 0; i < n1; i++)\n    L[i] = arr[l + i];\n  for(int j = 0; j < n2; j++)\n    R[j] = arr[m + 1 + j];",
-      "context": "// Implementation of merge sort algorithm\n\n",
-      "complexity": 7.8
-    },
-    {
-      "prefix": "function validateEmail(email) {",
-      "suffix": "}\n\nconsole.log(validateEmail('test@example.com'));",
-      "ground_truth": "  const regex = /^\\S+@\\S+\\.\\S+$/;\n  return regex.test(email);",
-      "context": "// Form validation utilities\n\n",
-      "complexity": 4.0
-    },
-    {
-      "prefix": "def binary_search(arr, target):\n  left, right = 0, len(arr) - 1\n  while left <= right:",
-      "suffix": "\n  return -1  # Target not found",
-      "ground_truth": "    mid = (left + right) // 2\n    if arr[mid] == target:\n      return mid\n    elif arr[mid] < target:\n      left = mid + 1\n    else:\n      right = mid - 1",
-      "context": "# Search algorithm implementation\n\n",
-      "complexity": 5.6
-    },
-    {
-      "prefix": "function debounce(func, wait) {",
-      "suffix": "}\n\nconst debouncedSearch = debounce(searchFunction, 300);",
-      "ground_truth": "  let timeout;\n  return function(...args) {\n    clearTimeout(timeout);\n    timeout = setTimeout(() => func.apply(this, args), wait);\n  };",
-      "context": "// Utility function for handling frequent events\n\n",
-      "complexity": 6.4
-    },
-    {
-      "prefix": "CREATE TABLE users (",
-      "suffix": ");",
-      "ground_truth": "  id INT PRIMARY KEY,\n  username VARCHAR(50) NOT NULL,\n  email VARCHAR(100) UNIQUE,\n  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP",
-      "context": "-- Database schema definition\n\n",
-      "complexity": 3.5
-    },
-    {
-      "prefix": "class Node:\n  def __init__(self, value):",
-      "suffix": "\n\nroot = Node(10)",
-      "ground_truth": "    self.value = value\n    self.left = None\n    self.right = None",
-      "context": "# Binary tree implementation\n\n",
-      "complexity": 3.2
-    },
-    {
-      "prefix": "function memoize(fn) {",
-      "suffix": "}\n\nconst memoizedFactorial = memoize(factorial);",
-      "ground_truth": "  const cache = {};\n  return function(...args) {\n    const key = JSON.stringify(args);\n    if (key in cache) return cache[key];\n    const result = fn.apply(this, args);\n    cache[key] = result;\n    return result;\n  };",
-      "context": "// Higher-order function for optimization\n\n",
-      "complexity": 7.3
-    },
-    {
-      "prefix": "def count_words(text):\n  if not text:",
-      "suffix": "\n  return result",
-      "ground_truth": "    return {}\n  words = text.lower().split()\n  result = {}\n  for word in words:\n    result[word] = result.get(word, 0) + 1",
-      "context": "# Text processing utility\n\n",
-      "complexity": 4.8
-    },
-    {
-      "prefix": "import java.util.*;\n\npublic class Graph {",
-      "suffix": "}\n\nGraph g = new Graph(5);",
-      "ground_truth": "  private int V;\n  private List<Integer>[] adj;\n  \n  public Graph(int v) {\n    V = v;\n    adj = new ArrayList[v];\n    for (int i = 0; i < v; i++)\n      adj[i] = new ArrayList<>();\n  }",
-      "context": "// Graph data structure implementation\n\n",
-      "complexity": 6.7
-    },
-    {
-      "prefix": "def calculate_tax(income):\n  if income < 10000:",
-      "suffix": "\n  return tax",
-      "ground_truth": "    return 0\n  elif income < 50000:\n    tax = income * 0.1\n  else:\n    tax = 5000 + (income - 50000) * 0.2",
-      "context": "# Tax calculation function\n\n",
-      "complexity": 4.2
-    },
-    {
-      "prefix": "const Router = require('express').Router();\n\nRouter.get('/users',",
-      "suffix": ");\n\nmodule.exports = Router;",
-      "ground_truth": " async (req, res) => {\n  try {\n    const users = await User.find();\n    res.json(users);\n  } catch (err) {\n    res.status(500).json({ error: err.message });\n  }",
-      "context": "// Express.js API route handlers\n\n",
-      "complexity": 5.9
-    },
-    {
-      "prefix": "def matrix_multiply(A, B):",
-      "suffix": "\n  return C",
-      "ground_truth": "  n = len(A)\n  C = [[0 for _ in range(n)] for _ in range(n)]\n  for i in range(n):\n    for j in range(n):\n      for k in range(n):\n        C[i][j] += A[i][k] * B[k][j]",
-      "context": "# Matrix operations implementation\n\n",
-      "complexity": 7.5
-    },
-    {
-      "prefix": "function throttle(func, limit) {",
-      "suffix": "}\n\nwindow.addEventListener('resize', throttle(handleResize, 100));",
-      "ground_truth": "  let inThrottle;\n  return function(...args) {\n    if (!inThrottle) {\n      func.apply(this, args);\n      inThrottle = true;\n      setTimeout(() => inThrottle = false, limit);\n    }\n  }",
-      "context": "// Performance optimization utility\n\n",
-      "complexity": 6.2
-    },
-    {
-      "prefix": "class Stack<T> {",
-      "suffix": "}\n\nlet stack = new Stack<number>();",
-      "ground_truth": "  private items: T[] = [];\n  \n  push(item: T): void {\n    this.items.push(item);\n  }\n  \n  pop(): T | undefined {\n    return this.items.pop();\n  }\n  \n  peek(): T | undefined {\n    return this.items[this.items.length - 1];\n  }",
-      "context": "// Generic data structure implementation\n\n",
-      "complexity": 5.8
-    },
-    {
-      "prefix": "function isPalindrome(str) {",
-      "suffix": "}\n\nconsole.log(isPalindrome('racecar'));",
-      "ground_truth": "  str = str.toLowerCase().replace(/[^a-z0-9]/g, '');\n  return str === str.split('').reverse().join('');",
-      "context": "// String utility function\n\n",
-      "complexity": 3.9
-    },
-    {
-      "prefix": "def generate_prime_numbers(n):",
-      "suffix": "\n  return primes",
-      "ground_truth": "  sieve = [True] * (n + 1)\n  p = 2\n  while p * p <= n:\n    if sieve[p]:\n      for i in range(p * p, n + 1, p):\n        sieve[i] = False\n    p += 1\n  primes = [p for p in range(2, n + 1) if sieve[p]]",
-      "context": "# Prime number generation using Sieve of Eratosthenes\n\n",
-      "complexity": 7.0
-    },
-    {
-      "prefix": "const mergeSort = (arr) => {",
-      "suffix": "};\n\nconst sortedArray = mergeSort([3, 1, 4, 1, 5, 9]);",
-      "ground_truth": "  if (arr.length <= 1) return arr;\n  const mid = Math.floor(arr.length / 2);\n  const left = mergeSort(arr.slice(0, mid));\n  const right = mergeSort(arr.slice(mid));\n  return merge(left, right);",
-      "context": "// Recursive sorting algorithm implementation\n\n",
-      "complexity": 6.8
-    },
-    {
-      "prefix": "def read_file(filename):\n  try:",
-      "suffix": "\n  except Exception as e:\n    print(f\"Error: {e}\")",
-      "ground_truth": "    with open(filename, 'r') as f:\n      data = f.read()\n    return data",
-      "context": "# File handling utility\n\n",
-      "complexity": 3.4
-    },
-    {
-      "prefix": "interface Vehicle {",
-      "suffix": "}\n\nclass Car implements Vehicle { }",
-      "ground_truth": "  make: string;\n  model: string;\n  year: number;\n  start(): void;\n  stop(): void;",
-      "context": "// TypeScript interface definition\n\n",
-      "complexity": 4.1
-    },
-    {
-      "prefix": "def dijkstra(graph, start):",
-      "suffix": "\n  return distances",
-      "ground_truth": "  distances = {node: float('infinity') for node in graph}\n  distances[start] = 0\n  pq = [(0, start)]\n  while pq:\n    current_distance, current_node = heapq.heappop(pq)\n    if current_distance > distances[current_node]:\n      continue\n    for neighbor, weight in graph[current_node].items():\n      distance = current_distance + weight\n      if distance < distances[neighbor]:\n        distances[neighbor] = distance\n        heapq.heappush(pq, (distance, neighbor))",
-      "context": "import heapq\n\n# Graph shortest path algorithm\n\n",
-      "complexity": 8.5
-    },
-    {
-      "prefix": "function curry(fn) {",
-      "suffix": "}\n\nconst add = curry((a, b, c) => a + b + c);",
-      "ground_truth": "  return function curried(...args) {\n    if (args.length >= fn.length) {\n      return fn.apply(this, args);\n    }\n    return function(...more) {\n      return curried.apply(this, args.concat(more));\n    };\n  };",
-      "context": "// Functional programming utility\n\n",
-      "complexity": 7.7
-    },
-    {
-      "prefix": "def gcd(a, b):",
-      "suffix": "\n\nprint(gcd(48, 18))",
-      "ground_truth": "  while b:\n    a, b = b, a % b\n  return a",
-      "context": "# Greatest common divisor function\n\n",
-      "complexity": 3.6
-    },
-    {
-      "prefix": "function createObservable() {",
-      "suffix": "}\n\nconst observable = createObservable();",
-      "ground_truth": "  const observers = [];\n  return {\n    subscribe: fn => {\n      observers.push(fn);\n      return () => {\n        observers.splice(observers.indexOf(fn), 1);\n      };\n    },\n    notify: data => {\n      observers.forEach(fn => fn(data));\n    }\n  };",
-      "context": "// Observer pattern implementation\n\n",
-      "complexity": 6.3
-    },
-    {
-      "prefix": "def insertion_sort(arr):",
-      "suffix": "\n  return arr",
-      "ground_truth": "  for i in range(1, len(arr)):\n    key = arr[i]\n    j = i - 1\n    while j >= 0 and arr[j] > key:\n      arr[j + 1] = arr[j]\n      j -= 1\n    arr[j + 1] = key",
-      "context": "# Simple sorting algorithm\n\n",
-      "complexity": 5.0
-    },
-    {
-      "prefix": "function deepClone(obj) {",
-      "suffix": "}\n\nconst cloned = deepClone(originalObject);",
-      "ground_truth": "  if (obj === null || typeof obj !== 'object') return obj;\n  const copy = Array.isArray(obj) ? [] : {};\n  for (let key in obj) {\n    if (obj.hasOwnProperty(key)) {\n      copy[key] = deepClone(obj[key]);\n    }\n  }\n  return copy;",
-      "context": "// Object utility function\n\n",
-      "complexity": 6.6
-    },
-    {
-      "prefix": "def find_longest_substring(s):",
-      "suffix": "\n  return max_length",
-      "ground_truth": "  start = max_length = 0\n  used_chars = {}\n  \n  for i, char in enumerate(s):\n    if char in used_chars and start <= used_chars[char]:\n      start = used_chars[char] + 1\n    else:\n      max_length = max(max_length, i - start + 1)\n    used_chars[char] = i",
-      "context": "# String algorithm problem\n\n",
-      "complexity": 7.4
-    },
-    {
-      "prefix": "import React, { useState, useEffect } from 'react';\n\nfunction UserProfile({ userId }) {",
-      "suffix": "}\n\nexport default UserProfile;",
-      "ground_truth": "  const [user, setUser] = useState(null);\n  const [loading, setLoading] = useState(true);\n\n  useEffect(() => {\n    fetch(`/api/users/${userId}`)\n      .then(res => res.json())\n      .then(data => {\n        setUser(data);\n        setLoading(false);\n      });\n  }, [userId]);\n\n  if (loading) return <div>Loading...</div>;\n  return <div>{user.name}</div>;",
-      "context": "// React functional component\n\n",
-      "complexity": 6.9
-    },
-    {
-      "prefix": "def knapsack(weights, values, capacity):",
-      "suffix": "\n  return dp[n][capacity]",
-      "ground_truth": "  n = len(weights)\n  dp = [[0 for _ in range(capacity + 1)] for _ in range(n + 1)]\n  \n  for i in range(1, n + 1):\n    for w in range(1, capacity + 1):\n      if weights[i-1] <= w:\n        dp[i][w] = max(values[i-1] + dp[i-1][w-weights[i-1]], dp[i-1][w])\n      else:\n        dp[i][w] = dp[i-1][w]",
-      "context": "# Dynamic programming problem\n\n",
-      "complexity": 8.2
-    },
-    {
-      "prefix": "const compose = (...fns) =>",
-      "suffix": ";\n\nconst enhance = compose(doubleThen, increment);",
-      "ground_truth": " x => fns.reduceRight((acc, fn) => fn(acc), x)",
-      "context": "// Functional composition utility\n\n",
-      "complexity": 5.2
-    },
-    {
-      "prefix": "def levenshtein_distance(s1, s2):",
-      "suffix": "\n  return dp[len(s1)][len(s2)]",
-      "ground_truth": "  m, n = len(s1), len(s2)\n  dp = [[0 for _ in range(n + 1)] for _ in range(m + 1)]\n  \n  for i in range(m + 1):\n    dp[i][0] = i\n  for j in range(n + 1):\n    dp[0][j] = j\n  \n  for i in range(1, m + 1):\n    for j in range(1, n + 1):\n      if s1[i-1] == s2[j-1]:\n        dp[i][j] = dp[i-1][j-1]\n      else:\n        dp[i][j] = 1 + min(dp[i-1][j], dp[i][j-1], dp[i-1][j-1])",
-      "context": "# String comparison algorithm\n\n",
-      "complexity": 7.9
-    },
-    {
-      "prefix": "function binarySearch(arr, target) {",
-      "suffix": "}\n\nconsole.log(binarySearch([1, 2, 3, 4, 5], 3));",
-      "ground_truth": "  let left = 0;\n  let right = arr.length - 1;\n  \n  while (left <= right) {\n    const mid = Math.floor((left + right) / 2);\n    if (arr[mid] === target) return mid;\n    if (arr[mid] < target) left = mid + 1;\n    else right = mid - 1;\n  }\n  \n  return -1;",
-      "context": "// Binary search implementation in JavaScript\n\n",
-      "complexity": 5.4
-    },
-    {
-      "prefix": "def rotate_matrix(matrix):",
-      "suffix": "\n  return matrix",
-      "ground_truth": "  n = len(matrix)\n  for i in range(n // 2):\n    for j in range(i, n - i - 1):\n      temp = matrix[i][j]\n      matrix[i][j] = matrix[n - j - 1][i]\n      matrix[n - j - 1][i] = matrix[n - i - 1][n - j - 1]\n      matrix[n - i - 1][n - j - 1] = matrix[j][n - i - 1]\n      matrix[j][n - i - 1] = temp",
-      "context": "# Matrix manipulation algorithm\n\n",
-      "complexity": 7.6
-    },
-    {
-      "prefix": "public class Singleton {",
-      "suffix": "}\n\nSingleton instance = Singleton.getInstance();",
-      "ground_truth": "  private static Singleton instance;\n  \n  private Singleton() {}\n  \n  public static synchronized Singleton getInstance() {\n    if (instance == null) {\n      instance = new Singleton();\n    }\n    return instance;\n  }",
-      "context": "// Design pattern implementation\n\n",
-      "complexity": 5.7
-    },
-    {
-      "prefix": "def merge_sort(arr):\n  if len(arr) <= 1:",
-      "suffix": "\n  return merge(left, right)",
-      "ground_truth": "    return arr\n  mid = len(arr) // 2\n  left = merge_sort(arr[:mid])\n  right = merge_sort(arr[mid:])",
-      "context": "# Divide and conquer sorting algorithm\n\n",
-      "complexity": 5.5
-    },
-    {
-      "prefix": "class Promise {",
-      "suffix": "}\n\nnew Promise((resolve, reject) => { /* ... */ });",
-      "ground_truth": "  constructor(executor) {\n    this.state = 'pending';\n    this.value = undefined;\n    this.reason = undefined;\n    this.onResolvedCallbacks = [];\n    this.onRejectedCallbacks = [];\n    \n    const resolve = value => {\n      if (this.state === 'pending') {\n        this.state = 'fulfilled';\n        this.value = value;\n        this.onResolvedCallbacks.forEach(fn => fn());\n      }\n    };\n    \n    const reject = reason => {\n      if (this.state === 'pending') {\n        this.state = 'rejected';\n        this.reason = reason;\n        this.onRejectedCallbacks.forEach(fn => fn());\n      }\n    };\n    \n    try {\n      executor(resolve, reject);\n    } catch (error) {\n      reject(error);\n    }\n  }",
-      "context": "// JavaScript Promise implementation\n\n",
-      "complexity": 9.1
-    },
-    {
-      "prefix": "def breadth_first_search(graph, start):",
-      "suffix": "\n  return visited",
-      "ground_truth": "  visited = set()\n  queue = [start]\n  visited.add(start)\n  \n  while queue:\n    vertex = queue.pop(0)\n    for neighbor in graph[vertex]:\n      if neighbor not in visited:\n        visited.add(neighbor)\n        queue.append(neighbor)",
-      "context": "from collections import deque\n\n# Graph traversal algorithm\n\n",
-      "complexity": 6.0
-    },
-    {
-      "prefix": "function createStore(reducer, initialState) {",
-      "suffix": "}\n\nconst store = createStore(rootReducer, {});",
-      "ground_truth": "  let state = initialState;\n  let listeners = [];\n  \n  function getState() {\n    return state;\n  }\n  \n  function subscribe(listener) {\n    listeners.push(listener);\n    return () => {\n      listeners = listeners.filter(l => l !== listener);\n    };\n  }\n  \n  function dispatch(action) {\n    state = reducer(state, action);\n    listeners.forEach(listener => listener());\n    return action;\n  }\n  \n  dispatch({});\n  \n  return { getState, subscribe, dispatch };",
-      "context": "// Redux-like state management implementation\n\n",
-      "complexity": 8.4
-    },
-    {
-      "prefix": "def find_min_coins(coins, amount):",
-      "suffix": "\n  return dp[amount] if dp[amount] != float('inf') else -1",
-      "ground_truth": "  dp = [float('inf')] * (amount + 1)\n  dp[0] = 0\n  \n  for coin in coins:\n    for x in range(coin, amount + 1):\n      dp[x] = min(dp[x], dp[x - coin] + 1)",
-      "context": "# Dynamic programming coin change problem\n\n",
-      "complexity": 7.2
-    },
-    {
-      "prefix": "function createLinkedList() {",
-      "suffix": "}\n\nconst list = createLinkedList();",
-      "ground_truth": "  let head = null;\n  \n  return {\n    append: function(value) {\n      const newNode = { value, next: null };\n      if (!head) {\n        head = newNode;\n        return;\n      }\n      let current = head;\n      while (current.next) {\n        current = current.next;\n      }\n      current.next = newNode;\n    },\n    getHead: function() {\n      return head;\n    }\n  };",
-      "context": "// Data structure implementation\n\n",
-      "complexity": 6.1
-    },
-    {
-      "prefix": "def lru_cache(capacity):",
-      "suffix": "\n  return cache",
-      "ground_truth": "  cache = OrderedDict()\n  \n  def get(key):\n    if key not in cache:\n      return -1\n    cache.move_to_end(key)\n    return cache[key]\n  \n  def put(key, value):\n    if key in cache:\n      cache.move_to_end(key)\n    cache[key] = value\n    if len(cache) > capacity:\n      cache.popitem(last=False)",
-      "context": "from collections import OrderedDict\n\n# Cache implementation\n\n",
-      "complexity": 7.8
-    },
-    {
-      "prefix": "const pipe = (...fns) =>",
-      "suffix": ";\n\nconst processData = pipe(validate, transform, save);",
-      "ground_truth": " x => fns.reduce((acc, fn) => fn(acc), x)",
-      "context": "// Functional programming utility\n\n",
-      "complexity": 4.9
-    },
-    {
-      "prefix": "def bubble_sort(arr):",
-      "suffix": "\n  return arr",
-      "ground_truth": "  n = len(arr)\n  for i in range(n):\n    for j in range(0, n - i - 1):\n      if arr[j] > arr[j + 1]:\n        arr[j], arr[j + 1] = arr[j + 1], arr[j]",
-      "context": "# Simple sorting algorithm\n\n",
-      "complexity": 4.3
-    },
-    {
-      "prefix": "function createElement(type, props, ...children) {",
-      "suffix": "}\n\nconst element = createElement('div', { className: 'container' }, 'Hello');",
-      "ground_truth": "  return {\n    type,\n    props: {\n      ...props,\n      children: children.map(child =>\n        typeof child === 'object' ? child : createTextElement(child)\n      )\n    }\n  };\n  \n  function createTextElement(text) {\n    return {\n      type: 'TEXT_ELEMENT',\n      props: {\n        nodeValue: text,\n        children: []\n      }\n    };\n  }",
-      "context": "// Virtual DOM implementation\n\n",
-      "complexity": 8.0
-    },
-        {
-      "prefix": "def calculate_area(shape):\n  if isinstance(shape, Circle):",
-      "suffix": "\n  else:\n    raise ValueError(\"Unsupported shape\")",
-      "ground_truth": "0.5 * shape.base * shape.height",
-      "context": "import math\n\nclass Shape:\n  pass\n\nclass Circle(Shape):",
-      "complexity": 6.5
-    },
-    {
-      "prefix": "async function processUserData(user: User, config: Config) {",
-      "suffix": ");\n}\n\nconst result = await processUserData(currentUser, appConfig);",
-      "ground_truth": "user, userProfile, permissions, analytics.getTrackingInfo()",
-      "context": "interface User {\n  id: string;\n  role: string;\n}\n\ninterface Config {",
-      "complexity": 8.0
-    },
-    {
-      "prefix": "function sum(arr) {",
-      "suffix": "}\n\nconst total = sum([1, 2, 3, 4]);",
-      "ground_truth": "return arr.reduce((a, b) => a + b, 0);",
-      "context": "// Utility functions for array operations\n\n",
-      "complexity": 3.2
-    },
-    {
-      "prefix": "def find_max(nums):\n  if not nums:",
-      "suffix": "\n  return max_val",
-      "ground_truth": "  return None\n  max_val = nums[0]\n  for n in nums[1:]:\n    if n > max_val:\n      max_val = n",
-      "context": "# Algorithm implementation\n\n",
-      "complexity": 4.7
-    },
-    {
-      "prefix": "SELECT * FROM users WHERE",
-      "suffix": "ORDER BY created_at DESC LIMIT 10;",
-      "ground_truth": " age > 18 AND status = 'active'",
-      "context": "-- Database query for active adult users\n\n",
-      "complexity": 2.8
-    },
-    {
-      "prefix": "class BinaryTree {",
-      "suffix": "}\n\nconst tree = new BinaryTree();",
-      "ground_truth": "  constructor() {\n    this.root = null;\n  }\n  \n  insert(value) {\n    // Implementation\n  }",
-      "context": "// Data structures implementation\n\n",
-      "complexity": 7.1
-    },
-    {
-      "prefix": "def quick_sort(arr):\n  if len(arr) <= 1:",
-      "suffix": "\n  return left + [pivot] + right",
-      "ground_truth": "    return arr\n  pivot = arr[0]\n  left = [x for x in arr[1:] if x < pivot]\n  right = [x for x in arr[1:] if x >= pivot]\n  return quick_sort(left) + [pivot] + quick_sort(right)",
-      "context": "# Sorting algorithms\n\n",
-      "complexity": 6.9
-    },
-    {
-      "prefix": "const fetchData = async () => {",
-      "suffix": "}\n\nfetchData().then(data => console.log(data));",
-      "ground_truth": "  try {\n    const response = await fetch('api/data');\n    return await response.json();\n  } catch (error) {\n    console.error(error);\n  }",
-      "context": "// API data fetching function\n\n",
-      "complexity": 5.3
-    },
-    {
-      "prefix": "SELECT COUNT(*) as total, department FROM employees",
-      "suffix": "HAVING COUNT(*) > 5;",
-      "ground_truth": " GROUP BY department",
-      "context": "-- SQL query for department statistics\n\n",
-      "complexity": 3.0
-    },
-    {
-      "prefix": "def fibonacci(n):\n  if n <= 1:",
-      "suffix": "\n\nfor i in range(10):\n  print(fibonacci(i))",
-      "ground_truth": "    return n\n  return fibonacci(n-1) + fibonacci(n-2)",
-      "context": "# Recursive function example\n\n",
-      "complexity": 4.5
-    },
-    {
-      "prefix": "void merge(int arr[], int l, int m, int r) {",
-      "suffix": "}\n\nvoid mergeSort(int arr[], int l, int r) { /* ... */ }",
-      "ground_truth": "  int n1 = m - l + 1;\n  int n2 = r - m;\n  \n  // Create temp arrays\n  int L[n1], R[n2];\n  \n  // Copy data\n  for(int i = 0; i < n1; i++)\n    L[i] = arr[l + i];\n  for(int j = 0; j < n2; j++)\n    R[j] = arr[m + 1 + j];",
-      "context": "// Implementation of merge sort algorithm\n\n",
-      "complexity": 7.8
-    },
-    {
-      "prefix": "function validateEmail(email) {",
-      "suffix": "}\n\nconsole.log(validateEmail('test@example.com'));",
-      "ground_truth": "  const regex = /^\\S+@\\S+\\.\\S+$/;\n  return regex.test(email);",
-      "context": "// Form validation utilities\n\n",
-      "complexity": 4.0
-    },
-    {
-      "prefix": "def binary_search(arr, target):\n  left, right = 0, len(arr) - 1\n  while left <= right:",
-      "suffix": "\n  return -1  # Target not found",
-      "ground_truth": "    mid = (left + right) // 2\n    if arr[mid] == target:\n      return mid\n    elif arr[mid] < target:\n      left = mid + 1\n    else:\n      right = mid - 1",
-      "context": "# Search algorithm implementation\n\n",
-      "complexity": 5.6
-    },
-    {
-      "prefix": "function debounce(func, wait) {",
-      "suffix": "}\n\nconst debouncedSearch = debounce(searchFunction, 300);",
-      "ground_truth": "  let timeout;\n  return function(...args) {\n    clearTimeout(timeout);\n    timeout = setTimeout(() => func.apply(this, args), wait);\n  };",
-      "context": "// Utility function for handling frequent events\n\n",
-      "complexity": 6.4
-    },
-    {
-      "prefix": "CREATE TABLE users (",
-      "suffix": ");",
-      "ground_truth": "  id INT PRIMARY KEY,\n  username VARCHAR(50) NOT NULL,\n  email VARCHAR(100) UNIQUE,\n  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP",
-      "context": "-- Database schema definition\n\n",
-      "complexity": 3.5
-    },
-    {
-      "prefix": "class Node:\n  def __init__(self, value):",
-      "suffix": "\n\nroot = Node(10)",
-      "ground_truth": "    self.value = value\n    self.left = None\n    self.right = None",
-      "context": "# Binary tree implementation\n\n",
-      "complexity": 3.2
-    },
-    {
-      "prefix": "function memoize(fn) {",
-      "suffix": "}\n\nconst memoizedFactorial = memoize(factorial);",
-      "ground_truth": "  const cache = {};\n  return function(...args) {\n    const key = JSON.stringify(args);\n    if (key in cache) return cache[key];\n    const result = fn.apply(this, args);\n    cache[key] = result;\n    return result;\n  };",
-      "context": "// Higher-order function for optimization\n\n",
-      "complexity": 7.3
-    },
-    {
-      "prefix": "def count_words(text):\n  if not text:",
-      "suffix": "\n  return result",
-      "ground_truth": "    return {}\n  words = text.lower().split()\n  result = {}\n  for word in words:\n    result[word] = result.get(word, 0) + 1",
-      "context": "# Text processing utility\n\n",
-      "complexity": 4.8
-    },
-    {
-      "prefix": "import java.util.*;\n\npublic class Graph {",
-      "suffix": "}\n\nGraph g = new Graph(5);",
-      "ground_truth": "  private int V;\n  private List<Integer>[] adj;\n  \n  public Graph(int v) {\n    V = v;\n    adj = new ArrayList[v];\n    for (int i = 0; i < v; i++)\n      adj[i] = new ArrayList<>();\n  }",
-      "context": "// Graph data structure implementation\n\n",
-      "complexity": 6.7
-    },
-    {
-      "prefix": "def calculate_tax(income):\n  if income < 10000:",
-      "suffix": "\n  return tax",
-      "ground_truth": "    return 0\n  elif income < 50000:\n    tax = income * 0.1\n  else:\n    tax = 5000 + (income - 50000) * 0.2",
-      "context": "# Tax calculation function\n\n",
-      "complexity": 4.2
-    }
+        "prefix": "def calculate_area(shape):\n  if isinstance(shape, Circle):",
+        "suffix": "\n  else:\n    raise ValueError(\"Unsupported shape\")",
+        "ground_truth": "    return math.pi * shape.radius ** 2",
+        "context": "import math\n\nclass Shape: pass\nclass Circle(Shape):\n  def __init__(self, r):\n    self.radius = r",
+        "complexity": 6.5,
+      },
+      {
+        "prefix": "async function fetchUser(id) {",
+        "suffix": "}\n\nconst user = await fetchUser(123);",
+        "ground_truth": "  const response = await fetch(`/api/users/${id}`);\n  return await response.json();",
+        "context": "// Fetch API wrapper for user data\n",
+        "complexity": 4.2,
+      },
+      {
+        "prefix": "#include <iostream>\nint sum(int arr[], int size) {",
+        "suffix": "}\n\nint main() {\n  int nums[] = {1, 2, 3};\n  std::cout << sum(nums, 3);\n}",
+        "ground_truth": "  int total = 0;\n  for(int i = 0; i < size; i++) {\n    total += arr[i];\n  }\n  return total;",
+        "context": "// C++ array processing function\n",
+        "complexity": 3.2,
+      },
+      {
+        "prefix": "program MaxFinder;\nfunction FindMax(a: array of integer): integer;\nvar\n  i, max: integer;\nbegin",
+        "suffix": "  FindMax := max;\nend;",
+        "ground_truth": "  if Length(a) = 0 then exit;\n  max := a[0];\n  for i := 1 to High(a) do\n    if a[i] > max then\n      max := a[i];",
+        "context": "{ Pascal program to find maximum value }\n",
+        "complexity": 4.7,
+      },
+      {
+        "prefix": "int[] quickSort(int[] arr) {\n  if (arr.length <= 1) {",
+        "suffix": "  }\n  return result;\n}",
+        "ground_truth": "    return arr;\n  }\n  int pivot = arr[0];\n  int[] less = filter(arr, x -> x < pivot);\n  int[] greater = filter(arr, x -> x >= pivot && x != pivot);\n  int[] result = concat(quickSort(less), pivot, quickSort(greater))",
+        "context": "import java.util.*;\n// Java sorting implementation\n",
+        "complexity": 6.9,
+      },
+      {
+        "prefix": "fn fetch_data() -> Result<Vec<String>, Error> {",
+        "suffix": "}\n\nlet data = fetch_data().unwrap();",
+        "ground_truth": "  let response = reqwest::blocking::get(\"https://api.example.com/data\")?;\n  let items = response.json()?;\n  Ok(items)",
+        "context": "use reqwest;\nuse std::error::Error;\n// Rust HTTP client example\n",
+        "complexity": 5.3,
+      },
+      {
+        "prefix": "(defn fibonacci [n]\n  (if (<= n 1)",
+        "suffix": "))\n\n(map fibonacci (range 10))",
+        "ground_truth": "    n\n    (+ (fibonacci (- n 1)) (fibonacci (- n 2)))",
+        "context": "; Clojure recursive function\n",
+        "complexity": 4.5,
+      },
+      {
+        "prefix": "procedure Merge(A: array; p, q, r: integer);\nvar\n  i, j, k: integer;\nbegin",
+        "suffix": "end;",
+        "ground_truth": "  n1 := q - p + 1;\n  n2 := r - q;\n  \n  // Create temp arrays\n  for i := 1 to n1 do\n    L[i] := A[p + i - 1];\n  for j := 1 to n2 do\n    R[j] := A[q + j];",
+        "context": "{ Ada merge sort implementation }\n",
+        "complexity": 7.8,
+      },
+      {
+        "prefix": "validate_email <- function(email) {",
+        "suffix": "}\n\nvalid <- validate_email(\"user@example.com\")",
+        "ground_truth": "  pattern <- \"^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\\\.[A-Za-z]{2,}$\"\n  return(grepl(pattern, email))",
+        "context": "# R email validation function\n",
+        "complexity": 4.0,
+      },
+      {
+        "prefix": "function binary_search(array, target, min, max){\n  if (max < min) {",
+        "suffix": "  }\n}",
+        "ground_truth": "    return -1;\n  }\n  \n  let mid = Math.floor((min + max) / 2);\n  \n  if (array[mid] > target) {\n    return binary_search(array, target, min, mid - 1);\n  } else if (array[mid] < target) {\n    return binary_search(array, target, mid + 1, max);\n  } else {\n    return mid;\n  }",
+        "context": "% Erlang binary search implementation\n",
+        "complexity": 5.6,
+      },
+      {
+        "prefix": "debounce :: (a -> IO ()) -> Int -> IO (a -> IO ())\ndebounce f delay = do",
+        "suffix": "  return debouncedF",
+        "ground_truth": "  timeoutRef <- newIORef Nothing\n  let debouncedF x = do\n        mt <- readIORef timeoutRef\n        case mt of\n          Just t -> cancelTimeout t\n          Nothing -> return ()\n        t <- setTimeout delay (f x)\n        writeIORef timeoutRef (Just t)",
+        "context": "-- Haskell debounce implementation\n",
+        "complexity": 6.4,
+      },
+      {
+        "prefix": "CREATE TABLE users (",
+        "suffix": ");",
+        "ground_truth": "  id SERIAL PRIMARY KEY,\n  name VARCHAR(100) NOT NULL,\n  email VARCHAR(100) UNIQUE,\n  created_at TIMESTAMP DEFAULT NOW()",
+        "context": "-- SQL table definition\n",
+        "complexity": 3.5,
+      },
+      {
+        "prefix": "function memoize(fn: function): function {",
+        "suffix": "}",
+        "ground_truth": "  const cache = {};\n  return (...args) => {\n    const key = JSON.stringify(args);\n    if (key in cache) return cache[key];\n    const result = fn(...args);\n    cache[key] = result;\n    return result;\n  };",
+        "context": "// TypeScript utility function\n",
+        "complexity": 5.3,
+      },
+      {
+        "prefix": "sub count_words {\n  my ($text) = @_;\n  if (!$text) {",
+        "suffix": "  }\n  return %count;\n}",
+        "ground_truth": "    return {};\n  }\n  my @words = split(/\\s+/, lc($text));\n  my %count;\n  foreach my $word (@words) {\n    $count{$word}++;",
+        "context": "# Perl text processing function\n",
+        "complexity": 4.8,
+      },
+      {
+        "prefix": "package main\n\nfunc getUsersHandler(w http.ResponseWriter, r *http.Request) {",
+        "suffix": "}",
+        "ground_truth": "  users, err := db.FindAllUsers()\n  if err != nil {\n    http.Error(w, err.Error(), 500)\n    return\n  }\n  json.NewEncoder(w).Encode(users)",
+        "context": "import (\n  \"net/http\"\n  \"encoding/json\"\n)\n",
+        "complexity": 5.9,
+      },
+      {
+        "prefix": "matrix_multiply <- function(A, B) {",
+        "suffix": "}",
+        "ground_truth": "  n <- nrow(A)\n  C <- matrix(0, nrow=n, ncol=n)\n  for (i in 1:n) {\n    for (j in 1:n) {\n      for (k in 1:n) {\n        C[i,j] <- C[i,j] + A[i,k] * B[k,j]\n      }\n    }\n  }\n  return(C)",
+        "context": "# R matrix multiplication\n",
+        "complexity": 7.5,
+      },
+      {
+        "prefix": "throttle = (func, limit) ->",
+        "suffix": "\n\nhandleResize = throttle(updateLayout, 100)",
+        "ground_truth": "  inThrottle = false\n  return (args...) ->\n    unless inThrottle\n      func(args...)\n      inThrottle = true\n      setTimeout(-> inThrottle = false, limit)",
+        "context": "# CoffeeScript utility function\n",
+        "complexity": 6.2,
+      },
+      {
+        "prefix": "mergeSort :: [Int] -> [Int]\nmergeSort xs",
+        "suffix": "  where\n    merge :: [Int] -> [Int] -> [Int]\n    merge [] ys = ys\n    merge xs [] = xs\n    merge (x:xs) (y:ys) | x <= y = x : merge xs (y:ys)\n                         | otherwise = y : merge (x:xs) ys",
+        "ground_truth": " | length xs <= 1 = xs\n | otherwise = merge (mergeSort left) (mergeSort right)\n   where (left, right) = splitAt (length xs `div` 2) xs",
+        "context": "-- Haskell recursive sorting\n",
+        "complexity": 6.8
+      },
+      {
+        "prefix": "static int gcd(int a, int b) {",
+        "suffix": "}",
+        "ground_truth": "  while (b != 0) {\n    int temp = b;\n    b = a % b;\n    a = temp;\n  }\n  return a;",
+        "context": "// C# math utility\n",
+        "complexity": 3.6
+      },
+      {
+        "prefix": "proc insertionSort {arr} {",
+        "suffix": "}",
+        "ground_truth": "  set len [llength $arr]\n  for {set i 1} {$i < $len} {incr i} {\n    set key [lindex $arr $i]\n    set j [expr {$i - 1}]\n    while {$j >= 0 && [lindex $arr $j] > $key} {\n      lset arr [expr {$j + 1}] [lindex $arr $j]\n      incr j -1\n    }\n    lset arr [expr {$j + 1}] $key\n  }\n  return $arr",
+        "context": "# Tcl sorting algorithm\n",
+        "complexity": 5.0
+      },
+      {
+        "prefix": "module LongestSubstring\n  def self.find(s)",
+        "suffix": "  end\nend",
+        "ground_truth": "    start = max_length = 0\n    used_chars = {}\n    \n    s.chars.each_with_index do |char, i|\n      if used_chars[char] && start <= used_chars[char]\n        start = used_chars[char] + 1\n      else\n        max_length = [max_length, i - start + 1].max\n      end\n      used_chars[char] = i\n    end\n    max_length",
+        "context": "# Ruby string algorithm\n",
+        "complexity": 7.4
+      },
 ]
