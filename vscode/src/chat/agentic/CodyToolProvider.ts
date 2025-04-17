@@ -120,16 +120,18 @@ class ToolFactory {
         return mcpTools
             .map(tool => {
                 // Format to match topic name requirements in bot-response-multiplexer (only digits, letters, hyphens)
-                const toolName = `${serverName}-${tool.name}`.replace(/[^\dA-Za-z-]/g, '-')
+                const toolName = `${serverName}-${tool.name as string}`.replace(/[^\dA-Za-z-]/g, '-')
                 // Create a proper tool configuration
                 const toolConfig: CodyToolConfig = {
-                    title: tool.name,
+                    title: tool.name as string,
                     tags: {
                         tag: PromptString.unsafe_fromUserQuery(toolName),
                         subTag: ps`call`,
                     },
                     prompt: {
-                        instruction: PromptString.unsafe_fromUserQuery(tool.description || ''),
+                        instruction: PromptString.unsafe_fromUserQuery(
+                            (tool.description as string) || ''
+                        ),
                         placeholder: ps`ARGS`,
                         examples: [],
                     },
@@ -157,7 +159,13 @@ class ToolFactory {
                             if (!mcpInstance) {
                                 throw new Error('MCP Manager instance not available')
                             }
-                            const result = await mcpInstance.executeTool(serverName, tool.name, args)
+
+                            // Use the MCPManager's executeTool method which properly delegates to serverManager
+                            const result = await mcpInstance.executeTool(
+                                serverName,
+                                tool.name as string,
+                                args
+                            )
 
                             return [
                                 {
@@ -166,7 +174,7 @@ class ToolFactory {
                                         result?.content || `MCP tool ${tool.name} executed successfully`,
                                     uri: URI.file(`mcp-tool-${serverName}-${tool.name}`),
                                     source: ContextItemSource.Agentic,
-                                    title: tool.name,
+                                    title: tool.name as string,
                                 },
                             ]
                         } catch (error) {
@@ -177,7 +185,7 @@ class ToolFactory {
                                     content: `Error executing MCP tool ${tool.name}: ${error}`,
                                     uri: URI.file(`mcp-tool-${serverName}-${tool.name}`),
                                     source: ContextItemSource.Agentic,
-                                    title: tool.name,
+                                    title: tool.name as string,
                                 },
                             ]
                         }
