@@ -46,15 +46,12 @@ This is a log of all notable changes to Cody for VS Code.
 
 - disable flaky chat test [#7705](https://github.com/sourcegraph/cody/pull/7705)
 
-#### Vscode
-
-- update release workflows to auth before integration tests [#7697](https://github.com/sourcegraph/cody/pull/7697)
-
 ### Chore
 
 #### Chat
 
 - Improve the feature flag evaluation process [#7664](https://github.com/sourcegraph/cody/pull/7664)
+- Put the settings tab behind a feature flag [#7686](https://github.com/sourcegraph/cody/pull/7686)
 
 #### Ci
 
@@ -73,21 +70,16 @@ This is a log of all notable changes to Cody for VS Code.
 
 - Revert "fix: backwards compatibility for evaluateFeatureFlags" [#-1](https://github.com/sourcegraph/cody/pull/7680)
 
-### Uncategorized
+#### Vscode
 
-#### Others
-
-- Changelog for 1.84.0 [#7717](https://github.com/sourcegraph/cody/pull/7717)
+- update release workflows to auth before integration tests [#7697](https://github.com/sourcegraph/cody/pull/7697)
 - Change 'auto-edit (Beta)' to 'auto-edit' [#7708](https://github.com/sourcegraph/cody/pull/7708)
 - Fix flaky tests caused by too often refresh of siteVersion [#7691](https://github.com/sourcegraph/cody/pull/7691)
-- Fix(agentic chat): Put the settings tab behind a feature flag [#7686](https://github.com/sourcegraph/cody/pull/7686)
 - Chore: Skip flaky integration test [#7674](https://github.com/sourcegraph/cody/pull/7674)
 - Replace tiktoken with gpt-tokenizer [#7662](https://github.com/sourcegraph/cody/pull/7662)
 - Refreshing icon after enabling autocomplete [#7660](https://github.com/sourcegraph/cody/pull/7660)
-- Changelog for 1.82.0 [#7656](https://github.com/sourcegraph/cody/pull/7656)
 - Fix memory leak in network diagnostics code [#7654](https://github.com/sourcegraph/cody/pull/7654)
 - Crash occurred when user tries to save new code file [#7645](https://github.com/sourcegraph/cody/pull/7645)
-
 
 ## 1.84.0
 
