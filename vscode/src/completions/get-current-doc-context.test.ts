@@ -3,7 +3,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import type * as vscode from 'vscode'
 import type * as Parser from 'web-tree-sitter'
 
-import { range } from '../testutils/textDocument'
+import { range } from '../editor/utils/virtual-text-document'
 import { asPoint } from '../tree-sitter/parse-tree-cache'
 import { type WrappedParser, resetParsersCache } from '../tree-sitter/parser'
 

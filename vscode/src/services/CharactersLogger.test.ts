@@ -5,7 +5,7 @@ import type * as vscode from 'vscode'
 import { telemetryRecorder } from '@sourcegraph/cody-shared'
 
 import { document } from '../completions/test-helpers'
-import { range } from '../testutils/textDocument'
+import { range } from '../editor/utils/virtual-text-document'
 
 import {
     type CharacterLoggerCounters,

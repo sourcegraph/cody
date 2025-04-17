@@ -232,6 +232,7 @@ export class FireworksWebSocketAdapter implements AutoeditsModelAdapter {
                     yield this.processFireworksResponse(message, state, extractPrediction, {
                         requestHeaders,
                         requestUrl: url,
+                        requestBody: body,
                     })
                 }
             }
@@ -247,6 +248,7 @@ export class FireworksWebSocketAdapter implements AutoeditsModelAdapter {
         requestParams: {
             requestHeaders: Record<string, string>
             requestUrl: string
+            requestBody: ModelResponseShared['requestBody']
         }
     ): ModelResponse {
         if (!message.body) {
@@ -263,8 +265,9 @@ export class FireworksWebSocketAdapter implements AutoeditsModelAdapter {
                 prediction: state.prediction,
                 responseHeaders: message.headers,
                 responseBody: state.responseBody,
-                requestHeaders: requestParams.requestHeaders,
                 requestUrl: requestParams.requestUrl,
+                requestHeaders: requestParams.requestHeaders,
+                requestBody: requestParams.requestBody,
             }
         }
 
@@ -275,8 +278,11 @@ export class FireworksWebSocketAdapter implements AutoeditsModelAdapter {
                 type: 'partial',
                 stopReason: AutoeditStopReason.StreamingChunk,
                 prediction: state.prediction,
-                requestHeaders: requestParams.requestHeaders,
+                responseHeaders: requestParams.requestHeaders,
+                responseBody: state.responseBody,
                 requestUrl: requestParams.requestUrl,
+                requestHeaders: requestParams.requestHeaders,
+                requestBody: requestParams.requestBody,
             }
         } catch (parseError) {
             autoeditsOutputChannelLogger.logError(

@@ -2,7 +2,7 @@ import dedent from 'dedent'
 import pick from 'lodash/pick'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
-import { range } from '../../testutils/textDocument'
+import { range } from '../../editor/utils/virtual-text-document'
 import { resetParsersCache } from '../../tree-sitter/parser'
 import { completion, initTreeSitterParser } from '../test-helpers'
 
