@@ -64,6 +64,7 @@ import {
     extractAutoEditResponseFromCurrentDocumentCommentTemplate,
     shrinkReplacerTextToCodeToReplaceRange,
 } from './renderer/mock-renderer'
+import { NextCursorManager } from './renderer/next-cursor-manager'
 import type { AutoEditRenderOutput } from './renderer/render-output'
 import { type AutoeditRequestManagerParams, RequestManager } from './request-manager'
 import { shrinkPredictionUntilSuffix } from './shrink-prediction'
@@ -177,6 +178,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
     private readonly modelAdapter: AutoeditsModelAdapter
     private readonly requestManager = new RequestManager()
     public readonly smartThrottleService = new SmartThrottleService()
+    protected nextCursorManager = new NextCursorManager()
 
     private readonly promptStrategy: AutoeditsUserPromptStrategy
     public readonly filterPrediction = new FilterPredictionBasedOnRecentEdits()
@@ -480,6 +482,16 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                     requestId,
                     discardReason: 'predictionEqualsCodeToRewrite',
                 })
+                return null
+            }
+
+            if (this.shouldDeferToNextCursorSuggestion({ prediction: predictionResult, position })) {
+                this.discardSuggestion({
+                    startedAt,
+                    requestId,
+                    discardReason: 'nextCursorSuggestionShownInstead',
+                })
+                this.nextCursorManager.suggest(document.uri, predictionResult.editPosition)
                 return null
             }
 
@@ -938,6 +950,22 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
         await vscode.commands.executeCommand('editor.action.inlineSuggest.hide')
         this.lastManualTriggerTimestamp = performance.now()
         await vscode.commands.executeCommand('editor.action.inlineSuggest.trigger')
+    }
+
+    /**
+     * Threshold in which we will prefer to show a next cursor suggeston instead
+     * of the current suggestion.
+     */
+    private NEXT_CURSOR_SUGGESTION_THRESHOLD = 10
+    private shouldDeferToNextCursorSuggestion({
+        prediction,
+        position,
+    }: {
+        prediction: SuggestedPredictionResult
+        position: vscode.Position
+    }): boolean {
+        const distance = prediction.editPosition.line - position.line
+        return distance > this.NEXT_CURSOR_SUGGESTION_THRESHOLD
     }
 
     public getTestingAutoeditEvent(id: AutoeditRequestID): AutoeditRequestStateForAgentTesting {

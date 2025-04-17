@@ -34,7 +34,6 @@ import type { AutoeditClientCapabilities } from '../autoedits-provider'
 import { autoeditsOutputChannelLogger } from '../output-channel-logger'
 import type { RequestManager } from '../request-manager'
 import type { AutoEditDecorations, AutoEditsDecorator, DecorationInfo } from './decorators/base'
-import { NextCursorManager } from './next-cursor-manager'
 import {
     type AutoEditRenderOutput,
     AutoEditsRenderOutput,
@@ -114,7 +113,6 @@ export class AutoEditsDefaultRendererManager
     protected activeRequestId: AutoeditRequestID | null = null
     protected disposables: vscode.Disposable[] = []
     protected decorator: AutoEditsDecorator | null = null
-    protected nextCursorManager = new NextCursorManager()
 
     /**
      * The amount of time before we consider a suggestion to be "visible" to the user.
@@ -370,6 +368,18 @@ export class AutoEditsDefaultRendererManager
             acceptReason,
         })
 
+        if (activeRequest.hotStreakId) {
+            // We are in a hot-streak chain, we should move the cursor to this item for when we accept it
+            editor.selection = new vscode.Selection(
+                activeRequest.editPosition,
+                activeRequest.editPosition
+            )
+        }
+
+        // Store this hot-streak ID so that we can use it when searching in the cache
+        // after the cursor moves
+        this.requestManager.lastAcceptedHotStreakId = activeRequest.hotStreakId
+
         if (isRunningInsideAgent()) {
             // We rely on the agent for accepting
             return
@@ -386,24 +396,6 @@ export class AutoEditsDefaultRendererManager
         await editor.edit(editBuilder => {
             editBuilder.replace(activeRequest.codeToReplaceData.range, activeRequest.prediction)
         })
-
-        if (activeRequest.hotStreakId) {
-            const nextCursorPosition = this.requestManager.getNearestHotStreakItem({
-                hotStreakId: activeRequest.hotStreakId,
-                position: activeRequest.editPosition,
-            })?.editPosition
-
-            console.log('GOT NEXT CURSOR POSITION?', nextCursorPosition)
-            if (!nextCursorPosition) {
-                return
-            }
-
-            // Store this hot-streak ID so that we can use it when searching in the cache
-            // after the cursor moves
-            this.requestManager.lastAcceptedHotStreakId = activeRequest.hotStreakId
-
-            this.nextCursorManager.suggest(editor.document.uri, nextCursorPosition)
-        }
     }
 
     protected async rejectActiveEdit(rejectReason: AutoeditRejectReasonMetadata): Promise<void> {
