@@ -49,13 +49,6 @@
       "complexity": 5.3
     },
     {
-      "prefix": "SELECT COUNT(*) as total, department FROM employees",
-      "suffix": "HAVING COUNT(*) > 5;",
-      "ground_truth": " GROUP BY department",
-      "context": "-- SQL query for department statistics\n\n",
-      "complexity": 3.0
-    },
-    {
       "prefix": "def fibonacci(n):\n  if n <= 1:",
       "suffix": "\n\nfor i in range(10):\n  print(fibonacci(i))",
       "ground_truth": "    return n\n  return fibonacci(n-1) + fibonacci(n-2)",
