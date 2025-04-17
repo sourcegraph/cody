@@ -4,7 +4,7 @@ import { authStatus, currentAuthStatus } from '../auth/authStatus'
 import { mockAuthStatus } from '../auth/authStatus'
 import { type AuthStatus, isCodyProUser, isEnterpriseUser } from '../auth/types'
 import { AUTH_STATUS_FIXTURE_AUTHED_DOTCOM } from '../auth/types'
-import { type PickResolvedConfiguration, resolvedConfig } from '../configuration/resolver'
+import { resolvedConfig } from '../configuration/resolver'
 import { FeatureFlag, featureFlagProvider } from '../experimentation/FeatureFlagProvider'
 import { logDebug } from '../logger'
 import {
@@ -16,7 +16,11 @@ import {
     storeLastValue,
     tap,
 } from '../misc/observable'
-import { firstResultFromOperation, pendingOperation } from '../misc/observableOperation'
+import {
+    firstResultFromOperation,
+    pendingOperation,
+    skipPendingOperation,
+} from '../misc/observableOperation'
 import { ClientConfigSingleton } from '../sourcegraph-api/clientConfig'
 import {
     type UserProductSubscription,
@@ -25,7 +29,7 @@ import {
 import { CHAT_INPUT_TOKEN_BUDGET, CHAT_OUTPUT_TOKEN_BUDGET } from '../token/constants'
 import { configOverwrites } from './configOverwrites'
 import { type Model, type ServerModel, modelTier } from './model'
-import { syncModels } from './sync'
+import { type SyncModelConfiguration, syncModels } from './sync'
 import { ModelTag } from './tags'
 import { type ChatModel, type EditModel, type ModelContextWindow, ModelUsage } from './types'
 
@@ -357,22 +361,14 @@ export class ModelsService {
      */
     public modelsChanges: Observable<ModelsData | typeof pendingOperation> = syncModels({
         resolvedConfig: resolvedConfig.pipe(
-            map(
-                (
-                    config
-                ): PickResolvedConfiguration<{
-                    configuration: true
-                    auth: true
-                    clientState: 'modelPreferences'
-                }> => config
-            ),
+            map((config): SyncModelConfiguration => config),
             distinctUntilChanged()
         ),
         authStatus,
         configOverwrites,
         clientConfig: ClientConfigSingleton.getInstance().changes,
         userProductSubscription,
-    })
+    }).pipe(skipPendingOperation())
 
     /**
      * The list of models.
