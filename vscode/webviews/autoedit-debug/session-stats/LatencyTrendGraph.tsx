@@ -10,11 +10,13 @@ export const LatencyTrendGraph: FC<{
         .map((entry, index) => ({
             index,
             e2eLatency: entry.endToEndLatencyMs,
+            networkLatency: entry.networkLatencyMs,
             inferenceLatency: entry.inferenceTimeMs,
         }))
         .reverse() as {
         index: number
         e2eLatency: number
+        networkLatency: number
         inferenceLatency?: number
     }[]
 
@@ -50,6 +52,7 @@ export const LatencyTrendGraph: FC<{
 
         const allLatencies = data.flatMap(d => [
             d.e2eLatency,
+            d.networkLatency,
             d.inferenceLatency !== undefined ? d.inferenceLatency : 0,
         ])
         const maxLatency = Math.max(...allLatencies, 100) * 1.1
@@ -121,6 +124,32 @@ export const LatencyTrendGraph: FC<{
             ctx.fill()
         }
 
+        ctx.beginPath()
+        ctx.strokeStyle = '#ff5733'
+        ctx.lineWidth = 2
+
+        for (let i = 0; i < data.length; i++) {
+            const x = padding.left + (chartWidth * i) / (data.length - 1)
+            const y = padding.top + chartHeight - (chartHeight * data[i].networkLatency) / maxLatency
+
+            if (i === 0) {
+                ctx.moveTo(x, y)
+            } else {
+                ctx.lineTo(x, y)
+            }
+        }
+        ctx.stroke()
+
+        for (let i = 0; i < data.length; i++) {
+            const x = padding.left + (chartWidth * i) / (data.length - 1)
+            const y = padding.top + chartHeight - (chartHeight * data[i].networkLatency) / maxLatency
+
+            ctx.beginPath()
+            ctx.fillStyle = '#ff5733'
+            ctx.arc(x, y, 3, 0, Math.PI * 2)
+            ctx.fill()
+        }
+
         const hasInferenceData = data.some(d => d.inferenceLatency !== undefined)
 
         if (hasInferenceData) {
@@ -172,6 +201,18 @@ export const LatencyTrendGraph: FC<{
         ctx.font = '10px sans-serif'
         ctx.textAlign = 'left'
         ctx.fillText('E2E Latency', width - padding.right - 115, legendY + 3)
+
+        ctx.beginPath()
+        ctx.strokeStyle = '#3b82f6'
+        ctx.lineWidth = 2
+        ctx.moveTo(width - padding.right - 100, legendY)
+        ctx.lineTo(width - padding.right - 80, legendY)
+        ctx.stroke()
+
+        ctx.fillStyle = '#333'
+        ctx.font = '10px sans-serif'
+        ctx.textAlign = 'left'
+        ctx.fillText('Network Latency', width - padding.right - 75, legendY + 3)
 
         if (hasInferenceData) {
             ctx.beginPath()
