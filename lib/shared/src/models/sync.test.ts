@@ -348,7 +348,7 @@ describe('syncModels', () => {
                 ...AUTH_STATUS_FIXTURE_AUTHED,
                 endpoint: 'https://other.example.com',
             })
-            await vi.runOnlyPendingTimersAsync()
+            await vi.runOnlyPendingTimers()
             clientConfigSubject.next({
                 modelsAPIEnabled: true,
             } satisfies Partial<CodyClientConfig> as CodyClientConfig)
