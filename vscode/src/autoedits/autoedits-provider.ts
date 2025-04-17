@@ -189,6 +189,10 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
     private readonly capabilities: AutoeditClientCapabilities
     private readonly features: AutoeditsFeatures
     private suggestionLatencyMetric: Histogram<SuggestionLatencyMetricAttributes>
+    private modelCallLatencyMetric: Histogram<{
+        adapter: string
+        model: string
+    }>
 
     constructor(
         chatClient: ChatClient,
@@ -254,6 +258,13 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                 unit: 'ms',
             }
         )
+        this.modelCallLatencyMetric = meter.createHistogram<{
+            adapter: string
+            model: string
+        }>('autoedit.model.call.latency', {
+            description: 'Autoedit model call latency',
+            unit: 'ms',
+        })
 
         this.statusBar = statusBar
     }
@@ -898,8 +909,9 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
             }
         }
 
-        return this.requestManager.request(requestParams, signal => {
-            return this.getAndProcessModelResponses({
+        return this.requestManager.request(requestParams, async signal => {
+            const startedAt = getTimeNowInMillis()
+            const response = await this.getAndProcessModelResponses({
                 document,
                 position,
                 codeToReplaceData,
@@ -907,6 +919,13 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                 abortSignal: signal,
                 docContext,
             })
+
+            this.modelCallLatencyMetric.record(getTimeNowInMillis() - startedAt, {
+                adapter: this.modelAdapter.constructor.name,
+                model: autoeditsProviderConfig.model,
+            })
+
+            return response
         })
     }
 
