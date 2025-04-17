@@ -86,11 +86,19 @@ export class NextCursorManager implements vscode.Disposable {
     }
 
     public accept(): void {
+        if (!this.activeCursorSuggestion) {
+            return
+        }
+
         // Proxy through to the VS Code command so this can be easily adopted for Agent.
         vscode.commands.executeCommand('cody.nextCursor.accept')
     }
 
     public discard(): void {
+        if (!this.activeCursorSuggestion) {
+            return
+        }
+
         // Proxy through to the VS Code command so this can be easily adopted for Agent.
         vscode.commands.executeCommand('cody.nextCursor.discard')
     }
