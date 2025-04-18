@@ -978,7 +978,7 @@ ${patch}`
                 ...capabilities,
                 // The test client doesn't implement secrets/didChange, so we need to use the
                 // stateless secrets store.
-                secrets: 'stateless',
+                secrets: 'client-managed',
             },
             extensionConfiguration: {
                 anonymousUserID: `${this.name}abcde1234`,

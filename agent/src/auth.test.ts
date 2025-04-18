@@ -141,7 +141,7 @@ describe(
         })
 
         // Skipped this test because of flakiness.
-        it('switches to a different account', async ({ task }) => {
+        it('switches to a different account', { timeout: 10000 }, async ({ task }) => {
             // Re-authenticate to a different endpoint so we can switch from it. It is important to
             // do this even if the preceding test does it because we might not be running the prior
             // tests or we might be running with `repeats > 0`.

@@ -12,17 +12,18 @@ import { localStorage } from '../LocalStorageProvider'
  * @param isEnabled Whether the user has the feature flag enabled or not.
  */
 export function logFirstEnrollmentEvent(key: FeatureFlag, isEnabled: boolean): boolean {
-    // Check if the user is already enrolled in the experiment or not
-    const isEnrolled = localStorage.getEnrollmentHistory(key)
     // We only want to log the enrollment event once in the user's lifetime.
-    if (!isEnrolled) {
+    if (localStorage.tryToEnroll(key)) {
         const eventName = getFeatureFlagEventName(key)
         const args = { variant: isEnabled ? 'treatment' : 'control' }
         telemetryRecorder.recordEvent(`cody.experiment.${eventName}`, 'enrolled', {
             privateMetadata: args,
         })
+
+        return true
     }
-    return isEnrolled
+
+    return false
 }
 
 /**

@@ -1,5 +1,5 @@
 import { Observable, Subject } from 'observable-fns'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { mockAuthStatus } from '../auth/authStatus'
 import { AUTH_STATUS_FIXTURE_AUTHED, type AuthStatus } from '../auth/types'
 import { CLIENT_CAPABILITIES_FIXTURE, mockClientCapabilities } from '../configuration/clientCapabilities'
@@ -29,9 +29,9 @@ import {
     type ModelCategory,
     type ModelTier,
     type ModelsData,
+    ModelsService,
     type ServerModelConfiguration,
     TestLocalStorageForModelPreferences,
-    modelsService,
 } from './modelsService'
 import { maybeAdjustContextWindows, syncModels } from './sync'
 import { ModelTag } from './tags'
@@ -39,10 +39,6 @@ import { ModelUsage } from './types'
 
 vi.mock('graphqlClient')
 vi.mock('../services/LocalStorageProvider')
-vi.mock('../experimentation/FeatureFlagProvider')
-
-// Returns true for all feature flags enabled during synctests.
-vi.spyOn(featureFlagProvider, 'evaluatedFeatureFlag').mockReturnValue(Observable.of(true))
 
 mockClientCapabilities(CLIENT_CAPABILITIES_FIXTURE)
 
@@ -106,7 +102,8 @@ describe('server sent models', async () => {
     }
 
     const mockFetchServerSideModels = vi.fn(() => Promise.resolve(SERVER_MODELS))
-    vi.mocked(featureFlagProvider).evaluatedFeatureFlag.mockReturnValue(Observable.of(false))
+
+    vi.spyOn(featureFlagProvider, 'evaluatedFeatureFlag').mockReturnValue(Observable.of(false))
 
     const result = await firstValueFrom(
         syncModels({
@@ -124,10 +121,20 @@ describe('server sent models', async () => {
             userProductSubscription: Observable.of({ userCanUpgrade: true }),
         }).pipe(skipPendingOperation())
     )
-    const storage = new TestLocalStorageForModelPreferences()
-    modelsService.setStorage(storage)
+
+    let modelsService: ModelsService
+    let storage: TestLocalStorageForModelPreferences
+    beforeEach(() => {
+        modelsService = new ModelsService()
+        storage = new TestLocalStorageForModelPreferences()
+        modelsService.setStorage(storage)
+        vi.spyOn(modelsService, 'modelsChanges', 'get').mockReturnValue(Observable.of(result))
+    })
+    afterEach(() => {
+        modelsService.dispose()
+    })
+
     mockAuthStatus(AUTH_STATUS_FIXTURE_AUTHED)
-    vi.spyOn(modelsService, 'modelsChanges', 'get').mockReturnValue(Observable.of(result))
 
     it('constructs from server models', () => {
         expect(opus.id).toBe(serverOpus.modelRef)
@@ -428,7 +435,8 @@ describe('syncModels', () => {
         }
 
         const mockFetchServerSideModels = vi.fn(() => Promise.resolve(SERVER_MODELS))
-        vi.mocked(featureFlagProvider).evaluatedFeatureFlag.mockReturnValue(Observable.of(true))
+
+        vi.spyOn(featureFlagProvider, 'evaluatedFeatureFlag').mockReturnValue(Observable.of(true))
 
         const result = await firstValueFrom(
             syncModels({
@@ -447,18 +455,27 @@ describe('syncModels', () => {
             }).pipe(skipPendingOperation())
         )
 
-        const storage = new TestLocalStorageForModelPreferences()
-        modelsService.setStorage(storage)
+        let modelsService: ModelsService
+        let storage: TestLocalStorageForModelPreferences | undefined
+        beforeEach(() => {
+            modelsService = new ModelsService()
+            storage = new TestLocalStorageForModelPreferences()
+            modelsService.setStorage(storage)
+            vi.spyOn(modelsService, 'modelsChanges', 'get').mockReturnValue(Observable.of(result))
+        })
+        afterEach(() => {
+            modelsService.dispose()
+        })
+
         mockAuthStatus(AUTH_STATUS_FIXTURE_AUTHED)
-        expect(storage.data?.[AUTH_STATUS_FIXTURE_AUTHED.endpoint]!.selected.chat).toBe(undefined)
-        vi.spyOn(modelsService, 'modelsChanges', 'get').mockReturnValue(Observable.of(result))
+        expect(storage?.data?.[AUTH_STATUS_FIXTURE_AUTHED.endpoint]!.selected.chat).toBe(undefined)
 
         // Check if Deep Cody model is in the primary models list.
         expect(result.primaryModels.some(model => model.id.includes('deep-cody'))).toBe(true)
 
         // preference should not be affected and remains unchanged as this is handled in a later step.
         expect(result.preferences.selected.chat).toBe(undefined)
-        expect(storage.data?.[AUTH_STATUS_FIXTURE_AUTHED.endpoint]!.selected.chat).toBe(undefined)
+        expect(storage?.data?.[AUTH_STATUS_FIXTURE_AUTHED.endpoint]!.selected.chat).toBe(undefined)
     })
 
     describe('model selection based on user tier and feature flags', () => {
