@@ -42,7 +42,7 @@ class CycleCodyAutocompleteActionHandler(private val cycleDirection: CycleDirect
       ApplicationManager.getApplication().invokeLater {
         CodyAutocompleteManager.instance.let {
           it.clearAutocompleteSuggestions(editor)
-          it.displayAutocomplete(editor, caret.offset, newItems, editor.inlayModel)
+          it.displayInlay(editor, caret.offset, newItems)
         }
         autocompleteItemsCache[cacheKey] = newItems
       }
