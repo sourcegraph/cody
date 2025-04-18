@@ -176,6 +176,8 @@ object CodyEditorUtil {
   }
 
   fun findFileOrScratch(project: Project, uriString: String): VirtualFile? {
+    println(project.basePath ?: "<null>")
+    println(uriString)
     val uri = CodyFileUri.parse(uriString)
     if (uri.isUntitled) {
       return ScratchRootType.getInstance()
