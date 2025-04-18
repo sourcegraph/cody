@@ -27,7 +27,6 @@ import com.intellij.util.concurrency.annotations.RequiresEdt
 import com.intellij.util.io.createFile
 import com.sourcegraph.cody.agent.protocol_extensions.toOffsetRange
 import com.sourcegraph.cody.agent.protocol_generated.Range
-import com.sourcegraph.common.CodyFileUri
 import com.sourcegraph.config.ConfigUtil
 import com.sourcegraph.utils.ThreadingUtil.runInEdtAndGet
 import java.net.URISyntaxException
@@ -178,14 +177,13 @@ object CodyEditorUtil {
   }
 
   fun findFileOrScratch(project: Project, uriString: String): VirtualFile? {
-    return null
-    val uri = CodyFileUri.parse(uriString)
-    if (uri.isUntitled) {
+    val fixedUri = fixUriString(uriString)
+    if (uriString.startsWith("untitled://")) {
       return ScratchRootType.getInstance()
-          .findFile(project, uri.toString(), ScratchFileService.Option.existing_only)
+          .findFile(project, fixedUri, ScratchFileService.Option.existing_only)
     } else {
-      val path = uri.toPath(project.basePath)
-      return VirtualFileManager.getInstance().refreshAndFindFileByNioPath(path)
+      val uri = VfsUtil.toUri(fixedUri) ?: return null
+      return VirtualFileManager.getInstance().refreshAndFindFileByNioPath(uri.toPath())
     }
   }
 
@@ -208,7 +206,6 @@ object CodyEditorUtil {
       overwrite: Boolean = false
   ): VirtualFile? {
     try {
-      return null
       val fileUri = VfsUtil.toUri(fixUriString(uriString)) ?: return null
       if (overwrite || fileUri.toPath().notExists()) {
         fileUri.toPath().parent?.createDirectories()
