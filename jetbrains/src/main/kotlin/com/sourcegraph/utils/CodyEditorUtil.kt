@@ -20,6 +20,7 @@ import com.intellij.openapi.project.ProjectManager
 import com.intellij.openapi.util.Key
 import com.intellij.openapi.util.TextRange
 import com.intellij.openapi.vfs.LocalFileSystem
+import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.VirtualFileManager
 import com.intellij.util.concurrency.annotations.RequiresEdt
@@ -29,6 +30,7 @@ import com.sourcegraph.cody.agent.protocol_generated.Range
 import com.sourcegraph.common.CodyFileUri
 import com.sourcegraph.config.ConfigUtil
 import com.sourcegraph.utils.ThreadingUtil.runInEdtAndGet
+import java.net.URISyntaxException
 import kotlin.io.path.*
 
 object CodyEditorUtil {
@@ -186,25 +188,52 @@ object CodyEditorUtil {
     }
   }
 
+  @JvmStatic
+  fun fixUriString(uriString: String): String {
+    if (uriString.startsWith("untitled://")) {
+      // IntelliJ does not support in-memory files so we are using scratch files instead
+      return uriString.substringAfterLast(':').trimStart('/', '\\')
+    } else {
+      // Check `ProtocolTextDocumentExt.normalizeToVscUriFormat` for explanation
+      val patchedUri = uriString.replace("file://wsl.localhost/", "file:////wsl.localhost/")
+      return if (patchedUri.startsWith("file://")) patchedUri else "file://$patchedUri"
+    }
+  }
+
   fun createFileOrUseExisting(
       project: Project,
       uriString: String,
       content: String? = null,
       overwrite: Boolean = false
   ): VirtualFile? {
-    val path = CodyFileUri.parse(uriString).toPath(project.basePath)
-    if (overwrite || path.notExists()) {
-      path.parent.createDirectories()
-      path.deleteIfExists()
-      path.createFile()
-      val vf = LocalFileSystem.getInstance().refreshAndFindFileByNioFile(path)
+    try {
+      val fileUri = VfsUtil.toUri(fixUriString(uriString)) ?: return null
+      if (overwrite || fileUri.toPath().notExists()) {
+        fileUri.toPath().parent?.createDirectories()
+        fileUri.toPath().deleteIfExists()
+        fileUri.toPath().createFile()
+        val vf = LocalFileSystem.getInstance().refreshAndFindFileByNioFile(fileUri.toPath())
 
-      content?.let {
-        WriteCommandAction.runWriteCommandAction(project) { vf?.setBinaryContent(it.toByteArray()) }
+        content?.let {
+          WriteCommandAction.runWriteCommandAction(project) {
+            vf?.setBinaryContent(it.toByteArray())
+          }
+        }
       }
-      return vf
+
+      return LocalFileSystem.getInstance().refreshAndFindFileByNioFile(fileUri.toPath())
+    } catch (e: URISyntaxException) {
+      val fileName = uriString.substringAfterLast(':').trimStart('/', '\\')
+      val fileType = FileTypeRegistry.getInstance().getFileTypeByFileName(fileName)
+      val language = LanguageUtil.getFileTypeLanguage(fileType) ?: PlainTextLanguage.INSTANCE
+      return ScratchRootType.getInstance()
+          .createScratchFile(
+              project,
+              java.net.URLDecoder.decode(fileName, "UTF-8"),
+              language,
+              content ?: "",
+              ScratchFileService.Option.create_if_missing)
     }
-    return VirtualFileManager.getInstance().refreshAndFindFileByNioPath(path)
   }
 
   fun createScratchOrUseExisting(
