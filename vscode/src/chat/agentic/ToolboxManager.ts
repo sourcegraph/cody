@@ -81,10 +81,7 @@ class ToolboxManager {
         featureFlagProvider.evaluateFeatureFlag(FeatureFlag.ContextAgentDefaultChatModel),
         featureFlagProvider.evaluateFeatureFlag(FeatureFlag.DeepCodyShellContext),
         userProductSubscription.pipe(distinctUntilChanged()),
-        modelsService.modelsChanges.pipe(
-            map(models => (models === pendingOperation ? null : models)),
-            distinctUntilChanged()
-        ),
+        modelsService.modelsChanges.pipe(distinctUntilChanged()),
         this.changeNotifications.pipe(startWith(undefined))
     ).pipe(
         map(([auth, deepCodyEnabled, useDefaultChatModel, instanceShellContextFlag, sub, models]) => {
