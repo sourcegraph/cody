@@ -178,6 +178,7 @@ object CodyEditorUtil {
   }
 
   fun findFileOrScratch(project: Project, uriString: String): VirtualFile? {
+    return null
     val uri = CodyFileUri.parse(uriString)
     if (uri.isUntitled) {
       return ScratchRootType.getInstance()
@@ -207,6 +208,7 @@ object CodyEditorUtil {
       overwrite: Boolean = false
   ): VirtualFile? {
     try {
+      return null
       val fileUri = VfsUtil.toUri(fixUriString(uriString)) ?: return null
       if (overwrite || fileUri.toPath().notExists()) {
         fileUri.toPath().parent?.createDirectories()
