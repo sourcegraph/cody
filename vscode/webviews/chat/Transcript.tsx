@@ -1,10 +1,8 @@
 import {
     type ChatMessage,
-    ContextItemSource,
     type Guardrails,
     type Model,
     type NLSSearchDynamicFilter,
-    REMOTE_FILE_PROVIDER_URI,
     type SerializedPromptEditorValue,
     deserializeContextItem,
     isAbortErrorOrSocketHangUp,
@@ -24,7 +22,6 @@ import {
     useRef,
     useState,
 } from 'react'
-import { URI } from 'vscode-uri'
 import type { UserAccountInfo } from '../Chat'
 import type { ApiPostMessage } from '../Chat'
 import { getVSCodeAPI } from '../utils/VSCodeApi'
@@ -96,39 +93,6 @@ export const Transcript: FC<TranscriptProps> = props => {
 
     const lastHumanEditorRef = useRef<PromptEditorRefAPI | null>(null)
 
-    const onAddToFollowupChat = useCallback(
-        ({
-            repoName,
-            filePath,
-            fileURL,
-        }: {
-            repoName: string
-            filePath: string
-            fileURL: string
-        }) => {
-            lastHumanEditorRef.current?.addMentions([
-                {
-                    providerUri: REMOTE_FILE_PROVIDER_URI,
-                    provider: 'openctx',
-                    type: 'openctx',
-                    uri: URI.parse(fileURL),
-                    title: filePath.split('/').at(-1) ?? filePath,
-                    description: filePath,
-                    source: ContextItemSource.User,
-                    mention: {
-                        uri: fileURL,
-                        description: filePath,
-                        data: {
-                            repoName,
-                            filePath: filePath,
-                        },
-                    },
-                },
-            ])
-        },
-        []
-    )
-
     return (
         <div
             className={clsx(' tw-px-8 tw-py-4 tw-flex tw-flex-col tw-gap-4', {
@@ -159,11 +123,13 @@ export const Transcript: FC<TranscriptProps> = props => {
                         )}
                         smartApply={smartApply}
                         editorRef={
-                            interaction.humanMessage.index === -1 && !messageInProgress
+                            ((interaction.humanMessage.intent === 'agentic' &&
+                                interaction.humanMessage.index === -1) ||
+                                i === interactions.length - 1) &&
+                            !messageInProgress
                                 ? lastHumanEditorRef
                                 : undefined
                         }
-                        onAddToFollowupChat={onAddToFollowupChat}
                         manuallySelectedIntent={manuallySelectedIntent}
                         setManuallySelectedIntent={setManuallySelectedIntent}
                     />
@@ -257,11 +223,6 @@ interface TranscriptInteractionProps
     isLastSentInteraction: boolean
     priorAssistantMessageIsLoading: boolean
     editorRef?: React.RefObject<PromptEditorRefAPI | null>
-    onAddToFollowupChat?: (props: {
-        repoName: string
-        filePath: string
-        fileURL: string
-    }) => void
     manuallySelectedIntent: ChatMessage['intent']
     setManuallySelectedIntent: (intent: ChatMessage['intent']) => void
 }
