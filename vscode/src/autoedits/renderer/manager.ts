@@ -368,6 +368,10 @@ export class AutoEditsDefaultRendererManager
             acceptReason,
         })
 
+        // If we have a hot-streak ID, store it so that we can use it when searching in the cache
+        // in the next call to `provideInlineCompletionItems`.
+        this.requestManager.lastAcceptedHotStreakId = activeRequest.hotStreakId
+
         if (isRunningInsideAgent()) {
             // We rely on the agent for accepting
             return
@@ -384,24 +388,6 @@ export class AutoEditsDefaultRendererManager
         await editor.edit(editBuilder => {
             editBuilder.replace(activeRequest.codeToReplaceData.range, activeRequest.prediction)
         })
-
-        if (activeRequest.hotStreakId) {
-            const nextCursorPosition = this.requestManager.getNearestHotStreakItem({
-                hotStreakId: activeRequest.hotStreakId,
-                position: activeRequest.editPosition,
-            })?.editPosition
-
-            if (!nextCursorPosition) {
-                return
-            }
-
-            // Store this hot-streak ID so that we can use it when searching in the cache
-            // after the cursor moves
-            this.requestManager.lastAcceptedHotStreakId = activeRequest.hotStreakId
-
-            editor.selection = new vscode.Selection(nextCursorPosition, nextCursorPosition)
-            editor.revealRange(editor.selection, vscode.TextEditorRevealType.Default)
-        }
     }
 
     protected async rejectActiveEdit(rejectReason: AutoeditRejectReasonMetadata): Promise<void> {
