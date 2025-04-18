@@ -106,7 +106,7 @@ export class MCPManager {
     private static readonly DEBOUNCE_TIMEOUT = 1000 // 1 second debounce timeout
 
     private connectionManager: MCPConnectionManager
-    private serverManager: MCPServerManager
+    public serverManager: MCPServerManager
     private disposables: vscode.Disposable[] = []
     private debouncedSync: (mcpServers: Record<string, any>) => Promise<void>
 
