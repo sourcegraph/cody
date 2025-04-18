@@ -2,10 +2,7 @@ import * as Form from '@radix-ui/react-form'
 import { ChevronDown, ChevronRight } from 'lucide-react'
 import type { FC } from 'react'
 import { useState } from 'react'
-import {
-    type AutoeditFeedbackData,
-    autoeditDiscardReason,
-} from '../../../src/autoedits/analytics-logger/types'
+import type { AutoeditFeedbackData } from '../../../src/autoedits/analytics-logger/types'
 import { AutoeditDataSDK } from '../../../src/autoedits/debug-panel/autoedit-data-sdk'
 import type { AutoeditRequestDebugState } from '../../../src/autoedits/debug-panel/debug-store'
 import { Label } from '../../components/shadcn/ui/label'
@@ -23,19 +20,7 @@ export const FeedbackSection: FC<FeedbackSectionProps> = ({ entry }) => {
     const [isSubmitting, setIsSubmitting] = useState(false)
 
     const codeToReplaceData = entry.state.codeToReplaceData
-    const {
-        filePath,
-        context,
-        prediction: initialPrediction,
-    } = AutoeditDataSDK.extractAutoeditData(entry)
-    let prediction = initialPrediction
-
-    if (
-        entry.state.phase === 'discarded' &&
-        entry.state.payload.discardReason === autoeditDiscardReason.predictionEqualsCodeToRewrite
-    ) {
-        prediction = codeToReplaceData.codeToRewrite
-    }
+    const { filePath, context, prediction } = AutoeditDataSDK.extractAutoeditData(entry)
 
     if (!prediction) {
         return (

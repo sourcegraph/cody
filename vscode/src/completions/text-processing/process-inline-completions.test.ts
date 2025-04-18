@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
+import { range } from '../../editor/utils/virtual-text-document'
 import type { Range } from '../../testutils/mocks'
-import { range } from '../../testutils/textDocument'
 import { documentAndPosition } from '../test-helpers'
 import type { InlineCompletionItem } from '../types'
 

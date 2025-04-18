@@ -357,11 +357,7 @@ export class AutoEditsDefaultRendererManager
             return this.rejectActiveEdit(autoeditRejectReason.acceptActiveEdit)
         }
 
-        this.requestManager.removeFromCache({
-            uri: activeRequest.document.uri.toString(),
-            documentVersion: activeRequest.document.version,
-            position: activeRequest.position,
-        })
+        this.requestManager.removeFromCache(activeRequest.cacheId)
 
         // Reset the testing promise when accepting
         this.testing_completionSuggestedPromise = undefined
@@ -388,17 +384,31 @@ export class AutoEditsDefaultRendererManager
         await editor.edit(editBuilder => {
             editBuilder.replace(activeRequest.codeToReplaceData.range, activeRequest.prediction)
         })
+
+        if (activeRequest.hotStreakId) {
+            const nextCursorPosition = this.requestManager.getNearestHotStreakItem({
+                hotStreakId: activeRequest.hotStreakId,
+                position: activeRequest.editPosition,
+            })?.editPosition
+
+            if (!nextCursorPosition) {
+                return
+            }
+
+            // Store this hot-streak ID so that we can use it when searching in the cache
+            // after the cursor moves
+            this.requestManager.lastAcceptedHotStreakId = activeRequest.hotStreakId
+
+            editor.selection = new vscode.Selection(nextCursorPosition, nextCursorPosition)
+            editor.revealRange(editor.selection, vscode.TextEditorRevealType.Default)
+        }
     }
 
     protected async rejectActiveEdit(rejectReason: AutoeditRejectReasonMetadata): Promise<void> {
         const { activeRequest, decorator } = this
 
         if (activeRequest) {
-            this.requestManager.removeFromCache({
-                uri: activeRequest.document.uri.toString(),
-                documentVersion: activeRequest.document.version,
-                position: activeRequest.position,
-            })
+            this.requestManager.removeFromCache(activeRequest.cacheId)
         }
 
         // Reset the testing promise when rejecting

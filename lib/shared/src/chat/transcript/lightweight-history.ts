@@ -1,6 +1,16 @@
 import type { SerializedChatTranscript } from '.'
 
 /**
+ * Enum representing the type of chat history.
+ * - Full: Contains the complete chat history with all interactions.
+ * - Lightweight: Contains only essential data for displaying in the history list.
+ */
+export enum ChatHistoryType {
+    Full = 'full',
+    Lightweight = 'lightweight',
+}
+
+/**
  * A lightweight version of SerializedChatTranscript containing only the essential
  * data needed for displaying in the history list.
  */

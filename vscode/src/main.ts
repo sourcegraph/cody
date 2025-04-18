@@ -1,5 +1,4 @@
-import _ from 'lodash'
-import { isEqual } from 'lodash'
+import _, { isEqual } from 'lodash'
 import { filter, map } from 'observable-fns'
 import * as vscode from 'vscode'
 
@@ -773,6 +772,7 @@ function registerAutoEdits({
                     FeatureFlag.CodyAutoEditExperimentEnabledFeatureFlag
                 ),
                 featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutoEditInlineRendering),
+                featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutoEditHotStreak),
                 featureFlagProvider.evaluateFeatureFlag(
                     FeatureFlag.CodyAutoEditUseWebSocketForFireworksConnections
                 )
@@ -791,6 +791,7 @@ function registerAutoEdits({
                             authStatus,
                             autoeditFeatureFlagEnabled,
                             autoeditInlineRenderingEnabled,
+                            autoeditHotStreakEnabled,
                             autoeditUseWebSocketEnabled,
                         ]) => {
                             return createAutoEditsProvider({
@@ -799,6 +800,7 @@ function registerAutoEdits({
                                 chatClient,
                                 autoeditFeatureFlagEnabled,
                                 autoeditInlineRenderingEnabled,
+                                autoeditHotStreakEnabled,
                                 autoeditUseWebSocketEnabled,
                                 fixupController,
                                 statusBar,

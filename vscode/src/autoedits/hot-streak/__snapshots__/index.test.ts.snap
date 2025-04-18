@@ -1,0 +1,181 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`processHotStreakResponses > does emit hot streaks when enabled 1`] = `
+"
+Code to Rewrite:
+
+export function isEvenOrOdd(numberToChange: number): boolean {
+    // Check if target is 0
+    if (numberToChange === 0) {
+        return true
+    }
+
+Prediction:
+
+export function isEvenOrOdd(target: number): boolean {
+    if (target === 0) {
+        return true
+    }
+
+            
+Code to Rewrite:
+
+export function isEvenOrOdd(target: number): boolean {
+    if (target === 0) {
+        return true
+    }
+    // Check if target is 1
+    if (numberToChange === 1) {
+        return false
+
+Prediction:
+
+export function isEvenOrOdd(target: number): boolean {
+    if (target === 0) {
+        return true
+    }
+    if (target === 1) {
+        return false
+
+            
+Code to Rewrite:
+
+export function isEvenOrOdd(target: number): boolean {
+    if (target === 0) {
+        return true
+    }
+    if (target === 1) {
+        return false
+    }
+    // Check if target is 2
+    if (numberToChange === 2) {
+        return true
+
+Prediction:
+
+export function isEvenOrOdd(target: number): boolean {
+    if (target === 0) {
+        return true
+    }
+    if (target === 1) {
+        return false
+    }
+    if (target === 2) {
+        return true
+
+            
+Code to Rewrite:
+
+export function isEvenOrOdd(target: number): boolean {
+    if (target === 0) {
+        return true
+    }
+    if (target === 1) {
+        return false
+    }
+    if (target === 2) {
+        return true
+    }
+    // Check if target is 3
+    if (numberToChange === 3) {
+        return false
+
+Prediction:
+
+export function isEvenOrOdd(target: number): boolean {
+    if (target === 0) {
+        return true
+    }
+    if (target === 1) {
+        return false
+    }
+    if (target === 2) {
+        return true
+    }
+    if (target === 3) {
+        return false
+
+            
+Code to Rewrite:
+
+export function isEvenOrOdd(target: number): boolean {
+    if (target === 0) {
+        return true
+    }
+    if (target === 1) {
+        return false
+    }
+    if (target === 2) {
+        return true
+    }
+    if (target === 3) {
+        return false
+    }
+    // Check if target is 4
+    if (numberToChange === 4) {
+        return true
+
+Prediction:
+
+export function isEvenOrOdd(target: number): boolean {
+    if (target === 0) {
+        return true
+    }
+    if (target === 1) {
+        return false
+    }
+    if (target === 2) {
+        return true
+    }
+    if (target === 3) {
+        return false
+    }
+    if (target === 4) {
+        return true
+
+            
+Code to Rewrite:
+
+export function isEvenOrOdd(target: number): boolean {
+    if (target === 0) {
+        return true
+    }
+    if (target === 1) {
+        return false
+    }
+    if (target === 2) {
+        return true
+    }
+    if (target === 3) {
+        return false
+    }
+    if (target === 4) {
+        return true
+    }
+    // Check if target is 5
+    if (numberToChange === 5) {
+        return false
+
+Prediction:
+
+export function isEvenOrOdd(target: number): boolean {
+    if (target === 0) {
+        return true
+    }
+    if (target === 1) {
+        return false
+    }
+    if (target === 2) {
+        return true
+    }
+    if (target === 3) {
+        return false
+    }
+    if (target === 4) {
+        return true
+    }
+    if (target === 5) {
+        return false
+
+            "
+`;

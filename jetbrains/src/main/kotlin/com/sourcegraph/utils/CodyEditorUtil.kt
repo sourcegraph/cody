@@ -23,6 +23,7 @@ import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.VirtualFileManager
 import com.intellij.util.concurrency.annotations.RequiresEdt
+import com.intellij.util.io.createFile
 import com.sourcegraph.cody.agent.protocol_extensions.toOffsetRange
 import com.sourcegraph.cody.agent.protocol_generated.Range
 import com.sourcegraph.common.CodyFileUri
@@ -188,11 +189,13 @@ object CodyEditorUtil {
   fun createFileOrUseExisting(
       project: Project,
       uriString: String,
-      content: String? = null
+      content: String? = null,
+      overwrite: Boolean = false
   ): VirtualFile? {
     val path = CodyFileUri.parse(uriString).toPath(project.basePath)
-    if (!path.exists()) {
+    if (overwrite || path.notExists()) {
       path.parent.createDirectories()
+      path.deleteIfExists()
       path.createFile()
       val vf = LocalFileSystem.getInstance().refreshAndFindFileByNioFile(path)
 
