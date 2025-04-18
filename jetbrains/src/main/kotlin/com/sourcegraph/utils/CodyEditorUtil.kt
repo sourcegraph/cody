@@ -189,6 +189,8 @@ object CodyEditorUtil {
     }
   }
 
+  // test
+
   fun findFileOrScratch(project: Project, uriString: String): VirtualFile? {
     val fixedUri = fixUriString(uriString)
     if (uriString.startsWith("untitled://")) {
