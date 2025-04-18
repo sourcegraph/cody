@@ -54,99 +54,105 @@ export class Dog implements Animal {
 `;
 
 exports[`Agent > Commands > commands/explain 1`] = `
-"Sure! This is the TypeScript code for defining an interface named \`Animal\`. Here's an explanation for it:
+"The Code: \`export interface Animal {\`
+\`name: string\`
+\`makeAnimalSound(): string\`
+\`isMammal: boolean\`
+\`}\`
 
-The Animal Interface
--------------------
+Purpose: This code defines an \`Animal\` interface in TypeScript, which is a way to ensure that any object that says it meets the \`Animal\` interface requirements actually does. By defining an interface, you are creating a blueprint for an object, specifying the structure that the object should have.
 
-The \`Animal\` interface defines the required properties and methods for an object that represents an animal. In simple terms, it outlines what an animal **should have** or **should do**. In this case, an animal has a \`name\` property (a string), a \`makeAnimalSound()\` method (returns a string), and an \`isMammal\` property (a boolean value). Interfaces in TypeScript are used to ensure consistency and cohesion in object-oriented programming. Here, the \`Animal\` interface can be used for type checking and ensuring that any objects implementing this interface will have the essential properties and methods of an animal.
+Inputs: This particular interface does not take any inputs, as it only provides a structure for objects to follow. Interfaces in TypeScript don't actually contain any implementation or logic, it is merely a definition of an object's shape and expected behaviors.
 
-Purpose, Inputs, and Outputs
-----------------------------
+Outputs: No direct outputs are produced by this interface. Instead, it serves as a guide for objects that will implement the \`Animal\` interface. The outputs come from the objects that implement this interface, as they will need to adhere to its structure and behavior requirements.
 
-The \`Animal\` interface doesn't have any specific inputs or outputs, as it deals with defining the structure for object types. When using this interface in your code, if you create an object implementing it, the object would be expected to provide a \`name\`, implement the \`makeAnimalSound()\` method, and set the \`isMammal\` property.
+Logic and Algorithm: As an interface, this code does not execute any logic or algorithms itself. However, when an object claims to implement the \`Animal\` interface, it will need to include properties and methods matching those defined here. When an object claims to implement this interface, the TypeScript compiler will ensure that the object adheres to the structure and required methods defined in the \`Animal\` interface, helping to ensure consistency and correctness in the codebase.
 
-The primary purpose of this \`Animal\` interface is to give guidance and maintain consistency in the code and between objects representing animals. This aids in better code organization, code understanding, and developer communication.
-
-In essence, this interface gives us a blueprint for creating structurally consistent animal objects. It helps ensure that wherever we use this \`Animal\` interface, the core traits of an animal (its \`name\`, \`makeAnimalSound()\` method, and \`isMammal\` property) will be properly addressed.
-
-Achieving the Purpose
---------------------
-
-By declaring the \`Animal\` interface, you create a pattern that other parts of the codebase can adhere to when building objects intended to emulate animal entities. This enables developers to manage and visualize all animal objects with similar structures, ensuring every animal object shares the same building blocks.
-
-Using this interface, you can create an instance of an object representing a specific animal and ensure it has the required properties and methods (\`name\`, \`makeAnimalSound()\`, and \`isMammal\`). This consistency guarantees clear and predictable functionality while dealing with the animal objects throughout the codebase.
-
-To sum up, the \`Animal\` interface, as shown in the code, lays the foundation for declaring the necessary structure and functionality of an animal object. It doesn't produce any specific outputs or handle particular inputs but rather guides developers to build objects that fit a common animal pattern, enhancing communication, manageability, and functionality."
+Important Logic Flows / Data Transformations: There are no specific logic flows or data transformations in this piece of code, since it is an interface. An interface is mainly used to define the structure and expected behavior for objects, without providing any implementation details. However, once an object implements this interface, its logic flows and data transformations will adhere to the rules laid out in the \`Animal\` interface, ensuring that all animals in your codebase behave consistently and as intended."
 `;
 
 exports[`Agent > Commands > commands/smell 1`] = `
-"Based on my analysis of the provided code, here are some suggestions for potential improvements:
+"Based on the provided code context, here are five suggestions for improvement:
 
-1. **Add a type annotation for the \`makeAnimalSound()\` method return type.** Although the code does not include an implementation for this method, it would be a good practice to provide type annotations for all methods that return a value. This can help prevent errors and improve the maintainability of the code.
+1. Add an access modifier to the \`Animal\` interface
 
-\`\`\`typescript
-makeAnimalSound(): string
+Currently, there is no access modifier specified for the \`Animal\` interface. By default, interfaces are internal to the module, and it may be desirable to make the interface public.
+
 \`\`\`
-
-2. **Consider capitalizing the \`isMammal\` property name accordingly.** In TypeScript, property names should use camelCase, so it would be more appropriate to name this property \`isMammal\`.
-
-\`\`\`typescript
-interface Animal {
-    name: string
-    makeAnimalSound(): string
-    isMammal: boolean
+export interface Animal {
+  name: string
+  makeAnimalSound(): string
+  isMammal: boolean
 }
 \`\`\`
 
-3. **Add a constructor to initialize the properties.** This can help ensure that instances of the \`Animal\` interface are always initialized with the correct values.
+2. Include a type annotation for the \`makeAnimalSound\` method
 
-\`\`\`typescript
-interface Animal {
-    name: string
-    makeAnimalSound(): string
-    isMammal: boolean
+It is a good practice to include type annotations for all members of the interface, including methods. This will provide a clearer understanding of the expected return type for users of the \`Animal\` interface.
 
-    constructor(name: string, isMammal: boolean) {
-        this.name = name
-        this.isMammal = isMammal
-    }
+\`\`\`
+export interface Animal {
+  name: string
+  makeAnimalSound(): string
+  isMammal: boolean
 }
 \`\`\`
 
-4. **Add JSDoc comments to provide more context for users of the \`Animal\` interface.** JSDoc comments can help developers understand how to use the interface and what its properties and methods are used for.
+3. Consider adding a documentation comment to the \`Animal\` interface
 
-\`\`\`typescript
+Adding a documentation comment to the \`Animal\` interface will provide users of the interface with a clear understanding of its purpose and requirements.
+
+\`\`\`
 /**
- * An interface representing an animal.
+ * An interface describing an animal.
  */
-interface Animal {
-    /**
-     * The animal's name.
-     */
-    name: string
-
-    /**
-     * A method that the animal uses to make a sound.
-     */
-    makeAnimalSound(): string
-
-    /**
-     * A boolean indicating whether the animal is a mammal.
-     */
-    isMammal: boolean
-
-    /**
-     * Constructs a new \`Animal\` instance.
-     *
-     * @param name The animal's name.
-     * @param isMammal A boolean indicating whether the animal is a mammal.
-     */
-    constructor(name: string, isMammal: boolean)
+export interface Animal {
+  name: string
+  makeAnimalSound(): string
+  isMammal: boolean
 }
 \`\`\`
 
-5. **Consider separating the \`Animal\` interface into separate interfaces or classes.** Depending on the complexity of the application, it may be more appropriate to split the \`Animal\` interface into smaller, more focused interfaces or classes. This can help improve the modularity and maintainability of the code.
+4. Use \`readonly\` for the \`name\` property
 
-Overall, the provided code is well-written and generally follows sound design principles. However, implementing these suggestions can help make the code more robust, efficient, and align with best practices."
+Adding the \`readonly\` keyword to the \`name\` property ensures that it cannot be modified once set.
+
+\`\`\`
+/**
+ * An interface describing an animal.
+ */
+export interface Animal {
+  readonly name: string
+  makeAnimalSound(): string
+  isMammal: boolean
+}
+\`\`\`
+
+5. Consider spliting the Animal interface into smaller interfaces
+
+If the \`Animal\` interface contains a large number of properties, it may be beneficial to split it into smaller interfaces. This will help to reduce the complexity of the interface and make it easier to understand.
+
+\`\`\`
+/**
+ * An interface describing an animal's basic information.
+ */
+export interface AnimalBasicInformation {
+  readonly name: string
+  isMammal: boolean
+}
+
+/**
+ * An interface describing an animal's sounds.
+ */
+export interface AnimalSound {
+  makeAnimalSound(): string
+}
+
+/**
+ * An interface describing an animal combining basic information and sounds.
+ */
+export interface Animal extends AnimalBasicInformation, AnimalSound {}
+\`\`\`
+
+In summary, the provided code generally follows sound design principles. However, there are opportunities to enhance code quality by making use of access modifiers, type annotations, documentation comments, and considering the split of interfaces. By making these changes, it will help to improve code readability, maintainability, and consistency."
 `;
