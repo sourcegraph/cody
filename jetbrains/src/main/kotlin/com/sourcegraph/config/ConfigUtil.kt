@@ -198,7 +198,7 @@ object ConfigUtil {
   fun setCustomConfiguration(project: Project, customConfigContent: String): VirtualFile? {
     val config = ConfigFactory.parseString(customConfigContent).resolve()
     val content = config.root().render(renderOptions)
-    return CodyEditorUtil.createFileOrScratchFromUntitled(
+    return CodyEditorUtil.createFileOrUseExisting(
         project, getSettingsFile(project).toUri().toString(), content = content, overwrite = true)
         ?: run {
           logger.warn("Could not create settings file")
