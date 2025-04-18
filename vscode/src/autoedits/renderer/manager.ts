@@ -18,6 +18,7 @@ import {
     autoeditDiscardReason,
     autoeditRejectReason,
 } from '../analytics-logger'
+import { NextCursorManager } from './next-cursor-manager'
 import { autoeditsProviderConfig } from '../autoedits-config'
 import type { CodeToReplaceData } from '../prompt/prompt-utils'
 import {
@@ -113,6 +114,7 @@ export class AutoEditsDefaultRendererManager
     protected activeRequestId: AutoeditRequestID | null = null
     protected disposables: vscode.Disposable[] = []
     protected decorator: AutoEditsDecorator | null = null
+    protected nextCursorManager = new NextCursorManager()
 
     /**
      * The amount of time before we consider a suggestion to be "visible" to the user.
@@ -242,6 +244,18 @@ export class AutoEditsDefaultRendererManager
         this.decorator = this.createDecorator(vscode.window.activeTextEditor!)
         this.activeRequestId = requestId
         autoeditAnalyticsLogger.markAsSuggested(requestId)
+
+        // Show tab-to-jump tooltip if this is part of a hot streak and has a position
+        if ('hotStreakId' in request && request.hotStreakId && 'position' in request) {
+            const nextCursorPosition = this.requestManager.getNearestHotStreakItem({
+                hotStreakId: request.hotStreakId,
+                position: request.position,
+            })?.editPosition
+
+            if (nextCursorPosition) {
+                this.showTabToJumpHoverTooltip(nextCursorPosition, request.document)
+            }
+        }
 
         // Clear any existing timeouts, only one suggestion can be shown at a time
         clearTimeout(this.autoeditSuggestedTimeoutId)
@@ -385,6 +399,12 @@ export class AutoEditsDefaultRendererManager
             editBuilder.replace(activeRequest.codeToReplaceData.range, activeRequest.prediction)
         })
 
+        // Move cursor to the accepted edit position
+        const newLine = activeRequest.editPosition.line
+        const newLineLength = editor.document.lineAt(newLine).text.length
+        const lineStart = new vscode.Position(newLine, newLineLength)
+        editor.selection = new vscode.Selection(lineStart, lineStart)
+
         if (activeRequest.hotStreakId) {
             const nextCursorPosition = this.requestManager.getNearestHotStreakItem({
                 hotStreakId: activeRequest.hotStreakId,
@@ -399,8 +419,79 @@ export class AutoEditsDefaultRendererManager
             // after the cursor moves
             this.requestManager.lastAcceptedHotStreakId = activeRequest.hotStreakId
 
-            editor.selection = new vscode.Selection(nextCursorPosition, nextCursorPosition)
             editor.revealRange(editor.selection, vscode.TextEditorRevealType.Default)
+            // Show tooltip at the new cursor position
+            this.showTabToJumpHoverTooltip(nextCursorPosition, activeRequest.document)
+        }
+    }
+
+    private tabToJumpHoverDisposable: vscode.Disposable | null = null
+    private showTabToJumpHoverTooltip(position: vscode.Position, document: vscode.TextDocument): void {
+        // First, dispose of any existing hover disposable
+        this.tabToJumpHoverDisposable?.dispose()
+        this.tabToJumpHoverDisposable = null
+
+        const editor = vscode.window.activeTextEditor
+        if (editor && editor.document.uri.toString() === document.uri.toString()) {
+            // // Automatically accept the edit at nextCursorPosition
+            // if (this.activeRequest?.hotStreakId) {
+            //     const nextItem = this.requestManager.getNearestHotStreakItem({
+            //         hotStreakId: this.activeRequest.hotStreakId,
+            //         position,
+            //     })
+
+            //     if (nextItem) {
+            //         // Move cursor to the next position
+            //         const nextLine = nextItem.editPosition.line
+            //         const nextLineLength = document.lineAt(nextLine).text.length
+            //         const nextLineStart = new vscode.Position(nextLine, nextLineLength)
+            //         editor.selection = new vscode.Selection(nextLineStart, nextLineStart)
+            //         editor.revealRange(editor.selection, vscode.TextEditorRevealType.Default)
+
+            //         // Trigger acceptance of the edit at this position
+            //         this.acceptActiveEdit(autoeditAcceptReason.acceptCommand)
+            //         return
+            //     }
+            // }
+
+            // If auto-acceptance wasn't possible, show the tab to jump tooltip as before
+            const decorationType = vscode.window.createTextEditorDecorationType({
+                after: {
+                    contentText: 'tab to jump',
+                    backgroundColor: 'rgba(50, 50, 50, 0.8)',
+                    color: 'white',
+                    border: '1px solid yellow',
+                    // Note: VS Code doesn't support borderRadius in decorations
+                    margin: '0 0 0 5px',
+                },
+                rangeBehavior: vscode.DecorationRangeBehavior.ClosedClosed,
+            })
+
+            // Position it at the end of the last character of the current line
+            const currentLine = position.line
+            const currentLineLength = document.lineAt(currentLine).text.length
+            const lineStart = new vscode.Position(currentLine, currentLineLength)
+            const range = new vscode.Range(lineStart, lineStart)
+            editor.setDecorations(decorationType, [{ range }])
+
+            // Add a selection change listener to remove the decoration when selection changes
+            const selectionChangeDisposable = vscode.window.onDidChangeTextEditorSelection(event => {
+                if (event.textEditor === editor) {
+                    selectionChangeDisposable.dispose()
+                    editor.setDecorations(decorationType, [])
+                    decorationType.dispose()
+                    this.tabToJumpHoverDisposable = null
+                }
+            })
+
+            // Store the decoration type to dispose it later
+            this.tabToJumpHoverDisposable = {
+                dispose: () => {
+                    selectionChangeDisposable.dispose()
+                    editor.setDecorations(decorationType, [])
+                    decorationType.dispose()
+                },
+            }
         }
     }
 
