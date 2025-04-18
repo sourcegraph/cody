@@ -39,6 +39,22 @@ export const GetDiagnosticSchema = z.object({
 
 export const CodeSearchSchema = z.object({
     query: z.string().describe('Keyword query to search for.'),
+    include: z
+        .string()
+        .optional()
+        .describe('Glob pattern to include files in the search. Default is all files.'),
+    exclude: z
+        .string()
+        .optional()
+        .describe('Glob pattern to exclude files from the search. Default is no exclusions.'),
+    dir: z
+        .string()
+        .optional()
+        .describe('Directory to search in. Default to use the current codebase root.'),
+})
+
+export const SearchAgentSchema = z.object({
+    query: z.string().describe('Specific instruction for the agent to follow when searching for code.'),
 })
 
 // Define types based on schemas for type safety
