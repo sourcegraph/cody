@@ -1,5 +1,6 @@
 import { type Observable, map } from 'observable-fns'
 
+import { isEqual } from 'lodash'
 import { authStatus, currentAuthStatus } from '../auth/authStatus'
 import { mockAuthStatus } from '../auth/authStatus'
 import { type AuthStatus, isCodyProUser, isEnterpriseUser } from '../auth/types'
@@ -343,7 +344,9 @@ export class ModelsService {
                 [endpoint]: accountPrefs,
             }
 
-            this.storage.setModelPreferences(updated)
+            if (!isEqual(updated, data.preferences)) {
+                return this.storage.setModelPreferences(updated).then(() => data)
+            }
 
             return data
         }),
