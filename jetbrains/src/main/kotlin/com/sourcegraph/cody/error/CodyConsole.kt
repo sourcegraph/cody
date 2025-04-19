@@ -9,6 +9,7 @@ import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.wm.ToolWindowManager
 import com.intellij.ui.content.Content
+import com.intellij.util.IncorrectOperationException
 import com.sourcegraph.cody.agent.protocol_generated.DebugMessage
 import com.sourcegraph.config.ConfigUtil
 
@@ -46,11 +47,16 @@ class CodyConsole(project: Project) {
   init {
     runInEdt {
       if (toolWindow?.isDisposed != false) return@runInEdt
-      val factory = toolWindow.contentManager.factory
-      content =
-          factory
-              .createContent(consoleView.component, "Cody Console", true)
-              .also(toolWindow.contentManager::addContent)
+      if (toolWindow.contentManager.isDisposed) return@runInEdt
+      try {
+        val factory = toolWindow.contentManager.factory
+        content =
+            factory
+                .createContent(consoleView.component, "Cody Console", true)
+                .also(toolWindow.contentManager::addContent)
+      } catch (e: IncorrectOperationException) {
+        return@runInEdt
+      }
     }
   }
 
