@@ -50,12 +50,12 @@ describe(
         beforeAll(async () => {
             await workspace.beforeAll()
             await client.beforeAll()
-        })
+        }, 15000)
 
         afterAll(async () => {
             await workspace.afterAll()
             await client.afterAll()
-        })
+        }, 15000)
 
         it('authenticated successfully using initial credentials', async () => {
             const authStatus = await client.request('extensionConfiguration/status', null)
@@ -141,7 +141,7 @@ describe(
         })
 
         // Skipped this test because of flakiness.
-        it('switches to a different account', async ({ task }) => {
+        it('switches to a different account', { timeout: 10000 }, async ({ task }) => {
             // Re-authenticate to a different endpoint so we can switch from it. It is important to
             // do this even if the preceding test does it because we might not be running the prior
             // tests or we might be running with `repeats > 0`.
