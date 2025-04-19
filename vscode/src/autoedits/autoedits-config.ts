@@ -76,8 +76,8 @@ function getBaseProviderConfig(): BaseAutoeditsProviderConfig {
             ...baseConfig,
             provider: 'cody-gateway',
             model: shouldHotStreak
-                ? 'autoedits-deepseek-lite-default'
-                : 'autoedits-long-suggestion-default',
+                ? 'autoedits-long-suggestion-default'
+                : 'autoedits-deepseek-lite-default',
             url: 'https://cody-gateway.sourcegraph.com/v1/completions/fireworks',
         }
     }
@@ -86,8 +86,8 @@ function getBaseProviderConfig(): BaseAutoeditsProviderConfig {
         ...baseConfig,
         provider: 'sourcegraph',
         model: shouldHotStreak
-            ? 'fireworks::v1::autoedits-deepseek-lite-default'
-            : 'fireworks::v1::autoedits-long-suggestion-default',
+            ? 'fireworks::v1::autoedits-long-suggestion-default'
+            : 'fireworks::v1::autoedits-deepseek-lite-default',
         url: '',
     }
 }
