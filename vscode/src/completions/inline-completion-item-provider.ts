@@ -172,7 +172,7 @@ export class InlineCompletionItemProvider
         this.disposables.push(
             subscriptionDisposable(
                 featureFlagProvider
-                    .evaluateFeatureFlag(FeatureFlag.CodyAutocompleteTracing)
+                    .evaluatedFeatureFlag(FeatureFlag.CodyAutocompleteTracing)
                     .subscribe(shouldSample => {
                         this.shouldSample = Boolean(shouldSample)
                     })

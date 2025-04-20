@@ -43,12 +43,12 @@ import {
     CURRENT_USER_INFO_QUERY,
     CURRENT_USER_ROLE_QUERY,
     DELETE_ACCESS_TOKEN_MUTATION,
-    EVALUATE_FEATURE_FLAGS_QUERY,
     EVALUATE_FEATURE_FLAG_QUERY,
     FILE_CONTENTS_QUERY,
     FILE_MATCH_SEARCH_QUERY,
     FUZZY_FILES_QUERY,
     FUZZY_SYMBOLS_QUERY,
+    GET_FEATURE_FLAGS_QUERY,
     GET_REMOTE_FILE_QUERY,
     GET_URL_CONTENT_QUERY,
     HIGHLIGHTED_FILE_QUERY,
@@ -613,12 +613,12 @@ interface EvaluatedFeatureFlag {
     value: boolean
 }
 
-interface EvaluateFeatureFlagResponse {
-    evaluateFeatureFlag: boolean
+interface EvaluatedFeatureFlagsResponse {
+    evaluatedFeatureFlags: EvaluatedFeatureFlag[]
 }
 
-interface EvaluateFeatureFlagsResponse {
-    evaluateFeatureFlags: EvaluatedFeatureFlag[]
+interface EvaluateFeatureFlagResponse {
+    evaluateFeatureFlag: boolean
 }
 
 interface ViewerSettingsResponse {
@@ -1541,20 +1541,16 @@ export class SourcegraphGraphQLAPIClient {
         ).then(response => extractDataOrError(response, data => data.snippetAttribution))
     }
 
-    public async evaluateFeatureFlags(
-        flagNames: string[],
+    public async getEvaluatedFeatureFlags(
         signal?: AbortSignal
     ): Promise<Record<string, boolean> | Error> {
-        const names = flagNames.filter(name => name !== 'test-flag-do-not-use')
-        return this.fetchSourcegraphAPI<APIResponse<EvaluateFeatureFlagsResponse>>(
-            EVALUATE_FEATURE_FLAGS_QUERY,
-            {
-                flagNames: names,
-            },
+        return this.fetchSourcegraphAPI<APIResponse<EvaluatedFeatureFlagsResponse>>(
+            GET_FEATURE_FLAGS_QUERY,
+            {},
             signal
         ).then(response => {
             return extractDataOrError(response, data =>
-                data.evaluateFeatureFlags.reduce((acc: Record<string, boolean>, { name, value }) => {
+                data.evaluatedFeatureFlags.reduce((acc: Record<string, boolean>, { name, value }) => {
                     acc[name] = value
                     return acc
                 }, {})
