@@ -570,9 +570,11 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         const { configuration, auth } = await currentResolvedConfig()
         const [experimentalPromptEditorEnabled, internalAgenticChatEnabled] = await Promise.all([
             firstValueFrom(
-                featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyExperimentalPromptEditor)
+                featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyExperimentalPromptEditor)
             ),
-            firstValueFrom(featureFlagProvider.evaluateFeatureFlag(FeatureFlag.NextAgenticChatInternal)),
+            firstValueFrom(
+                featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.NextAgenticChatInternal)
+            ),
         ])
         const experimentalAgenticChatEnabled = internalAgenticChatEnabled && isS2(auth.serverEndpoint)
         const sidebarViewOnly = this.extensionClient.capabilities?.webviewNativeConfig?.view === 'single'
@@ -1678,7 +1680,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 {
                     mentionMenuData: query => {
                         return featureFlagProvider
-                            .evaluateFeatureFlag(FeatureFlag.CodyExperimentalPromptEditor)
+                            .evaluatedFeatureFlag(FeatureFlag.CodyExperimentalPromptEditor)
                             .pipe(
                                 switchMap((experimentalPromptEditor: boolean) =>
                                     getMentionMenuData({
@@ -1696,7 +1698,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                         return promiseFactoryToObservable(this.getFrequentlyUsedContextItemsFromStorage)
                     },
                     clientActionBroadcast: () => this.clientBroadcast,
-                    evaluateFeatureFlag: flag => featureFlagProvider.evaluateFeatureFlag(flag),
+                    evaluatedFeatureFlag: flag => featureFlagProvider.evaluatedFeatureFlag(flag),
                     hydratePromptMessage: (promptText, initialContext) =>
                         promiseFactoryToObservable(() =>
                             hydratePromptText(promptText, initialContext ?? [])
@@ -1761,7 +1763,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     // Existing tools endpoint - update to include MCP tools
                     mcpSettings: () => {
                         return featureFlagProvider
-                            .evaluateFeatureFlag(FeatureFlag.NextAgenticChatInternal)
+                            .evaluatedFeatureFlag(FeatureFlag.NextAgenticChatInternal)
                             .pipe(
                                 // Simplify the flow with map and distinctUntilChanged
                                 distinctUntilChanged(),

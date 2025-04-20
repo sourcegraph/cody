@@ -324,7 +324,7 @@ const register = async (
     disposables.push(
         subscriptionDisposable(
             featureFlagProvider
-                .evaluateFeatureFlag(FeatureFlag.NextAgenticChatInternal)
+                .evaluatedFeatureFlag(FeatureFlag.NextAgenticChatInternal)
                 .pipe(distinctUntilChanged())
                 .subscribe(async isEnabled => {
                     if (isEnabled) {
@@ -514,7 +514,7 @@ async function registerCodyCommands({
     disposables.push(
         subscriptionDisposable(
             featureFlagProvider
-                .evaluateFeatureFlag(FeatureFlag.CodyUnifiedPrompts)
+                .evaluatedFeatureFlag(FeatureFlag.CodyUnifiedPrompts)
                 .pipe(
                     createDisposables(codyUnifiedPromptsFlag => {
                         // Commands that are available only if unified prompts feature is enabled.
@@ -768,12 +768,12 @@ function registerAutoEdits({
             combineLatest(
                 resolvedConfig,
                 authStatus,
-                featureFlagProvider.evaluateFeatureFlag(
+                featureFlagProvider.evaluatedFeatureFlag(
                     FeatureFlag.CodyAutoEditExperimentEnabledFeatureFlag
                 ),
-                featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutoEditInlineRendering),
-                featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutoEditHotStreak),
-                featureFlagProvider.evaluateFeatureFlag(
+                featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyAutoEditInlineRendering),
+                featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyAutoEditHotStreak),
+                featureFlagProvider.evaluatedFeatureFlag(
                     FeatureFlag.CodyAutoEditUseWebSocketForFireworksConnections
                 )
             )
