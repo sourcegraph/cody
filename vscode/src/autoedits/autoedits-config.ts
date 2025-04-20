@@ -45,7 +45,7 @@ const defaultTokenLimit = {
 } as const satisfies AutoEditsTokenLimit
 
 let hotStreakEnabled = false
-featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutoEditHotStreak).subscribe(value => {
+featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyAutoEditHotStreak).subscribe(value => {
     hotStreakEnabled = value
     autoeditsProviderConfig = getAutoeditsProviderConfig()
 })
