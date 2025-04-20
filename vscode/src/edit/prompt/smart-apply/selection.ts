@@ -12,7 +12,7 @@ import type { SmartApplyResult } from '../../../chat/protocol'
 import type { FixupTaskID } from '../../../non-stop/FixupTask'
 import { CodyTaskState } from '../../../non-stop/state'
 import { fuzzyFindLocation } from '../../../supercompletions/utils/fuzzy-find-location'
-import { SMART_APPLY_MODEL_IDENTIFIERS } from '../constants'
+import { SMART_APPLY_MODEL_IDENTIFIERS, SMART_APPLY_REPLACE_STRATEGY } from '../constants'
 import { SMART_APPLY_TOPICS, type SmartApplySelectionProvider } from './selection/base'
 import { CustomModelSelectionProvider } from './selection/custom-model'
 import { DefaultSelectionProvider } from './selection/default'
@@ -130,7 +130,10 @@ export async function getSmartApplySelection({
         return null
     }
 
-    if (originalCode.trim().length === 0 || originalCode.trim() === 'INSERT') {
+    if (
+        originalCode.trim().length === 0 ||
+        originalCode.trim() === SMART_APPLY_REPLACE_STRATEGY.INSERT.toString()
+    ) {
         // Insert flow. Cody thinks that this code should be inserted into the document.
         // Add the code to the end position of the document.
         const range = getFullRangeofDocument(document)
@@ -140,7 +143,7 @@ export async function getSmartApplySelection({
         }
     }
 
-    if (originalCode.trim() === 'ENTIRE_FILE') {
+    if (originalCode.trim() === SMART_APPLY_REPLACE_STRATEGY.ENTIRE_FILE.toString()) {
         // Replace flow. Cody thinks that the entire file should be replaced.
         // Replace the entire file.
         // Note: This is essentially a shortcut for a common use case,

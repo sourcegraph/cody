@@ -1,7 +1,13 @@
 import * as vscode from 'vscode'
 
 import { manipulateWebviewHTML } from '../../chat/chat-view/ChatController'
-import type { AutoeditDebugMessageFromExtension } from './debug-protocol'
+import { autoeditAnalyticsLogger } from '../analytics-logger/analytics-logger'
+import type { AutoeditFeedbackData } from '../analytics-logger/types'
+import type {
+    AutoeditDebugMessageFromExtension,
+    AutoeditDebugMessageFromWebview,
+} from './debug-protocol'
+import type { AutoeditRequestDebugState } from './debug-store'
 
 import { autoeditDebugStore } from './debug-store'
 
@@ -45,15 +51,33 @@ export class AutoeditDebugPanel {
 
         // Handle messages from the webview
         this.panel.webview.onDidReceiveMessage(
-            message => {
-                if (message.type === 'ready') {
-                    // Send the initial data when the webview is ready
-                    void this.updateContent()
+            (message: AutoeditDebugMessageFromWebview) => {
+                console.log('Received message for submitting: ', message)
+                switch (message.type) {
+                    case 'ready':
+                        // Send the initial data when the webview is ready
+                        void this.updateContent()
+                        break
+                    case 'submitFeedback':
+                        // Handle feedback submission
+                        this.handleFeedbackSubmission(message.entry, message.feedback)
+                        break
                 }
             },
             null,
             this.disposables
         )
+    }
+
+    private handleFeedbackSubmission(
+        entry: AutoeditRequestDebugState,
+        feedback: AutoeditFeedbackData
+    ): void {
+        // Log the feedback using the analytics logger
+        autoeditAnalyticsLogger.logFeedback(feedback)
+
+        // Show a notification to the user
+        void vscode.window.showInformationMessage('Feedback submitted successfully')
     }
 
     /**
@@ -108,12 +132,10 @@ export class AutoeditDebugPanel {
      * Updates the content of the panel with the latest auto-edit requests.
      */
     private async updateContent(): Promise<void> {
-        const entries = autoeditDebugStore.getAutoeditRequestDebugStates()
-
         // Send the updated entries to the webview using the type-safe protocol
         this.postMessageToWebview({
             type: 'updateEntries',
-            entries,
+            ...autoeditDebugStore.getDebugState(),
         })
 
         // If no HTML content is set yet, set the initial HTML

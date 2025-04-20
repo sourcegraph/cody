@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
 
-import { getDecorationInfo } from './renderer/diff-utils'
+import type { CodeToReplaceData } from '@sourcegraph/cody-shared'
+import { getNewLineChar } from '../completions/text-processing'
+import { getAddedLines, getDecorationInfo } from './renderer/diff-utils'
 import * as utils from './utils'
 
 describe('fixFirstLineIndentation', () => {
@@ -649,54 +651,136 @@ describe('countNewLineCharsStart', () => {
     })
 })
 
-describe('isPredictedTextAlreadyInSuffix', () => {
+describe('isDuplicatingTextFromRewriteArea', () => {
+    function getAddedLineSnippet(codeToRewrite: string, prediction: string): string {
+        const decorationInfo = getDecorationInfo(codeToRewrite, prediction)
+        const addedLines = getAddedLines(decorationInfo)
+        const newLineCharacter = getNewLineChar(codeToRewrite)
+        return addedLines.map(line => line.text).join(newLineCharacter) + '\n'
+    }
+
     it('should return false when there are no added lines', () => {
-        const codeToRewrite = 'const x = 1;\nconst y = 2;'
+        const codeToReplaceData = {
+            prefixBeforeArea: '',
+            prefixInArea: '',
+            suffixInArea: '',
+            suffixAfterArea: '',
+            codeToRewrite: 'const x = 1;\nconst y = 2;',
+        } as CodeToReplaceData
         const prediction = 'const x = 1;\nconst y = 2;'
 
-        const result = utils.isPredictedTextAlreadyInSuffix({
-            codeToRewrite,
-            decorationInfo: getDecorationInfo(codeToRewrite, prediction),
-            suffix: '',
+        const result = utils.isDuplicatingTextFromRewriteArea({
+            addedText: getAddedLineSnippet(codeToReplaceData.codeToRewrite, prediction),
+            codeToReplaceData,
         })
         expect(result).toBe(false)
     })
 
-    it('should return false when predicted text is different from suffix', () => {
-        const codeToRewrite = 'function test() {\n    \n}'
-        const prediction = 'function test() {\n    console.log("hello");\n}'
-
-        const result = utils.isPredictedTextAlreadyInSuffix({
-            codeToRewrite,
-            decorationInfo: getDecorationInfo(codeToRewrite, prediction),
-            suffix: 'return true;\n}',
-        })
-        expect(result).toBe(false)
-    })
-
-    it('should handle multiline predictions correctly', () => {
-        const codeToRewrite = 'function test() {\n'
-        const prediction =
-            'function test() {\n    const a = 1;\n    const b = 2;\n    console.log(a + b);\n}\n'
-
-        const result = utils.isPredictedTextAlreadyInSuffix({
-            codeToRewrite,
-            decorationInfo: getDecorationInfo(codeToRewrite, prediction),
-            suffix: '    const a = 1;\n    const b = 2;\n    console.log(a + b);\n}\n',
-        })
-        expect(result).toBe(true)
-    })
-
-    it('should not hide if suffix matches by empty space', () => {
-        const codeToRewrite = 'const x = '
+    it('should not hide if suffix or prefix matches by empty space', () => {
+        const codeToReplaceData = {
+            prefixBeforeArea: '',
+            prefixInArea: '',
+            suffixInArea: '',
+            suffixAfterArea: '',
+            codeToRewrite: 'const x = ',
+        } as CodeToReplaceData
         const prediction = 'const x = 1\n'
 
-        const result = utils.isPredictedTextAlreadyInSuffix({
-            codeToRewrite,
-            decorationInfo: getDecorationInfo(codeToRewrite, prediction),
-            suffix: '',
+        const result = utils.isDuplicatingTextFromRewriteArea({
+            addedText: getAddedLineSnippet(codeToReplaceData.codeToRewrite, prediction),
+            codeToReplaceData,
+        })
+        expect(result).toBe(false)
+    })
+
+    describe('suffix handling', () => {
+        it('should return false when predicted text is different from suffix', () => {
+            const codeToReplaceData = {
+                prefixBeforeArea: '',
+                prefixInArea: '',
+                suffixInArea: 'return true;\n}',
+                suffixAfterArea: '',
+                codeToRewrite: 'function test() {\n    \n}',
+            } as CodeToReplaceData
+            const prediction = 'function test() {\n    console.log("hello");\n}'
+
+            const result = utils.isDuplicatingTextFromRewriteArea({
+                addedText: getAddedLineSnippet(codeToReplaceData.codeToRewrite, prediction),
+                codeToReplaceData,
+            })
+            expect(result).toBe(false)
         })
 
-        expect(result).toBe(false)
+        it('should handle multiline predictions correctly', () => {
+            const codeToReplaceData = {
+                prefixBeforeArea: '',
+                prefixInArea: '',
+                suffixInArea: '    const a = 1;\n    const b = 2;\n    console.log(a + b);\n}\n',
+                suffixAfterArea: '',
+                codeToRewrite: 'function test() {\n',
+            } as CodeToReplaceData
+            const prediction =
+                'function test() {\n    const a = 1;\n    const b = 2;\n    console.log(a + b);\n}\n'
+
+            const result = utils.isDuplicatingTextFromRewriteArea({
+                addedText: getAddedLineSnippet(codeToReplaceData.codeToRewrite, prediction),
+                codeToReplaceData,
+            })
+            expect(result).toBe(true)
+        })
+
+        it('should not hide if suffix matches by empty space', () => {
+            const codeToReplaceData = {
+                prefixBeforeArea: '',
+                prefixInArea: '',
+                suffixInArea: '',
+                suffixAfterArea: '',
+                codeToRewrite: 'const x = ',
+            } as CodeToReplaceData
+            const prediction = 'const x = 1\n'
+
+            const result = utils.isDuplicatingTextFromRewriteArea({
+                addedText: getAddedLineSnippet(codeToReplaceData.codeToRewrite, prediction),
+                codeToReplaceData,
+            })
+            expect(result).toBe(false)
+        })
+    })
+
+    describe('prefix handling', () => {
+        it('should return false when predicted text is different from prefix', () => {
+            const codeToReplaceData = {
+                prefixBeforeArea: '',
+                prefixInArea: 'function test() {\n    \n}',
+                suffixInArea: '',
+                suffixAfterArea: '',
+                codeToRewrite: 'return true;\n}',
+            } as CodeToReplaceData
+            const prediction = 'function test() {\n    console.log("hello");\n}'
+
+            const result = utils.isDuplicatingTextFromRewriteArea({
+                addedText: getAddedLineSnippet(codeToReplaceData.codeToRewrite, prediction),
+                codeToReplaceData,
+            })
+            expect(result).toBe(false)
+        })
+
+        it('should handle multiline predictions correctly', () => {
+            const codeToReplaceData = {
+                prefixBeforeArea: '',
+                prefixInArea: 'function test() {\n',
+                suffixInArea: '',
+                suffixAfterArea: '',
+                codeToRewrite: '    const a = 1;\n    const b = 2;\n    console.log(a + b);\n}\n',
+            } as CodeToReplaceData
+            const prediction =
+                'function test() {\n    const a = 1;\n    const b = 2;\n    console.log(a + b);\n}\n'
+
+            const result = utils.isDuplicatingTextFromRewriteArea({
+                addedText: getAddedLineSnippet(codeToReplaceData.codeToRewrite, prediction),
+                codeToReplaceData,
+            })
+            expect(result).toBe(true)
+        })
     })
 })

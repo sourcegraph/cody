@@ -3,15 +3,19 @@ import * as vscode from 'vscode'
 import {
     type AutoEditsModelConfig,
     type AutoEditsTokenLimit,
+    FeatureFlag,
     authStatus,
+    featureFlagProvider,
     isDotComAuthed,
 } from '@sourcegraph/cody-shared'
 
 import { RetrieverIdentifier } from '../completions/context/utils'
 import { getConfiguration } from '../configuration'
+import { isHotStreakEnabledInSettings } from './hot-streak/utils'
 
 interface BaseAutoeditsProviderConfig {
     provider: AutoEditsModelConfig['provider']
+    promptProvider?: AutoEditsModelConfig['promptProvider']
     model: string
     url: string
     tokenLimit: AutoEditsTokenLimit
@@ -40,16 +44,28 @@ const defaultTokenLimit = {
     },
 } as const satisfies AutoEditsTokenLimit
 
+let hotStreakEnabled = false
+featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutoEditHotStreak).subscribe(value => {
+    hotStreakEnabled = value
+    autoeditsProviderConfig = getAutoeditsProviderConfig()
+})
+
 /**
  * Retrieves the base configuration for the AutoEdits provider based on authentication status.
  */
 function getBaseProviderConfig(): BaseAutoeditsProviderConfig {
+    const shouldHotStreak = hotStreakEnabled || isHotStreakEnabledInSettings()
+    const tokenLimit = shouldHotStreak
+        ? // Hot-streak can handle much longer suffixes
+          { ...defaultTokenLimit, codeToRewriteSuffixLines: 30 }
+        : defaultTokenLimit
+
     if (isDotComAuthed()) {
         return {
             provider: 'cody-gateway',
             model: 'autoedits-deepseek-lite-default',
             url: 'https://cody-gateway.sourcegraph.com/v1/completions/fireworks',
-            tokenLimit: defaultTokenLimit,
+            tokenLimit,
             isChatModel: false,
             timeoutMs: 10_000,
         }
@@ -58,7 +74,7 @@ function getBaseProviderConfig(): BaseAutoeditsProviderConfig {
     return {
         provider: 'sourcegraph',
         model: 'fireworks::v1::autoedits-deepseek-lite-default',
-        tokenLimit: defaultTokenLimit,
+        tokenLimit,
         url: '',
         isChatModel: false,
         timeoutMs: 10_000,
@@ -80,6 +96,7 @@ function getAutoeditsProviderConfig(): AutoeditsProviderConfig {
         experimentalAutoeditsConfigOverride: userConfig,
         isMockResponseFromCurrentDocumentTemplateEnabled,
         provider: baseConfig.provider,
+        promptProvider: baseConfig.promptProvider,
         model: baseConfig.model,
         url: baseConfig.url ?? '',
         tokenLimit: baseConfig.tokenLimit,

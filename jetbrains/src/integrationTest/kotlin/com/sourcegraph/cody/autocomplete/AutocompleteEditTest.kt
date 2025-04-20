@@ -21,7 +21,7 @@ class AutocompleteEditTest : BaseAutocompleteTest() {
   companion object {
     private val codySettingsContent =
         """{
-          |  "cody.suggestions.mode": "auto-edit (Beta)"
+          |  "cody.suggestions.mode": "auto-edit"
           |}
           |"""
             .trimMargin()
@@ -58,8 +58,8 @@ class AutocompleteEditTest : BaseAutocompleteTest() {
         Matchers.equalTo(
             """fun main() {
                       |    val list = listOf(1, 2, 3, 4, 5)
-                      |    for (i in list) {
-                      |        println(i)
+                      |    for (item in list) {
+                      |        println(item)
                       |    }
                       |}
                       |"""

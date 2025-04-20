@@ -1,8 +1,7 @@
 import type * as vscode from 'vscode'
 
+import type { CodeToReplaceData } from '@sourcegraph/cody-shared'
 import { getNewLineChar, lines } from '../completions/text-processing'
-
-import type { DecorationInfo } from './renderer/decorators/base'
 
 export function fixFirstLineIndentation(source: string, target: string): string {
     // Check the first line indentation of source string and replaces in target string.
@@ -42,25 +41,25 @@ export function extractInlineCompletionFromRewrittenCode(
     return completionWithSameLineSuffix.join(getNewLineChar(codeToRewritePrefix + codeToRewriteSuffix))
 }
 
-export function isPredictedTextAlreadyInSuffix({
-    codeToRewrite,
-    decorationInfo: { addedLines },
-    suffix,
-}: {
-    codeToRewrite: string
-    decorationInfo: DecorationInfo
-    suffix: string
-}): boolean {
-    if (addedLines.length === 0) {
+export function isDuplicatingTextFromRewriteArea({
+    addedText,
+    codeToReplaceData,
+}: { addedText: string; codeToReplaceData: CodeToReplaceData }): boolean {
+    if (addedText.length === 0) {
         return false
     }
 
-    const allAddedLinesText = addedLines
-        .sort((a, b) => a.modifiedLineNumber - b.modifiedLineNumber)
-        .map(line => line.text)
-        .join(getNewLineChar(codeToRewrite))
+    const prefix = codeToReplaceData.prefixBeforeArea + codeToReplaceData.prefixInArea
+    if (prefix.length > 0 && prefix.endsWith(addedText)) {
+        return true
+    }
 
-    return suffix.length > 0 && suffix.startsWith(allAddedLinesText)
+    const suffix = codeToReplaceData.suffixInArea + codeToReplaceData.suffixAfterArea
+    if (suffix.length > 0 && suffix.startsWith(addedText)) {
+        return true
+    }
+
+    return false
 }
 
 /**

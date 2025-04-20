@@ -1,19 +1,40 @@
-import type { Phase } from '../../src/autoedits/analytics-logger/types'
-import type { AutoeditRequestDebugState } from '../../src/autoedits/debug-panel/debug-store'
+import { getModelResponse } from './autoedit-data-sdk'
+import type { AutoeditRequestDebugState } from './debug-store'
+
+export const extractPromptCacheHitRate = (entry: AutoeditRequestDebugState): number | undefined => {
+    const modelResponse = getModelResponse(entry)
+
+    if (modelResponse && 'responseHeaders' in modelResponse) {
+        const cachedTokens = modelResponse.responseHeaders['fireworks-cached-prompt-tokens']
+        const totalTokens = modelResponse.responseHeaders['fireworks-prompt-tokens']
+
+        if (cachedTokens && totalTokens) {
+            return (Number(cachedTokens) / Number(totalTokens)) * 100
+        }
+    }
+
+    return undefined
+}
 
 /**
- * Map of discard reason codes to human-readable messages
+ * Possible phase names in the auto-edit process
  */
-export const DISCARD_REASONS: Record<number, string> = {
-    1: 'Client Aborted',
-    2: 'Empty Prediction',
-    3: 'Prediction Equals Code to Rewrite',
-    4: 'Recent Edits',
-    5: 'Suffix Overlap',
-    6: 'Empty Prediction After Inline Completion Extraction',
-    7: 'No Active Editor',
-    8: 'Conflicting Decoration With Edits',
-    9: 'Not Enough Lines in Editor',
+export enum PhaseNames {
+    Start = 'Start',
+    ContextLoaded = 'Context Loaded',
+    Inference = 'Inference',
+    Network = 'Network',
+    PostProcessed = 'Post Processed',
+    Suggested = 'Suggested',
+    Read = 'Read',
+    Accepted = 'Accepted',
+    Rejected = 'Rejected',
+    Discarded = 'Discarded',
+}
+
+export interface PhaseInfo {
+    name: PhaseNames
+    time?: number
 }
 
 /**
@@ -58,52 +79,19 @@ export const calculateDuration = (start: number | undefined, end: number | undef
 }
 
 /**
- * Get status badge color based on phase
- */
-export const getStatusColor = (phase: Phase): string => {
-    switch (phase) {
-        case 'started':
-            return 'tw-bg-yellow-200 tw-text-yellow-800'
-        case 'contextLoaded':
-            return 'tw-bg-blue-200 tw-text-blue-800'
-        case 'loaded':
-            return 'tw-bg-indigo-200 tw-text-indigo-800'
-        case 'postProcessed':
-            return 'tw-bg-purple-200 tw-text-purple-800'
-        case 'suggested':
-            return 'tw-bg-fuchsia-200 tw-text-fuchsia-800'
-        case 'read':
-            return 'tw-bg-teal-200 tw-text-teal-800'
-        case 'accepted':
-            return 'tw-bg-green-200 tw-text-green-800'
-        case 'rejected':
-            return 'tw-bg-red-200 tw-text-red-800'
-        case 'discarded':
-            return 'tw-bg-gray-200 tw-text-gray-800'
-        default:
-            return 'tw-bg-gray-200 tw-text-gray-800'
-    }
-}
-
-/**
  * Extract all phase timing information from an autoedit entry
  */
-export const extractPhaseInfo = (entry: AutoeditRequestDebugState) => {
+export const extractPhaseInfo = (entry: AutoeditRequestDebugState): PhaseInfo[] => {
     const { state } = entry
     const startTime = 'startedAt' in state ? state.startedAt : entry.updatedAt
     const inferenceTime = extractInferenceTime(state)
 
-    // Define all possible phase transitions in order with alternating color families for better visibility
-    const phases: Array<{
-        name: string
-        time?: number
-        color: string
-    }> = [
-        { name: 'Start', time: startTime, color: 'tw-bg-gray-500' },
+    // Define all possible phase transitions in order with colors from the separate module
+    const phases: PhaseInfo[] = [
+        { name: PhaseNames.Start, time: startTime },
         {
-            name: 'Context Loaded',
+            name: PhaseNames.ContextLoaded,
             time: 'contextLoadedAt' in state ? state.contextLoadedAt : undefined,
-            color: 'tw-bg-amber-500',
         },
     ]
 
@@ -116,53 +104,45 @@ export const extractPhaseInfo = (entry: AutoeditRequestDebugState) => {
 
         // Add the inference end phase, which should come right before loaded
         phases.push({
-            name: 'Inference',
+            name: PhaseNames.Inference,
             time: inferenceEndTime,
-            color: 'tw-bg-indigo-500',
         })
     }
 
     // Continue with the rest of the phases
     phases.push(
         {
-            name: 'Network',
+            name: PhaseNames.Network,
             time: 'loadedAt' in state ? state.loadedAt : undefined,
-            color: 'tw-bg-blue-500',
         },
         {
-            name: 'Post Processed',
+            name: PhaseNames.PostProcessed,
             time: 'postProcessedAt' in state ? state.postProcessedAt : undefined,
-            color: 'tw-bg-purple-500',
         },
         {
-            name: 'Suggested',
+            name: PhaseNames.Suggested,
             time: 'suggestedAt' in state ? state.suggestedAt : undefined,
-            color: 'tw-bg-pink-500',
         },
         {
-            name: 'Read',
+            name: PhaseNames.Read,
             time: 'readAt' in state ? state.readAt : undefined,
-            color: 'tw-bg-cyan-500',
         },
         {
-            name: 'Accepted',
+            name: PhaseNames.Accepted,
             time: 'acceptedAt' in state ? state.acceptedAt : undefined,
-            color: 'tw-bg-green-500',
         },
         {
-            name: 'Rejected',
+            name: PhaseNames.Rejected,
             time: 'rejectedAt' in state ? state.rejectedAt : undefined,
-            color: 'tw-bg-red-500',
         },
         {
-            name: 'Discarded',
+            name: PhaseNames.Discarded,
             time:
                 'discardedAt' in state
                     ? state.discardedAt
                     : entry.state.phase === 'discarded'
                       ? entry.updatedAt
                       : undefined,
-            color: 'tw-bg-rose-600',
         }
     )
 
@@ -175,9 +155,6 @@ export const extractPhaseInfo = (entry: AutoeditRequestDebugState) => {
     return validPhases
 }
 
-/**
- * Extract inference time from model response headers if available
- */
 export const extractInferenceTime = (state: Record<string, any>): number => {
     let inferenceTime = 0
 
@@ -197,37 +174,23 @@ export const extractInferenceTime = (state: Record<string, any>): number => {
     return inferenceTime
 }
 
-/**
- * Create segments between phases for visualization
- */
-export const createTimelineSegments = (
-    phases: Array<{ name: string; time?: number; color: string }>
-) => {
-    const segments: Array<{
-        name: string
-        startTime: number
-        endTime: number
-        duration: number
-        color: string
-        startPhaseName: string
-    }> = []
+export const extractEnvoyUpstreamServiceTime = (state: Record<string, any>): number => {
+    let envoyUpstreamServiceTime = 0
 
-    // Create a segment between each consecutive phase
-    for (let i = 0; i < phases.length - 1; i++) {
-        const startPhase = phases[i]
-        const endPhase = phases[i + 1]
+    if (
+        'modelResponse' in state &&
+        state.modelResponse?.responseHeaders?.['x-envoy-upstream-service-time']
+    ) {
+        envoyUpstreamServiceTime = Number.parseFloat(
+            state.modelResponse.responseHeaders['x-envoy-upstream-service-time']
+        )
 
-        segments.push({
-            name: endPhase.name,
-            startPhaseName: startPhase.name,
-            startTime: startPhase.time || 0,
-            endTime: endPhase.time || 0,
-            duration: (endPhase.time || 0) - (startPhase.time || 0),
-            color: endPhase.color,
-        })
+        if (Number.isNaN(envoyUpstreamServiceTime)) {
+            envoyUpstreamServiceTime = 0
+        }
     }
 
-    return segments
+    return envoyUpstreamServiceTime
 }
 
 /**
@@ -297,8 +260,16 @@ export const calculateTotalDuration = (
 
 export interface DetailedTimingInfo {
     predictionDuration: string
+    predictionDurationMs?: number
     inferenceTime?: string
-    details: Array<{ label: string; value: string }>
+    inferenceTimeMs?: number
+    envoyUpstreamServiceTime?: string
+    envoyUpstreamServiceTimeMs?: number
+    details: Array<{
+        label: PhaseNames | string
+        value: string
+        valueMs: number
+    }>
 }
 
 /**
@@ -309,19 +280,26 @@ export const getDetailedTimingInfo = (entry: AutoeditRequestDebugState): Detaile
     const result: DetailedTimingInfo = {
         predictionDuration: '',
         inferenceTime: undefined,
-        details: [] as Array<{ label: string; value: string }>,
+        details: [] as Array<{
+            label: PhaseNames | string
+            value: string
+            valueMs: number
+        }>,
     }
 
     // Calculate time from start to suggested phase (prediction duration)
     // This matches the calculation in TimelineSection
     const phases = extractPhaseInfo(entry)
-    const predictionDurationMs = calculateTotalDuration(phases, 'Suggested')
+    const predictionDurationMs = calculateTotalDuration(phases, PhaseNames.Suggested)
 
     if (predictionDurationMs > 0) {
         result.predictionDuration = formatLatency(predictionDurationMs)
+        result.predictionDurationMs = predictionDurationMs
     } else if ('payload' in entry.state && 'latency' in entry.state.payload) {
         // Fallback to payload latency only if we couldn't calculate directly
-        result.predictionDuration = formatLatency(entry.state.payload.latency)
+        const payloadLatency = entry.state.payload.latency
+        result.predictionDuration = formatLatency(payloadLatency)
+        result.predictionDurationMs = payloadLatency
     } else {
         result.predictionDuration = 'unknown'
     }
@@ -332,71 +310,97 @@ export const getDetailedTimingInfo = (entry: AutoeditRequestDebugState): Detaile
 
     // Extract inference time and format it
     const inferenceTimeMs = extractInferenceTime(state)
-    result.inferenceTime = inferenceTimeMs > 0 ? formatLatency(inferenceTimeMs) : undefined
+    if (inferenceTimeMs > 0) {
+        result.inferenceTime = formatLatency(inferenceTimeMs)
+        result.inferenceTimeMs = inferenceTimeMs
+    }
+
+    const envoyUpstreamServiceTimeMs = extractEnvoyUpstreamServiceTime(state)
+    if (envoyUpstreamServiceTimeMs > 0) {
+        result.envoyUpstreamServiceTime = formatLatency(envoyUpstreamServiceTimeMs)
+        result.envoyUpstreamServiceTimeMs = envoyUpstreamServiceTimeMs
+    }
 
     if (startTime !== undefined) {
         // Context loading time
         if ('contextLoadedAt' in state) {
+            const contextLoadingMs = state.contextLoadedAt - startTime
             result.details.push({
-                label: 'Context Loading',
+                label: PhaseNames.ContextLoaded,
                 value: calculateDuration(startTime, state.contextLoadedAt),
+                valueMs: contextLoadingMs,
             })
         }
 
         // Model generation time
         if ('contextLoadedAt' in state && 'loadedAt' in state) {
-            // Get inference time using the extracted utility function
-            const inferenceTime = extractInferenceTime(state)
-
             // Calculate model generation time and subtract inference time if available
             let modelGenerationTime = state.loadedAt - state.contextLoadedAt
-            if (inferenceTime > 0) {
-                modelGenerationTime -= inferenceTime
-            }
 
-            // Add inference time as a separate item if available
-            if (inferenceTime > 0) {
+            if (inferenceTimeMs > 0) {
+                modelGenerationTime -= inferenceTimeMs
+
                 result.details.push({
-                    label: 'Inference',
-                    value: formatLatency(inferenceTime),
+                    label: PhaseNames.Inference,
+                    value: formatLatency(inferenceTimeMs),
+                    valueMs: inferenceTimeMs,
+                })
+            } else if (envoyUpstreamServiceTimeMs > 0) {
+                modelGenerationTime -= envoyUpstreamServiceTimeMs
+
+                result.details.push({
+                    label: 'Envoy Latency',
+                    value: formatLatency(envoyUpstreamServiceTimeMs),
+                    valueMs: envoyUpstreamServiceTimeMs,
                 })
             }
 
+            // Ensure model generation time is never negative
+            const networkTimeMs = Math.max(0, modelGenerationTime)
             result.details.push({
-                label: 'Network',
-                value: formatLatency(Math.max(0, modelGenerationTime)), // Ensure it's never negative
+                label: PhaseNames.Network,
+                value: formatLatency(networkTimeMs),
+                valueMs: networkTimeMs,
             })
         }
 
         // Post-processing time
         if ('loadedAt' in state && 'postProcessedAt' in state) {
+            const postProcessingMs = state.postProcessedAt - state.loadedAt
             result.details.push({
-                label: 'Post-processing',
+                label: PhaseNames.PostProcessed,
                 value: calculateDuration(state.loadedAt, state.postProcessedAt),
+                valueMs: postProcessingMs,
             })
         }
 
         // Time to suggest
         if ('postProcessedAt' in state && 'suggestedAt' in state) {
+            const timeToSuggestMs = state.suggestedAt - state.postProcessedAt
             result.details.push({
-                label: 'Time to Suggest',
+                label: PhaseNames.Suggested,
                 value: calculateDuration(state.postProcessedAt, state.suggestedAt),
+                valueMs: timeToSuggestMs,
             })
         }
 
         // Gateway latency if available
         if ('payload' in state && 'gatewayLatency' in state.payload && state.payload.gatewayLatency) {
+            const gatewayLatencyMs = state.payload.gatewayLatency
             result.details.push({
                 label: 'Gateway Latency',
-                value: formatLatency(state.payload.gatewayLatency),
+                value: formatLatency(gatewayLatencyMs),
+                valueMs: gatewayLatencyMs,
             })
         }
 
         // Upstream latency if available
         if ('payload' in state && 'upstreamLatency' in state.payload && state.payload.upstreamLatency) {
+            const upstreamLatencyMs = state.payload.upstreamLatency
             result.details.push({
                 label: 'Upstream Latency',
-                value: formatLatency(state.payload.upstreamLatency),
+                value: formatLatency(upstreamLatencyMs),
+                valueMs: upstreamLatencyMs,
             })
         }
     }

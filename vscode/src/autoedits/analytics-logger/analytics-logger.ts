@@ -12,26 +12,29 @@ import {
     telemetryRecorder,
 } from '@sourcegraph/cody-shared'
 import type { TelemetryEventParameters } from '@sourcegraph/telemetry'
-
+import { convertAutocompleteContextSnippetForTelemetry } from '../../../src/completions/analytics-logger'
 import { getOtherCompletionProvider } from '../../completions/analytics-logger'
 import { lines } from '../../completions/text-processing'
 import { charactersLogger } from '../../services/CharactersLogger'
 import { upstreamHealthProvider } from '../../services/UpstreamHealthProvider'
 import { captureException, shouldErrorBeReported } from '../../services/sentry/sentry'
 import { splitSafeMetadata } from '../../services/telemetry-v2'
-import type { AutoeditsPrompt, SuccessModelResponse } from '../adapters/base'
+import type { AutoeditsPrompt, PartialModelResponse, SuccessModelResponse } from '../adapters/base'
 import { autoeditsOutputChannelLogger } from '../output-channel-logger'
 import type { CodeToReplaceData } from '../prompt/prompt-utils'
 import type { DecorationInfo } from '../renderer/decorators/base'
 import { getDecorationStats } from '../renderer/diff-utils'
 
+import type { AutocompleteContextSnippet } from '../../../../lib/shared/src/completions/types'
 import { autoeditDebugStore } from '../debug-panel/debug-store'
 import type { AutoEditRenderOutput } from '../renderer/render-output'
 import { autoeditIdRegistry } from './suggestion-id-registry'
 import {
     type AcceptedState,
     type AutoeditAcceptReasonMetadata,
+    type AutoeditCacheID,
     type AutoeditDiscardReasonMetadata,
+    type AutoeditHotStreakID,
     type AutoeditRejectReasonMetadata,
     type AutoeditRequestID,
     type ContextLoadedState,
@@ -44,6 +47,7 @@ import {
     type SuggestedState,
     validRequestTransitions,
 } from './types'
+import type { AutoeditFeedbackData, HotStreakChunk } from './types'
 
 /**
  * Using the validTransitions definition, we can derive which "from phases" lead to a given next phase,
@@ -60,6 +64,7 @@ type AutoeditEventAction =
     | 'accepted'
     | 'discarded'
     | 'error'
+    | 'feedback-submitted'
     | `invalidTransitionTo${Capitalize<Phase>}`
 
 const AUTOEDIT_EVENT_BILLING_CATEGORY: Partial<Record<AutoeditEventAction, BillingCategory>> = {
@@ -90,6 +95,7 @@ export class AutoeditAnalyticsLogger {
      */
     public createRequest({
         startedAt,
+        filePath,
         payload,
         codeToReplaceData,
         document,
@@ -97,6 +103,7 @@ export class AutoeditAnalyticsLogger {
         docContext,
     }: {
         startedAt: number
+        filePath: string
         codeToReplaceData: CodeToReplaceData
         document: vscode.TextDocument
         position: vscode.Position
@@ -113,6 +120,7 @@ export class AutoeditAnalyticsLogger {
             requestId,
             phase: 'started',
             startedAt,
+            filePath,
             codeToReplaceData,
             document,
             position,
@@ -136,14 +144,17 @@ export class AutoeditAnalyticsLogger {
 
     public markAsContextLoaded({
         requestId,
+        context,
         payload,
     }: {
         requestId: AutoeditRequestID
+        context: AutocompleteContextSnippet[]
         payload: Pick<ContextLoadedState['payload'], 'contextSummary'>
     }): void {
         this.tryTransitionTo(requestId, 'contextLoaded', request => ({
             ...request,
             contextLoadedAt: getTimeNowInMillis(),
+            context: convertAutocompleteContextSnippetForTelemetry(context),
             payload: {
                 ...request.payload,
                 contextSummary: payload.contextSummary,
@@ -158,14 +169,26 @@ export class AutoeditAnalyticsLogger {
      */
     public markAsLoaded({
         requestId,
+        cacheId,
+        hotStreakId,
         prompt,
         payload,
         modelResponse,
+        codeToReplaceData,
+        docContext,
+        editPosition,
     }: {
-        modelResponse: SuccessModelResponse
+        modelResponse: SuccessModelResponse | PartialModelResponse
+        codeToReplaceData: CodeToReplaceData
+        docContext: DocumentContext
         requestId: AutoeditRequestID
+        cacheId: AutoeditCacheID
+        hotStreakId?: AutoeditHotStreakID
         prompt: AutoeditsPrompt
-        payload: Required<Pick<LoadedState['payload'], 'source' | 'isFuzzyMatch' | 'prediction'>>
+        editPosition: vscode.Position
+        payload: Required<
+            Pick<LoadedState['payload'], 'source' | 'isFuzzyMatch' | 'prediction' | 'codeToRewrite'>
+        >
     }): void {
         const { prediction, source, isFuzzyMatch } = payload
         const stableId = autoeditIdRegistry.getOrCreate(prompt, prediction)
@@ -176,6 +199,11 @@ export class AutoeditAnalyticsLogger {
                 ...request,
                 loadedAt,
                 modelResponse,
+                codeToReplaceData,
+                docContext,
+                cacheId,
+                hotStreakId,
+                editPosition,
                 payload: {
                     ...request.payload,
                     id: stableId,
@@ -183,11 +211,34 @@ export class AutoeditAnalyticsLogger {
                     prediction: isDotComAuthed() && prediction.length < 300 ? prediction : undefined,
                     source,
                     isFuzzyMatch,
-                    responseHeaders: modelResponse.responseHeaders,
+                    responseHeaders:
+                        'responseHeaders' in modelResponse ? modelResponse.responseHeaders : {},
                     latency: Math.floor(loadedAt - request.startedAt),
                 },
             }
         })
+    }
+
+    public recordHotStreakLoaded({
+        requestId,
+        hotStreakId,
+        chunk,
+    }: {
+        requestId: AutoeditRequestID
+        hotStreakId: AutoeditHotStreakID
+        chunk: Omit<HotStreakChunk, 'loadedAt'>
+    }) {
+        const request = this.activeRequests.get(requestId)
+        if (request && 'hotStreakId' in request && request.hotStreakId === hotStreakId) {
+            const hotStreakChunks = request.hotStreakChunks ?? []
+            hotStreakChunks.push({
+                loadedAt: getTimeNowInMillis(),
+                prediction: chunk.prediction,
+                modelResponse: chunk.modelResponse,
+                fullPrediction: chunk.fullPrediction,
+            })
+            this.activeRequests.set(requestId, { ...request, hotStreakChunks })
+        }
     }
 
     public markAsPostProcessed({
@@ -335,14 +386,17 @@ export class AutoeditAnalyticsLogger {
     public markAsDiscarded({
         requestId,
         discardReason,
+        prediction,
     }: {
         requestId: AutoeditRequestID
         discardReason: AutoeditDiscardReasonMetadata
+        prediction?: string
     }): void {
         const result = this.tryTransitionTo(requestId, 'discarded', request => {
             return {
                 ...request,
                 discardedAt: getTimeNowInMillis(),
+                prediction,
                 payload: {
                     ...request.payload,
                     discardReason,
@@ -519,6 +573,26 @@ export class AutoeditAnalyticsLogger {
             }, this.ERROR_THROTTLE_INTERVAL_MS)
         }
         this.errorCounts.set(messageKey, currentCount + 1)
+    }
+
+    public logFeedback(feedbackData: AutoeditFeedbackData): void {
+        this.writeAutoeditEvent({
+            action: 'feedback-submitted',
+            logDebugArgs: [`Feedback submitted for file: ${feedbackData.file_path}`],
+            telemetryParams: {
+                version: 0,
+                metadata: {
+                    recordsPrivateMetadataTranscript: 1,
+                },
+                privateMetadata: {
+                    inlineCompletionItemContext: feedbackData,
+                },
+                billingMetadata: {
+                    product: 'cody',
+                    category: 'core',
+                },
+            },
+        })
     }
 }
 

@@ -161,7 +161,7 @@ function getCurrentFileOrSelection({
                     if (range) {
                         items.push({
                             ...contextFile,
-                            type: 'current-selection',
+                            type: 'file',
                             title: 'Current Selection',
                             description: `${displayPathBasename(contextFile.uri)}:${displayLineRange(
                                 range

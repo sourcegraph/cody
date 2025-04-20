@@ -1,3 +1,4 @@
+import { addAuthHeaders, currentResolvedConfig, getClientInfoParams } from '@sourcegraph/cody-shared'
 import { type CloseEvent, type ErrorEvent, type MessageEvent, WebSocket } from 'ws'
 import { forkSignal, generatorWithErrorObserver, generatorWithTimeout } from '../../completions/utils'
 import { autoeditsProviderConfig } from '../autoedits-config'
@@ -231,6 +232,7 @@ export class FireworksWebSocketAdapter implements AutoeditsModelAdapter {
                     yield this.processFireworksResponse(message, state, extractPrediction, {
                         requestHeaders,
                         requestUrl: url,
+                        requestBody: body,
                     })
                 }
             }
@@ -246,6 +248,7 @@ export class FireworksWebSocketAdapter implements AutoeditsModelAdapter {
         requestParams: {
             requestHeaders: Record<string, string>
             requestUrl: string
+            requestBody: ModelResponseShared['requestBody']
         }
     ): ModelResponse {
         if (!message.body) {
@@ -262,8 +265,9 @@ export class FireworksWebSocketAdapter implements AutoeditsModelAdapter {
                 prediction: state.prediction,
                 responseHeaders: message.headers,
                 responseBody: state.responseBody,
-                requestHeaders: requestParams.requestHeaders,
                 requestUrl: requestParams.requestUrl,
+                requestHeaders: requestParams.requestHeaders,
+                requestBody: requestParams.requestBody,
             }
         }
 
@@ -274,8 +278,11 @@ export class FireworksWebSocketAdapter implements AutoeditsModelAdapter {
                 type: 'partial',
                 stopReason: AutoeditStopReason.StreamingChunk,
                 prediction: state.prediction,
-                requestHeaders: requestParams.requestHeaders,
+                responseHeaders: requestParams.requestHeaders,
+                responseBody: state.responseBody,
                 requestUrl: requestParams.requestUrl,
+                requestHeaders: requestParams.requestHeaders,
+                requestBody: requestParams.requestBody,
             }
         } catch (parseError) {
             autoeditsOutputChannelLogger.logError(
@@ -289,7 +296,6 @@ export class FireworksWebSocketAdapter implements AutoeditsModelAdapter {
 
     private async connect(): Promise<WebSocket> {
         if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-            // Already an open connection, use this
             return this.ws
         }
 
@@ -298,8 +304,24 @@ export class FireworksWebSocketAdapter implements AutoeditsModelAdapter {
             return this.pendingConnectPromise
         }
 
-        this.pendingConnectPromise = new Promise<WebSocket>((resolve, reject) => {
-            const ws = new WebSocket(this.webSocketEndpoint)
+        // Use sourcegraph authentication token
+        const { auth } = await currentResolvedConfig()
+        const clientInfoParams = getClientInfoParams()
+        const query = new URLSearchParams(clientInfoParams)
+        const url = new URL(`/.api/completions/code?${query.toString()}`, auth.serverEndpoint)
+        const headers = new Headers({})
+        await addAuthHeaders(auth, headers, url)
+
+        const token = headers.get('Authorization')
+
+        this.pendingConnectPromise = new Promise((resolve, reject) => {
+            const protocol = `${clientInfoParams['client-name']}-${clientInfoParams['client-version']}`
+            const ws = new WebSocket(this.webSocketEndpoint, protocol, {
+                headers: {
+                    authorization: token === null ? undefined : token,
+                    'X-Sourcegraph-Endpoint': auth.serverEndpoint,
+                },
+            })
             ws.addEventListener('open', () => {
                 autoeditsOutputChannelLogger.logDebug(
                     LOG_FILTER_LABEL,

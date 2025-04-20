@@ -2,11 +2,8 @@
 # Worst-case: feel free to disable this workflow here https://github.com/sourcegraph/cody/actions/workflows/agent-bindings.yml
 name: agent-bindings
 on:
+  workflow_dispatch:
   pull_request:
-    paths:
-      - "**.ts"
-      - "**.tsx"
-      - "**.js"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -18,6 +15,22 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Check if only Kotlin files changed
+        id: check-kt-only
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const { data: files } = await github.rest.pulls.listFiles({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number
+            });
+            const changedFiles = files.map(file => file.filename);
+            const onlyKotlinChanged = changedFiles.every(file => file.endsWith('.kt'));
+            core.setOutput('only-kt-files', onlyKotlinChanged.toString());
+            if (onlyKotlinChanged) {
+              core.info('Only Kotlin files changed - skipping bindings checks');
+            }
       - uses: pnpm/action-setup@fe02b34f77f8bc703788d5817da081398fad5dd2 # SECURITY: pin third-party action hashes
         id: pnpm-install
         with:
@@ -37,5 +50,8 @@ jobs:
             ${{ runner.os }}-pnpm-store-
       - run: pnpm install --frozen-lockfile
       - run: pnpm generate-agent-kotlin-bindings
+        if: steps.check-kt-only.outputs['only-kt-files'] != 'true'
       - run: ./agent/scripts/error-if-diff.sh
+        if: steps.check-kt-only.outputs['only-kt-files'] != 'true'
       - run: ./agent/scripts/compile-bindings-if-diff.sh
+        if: steps.check-kt-only.outputs['only-kt-files'] != 'true'

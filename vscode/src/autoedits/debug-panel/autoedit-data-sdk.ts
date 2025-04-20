@@ -1,11 +1,13 @@
-import type { SuccessModelResponse } from '../../src/autoedits/adapters/base'
-import type { AutoeditRequestDebugState } from '../../src/autoedits/debug-panel/debug-store'
-import { DISCARD_REASONS, getDetailedTimingInfo } from './autoedit-ui-utils'
+import type { InlineCompletionItemRetrievedContext } from '../../completions/analytics-logger'
+import type { ModelResponse, PartialModelResponse, SuccessModelResponse } from '../adapters/base'
+import { getDetailedTimingInfo } from './autoedit-latency-utils'
+import type { AutoeditRequestDebugState } from './debug-store'
 
 export const extractAutoeditData = (entry: AutoeditRequestDebugState) => {
     const phase = entry.state.phase
     const discardReason = getDiscardReason(entry)
     const filePath = getFilePath(entry)
+    const fileName = getFileName(entry)
     const codeToRewrite = getCodeToRewrite(entry)
     const prediction = getPrediction(entry)
     const triggerKind = getTriggerKind(entry)
@@ -17,11 +19,13 @@ export const extractAutoeditData = (entry: AutoeditRequestDebugState) => {
     const document = getDocument(entry)
     const position = getPosition(entry)
     const modelResponse = getModelResponse(entry)
+    const context = getContext(entry)
 
     return {
         phase,
         discardReason,
         filePath,
+        fileName,
         codeToRewrite,
         prediction,
         triggerKind,
@@ -33,6 +37,7 @@ export const extractAutoeditData = (entry: AutoeditRequestDebugState) => {
         document,
         position,
         modelResponse,
+        context,
     }
 }
 
@@ -78,9 +83,16 @@ export const getModel = (entry: AutoeditRequestDebugState): string | null => {
 }
 
 /**
- * Extracts the file path from an autoedit entry
+ * Extracts the relative file path from an autoedit entry relative to workspace root.
  */
 export const getFilePath = (entry: AutoeditRequestDebugState): string => {
+    return entry.state.filePath
+}
+
+/**
+ * Extracts the file name from an autoedit entry
+ */
+export const getFileName = (entry: AutoeditRequestDebugState): string => {
     if ('document' in entry.state && entry.state.document) {
         // Access the URI property of the document which should contain the path
         // Using optional chaining to safely access properties
@@ -104,6 +116,13 @@ export const getCodeToRewrite = (entry: AutoeditRequestDebugState): string | und
         return entry.state.codeToReplaceData.codeToRewrite
     }
     return undefined
+}
+
+export const getContext = (entry: AutoeditRequestDebugState): InlineCompletionItemRetrievedContext[] => {
+    if ('context' in entry.state) {
+        return entry.state.context
+    }
+    return []
 }
 
 /**
@@ -134,6 +153,22 @@ export const getPositionInfo = (entry: AutoeditRequestDebugState): string => {
         return `${line}:${character}`
     }
     return ''
+}
+
+/**
+ * Map of discard reason codes to human-readable messages
+ */
+export const DISCARD_REASONS: Record<number, string> = {
+    1: 'Client Aborted',
+    2: 'Empty Prediction',
+    3: 'Prediction Equals Code to Rewrite',
+    4: 'Recent Edits',
+    5: 'Suffix Overlap',
+    6: 'Empty Prediction After Inline Completion Extraction',
+    7: 'No Active Editor',
+    8: 'Conflicting Decoration With Edits',
+    9: 'Not Enough Lines in Editor',
+    10: 'Stale Throttled Request',
 }
 
 /**
@@ -224,7 +259,7 @@ export const formatTriggerKind = (triggerKind?: number): string => {
  */
 export const getPrediction = (entry: AutoeditRequestDebugState): string | null => {
     if ('prediction' in entry.state && typeof entry.state.prediction === 'string') {
-        return entry.state.prediction.trim()
+        return entry.state.prediction
     }
     return null
 }
@@ -254,9 +289,30 @@ export const getNetworkLatencyInfo = (
 
 export const getSuccessModelResponse = (
     entry: AutoeditRequestDebugState
-): SuccessModelResponse | null => {
-    if ('modelResponse' in entry.state && entry.state.modelResponse.type === 'success') {
+): SuccessModelResponse | PartialModelResponse | null => {
+    if (
+        'modelResponse' in entry.state &&
+        (entry.state.modelResponse.type === 'success' || entry.state.modelResponse.type === 'partial')
+    ) {
         return entry.state.modelResponse
+    }
+    return null
+}
+
+/**
+ * Get hot streak chunks if available
+ */
+export const getHotStreakChunks = (
+    entry: AutoeditRequestDebugState
+):
+    | { prediction: string; loadedAt: number; modelResponse: ModelResponse; fullPrediction?: string }[]
+    | null => {
+    if (
+        'hotStreakChunks' in entry.state &&
+        Array.isArray(entry.state.hotStreakChunks) &&
+        entry.state.hotStreakChunks.length > 0
+    ) {
+        return entry.state.hotStreakChunks
     }
     return null
 }
@@ -278,7 +334,7 @@ export const getFullResponseBody = (entry: AutoeditRequestDebugState): any | nul
 /**
  * Get the complete model response if available
  */
-export const getModelResponse = (entry: AutoeditRequestDebugState): any | null => {
+export const getModelResponse = (entry: AutoeditRequestDebugState): ModelResponse | null => {
     if ('modelResponse' in entry.state) {
         return entry.state.modelResponse
     }
@@ -289,6 +345,7 @@ export const AutoeditDataSDK = {
     extractAutoeditData,
     getStartTime,
     getFilePath,
+    getFileName,
     getCodeToRewrite,
     getTriggerKind,
     getPositionInfo,
@@ -305,4 +362,5 @@ export const AutoeditDataSDK = {
     getNetworkLatencyInfo,
     getFullResponseBody,
     getModelResponse,
+    getHotStreakChunks,
 }

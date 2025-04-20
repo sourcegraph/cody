@@ -1,7 +1,7 @@
 import type * as vscode from 'vscode'
 
 import type { DocumentContext } from '@sourcegraph/cody-shared'
-
+import type { InlineCompletionItemRetrievedContext } from '../../../src/completions/analytics-logger'
 import type { ContextSummary } from '../../completions/context/context-mixer'
 import type { CodeGenEventMetadata } from '../../services/CharactersLogger'
 import type { ModelResponse } from '../adapters/base'
@@ -99,6 +99,8 @@ export const autoeditSource = {
     cache: 2,
     /** Autoedit originated from a in-flight request. */
     inFlightRequest: 3,
+    /** Autoedit originated from a hot streak chain. */
+    hotStreak: 4,
 } as const
 
 /** We use numeric keys to send these to the analytics backend */
@@ -109,7 +111,7 @@ export const autoeditDiscardReason = {
     emptyPrediction: 2,
     predictionEqualsCodeToRewrite: 3,
     recentEdits: 4,
-    suffixOverlap: 5,
+    rewriteAreaOverlap: 5,
     emptyPredictionAfterInlineCompletionExtraction: 6,
     noActiveEditor: 7,
     conflictingDecorationWithEdits: 8,
@@ -156,6 +158,17 @@ export type AutoeditSuggestionID = string & { readonly _brand: 'AutoeditSuggesti
 export type AutoeditRequestID = string & { readonly _brand: 'AutoeditRequestID' }
 
 /**
+ * A stable ID for a cache entry.
+ */
+export type AutoeditCacheID = string & { readonly _brand: 'AutoeditCacheID' }
+
+/**
+ * A stable ID for a chain of hot-streak suggestions.
+ * Used to support jumping between hot-streak suggestions.
+ */
+export type AutoeditHotStreakID = string & { readonly _brand: 'AutoeditHotStreakID' }
+
+/**
  * The base fields common to all request states. We track ephemeral times and
  * the partial payload. Once we reach a certain phase, we log the payload as a telemetry event.
  */
@@ -169,6 +182,9 @@ export interface StartedState extends AutoeditBaseState {
     phase: 'started'
     /** Time (ms) when we started computing or requesting the suggestion. */
     startedAt: number
+
+    /** The relative file path of the document being edited. */
+    filePath: string
 
     /** Metadata required to show a suggestion based on `requestId` only. */
     codeToReplaceData: CodeToReplaceData
@@ -212,6 +228,8 @@ export interface ContextLoadedState extends Omit<StartedState, 'phase' | 'payloa
     phase: 'contextLoaded'
     /** Timestamp when the context for the autoedit was loaded. */
     contextLoadedAt: number
+    /** Context snippets used by the autoedit model to create a prompt */
+    context: InlineCompletionItemRetrievedContext[]
     payload: StartedState['payload'] & {
         /**
          * Information about the context retrieval process that lead to this autoedit request. Refer
@@ -221,12 +239,23 @@ export interface ContextLoadedState extends Omit<StartedState, 'phase' | 'payloa
     }
 }
 
+export interface HotStreakChunk {
+    prediction: string
+    loadedAt: number
+    modelResponse: ModelResponse
+    fullPrediction?: string
+}
+
 export interface LoadedState extends Omit<ContextLoadedState, 'phase' | 'payload'> {
     phase: 'loaded'
     /** Timestamp when the suggestion completed generation/loading. */
     loadedAt: number
     /** Model response metadata for the debug panel */
     modelResponse: ModelResponse
+    cacheId: AutoeditCacheID
+    hotStreakId?: AutoeditHotStreakID
+    hotStreakChunks?: HotStreakChunk[]
+    editPosition: vscode.Position
     payload: ContextLoadedState['payload'] & {
         /**
          * An ID to uniquely identify a suggest autoedit. Note: It is possible for this ID to be part
@@ -349,6 +378,8 @@ export interface DiscardedState extends Omit<StartedState, 'phase' | 'payload'> 
     discardedAt: number
     /** Timestamp when the suggestion was logged to our analytics backend. This is to avoid double-logging. */
     suggestionLoggedAt?: number
+    /** The prediction that was discarded. This is only available after the loaded state */
+    prediction?: string
     payload: StartedState['payload'] & {
         discardReason: AutoeditDiscardReasonMetadata
     }
@@ -376,4 +407,18 @@ export type AutoeditRequestState = PhaseStates[keyof PhaseStates]
 export interface AutoeditRequestStateForAgentTesting {
     phase?: Phase
     read?: boolean
+}
+
+export interface AutoeditFeedbackData {
+    source: 'feedback'
+    file_path: string
+    prefix: string
+    suffix: string
+    code_to_rewrite_prefix: string
+    code_to_rewrite_suffix: string
+    context: InlineCompletionItemRetrievedContext[]
+    chosen: string
+    rejected: string
+    assertions: string
+    is_reviewed: boolean
 }

@@ -415,6 +415,9 @@ export type ServerNotifications = {
 
     'debug/message': [DebugMessage]
 
+    'extensionConfiguration/didUpdate': [string]
+    'extensionConfiguration/openSettings': [null]
+
     // Certain properties of the task are updated:
     // - State
     // - The associated range has changed because the document was edited
@@ -647,7 +650,7 @@ export interface ExtensionConfiguration {
 
     autocompleteAdvancedProvider?: string | undefined | null
     autocompleteAdvancedModel?: string | undefined | null
-    suggestionsMode?: 'autocomplete' | 'auto-edit (Beta)' | 'off' | undefined | null
+    suggestionsMode?: 'autocomplete' | 'auto-edit' | 'off' | undefined | null
     debug?: boolean | undefined | null
     verboseDebug?: boolean | undefined | null
     telemetryClientName?: string | undefined | null

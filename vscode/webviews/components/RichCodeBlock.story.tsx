@@ -115,7 +115,8 @@ const meta: Meta<typeof RichCodeBlock> = {
     component: RichCodeBlock,
 
     args: {
-        code: sampleCode,
+        plainCode: sampleCode,
+        markdownCode: `\`\`\`js\n${sampleCode}\n\`\`\``,
         children: highlightedCode,
         language: 'javascript',
         isCodeComplete: true,
@@ -145,7 +146,8 @@ export const ShellCommand: StoryObj<typeof meta> = {
                 <span className="hljs-string">"Hello, World!"</span>
             </>
         ),
-        code: 'echo "Hello, World!"',
+        plainCode: 'echo "Hello, World!"',
+        markdownCode: '```bash\necho "Hello, World!"\n```',
         language: 'bash',
         isShellCommand: true,
         onExecute: cmd => console.log('Execute command:', cmd),

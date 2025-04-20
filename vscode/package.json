@@ -3,7 +3,7 @@
   "name": "cody-ai",
   "private": true,
   "displayName": "Cody: AI Code Assistant",
-  "version": "1.82.0",
+  "version": "1.86.0",
   "publisher": "sourcegraph",
   "license": "Apache-2.0",
   "icon": "resources/sourcegraph.png",
@@ -595,7 +595,7 @@
       {
         "command": "cody.command.autoedit-manual-trigger",
         "title": "Autoedits Manual Trigger",
-        "enablement": "cody.activated && config.cody.suggestions.mode == 'auto-edit (Beta)'"
+        "enablement": "cody.activated && config.cody.suggestions.mode == 'auto-edit'"
       },
       {
         "command": "cody.command.autoedit.open-debug-panel",
@@ -720,7 +720,7 @@
       {
         "command": "cody.supersuggest.testExample",
         "key": "ctrl+alt+enter",
-        "when": "cody.activated && config.cody.suggestions.mode == 'auto-edit (Beta)'"
+        "when": "cody.activated && config.cody.suggestions.mode == 'auto-edit'"
       }
     ],
     "submenus": [
@@ -963,7 +963,7 @@
         },
         "cody.suggestions.mode": {
           "type": "string",
-          "enum": ["autocomplete", "auto-edit (Beta)", "off"],
+          "enum": ["autocomplete", "auto-edit", "off"],
           "enumDescriptions": [
             "Suggests standard code completions as you type.",
             "Suggests advanced context-aware code edits as you navigate the codebase. Experimental feature for Pro and Enterprise users.",
@@ -1395,10 +1395,12 @@
     "@openctx/vscode-lib": "^0.0.26",
     "@opentelemetry/api": "^1.7.0",
     "@opentelemetry/core": "^1.18.1",
+    "@opentelemetry/exporter-metrics-otlp-http": "^0.45.1",
     "@opentelemetry/exporter-trace-otlp-http": "^0.45.1",
     "@opentelemetry/instrumentation": "^0.45.1",
     "@opentelemetry/instrumentation-http": "^0.45.1",
     "@opentelemetry/resources": "^1.18.1",
+    "@opentelemetry/sdk-metrics": "^1.18.1",
     "@opentelemetry/sdk-trace-base": "^1.18.1",
     "@opentelemetry/sdk-trace-node": "^1.18.1",
     "@opentelemetry/semantic-conventions": "^1.18.1",

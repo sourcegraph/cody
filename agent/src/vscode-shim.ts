@@ -158,12 +158,6 @@ export function isTokenOrEndpointChange(newConfig: ExtensionConfiguration): bool
     )
 }
 
-const configuration = new AgentWorkspaceConfiguration(
-    [],
-    () => clientInfo,
-    () => extensionConfiguration
-)
-
 // Sorted alphabetically
 export const onDidChangeActiveTextEditor = new EventEmitter<vscode.TextEditor | undefined>()
 export const onDidChangeConfiguration = new EventEmitter<vscode.ConfigurationChangeEvent>()
@@ -178,6 +172,13 @@ export const onDidDeleteFiles = new EventEmitter<vscode.FileDeleteEvent>()
 export const onDidOpenTextDocument = new EventEmitter<vscode.TextDocument>()
 export const onDidRenameFiles = new EventEmitter<vscode.FileRenameEvent>()
 export const onDidSaveTextDocument = new EventEmitter<vscode.TextDocument>()
+
+const configuration = new AgentWorkspaceConfiguration(
+    [],
+    () => clientInfo,
+    () => extensionConfiguration,
+    onDidChangeConfiguration
+)
 
 export interface WorkspaceDocuments {
     openTextDocument: (uri: vscode.Uri) => Promise<vscode.TextDocument>
@@ -1052,6 +1053,10 @@ const _commands: Partial<typeof vscode.commands> = {
 _commands?.registerCommand?.('workbench.action.reloadWindow', () => {
     // Do nothing
 })
+_commands?.registerCommand?.('workbench.action.openSettings', () => {
+    agent?.notify('extensionConfiguration/openSettings', null)
+})
+
 _commands?.registerCommand?.('setContext', (key, value) => {
     if (typeof key !== 'string') {
         throw new TypeError(`setContext: first argument must be string. Got: ${key}`)

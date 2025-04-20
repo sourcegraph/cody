@@ -257,6 +257,54 @@ export function insertIntoDocContext(params: InsertIntoDocContextParams): Docume
     return updatedDocContext
 }
 
+interface GetDocContextAfterRewriteParams {
+    document: vscode.TextDocument
+    replacementRange: vscode.Range
+    injectedContent: string
+    position: vscode.Position
+    maxPrefixLength: number
+    maxSuffixLength: number
+}
+
+export function getDocContextAfterRewrite(params: GetDocContextAfterRewriteParams): DocumentContext {
+    const { document, replacementRange, injectedContent, position, maxPrefixLength, maxSuffixLength } =
+        params
+
+    const originalPrefix = document.getText(
+        new vscode.Range(new vscode.Position(0, 0), replacementRange.start)
+    )
+    const originalSuffix = document.getText(
+        new vscode.Range(replacementRange.end, document.positionAt(document.getText().length))
+    )
+
+    const updatedDocumentPrefix = originalPrefix + injectedContent
+    const updatedDocumentSuffix = originalSuffix
+
+    const prefixLines = lines(updatedDocumentPrefix)
+    const suffixLines = lines(updatedDocumentSuffix)
+
+    const truncatedPrefix = getPrefix({
+        offset: updatedDocumentPrefix.length,
+        maxPrefixLength,
+        prefixLines,
+    })
+    const truncatedSuffix = getSuffixWithCharLimit(suffixLines, maxSuffixLength)
+
+    return getDerivedDocContext({
+        maxPrefixLength,
+        maxSuffixLength,
+        position,
+        languageId: document.languageId,
+        documentDependentContext: {
+            prefix: truncatedPrefix,
+            suffix: truncatedSuffix,
+            injectedPrefix: null,
+            completePrefix: updatedDocumentPrefix,
+            completeSuffix: updatedDocumentSuffix,
+        },
+    })
+}
+
 interface GetLinesContextParams {
     prefix: string
     suffix: string
