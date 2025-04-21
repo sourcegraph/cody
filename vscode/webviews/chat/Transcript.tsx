@@ -374,7 +374,8 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
         onUserAction('submit')
     }, [onUserAction])
 
-    const omniboxEnabled = useOmniBox() && !usingToolCody
+    // Omnibox is enabled if the user is not a dotcom user and the omnibox is enabled
+    const omniboxEnabled = useOmniBox() && !userInfo?.isDotComUser
 
     const vscodeAPI = getVSCodeAPI()
     const onStop = useCallback(() => {
@@ -649,7 +650,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
             />
             {!isAgenticMode && (
                 <>
-                    {omniboxEnabled && assistantMessage?.didYouMeanQuery && (
+                    {!usingToolCody && omniboxEnabled && assistantMessage?.didYouMeanQuery && (
                         <DidYouMeanNotice
                             query={assistantMessage?.didYouMeanQuery}
                             disabled={!!assistantMessage?.isLoading}

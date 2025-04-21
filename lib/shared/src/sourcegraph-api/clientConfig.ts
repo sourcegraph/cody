@@ -208,6 +208,7 @@ export class ClientConfigSingleton {
                 if (semver.lt(siteVersion, '5.5.0')) {
                     return false
                 }
+                omniBoxEnabled = true
                 return true
             })
             .then(supportsClientConfig => {
