@@ -103,16 +103,24 @@ describe('CodyToolProvider', () => {
         const tools = CodyToolProvider.getTools()
         expect(tools.some(tool => tool.config.title === 'Terminal')).toBe(true)
     })
-    
+
     it('should register and include MCP tools', () => {
         const mockMcpTools = [
-            { name: 'testMcpTool1', description: 'Test MCP Tool 1', input_schema: { type: "object" as const, properties: {} } },
-            { name: 'testMcpTool2', description: 'Test MCP Tool 2', input_schema: { type: "object" as const, properties: {} } }
+            {
+                name: 'testMcpTool1',
+                description: 'Test MCP Tool 1',
+                input_schema: { type: 'object' as const, properties: {} },
+            },
+            {
+                name: 'testMcpTool2',
+                description: 'Test MCP Tool 2',
+                input_schema: { type: 'object' as const, properties: {} },
+            },
         ]
-        
+
         const registeredTools = CodyToolProvider.registerMcpTools('test-server', mockMcpTools)
         expect(registeredTools.length).toBe(2)
-        
+
         // Verify tools were properly registered
         const allTools = CodyToolProvider.getTools()
         expect(allTools.some(tool => tool.config.title === 'testMcpTool1')).toBe(true)
@@ -125,15 +133,17 @@ describe('ToolFactory', () => {
 
     // Mock required for MCP execution test
     vi.mock('../../chat/chat-view/tools/MCPManager', async () => {
-        const actual = await vi.importActual('../../chat/chat-view/tools/MCPManager') as any;
+        const actual = (await vi.importActual('../../chat/chat-view/tools/MCPManager')) as any
         return {
             ...actual,
             MCPManager: {
                 instance: {
-                    executeTool: vi.fn().mockResolvedValue({ content: 'MCP tool executed successfully' })
-                }
-            }
-        };
+                    executeTool: vi
+                        .fn()
+                        .mockResolvedValue({ content: 'MCP tool executed successfully' }),
+                },
+            },
+        }
     })
 
     class TestCodyTool extends CodyTool {
@@ -195,26 +205,32 @@ describe('ToolFactory', () => {
         expect(tools.length).toBeGreaterThan(2)
         expect(tools.filter(tool => tool instanceof TestCodyTool).length).toBe(2)
     })
-    
+
     it('should create and execute MCP tools', async () => {
-        const mockMcpTools = [{ name: 'testMcpTool', description: 'Test MCP Tool', input_schema: { type: "object" as const, properties: {} } }]
+        const mockMcpTools = [
+            {
+                name: 'testMcpTool',
+                description: 'Test MCP Tool',
+                input_schema: { type: 'object' as const, properties: {} },
+            },
+        ]
         const serverName = 'test-server'
-        
+
         // Create MCP tools
         const mcpTools = factory.createMcpTools(mockMcpTools, serverName)
         expect(mcpTools.length).toBe(1)
-        
+
         // Get all instances - should include MCP tools
         const allTools = factory.getInstances()
         const mcpTool = allTools.find(tool => tool.config.title === 'testMcpTool')
         expect(mcpTool).toBeDefined()
-        
+
         // Test executing the MCP tool
         if (mcpTool) {
-            // Mock span 
+            // Mock span
             const mockSpan = { addEvent: vi.fn() } as any
             const result = await mcpTool.execute(mockSpan, ['{}'])
-            
+
             expect(result.length).toBe(1)
             expect(result[0].content).toContain('executed successfully')
             expect(result[0].source).toBe(ContextItemSource.Agentic)
