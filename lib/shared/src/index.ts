@@ -303,7 +303,6 @@ export {
     type RepoListResponse,
     type SuggestionsRepo,
     type RepoSuggestionsSearchResponse,
-    type ChatIntentResult,
     type NLSSearchResult,
     type NLSSearchResponse,
     type NLSSearchFileMatch,
