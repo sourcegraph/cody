@@ -237,7 +237,7 @@ export function transcriptToInteractionPairs(
                 isUnsentFollowup: true,
                 // If the last submitted message was a search, default to chat for the followup. Else,
                 // keep the manually selected intent, if any, or the last human message's intent.
-                intent: lastHumanMessage?.intent === 'search' ? 'chat' : lastHumanMessage?.intent,
+                intent: lastHumanMessage?.intent,
                 manuallySelectedIntent,
             },
             assistantMessage: null,
@@ -332,6 +332,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
             const commonProps = {
                 editorValue,
                 traceparent,
+                manuallySelectedIntent,
             }
 
             if (action === 'edit') {
@@ -344,16 +345,14 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                 if (isLastSentInteraction) {
                     lastEditorRef.current?.filterMentions(item => !isCodeSearchContextItem(item))
                 }
-
+                setManuallySelectedIntent('edit')
                 editHumanMessage({
                     messageIndexInTranscript: humanMessage.index,
                     ...commonProps,
-                    manuallySelectedIntent: manuallySelectedIntent,
                 })
             } else {
                 submitHumanMessage({
                     ...commonProps,
-                    manuallySelectedIntent: manuallySelectedIntent,
                 })
             }
         },
@@ -363,6 +362,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
             isLastSentInteraction,
             lastEditorRef,
             manuallySelectedIntent,
+            setManuallySelectedIntent,
         ]
     )
 
@@ -551,7 +551,6 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
 
     const editAndSubmitSearch = useCallback(
         (text: string) => {
-            setManuallySelectedIntent('search')
             editHumanMessage({
                 messageIndexInTranscript: humanMessage.index,
                 editorValue: {
@@ -559,10 +558,11 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                     contextItems: [],
                     editorState: serializedPromptEditorStateFromText(text),
                 },
-                manuallySelectedIntent,
+                manuallySelectedIntent: 'search',
             })
+            setManuallySelectedIntent('chat')
         },
-        [humanMessage, manuallySelectedIntent, setManuallySelectedIntent]
+        [humanMessage, setManuallySelectedIntent]
     )
 
     // We track, ephemerally, the code blocks that are being regenerated so
@@ -644,7 +644,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                 isEditorInitiallyFocused={isLastInteraction}
                 editorRef={humanEditorRef}
                 className={!isFirstInteraction && isLastInteraction ? 'tw-mt-auto' : ''}
-                intent={manuallySelectedIntent}
+                intent={humanMessage.intent ?? manuallySelectedIntent}
                 manuallySelectIntent={setManuallySelectedIntent}
             />
             {!isAgenticMode && (
@@ -653,9 +653,10 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                         <DidYouMeanNotice
                             query={assistantMessage?.didYouMeanQuery}
                             disabled={!!assistantMessage?.isLoading}
-                            switchToSearch={() =>
+                            switchToSearch={() => {
                                 editAndSubmitSearch(assistantMessage?.didYouMeanQuery ?? '')
-                            }
+                                setManuallySelectedIntent('chat')
+                            }}
                         />
                     )}
                     {!usingToolCody && !isSearchIntent && humanMessage.agent && (

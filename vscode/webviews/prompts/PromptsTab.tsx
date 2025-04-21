@@ -14,8 +14,9 @@ import styles from './PromptsTab.module.css'
 export const PromptsTab: React.FC<{
     IDE: CodyIDE
     setView: (view: View) => void
-}> = ({ IDE, setView }) => {
-    const runAction = useActionSelect()
+    setLastManuallySelectedIntent: (intent: ChatMessage['intent']) => void
+}> = ({ setView, setLastManuallySelectedIntent }) => {
+    const runAction = useActionSelect(setLastManuallySelectedIntent)
 
     const [promptsFilter, setPromptsFilter] = useState<PromptsFilterArgs>({})
 
@@ -30,10 +31,13 @@ export const PromptsTab: React.FC<{
                 recommendedOnly={false}
                 showOnlyPromptInsertableCommands={false}
                 showPromptLibraryUnsupportedMessage={true}
-                onSelect={item => runAction(item, setView)}
+                onSelect={item => {
+                    runAction(item, setView)
+                }}
                 className={styles.promptsContainer}
                 inputClassName={styles.promptsInput}
                 promptFilters={promptsFilter}
+                setLastManuallySelectedIntent={setLastManuallySelectedIntent}
             />
         </div>
     )
@@ -52,7 +56,7 @@ export const promptModeToIntent = (mode?: PromptMode | undefined | null): ChatMe
     }
 }
 
-export function useActionSelect() {
+export function useActionSelect(setLastManuallySelectedIntent: (intent: ChatMessage['intent']) => void) {
     const dispatchClientAction = useClientActionDispatcher()
     const [lastUsedActions = {}, persistValue] = useLocalStorage<Record<string, number>>(
         'last-used-actions-v2',
@@ -69,6 +73,11 @@ export function useActionSelect() {
 
         switch (action.actionType) {
             case 'prompt': {
+                // Update the last manually selected intent if the action is a prompt
+                // Map action.mode to intent: CHAT -> 'chat', EDIT -> 'edit'
+                const intent = promptModeToIntent(action.mode)
+                setLastManuallySelectedIntent(intent)
+
                 setView(View.Chat)
 
                 dispatchClientAction(

@@ -19,6 +19,7 @@ import { Chat } from './Chat'
 import { useClientActionDispatcher } from './client/clientState'
 import { Notices } from './components/Notices'
 import { StateDebugOverlay } from './components/StateDebugOverlay'
+import { useLocalStorage } from './components/hooks'
 import type { ServerType } from './components/mcp'
 import { ServerHome } from './components/mcp/ServerHome'
 import { TabContainer, TabRoot } from './components/shadcn/ui/tabs'
@@ -123,6 +124,10 @@ export const CodyPanel: FunctionComponent<CodyPanelProps> = ({
         }
     }, [api.clientActionBroadcast])
 
+    const [lastManuallySelectedIntent, setLastManuallySelectedIntent] = useLocalStorage<
+        ChatMessage['intent']
+    >('last-selected-intent', 'chat')
+
     return (
         <TabViewContext.Provider value={useMemo(() => ({ view, setView }), [view, setView])}>
             <TabRoot
@@ -158,6 +163,8 @@ export const CodyPanel: FunctionComponent<CodyPanelProps> = ({
                             scrollableParent={tabContainerRef.current}
                             setView={setView}
                             isWorkspacesUpgradeCtaEnabled={isWorkspacesUpgradeCtaEnabled}
+                            lastManuallySelectedIntent={lastManuallySelectedIntent}
+                            setLastManuallySelectedIntent={setLastManuallySelectedIntent}
                         />
                     )}
                     {view === View.History && (
@@ -170,7 +177,11 @@ export const CodyPanel: FunctionComponent<CodyPanelProps> = ({
                         />
                     )}
                     {view === View.Prompts && (
-                        <PromptsTab IDE={clientCapabilities.agentIDE} setView={setView} />
+                        <PromptsTab
+                            IDE={clientCapabilities.agentIDE}
+                            setView={setView}
+                            setLastManuallySelectedIntent={setLastManuallySelectedIntent}
+                        />
                     )}
                     {view === View.Settings &&
                         // NOTE: This is temporary to hide the MCP UI until it is implemented.

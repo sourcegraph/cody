@@ -1,4 +1,4 @@
-import type { Action } from '@sourcegraph/cody-shared'
+import type { Action, ChatMessage } from '@sourcegraph/cody-shared'
 import { BookText } from 'lucide-react'
 import { useCallback } from 'react'
 import { Button } from '../../components/shadcn/ui/button'
@@ -13,10 +13,11 @@ export const PromptSelectField: React.FunctionComponent<{
     onSelect: (item: Action) => void
     onCloseByEscape?: () => void
     className?: string
+    setLastManuallySelectedIntent: (intent: ChatMessage['intent']) => void
 
     /** For storybooks only. */
     __storybook__open?: boolean
-}> = ({ onSelect, onCloseByEscape, className, __storybook__open }) => {
+}> = ({ onSelect, onCloseByEscape, className, __storybook__open, setLastManuallySelectedIntent }) => {
     const telemetryRecorder = useTelemetryRecorder()
     const { setView } = useTabView()
 
@@ -63,6 +64,7 @@ export const PromptSelectField: React.FunctionComponent<{
                         lastUsedSorting={true}
                         recommendedOnly={false}
                         inputClassName="tw-bg-popover"
+                        setLastManuallySelectedIntent={setLastManuallySelectedIntent}
                     />
 
                     <footer className="tw-px-2 tw-py-1 tw-border-t tw-border-border tw-bg-muted">

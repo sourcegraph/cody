@@ -8,7 +8,7 @@ import {
 } from '@sourcegraph/cody-shared'
 import { outputChannelLogger } from '../output-channel-logger'
 
-const LEGACY_API_VERSION = 1
+const LEGACY_API_VERSION = 8
 
 /**
  * Rewrite the query, using the fast completions model to pull out keywords.
@@ -126,10 +126,12 @@ export async function extractKeywords(
     const document: { keywords: { keyword: string | string[] } } = new XMLParser().parse(lastMessageText)
 
     let keywords: string[] = []
-    if (Array.isArray(document.keywords.keyword)) {
-        keywords = document.keywords.keyword
-    } else {
-        keywords = [document.keywords.keyword]
+    if (document.keywords) {
+        if (Array.isArray(document.keywords.keyword)) {
+            keywords = document.keywords.keyword
+        } else if (document.keywords.keyword) {
+            keywords = [document.keywords.keyword]
+        }
     }
 
     return keywords.flatMap(keyword => keyword.split(' ').filter(v => v !== ''))

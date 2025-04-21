@@ -147,7 +147,7 @@ export const HumanMessageEditor: FunctionComponent<{
                     isEdit: isSent ? 1 : 0,
                     messageLength: value.text.length,
                     contextItems: value.contextItems.length,
-                    intent: [undefined, 'chat', 'search'].findIndex(i => i === intent),
+                    intent: [undefined, 'chat', 'search', 'edit'].findIndex(i => i === intent),
                 },
                 billingMetadata: {
                     product: 'cody',
@@ -297,6 +297,7 @@ export const HumanMessageEditor: FunctionComponent<{
                 if (setPromptAsInput) {
                     // set the intent
                     promptIntent = promptModeToIntent(setPromptAsInput.mode)
+                    manuallySelectIntent(promptIntent)
 
                     updates.push(
                         // biome-ignore lint/suspicious/noAsyncPromiseExecutor: <explanation>
@@ -309,8 +310,6 @@ export const HumanMessageEditor: FunctionComponent<{
                             const promptEditorState = await firstValueFrom(
                                 extensionAPI.hydratePromptMessage(setPromptAsInput.text, initialContext)
                             )
-
-                            manuallySelectIntent(promptIntent)
 
                             // update editor state
                             requestAnimationFrame(async () => {
@@ -442,7 +441,6 @@ export const HumanMessageEditor: FunctionComponent<{
                     isEditorFocused={focused}
                     omniBoxEnabled={omniBoxEnabled}
                     onSubmitClick={onSubmitClick}
-                    manuallySelectIntent={manuallySelectIntent}
                     submitState={submitState}
                     onGapClick={onGapClick}
                     focusEditor={focusEditor}
@@ -451,6 +449,7 @@ export const HumanMessageEditor: FunctionComponent<{
                     intent={intent}
                     extensionAPI={extensionAPI}
                     onMediaUpload={onMediaUpload}
+                    setLastManuallySelectedIntent={manuallySelectIntent}
                 />
             )}
         </div>

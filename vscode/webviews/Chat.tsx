@@ -16,7 +16,6 @@ import { Transcript, focusLastHumanMessageEditor } from './chat/Transcript'
 import { WelcomeMessage } from './chat/components/WelcomeMessage'
 import { WelcomeNotice } from './chat/components/WelcomeNotice'
 import { ScrollDown } from './components/ScrollDown'
-import { useLocalStorage } from './components/hooks'
 import type { View } from './tabs'
 import type { VSCodeWrapper } from './utils/VSCodeApi'
 import { SpanManager } from './utils/spanManager'
@@ -35,9 +34,9 @@ interface ChatboxProps {
     showIDESnippetActions?: boolean
     setView: (view: View) => void
     isWorkspacesUpgradeCtaEnabled?: boolean
+    lastManuallySelectedIntent: ChatMessage['intent']
+    setLastManuallySelectedIntent: (intent: ChatMessage['intent']) => void
 }
-
-const LAST_SELECTED_INTENT_KEY = 'last-selected-intent'
 
 export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>> = ({
     messageInProgress,
@@ -51,14 +50,13 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     showIDESnippetActions = true,
     setView,
     isWorkspacesUpgradeCtaEnabled,
+    lastManuallySelectedIntent,
+    setLastManuallySelectedIntent,
 }) => {
     const transcriptRef = useRef(transcript)
     transcriptRef.current = transcript
 
     const userInfo = useUserAccountInfo()
-    const [lastManuallySelectedIntent, setLastManuallySelectedIntent] = useLocalStorage<
-        ChatMessage['intent']
-    >(LAST_SELECTED_INTENT_KEY, 'chat')
 
     const copyButtonOnSubmit = useCallback(
         (text: string, eventType: 'Button' | 'Keydown' = 'Button') => {
@@ -208,6 +206,13 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     }, [transcript])
     const [activeChatContext, setActiveChatContext] = useState<Context>()
 
+    const handleSetLastManuallySelectedIntent = useCallback(
+        (intent: ChatMessage['intent']) => {
+            setLastManuallySelectedIntent(intent)
+        },
+        [setLastManuallySelectedIntent]
+    )
+
     return (
         <>
             {!chatEnabled && (
@@ -233,7 +238,11 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             />
             {transcript.length === 0 && showWelcomeMessage && (
                 <>
-                    <WelcomeMessage IDE={userInfo.IDE} setView={setView} />
+                    <WelcomeMessage
+                        IDE={userInfo.IDE}
+                        setView={setView}
+                        setLastManuallySelectedIntent={handleSetLastManuallySelectedIntent}
+                    />
                     {isWorkspacesUpgradeCtaEnabled && userInfo.IDE !== CodyIDE.Web && (
                         <div className="tw-absolute tw-bottom-0 tw-left-1/2 tw-transform tw--translate-x-1/2 tw-w-[95%] tw-z-1 tw-mb-4 tw-max-h-1/2">
                             <WelcomeNotice />

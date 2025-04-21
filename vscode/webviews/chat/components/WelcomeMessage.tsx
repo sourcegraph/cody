@@ -1,4 +1,4 @@
-import type { CodyIDE } from '@sourcegraph/cody-shared'
+import type { ChatMessage, CodyIDE } from '@sourcegraph/cody-shared'
 import type { FunctionComponent } from 'react'
 import { PromptList } from '../../components/promptList/PromptList'
 import { useActionSelect } from '../../prompts/PromptsTab'
@@ -11,13 +11,18 @@ interface WelcomeMessageProps {
     setView: (view: View) => void
     IDE: CodyIDE
     isWorkspacesUpgradeCtaEnabled?: boolean
+    setLastManuallySelectedIntent: (intent: ChatMessage['intent']) => void
 }
 
-export const WelcomeMessage: FunctionComponent<WelcomeMessageProps> = ({ setView, IDE }) => {
+export const WelcomeMessage: FunctionComponent<WelcomeMessageProps> = ({
+    setView,
+    IDE,
+    setLastManuallySelectedIntent,
+}) => {
     // Remove the old welcome message dismissal key that is no longer used.
     localStorage.removeItem(localStorageKey)
 
-    const runAction = useActionSelect()
+    const runAction = useActionSelect(setLastManuallySelectedIntent)
 
     return (
         <div className="tw-flex-1 tw-flex tw-flex-col tw-items-start tw-w-full tw-px-8 tw-gap-6 tw-transition-all tw-relative">
@@ -32,6 +37,7 @@ export const WelcomeMessage: FunctionComponent<WelcomeMessageProps> = ({ setView
                     appearanceMode="chips-list"
                     telemetryLocation="WelcomeAreaPrompts"
                     onSelect={item => runAction(item, setView)}
+                    setLastManuallySelectedIntent={setLastManuallySelectedIntent}
                 />
             </div>
             <div className="tw-mt-auto tw-w-full tw-mb-4 tw-pb-2">

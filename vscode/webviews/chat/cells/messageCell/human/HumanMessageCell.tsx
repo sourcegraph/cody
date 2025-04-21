@@ -68,11 +68,18 @@ export const HumanMessageCell: FC<HumanMessageCellProps> = ({ message, ...otherP
         [messageJSON]
     )
 
-    return <HumanMessageCellContent {...otherProps} initialEditorState={initialEditorState} />
+    return (
+        <HumanMessageCellContent
+            {...otherProps}
+            initialEditorState={initialEditorState}
+            messageIntent={message.intent || otherProps.intent}
+        />
+    )
 }
 
 type HumanMessageCellContent = {
     initialEditorState: SerializedPromptEditorState
+    messageIntent: ChatMessage['intent']
 } & Omit<HumanMessageCellProps, 'message'>
 const HumanMessageCellContent = memo<HumanMessageCellContent>(props => {
     const {
@@ -93,8 +100,8 @@ const HumanMessageCellContent = memo<HumanMessageCellContent>(props => {
         editorRef,
         __storybook__focus,
         onEditorFocusChange,
-        intent,
         manuallySelectIntent,
+        messageIntent,
     } = props
 
     return (
@@ -122,7 +129,7 @@ const HumanMessageCellContent = memo<HumanMessageCellContent>(props => {
                     editorRef={editorRef}
                     __storybook__focus={__storybook__focus}
                     onEditorFocusChange={onEditorFocusChange}
-                    intent={intent}
+                    intent={messageIntent}
                     manuallySelectIntent={manuallySelectIntent}
                 />
             }

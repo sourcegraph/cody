@@ -37,9 +37,16 @@ describe('WelcomeMessage', () => {
             } satisfies Partial<ClientCapabilitiesWithLegacyFields> as ClientCapabilitiesWithLegacyFields,
             authStatus: AUTH_STATUS_FIXTURE_AUTHED,
         } satisfies Partial<useConfigModule.Config> as useConfigModule.Config)
-        render(<WelcomeMessage IDE={CodyIDE.VSCode} setView={() => {}} />, {
-            wrapper: AppWrapperForTest,
-        })
+        render(
+            <WelcomeMessage
+                IDE={CodyIDE.VSCode}
+                setView={() => {}}
+                setLastManuallySelectedIntent={() => {}}
+            />,
+            {
+                wrapper: AppWrapperForTest,
+            }
+        )
         openCollapsiblePanels()
 
         // Check common elements
@@ -54,9 +61,16 @@ describe('WelcomeMessage', () => {
             } satisfies Partial<ClientCapabilitiesWithLegacyFields> as ClientCapabilitiesWithLegacyFields,
             authStatus: AUTH_STATUS_FIXTURE_AUTHED,
         } satisfies Partial<useConfigModule.Config> as useConfigModule.Config)
-        render(<WelcomeMessage IDE={CodyIDE.VSCode} setView={() => {}} />, {
-            wrapper: AppWrapperForTest,
-        })
+        render(
+            <WelcomeMessage
+                IDE={CodyIDE.VSCode}
+                setView={() => {}}
+                setLastManuallySelectedIntent={() => {}}
+            />,
+            {
+                wrapper: AppWrapperForTest,
+            }
+        )
         openCollapsiblePanels()
 
         // Check common elements
