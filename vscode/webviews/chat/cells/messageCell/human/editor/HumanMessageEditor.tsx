@@ -77,6 +77,7 @@ export const HumanMessageEditor: FunctionComponent<{
 
     intent?: ChatMessage['intent']
     manuallySelectIntent: (intent: ChatMessage['intent']) => void
+    __logPrefix?: string
 }> = ({
     models,
     userInfo,
@@ -97,6 +98,7 @@ export const HumanMessageEditor: FunctionComponent<{
     onEditorFocusChange: parentOnEditorFocusChange,
     intent,
     manuallySelectIntent,
+    __logPrefix = 'HumanMessageEditor',
 }) => {
     const telemetryRecorder = useTelemetryRecorder()
 
@@ -109,12 +111,58 @@ export const HumanMessageEditor: FunctionComponent<{
             ? textContentFromSerializedLexicalNode(initialEditorState.lexicalEditorState.root) === ''
             : true
     )
+    // Previous input status to detect when input becomes empty
+    const wasEmptyRef = useRef(isEmptyEditorValue)
+    
+    // Track when the input was last cleared to distinguish between user and system clearing
+    const lastClearTimestamp = useRef(0)
+
+    /**
+     * Handles content changes in the editor.
+     * - Tracks when input becomes empty vs non-empty
+     * - Resets intent to 'chat' when input is cleared
+     * - Propagates changes to parent component
+     */
     const onEditorChange = useCallback(
         (value: SerializedPromptEditorValue): void => {
+            const isEmpty = !value?.text?.trim()
+            const wasEmpty = wasEmptyRef.current
+
+            // Check if this is a manual clearing by the user vs. an automatic clearing
+            // We only want to reset the intent if the user manually clears the input
+            // We'll use a timestamp to distinguish between them
+            const now = Date.now();
+            const timeSinceLastClear = now - lastClearTimestamp.current;
+            
+            // When the input changes from non-empty to empty:
+            if (!wasEmpty && isEmpty) {
+                console.log(`[${__logPrefix}] Input cleared, time since last programmatic clear: ${timeSinceLastClear}ms`);
+                
+                // Only consider it a user-initiated clear if:
+                // 1. It's been more than 200ms since last programmatic clear (to avoid false positives)
+                // 2. We're in a special intent mode like edit/insert
+                if ((intent === 'edit' || intent === 'insert') && 
+                    intent !== undefined &&
+                    timeSinceLastClear > 200) {
+                    
+                    console.log(`[${__logPrefix}] User manually cleared input, resetting intent to original intent`);
+                    
+                    // Store the current time right before the reset to prevent multiple resets
+                    lastClearTimestamp.current = now;
+                    
+                    // Use the special 'reset' value to trigger restoration to previous intent
+                    manuallySelectIntent('reset');
+                }
+                
+                // Record when the input was cleared for future reference
+                lastClearTimestamp.current = now;
+            }
+
+            wasEmptyRef.current = isEmpty
             onChange?.(value)
-            setIsEmptyEditorValue(!value?.text?.trim())
+            setIsEmptyEditorValue(isEmpty)
         },
-        [onChange]
+        [onChange, intent, manuallySelectIntent, __logPrefix]
     )
 
     const submitState: SubmitButtonState = isPendingPriorResponse
@@ -123,6 +171,15 @@ export const HumanMessageEditor: FunctionComponent<{
           ? 'emptyEditorValue'
           : 'submittable'
 
+    /**
+     * Handles the submission of a message.
+     * - Validates submission state (empty, waiting, submittable)
+     * - Stops ongoing responses if needed
+     * - Gets serialized value from editor
+     * - Tracks empty state for next message
+     * - Submits with the appropriate intent
+     * - Records telemetry for the submission
+     */
     const onSubmitClick = useCallback(
         (intent?: ChatMessage['intent'], forceSubmit?: boolean): void => {
             if (!forceSubmit && submitState === 'emptyEditorValue') {
@@ -139,7 +196,36 @@ export const HumanMessageEditor: FunctionComponent<{
             }
 
             const value = editorRef.current.getSerializedValue()
-            parentOnSubmit(intent)
+
+            // After submission, remember that we're starting with an empty editor next time
+            // This will help with intent tracking for the next message
+            requestAnimationFrame(() => {
+                wasEmptyRef.current = true
+            })
+
+            // Use the proper intent for submission
+            // The special intents (edit, insert) need to be preserved for handler selection
+            const submissionIntent = intent;
+            console.log(`[${__logPrefix}] Preparing to submit with intent:`, submissionIntent, 
+                      `(should use "${submissionIntent}" handler on the server side)`);
+            
+            // Special intents like 'edit' should be used only for the current message
+            // We'll reset immediately after submission to prevent getting stuck in edit mode
+            if ((intent === 'edit' || intent === 'insert') && intent !== undefined) {
+                console.log(`[${__logPrefix}] Will reset intent after submission`)
+                
+                // Use requestAnimationFrame to ensure this runs in the next frame after submission
+                // This is synchronous with the React render cycle
+                requestAnimationFrame(() => {
+                    console.log(`[${__logPrefix}] Resetting intent to original intent for the next message`)
+                    manuallySelectIntent('reset')
+                })
+            }
+            
+            console.log(`[${__logPrefix}] Submitting with intent:`, submissionIntent)
+
+            // Pass the intent to the parent component's onSubmit handler
+            parentOnSubmit(submissionIntent)
 
             telemetryRecorder.recordEvent('cody.humanMessageEditor', 'submit', {
                 metadata: {
@@ -147,7 +233,7 @@ export const HumanMessageEditor: FunctionComponent<{
                     isEdit: isSent ? 1 : 0,
                     messageLength: value.text.length,
                     contextItems: value.contextItems.length,
-                    intent: [undefined, 'chat', 'search'].findIndex(i => i === intent),
+                    intent: [undefined, 'chat', 'search'].findIndex(i => i === submissionIntent),
                 },
                 billingMetadata: {
                     product: 'cody',
@@ -155,7 +241,7 @@ export const HumanMessageEditor: FunctionComponent<{
                 },
             })
         },
-        [submitState, parentOnSubmit, onStop, telemetryRecorder.recordEvent, isFirstMessage, isSent]
+        [submitState, parentOnSubmit, onStop, telemetryRecorder.recordEvent, isFirstMessage, isSent, __logPrefix]
     )
 
     const omniBoxEnabled = useOmniBox()
@@ -163,6 +249,12 @@ export const HumanMessageEditor: FunctionComponent<{
         config: { experimentalPromptEditorEnabled },
     } = useConfig()
 
+    /**
+     * Handles Enter key press in the editor.
+     * - Submits the message when Enter is pressed without Shift
+     * - Prevents submission during composition, when empty, or with Shift key
+     * - Prevents default behavior to avoid newlines when submitting
+     */
     const onEditorEnterKey = useCallback(
         (event: KeyboardEvent | null): void => {
             // Submit input on Enter press (without shift) when input is not empty.
@@ -176,6 +268,10 @@ export const HumanMessageEditor: FunctionComponent<{
     )
 
     const [isEditorFocused, setIsEditorFocused] = useState(false)
+    /**
+     * Tracks focus state of the editor and notifies parent component.
+     * Used to manage UI states that depend on editor focus.
+     */
     const onEditorFocusChange = useCallback(
         (focused: boolean): void => {
             setIsEditorFocused(focused)
@@ -185,9 +281,18 @@ export const HumanMessageEditor: FunctionComponent<{
     )
 
     const [isFocusWithin, setIsFocusWithin] = useState(false)
+    /**
+     * Handles focus events on the container element.
+     * Sets focus-within state to true when any child element receives focus.
+     */
     const onFocus = useCallback(() => {
         setIsFocusWithin(true)
     }, [])
+    /**
+     * Handles blur events on the container element.
+     * Sets focus-within state to false when focus moves outside the container,
+     * but ignores blur events when focus is moving between child elements.
+     */
     const onBlur = useCallback<FocusEventHandler>(event => {
         // If we're shifting focus to one of our child elements, just skip this call because we'll
         // immediately set it back to true.
@@ -220,6 +325,11 @@ export const HumanMessageEditor: FunctionComponent<{
     const onGapClick = useCallback(() => {
         editorRef.current?.setFocus(true, { moveCursorToEnd: true })
     }, [])
+    /**
+     * Handles clicks on the container, determining if it's a gap click or a toolbar button click.
+     * If it's a gap click (clicking on the container itself), focuses the editor.
+     * If it's a toolbar button click, allows the event to propagate normally.
+     */
     const onMaybeGapClick = useCallback(
         (event: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
             const targetIsToolbarButton = event.target !== event.currentTarget
@@ -239,6 +349,14 @@ export const HumanMessageEditor: FunctionComponent<{
         // Add new context to chat from the "Cody Add Selection to Cody Chat"
         // command, etc. Only add to the last human input field.
         { isActive: !isSent },
+        /**
+         * Handles actions from the client/extension to control the input field.
+         * - Adds context items as mention chips
+         * - Appends text to the editor
+         * - Sets editor state
+         * - Handles prompt intents
+         * - Submits the input when requested
+         */
         useCallback<ClientActionListener>(
             ({
                 editorState,
@@ -301,6 +419,9 @@ export const HumanMessageEditor: FunctionComponent<{
                     updates.push(
                         // biome-ignore lint/suspicious/noAsyncPromiseExecutor: <explanation>
                         new Promise<void>(async resolve => {
+                            // Update timestamp to prevent triggering a reset when editor is cleared for the prompt
+                            lastClearTimestamp.current = Date.now();
+                            
                             // get initial context
                             const { initialContext } = await firstValueFrom(
                                 extensionAPI.defaultContext().pipe(skipPendingOperation())
@@ -310,11 +431,15 @@ export const HumanMessageEditor: FunctionComponent<{
                                 extensionAPI.hydratePromptMessage(setPromptAsInput.text, initialContext)
                             )
 
+                            console.log(`[${__logPrefix}] manuallySelectIntent called with promptIntent:`, promptIntent)
                             manuallySelectIntent(promptIntent)
 
                             // update editor state
                             requestAnimationFrame(async () => {
                                 if (editorRef.current) {
+                                    // Mark the clearing as system-initiated
+                                    lastClearTimestamp.current = Date.now();
+                                    
                                     await Promise.all([
                                         editorRef.current.setEditorState(promptEditorState),
                                         editorRef.current.setFocus(true),
@@ -325,6 +450,7 @@ export const HumanMessageEditor: FunctionComponent<{
                         })
                     )
                 } else if (setLastHumanInputIntent) {
+                    console.log(`[${__logPrefix}] manuallySelectIntent called with setLastHumanInputIntent:`, setLastHumanInputIntent)
                     manuallySelectIntent(setLastHumanInputIntent)
                 }
 
@@ -370,6 +496,10 @@ export const HumanMessageEditor: FunctionComponent<{
         void editor.setInitialContextMentions(filteredItems)
     }, [defaultContext?.initialContext, isSent, isFirstMessage, currentChatModel, intent])
 
+    /**
+     * Helper function to focus the editor programmatically.
+     * Used by various event handlers and effects.
+     */
     const focusEditor = useCallback(() => editorRef.current?.setFocus(true), [])
 
     useEffect(() => {
@@ -385,6 +515,10 @@ export const HumanMessageEditor: FunctionComponent<{
         FAST_CHAT_INPUT_TOKEN_BUDGET
 
     const linkOpener = useLinkOpener()
+    /**
+     * Handles opening external links from the editor.
+     * Uses the linkOpener service to safely open URLs.
+     */
     const openExternalLink = useCallback(
         (uri: string) => linkOpener?.openExternalLink(uri),
         [linkOpener]
@@ -392,6 +526,10 @@ export const HumanMessageEditor: FunctionComponent<{
 
     const Editor = experimentalPromptEditorEnabled ? PromptEditorV2 : PromptEditor
 
+    /**
+     * Handles media uploads from the toolbar.
+     * Adds the uploaded media as a mention chip in the editor when the editor is focused.
+     */
     const onMediaUpload = useCallback(
         (media: ContextItemMedia) => {
             // Add the media context item as a mention chip in the editor.

@@ -47,6 +47,8 @@ export const promptModeToIntent = (mode?: PromptMode | undefined | null): ChatMe
             return 'edit'
         case 'INSERT':
             return 'insert'
+        case 'RESET':
+            return 'reset' // Special case for resetting to the original intent
         default:
             return 'chat'
     }

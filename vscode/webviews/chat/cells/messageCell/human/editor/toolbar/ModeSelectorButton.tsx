@@ -111,6 +111,7 @@ export const ModeSelectorField: React.FunctionComponent<{
 
     // Initialize with the provided intent or fallback to chat
     const [currentSelectedIntent, setCurrentSelectedIntent] = useState(() => {
+        console.log('[ModeSelectorButton] Initializing with _intent:', _intent)
         const mappedIntent = INTENT_MAPPING[_intent || 'chat']
         // Check if the intent is available and not disabled
         const isValidIntent = intentOptions.some(
@@ -122,6 +123,7 @@ export const ModeSelectorField: React.FunctionComponent<{
     // Handle intent selection
     const handleSelectIntent = useCallback(
         (intent: ChatMessage['intent'], close?: () => void) => {
+            console.log('[ModeSelectorButton] handleSelectIntent called with intent:', intent)
             manuallySelectIntent(intent)
             setCurrentSelectedIntent(INTENT_MAPPING[intent || 'chat'])
             close?.()

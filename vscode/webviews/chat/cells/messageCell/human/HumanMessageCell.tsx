@@ -124,6 +124,7 @@ const HumanMessageCellContent = memo<HumanMessageCellContent>(props => {
                     onEditorFocusChange={onEditorFocusChange}
                     intent={intent}
                     manuallySelectIntent={manuallySelectIntent}
+                    __logPrefix="HumanMessageCell"
                 />
             }
             className={className}

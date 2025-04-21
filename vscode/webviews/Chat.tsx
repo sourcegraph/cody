@@ -60,6 +60,31 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
         ChatMessage['intent']
     >(LAST_SELECTED_INTENT_KEY, 'chat')
 
+    // Store the previous intent that we'll restore to after using edit/insert
+    const [previousIntent, setPreviousIntent] = useState<ChatMessage['intent']>('chat')
+    
+    // Add console log for manuallySelectedIntent changes
+    const setAndLogManuallySelectedIntent = useCallback((intent: ChatMessage['intent']) => {
+        console.log('[Chat.tsx] Setting manuallySelectedIntent:', intent, 'previous was:', previousIntent)
+        
+        // Special case: 'reset' means "restore to previous intent"
+        if (intent === 'reset') {
+            console.log('[Chat.tsx] Restoring to previous intent:', previousIntent)
+            setLastManuallySelectedIntent(previousIntent)
+            return
+        }
+        
+        // If switching to edit/insert, remember the current intent to restore later
+        if ((intent === 'edit' || intent === 'insert') && lastManuallySelectedIntent !== intent) {
+            setPreviousIntent(lastManuallySelectedIntent)
+            console.log('[Chat.tsx] Saved previous intent:', lastManuallySelectedIntent)
+        }
+        
+        // Update the active intent in the UI and for message submission
+        console.log('[Chat.tsx] Setting active intent to:', intent)
+        setLastManuallySelectedIntent(intent)
+    }, [lastManuallySelectedIntent, previousIntent])
+
     const copyButtonOnSubmit = useCallback(
         (text: string, eventType: 'Button' | 'Keydown' = 'Button') => {
             const op = 'copy'
@@ -229,7 +254,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                 postMessage={postMessage}
                 guardrails={guardrails}
                 manuallySelectedIntent={lastManuallySelectedIntent}
-                setManuallySelectedIntent={setLastManuallySelectedIntent}
+                setManuallySelectedIntent={setAndLogManuallySelectedIntent}
             />
             {transcript.length === 0 && showWelcomeMessage && (
                 <>

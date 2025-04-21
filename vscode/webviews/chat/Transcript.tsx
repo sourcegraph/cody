@@ -187,6 +187,8 @@ export function transcriptToInteractionPairs(
     assistantMessageInProgress: ChatMessage | null,
     manuallySelectedIntent: ChatMessage['intent']
 ): Interaction[] {
+    // Log transcript to interactions mapping
+    console.log('[Transcript] transcriptToInteractionPairs - manuallySelectedIntent:', manuallySelectedIntent)
     const pairs: Interaction[] = []
     const transcriptLength = transcript.length
 
@@ -300,7 +302,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
     const usingToolCody = assistantMessage?.model?.includes(ToolCodyModelName)
 
     const onUserAction = useCallback(
-        (action: 'edit' | 'submit') => {
+        (action: 'edit' | 'submit', actionIntent?: ChatMessage['intent']) => {
             // Start the span as soon as the user initiates the action
             const startMark = performance.mark('startSubmit')
             const spanManager = new SpanManager('cody-webview')
@@ -329,6 +331,12 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                 return
             }
 
+            // Determine which intent to use - use the passed intent (from editor) if available,
+            // otherwise fall back to the manual intent from Transcript props
+            const intentToUse = actionIntent || manuallySelectedIntent
+            console.log('[Transcript] Using intent for submission:', intentToUse, 
+                       'passed intent:', actionIntent, 'manual intent:', manuallySelectedIntent)
+            
             const commonProps = {
                 editorValue,
                 traceparent,
@@ -348,12 +356,12 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                 editHumanMessage({
                     messageIndexInTranscript: humanMessage.index,
                     ...commonProps,
-                    manuallySelectedIntent: manuallySelectedIntent,
+                    manuallySelectedIntent: intentToUse,
                 })
             } else {
                 submitHumanMessage({
                     ...commonProps,
-                    manuallySelectedIntent: manuallySelectedIntent,
+                    manuallySelectedIntent: intentToUse,
                 })
             }
         },
@@ -370,8 +378,8 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
         onUserAction('edit')
     }, [onUserAction])
 
-    const onFollowupSubmit = useCallback((): void => {
-        onUserAction('submit')
+    const onFollowupSubmit = useCallback((intent?: ChatMessage['intent']): void => {
+        onUserAction('submit', intent)
     }, [onUserAction])
 
     const omniboxEnabled = useOmniBox() && !usingToolCody
@@ -519,18 +527,47 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
         }
     }, [assistantMessage, activeChatContext, setActiveChatContext, spanManager, isLoading])
 
+    // Track if we've already reset the intent for this message
+    const hasResetIntentRef = useRef(false)
+    
     const humanMessageInfo = useMemo(() => {
         // See SRCH-942: it's critical to memoize this value to avoid repeated
         // requests to our guardrails server.
         if (assistantMessage && !isContextLoading) {
+            // We only want to reset the intent once when the response is received
+            // Not on every render of this component
+            const shouldResetIntent = (humanMessage.intent === 'edit' || humanMessage.intent === 'insert') && 
+                !humanMessage.isUnsentFollowup && 
+                isLastSentInteraction && 
+                !hasResetIntentRef.current;
+                
+            if (shouldResetIntent) {
+                console.log('[Transcript] Special intent message received response, ensuring reset to normal intent (one time only)')
+                hasResetIntentRef.current = true;
+                
+                // Use setTimeout to ensure this doesn't interfere with other operations
+                // This will happen after the current render cycle
+                setTimeout(() => {
+                    setManuallySelectedIntent('reset');
+                }, 0);
+            }
+            
             return makeHumanMessageInfo({ humanMessage, assistantMessage }, humanEditorRef)
         }
+        
+        // Reset the flag when we don't have an assistant message
+        if (!assistantMessage) {
+            hasResetIntentRef.current = false;
+        }
+        
         return null
-    }, [humanMessage, assistantMessage, isContextLoading])
+    }, [humanMessage, assistantMessage, isContextLoading, isLastSentInteraction, setManuallySelectedIntent])
 
-    const onHumanMessageSubmit = useCallback(() => {
+    const onHumanMessageSubmit = useCallback((submittedIntent?: ChatMessage['intent']) => {
+        console.log('[Transcript] onHumanMessageSubmit called with intent:', submittedIntent)
         if (humanMessage.isUnsentFollowup) {
-            onFollowupSubmit()
+            // Pass the intent to onFollowupSubmit
+            onFollowupSubmit(submittedIntent)
         } else {
             onEditSubmit()
         }
@@ -541,6 +578,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
 
     const onSelectedFiltersUpdate = useCallback(
         (selectedFilters: NLSSearchDynamicFilter[]) => {
+            console.log('[Transcript] Selected filters update:', selectedFilters)
             reevaluateSearchWithSelectedFilters({
                 messageIndexInTranscript: humanMessage.index,
                 selectedFilters,
@@ -551,6 +589,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
 
     const editAndSubmitSearch = useCallback(
         (text: string) => {
+            console.log('[Transcript] Setting search intent for text:', text)
             setManuallySelectedIntent('search')
             editHumanMessage({
                 messageIndexInTranscript: humanMessage.index,
@@ -770,6 +809,7 @@ export function editHumanMessage({
     editorValue: SerializedPromptEditorValue
     manuallySelectedIntent?: ChatMessage['intent']
 }): void {
+    console.log('[Transcript] editHumanMessage with manuallySelectedIntent:', manuallySelectedIntent)
     getVSCodeAPI().postMessage({
         command: 'edit',
         index: messageIndexInTranscript,
@@ -790,6 +830,14 @@ function submitHumanMessage({
     manuallySelectedIntent?: ChatMessage['intent']
     traceparent: string
 }): void {
+    console.log('[Transcript] submitHumanMessage with manuallySelectedIntent:', manuallySelectedIntent, 
+              'Submitting message with this intent will trigger the corresponding handler on the server')
+              
+    // For special intents like edit and insert, we make a note in the console about what should happen
+    if (manuallySelectedIntent === 'edit' || manuallySelectedIntent === 'insert') {
+        console.log(`[Transcript] This is a special "${manuallySelectedIntent}" message - it should trigger the ${manuallySelectedIntent} handler on the server`)
+    }
+    
     getVSCodeAPI().postMessage({
         command: 'submit',
         text: editorValue.text,
