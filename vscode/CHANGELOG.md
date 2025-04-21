@@ -10,13 +10,6 @@ This is a log of all notable changes to Cody for VS Code.
 
 - Revert "chore: migrate feature flags evaluation to new batch api [#-1](https://github.com/sourcegraph/cody/pull/7380)
 
-### Uncategorized
-
-#### Others
-
-- Changelog for 1.86.0 [#7752](https://github.com/sourcegraph/cody/pull/7752)
-
-
 ## 1.86.0
 
 ### Features
