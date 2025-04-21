@@ -7,6 +7,7 @@ import {
 } from '@sourcegraph/cody-shared/src/models/client'
 import { getConfiguration } from '../../../configuration'
 import { AgenticHandler } from './AgenticHandler'
+import { ChatHandler } from './ChatHandler'
 import { DeepCodyHandler } from './DeepCodyHandler'
 import { EditHandler } from './EditHandler'
 import { SearchHandler } from './SearchHandler'
@@ -60,7 +61,7 @@ export function getAgent(model: string, intent: ChatMessage['intent'], tools: Ag
     const modelHandler = agentRegistry.get(model)
     if (modelHandler) return modelHandler(model, tools)
 
-    return new DeepCodyHandler(contextRetriever, editor, chatClient)
+    return new ChatHandler(contextRetriever, editor, chatClient)
 }
 
 /**
@@ -77,6 +78,8 @@ export function getAgentName(intent: ChatMessage['intent'], model?: ChatModel): 
     if (model === ToolCodyModelRef) {
         return ToolCodyModelRef
     }
-
-    return DeepCodyAgentID
+    if (model === DeepCodyModelRef) {
+        return DeepCodyAgentID
+    }
+    return undefined
 }
