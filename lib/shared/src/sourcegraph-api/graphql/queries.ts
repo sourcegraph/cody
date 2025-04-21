@@ -212,26 +212,6 @@ query Repositories($names: [String!]!, $first: Int!) {
   }
 `
 
-export const LEGACY_CHAT_INTENT_QUERY = `
-query ChatIntent($query: String!, $interactionId: String!) {
-    chatIntent(query: $query, interactionId: $interactionId) {
-        intent
-        score
-    }
-}`
-
-export const CHAT_INTENT_QUERY = `
-query ChatIntent($query: String!, $interactionId: String!) {
-    chatIntent(query: $query, interactionId: $interactionId) {
-        intent
-        score
-        allScores {
-            intent
-            score
-        }
-    }
-}`
-
 export const LEGACY_CONTEXT_SEARCH_QUERY = `
 query GetCodyContext($repos: [ID!]!, $query: String!, $codeResultsCount: Int!, $textResultsCount: Int!) {
 	getCodyContext(repos: $repos, query: $query, codeResultsCount: $codeResultsCount, textResultsCount: $textResultsCount) {
