@@ -126,10 +126,12 @@ export async function extractKeywords(
     const document: { keywords: { keyword: string | string[] } } = new XMLParser().parse(lastMessageText)
 
     let keywords: string[] = []
-    if (Array.isArray(document.keywords.keyword)) {
-        keywords = document.keywords.keyword
-    } else {
-        keywords = [document.keywords.keyword]
+    if (document?.keywords) {
+        if (Array.isArray(document.keywords.keyword)) {
+            keywords = document.keywords.keyword
+        } else if (document.keywords.keyword) {
+            keywords = [document.keywords.keyword]
+        }
     }
 
     return keywords.flatMap(keyword => keyword.split(' ').filter(v => v !== ''))
