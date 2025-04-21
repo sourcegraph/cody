@@ -4,6 +4,13 @@ This is a log of all notable changes to Cody for VS Code.
 
 <!--- {/_ CHANGELOG_START _/} -->
 
+## 1.86.1
+
+### Reverts
+
+  There were no reverts for this release
+
+
 ## 1.86.0
 
 ### Features
