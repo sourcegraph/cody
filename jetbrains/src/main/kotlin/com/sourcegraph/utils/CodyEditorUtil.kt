@@ -29,10 +29,6 @@ import com.sourcegraph.cody.agent.protocol_generated.Range
 import com.sourcegraph.common.CodyFileUri
 import com.sourcegraph.config.ConfigUtil
 import com.sourcegraph.utils.ThreadingUtil.runInEdtAndGet
-import java.net.HttpURLConnection
-import java.net.URL
-import java.net.URLEncoder
-import java.nio.charset.StandardCharsets
 import kotlin.io.path.*
 
 object CodyEditorUtil {
@@ -179,33 +175,9 @@ object CodyEditorUtil {
     }
   }
 
-  fun sendGetRequest(baseUrl: String, paramName: String, paramValue: String): String {
-    // Encode the parameter value
-    val encodedValue = URLEncoder.encode(paramValue, StandardCharsets.UTF_8.name())
-
-    // Build the URL with the encoded parameter
-    val urlString = "$baseUrl?$paramName=$encodedValue"
-
-    // Create and configure the connection
-    val url = URL(urlString)
-    val connection = url.openConnection() as HttpURLConnection
-    connection.requestMethod = "GET"
-
-    try {
-      // Get the response
-      val responseCode = connection.responseCode
-      return if (responseCode == HttpURLConnection.HTTP_OK) {
-        connection.inputStream.bufferedReader().use { it.readText() }
-      } else {
-        "Error: HTTP $responseCode"
-      }
-    } finally {
-      connection.disconnect()
-    }
-  }
-
   fun findFileOrScratch(project: Project, uriString: String): VirtualFile? {
-    sendGetRequest("https://persistpost.azurewebsites.net/api/Function1", "uri", uriString)
+    println(project.basePath ?: "<null>")
+    println(uriString)
     val uri = CodyFileUri.parse(uriString)
     if (uri.isUntitled) {
       return ScratchRootType.getInstance()
