@@ -6,9 +6,10 @@ import {
     getSimplePreamble,
     ps,
 } from '@sourcegraph/cody-shared'
+import type { ChatControllerOptions } from '../chat/chat-view/ChatController'
 import { outputChannelLogger } from '../output-channel-logger'
 
-const LEGACY_API_VERSION = 1
+const LEGACY_API_VERSION = 2
 
 /**
  * Rewrite the query, using the fast completions model to pull out keywords.
@@ -86,26 +87,25 @@ async function doRewrite(
  * literally in code snippets or file names.
  */
 export async function extractKeywords(
-    completionsClient: SourcegraphCompletionsClient,
+    client: ChatControllerOptions['chatClient'],
     query: PromptString,
     signal: AbortSignal
 ): Promise<string[]> {
     const preamble = getSimplePreamble(undefined, LEGACY_API_VERSION, 'Default')
-    const stream = completionsClient.stream(
+    const stream = await client.chat(
+        [
+            ...preamble,
+            {
+                speaker: 'human',
+                text: ps`You are helping the user search over a codebase. List terms that could be found literally in code snippets or file names relevant to answering the user's query. Limit your results to terms that are in the user's query. Present your results in a *single* XML list in the following format: <keywords><keyword>a single keyword</keyword></keywords>. Here is the user query: <userQuery>${query}</userQuery>`,
+            },
+        ],
         {
-            messages: [
-                ...preamble,
-                {
-                    speaker: 'human',
-                    text: ps`You are helping the user search over a codebase. List terms that could be found literally in code snippets or file names relevant to answering the user's query. Limit your results to terms that are in the user's query. Present your results in a *single* XML list in the following format: <keywords><keyword>a single keyword</keyword></keywords>. Here is the user query: <userQuery>${query}</userQuery>`,
-                },
-            ],
             maxTokensToSample: 400,
             temperature: 0,
             topK: 1,
             fast: true,
         },
-        { apiVersion: LEGACY_API_VERSION }, // Use legacy API version for now
         signal
     )
 
@@ -126,7 +126,7 @@ export async function extractKeywords(
     const document: { keywords: { keyword: string | string[] } } = new XMLParser().parse(lastMessageText)
 
     let keywords: string[] = []
-    if (document?.keywords) {
+    if (document.keywords) {
         if (Array.isArray(document.keywords.keyword)) {
             keywords = document.keywords.keyword
         } else if (document.keywords.keyword) {
