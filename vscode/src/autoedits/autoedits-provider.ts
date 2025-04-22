@@ -148,7 +148,6 @@ interface AutoeditsFeatures {
     shouldRenderInline: boolean
     shouldHotStreak: boolean
     allowUsingWebSocket: boolean
-    forceWebSocketProxy?: boolean
 }
 
 type SuggestionStatus = 'success' | 'error' | 'aborted' | 'discarded'
@@ -220,7 +219,6 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
             isChatModel: autoeditsProviderConfig.isChatModel,
             chatClient: chatClient,
             allowUsingWebSocket: this.features.allowUsingWebSocket,
-            forceWebSocketProxy: this.features.forceWebSocketProxy,
         })
 
         this.rendererManager = this.features.shouldRenderInline

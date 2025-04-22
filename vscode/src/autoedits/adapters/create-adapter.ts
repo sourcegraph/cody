@@ -1,4 +1,9 @@
-import type { AutoEditsModelConfig, ChatClient } from '@sourcegraph/cody-shared'
+import {
+    type AutoEditsModelConfig,
+    type ChatClient,
+    currentAuthStatusOrNotReadyYet,
+    isS2,
+} from '@sourcegraph/cody-shared'
 
 import { autoeditsOutputChannelLogger } from '../output-channel-logger'
 
@@ -17,14 +22,15 @@ export function createAutoeditsModelAdapter({
     isChatModel,
     chatClient,
     allowUsingWebSocket,
-    forceWebSocketProxy,
 }: {
     providerName: AutoEditsModelConfig['provider']
     isChatModel: boolean
     chatClient: ChatClient
     allowUsingWebSocket?: boolean
-    forceWebSocketProxy?: boolean
 }): AutoeditsModelAdapter {
+    const authStatus = currentAuthStatusOrNotReadyYet()
+    const forceWebSocketProxy =
+        allowUsingWebSocket && Boolean(authStatus?.authenticated && isS2(authStatus))
     if (forceWebSocketProxy) {
         const webSocketEndpoint =
             autoeditsProviderConfig.experimentalAutoeditsConfigOverride?.webSocketEndpoint ??
