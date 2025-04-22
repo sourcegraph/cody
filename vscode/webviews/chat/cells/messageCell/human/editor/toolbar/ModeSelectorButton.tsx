@@ -112,6 +112,10 @@ export const ModeSelectorField: React.FunctionComponent<{
     // Initialize with the provided intent or fallback to chat
     const [currentSelectedIntent, setCurrentSelectedIntent] = useState(() => {
         const mappedIntent = INTENT_MAPPING[_intent || 'chat']
+        // For agentic intent, check if the feature flag is enabled
+        if (_intent === 'agentic' && !config?.experimentalAgenticChatEnabled) {
+            return IntentEnum.Chat
+        }
         // Check if the intent is available and not disabled
         const isValidIntent = intentOptions.some(
             option => option.value === mappedIntent && !option.disabled
@@ -134,6 +138,14 @@ export const ModeSelectorField: React.FunctionComponent<{
         // Only enable shortcut if there are multiple available options
         if (availableOptions.length <= 1) return
 
+        // If intent is agentic but feature flag is off, fallback to Chat
+        if (_intent === 'agentic' && !config?.experimentalAgenticChatEnabled) {
+            if (currentSelectedIntent !== IntentEnum.Chat) {
+                setCurrentSelectedIntent(IntentEnum.Chat)
+            }
+            return
+        }
+
         if (INTENT_MAPPING[_intent || IntentEnum.Chat] !== currentSelectedIntent) {
             setCurrentSelectedIntent(INTENT_MAPPING[_intent || 'chat'] || IntentEnum.Chat)
         }
@@ -155,7 +167,13 @@ export const ModeSelectorField: React.FunctionComponent<{
 
         document.addEventListener('keydown', handleKeyDown)
         return () => document.removeEventListener('keydown', handleKeyDown)
-    }, [availableOptions, currentSelectedIntent, handleSelectIntent, _intent])
+    }, [
+        availableOptions,
+        currentSelectedIntent,
+        handleSelectIntent,
+        _intent,
+        config?.experimentalAgenticChatEnabled,
+    ])
 
     return (
         <ToolbarPopoverItem

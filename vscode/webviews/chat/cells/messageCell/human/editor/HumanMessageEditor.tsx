@@ -298,6 +298,7 @@ export const HumanMessageEditor: FunctionComponent<{
                 if (setPromptAsInput) {
                     // set the intent
                     promptIntent = promptModeToIntent(setPromptAsInput.mode)
+                    manuallySelectIntent(promptIntent)
 
                     updates.push(
                         // biome-ignore lint/suspicious/noAsyncPromiseExecutor: <explanation>
@@ -325,6 +326,7 @@ export const HumanMessageEditor: FunctionComponent<{
                     )
                 } else if (setLastHumanInputIntent) {
                     promptIntent = setLastHumanInputIntent
+                    manuallySelectIntent(setLastHumanInputIntent)
                 }
 
                 if (submitHumanInput || setPromptAsInput?.autoSubmit) {
@@ -336,6 +338,7 @@ export const HumanMessageEditor: FunctionComponent<{
                 onSubmitClick,
                 extensionAPI.hydratePromptMessage,
                 extensionAPI.defaultContext,
+                manuallySelectIntent,
             ]
         )
     )
