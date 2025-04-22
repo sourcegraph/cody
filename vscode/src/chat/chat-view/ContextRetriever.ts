@@ -25,7 +25,6 @@ import type { SymfRunner } from '../../local-context/symf'
 import { logDebug, logError } from '../../output-channel-logger'
 import { gitLocallyModifiedFiles } from '../../repository/git-extension-api'
 import { repoNameResolver } from '../../repository/repo-name-resolver'
-import type { ChatControllerOptions } from './ChatController'
 import { retrieveContextGracefully, searchSymf, truncateSymfResult } from './context'
 
 interface StructuredMentions {
@@ -202,14 +201,13 @@ export class ContextRetriever implements vscode.Disposable {
      * Only attempts to extract keywords for queries that look like search queries.
      */
     public async computeDidYouMean(
-        client: ChatControllerOptions['chatClient'],
         query: PromptString,
         signal: AbortSignal
     ): Promise<string | undefined> {
         if (!looksLikeSearch(query.toString())) {
             return undefined
         }
-        const keywords = await extractKeywords(client, query, signal)
+        const keywords = await extractKeywords(this.llms, query, signal)
         if (keywords.length > 0) {
             return keywords.join(' ')
         }

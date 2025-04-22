@@ -1,12 +1,12 @@
 import { XMLParser } from 'fast-xml-parser'
 
 import {
+    ChatClient,
     type PromptString,
     type SourcegraphCompletionsClient,
     getSimplePreamble,
     ps,
 } from '@sourcegraph/cody-shared'
-import type { ChatControllerOptions } from '../chat/chat-view/ChatController'
 import { outputChannelLogger } from '../output-channel-logger'
 
 const LEGACY_API_VERSION = 1
@@ -87,11 +87,12 @@ async function doRewrite(
  * literally in code snippets or file names.
  */
 export async function extractKeywords(
-    client: ChatControllerOptions['chatClient'],
+    completionsClient: SourcegraphCompletionsClient,
     query: PromptString,
     signal: AbortSignal
 ): Promise<string[]> {
     const preamble = getSimplePreamble(undefined, LEGACY_API_VERSION, 'Default')
+    const client = new ChatClient(completionsClient)
     const stream = await client.chat(
         [
             ...preamble,
