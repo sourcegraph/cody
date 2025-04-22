@@ -123,6 +123,10 @@ export const Transcript: FC<TranscriptProps> = props => {
                         )}
                         smartApply={smartApply}
                         editorRef={
+                            // Only set the editor ref for:
+                            // 1. The first unsent agentic message (index -1), or
+                            // 2. The last interaction in the transcript
+                            // And only when there's no message currently in progress
                             ((interaction.humanMessage.intent === 'agentic' &&
                                 interaction.humanMessage.index === -1) ||
                                 i === interactions.length - 1) &&
