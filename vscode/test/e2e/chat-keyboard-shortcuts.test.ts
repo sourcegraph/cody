@@ -79,6 +79,9 @@ test.extend<DotcomUrlOverride>({ dotcomUrl: mockServer.SERVER_URL })(
         // Check if the mode changed based on user permissions
         // For dotcom users, it should stay as "Chat"
         const modeSelectorButton = chatFrame.getByLabel('switch-mode')
+        await modeSelectorButton.click()
+        // Select the first option in the dropdown
+        await chatFrame.getByRole('option', { name: 'Chat' }).click()
         await expect(modeSelectorButton).toHaveText('Chat')
 
         // Get the current mode after shortcut
