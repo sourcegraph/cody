@@ -125,14 +125,12 @@ class ToolFactory {
     public createMcpTools(mcpTools: McpTool[], serverName: string): CodyTool[] {
         return mcpTools
             .map(tool => {
+                const _toolName = tool.name
                 // Format to match topic name requirements in bot-response-multiplexer (only digits, letters, hyphens)
-                const toolName = `${serverName}-${(tool as any).name as string}`.replace(
-                    /[^\dA-Za-z-]/g,
-                    '-'
-                )
+                const toolName = `${serverName}-${_toolName}`.replace(/[^\dA-Za-z-]/g, '-')
                 // Create a proper tool configuration
                 const toolConfig: CodyToolConfig = {
-                    title: (tool as any).name as string,
+                    title: _toolName,
                     tags: {
                         tag: PromptString.unsafe_fromUserQuery(toolName),
                         subTag: ps`call`,
@@ -212,38 +210,30 @@ class ToolFactory {
                             }
 
                             // Use the MCPManager's executeTool method which properly delegates to serverManager
-                            const result = await mcpInstance.executeTool(
-                                serverName,
-                                (tool as any).name as string,
-                                args
-                            )
+                            const result = await mcpInstance.executeTool(serverName, _toolName, args)
 
                             return [
                                 {
                                     type: 'file',
-                                    content: `${
-                                        (tool as any).name
-                                    } has been executed successfully. Output from tool: ${
-                                        result?.content ?? 'empty'
+                                    content: `${_toolName} tool was executed successfully: ${
+                                        result?.content || 'invoked'
                                     }`,
-                                    uri:
-                                        result?.uri ??
-                                        URI.file(`mcp-tool-${serverName}-${(tool as any).name}`),
+                                    uri: URI.parse(`${toolName}-result`),
                                     source: ContextItemSource.Agentic,
-                                    title: (tool as any).name as string,
+                                    title: toolName,
                                 },
                             ]
                         } catch (error) {
-                            logDebug('ToolFactory', `Error executing ${(tool as any).name}`, {
+                            logDebug('ToolFactory', `Error executing ${toolName}`, {
                                 verbose: error,
                             })
                             return [
                                 {
                                     type: 'file',
-                                    content: `Error executing MCP tool ${(tool as any).name}: ${error}`,
-                                    uri: URI.file(`mcp-tool-${serverName}-${(tool as any).name}`),
+                                    content: `Error executing MCP tool ${_toolName}: ${error}`,
+                                    uri: URI.parse(`${toolName}-error`),
                                     source: ContextItemSource.Agentic,
-                                    title: (tool as any).name as string,
+                                    title: toolName,
                                 },
                             ]
                         }
