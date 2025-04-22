@@ -123,7 +123,7 @@ export const ModeSelectorField: React.FunctionComponent<{
     const handleSelectIntent = useCallback(
         (intent: ChatMessage['intent'], close?: () => void) => {
             manuallySelectIntent(intent)
-            setCurrentSelectedIntent(INTENT_MAPPING[intent || 'chat'])
+            setCurrentSelectedIntent(INTENT_MAPPING[intent || 'chat'] || IntentEnum.Chat)
             close?.()
         },
         [manuallySelectIntent]
@@ -133,6 +133,10 @@ export const ModeSelectorField: React.FunctionComponent<{
     useEffect(() => {
         // Only enable shortcut if there are multiple available options
         if (availableOptions.length <= 1) return
+
+        if (INTENT_MAPPING[_intent || IntentEnum.Chat] !== currentSelectedIntent) {
+            setCurrentSelectedIntent(INTENT_MAPPING[_intent || 'chat'] || IntentEnum.Chat)
+        }
 
         const handleKeyDown = (event: KeyboardEvent) => {
             if ((isMac ? event.metaKey : event.ctrlKey) && event.key === '.') {
@@ -151,7 +155,7 @@ export const ModeSelectorField: React.FunctionComponent<{
 
         document.addEventListener('keydown', handleKeyDown)
         return () => document.removeEventListener('keydown', handleKeyDown)
-    }, [availableOptions, currentSelectedIntent, handleSelectIntent])
+    }, [availableOptions, currentSelectedIntent, handleSelectIntent, _intent])
 
     return (
         <ToolbarPopoverItem

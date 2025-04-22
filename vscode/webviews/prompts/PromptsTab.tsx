@@ -14,9 +14,8 @@ import styles from './PromptsTab.module.css'
 export const PromptsTab: React.FC<{
     IDE: CodyIDE
     setView: (view: View) => void
-    setLastManuallySelectedIntent: (intent: ChatMessage['intent']) => void
-}> = ({ setView, setLastManuallySelectedIntent }) => {
-    const runAction = useActionSelect(setLastManuallySelectedIntent)
+}> = ({ setView }) => {
+    const runAction = useActionSelect()
 
     const [promptsFilter, setPromptsFilter] = useState<PromptsFilterArgs>({})
 
@@ -37,7 +36,6 @@ export const PromptsTab: React.FC<{
                 className={styles.promptsContainer}
                 inputClassName={styles.promptsInput}
                 promptFilters={promptsFilter}
-                setLastManuallySelectedIntent={setLastManuallySelectedIntent}
             />
         </div>
     )
@@ -56,7 +54,7 @@ export const promptModeToIntent = (mode?: PromptMode | undefined | null): ChatMe
     }
 }
 
-export function useActionSelect(setLastManuallySelectedIntent: (intent: ChatMessage['intent']) => void) {
+export function useActionSelect() {
     const dispatchClientAction = useClientActionDispatcher()
     const [lastUsedActions = {}, persistValue] = useLocalStorage<Record<string, number>>(
         'last-used-actions-v2',
@@ -73,11 +71,6 @@ export function useActionSelect(setLastManuallySelectedIntent: (intent: ChatMess
 
         switch (action.actionType) {
             case 'prompt': {
-                // Update the last manually selected intent if the action is a prompt
-                // Map action.mode to intent: CHAT -> 'chat', EDIT -> 'edit'
-                const intent = promptModeToIntent(action.mode)
-                setLastManuallySelectedIntent(intent)
-
                 setView(View.Chat)
 
                 dispatchClientAction(

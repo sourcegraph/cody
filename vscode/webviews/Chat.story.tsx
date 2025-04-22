@@ -32,8 +32,6 @@ const meta: Meta<typeof Chat> = {
         setView: () => {},
         models: FIXTURE_MODELS,
         guardrails: new MockNoGuardrails(),
-        lastManuallySelectedIntent: 'chat',
-        setLastManuallySelectedIntent: () => {},
     } satisfies React.ComponentProps<typeof Chat>,
 
     decorators: [VSCodeWebview],

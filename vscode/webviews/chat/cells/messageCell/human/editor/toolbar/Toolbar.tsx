@@ -174,8 +174,8 @@ const PromptSelectFieldToolbarItem: FunctionComponent<{
     focusEditor?: () => void
     className?: string
     setLastManuallySelectedIntent: (intent: ChatMessage['intent']) => void
-}> = ({ focusEditor, className, setLastManuallySelectedIntent }) => {
-    const runAction = useActionSelect(setLastManuallySelectedIntent)
+}> = ({ focusEditor, className }) => {
+    const runAction = useActionSelect()
 
     const onSelect = useCallback(
         async (item: Action) => {
@@ -185,14 +185,7 @@ const PromptSelectFieldToolbarItem: FunctionComponent<{
         [focusEditor, runAction]
     )
 
-    return (
-        <PromptSelectField
-            onSelect={onSelect}
-            onCloseByEscape={focusEditor}
-            className={className}
-            setLastManuallySelectedIntent={setLastManuallySelectedIntent}
-        />
-    )
+    return <PromptSelectField onSelect={onSelect} onCloseByEscape={focusEditor} className={className} />
 }
 
 const ModelSelectFieldToolbarItem: FunctionComponent<{

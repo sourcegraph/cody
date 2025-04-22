@@ -34,8 +34,6 @@ interface ChatboxProps {
     showIDESnippetActions?: boolean
     setView: (view: View) => void
     isWorkspacesUpgradeCtaEnabled?: boolean
-    lastManuallySelectedIntent: ChatMessage['intent']
-    setLastManuallySelectedIntent: (intent: ChatMessage['intent']) => void
 }
 
 export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>> = ({
@@ -50,8 +48,6 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     showIDESnippetActions = true,
     setView,
     isWorkspacesUpgradeCtaEnabled,
-    lastManuallySelectedIntent,
-    setLastManuallySelectedIntent,
 }) => {
     const transcriptRef = useRef(transcript)
     transcriptRef.current = transcript
@@ -206,13 +202,6 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     }, [transcript])
     const [activeChatContext, setActiveChatContext] = useState<Context>()
 
-    const handleSetLastManuallySelectedIntent = useCallback(
-        (intent: ChatMessage['intent']) => {
-            setLastManuallySelectedIntent(intent)
-        },
-        [setLastManuallySelectedIntent]
-    )
-
     return (
         <>
             {!chatEnabled && (
@@ -233,16 +222,10 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                 chatEnabled={chatEnabled}
                 postMessage={postMessage}
                 guardrails={guardrails}
-                manuallySelectedIntent={lastManuallySelectedIntent}
-                setManuallySelectedIntent={setLastManuallySelectedIntent}
             />
             {transcript.length === 0 && showWelcomeMessage && (
                 <>
-                    <WelcomeMessage
-                        IDE={userInfo.IDE}
-                        setView={setView}
-                        setLastManuallySelectedIntent={handleSetLastManuallySelectedIntent}
-                    />
+                    <WelcomeMessage IDE={userInfo.IDE} setView={setView} />
                     {isWorkspacesUpgradeCtaEnabled && userInfo.IDE !== CodyIDE.Web && (
                         <div className="tw-absolute tw-bottom-0 tw-left-1/2 tw-transform tw--translate-x-1/2 tw-w-[95%] tw-z-1 tw-mb-4 tw-max-h-1/2">
                             <WelcomeNotice />

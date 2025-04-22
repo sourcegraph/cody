@@ -139,6 +139,7 @@ export const HumanMessageEditor: FunctionComponent<{
             }
 
             const value = editorRef.current.getSerializedValue()
+            if (intent) manuallySelectIntent(intent)
             parentOnSubmit(intent)
 
             telemetryRecorder.recordEvent('cody.humanMessageEditor', 'submit', {
@@ -155,7 +156,15 @@ export const HumanMessageEditor: FunctionComponent<{
                 },
             })
         },
-        [submitState, parentOnSubmit, onStop, telemetryRecorder.recordEvent, isFirstMessage, isSent]
+        [
+            submitState,
+            parentOnSubmit,
+            onStop,
+            telemetryRecorder.recordEvent,
+            isFirstMessage,
+            isSent,
+            manuallySelectIntent,
+        ]
     )
 
     const omniBoxEnabled = useOmniBox()
@@ -297,11 +306,11 @@ export const HumanMessageEditor: FunctionComponent<{
                 if (setPromptAsInput) {
                     // set the intent
                     promptIntent = promptModeToIntent(setPromptAsInput.mode)
-                    manuallySelectIntent(promptIntent)
 
                     updates.push(
                         // biome-ignore lint/suspicious/noAsyncPromiseExecutor: <explanation>
                         new Promise<void>(async resolve => {
+                            manuallySelectIntent(promptIntent)
                             // get initial context
                             const { initialContext } = await firstValueFrom(
                                 extensionAPI.defaultContext().pipe(skipPendingOperation())
@@ -324,18 +333,15 @@ export const HumanMessageEditor: FunctionComponent<{
                         })
                     )
                 } else if (setLastHumanInputIntent) {
-                    manuallySelectIntent(setLastHumanInputIntent)
+                    promptIntent = setLastHumanInputIntent
                 }
 
                 if (submitHumanInput || setPromptAsInput?.autoSubmit) {
-                    Promise.all(updates).then(() =>
-                        onSubmitClick(promptIntent || setLastHumanInputIntent || intent, true)
-                    )
+                    Promise.all(updates).then(() => onSubmitClick(promptIntent, true))
                 }
             },
             [
                 onSubmitClick,
-                intent,
                 manuallySelectIntent,
                 extensionAPI.hydratePromptMessage,
                 extensionAPI.defaultContext,

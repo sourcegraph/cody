@@ -6,7 +6,6 @@ import {
     serializedPromptEditorStateFromChatMessage,
 } from '@sourcegraph/cody-shared'
 import type { PromptEditorRefAPI } from '@sourcegraph/prompt-editor'
-import isEqual from 'lodash/isEqual'
 import { type FC, memo, useMemo } from 'react'
 import type { UserAccountInfo } from '../../../../Chat'
 import { BaseMessageCell } from '../BaseMessageCell'
@@ -68,18 +67,11 @@ export const HumanMessageCell: FC<HumanMessageCellProps> = ({ message, ...otherP
         [messageJSON]
     )
 
-    return (
-        <HumanMessageCellContent
-            {...otherProps}
-            initialEditorState={initialEditorState}
-            messageIntent={message.intent || otherProps.intent}
-        />
-    )
+    return <HumanMessageCellContent {...otherProps} initialEditorState={initialEditorState} />
 }
 
 type HumanMessageCellContent = {
     initialEditorState: SerializedPromptEditorState
-    messageIntent: ChatMessage['intent']
 } & Omit<HumanMessageCellProps, 'message'>
 const HumanMessageCellContent = memo<HumanMessageCellContent>(props => {
     const {
@@ -101,7 +93,7 @@ const HumanMessageCellContent = memo<HumanMessageCellContent>(props => {
         __storybook__focus,
         onEditorFocusChange,
         manuallySelectIntent,
-        messageIntent,
+        intent,
     } = props
 
     return (
@@ -129,11 +121,11 @@ const HumanMessageCellContent = memo<HumanMessageCellContent>(props => {
                     editorRef={editorRef}
                     __storybook__focus={__storybook__focus}
                     onEditorFocusChange={onEditorFocusChange}
-                    intent={messageIntent}
+                    intent={intent}
                     manuallySelectIntent={manuallySelectIntent}
                 />
             }
             className={className}
         />
     )
-}, isEqual)
+})

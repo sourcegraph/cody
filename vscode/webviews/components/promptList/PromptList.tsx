@@ -1,7 +1,7 @@
 import clsx from 'clsx'
 import { type FC, useCallback, useMemo, useState } from 'react'
 
-import type { Action, ChatMessage, PromptsInput } from '@sourcegraph/cody-shared'
+import type { Action, PromptsInput } from '@sourcegraph/cody-shared'
 
 import { useLocalStorage } from '../../components/hooks'
 import { useTelemetryRecorder } from '../../utils/telemetry'
@@ -41,7 +41,6 @@ interface PromptListProps {
     lastUsedSorting?: boolean
     recommendedOnly?: boolean
     onSelect: (item: Action) => void
-    setLastManuallySelectedIntent: (intent: ChatMessage['intent']) => void
     promptFilters?: PromptsFilterArgs
 }
 
@@ -66,7 +65,6 @@ export const PromptList: FC<PromptListProps> = props => {
         lastUsedSorting,
         recommendedOnly,
         onSelect: parentOnSelect,
-        setLastManuallySelectedIntent,
         promptFilters,
     } = props
     const { clientCapabilities, authStatus } = useConfig()
@@ -148,7 +146,6 @@ export const PromptList: FC<PromptListProps> = props => {
                 },
                 billingMetadata: { product: 'cody', category: 'core' },
             })
-            setLastManuallySelectedIntent(action.mode === 'CHAT' ? 'chat' : 'edit')
             parentOnSelect(action)
         },
         [
@@ -158,7 +155,6 @@ export const PromptList: FC<PromptListProps> = props => {
             telemetryPublicMetadata,
             debouncedQuery,
             error,
-            setLastManuallySelectedIntent,
         ]
     )
 

@@ -17,8 +17,6 @@ const PROPS: Omit<ComponentProps<typeof Transcript>, 'transcript'> = {
     postMessage: () => {},
     models: FIXTURE_MODELS,
     setActiveChatContext: () => {},
-    manuallySelectedIntent: undefined,
-    setManuallySelectedIntent: () => {},
     guardrails: new MockNoGuardrails(),
 }
 
@@ -422,7 +420,7 @@ function expectCells(expectedCells: CellMatcher[], containerElement?: HTMLElemen
 
 describe('transcriptToInteractionPairs', () => {
     test('empty transcript', () => {
-        expect(transcriptToInteractionPairs([], null, null)).toEqual<Interaction[]>([
+        expect(transcriptToInteractionPairs([], null)).toEqual<Interaction[]>([
             {
                 humanMessage: {
                     index: 0,
@@ -445,7 +443,6 @@ describe('transcriptToInteractionPairs', () => {
                     { speaker: 'human', text: ps`c` },
                     { speaker: 'assistant', text: ps`d` },
                 ],
-                null,
                 null
             )
         ).toEqual<Interaction[]>([
@@ -494,14 +491,10 @@ describe('transcriptToInteractionPairs', () => {
 
     test('assistant message is loading', () => {
         expect(
-            transcriptToInteractionPairs(
-                [{ speaker: 'human', text: ps`a` }],
-                {
-                    speaker: 'assistant',
-                    text: ps`b`,
-                },
-                null
-            )
+            transcriptToInteractionPairs([{ speaker: 'human', text: ps`a` }], {
+                speaker: 'assistant',
+                text: ps`b`,
+            })
         ).toEqual<Interaction[]>([
             {
                 humanMessage: {
@@ -534,14 +527,10 @@ describe('transcriptToInteractionPairs', () => {
     test('last assistant message is error', () => {
         const error = errorToChatError(new Error('x'))
         expect(
-            transcriptToInteractionPairs(
-                [{ speaker: 'human', text: ps`a` }],
-                {
-                    speaker: 'assistant',
-                    error,
-                },
-                null
-            )
+            transcriptToInteractionPairs([{ speaker: 'human', text: ps`a` }], {
+                speaker: 'assistant',
+                error,
+            })
         ).toEqual<Interaction[]>([
             {
                 humanMessage: {
