@@ -9,7 +9,7 @@ import {
 import type { ChatControllerOptions } from '../chat/chat-view/ChatController'
 import { outputChannelLogger } from '../output-channel-logger'
 
-const LEGACY_API_VERSION = 2
+const LEGACY_API_VERSION = 1
 
 /**
  * Rewrite the query, using the fast completions model to pull out keywords.
