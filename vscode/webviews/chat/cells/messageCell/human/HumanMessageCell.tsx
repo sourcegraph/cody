@@ -121,7 +121,7 @@ const HumanMessageCellContent = memo<HumanMessageCellContent>(props => {
                     editorRef={editorRef}
                     __storybook__focus={__storybook__focus}
                     onEditorFocusChange={onEditorFocusChange}
-                    intent={intent}
+                    selectedIntent={intent}
                     manuallySelectIntent={manuallySelectIntent}
                 />
             }

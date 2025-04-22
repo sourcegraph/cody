@@ -286,7 +286,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
     const usingToolCody = assistantMessage?.model?.includes(ToolCodyModelName)
 
     const onUserAction = useCallback(
-        (action: 'edit' | 'submit', intent?: ChatMessage['intent']) => {
+        (action: 'edit' | 'submit', manuallySelectedIntent: ChatMessage['intent']) => {
             // Start the span as soon as the user initiates the action
             const startMark = performance.mark('startSubmit')
             const spanManager = new SpanManager('cody-webview')
@@ -318,6 +318,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
             const commonProps = {
                 editorValue,
                 traceparent,
+                manuallySelectedIntent,
             }
 
             if (action === 'edit') {
@@ -333,30 +334,14 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                 editHumanMessage({
                     messageIndexInTranscript: humanMessage.index,
                     ...commonProps,
-                    manuallySelectedIntent: intent,
                 })
             } else {
                 submitHumanMessage({
                     ...commonProps,
-                    manuallySelectedIntent: intent,
                 })
             }
         },
         [humanMessage, setActiveChatContext, isLastSentInteraction, lastEditorRef]
-    )
-
-    const onEditSubmit = useCallback(
-        (intent?: ChatMessage['intent']): void => {
-            onUserAction('edit', intent)
-        },
-        [onUserAction]
-    )
-
-    const onFollowupSubmit = useCallback(
-        (intent?: ChatMessage['intent']): void => {
-            onUserAction('submit', intent)
-        },
-        [onUserAction]
     )
 
     // Omnibox is enabled if the user is not a dotcom user and the omnibox is enabled
@@ -515,18 +500,26 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
     }, [humanMessage, assistantMessage, isContextLoading])
 
     const onHumanMessageSubmit = useCallback(
-        (intent?: ChatMessage['intent']) => {
-            if (intent) setSelectedIntent(intent)
+        (intentOnSubmit: ChatMessage['intent']) => {
             if (humanMessage.isUnsentFollowup) {
-                onFollowupSubmit(intent)
+                // Use onUserAction directly with the new intent
+                setSelectedIntent(intentOnSubmit)
+                onUserAction('submit', intentOnSubmit)
             } else {
-                onEditSubmit(intent)
+                // Current intent is the last selected intent if any or the current intent of the human message
+                const currentIntent = selectedIntent || humanMessage?.intent
+                // If no intent on submit provided, use the current intent instead
+                const newIntent = intentOnSubmit === undefined ? currentIntent : intentOnSubmit
+                humanMessage.intent = newIntent
+                setSelectedIntent(newIntent)
+                // Use onUserAction directly with the new intent
+                onUserAction('edit', newIntent)
             }
             // Set the unsent followup flag to false after submitting
             // to makes sure the last editor for Agent mode gets reset.
             humanMessage.isUnsentFollowup = false
         },
-        [humanMessage, onFollowupSubmit, onEditSubmit]
+        [humanMessage, onUserAction, selectedIntent]
     )
 
     const onSelectedFiltersUpdate = useCallback(
@@ -541,6 +534,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
 
     const editAndSubmitSearch = useCallback(
         (text: string) => {
+            setSelectedIntent('search')
             editHumanMessage({
                 messageIndexInTranscript: humanMessage.index,
                 editorValue: {
@@ -550,7 +544,6 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                 },
                 manuallySelectedIntent: 'search',
             })
-            setSelectedIntent('chat')
         },
         [humanMessage]
     )
@@ -645,7 +638,6 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                             disabled={!!assistantMessage?.isLoading}
                             switchToSearch={() => {
                                 editAndSubmitSearch(assistantMessage?.didYouMeanQuery ?? '')
-                                setSelectedIntent('chat')
                             }}
                         />
                     )}
