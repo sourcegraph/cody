@@ -281,12 +281,52 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
     const lastEditorRef = useContext(LastEditorContext)
     useImperativeHandle(parentEditorRef, () => humanEditorRef.current)
 
-    const [selectedIntent, setSelectedIntent] = useState<ChatMessage['intent']>(humanMessage?.intent)
+    const [selectedIntent, setSelectedIntent] = useState<ChatMessage['intent']>(() => {
+        console.log('[DEBUG] Init intent state:', {
+            humanMessageIntent: humanMessage?.intent,
+            isUnsentFollowup: humanMessage.isUnsentFollowup,
+            messageIndex: humanMessage.index,
+        })
+
+        if (humanMessage?.intent) {
+            console.log('[DEBUG] Using existing humanMessage.intent:', humanMessage.intent)
+            return humanMessage.intent
+        }
+        if (humanMessage.isUnsentFollowup) {
+            try {
+                const persistedIntent = localStorage.getItem('cody-last-selected-intent')
+                console.log('[DEBUG] Using persisted intent from localStorage:', persistedIntent)
+                return (persistedIntent as ChatMessage['intent']) || 'chat'
+            } catch (e) {
+                console.log('[DEBUG] Failed to access localStorage, using default chat')
+                return 'chat'
+            }
+        }
+        console.log('[DEBUG] No intent found, using default chat')
+        return 'chat'
+    })
+    const persistAndSetIntent = useCallback((intent: ChatMessage['intent']) => {
+        console.log('[DEBUG] persistAndSetIntent called with:', intent)
+        setSelectedIntent(intent)
+        try {
+            localStorage.setItem('cody-last-selected-intent', intent || 'chat')
+            console.log('[DEBUG] Saved intent to localStorage:', intent || 'chat')
+        } catch (e) {
+            console.warn('Failed to persist intent to localStorage', e)
+        }
+    }, [])
 
     const usingToolCody = assistantMessage?.model?.includes(ToolCodyModelName)
 
     const onUserAction = useCallback(
         (action: 'edit' | 'submit', intent?: ChatMessage['intent']) => {
+            console.log('[DEBUG] onUserAction called:', {
+                action,
+                intent,
+                selectedIntent,
+                useFallback: !intent && !!selectedIntent,
+            })
+
             // Start the span as soon as the user initiates the action
             const startMark = performance.mark('startSubmit')
             const spanManager = new SpanManager('cody-webview')
@@ -336,27 +376,32 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                     manuallySelectedIntent: intent,
                 })
             } else {
+                // Use the provided intent or fallback to the persisted one
+                const effectiveIntent = intent || selectedIntent
+                console.log('[DEBUG] Submitting message with intent:', effectiveIntent)
                 submitHumanMessage({
                     ...commonProps,
-                    manuallySelectedIntent: intent,
+                    manuallySelectedIntent: effectiveIntent,
                 })
             }
         },
-        [humanMessage, setActiveChatContext, isLastSentInteraction, lastEditorRef]
+        [humanMessage, setActiveChatContext, isLastSentInteraction, lastEditorRef, selectedIntent]
     )
 
     const onEditSubmit = useCallback(
         (intent?: ChatMessage['intent']): void => {
-            onUserAction('edit', intent)
+            // Pass the provided intent or the selected one as default for edit
+            onUserAction('edit', intent || selectedIntent)
         },
-        [onUserAction]
+        [onUserAction, selectedIntent]
     )
 
     const onFollowupSubmit = useCallback(
         (intent?: ChatMessage['intent']): void => {
-            onUserAction('submit', intent)
+            // Pass the provided intent or the selected one as default
+            onUserAction('submit', intent || selectedIntent)
         },
-        [onUserAction]
+        [onUserAction, selectedIntent]
     )
 
     // Omnibox is enabled if the user is not a dotcom user and the omnibox is enabled
@@ -635,7 +680,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                 editorRef={humanEditorRef}
                 className={!isFirstInteraction && isLastInteraction ? 'tw-mt-auto' : ''}
                 intent={selectedIntent}
-                manuallySelectIntent={setSelectedIntent}
+                manuallySelectIntent={persistAndSetIntent}
             />
             {!isAgenticMode && (
                 <>
@@ -645,7 +690,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                             disabled={!!assistantMessage?.isLoading}
                             switchToSearch={() => {
                                 editAndSubmitSearch(assistantMessage?.didYouMeanQuery ?? '')
-                                setSelectedIntent('chat')
+                                persistAndSetIntent('chat')
                             }}
                         />
                     )}
