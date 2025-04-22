@@ -12,6 +12,7 @@ import {
     createDisposables,
     currentUserProductSubscription,
     isFreeUser,
+    isS2,
     promiseFactoryToObservable,
     skipPendingOperation,
 } from '@sourcegraph/cody-shared'
@@ -111,10 +112,12 @@ export function createAutoEditsProvider({
                 autoeditInlineRenderingEnabled ||
                 enabledRendererInSettings === 'inline' ||
                 isRunningInsideAgent()
+            const forceWebSocketProxy = autoeditUseWebSocketEnabled && isS2(authStatus)
             const provider = new AutoeditsProvider(chatClient, fixupController, statusBar, {
                 shouldRenderInline,
                 shouldHotStreak: autoeditHotStreakEnabled || isHotStreakEnabledInSettings(),
                 allowUsingWebSocket: autoeditUseWebSocketEnabled,
+                forceWebSocketProxy,
             })
             return [
                 vscode.commands.registerCommand('cody.command.autoedit-manual-trigger', async () =>

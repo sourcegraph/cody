@@ -3,7 +3,7 @@ import type { InceptionLabsRequestParams } from './inceptionlabs'
 
 export interface FireworksCompatibleRequestParams {
     stream: boolean
-    model: string
+    model?: string
     temperature: number
     max_tokens: number
     response_format: {
