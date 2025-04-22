@@ -1,6 +1,6 @@
 import type { ChatMessage } from '@sourcegraph/cody-shared'
 import { isMacOS } from '@sourcegraph/cody-shared'
-import { BetweenHorizonalEnd, MessageSquare, Pencil, Search, Sparkle } from 'lucide-react'
+import { MessageSquare, Pencil, Search, Sparkle } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Badge } from '../../../../../../components/shadcn/ui/badge'
 import { Command, CommandItem, CommandList } from '../../../../../../components/shadcn/ui/command'
@@ -65,30 +65,19 @@ export const ModeSelectorField: React.FunctionComponent<{
             },
             {
                 title: 'Search',
-                badge: isDotComUser ? 'Enterprise' : 'Beta',
+                badge: isDotComUser ? 'Enterprise' : undefined,
                 icon: Search,
                 intent: 'search',
-                hidden: !omniBoxEnabled,
                 disabled: isDotComUser,
                 value: IntentEnum.Search,
             },
             {
                 title: 'Edit',
-                badge: 'Experimental',
                 icon: Pencil,
                 intent: 'edit',
                 hidden: !isEditEnabled,
                 disabled: !isEditEnabled,
                 value: IntentEnum.Edit,
-            },
-            {
-                title: 'Insert',
-                badge: 'Experimental',
-                icon: BetweenHorizonalEnd,
-                intent: 'insert',
-                hidden: true,
-                disabled: !isEditEnabled,
-                value: IntentEnum.Insert,
             },
             {
                 title: 'Agent',
@@ -101,7 +90,7 @@ export const ModeSelectorField: React.FunctionComponent<{
                 value: IntentEnum.Agentic,
             },
         ].filter(option => !option.hidden) as IntentOption[]
-    }, [edit, config?.experimentalAgenticChatEnabled, isDotComUser, omniBoxEnabled])
+    }, [edit, config?.experimentalAgenticChatEnabled, isDotComUser])
 
     // Get available (non-disabled) options
     const availableOptions = useMemo(
