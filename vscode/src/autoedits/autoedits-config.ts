@@ -59,25 +59,36 @@ function getBaseProviderConfig(): BaseAutoeditsProviderConfig {
         ? // Hot-streak can handle much longer suffixes
           { ...defaultTokenLimit, codeToRewriteSuffixLines: 30 }
         : defaultTokenLimit
+    const promptProvider: AutoEditsModelConfig['promptProvider'] = shouldHotStreak
+        ? 'long-suggestion-prompt-provider'
+        : undefined
+
+    // Common configuration for both authentication states
+    const baseConfig = {
+        promptProvider,
+        tokenLimit,
+        isChatModel: false,
+        timeoutMs: 10_000,
+    } as const
 
     if (isDotComAuthed()) {
         return {
+            ...baseConfig,
             provider: 'cody-gateway',
-            model: 'autoedits-deepseek-lite-default',
+            model: shouldHotStreak
+                ? 'autoedits-long-suggestion-default'
+                : 'autoedits-deepseek-lite-default',
             url: 'https://cody-gateway.sourcegraph.com/v1/completions/fireworks',
-            tokenLimit,
-            isChatModel: false,
-            timeoutMs: 10_000,
         }
     }
 
     return {
+        ...baseConfig,
         provider: 'sourcegraph',
-        model: 'fireworks::v1::autoedits-deepseek-lite-default',
-        tokenLimit,
+        model: shouldHotStreak
+            ? 'fireworks::v1::autoedits-long-suggestion-default'
+            : 'fireworks::v1::autoedits-deepseek-lite-default',
         url: '',
-        isChatModel: false,
-        timeoutMs: 10_000,
     }
 }
 
