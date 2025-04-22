@@ -160,6 +160,7 @@ export class FireworksWebSocketAdapter implements AutoeditsModelAdapter {
             ...customHeaders,
         }
 
+        // Use user provided (fireworks) apiKey. Otherwise, the websocket server will use its configured fireworks apiKey as fallback.
         if (apiKey) {
             requestHeaders.Authorization = `Bearer ${apiKey}`
         }
