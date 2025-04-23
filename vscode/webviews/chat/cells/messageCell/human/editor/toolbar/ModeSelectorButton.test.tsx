@@ -117,18 +117,22 @@ describe('ModeSelectorField', () => {
         expect(searchOption?.getAttribute('aria-disabled')).toBe('true')
     })
 
-    it('hides search option when omnibox is disabled', () => {
+    it('show search option as disabled for DotCom user', () => {
         render(
             <TestWrapper>
-                <ModeSelectorField {...defaultProps} omniBoxEnabled={false} />
+                <ModeSelectorField {...defaultProps} isDotComUser={true} />
             </TestWrapper>
         )
 
         // Open the dropdown
         fireEvent.click(screen.getByRole('combobox'))
 
-        // Search option should not be visible
-        expect(screen.queryByText('Search')).not.toBeInTheDocument()
+        // Search option should be visible
+        expect(screen.queryByText('Search')).toBeInTheDocument()
+        // But disabled
+        expect(
+            screen.getByText('Search').closest('div[role="option"]')?.getAttribute('aria-disabled')
+        ).toBe('true')
     })
 
     it('hides agentic option when feature flag is disabled', () => {

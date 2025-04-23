@@ -54,7 +54,7 @@ class CodyFileEditorListener : FileEditorManagerListener {
       ApplicationManager.getApplication().invokeLater {
         val fileDocumentManager = FileDocumentManager.getInstance()
 
-        CodyEditorUtil.getAllOpenEditors().forEach { editor ->
+        CodyEditorUtil.getAllOpenEditors(project).forEach { editor ->
           fileDocumentManager.getFile(editor.document)?.let { file ->
             try {
               val textDocument =

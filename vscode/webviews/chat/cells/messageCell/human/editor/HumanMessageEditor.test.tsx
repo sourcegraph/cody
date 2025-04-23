@@ -171,6 +171,7 @@ function renderWithMocks(props: Partial<ComponentProps<typeof HumanMessageEditor
         onSubmit,
         onStop,
         models: FIXTURE_MODELS,
+        selectedIntent: 'chat',
         manuallySelectIntent,
     }
 

@@ -63,7 +63,7 @@ test.extend<DotcomUrlOverride>({ dotcomUrl: mockServer.SERVER_URL })(
 
         // Get the initial mode (should be "Chat" by default)
         await chatFrame.getByLabel('switch-mode').click()
-        await expect(chatFrame.getByText('ChatSearchEnterprise')).toBeVisible()
+        await expect(chatFrame.getByText('ChatSearchEnterpriseEdit')).toBeVisible()
         await expect(chatFrame.getByRole('option', { name: 'Search Enterprise' })).toBeDisabled()
 
         // Escape to close the mode selector
@@ -79,6 +79,9 @@ test.extend<DotcomUrlOverride>({ dotcomUrl: mockServer.SERVER_URL })(
         // Check if the mode changed based on user permissions
         // For dotcom users, it should stay as "Chat"
         const modeSelectorButton = chatFrame.getByLabel('switch-mode')
+        await modeSelectorButton.click()
+        // Select the first option in the dropdown
+        await chatFrame.getByRole('option', { name: 'Chat' }).click()
         await expect(modeSelectorButton).toHaveText('Chat')
 
         // Get the current mode after shortcut
@@ -99,11 +102,20 @@ test.extend<DotcomUrlOverride>({ dotcomUrl: mockServer.SERVER_URL })(
         // Close the dropdown
         await page.keyboard.press('Escape')
 
+        let currentMode = await modeSelectorButton.textContent()
         // Try cycling through modes multiple times to ensure we don't get stuck
         for (let i = 0; i < 3; i++) {
             await page.keyboard.press(process.platform === 'darwin' ? 'Meta+.' : 'Control+.')
             await page.waitForTimeout(300)
+            const nextMode = await modeSelectorButton.textContent()
+            expect(currentMode).not.toBe(nextMode)
+            currentMode = nextMode
         }
+
+        // Move back to Chat mode
+        await modeSelectorButton.click()
+        await chatFrame.getByRole('option', { name: 'Chat' }).click()
+        await expect(modeSelectorButton).toHaveText('Chat')
 
         // Verify we can still interact with the chat after cycling
         await chatInput.fill('Test message after cycling modes')

@@ -15,7 +15,8 @@ class CodyDisableLanguageForAutocompleteAction : DumbAwareEDTAction() {
     getLanguageForLastActiveEditor(e)?.let { lang ->
       applicationSettings.blacklistedLanguageIds =
           applicationSettings.blacklistedLanguageIds.plus(lang.id)
-      CodyAutocompleteManager.instance.clearAutocompleteSuggestionsForLanguageId(lang.id)
+      CodyAutocompleteManager.getInstance(e.project ?: return)
+          .clearAutocompleteSuggestionsForLanguageId(lang.id)
     }
   }
 

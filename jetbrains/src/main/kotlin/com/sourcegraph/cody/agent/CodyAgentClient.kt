@@ -264,8 +264,9 @@ class CodyAgentClient(private val project: Project, private val webview: NativeW
   fun autocomplete_didTrigger(params: Null?) {
     FileEditorManager.getInstance(project).selectedTextEditor?.let { editor ->
       ReadAction.run<Throwable> {
-        CodyAutocompleteManager.instance.triggerAutocomplete(
-            editor, editor.caretModel.offset, InlineCompletionTriggerKind.AUTOMATIC)
+        CodyAutocompleteManager.getInstance(project)
+            .triggerAutocomplete(
+                editor, editor.caretModel.offset, InlineCompletionTriggerKind.AUTOMATIC)
       }
     }
   }

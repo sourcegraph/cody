@@ -64,6 +64,7 @@ import {
     extractAutoEditResponseFromCurrentDocumentCommentTemplate,
     shrinkReplacerTextToCodeToReplaceRange,
 } from './renderer/mock-renderer'
+import { NextCursorManager } from './renderer/next-cursor-manager'
 import type { AutoEditRenderOutput } from './renderer/render-output'
 import { type AutoeditRequestManagerParams, RequestManager } from './request-manager'
 import { shrinkPredictionUntilSuffix } from './shrink-prediction'
@@ -177,6 +178,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
     private readonly modelAdapter: AutoeditsModelAdapter
     private readonly requestManager = new RequestManager()
     public readonly smartThrottleService = new SmartThrottleService()
+    protected nextCursorManager = new NextCursorManager(this.requestManager)
 
     private readonly promptStrategy: AutoeditsUserPromptStrategy
     public readonly filterPrediction = new FilterPredictionBasedOnRecentEdits()
@@ -192,6 +194,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
     private modelCallLatencyMetric: Histogram<{
         adapter: string
         model: string
+        seq: number
     }>
 
     constructor(
@@ -261,8 +264,9 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
         this.modelCallLatencyMetric = meter.createHistogram<{
             adapter: string
             model: string
-        }>('autoedit.model.call.latency', {
-            description: 'Autoedit model call latency',
+            seq: number
+        }>('autoedit.model.latency', {
+            description: 'Autoedit model call latency by adapter and model',
             unit: 'ms',
         })
 
@@ -634,6 +638,24 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                         : decorationInfo,
             })
 
+            if (this.shouldDeferToNextCursorSuggestion({ prediction: predictionResult, position })) {
+                this.discardSuggestion({
+                    startedAt,
+                    requestId,
+                    discardReason: 'nextCursorSuggestionShownInstead',
+                })
+
+                this.nextCursorManager.suggest({
+                    uri: document.uri,
+                    position: predictionResult.editPosition,
+                    hotStreakId: predictionResult.hotStreakId,
+                })
+                return null
+            }
+
+            // Ensure any next cursor suggestion is discarded before we render a suggestion.
+            this.nextCursorManager.discard()
+
             if (!isRunningInsideAgent()) {
                 // Since VS Code has no callback as to when a completion is shown, we assume
                 // that if we pass the above visibility tests, the completion is going to be
@@ -838,8 +860,14 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
             timeoutMs: autoeditsProviderConfig.timeoutMs,
         })
 
+        const responseWithTiming = this.generatorWithTiming(
+            this.modelAdapter.constructor.name,
+            autoeditsProviderConfig.model,
+            responseGenerator
+        )
+
         return processHotStreakResponses({
-            responseGenerator,
+            responseGenerator: responseWithTiming,
             document,
             codeToReplaceData,
             docContext,
@@ -910,7 +938,6 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
         }
 
         return this.requestManager.request(requestParams, async signal => {
-            const startedAt = getTimeNowInMillis()
             const response = await this.getAndProcessModelResponses({
                 document,
                 position,
@@ -919,14 +946,31 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                 abortSignal: signal,
                 docContext,
             })
-
-            this.modelCallLatencyMetric.record(getTimeNowInMillis() - startedAt, {
-                adapter: this.modelAdapter.constructor.name,
-                model: autoeditsProviderConfig.model,
-            })
-
             return response
         })
+    }
+
+    private async *generatorWithTiming<T>(
+        adapter: string,
+        model: string,
+        generator: AsyncGenerator<T>
+    ): AsyncGenerator<T> {
+        const startedAt = getTimeNowInMillis()
+        let seq = 0
+        while (true) {
+            const res = await generator.next()
+            this.modelCallLatencyMetric.record(getTimeNowInMillis() - startedAt, {
+                adapter,
+                model,
+                seq,
+            })
+            seq += 1
+
+            if (res.done) {
+                return
+            }
+            yield res.value
+        }
     }
 
     public async manuallyTriggerCompletion(): Promise<void> {
@@ -938,6 +982,27 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
         await vscode.commands.executeCommand('editor.action.inlineSuggest.hide')
         this.lastManualTriggerTimestamp = performance.now()
         await vscode.commands.executeCommand('editor.action.inlineSuggest.trigger')
+    }
+
+    /**
+     * Threshold in which we will prefer to show a next cursor suggeston instead
+     * of the current suggestion.
+     */
+    private NEXT_CURSOR_SUGGESTION_THRESHOLD = 10
+    private shouldDeferToNextCursorSuggestion({
+        prediction,
+        position,
+    }: {
+        prediction: SuggestedPredictionResult
+        position: vscode.Position
+    }): boolean {
+        if (!this.features.shouldHotStreak) {
+            // Only support next cursor suggestions when hot-streak is enabled
+            return false
+        }
+
+        const distance = prediction.editPosition.line - position.line
+        return distance > this.NEXT_CURSOR_SUGGESTION_THRESHOLD
     }
 
     public getTestingAutoeditEvent(id: AutoeditRequestID): AutoeditRequestStateForAgentTesting {
