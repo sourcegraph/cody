@@ -53,6 +53,13 @@ export class EditHandler implements AgentHandler {
 
         recorder.recordChatQuestionExecuted(context, { addMetadata: true, current: span })
 
+        // Send context to webview for display before sending the request.
+        delegate.postMessageInProgress({
+            speaker: 'assistant',
+            model,
+            intent: this.mode,
+        })
+
         const result = await executeCodyCommand(DefaultEditCommands.Edit, {
             requestID,
             runInChatMode: true,
@@ -79,6 +86,7 @@ export class EditHandler implements AgentHandler {
             speaker: 'assistant',
             text: PromptString.unsafe_fromLLMResponse(message),
             model,
+            intent: this.mode,
         })
 
         delegate.postDone()

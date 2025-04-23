@@ -6,7 +6,12 @@ export function useLocalStorage<T>(
 ): [T | undefined, Dispatch<SetStateAction<T>>] {
     const [value, setValue] = useState<T>(() => {
         const json = localStorage.getItem(key)
-        return json ? JSON.parse(json) : defaultValue
+        if (!json) return defaultValue
+        try {
+            return JSON.parse(json)
+        } catch {
+            return defaultValue
+        }
     })
     const persistValue = useCallback(
         (value: T | Dispatch<T>) => {
