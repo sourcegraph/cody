@@ -186,7 +186,7 @@ export const pollyFixture = _test.extend<TestContext, WorkerContext>({
                     })
                     .intercept((req, res) => {
                         //TODO: implement this
-                        res.status(200).json({ data: { evaluateFeatureFlags: [] } })
+                        res.status(200).json({ data: { evaluatedFeatureFlags: [] } })
                     })
 
                 polly.server
