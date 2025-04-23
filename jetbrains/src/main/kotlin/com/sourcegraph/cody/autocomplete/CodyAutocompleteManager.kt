@@ -55,8 +55,8 @@ import java.util.concurrent.atomic.AtomicReference
 import org.jetbrains.annotations.VisibleForTesting
 
 /** Responsible for triggering and clearing inline code completions (the autocomplete feature). */
-@Service
-class CodyAutocompleteManager {
+@Service(Service.Level.PROJECT)
+class CodyAutocompleteManager(val project: Project) {
   private val logger = Logger.getInstance(CodyAutocompleteManager::class.java)
   private val currentJob = AtomicReference(CancellationToken())
 
@@ -80,13 +80,13 @@ class CodyAutocompleteManager {
    * pending ones.
    */
   @RequiresEdt
-  fun clearAutocompleteSuggestionsForAllProjects() {
-    getAllOpenEditors().forEach { clearAutocompleteSuggestions(it) }
+  fun clearAutocompleteSuggestions() {
+    getAllOpenEditors(project).forEach { clearAutocompleteSuggestions(it) }
   }
 
   @RequiresEdt
   fun clearAutocompleteSuggestionsForLanguageIds(languageIds: List<String?>) =
-      getAllOpenEditors()
+      getAllOpenEditors(project)
           .filter { e -> getLanguage(e)?.let { l -> languageIds.contains(l.id) } ?: false }
           .forEach { clearAutocompleteSuggestions(it) }
 
@@ -117,12 +117,6 @@ class CodyAutocompleteManager {
       lookupString: String? = null
   ) {
     val isTriggeredExplicitly = triggerKind == InlineCompletionTriggerKind.INVOKE
-
-    val project = editor.project
-    if (project == null) {
-      logger.warn("triggered autocomplete with null project")
-      return
-    }
 
     if (editor.editorKind != EditorKind.MAIN_EDITOR && !ConfigUtil.isIntegrationTestModeEnabled()) {
       logger.warn("triggered autocomplete with non-main editor")
@@ -350,8 +344,8 @@ class CodyAutocompleteManager {
 
   companion object {
     @JvmStatic
-    val instance: CodyAutocompleteManager
-      get() = service()
+    fun getInstance(project: Project): CodyAutocompleteManager =
+        project.service<CodyAutocompleteManager>()
 
     private val lineBreaks = listOf("\r\n", "\n", "\r")
 
