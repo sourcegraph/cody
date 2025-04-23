@@ -3,9 +3,7 @@ import type { InceptionLabsRequestParams } from './inceptionlabs'
 
 export interface FireworksCompatibleRequestParams {
     stream: boolean
-    // TODO(CODY-5745): make this mandatory to be consistent with fireworks API. This is required unless
-    // hitting fireworks direct URL.
-    model?: string
+    model: string
     temperature: number
     max_tokens: number
     response_format: {
