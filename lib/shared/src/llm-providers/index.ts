@@ -12,7 +12,10 @@ export type CompletionsModelConfig = {
 }
 
 export interface ChatNetworkClientParams {
-    params: CompletionParameters
+    params: CompletionParameters & {
+        tools?: any[]
+        processToolCalls?: (toolCalls: any[]) => Promise<any[]>
+    }
     cb: CompletionCallbacks
     // This is used for logging as the completions request is sent to the provider's API
     completionsEndpoint: string

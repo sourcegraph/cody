@@ -140,7 +140,7 @@ export interface SerializedCompletionParameters extends Omit<CompletionParameter
 
 export interface CompletionCallbacks {
     onChange: (text: string, content?: CompletionContentData[] | undefined | null) => void
-    onComplete: () => void
+    onComplete: (result?: CompletionResponse) => void
     onError: (error: Error, statusCode?: number) => void
 }
 

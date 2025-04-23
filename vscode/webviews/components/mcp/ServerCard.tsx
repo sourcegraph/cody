@@ -1,6 +1,7 @@
-import { DatabaseZap } from 'lucide-react'
+import { DatabaseZap, PowerOff, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 import { Badge } from '../shadcn/ui/badge'
+import { Button } from '../shadcn/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '../shadcn/ui/card'
 import { Popover, PopoverContent, PopoverTrigger } from '../shadcn/ui/popover'
 import type { ServerType } from './types'
@@ -8,9 +9,11 @@ import type { ServerType } from './types'
 interface ServerCardProps {
     server: ServerType
     onClick: () => void
+    onDisable?: (serverId: string) => void
+    onDelete?: (serverId: string) => void
 }
 
-export function ServerCard({ server, onClick }: ServerCardProps) {
+export function ServerCard({ server, onClick, onDisable, onDelete }: ServerCardProps) {
     const ServerIcon = server.icon ?? DatabaseZap
     const [showAllTags, setShowAllTags] = useState(false)
     const maxVisibleTags = 3
@@ -36,7 +39,13 @@ export function ServerCard({ server, onClick }: ServerCardProps) {
                         <CardTitle className="tw-text-base tw-text-md">{server.name}</CardTitle>
                     </div>
                     <Badge
-                        variant={server.status === 'online' ? 'success' : 'error'}
+                        variant={
+                            server.status === 'online'
+                                ? 'success'
+                                : server.status === 'disabled'
+                                  ? 'secondary'
+                                  : 'error'
+                        }
                         className="tw-whitespace-nowrap tw-overflow-hidden tw-ring-1 tw-ring-inset"
                     >
                         {server.status}
@@ -70,6 +79,40 @@ export function ServerCard({ server, onClick }: ServerCardProps) {
                             </div>
                         </div>
                     )}
+                </div>
+
+                {/* Action buttons */}
+                <div className="tw-flex tw-justify-end tw-gap-2 tw-mt-2">
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        className="tw-h-8 tw-px-2"
+                        onClick={e => {
+                            e.stopPropagation()
+                            if (onDisable) {
+                                onDisable(server.id)
+                            }
+                        }}
+                        title={server.status === 'disabled' ? 'Enable server' : 'Disable server'}
+                    >
+                        <PowerOff size={16} className="tw-mr-1" />
+                        {server.status === 'disabled' ? 'Enable' : 'Disable'}
+                    </Button>
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        className="tw-h-8 tw-px-2 tw-text-destructive hover:tw-bg-destructive/10 tw-z-10"
+                        onClick={e => {
+                            e.stopPropagation()
+                            if (onDelete) {
+                                onDelete(server.id)
+                            }
+                        }}
+                        title="Delete server"
+                    >
+                        <Trash2 size={16} className="tw-mr-1" />
+                        Delete
+                    </Button>
                 </div>
             </CardContent>
         </Card>

@@ -15,7 +15,7 @@ export interface ServerType {
     id: string
     name: string
     type: string
-    status: 'online' | 'offline'
+    status: 'online' | 'offline' | 'disabled'
     icon?: LucideIcon
     url?: string
     command?: string

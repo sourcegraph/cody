@@ -286,7 +286,7 @@ export class MCPManager {
                 return
             }
             const parsedConfig = result.data
-            // Add the connection
+            // Add the connection (respect the disabled flag)
             await this.connectionManager.addConnection(name, configWithDefaults, parsedConfig?.disabled)
 
             // If connection was successful, initialize server data
@@ -517,6 +517,90 @@ export class MCPManager {
         } catch (error) {
             vscode.window.showErrorMessage(
                 `Failed to update MCP server: ${error instanceof Error ? error.message : String(error)}`
+            )
+            throw error
+        }
+    }
+
+    // Disable an MCP server
+    public async disableServer(name: string): Promise<void> {
+        try {
+            // Get current configuration
+            const vsConfig = vscode.workspace.getConfiguration(MCPManager.CONFIG_SECTION)
+            const mcpServers = { ...vsConfig.get<Record<string, any>>(MCPManager.MCP_SERVERS_KEY, {}) }
+
+            // Check if server exists
+            if (!mcpServers[name]) {
+                throw new Error(`MCP server "${name}" does not exist`)
+            }
+
+            // Update the disabled flag
+            mcpServers[name] = {
+                ...mcpServers[name],
+                disabled: true,
+            }
+
+            // Update configuration
+            await vsConfig.update(
+                MCPManager.MCP_SERVERS_KEY,
+                mcpServers,
+                vscode.ConfigurationTarget.Global
+            )
+
+            // If the server is connected, disconnect it
+            await this.connectionManager.removeConnection(name)
+
+            logDebug('MCPManager', `Disabled MCP server: ${name}`)
+            // Notify about server changes
+            MCPManager.changeNotifications.next()
+        } catch (error) {
+            vscode.window.showErrorMessage(
+                `Failed to disable MCP server: ${error instanceof Error ? error.message : String(error)}`
+            )
+            throw error
+        }
+    }
+
+    // Enable an MCP server
+    public async enableServer(name: string): Promise<void> {
+        try {
+            // Get current configuration
+            const vsConfig = vscode.workspace.getConfiguration(MCPManager.CONFIG_SECTION)
+            const mcpServers = { ...vsConfig.get<Record<string, any>>(MCPManager.MCP_SERVERS_KEY, {}) }
+
+            // Check if server exists
+            if (!mcpServers[name]) {
+                throw new Error(`MCP server "${name}" does not exist`)
+            }
+
+            // Remove the disabled flag
+            mcpServers[name] = {
+                ...mcpServers[name],
+                disabled: false,
+            }
+
+            // Update configuration
+            await vsConfig.update(
+                MCPManager.MCP_SERVERS_KEY,
+                mcpServers,
+                vscode.ConfigurationTarget.Global
+            )
+
+            // Try to connect to the server
+            try {
+                await this.addConnection(name, mcpServers[name])
+                logDebug('MCPManager', `Enabled and connected to MCP server: ${name}`)
+            } catch (error) {
+                logDebug('MCPManager', `Enabled MCP server but failed to connect: ${name}`, {
+                    verbose: { error },
+                })
+            }
+
+            // Notify about server changes
+            MCPManager.changeNotifications.next()
+        } catch (error) {
+            vscode.window.showErrorMessage(
+                `Failed to enable MCP server: ${error instanceof Error ? error.message : String(error)}`
             )
             throw error
         }

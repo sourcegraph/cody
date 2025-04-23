@@ -166,6 +166,12 @@ export type WebviewMessage =
       }
     | { command: 'action/confirmation'; id: string; response: boolean }
     | { command: 'devicePixelRatio'; devicePixelRatio: number }
+    | {
+          command: 'mcp'
+          type: 'addServer' | 'removeServer' | 'restartServer'
+          name: string
+          config?: Record<string, any>
+      }
 
 export interface SmartApplyResult {
     taskId: FixupTaskID
@@ -215,6 +221,8 @@ export type ExtensionMessage =
               | { id: string; status: 'error'; error: string }
               | undefined
               | null
+          mcpServerAdded?: { name: string } | undefined | null
+          mcpServerError?: { name: string; error: string } | undefined | null
       }
     | ({ type: 'attribution' } & ExtensionAttributionMessage)
     | { type: 'rpc/response'; message: ResponseMessage }

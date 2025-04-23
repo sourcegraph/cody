@@ -301,6 +301,7 @@ const register = async (
     await registerCodyCommands({ statusBar, chatClient, fixupController, disposables, context })
     registerAuthCommands(disposables)
     registerChatCommands(disposables)
+    registerMCPCommands(disposables)
     disposables.push(...registerSidebarCommands())
     registerOtherCommands(disposables)
     if (clientCapabilities().isVSCode) {
@@ -638,6 +639,13 @@ function registerChatCommands(disposables: vscode.Disposable[]): void {
             vscode.env.clipboard.writeText(version)
         )
     )
+}
+
+function registerMCPCommands(disposables: vscode.Disposable[]): void {
+    // These commands are registered in src/commands/mcp-commands.ts
+    // but we need to import and call the function here
+    const { registerMCPCommands: registerMCPCommandsImpl } = require('./commands/mcp-commands')
+    registerMCPCommandsImpl(disposables)
 }
 
 function registerAuthCommands(disposables: vscode.Disposable[]): void {

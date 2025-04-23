@@ -1,5 +1,7 @@
 import { Search } from 'lucide-react'
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { toast } from 'sonner'
+import { getVSCodeAPI } from '../../utils/VSCodeApi'
 import { Input } from '../shadcn/ui/input'
 import { cn } from '../shadcn/utils'
 import type { ServerType } from './types'
@@ -13,13 +15,87 @@ export function ServerHome({ mcpServers = [] }: ServerHomeProps) {
     const [selectedServer, setSelectedServer] = useState<ServerType | null>(null)
     const [searchQuery, setSearchQuery] = useState('')
 
+    // Handle messages from the extension
+    useEffect(() => {
+        const messageHandler = (event: MessageEvent) => {
+            const message = event.data
+
+            if (message.type === 'clientAction') {
+                if (message.mcpServerAdded) {
+                    // Server was successfully added
+                    toast(`${message.mcpServerAdded.name} has been connected successfully.`)
+                } else if (message.mcpServerError) {
+                    // Error adding server
+                    toast(message.mcpServerError.error || 'Failed to add server')
+
+                    // Remove the server from the UI if it was added optimistically
+                    if (message.mcpServerError.name) {
+                        setServers(prevServers =>
+                            prevServers.filter(s => s.name !== message.mcpServerError?.name)
+                        )
+                    }
+                }
+            }
+        }
+
+        window.addEventListener('message', messageHandler)
+        return () => window.removeEventListener('message', messageHandler)
+    }, [])
+
     if (!servers) {
         return <div>Loading...</div>
     }
 
     const addServers = useCallback(
         (server: ServerType) => {
+            // Transform the UI server type to the format expected by MCPManager
+            const mcpServerConfig: Record<string, any> = {
+                transportType: server.url ? 'sse' : 'stdio',
+            }
+
+            // Add URL if it exists (for SSE transport)
+            if (server.url) {
+                mcpServerConfig.url = server.url
+            }
+
+            // Add command and args (for stdio transport)
+            if (server.command) {
+                mcpServerConfig.command = server.command
+
+                // Only add non-empty args
+                if (server.args && server.args.length > 0) {
+                    mcpServerConfig.args = server.args.filter(arg => arg.trim() !== '')
+                }
+            }
+
+            // Add environment variables if they exist
+            if (server.env && server.env.length > 0) {
+                const envVars: Record<string, string> = {}
+                for (const env of server.env) {
+                    if (env.name.trim() !== '') {
+                        envVars[env.name] = env.value
+                    }
+                }
+
+                // Only add if there are actual env vars
+                if (Object.keys(envVars).length > 0) {
+                    mcpServerConfig.env = envVars
+                }
+            }
+
+            // Use extension API to add the server
+            getVSCodeAPI().postMessage({
+                command: 'mcp',
+                type: 'addServer',
+                name: server.name,
+                config: mcpServerConfig,
+            })
+
+            // Optimistically add to UI state
             setServers([...servers, server])
+
+            // Show toast notification
+            toast(`${server.name} has been added. Connecting...`)
         },
         [servers]
     )
