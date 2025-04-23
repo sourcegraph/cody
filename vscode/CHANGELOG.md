@@ -4,6 +4,25 @@ This is a log of all notable changes to Cody for VS Code.
 
 <!--- {/_ CHANGELOG_START _/} -->
 
+## 1.88.0
+
+### Features
+
+#### Guardrails
+
+- Regenerate blocks which are detected in Guardrails checks [#7747](https://github.com/sourcegraph/cody/pull/7747)
+
+### Fix
+
+#### Auto-Edit
+
+- Add hot-streak model for long suggestion [#7779](https://github.com/sourcegraph/cody/pull/7779)
+
+### Reverts
+
+- Revert "chore: migrate feature flags evaluation to new batch api [#-1](https://github.com/sourcegraph/cody/pull/7380)
+
+
 ## 1.86.1
 
 ### Reverts
