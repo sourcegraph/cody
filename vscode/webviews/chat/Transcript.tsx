@@ -197,6 +197,7 @@ export function transcriptToInteractionPairs(
                 index: lastHumanMessage?.intent === 'agentic' ? -1 : pairs.length * 2,
                 speaker: 'human',
                 isUnsentFollowup: true,
+                intent: lastHumanMessage?.intent === 'agentic' ? 'agentic' : 'chat',
             },
             assistantMessage: null,
         })
@@ -247,6 +248,14 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
     useImperativeHandle(parentEditorRef, () => humanEditorRef.current)
 
     const [selectedIntent, setSelectedIntent] = useState<ChatMessage['intent']>(humanMessage?.intent)
+
+    // Reset intent to 'chat' when there are no interactions (new chat)
+    useEffect(() => {
+        if (isFirstInteraction && isLastInteraction && humanMessage.isUnsentFollowup) {
+            humanMessage.intent = 'chat'
+            setSelectedIntent('chat')
+        }
+    }, [humanMessage, isFirstInteraction, isLastInteraction])
 
     const usingToolCody = assistantMessage?.model?.includes(ToolCodyModelName)
 
@@ -466,17 +475,14 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
 
     const onHumanMessageSubmit = useCallback(
         (intentOnSubmit: ChatMessage['intent']) => {
+            // Current intent is the last selected intent if any or the current intent of the human message
+            const currentIntent = selectedIntent || humanMessage?.intent
+            // If no intent on submit provided, use the current intent instead
+            const newIntent = intentOnSubmit === undefined ? currentIntent : intentOnSubmit
+            setSelectedIntent(newIntent)
             if (humanMessage.isUnsentFollowup) {
-                // Use onUserAction directly with the new intent
-                setSelectedIntent(intentOnSubmit)
-                onUserAction('submit', intentOnSubmit)
+                onUserAction('submit', newIntent)
             } else {
-                // Current intent is the last selected intent if any or the current intent of the human message
-                const currentIntent = selectedIntent || humanMessage?.intent
-                // If no intent on submit provided, use the current intent instead
-                const newIntent = intentOnSubmit === undefined ? currentIntent : intentOnSubmit
-                humanMessage.intent = newIntent
-                setSelectedIntent(newIntent)
                 // Use onUserAction directly with the new intent
                 onUserAction('edit', newIntent)
             }
