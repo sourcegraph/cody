@@ -69,7 +69,7 @@ export function useCodyWebAgent(input: UseCodyWebAgentInput): CodyWebAgent | Err
 
     // Force a new agent instance when the component is remounted or when key properties change
     // This ensures all shared dependencies (models, extensionAPI, config) are properly refreshed
-    // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
+    // biome-ignore lint/correctness/useExhaustiveDependencies: Only recreate agent when connection or identity properties change
     useEffect(() => {
         const createAndSetNewAgent = () => {
             // Create a new agent instance
