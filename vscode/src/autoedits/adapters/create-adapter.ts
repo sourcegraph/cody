@@ -1,7 +1,13 @@
-import type { AutoEditsModelConfig, ChatClient } from '@sourcegraph/cody-shared'
+import {
+    type AutoEditsModelConfig,
+    type ChatClient,
+    currentAuthStatusOrNotReadyYet,
+    isS2,
+} from '@sourcegraph/cody-shared'
 
 import { autoeditsOutputChannelLogger } from '../output-channel-logger'
 
+import { autoeditsProviderConfig } from '../autoedits-config'
 import type { AutoeditsModelAdapter } from './base'
 import { CodyGatewayAdapter } from './cody-gateway'
 import { FireworksAdapter } from './fireworks'
@@ -22,6 +28,15 @@ export function createAutoeditsModelAdapter({
     chatClient: ChatClient
     allowUsingWebSocket?: boolean
 }): AutoeditsModelAdapter {
+    const authStatus = currentAuthStatusOrNotReadyYet()
+    const forceWebSocketProxy =
+        allowUsingWebSocket && Boolean(authStatus?.authenticated && isS2(authStatus))
+    if (forceWebSocketProxy) {
+        const webSocketEndpoint =
+            autoeditsProviderConfig.experimentalAutoeditsConfigOverride?.webSocketEndpoint ??
+            'wss://fine-tunes-proxy.sgdev.org'
+        return new FireworksWebSocketAdapter(webSocketEndpoint)
+    }
     switch (providerName) {
         case 'inceptionlabs':
             return new InceptionLabsAdapter()
@@ -31,7 +46,9 @@ export function createAutoeditsModelAdapter({
             return new FireworksAdapter()
         case 'fireworks-websocket':
             if (allowUsingWebSocket) {
-                return new FireworksWebSocketAdapter()
+                return new FireworksWebSocketAdapter(
+                    autoeditsProviderConfig.experimentalAutoeditsConfigOverride?.webSocketEndpoint
+                )
             }
             throw new Error('user is not opted into fireworks-websocket feature')
         case 'cody-gateway':

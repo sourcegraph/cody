@@ -51,7 +51,7 @@ describe('FireworksWebsocketAdapter', () => {
     })
 
     beforeEach(() => {
-        adapter = new FireworksWebSocketAdapter()
+        adapter = new FireworksWebSocketAdapter(webSocketEndpoint)
         vi.useFakeTimers()
     })
 
