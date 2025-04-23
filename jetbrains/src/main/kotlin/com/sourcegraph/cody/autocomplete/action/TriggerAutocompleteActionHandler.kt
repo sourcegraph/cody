@@ -17,7 +17,7 @@ class TriggerAutocompleteActionHandler : EditorActionHandler() {
 
   override fun doExecute(editor: Editor, caret: Caret?, dataContext: DataContext) {
     val offset = caret?.offset ?: editor.caretModel.currentCaret.offset
-    CodyAutocompleteManager.instance.triggerAutocomplete(
-        editor, offset, InlineCompletionTriggerKind.INVOKE)
+    CodyAutocompleteManager.getInstance(editor.project ?: return)
+        .triggerAutocomplete(editor, offset, InlineCompletionTriggerKind.INVOKE)
   }
 }

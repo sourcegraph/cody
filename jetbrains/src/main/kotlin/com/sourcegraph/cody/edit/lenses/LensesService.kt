@@ -64,7 +64,7 @@ class LensesService(val project: Project) {
     runInEdt {
       if (project.isDisposed) return@runInEdt
       // Find the specific editor matching the file
-      CodyEditorUtil.getAllOpenEditors()
+      CodyEditorUtil.getAllOpenEditors(project)
           .find { editor -> editor.virtualFile == vf }
           ?.let { matchingEditor ->
             CodeVisionInitializer.getInstance(project)

@@ -12,7 +12,7 @@ class CodyCommandListener(val project: Project) : CommandListener {
     if (event.commandName.isNullOrBlank() ||
         event.commandName.equals(VIM_EXIT_INSERT_MODE_ACTION)) {
       CodyEditorUtil.getSelectedEditors(project).forEach { editor ->
-        CodyAutocompleteManager.instance.disposeInlays(editor)
+        CodyAutocompleteManager.getInstance(project).disposeInlays(editor)
       }
     }
   }

@@ -26,13 +26,9 @@ class CodyDocumentListener(val project: Project) : BulkAwareDocumentListener {
   }
 
   private fun handleDocumentEvent(event: DocumentEvent) {
-    val editor = CodyEditorUtil.getEditorForDocument(event.document) ?: return
+    val editor = CodyEditorUtil.getEditorForDocument(project, event.document) ?: return
 
-    if (editor.project != project) {
-      return
-    }
-
-    CodyAutocompleteManager.instance.clearAutocompleteSuggestions(editor)
+    CodyAutocompleteManager.getInstance(project).clearAutocompleteSuggestions(editor)
 
     // IMPORTANT: we must do document synchronization even if autocomplete isn't auto-triggered.
     // This is esp. important with incremental document synchronization where the server goes out
@@ -52,8 +48,8 @@ class CodyDocumentListener(val project: Project) : BulkAwareDocumentListener {
       }
       val changeOffset = event.offset + event.newLength
       if (editor.caretModel.offset == changeOffset) {
-        CodyAutocompleteManager.instance.triggerAutocomplete(
-            editor, changeOffset, InlineCompletionTriggerKind.AUTOMATIC)
+        CodyAutocompleteManager.getInstance(project)
+            .triggerAutocomplete(editor, changeOffset, InlineCompletionTriggerKind.AUTOMATIC)
       }
     }
   }
