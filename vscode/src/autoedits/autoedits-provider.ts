@@ -194,6 +194,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
     private modelCallLatencyMetric: Histogram<{
         adapter: string
         model: string
+        seq: number
     }>
 
     constructor(
@@ -263,8 +264,9 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
         this.modelCallLatencyMetric = meter.createHistogram<{
             adapter: string
             model: string
-        }>('autoedit.model.call.latency', {
-            description: 'Autoedit model call latency',
+            seq: number
+        }>('autoedit.model.latency', {
+            description: 'Autoedit model call latency by adapter and model',
             unit: 'ms',
         })
 
@@ -858,8 +860,14 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
             timeoutMs: autoeditsProviderConfig.timeoutMs,
         })
 
+        const responseWithTiming = this.generatorWithTiming(
+            this.modelAdapter.constructor.name,
+            autoeditsProviderConfig.model,
+            responseGenerator
+        )
+
         return processHotStreakResponses({
-            responseGenerator,
+            responseGenerator: responseWithTiming,
             document,
             codeToReplaceData,
             docContext,
@@ -930,7 +938,6 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
         }
 
         return this.requestManager.request(requestParams, async signal => {
-            const startedAt = getTimeNowInMillis()
             const response = await this.getAndProcessModelResponses({
                 document,
                 position,
@@ -939,14 +946,31 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                 abortSignal: signal,
                 docContext,
             })
-
-            this.modelCallLatencyMetric.record(getTimeNowInMillis() - startedAt, {
-                adapter: this.modelAdapter.constructor.name,
-                model: autoeditsProviderConfig.model,
-            })
-
             return response
         })
+    }
+
+    private async *generatorWithTiming<T>(
+        adapter: string,
+        model: string,
+        generator: AsyncGenerator<T>
+    ): AsyncGenerator<T> {
+        const startedAt = getTimeNowInMillis()
+        let seq = 0
+        while (true) {
+            const res = await generator.next()
+            this.modelCallLatencyMetric.record(getTimeNowInMillis() - startedAt, {
+                adapter,
+                model,
+                seq,
+            })
+            seq += 1
+
+            if (res.done) {
+                return
+            }
+            yield res.value
+        }
     }
 
     public async manuallyTriggerCompletion(): Promise<void> {
