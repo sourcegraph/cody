@@ -92,11 +92,11 @@ log:
         send: 0
         ssl: -1
         wait: 267
-    - _id: 56717a41a622a03311dc5ce02bd45748
+    - _id: 400657813b3b22c276b690ec67125fb6
       _order: 0
       cache: {}
       request:
-        bodySize: 1299
+        bodySize: 419
         cookies: []
         headers:
           - _fromType: array
@@ -123,10 +123,10 @@ log:
             value: "7000"
           - _fromType: array
             name: content-length
-            value: "1299"
+            value: "419"
           - name: host
             value: sourcegraph.com
-        headersSize: 437
+        headersSize: 436
         httpVersion: HTTP/1.1
         method: POST
         postData:
@@ -136,41 +136,25 @@ log:
             maxTokensToSample: 256
             messages:
               - speaker: human
-                text: You are a code completion AI designed to take the surrounding code and
-                  shared context into account in order to predict and suggest
-                  high-quality code to complete the code enclosed in <CODE5711>
-                  tags. You only respond with code that works and fits
-                  seamlessly with surrounding code if any or use best practice
-                  and nothing else.
-              - speaker: assistant
-                text: I am a code completion AI with exceptional context-awareness designed to
-                  auto-complete nested code blocks with high-quality code that
-                  seamlessly integrates with surrounding code.
-              - speaker: human
                 text: >-
-                  Below is the code from file path src/sum.ts. Review the code
-                  outside the XML tags to detect the functionality, formats,
-                  style, patterns, and logics in use. Then, use what you detect
-                  and reuse methods/libraries to complete and enclose completed
-                  code only inside XML tags precisely without duplicating
-                  existing implementations. Here is the code: 
+                  
 
-                  ```
+                  #src/sum.ts
 
-                  export function sum(a: number, b: number): number {
-                      <CODE5711></CODE5711>
+                  <｜fim▁begin｜>export function sum(a: number, b: number): number {
+                      <｜fim▁hole｜>
                   }
 
-
-                  ```
-              - speaker: assistant
-                text: "<CODE5711>export function sum(a: number, b: number): number {"
-            model: anthropic/claude-instant-1.2
+                  <｜fim▁end｜>
+            model: fireworks/deepseek-coder-v2-lite-base
             stopSequences:
               - "\n\n"
               - "\n\r\n"
+              - <｜fim▁begin｜>
+              - <｜fim▁hole｜>
+              - <｜fim▁end｜>, <|eos_token|>
             stream: true
-            temperature: 0.5
+            temperature: 0.2
             timeoutMs: 7000
             topK: 0
         queryString:
@@ -180,21 +164,25 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/code?client-name=autocomplete&client-version=v1
       response:
-        bodySize: 92
+        bodySize: 254
         content:
-          mimeType: text/plain; charset=utf-8
-          size: 92
-          text: >
-            status 400, reason model "anthropic/claude-instant-1.2" is not
-            available on sourcegraph.com
+          mimeType: text/event-stream
+          size: 254
+          text: |+
+            event: completion
+            data: {"completion":"return a + b;","stopReason":"stop"}
+
+            event: done
+            data: {}
+
         cookies: []
         headers:
           - name: date
-            value: Wed, 23 Apr 2025 09:52:27 GMT
+            value: Wed, 23 Apr 2025 09:59:27 GMT
           - name: content-type
-            value: text/plain; charset=utf-8
-          - name: content-length
-            value: "92"
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
           - name: connection
             value: close
           - name: access-control-allow-credentials
@@ -202,7 +190,7 @@ log:
           - name: access-control-allow-origin
             value: ""
           - name: cache-control
-            value: no-cache, max-age=0
+            value: no-cache
           - name: vary
             value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
               X-Requested-With,Cookie
@@ -214,13 +202,13 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1374
+        headersSize: 1363
         httpVersion: HTTP/1.1
         redirectURL: ""
-        status: 400
-        statusText: Bad Request
-      startedDateTime: 2025-04-23T09:52:26.723Z
-      time: 441
+        status: 200
+        statusText: OK
+      startedDateTime: 2025-04-23T09:59:26.512Z
+      time: 1378
       timings:
         blocked: -1
         connect: -1
@@ -228,12 +216,12 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 441
-    - _id: faa48f2586eb742541f7150d4876a9d0
+        wait: 1378
+    - _id: 54c13387d9af8adabcdeadd76c3d8376
       _order: 0
       cache: {}
       request:
-        bodySize: 2536
+        bodySize: 1317
         cookies: []
         headers:
           - _fromType: array
@@ -260,7 +248,7 @@ log:
             value: "7000"
           - _fromType: array
             name: content-length
-            value: "2536"
+            value: "1317"
           - name: host
             value: sourcegraph.com
         headersSize: 437
@@ -274,18 +262,17 @@ log:
             messages:
               - speaker: human
                 text: >-
-                  Codebase context from file path 'src/sum.ts': <CODE5711>export
-                  function sum(a: number, b: number): number {
+                  #src/sum.ts
+
+                  export function sum(a: number, b: number): number {
                       
                   }
 
-                  </CODE5711>
-              - speaker: assistant
-                text: I will refer to this code to complete your next request.
-              - speaker: human
-                text: >-
-                  Codebase context from file path 'src/mergeSort.ts':
-                  <CODE5711>function mergeSort(arr: number[]): number[] {
+
+
+                  #src/mergeSort.ts
+
+                  function mergeSort(arr: number[]): number[] {
                       if (arr.length <= 1) {
                           return arr
                       }
@@ -316,45 +303,24 @@ log:
                       return result.concat(left.slice(leftIndex)).concat(right.slice(rightIndex))
                   }
 
-                  </CODE5711>
-              - speaker: assistant
-                text: I will refer to this code to complete your next request.
-              - speaker: human
-                text: You are a code completion AI designed to take the surrounding code and
-                  shared context into account in order to predict and suggest
-                  high-quality code to complete the code enclosed in <CODE5711>
-                  tags. You only respond with code that works and fits
-                  seamlessly with surrounding code if any or use best practice
-                  and nothing else.
-              - speaker: assistant
-                text: I am a code completion AI with exceptional context-awareness designed to
-                  auto-complete nested code blocks with high-quality code that
-                  seamlessly integrates with surrounding code.
-              - speaker: human
-                text: >-
-                  Below is the code from file path src/bubbleSort.ts. Review the
-                  code outside the XML tags to detect the functionality,
-                  formats, style, patterns, and logics in use. Then, use what
-                  you detect and reuse methods/libraries to complete and enclose
-                  completed code only inside XML tags precisely without
-                  duplicating existing implementations. Here is the code: 
 
-                  ```
 
-                  function bubbleSort(arr: number[]): number[] {
-                      <CODE5711></CODE5711>
+                  #src/bubbleSort.ts
+
+                  <｜fim▁begin｜>function bubbleSort(arr: number[]): number[] {
+                      <｜fim▁hole｜>
                   }
 
-
-                  ```
-              - speaker: assistant
-                text: "<CODE5711>function bubbleSort(arr: number[]): number[] {"
-            model: anthropic/claude-instant-1.2
+                  <｜fim▁end｜>
+            model: fireworks/deepseek-coder-v2-lite-base
             stopSequences:
               - "\n\n"
               - "\n\r\n"
+              - <｜fim▁begin｜>
+              - <｜fim▁hole｜>
+              - <｜fim▁end｜>, <|eos_token|>
             stream: true
-            temperature: 0.5
+            temperature: 0.2
             timeoutMs: 7000
             topK: 0
         queryString:
@@ -364,21 +330,28 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/code?client-name=autocomplete&client-version=v1
       response:
-        bodySize: 92
+        bodySize: 4626
         content:
-          mimeType: text/plain; charset=utf-8
-          size: 92
-          text: >
-            status 400, reason model "anthropic/claude-instant-1.2" is not
-            available on sourcegraph.com
+          mimeType: text/event-stream
+          size: 4626
+          text: >+
+            event: completion
+
+            data: {"completion":"for (let i = 0; i < arr.length; i++) {\n        for (let j = 0; j < arr.length - i - 1; j++) {\n            if (arr[j] > arr[j + 1]) {\n                const temp = arr[j]\n                arr[j] = arr[j + 1]\n                arr[j + 1] = temp\n            }\n        }\n    }\n    return arr\n}","stopReason":"stop"}
+
+
+            event: done
+
+            data: {}
+
         cookies: []
         headers:
           - name: date
-            value: Wed, 23 Apr 2025 09:52:27 GMT
+            value: Wed, 23 Apr 2025 09:59:29 GMT
           - name: content-type
-            value: text/plain; charset=utf-8
-          - name: content-length
-            value: "92"
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
           - name: connection
             value: close
           - name: access-control-allow-credentials
@@ -386,7 +359,7 @@ log:
           - name: access-control-allow-origin
             value: ""
           - name: cache-control
-            value: no-cache, max-age=0
+            value: no-cache
           - name: vary
             value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
               X-Requested-With,Cookie
@@ -398,13 +371,13 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1374
+        headersSize: 1363
         httpVersion: HTTP/1.1
         redirectURL: ""
-        status: 400
-        statusText: Bad Request
-      startedDateTime: 2025-04-23T09:52:27.186Z
-      time: 597
+        status: 200
+        statusText: OK
+      startedDateTime: 2025-04-23T09:59:28.023Z
+      time: 2831
       timings:
         blocked: -1
         connect: -1
@@ -412,7 +385,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 597
+        wait: 2831
     - _id: f1b1cde4cd57488b7f0137954f0302f5
       _order: 0
       cache: {}

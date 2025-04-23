@@ -92,11 +92,11 @@ log:
         send: 0
         ssl: -1
         wait: 303
-    - _id: a4971fb77885f1096dbd1fda3dbdd1da
+    - _id: 5b4a930c5a97ee546cb6b9a4a4a8edce
       _order: 0
       cache: {}
       request:
-        bodySize: 918
+        bodySize: 811
         cookies: []
         headers:
           - _fromType: array
@@ -123,7 +123,7 @@ log:
             value: "7000"
           - _fromType: array
             name: content-length
-            value: "918"
+            value: "811"
           - name: host
             value: sourcegraph.sourcegraph.com
         headersSize: 502
@@ -137,56 +137,44 @@ log:
             messages:
               - speaker: human
                 text: >-
-                  <filename>src/sum.ts<fim_prefix>// Here is a reference snippet
-                  of code from src/squirrel.ts:
+                  #src/squirrel.ts
 
-                  // /**
-
-                  //  * Squirrel is an interface that mocks something completely unrelated to squirrels.
-
-                  //  * It is related to the implementation of precise code navigation in Sourcegraph.
-
-                  //  */
-
-                  // export interface Squirrel {}
-
-                  // 
+                  /**
+                   * Squirrel is an interface that mocks something completely unrelated to squirrels.
+                   * It is related to the implementation of precise code navigation in Sourcegraph.
+                   */
+                  export interface Squirrel {}
 
 
-                  // Here is a reference snippet of code from src/animal.ts:
 
-                  // /* SELECTION_START */
+                  #src/animal.ts
 
-                  // export interface Animal {
+                  /* SELECTION_START */
 
-                  //     name: string
-
-                  //     makeAnimalSound(): string
-
-                  //     isMammal: boolean
-
-                  // }
-
-                  // /* SELECTION_END */
-
-                  // 
-
-
-                  export function sum(a: number, b: number): number {
-                      <fim_suffix>
+                  export interface Animal {
+                      name: string
+                      makeAnimalSound(): string
+                      isMammal: boolean
                   }
 
-                  <fim_middle>
-            model: fireworks/starcoder
+                  /* SELECTION_END */
+
+
+
+                  #src/sum.ts
+
+                  <｜fim▁begin｜>export function sum(a: number, b: number): number {
+                      <｜fim▁hole｜>
+                  }
+
+                  <｜fim▁end｜>
+            model: fireworks/deepseek-coder-v2-lite-base
             stopSequences:
               - "\n\n"
               - "\n\r\n"
-              - <fim_prefix>
-              - <fim_suffix>
-              - <fim_middle>
-              - <file_sep>
-              - <|endoftext|>
-              - <|end|>
+              - <｜fim▁begin｜>
+              - <｜fim▁hole｜>
+              - <｜fim▁end｜>, <|eos_token|>
             stream: true
             temperature: 0.2
             timeoutMs: 7000
@@ -198,13 +186,13 @@ log:
             value: v1
         url: https://sourcegraph.sourcegraph.com/.api/completions/code?client-name=enterprisemainbranchclient&client-version=v1
       response:
-        bodySize: 132
+        bodySize: 201
         content:
           mimeType: text/event-stream
-          size: 132
+          size: 201
           text: |+
             event: completion
-            data: {"completion":"\n","stopReason":"stop"}
+            data: {"completion":"return a + b","stopReason":"stop"}
 
             event: done
             data: {}
@@ -212,7 +200,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Wed, 23 Apr 2025 09:52:16 GMT
+            value: Wed, 23 Apr 2025 09:59:21 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -241,8 +229,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-04-23T09:52:15.373Z
-      time: 1098
+      startedDateTime: 2025-04-23T09:59:19.977Z
+      time: 1431
       timings:
         blocked: -1
         connect: -1
@@ -250,7 +238,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 1098
+        wait: 1431
     - _id: 5d0e29776bf0857beffb22b778ce488b
       _order: 0
       cache: {}

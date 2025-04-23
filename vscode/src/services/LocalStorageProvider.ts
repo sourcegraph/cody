@@ -61,7 +61,7 @@ class LocalStorage implements LocalStorageForModelPreferences {
 
     public setStorage(storage: Memento | 'noop' | 'inMemory'): void {
         if (storage === 'inMemory') {
-            this._storage = new InMemoryMemento()
+            this._storage = inMemoryEphemeralLocalStorage
         } else if (storage === 'noop') {
             this._storage = noopLocalStorage
         } else {
@@ -422,3 +422,5 @@ class InMemoryMemento implements Memento {
         return Array.from(this.storage.keys())
     }
 }
+
+const inMemoryEphemeralLocalStorage = new InMemoryMemento()
