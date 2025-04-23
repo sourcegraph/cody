@@ -10,7 +10,6 @@ import {
     mockAuthStatus,
     mockClientCapabilities,
     mockResolvedConfig,
-    modelsService,
     ps,
 } from '@sourcegraph/cody-shared'
 import { Observable } from 'observable-fns'
@@ -18,6 +17,7 @@ import { beforeEach, describe, expect, it, test, vi } from 'vitest'
 import { Uri } from 'vscode'
 import { URI } from 'vscode-uri'
 import * as featureFlagProviderModule from '../../../../lib/shared/src/experimentation/FeatureFlagProvider'
+import * as ModelServiceModule from '../../../../lib/shared/src/models/modelsService'
 import type { VSCodeEditor } from '../../editor/vscode-editor'
 import type { ExtensionClient } from '../../extension-client'
 import * as githubRepoMetadataModule from '../../repository/githubRepoMetadata'
@@ -69,6 +69,8 @@ describe('ChatController', () => {
         mockLocalStorage()
         vi.setSystemTime(mockNowDate)
 
+        const modelsService = new ModelServiceModule.ModelsService()
+        vi.spyOn(ModelServiceModule, 'modelsService', 'get').mockReturnValue(modelsService)
         vi.spyOn(modelsService, 'getDefaultModel').mockReturnValue(Observable.of(FIXTURE_MODEL))
 
         chatController = new ChatController({

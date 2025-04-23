@@ -9,12 +9,10 @@ import { FeatureFlag, featureFlagProvider } from '../experimentation/FeatureFlag
 import { logDebug } from '../logger'
 import {
     type StoredLastValue,
-    type Unsubscribable,
     combineLatest,
     distinctUntilChanged,
     shareReplay,
     storeLastValue,
-    tap,
 } from '../misc/observable'
 import {
     firstResultFromOperation,
@@ -237,7 +235,7 @@ export interface ModelsData {
 }
 
 export interface LocalStorageForModelPreferences {
-    getEnrollmentHistory(featureName: string): boolean
+    tryToEnroll(featureName: string): boolean
     getModelPreferences(): DefaultsAndUserPreferencesByEndpoint
     setModelPreferences(preferences: DefaultsAndUserPreferencesByEndpoint): Promise<void>
 }
@@ -259,104 +257,101 @@ export interface ModelAvailabilityStatus {
  *      from this type.)
  */
 export class ModelsService {
-    private storage: LocalStorageForModelPreferences | undefined
-
+    private storage: LocalStorageForModelPreferences | undefined = undefined
     private storedValue: StoredLastValue<ModelsData>
-    private syncPreferencesSubscription?: Unsubscribable
 
-    constructor(testing__mockModelsChanges?: ModelsService['modelsChanges']) {
-        if (testing__mockModelsChanges) {
-            this.modelsChanges = testing__mockModelsChanges
-        }
+    constructor() {
         this.storedValue = storeLastValue(this.modelsChanges)
     }
 
     public setStorage(storage: LocalStorageForModelPreferences): void {
         this.storage = storage
-
-        this.syncPreferencesSubscription = combineLatest(
-            this.modelsChanges,
-            featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyEditDefaultToGpt4oMini),
-            featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyDeepSeekChat)
-        )
-            .pipe(
-                tap(([data, shouldEditDefaultToGpt4oMini, shouldChatDefaultToDeepSeek]) => {
-                    // Ensures we only change user preferences once
-                    // when they join the A/B test.
-                    const isEnrolled = this.storage?.getEnrollmentHistory(
-                        FeatureFlag.CodyEditDefaultToGpt4oMini
-                    )
-
-                    // Check if this user has already been enrolled in the deepseek chat feature flag experiment.
-                    // We only want to change their default model ONCE when they first join the A/B test.
-                    // This ensures that:
-                    // 1. New users in the test group get deepseek as their default model
-                    // 2. If they later explicitly choose a different model (e.g., sonnet), we respect that choice
-                    // 3. Their chosen preference persists across sessions and new chats
-                    // 4. We don't override their preference every time they load the app
-                    const isEnrolledDeepSeekChat = this.storage?.getEnrollmentHistory(
-                        FeatureFlag.CodyDeepSeekChat
-                    )
-
-                    // Ensures that we have the gpt-4o-mini model
-                    // we want to default to in this A/B test.
-                    const gpt4oMini = data.primaryModels.find(
-                        model => model?.modelRef?.modelId === 'gpt-4o-mini'
-                    )
-
-                    // Ensures that we have the deepseek model
-                    // we want to default to in this A/B test
-                    // The model is defined at https://sourcegraph.sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/cmd/cody-gateway-config/dotcom_models.go?L323
-                    const deepseekModel = data.primaryModels.find(
-                        model => model?.id === 'fireworks::v1::deepseek-v3'
-                    )
-
-                    const allSitePrefs = this.storage?.getModelPreferences()
-                    const currentAccountPrefs = { ...data.preferences }
-
-                    if (!isEnrolled && shouldEditDefaultToGpt4oMini && gpt4oMini) {
-                        // For users enrolled in the A/B test, we'll default
-                        // to the gpt-4-mini model when using the Edit command.
-                        // They still can switch back to other models if they want.
-                        currentAccountPrefs.selected.edit = gpt4oMini.id
-                    }
-
-                    if (!isEnrolledDeepSeekChat && shouldChatDefaultToDeepSeek && deepseekModel) {
-                        // For users enrolled in the A/B test, we'll default
-                        // to the deepseek model when using the Chat command.
-                        // They still can switch back to other models if they want.
-                        currentAccountPrefs.selected.chat = deepseekModel.id
-                    }
-
-                    const updated: DefaultsAndUserPreferencesByEndpoint = {
-                        ...allSitePrefs,
-                        [currentAuthStatus().endpoint]: currentAccountPrefs,
-                    }
-                    this.storage?.setModelPreferences(updated)
-                })
-            )
-            .subscribe({})
+        this.storedValue.subscription.unsubscribe()
+        this.storedValue = storeLastValue(this.modelsChanges)
     }
 
     public dispose(): void {
         this.storedValue.subscription.unsubscribe()
-        this.syncPreferencesSubscription?.unsubscribe()
     }
 
-    /**
-     * An observable that emits all available models upon subscription and whenever there are
-     * changes.
-     */
-    public modelsChanges: Observable<ModelsData> = syncModels({
-        resolvedConfig: resolvedConfig.pipe(
-            map((config): SyncModelConfiguration => config),
-            distinctUntilChanged()
-        ),
-        authStatus,
-        configOverwrites,
-        clientConfig: ClientConfigSingleton.getInstance().changes,
-        userProductSubscription,
-    }).pipe(skipPendingOperation())
+    // An observable that emits all available models upon subscription and whenever there are changes.
+    public modelsChanges: Observable<ModelsData> = combineLatest(
+        syncModels({
+            resolvedConfig: resolvedConfig.pipe(
+                map((config): SyncModelConfiguration => config),
+                distinctUntilChanged()
+            ),
+            authStatus,
+            configOverwrites,
+            clientConfig: ClientConfigSingleton.getInstance().changes,
+            userProductSubscription,
+        }).pipe(skipPendingOperation()),
+        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyEditDefaultToGpt4oMini),
+        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyDeepSeekChat)
+    ).pipe(
+        map(([data, shouldEditDefaultToGpt4oMini, shouldChatDefaultToDeepSeek]) => {
+            if (!this.storage) {
+                return data
+            }
+
+            // Ensures that we have the gpt-4o-mini model
+            // we want to default to in this A/B test.
+            const gpt4oMini = data.primaryModels.find(
+                model => model?.modelRef?.modelId === 'gpt-4o-mini'
+            )
+
+            // Ensures that we have the deepseek model
+            // we want to default to in this A/B test
+            // The model is defined at https://sourcegraph.sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/cmd/cody-gateway-config/dotcom_models.go?L323
+            const deepseekModel = data.primaryModels.find(
+                model => model?.id === 'fireworks::v1::deepseek-v3'
+            )
+
+            const endpoint = currentAuthStatus().endpoint
+
+            const allSitePrefs = deepClone(this.storage?.getModelPreferences())
+            const accountPrefs = deepClone(allSitePrefs[endpoint] ?? data.preferences)
+
+            if (shouldEditDefaultToGpt4oMini && gpt4oMini) {
+                // Ensures we only change user preferences once when they join the A/B test.
+                if (this.storage.tryToEnroll(FeatureFlag.CodyEditDefaultToGpt4oMini)) {
+                    // For users enrolled in the A/B test, we'll default
+                    // to the gpt-4-mini model when using the Edit command.
+                    // They still can switch back to other models if they want.
+                    accountPrefs.selected.edit = gpt4oMini.id
+                }
+            }
+
+            if (shouldChatDefaultToDeepSeek && deepseekModel) {
+                // Check if this user has already been enrolled in the deepseek chat feature flag experiment.
+                // We only want to change their default model ONCE when they first join the A/B test.
+                // This ensures that:
+                // 1. New users in the test group get deepseek as their default model
+                // 2. If they later explicitly choose a different model (e.g., sonnet), we respect that choice
+                // 3. Their chosen preference persists across sessions and new chats
+                // 4. We don't override their preference every time they load the app
+                if (this.storage.tryToEnroll(FeatureFlag.CodyDeepSeekChat)) {
+                    // For users enrolled in the A/B test, we'll default
+                    // to the deepseek model when using the Chat command.
+                    // They still can switch back to other models if they want.
+                    accountPrefs.selected.chat = deepseekModel.id
+                }
+            }
+
+            return this.storage
+                .setModelPreferences({
+                    ...allSitePrefs,
+                    [endpoint]: accountPrefs,
+                })
+                .then(() => {
+                    return {
+                        ...data,
+                        preferences: accountPrefs,
+                    }
+                })
+        }),
+        distinctUntilChanged()
+    )
 
     /**
      * The list of models.
@@ -503,6 +498,7 @@ export class ModelsService {
     }
 
     public async setSelectedModel(type: ModelUsage, model: Model | string): Promise<void> {
+        const serverEndpoint = (await firstResultFromOperation(authStatus)).endpoint
         const modelsData = await firstResultFromOperation(this.modelsChanges)
         const resolved = this.resolveModel(modelsData, model)
         if (!resolved) {
@@ -515,7 +511,6 @@ export class ModelsService {
         if (!this.storage) {
             throw new Error('ModelsService.storage is not set')
         }
-        const serverEndpoint = currentAuthStatus().endpoint
         const currentPrefs = deepClone(this.storage.getModelPreferences())
         if (!currentPrefs[serverEndpoint]) {
             currentPrefs[serverEndpoint] = modelsData.preferences
@@ -656,12 +651,12 @@ export class TestLocalStorageForModelPreferences implements LocalStorageForModel
         this.data = preferences
     }
 
-    getEnrollmentHistory(_featureName: string): boolean {
+    tryToEnroll(_featureName: string): boolean {
         if (!this.isEnrolled) {
             this.isEnrolled = true
-            return false
+            return true
         }
-        return true
+        return false
     }
 }
 

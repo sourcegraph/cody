@@ -42,7 +42,7 @@ describe('DefaultPrompter', () => {
                 serverEndpoint: 'https://sourcegraph.com/.api/graphql',
             },
         })
-        vi.spyOn(localStorage, 'getEnrollmentHistory').mockReturnValue(false)
+        vi.spyOn(localStorage, 'tryToEnroll').mockReturnValue(true)
         vi.spyOn(contextFiltersProvider, 'isUriIgnored').mockResolvedValue(false)
         vi.spyOn(graphqlClient, 'getEvaluatedFeatureFlags').mockResolvedValue({
             [FeatureFlag.CodyUnifiedPrompts]: true,
