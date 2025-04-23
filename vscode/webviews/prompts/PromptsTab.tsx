@@ -30,9 +30,7 @@ export const PromptsTab: React.FC<{
                 recommendedOnly={false}
                 showOnlyPromptInsertableCommands={false}
                 showPromptLibraryUnsupportedMessage={true}
-                onSelect={item => {
-                    runAction(item, setView)
-                }}
+                onSelect={item => runAction(item, setView)}
                 className={styles.promptsContainer}
                 inputClassName={styles.promptsInput}
                 promptFilters={promptsFilter}

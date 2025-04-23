@@ -140,11 +140,7 @@ export const Toolbar: FunctionComponent<{
                         className={`tw-opacity-60 focus-visible:tw-opacity-100 hover:tw-opacity-100 tw-mr-2 tw-gap-0.5 ${toolbarStyles.button} ${toolbarStyles.buttonSmallIcon}`}
                     />
                 )}
-                <PromptSelectFieldToolbarItem
-                    focusEditor={focusEditor}
-                    className="tw-ml-1 tw-mr-1"
-                    setLastManuallySelectedIntent={setLastManuallySelectedIntent}
-                />
+                <PromptSelectFieldToolbarItem focusEditor={focusEditor} className="tw-ml-1 tw-mr-1" />
                 <ModeSelectorField
                     className={className}
                     omniBoxEnabled={omniBoxEnabled}
@@ -173,7 +169,6 @@ export const Toolbar: FunctionComponent<{
 const PromptSelectFieldToolbarItem: FunctionComponent<{
     focusEditor?: () => void
     className?: string
-    setLastManuallySelectedIntent: (intent: ChatMessage['intent']) => void
 }> = ({ focusEditor, className }) => {
     const runAction = useActionSelect()
 

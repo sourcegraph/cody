@@ -146,6 +146,7 @@ export const PromptList: FC<PromptListProps> = props => {
                 },
                 billingMetadata: { product: 'cody', category: 'core' },
             })
+
             parentOnSelect(action)
         },
         [
