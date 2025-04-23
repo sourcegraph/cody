@@ -555,9 +555,6 @@ export function createMCPToolState(
         .map(p => p.text)
         .join('\n')
 
-    // TODO: Handle image_url parts appropriately
-    // const imagePart = parts.find(p => p.type === 'image_url')
-
     return {
         type: 'tool-state',
         toolId: `mcp-${toolName}-${Date.now()}`,
@@ -572,5 +569,6 @@ export function createMCPToolState(
         source: ContextItemSource.Agentic,
         icon: 'database',
         metadata: ['mcp', toolName],
+        parts,
     }
 }

@@ -48,6 +48,7 @@ export function renderContextItem(contextItem: ContextItem): ContextMessage | nu
     const uri = getContextItemLocalUri(contextItem)
 
     let messageText: PromptString
+    let contentParts: MessagePart[] | undefined
 
     switch (source) {
         case ContextItemSource.Selection:
@@ -73,12 +74,18 @@ export function renderContextItem(contextItem: ContextItem): ContextMessage | nu
                     .replace('{title}', title)
                     .replace('{displayPath}', PromptString.fromDisplayPath(uri))
                     .concat(content)
+            } else if (contextItem.type === 'tool-state') {
+                messageText = ps``
+                // Extract content parts from the tool-state context item
+                if (contextItem.parts) {
+                    contentParts = contextItem.parts
+                }
             } else {
                 messageText = populateCodeContextTemplate(content, uri, repoName)
             }
     }
 
-    return { speaker: 'human', text: messageText, file: contextItem }
+    return { speaker: 'human', text: messageText, file: contextItem, content: contentParts }
 }
 
 export function getContextItemTokenUsageType(item: ContextItem): ContextTokenUsageType {
