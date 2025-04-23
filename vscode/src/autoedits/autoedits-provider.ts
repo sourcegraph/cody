@@ -840,8 +840,14 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
             timeoutMs: autoeditsProviderConfig.timeoutMs,
         })
 
+        const responseWithTiming = this.generatorWithTiming(
+            this.modelAdapter.constructor.name,
+            autoeditsProviderConfig.model,
+            responseGenerator
+        )
+
         return processHotStreakResponses({
-            responseGenerator,
+            responseGenerator: responseWithTiming,
             document,
             codeToReplaceData,
             docContext,
@@ -920,12 +926,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                 abortSignal: signal,
                 docContext,
             })
-
-            return this.generatorWithTiming(
-                this.modelAdapter.constructor.name,
-                autoeditsProviderConfig.model,
-                response
-            )
+            return response
         })
     }
 
