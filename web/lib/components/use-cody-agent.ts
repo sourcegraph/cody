@@ -90,7 +90,7 @@ export function useCodyWebAgent(input: UseCodyWebAgentInput): CodyWebAgent | Err
 
         retainGlobalAgent()
         return releaseGlobalAgent
-    }, [input.serverEndpoint, input.accessToken, input.telemetryClientName, input.customHeaders]) // Reinitialize when key properties change
+    }, [input, input.serverEndpoint, input.accessToken, input.telemetryClientName, input.customHeaders])
 
     return agent
 }
