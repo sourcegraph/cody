@@ -1,4 +1,5 @@
 import { clsx } from 'clsx'
+import { useState } from 'react'
 import type { FunctionComponent } from 'react'
 import type { UserAccountInfo } from '../Chat'
 import styles from './UserAvatar.module.css'
@@ -44,8 +45,9 @@ const InnerUserAvatar: FunctionComponent<Omit<Props, 'sourcegraphGradientBorder'
 }) => {
     const title = user.displayName || user.username
     const highDPISize = size * 2
+    const [imgError, setImgError] = useState(false)
 
-    if (user?.avatarURL) {
+    if (user?.avatarURL && !imgError) {
         let url = user.avatarURL
         try {
             const urlObject = new URL(user.avatarURL)
@@ -68,6 +70,7 @@ const InnerUserAvatar: FunctionComponent<Omit<Props, 'sourcegraphGradientBorder'
                 alt={`Avatar for ${user.username}`}
                 width={size}
                 height={size}
+                onError={() => setImgError(true)}
             />
         )
     }
