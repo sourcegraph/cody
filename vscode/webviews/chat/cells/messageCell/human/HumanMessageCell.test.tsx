@@ -6,7 +6,7 @@ import { HumanMessageCell } from './HumanMessageCell'
 vi.mock('./editor/HumanMessageEditor', () => ({
     HumanMessageEditor: vi.fn(props => (
         <div data-testid="human-message-editor">
-            <span data-testid="intent">{props.intent}</span>
+            <span data-testid="intent">{props.selectedIntent}</span>
             <button
                 type="button"
                 data-testid="select-intent-button"

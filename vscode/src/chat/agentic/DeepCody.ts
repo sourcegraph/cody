@@ -70,7 +70,7 @@ export class DeepCodyAgent {
         postRequest: (step: ProcessingStep) => Promise<boolean>
     ) {
         // Initialize tools, handlers and mixins in constructor
-        this.tools = CodyToolProvider.getTools()
+        this.tools = CodyToolProvider.getAllTools()
         this.initializeMultiplexer(this.tools)
         this.buildPrompt(this.tools)
 
