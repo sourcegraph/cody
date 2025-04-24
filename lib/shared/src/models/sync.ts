@@ -1,22 +1,21 @@
 import { Observable, interval, map } from 'observable-fns'
 import { currentAuthStatusOrNotReadyYet, mockAuthStatus } from '../auth/authStatus'
 import { type AuthStatus, isCodyProUser, isFreeUser } from '../auth/types'
-import type { ClientConfiguration } from '../configuration'
 import { clientCapabilities } from '../configuration/clientCapabilities'
 import { cenv } from '../configuration/environment'
 import type { PickResolvedConfiguration } from '../configuration/resolver'
 import { FeatureFlag, featureFlagProvider } from '../experimentation/FeatureFlagProvider'
 import { fetchLocalOllamaModels } from '../llm-providers/ollama/utils'
-import { logDebug } from '../logger'
+import { logError } from '../logger'
 import {
     combineLatest,
     distinctUntilChanged,
     promiseFactoryToObservable,
+    retry,
     shareReplay,
     startWith,
     switchMap,
     take,
-    tap,
 } from '../misc/observable'
 import { pendingOperation, switchMapReplayOperation } from '../misc/observableOperation'
 import { ANSWER_TOKENS } from '../prompt/constants'
@@ -53,6 +52,20 @@ const rateLimitState: RateLimitState = {
     editModel: undefined,
 }
 
+export type SyncModelConfiguration = PickResolvedConfiguration<{
+    configuration:
+        | 'providerLimitPrompt'
+        | 'customHeaders'
+        | 'devModels'
+        | 'experimentalMinionAnthropicKey'
+    auth: true
+    clientState: 'modelPreferences'
+}>
+
+type RemoteModelsData = Pick<ModelsData, 'primaryModels'> & {
+    preferences: Pick<ModelsData['preferences'], 'defaults'> | null
+}
+
 /**
  * Observe the list of all available models.
  */
@@ -64,521 +77,403 @@ export function syncModels({
     fetchServerSideModels_ = fetchServerSideModels,
     userProductSubscription = Observable.of(null),
 }: {
-    resolvedConfig: Observable<
-        PickResolvedConfiguration<{
-            configuration: true
-            auth: true
-            clientState: 'modelPreferences'
-        }>
-    >
+    resolvedConfig: Observable<SyncModelConfiguration>
     authStatus: Observable<AuthStatus>
     configOverwrites: Observable<CodyLLMSiteConfiguration | null | typeof pendingOperation>
     clientConfig: Observable<CodyClientConfig | undefined | typeof pendingOperation>
     fetchServerSideModels_?: typeof fetchServerSideModels
     userProductSubscription: Observable<UserProductSubscription | null | typeof pendingOperation>
 }): Observable<ModelsData | typeof pendingOperation> {
-    // Refresh Ollama models when Ollama-related config changes and periodically.
-    const localModels = combineLatest(
-        resolvedConfig.pipe(
-            map(
-                config =>
-                    ({
-                        autocompleteExperimentalOllamaOptions:
-                            config.configuration.autocompleteExperimentalOllamaOptions,
-                    }) satisfies Pick<ClientConfiguration, 'autocompleteExperimentalOllamaOptions'>
-            ),
-            distinctUntilChanged()
-        ),
-        interval(10 * 60 * 60 /* 10 minutes */).pipe(
-            startWith(undefined),
-            take(
-                // Use only a limited number of timers when running in Vitest so that `vi.runAllTimersAsync()` doesn't get into an infinite loop.
-                cenv.CODY_TESTING_LIMIT_MAX_TIMERS ? 10 : Number.MAX_SAFE_INTEGER
-            )
-        )
-    ).pipe(
-        switchMap(() =>
-            clientCapabilities().isCodyWeb
-                ? Observable.of([]) // disable Ollama local models for Cody Web
-                : promiseFactoryToObservable(signal => fetchLocalOllamaModels().catch(() => []))
-        ),
-        // Keep the old localModels results while we're fetching the new ones, to avoid UI jitter.
-        shareReplay()
+    return combineLatest(
+        resolvedConfig,
+        clientConfig,
+        configOverwrites,
+        authStatus,
+        userProductSubscription
     )
+        .pipe(
+            distinctUntilChanged(),
+            switchMapReplayOperation(
+                ([
+                    config,
+                    clientConfig,
+                    configOverwrites,
+                    currentAuthStatus,
+                    userProductSubscription,
+                ]) => {
+                    if (config.auth.serverEndpoint !== currentAuthStatus.endpoint) {
+                        return Observable.of(pendingOperation)
+                    }
 
-    const relevantConfig = resolvedConfig.pipe(
-        map(
-            config =>
-                ({
-                    configuration: {
-                        customHeaders: config.configuration.customHeaders,
-                        providerLimitPrompt: config.configuration.providerLimitPrompt,
-                        devModels: config.configuration.devModels,
-                    },
-                    auth: config.auth,
-                }) satisfies PickResolvedConfiguration<{
-                    configuration: 'providerLimitPrompt' | 'customHeaders' | 'devModels'
-                    auth: true
-                }>
-        ),
-        distinctUntilChanged()
-    )
-
-    const userModelPreferences: Observable<DefaultsAndUserPreferencesForEndpoint> = resolvedConfig.pipe(
-        map(config => {
-            // Deep clone so it's not readonly and we can mutate it, for convenience.
-            const prevPreferences = config.clientState.modelPreferences[config.auth.serverEndpoint]
-            return deepClone(prevPreferences ?? EMPTY_PREFERENCES)
-        }),
-        distinctUntilChanged(),
-        tap(preferences => {
-            logDebug('ModelsService', 'User model preferences changed', JSON.stringify(preferences))
-        }),
-        shareReplay()
-    )
-
-    type RemoteModelsData = Pick<ModelsData, 'primaryModels'> & {
-        preferences: Pick<ModelsData['preferences'], 'defaults'> | null
-    }
-    const remoteModelsData: Observable<RemoteModelsData | Error | typeof pendingOperation> =
-        combineLatest(relevantConfig, authStatus, userProductSubscription).pipe(
-            switchMapReplayOperation(([config, authStatus, userProductSubscription]) => {
-                if (
-                    authStatus.endpoint !== config.auth.serverEndpoint ||
-                    authStatus.pendingValidation ||
-                    userProductSubscription === pendingOperation
-                ) {
-                    return Observable.of(pendingOperation)
-                }
-
-                if (!authStatus.authenticated) {
-                    return Observable.of<RemoteModelsData>({ primaryModels: [], preferences: null })
-                }
-
-                const isDotComUser = isDotCom(authStatus)
-                const isCodyFreeUser =
-                    userProductSubscription == null || userProductSubscription.userCanUpgrade === true
-
-                const serverModelsConfig: Observable<
-                    RemoteModelsData | Error | typeof pendingOperation
-                > = clientConfig.pipe(
-                    switchMapReplayOperation(maybeServerSideClientConfig => {
-                        // NOTE: isDotComUser to enable server-side models for DotCom users,
-                        // as the modelsAPIEnabled is default to return false on DotCom to avoid older clients
-                        // that also share the same check from breaking.
-                        if (isDotComUser || maybeServerSideClientConfig?.modelsAPIEnabled) {
-                            logDebug('ModelsService', 'new models API enabled')
-                            return promiseFactoryToObservable(signal =>
-                                fetchServerSideModels_(config, signal)
-                            ).pipe(
-                                switchMap(serverModelsConfig => {
-                                    const data: RemoteModelsData = {
-                                        preferences: { defaults: {} },
-                                        primaryModels: [],
-                                    }
-
-                                    // For DotCom users with early access or on the waitlist, replace the waitlist tag with the appropriate tags.
-                                    const enableToolCody: Observable<boolean> = resolvedConfig.pipe(
-                                        map(c => !!c.configuration.experimentalMinionAnthropicKey),
-                                        distinctUntilChanged()
-                                    )
-                                    return combineLatest(
-                                        featureFlagProvider.evaluatedFeatureFlag(
-                                            FeatureFlag.CodyEarlyAccess
-                                        ),
-                                        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.DeepCody),
-                                        featureFlagProvider.evaluatedFeatureFlag(
-                                            FeatureFlag.CodyChatDefaultToClaude35Haiku
-                                        ),
-                                        enableToolCody,
-                                        featureFlagProvider.evaluatedFeatureFlag(
-                                            FeatureFlag.EnhancedContextWindow,
-                                            true /** force refresh */
-                                        ),
-                                        featureFlagProvider.evaluatedFeatureFlag(
-                                            FeatureFlag.FallbackToFlash,
-                                            true /** force refresh */
-                                        )
-                                    ).pipe(
-                                        switchMap(
-                                            ([
-                                                hasEarlyAccess,
-                                                hasAgenticChatFlag,
-                                                defaultToHaiku,
-                                                isToolCodyEnabled,
-                                                enhancedContextWindowFlag,
-                                                fallbackToFlashFlag,
-                                            ]) => {
-                                                if (serverModelsConfig) {
-                                                    // Remove deprecated models from the list, filter out waitlisted models for Enterprise.
-                                                    const filteredModels =
-                                                        serverModelsConfig?.models.filter(
-                                                            m =>
-                                                                m.status !== 'deprecated' &&
-                                                                (isDotComUser || m.status !== 'waitlist')
-                                                        )
-                                                    data.primaryModels.push(
-                                                        ...maybeAdjustContextWindows(filteredModels, {
-                                                            tier: isDotComUser
-                                                                ? isCodyProUser(
-                                                                      authStatus,
-                                                                      userProductSubscription
-                                                                  )
-                                                                    ? 'pro'
-                                                                    : 'free'
-                                                                : 'enterprise',
-                                                            enhancedContextWindowFlagEnabled:
-                                                                enhancedContextWindowFlag,
-                                                        }).map(model =>
-                                                            createModelFromServerModel(
-                                                                model,
-                                                                enhancedContextWindowFlag
-                                                            )
-                                                        )
-                                                    )
-                                                    data.preferences!.defaults =
-                                                        defaultModelPreferencesFromServerModelsConfig(
-                                                            serverModelsConfig
-                                                        )
-                                                }
-
-                                                // TODO(sqs): remove waitlist from localStorage when user has access
-                                                if (isDotComUser && hasEarlyAccess) {
-                                                    data.primaryModels = data.primaryModels.map(
-                                                        model => {
-                                                            if (model.tags.includes(ModelTag.Waitlist)) {
-                                                                const newTags = model.tags.filter(
-                                                                    tag => tag !== ModelTag.Waitlist
-                                                                )
-                                                                newTags.push(
-                                                                    hasEarlyAccess
-                                                                        ? ModelTag.EarlyAccess
-                                                                        : ModelTag.OnWaitlist
-                                                                )
-                                                                return { ...model, tags: newTags }
-                                                            }
-                                                            return model
-                                                        }
-                                                    )
-                                                }
-
-                                                // Enterprise instances with early access flag enabled
-                                                const isVisionSupported = !isDotComUser && hasEarlyAccess
-                                                data.primaryModels = data.primaryModels.map(m => ({
-                                                    ...m,
-                                                    // Gateway doesn't suppoort vision models for Google yet
-                                                    tags:
-                                                        isVisionSupported && m.provider !== 'google'
-                                                            ? m.tags
-                                                            : m.tags.filter(t => t !== ModelTag.Vision),
-                                                }))
-
-                                                const clientModels = []
-
-                                                // Handle agentic chat features
-                                                const isAgenticChatEnabled =
-                                                    hasAgenticChatFlag ||
-                                                    (isDotComUser && !isCodyFreeUser)
-                                                // Handle agentic chat features
-                                                const haikuModel = data.primaryModels.find(m =>
-                                                    m.id.includes('5-haiku')
-                                                )
-                                                // Look for any sonnet model to add Deep Cody.
-                                                const sonnetModel = data.primaryModels.find(m =>
-                                                    m.id.includes('sonnet')
-                                                )
-                                                const hasDeepCody = data.primaryModels.some(m =>
-                                                    m.id.includes('deep-cody')
-                                                )
-                                                if (
-                                                    !hasDeepCody &&
-                                                    isAgenticChatEnabled &&
-                                                    sonnetModel &&
-                                                    haikuModel
-                                                ) {
-                                                    // Add Deep Cody
-                                                    clientModels.push(DEEP_CODY_MODEL)
-                                                    // Add Tool Cody
-                                                    if (isToolCodyEnabled) {
-                                                        clientModels.push(TOOL_CODY_MODEL)
-                                                    }
-                                                }
-
-                                                // Add the client models to the list of models.
-                                                data.primaryModels.push(
-                                                    ...maybeAdjustContextWindows(clientModels, {
-                                                        tier: isDotComUser
-                                                            ? isCodyProUser(
-                                                                  authStatus,
-                                                                  userProductSubscription
-                                                              )
-                                                                ? 'pro'
-                                                                : 'free'
-                                                            : 'enterprise',
-                                                        // the feature flag is for serverModels, so it's always false for client models
-                                                        enhancedContextWindowFlagEnabled: false,
-                                                    }).map(model =>
-                                                        createModelFromServerModel(model, false)
-                                                    )
-                                                )
-
-                                                // Set the default model to Haiku for free users.
-                                                if (
-                                                    isDotComUser &&
-                                                    isCodyFreeUser &&
-                                                    defaultToHaiku &&
-                                                    haikuModel
-                                                ) {
-                                                    data.preferences!.defaults.chat = haikuModel.id
-                                                }
-                                                /**
-                                                 * Handle rate limiting for paid users
-                                                 *
-                                                 * When rate limited:
-                                                 * 1. Disables all non-fast models (models without Speed tag)
-                                                 * 2. Saves current model preferences for later restoration
-                                                 * 3. Forces default model to Gemini Flash for both chat and edit
-                                                 *
-                                                 * When rate limit is lifted:
-                                                 * - Restores previously saved model preferences
-                                                 */
-                                                if (
-                                                    fallbackToFlashFlag &&
-                                                    !isFreeUser(authStatus, userProductSubscription)
-                                                ) {
-                                                    if (authStatus.rateLimited) {
-                                                        // Disable all the models
-
-                                                        // Check if there are any unlimited models
-                                                        const hasUnlimitedModels =
-                                                            data.primaryModels.some(model =>
-                                                                model.tags.includes(ModelTag.Unlimited)
-                                                            )
-
-                                                        data.primaryModels = data.primaryModels.map(
-                                                            model => {
-                                                                if (hasUnlimitedModels) {
-                                                                    // If we have unlimited models, disable everything else
-                                                                    if (
-                                                                        !model.tags.includes(
-                                                                            ModelTag.Unlimited
-                                                                        )
-                                                                    ) {
-                                                                        return {
-                                                                            ...model,
-                                                                            disabled: true,
-                                                                        }
-                                                                    }
-                                                                } else {
-                                                                    // If no unlimited models, disable everything except speed
-                                                                    if (
-                                                                        !model.tags.includes(
-                                                                            ModelTag.Speed
-                                                                        )
-                                                                    ) {
-                                                                        return {
-                                                                            ...model,
-                                                                            disabled: true,
-                                                                        }
-                                                                    }
-                                                                }
-                                                                return model
-                                                            }
-                                                        )
-
-                                                        if (data.preferences) {
-                                                            const modelToFallback =
-                                                                data.preferences.defaults
-                                                                    .unlimitedChat ||
-                                                                'google::v1::gemini-2.0-flash'
-
-                                                            // Try to use Gemini Flash first, if not available fallback to any fast model
-                                                            let defaultModel = data.primaryModels.find(
-                                                                model => model.id === modelToFallback
-                                                            )
-                                                            if (!defaultModel) {
-                                                                defaultModel = data.primaryModels.find(
-                                                                    model =>
-                                                                        model.tags.includes(
-                                                                            ModelTag.Speed
-                                                                        )
-                                                                )
-                                                            }
-
-                                                            // Set the default model
-                                                            if (defaultModel) {
-                                                                rateLimitState.chatModel =
-                                                                    data.preferences.defaults.chat || ''
-                                                                rateLimitState.editModel =
-                                                                    data.preferences.defaults.edit || ''
-
-                                                                data.preferences.defaults.chat =
-                                                                    defaultModel.id
-                                                                data.preferences.defaults.edit =
-                                                                    defaultModel.id
-
-                                                                telemetryRecorder.recordEvent(
-                                                                    'cody.rateLimit',
-                                                                    'hit',
-                                                                    {
-                                                                        privateMetadata: {
-                                                                            chatModel: defaultModel.id,
-                                                                        },
-                                                                    }
-                                                                )
-                                                            }
-                                                        }
-                                                    } else {
-                                                        // Re-enable all models
-                                                        data.primaryModels = data.primaryModels.map(
-                                                            model => {
-                                                                if (
-                                                                    !model.tags.includes(ModelTag.Speed)
-                                                                ) {
-                                                                    return {
-                                                                        ...model,
-                                                                        disabled: false,
-                                                                    }
-                                                                }
-                                                                return model
-                                                            }
-                                                        )
-                                                        const originalChatModel =
-                                                            data.primaryModels.find(
-                                                                model =>
-                                                                    model.id === rateLimitState.chatModel
-                                                            )
-                                                        const originalEditModel =
-                                                            data.primaryModels.find(
-                                                                model =>
-                                                                    model.id === rateLimitState.editModel
-                                                            )
-                                                        if (originalChatModel && data.preferences) {
-                                                            data.preferences.defaults.chat =
-                                                                originalChatModel.id
-                                                        }
-                                                        if (originalEditModel && data.preferences) {
-                                                            data.preferences.defaults.edit =
-                                                                originalEditModel.id
-                                                        }
-                                                    }
-                                                }
-
-                                                // NOTE: Calling `registerModelsFromVSCodeConfiguration()` doesn't
-                                                // entirely make sense in a world where LLM models are managed
-                                                // server-side. However, this is how Cody can be extended to use locally
-                                                // running LLMs such as Ollama (BYOK). (Though some more testing is needed.)
-                                                // See:
-                                                // https://sourcegraph.com/blog/local-code-completion-with-ollama-and-cody
-                                                data.primaryModels.push(
-                                                    ...getModelsFromVSCodeConfiguration(config)
-                                                )
-
-                                                data.primaryModels = data.primaryModels.map(model => {
-                                                    if (
-                                                        model.modelRef ===
-                                                        data.preferences!.defaults.chat
-                                                    ) {
-                                                        return {
-                                                            ...model,
-                                                            tags: [...model.tags, ModelTag.Default],
-                                                        }
-                                                    }
-                                                    return model
-                                                })
-                                                return Observable.of(data)
-                                            }
-                                        )
-                                    )
-                                })
+                    return combineLatest(
+                        combineLatest(
+                            interval(10 * 60 * 60 /* 10 minutes */).pipe(
+                                startWith(undefined),
+                                take(
+                                    // Use only a limited number of timers when running in Vitest so that `vi.runAllTimersAsync()` doesn't get into an infinite loop.
+                                    cenv.CODY_TESTING_LIMIT_MAX_TIMERS ? 10 : Number.MAX_SAFE_INTEGER
+                                )
+                            ),
+                            promiseFactoryToObservable(() =>
+                                clientCapabilities().isCodyWeb
+                                    ? Promise.resolve<Model[]>([])
+                                    : fetchLocalOllamaModels().catch(() => [])
                             )
-                        }
+                        ).pipe(map(([_, ollamaModels]) => ollamaModels)),
+                        combineLatest(
+                            featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyEarlyAccess),
+                            featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.DeepCody),
+                            featureFlagProvider.evaluatedFeatureFlag(
+                                FeatureFlag.CodyChatDefaultToClaude35Haiku
+                            ),
+                            featureFlagProvider.evaluatedFeatureFlag(
+                                FeatureFlag.EnhancedContextWindow,
+                                true /** force refresh */
+                            ),
+                            featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.FallbackToFlash)
+                        ).pipe(
+                            distinctUntilChanged(),
+                            switchMap(
+                                ([
+                                    hasEarlyAccess,
+                                    hasAgenticChatFlag,
+                                    defaultToHaiku,
+                                    enhancedContextWindowFlag,
+                                    fallbackToFlashFlag,
+                                ]) => {
+                                    return promiseFactoryToObservable<
+                                        RemoteModelsData | Error | typeof pendingOperation
+                                    >(signal => {
+                                        if (
+                                            configOverwrites === pendingOperation ||
+                                            clientConfig === pendingOperation ||
+                                            userProductSubscription === pendingOperation
+                                        ) {
+                                            return Promise.resolve(pendingOperation)
+                                        }
 
-                        // In enterprise mode, we let the sg instance dictate the token limits and allow users
-                        // to overwrite it locally (for debugging purposes).
-                        //
-                        // This is similiar to the behavior we had before introducing the new chat and allows
-                        // BYOK customers to set a model of their choice without us having to map it to a known
-                        // model on the client.
-                        //
-                        // NOTE: If configOverwrites?.chatModel is empty, automatically fallback to use the
-                        // default model configured on the instance.
-                        return configOverwrites.pipe(
-                            map((configOverwrites): RemoteModelsData | typeof pendingOperation => {
-                                if (configOverwrites === pendingOperation) {
-                                    return pendingOperation
+                                        return getRemoteModelData(
+                                            config,
+                                            configOverwrites,
+                                            clientConfig,
+                                            currentAuthStatus,
+                                            userProductSubscription,
+                                            hasEarlyAccess,
+                                            hasAgenticChatFlag,
+                                            defaultToHaiku,
+                                            enhancedContextWindowFlag,
+                                            fallbackToFlashFlag,
+                                            signal,
+                                            fetchServerSideModels_
+                                        ).catch(error =>
+                                            error instanceof Error ? error : new Error(String(error))
+                                        )
+                                    })
                                 }
-                                if (configOverwrites?.chatModel) {
-                                    return {
-                                        preferences: null,
-                                        primaryModels: [
-                                            createModel({
-                                                id: configOverwrites.chatModel,
-                                                // TODO (umpox) Add configOverwrites.editModel for separate edit support
-                                                usage: [ModelUsage.Chat, ModelUsage.Edit],
-                                                contextWindow: getEnterpriseContextWindow(
-                                                    configOverwrites?.chatModel,
-                                                    configOverwrites,
-                                                    config.configuration
-                                                ),
-                                                tags: [ModelTag.Enterprise],
-                                            }),
-                                        ],
-                                    } satisfies RemoteModelsData
-                                }
-
-                                // If the enterprise instance didn't have any configuration data for Cody, clear the
-                                // models available in the modelsService. Otherwise there will be stale, defunct models
-                                // available.
-                                return {
-                                    preferences: null,
-                                    primaryModels: [],
-                                } satisfies RemoteModelsData
-                            })
+                            )
                         )
-                    })
-                )
-                return serverModelsConfig
-            })
+                    ).pipe(
+                        map(([localModels, remoteModels]) => {
+                            if (remoteModels === pendingOperation) {
+                                return pendingOperation
+                            }
+
+                            const isRateLimited = !!(
+                                'rateLimited' in currentAuthStatus && currentAuthStatus.rateLimited
+                            )
+
+                            const userPreferences = deepClone(
+                                config.clientState.modelPreferences[config.auth.serverEndpoint] ??
+                                    EMPTY_PREFERENCES
+                            )
+
+                            return {
+                                localModels,
+                                primaryModels: isError(remoteModels)
+                                    ? []
+                                    : normalizeModelList(remoteModels.primaryModels),
+                                preferences: isError(remoteModels)
+                                    ? userPreferences
+                                    : resolveModelPreferences(remoteModels.preferences, userPreferences),
+                                isRateLimited,
+                            } as ModelsData
+                        })
+                    )
+                }
+            ),
+            retry(3)
         )
-    return combineLatest(localModels, remoteModelsData, userModelPreferences, authStatus).pipe(
-        map(
-            ([localModels, remoteModelsData, userModelPreferences, currentAuthStatus]):
-                | ModelsData
-                | typeof pendingOperation => {
-                if (remoteModelsData === pendingOperation) {
+        .pipe(
+            map(value => {
+                if (isError(value)) {
+                    logError('syncModels', 'Error getting models', value)
                     return pendingOperation
                 }
+                return value
+            }),
+            distinctUntilChanged(),
+            shareReplay()
+        )
+}
 
-                // Calculate isRateLimited directly from the current authStatus
-                const isRateLimited = !!(
-                    'rateLimited' in currentAuthStatus && currentAuthStatus.rateLimited
+async function getRemoteModelData(
+    config: SyncModelConfiguration,
+    configOverwrites: CodyLLMSiteConfiguration | null,
+    clientConfig: CodyClientConfig | undefined,
+    authStatus: AuthStatus,
+    userProductSubscription: UserProductSubscription | null,
+    hasEarlyAccess: boolean,
+    hasAgenticChatFlag: boolean,
+    defaultToHaiku: boolean,
+    enhancedContextWindowFlag: boolean,
+    fallbackToFlashFlag: boolean,
+    signal: AbortSignal,
+    fetchServerSideModels_: typeof fetchServerSideModels
+): Promise<RemoteModelsData> {
+    if (!authStatus.authenticated) {
+        return { primaryModels: [], preferences: null }
+    }
+
+    const isDotComUser = isDotCom(authStatus)
+    const isCodyFreeUser =
+        userProductSubscription == null || userProductSubscription.userCanUpgrade === true
+
+    if (isDotComUser || clientConfig?.modelsAPIEnabled) {
+        const serverModelsConfig = await fetchServerSideModels_(config, signal)
+        const data: RemoteModelsData = {
+            preferences: { defaults: {} },
+            primaryModels: [],
+        }
+
+        // For DotCom users with early access or on the waitlist, replace the waitlist tag with the appropriate tags.
+        const isToolCodyEnabled = config.configuration.experimentalMinionAnthropicKey
+
+        if (serverModelsConfig) {
+            // Remove deprecated models from the list, filter out waitlisted models for Enterprise.
+            const filteredModels = serverModelsConfig?.models.filter(
+                m => m.status !== 'deprecated' && (isDotComUser || m.status !== 'waitlist')
+            )
+            data.primaryModels.push(
+                ...maybeAdjustContextWindows(filteredModels, {
+                    tier: isDotComUser
+                        ? isCodyProUser(authStatus, userProductSubscription)
+                            ? 'pro'
+                            : 'free'
+                        : 'enterprise',
+                    enhancedContextWindowFlagEnabled: enhancedContextWindowFlag,
+                }).map(model => createModelFromServerModel(model, enhancedContextWindowFlag))
+            )
+            data.preferences!.defaults =
+                defaultModelPreferencesFromServerModelsConfig(serverModelsConfig)
+        }
+
+        // NOTE: Calling `registerModelsFromVSCodeConfiguration()` doesn't
+        // entirely make sense in a world where LLM models are managed
+        // server-side. However, this is how Cody can be extended to use locally
+        // running LLMs such as Ollama. (Though some more testing is needed.)
+        // See:
+        // https://sourcegraph.com/blog/local-code-completion-with-ollama-and-cody
+        data.primaryModels.push(...getModelsFromVSCodeConfiguration(config))
+
+        // TODO(sqs): remove waitlist from localStorage when user has access
+        if (isDotComUser && hasEarlyAccess) {
+            data.primaryModels = data.primaryModels.map(model => {
+                if (model.tags.includes(ModelTag.Waitlist)) {
+                    const newTags = model.tags.filter(tag => tag !== ModelTag.Waitlist)
+                    newTags.push(hasEarlyAccess ? ModelTag.EarlyAccess : ModelTag.OnWaitlist)
+                    return { ...model, tags: newTags }
+                }
+                return model
+            })
+        }
+
+        // Enterprise instances with early access flag enabled
+        const isVisionSupported = !isDotComUser && hasEarlyAccess
+        data.primaryModels = data.primaryModels.map(m => ({
+            ...m,
+            // Gateway doesn't suppoort vision models for Google yet
+            tags:
+                isVisionSupported && m.provider !== 'google'
+                    ? m.tags
+                    : m.tags.filter(t => t !== ModelTag.Vision),
+        }))
+
+        const clientModels = []
+        // Handle agentic chat features
+        const isAgenticChatEnabled = hasAgenticChatFlag || (isDotComUser && !isCodyFreeUser)
+        // Handle agentic chat features
+        const haikuModel = data.primaryModels.find(m => m.id.includes('5-haiku'))
+        // Look for any sonnet model to add Deep Cody.
+        const sonnetModel = data.primaryModels.find(m => m.id.includes('sonnet'))
+        const hasDeepCody = data.primaryModels.some(m => m.id.includes('deep-cody'))
+        if (!hasDeepCody && isAgenticChatEnabled && sonnetModel && haikuModel) {
+            // Add Deep Cody
+            clientModels.push(DEEP_CODY_MODEL)
+            // Add Tool Cody
+            if (isToolCodyEnabled) {
+                clientModels.push(TOOL_CODY_MODEL)
+            }
+        }
+
+        // Add the client models to the list of models.
+        data.primaryModels.push(
+            ...maybeAdjustContextWindows(clientModels, {
+                tier: isDotComUser
+                    ? isCodyProUser(authStatus, userProductSubscription)
+                        ? 'pro'
+                        : 'free'
+                    : 'enterprise',
+                // the feature flag is for serverModels, so it's always false for client models
+                enhancedContextWindowFlagEnabled: false,
+            }).map(model => createModelFromServerModel(model, false))
+        )
+
+        // Set the default model to Haiku for free users.
+        if (isDotComUser && isCodyFreeUser && defaultToHaiku && haikuModel) {
+            data.preferences!.defaults.chat = haikuModel.id
+        }
+        /**
+         * Handle rate limiting for paid users
+         *
+         * When rate limited:
+         * 1. Disables all non-fast models (models without Speed tag)
+         * 2. Saves current model preferences for later restoration
+         * 3. Forces default model to Gemini Flash for both chat and edit
+         *
+         * When rate limit is lifted:
+         * - Restores previously saved model preferences
+         */
+        if (fallbackToFlashFlag && !isFreeUser(authStatus, userProductSubscription)) {
+            if (authStatus.rateLimited) {
+                // Disable all the models
+
+                // Check if there are any unlimited models
+                const hasUnlimitedModels = data.primaryModels.some(model =>
+                    model.tags.includes(ModelTag.Unlimited)
                 )
 
-                return {
-                    localModels,
-                    primaryModels: isError(remoteModelsData)
-                        ? []
-                        : normalizeModelList(remoteModelsData.primaryModels),
-                    preferences: isError(remoteModelsData)
-                        ? userModelPreferences
-                        : resolveModelPreferences(remoteModelsData.preferences, userModelPreferences),
-                    isRateLimited,
+                data.primaryModels = data.primaryModels.map(model => {
+                    if (hasUnlimitedModels) {
+                        // If we have unlimited models, disable everything else
+                        if (!model.tags.includes(ModelTag.Unlimited)) {
+                            return {
+                                ...model,
+                                disabled: true,
+                            }
+                        }
+                    } else {
+                        // If no unlimited models, disable everything except speed
+                        if (!model.tags.includes(ModelTag.Speed)) {
+                            return {
+                                ...model,
+                                disabled: true,
+                            }
+                        }
+                    }
+                    return model
+                })
+
+                if (data.preferences) {
+                    const modelToFallback =
+                        data.preferences.defaults.unlimitedChat || 'google::v1::gemini-2.0-flash'
+
+                    // Try to use Gemini Flash first, if not available fallback to any fast model
+                    let defaultModel = data.primaryModels.find(model => model.id === modelToFallback)
+                    if (!defaultModel) {
+                        defaultModel = data.primaryModels.find(model =>
+                            model.tags.includes(ModelTag.Speed)
+                        )
+                    }
+
+                    // Set the default model
+                    if (defaultModel) {
+                        rateLimitState.chatModel = data.preferences.defaults.chat || ''
+                        rateLimitState.editModel = data.preferences.defaults.edit || ''
+
+                        data.preferences.defaults.chat = defaultModel.id
+                        data.preferences.defaults.edit = defaultModel.id
+
+                        telemetryRecorder.recordEvent('cody.rateLimit', 'hit', {
+                            privateMetadata: {
+                                chatModel: defaultModel.id,
+                            },
+                        })
+                    }
+                }
+            } else {
+                // Re-enable all models
+                data.primaryModels = data.primaryModels.map(model => {
+                    if (!model.tags.includes(ModelTag.Speed)) {
+                        return {
+                            ...model,
+                            disabled: false,
+                        }
+                    }
+                    return model
+                })
+                const originalChatModel = data.primaryModels.find(
+                    model => model.id === rateLimitState.chatModel
+                )
+                const originalEditModel = data.primaryModels.find(
+                    model => model.id === rateLimitState.editModel
+                )
+                if (originalChatModel && data.preferences) {
+                    data.preferences.defaults.chat = originalChatModel.id
+                }
+                if (originalEditModel && data.preferences) {
+                    data.preferences.defaults.edit = originalEditModel.id
                 }
             }
-        ),
-        distinctUntilChanged(),
-        tap(modelsData => {
-            if (modelsData !== pendingOperation && modelsData.primaryModels.length > 0) {
-                logDebug(
-                    'ModelsService',
-                    'ModelsData changed',
-                    `${modelsData.primaryModels.length} primary models`
-                )
+        }
+
+        data.primaryModels = data.primaryModels.map(model => {
+            if (model.modelRef === data.preferences!.defaults.chat) {
+                return {
+                    ...model,
+                    tags: [...model.tags, ModelTag.Default],
+                }
             }
-        }),
-        shareReplay()
-    )
+            return model
+        })
+
+        return data
+    }
+
+    // In enterprise mode, we let the sg instance dictate the token limits and allow users
+    // to overwrite it locally (for debugging purposes).
+    //
+    // This is similiar to the behavior we had before introducing the new chat and allows
+    // BYOK customers to set a model of their choice without us having to map it to a known
+    // model on the client.
+    //
+    // NOTE: If configOverwrites?.chatModel is empty, automatically fallback to use the
+    // default model configured on the instance.
+    if (configOverwrites?.chatModel) {
+        return {
+            preferences: null,
+            primaryModels: [
+                createModel({
+                    id: configOverwrites.chatModel,
+                    // TODO (umpox) Add configOverwrites.editModel for separate edit support
+                    usage: [ModelUsage.Chat, ModelUsage.Edit],
+                    contextWindow: getEnterpriseContextWindow(
+                        configOverwrites?.chatModel,
+                        configOverwrites,
+                        config.configuration
+                    ),
+                    tags: [ModelTag.Enterprise],
+                }),
+            ],
+        } satisfies RemoteModelsData
+    }
+
+    // If the enterprise instance didn't have any configuration data for Cody, clear the
+    // models available in the modelsService. Otherwise there will be stale, defunct models
+    // available.
+    return {
+        preferences: null,
+        primaryModels: [],
+    } satisfies RemoteModelsData
 }
 
 function resolveModelPreferences(
