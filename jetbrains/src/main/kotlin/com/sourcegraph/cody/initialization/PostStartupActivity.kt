@@ -20,7 +20,6 @@ import com.sourcegraph.cody.listeners.CodyFocusChangeListener
 import com.sourcegraph.cody.listeners.CodySelectionListener
 import com.sourcegraph.cody.statusbar.CodyStatusService
 import com.sourcegraph.cody.telemetry.TelemetryV2
-import com.sourcegraph.config.CodyAuthNotificationActivity
 import com.sourcegraph.config.ConfigUtil
 
 class PostStartupActivity : ProjectActivity {
@@ -41,9 +40,6 @@ class PostStartupActivity : ProjectActivity {
     // For integration tests we do not want to start agent immediately as we would like to first
     // do some setup.
     if (!ConfigUtil.isIntegrationTestModeEnabled()) {
-      if (ConfigUtil.isCodyEnabled()) {
-        CodyAuthNotificationActivity().runActivity(project)
-      }
       CodyAgentService.getInstance(project).startAgent()
     }
 
