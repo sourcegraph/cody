@@ -183,7 +183,7 @@ describe('getHotStreakChunk', () => {
                             return true
                         }
 
-                        // We are adding some commments
+                        // We are adding some comments
                         // To make a ...wonderful diff!
 
                         // Check if numberToChange is 1
