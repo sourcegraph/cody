@@ -69,9 +69,9 @@ object CodyEditorUtil {
   }
 
   @JvmStatic
-  fun getSelectedEditors(project: Project): Array<out Editor> {
-    if (project.isDisposed) return emptyArray()
-    return FileEditorManager.getInstance(project).selectedTextEditorWithRemotes
+  fun getSelectedEditors(project: Project): Set<Editor> {
+    if (project.isDisposed) return emptySet()
+    return FileEditorManager.getInstance(project).selectedTextEditorWithRemotes.toSet()
   }
 
   @JvmStatic
