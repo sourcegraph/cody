@@ -136,7 +136,9 @@ internal class WebUIProxy(private val host: WebUIHost, private val browser: JBCe
               event.isConsumed &&
               (event.keyCode == KeyEvent.VK_ENTER ||
                   event.keyCode == KeyEvent.VK_DELETE ||
-                  event.keyCode == KeyEvent.VK_BACK_SPACE)) {
+                  event.keyCode == KeyEvent.VK_BACK_SPACE ||
+                  (event.isControlDown && event.keyCode == KeyEvent.VK_C) // Ctrl+C
+              )) {
 
             // trying to un-consume the event via reflection
             val consumedField = AWTEvent::class.java.getDeclaredField("consumed")
