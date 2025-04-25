@@ -1,5 +1,6 @@
 package com.sourcegraph.cody.config
 
+import com.sourcegraph.cody.config.ui.lang.UpdateMode
 import java.awt.Color
 
 data class SettingsModel(
@@ -15,5 +16,5 @@ data class SettingsModel(
     var isCodyUIHintsEnabled: Boolean = true,
     var blacklistedLanguageIds: List<String> = listOf(),
     var shouldAcceptNonTrustedCertificatesAutomatically: Boolean = false,
-    var shouldCheckForUpdates: Boolean = false
+    var updateMode: UpdateMode = UpdateMode.Automatic,
 )
