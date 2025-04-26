@@ -133,20 +133,26 @@ export function isRuleFilename(file: string | URI): boolean {
 export function ruleSearchPaths(uri: URI, root: URI): URI[] {
     const pathFuncs = pathFunctionsForURI(uri)
     const searchPaths: URI[] = []
+
     let current = uri
     while (true) {
         if (pathFuncs.relative(current.path, root.path) === '') {
             break
         }
         current = current.with({ path: pathFuncs.dirname(current.path) })
-        // skip adding the current path if it already ends with .sourcegraph
-        // to avoid duplicate .sourcegraph paths
+
+        // Special case: If the current path itself is already a .sourcegraph directory,
+        // don't try to add another .sourcegraph inside it
         if (current.path.endsWith('.sourcegraph')) {
-            continue
+            // Just add the current path (which is a .sourcegraph directory)
+            searchPaths.push(current)
+        } else {
+            // Normal case - add .sourcegraph directory to the current path
+            searchPaths.push(current.with({ path: pathFuncs.resolve(current.path, '.sourcegraph') }))
         }
-        searchPaths.push(current.with({ path: pathFuncs.resolve(current.path, '.sourcegraph') }))
     }
-    return searchPaths
+    // Remove any duplicates that might have been added
+    return [...new Map(searchPaths.map(path => [path.toString(), path])).values()]
 }
 
 export function formatRuleForPrompt(rule: Rule): PromptString {
