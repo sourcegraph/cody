@@ -122,7 +122,7 @@ describe('ruleSearchPaths', () => {
         const searchPaths = ruleSearchPaths(uri, root)
         expect(searchPaths.map(u => u.toString())).toStrictEqual([])
     })
-    
+
     it('avoids duplicate .sourcegraph paths', () => {
         const uri = URI.parse('file:///a/b/c/src/.sourcegraph/example.ts')
         const root = URI.parse('file:///a/b/c')
