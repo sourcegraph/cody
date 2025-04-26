@@ -76,9 +76,6 @@ export function createFileSystemRuleProvider(): RuleProvider {
                                 const searchPath = URI.parse(searchPathStr)
                                 const pathFuncs = pathFunctionsForURI(searchPath)
                                 try {
-                                    const entries = await vscode.workspace.fs.readDirectory(searchPath)
-                                    signal?.throwIfAborted()
-
                                     const rootFolder = vscode.workspace.getWorkspaceFolder(searchPath)
                                     // There should always be a root since we checked it above, but
                                     // be defensive.
@@ -86,6 +83,17 @@ export function createFileSystemRuleProvider(): RuleProvider {
                                         return []
                                     }
                                     const root = rootFolder.uri
+
+                                    // Check if directory exists before trying to read it
+                                    try {
+                                        await vscode.workspace.fs.stat(searchPath)
+                                    } catch {
+                                        // .sourcegraph directory doesn't exist, return empty array without error
+                                        return []
+                                    }
+
+                                    const entries = await vscode.workspace.fs.readDirectory(searchPath)
+                                    signal?.throwIfAborted()
 
                                     const ruleFiles = entries.filter(([name]) => isRuleFilename(name))
                                     const rules = await Promise.all(

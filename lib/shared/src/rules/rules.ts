@@ -139,6 +139,11 @@ export function ruleSearchPaths(uri: URI, root: URI): URI[] {
             break
         }
         current = current.with({ path: pathFuncs.dirname(current.path) })
+        // skip adding the current path if it already ends with .sourcegraph
+        // to avoid duplicate .sourcegraph paths
+        if (current.path.endsWith('.sourcegraph')) {
+            continue
+        }
         searchPaths.push(current.with({ path: pathFuncs.resolve(current.path, '.sourcegraph') }))
     }
     return searchPaths
