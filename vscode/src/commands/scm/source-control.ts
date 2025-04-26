@@ -126,11 +126,14 @@ export class CodySourceControl implements vscode.Disposable {
                 const commitTemplateFilePath = localTemplateFilePath ?? globalTemplateFilePath
                 if (commitTemplateFilePath) {
                     try {
-                        this.commitTemplate = await vscode.workspace.fs.readFile(vscode.Uri.file(commitTemplateFilePath)).then(buffer =>
-                            new TextDecoder().decode(buffer)
-                        )
+                        this.commitTemplate = await vscode.workspace.fs
+                            .readFile(vscode.Uri.file(commitTemplateFilePath))
+                            .then(buffer => new TextDecoder().decode(buffer))
                     } catch (error) {
-                        console.error(`Failed to read commit template file: ${commitTemplateFilePath}`, error)
+                        console.error(
+                            `Failed to read commit template file: ${commitTemplateFilePath}`,
+                            error
+                        )
                     }
                 }
             }
