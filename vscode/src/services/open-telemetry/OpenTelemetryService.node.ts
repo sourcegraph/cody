@@ -100,15 +100,6 @@ export class OpenTelemetryService {
                             exportIntervalMillis: 60 * 1000,
                         })
                     )
-                    // Enable the console exporter only in the development environment.
-                    if (process.env.NODE_ENV === 'development') {
-                        this.meterProvider?.addMetricReader(
-                            new PeriodicExportingMetricReader({
-                                exporter: new ConsoleMetricExporter(),
-                                exportIntervalMillis: 5 * 1000,
-                            })
-                        )
-                    }
 
                     const newConfig = {
                         isTracingEnabled: this.isTracingEnabled,
