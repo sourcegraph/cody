@@ -87,9 +87,12 @@ export function createFileSystemRuleProvider(): RuleProvider {
                                     // Check if directory exists before trying to read it
                                     try {
                                         await vscode.workspace.fs.stat(searchPath)
-                                    } catch {
-                                        // .sourcegraph directory doesn't exist, return empty array without error
-                                        return []
+                                    } catch (error) {
+                                        if (error && typeof error === 'object' && 'code' in error && error.code === 'ENOENT') {
+                                            // .sourcegraph directory doesn't exist, return empty array without error
+                                            return []
+                                        }
+                                        throw error // Rethrow other errors
                                     }
 
                                     const entries = await vscode.workspace.fs.readDirectory(searchPath)
