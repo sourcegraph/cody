@@ -27,8 +27,7 @@ ${CLEAN_RESPONSE}
 
 const C_RESPONSE = 'int* current_ptr = &currentValue;'
 const CSHARP_RESPONSE =
-    'public List&lt;object&gt; FindNext（Drone drone, HashSet&lt; int&gt; testHashSet)'
-
+    'public List&lt;object&gt; FindNext(Drone drone, HashSet&lt; int&gt; testHashSet)'
 const DEFAULT_TASK = { document: { languageId: 'typescript' } } as FixupTask
 
 export const RESPONSE_TEST_FIXTURES: Record<string, ResponseTestFixture> = {
