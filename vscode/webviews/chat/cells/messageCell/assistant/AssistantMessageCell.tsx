@@ -23,6 +23,9 @@ import {
     ChatMessageContent,
     type CodeBlockActionsProps,
 } from '../../../ChatMessageContent/ChatMessageContent'
+
+import styles from '../../../ChatMessageContent/ChatMessageContent.module.css'
+import { CopyButton } from '../../../ChatMessageContent/EditButtons'
 import { ErrorItem, RequestErrorItem } from '../../../ErrorItem'
 import { type Interaction, editHumanMessage } from '../../../Transcript'
 import { BaseMessageCell } from '../BaseMessageCell'
@@ -79,7 +82,6 @@ export const AssistantMessageCell: FunctionComponent<{
             () => (message.text ? reformatBotMessageForChat(message.text).toString() : ''),
             [message.text]
         )
-
         const chatModel = useChatModelByID(message.model, models)
         const isAborted = isAbortErrorOrSocketHangUp(message.error)
 
@@ -154,13 +156,30 @@ export const AssistantMessageCell: FunctionComponent<{
                     </>
                 }
                 footer={
-                    isAborted ? (
-                        <div className="tw-py-3 tw-flex tw-flex-col tw-gap-2">
-                            <div className="tw-text-sm tw-text-muted-foreground tw-mt-4">
-                                Output stream stopped
+                    <div className="tw-py-3 tw-flex tw-flex-col tw-gap-2">
+                        {isAborted && (
+                            <div className="tw-py-3 tw-flex tw-flex-col tw-gap-2">
+                                <div className="tw-text-sm tw-text-muted-foreground tw-mt-4">
+                                    Output stream stopped
+                                </div>
                             </div>
+                        )}
+                        <div
+                            className={`tw-flex tw-items-center tw-justify-end tw-gap-4  ${styles.buttonsContainer}`}
+                        >
+                            {!isLoading && (!message.error || isAborted) && !isSearchIntent && (
+                                <>
+                                    <CopyButton
+                                        text={message.text?.toString() || ''}
+                                        onCopy={copyButtonOnSubmit}
+                                        showLabel={false}
+                                        className={'tw-transition tw-opacity-65 hover:tw-opacity-100'}
+                                        title="Copy message"
+                                    />
+                                </>
+                            )}
                         </div>
-                    ) : null
+                    </div>
                 }
             />
         )
