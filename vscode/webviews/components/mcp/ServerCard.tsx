@@ -1,5 +1,6 @@
 import { DatabaseZap, PowerOff, Trash2 } from 'lucide-react'
 import { useState } from 'react'
+import { getVSCodeAPI } from '../../utils/VSCodeApi'
 import { Badge } from '../shadcn/ui/badge'
 import { Button } from '../shadcn/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '../shadcn/ui/card'
@@ -9,11 +10,9 @@ import type { ServerType } from './types'
 interface ServerCardProps {
     server: ServerType
     onClick: () => void
-    onDisable?: (serverId: string) => void
-    onDelete?: (serverId: string) => void
 }
 
-export function ServerCard({ server, onClick, onDisable, onDelete }: ServerCardProps) {
+export function ServerCard({ server, onClick }: ServerCardProps) {
     const ServerIcon = server.icon ?? DatabaseZap
     const [showAllTags, setShowAllTags] = useState(false)
     const maxVisibleTags = 3
@@ -89,9 +88,11 @@ export function ServerCard({ server, onClick, onDisable, onDelete }: ServerCardP
                         className="tw-h-8 tw-px-2"
                         onClick={e => {
                             e.stopPropagation()
-                            if (onDisable) {
-                                onDisable(server.id)
-                            }
+                            getVSCodeAPI()?.postMessage({
+                                command: 'mcp',
+                                type: 'removeServer',
+                                name: server.name,
+                            })
                         }}
                         title={server.status === 'disabled' ? 'Enable server' : 'Disable server'}
                     >
@@ -104,9 +105,11 @@ export function ServerCard({ server, onClick, onDisable, onDelete }: ServerCardP
                         className="tw-h-8 tw-px-2 tw-text-destructive hover:tw-bg-destructive/10 tw-z-10"
                         onClick={e => {
                             e.stopPropagation()
-                            if (onDelete) {
-                                onDelete(server.id)
-                            }
+                            getVSCodeAPI()?.postMessage({
+                                command: 'mcp',
+                                type: 'removeServer',
+                                name: server.name,
+                            })
                         }}
                         title="Delete server"
                     >

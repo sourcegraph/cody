@@ -10,7 +10,7 @@ import {
     type LucideProps,
     MessageSquarePlusIcon,
     MessagesSquareIcon,
-    Settings2Icon,
+    Server,
     Trash2Icon,
 } from 'lucide-react'
 import { getVSCodeAPI } from '../utils/VSCodeApi'
@@ -419,8 +419,8 @@ function useTabs(input: Pick<TabsBarProps, 'user'>): TabConfig[] {
                     isMcpEnabled
                         ? {
                               view: View.Settings,
-                              title: 'Settings',
-                              Icon: Settings2Icon,
+                              title: 'Servers',
+                              Icon: Server,
                               changesView: true,
                           }
                         : null,

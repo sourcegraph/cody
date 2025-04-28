@@ -5,7 +5,7 @@ import {
     ListToolsResultSchema,
     ReadResourceResultSchema,
 } from '@modelcontextprotocol/sdk/types.js'
-import { type MessagePart, logDebug } from '@sourcegraph/cody-shared'
+import { ContextItemSource, type MessagePart, UIToolStatus, logDebug } from '@sourcegraph/cody-shared'
 import type {
     McpResource,
     McpResourceTemplate,
@@ -16,8 +16,13 @@ import * as vscode from 'vscode'
 import type { AgentTool } from '.'
 import { CodyToolProvider } from '../../../chat/agentic/CodyToolProvider'
 
+import type {
+    ContextItem,
+    ContextItemToolState,
+} from '@sourcegraph/cody-shared/src/codebase-context/messages'
+import { URI } from 'vscode-uri'
+import { getImageContent } from '../../../prompt-builder/utils'
 import type { MCPConnectionManager } from './MCPConnectionManager'
-import { createMCPToolState } from './MCPManager'
 
 /**
  * MCPServerManager handles server-specific operations like tool and resource management
@@ -174,6 +179,7 @@ export class MCPServerManager {
                             logDebug('MCPServerManager', `Error executing tool ${tool.name}:`, {
                                 verbose: { error },
                             })
+                            throw error
                         }
                     },
                 }
@@ -231,7 +237,7 @@ export class MCPServerManager {
         serverName: string,
         toolName: string,
         args: Record<string, unknown> = {}
-    ): Promise<any> {
+    ): Promise<ContextItemToolState> {
         const connection = this.connectionManager.getConnection(serverName)
         if (!connection) {
             throw new Error(`MCP server "${serverName}" not found`)
@@ -259,30 +265,41 @@ export class MCPServerManager {
                 throw new Error('unexpected response')
             }
 
-            // Process content parts
-            const contentParts = result?.content?.map(p => {
+            const context: ContextItem[] = []
+            const contents: MessagePart[] = []
+
+            for (const p of result?.content || []) {
                 if (p?.type === 'text') {
-                    return { type: 'text', text: p.text || 'EMPTY' }
-                }
-                if (p?.type === 'image') {
+                    contents.push({ type: 'text', text: p.text || 'EMPTY' })
+                } else if (p?.type === 'image') {
                     const mimeType = p.mimeType || 'image/png'
-                    const url = `data:${mimeType};base64,${p.data}`
-                    return { type: 'image_url', image_url: { url } }
+
+                    context.push({
+                        type: 'media',
+                        title: `${toolName}_result`,
+                        uri: URI.parse(''),
+                        mimeType: mimeType,
+                        filename: 'mcp_tool_result',
+                        data: p.data,
+                        content: 'tool result',
+                    })
+
+                    const imageContent = getImageContent(p.data, mimeType)
+                    contents.push(imageContent)
+                } else {
+                    contents.push({ type: 'text', text: 'Content type not supported:' + p.type })
                 }
-                logDebug('MCPServerManager', `Unsupported content: ${p?.type}`, { verbose: { p } })
-                return { type: 'text', text: JSON.stringify(p) }
-            }) satisfies MessagePart[]
+            }
 
             logDebug('MCPServerManager', `Tool ${toolName} executed successfully`, {
-                verbose: { contentParts },
+                verbose: { context, contents },
             })
 
-            return createMCPToolState(serverName, toolName, contentParts)
+            return createMCPToolState(serverName, toolName, contents, context)
         } catch (error) {
             logDebug('MCPServerManager', `Error calling tool ${toolName} on server ${serverName}`, {
                 verbose: error,
             })
-            console.error('MCPServerManager', error)
             throw error
         }
     }
@@ -325,5 +342,38 @@ export class MCPServerManager {
      */
     public dispose(): void {
         this.toolsEmitter.dispose()
+    }
+}
+
+/**
+ * Create a tool state object from MCP tool execution result
+ */
+export function createMCPToolState(
+    serverName: string,
+    toolName: string,
+    parts: MessagePart[],
+    context?: ContextItem[],
+    status = UIToolStatus.Done
+): ContextItemToolState {
+    const textContent = parts
+        .filter(p => p.type === 'text')
+        .map(p => p.text)
+        .join('\n')
+
+    return {
+        type: 'tool-state',
+        toolId: `mcp-${toolName}-${Date.now()}`,
+        status,
+        toolName: `${serverName}_${toolName}`,
+        content: textContent,
+        outputType: 'mcp',
+        uri: URI.parse(''),
+        title: serverName + ' - ' + toolName,
+        description: textContent,
+        source: ContextItemSource.Agentic,
+        icon: 'database',
+        metadata: ['mcp', toolName],
+        parts,
+        context,
     }
 }

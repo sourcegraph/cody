@@ -168,7 +168,7 @@ export type WebviewMessage =
     | { command: 'devicePixelRatio'; devicePixelRatio: number }
     | {
           command: 'mcp'
-          type: 'addServer' | 'removeServer' | 'restartServer'
+          type: 'addServer' | 'removeServer' | 'updateServer'
           name: string
           config?: Record<string, any>
       }

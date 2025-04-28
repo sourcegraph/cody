@@ -127,7 +127,11 @@ export class MCPConnectionManager {
                 const conn = this.connections.find(c => c.server.name === name)
                 if (conn && conn.server.status !== 'disconnected') {
                     conn.server.status = 'disconnected'
-                    this.statusChangeEmitter.fire({ serverName: name, status: 'disconnected' })
+                    this.statusChangeEmitter.fire({
+                        serverName: name,
+                        status: 'disconnected',
+                        error: conn.server.error,
+                    })
                 }
             }
 
@@ -272,7 +276,11 @@ export class MCPConnectionManager {
                 // Ensure status is updated even if close fails
                 if (connection.server.status !== 'disconnected') {
                     connection.server.status = 'disconnected'
-                    this.statusChangeEmitter.fire({ serverName: name, status: 'disconnected' })
+                    this.statusChangeEmitter.fire({
+                        serverName: name,
+                        status: 'disconnected',
+                        error: connection.server.error,
+                    })
                 }
             }
         }

@@ -23,6 +23,7 @@ export interface ServerType {
     env?: EnvironmentVariable[]
     metrics?: ServerMetrics
     tools?: McpTool[]
+    error?: string
 }
 
 export interface ApiKey {

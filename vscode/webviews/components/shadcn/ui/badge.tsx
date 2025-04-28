@@ -16,6 +16,7 @@ const badgeVariants = cva(
                 info: 'tw-bg-blue-900 tw-text-blue-300',
                 error: 'tw-bg-pink-900 tw-text-pink-300',
                 disabled: 'tw-bg-gray-900 tw-text-gray-300',
+                online: 'tw-bg-green-700/50 tw-text-white-100',
             },
         },
         defaultVariants: {

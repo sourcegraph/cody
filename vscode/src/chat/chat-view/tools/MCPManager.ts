@@ -1,21 +1,15 @@
 import {
     FeatureFlag,
-    type MessagePart,
-    UIToolStatus,
     combineLatest,
     distinctUntilChanged,
     featureFlagProvider,
     logDebug,
     startWith,
 } from '@sourcegraph/cody-shared'
-import {
-    ContextItemSource,
-    type ContextItemToolState,
-} from '@sourcegraph/cody-shared/src/codebase-context/messages'
+import type { ContextItemToolState } from '@sourcegraph/cody-shared/src/codebase-context/messages'
 import type { McpServer } from '@sourcegraph/cody-shared/src/llm-providers/mcp/types'
 import { type Observable, Subject, map } from 'observable-fns'
 import * as vscode from 'vscode'
-import { URI } from 'vscode-uri'
 import { z } from 'zod'
 import type { AgentTool } from '.'
 import { MCPConnectionManager } from './MCPConnectionManager'
@@ -66,6 +60,8 @@ const AutoApproveSchema = z.array(z.string()).default([])
 const BaseConfigSchema = z.object({
     autoApprove: AutoApproveSchema.optional(),
     disabled: z.boolean().optional(),
+    // Error messages
+    error: z.string().optional(),
 })
 
 // Schema for configs with a URL (SSE)
@@ -151,6 +147,11 @@ export class MCPManager {
                         verbose: { error },
                     })
                 })
+            }
+            const conn = this.connectionManager.getConnection(event.serverName)
+            if (conn && event.error && conn.server.error) {
+                // Update the error message for the server without saving them in user config
+                conn.server.error = event.error
             }
             // Notify about server changes
             MCPManager.changeNotifications.next()
@@ -289,6 +290,7 @@ export class MCPManager {
             // Add the connection (respect the disabled flag)
             await this.connectionManager.addConnection(name, configWithDefaults, parsedConfig?.disabled)
 
+            MCPManager.changeNotifications.next()
             // If connection was successful, initialize server data
             const connection = this.connectionManager.getConnection(name)
             if (connection && connection.server.status === 'connected') {
@@ -307,22 +309,45 @@ export class MCPManager {
         const connection = this.connectionManager.getConnection(serverName)
         if (!connection || connection.server.status !== 'connected') return
 
+        // Fetch tools
         try {
-            // Fetch tools and resources
             const tools = await this.serverManager.getToolList(serverName)
-            const resources = await this.serverManager.getResourceList(serverName)
-            const resourceTemplates = await this.serverManager.getResourceTemplateList(serverName)
-            // Update server data
             connection.server.tools = tools
-            connection.server.resources = resources
-            connection.server.resourceTemplates = resourceTemplates
-            logDebug('MCPManager', `Initialized data for server: ${serverName}`)
-            MCPManager.changeNotifications.next()
+            logDebug('MCPManager', `Initialized tools for server: ${serverName}`)
         } catch (error) {
-            logDebug('MCPManager', `Failed to initialize data for server ${serverName}`, {
+            logDebug('MCPManager', `Failed to initialize tools for server ${serverName}`, {
                 verbose: { error },
             })
         }
+
+        MCPManager.toolsChangeNotifications.next()
+        MCPManager.changeNotifications.next()
+
+        // Fetch resources
+        try {
+            const resources = await this.serverManager.getResourceList(serverName)
+            connection.server.resources = resources
+            logDebug('MCPManager', `Initialized resources for server: ${serverName}`)
+        } catch (error) {
+            logDebug('MCPManager', `Failed to initialize resources for server ${serverName}`, {
+                verbose: { error },
+            })
+        }
+
+        // Fetch resource templates - currently not supported
+        try {
+            const resourceTemplates = await this.serverManager.getResourceTemplateList(serverName)
+            connection.server.resourceTemplates = resourceTemplates
+            logDebug('MCPManager', `Initialized resource templates for server: ${serverName}`)
+        } catch (error) {
+            logDebug('MCPManager', `Failed to initialize resource templates for server ${serverName}`, {
+                verbose: { error },
+            })
+        }
+
+        // Notify about server changes regardless of individual fetch outcomes
+        MCPManager.toolsChangeNotifications.next()
+        MCPManager.changeNotifications.next()
     }
 
     /**
@@ -357,7 +382,7 @@ export class MCPManager {
         serverName: string,
         toolName: string,
         args: Record<string, unknown> = {}
-    ): Promise<any> {
+    ): Promise<ContextItemToolState> {
         return this.serverManager.executeTool(serverName, toolName, args)
     }
 
@@ -498,7 +523,8 @@ export class MCPManager {
             }
 
             // Update the server configuration
-            mcpServers[name] = configWithDefaults
+            // Do not store the error message in config
+            mcpServers[name] = { ...config, error: null }
 
             // Update configuration
             await vsConfig.update(
@@ -622,37 +648,5 @@ export class MCPManager {
         // Notify subscribers that servers have changed
         MCPManager.changeNotifications.next()
         logDebug('MCPManager', 'disposed')
-    }
-}
-
-/**
- * Create a tool state object from MCP tool execution result
- */
-export function createMCPToolState(
-    serverName: string,
-    toolName: string,
-    parts: MessagePart[],
-    status = UIToolStatus.Done
-): ContextItemToolState {
-    const textContent = parts
-        .filter(p => p.type === 'text')
-        .map(p => p.text)
-        .join('\n')
-
-    return {
-        type: 'tool-state',
-        toolId: `mcp-${toolName}-${Date.now()}`,
-        status,
-        toolName: `${serverName}_${toolName}`,
-        content: textContent,
-        // ContextItemCommon properties
-        outputType: 'mcp',
-        uri: URI.parse(''),
-        title: serverName + ' - ' + toolName,
-        description: textContent,
-        source: ContextItemSource.Agentic,
-        icon: 'database',
-        metadata: ['mcp', toolName],
-        parts,
     }
 }

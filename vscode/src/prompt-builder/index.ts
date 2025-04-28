@@ -220,8 +220,17 @@ export class PromptBuilder {
             }
 
             if (item.type === 'media') {
-                result.added.push(item)
-                this.contextItems.push(item)
+                if (type === 'history') {
+                    result.added.push(item)
+                    this.contextItems.push(item)
+                } else if (contextMessage.content) {
+                    if (contextMessage.content) {
+                        this.reverseMessages[0].content = [
+                            ...(this.reverseMessages[0].content ?? []),
+                            ...contextMessage.content,
+                        ]
+                    }
+                }
                 continue
             }
 

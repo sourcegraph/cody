@@ -6,15 +6,18 @@ import {
     type CommandAction,
     CustomCommandType,
     type PromptAction,
+    PromptMode,
 } from '@sourcegraph/cody-shared'
 
 import {
     BookOpen,
-    BookUp2,
     FileQuestion,
     Hammer,
+    MessageSquare,
+    Pen,
     PencilLine,
     PencilRuler,
+    StarIcon,
     TextSearch,
 } from 'lucide-react'
 
@@ -69,6 +72,7 @@ interface ActionPromptProps {
 
 const ActionPrompt: FC<ActionPromptProps> = props => {
     const { prompt } = props
+    const isEditPrompt = prompt.mode !== PromptMode.CHAT
 
     return (
         <div className={styles.prompt}>
@@ -94,16 +98,25 @@ const ActionPrompt: FC<ActionPromptProps> = props => {
                             Draft
                         </Badge>
                     )}
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            {isEditPrompt ? (
+                                <Pen size={12} className={styles.promptIcon} />
+                            ) : (
+                                <MessageSquare size={12} className={styles.promptIcon} />
+                            )}
+                        </TooltipTrigger>
+                        <TooltipContent>{prompt.mode}</TooltipContent>
+                    </Tooltip>
                     {prompt.recommended && (
                         <Tooltip>
                             <TooltipTrigger asChild>
-                                <BookUp2 size={12} className={styles.promptIcon} />
+                                <StarIcon size={12} className={styles.promptIcon} />
                             </TooltipTrigger>
                             <TooltipContent>This prompt was promoted by your admin</TooltipContent>
                         </Tooltip>
                     )}
                 </div>
-
                 <span className={styles.promptDescription}>
                     {prompt.description ?? '(No description provided)'}
                 </span>

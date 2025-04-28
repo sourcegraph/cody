@@ -22,7 +22,7 @@ export function AddServerView({ onAddServer, className }: AddServerDialogProps) 
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
                 <Button variant="outline" size="sm" className="tw-inline-flex tw-w-full" disabled={open}>
-                    <Plus size={12} className="tw-mr-1" /> Add Server
+                    <Plus size={12} className="tw-mr-1" /> MCP Server
                 </Button>
             </DialogTrigger>
             <DialogContent className="tw-sm:max-w-[500px] tw-my-4">

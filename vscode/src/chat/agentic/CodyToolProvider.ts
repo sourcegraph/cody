@@ -5,6 +5,7 @@ import {
     type ContextMentionProviderMetadata,
     type ProcessingStep,
     PromptString,
+    UIToolStatus,
     type Unsubscribable,
     isDefined,
     logDebug,
@@ -142,6 +143,8 @@ class ToolFactory {
                         placeholder: ps`ARGS`,
                         examples: [],
                     },
+                    // Add metadata to identify tools from the same MCP server
+                    metadata: { serverName, isMcpTool: true },
                 }
 
                 // Store reference to CodyTool to ensure it's accessible in this scope
@@ -211,27 +214,39 @@ class ToolFactory {
 
                             // Use the MCPManager's executeTool method which properly delegates to serverManager
                             const result = await mcpInstance.executeTool(serverName, _toolName, args)
+                            const imageResultInfo = result.context?.some(i => i.type === 'media')
+                                ? `Image captured for ${JSON.stringify(
+                                      args
+                                  )} and will be available for the next request.`
+                                : ''
+                            const prefix = `${_toolName} tool was executed with ${JSON.stringify(
+                                args
+                            )} and `
+                            const statusReport =
+                                result.status !== UIToolStatus.Error
+                                    ? `completed: ${result?.content || 'invoked'}${imageResultInfo}`
+                                    : `failed: ${result.content}`
 
                             return [
+                                ...(result.context ?? []),
                                 {
                                     type: 'file',
-                                    content: `${_toolName} tool was executed successfully: ${
-                                        result?.content || 'invoked'
-                                    }`,
-                                    uri: URI.parse(`${toolName}-result`),
+                                    content: prefix + statusReport,
+                                    uri: URI.parse(`mcp://${toolName}-result`),
                                     source: ContextItemSource.Agentic,
                                     title: toolName,
                                 },
                             ]
                         } catch (error) {
-                            logDebug('ToolFactory', `Error executing ${toolName}`, {
+                            logDebug('CodyToolProvider', `Error executing ${toolName}`, {
                                 verbose: error,
                             })
+                            const errorStr = error instanceof Error ? error.message : String(error)
                             return [
                                 {
                                     type: 'file',
-                                    content: `Error executing MCP tool ${_toolName}: ${error}`,
-                                    uri: URI.parse(`${toolName}-error`),
+                                    content: `Error executing MCP tool ${_toolName}: ${errorStr}`,
+                                    uri: URI.parse(`mcp://$${toolName}-error`),
                                     source: ContextItemSource.Agentic,
                                     title: toolName,
                                 },

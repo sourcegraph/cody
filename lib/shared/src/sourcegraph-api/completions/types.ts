@@ -59,7 +59,7 @@ export type MessagePart =
     | TextContentPart // natively supported by LLM
     | { type: 'context_file'; uri: string; content?: string } // Cody extension
     | { type: 'context_repo'; repoId: string } // Cody extension
-    | { type: 'image_url'; image_url: { url: string } } // natively supported by LLM
+    | ImageContentPart // natively supported by LLM
     | ToolCallContentPart // Assistant-only
     | ToolResultContentPart // Human-only
 

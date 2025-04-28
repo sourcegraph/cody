@@ -39,6 +39,8 @@ export interface CodyToolConfig {
         placeholder: PromptString
         examples: PromptString[]
     }
+    // Optional metadata for tool-specific information
+    metadata?: Record<string, unknown>
 }
 
 /**

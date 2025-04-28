@@ -409,27 +409,34 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             case 'command':
                 vscode.commands.executeCommand(message.id, message.arg)
                 break
-            case 'mcp':
-                if (message.type === 'addServer' && message.name && message.config) {
-                    try {
-                        const mcpManager = MCPManager.instance
-                        if (!mcpManager) {
-                            throw new Error('MCP Manager is not initialized')
-                        }
+            case 'mcp': {
+                try {
+                    const mcpManager = MCPManager.instance
+                    if (!mcpManager || !message.name) {
+                        throw new Error('MCP Manager is not initialized')
+                    }
+
+                    if (message.type === 'addServer' && message.config) {
                         await mcpManager.addServer(message.name, message.config)
                         void this.postMessage({
                             type: 'clientAction',
                             mcpServerAdded: { name: message.name },
                         })
-                    } catch (error) {
-                        const errorMessage = error instanceof Error ? error.message : String(error)
-                        void this.postMessage({
-                            type: 'clientAction',
-                            mcpServerError: { name: message.name, error: errorMessage },
-                        })
                     }
+
+                    if (message.type === 'removeServer') {
+                        await mcpManager.deleteServer(message.name)
+                    }
+                } catch (error) {
+                    const errorMessage = error instanceof Error ? error.message : String(error)
+                    void this.postMessage({
+                        type: 'clientAction',
+                        mcpServerError: { name: message.name, error: errorMessage },
+                    })
                 }
+
                 break
+            }
             case 'recordEvent':
                 telemetryRecorder.recordEvent(
                     // 👷 HACK: We have no control over what gets sent over JSON RPC,
