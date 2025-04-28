@@ -174,7 +174,7 @@ export const AssistantMessageCell: FunctionComponent<{
                                         onCopy={copyButtonOnSubmit}
                                         showLabel={false}
                                         className={'tw-transition tw-opacity-65 hover:tw-opacity-100'}
-                                        title="Copy message"
+                                        title="Copy Message"
                                     />
                                 </>
                             )}

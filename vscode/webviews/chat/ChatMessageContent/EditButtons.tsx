@@ -514,18 +514,7 @@ export function createCopyButton(
     onCopy: CodeBlockActionsProps['copyButtonOnSubmit'],
     options?: ChatButtonOptions & { icon?: JSX.Element }
 ): React.ReactElement {
-    return (
-        <CopyButton
-            text={preText}
-            onCopy={onCopy}
-            label={options?.label}
-            pressedLabel={options?.pressedLabel}
-            className={options?.className}
-            showLabel={options?.showLabel}
-            title={options?.title}
-            icon={options?.icon}
-        />
-    )
+    return <CopyButton text={preText} onCopy={onCopy} {...options} />
 }
 
 function createApplyButton(
