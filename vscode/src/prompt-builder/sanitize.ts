@@ -74,7 +74,7 @@ export function sanitizedChatMessages(messages: ChatMessage[]): any[] {
             return {
                 ...message,
                 content: sanitizedContent,
-                text: null,
+                text: undefined,
             }
         }
         return message

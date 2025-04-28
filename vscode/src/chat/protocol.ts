@@ -170,7 +170,7 @@ export type WebviewMessage =
           command: 'mcp'
           type: 'addServer' | 'removeServer' | 'updateServer'
           name: string
-          config?: Record<string, any>
+          config?: Record<string, any> | undefined | null
       }
 
 export interface SmartApplyResult {

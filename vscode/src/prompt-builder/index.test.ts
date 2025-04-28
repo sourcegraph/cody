@@ -3,7 +3,6 @@ import {
     type ChatMessage,
     ContextItemSource,
     contextFiltersProvider,
-    displayPath,
     featureFlagProvider,
     ps,
 } from '@sourcegraph/cody-shared'
@@ -542,8 +541,8 @@ describe('PromptBuilder', () => {
             expect(builder.contextItems.length).toBe(1)
             expect(promptContent).toMatchInlineSnapshot(`
               "preamble
-              Codebase context from file ${displayPath(file.uri)}:
-              \`\`\`go:${displayPath(file.uri)}
+              Codebase context from file foo/bar.go:
+              \`\`\`go:foo/bar.go
               foo\`\`\`
               Ok.
               Hi!
