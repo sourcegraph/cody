@@ -630,13 +630,6 @@ tasks {
     // https://plugins.jetbrains.com/docs/intellij/deployment.html#specifying-a-release-channel
     val channel = properties("pluginVersion")!!.split('-').getOrElse(1) { "default" }
     channels.set(listOf(channel))
-
-    if (channel == "default") {
-      // The published version WILL NOT be available right after the JetBrains approval.
-      // Instead, we control if and when we want to make it available.
-      // (Note: there is ~48h waiting time for JetBrains approval).
-      hidden.set(true)
-    }
   }
 
   test { dependsOn(project.tasks.getByPath("buildCody")) }
