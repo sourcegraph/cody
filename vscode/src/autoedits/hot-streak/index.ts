@@ -96,12 +96,19 @@ export async function* processHotStreakResponses({
                 continue
             }
 
+            // TODO: Right now we always use the provided `position` in which the auto-edit was triggered from.
+            // This works great for the first chunk, but we should try to match the position of the users' cursor
+            // on the assumption that they have accepted the previous chunk (if present). For example, if the previous
+            // chunk was an inline completion, the cursor is moved to the end of the completion range when accepted.
+            // If we matched this new position, it would mean it would be possible to chain inline completions.
+            const hotStreakPosition = position
+
             // The hot streak prediction excludes part of the prefix. This means that it fundamentally relies
             // on the prefix existing in the document to be a valid suggestion. We need to update the docContext
             // to reflect this.
             const updatedDocContext = getCurrentDocContext({
                 document,
-                position,
+                position: hotStreakPosition,
                 maxPrefixLength: docContext.maxPrefixLength,
                 maxSuffixLength: docContext.maxSuffixLength,
             })
@@ -110,7 +117,7 @@ export async function* processHotStreakResponses({
             const adjustedCodeToReplace = getCodeToReplaceData({
                 docContext: updatedDocContext,
                 document,
-                position,
+                position: hotStreakPosition,
                 tokenBudget: {
                     ...autoeditsProviderConfig.tokenLimit,
                     codeToRewriteSuffixLines: Math.max(
