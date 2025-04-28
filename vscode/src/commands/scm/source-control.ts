@@ -197,7 +197,7 @@ export class CodySourceControl implements vscode.Disposable {
                 context,
                 commitTemplate
             ).catch(error => {
-                sourceControlInputbox.value = `${error}`
+                sourceControlInputbox.value = initialInputBoxValue
                 throw new Error()
             })
 
