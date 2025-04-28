@@ -3,7 +3,6 @@ import { type AutocompleteContextSnippet, PromptString, ps } from '@sourcegraph/
 import { shortenPromptForOutputChannel } from '../../../src/completions/output-channel-logger'
 import { groupConsecutiveItemsByPredicate } from '../../completions/context/retrievers/recent-user-actions/recent-edits-diff-helpers/utils'
 import { RetrieverIdentifier } from '../../completions/context/utils'
-import { inceptionlabsPrompt } from '../adapters/inceptionlabs'
 import { autoeditsProviderConfig } from '../autoedits-config'
 import { autoeditsOutputChannelLogger } from '../output-channel-logger'
 
@@ -61,7 +60,6 @@ export class ShortTermPromptStrategy extends AutoeditsUserPromptStrategy {
         })
 
         const promptParts = [
-            getPromptWithNewline(inceptionlabsPrompt.start),
             getPromptWithNewline(longTermViewPrompt),
             getPromptWithNewline(shortTermViewPrompt),
             getPromptWithNewline(lintErrorsPrompt),
@@ -69,7 +67,6 @@ export class ShortTermPromptStrategy extends AutoeditsUserPromptStrategy {
             getPromptWithNewline(areaPrompt),
             getPromptWithNewline(longTermEditsPrompt),
             getPromptWithNewline(shortTermEditsPrompt),
-            getPromptWithNewline(inceptionlabsPrompt.end),
         ]
 
         return PromptString.join(promptParts, ps``)
