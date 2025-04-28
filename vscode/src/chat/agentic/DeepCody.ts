@@ -70,7 +70,7 @@ export class DeepCodyAgent {
         postRequest: (step: ProcessingStep) => Promise<boolean>
     ) {
         // Initialize tools, handlers and mixins in constructor
-        this.tools = CodyToolProvider.getTools()
+        this.tools = CodyToolProvider.getAllTools()
         this.initializeMultiplexer(this.tools)
         this.buildPrompt(this.tools)
 
@@ -230,8 +230,27 @@ export class DeepCodyAgent {
 
             const step = this.stepsManager.addStep({ title: 'Retrieving context' })
 
-            const results = await Promise.all(
-                this.tools.map(async tool => {
+            // Group tools by server to avoid overwhelming MCP servers
+            const mcpToolsByServer = new Map<string, CodyTool[]>()
+            const nonMcpTools: CodyTool[] = []
+
+            // Separate MCP tools by server and non-MCP tools
+            for (const tool of this.tools) {
+                const metadata = tool.config.metadata as
+                    | { serverName?: string; isMcpTool?: boolean }
+                    | undefined
+                if (metadata?.isMcpTool && metadata.serverName) {
+                    const serverTools = mcpToolsByServer.get(metadata.serverName) || []
+                    serverTools.push(tool)
+                    mcpToolsByServer.set(metadata.serverName, serverTools)
+                } else {
+                    nonMcpTools.push(tool)
+                }
+            }
+
+            // Process non-MCP tools concurrently
+            const nonMcpResults = await Promise.all(
+                nonMcpTools.map(async tool => {
                     try {
                         if (chatAbortSignal.aborted) return []
                         return await tool.run(span, this.statusCallback)
@@ -249,13 +268,47 @@ export class DeepCodyAgent {
                 })
             )
 
+            // Process MCP tools sequentially by server
+            const mcpResults: ContextItem[][] = []
+            for (const [serverName, serverTools] of mcpToolsByServer.entries()) {
+                if (chatAbortSignal.aborted) break
+
+                // Log that we're processing tools for this server
+                logDebug(
+                    'Deep Cody',
+                    `Processing ${serverTools.length} tools for MCP server: ${serverName}`
+                )
+
+                // Process tools for this server sequentially
+                for (const tool of serverTools) {
+                    if (chatAbortSignal.aborted) break
+                    try {
+                        const result = await tool.run(span, this.statusCallback)
+                        mcpResults.push(result)
+                    } catch (error) {
+                        const errorMessage =
+                            error instanceof Error
+                                ? error.message
+                                : typeof error === 'object' && error !== null
+                                  ? JSON.stringify(error)
+                                  : String(error)
+                        const errorObject = error instanceof Error ? error : new Error(errorMessage)
+                        this.statusCallback.onComplete(tool.config.tags.tag.toString(), errorObject)
+                        mcpResults.push([])
+                    }
+                }
+            }
+
+            // Combine all results
+            const results = [...nonMcpResults, ...mcpResults]
+
             const newContext = results.flat().filter(isDefined)
             if (newContext.length > 0) {
                 this.stats.context = this.stats.context + newContext.length
                 this.statusCallback.onUpdate(step.id, `fetched ${toPlural(newContext.length, 'item')}`)
             }
 
-            const reviewed = []
+            const reviewed: ContextItem[] = []
             const currentContext = [
                 ...this.context,
                 ...this.chatBuilder
@@ -271,9 +324,18 @@ export class DeepCodyAgent {
             for (const contextName of contextNames) {
                 for (const item of currentContext) {
                     if (item.uri.path.endsWith(contextName)) {
-                        // Try getting the full content for the requested file.
-                        const file = (await getContextFromRelativePath(contextName)) || item
-                        reviewed.push({ ...file, source: ContextItemSource.Agentic })
+                        try {
+                            // Try getting the full content for the requested file.
+                            const file =
+                                item.uri.scheme === 'file'
+                                    ? await getContextFromRelativePath(contextName)
+                                    : item
+                            reviewed.push({ ...(file || item), source: ContextItemSource.Agentic })
+                        } catch (error) {
+                            logDebug('Deep Cody', `failed to get context from ${contextName}`, {
+                                verbose: { error, contextName },
+                            })
+                        }
                     }
                 }
             }
@@ -286,7 +348,7 @@ export class DeepCodyAgent {
                     title: 'Optimizing context',
                     content: `selected ${toPlural(reviewed.length, 'item')}`,
                 })
-                const userAdded = this.context.filter(c => isUserAddedItem(c))
+                const userAdded = this.context.filter(c => isUserAddedItem(c) || c.type === 'media')
                 reviewed.push(...userAdded)
                 this.context = reviewed
             }

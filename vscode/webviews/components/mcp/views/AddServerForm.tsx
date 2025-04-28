@@ -4,7 +4,7 @@ import { Button } from '../../shadcn/ui/button'
 import { Label } from '../../shadcn/ui/label'
 import type { ServerType } from '../types'
 
-const DEFAULT_CONFIG = {
+const _DEFAULT_CONFIG = {
     id: crypto.randomUUID(), // Add a unique id
     name: '',
     type: 'MCP',
@@ -16,6 +16,8 @@ const DEFAULT_CONFIG = {
     env: [{ name: '', value: '' }],
 } satisfies ServerType
 
+const DEFAULT_CONFIG = { ..._DEFAULT_CONFIG } satisfies ServerType
+
 interface AddServerFormProps {
     onAddServer: (server: ServerType) => void
     _server?: ServerType
@@ -26,17 +28,30 @@ export function AddServerForm({ onAddServer, _server }: AddServerFormProps) {
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault()
+
+        // Validate that either URL or command is provided
+        if (!formData.url && !formData.command) {
+            alert('You must provide either a URL or a command')
+            return
+        }
+
         onAddServer(formData)
         setFormData({ ...DEFAULT_CONFIG })
     }
 
-    const addArg = (index: number, arg: string) => {
-        const args = formData.args || []
+    const updateArg = (index: number, arg: string) => {
+        const args = [...(formData.args || [])]
         args[index] = arg
         setFormData({
             ...formData,
             args,
         })
+    }
+
+    const addArg = () => {
+        const newFormData = { ...formData }
+        newFormData.args = [...(newFormData.args || []), '']
+        setFormData(newFormData)
     }
 
     const addEnvVar = () => {
@@ -46,10 +61,11 @@ export function AddServerForm({ onAddServer, _server }: AddServerFormProps) {
     }
 
     const removeArg = (index: number) => {
-        const newArgs = formData.args || DEFAULT_CONFIG.args
+        const args = [...(formData.args || [])]
+        args.splice(index, 1)
         setFormData({
             ...formData,
-            args: newArgs.splice(index, 1),
+            args,
         })
     }
     const updateEnvVar = (index: number, field: 'name' | 'value', value: string) => {
@@ -96,10 +112,10 @@ export function AddServerForm({ onAddServer, _server }: AddServerFormProps) {
                     <input
                         id="command"
                         value={formData.command}
-                        onChange={e => setFormData({ ...formData, type: e.target.value })}
+                        onChange={e => setFormData({ ...formData, command: e.target.value })}
                         className="tw-block tw-py-2.5 tw-px-0 tw-w-full tw-text-sm tw-text-gray-900 tw-bg-transparent tw-border-0 tw-border-b-2 tw-border-gray-300 tw-appearance-none dark:tw-text-white dark:tw-border-gray-600 dark:focus:tw-border-blue-500 focus:tw-outline-none focus:tw-ring-0 focus:tw-border-blue-600 peer"
                         placeholder="npx"
-                        required
+                        required={!formData.url}
                     />
                 </div>
 
@@ -112,14 +128,13 @@ export function AddServerForm({ onAddServer, _server }: AddServerFormProps) {
                         onChange={e => setFormData({ ...formData, url: e.target.value })}
                         className="tw-block tw-py-2.5 tw-px-0 tw-w-full tw-text-sm tw-text-gray-900 tw-bg-transparent tw-border-0 tw-border-b-2 tw-border-gray-300 tw-appearance-none dark:tw-text-white dark:tw-border-gray-600 dark:focus:tw-border-blue-500 focus:tw-outline-none focus:tw-ring-0 focus:tw-border-blue-600 peer"
                         placeholder="Make sure you pass in the absolute path to your server."
-                        required
                     />
                 </div>
 
                 <div className="tw-space-y-3">
                     <div className="tw-flex tw-items-center tw-justify-between">
                         <Label>Arguments</Label>
-                        <Button type="button" variant="ghost" size="sm" onClick={addEnvVar}>
+                        <Button type="button" variant="ghost" size="sm" onClick={addArg}>
                             <Plus size={14} />
                         </Button>
                     </div>
@@ -130,7 +145,7 @@ export function AddServerForm({ onAddServer, _server }: AddServerFormProps) {
                             <input
                                 value={arg}
                                 placeholder=""
-                                onChange={e => addArg(index, e.target.value)}
+                                onChange={e => updateArg(index, e.target.value)}
                                 className="tw-block tw-py-2.5 tw-px-0 tw-w-full tw-text-sm tw-text-gray-900 tw-bg-transparent tw-border-0 tw-border-b-2 tw-border-gray-300 tw-appearance-none dark:tw-text-white dark:tw-border-gray-600 dark:focus:tw-border-blue-500 focus:tw-outline-none focus:tw-ring-0 focus:tw-border-blue-600 peer"
                             />
                             <Button

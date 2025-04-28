@@ -1,17 +1,25 @@
+import type { Span } from '@opentelemetry/api'
 import {
+    type ContextItem,
+    ContextItemSource,
     type ContextMentionProviderMetadata,
     type ProcessingStep,
     PromptString,
+    UIToolStatus,
     type Unsubscribable,
     isDefined,
+    logDebug,
     openCtxProviderMetadata,
     openctxController,
     ps,
     switchMap,
 } from '@sourcegraph/cody-shared'
+import type { McpTool } from '@sourcegraph/cody-shared/src/llm-providers/mcp/types'
 import { map } from 'observable-fns'
+import { URI } from 'vscode-uri'
+import { MCPManager } from '../../chat/chat-view/tools/MCPManager'
 import type { ContextRetriever } from '../chat-view/ContextRetriever'
-import { type CodyTool, type CodyToolConfig, OpenCtxTool, TOOL_CONFIGS } from './CodyTool'
+import { CodyTool, type CodyToolConfig, OpenCtxTool, TOOL_CONFIGS } from './CodyTool'
 import { toolboxManager } from './ToolboxManager'
 import { OPENCTX_TOOL_CONFIG } from './config'
 
@@ -84,8 +92,12 @@ class ToolFactory {
     }
 
     public getInstances(): CodyTool[] {
+        // Ensure we include all registered tools including MCP tools
         return Array.from(this.tools.entries())
-            .filter(([name]) => name !== 'CliTool' || toolboxManager.getSettings()?.shell?.enabled)
+            .filter(([name]) => {
+                // Include all tools except CliTool which has special handling
+                return name !== 'CliTool' || toolboxManager.getSettings()?.shell?.enabled
+            })
             .map(([_, config]) => config.createInstance(config, this.contextRetriever))
             .filter(isDefined)
     }
@@ -106,6 +118,150 @@ class ToolFactory {
                     ...config,
                     createInstance: cfg => new OpenCtxTool(provider, cfg),
                 })
+                return this.createTool(toolName)
+            })
+            .filter(isDefined)
+    }
+
+    public createMcpTools(mcpTools: McpTool[], serverName: string): CodyTool[] {
+        return mcpTools
+            .map(tool => {
+                const _toolName = tool.name
+                // Format to match topic name requirements in bot-response-multiplexer (only digits, letters, hyphens)
+                const toolName = `${serverName}-${_toolName}`.replace(/[^\dA-Za-z-]/g, '-')
+                // Create a proper tool configuration
+                const toolConfig: CodyToolConfig = {
+                    title: _toolName,
+                    tags: {
+                        tag: PromptString.unsafe_fromUserQuery(toolName),
+                        subTag: ps`call`,
+                    },
+                    prompt: {
+                        instruction: PromptString.unsafe_fromUserQuery(
+                            ((tool as any).description as string) || ''
+                        ),
+                        placeholder: ps`ARGS`,
+                        examples: [],
+                    },
+                    // Add metadata to identify tools from the same MCP server
+                    metadata: { serverName, isMcpTool: true },
+                }
+
+                // Store reference to CodyTool to ensure it's accessible in this scope
+                const BaseTool = CodyTool
+                // Create a class that extends CodyTool for this MCP tool
+                class McpToolInstance extends BaseTool {
+                    constructor() {
+                        super(toolConfig)
+                    }
+
+                    public async execute(span: Span, queries: string[]): Promise<ContextItem[]> {
+                        span.addEvent('executeMcpTool')
+                        if (!queries.length) {
+                            return []
+                        }
+
+                        try {
+                            // Initialize args object
+                            let args: Record<string, unknown> = {}
+
+                            // Process the queries into a proper args object
+                            if (queries.length > 0) {
+                                try {
+                                    // Try to parse as JSON first
+                                    const parsedJson = JSON.parse(queries[0])
+                                    if (typeof parsedJson === 'object' && parsedJson !== null) {
+                                        // If it's a valid object, use it directly
+                                        args = parsedJson
+                                    } else {
+                                        // If it's not an object, use it as a 'value' parameter
+                                        args = { value: parsedJson }
+                                    }
+                                } catch (e) {
+                                    // If not valid JSON, treat the query as a string argument
+                                    // Extract parameter names from input_schema if available
+                                    // Use type assertion since McpTool doesn't have these properties in its type definition
+                                    const toolAny = tool as any
+                                    const inputSchema = toolAny.input_schema?.properties || {}
+                                    const paramNames = Object.keys(inputSchema)
+
+                                    if (paramNames.length > 0) {
+                                        // Use the first parameter name from the schema
+                                        args = { [paramNames[0]]: queries[0] }
+
+                                        // If there are multiple query strings, try to map them to additional parameters
+                                        if (queries.length > 1 && paramNames.length > 1) {
+                                            for (
+                                                let i = 1;
+                                                i < queries.length && i < paramNames.length;
+                                                i++
+                                            ) {
+                                                args[paramNames[i]] = queries[i]
+                                            }
+                                        }
+                                    } else {
+                                        // Fallback to using 'query' as the parameter name
+                                        args = { query: queries[0] }
+                                    }
+                                }
+                            }
+
+                            // Get the instance and execute the tool
+                            const mcpInstance = MCPManager.instance
+                            if (!mcpInstance) {
+                                throw new Error('MCP Manager instance not available')
+                            }
+
+                            // Use the MCPManager's executeTool method which properly delegates to serverManager
+                            const result = await mcpInstance.executeTool(serverName, _toolName, args)
+                            const imageResultInfo = result.context?.some(i => i.type === 'media')
+                                ? `Image captured for ${JSON.stringify(
+                                      args
+                                  )} and will be available for the next request.`
+                                : ''
+                            const prefix = `${_toolName} tool was executed with ${JSON.stringify(
+                                args
+                            )} and `
+                            const statusReport =
+                                result.status !== UIToolStatus.Error
+                                    ? `completed: ${result?.content || 'invoked'}${imageResultInfo}`
+                                    : `failed: ${result.content}`
+
+                            return [
+                                ...(result.context ?? []),
+                                {
+                                    type: 'file',
+                                    content: prefix + statusReport,
+                                    uri: URI.parse(`mcp://${toolName}-result`),
+                                    source: ContextItemSource.Agentic,
+                                    title: toolName,
+                                },
+                            ]
+                        } catch (error) {
+                            logDebug('CodyToolProvider', `Error executing ${toolName}`, {
+                                verbose: error,
+                            })
+                            const errorStr = error instanceof Error ? error.message : String(error)
+                            return [
+                                {
+                                    type: 'file',
+                                    content: `Error executing MCP tool ${_toolName}: ${errorStr}`,
+                                    uri: URI.parse(`mcp://$${toolName}-error`),
+                                    source: ContextItemSource.Agentic,
+                                    title: toolName,
+                                },
+                            ]
+                        }
+                    }
+                }
+
+                // Register the tool
+                this.register({
+                    name: toolName,
+                    ...toolConfig,
+                    createInstance: () => new McpToolInstance(),
+                })
+
                 return this.createTool(toolName)
             })
             .filter(isDefined)
@@ -185,6 +341,30 @@ export class CodyToolProvider {
 
     public static getTools(): CodyTool[] {
         return CodyToolProvider.instance?.factory.getInstances() ?? []
+    }
+
+    /**
+     * Get all tools including dynamically registered ones
+     * This ensures MCP tools are properly included in the available tools
+     */
+    public static getAllTools(): CodyTool[] {
+        return CodyToolProvider.getTools()
+    }
+
+    /**
+     * Register MCP tools from a server
+     * @param serverName The name of the MCP server
+     * @param tools The list of MCP tools to register
+     */
+    public static registerMcpTools(serverName: string, tools: McpTool[]): CodyTool[] {
+        if (!CodyToolProvider.instance) {
+            logDebug('CodyToolProvider', 'Cannot register MCP tools - instance not initialized')
+            return []
+        }
+        logDebug('CodyToolProvider', `Registering ${tools.length} MCP tools from ${serverName}`)
+        const createdTools = CodyToolProvider.instance.factory.createMcpTools(tools, serverName)
+        logDebug('CodyToolProvider', `Registered ${createdTools.length} MCP tools successfully`)
+        return createdTools
     }
 
     private static setupOpenCtxProviderListener(): void {
