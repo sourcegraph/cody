@@ -14,18 +14,36 @@ import com.intellij.openapi.progress.Task
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.updateSettings.impl.PluginDownloader
 import com.intellij.openapi.updateSettings.impl.UpdateChecker
-import com.intellij.openapi.util.BuildNumber
+import com.sourcegraph.cody.config.CodyApplicationSettings
+import com.sourcegraph.cody.config.ui.lang.UpdateMode
 import com.sourcegraph.common.NotificationGroups
-import java.lang.reflect.InvocationTargetException
 
 class CheckUpdatesTask(project: Project) :
-    Task.Backgroundable(project, "Checking for Sourcegraph Cody + Code Search update...", false) {
+    Task.Backgroundable(
+        project,
+        "Checking for Sourcegraph Cody + Code Search update...",
+        /* canBeCancelled = */ true) {
 
   override fun run(indicator: ProgressIndicator) {
-    val availableUpdate = getAvailablePluginDownloaders(indicator).find { it.id == pluginId }
-    if (availableUpdate != null) {
+    val settings = CodyApplicationSettings.instance
+    if (project.isDisposed ||
+        indicator.isCanceled ||
+        !settings.isCodyEnabled ||
+        settings.updateMode == UpdateMode.Never) {
+      return
+    }
+
+    val allUpdates =
+        UpdateChecker.getInternalPluginUpdates(null, indicator).pluginUpdates.allEnabled
+    val pluginUpdateDownloader = allUpdates.find { it.id == pluginId }
+    if (pluginUpdateDownloader != null) {
       CustomPluginRepositoryService.getInstance().clearCache()
-      notifyAboutTheUpdate(project, availableUpdate, indicator)
+
+      if (settings.updateMode == UpdateMode.Ask) {
+        notifyAboutTheUpdateAvailable(project, pluginUpdateDownloader, indicator)
+      } else {
+        update(project, pluginUpdateDownloader, indicator)
+      }
     }
   }
 
@@ -33,32 +51,26 @@ class CheckUpdatesTask(project: Project) :
     private val logger = Logger.getInstance(CheckUpdatesTask::class.java)
     private val pluginId = PluginId.getId("com.sourcegraph.jetbrains")
 
-    fun getAvailablePluginDownloaders(indicator: ProgressIndicator): Collection<PluginDownloader> {
-      try {
-        val getInternalPluginUpdatesMethod =
-            UpdateChecker.javaClass.getMethod(
-                "getInternalPluginUpdates", BuildNumber::class.java, ProgressIndicator::class.java)
-        val internalPluginUpdates = getInternalPluginUpdatesMethod.invoke(null, null, indicator)
-        val getPluginUpdatesMethod = internalPluginUpdates.javaClass.getMethod("getPluginUpdates")
-        val pluginUpdates = getPluginUpdatesMethod.invoke(internalPluginUpdates)
-        val getAllEnabledMethod = pluginUpdates.javaClass.getMethod("getAllEnabled")
-        val allEnabled = getAllEnabledMethod.invoke(pluginUpdates)
-        return allEnabled?.let { it as (Collection<PluginDownloader>) } ?: emptyList()
-      } catch (e: Exception) {
-        when (e) {
-          is IllegalAccessException,
-          is NoSuchMethodException,
-          is InvocationTargetException,
-          is ClassCastException -> {
-            logger.warn(e)
+    fun update(
+        project: Project,
+        pluginUpdateDownloader: PluginDownloader,
+        indicator: ProgressIndicator
+    ) {
+      if (project.isDisposed || indicator.isCanceled) return
+
+      ApplicationManager.getApplication().executeOnPooledThread {
+        try {
+          if (pluginUpdateDownloader.prepareToInstall(indicator)) {
+            pluginUpdateDownloader.install()
+            PluginManagerMain.notifyPluginsUpdated(project)
           }
-          else -> throw e
+        } catch (e: Exception) {
+          logger.warn("Error updating Cody plugin", e)
         }
       }
-      return emptyList()
     }
 
-    fun notifyAboutTheUpdate(
+    fun notifyAboutTheUpdateAvailable(
         project: Project,
         pluginDownloader: PluginDownloader,
         indicator: ProgressIndicator
@@ -71,17 +83,9 @@ class CheckUpdatesTask(project: Project) :
               NotificationType.IDE_UPDATE)
       notification.addAction(
           NotificationAction.createSimpleExpiring("Update") {
-            ApplicationManager.getApplication().executeOnPooledThread {
-              try {
-                if (pluginDownloader.prepareToInstall(indicator)) {
-                  pluginDownloader.install()
-                  PluginManagerMain.notifyPluginsUpdated(project)
-                }
-              } catch (e: Exception) {
-                logger.warn("Error updating Cody plugin", e)
-              }
-            }
+            update(project, pluginDownloader, indicator)
           })
+
       notification.notify(project)
     }
 
