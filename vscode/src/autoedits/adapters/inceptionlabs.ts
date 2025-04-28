@@ -3,21 +3,20 @@ import { ps } from '@sourcegraph/cody-shared'
 import { forkSignal, generatorWithErrorObserver, generatorWithTimeout } from '../../completions/utils'
 import { autoeditsProviderConfig } from '../autoedits-config'
 import { autoeditsOutputChannelLogger } from '../output-channel-logger'
-
-import { getNewLineChar } from '../../completions/text-processing'
 import type { AutoeditModelOptions, AutoeditsModelAdapter, ModelResponse } from './base'
 import { getDefaultModelResponse } from './model-response/default'
+import { getMaxOutputTokensForAutoedits } from './utils'
 import { type AutoeditsRequestBody, getOpenaiCompatibleChatPrompt } from './utils'
 
 export interface InceptionLabsRequestParams {
     model: string
     temperature: number
+    max_tokens: number
+    stop?: string[]
 }
 
 export const inceptionlabsPrompt = {
-    start: ps`The programmer will provide you open files in the editor, recently viewed files, the currently edited file, recent codebase changes, linter errors, and copied content from the codebase. Your task is to rewrite <code_to_rewrite> or add new code to it to match what the programmer will likely do next based on recent edits. Keep your response direct, relevant, and aligned with the existing code patterns. Assume the programmer may have stopped mid-typing or just added a new line. Guidelines for edits: Stay consistent with the detected coding pattern. Output high-quality code. Prioritize continuing the diff history stream, improving code quality, and maintaining focus. Make only necessary changes. Do not skip lines or take shortcuts. The programmer will copy-paste your response directly. <CURSOR_IS_HERE> shows where programmer stopped typing.`,
-
-    end: ps`Based on <diff_history> content, what will I do next? Rewrite the code between <code_to_rewrite> and </code_to_rewrite> based on what I will do next. Remember, you must ONLY respond using the tag: <next-version> with the rewritten code. IMPORTANT: only rewrite the code between <code_to_rewrite> and </code_to_rewrite> tags. Suggest code completions after <CURSOR_IS_HERE> for empty lines. Never output the tag <CURSOR_IS_HERE> in your response.`,
+    system: ps`You are Mercury, created by Inception Labs. You are an intelligent programmer and an expert at coding. Your goal is to help a colleague finish a code change.`,
 }
 
 /**
@@ -25,6 +24,8 @@ export const inceptionlabsPrompt = {
  */
 export class InceptionLabsAdapter implements AutoeditsModelAdapter {
     dispose() {}
+
+    private readonly defaultTimeoutMs = 5000
 
     async getModelResponse(option: AutoeditModelOptions): Promise<AsyncGenerator<ModelResponse>> {
         const requestBody = this.getMessageBody(option)
@@ -40,7 +41,6 @@ export class InceptionLabsAdapter implements AutoeditsModelAdapter {
             }
 
             const abortController = forkSignal(option.abortSignal)
-            const newLineChar = getNewLineChar(option.codeToRewrite)
             return generatorWithErrorObserver(
                 generatorWithTimeout(
                     getDefaultModelResponse({
@@ -49,18 +49,17 @@ export class InceptionLabsAdapter implements AutoeditsModelAdapter {
                         body: requestBody,
                         abortSignal: option.abortSignal,
                         extractPrediction: (response: any) => {
-                            return (
-                                response.responseBody.choices[0].message.content
-                                    .replace(/<next-version>\n?/g, '')
-                                    .replace(/\n?<\/next-version>/g, '')
-                                    // For now manually limit prediction to the same number of lines as the code to rewrite
-                                    .split(newLineChar)
-                                    .slice(0, option.codeToRewrite.split(newLineChar).length)
-                                    .join(newLineChar)
+                            const responseParsed = response.choices[0].message.content.startsWith(
+                                '<|editable_region_start|>\n'
                             )
+                                ? response.choices[0].message.content.substring(
+                                      '<|editable_region_start|>\n'.length
+                                  )
+                                : response.choices[0].message.content
+                            return responseParsed
                         },
                     }),
-                    option.timeoutMs,
+                    option.timeoutMs ?? this.defaultTimeoutMs,
                     abortController
                 ),
                 error => {
@@ -87,15 +86,18 @@ export class InceptionLabsAdapter implements AutoeditsModelAdapter {
     }
 
     private getMessageBody(options: AutoeditModelOptions): AutoeditsRequestBody {
+        const maxTokens = getMaxOutputTokensForAutoedits(options.codeToRewrite)
         const baseParams: InceptionLabsRequestParams = {
             model: options.model,
-            temperature: 0,
+            temperature: 0.1,
+            max_tokens: maxTokens,
+            stop: ['<|editable_region_end|>'],
         }
 
         return {
             ...baseParams,
             messages: getOpenaiCompatibleChatPrompt({
-                // systemMessage: options.prompt.systemMessage,
+                systemMessage: inceptionlabsPrompt.system,
                 userMessage: options.prompt.userMessage,
             }),
         }
