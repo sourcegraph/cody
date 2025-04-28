@@ -1,7 +1,6 @@
 package com.sourcegraph.cody.initialization
 
 import com.intellij.AppTopics
-import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.service
 import com.intellij.openapi.editor.EditorFactory
 import com.intellij.openapi.editor.ex.EditorEventMulticasterEx

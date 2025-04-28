@@ -17,10 +17,12 @@ import com.intellij.openapi.updateSettings.impl.UpdateChecker
 import com.sourcegraph.cody.config.CodyApplicationSettings
 import com.sourcegraph.cody.config.ui.lang.UpdateMode
 import com.sourcegraph.common.NotificationGroups
-import com.sourcegraph.config.ConfigUtil
 
 class CheckUpdatesTask(project: Project) :
-    Task.Backgroundable(project, "Checking for Sourcegraph Cody + Code Search update...", true) {
+    Task.Backgroundable(
+        project,
+        "Checking for Sourcegraph Cody + Code Search update...",
+        /* canBeCancelled = */ true) {
 
   override fun run(indicator: ProgressIndicator) {
     val settings = CodyApplicationSettings.instance
@@ -59,10 +61,8 @@ class CheckUpdatesTask(project: Project) :
       ApplicationManager.getApplication().executeOnPooledThread {
         try {
           if (pluginUpdateDownloader.prepareToInstall(indicator)) {
-            if (!ConfigUtil.isDevMode()) {
-              pluginUpdateDownloader.install()
-              PluginManagerMain.notifyPluginsUpdated(project)
-            }
+            pluginUpdateDownloader.install()
+            PluginManagerMain.notifyPluginsUpdated(project)
           }
         } catch (e: Exception) {
           logger.warn("Error updating Cody plugin", e)
