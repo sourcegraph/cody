@@ -132,6 +132,7 @@ export interface CompletionParameters {
     // https://docs.fireworks.ai/guides/predicted-outputs#using-predicted-outputs
     rewriteSpeculation?: boolean
     adaptiveSpeculation?: boolean
+    tools?: any[]
 }
 
 export interface SerializedCompletionParameters extends Omit<CompletionParameters, 'messages'> {
