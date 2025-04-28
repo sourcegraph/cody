@@ -78,6 +78,8 @@ function createTestParams({
         maxSuffixLinesInArea: 2,
         codeToRewritePrefixLines: 1,
         codeToRewriteSuffixLines: 30,
+        prefixTokens: 100,
+        suffixTokens: 100,
     })
 
     return {
