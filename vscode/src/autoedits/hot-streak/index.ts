@@ -101,20 +101,22 @@ export async function* processHotStreakResponses({
             // to reflect this.
             const updatedDocContext = getCurrentDocContext({
                 document,
-                position: predictionChunk.range.start,
+                position,
                 maxPrefixLength: docContext.maxPrefixLength,
                 maxSuffixLength: docContext.maxSuffixLength,
             })
 
+            const lengthOfChunk = predictionChunk.range.end.line - predictionChunk.range.start.line - 1
             const adjustedCodeToReplace = getCodeToReplaceData({
                 docContext: updatedDocContext,
                 document,
-                position: predictionChunk.range.start,
+                position,
                 tokenBudget: {
                     ...autoeditsProviderConfig.tokenLimit,
-                    codeToRewritePrefixLines: 0,
-                    codeToRewriteSuffixLines:
-                        predictionChunk.range.end.line - predictionChunk.range.start.line - 1,
+                    codeToRewriteSuffixLines: Math.max(
+                        lengthOfChunk - autoeditsProviderConfig.tokenLimit.codeToRewritePrefixLines,
+                        0
+                    ),
                 },
             })
 
