@@ -20,6 +20,7 @@ export const extractAutoeditData = (entry: AutoeditRequestDebugState) => {
     const position = getPosition(entry)
     const modelResponse = getModelResponse(entry)
     const context = getContext(entry)
+    const renderOutput = getRenderOutput(entry)
 
     return {
         phase,
@@ -38,6 +39,7 @@ export const extractAutoeditData = (entry: AutoeditRequestDebugState) => {
         position,
         modelResponse,
         context,
+        renderOutput,
     }
 }
 
@@ -337,6 +339,16 @@ export const getFullResponseBody = (entry: AutoeditRequestDebugState): any | nul
 export const getModelResponse = (entry: AutoeditRequestDebugState): ModelResponse | null => {
     if ('modelResponse' in entry.state) {
         return entry.state.modelResponse
+    }
+    return null
+}
+
+/**
+ * Get the render output if available
+ */
+export const getRenderOutput = (entry: AutoeditRequestDebugState): any | null => {
+    if ('renderOutput' in entry.state) {
+        return entry.state.renderOutput
     }
     return null
 }

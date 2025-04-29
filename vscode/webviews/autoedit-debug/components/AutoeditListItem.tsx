@@ -67,12 +67,18 @@ const FileInfo: FC<{
     positionInfo: string
     inferenceTime?: string | null
     envoyUpstreamServiceTime?: string | null
-}> = ({ fileName, positionInfo, inferenceTime, envoyUpstreamServiceTime }) => (
+    renderOutputType?: string | null
+}> = ({ fileName, positionInfo, inferenceTime, envoyUpstreamServiceTime, renderOutputType }) => (
     <div className="tw-flex tw-items-center tw-justify-between tw-w-full tw-text-sm tw-text-gray-700 tw-dark:tw-text-gray-300">
-        <div className="tw-flex tw-items-center">
+        <div className="tw-flex tw-items-center tw-gap-2">
             <span className="tw-font-medium">
                 {`${fileName} ${positionInfo ? `:${positionInfo}` : ''}`}
             </span>
+            {renderOutputType && (
+                <span className="tw-text-xs tw-px-2 tw-py-0.5 tw-bg-gray-100 tw-dark:tw-bg-gray-700 tw-rounded">
+                    {renderOutputType}
+                </span>
+            )}
         </div>
         {inferenceTime && (
             <div className="tw-flex tw-items-center tw-gap-2">
@@ -126,6 +132,7 @@ export const AutoeditListItem: FC<AutoeditEntryItemProps> = ({ entry, isSelected
         positionInfo,
         discardReason,
         timing,
+        renderOutput,
     } = AutoeditDataSDK.extractAutoeditData(entry)
 
     // State management
@@ -189,6 +196,7 @@ export const AutoeditListItem: FC<AutoeditEntryItemProps> = ({ entry, isSelected
                         positionInfo={positionInfo}
                         inferenceTime={timing.inferenceTime}
                         envoyUpstreamServiceTime={timing.envoyUpstreamServiceTime}
+                        renderOutputType={renderOutput?.type}
                     />
 
                     {/* Code preview */}
