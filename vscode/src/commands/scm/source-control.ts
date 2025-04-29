@@ -21,6 +21,7 @@ import { PromptBuilder } from '../../prompt-builder'
 import type { API, GitExtension, InputBox, Repository } from '../../repository/builtinGitExtension'
 import { getContextFilesFromGitApi } from '../context/git-api'
 import { COMMIT_COMMAND_PROMPTS } from './prompts'
+import { outputChannelLogger } from '../../output-channel-logger'
 
 export class CodySourceControl implements vscode.Disposable {
     private disposables: vscode.Disposable[] = []
@@ -190,16 +191,13 @@ export class CodySourceControl implements vscode.Disposable {
             }
 
             const { id: model, contextWindow } = this.model
-            const context = await getContextFilesFromGitApi(repository, commitTemplate).catch(() => [])
+            const context = await getContextFilesFromGitApi(repository, commitTemplate)
             const { prompt, ignoredContext } = await this.buildPrompt(
                 contextWindow,
                 getSimplePreamble(model, 1, 'Default', COMMIT_COMMAND_PROMPTS.intro),
                 context,
                 commitTemplate
-            ).catch(error => {
-                sourceControlInputbox.value = initialInputBoxValue
-                throw new Error()
-            })
+            )
 
             const stream = await this.chatClient.chat(
                 prompt,
@@ -227,10 +225,13 @@ export class CodySourceControl implements vscode.Disposable {
         } catch (error) {
             this.statusUpdate()
             progress.report({ message: 'Error' })
+            sourceControlInputbox.value = initialInputBoxValue // Revert to initial value on error
+            var errorMessage = "Could not generate a commit message"
+            outputChannelLogger.logError('getContextFileFromGitDiff', errorMessage, error)
             if (error instanceof Error && error.message) {
-                sourceControlInputbox.value = initialInputBoxValue // Revert to initial value on error
-                vscode.window.showInformationMessage(`Generate commit message failed: ${error.message}`)
+                errorMessage += `: ${error.message}`
             }
+            vscode.window.showInformationMessage(errorMessage)
         } finally {
             if (initialPlaceholder !== undefined) {
                 ;(sourceControlInputbox as vscode.SourceControlInputBox).placeholder = initialPlaceholder
