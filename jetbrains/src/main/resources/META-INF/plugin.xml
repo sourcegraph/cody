@@ -67,6 +67,8 @@
         <postStartupActivity
                 implementation="com.sourcegraph.cody.initialization.PostStartupActivity"/>
 
+        <idePerformanceListener implementation="com.sourcegraph.cody.error.CodyPerformanceListener"/>
+
         <!-- Cody -->
         <toolWindow
                 id="Cody"
