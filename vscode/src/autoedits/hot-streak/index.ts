@@ -17,7 +17,8 @@ import type {
 } from '../autoedits-provider'
 import { getCodeToReplaceData } from '../prompt/prompt-utils'
 import { isDuplicatingTextFromRewriteArea } from '../utils'
-import { getHotStreakChunk, getStableSuggestion } from './get-chunk'
+import { getHotStreakChunk } from './get-chunk'
+import { getStableSuggestion } from './stable-suggestion'
 
 export interface ProcessHotStreakResponsesParams {
     responseGenerator: AsyncGenerator<ModelResponse>
