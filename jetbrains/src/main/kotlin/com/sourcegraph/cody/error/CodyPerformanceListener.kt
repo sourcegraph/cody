@@ -7,7 +7,7 @@ import java.nio.file.Path
 class CodyPerformanceListener : PerformanceListener {
   override fun dumpedThreads(toFile: Path, dump: ThreadDump) {
     val isCodyStacktrace =
-        dump.edtStackTrace?.any { it.className.startsWith("com.sourcegraph") } != null
+        dump.edtStackTrace?.any { it.className.startsWith("com.sourcegraph") } == true
 
     if (isCodyStacktrace) {
       val throwable = Throwable("IDE UI freeze detected").apply { stackTrace = dump.edtStackTrace }
