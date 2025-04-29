@@ -401,7 +401,7 @@ export class AutoEditsDefaultRendererManager
         this.testing_completionSuggestedPromise = undefined
 
         if (decorator) {
-            await this.handleDidHideSuggestion(this.decorator)
+            await this.handleDidHideSuggestion(decorator)
         }
 
         if (activeRequest) {
