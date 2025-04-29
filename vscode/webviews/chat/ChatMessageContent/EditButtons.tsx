@@ -17,7 +17,6 @@ import {
 import type { CodeBlockActionsProps } from './ChatMessageContent'
 import styles from './ChatMessageContent.module.css'
 
-
 export const CopyButton = ({
     text,
     onCopy,
