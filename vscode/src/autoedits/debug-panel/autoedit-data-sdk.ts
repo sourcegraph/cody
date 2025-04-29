@@ -22,6 +22,7 @@ export const extractAutoeditData = (entry: AutoeditRequestDebugState) => {
     const modelResponse = getModelResponse(entry)
     const context = getContext(entry)
     const renderOutput = getRenderOutput(entry)
+    const hotStreakId = getHotStreakId(entry)
 
     return {
         phase,
@@ -41,6 +42,7 @@ export const extractAutoeditData = (entry: AutoeditRequestDebugState) => {
         modelResponse,
         context,
         renderOutput,
+        hotStreakId,
     }
 }
 
@@ -321,6 +323,16 @@ export const getHotStreakChunks = (
 }
 
 /**
+ * Get the hot streak ID if available
+ */
+export const getHotStreakId = (entry: AutoeditRequestDebugState): string | null => {
+    if ('hotStreakId' in entry.state && entry.state.hotStreakId) {
+        return entry.state.hotStreakId
+    }
+    return null
+}
+
+/**
  * Get the full response body from the model if available
  */
 export const getFullResponseBody = (entry: AutoeditRequestDebugState): any | null => {
@@ -376,4 +388,5 @@ export const AutoeditDataSDK = {
     getFullResponseBody,
     getModelResponse,
     getHotStreakChunks,
+    getHotStreakId,
 }

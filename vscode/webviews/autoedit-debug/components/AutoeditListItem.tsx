@@ -1,4 +1,4 @@
-import { X } from 'lucide-react'
+import { Link, X } from 'lucide-react'
 import type { FC } from 'react'
 import React from 'react'
 
@@ -148,10 +148,16 @@ interface AutoeditEntryItemProps {
     entry: AutoeditRequestDebugState
     isSelected: boolean
     onSelect: (entryId: string) => void
+    hotStreakChain?: AutoeditRequestDebugState[]
 }
 
 // Main component
-export const AutoeditListItem: FC<AutoeditEntryItemProps> = ({ entry, isSelected, onSelect }) => {
+export const AutoeditListItem: FC<AutoeditEntryItemProps> = ({
+    entry,
+    isSelected,
+    onSelect,
+    hotStreakChain = [],
+}) => {
     // Extract all data from entry using the SDK
     const {
         phase,
@@ -162,10 +168,13 @@ export const AutoeditListItem: FC<AutoeditEntryItemProps> = ({ entry, isSelected
         discardReason,
         timing,
         renderOutput,
+        hotStreakId,
     } = AutoeditDataSDK.extractAutoeditData(entry)
+    const hasHotStreakChain = hotStreakId && hotStreakChain.length > 0
 
     // State management
     const [showDetailedTiming, setShowDetailedTiming] = React.useState(false)
+    const [showHotStreakChain, setShowHotStreakChain] = React.useState(false)
 
     // Calculate card classes based on selection state
     const cardClasses = `
@@ -236,6 +245,84 @@ export const AutoeditListItem: FC<AutoeditEntryItemProps> = ({ entry, isSelected
                         <div className="tw-flex tw-items-center tw-gap-1 tw-text-red-600 tw-text-xs tw-mt-1">
                             <X className="tw-h-3 tw-w-3" />
                             <span>{discardReason}</span>
+                        </div>
+                    )}
+
+                    {/* Hot streak related entries if available */}
+                    {hasHotStreakChain && (
+                        <div className="tw-mt-2 tw-pt-2 tw-border-t tw-border-gray-200 tw-dark:tw-border-gray-700">
+                            <div className="tw-flex tw-items-center tw-justify-between tw-text-xs tw-mb-1">
+                                <div className="tw-flex tw-items-center tw-gap-1 tw-text-gray-600 tw-dark:tw-text-gray-400">
+                                    <Link className="tw-h-3 tw-w-3" />
+                                    <span className="tw-font-medium">Hot Streak:</span>
+                                    <span
+                                        className="tw-font-mono tw-text-gray-500 tw-dark:tw-text-gray-500"
+                                        title={hotStreakId}
+                                    >
+                                        {hotStreakId?.substring(0, 8)}...
+                                    </span>
+                                </div>
+                                <button
+                                    type="button"
+                                    className="tw-px-2 tw-py-0.5 tw-rounded tw-text-blue-600 tw-dark:tw-text-blue-400 tw-bg-blue-50 tw-dark:tw-bg-blue-900/20 hover:tw-bg-blue-100 dark:hover:tw-bg-blue-900/30 tw-transition-colors"
+                                    onClick={e => {
+                                        e.stopPropagation()
+                                        setShowHotStreakChain(!showHotStreakChain)
+                                    }}
+                                >
+                                    {showHotStreakChain ? 'Hide Chain' : 'View Chain'} (
+                                    {hotStreakChain.length})
+                                </button>
+                            </div>
+                            {showHotStreakChain && (
+                                <div className="tw-flex tw-flex-col tw-gap-1 tw-mt-2 tw-p-2 tw-bg-gray-50 tw-dark:tw-bg-gray-800/40 tw-rounded">
+                                    {/* Display entries in their sorted order */}
+                                    {hotStreakChain.map(chainEntry => {
+                                        const chainEntryRequestId = chainEntry.state.requestId
+                                        const isCurrentEntry =
+                                            chainEntryRequestId === entry.state.requestId
+                                        const lineNumber =
+                                            'editPosition' in chainEntry.state
+                                                ? chainEntry.state.editPosition.line
+                                                : chainEntry.state.position.line
+
+                                        return (
+                                            <button
+                                                type="button"
+                                                key={chainEntryRequestId}
+                                                disabled={isCurrentEntry}
+                                                className={`tw-w-full tw-text-left tw-flex tw-items-center tw-justify-between tw-px-2 tw-py-1 tw-rounded tw-cursor-pointer hover:tw-bg-gray-200 dark:hover:tw-bg-gray-700/60 ${
+                                                    isCurrentEntry
+                                                        ? 'tw-bg-blue-100 tw-dark:tw-bg-blue-900/40 tw-opacity-90'
+                                                        : 'tw-bg-gray-100 tw-dark:tw-bg-gray-800'
+                                                }`}
+                                                onClick={e => {
+                                                    e.stopPropagation()
+                                                    onSelect(chainEntryRequestId)
+                                                }}
+                                            >
+                                                <div className="tw-flex tw-flex-1 tw-items-center tw-gap-2">
+                                                    <span className="tw-text-xs tw-font-mono tw-text-gray-500 tw-dark:tw-text-gray-400">
+                                                        {chainEntryRequestId.substring(0, 6)}
+                                                    </span>
+
+                                                    {lineNumber && (
+                                                        <span className="tw-text-xs tw-text-gray-600 tw-dark:tw-text-gray-400">
+                                                            Line: {lineNumber}
+                                                        </span>
+                                                    )}
+                                                </div>
+
+                                                {!isCurrentEntry && (
+                                                    <span className="tw-text-xs tw-text-blue-600 tw-dark:tw-text-blue-400">
+                                                        View
+                                                    </span>
+                                                )}
+                                            </button>
+                                        )
+                                    })}
+                                </div>
+                            )}
                         </div>
                     )}
                 </div>
