@@ -82,8 +82,6 @@ export class FireworksAdapter implements AutoeditsModelAdapter {
                 type: 'content',
                 content: options.codeToRewrite,
             },
-            rewrite_speculation: true,
-            adaptive_speculation: true,
             user: options.userId || undefined,
         }
 
