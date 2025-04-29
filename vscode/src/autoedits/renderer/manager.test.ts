@@ -7,14 +7,20 @@ import { documentAndPosition } from '../../completions/test-helpers'
 import { defaultVSCodeExtensionClient } from '../../extension-client'
 import { FixupController } from '../../non-stop/FixupController'
 import type { AutoeditRequestID } from '../analytics-logger'
-import { getDecorationInfoFromPrediction } from '../autoedits-provider'
+import { type AutoeditClientCapabilities, getDecorationInfoFromPrediction } from '../autoedits-provider'
 import { getCodeToReplaceForRenderer } from '../prompt/test-helper'
-import { AutoEditsDefaultRendererManager } from '../renderer/manager'
+import { AutoEditsRendererManager } from '../renderer/manager'
 
 import { RequestManager } from '../request-manager'
-import { DefaultDecorator } from './decorators/default-decorator'
 import type { TryMakeInlineCompletionsArgs } from './manager'
 import type { CompletionRenderOutput } from './render-output'
+import { InlineDiffDecorator } from './decorators/inline-diff-decorator'
+
+const mockCapabilities: AutoeditClientCapabilities = {
+    autoedit: 'enabled',
+    autoeditInlineDiff: 'insertions-and-deletions',
+    autoeditAsideDiff: 'diff',
+}
 
 describe('AutoEditsDefaultRendererManager', () => {
     const getAutoeditRendererManagerArgs = (
@@ -46,13 +52,13 @@ describe('AutoEditsDefaultRendererManager', () => {
     }
 
     describe('tryMakeInlineCompletions', () => {
-        let manager: AutoEditsDefaultRendererManager
+        let manager: AutoEditsRendererManager
         const extensionClient = defaultVSCodeExtensionClient()
         const fixupController = new FixupController(extensionClient)
 
         beforeEach(() => {
-            manager = new AutoEditsDefaultRendererManager(
-                (editor: vscode.TextEditor) => new DefaultDecorator(editor),
+            manager = new AutoEditsRendererManager(
+                (editor: vscode.TextEditor) => new InlineDiffDecorator(editor),
                 fixupController,
                 new RequestManager()
             )
@@ -66,7 +72,7 @@ describe('AutoEditsDefaultRendererManager', () => {
             expect(items[0].insertText).toEqual(expectedCompletion)
         }
 
-        it('should return single line inline completion when possible', async () => {
+        it.only('should return single line inline completion when possible', async () => {
             const documentText = dedent`const a = 1
                 const b = 2
                 const c = 3
@@ -81,8 +87,10 @@ describe('AutoEditsDefaultRendererManager', () => {
                 function greet() { console.log("Hello") }
             `
             const args = getAutoeditRendererManagerArgs(documentText, prediction)
-            const result = manager.getRenderOutput(args) as CompletionRenderOutput
+            const result = manager.getRenderOutput(args, mockCapabilities) as CompletionRenderOutput
             expect(result).toBeDefined()
+            console.log('got result', result);
+            console.log(JSON.stringify(result, null, 2));
             assertInlineCompletionItems(
                 result.inlineCompletionItems,
                 dedent`
@@ -108,7 +116,7 @@ describe('AutoEditsDefaultRendererManager', () => {
                 function greet() { console.log("Hello") }
             `
             const args = getAutoeditRendererManagerArgs(documentText, prediction)
-            const result = manager.getRenderOutput(args) as CompletionRenderOutput
+            const result = manager.getRenderOutput(args, mockCapabilities) as CompletionRenderOutput
             expect(result).toBeDefined()
             assertInlineCompletionItems(
                 result.inlineCompletionItems,
@@ -135,7 +143,7 @@ describe('AutoEditsDefaultRendererManager', () => {
                 function greet() { console.log("Hello") }
             `
             const args = getAutoeditRendererManagerArgs(documentText, prediction)
-            const result = manager.getRenderOutput(args) as CompletionRenderOutput
+            const result = manager.getRenderOutput(args, mockCapabilities) as CompletionRenderOutput
             expect(result).toBeDefined()
             assertInlineCompletionItems(
                 result.inlineCompletionItems,

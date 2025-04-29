@@ -33,17 +33,6 @@ interface NoCompletionRenderOutput {
     type: 'none'
 }
 
-/**
- * Legacy completion output that is required for the deprecated default decorator.
- * See vscode/src/autoedits/renderer/decorators/default-decorator.ts
- */
-export interface LegacyCompletionRenderOutput {
-    type: 'legacy-completion'
-    inlineCompletionItems: AutoeditCompletionItem[]
-    updatedDecorationInfo: null
-    updatedPrediction: string
-}
-
 export interface CompletionRenderOutput {
     type: 'completion'
     inlineCompletionItems: AutoeditCompletionItem[]
@@ -57,16 +46,6 @@ interface CompletionWithDecorationsRenderOutput {
     decorations: AutoEditDecorations
     updatedDecorationInfo: DecorationInfo
     updatedPrediction: string
-}
-
-/**
- * Legacy decorations output that is required for the deprecated default decorator.
- * See vscode/src/autoedits/renderer/decorators/default-decorator.ts.
- */
-export interface LegacyDecorationsRenderOutput {
-    // Only the type, the logic to compute the decorations lives in the default decorator
-    // instead of `getRenderOutput`.
-    type: 'legacy-decorations'
 }
 
 interface DecorationsRenderOutput {
@@ -97,10 +76,8 @@ interface CustomRenderOutput {
 
 export type AutoEditRenderOutput =
     | NoCompletionRenderOutput
-    | LegacyCompletionRenderOutput
     | CompletionRenderOutput
     | CompletionWithDecorationsRenderOutput
-    | LegacyDecorationsRenderOutput
     | DecorationsRenderOutput
     | ImageRenderOutput
     | CustomRenderOutput
@@ -114,7 +91,37 @@ export type AutoEditRenderOutput =
  * 4. As an image (adding/removing text in a complex diff where decorations are not desirable)
  */
 export class AutoEditsRenderOutput {
-    protected getInlineRenderOutput(
+    public getRenderOutput(
+        args: GetRenderOutputArgs,
+        capabilities: AutoeditClientCapabilities
+    ): AutoEditRenderOutput {
+        const completionsWithDecorations = this.getCompletionsWithPossibleDecorationsRenderOutput(
+            args,
+            capabilities
+        )
+        console.log('completions?', completionsWithDecorations)
+        if (completionsWithDecorations) {
+            return completionsWithDecorations
+        }
+
+        const inlineDiff = this.getInlineRenderOutput(args, capabilities)
+        if (inlineDiff) {
+            return inlineDiff
+        }
+
+        const asideDiff = this.getAsideRenderOutput(args, capabilities)
+        if (asideDiff) {
+            return asideDiff
+        }
+
+        // This should only happen if a client has opted in to `autoedit` but not provided a valid
+        // `autoeditInlineDiff` or `autoeditAsideDiff` capability.
+        throw new Error(
+            'Unable to get a render suitable suggestion for autoedit. Please ensure the correct clientCapabilities are set for this client.'
+        )
+    }
+
+    private getInlineRenderOutput(
         args: GetRenderOutputArgs,
         capabilities: AutoeditClientCapabilities
     ): AutoEditRenderOutput | null {
@@ -142,7 +149,7 @@ export class AutoEditsRenderOutput {
         }
     }
 
-    protected getAsideRenderOutput(
+    private getAsideRenderOutput(
         args: GetRenderOutputArgs,
         capabilities: AutoeditClientCapabilities
     ): AutoEditRenderOutput | null {
@@ -186,7 +193,7 @@ export class AutoEditsRenderOutput {
         }
     }
 
-    protected getCompletionsWithPossibleDecorationsRenderOutput(
+    private getCompletionsWithPossibleDecorationsRenderOutput(
         args: GetRenderOutputArgs,
         capabilities: AutoeditClientCapabilities
     ): CompletionRenderOutput | CompletionWithDecorationsRenderOutput | null {
@@ -332,7 +339,7 @@ export class AutoEditsRenderOutput {
         }
     }
 
-    protected shouldRenderInlineDiff(
+    private shouldRenderInlineDiff(
         decorationInfo: DecorationInfo,
         clientCapabilities: AutoeditClientCapabilities
     ): boolean {

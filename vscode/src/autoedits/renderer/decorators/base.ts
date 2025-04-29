@@ -59,14 +59,7 @@ export interface AutoEditsDecorator extends vscode.Disposable {
      * @param decorationInfo Contains the line-by-line information about text changes
      *        and how they should be decorated in the editor.
      */
-    setDecorations(
-        /**
-         * @deprecated Decorations are pre-computed by the manager in `getRenderOutput`.
-         * Use `decorations` instead.
-         */
-        decorationInfo: DecorationInfo,
-        decorations?: AutoEditDecorations
-    ): void
+    setDecorations(decorations: AutoEditDecorations): void
 }
 
 /**
