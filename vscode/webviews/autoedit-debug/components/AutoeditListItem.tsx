@@ -6,37 +6,72 @@ import type { Phase } from '../../../src/autoedits/analytics-logger/types'
 import { AutoeditDataSDK } from '../../../src/autoedits/debug-panel/autoedit-data-sdk'
 import type { getDetailedTimingInfo } from '../../../src/autoedits/debug-panel/autoedit-latency-utils'
 import type { AutoeditRequestDebugState } from '../../../src/autoedits/debug-panel/debug-store'
+import type { AutoEditRenderOutput } from '../../../src/autoedits/renderer/render-output'
 import { Badge } from '../../components/shadcn/ui/badge'
 import { getStatusColor } from '../phase-colors'
+
+// Map render output types to user-friendly names
+const getFriendlyRenderOutputType = (type?: AutoEditRenderOutput['type']): string | null => {
+    if (!type) {
+        return null
+    }
+
+    switch (type) {
+        case 'image':
+            return 'Image'
+        case 'decorations':
+        case 'legacy-decorations':
+            return 'Decoration'
+        case 'completion-with-decorations':
+            return 'Completion/Decoration'
+        case 'completion':
+        case 'legacy-completion':
+            return 'Completion'
+        default:
+            return null
+    }
+}
 
 // Sub-component for header section
 const EntryHeader: FC<{
     phase: Phase
     triggerKind: string
+    renderOutputType?: AutoEditRenderOutput['type']
     timingInfo: ReturnType<typeof getDetailedTimingInfo>
     onToggleDetailedTiming: () => void
-}> = ({ phase, triggerKind, timingInfo, onToggleDetailedTiming }) => (
-    <div className="tw-flex tw-items-center tw-justify-between tw-w-full">
-        <div className="tw-flex tw-items-center tw-gap-2">
-            <Badge className={getStatusColor(phase)}>{phase}</Badge>
-            <span className="tw-text-xs tw-text-gray-500 tw-dark:tw-text-gray-400">{triggerKind}</span>
+}> = ({ phase, triggerKind, renderOutputType, timingInfo, onToggleDetailedTiming }) => {
+    const renderType = getFriendlyRenderOutputType(renderOutputType)
+
+    return (
+        <div className="tw-flex tw-items-center tw-justify-between tw-w-full">
+            <div className="tw-flex tw-items-center tw-gap-2">
+                <Badge className={getStatusColor(phase)}>{phase}</Badge>
+                {renderType && (
+                    <span className="tw-text-xs tw-px-2 tw-py-0.5 tw-bg-gray-100 tw-dark:tw-bg-gray-700 tw-rounded">
+                        {renderType}
+                    </span>
+                )}
+                <span className="tw-text-xs tw-text-gray-500 tw-dark:tw-text-gray-400">
+                    {triggerKind}
+                </span>
+            </div>
+            <div className="tw-flex tw-items-center tw-gap-2">
+                <span className="tw-text-xs tw-text-gray-500 tw-dark:tw-text-gray-400">Total:</span>
+                <button
+                    type="button"
+                    className="tw-text-xs tw-font-medium tw-text-gray-600 tw-dark:tw-text-gray-300 hover:tw-underline tw-text-left"
+                    onClick={e => {
+                        e.stopPropagation()
+                        onToggleDetailedTiming()
+                    }}
+                    title="Click to see detailed timing"
+                >
+                    {timingInfo.predictionDuration || '—'}
+                </button>
+            </div>
         </div>
-        <div className="tw-flex tw-items-center tw-gap-2">
-            <span className="tw-text-xs tw-text-gray-500 tw-dark:tw-text-gray-400">Total:</span>
-            <button
-                type="button"
-                className="tw-text-xs tw-font-medium tw-text-gray-600 tw-dark:tw-text-gray-300 hover:tw-underline tw-text-left"
-                onClick={e => {
-                    e.stopPropagation()
-                    onToggleDetailedTiming()
-                }}
-                title="Click to see detailed timing"
-            >
-                {timingInfo.predictionDuration || '—'}
-            </button>
-        </div>
-    </div>
-)
+    )
+}
 
 // Sub-component for detailed timing
 const DetailedTiming: FC<{
@@ -67,18 +102,12 @@ const FileInfo: FC<{
     positionInfo: string
     inferenceTime?: string | null
     envoyUpstreamServiceTime?: string | null
-    renderOutputType?: string | null
-}> = ({ fileName, positionInfo, inferenceTime, envoyUpstreamServiceTime, renderOutputType }) => (
+}> = ({ fileName, positionInfo, inferenceTime, envoyUpstreamServiceTime }) => (
     <div className="tw-flex tw-items-center tw-justify-between tw-w-full tw-text-sm tw-text-gray-700 tw-dark:tw-text-gray-300">
-        <div className="tw-flex tw-items-center tw-gap-2">
+        <div className="tw-flex tw-items-center">
             <span className="tw-font-medium">
                 {`${fileName} ${positionInfo ? `:${positionInfo}` : ''}`}
             </span>
-            {renderOutputType && (
-                <span className="tw-text-xs tw-px-2 tw-py-0.5 tw-bg-gray-100 tw-dark:tw-bg-gray-700 tw-rounded">
-                    {renderOutputType}
-                </span>
-            )}
         </div>
         {inferenceTime && (
             <div className="tw-flex tw-items-center tw-gap-2">
@@ -181,6 +210,7 @@ export const AutoeditListItem: FC<AutoeditEntryItemProps> = ({ entry, isSelected
                     <EntryHeader
                         phase={phase}
                         triggerKind={triggerKind}
+                        renderOutputType={renderOutput?.type}
                         timingInfo={timing}
                         onToggleDetailedTiming={() => setShowDetailedTiming(!showDetailedTiming)}
                     />
@@ -196,7 +226,6 @@ export const AutoeditListItem: FC<AutoeditEntryItemProps> = ({ entry, isSelected
                         positionInfo={positionInfo}
                         inferenceTime={timing.inferenceTime}
                         envoyUpstreamServiceTime={timing.envoyUpstreamServiceTime}
-                        renderOutputType={renderOutput?.type}
                     />
 
                     {/* Code preview */}

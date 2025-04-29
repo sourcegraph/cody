@@ -1,5 +1,6 @@
 import type { InlineCompletionItemRetrievedContext } from '../../completions/analytics-logger'
 import type { ModelResponse, PartialModelResponse, SuccessModelResponse } from '../adapters/base'
+import type { AutoEditRenderOutput } from '../renderer/render-output'
 import { getDetailedTimingInfo } from './autoedit-latency-utils'
 import type { AutoeditRequestDebugState } from './debug-store'
 
@@ -346,7 +347,7 @@ export const getModelResponse = (entry: AutoeditRequestDebugState): ModelRespons
 /**
  * Get the render output if available
  */
-export const getRenderOutput = (entry: AutoeditRequestDebugState): any | null => {
+export const getRenderOutput = (entry: AutoeditRequestDebugState): AutoEditRenderOutput | null => {
     if ('renderOutput' in entry.state) {
         return entry.state.renderOutput
     }
