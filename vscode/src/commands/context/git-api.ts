@@ -6,9 +6,7 @@ import {
     TokenCounterUtils,
     displayPath,
 } from '@sourcegraph/cody-shared'
-import { logError } from '../../output-channel-logger'
 import type { Repository } from '../../repository/builtinGitExtension'
-import { doesFileExist } from '../utils/workspace-files'
 
 /**
  * Generates context files from the git diff and git log of a given repository.
@@ -22,12 +20,20 @@ export async function getContextFilesFromGitApi(
     gitRepo: Repository,
     template?: string
 ): Promise<ContextItem[]> {
-    const [diffContext, logContext] = await Promise.all([
-        getContextFilesFromGitDiff(gitRepo),
-        getContextFilesFromGitLog(gitRepo),
-    ])
+    const contextItems = []
+    try {
+        const diffContext = await getContextFilesFromGitDiff(gitRepo)
+        contextItems.push(...diffContext)
+    } catch (error) {
+        throw new Error("Unable to get context files from git diff", {cause: error})
+    }
+    try {
+        const logContext = await getContextFilesFromGitLog(gitRepo)
+        contextItems.push(...logContext)
+    } catch (error) {
+        throw new Error("Unable to get context files from git log", {cause: error})
+    }
 
-    const contextItems = [...diffContext, ...logContext]
     if (template) {
         contextItems.push(await getGitCommitTemplateContextFile(template))
     }
@@ -60,10 +66,11 @@ export async function getContextFilesFromGitDiff(gitRepo: Repository): Promise<C
         // Split diff output by files: diff --git a/$FILE b/$FILE\n$DIFF
         const diffOutput = await gitRepo?.diff(hasStagedChanges)
         const diffOutputByFiles = diffOutput.split(/diff --git a\/.+? b\//).filter(Boolean)
+
         // Compare the diff files to the diff output to ensure they match,
         // if the numbers are different, we can't trust the diff output were split correctly.
-        if (!diffFiles.length || !diffOutput || diffOutputByFiles.length !== diffFiles.length) {
-            throw new Error('Empty git diff output.')
+        if (diffOutputByFiles.length !== diffFiles.length) {
+            throw new Error('Discrepancy in diff output and diff files')
         }
 
         const diffs: ContextItem[] = []
@@ -88,7 +95,8 @@ export async function getContextFilesFromGitDiff(gitRepo: Repository): Promise<C
                 const filePath = normalizePath(file.uri.path)
                 return filePath.endsWith(normalizedDiffPath)
             })
-            if (!matchingFile || !(await doesFileExist(matchingFile.uri))) {
+
+            if (!matchingFile) {
                 continue
             }
 
@@ -115,8 +123,11 @@ export async function getContextFilesFromGitDiff(gitRepo: Repository): Promise<C
         // we sort by shortest diffs first so that we include as many changed files as possible
         return diffs.sort((a, b) => a.size! - b.size!)
     } catch (error) {
-        logError('getContextFileFromGitDiff', 'failed', { verbose: error })
-        throw new Error('Failed to get git diff.')
+        let errorMessage = "failed"
+        if (error instanceof Error && error.message) {
+            errorMessage += `: ${error.message}`
+        }
+        throw new Error('Failed to get git diff.', { cause: error })
     }
 }
 
@@ -129,32 +140,27 @@ export async function getContextFilesFromGitDiff(gitRepo: Repository): Promise<C
  * @throws If the git log is empty or if there is an error retrieving the git log.
  */
 async function getContextFilesFromGitLog(gitRepo: Repository, maxEntries = 5): Promise<ContextItem[]> {
-    try {
-        const logs = await gitRepo.log({ maxEntries })
-        if (!logs.length) {
-            throw new Error('Empty git log output.')
-        }
-
-        const command = `titles of the last ${maxEntries} git log entries`
-        const groupedTitles = logs.map(({ message }) => `<title>${message.trim()}</title>`).join('\n')
-        const content = logTemplate
-            .replace('{maxEntries}', `${maxEntries}`)
-            .replace('{output}', groupedTitles)
-
-        return [
-            {
-                type: 'file',
-                content,
-                title: command,
-                uri: vscode.Uri.file('GIT_LOG'),
-                source: ContextItemSource.Terminal,
-                size: await TokenCounterUtils.countTokens(content),
-            },
-        ]
-    } catch (error) {
-        logError('getContextFileFromGitLog', 'failed', { verbose: error })
-        throw new Error('Failed to get git log.')
+    const logs = await gitRepo.log({ maxEntries })
+    if (!logs.length) {
+        throw new Error('Empty git log output.')
     }
+
+    const command = `titles of the last ${maxEntries} git log entries`
+    const groupedTitles = logs.map(({ message }) => `<title>${message.trim()}</title>`).join('\n')
+    const content = logTemplate
+        .replace('{maxEntries}', `${maxEntries}`)
+        .replace('{output}', groupedTitles)
+
+    return [
+        {
+            type: 'file',
+            content,
+            title: command,
+            uri: vscode.Uri.file('GIT_LOG'),
+            source: ContextItemSource.Terminal,
+            size: await TokenCounterUtils.countTokens(content),
+        },
+    ]
 }
 
 /**
