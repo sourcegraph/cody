@@ -62,6 +62,7 @@ export const CopyButton = ({
 }
 
 export type CreateEditButtonsParams = {
+    // TODO: Remove this when there is a portable abstraction for popup menus, instead of special-casing VSCode.
     isVSCode: boolean
     preText: string
     copyButtonOnSubmit?: CodeBlockActionsProps['copyButtonOnSubmit']
@@ -298,7 +299,13 @@ function createRejectButton(
     )
 }
 
+// VS Code provides additional support for rendering an OS-native dropdown, that has some
+// additional benefits. Mainly that it can "break out" of the webview.
+// TODO: A dropdown would be useful for other clients too, we should consider building
+// a generic web-based dropdown component that can be used by any client.
 function createActionsDropdown(preText: string): React.ReactElement {
+    // Attach `data-vscode-context`, this is also provided when the commands are executed,
+    // so serves as a way for us to pass `vscodeContext.text` to each relevant command
     const vscodeContext = {
         webviewSection: 'codeblock-actions',
         preventDefaultContextMenuItems: true,
