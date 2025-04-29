@@ -153,7 +153,7 @@ export class NextCursorManager implements vscode.Disposable {
         // Reset cursor suggestion state so the Tab command will be used for accepting any auto-edit suggestions
         this.activeCursorSuggestion = null
         void vscode.commands.executeCommand('setContext', 'cody.nextCursorSuggested', false)
-    
+
         // Attempt to clear the suggestion decoration if it hasn't already been cleared
         const editor = this.getEditorForUri(cursorSuggestionUri)
         if (!editor) {
