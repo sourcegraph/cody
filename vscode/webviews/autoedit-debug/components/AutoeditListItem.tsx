@@ -302,6 +302,13 @@ export const AutoeditListItem: FC<AutoeditEntryItemProps> = ({
                                                 }}
                                             >
                                                 <div className="tw-flex tw-flex-1 tw-items-center tw-gap-2">
+                                                    <Badge
+                                                        className={getStatusColor(
+                                                            chainEntry.state.phase
+                                                        )}
+                                                    >
+                                                        {chainEntry.state.phase}
+                                                    </Badge>
                                                     <span className="tw-text-xs tw-font-mono tw-text-gray-500 tw-dark:tw-text-gray-400">
                                                         {chainEntryRequestId.substring(0, 6)}
                                                     </span>
