@@ -114,12 +114,29 @@ export class CodySourceControl implements vscode.Disposable {
 
         // Get Commit Template from config and set it when available.
         if (!this.commitTemplate) {
-            const [localTemplate, globalTemplate] = await Promise.all([
-                repository.getConfig('commit.template'),
-                repository.getGlobalConfig('commit.template'),
-            ])
-
-            this.commitTemplate = scm?.commitTemplate ?? localTemplate ?? globalTemplate
+            if (scm?.commitTemplate) {
+                this.commitTemplate = scm.commitTemplate
+            } else {
+                // In the case that VSCode's SCM integration didn't read the commit template,
+                // look for via `git config --get`
+                const [localTemplateFilePath, globalTemplateFilePath] = await Promise.all([
+                    repository.getConfig('commit.template'),
+                    repository.getGlobalConfig('commit.template'),
+                ])
+                const commitTemplateFilePath = localTemplateFilePath ?? globalTemplateFilePath
+                if (commitTemplateFilePath) {
+                    try {
+                        this.commitTemplate = await vscode.workspace.fs
+                            .readFile(vscode.Uri.file(commitTemplateFilePath))
+                            .then(buffer => new TextDecoder().decode(buffer))
+                    } catch (error) {
+                        console.error(
+                            `Failed to read commit template file: ${commitTemplateFilePath}`,
+                            error
+                        )
+                    }
+                }
+            }
         }
 
         // Open the vscode source control view to show the progress.
@@ -134,7 +151,7 @@ export class CodySourceControl implements vscode.Disposable {
                 cancellable: true,
             },
             async (progress, token) => {
-                this.stream(repository, sourceControlInputbox, progress, token, scm?.commitTemplate)
+                this.stream(repository, sourceControlInputbox, progress, token, this.commitTemplate)
             }
         )
     }
@@ -177,7 +194,8 @@ export class CodySourceControl implements vscode.Disposable {
             const { prompt, ignoredContext } = await this.buildPrompt(
                 contextWindow,
                 getSimplePreamble(model, 1, 'Default', COMMIT_COMMAND_PROMPTS.intro),
-                context
+                context,
+                commitTemplate
             ).catch(error => {
                 sourceControlInputbox.value = `${error}`
                 throw new Error()
@@ -223,13 +241,14 @@ export class CodySourceControl implements vscode.Disposable {
     private async buildPrompt(
         contextWindow: ModelContextWindow,
         preamble: Message[],
-        context: ContextItem[]
+        context: ContextItem[],
+        commitTemplate?: string
     ): Promise<{ prompt: Message[]; ignoredContext: ContextItem[] }> {
         if (!context.length) {
             throw new Error('Failed to get git output.')
         }
 
-        const templatePrompt = this.commitTemplate
+        const templatePrompt = commitTemplate
             ? COMMIT_COMMAND_PROMPTS.template
             : COMMIT_COMMAND_PROMPTS.noTemplate
         const text = COMMIT_COMMAND_PROMPTS.instruction.replace('{COMMIT_TEMPLATE}', templatePrompt)

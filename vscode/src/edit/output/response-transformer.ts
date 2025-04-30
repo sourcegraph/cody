@@ -1,5 +1,6 @@
 import { decode } from 'he'
 import type * as vscode from 'vscode'
+
 import type { FixupTask } from '../../non-stop/FixupTask'
 import {
     PROMPT_TOPICS,
@@ -85,6 +86,18 @@ function extractSmartApplyCustomModelResponse(text: string, task: FixupTask): st
 }
 
 /**
+- * Regular expression to detect potential HTML entities.
+- * Checks for named (&name;), decimal (&#digits;), or hex (&#xhex;) entities.
++ * Regular expression to detect the *few* entities we actually care about.
++ * We purposefully limit the named-entity part to the common escaping
++ * sequences that LLMs emit in source code:
++ *   &lt;  &gt;  &amp;  &quot;  &apos;
++ * Everything else (e.g. &nbsp;, &curren;, &copy;, …) is ignored so that we
++ * don’t accidentally alter code like “&current_value;”.
+  */
+const POTENTIAL_HTML_ENTITY_REGEX = /&(?:(?:lt|gt|amp|quot|apos)|#\d+|#x[0-9a-fA-F]+);/
+
+/**
  * Given the LLM response for a FixupTask, transforms the response
  * to make it suitable to insert as code.
  * This is handling cases where the LLM response does not __only__ include code.
@@ -106,8 +119,13 @@ export function responseTransformer(
             ? strippedText.replace(LEADING_SPACES, '')
             : strippedText.replace(LEADING_SPACES_AND_NEW_LINES, '')
 
-    // Strip the response of any remaining HTML entities such as &lt; and &gt;
-    const decodedText = decode(trimmedText)
+    // Decode HTML entities only if potential entities are detected.
+    // this way we avoid decoding code that is not HTML.
+    // For example, `int* current_ptr = &current_value;` should not be decoded.
+    let decodedText = trimmedText
+    if (POTENTIAL_HTML_ENTITY_REGEX.test(trimmedText)) {
+        decodedText = decode(trimmedText)
+    }
 
     if (!isMessageInProgress) {
         if (task.mode === 'insert') {

@@ -1,5 +1,6 @@
 import type { InlineCompletionItemRetrievedContext } from '../../completions/analytics-logger'
 import type { ModelResponse, PartialModelResponse, SuccessModelResponse } from '../adapters/base'
+import type { AutoEditRenderOutput } from '../renderer/render-output'
 import { getDetailedTimingInfo } from './autoedit-latency-utils'
 import type { AutoeditRequestDebugState } from './debug-store'
 
@@ -20,6 +21,8 @@ export const extractAutoeditData = (entry: AutoeditRequestDebugState) => {
     const position = getPosition(entry)
     const modelResponse = getModelResponse(entry)
     const context = getContext(entry)
+    const renderOutput = getRenderOutput(entry)
+    const hotStreakId = getHotStreakId(entry)
 
     return {
         phase,
@@ -38,6 +41,8 @@ export const extractAutoeditData = (entry: AutoeditRequestDebugState) => {
         position,
         modelResponse,
         context,
+        renderOutput,
+        hotStreakId,
     }
 }
 
@@ -318,6 +323,16 @@ export const getHotStreakChunks = (
 }
 
 /**
+ * Get the hot streak ID if available
+ */
+export const getHotStreakId = (entry: AutoeditRequestDebugState): string | null => {
+    if ('hotStreakId' in entry.state && entry.state.hotStreakId) {
+        return entry.state.hotStreakId
+    }
+    return null
+}
+
+/**
  * Get the full response body from the model if available
  */
 export const getFullResponseBody = (entry: AutoeditRequestDebugState): any | null => {
@@ -337,6 +352,16 @@ export const getFullResponseBody = (entry: AutoeditRequestDebugState): any | nul
 export const getModelResponse = (entry: AutoeditRequestDebugState): ModelResponse | null => {
     if ('modelResponse' in entry.state) {
         return entry.state.modelResponse
+    }
+    return null
+}
+
+/**
+ * Get the render output if available
+ */
+export const getRenderOutput = (entry: AutoeditRequestDebugState): AutoEditRenderOutput | null => {
+    if ('renderOutput' in entry.state) {
+        return entry.state.renderOutput
     }
     return null
 }
@@ -363,4 +388,5 @@ export const AutoeditDataSDK = {
     getFullResponseBody,
     getModelResponse,
     getHotStreakChunks,
+    getHotStreakId,
 }

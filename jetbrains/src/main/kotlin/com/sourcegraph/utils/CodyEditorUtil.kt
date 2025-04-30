@@ -16,7 +16,6 @@ import com.intellij.openapi.fileEditor.*
 import com.intellij.openapi.fileTypes.FileTypeRegistry
 import com.intellij.openapi.fileTypes.PlainTextLanguage
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.project.ProjectManager
 import com.intellij.openapi.util.Key
 import com.intellij.openapi.util.TextRange
 import com.intellij.openapi.vfs.LocalFileSystem
@@ -60,24 +59,24 @@ object CodyEditorUtil {
   }
 
   @JvmStatic
-  fun getAllOpenEditors(): Set<Editor> {
-    return ProjectManager.getInstance()
-        .openProjects
-        .flatMap { project: Project -> FileEditorManager.getInstance(project).allEditors.toList() }
+  fun getAllOpenEditors(project: Project): Set<Editor> {
+    return FileEditorManager.getInstance(project)
+        .allEditors
+        .toList()
         .filterIsInstance<TextEditor>()
         .map { fileEditor: FileEditor -> (fileEditor as TextEditor).editor }
         .toSet()
   }
 
   @JvmStatic
-  fun getSelectedEditors(project: Project): Array<out Editor> {
-    if (project.isDisposed) return emptyArray()
-    return FileEditorManager.getInstance(project).selectedTextEditorWithRemotes
+  fun getSelectedEditors(project: Project): Set<Editor> {
+    if (project.isDisposed) return emptySet()
+    return FileEditorManager.getInstance(project).selectedTextEditorWithRemotes.toSet()
   }
 
   @JvmStatic
-  fun getEditorForDocument(document: Document): Editor? {
-    return getAllOpenEditors().find { it.document == document }
+  fun getEditorForDocument(project: Project, document: Document): Editor? {
+    return getAllOpenEditors(project).find { it.document == document }
   }
 
   @JvmStatic

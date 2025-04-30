@@ -35,8 +35,9 @@ class CodyCaretListener(val project: Project) : CaretListener {
       }
     }
 
-    CodyAutocompleteManager.instance.clearAutocompleteSuggestions(e.editor)
-    CodyAutocompleteManager.instance.triggerAutocomplete(
-        e.editor, e.editor.caretModel.offset, InlineCompletionTriggerKind.AUTOMATIC)
+    CodyAutocompleteManager.getInstance(project).clearAutocompleteSuggestions(e.editor)
+    CodyAutocompleteManager.getInstance(project)
+        .triggerAutocomplete(
+            e.editor, e.editor.caretModel.offset, InlineCompletionTriggerKind.AUTOMATIC)
   }
 }

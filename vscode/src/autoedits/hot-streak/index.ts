@@ -17,7 +17,8 @@ import type {
 } from '../autoedits-provider'
 import { getCodeToReplaceData } from '../prompt/prompt-utils'
 import { isDuplicatingTextFromRewriteArea } from '../utils'
-import { getHotStreakChunk, getStableSuggestion } from './get-chunk'
+import { getHotStreakChunk } from './get-chunk'
+import { getStableSuggestion } from './stable-suggestion'
 
 export interface ProcessHotStreakResponsesParams {
     responseGenerator: AsyncGenerator<ModelResponse>
@@ -96,25 +97,34 @@ export async function* processHotStreakResponses({
                 continue
             }
 
+            // TODO: Right now we always use the provided `position` in which the auto-edit was triggered from.
+            // This works great for the first chunk, but we should try to match the position of the users' cursor
+            // on the assumption that they have accepted the previous chunk (if present). For example, if the previous
+            // chunk was an inline completion, the cursor is moved to the end of the completion range when accepted.
+            // If we matched this new position, it would mean it would be possible to chain inline completions.
+            const hotStreakPosition = position
+
             // The hot streak prediction excludes part of the prefix. This means that it fundamentally relies
             // on the prefix existing in the document to be a valid suggestion. We need to update the docContext
             // to reflect this.
             const updatedDocContext = getCurrentDocContext({
                 document,
-                position: predictionChunk.range.start,
+                position: hotStreakPosition,
                 maxPrefixLength: docContext.maxPrefixLength,
                 maxSuffixLength: docContext.maxSuffixLength,
             })
 
+            const lengthOfChunk = predictionChunk.range.end.line - predictionChunk.range.start.line - 1
             const adjustedCodeToReplace = getCodeToReplaceData({
                 docContext: updatedDocContext,
                 document,
-                position: predictionChunk.range.start,
+                position: hotStreakPosition,
                 tokenBudget: {
                     ...autoeditsProviderConfig.tokenLimit,
-                    codeToRewritePrefixLines: 0,
-                    codeToRewriteSuffixLines:
-                        predictionChunk.range.end.line - predictionChunk.range.start.line - 1,
+                    codeToRewriteSuffixLines: Math.max(
+                        lengthOfChunk - autoeditsProviderConfig.tokenLimit.codeToRewritePrefixLines,
+                        0
+                    ),
                 },
             })
 

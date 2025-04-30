@@ -4,6 +4,7 @@ import com.intellij.openapi.components.PersistentStateComponent
 import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
 import com.intellij.openapi.components.service
+import com.sourcegraph.cody.config.ui.lang.UpdateMode
 
 @State(name = "CodyApplicationSettings", storages = [Storage("cody_application_settings.xml")])
 data class CodyApplicationSettings(
@@ -19,8 +20,8 @@ data class CodyApplicationSettings(
     var isCodyUIHintsEnabled: Boolean = false,
     var blacklistedLanguageIds: List<String> = listOf(),
     var shouldAcceptNonTrustedCertificatesAutomatically: Boolean = false,
-    var shouldCheckForUpdates: Boolean = true,
     var isOffScreenRenderingEnabled: Boolean = true,
+    var updateMode: UpdateMode = UpdateMode.Automatic
 ) : PersistentStateComponent<CodyApplicationSettings> {
   override fun getState(): CodyApplicationSettings = this
 
@@ -38,8 +39,8 @@ data class CodyApplicationSettings(
     this.blacklistedLanguageIds = state.blacklistedLanguageIds
     this.shouldAcceptNonTrustedCertificatesAutomatically =
         state.shouldAcceptNonTrustedCertificatesAutomatically
-    this.shouldCheckForUpdates = state.shouldCheckForUpdates
     this.isOffScreenRenderingEnabled = state.isOffScreenRenderingEnabled
+    this.updateMode = state.updateMode
   }
 
   companion object {

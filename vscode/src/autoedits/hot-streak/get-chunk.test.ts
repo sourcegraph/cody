@@ -78,6 +78,8 @@ function createTestParams({
         maxSuffixLinesInArea: 2,
         codeToRewritePrefixLines: 1,
         codeToRewriteSuffixLines: 30,
+        prefixTokens: 100,
+        suffixTokens: 100,
     })
 
     return {
@@ -183,7 +185,7 @@ describe('getHotStreakChunk', () => {
                             return true
                         }
 
-                        // We are adding some commments
+                        // We are adding some comments
                         // To make a ...wonderful diff!
 
                         // Check if numberToChange is 1

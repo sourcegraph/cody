@@ -183,20 +183,20 @@ export function syncModels({
                                         distinctUntilChanged()
                                     )
                                     return combineLatest(
-                                        featureFlagProvider.evaluateFeatureFlag(
+                                        featureFlagProvider.evaluatedFeatureFlag(
                                             FeatureFlag.CodyEarlyAccess
                                         ),
-                                        featureFlagProvider.evaluateFeatureFlag(
+                                        featureFlagProvider.evaluatedFeatureFlag(
                                             FeatureFlag.CodyChatDefaultToClaude35Haiku
                                         ),
                                         enableToolCody,
-                                        featureFlagProvider.evaluateFeatureFlag(
+                                        featureFlagProvider.evaluatedFeatureFlag(
                                             FeatureFlag.EnhancedContextWindow,
                                             true /** force refresh */
                                         ),
-                                        featureFlagProvider.evaluateFeatureFlag(
+                                        featureFlagProvider.evaluatedFeatureFlag(
                                             FeatureFlag.FallbackToFlash,
-                                            true
+                                            true /** force refresh */
                                         )
                                     ).pipe(
                                         switchMap(

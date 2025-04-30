@@ -14,7 +14,7 @@ import styles from './PromptsTab.module.css'
 export const PromptsTab: React.FC<{
     IDE: CodyIDE
     setView: (view: View) => void
-}> = ({ IDE, setView }) => {
+}> = ({ setView }) => {
     const runAction = useActionSelect()
 
     const [promptsFilter, setPromptsFilter] = useState<PromptsFilterArgs>({})

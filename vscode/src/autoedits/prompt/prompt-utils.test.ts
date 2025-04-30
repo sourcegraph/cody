@@ -87,6 +87,8 @@ describe('getCurrentFilePromptComponents', () => {
                 maxSuffixLinesInArea: 1,
                 codeToRewritePrefixLines: 1,
                 codeToRewriteSuffixLines: 1,
+                prefixTokens: 100,
+                suffixTokens: 100,
             },
         })
 
@@ -154,6 +156,8 @@ describe('getCurrentFilePromptComponents', () => {
                 maxSuffixLinesInArea: 1,
                 codeToRewritePrefixLines: 1,
                 codeToRewriteSuffixLines: 1,
+                prefixTokens: 100,
+                suffixTokens: 100,
             },
         })
 
@@ -230,6 +234,8 @@ describe('getCodeToReplaceData', () => {
                 maxSuffixLinesInArea: 1,
                 codeToRewritePrefixLines: 1,
                 codeToRewriteSuffixLines: 1,
+                prefixTokens: 100,
+                suffixTokens: 100,
             },
         }
 
@@ -290,6 +296,8 @@ describe('getCodeToReplaceData', () => {
                 maxSuffixLinesInArea: 1,
                 codeToRewritePrefixLines: 1,
                 codeToRewriteSuffixLines: 1,
+                prefixTokens: 100,
+                suffixTokens: 100,
             },
         }
 
@@ -324,6 +332,8 @@ describe('getCodeToReplaceData', () => {
                 maxSuffixLinesInArea: 1,
                 codeToRewritePrefixLines: 1,
                 codeToRewriteSuffixLines: 1,
+                prefixTokens: 100,
+                suffixTokens: 100,
             },
         }
 
@@ -360,6 +370,8 @@ describe('getCodeToReplaceData', () => {
                 maxSuffixLinesInArea: 1,
                 codeToRewritePrefixLines: 1,
                 codeToRewriteSuffixLines: 1,
+                prefixTokens: 100,
+                suffixTokens: 100,
             },
         }
 
@@ -392,6 +404,8 @@ describe('getCodeToReplaceData', () => {
                 maxSuffixLinesInArea: 1,
                 codeToRewritePrefixLines: 1,
                 codeToRewriteSuffixLines: 1,
+                prefixTokens: 100,
+                suffixTokens: 100,
             },
         }
 
@@ -425,6 +439,8 @@ describe('getCodeToReplaceData', () => {
                 maxSuffixLinesInArea: 1,
                 codeToRewritePrefixLines: 1,
                 codeToRewriteSuffixLines: 1,
+                prefixTokens: 100,
+                suffixTokens: 100,
             },
         }
 
@@ -458,6 +474,8 @@ describe('getCodeToReplaceData', () => {
                 maxSuffixLinesInArea: 1,
                 codeToRewritePrefixLines: 1,
                 codeToRewriteSuffixLines: 1,
+                prefixTokens: 100,
+                suffixTokens: 100,
             },
         }
 
@@ -493,6 +511,8 @@ describe('getCodeToReplaceData', () => {
                 maxSuffixLinesInArea: 1,
                 codeToRewritePrefixLines: 3, // Increased prefix lines
                 codeToRewriteSuffixLines: 1,
+                prefixTokens: 100,
+                suffixTokens: 100,
             },
         }
 
@@ -531,6 +551,8 @@ describe('getCodeToReplaceData', () => {
                 maxSuffixLinesInArea: 1,
                 codeToRewritePrefixLines: 1,
                 codeToRewriteSuffixLines: 1,
+                prefixTokens: 100,
+                suffixTokens: 100,
             },
         }
 
@@ -570,6 +592,8 @@ describe('getCodeToReplaceData', () => {
                 maxSuffixLinesInArea: 2,
                 codeToRewritePrefixLines: 2,
                 codeToRewriteSuffixLines: 2,
+                prefixTokens: 100,
+                suffixTokens: 100,
             },
         }
 
@@ -604,6 +628,8 @@ describe('getCodeToReplaceData', () => {
                 maxSuffixLinesInArea: 5, // Larger than file
                 codeToRewritePrefixLines: 3, // Larger than file
                 codeToRewriteSuffixLines: 3, // Larger than file
+                prefixTokens: 100,
+                suffixTokens: 100,
             },
         }
 

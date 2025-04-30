@@ -10,7 +10,7 @@ import com.sourcegraph.cody.autocomplete.render.InlayModelUtil
 
 class CodyAutocompleteManagerTest : BasePlatformTestCase() {
 
-  fun test_displayAgentAutocomplete_cursorBased() {
+  fun test_displayInlay_cursorBased() {
     myFixture.configureByText("CommonPrefix.kt", "// say hello\n    CommonPrefix.\n// done")
     val editor =
         FileEditorManager.getInstance(project)
@@ -21,15 +21,14 @@ class CodyAutocompleteManagerTest : BasePlatformTestCase() {
                 id = "0",
                 range = Range(Position(1, 4), Position(1, 17)),
                 insertText = "CommonPrefix.sayHello(\"world\")"))
-    CodyAutocompleteManager.instance.displayAutocomplete(
-        editor, cursorOffset = 17, items, editor.inlayModel)
+    CodyAutocompleteManager.getInstance(project).displayInlay(editor, cursorOffset = 17, items)
     val allInlaysForEditor = InlayModelUtil.getAllInlaysForEditor(editor)
     assertEquals(1, allInlaysForEditor.size)
     val inlay = allInlaysForEditor[0]
     assertEquals(30, inlay.offset)
   }
 
-  fun test_displayAgentAutocomplete_lineStartBased() {
+  fun test_displayInlay_lineStartBased() {
     myFixture.configureByText("CommonPrefix.kt", "// say hello\n    CommonPrefix.\n// done")
     val editor =
         FileEditorManager.getInstance(project)
@@ -40,8 +39,7 @@ class CodyAutocompleteManagerTest : BasePlatformTestCase() {
                 id = "0",
                 range = Range(Position(1, 0), Position(1, 17)),
                 insertText = "    CommonPrefix.sayHello(\"world\")"))
-    CodyAutocompleteManager.instance.displayAutocomplete(
-        editor, cursorOffset = 17, items, editor.inlayModel)
+    CodyAutocompleteManager.getInstance(project).displayInlay(editor, cursorOffset = 17, items)
     val allInlaysForEditor = InlayModelUtil.getAllInlaysForEditor(editor)
     assertEquals(1, allInlaysForEditor.size)
     val inlay = allInlaysForEditor[0]

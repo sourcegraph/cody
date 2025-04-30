@@ -29,7 +29,7 @@ class CodySelectionListener(val project: Project) : SelectionListener {
       }
     }
 
-    CodyAutocompleteManager.instance.clearAutocompleteSuggestions(editor)
+    CodyAutocompleteManager.getInstance(project).clearAutocompleteSuggestions(editor)
     inlayManager.handleSelectionChanged(editor, event)
   }
 }
