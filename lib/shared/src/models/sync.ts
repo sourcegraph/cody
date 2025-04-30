@@ -29,7 +29,7 @@ import type { UserProductSubscription } from '../sourcegraph-api/userProductSubs
 import { telemetryRecorder } from '../telemetry-v2/singleton'
 import { CHAT_INPUT_TOKEN_BUDGET } from '../token/constants'
 import { isError } from '../utils'
-import { DEEP_CODY_MODEL, TOOL_CODY_MODEL } from './client'
+import { TOOL_CODY_MODEL } from './client'
 import { type Model, type ServerModel, createModel, createModelFromServerModel } from './model'
 import type {
     DefaultsAndUserPreferencesForEndpoint,
@@ -186,7 +186,6 @@ export function syncModels({
                                         featureFlagProvider.evaluateFeatureFlag(
                                             FeatureFlag.CodyEarlyAccess
                                         ),
-                                        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.DeepCody),
                                         featureFlagProvider.evaluateFeatureFlag(
                                             FeatureFlag.CodyChatDefaultToClaude35Haiku
                                         ),
@@ -203,7 +202,6 @@ export function syncModels({
                                         switchMap(
                                             ([
                                                 hasEarlyAccess,
-                                                hasAgenticChatFlag,
                                                 defaultToHaiku,
                                                 isToolCodyEnabled,
                                                 enhancedContextWindowFlag,
@@ -275,33 +273,14 @@ export function syncModels({
 
                                                 const clientModels = []
 
-                                                // Handle agentic chat features
-                                                const isAgenticChatEnabled =
-                                                    hasAgenticChatFlag ||
-                                                    (isDotComUser && !isCodyFreeUser)
-                                                // Handle agentic chat features
-                                                const haikuModel = data.primaryModels.find(m =>
-                                                    m.id.includes('5-haiku')
-                                                )
-                                                // Look for any sonnet model to add Deep Cody.
-                                                const sonnetModel = data.primaryModels.find(m =>
-                                                    m.id.includes('sonnet')
-                                                )
-                                                const hasDeepCody = data.primaryModels.some(m =>
-                                                    m.id.includes('deep-cody')
-                                                )
+                                                // Add Tool Cody
                                                 if (
-                                                    !hasDeepCody &&
-                                                    isAgenticChatEnabled &&
-                                                    sonnetModel &&
-                                                    haikuModel
+                                                    isToolCodyEnabled &&
+                                                    !data.primaryModels.some(m =>
+                                                        m.id.includes(TOOL_CODY_MODEL.modelRef)
+                                                    )
                                                 ) {
-                                                    // Add Deep Cody
-                                                    clientModels.push(DEEP_CODY_MODEL)
-                                                    // Add Tool Cody
-                                                    if (isToolCodyEnabled) {
-                                                        clientModels.push(TOOL_CODY_MODEL)
-                                                    }
+                                                    clientModels.push(TOOL_CODY_MODEL)
                                                 }
 
                                                 // Add the client models to the list of models.
@@ -323,6 +302,9 @@ export function syncModels({
                                                 )
 
                                                 // Set the default model to Haiku for free users.
+                                                const haikuModel = data.primaryModels.find(m =>
+                                                    m.id.includes('5-haiku')
+                                                )
                                                 if (
                                                     isDotComUser &&
                                                     isCodyFreeUser &&

@@ -11,7 +11,6 @@ import {
     startWith,
     userProductSubscription,
 } from '@sourcegraph/cody-shared'
-import { DeepCodyAgentID } from '@sourcegraph/cody-shared/src/models/client'
 import { type Observable, Subject, map } from 'observable-fns'
 import { env } from 'vscode'
 import { DeepCodyAgent } from './DeepCody'
@@ -30,12 +29,16 @@ const DEFAULT_SHELL_CONFIG = Object.freeze({
  */
 class ToolboxManager {
     private static instance?: ToolboxManager
+    private static isEnabled = false
+
+    public isAgenticChatEnabled(): boolean {
+        return Boolean(ToolboxManager.isEnabled)
+    }
 
     private constructor() {
         // Using private constructor for Singleton pattern
     }
 
-    private isEnabled = false
     private isRateLimited = false
     private readonly changeNotifications = new Subject<void>()
     private shellConfig = { ...DEFAULT_SHELL_CONFIG }
@@ -46,13 +49,13 @@ class ToolboxManager {
     }
 
     public getSettings(): AgentToolboxSettings | null {
-        if (!this.isEnabled) {
+        if (!ToolboxManager.isEnabled) {
             return null
         }
         const shellError = this.getFeatureError('shell')
         // TODO: Remove hard-coded agent once we have a proper agentic chat selection UI
         return {
-            agent: { name: this.isRateLimited ? undefined : DeepCodyAgentID },
+            agent: { name: this.isRateLimited ? undefined : DeepCodyAgent.id },
             shell: {
                 enabled: shellError === undefined,
                 error: shellError,
@@ -61,7 +64,7 @@ class ToolboxManager {
     }
 
     public setIsRateLimited(hasHitLimit: boolean): void {
-        if (this.isEnabled && this.isRateLimited !== hasHitLimit) {
+        if (ToolboxManager.isEnabled && this.isRateLimited !== hasHitLimit) {
             this.isRateLimited = hasHitLimit
             this.changeNotifications.next()
         }
@@ -98,14 +101,14 @@ class ToolboxManager {
                 !models ||
                 (!isDotCom(auth.endpoint) && !deepCodyEnabled)
             ) {
-                this.isEnabled = false
+                ToolboxManager.isEnabled = false
                 return null
             }
 
             // TODO (bee): Remove once A/B test is over - 3.5 Haiku vs default chat model.
             const haikuModel = models.primaryModels.find(model => model.id.includes('5-haiku'))
             DeepCodyAgent.model = useDefaultChatModel ? models.preferences.defaults.chat : haikuModel?.id
-            this.isEnabled = Boolean(DeepCodyAgent.model)
+            ToolboxManager.isEnabled = Boolean(DeepCodyAgent.model)
 
             Object.assign(this.shellConfig, {
                 instance: instanceShellContextFlag,

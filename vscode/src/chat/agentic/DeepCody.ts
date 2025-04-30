@@ -43,7 +43,7 @@ import { ACTIONS_TAGS, CODYAGENT_PROMPTS } from './prompts'
  * - Implements iterative context review with configurable max loops
  */
 export class DeepCodyAgent {
-    public static readonly id = 'deep-cody'
+    public static readonly id = DeepCodyAgentID
     /**
      * NOTE: Currently A/B test to default to 3.5 Haiku / 3.5 Sonnet for the review step.
      */
@@ -165,7 +165,7 @@ export class DeepCodyAgent {
                 requestID,
                 model: DeepCodyAgent.model,
                 traceId: span.spanContext().traceId,
-                chatAgent: DeepCodyAgentID,
+                chatAgent: DeepCodyAgent.id,
             },
             metadata: {
                 loop: this.stats.loop, // Number of loops run.
