@@ -214,20 +214,20 @@ export class CodySourceControl implements vscode.Disposable {
             await streaming(stream, abortController, updateInputBox, progress)
 
             if (ignoredContext.length > 0) {
-                vscode.window.showInformationMessage(
-                    `Cody was forced to skip ${ignoredContext.length} ${pluralize(
+                const message = `Cody was forced to skip ${ignoredContext.length} ${pluralize(
                         'file',
                         ignoredContext.length,
                         'files'
                     )} when generating the commit message.`
-                )
+                outputChannelLogger.logError('Generate Commit Message', message)
+                vscode.window.showInformationMessage(message)
             }
         } catch (error) {
             this.statusUpdate()
             progress.report({ message: 'Error' })
             sourceControlInputbox.value = initialInputBoxValue // Revert to initial value on error
+            outputChannelLogger.logError('Generate Commit Message', 'failed', error)
             var errorMessage = "Could not generate a commit message"
-            outputChannelLogger.logError('getContextFileFromGitDiff', errorMessage, error)
             if (error instanceof Error && error.message) {
                 errorMessage += `: ${error.message}`
             }
