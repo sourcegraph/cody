@@ -80,7 +80,7 @@ describe('getContextFilesFromGitDiff', () => {
         diffWithHEAD.mockResolvedValue([])
         diff.mockResolvedValue('')
 
-        await expect(getContextFilesFromGitDiff(mockGitRepo)).rejects.toThrow('Failed to get git diff.')
+        await expect(getContextFilesFromGitDiff(mockGitRepo)).rejects.toThrow('Empty git diff output.')
     })
 
     it('should handle multiple files in diffs', async () => {
