@@ -1,6 +1,8 @@
 import {
     type AgentToolboxSettings,
     FeatureFlag,
+    type Model,
+    ModelTag,
     authStatus,
     combineLatest,
     distinctUntilChanged,
@@ -102,9 +104,12 @@ class ToolboxManager {
                 return null
             }
 
-            // TODO (bee): Remove once A/B test is over - 3.5 Haiku vs default chat model.
-            const haikuModel = models.primaryModels.find(model => model.id.includes('5-haiku'))
-            DeepCodyAgent.model = useDefaultChatModel ? models.preferences.defaults.chat : haikuModel?.id
+            // If the feature flag to use the default chat model is enabled, use the default chat model.
+            // Otherwise, use gemini-flash or haiku 3.5 model if available.
+            // If neither is available, use the first model with speed tag in the list.
+            const reflectModel = getModelForReflection(models.primaryModels)
+            DeepCodyAgent.model = useDefaultChatModel ? models.preferences.defaults.chat : reflectModel
+
             this.isEnabled = Boolean(DeepCodyAgent.model)
 
             Object.assign(this.shellConfig, {
@@ -132,3 +137,26 @@ class ToolboxManager {
 }
 
 export const toolboxManager = ToolboxManager.getInstance()
+
+/**
+ * Returns the most suitable model for reflection operations.
+ *
+ * Prioritizes models in the following order:
+ * 1. Gemini Flash model
+ * 2. Haiku 3.5 model
+ * 3. Any model with the Speed tag
+ *
+ * @param models - Array of available models
+ * @returns The ID of the selected model, or undefined if no suitable model is found
+ */
+export function getModelForReflection(models: Model[]): string | undefined {
+    const speedModels = models.filter(
+        model =>
+            model.id.includes('haiku') ||
+            model.id.includes('gemini-flash') ||
+            model.tags.includes(ModelTag.Speed)
+    )
+    const geminiModel = speedModels.find(model => model.id.includes('gemini-flash'))
+    const haiku35Model = speedModels.find(model => model.id.includes('5-haiku'))
+    return geminiModel?.id ?? haiku35Model?.id ?? speedModels[0]?.id
+}
