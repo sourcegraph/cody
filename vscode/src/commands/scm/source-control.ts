@@ -17,11 +17,11 @@ import {
     telemetryRecorder,
 } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
+import { outputChannelLogger } from '../../output-channel-logger'
 import { PromptBuilder } from '../../prompt-builder'
 import type { API, GitExtension, InputBox, Repository } from '../../repository/builtinGitExtension'
 import { getContextFilesFromGitApi } from '../context/git-api'
 import { COMMIT_COMMAND_PROMPTS } from './prompts'
-import { outputChannelLogger } from '../../output-channel-logger'
 
 export class CodySourceControl implements vscode.Disposable {
     private disposables: vscode.Disposable[] = []
