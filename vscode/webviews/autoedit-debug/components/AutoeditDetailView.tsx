@@ -34,8 +34,6 @@ export const AutoeditDetailView: FC<{
     const { phase, fileName, discardReason, position, prediction, codeToRewrite, triggerKind } =
         AutoeditDataSDK.extractAutoeditData(entry)
 
-    const doc = entry.state.document
-
     return (
         <div className="tw-flex tw-flex-col tw-gap-6">
             {/* Header with navigation */}
