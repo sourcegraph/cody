@@ -123,7 +123,7 @@ export async function getContextFilesFromGitDiff(gitRepo: Repository): Promise<C
  * @returns A promise that resolves to an array of ContextItem objects.
  * @throws If the git log is empty or if there is an error retrieving the git log.
  */
-async function getContextFilesFromGitLog(gitRepo: Repository, maxEntries = 5): Promise<ContextItem[]> {
+export async function getContextFilesFromGitLog(gitRepo: Repository, maxEntries = 5): Promise<ContextItem[]> {
     const logs = await gitRepo.log({ maxEntries })
     if (!logs.length) {
         throw new Error('Empty git log output.')
@@ -153,7 +153,7 @@ async function getContextFilesFromGitLog(gitRepo: Repository, maxEntries = 5): P
  * @param template - The git commit template.
  * @returns The context item containing the git commit template information.
  */
-async function getGitCommitTemplateContextFile(template: string): Promise<ContextItem> {
+export async function getGitCommitTemplateContextFile(template: string): Promise<ContextItem> {
     const content = `Here is my git commit template:\n\n${template}`
     return {
         type: 'file',

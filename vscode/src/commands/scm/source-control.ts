@@ -20,7 +20,7 @@ import * as vscode from 'vscode'
 import { outputChannelLogger } from '../../output-channel-logger'
 import { PromptBuilder } from '../../prompt-builder'
 import type { API, GitExtension, InputBox, Repository } from '../../repository/builtinGitExtension'
-import { getContextFilesFromGitApi } from '../context/git-api'
+import { getContextFilesFromGitDiff, getContextFilesFromGitLog, getGitCommitTemplateContextFile } from '../context/git-api'
 import { COMMIT_COMMAND_PROMPTS } from './prompts'
 
 export class CodySourceControl implements vscode.Disposable {
@@ -191,7 +191,22 @@ export class CodySourceControl implements vscode.Disposable {
             }
 
             const { id: model, contextWindow } = this.model
-            const context = await getContextFilesFromGitApi(repository, commitTemplate)
+
+            const diffContext = await getContextFilesFromGitDiff(repository)
+
+            const logContext = await getContextFilesFromGitLog(repository).catch((error) => {
+                // we can generate a commit message without log context
+                // but in case the user wants to see what happened, record the error
+                outputChannelLogger.logError('getContextFilesFromGitLog', 'failed', error)
+                return []
+            })
+
+            const context = [...diffContext, ...logContext]
+
+            if(commitTemplate) {
+                context.push(await getGitCommitTemplateContextFile(commitTemplate))
+            }
+
             const { prompt, ignoredContext, contextTooBig } = await this.buildPrompt(
                 contextWindow,
                 getSimplePreamble(model, 1, 'Default', COMMIT_COMMAND_PROMPTS.intro),
@@ -199,7 +214,7 @@ export class CodySourceControl implements vscode.Disposable {
                 commitTemplate
             )
 
-            if (ignoredContext.length === context.length - 1) {
+            if (ignoredContext.length === diffContext.length) {
                 // All of the files being committed are either too big for the context window,
                 // or are on the Cody ignore list.
                 // No matter the reason, all of them are being skipped,
@@ -232,7 +247,11 @@ export class CodySourceControl implements vscode.Disposable {
                     'files'
                 )} when generating the commit message`
                 if (contextTooBig) {
-                    message += ' because they exceeded the context window limit'
+                    message += ` because ${pluralize(
+                        'it',
+                        ignoredContext.length,
+                        'they'
+                    )} exceeded the context token limit`
                 }
                 outputChannelLogger.logError('Generate Commit Message', message)
                 vscode.window.showInformationMessage(message)
