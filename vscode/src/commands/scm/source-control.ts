@@ -20,7 +20,11 @@ import * as vscode from 'vscode'
 import { outputChannelLogger } from '../../output-channel-logger'
 import { PromptBuilder } from '../../prompt-builder'
 import type { API, GitExtension, InputBox, Repository } from '../../repository/builtinGitExtension'
-import { getContextFilesFromGitDiff, getContextFilesFromGitLog, getGitCommitTemplateContextFile } from '../context/git-api'
+import {
+    getContextFilesFromGitDiff,
+    getContextFilesFromGitLog,
+    getGitCommitTemplateContextFile,
+} from '../context/git-api'
 import { COMMIT_COMMAND_PROMPTS } from './prompts'
 
 export class CodySourceControl implements vscode.Disposable {
@@ -194,7 +198,7 @@ export class CodySourceControl implements vscode.Disposable {
 
             const diffContext = await getContextFilesFromGitDiff(repository)
 
-            const logContext = await getContextFilesFromGitLog(repository).catch((error) => {
+            const logContext = await getContextFilesFromGitLog(repository).catch(error => {
                 // we can generate a commit message without log context
                 // but in case the user wants to see what happened, record the error
                 outputChannelLogger.logError('getContextFilesFromGitLog', 'failed', error)
@@ -203,7 +207,7 @@ export class CodySourceControl implements vscode.Disposable {
 
             const context = [...diffContext, ...logContext]
 
-            if(commitTemplate) {
+            if (commitTemplate) {
                 context.push(await getGitCommitTemplateContextFile(commitTemplate))
             }
 
