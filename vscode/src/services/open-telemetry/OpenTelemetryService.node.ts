@@ -18,11 +18,7 @@ import {
 
 import { DiagConsoleLogger, DiagLogLevel, diag, metrics } from '@opentelemetry/api'
 import { OTLPMetricExporter } from '@opentelemetry/exporter-metrics-otlp-http'
-import {
-    ConsoleMetricExporter,
-    MeterProvider,
-    PeriodicExportingMetricReader,
-} from '@opentelemetry/sdk-metrics'
+import { MeterProvider, PeriodicExportingMetricReader } from '@opentelemetry/sdk-metrics'
 import { BatchSpanProcessor } from '@opentelemetry/sdk-trace-base'
 import { externalAuthRefresh } from '@sourcegraph/cody-shared/src/configuration/auth-resolver'
 import { isEqual } from 'lodash'
