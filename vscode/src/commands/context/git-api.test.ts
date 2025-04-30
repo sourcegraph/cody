@@ -63,14 +63,15 @@ describe('getContextFilesFromGitDiff', () => {
             title: 'git diff',
             uri: URI.parse('file:///path/to/file2.ts'),
             source: ContextItemSource.Terminal,
-            content: "Here is the 'git diff' output:\n" +
-                        "<output file=\"path/to/file2.ts\">\n" +
-                        "file2.ts\n" +
-                        "--- a/file2.ts\n" +
-                        "+++ b/file2.ts\n" +
-                        "@@ -1,1 +1,2 @@\n" +
-                        "+console.log(\"Unstaged change\");\n" +
-                        "</output>",
+            content:
+                "Here is the 'git diff' output:\n" +
+                '<output file="path/to/file2.ts">\n' +
+                'file2.ts\n' +
+                '--- a/file2.ts\n' +
+                '+++ b/file2.ts\n' +
+                '@@ -1,1 +1,2 @@\n' +
+                '+console.log("Unstaged change");\n' +
+                '</output>',
         })
     })
 
@@ -136,14 +137,14 @@ describe('getContextFilesFromGitDiff', () => {
         diffWithHEAD.mockResolvedValue([])
         diff.mockResolvedValue(
             'diff --git a/path/to/deleted.file.txt b/path/to/deleted.file.txt\n' +
-            'deleted file mode 100644\n' +
-            'index 5b85839..0000000\n' +
-            '--- a/new.txt\n' +
-            '+++ /dev/null\n' +
-            '@@ -1,3 +0,0 @@\n' +
-            '-first line\n' +
-            '-line 2\n' +
-            '-another line 2'
+                'deleted file mode 100644\n' +
+                'index 5b85839..0000000\n' +
+                '--- a/new.txt\n' +
+                '+++ /dev/null\n' +
+                '@@ -1,3 +0,0 @@\n' +
+                '-first line\n' +
+                '-line 2\n' +
+                '-another line 2'
         )
 
         const result = await getContextFilesFromGitDiff(mockGitRepo)
@@ -153,18 +154,19 @@ describe('getContextFilesFromGitDiff', () => {
             title: 'git diff --cached',
             uri: URI.parse('file:///path/to/deleted.file.txt'),
             source: ContextItemSource.Terminal,
-            content: "Here is the 'git diff --cached' output:\n" +
-                        "<output file=\"path/to/deleted.file.txt\">\n" +
-                        "path/to/deleted.file.txt\n" +
-                        "deleted file mode 100644\n" +
-                        "index 5b85839..0000000\n" +
-                        "--- a/new.txt\n" +
-                        "+++ /dev/null\n" +
-                        "@@ -1,3 +0,0 @@\n" +
-                        "-first line\n" +
-                        "-line 2\n" +
-                        "-another line 2\n" +
-                        "</output>",
+            content:
+                "Here is the 'git diff --cached' output:\n" +
+                '<output file="path/to/deleted.file.txt">\n' +
+                'path/to/deleted.file.txt\n' +
+                'deleted file mode 100644\n' +
+                'index 5b85839..0000000\n' +
+                '--- a/new.txt\n' +
+                '+++ /dev/null\n' +
+                '@@ -1,3 +0,0 @@\n' +
+                '-first line\n' +
+                '-line 2\n' +
+                '-another line 2\n' +
+                '</output>',
         })
     })
 })

@@ -204,9 +204,9 @@ export class CodySourceControl implements vscode.Disposable {
                 // or are on the Cody ignore list.
                 // No matter the reason, all of them are being skipped,
                 // and we can't generate a commit message without any context.
-                let message = "Cody was forced to skip all of the files being committed"
-                if(contextTooBig) {
-                    message += " because they exceeded the context window limit"
+                let message = 'Cody was forced to skip all of the files being committed'
+                if (contextTooBig) {
+                    message += ' because they exceeded the context window limit'
                 }
                 throw new Error(message)
             }
@@ -227,12 +227,12 @@ export class CodySourceControl implements vscode.Disposable {
 
             if (ignoredContext.length > 0) {
                 let message = `Cody was forced to skip ${ignoredContext.length} ${pluralize(
-                        'file',
-                        ignoredContext.length,
-                        'files'
-                    )} when generating the commit message`
-                if(contextTooBig) {
-                    message += " because they exceeded the context window limit"
+                    'file',
+                    ignoredContext.length,
+                    'files'
+                )} when generating the commit message`
+                if (contextTooBig) {
+                    message += ' because they exceeded the context window limit'
                 }
                 outputChannelLogger.logError('Generate Commit Message', message)
                 vscode.window.showInformationMessage(message)
@@ -242,7 +242,7 @@ export class CodySourceControl implements vscode.Disposable {
             progress.report({ message: 'Error' })
             sourceControlInputbox.value = initialInputBoxValue // Revert to initial value on error
             outputChannelLogger.logError('Generate Commit Message', 'failed', error)
-            var errorMessage = "Could not generate a commit message"
+            let errorMessage = 'Could not generate a commit message'
             if (error instanceof Error && error.message) {
                 errorMessage += `: ${error.message}`
             }
@@ -259,7 +259,7 @@ export class CodySourceControl implements vscode.Disposable {
         preamble: Message[],
         context: ContextItem[],
         commitTemplate?: string
-    ): Promise<{ prompt: Message[]; ignoredContext: ContextItem[], contextTooBig: boolean }> {
+    ): Promise<{ prompt: Message[]; ignoredContext: ContextItem[]; contextTooBig: boolean }> {
         if (!context.length) {
             throw new Error('Failed to get git output.')
         }
@@ -274,7 +274,8 @@ export class CodySourceControl implements vscode.Disposable {
         promptBuilder.tryAddToPrefix(preamble)
         promptBuilder.tryAddMessages(transcript.reverse())
 
-        const { ignored: ignoredContext, limitReached: contextTooBig } = await promptBuilder.tryAddContext('user', context)
+        const { ignored: ignoredContext, limitReached: contextTooBig } =
+            await promptBuilder.tryAddContext('user', context)
         return { prompt: promptBuilder.build(), ignoredContext, contextTooBig }
     }
 
