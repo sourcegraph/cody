@@ -192,12 +192,24 @@ export class CodySourceControl implements vscode.Disposable {
 
             const { id: model, contextWindow } = this.model
             const context = await getContextFilesFromGitApi(repository, commitTemplate)
-            const { prompt, ignoredContext } = await this.buildPrompt(
+            const { prompt, ignoredContext, contextTooBig } = await this.buildPrompt(
                 contextWindow,
                 getSimplePreamble(model, 1, 'Default', COMMIT_COMMAND_PROMPTS.intro),
                 context,
                 commitTemplate
             )
+
+            if (ignoredContext.length === context.length - 1) {
+                // All of the files being committed are either too big for the context window,
+                // or are on the Cody ignore list.
+                // No matter the reason, all of them are being skipped,
+                // and we can't generate a commit message without any context.
+                let message = "Cody was forced to skip all of the files being committed"
+                if(contextTooBig) {
+                    message += " because they exceeded the context window limit"
+                }
+                throw new Error(message)
+            }
 
             const stream = await this.chatClient.chat(
                 prompt,
@@ -214,11 +226,14 @@ export class CodySourceControl implements vscode.Disposable {
             await streaming(stream, abortController, updateInputBox, progress)
 
             if (ignoredContext.length > 0) {
-                const message = `Cody was forced to skip ${ignoredContext.length} ${pluralize(
+                let message = `Cody was forced to skip ${ignoredContext.length} ${pluralize(
                         'file',
                         ignoredContext.length,
                         'files'
-                    )} when generating the commit message.`
+                    )} when generating the commit message`
+                if(contextTooBig) {
+                    message += " because they exceeded the context window limit"
+                }
                 outputChannelLogger.logError('Generate Commit Message', message)
                 vscode.window.showInformationMessage(message)
             }
@@ -244,7 +259,7 @@ export class CodySourceControl implements vscode.Disposable {
         preamble: Message[],
         context: ContextItem[],
         commitTemplate?: string
-    ): Promise<{ prompt: Message[]; ignoredContext: ContextItem[] }> {
+    ): Promise<{ prompt: Message[]; ignoredContext: ContextItem[], contextTooBig: boolean }> {
         if (!context.length) {
             throw new Error('Failed to get git output.')
         }
@@ -259,8 +274,8 @@ export class CodySourceControl implements vscode.Disposable {
         promptBuilder.tryAddToPrefix(preamble)
         promptBuilder.tryAddMessages(transcript.reverse())
 
-        const { ignored: ignoredContext } = await promptBuilder.tryAddContext('user', context)
-        return { prompt: promptBuilder.build(), ignoredContext }
+        const { ignored: ignoredContext, limitReached: contextTooBig } = await promptBuilder.tryAddContext('user', context)
+        return { prompt: promptBuilder.build(), ignoredContext, contextTooBig }
     }
 
     /**
