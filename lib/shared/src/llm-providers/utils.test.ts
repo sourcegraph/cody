@@ -74,7 +74,7 @@ describe('getCompletionsModelConfig', () => {
         const config = getCompletionsModelConfig(testModel.id)
 
         // Verify the model name has the provider prefix removed
-        expect(config?.model).toBe('meta-llama/llama-4-scout-17b-16e-instruct')
+        expect(config?.model).toBe('meta-llama/llama-4-instruct')
     })
 
     it('handles model ID without provider prefix correctly', () => {
