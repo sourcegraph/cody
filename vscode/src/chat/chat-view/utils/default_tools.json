@@ -1,0 +1,125 @@
+{
+  "tools": [
+    {
+      "type": "function",
+      "function": {
+        "name": "get_diagnostic",
+        "description": "Get diagnostics (including errors) from the editor for the file you have used text_editor on. This tool should be used at the end of your response on the files you have edited.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "command": {
+              "type": "string",
+              "description": "The command to run in the root of the users project. Must be shell escaped."
+            },
+            "danger": {
+              "type": "boolean",
+              "default": false,
+              "description": "Whether the command is dangerous. If true, user will be asked to confirm."
+            }
+          },
+          "required": ["command"],
+          "additionalProperties": false
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "text_editor",
+        "description": "An filesystem editor tool that allows access to view, create, and edit files with source control history.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "command": {
+              "type": "string",
+              "enum": ["create", "str_replace", "insert", "undo_edit"],
+              "description": "The command to execute"
+            },
+            "path": {
+              "type": "string",
+              "description": "The relative path of the file"
+            },
+            "file_text": {
+              "type": "string",
+              "description": "The full contents of the new file for create command"
+            },
+            "old_str": {
+              "type": "string",
+              "description": "String to replace"
+            },
+            "new_str": {
+              "type": "string",
+              "description": "String to replace with"
+            },
+            "insert_line": {
+              "type": "integer",
+              "description": "Line number to insert at"
+            }
+          },
+          "required": ["command", "path"],
+          "additionalProperties": false
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "code_search",
+        "description": "Perform a keyword query search in the codebase.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "query": {
+              "type": "string",
+              "description": "Keyword query to search for."
+            }
+          },
+          "required": ["query"],
+          "additionalProperties": false
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "get_file",
+        "description": "To retrieve full content of a codebase file. DO NOT retrieve files that may contain secrets",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string",
+              "description": "The name of the file to retrieve"
+            }
+          },
+          "required": ["name"],
+          "additionalProperties": false
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "run_terminal_command",
+        "description": "Run an arbitrary terminal command at the root of the users project. E.g. `ls -la` for listing files, or `find` for searching latest version of the codebase files locally.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "command": {
+              "type": "string",
+              "description": "The command to run in the root of the users project. Must be shell escaped."
+            },
+            "danger": {
+              "type": "boolean",
+              "default": false,
+              "description": "Whether the command is dangerous. If true, user will be asked to confirm."
+            }
+          },
+          "required": ["command"],
+          "additionalProperties": false
+        }
+      }
+    }
+  ]
+}

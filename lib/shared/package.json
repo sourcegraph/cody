@@ -18,10 +18,12 @@
     "prepublishOnly": "tsc --build --clean && pnpm run build"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.20.8",
+    "@ai-sdk/openai-compatible": "^0.2.12",
+    "@anthropic-ai/sdk": "^0.39.0",
     "@google/generative-ai": "^0.22.0",
     "@microsoft/fetch-event-source": "^2.0.1",
     "@opentelemetry/api": "^1.7.0",
+    "ai": "^4.3.9",
     "crypto-js": "^4.2.0",
     "date-fns": "^2.30.0",
     "dedent": "^0.7.0",
@@ -33,7 +35,8 @@
     "lexical": "^0.17.0",
     "lodash": "^4.17.21",
     "lru-cache": "^10.0.0",
-    "ollama": "^0.5.1",
+    "ollama": "^0.5.15",
+    "openai": "^4.96.0",
     "re2js": "^0.4.1",
     "semver": "^7.5.4",
     "vscode-uri": "^3.0.8",

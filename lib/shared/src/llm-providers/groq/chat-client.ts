@@ -1,10 +1,11 @@
 import type { GroqCompletionsStreamResponse } from '.'
 import type { ChatNetworkClientParams } from '..'
-import { getCompletionsModelConfig } from '../..'
+import { getCompletionsModelConfig, isDefined } from '../..'
 import { contextFiltersProvider } from '../../cody-ignore/context-filters-provider'
 import { onAbort } from '../../common/abortController'
 import { CompletionStopReason } from '../../inferenceClient/misc'
 import type { CompletionResponse } from '../../sourcegraph-api/completions/types'
+import { getMessageImageUrl } from '../completions-converter'
 
 const GROQ_CHAT_API_URL = new URL('https://api.groq.com/openai/v1/chat/completions')
 
@@ -41,10 +42,25 @@ export async function groqChatClient({
         ...config?.options,
         model: config?.model,
         messages: await Promise.all(
-            params.messages.map(async msg => ({
-                role: msg.speaker === 'human' ? 'user' : 'assistant',
-                content: (await msg.text?.toFilteredString(contextFiltersProvider)) ?? '',
-            }))
+            params.messages.map(async msg => {
+                const toolResults = msg.content?.filter(c => c.type === 'tool_result')
+                const images = msg.content
+                    ?.filter(c => c.type === 'image_url')
+                    ?.map(c => getMessageImageUrl(c).data)
+                    ?.filter(isDefined)
+                return {
+                    role:
+                        msg.speaker === 'system'
+                            ? 'system'
+                            : msg.speaker === 'human'
+                              ? toolResults?.length
+                                  ? 'tool'
+                                  : 'user'
+                              : 'assistant',
+                    content: (await msg.text?.toFilteredString(contextFiltersProvider)) ?? '',
+                    images: images?.length ? images : undefined,
+                }
+            })
         ),
         ...(isCortex && {
             max_tokens: 1000,
@@ -54,6 +70,7 @@ export async function groqChatClient({
             temperature: 0.1,
             top_p: -1,
         }),
+        tools: params.tools,
     }
 
     const completionResponse: CompletionResponse = {

@@ -338,7 +338,9 @@ export const HistoryTabWithData: React.FC<HistoryTabProps & { chats: Lightweight
                         >
                             <div className="tw-truncate tw-w-full tw-flex tw-flex-col tw-gap-2">
                                 <div>{chatTitle || lastMessage}</div>
-                                <div className="tw-text-left tw-text-muted-foreground">{timestamp}</div>
+                                <div className="tw-text-left tw-text-muted-foreground">
+                                    {timestamp} | {chat.model} {chat.mode}
+                                </div>
                             </div>
                             <Button
                                 variant="outline"

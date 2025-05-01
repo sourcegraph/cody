@@ -1,7 +1,22 @@
 import { GoogleGenerativeAI } from '@google/generative-ai'
 import type { ChatNetworkClientParams } from '..'
-import { type CompletionResponse, CompletionStopReason, getCompletionsModelConfig } from '../..'
-import { constructGeminiChatMessages } from './utils'
+import {
+    type CompletionContentData,
+    CompletionStopReason,
+    type ToolCallContentPart,
+    getCompletionsModelConfig,
+    logDebug,
+} from '../..'
+import { constructGeminiChatMessages, formatGoogleFunctionDeclarations } from './utils'
+
+/**
+ * Interface for tool calls in Google's format
+ */
+interface GoogleToolCall {
+    id: string
+    name: string
+    args: any
+}
 
 /**
  * The URL for the Gemini API, which is used to interact with the Generative Language API provided by Google.
@@ -32,25 +47,82 @@ export async function googleChatClient({
         return
     }
 
-    const completionResponse: CompletionResponse = {
+    const completionResponse = {
         completion: '',
-        stopReason: CompletionStopReason.RequestFinished,
+        stopReason: CompletionStopReason.StreamingChunk,
+        toolCalls: [] as ToolCallContentPart[],
+        content: [] as CompletionContentData[],
     }
     const log = logger?.startCompletion(params, completionsEndpoint)
     try {
         signal?.throwIfAborted()
         const genAI = new GoogleGenerativeAI(config.key)
-        const model = genAI.getGenerativeModel({ model: config.model })
 
-        // Construct the messages array for the API
-        const messages = await constructGeminiChatMessages(params.messages)
-        const lastMessage = messages.pop()
+        // Configure model options
+        const modelOptions: any = {
+            model: config.model,
+            generationConfig: {
+                ...config.options,
+                categories: undefined,
+            },
+        }
+
+        // Add tools if provided
+        if (params.tools && params.tools.length > 0) {
+            logDebug('GoogleChatClient', 'Adding tools to request', { verbose: params.tools })
+
+            // Format tools according to Google API requirements
+            const functionDeclarations = formatGoogleFunctionDeclarations(params.tools)
+
+            if (functionDeclarations.length > 0) {
+                modelOptions.tools = [
+                    {
+                        functionDeclarations,
+                    },
+                ]
+
+                logDebug('GoogleChatClient', 'Formatted function declarations', {
+                    verbose: functionDeclarations,
+                })
+            }
+        }
+
+        const model = genAI.getGenerativeModel(modelOptions)
+
+        // Construct the messages array for the API and extract system instruction
+        const { contents, systemInstruction } = await constructGeminiChatMessages(params.messages)
+
+        // Get the last message for the current request
+        const lastMessage = contents.length > 0 ? contents[contents.length - 1] : null
+        const history = contents.slice(0, -1)
+
         if (!lastMessage) {
             return
         }
 
-        const history = messages.filter(m => m.parts.length).map(m => ({ role: m.role, parts: m.parts }))
-        const chat = model.startChat({ history })
+        // Configure chat options with history and system instruction
+        const chatOptions: any = {
+            history: history
+                .filter(m => m.parts.length > 0)
+                .map(m => ({
+                    role: m.role,
+                    parts: m.parts,
+                })),
+        }
+
+        // Add system instruction if present
+        if (systemInstruction) {
+            chatOptions.systemInstruction = systemInstruction
+            logDebug('GoogleChatClient', 'Added system instruction to chat', {
+                verbose: systemInstruction,
+            })
+        }
+
+        const chat = model.startChat(chatOptions)
+
+        // Track tool calls
+        const toolCalls: GoogleToolCall[] = []
+
         const result = await chat.sendMessageStream(lastMessage.parts)
         for await (const chunk of result.stream) {
             if (signal?.aborted) {
@@ -60,10 +132,61 @@ export async function googleChatClient({
 
             const chunkText = chunk?.text()
             completionResponse.completion += chunkText
-            cb.onChange(completionResponse.completion)
+
+            // Check for function calls in the response
+            if (chunk?.candidates?.[0]?.content?.parts) {
+                for (const part of chunk.candidates[0].content.parts) {
+                    if (part.functionCall) {
+                        logDebug('GoogleChatClient', 'Detected function call in response', {
+                            verbose: part.functionCall,
+                        })
+
+                        // Generate a unique ID for this tool call
+                        const toolCallId = `tool_${Date.now()}_${Math.random()
+                            .toString(36)
+                            .substring(2, 9)}`
+
+                        // Add to our tracked tool calls
+                        const toolCall = {
+                            id: toolCallId,
+                            name: part.functionCall.name,
+                            args: part.functionCall.args,
+                        }
+                        toolCalls.push(toolCall)
+
+                        // Update the content array in the result
+                        completionResponse.content = [
+                            { type: 'text', text: completionResponse.completion },
+                            ...toolCalls.map(tc => ({
+                                type: 'tool_call' as const,
+                                tool_call: {
+                                    id: tc.id,
+                                    name: tc.name,
+                                    arguments: JSON.stringify(tc.args),
+                                },
+                            })),
+                        ]
+                    }
+                }
+            }
+
+            // Update the content and tool calls in the response
+            completionResponse.content = [
+                { type: 'text' as const, text: completionResponse.completion },
+                ...toolCalls.map(tc => ({
+                    type: 'tool_call' as const,
+                    tool_call: {
+                        id: tc.id,
+                        name: tc.name,
+                        arguments: JSON.stringify(tc.args),
+                    },
+                })),
+            ]
+
+            cb.onChange(completionResponse.completion, completionResponse.content)
 
             if (chunk?.candidates?.[0]?.finishReason) {
-                completionResponse.stopReason = chunk.candidates[0].finishReason
+                completionResponse.stopReason = CompletionStopReason.RequestFinished
                 break
             }
         }
@@ -73,7 +196,7 @@ export async function googleChatClient({
             500
         )
     } finally {
-        cb.onComplete()
+        cb.onComplete(completionResponse)
         log?.onComplete(completionResponse)
     }
 }

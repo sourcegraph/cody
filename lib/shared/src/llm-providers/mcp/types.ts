@@ -1,4 +1,4 @@
-import type { Tool } from '@anthropic-ai/sdk/resources/beta/tools/messages.mjs'
+import type { Tool } from '@anthropic-ai/sdk/resources/index.mjs'
 
 export interface McpTool extends Tool {
     autoApprove?: boolean

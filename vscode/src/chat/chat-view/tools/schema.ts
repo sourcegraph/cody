@@ -1,6 +1,6 @@
 import { z } from 'zod'
 
-// Zod schema for tool input// Zod schema for edit tool input
+// Zod schema for edit tool input
 export const EditToolSchema = z.object({
     command: z.enum(['create', 'str_replace', 'insert', 'undo_edit']).describe('The command to execute'),
     path: z.string().describe('The relative path of the file'),
@@ -47,3 +47,36 @@ export type RunTerminalCommandInput = z.infer<typeof RunTerminalCommandSchema>
 export type GetDiagnosticInput = z.infer<typeof GetDiagnosticSchema>
 export type CodeSearchInput = z.infer<typeof CodeSearchSchema>
 export type EditToolInput = z.infer<typeof EditToolSchema>
+
+// Zod schema for tool input
+export const DEDAULT_TOOLS_SCHEMA = {
+    get_diagnostic: {
+        name: 'get_diagnostic',
+        description:
+            'Get diagnostics (including errors) from the editor for the file you have used text_editor on. This tool should be used at the end of your response on the files you have edited.',
+        schema: RunTerminalCommandSchema,
+    },
+    text_editor: {
+        name: 'text_editor',
+        description:
+            'An filesystem editor tool that allows access to view, create, and edit files with source control history.',
+        schema: EditToolSchema,
+    },
+    code_search: {
+        name: 'code_search',
+        description: 'Perform a keyword query search in the codebase.',
+        schema: CodeSearchSchema,
+    },
+    get_file: {
+        name: 'get_file',
+        description:
+            'To retrieve full content of a codebase file. DO NOT retrieve files that may contain secrets',
+        schema: GetFileSchema,
+    },
+    run_terminal_command: {
+        name: 'run_terminal_command',
+        description:
+            'Run an arbitrary terminal command at the root of the users project. E.g. `ls -la` for listing files, or `find` for searching latest version of the codebase files locally.',
+        schema: RunTerminalCommandSchema,
+    },
+}

@@ -25,8 +25,13 @@ import type { AgentHandler, AgentHandlerDelegate, AgentRequest } from './interfa
 import { buildAgentPrompt } from './prompts'
 
 enum AGENT_MODELS {
-    ExtendedThinking = 'anthropic::2024-10-22::claude-3-7-sonnet-extended-thinking',
-    Base = 'anthropic::2024-10-22::claude-3-7-sonnet-latest',
+    // ExtendedThinking = 'anthropic::2024-10-22::claude-3-7-sonnet-extended-thinking',
+    // Base = 'anthropic::2024-10-22::claude-3-7-sonnet-latest',
+    // ExtendedThinking = 'gemini/gemini-2.5-pro-preview-03-25',
+    Base = 'gemini/gemini-2.5-flash-preview-04-17',
+    ExtendedThinking = 'gemini/gemini-2.0-flash-thinking-exp-01-21',
+    // ExtendedThinking = 'openaicompatible/Llama-4-Maverick-17B-128E-Instruct-FP8',
+    // Base = 'openaicompatible/Llama-4-Scout-17B-16E-Instruct-FP8',
 }
 
 interface ToolResult {

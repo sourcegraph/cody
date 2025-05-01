@@ -1,9 +1,10 @@
-import { Ollama } from 'ollama/browser'
+import { Ollama, type Tool } from 'ollama/browser'
 import type { ChatNetworkClientParams } from '..'
-import { getCompletionsModelConfig } from '../..'
+import { getCompletionsModelConfig, isDefined } from '../..'
 import { contextFiltersProvider } from '../../cody-ignore/context-filters-provider'
 import { onAbort } from '../../common/abortController'
 import { CompletionStopReason } from '../../inferenceClient/misc'
+import { getMessageImageUrl } from '../completions-converter'
 
 /**
  * Calls the Ollama API for chat completions with history.
@@ -37,12 +38,27 @@ export async function ollamaChatClient({
 
     try {
         const messages = await Promise.all(
-            params.messages.map(async msg => ({
-                role: msg.speaker === 'human' ? 'user' : 'assistant',
-                content: (await msg.text?.toFilteredString(contextFiltersProvider)) ?? '',
-            }))
+            params.messages.map(async msg => {
+                const toolResults = msg.content?.filter(c => c.type === 'tool_result')
+                const images = msg.content
+                    ?.filter(c => c.type === 'image_url')
+                    ?.map(c => getMessageImageUrl(c).data)
+                    ?.filter(isDefined)
+                return {
+                    role:
+                        msg.speaker === 'system'
+                            ? 'system'
+                            : msg.speaker === 'human'
+                              ? toolResults?.length
+                                  ? 'tool'
+                                  : 'user'
+                              : 'assistant',
+                    content: (await msg.text?.toFilteredString(contextFiltersProvider)) ?? '',
+                    images: images?.length ? images : undefined,
+                }
+            })
         )
-
+        const tools: Tool[] = params.tools ?? []
         ollama
             .chat({
                 model,
@@ -55,6 +71,7 @@ export async function ollamaChatClient({
                     ...config?.options,
                 },
                 stream: config?.stream || true,
+                tools,
             })
             .then(
                 async res => {

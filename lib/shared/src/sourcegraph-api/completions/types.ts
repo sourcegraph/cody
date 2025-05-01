@@ -132,6 +132,7 @@ export interface CompletionParameters {
     // https://docs.fireworks.ai/guides/predicted-outputs#using-predicted-outputs
     rewriteSpeculation?: boolean
     adaptiveSpeculation?: boolean
+    tools?: any[]
 }
 
 export interface SerializedCompletionParameters extends Omit<CompletionParameters, 'messages'> {
@@ -140,7 +141,7 @@ export interface SerializedCompletionParameters extends Omit<CompletionParameter
 
 export interface CompletionCallbacks {
     onChange: (text: string, content?: CompletionContentData[] | undefined | null) => void
-    onComplete: () => void
+    onComplete: (response?: CompletionResponse) => void
     onError: (error: Error, statusCode?: number) => void
 }
 

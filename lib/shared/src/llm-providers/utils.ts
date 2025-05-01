@@ -15,6 +15,12 @@ export function getCompletionsModelConfig(modelID: string): CompletionsModelConf
     const stream = Boolean(options?.stream ?? true)
 
     const { stream: _, ...restOptions } = options || {}
+    // Filter out any unsupported options before adding the rest
+    // Anthropic doesn't support 'categories' parameter
+    if (restOptions) {
+        const { categories, ...safeOptions } = restOptions
+        Object.assign(restOptions, safeOptions)
+    }
 
     return {
         model,

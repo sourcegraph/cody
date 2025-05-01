@@ -3,6 +3,8 @@ import { googleChatClient, groqChatClient, ollamaChatClient } from '..'
 import { modelsService } from '../models/modelsService'
 import { isCustomModel } from '../models/utils'
 import { anthropicChatClient } from './anthropic/chat-client'
+import { llmChatClient } from './openai-compatible/chat-client'
+import { openaiChatClient } from './openai/chat-client'
 
 export async function useCustomChatClient({
     params,
@@ -20,8 +22,10 @@ export async function useCustomChatClient({
         anthropic: anthropicChatClient,
         ollama: ollamaChatClient,
         google: googleChatClient,
+        gemini: googleChatClient,
         groq: groqChatClient,
-        openaicompatible: groqChatClient,
+        openaicompatible: openaiChatClient,
+        grok: llmChatClient,
     }
 
     const client = clientMap[model.provider.toLowerCase()]
