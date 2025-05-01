@@ -80,6 +80,7 @@ import * as vscode from 'vscode'
 
 import { type Span, context } from '@opentelemetry/api'
 import { captureException } from '@sentry/core'
+import { ChatHistoryType } from '@sourcegraph/cody-shared/src/chat/transcript'
 import type { SubMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { resolveAuth } from '@sourcegraph/cody-shared/src/configuration/auth-resolver'
 import type { McpServer } from '@sourcegraph/cody-shared/src/llm-providers/mcp/types'
@@ -136,6 +137,7 @@ import { countGeneratedCode } from '../utils'
 import { ChatBuilder, prepareChatMessage } from './ChatBuilder'
 import { chatHistory } from './ChatHistoryManager'
 import { CodyChatEditorViewType } from './ChatsController'
+import { CodeBlockRegenerator, type RegenerateRequestParams } from './CodeBlockRegenerator'
 import type { ContextRetriever } from './ContextRetriever'
 import { InitDoer } from './InitDoer'
 import { getChatPanelTitle, isAgentTesting } from './chat-helpers'
@@ -554,6 +556,17 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 localStorage.setDevicePixelRatio(message.devicePixelRatio)
                 break
             }
+            case 'regenerateCodeBlock': {
+                await this.handleRegenerateCodeBlock({
+                    requestID: message.id,
+                    code: PromptString.unsafe_fromLLMResponse(message.code),
+                    language: message.language
+                        ? PromptString.unsafe_fromLLMResponse(message.language)
+                        : undefined,
+                    index: message.index,
+                })
+                break
+            }
         }
     }
 
@@ -569,9 +582,11 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         const { configuration, auth } = await currentResolvedConfig()
         const [experimentalPromptEditorEnabled, internalAgenticChatEnabled] = await Promise.all([
             firstValueFrom(
-                featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyExperimentalPromptEditor)
+                featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyExperimentalPromptEditor)
             ),
-            firstValueFrom(featureFlagProvider.evaluateFeatureFlag(FeatureFlag.NextAgenticChatInternal)),
+            firstValueFrom(
+                featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.NextAgenticChatInternal)
+            ),
         ])
         const experimentalAgenticChatEnabled = internalAgenticChatEnabled && isS2(auth.serverEndpoint)
         const sidebarViewOnly = this.extensionClient.capabilities?.webviewNativeConfig?.view === 'single'
@@ -658,6 +673,11 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
 
         void this.saveSession()
         this.initDoer.signalInitialized()
+    }
+
+    async regenerateCodeBlock(params: RegenerateRequestParams): Promise<PromptString> {
+        const regenerator = new CodeBlockRegenerator(this.chatClient)
+        return await regenerator.regenerate(params)
     }
 
     /**
@@ -1188,6 +1208,76 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         }
     }
 
+    /**
+     * Regenerates a single code block in the transcript.
+     */
+    async handleRegenerateCodeBlock({
+        requestID,
+        code,
+        language,
+        index,
+    }: {
+        requestID: string
+        code: PromptString
+        language: PromptString | undefined
+        index: number
+    }): Promise<void> {
+        const abort = this.startNewSubmitOrEditOperation()
+
+        telemetryRecorder.recordEvent('cody.regenerateCodeBlock', 'clicked', {
+            billingMetadata: {
+                product: 'cody',
+                category: 'billable',
+            },
+        })
+
+        // TODO: Add trace spans around this operation
+
+        try {
+            const model: ChatModel | undefined = await wrapInActiveSpan('chat.resolveModel', () =>
+                firstResultFromOperation(ChatBuilder.resolvedModelForChat(this.chatBuilder), abort)
+            )
+            if (!model) {
+                throw new Error('no chat model selected')
+            }
+            this.postMessage({
+                type: 'clientAction',
+                regenerateStatus: { id: requestID, status: 'regenerating' },
+            })
+            const newCode = await this.regenerateCodeBlock({
+                abort,
+                code,
+                language,
+                model,
+                requestID,
+            })
+            // Paste up the chat transcript replacing `code` with `newCode`
+            if (this.chatBuilder.replaceInMessage(index, code, newCode)) {
+                // Post the updated transcript to the webview
+                this.postViewTranscript()
+                // Save the newly generated code to the transcript.
+                await this.saveSession()
+            }
+            this.postMessage({
+                type: 'clientAction',
+                regenerateStatus: { id: requestID, status: 'done' },
+            })
+        } catch (error) {
+            this.postMessage({
+                type: 'clientAction',
+                regenerateStatus: {
+                    id: requestID,
+                    status: 'error',
+                    error: `${error}`,
+                },
+            })
+            if (isAbortErrorOrSocketHangUp(error)) {
+                return
+            }
+            this.postError(new Error(`Failed to regenerate code: ${error}`), 'system')
+        }
+    }
+
     private handleAbort(): void {
         this.cancelSubmitOrEditOperation()
         // Notify the webview there is no message in progress.
@@ -1677,7 +1767,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 {
                     mentionMenuData: query => {
                         return featureFlagProvider
-                            .evaluateFeatureFlag(FeatureFlag.CodyExperimentalPromptEditor)
+                            .evaluatedFeatureFlag(FeatureFlag.CodyExperimentalPromptEditor)
                             .pipe(
                                 switchMap((experimentalPromptEditor: boolean) =>
                                     getMentionMenuData({
@@ -1695,7 +1785,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                         return promiseFactoryToObservable(this.getFrequentlyUsedContextItemsFromStorage)
                     },
                     clientActionBroadcast: () => this.clientBroadcast,
-                    evaluateFeatureFlag: flag => featureFlagProvider.evaluateFeatureFlag(flag),
+                    evaluatedFeatureFlag: flag => featureFlagProvider.evaluatedFeatureFlag(flag),
                     hydratePromptMessage: (promptText, initialContext) =>
                         promiseFactoryToObservable(() =>
                             hydratePromptText(promptText, initialContext ?? [])
@@ -1749,7 +1839,10 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     authStatus: () => authStatus,
                     transcript: () =>
                         this.chatBuilder.changes.pipe(map(chat => chat.getDehydratedMessages())),
-                    userHistory: () => chatHistory.lightweightChanges,
+                    userHistory: type =>
+                        type === ChatHistoryType.Full
+                            ? chatHistory.changes
+                            : chatHistory.lightweightChanges,
                     userProductSubscription: () =>
                         userProductSubscription.pipe(
                             map(value => (value === pendingOperation ? null : value))
@@ -1757,7 +1850,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     // Existing tools endpoint - update to include MCP tools
                     mcpSettings: () => {
                         return featureFlagProvider
-                            .evaluateFeatureFlag(FeatureFlag.NextAgenticChatInternal)
+                            .evaluatedFeatureFlag(FeatureFlag.NextAgenticChatInternal)
                             .pipe(
                                 // Simplify the flow with map and distinctUntilChanged
                                 distinctUntilChanged(),

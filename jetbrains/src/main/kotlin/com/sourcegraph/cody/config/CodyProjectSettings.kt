@@ -19,6 +19,7 @@ data class CodyProjectSettings(
     var lastSearchCaseSensitive: Boolean = false,
     var lastSearchPatternType: String? = null,
     var lastSearchContextSpec: String? = null,
+    var lastActivationState: Boolean = false,
 ) : PersistentStateComponent<CodyProjectSettings> {
   override fun getState(): CodyProjectSettings = this
 
@@ -30,6 +31,7 @@ data class CodyProjectSettings(
     this.lastSearchCaseSensitive = state.lastSearchCaseSensitive
     this.lastSearchPatternType = state.lastSearchPatternType
     this.lastSearchContextSpec = state.lastSearchContextSpec
+    this.lastActivationState = state.lastActivationState
   }
 
   @Transient

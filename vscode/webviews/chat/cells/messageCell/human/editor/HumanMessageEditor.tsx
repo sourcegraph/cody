@@ -75,7 +75,7 @@ export const HumanMessageEditor: FunctionComponent<{
     /** For use in storybooks only. */
     __storybook__focus?: boolean
 
-    intent?: ChatMessage['intent']
+    selectedIntent: ChatMessage['intent']
     manuallySelectIntent: (intent: ChatMessage['intent']) => void
 }> = ({
     models,
@@ -95,7 +95,7 @@ export const HumanMessageEditor: FunctionComponent<{
     editorRef: parentEditorRef,
     __storybook__focus,
     onEditorFocusChange: parentOnEditorFocusChange,
-    intent,
+    selectedIntent,
     manuallySelectIntent,
 }) => {
     const telemetryRecorder = useTelemetryRecorder()
@@ -124,7 +124,7 @@ export const HumanMessageEditor: FunctionComponent<{
           : 'submittable'
 
     const onSubmitClick = useCallback(
-        (intent?: ChatMessage['intent'], forceSubmit?: boolean): void => {
+        (_intent: ChatMessage['intent'], forceSubmit?: boolean): void => {
             if (!forceSubmit && submitState === 'emptyEditorValue') {
                 return
             }
@@ -139,7 +139,8 @@ export const HumanMessageEditor: FunctionComponent<{
             }
 
             const value = editorRef.current.getSerializedValue()
-            parentOnSubmit(intent)
+
+            parentOnSubmit(_intent)
 
             telemetryRecorder.recordEvent('cody.humanMessageEditor', 'submit', {
                 metadata: {
@@ -147,7 +148,7 @@ export const HumanMessageEditor: FunctionComponent<{
                     isEdit: isSent ? 1 : 0,
                     messageLength: value.text.length,
                     contextItems: value.contextItems.length,
-                    intent: [undefined, 'chat', 'search'].findIndex(i => i === intent),
+                    intent: [undefined, 'chat', 'search', 'edit'].findIndex(i => i === _intent),
                 },
                 billingMetadata: {
                     product: 'cody',
@@ -158,7 +159,7 @@ export const HumanMessageEditor: FunctionComponent<{
         [submitState, parentOnSubmit, onStop, telemetryRecorder.recordEvent, isFirstMessage, isSent]
     )
 
-    const omniBoxEnabled = useOmniBox()
+    const omniBoxEnabled = useOmniBox() && !userInfo.isDotComUser
     const {
         config: { experimentalPromptEditorEnabled },
     } = useConfig()
@@ -170,9 +171,9 @@ export const HumanMessageEditor: FunctionComponent<{
                 return
             }
             event.preventDefault()
-            onSubmitClick()
+            onSubmitClick(selectedIntent)
         },
-        [isEmptyEditorValue, onSubmitClick]
+        [isEmptyEditorValue, onSubmitClick, selectedIntent]
     )
 
     const [isEditorFocused, setIsEditorFocused] = useState(false)
@@ -292,11 +293,12 @@ export const HumanMessageEditor: FunctionComponent<{
                     )
                 }
 
-                let promptIntent: ChatMessage['intent'] = undefined
+                let promptIntent: ChatMessage['intent'] = selectedIntent
 
                 if (setPromptAsInput) {
                     // set the intent
                     promptIntent = promptModeToIntent(setPromptAsInput.mode)
+                    manuallySelectIntent(promptIntent)
 
                     updates.push(
                         // biome-ignore lint/suspicious/noAsyncPromiseExecutor: <explanation>
@@ -309,8 +311,6 @@ export const HumanMessageEditor: FunctionComponent<{
                             const promptEditorState = await firstValueFrom(
                                 extensionAPI.hydratePromptMessage(setPromptAsInput.text, initialContext)
                             )
-
-                            manuallySelectIntent(promptIntent)
 
                             // update editor state
                             requestAnimationFrame(async () => {
@@ -325,21 +325,20 @@ export const HumanMessageEditor: FunctionComponent<{
                         })
                     )
                 } else if (setLastHumanInputIntent) {
+                    promptIntent = setLastHumanInputIntent
                     manuallySelectIntent(setLastHumanInputIntent)
                 }
 
                 if (submitHumanInput || setPromptAsInput?.autoSubmit) {
-                    Promise.all(updates).then(() =>
-                        onSubmitClick(promptIntent || setLastHumanInputIntent || intent, true)
-                    )
+                    Promise.all(updates).then(() => onSubmitClick(promptIntent, true))
                 }
             },
             [
+                selectedIntent,
                 onSubmitClick,
-                intent,
-                manuallySelectIntent,
                 extensionAPI.hydratePromptMessage,
                 extensionAPI.defaultContext,
+                manuallySelectIntent,
             ]
         )
     )
@@ -349,7 +348,7 @@ export const HumanMessageEditor: FunctionComponent<{
     const defaultContext = useDefaultContextForChat()
 
     useEffect(() => {
-        if (isSent || !isFirstMessage || !editorRef?.current || intent === 'agentic') {
+        if (isSent || !isFirstMessage || !editorRef?.current || selectedIntent === 'agentic') {
             return
         }
 
@@ -361,7 +360,6 @@ export const HumanMessageEditor: FunctionComponent<{
         // Remove tree type if streaming is not supported.
         const excludedTypes = new Set([
             'open-link',
-            'current-selection',
             ...(currentChatModel?.tags?.includes(ModelTag.StreamDisabled) ? ['tree'] : []),
         ])
 
@@ -369,7 +367,7 @@ export const HumanMessageEditor: FunctionComponent<{
             item => !excludedTypes.has(item.type)
         )
         void editor.setInitialContextMentions(filteredItems)
-    }, [defaultContext?.initialContext, isSent, isFirstMessage, currentChatModel, intent])
+    }, [defaultContext?.initialContext, isSent, isFirstMessage, currentChatModel, selectedIntent])
 
     const focusEditor = useCallback(() => editorRef.current?.setFocus(true), [])
 
@@ -443,15 +441,15 @@ export const HumanMessageEditor: FunctionComponent<{
                     isEditorFocused={focused}
                     omniBoxEnabled={omniBoxEnabled}
                     onSubmitClick={onSubmitClick}
-                    manuallySelectIntent={manuallySelectIntent}
                     submitState={submitState}
                     onGapClick={onGapClick}
                     focusEditor={focusEditor}
                     hidden={!focused && isSent}
                     className={styles.toolbar}
-                    intent={intent}
+                    intent={selectedIntent}
                     extensionAPI={extensionAPI}
                     onMediaUpload={onMediaUpload}
+                    setLastManuallySelectedIntent={manuallySelectIntent}
                 />
             )}
         </div>

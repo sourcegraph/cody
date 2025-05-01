@@ -31,3 +31,10 @@ export const LINT_ERRORS_INSTRUCTION = ps`Linter errors from the code that you w
 export const RECENT_COPY_INSTRUCTION = ps`Recently copied code from the editor:`
 export const CURRENT_FILE_INSTRUCTION = ps`The file currently open:`
 export const SHORT_TERM_SNIPPET_VIEWS_INSTRUCTION = ps`Code snippets just I viewed:`
+
+export const LONG_SUGGESTION_BASE_USER_PROMPT = ps`Help me finish a coding change. You will see snippets from current open files in my editor, files I have recently viewed, the file I am editing, then a history of my recent codebase changes, then current compiler and linter errors, content I copied from my codebase. You will then rewrite the code between the <|editable_region_start|> and <|editable_region_end|> tags, to match what you think I would do next in the codebase. <|user_cursor_is_here|> indicates the position of the cursor in the the current file. Note: I might have stopped in the middle of typing.`
+export const LONG_SUGGESTION_FINAL_USER_PROMPT = ps`Continue where I left off and finish my change by rewriting the code between the <|editable_region_start|> and <|editable_region_end|> tags:`
+
+export const LONG_SUGGESTION_USER_CURSOR_MARKER = ps`<|user_cursor_is_here|>`
+export const LONG_SUGGESTION_EDITABLE_REGION_START_MARKER = ps`<|editable_region_start|>`
+export const LONG_SUGGESTION_EDITABLE_REGION_END_MARKER = ps`<|editable_region_end|>`

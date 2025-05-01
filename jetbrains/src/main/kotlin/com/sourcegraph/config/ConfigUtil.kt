@@ -11,12 +11,14 @@ import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.fileEditor.TextEditor
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ProjectManager
+import com.intellij.openapi.vfs.VirtualFile
 import com.sourcegraph.cody.agent.CodyAgentService
 import com.sourcegraph.cody.agent.protocol_generated.ExtensionConfiguration
 import com.sourcegraph.cody.auth.CodyAuthService
 import com.sourcegraph.cody.auth.CodySecureStore
 import com.sourcegraph.cody.auth.SourcegraphServerPath
 import com.sourcegraph.cody.config.CodyApplicationSettings
+import com.sourcegraph.utils.CodyEditorUtil
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigRenderOptions
 import com.typesafe.config.ConfigValueFactory
@@ -33,6 +35,8 @@ object ConfigUtil {
   const val CODE_SEARCH_DISPLAY_NAME = "Code Search"
   const val SOURCEGRAPH_DISPLAY_NAME = "Sourcegraph"
   private const val FEATURE_FLAGS_ENV_VAR = "CODY_JETBRAINS_FEATURES"
+  private val renderOptions =
+      ConfigRenderOptions.defaults().setComments(false).setOriginComments(false)
 
   private val logger = Logger.getInstance(ConfigUtil::class.java)
 
@@ -183,14 +187,23 @@ object ConfigUtil {
         config = config.withValue(key, ConfigValueFactory.fromAnyRef(value))
       }
 
-      return config
-          .withFallback(globalConfig)
-          .root()
-          .render(ConfigRenderOptions.defaults().setComments(false).setOriginComments(false))
+      return config.withFallback(globalConfig).root().render(renderOptions)
     } catch (e: Exception) {
       logger.error("Failed to parse Cody config", e)
       return ""
     }
+  }
+
+  @JvmStatic
+  fun setCustomConfiguration(project: Project, customConfigContent: String): VirtualFile? {
+    val config = ConfigFactory.parseString(customConfigContent).resolve()
+    val content = config.root().render(renderOptions)
+    return CodyEditorUtil.createFileOrScratchFromUntitled(
+        project, getSettingsFile(project).toUri().toString(), content = content, overwrite = true)
+        ?: run {
+          logger.warn("Could not create settings file")
+          return null
+        }
   }
 
   @JvmStatic

@@ -87,6 +87,8 @@ describe('getCurrentFilePromptComponents', () => {
                 maxSuffixLinesInArea: 1,
                 codeToRewritePrefixLines: 1,
                 codeToRewriteSuffixLines: 1,
+                prefixTokens: 100,
+                suffixTokens: 100,
             },
         })
 
@@ -114,19 +116,19 @@ describe('getCurrentFilePromptComponents', () => {
 
             </file>
         `)
-        expect(result.areaPrompt.toString()).toBe(dedent`
-            <area_around_code_to_rewrite>
-            prefix-line
+        expect(result.areaPrompt.toString()).toMatchInlineSnapshot(`
+          "<area_around_code_to_rewrite>
+          prefix-line
 
-            <code_to_rewrite>
-            prefix-line
-            cursorline
-            suffix-line
+          <code_to_rewrite>
+          prefix-line
+          cursorline
+          suffix-line
 
-            </code_to_rewrite>
-            suffix-line
+          </code_to_rewrite>
+          suffix-line
 
-            </area_around_code_to_rewrite>
+          </area_around_code_to_rewrite>"
         `)
     })
 
@@ -154,6 +156,8 @@ describe('getCurrentFilePromptComponents', () => {
                 maxSuffixLinesInArea: 1,
                 codeToRewritePrefixLines: 1,
                 codeToRewriteSuffixLines: 1,
+                prefixTokens: 100,
+                suffixTokens: 100,
             },
         })
 
@@ -167,19 +171,19 @@ describe('getCurrentFilePromptComponents', () => {
             <<<AREA_AROUND_CODE_TO_REWRITE_WILL_BE_INSERTED_HERE>>>
             </file>
         `)
-        expect(result.areaPrompt.toString()).toBe(dedent`
-            <area_around_code_to_rewrite>
-            prefix-line
+        expect(result.areaPrompt.toString()).toMatchInlineSnapshot(`
+          "<area_around_code_to_rewrite>
+          prefix-line
 
-            <code_to_rewrite>
-            prefix-line
-            cursorline
-            suffix-line
+          <code_to_rewrite>
+          prefix-line
+          cursorline
+          suffix-line
 
-            </code_to_rewrite>
-            suffix-line
+          </code_to_rewrite>
+          suffix-line
 
-            </area_around_code_to_rewrite>
+          </area_around_code_to_rewrite>"
         `)
     })
 })
@@ -230,6 +234,8 @@ describe('getCodeToReplaceData', () => {
                 maxSuffixLinesInArea: 1,
                 codeToRewritePrefixLines: 1,
                 codeToRewriteSuffixLines: 1,
+                prefixTokens: 100,
+                suffixTokens: 100,
             },
         }
 
@@ -290,6 +296,8 @@ describe('getCodeToReplaceData', () => {
                 maxSuffixLinesInArea: 1,
                 codeToRewritePrefixLines: 1,
                 codeToRewriteSuffixLines: 1,
+                prefixTokens: 100,
+                suffixTokens: 100,
             },
         }
 
@@ -324,6 +332,8 @@ describe('getCodeToReplaceData', () => {
                 maxSuffixLinesInArea: 1,
                 codeToRewritePrefixLines: 1,
                 codeToRewriteSuffixLines: 1,
+                prefixTokens: 100,
+                suffixTokens: 100,
             },
         }
 
@@ -338,7 +348,7 @@ describe('getCodeToReplaceData', () => {
         expect(result.prefixBeforeArea).toBe('')
         expect(result.suffixAfterArea).toBe('')
         expect(result.range.start.line).toBe(1)
-        expect(result.range.end.line).toBe(3)
+        expect(result.range.end.line).toBe(4)
     })
 
     it('handles cursor at start of line', () => {
@@ -360,6 +370,8 @@ describe('getCodeToReplaceData', () => {
                 maxSuffixLinesInArea: 1,
                 codeToRewritePrefixLines: 1,
                 codeToRewriteSuffixLines: 1,
+                prefixTokens: 100,
+                suffixTokens: 100,
             },
         }
 
@@ -370,7 +382,7 @@ describe('getCodeToReplaceData', () => {
         expect(result.prefixInArea).toBe('line1\n')
         expect(result.suffixInArea).toBe('line5')
         expect(result.range.start.line).toBe(1)
-        expect(result.range.end.line).toBe(3)
+        expect(result.range.end.line).toBe(4)
     })
 
     it('handles single line content', () => {
@@ -392,6 +404,8 @@ describe('getCodeToReplaceData', () => {
                 maxSuffixLinesInArea: 1,
                 codeToRewritePrefixLines: 1,
                 codeToRewriteSuffixLines: 1,
+                prefixTokens: 100,
+                suffixTokens: 100,
             },
         }
 
@@ -425,6 +439,8 @@ describe('getCodeToReplaceData', () => {
                 maxSuffixLinesInArea: 1,
                 codeToRewritePrefixLines: 1,
                 codeToRewriteSuffixLines: 1,
+                prefixTokens: 100,
+                suffixTokens: 100,
             },
         }
 
@@ -436,7 +452,7 @@ describe('getCodeToReplaceData', () => {
         expect(result.prefixInArea).toBe('')
         expect(result.suffixInArea).toBe('line3')
         expect(result.range.start.line).toBe(0)
-        expect(result.range.end.line).toBe(1)
+        expect(result.range.end.line).toBe(2)
     })
 
     it('handles cursor at end of file', () => {
@@ -458,6 +474,8 @@ describe('getCodeToReplaceData', () => {
                 maxSuffixLinesInArea: 1,
                 codeToRewritePrefixLines: 1,
                 codeToRewriteSuffixLines: 1,
+                prefixTokens: 100,
+                suffixTokens: 100,
             },
         }
 
@@ -493,6 +511,8 @@ describe('getCodeToReplaceData', () => {
                 maxSuffixLinesInArea: 1,
                 codeToRewritePrefixLines: 3, // Increased prefix lines
                 codeToRewriteSuffixLines: 1,
+                prefixTokens: 100,
+                suffixTokens: 100,
             },
         }
 
@@ -531,6 +551,8 @@ describe('getCodeToReplaceData', () => {
                 maxSuffixLinesInArea: 1,
                 codeToRewritePrefixLines: 1,
                 codeToRewriteSuffixLines: 1,
+                prefixTokens: 100,
+                suffixTokens: 100,
             },
         }
 
@@ -543,7 +565,7 @@ describe('getCodeToReplaceData', () => {
         expect(result.codeToRewritePrefix).toContain('prefix-line\ncursor')
         expect(result.codeToRewriteSuffix).toContain('line\nsuffix-line\n')
         expect(result.range.start.line).toBe(9)
-        expect(result.range.end.line).toBe(11)
+        expect(result.range.end.line).toBe(12)
     })
 
     it('handles very large file exceeding max lengths', () => {
@@ -570,6 +592,8 @@ describe('getCodeToReplaceData', () => {
                 maxSuffixLinesInArea: 2,
                 codeToRewritePrefixLines: 2,
                 codeToRewriteSuffixLines: 2,
+                prefixTokens: 100,
+                suffixTokens: 100,
             },
         }
 
@@ -582,7 +606,7 @@ describe('getCodeToReplaceData', () => {
         expect(result.codeToRewritePrefix).toContain('prefix-line\ncursor')
         expect(result.codeToRewriteSuffix).toContain('line\nsuffix-line')
         expect(result.range.start.line).toBe(9)
-        expect(result.range.end.line).toBe(11)
+        expect(result.range.end.line).toBe(12)
     })
 
     it('handles file shorter than requested ranges', () => {
@@ -604,6 +628,8 @@ describe('getCodeToReplaceData', () => {
                 maxSuffixLinesInArea: 5, // Larger than file
                 codeToRewritePrefixLines: 3, // Larger than file
                 codeToRewriteSuffixLines: 3, // Larger than file
+                prefixTokens: 100,
+                suffixTokens: 100,
             },
         }
 
@@ -617,7 +643,7 @@ describe('getCodeToReplaceData', () => {
         expect(result.prefixBeforeArea).toBe('')
         expect(result.suffixAfterArea).toBe('')
         expect(result.range.start.line).toBe(0)
-        expect(result.range.end.line).toBe(2)
+        expect(result.range.end.line).toBe(3)
     })
 })
 

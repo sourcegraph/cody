@@ -1,7 +1,6 @@
 package com.sourcegraph.cody.config.actions
 
 import com.intellij.openapi.actionSystem.AnActionEvent
-import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.util.io.write
@@ -12,20 +11,22 @@ import com.jetbrains.jsonSchema.impl.JsonSchemaVersion
 import com.sourcegraph.cody.agent.CodyAgentService
 import com.sourcegraph.common.ui.DumbAwareEDTAction
 import com.sourcegraph.config.ConfigUtil
+import com.sourcegraph.config.ConfigUtil.getSettingsFile
 import com.sourcegraph.utils.CodyEditorUtil
+import kotlin.io.path.exists
 import kotlin.io.path.name
+import kotlin.io.path.pathString
 
 class OpenCodySettingsEditorAction : DumbAwareEDTAction("Open Cody Settings Editor") {
   override fun actionPerformed(e: AnActionEvent) {
     val project = e.project ?: return
 
     val settingsVf =
-        CodyEditorUtil.createFileOrScratchFromUntitled(
-            project, ConfigUtil.getSettingsFile(project).toUri().toString(), content = "{\n  \n}")
-            ?: run {
-              logger.warn("Could not create settings file")
-              return
-            }
+        if (getSettingsFile(project).exists()) {
+          CodyEditorUtil.findFileOrScratch(project, getSettingsFile(project).pathString)
+        } else {
+          ConfigUtil.setCustomConfiguration(project, customConfigContent = "{\n  \n}")
+        } ?: return
 
     CodyEditorUtil.showDocument(project, settingsVf)
 
@@ -49,7 +50,7 @@ class OpenCodySettingsEditorAction : DumbAwareEDTAction("Open Cody Settings Edit
               /* applicationDefined = */ false,
               listOf(
                   UserDefinedJsonSchemaConfiguration.Item(
-                      "*/${ConfigUtil.getSettingsFile(project).name}",
+                      "*/${getSettingsFile(project).name}",
                       /* isPattern = */ true,
                       /* isDirectory = */ false)))
 
@@ -61,9 +62,5 @@ class OpenCodySettingsEditorAction : DumbAwareEDTAction("Open Cody Settings Edit
       schemaMapping.addConfiguration(schemaConfig)
       JsonSchemaService.Impl.get(project).reset()
     }
-  }
-
-  companion object {
-    private val logger = Logger.getInstance(OpenCodySettingsEditorAction::class.java)
   }
 }

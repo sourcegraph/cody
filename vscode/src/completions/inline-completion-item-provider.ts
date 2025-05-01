@@ -8,6 +8,7 @@ import {
     type IsIgnored,
     RateLimitError,
     authStatus,
+    clientCapabilities,
     contextFiltersProvider,
     featureFlagProvider,
     isAuthError,
@@ -144,7 +145,15 @@ export class InlineCompletionItemProvider
     }: CodyCompletionItemProviderConfig) {
         // Show the autoedit onboarding message if the user hasn't enabled autoedits
         // but is eligible to use them as an alternative to autocomplete
-        autoeditsOnboarding.enrollUserToAutoEditBetaIfEligible()
+        if (isRunningInsideAgent()) {
+            // We do not currently automatically opt users into auto-edit if we are running inside Agent.
+            // This is because Agent support is still experimental and is only ready for dogfooding right now.
+            if (clientCapabilities().autoeditSuggestToEnroll === 'enabled') {
+                autoeditsOnboarding.suggestToEnrollUserToAutoEditBetaIfEligible()
+            }
+        } else {
+            autoeditsOnboarding.enrollUserToAutoEditBetaIfEligible()
+        }
 
         // This is a static field to allow for easy access in the static `configuration` getter.
         // There must only be one instance of this class at a time.
@@ -163,7 +172,7 @@ export class InlineCompletionItemProvider
         this.disposables.push(
             subscriptionDisposable(
                 featureFlagProvider
-                    .evaluateFeatureFlag(FeatureFlag.CodyAutocompleteTracing)
+                    .evaluatedFeatureFlag(FeatureFlag.CodyAutocompleteTracing)
                     .subscribe(shouldSample => {
                         this.shouldSample = Boolean(shouldSample)
                     })

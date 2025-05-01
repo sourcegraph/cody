@@ -7,7 +7,7 @@ import com.intellij.codeInsight.lookup.LookupManagerListener
 import com.intellij.codeInsight.lookup.impl.LookupImpl
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.editor.EditorKind
-import com.sourcegraph.cody.autocomplete.CodyAutocompleteManager.Companion.instance
+import com.sourcegraph.cody.autocomplete.CodyAutocompleteManager
 import com.sourcegraph.cody.config.CodyApplicationSettings
 import com.sourcegraph.cody.vscode.InlineCompletionTriggerKind
 
@@ -33,8 +33,9 @@ class CodyLookupListener : LookupManagerListener {
                   }
                   val offset = newEditor.caretModel.offset
                   logger.debug("Triggering autocompletion for lookup element: $lookupString")
-                  instance.triggerAutocomplete(
-                      newEditor, offset, InlineCompletionTriggerKind.AUTOMATIC, lookupString)
+                  CodyAutocompleteManager.getInstance(newLookup.project)
+                      .triggerAutocomplete(
+                          newEditor, offset, InlineCompletionTriggerKind.AUTOMATIC, lookupString)
                 }
                 super.uiRefreshed()
               }

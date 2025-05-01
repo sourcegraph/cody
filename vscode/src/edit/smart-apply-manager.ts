@@ -91,7 +91,7 @@ export class SmartApplyManager implements vscode.Disposable {
         this.disposables.push(
             subscriptionDisposable(
                 featureFlagProvider
-                    .evaluateFeatureFlag(FeatureFlag.CodySmartApplyPrefetching)
+                    .evaluatedFeatureFlag(FeatureFlag.CodySmartApplyPrefetching)
                     .subscribe(isPrefetchingEnabled => {
                         this.isPrefetchingEnabled = Boolean(isPrefetchingEnabled)
                     })
@@ -397,7 +397,14 @@ ${replacementCode}`,
                 // Update the range to reflect the new end of document
                 insertionRange = document.lineAt(document.lineCount - 1).range
             }
-            finalReplacement = '\n' + replacement
+
+            // don't add a new line before the replacement text if the smart apply model
+            // is entire-file such as the fast models or the insertion range is empty
+            // such as the case of empty files
+            finalReplacement =
+                selectionType !== 'entire-file' && !insertionRange.isEmpty
+                    ? '\n' + replacement
+                    : replacement
         }
 
         const canStream =

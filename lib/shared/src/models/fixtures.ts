@@ -2,6 +2,72 @@ import type { Model } from './model'
 import { ModelTag } from './tags'
 import { ModelUsage } from './types'
 
+export const BYOK_MODELS: Model[] = [
+    {
+        id: 'groq/deepseek-r1-distill-qwen-14b@4bit',
+        modelRef: {
+            providerId: 'groq',
+            apiVersionId: 'unknown',
+            modelId: 'deepseek r1 distill qwen 14b@4bit',
+        },
+        usage: [ModelUsage.Chat, ModelUsage.Edit],
+        contextWindow: {
+            input: 128000,
+            output: 8192,
+        },
+        clientSideConfig: {
+            apiKey: undefined,
+            apiEndpoint: 'http://127.0.0.1:1234/v1/chat/completions',
+            options: {
+                temperature: 0.1,
+            },
+        },
+        tags: [ModelTag.Local, ModelTag.BYOK, ModelTag.Experimental],
+        provider: 'groq',
+        title: 'deepseek r1 distill qwen 14b@4bit',
+    },
+    {
+        id: 'ollama/gemma3:1b',
+        modelRef: {
+            providerId: 'Ollama',
+            apiVersionId: 'unknown',
+            modelId: 'gemma3:1b',
+        },
+        usage: [ModelUsage.Chat, ModelUsage.Edit],
+        contextWindow: {
+            input: 2048,
+            output: 4000,
+        },
+        clientSideConfig: undefined,
+        tags: [ModelTag.Local, ModelTag.BYOK, ModelTag.Experimental],
+        provider: 'Ollama',
+        title: 'gemma3:1b',
+    },
+    {
+        id: 'groq/meta-llama/llama-4-instruct',
+        modelRef: {
+            providerId: 'groq',
+            apiVersionId: 'unknown',
+            modelId: 'llama 4 scout instruct',
+        },
+        usage: [ModelUsage.Chat, ModelUsage.Edit],
+        contextWindow: {
+            input: 40960,
+            output: 8192,
+        },
+        clientSideConfig: {
+            apiKey: '',
+            apiEndpoint: undefined,
+            options: {
+                temperature: 0.1,
+            },
+        },
+        tags: [ModelTag.Local, ModelTag.BYOK, ModelTag.Experimental],
+        provider: 'groq',
+        title: 'llama 4 scout instruct',
+    },
+]
+
 export const FIXTURE_MODELS: Model[] = [
     {
         id: 'anthropic::2024-10-22::claude-3-5-sonnet-latest',

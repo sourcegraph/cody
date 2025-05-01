@@ -21,6 +21,7 @@ import type { FixupController } from '../non-stop/FixupController'
 import type { CodyStatusBar } from '../services/StatusBar'
 import { AutoeditsProvider } from './autoedits-provider'
 import { AutoeditDebugPanel } from './debug-panel/debug-panel'
+import { isHotStreakEnabledInSettings } from './hot-streak/utils'
 import { autoeditsOutputChannelLogger } from './output-channel-logger'
 
 const AUTOEDITS_NON_ELIGIBILITY_MESSAGES = {
@@ -51,6 +52,7 @@ interface AutoeditsItemProviderArgs {
     chatClient: ChatClient
     autoeditFeatureFlagEnabled: boolean
     autoeditInlineRenderingEnabled: boolean
+    autoeditHotStreakEnabled: boolean
     autoeditUseWebSocketEnabled: boolean
     fixupController: FixupController
     statusBar: CodyStatusBar
@@ -63,6 +65,7 @@ export function createAutoEditsProvider({
     chatClient,
     autoeditFeatureFlagEnabled,
     autoeditInlineRenderingEnabled,
+    autoeditHotStreakEnabled,
     autoeditUseWebSocketEnabled,
     fixupController,
     statusBar,
@@ -110,6 +113,7 @@ export function createAutoEditsProvider({
                 isRunningInsideAgent()
             const provider = new AutoeditsProvider(chatClient, fixupController, statusBar, {
                 shouldRenderInline,
+                shouldHotStreak: autoeditHotStreakEnabled || isHotStreakEnabledInSettings(),
                 allowUsingWebSocket: autoeditUseWebSocketEnabled,
             })
             return [

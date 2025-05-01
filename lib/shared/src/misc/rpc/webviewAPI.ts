@@ -1,8 +1,8 @@
 import { type Observable, map } from 'observable-fns'
 import type { AuthStatus, ModelsData, ResolvedConfiguration, UserProductSubscription } from '../..'
 import type { SerializedPromptEditorState } from '../..'
-import type { LightweightChatHistory } from '../../chat/transcript'
-import type { ChatMessage } from '../../chat/transcript/messages'
+import type { ChatHistoryType, LightweightChatHistory } from '../../chat/transcript'
+import type { ChatMessage, UserLocalHistory } from '../../chat/transcript/messages'
 import type { ContextItem, DefaultContext } from '../../codebase-context/messages'
 import type { CodyCommand } from '../../commands/types'
 import type { FeatureFlag } from '../../experimentation/FeatureFlagProvider'
@@ -31,7 +31,7 @@ export interface WebviewToExtensionAPI {
     /**
      * Get the evaluated value of a feature flag.
      */
-    evaluateFeatureFlag(flag: FeatureFlag): Observable<boolean | undefined>
+    evaluatedFeatureFlag(flag: FeatureFlag): Observable<boolean | undefined>
 
     /**
      * Observe the results of querying prompts in the Prompt Library. For backcompat, it also
@@ -104,7 +104,7 @@ export interface WebviewToExtensionAPI {
     /**
      * The current user's chat history.
      */
-    userHistory(): Observable<LightweightChatHistory | null>
+    userHistory(type?: ChatHistoryType): Observable<LightweightChatHistory | UserLocalHistory | null>
 
     /**
      * The current user's product subscription information (Cody Free/Pro).
@@ -125,7 +125,7 @@ export function createExtensionAPI(
     return {
         mentionMenuData: proxyExtensionAPI(messageAPI, 'mentionMenuData'),
         frequentlyUsedContextItems: proxyExtensionAPI(messageAPI, 'frequentlyUsedContextItems'),
-        evaluateFeatureFlag: proxyExtensionAPI(messageAPI, 'evaluateFeatureFlag'),
+        evaluatedFeatureFlag: proxyExtensionAPI(messageAPI, 'evaluatedFeatureFlag'),
         prompts: proxyExtensionAPI(messageAPI, 'prompts'),
         promptTags: proxyExtensionAPI(messageAPI, 'promptTags'),
         getCurrentUserId: proxyExtensionAPI(messageAPI, 'getCurrentUserId'),

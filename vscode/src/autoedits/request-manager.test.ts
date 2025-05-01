@@ -10,16 +10,19 @@ import {
     it,
     vi,
 } from 'vitest'
+import * as vscode from 'vscode'
 
+import type { DocumentContext } from '@sourcegraph/cody-shared'
 import { documentAndPosition } from '../completions/test-helpers'
 
-import {
-    type AbortedModelResponse,
-    AutoeditStopReason,
-    type ModelResponse,
-    type SuccessModelResponse,
-} from './adapters/base'
+import { AutoeditStopReason } from './adapters/base'
 import { type AutoeditSourceMetadata, autoeditSource } from './analytics-logger'
+import type {
+    AbortedPredictionResult,
+    PredictionResult,
+    SuggestedPredictionResult,
+} from './autoedits-provider'
+import type { CodeToReplaceData } from './prompt/prompt-utils'
 import { createCodeToReplaceDataForTest, isTemplateStringsArray } from './prompt/test-helper'
 import { type AutoeditRequestManagerParams, RequestManager } from './request-manager'
 import * as requestRecycling from './request-recycling'
@@ -51,25 +54,30 @@ describe('Autoedits RequestManager', () => {
 
         const mockRequest = vi.fn().mockImplementation(async function* () {
             await vi.advanceTimersByTimeAsync(100)
-            yield createSuccessResponse(prediction)
+            yield createSuccessResponse(
+                prediction,
+                params.documentUri,
+                params.docContext,
+                params.codeToReplaceData
+            )
         })
 
         const responsePromise = requestManager.request(params, mockRequest)
         await vi.advanceTimersByTimeAsync(200) // Give time for the request to complete
-        const responseFromNetwork = (await responsePromise) as SuccessModelResponse
+        const responseFromNetwork = (await responsePromise) as SuggestedPredictionResult
 
-        expect(responseFromNetwork.type).toBe('success')
-        expect(responseFromNetwork.source).toBe(autoeditSource.network)
-        expect(responseFromNetwork.prediction).toBe(prediction)
+        expect(responseFromNetwork.type).toBe('suggested')
+        expect(responseFromNetwork.response.source).toBe(autoeditSource.network)
+        expect(responseFromNetwork.response.prediction).toBe(prediction)
 
         const responseFromCache = (await requestManager.request(
             params,
             mockRequest
-        )) as SuccessModelResponse
+        )) as SuggestedPredictionResult
 
-        expect(responseFromCache.type).toBe('success')
-        expect(responseFromCache.source).toBe(autoeditSource.cache)
-        expect(responseFromCache.prediction).toBe(prediction)
+        expect(responseFromCache.type).toBe('suggested')
+        expect(responseFromCache.response.source).toBe(autoeditSource.cache)
+        expect(responseFromCache.response.prediction).toBe(prediction)
         expect(mockRequest).toHaveBeenCalledTimes(1)
     })
 
@@ -289,7 +297,7 @@ describe('Autoedits RequestManager', () => {
 interface RequestWithResponse {
     code: string
     prediction: string
-    response: SuccessModelResponse
+    response: SuggestedPredictionResult
     mockRequest: MockInstance<typeof RequestManager.prototype.request>
 }
 
@@ -304,9 +312,9 @@ function verifyResponse({
     source?: AutoeditSourceMetadata
     calledTimes?: number
 }) {
-    expect(request.response.type).toBe('success')
-    expect(request.response.prediction).toBe(prediction)
-    expect(request.response.source).toBe(source)
+    expect(request.response.type).toBe('suggested')
+    expect(request.response.response.prediction).toBe(prediction)
+    expect(request.response.response.source).toBe(source)
     expect(request.mockRequest).toHaveBeenCalledTimes(calledTimes)
 }
 
@@ -323,7 +331,7 @@ async function startRequests({
     requestManager?: RequestManager
 }): Promise<RequestWithResponse[]> {
     const requestsWithResponses: Partial<RequestWithResponse>[] = requests
-    const pendingResponses: Promise<ModelResponse>[] = []
+    const pendingResponses: Promise<PredictionResult>[] = []
 
     for (let i = 0; i < requests.length; i++) {
         const { code, prediction, serverProcessingTime = 500, delayBeforeRequestStart = 0 } = requests[i]
@@ -341,7 +349,12 @@ async function startRequests({
                 yield createAbortResponse()
                 return
             }
-            yield createSuccessResponse(prediction)
+            yield createSuccessResponse(
+                prediction,
+                requestParams.documentUri,
+                requestParams.docContext,
+                requestParams.codeToReplaceData
+            )
         })
 
         vi.advanceTimersByTime(delayBeforeRequestStart)
@@ -355,27 +368,42 @@ async function startRequests({
 
     return requestsWithResponses.map((request, index) => ({
         ...request,
-        response: responses[index] as SuccessModelResponse,
+        response: responses[index] as SuggestedPredictionResult,
     })) as RequestWithResponse[]
 }
 
-function createSuccessResponse(prediction: string): ModelResponse {
+function createSuccessResponse(
+    prediction: string,
+    uri: string,
+    docContext: DocumentContext,
+    codeToReplaceData: CodeToReplaceData
+): Omit<SuggestedPredictionResult, 'cacheId'> {
     return {
-        type: 'success',
-        stopReason: AutoeditStopReason.RequestFinished,
-        source: autoeditSource.network,
-        prediction,
-        requestUrl: 'https://test.com',
-        responseHeaders: {},
-        responseBody: {},
+        type: 'suggested',
+        response: {
+            type: 'success',
+            stopReason: AutoeditStopReason.RequestFinished,
+            source: autoeditSource.network,
+            prediction,
+            requestUrl: 'https://test.com',
+            responseHeaders: {},
+            responseBody: {},
+        },
+        uri,
+        editPosition: new vscode.Position(0, 0),
+        docContext,
+        codeToReplaceData,
     }
 }
 
-function createAbortResponse(): AbortedModelResponse {
+function createAbortResponse(): AbortedPredictionResult {
     return {
         type: 'aborted',
-        requestUrl: 'https://test.com',
-        stopReason: AutoeditStopReason.RequestAborted,
+        response: {
+            type: 'aborted',
+            requestUrl: 'https://test.com',
+            stopReason: AutoeditStopReason.RequestAborted,
+        },
     }
 }
 
@@ -393,15 +421,20 @@ function createRequestParams(
         maxSuffixLinesInArea: 2,
         codeToRewritePrefixLines: 1,
         codeToRewriteSuffixLines: 1,
+        prefixTokens: 100,
+        suffixTokens: 100,
     })
 
     return {
-        uri: document.uri.toString(),
+        requestId: 'test-request-id' as any,
+        documentUri: document.uri.toString(),
+        documentText: document.getText(),
         documentVersion,
         position,
         requestUrl: 'https://test.com',
         abortSignal: new AbortController().signal,
         codeToReplaceData,
+        docContext: {} as DocumentContext,
     }
 }
 

@@ -9,25 +9,46 @@ import {
     telemetryRecorder,
 } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
-import { isRunningInsideAgent } from '../jsonrpc/isRunningInsideAgent'
 import { localStorage } from '../services/LocalStorageProvider'
 import { isUserEligibleForAutoeditsFeature } from './create-autoedits-provider'
 
 export class AutoEditBetaOnboarding implements vscode.Disposable {
     private featureFlagAutoEditExperimental = storeLastValue(
-        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutoEditExperimentEnabledFeatureFlag)
+        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyAutoEditExperimentEnabledFeatureFlag)
     )
 
     public async enrollUserToAutoEditBetaIfEligible(): Promise<void> {
-        if (isRunningInsideAgent()) {
-            // We do not currently automatically opt users into auto-edit if we are running inside Agent.
-            // This is because Agent support is still experimental and is only ready for dogfooding right now.
-            return
-        }
-
         const isUserEligibleForAutoeditBeta = await this.isUserEligibleForAutoeditBetaOverride()
         if (isUserEligibleForAutoeditBeta) {
             await this.enrollUserToAutoEditBeta()
+        }
+    }
+
+    public async suggestToEnrollUserToAutoEditBetaIfEligible(): Promise<void> {
+        const isUserEligibleForAutoeditBeta = await this.isUserEligibleForAutoeditBetaOverride()
+        if (isUserEligibleForAutoeditBeta) {
+            vscode.window
+                .showInformationMessage(
+                    'Auto-edits are now available',
+                    {
+                        detail: '<html>An advanced mode for completions is now available. This is configured via <b>cody_settings.json</b>, give it a try now.</html>',
+                    },
+                    'Configure auto-edits',
+                    'Open cody__settings.json'
+                )
+                .then(answer => {
+                    if (answer === 'Configure auto-edits') {
+                        vscode.workspace
+                            .getConfiguration()
+                            .update(
+                                'cody.suggestions.mode',
+                                CodyAutoSuggestionMode.Autoedit,
+                                vscode.ConfigurationTarget.Global
+                            )
+                    } else if (answer === 'Open cody__settings.json') {
+                        vscode.commands.executeCommand('cody.settings.extension')
+                    }
+                })
         }
     }
 

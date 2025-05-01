@@ -1,7 +1,8 @@
 import { GuardrailsCheckStatus } from '@sourcegraph/cody-shared'
 import { clsx } from 'clsx'
-import { AlertTriangleIcon, CheckCircleIcon, FileIcon, LoaderIcon, RefreshCwIcon } from 'lucide-react'
+import { AlertTriangleIcon, CheckCircleIcon, FileIcon, LoaderIcon } from 'lucide-react'
 import type React from 'react'
+import type { MouseEventHandler } from 'react'
 import styles from '../chat/ChatMessageContent/ChatMessageContent.module.css'
 
 interface GuardrailsStatusProps {
@@ -10,7 +11,7 @@ interface GuardrailsStatusProps {
     filename?: string
     tooltip?: string
     className?: string
-    onRetry?: () => void
+    onSuccessAuxClick?: MouseEventHandler<Element>
 }
 
 /**
@@ -23,7 +24,7 @@ export const GuardrailsStatus: React.FC<GuardrailsStatusProps> = ({
     filename,
     tooltip,
     className,
-    onRetry,
+    onSuccessAuxClick,
 }) => {
     const containerClasses = clsx(
         'tw-flex tw-items-center tw-gap-1',
@@ -47,7 +48,7 @@ export const GuardrailsStatus: React.FC<GuardrailsStatusProps> = ({
                 </div>
             )}
             {status === GuardrailsCheckStatus.Success && (
-                <div className={styles.status} title={filename}>
+                <div className={styles.status} title={filename} onAuxClick={onSuccessAuxClick}>
                     <CheckCircleIcon
                         size={14}
                         className={clsx(
@@ -80,6 +81,7 @@ export const GuardrailsStatus: React.FC<GuardrailsStatusProps> = ({
                         size={14}
                         className={clsx(styles.attributionIconFound, styles.iconContainer)}
                     />
+                    <span className={styles.fileNameContainer}>Guardrails: Match found</span>
                 </div>
             )}
             {status === GuardrailsCheckStatus.Error && (
@@ -89,18 +91,6 @@ export const GuardrailsStatus: React.FC<GuardrailsStatusProps> = ({
                         className={clsx(styles.attributionIconUnavailable, styles.iconContainer)}
                     />
                     <span className={styles.fileNameContainer}>Guardrails API Error</span>
-                    {onRetry && (
-                        <button
-                            onClick={onRetry}
-                            type="button"
-                            className={styles.button}
-                            title="Retry Guardrails check"
-                        >
-                            <div className={styles.iconContainer}>
-                                <RefreshCwIcon size={12} />
-                            </div>
-                        </button>
-                    )}
                 </div>
             )}
             {children}

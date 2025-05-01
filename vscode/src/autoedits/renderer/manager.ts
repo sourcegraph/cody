@@ -357,11 +357,7 @@ export class AutoEditsDefaultRendererManager
             return this.rejectActiveEdit(autoeditRejectReason.acceptActiveEdit)
         }
 
-        this.requestManager.removeFromCache({
-            uri: activeRequest.document.uri.toString(),
-            documentVersion: activeRequest.document.version,
-            position: activeRequest.position,
-        })
+        this.requestManager.removeFromCache(activeRequest.cacheId)
 
         // Reset the testing promise when accepting
         this.testing_completionSuggestedPromise = undefined
@@ -371,6 +367,10 @@ export class AutoEditsDefaultRendererManager
             requestId: activeRequest.requestId,
             acceptReason,
         })
+
+        // If we have a hot-streak ID, store it so that we can use it when searching in the cache
+        // in the next call to `provideInlineCompletionItems`.
+        this.requestManager.lastAcceptedHotStreakId = activeRequest.hotStreakId
 
         if (isRunningInsideAgent()) {
             // We rely on the agent for accepting
@@ -394,18 +394,14 @@ export class AutoEditsDefaultRendererManager
         const { activeRequest, decorator } = this
 
         if (activeRequest) {
-            this.requestManager.removeFromCache({
-                uri: activeRequest.document.uri.toString(),
-                documentVersion: activeRequest.document.version,
-                position: activeRequest.position,
-            })
+            this.requestManager.removeFromCache(activeRequest.cacheId)
         }
 
         // Reset the testing promise when rejecting
         this.testing_completionSuggestedPromise = undefined
 
         if (decorator) {
-            await this.handleDidHideSuggestion(this.decorator)
+            await this.handleDidHideSuggestion(decorator)
         }
 
         if (activeRequest) {

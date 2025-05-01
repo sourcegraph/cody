@@ -37,7 +37,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Tue, 01 Apr 2025 16:19:55 GMT
+            value: Mon, 28 Apr 2025 09:57:24 GMT
           - name: content-type
             value: application/json
           - name: content-length
@@ -56,13 +56,13 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1218
+        headersSize: 1266
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-04-01T16:19:55.616Z
-      time: 205
+      startedDateTime: 2025-04-28T09:57:24.456Z
+      time: 198
       timings:
         blocked: -1
         connect: -1
@@ -70,7 +70,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 205
+        wait: 198
     - _id: 6e977d3842ddb417bf941a0f568426d9
       _order: 0
       cache: {}
@@ -106,7 +106,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Tue, 01 Apr 2025 16:19:56 GMT
+            value: Mon, 28 Apr 2025 09:57:24 GMT
           - name: content-type
             value: application/json
           - name: content-length
@@ -125,13 +125,13 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1218
+        headersSize: 1266
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-04-01T16:19:55.934Z
-      time: 223
+      startedDateTime: 2025-04-28T09:57:24.477Z
+      time: 190
       timings:
         blocked: -1
         connect: -1
@@ -139,7 +139,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 223
+        wait: 190
     - _id: 897d3731ab8e15a1549f29445eafd1e1
       _order: 0
       cache: {}
@@ -159,10 +159,10 @@ log:
             value: application/json; charset=utf-8
           - _fromType: array
             name: user-agent
-            value: jetbrains/6.0-localbuild (Node.js v20.12.2)
+            value: jetbrains/9.9-localbuild (Node.js v22.14.0)
           - _fromType: array
             name: x-requested-with
-            value: jetbrains 6.0-localbuild
+            value: jetbrains 9.9-localbuild
           - _fromType: array
             name: accept-encoding
             value: gzip,deflate
@@ -174,19 +174,19 @@ log:
         queryString: []
         url: https://sourcegraph.com/.api/client-config
       response:
-        bodySize: 239
+        bodySize: 232
         content:
           encoding: base64
           mimeType: text/plain; charset=utf-8
-          size: 239
+          size: 232
           text: "[\"H4sIAAAAAAAAA2yPsQrCQBBE+3zFcbU/YLoQLNIFAlpvvBUP7nbD7Rwq4r9bGLC5+s3MY\
             96dc875q4bXSWhNHHzvUCofdnAnNAFV6Kh5SwxuN6tB86g5kwRrbwAlrhVR5c9vlKwR\
             8L3zosJ+R5apYFQBP3GJEvTRVGQNnGyYp7YgEdiw1G3TAg77oahiCwpTHubpzMV+/mP\
-            36b4AAAD//w==\",\"AwAee0MGMAEAAA==\"]"
+            36b4AAAD//wMAHntDBjABAAA=\"]"
         cookies: []
         headers:
           - name: date
-            value: Tue, 01 Apr 2025 16:19:50 GMT
+            value: Mon, 28 Apr 2025 09:57:19 GMT
           - name: content-type
             value: text/plain; charset=utf-8
           - name: transfer-encoding
@@ -212,13 +212,13 @@ log:
             value: max-age=31536000; includeSubDomains; preload
           - name: content-encoding
             value: gzip
-        headersSize: 1358
+        headersSize: 1406
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-04-01T16:19:50.327Z
-      time: 256
+      startedDateTime: 2025-04-28T09:57:19.170Z
+      time: 271
       timings:
         blocked: -1
         connect: -1
@@ -226,8 +226,8 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 256
-    - _id: d339f9e066a991b97bfa2860eeb610bc
+        wait: 271
+    - _id: 5de5468ad29da3411954a00c04930708
       _order: 0
       cache: {}
       request:
@@ -244,11 +244,11 @@ log:
           - name: content-type
             value: application/json
           - name: traceparent
-            value: 00-651ab9dc0f36b013747d0c3c69158824-acc8dfc66c2b8685-01
+            value: 00-3a9839ed2419b6e70f68b023ab270b00-e9c9d97f4655bed0-01
           - name: user-agent
-            value: jetbrains/6.0-localbuild (Node.js v20.12.2)
+            value: jetbrains/9.9-localbuild (Node.js v22.14.0)
           - name: x-requested-with
-            value: jetbrains 6.0-localbuild
+            value: jetbrains 9.9-localbuild
           - name: host
             value: sourcegraph.com
         headersSize: 524
@@ -350,17 +350,17 @@ log:
           - name: client-name
             value: jetbrains
           - name: client-version
-            value: 6.0-localbuild
-        url: https://sourcegraph.com/.api/completions/stream?api-version=9&client-name=jetbrains&client-version=6.0-localbuild
+            value: 9.9-localbuild
+        url: https://sourcegraph.com/.api/completions/stream?api-version=9&client-name=jetbrains&client-version=9.9-localbuild
       response:
-        bodySize: 1158
+        bodySize: 1850
         content:
           mimeType: text/event-stream
-          size: 1158
+          size: 1850
           text: >+
             event: completion
 
-            data: {"deltaText":"\n    /**\n     * Generates and prints the first 10 Fibonacci numbers.\n     * \n     * This method creates a list of Fibonacci numbers starting with 0 and 1,\n     * then calculates the subsequent 8 numbers by adding the two previous numbers.\n     * It then prints each number in the sequence.\n     */\n","stopReason":"stop_sequence"}
+            data: {"deltaText":"\n    /**\n     * Generates and prints the first 10 numbers of the Fibonacci sequence.\n     * \n     * This method creates a list of Fibonacci numbers starting from 0 and 1,\n     * and then calculates and adds subsequent Fibonacci numbers up to the 10th position.\n     * It then prints each number in the sequence.\n     */\n","stopReason":"stop_sequence"}
 
 
             event: done
@@ -370,7 +370,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Tue, 01 Apr 2025 16:19:54 GMT
+            value: Mon, 28 Apr 2025 09:57:22 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -394,13 +394,13 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1320
+        headersSize: 1368
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-04-01T16:19:52.576Z
-      time: 3111
+      startedDateTime: 2025-04-28T09:57:21.168Z
+      time: 2702
       timings:
         blocked: -1
         connect: -1
@@ -408,7 +408,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 3111
+        wait: 2702
     - _id: f1b1cde4cd57488b7f0137954f0302f5
       _order: 0
       cache: {}
@@ -428,10 +428,10 @@ log:
             value: application/json; charset=utf-8
           - _fromType: array
             name: user-agent
-            value: jetbrains/6.0-localbuild (Node.js v20.12.2)
+            value: jetbrains/9.9-localbuild (Node.js v22.14.0)
           - _fromType: array
             name: x-requested-with
-            value: jetbrains 6.0-localbuild
+            value: jetbrains 9.9-localbuild
           - _fromType: array
             name: content-length
             value: "136"
@@ -466,7 +466,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Tue, 01 Apr 2025 16:19:52 GMT
+            value: Mon, 28 Apr 2025 09:57:20 GMT
           - name: content-type
             value: application/json
           - name: content-length
@@ -490,13 +490,13 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1317
+        headersSize: 1365
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-04-01T16:19:51.870Z
-      time: 238
+      startedDateTime: 2025-04-28T09:57:20.509Z
+      time: 330
       timings:
         blocked: -1
         connect: -1
@@ -504,7 +504,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 238
+        wait: 330
     - _id: a376faab1c8a1993bb48c745757f0a4a
       _order: 0
       cache: {}
@@ -524,10 +524,10 @@ log:
             value: application/json; charset=utf-8
           - _fromType: array
             name: user-agent
-            value: jetbrains/6.0-localbuild (Node.js v20.12.2)
+            value: jetbrains/9.9-localbuild (Node.js v22.14.0)
           - _fromType: array
             name: x-requested-with
-            value: jetbrains 6.0-localbuild
+            value: jetbrains 9.9-localbuild
           - _fromType: array
             name: content-length
             value: "318"
@@ -563,29 +563,19 @@ log:
             value: null
         url: https://sourcegraph.com/.api/graphql?CurrentSiteCodyLlmConfiguration
       response:
-        bodySize: 248
+        bodySize: 259
         content:
           encoding: base64
           mimeType: application/json
-          size: 248
-          text: "[\"H4sIAAAAAAAAA4TOTQ6CMBAF4LvMmmqDEA1btrLzAmM7QAN2SH+MhvTuBjYSNXH1ksmbL\
-            28GjQGhmsGbQEsq1s/zuanZtqaLDoNhu957DA1rGqECz9Ep6hxO/V6NGDWJw64Unq2l\
-            ANm72+DjwgNZD1VRSikzaNGH+g8lejRDhI/yxjqulOLbNNKy7xemiSZPNAjFmpy452I\
-            0gcQVPcHX78bOZXFKKaUXAAAA//8DADDh/dAaAQAA\"]"
-          textDecoded:
-            data:
-              site:
-                codyLLMConfiguration:
-                  chatModel: sourcegraph/claude-3.5-sonnet
-                  chatModelMaxTokens: 45000
-                  completionModel: sourcegraph/deepseek-coder-v2-lite-base
-                  completionModelMaxTokens: 2048
-                  fastChatModel: sourcegraph/claude-3-haiku
-                  fastChatModelMaxTokens: 7000
+          size: 259
+          text: "[\"H4sIAAAAAAAAAwAAAP//\",\"hM5NDoIwEAXgu8yaaoMQDVu2svMCYztAA3ZIf4yG9O4G\
+            NhI1cfWSyZsvbwaNAaGawZtASyrWz/O5qdm2posOg2G73nsMDWsaoQLP0SnqHE79Xo0\
+            YNYnDrhSeraUA2bvb4OPCA1kPVVFKKTNo0Yf6DyV6NEOEj/LGOq6U4ts00rLvF6aJJk\
+            80CMWanLjnYjSBxBU9wdfvxs5lcUoppRcAAAD//wMAMOH90BoBAAA=\"]"
         cookies: []
         headers:
           - name: date
-            value: Tue, 01 Apr 2025 16:19:51 GMT
+            value: Mon, 28 Apr 2025 09:57:20 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -611,13 +601,13 @@ log:
             value: max-age=31536000; includeSubDomains; preload
           - name: content-encoding
             value: gzip
-        headersSize: 1349
+        headersSize: 1397
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-04-01T16:19:51.228Z
-      time: 349
+      startedDateTime: 2025-04-28T09:57:19.977Z
+      time: 270
       timings:
         blocked: -1
         connect: -1
@@ -625,7 +615,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 349
+        wait: 270
     - _id: 0484c4d780805faf3dd3ddabae814640
       _order: 0
       cache: {}
@@ -645,10 +635,10 @@ log:
             value: application/json; charset=utf-8
           - _fromType: array
             name: user-agent
-            value: jetbrains/6.0-localbuild (Node.js v20.12.2)
+            value: jetbrains/9.9-localbuild (Node.js v22.14.0)
           - _fromType: array
             name: x-requested-with
-            value: jetbrains 6.0-localbuild
+            value: jetbrains 9.9-localbuild
           - _fromType: array
             name: content-length
             value: "165"
@@ -679,22 +669,18 @@ log:
             value: null
         url: https://sourcegraph.com/.api/graphql?CurrentSiteCodyLlmConfiguration
       response:
-        bodySize: 136
+        bodySize: 139
         content:
           encoding: base64
           mimeType: application/json
-          size: 136
+          size: 139
           text: "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqzixJBdHJ+SmVPj6+zvl5aZnppUWJJZn5eWD53MSiE\
-            uf8vJLUipLwzLyU/HIlK6WUzOLEpJzUFKXa2tpaAAAAAP//AwArMNn0TAAAAA==\"]"
-          textDecoded:
-            data:
-              site:
-                codyLLMConfiguration:
-                  smartContextWindow: disabled
+            uf8vJLUipLwzLyU/HIlK6WUzOLEpJzUFKXa2tpaAAAAAP//\",\"AwArMNn0TAAAAA==\
+            \"]"
         cookies: []
         headers:
           - name: date
-            value: Tue, 01 Apr 2025 16:19:51 GMT
+            value: Mon, 28 Apr 2025 09:57:20 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -720,13 +706,13 @@ log:
             value: max-age=31536000; includeSubDomains; preload
           - name: content-encoding
             value: gzip
-        headersSize: 1349
+        headersSize: 1397
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-04-01T16:19:51.293Z
-      time: 260
+      startedDateTime: 2025-04-28T09:57:20.027Z
+      time: 222
       timings:
         blocked: -1
         connect: -1
@@ -734,7 +720,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 260
+        wait: 222
     - _id: e141c56e63809042300db9bf8551d492
       _order: 0
       cache: {}
@@ -754,10 +740,10 @@ log:
             value: application/json; charset=utf-8
           - _fromType: array
             name: user-agent
-            value: jetbrains/6.0-localbuild (Node.js v20.12.2)
+            value: jetbrains/9.9-localbuild (Node.js v22.14.0)
           - _fromType: array
             name: x-requested-with
-            value: jetbrains 6.0-localbuild
+            value: jetbrains 9.9-localbuild
           - _fromType: array
             name: content-length
             value: "150"
@@ -803,7 +789,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Tue, 01 Apr 2025 16:19:51 GMT
+            value: Mon, 28 Apr 2025 09:57:20 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -829,13 +815,13 @@ log:
             value: max-age=31536000; includeSubDomains; preload
           - name: content-encoding
             value: gzip
-        headersSize: 1349
+        headersSize: 1397
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-04-01T16:19:51.267Z
-      time: 287
+      startedDateTime: 2025-04-28T09:57:20.004Z
+      time: 276
       timings:
         blocked: -1
         connect: -1
@@ -843,7 +829,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 287
+        wait: 276
     - _id: 5b9030a4e18d1e000c71d6000a7cef6f
       _order: 0
       cache: {}
@@ -863,10 +849,10 @@ log:
             value: application/json; charset=utf-8
           - _fromType: array
             name: user-agent
-            value: jetbrains/6.0-localbuild (Node.js v20.12.2)
+            value: jetbrains/9.9-localbuild (Node.js v22.14.0)
           - _fromType: array
             name: x-requested-with
-            value: jetbrains 6.0-localbuild
+            value: jetbrains 9.9-localbuild
           - _fromType: array
             name: content-length
             value: "341"
@@ -934,7 +920,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Tue, 01 Apr 2025 16:19:50 GMT
+            value: Mon, 28 Apr 2025 09:57:19 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -960,13 +946,13 @@ log:
             value: max-age=31536000; includeSubDomains; preload
           - name: content-encoding
             value: gzip
-        headersSize: 1349
+        headersSize: 1397
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-04-01T16:19:50.021Z
-      time: 278
+      startedDateTime: 2025-04-28T09:57:18.614Z
+      time: 544
       timings:
         blocked: -1
         connect: -1
@@ -974,7 +960,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 278
+        wait: 544
     - _id: aef0c9fe7483280d9c05ac8e97e37571
       _order: 0
       cache: {}
@@ -994,10 +980,10 @@ log:
             value: application/json; charset=utf-8
           - _fromType: array
             name: user-agent
-            value: jetbrains/6.0-localbuild (Node.js v20.12.2)
+            value: jetbrains/9.9-localbuild (Node.js v22.14.0)
           - _fromType: array
             name: x-requested-with
-            value: jetbrains 6.0-localbuild
+            value: jetbrains 9.9-localbuild
           - _fromType: array
             name: content-length
             value: "268"
@@ -1037,23 +1023,23 @@ log:
           encoding: base64
           mimeType: application/json
           size: 224
-          text: "[\"H4sIAAAAAAAAA1zMsQrCMBSF4Xc5c4U2rUu2Ih0EwdJWB7fYZAjUJNzcDKXk3UVBUMfz8\
+          text: "[\"H4sIAAAAAAAAA1zMsQrCMBSF4Xc5c4U2tku2Ih0EwdJWB7fYZAjUJNzcDKXk3UVBUMfz8\
             3E2aMUKcsOciIzjSzT0nl6vY7rHmWxg692rRVacIiTaw3S8digQFuUg0Q9nFFAhLGtP\
-            flBsTvZhOUIyJVN8vntD1uuRFXHLkBCl2O/Kelc1kxCyqmQtbvjTndNftvm1Oef8BAA\
-            A//8DAPWiQezCAAAA\"]"
+            flBsTvZhOUIyJVN8vntD1uuRFXHLkBClaHZlvavqSQhZVXIvbvjTndNftvm1Oef8BAA\
+            A//8DAPgwylPCAAAA\"]"
           textDecoded:
             data:
               currentUser:
                 codySubscription:
                   applyProRateLimits: true
-                  currentPeriodEndAt: 2025-04-14T22:11:32Z
-                  currentPeriodStartAt: 2025-03-14T22:11:32Z
+                  currentPeriodEndAt: 2025-05-14T22:11:32Z
+                  currentPeriodStartAt: 2025-04-14T22:11:32Z
                   plan: PRO
                   status: ACTIVE
         cookies: []
         headers:
           - name: date
-            value: Tue, 01 Apr 2025 16:19:51 GMT
+            value: Mon, 28 Apr 2025 09:57:20 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -1079,13 +1065,13 @@ log:
             value: max-age=31536000; includeSubDomains; preload
           - name: content-encoding
             value: gzip
-        headersSize: 1349
+        headersSize: 1397
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-04-01T16:19:51.337Z
-      time: 348
+      startedDateTime: 2025-04-28T09:57:20.051Z
+      time: 324
       timings:
         blocked: -1
         connect: -1
@@ -1093,7 +1079,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 348
+        wait: 324
     - _id: 4504fab53d7cb602861f73dc2aa883d2
       _order: 0
       cache: {}
@@ -1113,10 +1099,10 @@ log:
             value: application/json; charset=utf-8
           - _fromType: array
             name: user-agent
-            value: jetbrains/6.0-localbuild (Node.js v20.12.2)
+            value: jetbrains/9.9-localbuild (Node.js v22.14.0)
           - _fromType: array
             name: x-requested-with
-            value: jetbrains 6.0-localbuild
+            value: jetbrains 9.9-localbuild
           - _fromType: array
             name: content-length
             value: "101"
@@ -1145,18 +1131,21 @@ log:
             value: null
         url: https://sourcegraph.com/.api/graphql?SiteProductVersion
       response:
-        bodySize: 139
+        bodySize: 136
         content:
           encoding: base64
           mimeType: application/json
-          size: 139
-          text: "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqzixJBdEFRfkppcklYalFxZn5eUpWSsaGlqbmZvFGB\
-            kamugbGusaG8WZ6hrpJloYWxqbmpqbGhmlKtbW1AAAAAP//\",\"AwDt2Xx6SQAAAA==\
-            \"]"
+          size: 136
+          text: "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqzixJBdEFRfkppcklYalFxZn5eUpWSsZGxuaWRvFGB\
+            kamugYmukbm8WZ6RromqYmJFsZmiRYWKSlKtbW1AAAAAP//AwBa7vrISQAAAA==\"]"
+          textDecoded:
+            data:
+              site:
+                productVersion: 323792_2025-04-27_6.2-4eaa836a88dd
         cookies: []
         headers:
           - name: date
-            value: Tue, 01 Apr 2025 16:19:51 GMT
+            value: Mon, 28 Apr 2025 09:57:20 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -1182,13 +1171,13 @@ log:
             value: max-age=31536000; includeSubDomains; preload
           - name: content-encoding
             value: gzip
-        headersSize: 1349
+        headersSize: 1397
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-04-01T16:19:51.314Z
-      time: 282
+      startedDateTime: 2025-04-28T09:57:19.954Z
+      time: 294
       timings:
         blocked: -1
         connect: -1
@@ -1196,7 +1185,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 282
+        wait: 294
     - _id: fd0fee4687419870bc82cba9d1023319
       _order: 0
       cache: {}
@@ -1216,10 +1205,10 @@ log:
             value: application/json; charset=utf-8
           - _fromType: array
             name: user-agent
-            value: jetbrains/6.0-localbuild (Node.js v20.12.2)
+            value: jetbrains/9.9-localbuild (Node.js v22.14.0)
           - _fromType: array
             name: x-requested-with
-            value: jetbrains 6.0-localbuild
+            value: jetbrains 9.9-localbuild
           - _fromType: array
             name: content-length
             value: "92"
@@ -1248,28 +1237,23 @@ log:
             value: null
         url: https://sourcegraph.com/.api/graphql?ViewerSettings
       response:
-        bodySize: 280
+        bodySize: 192
         content:
           encoding: base64
           mimeType: application/json
-          size: 280
-          text: "[\"H4sIAAAAAAAAA4zPwUoDQRAE0H/pc75gbyoGAwrikttcOkk529D2LD292cRl/l0WAsGD4\
-            LXqUVALnTiYuoXOghneI0Is1zX5FGOljpZEuIxw+YIF6xYck6Mm6tbG+KB45e/ro5ZD\
-            f7Xgy4vkQSUP61KiLnzCJpFh7sF+HD5QJ42taMDrOxv0T1T3u3s3euFjyBm/xEPOjsw\
-            hxerd1n+Qocxvk4ao2G3yqVgtiptpm0RlhO3s+SRRfD3cGrXWfgAAAP//AwDHP3NmNg\
-            EAAA==\"]"
+          size: 192
+          text: "[\"H4sIAAAAAAAAA2SMwQrCQAwF/yXnfsHeLfQmFm97CfapgTUt2awVlvy7FLx5nRmm08LOl\
+            Dq9BTtshrvoox7kLsqFEvVM+GwweUGdywj2ZqiZUs+k2Gew3Z4X1FZ8lOKwemZFyZTc\
+            Goa/qF6nn4sh07pBJz0t4qsdzwiKiC8AAAD//wMAV+4vNJkAAAA=\"]"
           textDecoded:
             data:
               viewerSettings:
-                final: "{\"experimentalFeatures\":{\"enableLazyBlobSyntaxHighlighting\":true,\"\
-                  newSearchResultFiltersPanel\":true,\"newSearchResultsUI\":tru\
-                  e,\"proactiveSearchResultsAggregations\":true,\"searchResults\
-                  Aggregations\":true,\"showMultilineSearchConsole\":true},\"op\
-                  enInEditor\":{}}"
+                final: "{\"experimentalFeatures\":{\"newSearchResultFiltersPanel\":true,\"newSe\
+                  archResultsUI\":true},\"openInEditor\":{}}"
         cookies: []
         headers:
           - name: date
-            value: Tue, 01 Apr 2025 16:19:52 GMT
+            value: Mon, 28 Apr 2025 09:57:20 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -1295,13 +1279,13 @@ log:
             value: max-age=31536000; includeSubDomains; preload
           - name: content-encoding
             value: gzip
-        headersSize: 1349
+        headersSize: 1397
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-04-01T16:19:51.846Z
-      time: 274
+      startedDateTime: 2025-04-28T09:57:20.483Z
+      time: 381
       timings:
         blocked: -1
         connect: -1
@@ -1309,7 +1293,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 274
+        wait: 381
     - _id: fbb23499ae0eec5c2e188687b429531b
       _order: 0
       cache: {}
@@ -1323,10 +1307,10 @@ log:
               REDACTED_fc324d3667e841181b0779375f26dedc911d26b303d23b29b1a2d7ee63dc77eb
           - _fromType: array
             name: user-agent
-            value: jetbrains/6.0-localbuild (Node.js v20.12.2)
+            value: jetbrains/9.9-localbuild (Node.js v22.14.0)
           - _fromType: array
             name: x-requested-with
-            value: jetbrains 6.0-localbuild
+            value: jetbrains 9.9-localbuild
           - _fromType: array
             name: accept
             value: "*/*"
@@ -1341,60 +1325,69 @@ log:
         queryString: []
         url: https://sourcegraph.com/.api/modelconfig/supported-models.json
       response:
-        bodySize: 2987
+        bodySize: 3575
         content:
           encoding: base64
           mimeType: text/plain; charset=utf-8
-          size: 2987
-          text: "[\"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\
-            \",\"WhcGlF2b+yiiMaAI5hChiMUTxCGdlT0NM6E5CLkBAfKSvsH228T28r0Iy3h2Aj\
-            MaU+T1+kjCI1sc+6kwtr1e3/6aslrE1terZtHjiO8jEpE4eH2l6ULWgHj6K5t25iDNU\
-            lazlNUsZT3DUlYJe+Oei8YRyaYIFokeh+Oea38URewPNfmPjNJrG2tJ7KdcMaWIQt7E\
-            cqlRA9nXc6X0IXcHwm210yrqYK0XlpSQboTiXwfBv/ymnIbobYDd2m6a7cNm+7DZPny\
-            K7cO1oYzQ/vTy0ZL40R+SMvUxjKyVkwUxhulPwPQD7ZzVV/TSEL0hekP0ZyT6JGUiiU\
-            QuRm5fT3sUXK+pPSpb6HCyqhYudaYtZcqrEpbapNS5kF/XD2zNDBkvYLyA8QKv4wXEv\
-            FMDiUfMPH2UmcuC/L11t+T9Y+k1RnHcUhxNJG8ieRPJdzuSX32pYEniM7oQP9DtYjBC\
-            NM54mgdcweSfl2Xs28XgfS2Ll2teyoWD64WvWs2qSb7ZxoHOkPll7OPru7pc3t/qpCW\
-            JuWqCij2AxPgARGLcHpIYt8HkcZa9mH3PjfY9e/p7rLyWm6wqaH1ZubeGzxwrsPqyJH\
-            uN2qOsHIxhgtzEw+OXjQT7u6RGsVmn/Uut015+8mj1nSChpIn8LeHomimY9dPXR4lRN\
-            VeT1tOSKE+pzKk3ENbPw1++JtckDMD6cYCnepI6kNTJ/VlNML8z+LthjuRZPL3ENmh8\
-            Jb+iwtZ8FE7/qQpL/qstUyMhiSkC4SVdSy0lnC216zBxKxK4etY+VkB8IbTtaStxN4a\
-            zDWcbzj4yZzO/YFc0g5DmM4V+sTK25cYV5l6ZNmftfWtbT/JttHPuyL0UQva04+jra0\
-            PJ56Lkm1spemqu5PRk9Apx9AHD4LrKIi3HwZL/2hifGp1OSsqeQkhmXj35esVbWZGHk\
-            XfAq+A7R8FvS8lo8gGbm22YGg42HGw4+AgcXMjFiOfpiClm9Qoxw36UWe6KGfIaW4oZ\
-            2nTcerruSEwsD8t0wrGzErGrT8T+TkctSZcPwKDf62ujUHyWQA+He2s9FxJbL3J4U0h\
-            s8M72mlcVWxuz+c7qXUdFBlldsra8k+pvLsq+CeOMScYf9MrvfApJvM4LHpYvNKIslr\
-            wTr+69tpZt2/ZP66f1/wEAdvMbd66GAAA=\"]"
+          size: 3575
+          text: "[\"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\
+            FHE=\",\"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\
+            r87/BwCH5WjHI8AAAA==\"]"
         cookies: []
         headers:
           - name: date
-            value: Tue, 01 Apr 2025 16:19:52 GMT
+            value: Mon, 28 Apr 2025 09:57:21 GMT
           - name: content-type
             value: text/plain; charset=utf-8
           - name: transfer-encoding
@@ -1420,13 +1413,13 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1358
+        headersSize: 1406
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-04-01T16:19:52.128Z
-      time: 274
+      startedDateTime: 2025-04-28T09:57:20.871Z
+      time: 270
       timings:
         blocked: -1
         connect: -1
@@ -1434,6 +1427,6 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 274
+        wait: 270
   pages: []
   version: "1.2"

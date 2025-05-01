@@ -1,5 +1,6 @@
 import type { InlineCompletionItemRetrievedContext } from '../../completions/analytics-logger'
-import type { ModelResponse, SuccessModelResponse } from '../adapters/base'
+import type { ModelResponse, PartialModelResponse, SuccessModelResponse } from '../adapters/base'
+import type { AutoEditRenderOutput } from '../renderer/render-output'
 import { getDetailedTimingInfo } from './autoedit-latency-utils'
 import type { AutoeditRequestDebugState } from './debug-store'
 
@@ -20,6 +21,8 @@ export const extractAutoeditData = (entry: AutoeditRequestDebugState) => {
     const position = getPosition(entry)
     const modelResponse = getModelResponse(entry)
     const context = getContext(entry)
+    const renderOutput = getRenderOutput(entry)
+    const hotStreakId = getHotStreakId(entry)
 
     return {
         phase,
@@ -38,6 +41,8 @@ export const extractAutoeditData = (entry: AutoeditRequestDebugState) => {
         position,
         modelResponse,
         context,
+        renderOutput,
+        hotStreakId,
     }
 }
 
@@ -289,9 +294,40 @@ export const getNetworkLatencyInfo = (
 
 export const getSuccessModelResponse = (
     entry: AutoeditRequestDebugState
-): SuccessModelResponse | null => {
-    if ('modelResponse' in entry.state && entry.state.modelResponse.type === 'success') {
+): SuccessModelResponse | PartialModelResponse | null => {
+    if (
+        'modelResponse' in entry.state &&
+        (entry.state.modelResponse.type === 'success' || entry.state.modelResponse.type === 'partial')
+    ) {
         return entry.state.modelResponse
+    }
+    return null
+}
+
+/**
+ * Get hot streak chunks if available
+ */
+export const getHotStreakChunks = (
+    entry: AutoeditRequestDebugState
+):
+    | { prediction: string; loadedAt: number; modelResponse: ModelResponse; fullPrediction?: string }[]
+    | null => {
+    if (
+        'hotStreakChunks' in entry.state &&
+        Array.isArray(entry.state.hotStreakChunks) &&
+        entry.state.hotStreakChunks.length > 0
+    ) {
+        return entry.state.hotStreakChunks
+    }
+    return null
+}
+
+/**
+ * Get the hot streak ID if available
+ */
+export const getHotStreakId = (entry: AutoeditRequestDebugState): string | null => {
+    if ('hotStreakId' in entry.state && entry.state.hotStreakId) {
+        return entry.state.hotStreakId
     }
     return null
 }
@@ -320,6 +356,16 @@ export const getModelResponse = (entry: AutoeditRequestDebugState): ModelRespons
     return null
 }
 
+/**
+ * Get the render output if available
+ */
+export const getRenderOutput = (entry: AutoeditRequestDebugState): AutoEditRenderOutput | null => {
+    if ('renderOutput' in entry.state) {
+        return entry.state.renderOutput
+    }
+    return null
+}
+
 export const AutoeditDataSDK = {
     extractAutoeditData,
     getStartTime,
@@ -341,4 +387,6 @@ export const AutoeditDataSDK = {
     getNetworkLatencyInfo,
     getFullResponseBody,
     getModelResponse,
+    getHotStreakChunks,
+    getHotStreakId,
 }

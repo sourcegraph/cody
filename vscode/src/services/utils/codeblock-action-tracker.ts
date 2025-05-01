@@ -143,7 +143,7 @@ export async function handleCodeFromInsertAtCursor(text: string): Promise<void> 
 
 function isSmartApplyInstantModeEnabled(): Observable<boolean> {
     return combineLatest(
-        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodySmartApplyInstantModeEnabled)
+        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodySmartApplyInstantModeEnabled)
     ).pipe(
         switchMap(([isEnabled]) => {
             // If the instant mode is enabled, return true to use qwen model.
@@ -164,7 +164,7 @@ async function getSmartApplyModel(authStatus: AuthStatus): Promise<EditModel | u
         return SMART_APPLY_MODEL_IDENTIFIERS.FireworksQwenCodeDefault
     }
     if (isDotCom(authStatus) || isS2(authStatus)) {
-        const defaultModel: EditModel = 'anthropic/claude-3-5-sonnet-20240620'
+        const defaultModel: EditModel = 'anthropic::2024-10-22::claude-3-5-sonnet-latest'
         /**
          * For PLG, we have a greater model choice. We default this to Claude 3.5 Sonnet
          * as it is the most reliable model for smart apply from our testing.

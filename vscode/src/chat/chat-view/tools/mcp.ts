@@ -368,7 +368,7 @@ export class MCPManager {
     private static changeNotifications = new Subject<void>()
     private static toolsChangeNotifications = new Subject<void>()
     public static observable: Observable<McpServer[]> = combineLatest(
-        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.NextAgenticChatInternal),
+        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.NextAgenticChatInternal),
         this.changeNotifications.pipe(startWith(undefined)),
         this.toolsChangeNotifications.pipe(startWith(undefined))
     ).pipe(
