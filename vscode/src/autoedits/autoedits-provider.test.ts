@@ -590,9 +590,7 @@ describe('AutoeditsProvider', () => {
             // `customGetModelResponse` function has returned.
             expect(result1).toBeNull()
 
-            // Insert text includes duplicated the existing numbers becase we have inline decorations
-            // to remove "123" and replace it with "12345".
-            expect(result2?.inlineCompletionItems[0].insertText).toBe('const x = 12312345')
+            expect(result2?.inlineCompletionItems[0].insertText).toBe('const x = 12345')
 
             // The first call is executed immediately.
             expect(calls[0].getModelResponseCalledAt).toBe(0)
@@ -692,7 +690,7 @@ describe('AutoeditsProvider', () => {
             expect(result1).toBeNull()
             expect(result2).toBeNull()
             expect(result3).toBeNull()
-            expect(result4?.inlineCompletionItems[0].insertText).toBe('const y = 1212345')
+            expect(result4?.inlineCompletionItems[0].insertText).toBe('const y = 12345')
 
             // The first call is executed immediately.
             expect(calls[0].getModelResponseCalledAt).toBe(0)

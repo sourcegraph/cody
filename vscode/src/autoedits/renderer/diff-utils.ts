@@ -166,10 +166,7 @@ function computeDiffOperations(
     return lineInfos
 }
 
-/**
- * Creates a ModifiedLineInfo object by computing insertions and deletions within a line.
- */
-function createModifiedLineInfo({
+function getModifiedLineChanges({
     originalLineNumber,
     modifiedLineNumber,
     originalText,
@@ -181,24 +178,68 @@ function createModifiedLineInfo({
     originalText: string
     modifiedText: string
     chunkRegex: RegExp
-}): ModifiedLineInfo {
+}): LineChange[] {
     const oldChunks = splitLineIntoChunks(originalText, chunkRegex)
     const newChunks = splitLineIntoChunks(modifiedText, chunkRegex)
-    const lineChanges = computeLineChanges({
+    return computeLineChanges({
         oldChunks,
         newChunks,
         originalLineNumber,
         modifiedLineNumber,
     })
+}
+
+function isSingleConsecutiveChunk(changes: LineChange[]): boolean {
+    const modifications = changes
+        .filter(change => change.type === 'insert' || change.type === 'delete')
+        .sort((a, b) => a.originalRange.start.character - b.originalRange.start.character)
+
+    if (modifications.length <= 1) {
+        return true
+    }
+
+    return modifications.every((modification, i) => {
+        if (i === 0) {
+            // First modification, always a continuous range at this point
+            return true
+        }
+
+        const previousModification = modifications[i - 1]
+
+        // This modification must be adjacent or overlap with the previous one
+        return (
+            modification.originalRange.start.character <=
+            previousModification.originalRange.end.character + 1
+        )
+    })
+}
+
+/**
+ * Creates a ModifiedLineInfo object by computing insertions and deletions within a line.
+ */
+function createModifiedLineInfo(params: {
+    originalLineNumber: number
+    modifiedLineNumber: number
+    originalText: string
+    modifiedText: string
+    chunkRegex: RegExp
+}): ModifiedLineInfo {
+    let changes = getModifiedLineChanges(params)
+
+    if (isSingleConsecutiveChunk(changes)) {
+        // The modified line changes form a single consecutive chunk.
+        // It is likely that character based diffing will be a better representation of the diff here
+        changes = getModifiedLineChanges({ ...params, chunkRegex: CHARACTER_REGEX })
+    }
 
     return {
         id: uuid.v4(),
         type: 'modified',
-        originalLineNumber,
-        modifiedLineNumber,
-        oldText: originalText,
-        newText: modifiedText,
-        changes: lineChanges,
+        originalLineNumber: params.originalLineNumber,
+        modifiedLineNumber: params.modifiedLineNumber,
+        oldText: params.originalText,
+        newText: params.modifiedText,
+        changes,
     }
 }
 
@@ -465,6 +506,9 @@ function computeLineChanges({
 
 // Split line into words, consecutive spaces and punctuation marks
 const WORDS_AND_PUNCTUATION_REGEX = /(\w+|\s+|\W)/g
+
+// Split lines by characters
+const CHARACTER_REGEX = /./g
 
 /**
  * Splits a line into chunks for fine-grained diffing.
