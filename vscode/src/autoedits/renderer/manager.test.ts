@@ -12,9 +12,9 @@ import { getCodeToReplaceForRenderer } from '../prompt/test-helper'
 import { AutoEditsRendererManager } from '../renderer/manager'
 
 import { RequestManager } from '../request-manager'
+import { InlineDiffDecorator } from './decorators/inline-diff-decorator'
 import type { TryMakeInlineCompletionsArgs } from './manager'
 import type { CompletionRenderOutput } from './render-output'
-import { InlineDiffDecorator } from './decorators/inline-diff-decorator'
 
 const mockCapabilities: AutoeditClientCapabilities = {
     autoedit: 'enabled',
@@ -72,7 +72,7 @@ describe('AutoEditsDefaultRendererManager', () => {
             expect(items[0].insertText).toEqual(expectedCompletion)
         }
 
-        it.only('should return single line inline completion when possible', async () => {
+        it('should return single line inline completion when possible', async () => {
             const documentText = dedent`const a = 1
                 const b = 2
                 const c = 3
@@ -84,13 +84,11 @@ describe('AutoEditsDefaultRendererManager', () => {
             `
             const prediction = dedent`const c = 3
                 console.log(a, b, c)
-                function greet() { console.log("Hello") }
+                function greet() { console.log("Hello") }\n
             `
             const args = getAutoeditRendererManagerArgs(documentText, prediction)
             const result = manager.getRenderOutput(args, mockCapabilities) as CompletionRenderOutput
             expect(result).toBeDefined()
-            console.log('got result', result);
-            console.log(JSON.stringify(result, null, 2));
             assertInlineCompletionItems(
                 result.inlineCompletionItems,
                 dedent`
@@ -113,7 +111,7 @@ describe('AutoEditsDefaultRendererManager', () => {
                 console.log(a, b, c)
                 const d = 10
                 const e = 20
-                function greet() { console.log("Hello") }
+                function greet() { console.log("Hello") }\n
             `
             const args = getAutoeditRendererManagerArgs(documentText, prediction)
             const result = manager.getRenderOutput(args, mockCapabilities) as CompletionRenderOutput
@@ -140,7 +138,7 @@ describe('AutoEditsDefaultRendererManager', () => {
             `
             const prediction = dedent`const c = 3
                 console.log(a, b, c)
-                function greet() { console.log("Hello") }
+                function greet() { console.log("Hello") }\n
             `
             const args = getAutoeditRendererManagerArgs(documentText, prediction)
             const result = manager.getRenderOutput(args, mockCapabilities) as CompletionRenderOutput

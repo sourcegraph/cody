@@ -99,7 +99,6 @@ export class AutoEditsRenderOutput {
             args,
             capabilities
         )
-        console.log('completions?', completionsWithDecorations)
         if (completionsWithDecorations) {
             return completionsWithDecorations
         }
