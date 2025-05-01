@@ -19,7 +19,7 @@ testWithGitRemote.extend<DotcomUrlOverride>({ dotcomUrl: mockServer.SERVER_URL }
         await sidebarSignin(page, sidebar)
         const chatFrame = getChatSidebarPanel(page)
         const lastChatInput = getChatInputs(chatFrame).last()
-
+        await lastChatInput.click({ delay: 100 })
         // The current repository should be initially present in the chat input.
         await expect(chatInputMentions(lastChatInput)).toHaveText(['myrepo'])
     }
