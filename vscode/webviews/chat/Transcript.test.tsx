@@ -1,7 +1,7 @@
 import { type ChatMessage, FIXTURE_MODELS, errorToChatError, ps } from '@sourcegraph/cody-shared'
 import { fireEvent, getQueriesForElement, render as render_, screen } from '@testing-library/react'
 import type { ComponentProps } from 'react'
-import { describe, expect, test, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 import { URI } from 'vscode-uri'
 import { AppWrapperForTest } from '../AppWrapperForTest'
 import { MockNoGuardrails } from '../utils/guardrails'
@@ -19,6 +19,21 @@ const PROPS: Omit<ComponentProps<typeof Transcript>, 'transcript'> = {
     setActiveChatContext: () => {},
     guardrails: new MockNoGuardrails(),
 }
+
+// Mock requestAnimationFrame to execute callback immediately in test environment
+const originalRAF = global.requestAnimationFrame
+beforeEach(() => {
+    global.requestAnimationFrame = (cb: FrameRequestCallback): number => {
+        // Execute the callback immediately
+        cb(0)
+        return 0
+    }
+})
+
+afterEach(() => {
+    // Restore the original requestAnimationFrame
+    global.requestAnimationFrame = originalRAF
+})
 
 vi.mock('../utils/VSCodeApi', () => ({
     getVSCodeAPI: vi.fn().mockReturnValue({
