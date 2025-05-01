@@ -107,8 +107,12 @@ class ToolboxManager {
             // If the feature flag to use the default chat model is enabled, use the default chat model.
             // Otherwise, use gemini-flash or haiku 3.5 model if available.
             // If neither is available, use the first model with speed tag in the list.
-            const reflectModel = getModelForReflection(models.primaryModels)
-            DeepCodyAgent.model = useDefaultChatModel ? models.preferences.defaults.chat : reflectModel
+            const defaultChatModel = models.preferences?.defaults?.chat
+            if (useDefaultChatModel && defaultChatModel) {
+                DeepCodyAgent.model = defaultChatModel
+            } else {
+                DeepCodyAgent.model = getDeepCodyModel(models.primaryModels)?.id
+            }
 
             this.isEnabled = Boolean(DeepCodyAgent.model)
 
@@ -139,24 +143,25 @@ class ToolboxManager {
 export const toolboxManager = ToolboxManager.getInstance()
 
 /**
- * Returns the most suitable model for reflection operations.
+ * Returns the most suitable model for Deep Cody / agentic chat.
+ * The model is expected to be fast and capable of reviewing and filtering large
+ * amounts of context and ability to use tools.
  *
  * Prioritizes models in the following order:
  * 1. Gemini Flash model
- * 2. Haiku 3.5 model
- * 3. Any model with the Speed tag
+ * 2. GPT-4.1 Mini model
+ * 3. Haiku 3.5 model
+ * 4. First model with the Speed tag
  *
  * @param models - Array of available models
  * @returns The ID of the selected model, or undefined if no suitable model is found
  */
-export function getModelForReflection(models: Model[]): string | undefined {
-    const speedModels = models.filter(
-        model =>
-            model.id.includes('haiku') ||
-            model.id.includes('gemini-flash') ||
-            model.tags.includes(ModelTag.Speed)
-    )
-    const geminiModel = speedModels.find(model => model.id.includes('gemini-flash'))
-    const haiku35Model = speedModels.find(model => model.id.includes('5-haiku'))
-    return geminiModel?.id ?? haiku35Model?.id ?? speedModels[0]?.id
+export function getDeepCodyModel(models: Model[]): Model | undefined {
+    if (!models.length) return undefined
+    // List of preferred model id substring sorted by priority.
+    const priorityModels = ['-flash', 'gpt-4.1-mini', '5-haiku']
+    // Find the model that matches the preferred model id substring.
+    // If none of the preferred models are found, find the first model with the Speed tag.
+    const matches = priorityModels.map(s => models.find(m => m.id.includes(s)))
+    return matches.find(m => m !== undefined) || models.find(m => m.tags.includes(ModelTag.Speed))
 }

@@ -42,7 +42,7 @@ vi.mock('./DeepCody', () => ({
 
 // Import after setting up mocks
 import { DeepCodyAgent } from './DeepCody'
-import { getModelForReflection, toolboxManager } from './ToolboxManager'
+import { getDeepCodyModel, toolboxManager } from './ToolboxManager'
 
 // Mocks are defined at the top of the file
 
@@ -57,24 +57,34 @@ describe('ToolboxManager', () => {
         vi.resetAllMocks()
     })
 
-    describe('getModelForReflection', () => {
+    describe('getDeepCodyModel', () => {
         const testCases = [
             {
-                name: 'should prioritize gemini-flash model',
+                name: 'should prioritize model with -flash substring',
                 models: [
                     { id: 'gemini-flash', tags: [ModelTag.Speed] },
+                    { id: 'gpt-4.1-mini', tags: [ModelTag.Speed] },
                     { id: 'claude-3-5-haiku', tags: [ModelTag.Speed] },
                     { id: 'other-model', tags: [ModelTag.Speed] },
                 ],
-                expected: 'gemini-flash',
+                expectedId: 'gemini-flash',
             },
             {
-                name: 'should use haiku model if gemini not available',
+                name: 'should prioritize gpt-4.1-mini if -flash not available',
+                models: [
+                    { id: 'gpt-4.1-mini', tags: [ModelTag.Speed] },
+                    { id: 'claude-3-5-haiku', tags: [ModelTag.Speed] },
+                    { id: 'other-model', tags: [ModelTag.Speed] },
+                ],
+                expectedId: 'gpt-4.1-mini',
+            },
+            {
+                name: 'should use haiku model if higher priority models not available',
                 models: [
                     { id: 'claude-3-5-haiku', tags: [ModelTag.Speed] },
                     { id: 'other-model', tags: [ModelTag.Speed] },
                 ],
-                expected: 'claude-3-5-haiku',
+                expectedId: 'claude-3-5-haiku',
             },
             {
                 name: 'should use first speed model if preferred models not available',
@@ -82,19 +92,24 @@ describe('ToolboxManager', () => {
                     { id: 'other-model', tags: ['other'] },
                     { id: 'speed-model', tags: [ModelTag.Speed] },
                 ],
-                expected: 'speed-model',
+                expectedId: 'speed-model',
             },
             {
                 name: 'should return undefined if no suitable models',
                 models: [{ id: 'other-model', tags: ['other'] }],
-                expected: undefined,
+                expectedId: undefined,
             },
         ]
 
         for (const testCase of testCases) {
             it(testCase.name, () => {
-                const result = getModelForReflection(testCase.models as Model[])
-                expect(result).toBe(testCase.expected)
+                const result = getDeepCodyModel(testCase.models as Model[])
+                if (testCase.expectedId === undefined) {
+                    expect(result).toBeUndefined()
+                } else {
+                    expect(result).not.toBeUndefined()
+                    expect(result?.id).toBe(testCase.expectedId)
+                }
             })
         }
     })
