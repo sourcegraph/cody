@@ -126,7 +126,7 @@ function createHotStreakParams(
         responseGenerator,
         document,
         codeToReplaceData,
-        docContext: docContext,
+        requestDocContext: docContext,
         position,
         options: {
             hotStreakEnabled: true,

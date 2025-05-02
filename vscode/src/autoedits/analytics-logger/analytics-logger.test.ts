@@ -78,7 +78,7 @@ describe('AutoeditAnalyticsLogger', () => {
         return {
             startedAt: performance.now(),
             filePath: getCurrentFilePath(document).toString(),
-            docContext,
+            requestDocContext: docContext,
             document,
             position,
             codeToReplaceData: codeToReplace,
@@ -120,7 +120,7 @@ describe('AutoeditAnalyticsLogger', () => {
             cacheId: uuid.v4() as AutoeditCacheID,
             prompt: modelOptions.prompt,
             codeToReplaceData: codeToReplace,
-            docContext,
+            predictionDocContext: docContext,
             editPosition: position,
             modelResponse: {
                 type: 'success',

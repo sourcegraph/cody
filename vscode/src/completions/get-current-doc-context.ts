@@ -348,3 +348,19 @@ function getLinesContext(params: GetLinesContextParams): LinesContext {
         nextNonEmptyLine,
     }
 }
+
+export function getCurrentLinePrefixAndSuffix({
+    document,
+    position,
+}: {
+    document: vscode.TextDocument
+    position: vscode.Position
+}) {
+    const currentLineStartPosition = new vscode.Position(position.line, 0)
+    const currentLinePrefix = document.getText(new vscode.Range(currentLineStartPosition, position))
+
+    const currentLineEndPosition = document.lineAt(position.line).range.end
+    const currentLineSuffix = document.getText(new vscode.Range(position, currentLineEndPosition))
+
+    return { currentLinePrefix, currentLineSuffix }
+}

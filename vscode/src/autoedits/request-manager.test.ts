@@ -16,7 +16,7 @@ import type { DocumentContext } from '@sourcegraph/cody-shared'
 import { documentAndPosition } from '../completions/test-helpers'
 
 import { AutoeditStopReason } from './adapters/base'
-import { type AutoeditSourceMetadata, autoeditSource } from './analytics-logger'
+import { type AutoeditSourceMetadata, autoeditSource, autoeditTriggerKind } from './analytics-logger'
 import type {
     AbortedPredictionResult,
     PredictionResult,
@@ -57,7 +57,7 @@ describe('Autoedits RequestManager', () => {
             yield createSuccessResponse(
                 prediction,
                 params.documentUri,
-                params.docContext,
+                params.requestDocContext,
                 params.codeToReplaceData
             )
         })
@@ -352,7 +352,7 @@ async function startRequests({
             yield createSuccessResponse(
                 prediction,
                 requestParams.documentUri,
-                requestParams.docContext,
+                requestParams.requestDocContext,
                 requestParams.codeToReplaceData
             )
         })
@@ -434,7 +434,8 @@ function createRequestParams(
         requestUrl: 'https://test.com',
         abortSignal: new AbortController().signal,
         codeToReplaceData,
-        docContext: {} as DocumentContext,
+        requestDocContext: {} as DocumentContext,
+        triggerKind: autoeditTriggerKind.automatic,
     }
 }
 
