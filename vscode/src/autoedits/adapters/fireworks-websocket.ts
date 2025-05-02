@@ -106,8 +106,7 @@ export class FireworksWebSocketAdapter implements AutoeditsModelAdapter {
         const maxTokens = getMaxOutputTokensForAutoedits(options.codeToRewrite)
         const baseParams: FireworksCompatibleRequestParams = {
             stream: true,
-            // TODO(CODY-5528): allow user to specify models
-            // model: options.model,
+            model: options.model,
             temperature: 0.1,
             max_tokens: maxTokens,
             response_format: {

@@ -1,6 +1,8 @@
 import {
     type AgentToolboxSettings,
     FeatureFlag,
+    type Model,
+    ModelTag,
     authStatus,
     combineLatest,
     distinctUntilChanged,
@@ -11,6 +13,7 @@ import {
     startWith,
     userProductSubscription,
 } from '@sourcegraph/cody-shared'
+import { DeepCodyAgentID } from '@sourcegraph/cody-shared/src/models/client'
 import { type Observable, Subject, map } from 'observable-fns'
 import { env } from 'vscode'
 import { DeepCodyAgent } from './DeepCody'
@@ -29,16 +32,12 @@ const DEFAULT_SHELL_CONFIG = Object.freeze({
  */
 class ToolboxManager {
     private static instance?: ToolboxManager
-    private static isEnabled = false
-
-    public isAgenticChatEnabled(): boolean {
-        return Boolean(ToolboxManager.isEnabled)
-    }
 
     private constructor() {
         // Using private constructor for Singleton pattern
     }
 
+    private isEnabled = false
     private isRateLimited = false
     private readonly changeNotifications = new Subject<void>()
     private shellConfig = { ...DEFAULT_SHELL_CONFIG }
@@ -49,13 +48,13 @@ class ToolboxManager {
     }
 
     public getSettings(): AgentToolboxSettings | null {
-        if (!ToolboxManager.isEnabled) {
+        if (!this.isEnabled) {
             return null
         }
         const shellError = this.getFeatureError('shell')
         // TODO: Remove hard-coded agent once we have a proper agentic chat selection UI
         return {
-            agent: { name: this.isRateLimited ? undefined : DeepCodyAgent.id },
+            agent: { name: this.isRateLimited ? undefined : DeepCodyAgentID },
             shell: {
                 enabled: shellError === undefined,
                 error: shellError,
@@ -63,8 +62,14 @@ class ToolboxManager {
         }
     }
 
+
+    public isAgenticChatEnabled(): boolean {
+        return this.isEnabled && Boolean(DeepCodyAgent.model)
+    }
+
+
     public setIsRateLimited(hasHitLimit: boolean): void {
-        if (ToolboxManager.isEnabled && this.isRateLimited !== hasHitLimit) {
+        if (this.isEnabled && this.isRateLimited !== hasHitLimit) {
             this.isRateLimited = hasHitLimit
             this.changeNotifications.next()
         }
@@ -101,14 +106,22 @@ class ToolboxManager {
                 !models ||
                 (!isDotCom(auth.endpoint) && !deepCodyEnabled)
             ) {
-                ToolboxManager.isEnabled = false
+                DeepCodyAgent.model = undefined
+                this.isEnabled = false
                 return null
             }
 
-            // TODO (bee): Remove once A/B test is over - 3.5 Haiku vs default chat model.
-            const haikuModel = models.primaryModels.find(model => model.id.includes('5-haiku'))
-            DeepCodyAgent.model = useDefaultChatModel ? models.preferences.defaults.chat : haikuModel?.id
-            ToolboxManager.isEnabled = Boolean(DeepCodyAgent.model)
+            // If the feature flag to use the default chat model is enabled, use the default chat model.
+            // Otherwise, use gemini-flash or haiku 3.5 model if available.
+            // If neither is available, use the first model with speed tag in the list.
+            const defaultChatModel = models.preferences?.defaults?.chat
+            if (useDefaultChatModel && defaultChatModel) {
+                DeepCodyAgent.model = defaultChatModel
+            } else {
+                DeepCodyAgent.model = getDeepCodyModel(models.primaryModels)?.id
+            }
+
+            this.isEnabled = Boolean(DeepCodyAgent.model)
 
             Object.assign(this.shellConfig, {
                 instance: instanceShellContextFlag,
@@ -135,3 +148,27 @@ class ToolboxManager {
 }
 
 export const toolboxManager = ToolboxManager.getInstance()
+
+/**
+ * Returns the most suitable model for Deep Cody / agentic chat.
+ * The model is expected to be fast and capable of reviewing and filtering large
+ * amounts of context and ability to use tools.
+ *
+ * Prioritizes models in the following order:
+ * 1. Gemini Flash model
+ * 2. GPT-4.1 Mini model
+ * 3. Haiku 3.5 model
+ * 4. First model with the Speed tag
+ *
+ * @param models - Array of available models
+ * @returns The ID of the selected model, or undefined if no suitable model is found
+ */
+export function getDeepCodyModel(models: Model[]): Model | undefined {
+    if (!models.length) return undefined
+    // List of preferred model id substring sorted by priority.
+    const priorityModels = ['-flash', 'gpt-4.1-mini', '5-haiku']
+    // Find the model that matches the preferred model id substring.
+    // If none of the preferred models are found, find the first model with the Speed tag.
+    const matches = priorityModels.map(s => models.find(m => m.id.includes(s)))
+    return matches.find(m => m !== undefined) || models.find(m => m.tags.includes(ModelTag.Speed))
+}
