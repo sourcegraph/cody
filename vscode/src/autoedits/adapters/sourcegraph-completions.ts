@@ -70,6 +70,14 @@ export class SourcegraphCompletionsAdapter implements AutoeditsModelAdapter {
         let requestUrl = options.url
         let isAborted = false
 
+        const sharedResult = {
+            responseHeaders,
+            requestHeaders,
+            requestUrl,
+            requestBody,
+            responseBody,
+        }
+
         for await (const msg of completionResponseGenerator) {
             const newText = msg.completionResponse?.completion
             if (newText) {
@@ -106,22 +114,11 @@ export class SourcegraphCompletionsAdapter implements AutoeditsModelAdapter {
             }
 
             yield {
+                ...sharedResult,
                 type: 'partial',
                 stopReason: AutoeditStopReason.StreamingChunk,
                 prediction,
-                requestUrl,
-                requestHeaders,
-                responseHeaders,
-                responseBody,
             }
-        }
-
-        const sharedResult = {
-            responseHeaders,
-            requestHeaders,
-            requestUrl,
-            requestBody,
-            responseBody,
         }
 
         if (isAborted) {
