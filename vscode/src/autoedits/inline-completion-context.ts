@@ -1,5 +1,9 @@
 import type * as vscode from 'vscode'
 
+function doRangesOverlap(a: vscode.Range, b: vscode.Range): boolean {
+    return a.end.isAfter(b.start) && b.end.isAfter(a.start)
+}
+
 export function getCompletionContextAwareDocument(
     document: vscode.TextDocument,
     inlineCompletionContext: vscode.InlineCompletionContext
@@ -14,6 +18,11 @@ export function getCompletionContextAwareDocument(
         ...document,
         getText(range) {
             const documentText = document.getText(range)
+            if (range && !doRangesOverlap(range, selectedCompletionInfo.range)) {
+                // The target range does not intersect with the affected range. Return as normal
+                return documentText
+            }
+
             let startOffset = document.offsetAt(selectedCompletionInfo.range.start)
             let endOffset = document.offsetAt(selectedCompletionInfo.range.end)
 

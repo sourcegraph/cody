@@ -239,6 +239,31 @@ export class AutoEditsRenderOutput {
         return null
     }
 
+    private getInsertionPositionForInlineCompletion(
+        position: vscode.Position,
+        inlineCompletionContext: vscode.InlineCompletionContext
+    ) {
+        const { selectedCompletionInfo } = inlineCompletionContext
+        if (!selectedCompletionInfo) {
+            // No need to modify the cursor position
+            return position
+        }
+
+        const selectedCompletionLines = selectedCompletionInfo.text.split('\n')
+        if (selectedCompletionLines.length === 1) {
+            return new vscode.Position(
+                selectedCompletionInfo.range.start.line,
+                selectedCompletionInfo.range.start.character + selectedCompletionInfo.text.length
+            )
+        }
+
+        const lastInsertionLine = selectedCompletionLines[selectedCompletionLines.length - 1]
+        return new vscode.Position(
+            selectedCompletionInfo.range.start.line + selectedCompletionLines.length - 1,
+            lastInsertionLine.length
+        )
+    }
+
     private tryMakeInlineCompletions({
         requestId,
         position,
@@ -252,15 +277,19 @@ export class AutoEditsRenderOutput {
         updatedDecorationInfo: DecorationInfo
         updatedPrediction: string
     } | null {
+        const insertionPosition = this.getInsertionPositionForInlineCompletion(
+            position,
+            inlineCompletionContext
+        )
         const { insertText, usedChangeIds } = getCompletionText({
             prediction,
-            cursorPosition: position,
+            cursorPosition: insertionPosition,
             decorationInfo,
         })
 
         const { currentLinePrefix, currentLineSuffix } = getCurrentLinePrefixAndSuffix({
             document,
-            position,
+            position: insertionPosition,
             inlineCompletionContext,
         })
 
@@ -276,14 +305,6 @@ export class AutoEditsRenderOutput {
         }
 
         const completionText = currentLinePrefix + insertText
-        console.log('UMPOX GOT COMPLETION TEXT', {
-            used: {
-                completionText,
-                currentLinePrefix,
-                inlineCompletionContext,
-                insertText,
-            },
-        })
         const inlineCompletionItems = [
             new AutoeditCompletionItem({
                 id: requestId,
