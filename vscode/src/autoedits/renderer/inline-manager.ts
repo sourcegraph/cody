@@ -23,6 +23,7 @@ export class AutoEditsInlineRendererManager
         args: GetRenderOutputArgs,
         capabilities: AutoeditClientCapabilities
     ): AutoEditRenderOutput {
+        console.log('UMPOX GETTING RENDER OUTPUT')
         const completionsWithDecorations = this.getCompletionsWithPossibleDecorationsRenderOutput(
             args,
             capabilities

@@ -4,6 +4,7 @@ import * as vscode from 'vscode'
 
 import { getNewLineChar } from '../../completions/text-processing'
 
+import { getDocumentTextWithInlineCompletionContext } from '../utils'
 import type {
     AddedLineInfo,
     DecorationInfo,
@@ -15,13 +16,20 @@ import type {
 export function getDecorationInfoFromPrediction(
     document: vscode.TextDocument,
     prediction: string,
-    range: vscode.Range
+    range: vscode.Range,
+    inlineCompletionContext: vscode.InlineCompletionContext
 ): DecorationInfo {
-    const currentFileText = document.getText()
+    const currentFileText = getDocumentTextWithInlineCompletionContext(document, inlineCompletionContext)
     const predictedFileText =
         currentFileText.slice(0, document.offsetAt(range.start)) +
         prediction +
         currentFileText.slice(document.offsetAt(range.end))
+
+    console.log('UMPOX COMPARING', {
+        before: getDocumentTextWithInlineCompletionContext(document, inlineCompletionContext),
+        after: prediction,
+        inlineCompletionContext,
+    })
 
     const decorationInfo = getDecorationInfo(currentFileText, predictedFileText)
     return decorationInfo

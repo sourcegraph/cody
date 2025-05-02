@@ -393,7 +393,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                 position,
                 tokenBudget: autoeditsProviderConfig.tokenLimit,
             })
-            console.log('UMPOX GOT REQUEST CODE TO REPLACE DATA', {
+            console.log('UMPOX GOT REQUEST CODE TO REPLACE DATA!!!', {
                 rewrite: requestCodeToReplaceData.codeToRewrite,
                 inlineCompletionContext,
             })
@@ -426,6 +426,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                 new Promise(resolve => setTimeout(resolve, remainingThrottleDelay)),
             ])
 
+            console.log('UMPOX GOT CONTEXT?')
             if (abortSignal.aborted) {
                 autoeditsOutputChannelLogger.logDebugIfVerbose(
                     'provideInlineCompletionItems',
@@ -459,6 +460,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                 'provideInlineCompletionItems',
                 'Calculating prediction from getPrediction...'
             )
+            console.log('UMPOX GETTING PREDICTION...')
             const predictionResult = await this.getPrediction({
                 requestId,
                 document,
@@ -470,6 +472,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                 abortSignal,
                 triggerKind,
             })
+            console.log('UMPOX GOT PREDICTION RESULT', predictionResult)
 
             if (abortSignal?.aborted || predictionResult.type === 'aborted') {
                 this.discardSuggestion({
@@ -574,8 +577,10 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
             const decorationInfo = getDecorationInfoFromPrediction(
                 document,
                 prediction,
-                predictionCodeToReplaceData.range
+                predictionCodeToReplaceData.range,
+                inlineCompletionContext
             )
+            console.log('UMPOX GOT DECORATION INFO')
 
             if (
                 isDuplicatingTextFromRewriteArea({
@@ -585,6 +590,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                     codeToReplaceData: predictionCodeToReplaceData,
                 })
             ) {
+                console.log('UMPOX DUPLICAITNG...')
                 this.discardSuggestion({
                     startedAt,
                     requestId,
@@ -922,6 +928,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                 responseGenerator
             )
 
+            console.log('UMPOX PROCESSING HOT STREAK RESPONSES')
             return processHotStreakResponses({
                 responseGenerator: responseWithTiming,
                 document,

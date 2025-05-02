@@ -167,6 +167,7 @@ export async function* processHotStreakResponses({
                 document.version + 1
             )
 
+            console.log('UMPOX GOT SUGGESTION', predictionChunk)
             yield {
                 type: 'suggested',
                 response: {

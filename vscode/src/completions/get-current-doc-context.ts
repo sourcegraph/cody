@@ -361,19 +361,19 @@ export function getCurrentLinePrefixAndSuffix({
     const currentLineStartPosition = new vscode.Position(position.line, 0)
     const currentLineEndPosition = document.lineAt(position.line).range.end
 
-    const selectedCompletion = inlineCompletionContext.selectedCompletionInfo
-    if (selectedCompletion) {
-        console.log('UMPOX GOT SELECTION COMPLETION')
-        // The selected completion may replace existing characters in the document
-        // Use this so we get an accurate prefix, we can append the completion text afterwards
-        // const adjustedPosition = selectedCompletion.range.end
-        const currentLinePrefix =
-            document.getText(
-                new vscode.Range(currentLineStartPosition, selectedCompletion.range.start)
-            ) + selectedCompletion.text
-        const currentLineSuffix = document.getText(new vscode.Range(position, currentLineEndPosition))
-        return { currentLinePrefix, currentLineSuffix }
-    }
+    // const selectedCompletion = inlineCompletionContext.selectedCompletionInfo
+    // if (selectedCompletion) {
+    //     console.log('UMPOX GOT SELECTION COMPLETION')
+    //     // The selected completion may replace existing characters in the document
+    //     // Use this so we get an accurate prefix, we can append the completion text afterwards
+    //     // const adjustedPosition = selectedCompletion.range.end
+    //     const currentLinePrefix =
+    //         document.getText(
+    //             new vscode.Range(currentLineStartPosition, selectedCompletion.range.start)
+    //         ) + selectedCompletion.text
+    //     const currentLineSuffix = document.getText(new vscode.Range(position, currentLineEndPosition))
+    //     return { currentLinePrefix, currentLineSuffix }
+    // }
 
     const currentLinePrefix = document.getText(new vscode.Range(currentLineStartPosition, position))
     const currentLineSuffix = document.getText(new vscode.Range(position, currentLineEndPosition))
