@@ -252,7 +252,6 @@ export class AutoEditsRenderOutput {
         updatedDecorationInfo: DecorationInfo
         updatedPrediction: string
     } | null {
-        console.log('UMPOX GETTING INLINE COMPLETIONS...')
         const { insertText, usedChangeIds } = getCompletionText({
             prediction,
             cursorPosition: position,
@@ -272,7 +271,6 @@ export class AutoEditsRenderOutput {
         // The current line suffix should not require any char removals to render the completion.
         const isSuffixMatch = completionMatchesSuffix(insertText, currentLineSuffix)
         if (!isSuffixMatch) {
-            console.log('UMPOX NOT MATCHING SUFFIX..')
             // Does not match suffix. Cannot render inline completion.
             return null
         }
@@ -337,11 +335,6 @@ export class AutoEditsRenderOutput {
             decorationInfoWithoutUsedChanges.modifiedLines.filter(line =>
                 line.changes.some(change => change.type !== 'unchanged')
             ).length
-
-        console.log('UMPOX SHOWING COMPLETION', {
-            type: remainingChanges === 0 ? 'full' : 'partial',
-            inlineCompletionItems,
-        })
 
         return {
             type: remainingChanges === 0 ? 'full' : 'partial',

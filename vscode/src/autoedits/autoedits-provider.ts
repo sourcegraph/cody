@@ -391,10 +391,6 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                 position,
                 tokenBudget: autoeditsProviderConfig.tokenLimit,
             })
-            console.log('UMPOX GOT REQUEST CODE TO REPLACE DATA!!!', {
-                rewrite: requestCodeToReplaceData.codeToRewrite,
-                inlineCompletionContext,
-            })
             const requestId = autoeditAnalyticsLogger.createRequest({
                 startedAt,
                 filePath: getCurrentFilePath(document).toString(),
@@ -424,7 +420,6 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                 new Promise(resolve => setTimeout(resolve, remainingThrottleDelay)),
             ])
 
-            console.log('UMPOX GOT CONTEXT?')
             if (abortSignal.aborted) {
                 autoeditsOutputChannelLogger.logDebugIfVerbose(
                     'provideInlineCompletionItems',
@@ -458,7 +453,6 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                 'provideInlineCompletionItems',
                 'Calculating prediction from getPrediction...'
             )
-            console.log('UMPOX GETTING PREDICTION...')
             const predictionResult = await this.getPrediction({
                 requestId,
                 document,
@@ -470,7 +464,6 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                 abortSignal,
                 triggerKind,
             })
-            console.log('UMPOX GOT PREDICTION RESULT', predictionResult)
 
             if (abortSignal?.aborted || predictionResult.type === 'aborted') {
                 this.discardSuggestion({
@@ -493,10 +486,6 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
             const initialPrediction = predictionResult.response.prediction
             const predictionDocContext = predictionResult.docContext
             const predictionCodeToReplaceData = predictionResult.codeToReplaceData
-            console.log('UMPOX GOT PREDICTION CODE TO REPLACE DATA', {
-                rewrite: predictionCodeToReplaceData.codeToRewrite,
-                inlineCompletionContext,
-            })
             autoeditAnalyticsLogger.markAsLoaded({
                 requestId,
                 cacheId: predictionResult.cacheId,
@@ -941,7 +930,6 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                 responseGenerator
             )
 
-            console.log('UMPOX PROCESSING HOT STREAK RESPONSES')
             return processHotStreakResponses({
                 responseGenerator: responseWithTiming,
                 document,
