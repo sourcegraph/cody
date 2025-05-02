@@ -100,14 +100,14 @@ export class AutoeditAnalyticsLogger {
         codeToReplaceData,
         document,
         position,
-        docContext,
+        requestDocContext,
     }: {
         startedAt: number
         filePath: string
         codeToReplaceData: CodeToReplaceData
         document: vscode.TextDocument
         position: vscode.Position
-        docContext: DocumentContext
+        requestDocContext: DocumentContext
         payload: Required<
             Pick<StartedState['payload'], 'languageId' | 'model' | 'triggerKind' | 'codeToRewrite'>
         >
@@ -124,7 +124,7 @@ export class AutoeditAnalyticsLogger {
             codeToReplaceData,
             document,
             position,
-            docContext,
+            requestDocContext,
             payload: {
                 otherCompletionProviderEnabled: otherCompletionProviders.length > 0,
                 otherCompletionProviders,
@@ -175,12 +175,12 @@ export class AutoeditAnalyticsLogger {
         payload,
         modelResponse,
         codeToReplaceData,
-        docContext,
+        predictionDocContext,
         editPosition,
     }: {
         modelResponse: SuccessModelResponse | PartialModelResponse
         codeToReplaceData: CodeToReplaceData
-        docContext: DocumentContext
+        predictionDocContext: DocumentContext
         requestId: AutoeditRequestID
         cacheId: AutoeditCacheID
         hotStreakId?: AutoeditHotStreakID
@@ -200,7 +200,7 @@ export class AutoeditAnalyticsLogger {
                 loadedAt,
                 modelResponse,
                 codeToReplaceData,
-                docContext,
+                predictionDocContext,
                 cacheId,
                 hotStreakId,
                 editPosition,
@@ -257,9 +257,8 @@ export class AutoeditAnalyticsLogger {
                 'inlineCompletionItems' in renderOutput
                     ? renderOutput.inlineCompletionItems[0]
                     : undefined
-            const insertText = completion
-                ? (completion.insertText as string).slice(request.docContext.currentLinePrefix.length)
-                : undefined
+
+            const insertText = completion?.withoutCurrentLinePrefix.insertText
 
             return {
                 ...request,
