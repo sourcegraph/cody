@@ -62,11 +62,9 @@ class ToolboxManager {
         }
     }
 
-
     public isAgenticChatEnabled(): boolean {
         return this.isEnabled && Boolean(DeepCodyAgent.model)
     }
-
 
     public setIsRateLimited(hasHitLimit: boolean): void {
         if (this.isEnabled && this.isRateLimited !== hasHitLimit) {

@@ -374,1046 +374,6 @@ log:
         send: 0
         ssl: -1
         wait: 1804
-    - _id: b81d6bf8a449e68d473349235e63f0ef
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 5662
-        cookies: []
-        headers:
-          - name: accept-encoding
-            value: gzip;q=0
-          - name: authorization
-            value: token
-              REDACTED_fc324d3667e841181b0779375f26dedc911d26b303d23b29b1a2d7ee63dc77eb
-          - name: connection
-            value: keep-alive
-          - name: content-type
-            value: application/json
-          - name: traceparent
-            value: 00-00114ea25d166ffbf6f14757ce4f28cb-8189f45dbb141455-01
-          - name: user-agent
-            value: customcommandsclient/v1 (Node.js v20.4.0)
-          - name: x-requested-with
-            value: customcommandsclient v1
-          - name: host
-            value: sourcegraph.com
-        headersSize: 556
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json
-          params: []
-          textJSON:
-            maxTokensToSample: 4000
-            messages:
-              - speaker: system
-                text: >-
-                  You are Cody, an AI coding assistant from Sourcegraph.If your
-                  answer contains fenced code blocks in Markdown, include the
-                  relevant full file path in the code block tag using this
-                  structure: ```$LANGUAGE:$FILEPATH```
-
-                  For executable terminal commands: enclose each command in individual "bash" language code block without comments and new lines inside.
-              - speaker: human
-                text: >
-                  Codebase context from file path src/example3.ts: export
-                  function example(): string {
-                      return 'example'
-                  }
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: >
-                  Codebase context from file path src/example2.ts: export
-                  function example(): string {
-                      return 'example'
-                  }
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: |-
-                  My selected code from codebase file src/example1.ts:1-3:
-                  ```
-                  export function example(): string {
-                      return 'example'
-                  }
-                  ```
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: >-
-                  Answer positively without apologizing.
-
-
-                  Your task is to evaluate the shared context and think step-by-step to determine if you can answer user's request enclosed inside the <user_input> tags below.
-
-
-                  ## INSTRUCTIONS
-
-                  1. Analyze the shared context and chat history thoroughly.
-
-                  2. Decide if you have enough information to answer <user_input>.
-
-
-                  ## TOOLS
-
-                  In this environment you have access to this set of tools you can use to fetch context before answering:
-
-                  - `<TOOLMEMORY><store>SUMMARIZED_TEXT</store></TOOLMEMORY>`: Add info about the user and their preferences (e.g. name, preferred tool, language etc) based on the question, or when asked. DO NOT store summarized questions. DO NOT clear memory unless requested.
-                  	- Add user info to memory: `<TOOLMEMORY><store>info</store></TOOLMEMORY>`
-                  	- Get the stored user info: `<TOOLMEMORY><store>GET</store></TOOLMEMORY>`
-                  	- ONLY clear memory ON REQUEST: `<TOOLMEMORY><store>FORGET</store></TOOLMEMORY>`
-                  - `<TOOLSEARCH><query>SEARCH_QUERY</query></TOOLSEARCH>`: Perform a symbol query search in the codebase (Natural language search NOT supported).
-                  	- Locate a symbol found in an error log: `<TOOLSEARCH><query>symbol name</query></TOOLSEARCH>`
-                  	- Search for a function named getController: `<TOOLSEARCH><query>getController</query></TOOLSEARCH>`
-                  - `<TOOLFILE><name>FILENAME</name></TOOLFILE>`: To retrieve full content of a codebase file-DO NOT retrieve files that may contain secrets.
-                  	- See the content of different files: `<TOOLFILE><name>path/foo.ts</name><name>path/bar.ts</name></TOOLFILE>`
-                  - `<TOOLWEB><link>URL</link></TOOLWEB>`: To retrieve content from the link of a webpage.
-                  	- Content from the URL: `<TOOLWEB><link>https://sourcegraph.com</link></TOOLWEB>`
-                  - `<TOOLRULES><get>QUERY</get></TOOLRULES>`: Search....
-
-
-                  ## EXPECTED VALID OUTPUT
-
-                  1. Add the evaluated context that you need for certain in order to answer the <user_input> concisely with <context_list> tags, with the filename in between:
-                      - DO NOT add context that was not shared to the list.
-                      - DO NOT include EMPTY <context_list> list.
-                      <example_response>
-                          <context_list>shared/file1.ts</context_list><context_list>shared/file2.ts</context_list><context_list>command</context_list>
-                      <example_response>
-                  2. If you can answer the <user_input> fully with the context added to <context_list>, add "<next_step>" at the end:
-                      <example_response>
-                          <context_list>path/to/file1.ts</context_list><context_list>path/to/file2.ts</context_list><context_list>command</context_list><next_step>
-                      <example_response>
-                  3. If you need more information, use ONLY the appropriate <TOOL*> tag(s) in your response:
-                      <example_response>
-                          <TOOLFILE><name>path/to/file.ts</name></TOOLFILE><TOOLSEARCH><query>class Controller</query></TOOLSEARCH>
-                      <example_response>
-                  4. If you can answer the <user_input> fully without context, respond with ONLY the word "<next_step>":
-                      <example_response>
-                          <next_step>
-                      <example_response>
-                  5. If you can answer the <user_input> fully without context, but need to use tool per <user_input>:
-                      <example_response>
-                          <TOOLMEMORY><store>user's preferences</store></TOOLMEMORY><next_step>
-                      <example_response>
-
-                  ## INVALIDE OUTPUT EXAMPLES
-
-                  - Empty context list: `<context_list></context_list>`
-
-                  - Include non tags values (comments or explanations) in the response: `<next_step> YOUR EXPLANATION`
-
-                  - <context_list> includes context that was not shared: `<context_list>not-shared-context</context_list>`
-
-
-                  ## GOALS
-
-                  - Determine if you can answer the question with the given context, or if you need more information.
-
-                  - Your response should only contains the <context_list> list, and either the word "<next_step>" OR the appropriate <TOOL*> tag(s) and NOTHING else.
-
-
-                  ## RULES
-
-                  1. Only use <TOOL*> tags when additional context is necessary to answer the question.
-
-                  2. You may use multiple <TOOL*> tags in a single response if needed.
-
-                  3. Never make assumption about the provided context.
-
-                  4. NEVER request sensitive information or files such as passwords, API keys, or env files.
-
-                  5. The user is working in the VS Code on MacOS.
-
-
-                  <user_input>
-
-                  Give me the names of the files I have shared with you so far. Format the response as a bulleted list. Only include the raw filename, no extra formatting like quotes.
-
-                  <user_input>
-
-
-                  ## IMPORTANT
-
-                  Skip preamble. ONLY include the expected tags in your response and nothing else.
-
-                  This is an auto-generated message and your response will be processed by a bot using the expected tags.
-            model: anthropic::2024-10-22::claude-3-5-haiku-latest
-            temperature: 0
-            topK: -1
-            topP: -1
-        queryString:
-          - name: api-version
-            value: "8"
-          - name: client-name
-            value: customcommandsclient
-          - name: client-version
-            value: v1
-        url: https://sourcegraph.com/.api/completions/stream?api-version=8&client-name=customcommandsclient&client-version=v1
-      response:
-        bodySize: 1102
-        content:
-          mimeType: text/event-stream
-          size: 1102
-          text: >+
-            event: completion
-
-            data: {"deltaText":"<context_list>src/example1.ts</context_list><context_list>src/example2.ts</context_list><context_list>src/example3.ts</context_list><next_step>","stopReason":"end_turn"}
-
-
-            event: done
-
-            data: {}
-
-        cookies: []
-        headers:
-          - name: date
-            value: Wed, 30 Apr 2025 20:03:40 GMT
-          - name: content-type
-            value: text/event-stream
-          - name: transfer-encoding
-            value: chunked
-          - name: connection
-            value: keep-alive
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache
-          - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
-              X-Requested-With,Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1368
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2025-04-30T20:03:39.391Z
-      time: 1654
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 1654
-    - _id: 054c42cacdefcf0a45e35409cc686be9
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 1375
-        cookies: []
-        headers:
-          - name: accept-encoding
-            value: gzip;q=0
-          - name: authorization
-            value: token
-              REDACTED_fc324d3667e841181b0779375f26dedc911d26b303d23b29b1a2d7ee63dc77eb
-          - name: connection
-            value: keep-alive
-          - name: content-type
-            value: application/json
-          - name: traceparent
-            value: 00-00114ea25d166ffbf6f14757ce4f28cb-718aace36673159a-01
-          - name: user-agent
-            value: customcommandsclient/v1 (Node.js v20.4.0)
-          - name: x-requested-with
-            value: customcommandsclient v1
-          - name: host
-            value: sourcegraph.com
-        headersSize: 556
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json
-          params: []
-          textJSON:
-            maxTokensToSample: 4000
-            messages:
-              - speaker: system
-                text: >-
-                  You are Cody, an AI coding assistant from Sourcegraph.If your
-                  answer contains fenced code blocks in Markdown, include the
-                  relevant full file path in the code block tag using this
-                  structure: ```$LANGUAGE:$FILEPATH```
-
-                  For executable terminal commands: enclose each command in individual "bash" language code block without comments and new lines inside.
-              - speaker: human
-                text: |-
-                  Codebase context from file src/example3.ts:
-                  ```typescript:src/example3.ts
-                  export function example(): string {
-                      return 'example'
-                  }
-                  ```
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: |-
-                  Codebase context from file src/example2.ts:
-                  ```typescript:src/example2.ts
-                  export function example(): string {
-                      return 'example'
-                  }
-                  ```
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: |-
-                  My selected code from codebase file src/example1.ts:1-3:
-                  ```
-                  export function example(): string {
-                      return 'example'
-                  }
-                  ```
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: >-
-                  Answer positively without apologizing.
-
-
-                  Question: Give me the names of the files I have shared with you so far. Format the response as a bulleted list. Only include the raw filename, no extra formatting like quotes.
-            model: anthropic::2024-10-22::claude-3-5-sonnet-latest
-            temperature: 0
-            topK: -1
-            topP: -1
-        queryString:
-          - name: api-version
-            value: "8"
-          - name: client-name
-            value: customcommandsclient
-          - name: client-version
-            value: v1
-        url: https://sourcegraph.com/.api/completions/stream?api-version=8&client-name=customcommandsclient&client-version=v1
-      response:
-        bodySize: 690
-        content:
-          mimeType: text/event-stream
-          size: 690
-          text: >+
-            event: completion
-
-            data: {"deltaText":"Here are all the shared files:\n\n• src/example1.ts \n• src/example2.ts\n• src/example3.ts","stopReason":"end_turn"}
-
-
-            event: done
-
-            data: {}
-
-        cookies: []
-        headers:
-          - name: date
-            value: Wed, 30 Apr 2025 20:03:42 GMT
-          - name: content-type
-            value: text/event-stream
-          - name: transfer-encoding
-            value: chunked
-          - name: connection
-            value: keep-alive
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache
-          - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
-              X-Requested-With,Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1368
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2025-04-30T20:03:41.058Z
-      time: 1627
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 1627
-    - _id: 9ab0a24c9059afe03534b05265ac489c
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 5030
-        cookies: []
-        headers:
-          - name: accept-encoding
-            value: gzip;q=0
-          - name: authorization
-            value: token
-              REDACTED_fc324d3667e841181b0779375f26dedc911d26b303d23b29b1a2d7ee63dc77eb
-          - name: connection
-            value: keep-alive
-          - name: content-type
-            value: application/json
-          - name: traceparent
-            value: 00-57a15bf6f3d4c2489596846387c71dc3-94ffda95dba6d3ef-01
-          - name: user-agent
-            value: customcommandsclient/v1 (Node.js v20.4.0)
-          - name: x-requested-with
-            value: customcommandsclient v1
-          - name: host
-            value: sourcegraph.com
-        headersSize: 556
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json
-          params: []
-          textJSON:
-            maxTokensToSample: 4000
-            messages:
-              - speaker: system
-                text: >-
-                  You are Cody, an AI coding assistant from Sourcegraph.If your
-                  answer contains fenced code blocks in Markdown, include the
-                  relevant full file path in the code block tag using this
-                  structure: ```$LANGUAGE:$FILEPATH```
-
-                  For executable terminal commands: enclose each command in individual "bash" language code block without comments and new lines inside.
-              - speaker: human
-                text: >-
-                  Answer positively without apologizing.
-
-
-                  Your task is to evaluate the shared context and think step-by-step to determine if you can answer user's request enclosed inside the <user_input> tags below.
-
-
-                  ## INSTRUCTIONS
-
-                  1. Analyze the shared context and chat history thoroughly.
-
-                  2. Decide if you have enough information to answer <user_input>.
-
-
-                  ## TOOLS
-
-                  In this environment you have access to this set of tools you can use to fetch context before answering:
-
-                  - `<TOOLMEMORY><store>SUMMARIZED_TEXT</store></TOOLMEMORY>`: Add info about the user and their preferences (e.g. name, preferred tool, language etc) based on the question, or when asked. DO NOT store summarized questions. DO NOT clear memory unless requested.
-                  	- Add user info to memory: `<TOOLMEMORY><store>info</store></TOOLMEMORY>`
-                  	- Get the stored user info: `<TOOLMEMORY><store>GET</store></TOOLMEMORY>`
-                  	- ONLY clear memory ON REQUEST: `<TOOLMEMORY><store>FORGET</store></TOOLMEMORY>`
-                  - `<TOOLSEARCH><query>SEARCH_QUERY</query></TOOLSEARCH>`: Perform a symbol query search in the codebase (Natural language search NOT supported).
-                  	- Locate a symbol found in an error log: `<TOOLSEARCH><query>symbol name</query></TOOLSEARCH>`
-                  	- Search for a function named getController: `<TOOLSEARCH><query>getController</query></TOOLSEARCH>`
-                  - `<TOOLFILE><name>FILENAME</name></TOOLFILE>`: To retrieve full content of a codebase file-DO NOT retrieve files that may contain secrets.
-                  	- See the content of different files: `<TOOLFILE><name>path/foo.ts</name><name>path/bar.ts</name></TOOLFILE>`
-                  - `<TOOLWEB><link>URL</link></TOOLWEB>`: To retrieve content from the link of a webpage.
-                  	- Content from the URL: `<TOOLWEB><link>https://sourcegraph.com</link></TOOLWEB>`
-                  - `<TOOLRULES><get>QUERY</get></TOOLRULES>`: Search....
-
-
-                  ## EXPECTED VALID OUTPUT
-
-                  1. Add the evaluated context that you need for certain in order to answer the <user_input> concisely with <context_list> tags, with the filename in between:
-                      - DO NOT add context that was not shared to the list.
-                      - DO NOT include EMPTY <context_list> list.
-                      <example_response>
-                          <context_list>shared/file1.ts</context_list><context_list>shared/file2.ts</context_list><context_list>command</context_list>
-                      <example_response>
-                  2. If you can answer the <user_input> fully with the context added to <context_list>, add "<next_step>" at the end:
-                      <example_response>
-                          <context_list>path/to/file1.ts</context_list><context_list>path/to/file2.ts</context_list><context_list>command</context_list><next_step>
-                      <example_response>
-                  3. If you need more information, use ONLY the appropriate <TOOL*> tag(s) in your response:
-                      <example_response>
-                          <TOOLFILE><name>path/to/file.ts</name></TOOLFILE><TOOLSEARCH><query>class Controller</query></TOOLSEARCH>
-                      <example_response>
-                  4. If you can answer the <user_input> fully without context, respond with ONLY the word "<next_step>":
-                      <example_response>
-                          <next_step>
-                      <example_response>
-                  5. If you can answer the <user_input> fully without context, but need to use tool per <user_input>:
-                      <example_response>
-                          <TOOLMEMORY><store>user's preferences</store></TOOLMEMORY><next_step>
-                      <example_response>
-
-                  ## INVALIDE OUTPUT EXAMPLES
-
-                  - Empty context list: `<context_list></context_list>`
-
-                  - Include non tags values (comments or explanations) in the response: `<next_step> YOUR EXPLANATION`
-
-                  - <context_list> includes context that was not shared: `<context_list>not-shared-context</context_list>`
-
-
-                  ## GOALS
-
-                  - Determine if you can answer the question with the given context, or if you need more information.
-
-                  - Your response should only contains the <context_list> list, and either the word "<next_step>" OR the appropriate <TOOL*> tag(s) and NOTHING else.
-
-
-                  ## RULES
-
-                  1. Only use <TOOL*> tags when additional context is necessary to answer the question.
-
-                  2. You may use multiple <TOOL*> tags in a single response if needed.
-
-                  3. Never make assumption about the provided context.
-
-                  4. NEVER request sensitive information or files such as passwords, API keys, or env files.
-
-                  5. The user is working in the VS Code on MacOS.
-
-
-                  <user_input>
-
-                  Did I share any code with you? If yes, reply single word 'yes'. If none, reply 'no'.
-
-                  <user_input>
-
-
-                  ## IMPORTANT
-
-                  Skip preamble. ONLY include the expected tags in your response and nothing else.
-
-                  This is an auto-generated message and your response will be processed by a bot using the expected tags.
-            model: anthropic::2024-10-22::claude-3-5-haiku-latest
-            temperature: 0
-            topK: -1
-            topP: -1
-        queryString:
-          - name: api-version
-            value: "8"
-          - name: client-name
-            value: customcommandsclient
-          - name: client-version
-            value: v1
-        url: https://sourcegraph.com/.api/completions/stream?api-version=8&client-name=customcommandsclient&client-version=v1
-      response:
-        bodySize: 302
-        content:
-          mimeType: text/event-stream
-          size: 302
-          text: |+
-            event: completion
-            data: {"deltaText":"no","stopReason":"end_turn"}
-
-            event: done
-            data: {}
-
-        cookies: []
-        headers:
-          - name: date
-            value: Wed, 30 Apr 2025 20:03:43 GMT
-          - name: content-type
-            value: text/event-stream
-          - name: transfer-encoding
-            value: chunked
-          - name: connection
-            value: keep-alive
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache
-          - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
-              X-Requested-With,Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1368
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2025-04-30T20:03:42.706Z
-      time: 1156
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 1156
-    - _id: 0811984ee140260752de85b37c333d1d
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 6419
-        cookies: []
-        headers:
-          - name: accept-encoding
-            value: gzip;q=0
-          - name: authorization
-            value: token
-              REDACTED_fc324d3667e841181b0779375f26dedc911d26b303d23b29b1a2d7ee63dc77eb
-          - name: connection
-            value: keep-alive
-          - name: content-type
-            value: application/json
-          - name: traceparent
-            value: 00-d5f291cde9abf6c28c560360fb1adb3d-acd10074da9e691f-01
-          - name: user-agent
-            value: customcommandsclient/v1 (Node.js v20.4.0)
-          - name: x-requested-with
-            value: customcommandsclient v1
-          - name: host
-            value: sourcegraph.com
-        headersSize: 556
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json
-          params: []
-          textJSON:
-            maxTokensToSample: 4000
-            messages:
-              - speaker: system
-                text: >-
-                  You are Cody, an AI coding assistant from Sourcegraph.If your
-                  answer contains fenced code blocks in Markdown, include the
-                  relevant full file path in the code block tag using this
-                  structure: ```$LANGUAGE:$FILEPATH```
-
-                  For executable terminal commands: enclose each command in individual "bash" language code block without comments and new lines inside.
-              - speaker: human
-                text: >
-                  Codebase context from file path src/sum.ts: export function
-                  sum(a: number, b: number): number {
-                      /* CURSOR */
-                  }
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: >
-                  Codebase context from file path src/example4.ts: export
-                  function example(): string {
-                      return 'example'
-                  }
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: >
-                  Codebase context from file path src/example3.ts: export
-                  function example(): string {
-                      return 'example'
-                  }
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: >
-                  Codebase context from file path src/example2.ts: export
-                  function example(): string {
-                      return 'example'
-                  }
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: >
-                  Codebase context from file path src/example1.ts: export
-                  function example(): string {
-                      return 'example'
-                  }
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: >
-                  Codebase context from file path src/animal.ts: /*
-                  SELECTION_START */
-
-                  export interface Animal {
-                      name: string
-                      makeAnimalSound(): string
-                      isMammal: boolean
-                  }
-
-                  /* SELECTION_END */
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: |-
-                  My selected code from codebase file src/animal.ts:1-6:
-                  ```
-
-                  export interface Animal {
-                      name: string
-                      makeAnimalSound(): string
-                      isMammal: boolean
-                  }
-                  ```
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: >-
-                  Answer positively without apologizing.
-
-
-                  Your task is to evaluate the shared context and think step-by-step to determine if you can answer user's request enclosed inside the <user_input> tags below.
-
-
-                  ## INSTRUCTIONS
-
-                  1. Analyze the shared context and chat history thoroughly.
-
-                  2. Decide if you have enough information to answer <user_input>.
-
-
-                  ## TOOLS
-
-                  In this environment you have access to this set of tools you can use to fetch context before answering:
-
-                  - `<TOOLMEMORY><store>SUMMARIZED_TEXT</store></TOOLMEMORY>`: Add info about the user and their preferences (e.g. name, preferred tool, language etc) based on the question, or when asked. DO NOT store summarized questions. DO NOT clear memory unless requested.
-                  	- Add user info to memory: `<TOOLMEMORY><store>info</store></TOOLMEMORY>`
-                  	- Get the stored user info: `<TOOLMEMORY><store>GET</store></TOOLMEMORY>`
-                  	- ONLY clear memory ON REQUEST: `<TOOLMEMORY><store>FORGET</store></TOOLMEMORY>`
-                  - `<TOOLSEARCH><query>SEARCH_QUERY</query></TOOLSEARCH>`: Perform a symbol query search in the codebase (Natural language search NOT supported).
-                  	- Locate a symbol found in an error log: `<TOOLSEARCH><query>symbol name</query></TOOLSEARCH>`
-                  	- Search for a function named getController: `<TOOLSEARCH><query>getController</query></TOOLSEARCH>`
-                  - `<TOOLFILE><name>FILENAME</name></TOOLFILE>`: To retrieve full content of a codebase file-DO NOT retrieve files that may contain secrets.
-                  	- See the content of different files: `<TOOLFILE><name>path/foo.ts</name><name>path/bar.ts</name></TOOLFILE>`
-                  - `<TOOLWEB><link>URL</link></TOOLWEB>`: To retrieve content from the link of a webpage.
-                  	- Content from the URL: `<TOOLWEB><link>https://sourcegraph.com</link></TOOLWEB>`
-                  - `<TOOLRULES><get>QUERY</get></TOOLRULES>`: Search....
-
-
-                  ## EXPECTED VALID OUTPUT
-
-                  1. Add the evaluated context that you need for certain in order to answer the <user_input> concisely with <context_list> tags, with the filename in between:
-                      - DO NOT add context that was not shared to the list.
-                      - DO NOT include EMPTY <context_list> list.
-                      <example_response>
-                          <context_list>shared/file1.ts</context_list><context_list>shared/file2.ts</context_list><context_list>command</context_list>
-                      <example_response>
-                  2. If you can answer the <user_input> fully with the context added to <context_list>, add "<next_step>" at the end:
-                      <example_response>
-                          <context_list>path/to/file1.ts</context_list><context_list>path/to/file2.ts</context_list><context_list>command</context_list><next_step>
-                      <example_response>
-                  3. If you need more information, use ONLY the appropriate <TOOL*> tag(s) in your response:
-                      <example_response>
-                          <TOOLFILE><name>path/to/file.ts</name></TOOLFILE><TOOLSEARCH><query>class Controller</query></TOOLSEARCH>
-                      <example_response>
-                  4. If you can answer the <user_input> fully without context, respond with ONLY the word "<next_step>":
-                      <example_response>
-                          <next_step>
-                      <example_response>
-                  5. If you can answer the <user_input> fully without context, but need to use tool per <user_input>:
-                      <example_response>
-                          <TOOLMEMORY><store>user's preferences</store></TOOLMEMORY><next_step>
-                      <example_response>
-
-                  ## INVALIDE OUTPUT EXAMPLES
-
-                  - Empty context list: `<context_list></context_list>`
-
-                  - Include non tags values (comments or explanations) in the response: `<next_step> YOUR EXPLANATION`
-
-                  - <context_list> includes context that was not shared: `<context_list>not-shared-context</context_list>`
-
-
-                  ## GOALS
-
-                  - Determine if you can answer the question with the given context, or if you need more information.
-
-                  - Your response should only contains the <context_list> list, and either the word "<next_step>" OR the appropriate <TOOL*> tag(s) and NOTHING else.
-
-
-                  ## RULES
-
-                  1. Only use <TOOL*> tags when additional context is necessary to answer the question.
-
-                  2. You may use multiple <TOOL*> tags in a single response if needed.
-
-                  3. Never make assumption about the provided context.
-
-                  4. NEVER request sensitive information or files such as passwords, API keys, or env files.
-
-                  5. The user is working in the VS Code on MacOS.
-
-
-                  <user_input>
-
-                  How many file context have I shared with you? Reply single number. Skip preamble.
-
-                  <user_input>
-
-
-                  ## IMPORTANT
-
-                  Skip preamble. ONLY include the expected tags in your response and nothing else.
-
-                  This is an auto-generated message and your response will be processed by a bot using the expected tags.
-            model: anthropic::2024-10-22::claude-3-5-haiku-latest
-            temperature: 0
-            topK: -1
-            topP: -1
-        queryString:
-          - name: api-version
-            value: "8"
-          - name: client-name
-            value: customcommandsclient
-          - name: client-version
-            value: v1
-        url: https://sourcegraph.com/.api/completions/stream?api-version=8&client-name=customcommandsclient&client-version=v1
-      response:
-        bodySize: 363
-        content:
-          mimeType: text/event-stream
-          size: 363
-          text: |+
-            event: completion
-            data: {"deltaText":"<next_step>","stopReason":"end_turn"}
-
-            event: done
-            data: {}
-
-        cookies: []
-        headers:
-          - name: date
-            value: Wed, 30 Apr 2025 20:03:45 GMT
-          - name: content-type
-            value: text/event-stream
-          - name: transfer-encoding
-            value: chunked
-          - name: connection
-            value: keep-alive
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache
-          - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
-              X-Requested-With,Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1368
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2025-04-30T20:03:43.894Z
-      time: 1348
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 1348
-    - _id: 31561df860761d96d71a8879dbca2888
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 2072
-        cookies: []
-        headers:
-          - name: accept-encoding
-            value: gzip;q=0
-          - name: authorization
-            value: token
-              REDACTED_fc324d3667e841181b0779375f26dedc911d26b303d23b29b1a2d7ee63dc77eb
-          - name: connection
-            value: keep-alive
-          - name: content-type
-            value: application/json
-          - name: traceparent
-            value: 00-d5f291cde9abf6c28c560360fb1adb3d-2e0561bbc61e0ade-01
-          - name: user-agent
-            value: customcommandsclient/v1 (Node.js v20.4.0)
-          - name: x-requested-with
-            value: customcommandsclient v1
-          - name: host
-            value: sourcegraph.com
-        headersSize: 556
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json
-          params: []
-          textJSON:
-            maxTokensToSample: 4000
-            messages:
-              - speaker: system
-                text: >-
-                  You are Cody, an AI coding assistant from Sourcegraph.If your
-                  answer contains fenced code blocks in Markdown, include the
-                  relevant full file path in the code block tag using this
-                  structure: ```$LANGUAGE:$FILEPATH```
-
-                  For executable terminal commands: enclose each command in individual "bash" language code block without comments and new lines inside.
-              - speaker: human
-                text: >
-                  Codebase context from file path src/sum.ts: export function
-                  sum(a: number, b: number): number {
-                      /* CURSOR */
-                  }
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: >
-                  Codebase context from file path src/example4.ts: export
-                  function example(): string {
-                      return 'example'
-                  }
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: >
-                  Codebase context from file path src/example3.ts: export
-                  function example(): string {
-                      return 'example'
-                  }
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: >
-                  Codebase context from file path src/example2.ts: export
-                  function example(): string {
-                      return 'example'
-                  }
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: >
-                  Codebase context from file path src/example1.ts: export
-                  function example(): string {
-                      return 'example'
-                  }
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: >
-                  Codebase context from file path src/animal.ts: /*
-                  SELECTION_START */
-
-                  export interface Animal {
-                      name: string
-                      makeAnimalSound(): string
-                      isMammal: boolean
-                  }
-
-                  /* SELECTION_END */
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: |-
-                  My selected code from codebase file src/animal.ts:1-6:
-                  ```
-
-                  export interface Animal {
-                      name: string
-                      makeAnimalSound(): string
-                      isMammal: boolean
-                  }
-                  ```
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: >-
-                  Answer positively without apologizing.
-
-
-                  Question: How many file context have I shared with you? Reply single number. Skip preamble.
-            model: anthropic::2024-10-22::claude-3-5-sonnet-latest
-            temperature: 0
-            topK: -1
-            topP: -1
-        queryString:
-          - name: api-version
-            value: "8"
-          - name: client-name
-            value: customcommandsclient
-          - name: client-version
-            value: v1
-        url: https://sourcegraph.com/.api/completions/stream?api-version=8&client-name=customcommandsclient&client-version=v1
-      response:
-        bodySize: 300
-        content:
-          mimeType: text/event-stream
-          size: 300
-          text: |+
-            event: completion
-            data: {"deltaText":"7","stopReason":"end_turn"}
-
-            event: done
-            data: {}
-
-        cookies: []
-        headers:
-          - name: date
-            value: Wed, 30 Apr 2025 20:03:46 GMT
-          - name: content-type
-            value: text/event-stream
-          - name: transfer-encoding
-            value: chunked
-          - name: connection
-            value: keep-alive
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache
-          - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
-              X-Requested-With,Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1368
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2025-04-30T20:03:45.249Z
-      time: 1664
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 1664
     - _id: 08e850ec487de9001def931aa702be9b
       _order: 0
       cache: {}
@@ -1570,6 +530,328 @@ log:
         send: 0
         ssl: -1
         wait: 3121
+    - _id: a62a3d603f55852828dd4e700975f339
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 1315
+        cookies: []
+        headers:
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_fc324d3667e841181b0779375f26dedc911d26b303d23b29b1a2d7ee63dc77eb
+          - name: connection
+            value: keep-alive
+          - name: content-type
+            value: application/json
+          - name: traceparent
+            value: 00-d4c5a4ccf99a88b2770512b458c9b1ac-4c0480045469cab2-01
+          - name: user-agent
+            value: customcommandsclient/v1 (Node.js v20.4.0)
+          - name: x-requested-with
+            value: customcommandsclient v1
+          - name: host
+            value: sourcegraph.com
+        headersSize: 556
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            maxTokensToSample: 4000
+            messages:
+              - speaker: system
+                text: >-
+                  You are Cody, an AI coding assistant from Sourcegraph.If your
+                  answer contains fenced code blocks in Markdown, include the
+                  relevant full file path in the code block tag using this
+                  structure: ```$LANGUAGE:$FILEPATH```
+
+                  For executable terminal commands: enclose each command in individual "bash" language code block without comments and new lines inside.
+              - speaker: human
+                text: >
+                  Codebase context from file path src/example3.ts: export
+                  function example(): string {
+                      return 'example'
+                  }
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >
+                  Codebase context from file path src/example2.ts: export
+                  function example(): string {
+                      return 'example'
+                  }
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: |-
+                  My selected code from codebase file src/example1.ts:1-3:
+                  ```
+                  export function example(): string {
+                      return 'example'
+                  }
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >-
+                  Answer positively without apologizing.
+
+
+                  Question: Give me the names of the files I have shared with you so far. Format the response as a bulleted list. Only include the raw filename, no extra formatting like quotes.
+            model: anthropic::2024-10-22::claude-3-5-sonnet-latest
+            temperature: 0
+            topK: -1
+            topP: -1
+        queryString:
+          - name: api-version
+            value: "8"
+          - name: client-name
+            value: customcommandsclient
+          - name: client-version
+            value: v1
+        url: https://sourcegraph.com/.api/completions/stream?api-version=8&client-name=customcommandsclient&client-version=v1
+      response:
+        bodySize: 469
+        content:
+          mimeType: text/event-stream
+          size: 469
+          text: >+
+            event: completion
+
+            data: {"deltaText":"* example1.ts\n* example2.ts\n* example3.ts","stopReason":"end_turn"}
+
+
+            event: done
+
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Fri, 02 May 2025 09:48:09 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1368
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2025-05-02T09:48:06.255Z
+      time: 3660
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 3660
+    - _id: 31561df860761d96d71a8879dbca2888
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 2072
+        cookies: []
+        headers:
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_fc324d3667e841181b0779375f26dedc911d26b303d23b29b1a2d7ee63dc77eb
+          - name: connection
+            value: keep-alive
+          - name: content-type
+            value: application/json
+          - name: traceparent
+            value: 00-da0ac33c7d8322b32b1537197f02cc53-afd8c109609782b1-01
+          - name: user-agent
+            value: customcommandsclient/v1 (Node.js v20.4.0)
+          - name: x-requested-with
+            value: customcommandsclient v1
+          - name: host
+            value: sourcegraph.com
+        headersSize: 556
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            maxTokensToSample: 4000
+            messages:
+              - speaker: system
+                text: >-
+                  You are Cody, an AI coding assistant from Sourcegraph.If your
+                  answer contains fenced code blocks in Markdown, include the
+                  relevant full file path in the code block tag using this
+                  structure: ```$LANGUAGE:$FILEPATH```
+
+                  For executable terminal commands: enclose each command in individual "bash" language code block without comments and new lines inside.
+              - speaker: human
+                text: >
+                  Codebase context from file path src/sum.ts: export function
+                  sum(a: number, b: number): number {
+                      /* CURSOR */
+                  }
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >
+                  Codebase context from file path src/example4.ts: export
+                  function example(): string {
+                      return 'example'
+                  }
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >
+                  Codebase context from file path src/example3.ts: export
+                  function example(): string {
+                      return 'example'
+                  }
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >
+                  Codebase context from file path src/example2.ts: export
+                  function example(): string {
+                      return 'example'
+                  }
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >
+                  Codebase context from file path src/example1.ts: export
+                  function example(): string {
+                      return 'example'
+                  }
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >
+                  Codebase context from file path src/animal.ts: /*
+                  SELECTION_START */
+
+                  export interface Animal {
+                      name: string
+                      makeAnimalSound(): string
+                      isMammal: boolean
+                  }
+
+                  /* SELECTION_END */
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: |-
+                  My selected code from codebase file src/animal.ts:1-6:
+                  ```
+
+                  export interface Animal {
+                      name: string
+                      makeAnimalSound(): string
+                      isMammal: boolean
+                  }
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >-
+                  Answer positively without apologizing.
+
+
+                  Question: How many file context have I shared with you? Reply single number. Skip preamble.
+            model: anthropic::2024-10-22::claude-3-5-sonnet-latest
+            temperature: 0
+            topK: -1
+            topP: -1
+        queryString:
+          - name: api-version
+            value: "8"
+          - name: client-name
+            value: customcommandsclient
+          - name: client-version
+            value: v1
+        url: https://sourcegraph.com/.api/completions/stream?api-version=8&client-name=customcommandsclient&client-version=v1
+      response:
+        bodySize: 300
+        content:
+          mimeType: text/event-stream
+          size: 300
+          text: |+
+            event: completion
+            data: {"deltaText":"7","stopReason":"end_turn"}
+
+            event: done
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Fri, 02 May 2025 09:48:11 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1368
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2025-05-02T09:48:09.967Z
+      time: 1257
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 1257
     - _id: f1b1cde4cd57488b7f0137954f0302f5
       _order: 0
       cache: {}

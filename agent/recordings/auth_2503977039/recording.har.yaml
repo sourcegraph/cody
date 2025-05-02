@@ -208,11 +208,11 @@ log:
         send: 0
         ssl: -1
         wait: 1015
-    - _id: f09268515c60b31232a4a8f5bcd821f7
+    - _id: ad5843c06b4b96085ceb6186dd7d464e
       _order: 0
       cache: {}
       request:
-        bodySize: 4931
+        bodySize: 4913
         cookies: []
         headers:
           - name: accept-encoding
@@ -225,7 +225,7 @@ log:
           - name: content-type
             value: application/json
           - name: traceparent
-            value: 00-fbf92cdaf261abace4df7fda67c70ee2-a245c20100c90c78-01
+            value: 00-5e62e836f1406613ed1078842ad1946d-1ef2cd9f1cf732eb-01
           - name: user-agent
             value: auth/v1 (Node.js v20.4.0)
           - name: x-requested-with
@@ -347,7 +347,7 @@ log:
                   Skip preamble. ONLY include the expected tags in your response and nothing else.
 
                   This is an auto-generated message and your response will be processed by a bot using the expected tags.
-            model: anthropic::2024-10-22::claude-3-5-haiku-latest
+            model: google::v1::gemini-1.5-flash
             temperature: 0
             topK: -1
             topP: -1
@@ -360,24 +360,21 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=8&client-name=auth&client-version=v1
       response:
-        bodySize: 713
+        bodySize: 249
         content:
           mimeType: text/event-stream
-          size: 713
-          text: >+
+          size: 249
+          text: |+
             event: completion
-
-            data: {"deltaText":"<TOOLMEMORY><store>first_interaction</store></TOOLMEMORY><next_step>","stopReason":"end_turn"}
-
+            data: {"deltaText":"<next_step>\n"}
 
             event: done
-
             data: {}
 
         cookies: []
         headers:
           - name: date
-            value: Wed, 30 Apr 2025 20:03:34 GMT
+            value: Fri, 02 May 2025 08:46:50 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -406,8 +403,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-04-30T20:03:33.632Z
-      time: 1395
+      startedDateTime: 2025-05-02T08:46:49.906Z
+      time: 600
       timings:
         blocked: -1
         connect: -1
@@ -415,7 +412,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 1395
+        wait: 600
     - _id: f1b1cde4cd57488b7f0137954f0302f5
       _order: 0
       cache: {}
