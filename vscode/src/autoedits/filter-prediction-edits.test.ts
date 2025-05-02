@@ -4,17 +4,17 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type * as vscode from 'vscode'
 import { getTextDocumentChangesForText } from '../completions/context/retrievers/recent-user-actions/recent-edits-diff-helpers/helper'
 import { document } from '../completions/test-helpers'
-import { FilterPredictionBasedOnRecentEdits } from './filter-prediction-edits'
+import { PredictionsFilter } from './filter-prediction-edits'
 
 describe('FilterPredictionBasedOnRecentEdits', () => {
-    let filterStrategy: FilterPredictionBasedOnRecentEdits
+    let filterStrategy: PredictionsFilter
     // Mock workspace APIs to trigger document changes
     let onDidChangeTextDocument: (event: vscode.TextDocumentChangeEvent) => void
     let onDidOpenTextDocument: (event: vscode.TextDocument) => void
 
     beforeEach(() => {
         vi.useFakeTimers()
-        filterStrategy = new FilterPredictionBasedOnRecentEdits({
+        filterStrategy = new PredictionsFilter({
             onDidChangeTextDocument(listener) {
                 onDidChangeTextDocument = listener
                 return { dispose: () => {} }

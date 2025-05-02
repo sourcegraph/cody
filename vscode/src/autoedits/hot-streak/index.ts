@@ -8,7 +8,11 @@ import { getCurrentDocContext } from '../../completions/get-current-doc-context'
 import { getNewLineChar } from '../../completions/text-processing'
 import { wrapVSCodeTextDocument } from '../../editor/utils/virtual-text-document'
 import { AutoeditStopReason, type ModelResponse } from '../adapters/base'
-import type { AutoeditHotStreakID } from '../analytics-logger'
+import {
+    type AutoeditDiscardReasonMetadata,
+    type AutoeditHotStreakID,
+    autoeditDiscardReason,
+} from '../analytics-logger'
 import { autoeditsProviderConfig } from '../autoedits-config'
 import type {
     AbortedPredictionResult,
@@ -18,6 +22,8 @@ import type {
 import { getCodeToReplaceData } from '../prompt/prompt-utils'
 import { isDuplicatingTextFromRewriteArea } from '../utils'
 
+import { PredictionsFilter, predictionsFilter } from '../filter-prediction-edits'
+import { shrinkPredictionUntilSuffix } from '../shrink-prediction'
 import { getHotStreakChunk } from './get-chunk'
 import { getStableSuggestion } from './stable-suggestion'
 
@@ -89,6 +95,7 @@ export async function* processHotStreakResponses({
             if (!predictionChunk.firstLineChanged) {
                 yield {
                     type: 'ignored',
+                    discardReason: autoeditDiscardReason.emptyPrediction,
                     response: {
                         ...response,
                         prediction: predictionChunk.text,
@@ -129,18 +136,18 @@ export async function* processHotStreakResponses({
                 },
             })
 
-            const newLineChar = getNewLineChar(adjustedCodeToReplace.codeToRewrite)
-            if (
-                predictionChunk.text === adjustedCodeToReplace.codeToRewrite ||
-                isDuplicatingTextFromRewriteArea({
-                    addedText: predictionChunk.addedLines.join(newLineChar),
-                    codeToReplaceData: adjustedCodeToReplace,
-                })
-            ) {
+            const discardReason = predictionsFilter.shouldFilterPrediction({
+                codeToReplaceData: adjustedCodeToReplace,
+                prediction: predictionChunk.text,
+                document,
+            })
+
+            if (discardReason) {
                 // The adjusted codeToRewrite is the same as the prediction.
                 // We should not emit this prediction
                 yield {
                     type: 'ignored',
+                    discardReason,
                     response: {
                         ...response,
                         prediction: predictionChunk.text,
@@ -220,7 +227,7 @@ export async function* processHotStreakResponses({
         })
 
         if (!suggestion || suggestion.firstLineChanged === null) {
-            yield { type: 'ignored', response }
+            yield { type: 'ignored', discardReason: autoeditDiscardReason.emptyPrediction, response }
             return
         }
 

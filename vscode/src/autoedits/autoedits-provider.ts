@@ -35,6 +35,7 @@ import type {
 import { createAutoeditsModelAdapter } from './adapters/create-adapter'
 import {
     type AutoeditCacheID,
+    type AutoeditDiscardReasonMetadata,
     type AutoeditHotStreakID,
     type AutoeditRequestID,
     type AutoeditRequestStateForAgentTesting,
@@ -48,7 +49,7 @@ import {
 import { AutoeditCompletionItem } from './autoedit-completion-item'
 import { autoeditsOnboarding } from './autoedit-onboarding'
 import { autoeditsProviderConfig } from './autoedits-config'
-import { FilterPredictionBasedOnRecentEdits } from './filter-prediction-edits'
+import { PredictionsFilter } from './filter-prediction-edits'
 import { processHotStreakResponses } from './hot-streak'
 import { createMockResponseGenerator } from './mock-response-generator'
 import { autoeditsOutputChannelLogger } from './output-channel-logger'
@@ -90,6 +91,7 @@ export interface AbortedPredictionResult {
 /* A prediction result that has no valid changes to use */
 export interface IgnoredPredictionResult {
     type: 'ignored'
+    discardReason: AutoeditDiscardReasonMetadata
     response: SuccessModelResponse | PartialModelResponse
 }
 
@@ -183,7 +185,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
     protected nextCursorManager = new NextCursorManager(this.requestManager)
 
     private readonly promptStrategy: AutoeditsUserPromptStrategy
-    public readonly filterPrediction = new FilterPredictionBasedOnRecentEdits()
+    public readonly filterPrediction = new PredictionsFilter()
     private readonly contextMixer = new ContextMixer({
         strategyFactory: new DefaultContextStrategyFactory(Observable.of(AUTOEDIT_CONTEXT_STRATEGY)),
         contextRankingStrategy: ContextRankingStrategy.TimeBased,
@@ -495,7 +497,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                 this.discardSuggestion({
                     startedAt,
                     requestId,
-                    discardReason: 'predictionEqualsCodeToRewrite',
+                    discardReason: predictionResult.discardReason,
                 })
                 return null
             }
