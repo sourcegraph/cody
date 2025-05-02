@@ -11,6 +11,7 @@ import { AutoeditCompletionItem } from '../autoedit-completion-item'
 import type { AutoeditClientCapabilities } from '../autoedits-provider'
 import { autoeditsOutputChannelLogger } from '../output-channel-logger'
 
+import { getNewLineChar } from '../../completions/text-processing'
 import type { AutoEditDecoration, AutoEditDecorations, DecorationInfo } from './decorators/base'
 import { cssPropertiesToString } from './decorators/utils'
 import { isOnlyAddingTextForModifiedLines, isOnlyRemovingTextForModifiedLines } from './diff-utils'
@@ -26,6 +27,7 @@ export interface GetRenderOutputArgs {
     position: vscode.Position
     decorationInfo: DecorationInfo
     codeToReplaceData: CodeToReplaceData
+    inlineCompletionContext: vscode.InlineCompletionContext
 }
 
 interface NoCompletionRenderOutput {
@@ -190,6 +192,7 @@ export class AutoEditsRenderOutput {
         args: GetRenderOutputArgs,
         capabilities: AutoeditClientCapabilities
     ): CompletionRenderOutput | CompletionWithDecorationsRenderOutput | null {
+        console.log('UMPOX CODE TO REWIRTE', args.codeToReplaceData.codeToRewrite)
         const completions = this.tryMakeInlineCompletions(args)
         if (!completions) {
             // Cannot render a completion
@@ -237,27 +240,67 @@ export class AutoEditsRenderOutput {
         return null
     }
 
+    private getInsertionPositionForInlineCompletion(
+        position: vscode.Position,
+        inlineCompletionContext: vscode.InlineCompletionContext
+    ) {
+        const selectedCompletion = inlineCompletionContext.selectedCompletionInfo
+        if (!selectedCompletion) {
+            // No selected completion so no need to modify the cursor position
+            return position
+        }
+
+        const newLineChar = getNewLineChar(selectedCompletion.text)
+        const linesToInsertFromSelectedCompletion = selectedCompletion.text.split(newLineChar)
+
+        if (linesToInsertFromSelectedCompletion.length === 1) {
+            return new vscode.Position(
+                selectedCompletion.range.start.line,
+                selectedCompletion.range.start.character + selectedCompletion.text.length
+            )
+        }
+
+        const lastInsertionLine =
+            linesToInsertFromSelectedCompletion[linesToInsertFromSelectedCompletion.length - 1]
+        return new vscode.Position(
+            selectedCompletion.range.start.line + linesToInsertFromSelectedCompletion.length - 1,
+            lastInsertionLine.length
+        )
+    }
+
     private tryMakeInlineCompletions({
         requestId,
         position,
         prediction,
         document,
         decorationInfo,
+        inlineCompletionContext,
     }: GetRenderOutputArgs): {
         type: 'full' | 'partial'
         inlineCompletionItems: AutoeditCompletionItem[]
         updatedDecorationInfo: DecorationInfo
         updatedPrediction: string
     } | null {
+        const otherPosition = this.getInsertionPositionForInlineCompletion(
+            position,
+            inlineCompletionContext
+        )
         const { insertText, usedChangeIds } = getCompletionText({
             prediction,
             cursorPosition: position,
             decorationInfo,
         })
 
+        const other = getCompletionText({
+            prediction,
+            cursorPosition: otherPosition,
+            decorationInfo,
+        })
+
         const { currentLinePrefix, currentLineSuffix } = getCurrentLinePrefixAndSuffix({
             document,
             position,
+            inlineCompletionContext,
         })
 
         if (insertText.length === 0) {
@@ -272,6 +315,15 @@ export class AutoEditsRenderOutput {
         }
 
         const completionText = currentLinePrefix + insertText
+        console.log('UMPOX GOT COMPLETION TEXT', {
+            used: {
+                completionText,
+                currentLinePrefix,
+                inlineCompletionContext,
+                insertText,
+            },
+            other,
+        })
         const inlineCompletionItems = [
             new AutoeditCompletionItem({
                 id: requestId,

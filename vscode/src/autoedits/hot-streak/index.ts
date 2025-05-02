@@ -26,6 +26,7 @@ export interface ProcessHotStreakResponsesParams {
     document: vscode.TextDocument
     codeToReplaceData: CodeToReplaceData
     requestDocContext: DocumentContext
+    inlineCompletionContext: vscode.InlineCompletionContext
     position: vscode.Position
     options: {
         // If hot-streak is actually enabled. If it is not, we will not attempt to emit
@@ -53,6 +54,7 @@ export async function* processHotStreakResponses({
     document: originalDocument,
     codeToReplaceData,
     requestDocContext,
+    inlineCompletionContext,
     position,
     options,
 }: ProcessHotStreakResponsesParams): AsyncGenerator<ProcessedHotStreakResponse> {
@@ -113,6 +115,7 @@ export async function* processHotStreakResponses({
                 position: hotStreakPosition,
                 maxPrefixLength: requestDocContext.maxPrefixLength,
                 maxSuffixLength: requestDocContext.maxSuffixLength,
+                context: inlineCompletionContext,
             })
 
             const lengthOfChunk = predictionChunk.range.end.line - predictionChunk.range.start.line - 1

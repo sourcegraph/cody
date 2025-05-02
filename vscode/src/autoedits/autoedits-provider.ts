@@ -45,7 +45,7 @@ import {
     autoeditTriggerKind,
     getTimeNowInMillis,
 } from './analytics-logger'
-import { AutoeditCompletionItem } from './autoedit-completion-item'
+import type { AutoeditCompletionItem } from './autoedit-completion-item'
 import { autoeditsOnboarding } from './autoedit-onboarding'
 import { autoeditsProviderConfig } from './autoedits-config'
 import { FilterPredictionBasedOnRecentEdits } from './filter-prediction-edits'
@@ -71,7 +71,11 @@ import type { AutoEditRenderOutput } from './renderer/render-output'
 import { type AutoeditRequestManagerParams, RequestManager } from './request-manager'
 import { shrinkPredictionUntilSuffix } from './shrink-prediction'
 import { SmartThrottleService } from './smart-throttle'
-import { areSameUriDocs, isDuplicatingTextFromRewriteArea } from './utils'
+import {
+    areSameUriDocs,
+    getDocumentTextWithInlineCompletionContext,
+    isDuplicatingTextFromRewriteArea,
+} from './utils'
 
 const AUTOEDIT_CONTEXT_STRATEGY = 'auto-edit'
 const RESET_SUGGESTION_ON_CURSOR_CHANGE_AFTER_INTERVAL_MS = 60 * 1000
@@ -328,27 +332,6 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
         let stopLoading: (() => void) | undefined
         const startedAt = getTimeNowInMillis()
 
-        if (inlineCompletionContext.selectedCompletionInfo !== undefined) {
-            const { range, text } = inlineCompletionContext.selectedCompletionInfo
-            const completion = new AutoeditCompletionItem({
-                id: null,
-                insertText: text,
-                range,
-                withoutCurrentLinePrefix: { insertText: text, range },
-            })
-            // User has a currently selected item in the autocomplete widget.
-            // Instead of attempting to suggest an auto-edit, just show the selected item
-            // as the completion. This is to avoid an undesirable edit conflicting with the acceptance
-            // of the item shown in the widget.
-            // TODO: We should consider the optimal solution here, it may be better to show an
-            // inline completion (not an edit) that includes the currently selected item.
-            return {
-                items: [completion],
-                inlineCompletionItems: [completion],
-                decoratedEditItems: [],
-            }
-        }
-
         try {
             const triggerKind =
                 this.lastManualTriggerTimestamp > performance.now() - 50
@@ -398,6 +381,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                 position,
                 maxPrefixLength: tokensToChars(autoeditsProviderConfig.tokenLimit.prefixTokens),
                 maxSuffixLength: tokensToChars(autoeditsProviderConfig.tokenLimit.suffixTokens),
+                context: inlineCompletionContext,
             })
 
             // Determine the code to replace for this specific request
@@ -408,6 +392,10 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                 document,
                 position,
                 tokenBudget: autoeditsProviderConfig.tokenLimit,
+            })
+            console.log('UMPOX GOT REQUEST CODE TO REPLACE DATA', {
+                rewrite: requestCodeToReplaceData.codeToRewrite,
+                inlineCompletionContext,
             })
             const requestId = autoeditAnalyticsLogger.createRequest({
                 startedAt,
@@ -478,6 +466,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                 prompt,
                 codeToReplaceData: requestCodeToReplaceData,
                 requestDocContext,
+                inlineCompletionContext,
                 abortSignal,
                 triggerKind,
             })
@@ -503,7 +492,10 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
             const initialPrediction = predictionResult.response.prediction
             const predictionDocContext = predictionResult.docContext
             const predictionCodeToReplaceData = predictionResult.codeToReplaceData
-
+            console.log('UMPOX GOT PREDICTION CODE TO REPLACE DATA', {
+                rewrite: predictionCodeToReplaceData.codeToRewrite,
+                inlineCompletionContext,
+            })
             autoeditAnalyticsLogger.markAsLoaded({
                 requestId,
                 cacheId: predictionResult.cacheId,
@@ -610,6 +602,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                     position,
                     decorationInfo,
                     codeToReplaceData: predictionCodeToReplaceData,
+                    inlineCompletionContext,
                 },
                 this.capabilities
             )
@@ -851,6 +844,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
         position,
         codeToReplaceData,
         requestDocContext,
+        inlineCompletionContext,
         prompt,
         abortSignal,
         triggerKind,
@@ -860,6 +854,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
         position: vscode.Position
         codeToReplaceData: CodeToReplaceData
         requestDocContext: DocumentContext
+        inlineCompletionContext: vscode.InlineCompletionContext
         prompt: AutoeditsPrompt
         abortSignal: AbortSignal
         triggerKind: AutoeditTriggerKindMetadata
@@ -868,7 +863,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
             requestId,
             requestUrl: autoeditsProviderConfig.url,
             documentUri: document.uri.toString(),
-            documentText: document.getText(),
+            documentText: getDocumentTextWithInlineCompletionContext(document, inlineCompletionContext),
             documentVersion: document.version,
             codeToReplaceData,
             requestDocContext,
@@ -897,6 +892,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                             document,
                             codeToReplaceData,
                             requestDocContext,
+                            inlineCompletionContext,
                             position,
                             options: {
                                 hotStreakEnabled: this.features.shouldHotStreak,
@@ -931,6 +927,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                 document,
                 codeToReplaceData,
                 requestDocContext,
+                inlineCompletionContext,
                 position,
                 options: {
                     hotStreakEnabled: this.features.shouldHotStreak,

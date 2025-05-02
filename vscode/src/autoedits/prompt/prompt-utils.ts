@@ -236,10 +236,21 @@ export function getCodeToReplaceData(options: CurrentFilePromptOptions): CodeToR
         remainingSuffixChars
     )
 
+    // Get the text from the document for each range
+    const codeToRewritePrefix =
+        document.getText(ranges.codeToRewritePrefix) + (docContext.injectedPrefix || '')
+    const codeToRewriteSuffix = document.getText(ranges.codeToRewriteSuffix)
+
+    console.log('UMPOX MADE CODE TO REWRITE', {
+        codeToRewrite: codeToRewritePrefix + codeToRewriteSuffix,
+        codeToRewritePrefix,
+        codeToRewriteSuffix,
+        prefixinject: docContext.injectedPrefix,
+    })
     return {
-        codeToRewrite: document.getText(ranges.codeToRewrite),
-        codeToRewritePrefix: document.getText(ranges.codeToRewritePrefix),
-        codeToRewriteSuffix: document.getText(ranges.codeToRewriteSuffix),
+        codeToRewrite: codeToRewritePrefix + codeToRewriteSuffix,
+        codeToRewritePrefix,
+        codeToRewriteSuffix,
         prefixInArea: document.getText(ranges.prefixInArea),
         suffixInArea: document.getText(ranges.suffixInArea),
         prefixBeforeArea: prefixBeforeArea.toString(),

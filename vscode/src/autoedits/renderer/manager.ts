@@ -426,7 +426,14 @@ export class AutoEditsDefaultRendererManager
     }
 
     public getRenderOutput(
-        { requestId, prediction, codeToReplaceData, document, position }: GetRenderOutputArgs,
+        {
+            requestId,
+            prediction,
+            codeToReplaceData,
+            document,
+            position,
+            inlineCompletionContext,
+        }: GetRenderOutputArgs,
         capabilities?: AutoeditClientCapabilities
     ): AutoEditRenderOutput {
         const updatedPrediction = adjustPredictionIfInlineCompletionPossible(
@@ -438,6 +445,7 @@ export class AutoEditsDefaultRendererManager
         const { currentLinePrefix, currentLineSuffix } = getCurrentLinePrefixAndSuffix({
             document,
             position,
+            inlineCompletionContext,
         })
         const codeToRewriteAfterCurrentLine = codeToReplaceData.codeToRewriteSuffix.slice(
             currentLineSuffix.length + 1 // Additional char for newline
