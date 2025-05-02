@@ -50,6 +50,7 @@ import { autoeditsOnboarding } from './autoedit-onboarding'
 import { autoeditsProviderConfig } from './autoedits-config'
 import { FilterPredictionBasedOnRecentEdits } from './filter-prediction-edits'
 import { processHotStreakResponses } from './hot-streak'
+import { getCompletionContextAwareDocument } from './inline-completion-context'
 import { createMockResponseGenerator } from './mock-response-generator'
 import { autoeditsOutputChannelLogger } from './output-channel-logger'
 import type { AutoeditsUserPromptStrategy } from './prompt/base'
@@ -71,11 +72,7 @@ import type { AutoEditRenderOutput } from './renderer/render-output'
 import { type AutoeditRequestManagerParams, RequestManager } from './request-manager'
 import { shrinkPredictionUntilSuffix } from './shrink-prediction'
 import { SmartThrottleService } from './smart-throttle'
-import {
-    areSameUriDocs,
-    getDocumentTextWithInlineCompletionContext,
-    isDuplicatingTextFromRewriteArea,
-} from './utils'
+import { areSameUriDocs, isDuplicatingTextFromRewriteArea } from './utils'
 
 const AUTOEDIT_CONTEXT_STRATEGY = 'auto-edit'
 const RESET_SUGGESTION_ON_CURSOR_CHANGE_AFTER_INTERVAL_MS = 60 * 1000
@@ -324,7 +321,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
     }
 
     public async provideInlineCompletionItems(
-        document: vscode.TextDocument,
+        invokedDocument: vscode.TextDocument,
         position: vscode.Position,
         inlineCompletionContext: vscode.InlineCompletionContext,
         token?: vscode.CancellationToken
@@ -333,6 +330,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
         const startedAt = getTimeNowInMillis()
 
         try {
+            const document = getCompletionContextAwareDocument(invokedDocument, inlineCompletionContext)
             const triggerKind =
                 this.lastManualTriggerTimestamp > performance.now() - 50
                     ? autoeditTriggerKind.manual
@@ -580,7 +578,6 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                 predictionCodeToReplaceData.range,
                 inlineCompletionContext
             )
-            console.log('UMPOX GOT DECORATION INFO')
 
             if (
                 isDuplicatingTextFromRewriteArea({
@@ -590,7 +587,6 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                     codeToReplaceData: predictionCodeToReplaceData,
                 })
             ) {
-                console.log('UMPOX DUPLICAITNG...')
                 this.discardSuggestion({
                     startedAt,
                     requestId,
@@ -618,6 +614,23 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                     startedAt,
                     requestId,
                     discardReason: 'emptyPredictionAfterInlineCompletionExtraction',
+                    prediction: initialPrediction,
+                })
+                return null
+            }
+
+            if (
+                inlineCompletionContext.selectedCompletionInfo &&
+                renderOutput.type !== 'completion' &&
+                renderOutput.type !== 'legacy-completion'
+            ) {
+                // We ensure that `codeToRewrite` includes the `selectedCompletionInfo` but we also guard against
+                // suggestions from the LLM where it isn't a pure inline completion. This is because it would be unexpected
+                // to Tab to accept an item from `selectedCompletionInfo` and have an auto-edit also remove code.
+                this.discardSuggestion({
+                    startedAt,
+                    requestId,
+                    discardReason: 'incompatibleWithSelectedCompletionContextItem',
                     prediction: initialPrediction,
                 })
                 return null
@@ -869,7 +882,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
             requestId,
             requestUrl: autoeditsProviderConfig.url,
             documentUri: document.uri.toString(),
-            documentText: getDocumentTextWithInlineCompletionContext(document, inlineCompletionContext),
+            documentText: document.getText(),
             documentVersion: document.version,
             codeToReplaceData,
             requestDocContext,

@@ -11,7 +11,6 @@ import { AutoeditCompletionItem } from '../autoedit-completion-item'
 import type { AutoeditClientCapabilities } from '../autoedits-provider'
 import { autoeditsOutputChannelLogger } from '../output-channel-logger'
 
-import { getNewLineChar } from '../../completions/text-processing'
 import type { AutoEditDecoration, AutoEditDecorations, DecorationInfo } from './decorators/base'
 import { cssPropertiesToString } from './decorators/utils'
 import { isOnlyAddingTextForModifiedLines, isOnlyRemovingTextForModifiedLines } from './diff-utils'
@@ -238,34 +237,6 @@ export class AutoEditsRenderOutput {
         }
 
         return null
-    }
-
-    private getInsertionPositionForInlineCompletion(
-        position: vscode.Position,
-        inlineCompletionContext: vscode.InlineCompletionContext
-    ) {
-        const selectedCompletion = inlineCompletionContext.selectedCompletionInfo
-        if (!selectedCompletion) {
-            // No selected completion so no need to modify the cursor position
-            return position
-        }
-
-        const newLineChar = getNewLineChar(selectedCompletion.text)
-        const linesToInsertFromSelectedCompletion = selectedCompletion.text.split(newLineChar)
-
-        if (linesToInsertFromSelectedCompletion.length === 1) {
-            return new vscode.Position(
-                selectedCompletion.range.start.line,
-                selectedCompletion.range.start.character + selectedCompletion.text.length
-            )
-        }
-
-        const lastInsertionLine =
-            linesToInsertFromSelectedCompletion[linesToInsertFromSelectedCompletion.length - 1]
-        return new vscode.Position(
-            selectedCompletion.range.start.line + linesToInsertFromSelectedCompletion.length - 1,
-            lastInsertionLine.length
-        )
     }
 
     private tryMakeInlineCompletions({

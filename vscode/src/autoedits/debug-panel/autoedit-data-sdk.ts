@@ -174,6 +174,8 @@ export const DISCARD_REASONS: Record<number, string> = {
     8: 'Conflicting Decoration With Edits',
     9: 'Not Enough Lines in Editor',
     10: 'Stale Throttled Request',
+    11: 'Deferred to Next Cursor Suggestion',
+    12: 'Incompatible with Selected Completion Context Item',
 }
 
 /**

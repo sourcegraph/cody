@@ -161,23 +161,3 @@ export function clip(line: number, min: number, max: number) {
 export function areSameUriDocs(a?: vscode.TextDocument, b?: vscode.TextDocument): boolean {
     return Boolean(a && b && a.uri.toString() === b.uri.toString())
 }
-
-export function getDocumentTextWithInlineCompletionContext(
-    document: vscode.TextDocument,
-    inlineCompletionContext: vscode.InlineCompletionContext
-): string {
-    const selectedCompletionContext = inlineCompletionContext.selectedCompletionInfo
-    if (!selectedCompletionContext) {
-        return document.getText()
-    }
-
-    const documentText = document.getText()
-    const startOffset = document.offsetAt(selectedCompletionContext.range.start)
-    const endOffset = document.offsetAt(selectedCompletionContext.range.end)
-
-    return (
-        documentText.substring(0, startOffset) +
-        selectedCompletionContext.text +
-        documentText.substring(endOffset)
-    )
-}
