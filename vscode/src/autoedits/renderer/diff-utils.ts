@@ -215,6 +215,63 @@ function isSingleConsecutiveChunk(changes: LineChange[]): boolean {
 }
 
 /**
+ * Checks if the changes are clean replacements.
+ * For example:
+ * 1. Unchanged -> Insertion/Deletion -> Unchanged
+ * 2. Unchanged -> Insertion -> Deletion -> Unchanged
+ * 3. Unchanged -> Deletion -> Insertion -> Unchanged
+ *
+ * A "dirty" replacement is where we end up with 3 or more deletions/insertions that are adjacent
+ * For example:
+ * 1. Insertion -> Deletion -> Insertion -> Unchanged
+ */
+function hasCleanReplacements(changes: LineChange[]): boolean {
+    const segments: { type: 'unchanged' | 'modification'; changes: LineChange[] }[] = []
+    let currentSegment: { type: 'unchanged' | 'modification'; changes: LineChange[] } | null = null
+
+    for (const change of changes) {
+        const isModification = change.type === 'insert' || change.type === 'delete'
+        const segmentType = isModification ? 'modification' : 'unchanged'
+
+        if (!currentSegment || currentSegment.type !== segmentType) {
+            if (currentSegment) {
+                segments.push(currentSegment)
+            }
+            currentSegment = { type: segmentType, changes: [change] }
+        } else {
+            currentSegment.changes.push(change)
+        }
+    }
+
+    if (currentSegment) {
+        segments.push(currentSegment)
+    }
+
+    // Check for clean replacement patterns:
+    // 1. Unchanged -> Modification -> Unchanged
+    // 2. Unchanged? -> Modification -> Unchanged?
+    if (segments.length <= 3) {
+        if (segments.length === 1) {
+            return segments[0].type === 'unchanged'
+        }
+
+        if (segments.length === 2) {
+            return segments.some(segment => segment.type === 'unchanged')
+        }
+
+        // For 3 segments, we expect: Unchanged -> Modification -> Unchanged
+        return (
+            segments[0].type === 'unchanged' &&
+            segments[1].type === 'modification' &&
+            segments[2].type === 'unchanged'
+        )
+    }
+
+    // Too many segments or unexpected pattern
+    return false
+}
+
+/**
  * Creates a ModifiedLineInfo object by computing insertions and deletions within a line.
  */
 function createModifiedLineInfo(params: {
@@ -224,12 +281,12 @@ function createModifiedLineInfo(params: {
     modifiedText: string
     chunkRegex: RegExp
 }): ModifiedLineInfo {
-    let changes = getModifiedLineChanges(params)
+    let changes = getModifiedLineChanges({ ...params, chunkRegex: CHARACTER_REGEX })
 
-    if (isSingleConsecutiveChunk(changes)) {
+    if (!hasCleanReplacements(changes)) {
         // The modified line changes form a single consecutive chunk.
         // It is likely that character based diffing will be a better representation of the diff here
-        changes = getModifiedLineChanges({ ...params, chunkRegex: CHARACTER_REGEX })
+        changes = getModifiedLineChanges(params)
     }
 
     return {
