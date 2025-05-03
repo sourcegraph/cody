@@ -11,4 +11,3 @@ You can also use the default keyboard shortcut of `Opt+K`/`Alt+K`.
 **✨ Pro-tips for code editing with Cody**
 <br>• You can open the 💡 menu, with an "Cody: Edit Code" option, by selecting any line of code and using the keyboard shortcut `Cmd+.`/`Ctrl+.`.
 <br>• If you start an empty line and open the 💡 menu (using the keyboard shortcut `Cmd+.`/`Ctrl+.`) you can use "Cody: Generate Code" to generate new lines of code based on instructions.
-<br>• You define your own custom code editing commands using [Custom Commands (Beta)](https://sourcegraph.com/docs/cody/custom-commands), by setting the [`commands.<id>.mode` property](https://sourcegraph.com/docs/cody/capabilities/commands#commands-id-mode).
