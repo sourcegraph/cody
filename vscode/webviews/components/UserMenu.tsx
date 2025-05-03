@@ -1,4 +1,9 @@
-import { type AuthenticatedAuthStatus, CodyIDE, isDotCom } from '@sourcegraph/cody-shared'
+import {
+    type AuthenticatedAuthStatus,
+    CodyIDE,
+    isDotCom,
+    isWorkspaceInstance,
+} from '@sourcegraph/cody-shared'
 import {
     ArrowLeftRightIcon,
     BookOpenText,
@@ -65,6 +70,10 @@ export const UserMenu: React.FunctionComponent<UserMenuProps> = ({
     const telemetryRecorder = useTelemetryRecorder()
     const { displayName, username, primaryEmail, endpoint } = authStatus
     const isDotComUser = isDotCom(endpoint)
+    const isWorkspaceUser = isWorkspaceInstance(endpoint)
+
+    const userType = isDotComUser ? (isProUser ? 'Pro' : 'Free') : isWorkspaceUser ? 'ES' : 'Enterprise'
+    const endpointTitle = `${endpoint} (${isWorkspaceUser ? 'Enterprise Starter' : userType} User)`
 
     const [userMenuView, setUserMenuView] = useState<MenuView>('main')
 
@@ -480,9 +489,9 @@ export const UserMenu: React.FunctionComponent<UserMenuProps> = ({
                                         <Badge
                                             variant={isProUser ? 'cody' : 'secondary'}
                                             className="tw-opacity-85 tw-text-xs tw-h-fit tw-self-center"
-                                            title={endpoint}
+                                            title={endpointTitle}
                                         >
-                                            {isDotComUser ? (isProUser ? 'Pro' : 'Free') : 'Enterprise'}
+                                            {userType}
                                         </Badge>
                                     </div>
                                 </CommandItem>
