@@ -109,68 +109,25 @@ export class ChatsController implements vscode.Disposable {
     }: { text: string; mode: PromptMode; autoSubmit: boolean }): Promise<void> {
         // Get the appropriate controller (active editor, sidebar, or new instance)
         const controller = await this.getControllerForPrompt()
-        
-        // If the webview isn't ready yet, wait for it to be created
-        if (!controller.webviewPanelOrView) {
-            await controller.createWebviewViewOrPanel()
-        }
-        
-        // We don't need to cancel operations here as we're handling a new prompt
-        
-        // For new webview panels, we need to ensure they're ready to receive messages
-        // Use the clientBroadcast observable to wait for the webview to be ready
-        const ensureWebviewReady = new Promise<void>(resolve => {
-            // Create a subscription to wait for the webview to be ready
-            const subscription = controller.clientBroadcast.subscribe(() => {
-                if (controller.webviewPanelOrView?.webview) {
-                    // Webview is ready, unsubscribe and resolve
-                    subscription.unsubscribe()
-                    resolve()
-                }
-            })
-            
-            // If webview already exists, resolve immediately
-            if (controller.webviewPanelOrView?.webview) {
-                subscription.unsubscribe()
-                resolve()
-            }
-        })
-        
-        // Wait for the webview to be ready
-        await ensureWebviewReady
-        
+
         // Now that we have an initialized webview, send messages
-        if (controller.webviewPanelOrView?.webview) {
-            // Important: Send these commands in the correct order
-            
-            // 1. First stop any initial context loading
+        if (controller.webviewPanelOrView) {
+            if (controller.webviewPanelOrView.title === 'New Chat') {
+                //Add a small delay before setting the prompt to ensure the webview has processed the previous messages
+                await new Promise(resolve => setTimeout(resolve, 1500))
+            }
+
             controller.webviewPanelOrView.webview.postMessage({
                 type: 'clientAction',
-                skipInitialContext: true,
-            })
-            
-            // 2. Cancel any ongoing requests
-            controller.webviewPanelOrView.webview.postMessage({
-                type: 'clientAction',
-                cancelRequest: true,
-            })
-            
-            // 3. Add a small delay before setting the prompt to ensure the webview has processed the previous messages
-            await new Promise(resolve => setTimeout(resolve, 100))
-            
-            // 4. Finally set the prompt with noInitialContext flag for extra safety
-            controller.webviewPanelOrView.webview.postMessage({
-                type: 'clientAction',
-                setPromptAsInput: { 
-                    text, 
-                    mode, 
+                setPromptAsInput: {
+                    text,
+                    mode,
                     autoSubmit,
-                    noInitialContext: true // Add this extra flag to prevent context loading
                 },
             })
         }
     }
-    
+
     /**
      * Gets the most appropriate controller for showing a prompt based on visibility and preference.
      */
@@ -178,21 +135,21 @@ export class ChatsController implements vscode.Disposable {
         // Use existing active editor chat if available to avoid creating new instances
         if (this.activeEditor?.webviewPanelOrView?.visible) {
             return this.activeEditor
-        } 
-        
+        }
+
         // Use sidebar if visible
         if (this.panel.isVisible()) {
             return this.panel
         }
-        
+
         // Otherwise follow location preference
         const chatLocation = getNewChatLocation()
-        
+
         if (chatLocation === 'sidebar') {
             await vscode.commands.executeCommand('cody.chat.focus')
             return this.panel
-        } 
-        
+        }
+
         if (this.editors.length > 0) {
             // Reuse an existing editor chat if available
             const controller = this.editors[0]
@@ -200,13 +157,10 @@ export class ChatsController implements vscode.Disposable {
                 revealWebviewViewOrPanel(controller.webviewPanelOrView)
             }
             return controller
-        } 
-        
+        }
+
         // Create a new editor if none exist
         const controller = await this.getOrCreateEditorChatController()
-        if (controller.webviewPanelOrView) {
-            revealWebviewViewOrPanel(controller.webviewPanelOrView)
-        }
         return controller
     }
 
