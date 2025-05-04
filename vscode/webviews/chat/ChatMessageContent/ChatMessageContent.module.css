@@ -33,6 +33,7 @@
     justify-content: space-between;
 }
 
+.insert-buttons,
 .action-buttons {
     display: flex;
     flex-shrink: 0;
@@ -54,10 +55,6 @@
     background: var(--button-icon-hover-background);
     outline: 1px dotted var(--contrast-active-border);
     outline-offset: -1px;
-}
-
-.button:not(:first-child) {
-    margin-left: 0.25rem;
 }
 
 .button .icon-container, .status .icon-container {
