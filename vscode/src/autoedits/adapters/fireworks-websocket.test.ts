@@ -65,7 +65,6 @@ describe('FireworksWebsocketAdapter', () => {
     it('includes speculation parameters when hot streak is enabled', async () => {
         // Mock hot streak enabled
         vi.spyOn(autoeditsConfig, 'isHotStreakEnabled').mockReturnValue(true)
-
         messageFn.mockReturnValueOnce(
             JSON.stringify({
                 'x-message-id': 'm_0',

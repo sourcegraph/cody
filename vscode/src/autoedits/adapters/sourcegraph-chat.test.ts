@@ -6,6 +6,7 @@ import type { AutoeditModelOptions, SuccessModelResponse } from './base'
 import { SourcegraphChatAdapter } from './sourcegraph-chat'
 import { getMaxOutputTokensForAutoedits } from './utils'
 
+
 describe('SourcegraphChatAdapter', () => {
     let adapter: SourcegraphChatAdapter
     let mockChatClient: ChatClient
