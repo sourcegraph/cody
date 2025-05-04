@@ -1,11 +1,10 @@
 import { ps } from '@sourcegraph/cody-shared'
 import type { ChatClient } from '@sourcegraph/cody-shared'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
+import * as autoeditsConfig from '../autoedits-config'
 import type { AutoeditModelOptions, SuccessModelResponse } from './base'
 import { SourcegraphChatAdapter } from './sourcegraph-chat'
 import { getMaxOutputTokensForAutoedits } from './utils'
-import * as autoeditsConfig from '../autoedits-config'
-
 
 describe('SourcegraphChatAdapter', () => {
     let adapter: SourcegraphChatAdapter
@@ -67,7 +66,7 @@ describe('SourcegraphChatAdapter', () => {
             adaptiveSpeculation: true,
             speculationLengthOnStrongMatch: 500,
             speculationMinLengthOnStrongMatch: 500,
-            speculationStrongMatchThreshold: 20
+            speculationStrongMatchThreshold: 20,
         })
     })
 

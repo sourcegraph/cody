@@ -63,7 +63,7 @@ describe('FireworksAdapter', () => {
                 adaptive_speculation: true,
                 speculation_length_on_strong_match: 500,
                 speculation_min_length_on_strong_match: 500,
-                speculation_strong_match_threshold: 20
+                speculation_strong_match_threshold: 20,
             })
         )
     })
