@@ -1,11 +1,11 @@
 import dedent from 'dedent'
 import { describe, expect, it } from 'vitest'
-import { LONG_SUGGESTION_USER_CURSOR_MARKER } from '../prompt/constants'
 import { type ProcessHotStreakResponsesParams, processHotStreakResponses } from '.'
 import { getCurrentDocContext } from '../../completions/get-current-doc-context'
 import { documentAndPosition } from '../../completions/test-helpers'
 import { AutoeditStopReason, type ModelResponse } from '../adapters/base'
 import type { SuggestedPredictionResult } from '../autoedits-provider'
+import { LONG_SUGGESTION_USER_CURSOR_MARKER } from '../prompt/constants'
 import { LongTermPromptStrategy } from '../prompt/long-prompt-experimental'
 import { createCodeToReplaceDataForTest } from '../prompt/test-helper'
 
@@ -137,7 +137,6 @@ function createHotStreakParams(
 }
 
 describe('processHotStreakResponses', () => {
-
     it('post-processes predictions to filter out marker tokens', async () => {
         // Create prediction with the marker token that should be filtered out
         const markerToken = LONG_SUGGESTION_USER_CURSOR_MARKER

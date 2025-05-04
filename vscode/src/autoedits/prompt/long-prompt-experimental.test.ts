@@ -21,7 +21,6 @@ describe('LongTermPromptStrategy', () => {
     })
 
     describe('postProcessCompletion', () => {
-
         it('should return the completion as is without any cursor marker', () => {
             const strategy = new LongTermPromptStrategy()
             const completion = 'foo'
@@ -35,7 +34,6 @@ describe('LongTermPromptStrategy', () => {
             const result = strategy.postProcessCompletion(completion)
             expect(result).toBe('foobar')
         })
-
     })
 
     describe('getUserPrompt', () => {
