@@ -8,10 +8,15 @@ import { isHotStreakEnabled } from '../autoedits-config'
 import type { InceptionLabsRequestParams } from './inceptionlabs'
 
 export interface FireworksCompatibleRewriteSpeculationArgs {
+    // Rewrite speculation enabled speculating the tokens from predicted outputs even after first token mis-match.
     rewrite_speculation?: boolean
+    // Adaptive speculation adjust the length of speculation tokens dynamically.
     adaptive_speculation?: boolean
+    // Number of tokens to speculate.
     speculation_length_on_strong_match?: number
+    // Minimum number of tokens to speculate.
     speculation_min_length_on_strong_match?: number
+    // Speculation threshold.
     speculation_strong_match_threshold?: number
 }
 
@@ -82,6 +87,8 @@ export function getFireworksCompatibleRewriteSpeculationParams(): FireworksCompa
     if (!isHotStreakEnabled()) {
         return {}
     }
+    // The rewrite speculation parameter values are decided based on the offline experiments.
+    // Check the PR https://github.com/sourcegraph/cody-chat-eval/pull/157 for more details.
     return {
         rewrite_speculation: true,
         adaptive_speculation: true,
