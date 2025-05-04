@@ -1,11 +1,12 @@
 import dedent from 'dedent'
 import { describe, expect, it } from 'vitest'
-
+import { LONG_SUGGESTION_USER_CURSOR_MARKER } from '../prompt/constants'
 import { type ProcessHotStreakResponsesParams, processHotStreakResponses } from '.'
 import { getCurrentDocContext } from '../../completions/get-current-doc-context'
 import { documentAndPosition } from '../../completions/test-helpers'
 import { AutoeditStopReason, type ModelResponse } from '../adapters/base'
 import type { SuggestedPredictionResult } from '../autoedits-provider'
+import { LongTermPromptStrategy } from '../prompt/long-prompt-experimental'
 import { createCodeToReplaceDataForTest } from '../prompt/test-helper'
 
 // Helper to create a generator for model responses
@@ -123,6 +124,7 @@ function createHotStreakParams(
     })
 
     return {
+        promptStrategy: new LongTermPromptStrategy(),
         responseGenerator,
         document,
         codeToReplaceData,
@@ -135,6 +137,32 @@ function createHotStreakParams(
 }
 
 describe('processHotStreakResponses', () => {
+
+    it('post-processes predictions to filter out marker tokens', async () => {
+        // Create prediction with the marker token that should be filtered out
+        const markerToken = LONG_SUGGESTION_USER_CURSOR_MARKER
+        const predictionWithMarker = MOCK_PREDICTION.replace('return true', `${markerToken}return true`)
+        const responseGenerator = createModelResponseGenerator([predictionWithMarker])
+        const params = createHotStreakParams(MOCK_CODE, responseGenerator)
+        const resultGenerator = processHotStreakResponses(params)
+
+        // Collect all results
+        const results = []
+        for await (const result of resultGenerator) {
+            results.push(result)
+        }
+
+        // Verify the marker has been filtered out in all results
+        for (const result of results) {
+            if (result.type !== 'aborted') {
+                expect(result.response.prediction).not.toContain(markerToken)
+            }
+        }
+
+        // Verify we got at least one result
+        expect(results.length).toBeGreaterThan(0)
+    })
+
     it('does not emit hot streaks if disabled', async () => {
         const responseGenerator = createModelResponseGenerator(MOCK_PREDICTION.split('\n'))
         const params = createHotStreakParams(MOCK_CODE, responseGenerator)

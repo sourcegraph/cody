@@ -20,6 +20,24 @@ describe('LongTermPromptStrategy', () => {
         vi.useFakeTimers()
     })
 
+    describe('postProcessCompletion', () => {
+
+        it('should return the completion as is without any cursor marker', () => {
+            const strategy = new LongTermPromptStrategy()
+            const completion = 'foo'
+            const result = strategy.postProcessCompletion(completion)
+            expect(result).toBe(completion)
+        })
+
+        it('should return the completion without any cursor marker if present', () => {
+            const strategy = new LongTermPromptStrategy()
+            const completion = 'foo<|user_cursor_is_here|>bar'
+            const result = strategy.postProcessCompletion(completion)
+            expect(result).toBe('foobar')
+        })
+
+    })
+
     describe('getUserPrompt', () => {
         const getContextItem = (
             content: string,

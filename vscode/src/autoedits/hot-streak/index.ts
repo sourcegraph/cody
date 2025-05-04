@@ -15,9 +15,9 @@ import type {
     IgnoredPredictionResult,
     SuggestedPredictionResult,
 } from '../autoedits-provider'
+import type { AutoeditsUserPromptStrategy } from '../prompt/base'
 import { getCodeToReplaceData } from '../prompt/prompt-utils'
 import { isDuplicatingTextFromRewriteArea } from '../utils'
-
 import { getHotStreakChunk } from './get-chunk'
 import { getStableSuggestion } from './stable-suggestion'
 
@@ -32,6 +32,7 @@ export interface ProcessHotStreakResponsesParams {
         // any hot-streak suggestions and wait for the final response.
         hotStreakEnabled?: boolean
     }
+    promptStrategy: AutoeditsUserPromptStrategy
 }
 
 export type ProcessedHotStreakResponse = (
@@ -55,6 +56,7 @@ export async function* processHotStreakResponses({
     requestDocContext,
     position,
     options,
+    promptStrategy,
 }: ProcessHotStreakResponsesParams): AsyncGenerator<ProcessedHotStreakResponse> {
     let hotStreakId = null
     let virtualDocument = TextDocument.create(
@@ -66,6 +68,11 @@ export async function* processHotStreakResponses({
     const document = wrapVSCodeTextDocument(virtualDocument)
 
     for await (const response of responseGenerator) {
+        // Post process the prediction
+        if (response.type !== 'aborted') {
+            response.prediction = promptStrategy.postProcessCompletion(response.prediction)
+        }
+
         const canHotStreak = hotStreakId
             ? // If we have already started emitted hot-streak suggestions, then we should treat all responses as hot-streaks
               response.type === 'partial' || response.type === 'success'

@@ -902,6 +902,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                             options: {
                                 hotStreakEnabled: this.features.shouldHotStreak,
                             },
+                            promptStrategy: this.promptStrategy,
                         })
                     })
                 }
@@ -936,6 +937,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                 options: {
                     hotStreakEnabled: this.features.shouldHotStreak,
                 },
+                promptStrategy: this.promptStrategy,
             })
         })
     }
