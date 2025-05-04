@@ -64,7 +64,7 @@ describe('SourcegraphCompletionsAdapter', () => {
             adaptiveSpeculation: true,
             speculationLengthOnStrongMatch: 500,
             speculationMinLengthOnStrongMatch: 500,
-            speculationStrongMatchThreshold: 20
+            speculationStrongMatchThreshold: 20,
         })
     })
 
