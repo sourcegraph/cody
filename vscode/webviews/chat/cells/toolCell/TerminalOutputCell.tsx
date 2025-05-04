@@ -47,18 +47,27 @@ const getLineClass = (type?: string) => {
 // Format the output as an array of TerminalLine objects
 export function convertToTerminalLines(command: string, content?: string): UITerminalLine[] {
     if (!content) return []
-    // Split content into strout and sterr parts
+    // Split content into stdout and stderr parts
     // We will get the errors from between the <sterr> tags
     const sterrRegex = /<sterr>([\s\S]*)<\/sterr>/g
     const parts = content.split(sterrRegex)
-    const stdout = parts[0] || ''
-    const stderr = parts.length > 1 ? parts[1] : ''
-    // If there's no output parts, return just the command
-    if (parts.length < 2) {
-        return [{ content: command, type: UITerminalOutputType.Input }].filter(
-            line => line.content.trim() !== ''
-        )
+
+    let stdout = ''
+    let stderr = ''
+
+    if (parts.length === 1) {
+        // No <sterr> tags found, treat the whole content as stdout
+        stdout = parts[0] || ''
+    } else {
+        // <sterr> tags found, parts[1] contains the stderr content
+        stdout = parts[0] || ''
+        stderr = parts[1] || ''
+        // If there was content after the closing </sterr> tag, append it to stdout
+        if (parts.length > 2 && parts[2]) {
+            stdout += parts[2]
+        }
     }
+
     const lines: UITerminalLine[] = [
         { content: command, type: UITerminalOutputType.Input },
         ...formatOutputToTerminalLines(stdout, UITerminalOutputType.Output),
