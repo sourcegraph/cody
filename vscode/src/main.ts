@@ -38,7 +38,6 @@ import {
     subscriptionDisposable,
     switchMap,
     take,
-    telemetryRecorder,
 } from '@sourcegraph/cody-shared'
 
 import { isReinstalling } from '../uninstall/reinstall'
@@ -61,12 +60,7 @@ import { ChatsController, CodyChatEditorViewType } from './chat/chat-view/ChatsC
 import { ContextRetriever } from './chat/chat-view/ContextRetriever'
 import { SourcegraphRemoteFileProvider } from './chat/chat-view/sourcegraphRemoteFile'
 import { MCPManager } from './chat/chat-view/tools/MCPManager'
-import {
-    ACCOUNT_LIMITS_INFO_URL,
-    ACCOUNT_UPGRADE_URL,
-    CODY_FEEDBACK_URL,
-    CODY_OLLAMA_DOCS_URL,
-} from './chat/protocol'
+import { ACCOUNT_LIMITS_INFO_URL, ACCOUNT_UPGRADE_URL, CODY_FEEDBACK_URL } from './chat/protocol'
 import { CodeActionProvider } from './code-actions/CodeActionProvider'
 import { commandControllerInit, executeCodyCommand } from './commands/CommandsController'
 import { GhostHintDecorator } from './commands/GhostHintDecorator'
@@ -419,29 +413,7 @@ async function registerOtherCommands(disposables: vscode.Disposable[]) {
         // Walkthrough / Support
         vscode.commands.registerCommand('cody.feedback', () =>
             vscode.env.openExternal(vscode.Uri.parse(CODY_FEEDBACK_URL.href))
-        ),
-        vscode.commands.registerCommand('cody.welcome', async () => {
-            telemetryRecorder.recordEvent('cody.walkthrough', 'clicked', {
-                billingMetadata: {
-                    category: 'billable',
-                    product: 'cody',
-                },
-            })
-            // Hack: We have to run this twice to force VS Code to register the walkthrough
-            // Open issue: https://github.com/microsoft/vscode/issues/186165
-            await vscode.commands.executeCommand('workbench.action.openWalkthrough')
-            return vscode.commands.executeCommand(
-                'workbench.action.openWalkthrough',
-                'sourcegraph.cody-ai#welcome',
-                false
-            )
-        }),
-
-        // StatusBar Commands
-        vscode.commands.registerCommand('cody.statusBar.ollamaDocs', () => {
-            vscode.commands.executeCommand('vscode.open', CODY_OLLAMA_DOCS_URL.href)
-            telemetryRecorder.recordEvent('cody.statusBar.ollamaDocs', 'opened')
-        })
+        )
     )
 }
 
