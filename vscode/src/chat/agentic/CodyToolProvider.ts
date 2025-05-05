@@ -1,5 +1,4 @@
 import {
-    type ProcessingStep,
     type Unsubscribable,
     logDebug,
     openCtxProviderMetadata,
@@ -9,25 +8,12 @@ import {
 import type { McpTool } from '@sourcegraph/cody-shared/src/llm-providers/mcp/types'
 import { map } from 'observable-fns'
 import type { ContextRetriever } from '../chat-view/ContextRetriever'
-import type { CodyTool, CodyToolConfig } from './CodyTool'
+import { CodyTool } from './CodyTool'
 import { ToolFactory } from './CodyToolFactory'
+import { type CodyToolConfig} from './types'
 import { toolboxManager } from './ToolboxManager'
 
 type Retriever = Pick<ContextRetriever, 'retrieveContext'>
-
-/**
- * Interface for tool execution status callbacks.
- * Used to track and report tool execution progress.
- */
-export interface ToolStatusCallback {
-    onUpdate(id: string, content: string): void
-    onStream(step: Partial<ProcessingStep>): void
-    onComplete(id?: string, error?: Error): void
-    onConfirmationNeeded(
-        id: string,
-        step: Omit<ProcessingStep, 'id' | 'type' | 'state'>
-    ): Promise<boolean>
-}
 
 /**
  * Configuration interface for registering new tools.

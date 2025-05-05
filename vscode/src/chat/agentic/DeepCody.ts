@@ -25,9 +25,10 @@ import { getCategorizedMentions, isUserAddedItem } from '../../prompt-builder/ut
 import type { ChatBuilder } from '../chat-view/ChatBuilder'
 import { DefaultPrompter } from '../chat-view/prompt'
 import type { CodyTool } from './CodyTool'
-import { CodyToolProvider, type ToolStatusCallback } from './CodyToolProvider'
+import { CodyToolProvider } from './CodyToolProvider'
 import { ProcessManager } from './ProcessManager'
 import { ACTIONS_TAGS, CODYAGENT_PROMPTS } from './prompts'
+import { ToolStatusCallback } from './types'
 
 /**
  * A DeepCodyAgent handles advanced context retrieval and analysis for chat interactions.

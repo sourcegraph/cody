@@ -1,24 +1,26 @@
-import type { Span } from '@opentelemetry/api'
 import {
-    type ContextItem,
-    ContextItemSource,
     type ContextMentionProviderMetadata,
     PromptString,
-    UIToolStatus,
     isDefined,
-    logDebug,
     ps,
 } from '@sourcegraph/cody-shared'
 import type { McpTool } from '@sourcegraph/cody-shared/src/llm-providers/mcp/types'
-import { URI } from 'vscode-uri'
-import { MCPManager } from '../../chat/chat-view/tools/MCPManager'
 import type { ContextRetriever } from '../chat-view/ContextRetriever'
-import { CodyTool, type CodyToolConfig, OpenCtxTool, TOOL_CONFIGS } from './CodyTool'
-import type { ToolConfiguration } from './CodyToolProvider'
+import { CodyTool, McpToolImpl, OpenCtxTool, TOOL_CONFIGS } from './CodyTool'
+import { type CodyToolConfig } from './types'
 import { toolboxManager } from './ToolboxManager'
 import { OPENCTX_TOOL_CONFIG } from './config'
 
 type Retriever = Pick<ContextRetriever, 'retrieveContext'>
+
+/**
+ * Configuration interface for registering new tools.
+ * Extends CodyToolConfig with name and instance creation function.
+ */
+interface ToolConfiguration extends CodyToolConfig {
+    name: string
+    createInstance: (config: CodyToolConfig, retriever?: Retriever) => CodyTool
+}
 
 /**
  *
@@ -235,105 +237,5 @@ export class ToolFactory {
                 },
             }
         )
-    }
-}
-
-/**
- * McpToolImpl implements a CodyTool that interfaces with Model Context Protocol tools.
- * It handles the execution of MCP tools and formats their results for display in the UI.
- */
-class McpToolImpl extends CodyTool {
-    constructor(
-        toolConfig: CodyToolConfig,
-        private tool: McpTool,
-        private toolName: string,
-        private serverName: string,
-        private parseQueryToArgs: (queries: string[], tool: McpTool) => Record<string, unknown>
-    ) {
-        super(toolConfig)
-    }
-
-    public async execute(span: Span, queries: string[]): Promise<ContextItem[]> {
-        span.addEvent('executeMcpTool')
-        if (!queries.length) {
-            return []
-        }
-
-        try {
-            // Parse queries into args object
-            const args = this.parseQueryToArgs(queries, this.tool)
-
-            // Get the instance and execute the tool
-            const mcpInstance = MCPManager.instance
-            if (!mcpInstance) {
-                throw new Error('MCP Manager instance not available')
-            }
-
-            // Execute the tool and format results
-            return await this.executeMcpToolAndFormatResults(
-                mcpInstance,
-                args,
-                this.serverName,
-                this.tool.name,
-                this.toolName
-            )
-        } catch (error) {
-            return this.handleMcpToolError(error, this.tool.name, this.toolName)
-        }
-    }
-
-    private async executeMcpToolAndFormatResults(
-        mcpInstance: MCPManager,
-        args: Record<string, unknown>,
-        serverName: string,
-        toolName: string,
-        displayToolName: string
-    ): Promise<ContextItem[]> {
-        // Use the MCPManager's executeTool method which properly delegates to serverManager
-        const result = await mcpInstance.executeTool(serverName, toolName, args)
-
-        const imageResultInfo = result.context?.some(i => i.type === 'media')
-            ? `Image captured for ${JSON.stringify(args)} and will be available for the next request.`
-            : ''
-
-        const prefix = `${toolName} tool was executed with ${JSON.stringify(args)} and `
-
-        const statusReport =
-            result.status !== UIToolStatus.Error
-                ? `completed: ${result?.content || 'invoked'}${imageResultInfo}`
-                : `failed: ${result.content}`
-
-        return [
-            ...(result.context ?? []),
-            {
-                type: 'file',
-                content: prefix + statusReport,
-                uri: URI.parse(`mcp://${displayToolName}-result`),
-                source: ContextItemSource.Agentic,
-                title: displayToolName,
-            },
-        ]
-    }
-
-    private handleMcpToolError(
-        error: unknown,
-        toolName: string,
-        displayToolName: string
-    ): ContextItem[] {
-        logDebug('CodyToolProvider', `Error executing ${displayToolName}`, {
-            verbose: error,
-        })
-
-        const errorStr = error instanceof Error ? error.message : String(error)
-
-        return [
-            {
-                type: 'file',
-                content: `Error executing MCP tool ${toolName}: ${errorStr}`,
-                uri: URI.parse(`mcp://$${displayToolName}-error`),
-                source: ContextItemSource.Agentic,
-                title: displayToolName,
-            },
-        ]
     }
 }
