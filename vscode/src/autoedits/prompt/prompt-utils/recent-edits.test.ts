@@ -1,10 +1,9 @@
-import dedent from 'dedent'
-import { describe, expect, it} from 'vitest'
 import { type AutocompleteContextSnippet, ps, testFileUri } from '@sourcegraph/cody-shared'
+import dedent from 'dedent'
+import { describe, expect, it } from 'vitest'
 
 import { RetrieverIdentifier } from '../../../completions/context/utils'
-import { getRecentEditsPrompt, getRecentEditsContextPromptWithPath } from './recent-edits'
-
+import { getRecentEditsContextPromptWithPath, getRecentEditsPrompt } from './recent-edits'
 
 describe('getRecentEditsContextPromptWithPath', () => {
     it('correct prompt with path', () => {
