@@ -13,7 +13,7 @@ import { documentAndPosition } from '../../completions/test-helpers'
 
 import type { UserPromptArgs } from './base'
 import { PromptCacheOptimizedV1 } from './prompt-cache-optimized-v1'
-import { getCodeToReplaceData } from './prompt-utils'
+import { getCodeToReplaceData } from './prompt-utils/code-to-replace'
 
 describe('PromptCacheOptimizedV1', () => {
     beforeEach(() => {

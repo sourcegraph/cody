@@ -13,7 +13,7 @@ import { documentAndPosition } from '../../completions/test-helpers'
 
 import type { UserPromptArgs } from './base'
 import { LongTermPromptStrategy } from './long-prompt-experimental'
-import { getCodeToReplaceData } from './prompt-utils'
+import { getCodeToReplaceData } from './prompt-utils/code-to-replace'
 
 describe('LongTermPromptStrategy', () => {
     beforeEach(() => {

@@ -1,6 +1,6 @@
 import * as vscode from 'vscode'
 
-import { type DocumentContext, tokensToChars } from '@sourcegraph/cody-shared'
+import { type CodeToReplaceData, type DocumentContext, tokensToChars } from '@sourcegraph/cody-shared'
 
 import {
     completionMatchesSuffix,
@@ -25,7 +25,6 @@ import { AutoeditCompletionItem } from '../autoedit-completion-item'
 import { autoeditsProviderConfig } from '../autoedits-config'
 import type { AutoeditClientCapabilities } from '../autoedits-provider'
 import { autoeditsOutputChannelLogger } from '../output-channel-logger'
-import type { CodeToReplaceData } from '../prompt/prompt-utils'
 import type { RequestManager } from '../request-manager'
 import {
     adjustPredictionIfInlineCompletionPossible,

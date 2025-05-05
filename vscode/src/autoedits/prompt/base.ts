@@ -10,7 +10,7 @@ import type {
 import type { AutoeditsPrompt } from '../adapters/base'
 
 import { SYSTEM_PROMPT } from './constants'
-import { getCompletionsPromptWithSystemPrompt } from './prompt-utils'
+import { getCompletionsPromptWithSystemPrompt } from './prompt-utils/common'
 
 export interface UserPromptArgs {
     document: vscode.TextDocument

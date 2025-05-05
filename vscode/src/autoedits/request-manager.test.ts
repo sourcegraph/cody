@@ -12,7 +12,7 @@ import {
 } from 'vitest'
 import * as vscode from 'vscode'
 
-import type { DocumentContext } from '@sourcegraph/cody-shared'
+import type { CodeToReplaceData, DocumentContext } from '@sourcegraph/cody-shared'
 import { documentAndPosition } from '../completions/test-helpers'
 
 import { AutoeditStopReason } from './adapters/base'
@@ -22,7 +22,6 @@ import type {
     PredictionResult,
     SuggestedPredictionResult,
 } from './autoedits-provider'
-import type { CodeToReplaceData } from './prompt/prompt-utils'
 import { createCodeToReplaceDataForTest, isTemplateStringsArray } from './prompt/test-helper'
 import { type AutoeditRequestManagerParams, RequestManager } from './request-manager'
 import * as requestRecycling from './request-recycling'
