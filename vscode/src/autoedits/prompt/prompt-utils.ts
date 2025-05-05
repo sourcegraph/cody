@@ -1,5 +1,5 @@
 import * as vscode from 'vscode'
-
+import { groupConsecutiveItemsByPredicate } from '../../completions/context/retrievers/recent-user-actions/recent-edits-diff-helpers/utils'
 import {
     type AutoEditsTokenLimit,
     type AutocompleteContextSnippet,
@@ -469,7 +469,8 @@ export function getJaccardSimilarityPrompt(contextItems: AutocompleteContextSnip
 //  Helper functions
 export function getContextItemMappingWithTokenLimit(
     contextItems: AutocompleteContextSnippet[],
-    contextTokenLimitMapping: Record<string, number>
+    contextTokenLimitMapping: Record<string, number>,
+    contextNumItemsLimitMapping: Record<string, number>
 ): Map<RetrieverIdentifier, AutocompleteContextSnippet[]> {
     const contextItemMapping = new Map<RetrieverIdentifier, AutocompleteContextSnippet[]>()
     // Group items by identifier
@@ -484,8 +485,11 @@ export function getContextItemMappingWithTokenLimit(
     for (const [identifier, items] of contextItemMapping) {
         const tokenLimit =
             identifier in contextTokenLimitMapping ? contextTokenLimitMapping[identifier] : undefined
+        const numItemsLimit =
+            identifier in contextNumItemsLimitMapping ? contextNumItemsLimitMapping[identifier] : undefined
+
         if (tokenLimit !== undefined) {
-            contextItemMapping.set(identifier, getContextItemsInTokenBudget(items, tokenLimit))
+            contextItemMapping.set(identifier, getContextItemsInTokenBudget(items, tokenLimit, numItemsLimit))
         } else {
             autoeditsOutputChannelLogger.logError(
                 'getContextItemMappingWithTokenLimit',
@@ -499,7 +503,8 @@ export function getContextItemMappingWithTokenLimit(
 
 export function getContextItemsInTokenBudget(
     contextItems: AutocompleteContextSnippet[],
-    tokenBudget: number
+    tokenBudget: number,
+    numItemsLimit?: number
 ): AutocompleteContextSnippet[] {
     const autocompleteItemsWithBudget: AutocompleteContextSnippet[] = []
     let currentCharsCount = 0
@@ -512,8 +517,36 @@ export function getContextItemsInTokenBudget(
         }
         currentCharsCount += item.content.length
         autocompleteItemsWithBudget.push(item)
+        if (numItemsLimit && autocompleteItemsWithBudget.length >= numItemsLimit) {
+            break
+        }
     }
     return autocompleteItemsWithBudget
+}
+
+export function groupConsecutiveRecentEditsItemsFromSameFile(contextItems: AutocompleteContextSnippet[]): AutocompleteContextSnippet[] {
+    if (contextItems.length === 0) {
+        return []
+    }
+    // Group consecutive items by file name
+    const groupedContextItems = groupConsecutiveItemsByPredicate(
+        contextItems,
+        (a, b) => a.uri.toString() === b.uri.toString()
+    )
+    const combinedContextItems: AutocompleteContextSnippet[] = []
+    for (const group of groupedContextItems) {
+        const combinedItem = {
+            ...group[0],
+            // The group content is from the latest to the oldest item.
+            // We need to reverse the order of the content to get diff from old to new.
+            content: group
+                .map(item => item.content)
+                .reverse()
+                .join('\nthen\n'),
+        }
+        combinedContextItems.push(combinedItem)
+    }
+    return combinedContextItems
 }
 
 export function getContextItemsForIdentifier(
