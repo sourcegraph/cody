@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 import { getCurrentDocContext } from '../../../completions/get-current-doc-context'
 import { documentAndPosition } from '../../../completions/test-helpers'
 import { getCodeToReplaceData } from './code-to-replace'
-import { getCurrentFilePromptComponents, getCurrentFileLongSuggestionPrompt } from './current-file'
+import { getCurrentFileLongSuggestionPrompt, getCurrentFilePromptComponents } from './current-file'
 
 describe('getCurrentFilePromptComponents and getCurrentFileLongSuggestionPrompt', () => {
     it('handles the markers correctly for current file context', () => {
