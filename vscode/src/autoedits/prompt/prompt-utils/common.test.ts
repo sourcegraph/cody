@@ -1,8 +1,10 @@
 import { type AutocompleteContextSnippet, ps, testFileUri } from '@sourcegraph/cody-shared'
 import dedent from 'dedent'
 import { describe, expect, it } from 'vitest'
+import { RetrieverIdentifier } from '../../../completions/context/utils'
 import {
     getCompletionsPromptWithSystemPrompt,
+    getContextItemMappingWithTokenLimit,
     getContextItemsInTokenBudget,
     getContextPromptWithPath,
     joinPromptsWithNewlineSeparator,
@@ -79,6 +81,33 @@ describe('getContextItemsInTokenBudget', () => {
         expect(result[0].identifier).toBe('test1')
         expect(result[1].identifier).toBe('test3')
     })
+
+    it('respects numItemsLimit when provided', () => {
+        const contextItems: AutocompleteContextSnippet[] = [
+            getContextItem('short content 1', 'test1'),
+            getContextItem('short content 2', 'test2'),
+            getContextItem('short content 3', 'test3'),
+        ]
+        const tokenBudget = 100
+        const numItemsLimit = 2
+        const result = getContextItemsInTokenBudget(contextItems, tokenBudget, numItemsLimit)
+        expect(result.length).toBe(2)
+        expect(result[0].identifier).toBe('test1')
+        expect(result[1].identifier).toBe('test2')
+    })
+
+    it('prioritizes token budget over numItemsLimit', () => {
+        const contextItems: AutocompleteContextSnippet[] = [
+            getContextItem('a'.repeat(100), 'test1'),
+            getContextItem('b'.repeat(100), 'test2'),
+            getContextItem('c'.repeat(100), 'test3'),
+        ]
+        const tokenBudget = 30 // Only enough for one item
+        const numItemsLimit = 3
+        const result = getContextItemsInTokenBudget(contextItems, tokenBudget, numItemsLimit)
+        expect(result.length).toBe(1)
+        expect(result[0].identifier).toBe('test1')
+    })
 })
 
 describe('getCompletionsPromptWithSystemPrompt', () => {
@@ -108,5 +137,103 @@ describe('joinPromptsWithNewlineSeparator', () => {
 
             bar
         `)
+    })
+})
+
+describe('getContextItemMappingWithTokenLimit', () => {
+    const getContextItem = (content: string, identifier: string): AutocompleteContextSnippet => ({
+        type: 'file',
+        content,
+        identifier,
+        uri: testFileUri('foo.ts'),
+        startLine: 0,
+        endLine: 0,
+    })
+
+    it('groups items by identifier and applies token limits', () => {
+        const contextItems: AutocompleteContextSnippet[] = [
+            getContextItem('content A1', RetrieverIdentifier.RecentEditsRetriever),
+            getContextItem('content A2', RetrieverIdentifier.RecentEditsRetriever),
+            getContextItem('content B1', RetrieverIdentifier.JaccardSimilarityRetriever),
+            getContextItem('content B2', RetrieverIdentifier.JaccardSimilarityRetriever),
+        ]
+
+        const contextTokenLimitMapping = {
+            [RetrieverIdentifier.RecentEditsRetriever]: 50,
+            [RetrieverIdentifier.JaccardSimilarityRetriever]: 20,
+        }
+
+        const contextNumItemsLimitMapping = {
+            [RetrieverIdentifier.RecentEditsRetriever]: 2,
+            [RetrieverIdentifier.JaccardSimilarityRetriever]: 1,
+        }
+
+        const result = getContextItemMappingWithTokenLimit(
+            contextItems,
+            contextTokenLimitMapping,
+            contextNumItemsLimitMapping
+        )
+
+        expect(result.size).toBe(2)
+        expect(result.get(RetrieverIdentifier.RecentEditsRetriever)?.length).toBe(2)
+        expect(result.get(RetrieverIdentifier.JaccardSimilarityRetriever)?.length).toBe(1)
+        expect(result.get(RetrieverIdentifier.RecentEditsRetriever)?.[0].content).toBe('content A1')
+        expect(result.get(RetrieverIdentifier.JaccardSimilarityRetriever)?.[0].content).toBe(
+            'content B1'
+        )
+    })
+
+    it('respects token limits over item count limits', () => {
+        const contextItems: AutocompleteContextSnippet[] = [
+            getContextItem('a'.repeat(50), RetrieverIdentifier.RecentEditsRetriever),
+            getContextItem('b'.repeat(50), RetrieverIdentifier.RecentEditsRetriever),
+            getContextItem('c'.repeat(10), RetrieverIdentifier.JaccardSimilarityRetriever),
+        ]
+
+        const contextTokenLimitMapping = {
+            [RetrieverIdentifier.RecentEditsRetriever]: 10, // Very small token limit
+            [RetrieverIdentifier.JaccardSimilarityRetriever]: 100,
+        }
+
+        const contextNumItemsLimitMapping = {
+            [RetrieverIdentifier.RecentEditsRetriever]: 2,
+            [RetrieverIdentifier.JaccardSimilarityRetriever]: 2,
+        }
+
+        const result = getContextItemMappingWithTokenLimit(
+            contextItems,
+            contextTokenLimitMapping,
+            contextNumItemsLimitMapping
+        )
+
+        expect(result.size).toBe(2)
+        expect(result.get(RetrieverIdentifier.RecentEditsRetriever)?.length).toBe(0) // All items exceed budget
+        expect(result.get(RetrieverIdentifier.JaccardSimilarityRetriever)?.length).toBe(1)
+    })
+
+    it('returns empty arrays for identifiers without token limits', () => {
+        const contextItems: AutocompleteContextSnippet[] = [
+            getContextItem('content', RetrieverIdentifier.RecentEditsRetriever),
+            getContextItem('content', RetrieverIdentifier.TscRetriever),
+        ]
+
+        const contextTokenLimitMapping = {
+            [RetrieverIdentifier.RecentEditsRetriever]: 50,
+        }
+
+        const contextNumItemsLimitMapping = {
+            [RetrieverIdentifier.RecentEditsRetriever]: 2,
+            [RetrieverIdentifier.TscRetriever]: 2,
+        }
+
+        const result = getContextItemMappingWithTokenLimit(
+            contextItems,
+            contextTokenLimitMapping,
+            contextNumItemsLimitMapping
+        )
+
+        expect(result.size).toBe(2)
+        expect(result.get(RetrieverIdentifier.RecentEditsRetriever)?.length).toBe(1)
+        expect(result.get(RetrieverIdentifier.TscRetriever)?.length).toBe(0) // No token limit for retriever2
     })
 })
