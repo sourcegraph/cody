@@ -54,6 +54,30 @@ export function groupConsecutiveRecentEditsItemsFromSameFile(
     return combinedContextItems
 }
 
+export function splitMostRecentRecentEditItemAsShortTermItem(
+    contextItems: AutocompleteContextSnippet[]
+): {
+    shortTermEditItems: AutocompleteContextSnippet[]
+    longTermEditItems: AutocompleteContextSnippet[]
+} {
+    const recentEditsSnippets = getContextItemsForIdentifier(
+        contextItems,
+        RetrieverIdentifier.RecentEditsRetriever
+    )
+    const shortTermEditItems =
+        recentEditsSnippets.length > 0 ? [recentEditsSnippets[0]] : []
+
+    const longTermEditItems =
+        recentEditsSnippets.length > 1
+            ? recentEditsSnippets.slice(1)
+            : []
+
+    return {
+        shortTermEditItems,
+        longTermEditItems,
+    }
+}
+
 export function getRecentEditsContextPromptWithPath(
     filePath: PromptString,
     content: PromptString

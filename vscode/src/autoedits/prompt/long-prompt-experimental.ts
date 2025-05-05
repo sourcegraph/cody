@@ -5,7 +5,6 @@ import { AutoeditsUserPromptStrategy, type UserPromptArgs } from './base'
 import * as constants from './constants'
 import {
     getContextItemMappingWithTokenLimit,
-    getContextItemsForIdentifier,
     getPromptForTheContextSource,
     getPromptWithNewline,
     joinPromptsWithNewlineSeparator,
@@ -15,20 +14,24 @@ import { getLintErrorsPrompt } from './prompt-utils/lint'
 import {
     getRecentEditsPrompt,
     groupConsecutiveRecentEditsItemsFromSameFile,
+    splitMostRecentRecentEditItemAsShortTermItem
 } from './prompt-utils/recent-edits'
-import { getRecentlyViewedSnippetsPrompt } from './prompt-utils/recent-view'
+import { getRecentSnippetViewPromptWithMaxSnippetAge } from './prompt-utils/recent-view'
 
 export class LongTermPromptStrategy extends AutoeditsUserPromptStrategy {
+
+    // Oldest timestamp for a snippet view that can be included in the prompt.
+    private SNIPPET_VIEW_MAX_TIMESTAMP_MS = 1000 * 60 * 10 // 10 minutes
+
     getUserPrompt({ context, tokenBudget, codeToReplaceData, document }: UserPromptArgs): PromptString {
         const contextItemMapping = getContextItemMappingWithTokenLimit(
             context,
             tokenBudget.contextSpecificTokenLimit,
             tokenBudget.contextSpecificNumItemsLimit
         )
-        const recentViewsPrompt = getPromptForTheContextSource(
+        const recentViewsPrompt = getRecentSnippetViewPromptWithMaxSnippetAge(
             contextItemMapping.get(RetrieverIdentifier.RecentViewPortRetriever) || [],
-            constants.LONG_TERM_SNIPPET_VIEWS_INSTRUCTION,
-            getRecentlyViewedSnippetsPrompt
+            this.SNIPPET_VIEW_MAX_TIMESTAMP_MS
         )
         const { shortTermEditsPrompt, longTermEditsPrompt } = this.getRecentEditsPrompt(
             contextItemMapping.get(RetrieverIdentifier.RecentEditsRetriever) || []
@@ -65,18 +68,11 @@ export class LongTermPromptStrategy extends AutoeditsUserPromptStrategy {
         shortTermEditsPrompt: PromptString
         longTermEditsPrompt: PromptString
     } {
-        const recentEditsSnippets = getContextItemsForIdentifier(
-            contextItems,
-            RetrieverIdentifier.RecentEditsRetriever
+        const { shortTermEditItems, longTermEditItems } = splitMostRecentRecentEditItemAsShortTermItem(
+            contextItems
         )
-
-        const shortTermEditsPrompt =
-            recentEditsSnippets.length > 0 ? ps`${getRecentEditsPrompt([recentEditsSnippets[0]])}` : ps``
-
-        const longTermEditsPrompt =
-            recentEditsSnippets.length > 1
-                ? this.computeLongTermRecentEditsPrompt(recentEditsSnippets.slice(1))
-                : ps``
+        const shortTermEditsPrompt = getRecentEditsPrompt(shortTermEditItems)
+        const longTermEditsPrompt = this.computeLongTermRecentEditsPrompt(longTermEditItems)
 
         return {
             shortTermEditsPrompt,
