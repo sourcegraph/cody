@@ -8,21 +8,20 @@ import { type AutocompleteContextSnippet, ps, testFileUri } from '@sourcegraph/c
 import { RetrieverIdentifier } from '../../completions/context/utils'
 import { getCurrentDocContext } from '../../completions/get-current-doc-context'
 import { documentAndPosition, mockNotebookAndPosition } from '../../completions/test-helpers'
+import { type CurrentFilePromptOptions, getCodeToReplaceData } from './prompt-utils/code-to-replace'
 import {
-    type CurrentFilePromptOptions,
-    getCodeToReplaceData,
     getCompletionsPromptWithSystemPrompt,
     getContextItemsInTokenBudget,
     getContextPromptWithPath,
-    getCurrentFilePromptComponents,
-    getJaccardSimilarityPrompt,
-    getLintErrorsPrompt,
-    getRecentCopyPrompt,
-    getRecentEditsContextPromptWithPath,
-    getRecentEditsPrompt,
-    getRecentlyViewedSnippetsPrompt,
     joinPromptsWithNewlineSeparator,
-} from './prompt-utils'
+} from './prompt-utils/common'
+import { getCurrentFilePromptComponents } from './prompt-utils/current-file'
+import { getJaccardSimilarityPrompt } from './prompt-utils/jaccard-similarity'
+import { getLintErrorsPrompt } from './prompt-utils/lint'
+import { getRecentCopyPrompt } from './prompt-utils/recent-copy'
+import { getRecentEditsPrompt } from './prompt-utils/recent-edits'
+import { getRecentEditsContextPromptWithPath } from './prompt-utils/recent-edits'
+import { getRecentlyViewedSnippetsPrompt } from './prompt-utils/recent-view'
 
 // A helper to set up your global "activeNotebookEditor" mock.
 function mockActiveNotebookEditor(notebook: vscode.NotebookDocument | undefined) {
