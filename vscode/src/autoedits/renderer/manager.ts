@@ -1,6 +1,6 @@
 import * as vscode from 'vscode'
 
-import { type DocumentContext, tokensToChars } from '@sourcegraph/cody-shared'
+import { type CodeToReplaceData, type DocumentContext, tokensToChars } from '@sourcegraph/cody-shared'
 
 import {
     completionMatchesSuffix,
@@ -16,6 +16,7 @@ import {
     type AutoeditRequestID,
     type AutoeditRequestStateForAgentTesting,
     type Phase,
+    type SuggestedState,
     autoeditAcceptReason,
     autoeditAnalyticsLogger,
     autoeditDiscardReason,
@@ -25,7 +26,6 @@ import { AutoeditCompletionItem } from '../autoedit-completion-item'
 import { autoeditsProviderConfig } from '../autoedits-config'
 import type { AutoeditClientCapabilities } from '../autoedits-provider'
 import { autoeditsOutputChannelLogger } from '../output-channel-logger'
-import type { CodeToReplaceData } from '../prompt/prompt-utils'
 import type { RequestManager } from '../request-manager'
 import {
     adjustPredictionIfInlineCompletionPossible,
@@ -171,6 +171,7 @@ export class AutoEditsDefaultRendererManager
     }
 
     protected onDidChangeTextEditorSelection(event: vscode.TextEditorSelectionChangeEvent): void {
+        console.log('hasInlineDecorationOnly:', this.hasInlineDecorationOnly())
         if (
             // Only dismiss if there are inline decorations, as inline completion items rely on
             // a native acceptance/rejection mechanism that we can't interfere with.
@@ -214,6 +215,7 @@ export class AutoEditsDefaultRendererManager
             return false
         }
 
+        // console.log('activeRequest.renderOutput.type:', this.activeRequest.renderOutput.type)
         return ['decorations', 'image', 'legacy-decorations'].includes(
             this.activeRequest.renderOutput.type
         )
@@ -226,12 +228,12 @@ export class AutoEditsDefaultRendererManager
     }
 
     public async handleDidShowSuggestion(requestId: AutoeditRequestID): Promise<void> {
-        await this.rejectActiveEdit(autoeditRejectReason.handleDidShowSuggestion)
-
-        const request = autoeditAnalyticsLogger.getRequest(requestId)
-        if (!request) {
+        const request = autoeditAnalyticsLogger.getRequest(requestId) as SuggestedState
+        if (!request || request.payload.id === this.activeRequest?.payload.id) {
             return
         }
+        await this.rejectActiveEdit(autoeditRejectReason.handleDidShowSuggestion)
+
         if (this.hasConflictingDecorations(request.document, request.codeToReplaceData.range)) {
             autoeditAnalyticsLogger.markAsDiscarded({
                 requestId,
@@ -326,6 +328,7 @@ export class AutoEditsDefaultRendererManager
     }
 
     protected async handleDidHideSuggestion(decorator: AutoEditsDecorator | null): Promise<void> {
+        // console.log('handleDidHideSuggestion')
         if (decorator) {
             decorator.dispose()
             // Hide inline decorations
@@ -333,7 +336,7 @@ export class AutoEditsDefaultRendererManager
         }
 
         // Hide inline completion provider item ghost text
-        await vscode.commands.executeCommand('editor.action.inlineSuggest.hide')
+        // await vscode.commands.executeCommand('editor.action.inlineSuggest.hide')
 
         this.activeRequestId = null
         this.decorator = null
@@ -392,9 +395,19 @@ export class AutoEditsDefaultRendererManager
     }
 
     protected async rejectActiveEdit(rejectReason: AutoeditRejectReasonMetadata): Promise<void> {
+        // console.log(
+        //     'rejectActiveEdit',
+        //     Object.entries(autoeditRejectReason).find(([k, v]) => v === rejectReason)![0]
+        // )
         const { activeRequest, decorator } = this
 
-        if (activeRequest) {
+        const reasonsToRemoveFromCache: AutoeditRejectReasonMetadata[] = [
+            autoeditRejectReason.disposal,
+            autoeditRejectReason.dismissCommand,
+            autoeditRejectReason.acceptActiveEdit,
+        ]
+
+        if (activeRequest && reasonsToRemoveFromCache.includes(rejectReason)) {
             this.requestManager.removeFromCache(activeRequest.cacheId)
         }
 

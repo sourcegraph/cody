@@ -2,7 +2,7 @@ import detectIndent from 'detect-indent'
 
 import { getLanguageConfig } from '../../tree-sitter/language'
 
-import { getEditorTabSize, indentation, shouldIncludeClosingLine } from './utils'
+import { getEditorTabSize, indentation, shouldIncludeClosingLine } from './index'
 
 export function normalizeStartLine(completion: string, prefix: string): string {
     const lines = completion.split('\n')

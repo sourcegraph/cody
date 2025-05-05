@@ -1,16 +1,23 @@
-import { CodeToReplaceData } from '@sourcegraph/cody-shared'
 import { createTwoFilesPatch } from 'diff'
 import * as vscode from 'vscode'
+
+import type { CodeToReplaceData } from '@sourcegraph/cody-shared'
+
 import { applyTextDocumentChanges } from '../completions/context/retrievers/recent-user-actions/recent-edits-diff-helpers/utils'
 import { RecentEditsTracker } from '../completions/context/retrievers/recent-user-actions/recent-edits-tracker'
 import { getNewLineChar } from '../completions/text-processing'
-import { AutoeditDiscardReasonMetadata, autoeditDiscardReason } from './analytics-logger'
+
+import type { autoeditDiscardReason } from './analytics-logger'
 import { autoeditsOutputChannelLogger } from './output-channel-logger'
+import type { DecorationInfo } from './renderer/decorators/base'
 import { getAddedLines, getDecorationInfoFromPrediction } from './renderer/diff-utils'
-import { shrinkPredictionUntilSuffix } from './shrink-prediction'
 import { isDuplicatingTextFromRewriteArea } from './utils'
 
 const MAX_FILTER_AGE_MS = 1000 * 30 // 30 seconds
+
+export type PredictionFilterResult =
+    | { discardReason: keyof typeof autoeditDiscardReason }
+    | { decorationInfo: DecorationInfo }
 
 export class PredictionsFilter implements vscode.Disposable {
     private readonly recentEditsTracker: RecentEditsTracker
@@ -26,20 +33,19 @@ export class PredictionsFilter implements vscode.Disposable {
 
     public shouldFilterPrediction({
         codeToReplaceData,
-        prediction: initialPrediction,
+        prediction,
         document,
     }: {
         codeToReplaceData: CodeToReplaceData
         prediction: string
         document: vscode.TextDocument
-    }): AutoeditDiscardReasonMetadata | false {
-        const prediction = shrinkPredictionUntilSuffix({
-            prediction: initialPrediction,
-            codeToReplaceData,
-        })
-
+    }): PredictionFilterResult {
         if (prediction === codeToReplaceData.codeToRewrite) {
-            return autoeditDiscardReason.predictionEqualsCodeToRewrite
+            return { discardReason: 'predictionEqualsCodeToRewrite' }
+        }
+
+        if (prediction.length === 0) {
+            return { discardReason: 'emptyPrediction' }
         }
 
         const shouldFilterPredictionBasedRecentEdits = this.shouldFilterPredictionBasedOnRecentEdits({
@@ -48,7 +54,7 @@ export class PredictionsFilter implements vscode.Disposable {
             codeToRewrite: codeToReplaceData.codeToRewrite,
         })
         if (shouldFilterPredictionBasedRecentEdits) {
-            return autoeditDiscardReason.recentEdits
+            return { discardReason: 'recentEdits' }
         }
 
         // TODO: optimize so that we do not have to recompute it in other places
@@ -63,10 +69,10 @@ export class PredictionsFilter implements vscode.Disposable {
             .join(newLineChar)
 
         if (isDuplicatingTextFromRewriteArea({ addedText, codeToReplaceData })) {
-            return autoeditDiscardReason.rewriteAreaOverlap
+            return { discardReason: 'rewriteAreaOverlap' }
         }
 
-        return false
+        return { decorationInfo }
     }
 
     /**
@@ -74,7 +80,7 @@ export class PredictionsFilter implements vscode.Disposable {
      * The function compares diffs between document states and the prediction vs code to re-write
      * to determine if the same edit was recently reverted.
      */
-    private shouldFilterPredictionBasedOnRecentEdits({
+    public shouldFilterPredictionBasedOnRecentEdits({
         uri,
         prediction,
         codeToRewrite,

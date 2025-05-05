@@ -38,7 +38,7 @@ export function getDecorationInfo(
      * Required for the auto-edit debug panel to render the diff in a readable format.
      * @default WORDS_AND_PUNCTUATION_REGEX
      */
-    chunkRegex: RegExp = WORDS_AND_PUNCTUATION_REGEX
+    chunkRegex: RegExp = CHARACTER_REGEX
 ): DecorationInfo {
     const originalLines = originalText.split(getNewLineChar(originalText))
     const modifiedLines = modifiedText.split(getNewLineChar(modifiedText))
@@ -480,6 +480,7 @@ function computeLineChanges({
 
 // Split line into words, consecutive spaces and punctuation marks
 const WORDS_AND_PUNCTUATION_REGEX = /(\w+|\s+|\W)/g
+const CHARACTER_REGEX = /./g
 
 /**
  * Splits a line into chunks for fine-grained diffing.

@@ -13,9 +13,9 @@ import { getNodeAtCursorAndParents } from '../../tree-sitter/ast-getters'
 import { asPoint, getCachedParseTreeForDocument } from '../../tree-sitter/parse-tree-cache'
 import type { ItemPostProcessingInfo } from '../analytics-logger'
 import type { InlineCompletionItem } from '../types'
+import { collapseDuplicativeWhitespace, removeTrailingWhitespace, trimUntilSuffix } from './index'
 import { type ParsedCompletion, dropParserFields } from './parse-completion'
 import { findLastAncestorOnTheSameRow } from './truncate-parsed-completion'
-import { collapseDuplicativeWhitespace, removeTrailingWhitespace, trimUntilSuffix } from './utils'
 
 interface ProcessInlineCompletionsParams {
     document: TextDocument

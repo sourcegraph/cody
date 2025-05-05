@@ -1,3 +1,4 @@
+import { CodeToReplaceData } from '@sourcegraph/cody-shared'
 import type { ModelResponse } from './adapters/base'
 import { getDecorationInfo, isOnlyAddingText } from './renderer/diff-utils'
 import type { AutoeditRequestManagerParams } from './request-manager'
@@ -26,7 +27,7 @@ const CHARACTER_REGEX = /./g
  * Check if a completed request can be recycled for an in-flight request
  * based on type-forward pattern detection
  */
-export function isNotRecyclable(
+export function isNotRecyclableRequest(
     completedRequest: InflightRequest,
     inflightRequest: InflightRequest,
     response: ModelResponse
@@ -64,16 +65,99 @@ export function isNotRecyclable(
 
         if (decorationInfoTyped.addedLines.length === 1) {
             const typedAddedLine = decorationInfoTyped.addedLines[0]
-            const predictedAddedLine = decorationInfoPrediction.addedLines[0]
-            return predictedAddedLine.text.startsWith(typedAddedLine.text)
+            const predictedMatchingLine = [
+                ...decorationInfoPrediction.modifiedLines,
+                ...decorationInfoPrediction.addedLines,
+            ].find(line => line.modifiedLineNumber === typedAddedLine.modifiedLineNumber)
+            const updatedOrNewText =
+                predictedMatchingLine?.type === 'added'
+                    ? predictedMatchingLine.text
+                    : predictedMatchingLine?.newText
+            return updatedOrNewText?.startsWith(typedAddedLine.text)
                 ? false
                 : notRecyclableReason.predictedTextDoesNotMatch
         }
 
         if (decorationInfoTyped.modifiedLines.length === 1) {
             const typedModifiedLine = decorationInfoTyped.modifiedLines[0]
-            const predictedModifiedLine = decorationInfoPrediction.modifiedLines[0]
-            return predictedModifiedLine.newText.startsWith(typedModifiedLine.newText)
+            const predictedModifiedLine = [
+                ...decorationInfoPrediction.modifiedLines,
+                ...decorationInfoPrediction.addedLines,
+            ].find(line => line.modifiedLineNumber === typedModifiedLine.modifiedLineNumber)
+            const updatedOrNewText =
+                predictedModifiedLine?.type === 'added'
+                    ? predictedModifiedLine.text
+                    : predictedModifiedLine?.newText
+
+            return updatedOrNewText?.startsWith(typedModifiedLine.newText)
+                ? false
+                : notRecyclableReason.predictedTextDoesNotMatch
+        }
+    }
+
+    return notRecyclableReason.notOnlyAdditions
+}
+
+// TODO: reuse inside of `isNotRecyclableRequest` and reduce duplication.
+export function isNotRecyclableCacheItem(
+    cachedData: { codeToReplaceData: CodeToReplaceData; documentUri: string },
+    currentData: { codeToReplaceData: CodeToReplaceData; documentUri: string },
+    response: ModelResponse
+) {
+    if (response.type !== 'success') {
+        return notRecyclableReason.notSuccess
+    }
+
+    const notRelevantReason = isRequestNotRelevant(cachedData, currentData)
+    if (notRelevantReason) {
+        return notRelevantReason
+    }
+
+    const originalText = cachedData.codeToReplaceData.codeToRewrite
+    const currentText = currentData.codeToReplaceData.codeToRewrite
+    const prediction = response.prediction
+
+    const decorationInfoTyped = getDecorationInfo(originalText, currentText, CHARACTER_REGEX)
+
+    // For now, we only recycle responses if the only change is an addition
+    const onlyAdding = isOnlyAddingText(decorationInfoTyped)
+
+    if (onlyAdding) {
+        // If there are added more than one line, this is unlikely to be a type-forward case
+        // as we're looking for small incremental edits
+        if (decorationInfoTyped.addedLines.length + decorationInfoTyped.modifiedLines.length > 1) {
+            return notRecyclableReason.moreThanOneLineAddedOrModified
+        }
+
+        const decorationInfoPrediction = getDecorationInfo(originalText, prediction, CHARACTER_REGEX)
+
+        if (decorationInfoTyped.addedLines.length === 1) {
+            const typedAddedLine = decorationInfoTyped.addedLines[0]
+            const predictedMatchingLine = [
+                ...decorationInfoPrediction.modifiedLines,
+                ...decorationInfoPrediction.addedLines,
+            ].find(line => line.modifiedLineNumber === typedAddedLine.modifiedLineNumber)
+            const updatedOrNewText =
+                predictedMatchingLine?.type === 'added'
+                    ? predictedMatchingLine.text
+                    : predictedMatchingLine?.newText
+            return updatedOrNewText?.startsWith(typedAddedLine.text)
+                ? false
+                : notRecyclableReason.predictedTextDoesNotMatch
+        }
+
+        if (decorationInfoTyped.modifiedLines.length === 1) {
+            const typedModifiedLine = decorationInfoTyped.modifiedLines[0]
+            const predictedModifiedLine = [
+                ...decorationInfoPrediction.modifiedLines,
+                ...decorationInfoPrediction.addedLines,
+            ].find(line => line.modifiedLineNumber === typedModifiedLine.modifiedLineNumber)
+            const updatedOrNewText =
+                predictedModifiedLine?.type === 'added'
+                    ? predictedModifiedLine.text
+                    : predictedModifiedLine?.newText
+
+            return updatedOrNewText?.startsWith(typedModifiedLine.newText)
                 ? false
                 : notRecyclableReason.predictedTextDoesNotMatch
         }
@@ -86,8 +170,8 @@ export function isNotRecyclable(
  * Determines if a request is still relevant compared to the latest request params
  */
 export function isRequestNotRelevant(
-    oldParams: AutoeditRequestManagerParams,
-    currentParams: AutoeditRequestManagerParams
+    oldParams: Pick<AutoeditRequestManagerParams, 'documentUri' | 'codeToReplaceData'>,
+    currentParams: Pick<AutoeditRequestManagerParams, 'documentUri' | 'codeToReplaceData'>
 ): NotRecyclableReason | false {
     if (oldParams.documentUri !== currentParams.documentUri) {
         return notRecyclableReason.notSameFile

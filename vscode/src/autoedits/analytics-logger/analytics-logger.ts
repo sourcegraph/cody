@@ -169,26 +169,14 @@ export class AutoeditAnalyticsLogger {
      */
     public markAsLoaded({
         requestId,
-        cacheId,
-        hotStreakId,
         prompt,
         payload,
         modelResponse,
-        codeToReplaceData,
-        predictionDocContext,
-        editPosition,
     }: {
         modelResponse: SuccessModelResponse | PartialModelResponse
-        codeToReplaceData: CodeToReplaceData
-        predictionDocContext: DocumentContext
         requestId: AutoeditRequestID
-        cacheId: AutoeditCacheID
-        hotStreakId?: AutoeditHotStreakID
         prompt: AutoeditsPrompt
-        editPosition: vscode.Position
-        payload: Required<
-            Pick<LoadedState['payload'], 'source' | 'isFuzzyMatch' | 'prediction' | 'codeToRewrite'>
-        >
+        payload: Required<Pick<LoadedState['payload'], 'source' | 'isFuzzyMatch' | 'prediction'>>
     }): void {
         const { prediction, source, isFuzzyMatch } = payload
         const stableId = autoeditIdRegistry.getOrCreate(prompt, prediction)
@@ -199,11 +187,6 @@ export class AutoeditAnalyticsLogger {
                 ...request,
                 loadedAt,
                 modelResponse,
-                codeToReplaceData,
-                predictionDocContext,
-                cacheId,
-                hotStreakId,
-                editPosition,
                 payload: {
                     ...request.payload,
                     id: stableId,
@@ -243,6 +226,33 @@ export class AutoeditAnalyticsLogger {
 
     public markAsPostProcessed({
         requestId,
+        cacheId,
+        hotStreakId,
+        codeToReplaceData,
+        predictionDocContext,
+        editPosition,
+    }: {
+        requestId: AutoeditRequestID
+        cacheId: AutoeditCacheID
+        hotStreakId?: AutoeditHotStreakID
+        codeToReplaceData: CodeToReplaceData
+        predictionDocContext: DocumentContext
+        editPosition: vscode.Position
+    }): void {
+        this.tryTransitionTo(requestId, 'postProcessed', request => {
+            return {
+                ...request,
+                codeToReplaceData,
+                predictionDocContext,
+                cacheId,
+                hotStreakId,
+                editPosition,
+            }
+        })
+    }
+
+    public markAsReadyToBeRendered({
+        requestId,
         decorationInfo,
         prediction,
         renderOutput,
@@ -252,7 +262,7 @@ export class AutoeditAnalyticsLogger {
         decorationInfo: DecorationInfo | null
         renderOutput: AutoEditRenderOutput
     }) {
-        this.tryTransitionTo(requestId, 'postProcessed', request => {
+        this.tryTransitionTo(requestId, 'readyToBeRendered', request => {
             const completion =
                 'inlineCompletionItems' in renderOutput
                     ? renderOutput.inlineCompletionItems[0]

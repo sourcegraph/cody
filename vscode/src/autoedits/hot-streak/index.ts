@@ -1,18 +1,13 @@
-import type { CodeToReplaceData, DocumentContext } from '@sourcegraph/cody-shared'
 import * as uui from 'uuid'
-
 import * as vscode from 'vscode'
 import { TextDocument } from 'vscode-languageserver-textdocument'
 
+import type { CodeToReplaceData, DocumentContext } from '@sourcegraph/cody-shared'
+
 import { getCurrentDocContext } from '../../completions/get-current-doc-context'
-import { getNewLineChar } from '../../completions/text-processing'
 import { wrapVSCodeTextDocument } from '../../editor/utils/virtual-text-document'
 import { AutoeditStopReason, type ModelResponse } from '../adapters/base'
-import {
-    type AutoeditDiscardReasonMetadata,
-    type AutoeditHotStreakID,
-    autoeditDiscardReason,
-} from '../analytics-logger'
+import type { AutoeditHotStreakID } from '../analytics-logger'
 import { autoeditsProviderConfig } from '../autoedits-config'
 import type {
     AbortedPredictionResult,
@@ -20,10 +15,8 @@ import type {
     SuggestedPredictionResult,
 } from '../autoedits-provider'
 import { getCodeToReplaceData } from '../prompt/prompt-utils'
-import { isDuplicatingTextFromRewriteArea } from '../utils'
 
-import { PredictionsFilter, predictionsFilter } from '../filter-prediction-edits'
-import { shrinkPredictionUntilSuffix } from '../shrink-prediction'
+import { predictionsFilter } from '../filter-prediction-edits'
 import { getHotStreakChunk } from './get-chunk'
 import { getStableSuggestion } from './stable-suggestion'
 
@@ -95,7 +88,7 @@ export async function* processHotStreakResponses({
             if (!predictionChunk.firstLineChanged) {
                 yield {
                     type: 'ignored',
-                    discardReason: autoeditDiscardReason.emptyPrediction,
+                    discardReason: 'emptyPrediction',
                     response: {
                         ...response,
                         prediction: predictionChunk.text,
@@ -136,18 +129,18 @@ export async function* processHotStreakResponses({
                 },
             })
 
-            const discardReason = predictionsFilter.shouldFilterPrediction({
+            const predictionFilterResult = predictionsFilter.shouldFilterPrediction({
                 codeToReplaceData: adjustedCodeToReplace,
                 prediction: predictionChunk.text,
                 document,
             })
 
-            if (discardReason) {
+            if ('discardReason' in predictionFilterResult) {
                 // The adjusted codeToRewrite is the same as the prediction.
                 // We should not emit this prediction
                 yield {
                     type: 'ignored',
-                    discardReason,
+                    discardReason: predictionFilterResult.discardReason,
                     response: {
                         ...response,
                         prediction: predictionChunk.text,
@@ -184,6 +177,7 @@ export async function* processHotStreakResponses({
                 editPosition: document.lineAt(predictionChunk.firstLineChanged).range.end,
                 docContext: updatedDocContext,
                 codeToReplaceData: adjustedCodeToReplace,
+                decorationInfo: predictionFilterResult.decorationInfo,
                 hotStreakId,
                 fullPrediction: response.prediction,
             }
@@ -202,6 +196,24 @@ export async function* processHotStreakResponses({
             return
         }
 
+        // TODO: consider reusing this logic in the hot-streak items processing
+        const predictionFilterResult = predictionsFilter.shouldFilterPrediction({
+            codeToReplaceData,
+            prediction: response.prediction,
+            document,
+        })
+
+        if ('discardReason' in predictionFilterResult) {
+            // The adjusted codeToRewrite is the same as the prediction.
+            // We should not emit this prediction
+            yield {
+                type: 'ignored',
+                discardReason: predictionFilterResult.discardReason,
+                response,
+            }
+            return
+        }
+
         if (!options.hotStreakEnabled) {
             yield {
                 type: 'suggested',
@@ -214,6 +226,7 @@ export async function* processHotStreakResponses({
                 // The `editPosition` here will never actually be used.
                 editPosition: position,
                 fullPrediction: response.prediction,
+                decorationInfo: predictionFilterResult.decorationInfo,
             }
             return
         }
@@ -227,7 +240,7 @@ export async function* processHotStreakResponses({
         })
 
         if (!suggestion || suggestion.firstLineChanged === null) {
-            yield { type: 'ignored', discardReason: autoeditDiscardReason.emptyPrediction, response }
+            yield { type: 'ignored', discardReason: 'emptyPrediction', response }
             return
         }
 
@@ -245,6 +258,7 @@ export async function* processHotStreakResponses({
                 new vscode.Position(suggestion.firstLineChanged, Number.MAX_SAFE_INTEGER)
             ),
             fullPrediction: response.prediction,
+            decorationInfo: predictionFilterResult.decorationInfo,
         }
     }
 }

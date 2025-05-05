@@ -49,6 +49,7 @@ export type Phase =
      * agent can access it using the request ID only in `unstable_handleDidShowCompletionItem` calls.
      */
     | 'postProcessed'
+    | 'readyToBeRendered'
     /** The autoedit suggestion has been suggested to the user. */
     | 'suggested'
     /** The autoedit suggestion is marked as read is it's still visible to the user after a hardcoded timeout. */
@@ -67,7 +68,8 @@ export const validRequestTransitions = {
     started: ['contextLoaded', 'discarded'],
     contextLoaded: ['loaded', 'discarded'],
     loaded: ['postProcessed', 'discarded'],
-    postProcessed: ['suggested', 'discarded'],
+    postProcessed: ['readyToBeRendered', 'discarded'],
+    readyToBeRendered: ['suggested', 'discarded'],
     suggested: ['read', 'accepted', 'rejected'],
     read: ['accepted', 'rejected'],
     accepted: [],
@@ -253,11 +255,6 @@ export interface LoadedState extends Omit<ContextLoadedState, 'phase' | 'payload
     loadedAt: number
     /** Model response metadata for the debug panel */
     modelResponse: ModelResponse
-    cacheId: AutoeditCacheID
-    hotStreakId?: AutoeditHotStreakID
-    hotStreakChunks?: HotStreakChunk[]
-    editPosition: vscode.Position
-    predictionDocContext: DocumentContext
     payload: ContextLoadedState['payload'] & {
         /**
          * An ID to uniquely identify a suggest autoedit. Note: It is possible for this ID to be part
@@ -289,6 +286,16 @@ export interface LoadedState extends Omit<ContextLoadedState, 'phase' | 'payload
 
 export interface PostProcessedState extends Omit<LoadedState, 'phase' | 'payload'> {
     phase: 'postProcessed'
+    cacheId: AutoeditCacheID
+    hotStreakId?: AutoeditHotStreakID
+    hotStreakChunks?: HotStreakChunk[]
+    editPosition: vscode.Position
+    predictionDocContext: DocumentContext
+    payload: LoadedState['payload']
+}
+
+export interface ReadyToBeRenderedState extends Omit<PostProcessedState, 'phase' | 'payload'> {
+    phase: 'readyToBeRendered'
     /** Timestamp when the post-processing of the suggestion was completed. */
     postProcessedAt: number
 
@@ -296,7 +303,7 @@ export interface PostProcessedState extends Omit<LoadedState, 'phase' | 'payload
     prediction: string
     renderOutput: AutoEditRenderOutput
 
-    payload: LoadedState['payload'] & {
+    payload: PostProcessedState['payload'] & {
         /** The number of added, modified, removed lines and characters from suggestion. */
         decorationStats?: DecorationStats
         /** The number of lines and added chars attributed to an inline completion item. */
@@ -307,24 +314,24 @@ export interface PostProcessedState extends Omit<LoadedState, 'phase' | 'payload
     }
 }
 
-export interface SuggestedState extends Omit<PostProcessedState, 'phase'> {
+export interface SuggestedState extends Omit<ReadyToBeRenderedState, 'phase'> {
     phase: 'suggested'
     /** Timestamp when the suggestion was first shown to the user. */
     suggestedAt: number
-    payload: PostProcessedState['payload']
+    payload: ReadyToBeRenderedState['payload']
 }
 
 export interface ReadState extends Omit<SuggestedState, 'phase'> {
     phase: 'read'
     /** Timestamp when the suggestion was marked as visible to the user. */
     readAt: number
-    payload: PostProcessedState['payload']
+    payload: ReadyToBeRenderedState['payload']
 }
 
 /**
  * Common final payload properties shared between accepted and rejected states
  */
-export type FinalPayload = PostProcessedState['payload'] & {
+export type FinalPayload = ReadyToBeRenderedState['payload'] & {
     /** Displayed to the user for this many milliseconds. */
     timeFromSuggestedAt: number
     /** True if the suggestion was explicitly/intentionally accepted. */
@@ -392,6 +399,7 @@ export interface PhaseStates {
     contextLoaded: ContextLoadedState
     loaded: LoadedState
     postProcessed: PostProcessedState
+    readyToBeRendered: ReadyToBeRenderedState
     suggested: SuggestedState
     read: ReadState
     accepted: AcceptedState

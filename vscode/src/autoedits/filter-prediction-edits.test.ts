@@ -60,7 +60,7 @@ describe('FilterPredictionBasedOnRecentEdits', () => {
                 reason: undefined,
             })
         }
-        const result = filterStrategy.shouldFilterPrediction({
+        const result = filterStrategy.shouldFilterPredictionBasedOnRecentEdits({
             uri: doc.uri,
             prediction,
             codeToRewrite,

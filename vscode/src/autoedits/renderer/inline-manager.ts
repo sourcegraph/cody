@@ -154,13 +154,15 @@ export class AutoEditsInlineRendererManager
             return
         }
 
-        if (this.hasInlineCompletionItems()) {
+        if (this.hasInlineCompletionItems() && this.hasInlineDecorations()) {
             // We are showing a completion. The dismissal of the completion will
             // automatically be handled by VS Code. We must match that behaviour for any decorations,
             // otherwise we will end up with a scenario where the decorations of a suggestion are preserved,
             // whilst the completion has already been dismissed.
             // If the cursor moved in any file, we assume it's a user action and
             // dismiss the active edit.
+            //
+            // If we do not have inline decorations we can let VS Code handle the dismissal.
             this.rejectActiveEdit(autoeditRejectReason.onDidChangeTextEditorSelection)
         }
 

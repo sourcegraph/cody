@@ -12,7 +12,7 @@ import {
 } from 'vitest'
 import * as vscode from 'vscode'
 
-import type { DocumentContext } from '@sourcegraph/cody-shared'
+import type { CodeToReplaceData, DocumentContext } from '@sourcegraph/cody-shared'
 import { documentAndPosition } from '../completions/test-helpers'
 
 import { AutoeditStopReason } from './adapters/base'
@@ -22,14 +22,14 @@ import type {
     PredictionResult,
     SuggestedPredictionResult,
 } from './autoedits-provider'
-import type { CodeToReplaceData } from './prompt/prompt-utils'
 import { createCodeToReplaceDataForTest, isTemplateStringsArray } from './prompt/test-helper'
+import { getDecorationInfo } from './renderer/diff-utils'
 import { type AutoeditRequestManagerParams, RequestManager } from './request-manager'
 import * as requestRecycling from './request-recycling'
 
 describe('Autoedits RequestManager', () => {
     let requestManager: RequestManager
-    let isNotRecyclable: MockInstance<typeof requestRecycling.isNotRecyclable>
+    let isNotRecyclable: MockInstance<typeof requestRecycling.isNotRecyclableRequest>
 
     beforeAll(() => {
         vi.useFakeTimers()
@@ -393,6 +393,7 @@ function createSuccessResponse(
         editPosition: new vscode.Position(0, 0),
         docContext,
         codeToReplaceData,
+        decorationInfo: getDecorationInfo(codeToReplaceData.codeToRewrite, prediction),
     }
 }
 

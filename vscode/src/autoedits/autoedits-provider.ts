@@ -7,6 +7,7 @@ import type { Histogram } from '@opentelemetry/api'
 import {
     type ChatClient,
     type ClientCapabilities,
+    type CodeToReplaceData,
     type DocumentContext,
     clientCapabilities,
     currentResolvedConfig,
@@ -18,7 +19,8 @@ import { ContextRankingStrategy } from '../completions/context/completions-conte
 import { ContextMixer } from '../completions/context/context-mixer'
 import { DefaultContextStrategyFactory } from '../completions/context/context-strategy'
 import { getCurrentDocContext } from '../completions/get-current-doc-context'
-import { getNewLineChar } from '../completions/text-processing'
+import type { LastInlineCompletionCandidate } from '../completions/get-inline-completions'
+import type { InlineCompletionItemWithAnalytics } from '../completions/text-processing/process-inline-completions'
 import { defaultVSCodeExtensionClient } from '../extension-client'
 import type { AutocompleteEditItem, AutoeditChanges } from '../jsonrpc/agent-protocol'
 import { isRunningInsideAgent } from '../jsonrpc/isRunningInsideAgent'
@@ -35,7 +37,6 @@ import type {
 import { createAutoeditsModelAdapter } from './adapters/create-adapter'
 import {
     type AutoeditCacheID,
-    type AutoeditDiscardReasonMetadata,
     type AutoeditHotStreakID,
     type AutoeditRequestID,
     type AutoeditRequestStateForAgentTesting,
@@ -46,7 +47,7 @@ import {
     autoeditTriggerKind,
     getTimeNowInMillis,
 } from './analytics-logger'
-import { AutoeditCompletionItem } from './autoedit-completion-item'
+import type { AutoeditCompletionItem } from './autoedit-completion-item'
 import { autoeditsOnboarding } from './autoedit-onboarding'
 import { autoeditsProviderConfig } from './autoedits-config'
 import { PredictionsFilter } from './filter-prediction-edits'
@@ -55,11 +56,12 @@ import { createMockResponseGenerator } from './mock-response-generator'
 import { autoeditsOutputChannelLogger } from './output-channel-logger'
 import type { AutoeditsUserPromptStrategy } from './prompt/base'
 import { createPromptProvider } from './prompt/create-prompt-provider'
-import { type CodeToReplaceData, getCodeToReplaceData } from './prompt/prompt-utils'
+import { getCodeToReplaceData } from './prompt/prompt-utils'
 import { getCurrentFilePath } from './prompt/prompt-utils'
+import type { DecorationInfo } from './renderer/decorators/base'
 import { DefaultDecorator } from './renderer/decorators/default-decorator'
 import { InlineDiffDecorator } from './renderer/decorators/inline-diff-decorator'
-import { getAddedLines, getDecorationInfoFromPrediction } from './renderer/diff-utils'
+import { getDecorationInfoFromPrediction } from './renderer/diff-utils'
 import { initImageSuggestionService } from './renderer/image-gen'
 import { AutoEditsInlineRendererManager } from './renderer/inline-manager'
 import { AutoEditsDefaultRendererManager, type AutoEditsRendererManager } from './renderer/manager'
@@ -72,7 +74,7 @@ import type { AutoEditRenderOutput } from './renderer/render-output'
 import { type AutoeditRequestManagerParams, RequestManager } from './request-manager'
 import { shrinkPredictionUntilSuffix } from './shrink-prediction'
 import { SmartThrottleService } from './smart-throttle'
-import { areSameUriDocs, isDuplicatingTextFromRewriteArea } from './utils'
+import { areSameUriDocs } from './utils'
 
 const AUTOEDIT_CONTEXT_STRATEGY = 'auto-edit'
 const RESET_SUGGESTION_ON_CURSOR_CHANGE_AFTER_INTERVAL_MS = 60 * 1000
@@ -91,7 +93,7 @@ export interface AbortedPredictionResult {
 /* A prediction result that has no valid changes to use */
 export interface IgnoredPredictionResult {
     type: 'ignored'
-    discardReason: AutoeditDiscardReasonMetadata
+    discardReason: keyof typeof autoeditDiscardReason
     response: SuccessModelResponse | PartialModelResponse
 }
 
@@ -129,6 +131,10 @@ export interface SuggestedPredictionResult {
      * This may differ from the original code to replace data if the prediction is a hot-streak.
      */
     codeToReplaceData: CodeToReplaceData
+    /**
+     * Decoration info for this prediction computed by the PredictionsFilter
+     */
+    decorationInfo: DecorationInfo
 }
 
 export type PredictionResult =
@@ -201,6 +207,10 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
         seq: number
     }>
 
+    protected lastCandidate:
+        | (LastInlineCompletionCandidate & { predictionResult: PredictionResult })
+        | undefined
+
     constructor(
         chatClient: ChatClient,
         fixupController: FixupController,
@@ -250,6 +260,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
             this.contextMixer,
             this.rendererManager,
             this.modelAdapter,
+            this.nextCursorManager,
             vscode.window.onDidChangeTextEditorSelection(this.onSelectionChangeDebounced),
             vscode.workspace.onDidChangeTextDocument(event => {
                 this.onDidChangeTextDocument(event)
@@ -330,26 +341,26 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
         let stopLoading: (() => void) | undefined
         const startedAt = getTimeNowInMillis()
 
-        if (inlineCompletionContext.selectedCompletionInfo !== undefined) {
-            const { range, text } = inlineCompletionContext.selectedCompletionInfo
-            const completion = new AutoeditCompletionItem({
-                id: null,
-                insertText: text,
-                range,
-                withoutCurrentLinePrefix: { insertText: text, range },
-            })
-            // User has a currently selected item in the autocomplete widget.
-            // Instead of attempting to suggest an auto-edit, just show the selected item
-            // as the completion. This is to avoid an undesirable edit conflicting with the acceptance
-            // of the item shown in the widget.
-            // TODO: We should consider the optimal solution here, it may be better to show an
-            // inline completion (not an edit) that includes the currently selected item.
-            return {
-                items: [completion],
-                inlineCompletionItems: [completion],
-                decoratedEditItems: [],
-            }
-        }
+        // if (inlineCompletionContext.selectedCompletionInfo !== undefined) {
+        //     const { range, text } = inlineCompletionContext.selectedCompletionInfo
+        //     const completion = new AutoeditCompletionItem({
+        //         id: null,
+        //         insertText: text,
+        //         range,
+        //         withoutCurrentLinePrefix: { insertText: text, range },
+        //     })
+        //     // User has a currently selected item in the autocomplete widget.
+        //     // Instead of attempting to suggest an auto-edit, just show the selected item
+        //     // as the completion. This is to avoid an undesirable edit conflicting with the acceptance
+        //     // of the item shown in the widget.
+        //     // TODO: We should consider the optimal solution here, it may be better to show an
+        //     // inline completion (not an edit) that includes the currently selected item.
+        //     return {
+        //         items: [completion],
+        //         inlineCompletionItems: [completion],
+        //         decoratedEditItems: [],
+        //     }
+        // }
 
         try {
             const triggerKind =
@@ -473,16 +484,38 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                 'provideInlineCompletionItems',
                 'Calculating prediction from getPrediction...'
             )
-            const predictionResult = await this.getPrediction({
-                requestId,
-                document,
-                position,
-                prompt,
-                codeToReplaceData: requestCodeToReplaceData,
-                requestDocContext,
-                abortSignal,
-                triggerKind,
-            })
+
+            // const { lastCandidate } = this
+            let predictionResult: PredictionResult | undefined = undefined
+            // if (lastCandidate) {
+            //     const resultToReuse = reuseLastCandidate({
+            //         document,
+            //         position,
+            //         lastCandidate,
+            //         docContext: requestDocContext,
+            //         selectedCompletionInfo: inlineCompletionContext?.selectedCompletionInfo,
+            //         handleDidAcceptCompletionItem: noop,
+            //         handleDidPartiallyAcceptCompletionItem: noop,
+            //     })
+
+            //     if (resultToReuse) {
+            //         console.log('can reuse last candidate')
+            //         predictionResult = lastCandidate.predictionResult
+            //     }
+            // }
+
+            if (!predictionResult) {
+                predictionResult = await this.getPrediction({
+                    requestId,
+                    document,
+                    position,
+                    prompt,
+                    codeToReplaceData: requestCodeToReplaceData,
+                    requestDocContext,
+                    abortSignal,
+                    triggerKind,
+                })
+            }
 
             if (abortSignal?.aborted || predictionResult.type === 'aborted') {
                 this.discardSuggestion({
@@ -493,6 +526,19 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                 return null
             }
 
+            let prediction = predictionResult.response.prediction
+            autoeditAnalyticsLogger.markAsLoaded({
+                requestId,
+                prompt,
+                modelResponse: predictionResult.response,
+                payload: {
+                    // TODO: make it required
+                    source: predictionResult.response.source ?? autoeditSource.network,
+                    isFuzzyMatch: false,
+                    prediction,
+                },
+            })
+
             if (predictionResult.type === 'ignored') {
                 this.discardSuggestion({
                     startedAt,
@@ -502,26 +548,47 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                 return null
             }
 
-            const initialPrediction = predictionResult.response.prediction
-            const predictionDocContext = predictionResult.docContext
-            const predictionCodeToReplaceData = predictionResult.codeToReplaceData
+            let predictionDocContext = predictionResult.docContext
+            let predictionCodeToReplaceData = predictionResult.codeToReplaceData
 
-            autoeditAnalyticsLogger.markAsLoaded({
+            // Get latest cursor position and update predictionDocContext and predictionCodeToReplaceData
+            // to match the latest document state.
+            position = vscode.window.activeTextEditor?.selection.active!
+            predictionDocContext = getCurrentDocContext({
+                document,
+                position,
+                maxPrefixLength: requestDocContext.maxPrefixLength,
+                maxSuffixLength: requestDocContext.maxSuffixLength,
+            })
+
+            predictionCodeToReplaceData = getCodeToReplaceData({
+                docContext: requestDocContext,
+                document,
+                position,
+                tokenBudget: autoeditsProviderConfig.tokenLimit,
+            })
+
+            const decorationInfo = getDecorationInfoFromPrediction(
+                document,
+                prediction,
+                predictionCodeToReplaceData.range
+            )
+            if (
+                decorationInfo.modifiedLines.length === 0 &&
+                decorationInfo.removedLines.length === 0 &&
+                decorationInfo.addedLines.length === 1 &&
+                decorationInfo.addedLines[0].text === ''
+            ) {
+                console.log('another suspect')
+            }
+
+            autoeditAnalyticsLogger.markAsPostProcessed({
                 requestId,
                 cacheId: predictionResult.cacheId,
                 hotStreakId: predictionResult.hotStreakId,
-                prompt,
-                modelResponse: predictionResult.response,
                 predictionDocContext,
                 codeToReplaceData: predictionCodeToReplaceData,
                 editPosition: predictionResult.editPosition,
-                payload: {
-                    // TODO: make it required
-                    source: predictionResult.response.source ?? autoeditSource.network,
-                    isFuzzyMatch: false,
-                    prediction: initialPrediction,
-                    codeToRewrite: predictionCodeToReplaceData.codeToRewrite,
-                },
             })
 
             if (throttledRequest.isStale) {
@@ -529,29 +596,19 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                     startedAt,
                     requestId,
                     discardReason: 'staleThrottledRequest',
-                    prediction: initialPrediction,
-                })
-                return null
-            }
-
-            if (predictionResult.response.prediction.length === 0) {
-                this.discardSuggestion({
-                    startedAt,
-                    requestId,
-                    discardReason: 'emptyPrediction',
-                    prediction: initialPrediction,
+                    prediction,
                 })
                 return null
             }
 
             autoeditsOutputChannelLogger.logDebug(
                 'provideInlineCompletionItems',
-                `"${requestId}" ============= Response:\n${initialPrediction}\n` +
+                `"${requestId}" ============= Response:\n${prediction}\n` +
                     `============= Time Taken: ${getTimeNowInMillis() - startedAt}ms`
             )
 
-            const prediction = shrinkPredictionUntilSuffix({
-                prediction: initialPrediction,
+            prediction = shrinkPredictionUntilSuffix({
+                prediction,
                 codeToReplaceData: predictionCodeToReplaceData,
             })
 
@@ -560,46 +617,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                     startedAt,
                     requestId,
                     discardReason: 'predictionEqualsCodeToRewrite',
-                    prediction: initialPrediction,
-                })
-                return null
-            }
-
-            const shouldFilterPredictionBasedRecentEdits = this.filterPrediction.shouldFilterPrediction({
-                uri: document.uri,
-                prediction,
-                codeToRewrite: predictionCodeToReplaceData.codeToRewrite,
-            })
-
-            if (shouldFilterPredictionBasedRecentEdits) {
-                this.discardSuggestion({
-                    startedAt,
-                    requestId,
-                    discardReason: 'recentEdits',
-                    prediction: initialPrediction,
-                })
-                return null
-            }
-
-            const decorationInfo = getDecorationInfoFromPrediction(
-                document,
-                prediction,
-                predictionCodeToReplaceData.range
-            )
-
-            if (
-                isDuplicatingTextFromRewriteArea({
-                    addedText: getAddedLines(decorationInfo)
-                        .map(line => line.text)
-                        .join(getNewLineChar(predictionCodeToReplaceData.codeToRewrite)),
-                    codeToReplaceData: predictionCodeToReplaceData,
-                })
-            ) {
-                this.discardSuggestion({
-                    startedAt,
-                    requestId,
-                    discardReason: 'rewriteAreaOverlap',
-                    prediction: initialPrediction,
+                    prediction,
                 })
                 return null
             }
@@ -621,7 +639,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                     startedAt,
                     requestId,
                     discardReason: 'emptyPredictionAfterInlineCompletionExtraction',
-                    prediction: initialPrediction,
+                    prediction,
                 })
                 return null
             }
@@ -632,7 +650,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                     startedAt,
                     requestId,
                     discardReason: 'noActiveEditor',
-                    prediction: initialPrediction,
+                    prediction,
                 })
                 return null
             }
@@ -641,7 +659,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
             // `this.unstable_handleDidShowCompletionItem` can't receive anything apart from the `requestId`
             // because the agent does not know anything about our internal state.
             // We need to ensure all the relevant metadata can be retrieved from `requestId` only.
-            autoeditAnalyticsLogger.markAsPostProcessed({
+            autoeditAnalyticsLogger.markAsReadyToBeRendered({
                 requestId,
                 renderOutput,
                 prediction:
@@ -690,6 +708,20 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                 this.suggestionLatencyMetric.record(getTimeNowInMillis() - startedAt, {
                     status: 'success',
                 })
+
+                this.lastCandidate = {
+                    uri: document.uri,
+                    lastTriggerPosition: position,
+                    lastTriggerDocContext: predictionDocContext,
+                    lastTriggerSelectedCompletionInfo: inlineCompletionContext?.selectedCompletionInfo,
+                    result: {
+                        logId: 'test' as any,
+                        source: 'network' as any,
+                        items: renderOutput.inlineCompletionItems as InlineCompletionItemWithAnalytics[],
+                    },
+                    predictionResult,
+                }
+
                 return {
                     items: renderOutput.inlineCompletionItems,
                     inlineCompletionItems: renderOutput.inlineCompletionItems,

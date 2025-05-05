@@ -2,10 +2,10 @@ import { LRUCache } from 'lru-cache'
 import * as uuid from 'uuid'
 import type * as vscode from 'vscode'
 
-import type { PredictionResult, SuggestedPredictionResult } from './autoedits-provider'
+import type { CodeToReplaceData, DocumentContext } from '@sourcegraph/cody-shared'
 
-import type { DocumentContext } from '@sourcegraph/cody-shared'
 import { forkSignal } from '../completions/utils'
+
 import { AutoeditStopReason } from './adapters/base'
 import type {
     AutoeditCacheID,
@@ -14,9 +14,13 @@ import type {
     AutoeditTriggerKindMetadata,
 } from './analytics-logger'
 import { autoeditAnalyticsLogger, autoeditSource, autoeditTriggerKind } from './analytics-logger'
+import type { PredictionResult, SuggestedPredictionResult } from './autoedits-provider'
 import type { ProcessedHotStreakResponse } from './hot-streak'
-import type { CodeToReplaceData } from './prompt/prompt-utils'
-import { isNotRecyclable, isRequestNotRelevant } from './request-recycling'
+import {
+    isNotRecyclableCacheItem,
+    isNotRecyclableRequest,
+    isRequestNotRelevant,
+} from './request-recycling'
 
 export interface AutoeditRequestManagerParams {
     requestId: AutoeditRequestID
@@ -32,7 +36,7 @@ export interface AutoeditRequestManagerParams {
 }
 
 export class RequestManager implements vscode.Disposable {
-    private cache = new LRUCache<AutoeditCacheID, SuggestedPredictionResult>({
+    private cache = new LRUCache<AutoeditCacheID, SuggestedPredictionResult & { timestamp: number }>({
         max: 50,
     })
     private readonly inflightRequests = new LRUCache<string, InflightRequest>({ max: 20 })
@@ -54,18 +58,26 @@ export class RequestManager implements vscode.Disposable {
         params: AutoeditRequestManagerParams,
         makeRequest: (abortSignal: AbortSignal) => Promise<AsyncGenerator<ProcessedHotStreakResponse>>
     ): Promise<PredictionResult> {
+        console.log('--------------------------------------------')
+        console.log(`new request ${params.position.line}:${params.position.character}`)
         // 1. First check the cache for exact matches if trigger kind is not manual
         if (params.triggerKind !== autoeditTriggerKind.manual) {
             const cachedResponse = this.checkCache(params)
             if (cachedResponse) {
+                console.log('cache')
                 return cachedResponse
             }
+
+            console.log('no cached response')
+        } else {
+            console.log('manual trigger')
         }
 
         // 2. Then check for a matching in-flight request
         const inflightRequest = this.findMatchingInflightRequest(params)
         if (inflightRequest) {
             const result = await inflightRequest.promise
+            console.log('inflight', result)
             if (result.type === 'suggested' && result.response.type === 'success') {
                 return {
                     ...result,
@@ -98,6 +110,7 @@ export class RequestManager implements vscode.Disposable {
 
         // Start processing the request in the background
         this.processRequestInBackground(request, makeRequest, params)
+        console.log('network')
 
         // Return the promise to the client immediately and handle request completion in promise callbacks.
         return request.promise
@@ -136,6 +149,7 @@ export class RequestManager implements vscode.Disposable {
                 if (resolvedResult.type === 'suggested') {
                     this.cache.set(cacheId, {
                         ...resolvedResult,
+                        timestamp: Date.now(),
                         response: { ...resolvedResult.response, source: autoeditSource.cache },
                     })
 
@@ -213,34 +227,46 @@ export class RequestManager implements vscode.Disposable {
             })
         }
 
-        const matches = this.getValidCacheItemsForDocument(params.documentText, params.documentUri)
+        const matches = this.getValidCacheItemsForDocument(params) as (SuggestedPredictionResult & {
+            timestamp: number
+        })[]
         if (matches.length === 0) {
             // No matches found
             return null
         }
 
         // Find match with closest range.start
-        let closestMatch: SuggestedPredictionResult | null = null
+        let closestMatch: (SuggestedPredictionResult & { timestamp: number }) | null = null
         let closestDistance = Number.MAX_SAFE_INTEGER
         const maxDistance = 5 // Avoid matching too far from the cursor
 
         for (const match of matches) {
             const distance = Math.abs(match.codeToReplaceData.range.start.line - params.position.line)
 
-            if (distance < closestDistance && distance <= maxDistance) {
+            if (
+                distance < closestDistance &&
+                distance <= maxDistance &&
+                (!closestMatch || match.timestamp > closestMatch?.timestamp)
+            ) {
                 closestDistance = distance
                 closestMatch = match
             }
         }
+        console.log({
+            closestMatch,
+            distances: matches.map(m =>
+                Math.abs(m.codeToReplaceData.range.start.line - params.position.line)
+            ),
+        })
 
         return closestMatch
     }
 
     public getValidCacheItemsForDocument(
-        documentText: string,
-        documentUri: string
+        params: AutoeditRequestManagerParams
     ): SuggestedPredictionResult[] {
         const matchingItems: SuggestedPredictionResult[] = []
+        const { documentText, documentUri } = params
 
         for (const key of [...this.cache.keys()]) {
             const item = this.cache.get(key)
@@ -250,12 +276,26 @@ export class RequestManager implements vscode.Disposable {
 
             // Check that the rewrite area is still present in the document
             // This is a good indicator that the item is still valid
-            const rewriteArea =
-                item.codeToReplaceData.prefixInArea +
-                item.codeToReplaceData.codeToRewrite +
-                item.codeToReplaceData.suffixInArea
+            // const rewriteArea =
+            //     item.codeToReplaceData.prefixInArea +
+            //     item.codeToReplaceData.codeToRewrite +
+            //     item.codeToReplaceData.suffixInArea
 
-            if (documentText.includes(rewriteArea)) {
+            // if (documentText.includes(rewriteArea)) {
+            //     console.log('match because of the rewrite area')
+            //     matchingItems.push(item)
+            // }
+
+            params.position === item.editPosition
+
+            const notRecyclableReason = isNotRecyclableCacheItem(
+                { codeToReplaceData: item.codeToReplaceData, documentUri: item.uri },
+                { codeToReplaceData: params.codeToReplaceData, documentUri: params.documentUri },
+                item.response
+            )
+
+            if (!notRecyclableReason) {
+                console.log('match because of not notRecyclableReason')
                 matchingItems.push(item)
             }
         }
@@ -301,11 +341,18 @@ export class RequestManager implements vscode.Disposable {
             }
 
             if (!inflightRequest.isResolved) {
-                const reasonNotToRecycle = isNotRecyclable(
+                const reasonNotToRecycle = isNotRecyclableRequest(
                     completedRequest,
                     inflightRequest,
                     result.response
                 )
+
+                // console.log(
+                //     'reasonNotToRecycle',
+                //     Object.entries(notRecyclableReason).find(
+                //         ([key, value]) => value === reasonNotToRecycle
+                //     )?.[0]
+                // )
 
                 if (!reasonNotToRecycle && result.type === 'suggested') {
                     inflightRequest.abortNetworkRequest()
