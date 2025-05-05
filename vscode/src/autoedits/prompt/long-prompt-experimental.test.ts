@@ -67,11 +67,7 @@ describe('LongTermPromptStrategy', () => {
                     [RetrieverIdentifier.JaccardSimilarityRetriever]: 100,
                     [RetrieverIdentifier.DiagnosticsRetriever]: 100,
                 },
-                contextSpecificNumItemsLimit: {
-                    [RetrieverIdentifier.RecentViewPortRetriever]: 2,
-                    [RetrieverIdentifier.RecentEditsRetriever]: 2,
-                    [RetrieverIdentifier.RecentCopyRetriever]: 2,
-                },
+                contextSpecificNumItemsLimit: {},
             }
             const codeToReplaceData = getCodeToReplaceData({
                 docContext,
