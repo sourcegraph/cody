@@ -66,7 +66,7 @@ featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyAutoEditHotStreak).subs
 /**
  * Determines if hot streak mode should be enabled based on feature flag and settings.
  */
-function isHotStreakEnabled(): boolean {
+export function isHotStreakEnabled(): boolean {
     return hotStreakEnabled || isHotStreakEnabledInSettings()
 }
 
