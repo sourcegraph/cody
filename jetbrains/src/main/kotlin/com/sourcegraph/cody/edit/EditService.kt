@@ -6,7 +6,7 @@ import com.intellij.openapi.components.service
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.project.Project
-import com.sourcegraph.cody.agent.protocol_extensions.toOffsetOrZero
+import com.sourcegraph.cody.agent.protocol_extensions.toBoundedOffset
 import com.sourcegraph.cody.agent.protocol_extensions.toOffsetRange
 import com.sourcegraph.cody.agent.protocol_generated.CreateFileOperation
 import com.sourcegraph.cody.agent.protocol_generated.DeleteFileOperation
@@ -58,7 +58,7 @@ class EditService(val project: Project) {
             true
           }
           is InsertTextEdit -> {
-            document.insertString(edit.position.toOffsetOrZero(document), edit.value)
+            document.insertString(edit.position.toBoundedOffset(document), edit.value)
             true
           }
         }
