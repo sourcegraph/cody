@@ -15,11 +15,11 @@ class CodyFileUri private constructor(val originalScheme: String, val uri: URI) 
 
   fun toPath(basePath: String?): Path {
     var path = uri.toPath()
-    /*if (!path.isAbsolute && basePath != null) {
+    if (!path.isAbsolute && basePath != null) {
       val fixedPath = Paths.get(path.toString().trimStart('/', '\\'))
       path = Paths.get(basePath).resolve(fixedPath)
-    }*/
-    return path // .normalize()
+    }
+    return path.normalize()
   }
 
   fun toPath(): Path = uri.toPath()
