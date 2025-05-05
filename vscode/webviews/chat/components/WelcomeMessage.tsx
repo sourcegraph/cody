@@ -1,7 +1,7 @@
 import type { CodyIDE } from '@sourcegraph/cody-shared'
 import type { FunctionComponent } from 'react'
 import { PromptList } from '../../components/promptList/PromptList'
-import { useActionSelect } from '../../prompts/PromptsTab'
+import { useActionSelect } from '../../prompts/promptUtils'
 import type { View } from '../../tabs'
 import { LastConversation } from './LastConversation'
 

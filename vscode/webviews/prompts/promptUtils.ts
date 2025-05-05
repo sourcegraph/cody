@@ -1,43 +1,9 @@
 import type { Action, ChatMessage } from '@sourcegraph/cody-shared'
+import type { PromptMode } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
 import { useClientActionDispatcher } from '../client/clientState'
 import { useLocalStorage } from '../components/hooks'
-import { PromptList } from '../components/promptList/PromptList'
 import { View } from '../tabs/types'
 import { getVSCodeAPI } from '../utils/VSCodeApi'
-
-import type { CodyIDE } from '@sourcegraph/cody-shared'
-import type { PromptMode } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
-import { useState } from 'react'
-import { PromptsFilter, type PromptsFilterArgs } from '../components/promptFilter/PromptsFilter'
-import styles from './PromptsTab.module.css'
-
-export const PromptsTab: React.FC<{
-    IDE: CodyIDE
-    setView: (view: View) => void
-}> = ({ setView }) => {
-    const runAction = useActionSelect()
-
-    const [promptsFilter, setPromptsFilter] = useState<PromptsFilterArgs>({})
-
-    return (
-        <div className="tw-overflow-auto tw-h-full tw-flex tw-flex-col">
-            <PromptsFilter promptFilters={promptsFilter} setPromptFilters={setPromptsFilter} />
-            <PromptList
-                showSearch={true}
-                showCommandOrigins={true}
-                paddingLevels="big"
-                telemetryLocation="PromptsTab"
-                recommendedOnly={false}
-                showOnlyPromptInsertableCommands={false}
-                showPromptLibraryUnsupportedMessage={true}
-                onSelect={item => runAction(item, setView)}
-                className={styles.promptsContainer}
-                inputClassName={styles.promptsInput}
-                promptFilters={promptsFilter}
-            />
-        </div>
-    )
-}
 
 export const promptModeToIntent = (mode?: PromptMode | undefined | null): ChatMessage['intent'] => {
     switch (mode) {
