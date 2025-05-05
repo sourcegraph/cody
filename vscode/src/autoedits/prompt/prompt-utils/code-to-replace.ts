@@ -3,6 +3,7 @@ import {
     type CodeToReplaceData,
     type DocumentContext,
     PromptString,
+    logDebug,
     ps,
     tokensToChars,
 } from '@sourcegraph/cody-shared'
@@ -18,6 +19,7 @@ import {
     getSuffixWithCharLimit,
 } from '../../../completions/get-current-doc-context'
 import { clip, splitLinesKeepEnds } from '../../utils'
+import { getEnclosingNodeWithinCharLimit } from './dynamic-rewrite-range'
 
 export interface CurrentFilePromptOptions {
     docContext: DocumentContext
@@ -48,6 +50,13 @@ export function getCodeToReplaceData(options: CurrentFilePromptOptions): CodeToR
             suffixTokens,
         },
     } = options
+
+    const startTime = Date.now()
+    const expandedRange = getEnclosingNodeWithinCharLimit(document, position, 500)
+    const expandedText = document.getText(expandedRange)
+    logDebug('expand', `expandedText: ${expandedText}`)
+    const endTime = Date.now()
+    logDebug('expand', `Time taken for calculation in milli seconds: ${endTime - startTime}`)
 
     const numContextLines = splitLinesKeepEnds(docContext.prefix + docContext.suffix).length
     const numPrefixLines = splitLinesKeepEnds(docContext.prefix).length
