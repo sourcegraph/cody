@@ -140,19 +140,21 @@ export class RecentViewPortRetriever implements vscode.Disposable, ContextRetrie
 
     private onDidChangeActiveTextEditor(editor: vscode.TextEditor | undefined): void {
         if (this.activeTextEditor) {
+            const visibleRange = this.activeTextEditor.visibleRanges.at(-1)
             // Update the previous editor which was active before this one
             // Most of the property would remain same, but lastAccessTimestamp would be updated on the update
             this.updateTrackedViewPort({
                 uri: this.activeTextEditor.document.uri,
-                content: this.activeTextEditor.document.getText(this.activeTextEditor.visibleRanges[0]),
+                content: this.activeTextEditor.document.getText(visibleRange),
                 languageId: this.activeTextEditor.document.languageId,
-                startLine: this.activeTextEditor.visibleRanges.at(-1)?.start.line,
-                endLine: this.activeTextEditor.visibleRanges.at(-1)?.end.line,
+                startLine: visibleRange?.start.line,
+                endLine: visibleRange?.end.line,
             })
         }
         if (!editor) {
             return
         }
+        this.activeTextEditor = editor
         this.updateTextEditor(editor, editor.visibleRanges)
     }
 
