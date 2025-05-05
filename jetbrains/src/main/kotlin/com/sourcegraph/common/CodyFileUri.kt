@@ -36,7 +36,7 @@ class CodyFileUri private constructor(val originalScheme: String, val uri: URI) 
     }
 
     fun parse(input: String): CodyFileUri {
-      if (input.isEmpty()) throw IllegalArgumentException("input cannot be empty")
+      if (input.isEmpty()) throw IllegalArgumentException("Input cannot be empty")
 
       var processedInput = input
       if (processedInput.contains("%")) {
