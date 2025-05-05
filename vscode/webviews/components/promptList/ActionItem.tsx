@@ -124,7 +124,7 @@ const ActionPrompt: FC<ActionPromptProps> = props => {
                     {prompt.mode !== 'CHAT' && (
                         <Tooltip>
                             <TooltipTrigger asChild>
-                                <PencilLine size={12} className={styles.promptIcon} />
+                                <Pencil size={12} className={styles.promptIcon} />
                             </TooltipTrigger>
                             <TooltipContent>Edit prompt</TooltipContent>
                         </Tooltip>
