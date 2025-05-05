@@ -196,6 +196,7 @@ export class MCPServerManager {
             }
         }
 
+        // Only remove and update tools for this specific server
         this.updateTools([
             ...this.tools.filter(t => !t.spec.name.startsWith(`${serverName}_`)),
             ..._agentTools,
@@ -265,31 +266,7 @@ export class MCPServerManager {
                 throw new Error('unexpected response')
             }
 
-            const context: ContextItem[] = []
-            const contents: MessagePart[] = []
-
-            for (const p of result?.content || []) {
-                if (p?.type === 'text') {
-                    contents.push({ type: 'text', text: p.text || 'EMPTY' })
-                } else if (p?.type === 'image') {
-                    const mimeType = p.mimeType || 'image/png'
-
-                    context.push({
-                        type: 'media',
-                        title: `${toolName}_result`,
-                        uri: URI.parse(''),
-                        mimeType: mimeType,
-                        filename: 'mcp_tool_result',
-                        data: p.data,
-                        content: 'tool result',
-                    })
-
-                    const imageContent = getImageContent(p.data, mimeType)
-                    contents.push(imageContent)
-                } else {
-                    contents.push({ type: 'text', text: 'Content type not supported:' + p.type })
-                }
-            }
+            const { context, contents } = transforMCPToolResult(result.content, toolName)
 
             logDebug('MCPServerManager', `Tool ${toolName} executed successfully`, {
                 verbose: { context, contents },
@@ -300,7 +277,16 @@ export class MCPServerManager {
             logDebug('MCPServerManager', `Error calling tool ${toolName} on server ${serverName}`, {
                 verbose: error,
             })
-            throw error
+
+            // Create an error state instead of throwing
+            const errorMessage = error instanceof Error ? error.message : String(error)
+            return createMCPToolState(
+                serverName,
+                toolName,
+                [{ type: 'text', text: `[${toolName}] ERROR: ${errorMessage}` }],
+                undefined,
+                UIToolStatus.Error
+            )
         }
     }
 
@@ -343,6 +329,45 @@ export class MCPServerManager {
     public dispose(): void {
         this.toolsEmitter.dispose()
     }
+}
+
+/**
+ * Transform tool execution result content into context items and message parts
+ */
+export function transforMCPToolResult(
+    content: any[],
+    toolName: string
+): { context: ContextItem[]; contents: MessagePart[] } {
+    const context: ContextItem[] = []
+    const contents: MessagePart[] = []
+
+    for (const p of content || []) {
+        if (p?.type === 'text') {
+            contents.push({ type: 'text', text: p.text || 'EMPTY' })
+        } else if (p?.type === 'image') {
+            const mimeType = p.mimeType || 'image/png'
+
+            context.push({
+                type: 'media',
+                title: `${toolName}_result`,
+                uri: URI.parse(''),
+                mimeType: mimeType,
+                filename: 'mcp_tool_result',
+                data: p.data,
+                content: 'tool result',
+            })
+
+            const imageContent = getImageContent(p.data, mimeType)
+            contents.push(imageContent)
+        } else {
+            contents.push({
+                type: 'text',
+                text: `${toolName} returned unsupported result type: ${p.type}`,
+            })
+        }
+    }
+
+    return { context, contents }
 }
 
 /**

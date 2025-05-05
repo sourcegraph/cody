@@ -1,4 +1,4 @@
-import { PlugZapIcon, Server, XIcon } from 'lucide-react'
+import { Server, XIcon } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { getVSCodeAPI } from '../../utils/VSCodeApi'
 import { Badge } from '../shadcn/ui/badge'
@@ -142,18 +142,38 @@ export function ServerHome({ mcpServers }: ServerHomeProps) {
                     className="tw-m-[0.5rem] !tw-p-[0.5rem] tw-rounded tw-bg-input-background tw-text-input-foreground focus:tw-shadow-[0_0_0_0.125rem_var(--vscode-focusBorder)]"
                 />
             </CommandList>
-            <CommandList className="tw-flex-1 tw-overflow-y-auto tw-m-2 tw-gap-2">
+            <CommandList className="tw-flex-1 tw-overflow-y-auto tw-m-2 tw-gap-6">
                 {filteredServers.map(server => {
                     return (
                         <CommandItem
                             key={server.id}
-                            className="tw-text-left tw-truncate tw-w-full tw-rounded-md tw-text-sm tw-overflow-hidden tw-text-sidebar-foreground tw-align-baseline hover:tw-bg-transparent"
+                            className="tw-text-left tw-truncate tw-w-full tw-rounded-md tw-text-sm tw-overflow-hidden tw-text-sidebar-foreground tw-align-baseline hover:tw-bg-transparent tw-mt-2"
                             onSelect={() => setSelectedServer(server)}
                         >
                             <div className="tw-truncate tw-w-full tw-flex tw-flex-col tw-gap-2">
-                                <div className="tw-flex tw-items-center tw-gap-2">
-                                    <PlugZapIcon className="tw-w-8 tw-h-8" strokeWidth={1.25} />
-                                    <strong>{server.name}</strong>
+                                <div className="tw-flex tw-items-center tw-justify-between tw-gap-2">
+                                    <div className="tw-flex tw-items-center tw-gap-2">
+                                        <Server className="tw-w-8 tw-h-8" strokeWidth={1.25} size={16} />
+                                        <strong>{server.name}</strong>
+                                    </div>
+                                    {server.name === selectedServer?.name && (
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            className="tw-h-8 tw-p-2 tw-z-10"
+                                            onClick={e => {
+                                                e.stopPropagation()
+                                                getVSCodeAPI()?.postMessage({
+                                                    command: 'mcp',
+                                                    type: 'removeServer',
+                                                    name: server.name,
+                                                })
+                                            }}
+                                            title="Delete server"
+                                        >
+                                            <XIcon size={16} />
+                                        </Button>
+                                    )}
                                 </div>
                                 <div className="tw-flex tw-align-top tw-justify-between tw-my-1 tw-flex-wrap">
                                     {server.error && (
@@ -171,9 +191,9 @@ export function ServerHome({ mcpServers }: ServerHomeProps) {
                                             <div className="tw-flex tw-flex-wrap tw-gap-4">
                                                 {server.tools.map(t => (
                                                     <Badge
-                                                        variant="success"
+                                                        variant="outline"
                                                         key={t.name}
-                                                        className="tw-truncate tw-max-w-[250px] tw-text-foreground"
+                                                        className="tw-truncate tw-max-w-[250px] tw-text-foreground hover:tw-bg-transparent"
                                                         title={t.description}
                                                     >
                                                         {t.name}
@@ -184,28 +204,12 @@ export function ServerHome({ mcpServers }: ServerHomeProps) {
                                     )}
                                 </div>
                             </div>
-                            {server.name === selectedServer?.name && (
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    className="tw-h-8 tw-p-2 tw-z-10"
-                                    onClick={e => {
-                                        e.stopPropagation()
-                                        getVSCodeAPI()?.postMessage({
-                                            command: 'mcp',
-                                            type: 'removeServer',
-                                            name: server.name,
-                                        })
-                                    }}
-                                    title="Delete server"
-                                >
-                                    <XIcon size={16} className="tw-mr-1" />
-                                </Button>
-                            )}
                         </CommandItem>
                     )
                 })}
-                <AddServerView onAddServer={addServers} className="tw-my-4 tw-w-full tw-py-1" />
+                <div className="tw-flex tw-flex-col tw-justify-center tw-mt-4 tw-w-full">
+                    <AddServerView onAddServer={addServers} className="tw-my-4 tw-w-full tw-px-2" />
+                </div>
             </CommandList>
         </Command>
     )

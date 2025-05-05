@@ -1,4 +1,4 @@
-import { DatabaseZap, PowerOff, Trash2 } from 'lucide-react'
+import { DatabaseZap, PowerOff, Server, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 import { getVSCodeAPI } from '../../utils/VSCodeApi'
 import { Badge } from '../shadcn/ui/badge'
@@ -13,7 +13,7 @@ interface ServerCardProps {
 }
 
 export function ServerCard({ server, onClick }: ServerCardProps) {
-    const ServerIcon = server.icon ?? DatabaseZap
+    const ServerIcon = server.icon ?? Server
     const [showAllTags, setShowAllTags] = useState(false)
     const maxVisibleTags = 3
     const hasMoreTags = server.tools && server.tools.length > maxVisibleTags
@@ -90,7 +90,7 @@ export function ServerCard({ server, onClick }: ServerCardProps) {
                             e.stopPropagation()
                             getVSCodeAPI()?.postMessage({
                                 command: 'mcp',
-                                type: 'removeServer',
+                                type: 'updateServer',
                                 name: server.name,
                             })
                         }}

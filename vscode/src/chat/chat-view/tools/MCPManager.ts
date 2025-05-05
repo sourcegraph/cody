@@ -488,9 +488,12 @@ export class MCPManager {
                 vscode.ConfigurationTarget.Global
             )
 
-            // Connect to the new server
+            // Connect only the new server
             await this.addConnection(name, config)
             logDebug('MCPManager', `Added MCP server: ${name}`, { verbose: { config } })
+
+            // Notify about server changes
+            MCPManager.changeNotifications.next()
         } catch (error) {
             logDebug('MCPManager', `Failed to add MCP server: ${name}`, { verbose: { error } })
             throw error
@@ -536,13 +539,16 @@ export class MCPManager {
                 vscode.ConfigurationTarget.Global
             )
 
-            // Reconnect to the server with new configuration
+            // Only disconnect and reconnect the updated server
             await this.connectionManager.removeConnection(name)
             await this.addConnection(name, configWithDefaults)
 
             logDebug('MCPManager', `Updated MCP server: ${name}`, {
                 verbose: { config: configWithDefaults },
             })
+
+            // Notify about server changes
+            MCPManager.changeNotifications.next()
         } catch (error) {
             vscode.window.showErrorMessage(
                 `Failed to update MCP server: ${error instanceof Error ? error.message : String(error)}`
