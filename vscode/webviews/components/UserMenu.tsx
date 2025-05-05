@@ -72,8 +72,13 @@ export const UserMenu: React.FunctionComponent<UserMenuProps> = ({
     const isDotComUser = isDotCom(endpoint)
     const isWorkspaceUser = isWorkspaceInstance(endpoint)
 
-    const userType = isDotComUser ? (isProUser ? 'Pro' : 'Free') : isWorkspaceUser ? 'ES' : 'Enterprise'
-    const endpointTitle = `${endpoint} (${isWorkspaceUser ? 'Enterprise Starter' : userType} User)`
+    const userType = isDotComUser
+        ? isProUser
+            ? 'Pro'
+            : 'Free'
+        : isWorkspaceUser
+          ? 'Enterprise Starter'
+          : 'Enterprise'
 
     const [userMenuView, setUserMenuView] = useState<MenuView>('main')
 
@@ -487,9 +492,9 @@ export const UserMenu: React.FunctionComponent<UserMenuProps> = ({
                                             </p>
                                         </div>
                                         <Badge
-                                            variant={isProUser ? 'cody' : 'secondary'}
-                                            className="tw-opacity-85 tw-text-xs tw-h-fit tw-self-center"
-                                            title={endpointTitle}
+                                            variant={'secondary'}
+                                            className="tw-opacity-85 tw-text-xs tw-h-fit tw-self-center tw-flex-shrink-0"
+                                            title={endpoint}
                                         >
                                             {userType}
                                         </Badge>
