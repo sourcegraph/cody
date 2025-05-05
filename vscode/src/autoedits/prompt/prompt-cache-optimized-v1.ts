@@ -12,14 +12,8 @@ import {
     getPromptForTheContextSource,
     getPromptWithNewline,
     joinPromptsWithNewlineSeparator,
-} from './prompt-utils/common'
-import { getCurrentFilePromptComponents } from './prompt-utils/current-file'
-import { getLintErrorsPrompt } from './prompt-utils/lint'
-import {
-    getRecentEditsPrompt,
     groupConsecutiveRecentEditsItemsFromSameFile,
-} from './prompt-utils/recent-edits'
-import { getRecentlyViewedSnippetsPrompt } from './prompt-utils/recent-view'
+} from './prompt-utils'
 
 interface RecentEditsPromptComponents {
     mostRecentEditsPrompt: PromptString
@@ -95,6 +89,11 @@ export class PromptCacheOptimizedV1 extends AutoeditsUserPromptStrategy {
                 item.metadata?.timeSinceActionMs !== undefined &&
                 item.metadata.timeSinceActionMs < this.SNIPPET_VIEW_MAX_TIMESTAMP_MS
         )
+        .filter(
+            item =>
+                item.metadata?.timeSinceActionMs !== undefined &&
+                item.metadata.timeSinceActionMs < this.SNIPPET_VIEW_MAX_TIMESTAMP_MS
+        )
 
         return joinPromptsWithNewlineSeparator([
             constants.SHORT_TERM_SNIPPET_VIEWS_INSTRUCTION,
@@ -116,9 +115,7 @@ export class PromptCacheOptimizedV1 extends AutoeditsUserPromptStrategy {
         const otherRecentEditsContextItems =
             recentEditsSnippets.length > 1 ? recentEditsSnippets.slice(1) : []
 
-        const groupedContextItems = groupConsecutiveRecentEditsItemsFromSameFile(
-            otherRecentEditsContextItems
-        )
+        const groupedContextItems = groupConsecutiveRecentEditsItemsFromSameFile(otherRecentEditsContextItems)
 
         const { shortTermSnippets, longTermSnippets } = this.splitContextItemsIntoShortAndLongTerm(
             groupedContextItems,

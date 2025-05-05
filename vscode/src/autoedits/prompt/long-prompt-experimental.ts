@@ -9,14 +9,8 @@ import {
     getPromptForTheContextSource,
     getPromptWithNewline,
     joinPromptsWithNewlineSeparator,
-} from './prompt-utils/common'
-import { getCurrentFileLongSuggestionPrompt } from './prompt-utils/current-file'
-import { getLintErrorsPrompt } from './prompt-utils/lint'
-import {
-    getRecentEditsPrompt,
-    groupConsecutiveRecentEditsItemsFromSameFile,
-} from './prompt-utils/recent-edits'
-import { getRecentlyViewedSnippetsPrompt } from './prompt-utils/recent-view'
+    groupConsecutiveRecentEditsItemsFromSameFile
+} from './prompt-utils'
 
 export class LongTermPromptStrategy extends AutoeditsUserPromptStrategy {
     getUserPrompt({ context, tokenBudget, codeToReplaceData, document }: UserPromptArgs): PromptString {

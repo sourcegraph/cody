@@ -67,8 +67,9 @@ describe('PromptCacheOptimizedV1', () => {
                 [RetrieverIdentifier.DiagnosticsRetriever]: 100,
             },
             contextSpecificNumItemsLimit: {
-                [RetrieverIdentifier.DiagnosticsRetriever]: 4,
                 [RetrieverIdentifier.RecentViewPortRetriever]: 2,
+                [RetrieverIdentifier.RecentEditsRetriever]: 2,
+                [RetrieverIdentifier.RecentCopyRetriever]: 2,
             },
         }
 
