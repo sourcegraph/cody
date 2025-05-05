@@ -19,6 +19,7 @@ import { useCallback, useState } from 'react'
 import { URI } from 'vscode-uri'
 import {
     ACCOUNT_USAGE_URL,
+    CODY_DOC_QUICKSTART_URL,
     CODY_PRO_SUBSCRIPTION_URL,
     ENTERPRISE_STARTER_LEARN_MORE_URL,
     ENTERPRISE_STARTER_PRICING_URL,
@@ -590,18 +591,23 @@ export const UserMenu: React.FunctionComponent<UserMenuProps> = ({
 
                             <CommandGroup>
                                 {IDE === CodyIDE.VSCode && (
-                                    <CommandItem
+                                    <CommandLink
+                                        href={CODY_DOC_QUICKSTART_URL.toString()}
+                                        target="_blank"
+                                        rel="noreferrer"
                                         onSelect={() => {
-                                            getVSCodeAPI().postMessage({
-                                                command: 'command',
-                                                id: 'cody.welcome',
-                                            })
+                                            telemetryRecorder.recordEvent(
+                                                'cody.userMenu.exploreEnterprisePlanLink',
+                                                'open',
+                                                {}
+                                            )
                                             close()
                                         }}
                                     >
                                         <BookOpenText size={16} strokeWidth={1.25} className="tw-mr-2" />
                                         <span className="tw-flex-grow">Getting Started Guide</span>
-                                    </CommandItem>
+                                        <ExternalLinkIcon size={16} strokeWidth={1.25} />
+                                    </CommandLink>
                                 )}
 
                                 {IDE === CodyIDE.VSCode && (

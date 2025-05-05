@@ -123,63 +123,6 @@
   "browser": "./dist/extension.web.js",
   "activationEvents": ["onLanguage", "onStartupFinished", "onWebviewPanel:cody.editorPanel"],
   "contributes": {
-    "walkthroughs": [
-      {
-        "id": "welcome",
-        "title": "Getting Started with Cody",
-        "description": "Discover how Cody can help you write, understand and fix code faster",
-        "steps": [
-          {
-            "id": "autocomplete",
-            "title": "Code Autocomplete",
-            "description": "Start writing code and Cody will complete the line (or the entire function) for you. Hit tab to accept the suggestion.",
-            "media": {
-              "markdown": "walkthroughs/autocomplete.md"
-            }
-          },
-          {
-            "id": "chat",
-            "title": "Cody Chat",
-            "description": "Answer questions about general programming topics, or specific to your codebase, with Cody chat.\n[Open Chat](command:cody.chat.newEditorPanel)",
-            "media": {
-              "markdown": "walkthroughs/chat.md"
-            }
-          },
-          {
-            "id": "edit",
-            "title": "Edit Code",
-            "description": "Ask Cody to perform code edits with your instructions.",
-            "media": {
-              "markdown": "walkthroughs/edit.md"
-            }
-          },
-          {
-            "id": "fix",
-            "title": "Fix Code",
-            "description": "Use Cody to fix or explain problems in your code.",
-            "media": {
-              "markdown": "walkthroughs/fix.md"
-            }
-          },
-          {
-            "id": "commands",
-            "title": "Cody Commands",
-            "description": "Discover all the built-in Cody commands, and create your own custom commands.\n[Show Commands](command:cody.menu.commands)",
-            "media": {
-              "markdown": "walkthroughs/commands.md"
-            }
-          },
-          {
-            "id": "keyboard",
-            "title": "Keyboard Shortcuts",
-            "description": "Easily customize the default keyboard shortcuts to suit your workflow.\n[Show Keyboard Shortcuts Editor](command:cody.sidebar.keyboardShortcuts)",
-            "media": {
-              "markdown": "walkthroughs/keyboard.md"
-            }
-          }
-        ]
-      }
-    ],
     "colors": [
       {
         "id": "cody.fixup.conflictBackground",
@@ -249,13 +192,6 @@
       ]
     },
     "commands": [
-      {
-        "command": "cody.welcome",
-        "title": "Getting Started Guide",
-        "category": "Cody",
-        "group": "Cody",
-        "icon": "$(book)"
-      },
       {
         "command": "cody.feedback",
         "title": "Feedback",
