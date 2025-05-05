@@ -3,9 +3,9 @@ import { describe, expect, it } from 'vitest'
 import { getCurrentDocContext } from '../../../completions/get-current-doc-context'
 import { documentAndPosition } from '../../../completions/test-helpers'
 import { getCodeToReplaceData } from './code-to-replace'
-import { getCurrentFilePromptComponents } from './current-file'
+import { getCurrentFilePromptComponents, getCurrentFileLongSuggestionPrompt } from './current-file'
 
-describe('getCurrentFilePromptComponents', () => {
+describe('getCurrentFilePromptComponents and getCurrentFileLongSuggestionPrompt', () => {
     it('handles the markers correctly for current file context', () => {
         // Create a large file content
         const longPrefix = Array(10).fill('prefix-line').join('\n')
@@ -130,5 +130,54 @@ describe('getCurrentFilePromptComponents', () => {
 
           </area_around_code_to_rewrite>"
         `)
+    })
+
+    it('builds correct prompt for long suggestions', () => {
+        // Create a large file content
+        const longPrefix = Array(10).fill('prefix-line').join('\n')
+        const longSuffix = Array(10).fill('suffix-line').join('\n')
+        const content = `${longPrefix}\ncursor█line\n${longSuffix}`
+
+        const { document, position } = documentAndPosition(content)
+
+        const docContext = getCurrentDocContext({
+            document,
+            position,
+            maxPrefixLength: 30,
+            maxSuffixLength: 30,
+        })
+
+        const codeToReplaceData = getCodeToReplaceData({
+            docContext,
+            position,
+            document,
+            tokenBudget: {
+                maxPrefixLinesInArea: 1,
+                maxSuffixLinesInArea: 1,
+                codeToRewritePrefixLines: 1,
+                codeToRewriteSuffixLines: 1,
+                prefixTokens: 100,
+                suffixTokens: 100,
+            },
+        })
+
+        const result = getCurrentFileLongSuggestionPrompt({
+            document,
+            codeToReplaceDataRaw: codeToReplaceData,
+        })
+
+        const expectedOutput = dedent`
+            (\`test.ts\`)
+            <file>
+            prefix-line
+            <|editable_region_start|>
+            prefix-line
+            cursor<|user_cursor_is_here|>line
+            suffix-line
+            <|editable_region_end|>
+            suffix-line
+            </file>
+        `
+        expect(result.toString()).toBe(expectedOutput)
     })
 })
