@@ -52,7 +52,7 @@ export function getCodeToReplaceData(options: CurrentFilePromptOptions): CodeToR
     } = options
 
     const startTime = Date.now()
-    const expandedRange = getEnclosingNodeWithinCharLimit(document, position, 500)
+    const expandedRange = getEnclosingNodeWithinCharLimit(document, position, 500, false)
     const expandedText = document.getText(expandedRange)
     logDebug('expand', `expandedText: ${expandedText}`)
     const endTime = Date.now()
