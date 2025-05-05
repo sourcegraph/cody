@@ -10,11 +10,7 @@ import com.sourcegraph.utils.CodyEditorUtil
 
 class CodySettingsFileChangeListener(private val project: Project) : FileDocumentManagerListener {
   override fun beforeDocumentSaving(document: Document) {
-    val editor = CodyEditorUtil.getEditorForDocument(document) ?: return
-    if (editor.project != project) {
-      return
-    }
-
+    val editor = CodyEditorUtil.getEditorForDocument(project, document) ?: return
     val currentFile = editor.virtualFile
     val configFile =
         LocalFileSystem.getInstance()

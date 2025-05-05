@@ -42,7 +42,7 @@ describe('ChatController', () => {
     }
     const mockGuardrails: SourcegraphGuardrailsClient = {} as any
 
-    vi.spyOn(featureFlagProviderModule.featureFlagProvider, 'evaluateFeatureFlag').mockReturnValue(
+    vi.spyOn(featureFlagProviderModule.featureFlagProvider, 'evaluatedFeatureFlag').mockReturnValue(
         Observable.of(true)
     )
 

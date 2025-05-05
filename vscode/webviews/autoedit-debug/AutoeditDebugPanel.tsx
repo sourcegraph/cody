@@ -47,6 +47,34 @@ export const AutoeditDebugPanel: FC<{
         })
     }, [entries, phaseFilter])
 
+    const hotStreakMap = useMemo(() => {
+        const map = new Map<string, AutoeditRequestDebugState[]>()
+
+        // First pass: collect all hot streak IDs
+        for (const entry of entries) {
+            if ('hotStreakId' in entry.state && entry.state.hotStreakId) {
+                const hotStreakId = entry.state.hotStreakId
+                if (!map.has(hotStreakId)) {
+                    map.set(hotStreakId, [])
+                }
+                map.get(hotStreakId)!.push(entry)
+            }
+        }
+
+        // Second pass: sort each group of entries by editPosition
+        for (const [_, hotStreakEntries] of map.entries()) {
+            hotStreakEntries.sort((a, b) => {
+                const posA =
+                    'editPosition' in a.state ? a.state.editPosition.line : a.state.position.line
+                const posB =
+                    'editPosition' in b.state ? b.state.editPosition.line : b.state.position.line
+                return posA - posB
+            })
+        }
+
+        return map
+    }, [entries])
+
     // Ensure we always have a valid selectedEntryId that exists in filteredEntries
     const [selectedEntryId, setSelectedEntryId] = useState<string | null>(null)
 
@@ -205,14 +233,20 @@ export const AutoeditDebugPanel: FC<{
                     No entries match the selected phase filter
                 </div>
             ) : (
-                filteredEntries.map(entry => (
-                    <AutoeditListItem
-                        key={entry.state.requestId}
-                        entry={entry}
-                        isSelected={entry.state.requestId === selectedEntryId}
-                        onSelect={handleEntrySelect}
-                    />
-                ))
+                filteredEntries.map(entry => {
+                    // Find related entries for this entry if it's part of a hot streak
+                    const hotStreakId = 'hotStreakId' in entry.state ? entry.state.hotStreakId : null
+                    const hotStreakChain = hotStreakId ? hotStreakMap.get(hotStreakId) : []
+                    return (
+                        <AutoeditListItem
+                            key={entry.state.requestId}
+                            entry={entry}
+                            isSelected={entry.state.requestId === selectedEntryId}
+                            onSelect={handleEntrySelect}
+                            hotStreakChain={hotStreakChain}
+                        />
+                    )
+                })
             )}
         </div>
     )

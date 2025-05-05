@@ -15,6 +15,7 @@ import type { FireworksResponse } from './model-response/fireworks'
 import {
     type AutoeditsRequestBody,
     type FireworksCompatibleRequestParams,
+    getFireworksCompatibleRewriteSpeculationParams,
     getMaxOutputTokensForAutoedits,
     getOpenaiCompatibleChatPrompt,
 } from './utils'
@@ -45,9 +46,7 @@ export class FireworksWebSocketAdapter implements AutoeditsModelAdapter {
     private callbackQueue: Record<string, MessageCallback> = {}
     private pendingConnectPromise: Promise<WebSocket> | null = null
 
-    constructor() {
-        const webSocketEndpoint =
-            autoeditsProviderConfig.experimentalAutoeditsConfigOverride?.webSocketEndpoint
+    constructor(webSocketEndpoint?: string) {
         if (!webSocketEndpoint) {
             autoeditsOutputChannelLogger.logError(LOG_FILTER_LABEL, 'webSocketEndpoint is not provided')
             throw new Error('No webSocketEndpoint provided')
@@ -67,15 +66,6 @@ export class FireworksWebSocketAdapter implements AutoeditsModelAdapter {
         const requestBody = this.getMessageBody(option)
         try {
             const apiKey = autoeditsProviderConfig.experimentalAutoeditsConfigOverride?.apiKey
-
-            if (!apiKey) {
-                autoeditsOutputChannelLogger.logError(
-                    'getModelResponse',
-                    'No api key provided in the config override'
-                )
-                throw new Error('No api key provided in the config override')
-            }
-
             const abortController = forkSignal(option.abortSignal)
             return generatorWithErrorObserver(
                 generatorWithTimeout(
@@ -130,6 +120,7 @@ export class FireworksWebSocketAdapter implements AutoeditsModelAdapter {
                 content: options.codeToRewrite,
             },
             user: options.userId || undefined,
+            ...getFireworksCompatibleRewriteSpeculationParams(),
         }
 
         if (options.isChatModel) {
@@ -156,7 +147,7 @@ export class FireworksWebSocketAdapter implements AutoeditsModelAdapter {
         extractPrediction,
         customHeaders = {},
     }: {
-        apiKey: string
+        apiKey?: string
         url: string
         body: ModelResponseShared['requestBody']
         abortSignal: AbortSignal
@@ -167,8 +158,12 @@ export class FireworksWebSocketAdapter implements AutoeditsModelAdapter {
 
         const requestHeaders: Record<string, string> = {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${apiKey}`,
             ...customHeaders,
+        }
+
+        // Use user provided (fireworks) apiKey. Otherwise, the websocket server will use its configured fireworks apiKey as fallback.
+        if (apiKey) {
+            requestHeaders.Authorization = `Bearer ${apiKey}`
         }
 
         const messageId = 'm_' + this.messageId++

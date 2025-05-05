@@ -16,7 +16,11 @@ import {
     type AutoeditsModelAdapter,
     type ModelResponse,
 } from './base'
-import { getMaxOutputTokensForAutoedits, getSourcegraphCompatibleChatPrompt } from './utils'
+import {
+    getMaxOutputTokensForAutoedits,
+    getSourcegraphCompatibleChatPrompt,
+    getSourcegraphRewriteSpeculationParams,
+} from './utils'
 
 export class SourcegraphCompletionsAdapter implements AutoeditsModelAdapter {
     private client: CodeCompletionsClient
@@ -27,6 +31,7 @@ export class SourcegraphCompletionsAdapter implements AutoeditsModelAdapter {
     dispose() {}
 
     async getModelResponse(options: AutoeditModelOptions): Promise<AsyncGenerator<ModelResponse>> {
+        const speculationParams = getSourcegraphRewriteSpeculationParams()
         try {
             const maxTokens = getMaxOutputTokensForAutoedits(options.codeToRewrite)
             const messages: Message[] = getSourcegraphCompatibleChatPrompt({
@@ -43,8 +48,8 @@ export class SourcegraphCompletionsAdapter implements AutoeditsModelAdapter {
                     type: 'content',
                     content: options.codeToRewrite,
                 },
+                ...speculationParams,
             }
-
             const abortController = forkSignal(options.abortSignal)
             const completionResponseGenerator = await this.client.complete(requestBody, abortController)
             return this.processCompletionResponse(completionResponseGenerator, options, requestBody)
@@ -69,6 +74,14 @@ export class SourcegraphCompletionsAdapter implements AutoeditsModelAdapter {
         let requestHeaders: Record<string, string> = {}
         let requestUrl = options.url
         let isAborted = false
+
+        const sharedResult = {
+            responseHeaders,
+            requestHeaders,
+            requestUrl,
+            requestBody,
+            responseBody,
+        }
 
         for await (const msg of completionResponseGenerator) {
             const newText = msg.completionResponse?.completion
@@ -106,22 +119,11 @@ export class SourcegraphCompletionsAdapter implements AutoeditsModelAdapter {
             }
 
             yield {
+                ...sharedResult,
                 type: 'partial',
                 stopReason: AutoeditStopReason.StreamingChunk,
                 prediction,
-                requestUrl,
-                requestHeaders,
-                responseHeaders,
-                responseBody,
             }
-        }
-
-        const sharedResult = {
-            responseHeaders,
-            requestHeaders,
-            requestUrl,
-            requestBody,
-            responseBody,
         }
 
         if (isAborted) {

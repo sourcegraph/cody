@@ -1,7 +1,7 @@
 package com.sourcegraph.cody.listeners
 
-import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.diagnostic.Logger
+import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.fileEditor.FileEditorManagerListener
@@ -11,8 +11,10 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.sourcegraph.cody.agent.CodyAgent
 import com.sourcegraph.cody.agent.CodyAgentService.Companion.withAgent
 import com.sourcegraph.cody.agent.protocol_extensions.ProtocolTextDocumentExt
+import com.sourcegraph.cody.agent.protocol_generated.ProtocolTextDocument
 import com.sourcegraph.cody.agent.protocol_generated.TextDocument_DidFocusParams
 import com.sourcegraph.utils.CodyEditorUtil
+import com.sourcegraph.utils.ThreadingUtil
 
 class CodyFileEditorListener : FileEditorManagerListener {
   private val logger = Logger.getInstance(CodyFileEditorListener::class.java)
@@ -47,36 +49,45 @@ class CodyFileEditorListener : FileEditorManagerListener {
   companion object {
     private val logger = Logger.getInstance(CodyFileEditorListener::class.java)
 
+    private fun processDocuments(
+        project: Project,
+        getEditors: (Project) -> Set<Editor>,
+        processDocument: (ProtocolTextDocument) -> Unit
+    ) {
+      val documents =
+          ThreadingUtil.runInEdtAndGet {
+            if (project.isDisposed) return@runInEdtAndGet emptySet()
+
+            getEditors(project).mapNotNull { editor ->
+              FileDocumentManager.getInstance().getFile(editor.document)?.let { file ->
+                try {
+                  ProtocolTextDocumentExt.fromVirtualEditorFile(editor, file)
+                } catch (x: Exception) {
+                  logger.warn("Error while obtaining text document for file: ${file.path}", x)
+                  null
+                }
+              }
+            }
+          }
+
+      documents.forEach(processDocument)
+    }
+
     // When IDEA starts for the first time, we send duplicate `textDocument/didOpen` notifications
     // with `fileOpened` above. This function is only needed when we restart the agent process.
     fun registerAllOpenedFiles(project: Project, codyAgent: CodyAgent) {
+      processDocuments(
+          project,
+          CodyEditorUtil::getAllOpenEditors,
+      ) { textDocument ->
+        codyAgent.server.textDocument_didOpen(textDocument)
+      }
 
-      ApplicationManager.getApplication().invokeLater {
-        val fileDocumentManager = FileDocumentManager.getInstance()
-
-        CodyEditorUtil.getAllOpenEditors().forEach { editor ->
-          fileDocumentManager.getFile(editor.document)?.let { file ->
-            try {
-              val textDocument =
-                  ProtocolTextDocumentExt.fromVirtualEditorFile(editor, file) ?: return@let
-              codyAgent.server.textDocument_didOpen(textDocument)
-            } catch (x: Exception) {
-              logger.warn("Error calling textDocument/didOpen for file: ${file.path}", x)
-            }
-          }
-        }
-
-        if (project.isDisposed) return@invokeLater
-        CodyEditorUtil.getSelectedEditors(project).forEach { editor ->
-          val file = fileDocumentManager.getFile(editor.document)
-          try {
-            val textDocument =
-                ProtocolTextDocumentExt.fromVirtualEditorFile(editor, file!!) ?: return@invokeLater
-            codyAgent.server.textDocument_didFocus(TextDocument_DidFocusParams(textDocument.uri))
-          } catch (x: Exception) {
-            logger.warn("Error calling textDocument/didFocus on ${file?.path}", x)
-          }
-        }
+      processDocuments(
+          project,
+          CodyEditorUtil::getSelectedEditors,
+      ) { textDocument ->
+        codyAgent.server.textDocument_didFocus(TextDocument_DidFocusParams(textDocument.uri))
       }
     }
   }

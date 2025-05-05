@@ -4,6 +4,7 @@ import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.DefaultActionGroup
 import com.sourcegraph.cody.agent.action.CodyAgentRestartAction
+import com.sourcegraph.cody.chat.OpenChatAction
 import com.sourcegraph.common.CodyBundle
 import com.sourcegraph.common.CodyBundle.fmt
 import com.sourcegraph.common.UpgradeToCodyProNotification
@@ -27,6 +28,7 @@ class CodyStatusBarActionGroup : DefaultActionGroup() {
       addAll(listOfNotNull(deriveRateLimitErrorAction()))
       addSeparator()
       addAll(
+          OpenChatAction(),
           CodyOpenSettingsAction(),
       )
       addSeparator()

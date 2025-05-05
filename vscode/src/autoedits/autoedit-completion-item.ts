@@ -1,5 +1,6 @@
 import * as uuid from 'uuid'
 import * as vscode from 'vscode'
+
 import type { AutoeditRequestID } from './analytics-logger'
 
 interface AutoeditCompletionItemParams {
@@ -7,6 +8,12 @@ interface AutoeditCompletionItemParams {
     insertText: string | vscode.SnippetString
     range: vscode.Range
     command?: vscode.Command
+
+    /** For debugging purposes */
+    withoutCurrentLinePrefix: {
+        insertText: string
+        range: vscode.Range
+    }
 }
 
 export class AutoeditCompletionItem extends vscode.InlineCompletionItem {
@@ -17,10 +24,12 @@ export class AutoeditCompletionItem extends vscode.InlineCompletionItem {
      * API's that require the completion item to only have an ID.
      */
     public id: string
+    public withoutCurrentLinePrefix: AutoeditCompletionItemParams['withoutCurrentLinePrefix']
 
     constructor(params: AutoeditCompletionItemParams) {
-        const { insertText, range, command, id } = params
+        const { insertText, range, command, id, withoutCurrentLinePrefix } = params
         super(insertText, range, command)
         this.id = id || uuid.v4()
+        this.withoutCurrentLinePrefix = withoutCurrentLinePrefix
     }
 }

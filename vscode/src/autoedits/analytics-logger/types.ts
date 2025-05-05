@@ -117,6 +117,7 @@ export const autoeditDiscardReason = {
     conflictingDecorationWithEdits: 8,
     notEnoughLinesEditor: 9,
     staleThrottledRequest: 10,
+    nextCursorSuggestionShownInstead: 11,
 } as const
 
 /** We use numeric keys to send these to the analytics backend */
@@ -190,7 +191,7 @@ export interface StartedState extends AutoeditBaseState {
     codeToReplaceData: CodeToReplaceData
     document: vscode.TextDocument
     position: vscode.Position
-    docContext: DocumentContext
+    requestDocContext: DocumentContext
 
     /** Partial payload for this phase. Will be augmented with more info as we progress. */
     payload: {
@@ -256,6 +257,7 @@ export interface LoadedState extends Omit<ContextLoadedState, 'phase' | 'payload
     hotStreakId?: AutoeditHotStreakID
     hotStreakChunks?: HotStreakChunk[]
     editPosition: vscode.Position
+    predictionDocContext: DocumentContext
     payload: ContextLoadedState['payload'] & {
         /**
          * An ID to uniquely identify a suggest autoedit. Note: It is possible for this ID to be part

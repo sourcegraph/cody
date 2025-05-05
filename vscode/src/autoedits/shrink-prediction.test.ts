@@ -241,6 +241,8 @@ function getCodeToReplaceForShrinkPrediction(
             maxSuffixLinesInArea: 5,
             codeToRewritePrefixLines: 1,
             codeToRewriteSuffixLines: 2,
+            prefixTokens: 100,
+            suffixTokens: 100,
         },
         ...values
     )

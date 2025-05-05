@@ -17,6 +17,10 @@ import {
     getNotebookCells,
 } from '../../completions/context/retrievers/recent-user-actions/notebook-utils'
 import { RetrieverIdentifier } from '../../completions/context/utils'
+import {
+    getPrefixWithCharLimit,
+    getSuffixWithCharLimit,
+} from '../../completions/get-current-doc-context'
 import { autoeditsOutputChannelLogger } from '../output-channel-logger'
 import { clip, splitLinesKeepEnds } from '../utils'
 
@@ -34,6 +38,8 @@ export interface CurrentFilePromptOptions {
         | 'codeToRewriteSuffixLines'
         | 'maxPrefixLinesInArea'
         | 'maxSuffixLinesInArea'
+        | 'prefixTokens'
+        | 'suffixTokens'
     >
 }
 
@@ -167,6 +173,8 @@ export function getCodeToReplaceData(options: CurrentFilePromptOptions): CodeToR
             codeToRewriteSuffixLines,
             maxPrefixLinesInArea,
             maxSuffixLinesInArea,
+            prefixTokens,
+            suffixTokens,
         },
     } = options
 
@@ -217,10 +225,15 @@ export function getCodeToReplaceData(options: CurrentFilePromptOptions): CodeToR
         suffixAfterArea: new vscode.Range(positionAtLineEnd(areaEnd), positionAtLineEnd(maxLine)),
     }
 
+    const remainingPrefixChars = Math.max(0, tokensToChars(prefixTokens) - docContext.prefix.length)
+    const remainingSuffixChars = Math.max(0, tokensToChars(suffixTokens) - docContext.suffix.length)
+
     const { prefixBeforeArea, suffixAfterArea } = getUpdatedCurrentFilePrefixAndSuffixOutsideArea(
         document,
         ranges.prefixBeforeArea,
-        ranges.suffixAfterArea
+        ranges.suffixAfterArea,
+        remainingPrefixChars,
+        remainingSuffixChars
     )
 
     return {
@@ -246,13 +259,15 @@ export function getCurrentFilePath(document: vscode.TextDocument): PromptString 
 function getUpdatedCurrentFilePrefixAndSuffixOutsideArea(
     document: vscode.TextDocument,
     rangePrefixBeforeArea: vscode.Range,
-    rangeSuffixAfterArea: vscode.Range
+    rangeSuffixAfterArea: vscode.Range,
+    remainingPrefixChars: number,
+    remainingSuffixChars: number
 ): {
     prefixBeforeArea: PromptString
     suffixAfterArea: PromptString
 } {
     const { prefixBeforeAreaForNotebook, suffixAfterAreaForNotebook } =
-        getPrefixAndSuffixForAreaForNotebook(document)
+        getPrefixAndSuffixForAreaForNotebook(document, remainingPrefixChars, remainingSuffixChars)
 
     const prefixBeforeArea = ps`${prefixBeforeAreaForNotebook}${PromptString.fromDocumentText(
         document,
@@ -270,7 +285,11 @@ function getUpdatedCurrentFilePrefixAndSuffixOutsideArea(
     }
 }
 
-function getPrefixAndSuffixForAreaForNotebook(document: vscode.TextDocument): {
+function getPrefixAndSuffixForAreaForNotebook(
+    document: vscode.TextDocument,
+    remainingPrefixChars: number,
+    remainingSuffixChars: number
+): {
     prefixBeforeAreaForNotebook: PromptString
     suffixAfterAreaForNotebook: PromptString
 } {
@@ -287,9 +306,19 @@ function getPrefixAndSuffixForAreaForNotebook(document: vscode.TextDocument): {
     const cellsAfterCurrentCell = notebookCells.slice(currentCellIndex + 1)
     const beforeContent = getTextFromNotebookCells(activeNotebook, cellsBeforeCurrentCell)
     const afterContent = getTextFromNotebookCells(activeNotebook, cellsAfterCurrentCell)
+
+    const beforeContentList = beforeContent.split('\n')
+    const afterContentList = afterContent.split('\n')
+
     return {
-        prefixBeforeAreaForNotebook: ps`${beforeContent}\n`,
-        suffixAfterAreaForNotebook: ps`\n${afterContent}`,
+        prefixBeforeAreaForNotebook: ps`${getPrefixWithCharLimit(
+            beforeContentList,
+            remainingPrefixChars
+        )}\n`,
+        suffixAfterAreaForNotebook: ps`\n${getSuffixWithCharLimit(
+            afterContentList,
+            remainingSuffixChars
+        )}`,
     }
 }
 

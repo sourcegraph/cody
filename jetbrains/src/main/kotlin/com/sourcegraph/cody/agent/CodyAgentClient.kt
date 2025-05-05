@@ -197,11 +197,11 @@ class CodyAgentClient(private val project: Project, private val webview: NativeW
       val authService = CodyAuthService.getInstance(project)
       if (params is ProtocolAuthenticatedAuthStatus) {
         SentryService.getInstance().setUser(params.primaryEmail, params.username)
-        authService.setActivated(true)
+        authService.setActivated(true, params.pendingValidation)
         authService.setEndpoint(SourcegraphServerPath(params.endpoint))
       } else if (params is ProtocolUnauthenticatedAuthStatus) {
         SentryService.getInstance().setUser(null, null)
-        authService.setActivated(false)
+        authService.setActivated(false, params.pendingValidation)
         authService.setEndpoint(SourcegraphServerPath(params.endpoint))
       }
       CodyStatusService.resetApplication(project)
@@ -264,8 +264,9 @@ class CodyAgentClient(private val project: Project, private val webview: NativeW
   fun autocomplete_didTrigger(params: Null?) {
     FileEditorManager.getInstance(project).selectedTextEditor?.let { editor ->
       ReadAction.run<Throwable> {
-        CodyAutocompleteManager.instance.triggerAutocomplete(
-            editor, editor.caretModel.offset, InlineCompletionTriggerKind.AUTOMATIC)
+        CodyAutocompleteManager.getInstance(project)
+            .triggerAutocomplete(
+                editor, editor.caretModel.offset, InlineCompletionTriggerKind.AUTOMATIC)
       }
     }
   }

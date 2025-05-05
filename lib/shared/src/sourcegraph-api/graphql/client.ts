@@ -23,7 +23,6 @@ import { type GraphQLResultCache, ObservableInvalidatedGraphQLResultCacheFactory
 import {
     BUILTIN_PROMPTS_QUERY,
     CHANGE_PROMPT_VISIBILITY,
-    CHAT_INTENT_QUERY,
     CODE_SEARCH_ENABLED_QUERY,
     CONTEXT_FILTERS_QUERY,
     CONTEXT_SEARCH_EVAL_DEBUG_QUERY,
@@ -43,16 +42,15 @@ import {
     CURRENT_USER_INFO_QUERY,
     CURRENT_USER_ROLE_QUERY,
     DELETE_ACCESS_TOKEN_MUTATION,
-    EVALUATE_FEATURE_FLAGS_QUERY,
     EVALUATE_FEATURE_FLAG_QUERY,
     FILE_CONTENTS_QUERY,
     FILE_MATCH_SEARCH_QUERY,
     FUZZY_FILES_QUERY,
     FUZZY_SYMBOLS_QUERY,
+    GET_FEATURE_FLAGS_QUERY,
     GET_REMOTE_FILE_QUERY,
     GET_URL_CONTENT_QUERY,
     HIGHLIGHTED_FILE_QUERY,
-    LEGACY_CHAT_INTENT_QUERY,
     LEGACY_CONTEXT_SEARCH_QUERY,
     LEGACY_PROMPTS_QUERY_5_8,
     NLS_SEARCH_QUERY,
@@ -390,18 +388,6 @@ export interface SearchAttributionResponse {
         nodes: { repositoryName: string }[]
     }
 }
-
-interface ChatIntentResponse {
-    chatIntent: {
-        intent: string
-        score: number
-        allScores?: {
-            intent: string
-            score: number
-        }[]
-    }
-}
-
 interface ContextSearchResponse {
     getCodyContext: {
         blob: {
@@ -455,15 +441,6 @@ interface Position {
 export interface Range {
     start: Position
     end: Position
-}
-
-export interface ChatIntentResult {
-    intent: string
-    score: number
-    allScores?: {
-        intent: string
-        score: number
-    }[]
 }
 
 /**
@@ -613,12 +590,12 @@ interface EvaluatedFeatureFlag {
     value: boolean
 }
 
-interface EvaluateFeatureFlagResponse {
-    evaluateFeatureFlag: boolean
+interface EvaluatedFeatureFlagsResponse {
+    evaluatedFeatureFlags: EvaluatedFeatureFlag[]
 }
 
-interface EvaluateFeatureFlagsResponse {
-    evaluateFeatureFlags: EvaluatedFeatureFlag[]
+interface EvaluateFeatureFlagResponse {
+    evaluateFeatureFlag: boolean
 }
 
 interface ViewerSettingsResponse {
@@ -1098,23 +1075,6 @@ export class SourcegraphGraphQLAPIClient {
         return isError(result) ? null : result
     }
 
-    /** Experimental API */
-    public async chatIntent(interactionID: string, query: string): Promise<ChatIntentResult | Error> {
-        const hasAllScoresField = await this.isValidSiteVersion({
-            minimumVersion: '5.9.0',
-            insider: true,
-        })
-
-        const response = await this.fetchSourcegraphAPI<APIResponse<ChatIntentResponse>>(
-            hasAllScoresField ? CHAT_INTENT_QUERY : LEGACY_CHAT_INTENT_QUERY,
-            {
-                query: query,
-                interactionId: interactionID,
-            }
-        )
-        return extractDataOrError(response, data => data.chatIntent)
-    }
-
     /**
      * Checks if the current site version is valid based on the given criteria.
      *
@@ -1541,20 +1501,16 @@ export class SourcegraphGraphQLAPIClient {
         ).then(response => extractDataOrError(response, data => data.snippetAttribution))
     }
 
-    public async evaluateFeatureFlags(
-        flagNames: string[],
+    public async getEvaluatedFeatureFlags(
         signal?: AbortSignal
     ): Promise<Record<string, boolean> | Error> {
-        const names = flagNames.filter(name => name !== 'test-flag-do-not-use')
-        return this.fetchSourcegraphAPI<APIResponse<EvaluateFeatureFlagsResponse>>(
-            EVALUATE_FEATURE_FLAGS_QUERY,
-            {
-                flagNames: names,
-            },
+        return this.fetchSourcegraphAPI<APIResponse<EvaluatedFeatureFlagsResponse>>(
+            GET_FEATURE_FLAGS_QUERY,
+            {},
             signal
         ).then(response => {
             return extractDataOrError(response, data =>
-                data.evaluateFeatureFlags.reduce((acc: Record<string, boolean>, { name, value }) => {
+                data.evaluatedFeatureFlags.reduce((acc: Record<string, boolean>, { name, value }) => {
                     acc[name] = value
                     return acc
                 }, {})

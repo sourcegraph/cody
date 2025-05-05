@@ -1,6 +1,7 @@
 package com.sourcegraph.cody.autocomplete
 
 import com.intellij.codeInsight.hint.HintManager
+import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.command.CommandProcessor
@@ -11,15 +12,12 @@ import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.EditorKind
 import com.intellij.openapi.editor.Inlay
-import com.intellij.openapi.editor.InlayModel
 import com.intellij.openapi.editor.colors.EditorColorsManager
 import com.intellij.openapi.keymap.KeymapUtil
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.popup.Balloon
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.util.TextRange
-import com.intellij.openapi.wm.ToolWindowId
-import com.intellij.openapi.wm.ToolWindowManager
 import com.intellij.ui.GotItTooltip
 import com.intellij.util.concurrency.annotations.RequiresEdt
 import com.sourcegraph.Icons
@@ -57,8 +55,8 @@ import java.util.concurrent.atomic.AtomicReference
 import org.jetbrains.annotations.VisibleForTesting
 
 /** Responsible for triggering and clearing inline code completions (the autocomplete feature). */
-@Service
-class CodyAutocompleteManager {
+@Service(Service.Level.PROJECT)
+class CodyAutocompleteManager(val project: Project) {
   private val logger = Logger.getInstance(CodyAutocompleteManager::class.java)
   private val currentJob = AtomicReference(CancellationToken())
 
@@ -82,13 +80,13 @@ class CodyAutocompleteManager {
    * pending ones.
    */
   @RequiresEdt
-  fun clearAutocompleteSuggestionsForAllProjects() {
-    getAllOpenEditors().forEach { clearAutocompleteSuggestions(it) }
+  fun clearAutocompleteSuggestions() {
+    getAllOpenEditors(project).forEach { clearAutocompleteSuggestions(it) }
   }
 
   @RequiresEdt
   fun clearAutocompleteSuggestionsForLanguageIds(languageIds: List<String?>) =
-      getAllOpenEditors()
+      getAllOpenEditors(project)
           .filter { e -> getLanguage(e)?.let { l -> languageIds.contains(l.id) } ?: false }
           .forEach { clearAutocompleteSuggestions(it) }
 
@@ -119,12 +117,6 @@ class CodyAutocompleteManager {
       lookupString: String? = null
   ) {
     val isTriggeredExplicitly = triggerKind == InlineCompletionTriggerKind.INVOKE
-
-    val project = editor.project
-    if (project == null) {
-      logger.warn("triggered autocomplete with null project")
-      return
-    }
 
     if (editor.editorKind != EditorKind.MAIN_EDITOR && !ConfigUtil.isIntegrationTestModeEnabled()) {
       logger.warn("triggered autocomplete with non-main editor")
@@ -207,7 +199,6 @@ class CodyAutocompleteManager {
       return
     }
 
-    val inlayModel = editor.inlayModel
     if (result.inlineCompletionItems.isEmpty() && result.decoratedEditItems.isEmpty()) {
       // NOTE(olafur): it would be nice to give the user a visual hint when this happens.
       // We don't do anything now because it's unclear what would be the most idiomatic
@@ -233,39 +224,30 @@ class CodyAutocompleteManager {
         // https://github.com/sourcegraph/jetbrains/issues/350
         // CodyFormatter.formatStringBasedOnDocument needs to be on a write action.
         WriteCommandAction.runWriteCommandAction(editor.project) {
-          displayAutocomplete(editor, offset, result.inlineCompletionItems, inlayModel)
+          displayInlay(editor, offset, result.inlineCompletionItems)
         }
       }
     }
   }
 
-  /**
-   * Render inlay hints for unprocessed autocomplete results from the agent.
-   *
-   * The reason we have a custom code path to render hints for agent autocompletions is because we
-   * can use `insertText` directly and the `range` encloses the entire line.
-   */
   @RequiresEdt
   @VisibleForTesting
-  fun displayAutocomplete(
+  fun displayInlay(
       editor: Editor,
       cursorOffset: Int,
       items: List<AutocompleteItem>,
-      inlayModel: InlayModel,
   ) {
-    if (editor.isDisposed) {
+    val project = editor.project ?: return
+    if (editor.isDisposed || project.isDisposed) {
       return
     }
 
-    val project = editor.project
     val defaultItem = items.firstOrNull() ?: return
     val range = getTextRange(editor.document, defaultItem.range) ?: return
-
     val originalText = editor.document.getText(range)
 
     val formattedCompletionText =
-        if (project == null ||
-            System.getProperty("cody.autocomplete.enableFormatting") == "false") {
+        if (System.getProperty("cody.autocomplete.enableFormatting") == "false") {
           defaultItem.insertText
         } else {
           CodyFormatter.formatStringBasedOnDocument(
@@ -274,10 +256,8 @@ class CodyAutocompleteManager {
 
     if (formattedCompletionText.trim().isBlank()) return
 
-    project?.let {
-      CodyAgentService.withAgent(project) { agent ->
-        agent.server.autocomplete_completionSuggested(CompletionItemParams(defaultItem.id))
-      }
+    CodyAgentService.withAgent(project) { agent ->
+      agent.server.autocomplete_completionSuggested(CompletionItemParams(defaultItem.id))
     }
 
     val startsInline =
@@ -290,20 +270,16 @@ class CodyAutocompleteManager {
         } else {
           0 to ""
         }
-
     val offset = range.startOffset + commonTextLength
 
     var inlay: Inlay<*>? = null
-    if (startsInline) {
-
-      if (inlineCompletionText.isNotEmpty()) {
-        val renderer =
-            CodyAutocompleteSingleLineRenderer(
-                inlineCompletionText, items, editor, AutocompleteRendererType.INLINE)
-        inlay = inlayModel.addInlineElement(offset, /* relatesToPrecedingText= */ true, renderer)
-      }
+    if (startsInline && inlineCompletionText.isNotEmpty()) {
+      val renderer =
+          CodyAutocompleteSingleLineRenderer(
+              inlineCompletionText, items, editor, AutocompleteRendererType.INLINE)
+      inlay =
+          editor.inlayModel.addInlineElement(offset, /* relatesToPrecedingText= */ true, renderer)
     }
-
     val lines = formattedCompletionText.lines()
     if (lines.size > 1) {
       val text =
@@ -311,7 +287,7 @@ class CodyAutocompleteManager {
       if (text.isNotEmpty()) {
         val renderer = CodyAutocompleteBlockElementRenderer(text, items, editor)
         val inlay2 =
-            inlayModel.addBlockElement(
+            editor.inlayModel.addBlockElement(
                 /* offset = */ offset,
                 /* relatesToPrecedingText = */ true,
                 /* showAbove = */ false,
@@ -323,62 +299,34 @@ class CodyAutocompleteManager {
       }
     }
 
-    if (inlay?.bounds?.location != null) {
-      val gotit =
-          GotItTooltip(
-                  "cody.autocomplete.gotIt",
-                  CodyBundle.getString("gotit.autocomplete.message")
-                      .fmt(
-                          KeymapUtil.getShortcutText("cody.acceptAutocompleteAction"),
-                          KeymapUtil.getShortcutText("cody.cycleForwardAutocompleteAction"),
-                          KeymapUtil.getShortcutText("cody.cycleBackAutocompleteAction")),
-                  inlay /* dispose tooltip alongside inlay */)
-              .withHeader(CodyBundle.getString("gotit.autocomplete.header"))
-              .withPosition(Balloon.Position.above)
-              .withIcon(Icons.CodyLogo)
-              .andShowCloseShortcut()
-      try {
-        gotit.show(editor.contentComponent) { _, _ -> inlay.bounds!!.location }
-      } catch (e: Exception) {
-        logger.info("Failed to display gotit tooltip", e)
-      }
-    }
+    displayGotItTooltip(inlay, editor)
+  }
 
-    if (inlay?.bounds?.location != null && project != null) {
-      val isProjectViewVisible =
-          ToolWindowManager.getInstance(project).getToolWindow(ToolWindowId.PROJECT_VIEW)?.isVisible
-              ?: false
-      val position =
-          if (isProjectViewVisible) Balloon.Position.atLeft
-          else if (inlay.bounds!!.location.y < 150) Balloon.Position.below
-          else Balloon.Position.above
-      val gotit =
-          GotItTooltip(
-                  "cody.autocomplete.gotIt",
-                  CodyBundle.getString("gotit.autocomplete.message")
-                      .fmt(
-                          KeymapUtil.getShortcutText("cody.acceptAutocompleteAction"),
-                          KeymapUtil.getShortcutText("cody.cycleForwardAutocompleteAction"),
-                          KeymapUtil.getShortcutText("cody.cycleBackAutocompleteAction")),
-                  inlay /* dispose tooltip alongside inlay */)
-              .withHeader(CodyBundle.getString("gotit.autocomplete.header"))
-              .withPosition(position)
-              .withIcon(Icons.CodyLogo)
-              .andShowCloseShortcut()
-      try {
-        gotit.show(editor.contentComponent) { _, _ ->
-          val location = inlay.bounds!!.location
-          if (position == Balloon.Position.below) {
-            val lineHeight = getLineHeight()
-            location.setLocation(location.x, location.y + lineHeight)
-          }
-          location
-        }
-      } catch (e: Exception) {
-        logger.info("Failed to display gotit tooltip", e)
-      }
+  private fun displayGotItTooltip(inlay: Inlay<*>?, editor: Editor) {
+    val location = inlay?.bounds?.location ?: return
+    val gotit = tooltip(inlay)
+    if (location.y < 150) {
+      location.setLocation(location.x, location.y + getLineHeight())
+    }
+    try {
+      gotit.show(editor.contentComponent) { _, _ -> location }
+    } catch (e: Exception) {
+      logger.info("Failed to display gotit tooltip", e)
     }
   }
+
+  private fun tooltip(disposable: Disposable): GotItTooltip =
+      GotItTooltip(
+              "cody.autocomplete.gotIt",
+              CodyBundle.getString("gotit.autocomplete.message")
+                  .fmt(
+                      KeymapUtil.getShortcutText("cody.acceptAutocompleteAction"),
+                      KeymapUtil.getShortcutText("cody.cycleForwardAutocompleteAction"),
+                      KeymapUtil.getShortcutText("cody.cycleBackAutocompleteAction")),
+              disposable)
+          .withHeader(CodyBundle.getString("gotit.autocomplete.header"))
+          .withPosition(Balloon.Position.above)
+          .withIcon(Icons.SourcegraphLogo)
 
   private fun getLineHeight(): Int {
     val colorsManager = EditorColorsManager.getInstance()
@@ -396,8 +344,8 @@ class CodyAutocompleteManager {
 
   companion object {
     @JvmStatic
-    val instance: CodyAutocompleteManager
-      get() = service()
+    fun getInstance(project: Project): CodyAutocompleteManager =
+        project.service<CodyAutocompleteManager>()
 
     private val lineBreaks = listOf("\r\n", "\n", "\r")
 

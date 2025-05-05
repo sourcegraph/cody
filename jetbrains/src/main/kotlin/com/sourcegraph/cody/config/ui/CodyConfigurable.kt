@@ -123,6 +123,7 @@ class CodyConfigurable(val project: Project) : BoundConfigurable(ConfigUtil.CODY
     settingsModel.blacklistedLanguageIds = codyApplicationSettings.blacklistedLanguageIds
     settingsModel.shouldAcceptNonTrustedCertificatesAutomatically =
         codyApplicationSettings.shouldAcceptNonTrustedCertificatesAutomatically
+    settingsModel.updateMode = codyApplicationSettings.updateMode
     dialogPanel.reset()
   }
 
@@ -156,6 +157,7 @@ class CodyConfigurable(val project: Project) : BoundConfigurable(ConfigUtil.CODY
     codyApplicationSettings.blacklistedLanguageIds = settingsModel.blacklistedLanguageIds
     codyApplicationSettings.shouldAcceptNonTrustedCertificatesAutomatically =
         settingsModel.shouldAcceptNonTrustedCertificatesAutomatically
+    codyApplicationSettings.updateMode = settingsModel.updateMode
 
     publisher.afterAction(context)
   }

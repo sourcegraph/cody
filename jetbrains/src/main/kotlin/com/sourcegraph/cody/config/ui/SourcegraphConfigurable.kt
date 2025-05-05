@@ -1,25 +1,23 @@
 package com.sourcegraph.cody.config.ui
 
-import com.intellij.openapi.components.service
 import com.intellij.openapi.options.BoundConfigurable
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogPanel
 import com.intellij.openapi.updateSettings.impl.UpdateSettings
 import com.intellij.ui.SimpleListCellRenderer
 import com.intellij.ui.dsl.builder.bindItem
-import com.intellij.ui.dsl.builder.bindSelected
 import com.intellij.ui.dsl.builder.panel
 import com.sourcegraph.cody.config.CodyApplicationSettings
 import com.sourcegraph.cody.config.SettingsModel
+import com.sourcegraph.cody.config.ui.lang.UpdateMode
 import com.sourcegraph.config.ConfigUtil
 
 class SourcegraphConfigurable(val project: Project) :
     BoundConfigurable(ConfigUtil.SOURCEGRAPH_DISPLAY_NAME) {
   private lateinit var dialogPanel: DialogPanel
   private var channel: UpdateChannel = findConfiguredChannel()
-  private val codyApplicationSettings = service<CodyApplicationSettings>()
-  private val settingsModel =
-      SettingsModel(shouldCheckForUpdates = codyApplicationSettings.shouldCheckForUpdates)
+  private val codyApplicationSettings = CodyApplicationSettings.instance
+  private val settingsModel = SettingsModel(updateMode = codyApplicationSettings.updateMode)
 
   override fun createPanel(): DialogPanel {
     dialogPanel = panel {
@@ -32,8 +30,11 @@ class SourcegraphConfigurable(val project: Project) :
               .bindItem({ channel }, { channel = it!! })
         }
         row {
-          checkBox("Automatically check for plugin updates")
-              .bindSelected(settingsModel::shouldCheckForUpdates)
+          label("Update mode:")
+          comboBox(
+                  UpdateMode.values().toList(),
+                  SimpleListCellRenderer.create("") { it.presentableText })
+              .bindItem({ settingsModel.updateMode }, { settingsModel.updateMode = it!! })
         }
       }
     }
@@ -42,13 +43,13 @@ class SourcegraphConfigurable(val project: Project) :
 
   override fun reset() {
     dialogPanel.reset()
-    codyApplicationSettings.shouldCheckForUpdates = settingsModel.shouldCheckForUpdates
+    codyApplicationSettings.updateMode = settingsModel.updateMode
   }
 
   override fun apply() {
     super.apply()
-    codyApplicationSettings.shouldCheckForUpdates = settingsModel.shouldCheckForUpdates
-    if (codyApplicationSettings.shouldCheckForUpdates) {
+    codyApplicationSettings.updateMode = settingsModel.updateMode
+    if (codyApplicationSettings.updateMode != UpdateMode.Never) {
       CheckUpdatesTask(project).queue()
     }
 
