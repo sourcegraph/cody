@@ -154,32 +154,12 @@ export class MCPConnectionManager {
             // Start the transport first
             await transport.start()
 
-            // Handle stderr for stdio transport
+            // Handle connection attemps
             if (config.transportType === 'stdio' && transport instanceof StdioClientTransport) {
-                const stderrStream = transport.stderr
                 logDebug('MCPConnectionManager', `Connecting to stdio server "${name}"...`, {
                     verbose: { config },
                 })
-
-                if (stderrStream) {
-                    stderrStream.on('data', (data: Buffer) => {
-                        const errorOutput = data.toString()
-                        logDebug('MCPConnectionManager', `Server "${name}" stderr:`, {
-                            verbose: { errorOutput },
-                        })
-                        const conn = this.connections.find(c => c.server.name === name)
-                        if (conn) {
-                            this.setConnectionError(conn, errorOutput)
-                            // Don't immediately set to disconnected, wait for connect attempt
-                        }
-                    })
-                } else {
-                    logDebug('MCPConnectionManager', `No stderr stream for ${name}`)
-                }
-            }
-
-            // For SSE transport, just log the connection attempt
-            if (config.transportType === 'sse') {
+            } else if (config.transportType === 'sse') {
                 logDebug('MCPConnectionManager', `Connecting to SSE server "${name}"...`, {
                     verbose: { config },
                 })
