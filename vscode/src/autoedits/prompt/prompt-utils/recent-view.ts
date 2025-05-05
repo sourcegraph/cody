@@ -23,7 +23,6 @@ export function getRecentSnippetViewPromptWithMaxSnippetAge(
     ])
 }
 
-
 export function getRecentlyViewedSnippetsPrompt(
     contextItems: AutocompleteContextSnippet[]
 ): PromptString {

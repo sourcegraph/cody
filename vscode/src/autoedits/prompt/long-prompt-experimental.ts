@@ -14,12 +14,11 @@ import { getLintErrorsPrompt } from './prompt-utils/lint'
 import {
     getRecentEditsPrompt,
     groupConsecutiveRecentEditsItemsFromSameFile,
-    splitMostRecentRecentEditItemAsShortTermItem
+    splitMostRecentRecentEditItemAsShortTermItem,
 } from './prompt-utils/recent-edits'
 import { getRecentSnippetViewPromptWithMaxSnippetAge } from './prompt-utils/recent-view'
 
 export class LongTermPromptStrategy extends AutoeditsUserPromptStrategy {
-
     // Oldest timestamp for a snippet view that can be included in the prompt.
     private SNIPPET_VIEW_MAX_TIMESTAMP_MS = 1000 * 60 * 10 // 10 minutes
 
@@ -68,9 +67,8 @@ export class LongTermPromptStrategy extends AutoeditsUserPromptStrategy {
         shortTermEditsPrompt: PromptString
         longTermEditsPrompt: PromptString
     } {
-        const { shortTermEditItems, longTermEditItems } = splitMostRecentRecentEditItemAsShortTermItem(
-            contextItems
-        )
+        const { shortTermEditItems, longTermEditItems } =
+            splitMostRecentRecentEditItemAsShortTermItem(contextItems)
         const shortTermEditsPrompt = getRecentEditsPrompt(shortTermEditItems)
         const longTermEditsPrompt = this.computeLongTermRecentEditsPrompt(longTermEditItems)
 

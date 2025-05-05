@@ -6,7 +6,6 @@ import { autoeditsOutputChannelLogger } from '../output-channel-logger'
 
 import { AutoeditsUserPromptStrategy, type UserPromptArgs } from './base'
 import * as constants from './constants'
-import { splitMostRecentRecentEditItemAsShortTermItem } from './prompt-utils/recent-edits'
 import {
     getContextItemMappingWithTokenLimit,
     getPromptForTheContextSource,
@@ -15,6 +14,7 @@ import {
 } from './prompt-utils/common'
 import { getCurrentFilePromptComponents } from './prompt-utils/current-file'
 import { getLintErrorsPrompt } from './prompt-utils/lint'
+import { splitMostRecentRecentEditItemAsShortTermItem } from './prompt-utils/recent-edits'
 import {
     getRecentEditsPrompt,
     groupConsecutiveRecentEditsItemsFromSameFile,
@@ -90,14 +90,11 @@ export class PromptCacheOptimizedV1 extends AutoeditsUserPromptStrategy {
     private getRecentEditsPromptComponents(
         contextItems: AutocompleteContextSnippet[]
     ): RecentEditsPromptComponents {
-        const { shortTermEditItems, longTermEditItems: otherEditItems } = splitMostRecentRecentEditItemAsShortTermItem(
-            contextItems
-        )
+        const { shortTermEditItems, longTermEditItems: otherEditItems } =
+            splitMostRecentRecentEditItemAsShortTermItem(contextItems)
         const mostRecentEditsPrompt = getRecentEditsPrompt(shortTermEditItems)
 
-        const groupedContextItems = groupConsecutiveRecentEditsItemsFromSameFile(
-            otherEditItems
-        )
+        const groupedContextItems = groupConsecutiveRecentEditsItemsFromSameFile(otherEditItems)
         const { shortTermSnippets, longTermSnippets } = this.splitContextItemsIntoShortAndLongTerm(
             groupedContextItems,
             this.RECENT_EDIT_SHORT_TERM_TIME_MS
