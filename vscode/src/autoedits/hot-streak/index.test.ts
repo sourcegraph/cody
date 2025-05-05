@@ -6,7 +6,6 @@ import { documentAndPosition } from '../../completions/test-helpers'
 import { AutoeditStopReason, type ModelResponse } from '../adapters/base'
 import type { SuggestedPredictionResult } from '../autoedits-provider'
 import { LONG_SUGGESTION_USER_CURSOR_MARKER } from '../prompt/constants'
-import { LongTermPromptStrategy } from '../prompt/long-prompt-experimental'
 import { createCodeToReplaceDataForTest } from '../prompt/test-helper'
 
 // Helper to create a generator for model responses
@@ -124,7 +123,6 @@ function createHotStreakParams(
     })
 
     return {
-        promptStrategy: new LongTermPromptStrategy(),
         responseGenerator,
         document,
         codeToReplaceData,

@@ -48,8 +48,4 @@ export abstract class AutoeditsUserPromptStrategy {
 
         return adjustedPrompt
     }
-
-    public postProcessCompletion(completion: string): string {
-        return completion
-    }
 }

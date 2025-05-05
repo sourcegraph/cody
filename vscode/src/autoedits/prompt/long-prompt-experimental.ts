@@ -17,11 +17,6 @@ import {
 } from './prompt-utils'
 
 export class LongTermPromptStrategy extends AutoeditsUserPromptStrategy {
-    public postProcessCompletion(completion: string): string {
-        const cursorMarker = constants.LONG_SUGGESTION_USER_CURSOR_MARKER.toString()
-        return completion.replace(cursorMarker, '')
-    }
-
     getUserPrompt({ context, tokenBudget, codeToReplaceData, document }: UserPromptArgs): PromptString {
         const contextItemMapping = getContextItemMappingWithTokenLimit(
             context,
