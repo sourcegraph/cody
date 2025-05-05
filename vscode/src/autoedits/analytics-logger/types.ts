@@ -1,11 +1,10 @@
 import type * as vscode from 'vscode'
 
-import type { DocumentContext } from '@sourcegraph/cody-shared'
+import type { CodeToReplaceData, DocumentContext } from '@sourcegraph/cody-shared'
 import type { InlineCompletionItemRetrievedContext } from '../../../src/completions/analytics-logger'
 import type { ContextSummary } from '../../completions/context/context-mixer'
 import type { CodeGenEventMetadata } from '../../services/CharactersLogger'
 import type { ModelResponse } from '../adapters/base'
-import type { CodeToReplaceData } from '../prompt/prompt-utils'
 import type { DecorationStats } from '../renderer/diff-utils'
 import type { AutoEditRenderOutput } from '../renderer/render-output'
 

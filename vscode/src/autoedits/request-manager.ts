@@ -266,7 +266,7 @@ export class RequestManager implements vscode.Disposable {
         params: AutoeditRequestManagerParams
     ): SuggestedPredictionResult[] {
         const matchingItems: SuggestedPredictionResult[] = []
-        const { documentText, documentUri } = params
+        const { documentUri } = params
 
         for (const key of [...this.cache.keys()]) {
             const item = this.cache.get(key)

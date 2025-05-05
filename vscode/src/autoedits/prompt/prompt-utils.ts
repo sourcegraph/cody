@@ -26,6 +26,8 @@ import { clip, splitLinesKeepEnds } from '../utils'
 
 import * as constants from './constants'
 
+export type { CodeToReplaceData } from '@sourcegraph/cody-shared'
+
 export interface CurrentFilePromptOptions {
     docContext: DocumentContext
     document: vscode.TextDocument

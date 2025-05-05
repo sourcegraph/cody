@@ -479,7 +479,7 @@ function computeLineChanges({
 }
 
 // Split line into words, consecutive spaces and punctuation marks
-const WORDS_AND_PUNCTUATION_REGEX = /(\w+|\s+|\W)/g
+// const WORDS_AND_PUNCTUATION_REGEX = /(\w+|\s+|\W)/g
 const CHARACTER_REGEX = /./g
 
 /**

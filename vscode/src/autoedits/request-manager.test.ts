@@ -41,7 +41,7 @@ describe('Autoedits RequestManager', () => {
 
     beforeEach(() => {
         requestManager = new RequestManager()
-        isNotRecyclable = vi.spyOn(requestRecycling, 'isNotRecyclable')
+        isNotRecyclable = vi.spyOn(requestRecycling, 'isNotRecyclableRequest')
     })
 
     afterEach(() => {
