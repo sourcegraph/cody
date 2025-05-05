@@ -1,4 +1,5 @@
 import findLast from 'lodash/findLast'
+import * as vscode from 'vscode'
 import type { Position, TextDocument } from 'vscode'
 import type {
     Language,
@@ -11,7 +12,7 @@ import type {
 } from 'web-tree-sitter'
 
 import { type SupportedLanguage, isSupportedLanguage } from './grammars'
-import { getCachedParseTreeForDocument } from './parse-tree-cache'
+import { asPoint, getCachedParseTreeForDocument } from './parse-tree-cache'
 import { type WrappedParser, getParser } from './parser'
 import { type CompletionIntent, type QueryName, intentPriority, languages } from './queries'
 
@@ -564,3 +565,71 @@ export function execQueryWrapper<T extends keyof QueryWrappers>(
 }
 
 export type { CompletionIntent }
+
+/**
+ * Returns the largest enclosing node within a character limit, starting from the cursor position.
+ * Traverses up the AST hierarchy from the node at the cursor position to find the largest node
+ * that stays within the character limit.
+ * 
+ * @param document The text document
+ * @param cursorPosition The cursor position
+ * @param charLimit The maximum number of characters allowed in the range
+ * @returns A vscode.Range representing the node's range, or a minimal range if no suitable node is found
+ */
+export function getEnclosingNodeWithinTokenLimit(
+    document: TextDocument,
+    cursorPosition: Position,
+    charLimit: number
+): vscode.Range {
+    // Get the parse tree for the document
+    const parseTreeCache = getCachedParseTreeForDocument(document)
+    if (!parseTreeCache) {
+        // If no parse tree is available, return a minimal range around the cursor
+        return new vscode.Range(cursorPosition, cursorPosition)
+    }
+
+    const { tree } = parseTreeCache
+    
+    // Convert VSCode position to Tree-sitter point
+    const cursorPoint = asPoint(cursorPosition)
+    
+    // Get the node at the cursor position
+    let currentNode: SyntaxNode | null = tree.rootNode.descendantForPosition(cursorPoint)
+    let bestNodeSoFar: SyntaxNode | null = null
+    
+    // Traverse up the AST hierarchy to find the largest node within the character limit
+    while (currentNode !== null) {
+        const range = nodeToVSCodeRange(currentNode)
+        const text = document.getText(range)
+        
+        if (text.length <= charLimit) {
+            bestNodeSoFar = currentNode
+        } else {
+            // If we've exceeded the character limit, stop traversing
+            break
+        }
+        
+        // Move to parent node for next iteration (may be null)
+        currentNode = currentNode.parent
+    }
+    
+    if (bestNodeSoFar) {
+        return nodeToVSCodeRange(bestNodeSoFar)
+    }
+    
+    // If no suitable node was found (even the smallest exceeded limit), 
+    // return a minimal range around the cursor
+    return new vscode.Range(cursorPosition, cursorPosition)
+}
+
+/**
+ * Converts a tree-sitter SyntaxNode to a vscode.Range
+ */
+function nodeToVSCodeRange(node: SyntaxNode): vscode.Range {
+    return new vscode.Range(
+        node.startPosition.row,
+        node.startPosition.column,
+        node.endPosition.row,
+        node.endPosition.column
+    )
+}
