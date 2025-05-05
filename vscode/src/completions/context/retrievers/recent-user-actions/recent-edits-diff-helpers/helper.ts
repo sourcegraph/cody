@@ -1,11 +1,12 @@
 import { createGitDiff } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
-import { getPositionAfterTextInsertion } from '../../../../text-processing/utils'
+import { getPositionAfterTextInsertion } from '../../../../text-processing'
 import type { TextDocumentChange } from './recent-edits-diff-strategy'
 import { type TextDocumentChangeGroup, applyTextDocumentChanges } from './utils'
 
 export function getTextDocumentChangesForText(text: string): {
     originalText: string
+    updatedText: string
     changes: TextDocumentChange[]
 } {
     const { originalText, changeEvents } = parseTextAndGenerateChangeEvents(text)
@@ -23,7 +24,9 @@ export function getTextDocumentChangesForText(text: string): {
         })
         currentTimeStamp += 1
     }
-    return { originalText, changes: documentChanges }
+    const updatedText = applyTextDocumentChanges(originalText, changeEvents)
+
+    return { originalText, updatedText, changes: documentChanges }
 }
 
 export function getDiffsForContentChanges(

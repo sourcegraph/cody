@@ -1,7 +1,9 @@
 import type { CodeToReplaceData } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
+
 import { lines } from '../../completions/text-processing'
 import type { PartialModelResponse, SuccessModelResponse } from '../adapters/base'
+
 import { SHOULD_ATTEMPT_HOT_STREAK_CHUNK_THRESHOLD } from './constants'
 import { getStableSuggestion } from './stable-suggestion'
 import { trimPredictionToLastFullLine } from './utils'

@@ -5,8 +5,8 @@ import { addAutocompleteDebugEvent } from '../../services/open-telemetry/debug-u
 import { getCachedParseTreeForDocument } from '../../tree-sitter/parse-tree-cache'
 
 import type { DocumentContext } from '@sourcegraph/cody-shared'
+import { BRACKET_PAIR, type OpeningBracket } from './index'
 import { type ParsedCompletion, parseCompletion } from './parse-completion'
-import { BRACKET_PAIR, type OpeningBracket } from './utils'
 
 interface CompletionContext {
     completion: ParsedCompletion

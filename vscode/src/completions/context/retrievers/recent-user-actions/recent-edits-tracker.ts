@@ -1,5 +1,5 @@
 import * as vscode from 'vscode'
-import { getPositionAfterTextInsertion } from '../../../text-processing/utils'
+import { getPositionAfterTextInsertion } from '../../../text-processing'
 import type { TextDocumentChange } from './recent-edits-diff-helpers/recent-edits-diff-strategy'
 import { applyTextDocumentChanges } from './recent-edits-diff-helpers/utils'
 

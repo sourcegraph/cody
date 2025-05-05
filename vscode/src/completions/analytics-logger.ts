@@ -44,11 +44,11 @@ import {
 } from './get-inline-completions'
 import type { RequestParams } from './request-manager'
 import * as statistics from './statistics'
+import { lines } from './text-processing'
 import type {
     InlineCompletionItemWithAnalytics,
     InlineCompletionResponseHeaders,
 } from './text-processing/process-inline-completions'
-import { lines } from './text-processing/utils'
 import type { InlineCompletionItem } from './types'
 
 // A completion ID is a unique identifier for a specific completion text displayed at a specific

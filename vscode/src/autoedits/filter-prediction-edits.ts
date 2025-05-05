@@ -1,12 +1,25 @@
 import { createTwoFilesPatch } from 'diff'
 import * as vscode from 'vscode'
+
+import type { CodeToReplaceData } from '@sourcegraph/cody-shared'
+
 import { applyTextDocumentChanges } from '../completions/context/retrievers/recent-user-actions/recent-edits-diff-helpers/utils'
 import { RecentEditsTracker } from '../completions/context/retrievers/recent-user-actions/recent-edits-tracker'
+import { getNewLineChar } from '../completions/text-processing'
+
+import type { autoeditDiscardReason } from './analytics-logger'
 import { autoeditsOutputChannelLogger } from './output-channel-logger'
+import type { DecorationInfo } from './renderer/decorators/base'
+import { getAddedLines, getDecorationInfoFromPrediction } from './renderer/diff-utils'
+import { isDuplicatingTextFromRewriteArea } from './utils'
 
 const MAX_FILTER_AGE_MS = 1000 * 30 // 30 seconds
 
-export class FilterPredictionBasedOnRecentEdits implements vscode.Disposable {
+export type PredictionFilterResult =
+    | { discardReason: keyof typeof autoeditDiscardReason }
+    | { decorationInfo: DecorationInfo }
+
+export class PredictionsFilter implements vscode.Disposable {
     private readonly recentEditsTracker: RecentEditsTracker
 
     constructor(
@@ -18,12 +31,56 @@ export class FilterPredictionBasedOnRecentEdits implements vscode.Disposable {
         this.recentEditsTracker = new RecentEditsTracker(MAX_FILTER_AGE_MS, workspace)
     }
 
+    public shouldFilterPrediction({
+        codeToReplaceData,
+        prediction,
+        document,
+    }: {
+        codeToReplaceData: CodeToReplaceData
+        prediction: string
+        document: vscode.TextDocument
+    }): PredictionFilterResult {
+        if (prediction === codeToReplaceData.codeToRewrite) {
+            return { discardReason: 'predictionEqualsCodeToRewrite' }
+        }
+
+        if (prediction.length === 0) {
+            return { discardReason: 'emptyPrediction' }
+        }
+
+        const shouldFilterPredictionBasedRecentEdits = this.shouldFilterPredictionBasedOnRecentEdits({
+            uri: document.uri,
+            prediction,
+            codeToRewrite: codeToReplaceData.codeToRewrite,
+        })
+        if (shouldFilterPredictionBasedRecentEdits) {
+            return { discardReason: 'recentEdits' }
+        }
+
+        // TODO: optimize so that we do not have to recompute it in other places
+        const decorationInfo = getDecorationInfoFromPrediction(
+            document,
+            prediction,
+            codeToReplaceData.range
+        )
+        const newLineChar = getNewLineChar(codeToReplaceData.codeToRewrite)
+        const addedText = getAddedLines(decorationInfo)
+            .map(line => line.text)
+            .join(newLineChar)
+
+        if (isDuplicatingTextFromRewriteArea({ addedText, codeToReplaceData })) {
+            return { discardReason: 'rewriteAreaOverlap' }
+        }
+
+        return { decorationInfo }
+    }
+
     /**
      * Filters out predictions from auto-edit suggestion which undo the latest recent edits made by the user.
      * The function compares diffs between document states and the prediction vs code to re-write
      * to determine if the same edit was recently reverted.
      */
-    public shouldFilterPrediction({
+    public shouldFilterPredictionBasedOnRecentEdits({
         uri,
         prediction,
         codeToRewrite,
@@ -99,3 +156,5 @@ export class FilterPredictionBasedOnRecentEdits implements vscode.Disposable {
         this.recentEditsTracker.dispose()
     }
 }
+
+export const predictionsFilter = new PredictionsFilter()

@@ -7,7 +7,7 @@ import {
     getPrevNonEmptyLine,
     lines,
     removeIndentation,
-} from './utils'
+} from './index'
 
 describe('getNextNonEmptyLine', () => {
     it.each(
