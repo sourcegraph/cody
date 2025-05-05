@@ -10,8 +10,8 @@ import type { McpTool } from '@sourcegraph/cody-shared/src/llm-providers/mcp/typ
 import { map } from 'observable-fns'
 import type { ContextRetriever } from '../chat-view/ContextRetriever'
 import type { CodyTool, CodyToolConfig } from './CodyTool'
-import { toolboxManager } from './ToolboxManager'
 import { ToolFactory } from './CodyToolFactory'
+import { toolboxManager } from './ToolboxManager'
 
 type Retriever = Pick<ContextRetriever, 'retrieveContext'>
 

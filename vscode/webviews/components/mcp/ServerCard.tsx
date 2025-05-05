@@ -1,4 +1,4 @@
-import { DatabaseZap, PowerOff, Server, Trash2 } from 'lucide-react'
+import { PowerOff, Server, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 import { getVSCodeAPI } from '../../utils/VSCodeApi'
 import { Badge } from '../shadcn/ui/badge'

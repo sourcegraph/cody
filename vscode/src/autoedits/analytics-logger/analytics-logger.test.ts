@@ -55,6 +55,8 @@ describe('AutoeditAnalyticsLogger', () => {
             maxSuffixLinesInArea: 2,
             codeToRewritePrefixLines: 1,
             codeToRewriteSuffixLines: 1,
+            prefixTokens: 100,
+            suffixTokens: 100,
         },
     })
 
@@ -76,7 +78,7 @@ describe('AutoeditAnalyticsLogger', () => {
         return {
             startedAt: performance.now(),
             filePath: getCurrentFilePath(document).toString(),
-            docContext,
+            requestDocContext: docContext,
             document,
             position,
             codeToReplaceData: codeToReplace,
@@ -118,7 +120,7 @@ describe('AutoeditAnalyticsLogger', () => {
             cacheId: uuid.v4() as AutoeditCacheID,
             prompt: modelOptions.prompt,
             codeToReplaceData: codeToReplace,
-            docContext,
+            predictionDocContext: docContext,
             editPosition: position,
             modelResponse: {
                 type: 'success',

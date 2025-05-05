@@ -1,6 +1,7 @@
 import type { CodeCompletionsClient } from '@sourcegraph/cody-shared'
 import { ps } from '@sourcegraph/cody-shared'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
+import * as autoeditsConfig from '../autoedits-config'
 import type { AutoeditModelOptions, SuccessModelResponse } from './base'
 import { SourcegraphCompletionsAdapter } from './sourcegraph-completions'
 import { getMaxOutputTokensForAutoedits } from './utils'
@@ -37,6 +38,60 @@ describe('SourcegraphCompletionsAdapter', () => {
 
     afterAll(() => {
         vi.restoreAllMocks()
+    })
+
+    it('includes rewrite speculation parameters when hot streak is enabled', async () => {
+        vi.spyOn(autoeditsConfig, 'isHotStreakEnabled').mockReturnValue(true)
+
+        const mockComplete = vi.fn().mockResolvedValue({
+            async *[Symbol.asyncIterator]() {
+                yield { completionResponse: { completion: 'response' } }
+            },
+        })
+
+        mockCompletionsClient.complete = mockComplete
+        // @ts-ignore - accessing private property for testing
+        adapter.client = mockCompletionsClient
+
+        await adapter.getModelResponse(options)
+
+        // Extract parameters passed to complete
+        const [params] = mockComplete.mock.calls[0]
+
+        // Verify rewrite speculation parameters
+        expect(params).toMatchObject({
+            rewriteSpeculation: true,
+            adaptiveSpeculation: true,
+            speculationLengthOnStrongMatch: 500,
+            speculationMinLengthOnStrongMatch: 500,
+            speculationStrongMatchThreshold: 20,
+        })
+    })
+
+    it('does not include rewrite speculation parameters when hot streak is disabled', async () => {
+        vi.spyOn(autoeditsConfig, 'isHotStreakEnabled').mockReturnValue(false)
+
+        const mockComplete = vi.fn().mockResolvedValue({
+            async *[Symbol.asyncIterator]() {
+                yield { completionResponse: { completion: 'response' } }
+            },
+        })
+
+        mockCompletionsClient.complete = mockComplete
+        // @ts-ignore - accessing private property for testing
+        adapter.client = mockCompletionsClient
+
+        await adapter.getModelResponse(options)
+
+        // Extract parameters passed to complete
+        const [params] = mockComplete.mock.calls[0]
+
+        // Verify no rewrite speculation parameters
+        expect(params.rewriteSpeculation).toBeUndefined()
+        expect(params.adaptiveSpeculation).toBeUndefined()
+        expect(params.speculationLengthOnStrongMatch).toBeUndefined()
+        expect(params.speculationMinLengthOnStrongMatch).toBeUndefined()
+        expect(params.speculationStrongMatchThreshold).toBeUndefined()
     })
 
     it('sends correct request parameters', async () => {

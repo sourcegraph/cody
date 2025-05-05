@@ -74,22 +74,20 @@ export const PromptSection: FC<{ entry: AutoeditRequestDebugState }> = ({ entry 
                     .map((message: MessageType) => {
                         // Handle Fireworks format (role/content) - used in FireworksChatModelRequestParams
                         if ('role' in message && typeof message.role === 'string') {
-                            const role = message.role
                             const content =
                                 'content' in message && message.content !== undefined
                                     ? String(message.content)
                                     : 'No content'
-                            return `${role}: ${content}`
+                            return content
                         }
 
                         // Handle Sourcegraph format (speaker/text) - used in Message and SerializedChatMessage
                         if ('speaker' in message && typeof message.speaker === 'string') {
-                            const speaker = message.speaker
                             const text =
                                 'text' in message && message.text !== undefined
                                     ? String(message.text)
                                     : 'No content'
-                            return `${speaker}: ${text}`
+                            return text
                         }
 
                         // Fallback for unknown message format

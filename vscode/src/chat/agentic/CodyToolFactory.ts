@@ -175,13 +175,7 @@ export class ToolFactory {
         toolName: string,
         serverName: string
     ) {
-        return new McpToolImpl(
-            toolConfig,
-            tool,
-            toolName,
-            serverName,
-            this.parseQueryToArgs.bind(this)
-        )
+        return new McpToolImpl(toolConfig, tool, toolName, serverName, this.parseQueryToArgs.bind(this))
     }
 
     public createMcpTools(mcpTools: McpTool[], serverName: string): CodyTool[] {
@@ -299,9 +293,7 @@ class McpToolImpl extends CodyTool {
         const result = await mcpInstance.executeTool(serverName, toolName, args)
 
         const imageResultInfo = result.context?.some(i => i.type === 'media')
-            ? `Image captured for ${JSON.stringify(
-                args
-            )} and will be available for the next request.`
+            ? `Image captured for ${JSON.stringify(args)} and will be available for the next request.`
             : ''
 
         const prefix = `${toolName} tool was executed with ${JSON.stringify(args)} and `
