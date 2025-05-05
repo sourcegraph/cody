@@ -9,6 +9,7 @@ import type {
     SyntaxNode,
     Tree,
 } from 'web-tree-sitter'
+
 import { type SupportedLanguage, isSupportedLanguage } from './grammars'
 import { getCachedParseTreeForDocument } from './parse-tree-cache'
 import { type WrappedParser, getParser } from './parser'
