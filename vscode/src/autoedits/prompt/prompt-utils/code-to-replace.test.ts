@@ -474,4 +474,3 @@ describe('getCodeToReplaceData', () => {
         expect(result.range.end.line).toBe(3)
     })
 })
-

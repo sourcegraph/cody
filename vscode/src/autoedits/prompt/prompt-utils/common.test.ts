@@ -1,13 +1,12 @@
+import { type AutocompleteContextSnippet, ps, testFileUri } from '@sourcegraph/cody-shared'
 import dedent from 'dedent'
 import { describe, expect, it } from 'vitest'
-import { type AutocompleteContextSnippet, ps, testFileUri } from '@sourcegraph/cody-shared'
 import {
     getCompletionsPromptWithSystemPrompt,
     getContextItemsInTokenBudget,
     getContextPromptWithPath,
     joinPromptsWithNewlineSeparator,
 } from './common'
-
 
 describe('getContextPromptWithPath', () => {
     it('correct prompt with path', () => {
@@ -91,7 +90,6 @@ describe('getCompletionsPromptWithSystemPrompt', () => {
         expect(result.toString()).toEqual(expectedPrompt)
     })
 })
-
 
 describe('joinPromptsWithNewlineSeparator', () => {
     it('joins multiple prompt strings with a new line separator', () => {

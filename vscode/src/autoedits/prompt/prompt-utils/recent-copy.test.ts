@@ -1,10 +1,9 @@
-import dedent from 'dedent'
-import { describe, expect, it} from 'vitest'
 import { type AutocompleteContextSnippet, testFileUri } from '@sourcegraph/cody-shared'
+import dedent from 'dedent'
+import { describe, expect, it } from 'vitest'
 
 import { RetrieverIdentifier } from '../../../completions/context/utils'
 import { getRecentCopyPrompt } from './recent-copy'
-
 
 describe('getRecentCopyPrompt', () => {
     const getContextItem = (
@@ -64,4 +63,3 @@ describe('getRecentCopyPrompt', () => {
         `)
     })
 })
-

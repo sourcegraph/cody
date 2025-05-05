@@ -1,6 +1,6 @@
-import dedent from 'dedent'
-import { describe, expect, it} from 'vitest'
 import { type AutocompleteContextSnippet, testFileUri } from '@sourcegraph/cody-shared'
+import dedent from 'dedent'
+import { describe, expect, it } from 'vitest'
 
 import { RetrieverIdentifier } from '../../../completions/context/utils'
 import { getLintErrorsPrompt } from './lint'
@@ -83,4 +83,3 @@ describe('getLintErrorsPrompt', () => {
         `)
     })
 })
-

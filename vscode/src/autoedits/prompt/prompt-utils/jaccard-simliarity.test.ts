@@ -1,9 +1,8 @@
+import { type AutocompleteContextSnippet, testFileUri } from '@sourcegraph/cody-shared'
 import dedent from 'dedent'
 import { describe, expect, it } from 'vitest'
-import { type AutocompleteContextSnippet, testFileUri } from '@sourcegraph/cody-shared'
 import { RetrieverIdentifier } from '../../../completions/context/utils'
 import { getJaccardSimilarityPrompt } from './jaccard-similarity'
-
 
 describe('getJaccardSimilarityPrompt', () => {
     const getContextItem = (
