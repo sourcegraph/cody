@@ -64,13 +64,9 @@ export function splitMostRecentRecentEditItemAsShortTermItem(
         contextItems,
         RetrieverIdentifier.RecentEditsRetriever
     )
-    const shortTermEditItems =
-        recentEditsSnippets.length > 0 ? [recentEditsSnippets[0]] : []
+    const shortTermEditItems = recentEditsSnippets.length > 0 ? [recentEditsSnippets[0]] : []
 
-    const longTermEditItems =
-        recentEditsSnippets.length > 1
-            ? recentEditsSnippets.slice(1)
-            : []
+    const longTermEditItems = recentEditsSnippets.length > 1 ? recentEditsSnippets.slice(1) : []
 
     return {
         shortTermEditItems,

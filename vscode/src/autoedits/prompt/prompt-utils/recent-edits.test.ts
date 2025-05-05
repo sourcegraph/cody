@@ -3,7 +3,12 @@ import dedent from 'dedent'
 import { describe, expect, it } from 'vitest'
 
 import { RetrieverIdentifier } from '../../../completions/context/utils'
-import { getRecentEditsContextPromptWithPath, getRecentEditsPrompt, groupConsecutiveRecentEditsItemsFromSameFile, splitMostRecentRecentEditItemAsShortTermItem } from './recent-edits'
+import {
+    getRecentEditsContextPromptWithPath,
+    getRecentEditsPrompt,
+    groupConsecutiveRecentEditsItemsFromSameFile,
+    splitMostRecentRecentEditItemAsShortTermItem,
+} from './recent-edits'
 
 describe('getRecentEditsContextPromptWithPath', () => {
     it('correct prompt with path', () => {
@@ -101,10 +106,7 @@ describe('getRecentEditsPrompt', () => {
 })
 
 describe('groupConsecutiveRecentEditsItemsFromSameFile', () => {
-    const getContextItem = (
-        content: string,
-        uri: string
-    ): AutocompleteContextSnippet => ({
+    const getContextItem = (content: string, uri: string): AutocompleteContextSnippet => ({
         type: 'file',
         content,
         identifier: RetrieverIdentifier.RecentEditsRetriever,
@@ -130,17 +132,17 @@ describe('groupConsecutiveRecentEditsItemsFromSameFile', () => {
         ]
 
         const result = groupConsecutiveRecentEditsItemsFromSameFile(contextItems)
-        
+
         expect(result.length).toBe(4) // 4 groups
         expect(result[0].content).toBe('edit2\nthen\nedit1') // First group: file1.ts (edit1, edit2) - reversed
         expect(result[0].uri.toString()).toContain('file1.ts')
-        
+
         expect(result[1].content).toBe('edit3') // Second group: file2.ts (edit3)
         expect(result[1].uri.toString()).toContain('file2.ts')
-        
+
         expect(result[2].content).toBe('edit6\nthen\nedit5\nthen\nedit4') // Third group: file3.ts (edit4, edit5, edit6) - reversed
         expect(result[2].uri.toString()).toContain('file3.ts')
-        
+
         expect(result[3].content).toBe('edit7') // Fourth group: file1.ts (edit7)
         expect(result[3].uri.toString()).toContain('file1.ts')
     })
@@ -153,7 +155,7 @@ describe('groupConsecutiveRecentEditsItemsFromSameFile', () => {
         ]
 
         const result = groupConsecutiveRecentEditsItemsFromSameFile(contextItems)
-        
+
         expect(result.length).toBe(3)
         expect(result[0].content).toBe('edit1')
         expect(result[1].content).toBe('edit2')
@@ -184,10 +186,10 @@ describe('splitMostRecentRecentEditItemAsShortTermItem', () => {
         ]
 
         const result = splitMostRecentRecentEditItemAsShortTermItem(contextItems)
-        
+
         expect(result.shortTermEditItems.length).toBe(1)
         expect(result.shortTermEditItems[0].content).toBe('edit1')
-        
+
         expect(result.longTermEditItems.length).toBe(2)
         expect(result.longTermEditItems[0].content).toBe('edit2')
         expect(result.longTermEditItems[1].content).toBe('edit3')
@@ -200,7 +202,7 @@ describe('splitMostRecentRecentEditItemAsShortTermItem', () => {
         ]
 
         const result = splitMostRecentRecentEditItemAsShortTermItem(contextItems)
-        
+
         expect(result.shortTermEditItems.length).toBe(1)
         expect(result.shortTermEditItems[0].content).toBe('edit1')
         expect(result.longTermEditItems.length).toBe(0)
@@ -213,7 +215,7 @@ describe('splitMostRecentRecentEditItemAsShortTermItem', () => {
         ]
 
         const result = splitMostRecentRecentEditItemAsShortTermItem(contextItems)
-        
+
         expect(result.shortTermEditItems.length).toBe(0)
         expect(result.longTermEditItems.length).toBe(0)
     })
