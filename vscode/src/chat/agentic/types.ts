@@ -1,10 +1,6 @@
 // filepath: /Users/bwork/dev/cody-wip/vscode/src/chat/agentic/ToolTypes.ts
 import type { Span } from '@opentelemetry/api'
-import {
-    type ContextItem,
-    type ProcessingStep,
-    PromptString,
-} from '@sourcegraph/cody-shared'
+import type { ContextItem, ProcessingStep, PromptString } from '@sourcegraph/cody-shared'
 
 /**
  * Configuration interface for CodyTool instances.

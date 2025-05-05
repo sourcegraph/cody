@@ -8,7 +8,7 @@ import type { ContextRetriever } from '../chat-view/ContextRetriever'
 import { CodyTool } from './CodyTool'
 import { CodyToolProvider, TestToolFactory, type ToolConfiguration } from './CodyToolProvider'
 import { toolboxManager } from './ToolboxManager'
-import { CodyToolConfig } from './types'
+import type { CodyToolConfig } from './types'
 
 const localStorageData: { [key: string]: unknown } = {}
 mockLocalStorage({

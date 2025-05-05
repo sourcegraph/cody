@@ -6,10 +6,10 @@ import {
 } from '@sourcegraph/cody-shared'
 import type { McpTool } from '@sourcegraph/cody-shared/src/llm-providers/mcp/types'
 import type { ContextRetriever } from '../chat-view/ContextRetriever'
-import { CodyTool, McpToolImpl, OpenCtxTool, TOOL_CONFIGS } from './CodyTool'
-import { type CodyToolConfig } from './types'
+import { type CodyTool, McpToolImpl, OpenCtxTool, TOOL_CONFIGS } from './CodyTool'
 import { toolboxManager } from './ToolboxManager'
 import { OPENCTX_TOOL_CONFIG } from './config'
+import type { CodyToolConfig } from './types'
 
 type Retriever = Pick<ContextRetriever, 'retrieveContext'>
 

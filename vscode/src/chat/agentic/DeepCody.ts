@@ -28,7 +28,7 @@ import type { CodyTool } from './CodyTool'
 import { CodyToolProvider } from './CodyToolProvider'
 import { ProcessManager } from './ProcessManager'
 import { ACTIONS_TAGS, CODYAGENT_PROMPTS } from './prompts'
-import { ToolStatusCallback } from './types'
+import type { ToolStatusCallback } from './types'
 
 /**
  * A DeepCodyAgent handles advanced context retrieval and analysis for chat interactions.

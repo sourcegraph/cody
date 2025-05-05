@@ -14,18 +14,18 @@ import {
     pendingOperation,
     ps,
 } from '@sourcegraph/cody-shared'
+import type { McpTool } from '@sourcegraph/cody-shared/src/llm-providers/mcp/types'
 import * as uuid from 'uuid'
 import { URI } from 'vscode-uri'
 import { getContextFromRelativePath } from '../../commands/context/file-path'
 import { getContextFileFromShell } from '../../commands/context/shell'
 import { type ContextRetriever, toStructuredMentions } from '../chat-view/ContextRetriever'
+import { MCPManager } from '../chat-view/tools/MCPManager'
 import { getChatContextItemsForMention } from '../context/chatContext'
 import { getCorpusContextItemsForEditorState } from '../initialContext'
 import { CodyChatMemory } from './CodyChatMemory'
 import { RawTextProcessor } from './DeepCody'
-import { type CodyToolConfig, type ICodyTool, type ToolStatusCallback } from './types'
-import { MCPManager } from '../chat-view/tools/MCPManager'
-import { McpTool } from '@sourcegraph/cody-shared/src/llm-providers/mcp/types'
+import type { CodyToolConfig, ICodyTool, ToolStatusCallback } from './types'
 
 /**
  * Abstract base class for Cody tools.
@@ -399,7 +399,6 @@ class MemoryTool extends CodyTool {
     }
 }
 
-
 /**
  * McpToolImpl implements a CodyTool that interfaces with Model Context Protocol tools.
  * It handles the execution of MCP tools and formats their results for display in the UI.
@@ -499,7 +498,6 @@ export class McpToolImpl extends CodyTool {
         ]
     }
 }
-
 
 // Define tools configuration once to avoid repetition
 export const TOOL_CONFIGS = {

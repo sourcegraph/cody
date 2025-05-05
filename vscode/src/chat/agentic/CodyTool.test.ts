@@ -5,46 +5,46 @@ import { URI } from 'vscode-uri'
 import { mockLocalStorage } from '../../services/LocalStorageProvider'
 import type { ContextRetriever } from '../chat-view/ContextRetriever'
 import { CodyTool, OpenCtxTool } from './CodyTool'
-import { CodyToolProvider, TestToolFactory, } from './CodyToolProvider'
+import { CodyToolProvider, TestToolFactory } from './CodyToolProvider'
 import { toolboxManager } from './ToolboxManager'
-import { ToolStatusCallback } from './types'
+import type { ToolStatusCallback } from './types'
 
 // Mock all the dependencies properly
 vi.mock('./CodyTool', async () => {
-  const actual = await vi.importActual('./CodyTool');
-  return {
-    ...actual,
-    // No need to override anything here since we want the real getInstruction method
-  };
-});
+    const actual = await vi.importActual('./CodyTool')
+    return {
+        ...actual,
+        // No need to override anything here since we want the real getInstruction method
+    }
+})
 
 vi.mock('./CodyToolFactory', async () => {
-  const actual = await vi.importActual('./CodyToolFactory');
-  return {
-    ...actual,
-    // Mock the McpToolImpl class if needed
-  };
-});
+    const actual = await vi.importActual('./CodyToolFactory')
+    return {
+        ...actual,
+        // Mock the McpToolImpl class if needed
+    }
+})
 
 vi.mock('./DeepCody', () => ({
-  RawTextProcessor: {
-    join: (prompts: any[], connector: any) => {
-      return prompts.join(connector || '\n');
-    }
-  }
-}));
+    RawTextProcessor: {
+        join: (prompts: any[], connector: any) => {
+            return prompts.join(connector || '\n')
+        },
+    },
+}))
 
 vi.mock('../../chat/chat-view/tools/MCPManager', () => ({
-  MCPManager: {
-    instance: {
-      executeTool: vi.fn().mockResolvedValue({
-        status: 'done',
-        content: 'Tool executed successfully',
-        context: []
-      })
-    }
-  }
-}));
+    MCPManager: {
+        instance: {
+            executeTool: vi.fn().mockResolvedValue({
+                status: 'done',
+                content: 'Tool executed successfully',
+                context: [],
+            }),
+        },
+    },
+}))
 
 const mockCallback: ToolStatusCallback = {
     onUpdate: vi.fn(),
@@ -125,7 +125,7 @@ describe('CodyTool', () => {
         if (testTool) {
             vi.spyOn(testTool, 'getInstruction').mockImplementation(() => {
                 return ps`\`<TOOLTEST><test>TEST_CONTENT</test></TOOLTEST>\`: To test the CodyTool class.\n\t- Test the tool: \`<TESTTOOL><test>sample content</test></TESTTOOL>\``
-            });
+            })
         }
 
         const instruction = testTool?.getInstruction()
