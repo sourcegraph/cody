@@ -1,6 +1,6 @@
-import { type AutocompleteContextSnippet, testFileUri } from '@sourcegraph/cody-shared'
 import dedent from 'dedent'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it} from 'vitest'
+import { type AutocompleteContextSnippet, testFileUri } from '@sourcegraph/cody-shared'
 
 import { RetrieverIdentifier } from '../../../completions/context/utils'
 import { getRecentlyViewedSnippetsPrompt } from './recent-view'
