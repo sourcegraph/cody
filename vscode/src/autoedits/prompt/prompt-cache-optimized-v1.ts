@@ -6,9 +6,9 @@ import { autoeditsOutputChannelLogger } from '../output-channel-logger'
 
 import { AutoeditsUserPromptStrategy, type UserPromptArgs } from './base'
 import * as constants from './constants'
+import { splitMostRecentRecentEditItemAsShortTermItem } from './prompt-utils/recent-edits'
 import {
     getContextItemMappingWithTokenLimit,
-    getContextItemsForIdentifier,
     getPromptForTheContextSource,
     getPromptWithNewline,
     joinPromptsWithNewlineSeparator,
@@ -19,7 +19,7 @@ import {
     getRecentEditsPrompt,
     groupConsecutiveRecentEditsItemsFromSameFile,
 } from './prompt-utils/recent-edits'
-import { getRecentlyViewedSnippetsPrompt } from './prompt-utils/recent-view'
+import { getRecentSnippetViewPromptWithMaxSnippetAge } from './prompt-utils/recent-view'
 
 interface RecentEditsPromptComponents {
     mostRecentEditsPrompt: PromptString
@@ -40,8 +40,9 @@ export class PromptCacheOptimizedV1 extends AutoeditsUserPromptStrategy {
             tokenBudget.contextSpecificTokenLimit,
             tokenBudget.contextSpecificNumItemsLimit
         )
-        const recentViewedSnippetsPrompt = this.getRecentSnippetViewPrompt(
-            contextItemMapping.get(RetrieverIdentifier.RecentViewPortRetriever) || []
+        const recentViewedSnippetsPrompt = getRecentSnippetViewPromptWithMaxSnippetAge(
+            contextItemMapping.get(RetrieverIdentifier.RecentViewPortRetriever) || [],
+            this.SNIPPET_VIEW_MAX_TIMESTAMP_MS
         )
         const recentEditsPromptComponents = this.getRecentEditsPromptComponents(
             contextItemMapping.get(RetrieverIdentifier.RecentEditsRetriever) || []
@@ -86,40 +87,17 @@ export class PromptCacheOptimizedV1 extends AutoeditsUserPromptStrategy {
         )
     }
 
-    private getRecentSnippetViewPrompt(contextItems: AutocompleteContextSnippet[]): PromptString {
-        const recentViewedSnippets = getContextItemsForIdentifier(
-            contextItems,
-            RetrieverIdentifier.RecentViewPortRetriever
-        ).filter(
-            item =>
-                item.metadata?.timeSinceActionMs !== undefined &&
-                item.metadata.timeSinceActionMs < this.SNIPPET_VIEW_MAX_TIMESTAMP_MS
-        )
-
-        return joinPromptsWithNewlineSeparator([
-            constants.SHORT_TERM_SNIPPET_VIEWS_INSTRUCTION,
-            getRecentlyViewedSnippetsPrompt(recentViewedSnippets),
-        ])
-    }
-
     private getRecentEditsPromptComponents(
         contextItems: AutocompleteContextSnippet[]
     ): RecentEditsPromptComponents {
-        const recentEditsSnippets = getContextItemsForIdentifier(
-            contextItems,
-            RetrieverIdentifier.RecentEditsRetriever
+        const { shortTermEditItems, longTermEditItems: otherEditItems } = splitMostRecentRecentEditItemAsShortTermItem(
+            contextItems
         )
-
-        const mostRecentEditsPrompt =
-            recentEditsSnippets.length > 0 ? ps`${getRecentEditsPrompt([recentEditsSnippets[0]])}` : ps``
-
-        const otherRecentEditsContextItems =
-            recentEditsSnippets.length > 1 ? recentEditsSnippets.slice(1) : []
+        const mostRecentEditsPrompt = getRecentEditsPrompt(shortTermEditItems)
 
         const groupedContextItems = groupConsecutiveRecentEditsItemsFromSameFile(
-            otherRecentEditsContextItems
+            otherEditItems
         )
-
         const { shortTermSnippets, longTermSnippets } = this.splitContextItemsIntoShortAndLongTerm(
             groupedContextItems,
             this.RECENT_EDIT_SHORT_TERM_TIME_MS

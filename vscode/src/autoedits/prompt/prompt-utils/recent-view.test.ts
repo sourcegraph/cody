@@ -3,7 +3,7 @@ import dedent from 'dedent'
 import { describe, expect, it } from 'vitest'
 
 import { RetrieverIdentifier } from '../../../completions/context/utils'
-import { getRecentlyViewedSnippetsPrompt } from './recent-view'
+import { getRecentSnippetViewPromptWithMaxSnippetAge, getRecentlyViewedSnippetsPrompt } from './recent-view'
 
 describe('getRecentlyViewedSnippetsPrompt', () => {
     const getContextItem = (
@@ -81,5 +81,61 @@ describe('getRecentlyViewedSnippetsPrompt', () => {
             </snippet>
             </recently_viewed_snippets>
         `)
+    })    
+})
+
+describe('getRecentSnippetViewPromptWithMaxSnippetAge', () => {
+    const getContextItem = (
+        content: string,
+        identifier: string,
+        fileName = 'foo.ts',
+        timeSinceActionMs?: number
+    ): AutocompleteContextSnippet => ({
+        type: 'file',
+        content,
+        identifier,
+        uri: testFileUri(fileName),
+        startLine: 0,
+        endLine: 0,
+        metadata: timeSinceActionMs !== undefined ? { timeSinceActionMs } : undefined,
+    })
+
+    it('filters snippets based on maxAgeContextMs', () => {
+        const maxAgeContextMs = 1000
+        const contextItems = [
+            getContextItem('fresh', RetrieverIdentifier.RecentViewPortRetriever, 'fresh.ts', 500),
+            getContextItem('stale', RetrieverIdentifier.RecentViewPortRetriever, 'stale.ts', 1500),
+            getContextItem('another-fresh', RetrieverIdentifier.RecentViewPortRetriever, 'another.ts', 999),
+            getContextItem('no-time', RetrieverIdentifier.RecentViewPortRetriever, 'notime.ts'),
+            getContextItem('wrong-type', RetrieverIdentifier.DiagnosticsRetriever, 'wrong.ts', 100),
+        ]
+        
+        const prompt = getRecentSnippetViewPromptWithMaxSnippetAge(contextItems, maxAgeContextMs)
+        
+        // Should only include 'fresh' and 'another-fresh' in the snippets section
+        expect(prompt.toString()).toContain('fresh')
+        expect(prompt.toString()).toContain('another-fresh')
+        expect(prompt.toString()).not.toContain('stale')
+        expect(prompt.toString()).not.toContain('no-time')
+        expect(prompt.toString()).not.toContain('wrong-type')
+    })
+
+    it('returns only instructions when no snippets match the time criteria', () => {
+        const maxAgeContextMs = 500
+        const contextItems = [
+            getContextItem('stale1', RetrieverIdentifier.RecentViewPortRetriever, 'stale1.ts', 600),
+            getContextItem('stale2', RetrieverIdentifier.RecentViewPortRetriever, 'stale2.ts', 1000),
+            getContextItem('no-time', RetrieverIdentifier.RecentViewPortRetriever, 'notime.ts'),
+        ]
+        
+        const prompt = getRecentSnippetViewPromptWithMaxSnippetAge(contextItems, maxAgeContextMs)
+        
+        // Should not include any snippets
+        expect(prompt.toString()).not.toContain('<snippet>')
+        expect(prompt.toString()).not.toContain('stale1')
+        expect(prompt.toString()).not.toContain('stale2')
+        expect(prompt.toString()).not.toContain('no-time')
+        // But should still include instructions
+        expect(prompt.toString()).not.toBe('')
     })
 })
