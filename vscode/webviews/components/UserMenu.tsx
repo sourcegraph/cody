@@ -539,6 +539,7 @@ export const UserMenu: React.FunctionComponent<UserMenuProps> = ({
                                             />
                                         </svg>
                                         <span className="tw-flex-grow">Upgrade to Pro</span>
+                                        <ExternalLinkIcon size={16} strokeWidth={1.25} />
                                     </CommandLink>
                                 )}
                                 {isDotComUser && (
