@@ -41,6 +41,7 @@ const documentList = [
 describe('RecentViewPortRetriever', () => {
     let retriever: RecentViewPortRetriever
     let onDidChangeTextEditorVisibleRanges: any
+    let onDidChangeActiveTextEditor: any
 
     const createMockVisibleRange = (doc: vscode.TextDocument, startLine: number, endLine: number) => {
         return new Range(
@@ -88,7 +89,8 @@ describe('RecentViewPortRetriever', () => {
                     onDidChangeTextEditorVisibleRanges = listener
                     return { dispose: () => {} }
                 },
-                onDidChangeActiveTextEditor() {
+                onDidChangeActiveTextEditor(listener) {
+                    onDidChangeActiveTextEditor = listener
                     return { dispose: () => {} }
                 },
                 onDidChangeNotebookEditorVisibleRanges() {
@@ -115,6 +117,11 @@ describe('RecentViewPortRetriever', () => {
             visibleRanges,
         })
         // Preloading is debounced so we need to advance the timer manually
+        await vi.advanceTimersToNextTimerAsync()
+    }
+
+    const simulateActiveTextEditorChange = async (testEditor: vscode.TextEditor | undefined) => {
+        onDidChangeActiveTextEditor(testEditor)
         await vi.advanceTimersToNextTimerAsync()
     }
 
@@ -185,5 +192,33 @@ describe('RecentViewPortRetriever', () => {
         expect(snippets).toHaveLength(2)
         expect(snippets[0].uri).toEqual(doc3.uri)
         expect(snippets[1].uri).toEqual(doc2.uri)
+    })
+
+    it('should properly update activeTextEditor property when changing editors', async () => {
+        const doc1 = documentList[0]
+        const doc2 = documentList[1]
+
+        const editor1 = {
+            document: doc1,
+            visibleRanges: [createMockVisibleRange(doc1, 0, 1)],
+        } as unknown as vscode.TextEditor
+
+        const editor2 = {
+            document: doc2,
+            visibleRanges: [createMockVisibleRange(doc2, 0, 1)],
+        } as unknown as vscode.TextEditor
+
+        // biome-ignore lint/complexity/useLiteralKeys: accessing private property
+        expect(retriever['activeTextEditor']).toBeUndefined()
+
+        await simulateActiveTextEditorChange(editor1)
+
+        // biome-ignore lint/complexity/useLiteralKeys: accessing private property
+        expect(retriever['activeTextEditor']).toBe(editor1)
+
+        await simulateActiveTextEditorChange(editor2)
+
+        // biome-ignore lint/complexity/useLiteralKeys: accessing private property
+        expect(retriever['activeTextEditor']).toBe(editor2)
     })
 })
