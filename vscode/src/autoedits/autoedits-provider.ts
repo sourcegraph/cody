@@ -248,6 +248,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
             this.contextMixer,
             this.rendererManager,
             this.modelAdapter,
+            this.nextCursorManager,
             vscode.window.onDidChangeTextEditorSelection(this.onSelectionChangeDebounced),
             vscode.workspace.onDidChangeTextDocument(event => {
                 this.onDidChangeTextDocument(event)
@@ -491,6 +492,19 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                 return null
             }
 
+            const initialPrediction = predictionResult.response.prediction
+            autoeditAnalyticsLogger.markAsLoaded({
+                requestId,
+                prompt,
+                modelResponse: predictionResult.response,
+                payload: {
+                    // TODO: make it required
+                    source: predictionResult.response.source ?? autoeditSource.network,
+                    isFuzzyMatch: false,
+                    prediction: initialPrediction,
+                },
+            })
+
             if (predictionResult.type === 'ignored') {
                 this.discardSuggestion({
                     startedAt,
@@ -500,26 +514,16 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                 return null
             }
 
-            const initialPrediction = predictionResult.response.prediction
             const predictionDocContext = predictionResult.docContext
             const predictionCodeToReplaceData = predictionResult.codeToReplaceData
 
-            autoeditAnalyticsLogger.markAsLoaded({
+            autoeditAnalyticsLogger.markAsPostProcessed({
                 requestId,
                 cacheId: predictionResult.cacheId,
                 hotStreakId: predictionResult.hotStreakId,
-                prompt,
-                modelResponse: predictionResult.response,
                 predictionDocContext,
                 codeToReplaceData: predictionCodeToReplaceData,
                 editPosition: predictionResult.editPosition,
-                payload: {
-                    // TODO: make it required
-                    source: predictionResult.response.source ?? autoeditSource.network,
-                    isFuzzyMatch: false,
-                    prediction: initialPrediction,
-                    codeToRewrite: predictionCodeToReplaceData.codeToRewrite,
-                },
             })
 
             if (throttledRequest.isStale) {
@@ -639,7 +643,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
             // `this.unstable_handleDidShowCompletionItem` can't receive anything apart from the `requestId`
             // because the agent does not know anything about our internal state.
             // We need to ensure all the relevant metadata can be retrieved from `requestId` only.
-            autoeditAnalyticsLogger.markAsPostProcessed({
+            autoeditAnalyticsLogger.markAsReadyToBeRendered({
                 requestId,
                 renderOutput,
                 prediction:
