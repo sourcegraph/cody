@@ -533,9 +533,9 @@ describe('getDecorationStats', () => {
             removedLines: 1, // empty line after the function definition
             addedLines: 1, // "greet(newVar)"
             unchangedLines: 3,
-            addedChars: ('Brave ' + 'used' + 'Bob' + 'greet(used)').length,
-            removedChars: 'unused'.length,
-            unchangedChars: 100,
+            addedChars: ('Brave ' + 'Bob' + 'greet(used)').length,
+            removedChars: 'un'.length, // "unused" - "used" = "un"
+            unchangedChars: 104,
         })
     })
 })
