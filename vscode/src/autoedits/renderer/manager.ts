@@ -2,11 +2,7 @@ import * as vscode from 'vscode'
 
 import { type CodeToReplaceData, type DocumentContext, tokensToChars } from '@sourcegraph/cody-shared'
 
-import {
-    completionMatchesSuffix,
-    getLatestVisibilityContext,
-    isCompletionVisible,
-} from '../../completions/is-completion-visible'
+import { getLatestVisibilityContext, isCompletionVisible } from '../../completions/is-completion-visible'
 import { isRunningInsideAgent } from '../../jsonrpc/isRunningInsideAgent'
 import type { FixupController } from '../../non-stop/FixupController'
 import { CodyTaskState } from '../../non-stop/state'
@@ -20,18 +16,9 @@ import {
     autoeditDiscardReason,
     autoeditRejectReason,
 } from '../analytics-logger'
-import { AutoeditCompletionItem } from '../autoedit-completion-item'
 import { autoeditsProviderConfig } from '../autoedits-config'
-import type { AutoeditClientCapabilities } from '../autoedits-provider'
-import { autoeditsOutputChannelLogger } from '../output-channel-logger'
 import type { RequestManager } from '../request-manager'
-import {
-    adjustPredictionIfInlineCompletionPossible,
-    areSameUriDocs,
-    extractInlineCompletionFromRewrittenCode,
-} from '../utils'
-
-import { getCurrentLinePrefixAndSuffix } from '../../completions/get-current-doc-context'
+import { areSameUriDocs } from '../utils'
 
 import type { AutoEditDecorations, AutoEditsDecorator, DecorationInfo } from './decorators/base'
 import { AutoEditsRenderOutput } from './render-output'
@@ -444,81 +431,6 @@ export class AutoEditsRendererManager extends AutoEditsRenderOutput {
         }
         this.decorator.setDecorations(decorations)
         await vscode.commands.executeCommand('setContext', 'cody.supersuggest.active', true)
-    }
-
-    public getRenderOutput(
-        { requestId, prediction, codeToReplaceData, document, position }: GetRenderOutputArgs,
-        capabilities?: AutoeditClientCapabilities
-    ): AutoEditRenderOutput {
-        const updatedPrediction = adjustPredictionIfInlineCompletionPossible(
-            prediction,
-            codeToReplaceData.codeToRewritePrefix,
-            codeToReplaceData.codeToRewriteSuffix
-        )
-
-        const { currentLinePrefix, currentLineSuffix } = getCurrentLinePrefixAndSuffix({
-            document,
-            position,
-        })
-        const codeToRewriteAfterCurrentLine = codeToReplaceData.codeToRewriteSuffix.slice(
-            currentLineSuffix.length + 1 // Additional char for newline
-        )
-        const isPrefixMatch = updatedPrediction.startsWith(codeToReplaceData.codeToRewritePrefix)
-        const isSuffixMatch =
-            // The current line suffix should not require any char removals to render the completion.
-            completionMatchesSuffix(updatedPrediction, currentLineSuffix) &&
-            // The new lines suggested after the current line must be equal to the prediction.
-            updatedPrediction.endsWith(codeToRewriteAfterCurrentLine)
-
-        if (isPrefixMatch && isSuffixMatch) {
-            const insertText = extractInlineCompletionFromRewrittenCode(
-                updatedPrediction,
-                codeToReplaceData.codeToRewritePrefix,
-                codeToReplaceData.codeToRewriteSuffix
-            )
-
-            if (insertText.trimEnd().length === 0) {
-                return { type: 'none' }
-            }
-
-            const completionText = currentLinePrefix + insertText
-            const inlineCompletionItem = new AutoeditCompletionItem({
-                id: requestId,
-                insertText: completionText,
-                range: new vscode.Range(
-                    document.lineAt(position).range.start,
-                    document.lineAt(position).range.end
-                ),
-                command: {
-                    title: 'Autoedit accepted',
-                    command: 'cody.supersuggest.accept',
-                    arguments: [
-                        {
-                            requestId,
-                        },
-                    ],
-                },
-                withoutCurrentLinePrefix: {
-                    insertText,
-                    range: new vscode.Range(position, position),
-                },
-            })
-            autoeditsOutputChannelLogger.logDebug('tryMakeInlineCompletions', 'insert text', {
-                verbose: insertText,
-            })
-            return {
-                type: 'legacy-completion',
-                inlineCompletionItems: [inlineCompletionItem],
-                updatedDecorationInfo: null,
-                updatedPrediction,
-            }
-        }
-        autoeditsOutputChannelLogger.logDebugIfVerbose(
-            'tryMakeInlineCompletions',
-            'Rendering a diff view for auto-edit.'
-        )
-
-        return { type: 'legacy-decorations' }
     }
 
     private hasConflictingDecorations(document: vscode.TextDocument, range: vscode.Range): boolean {
