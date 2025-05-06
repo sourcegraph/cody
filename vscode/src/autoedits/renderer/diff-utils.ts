@@ -205,6 +205,42 @@ function getModifiedLineChanges({
 }
 
 /**
+ * Groups changes from a line by merging consecutive changes of the same type
+ */
+function groupLineChanges(changes: LineChange[]): LineChange[] {
+    const groupedChanges: LineChange[] = []
+    let currentGroup: LineChange | null = null
+
+    for (const change of changes) {
+        if (currentGroup && currentGroup.type === change.type) {
+            currentGroup = {
+                ...change,
+                text: currentGroup.text + change.text,
+                originalRange: new vscode.Range(
+                    currentGroup.originalRange.start.line,
+                    currentGroup.originalRange.start.character,
+                    change.originalRange.end.line,
+                    change.originalRange.end.character
+                ),
+                modifiedRange: new vscode.Range(
+                    currentGroup.modifiedRange.start.line,
+                    currentGroup.modifiedRange.start.character,
+                    change.modifiedRange.end.line,
+                    change.modifiedRange.end.character
+                ),
+            }
+            // Update the previous item
+            groupedChanges[groupedChanges.length - 1] = currentGroup
+        } else {
+            currentGroup = { ...change }
+            groupedChanges.push(currentGroup)
+        }
+    }
+
+    return groupedChanges
+}
+
+/**
  * Checks if a line change within a diff is simple enough to show to the user.
  * This is if the diff is set of suitable modifications that are separated by suitable unchanged areas.
  *    Suitable modifications: Pure insertions/deletions or "replacement" changes where an insertion is immediately followed by a deletion or vice versa.
@@ -221,8 +257,9 @@ function isSimpleLineDiff(changes: LineChange[]): boolean {
         isReplacement: false,
     }
 
-    for (let i = 0; i < changes.length; i++) {
-        const incomingChange = changes[i]
+    const groupedChanges = groupLineChanges(changes)
+    for (let i = 0; i < groupedChanges.length; i++) {
+        const incomingChange = groupedChanges[i]
         if (!lastChange.type) {
             lastChange = {
                 type: incomingChange.type,
@@ -244,7 +281,7 @@ function isSimpleLineDiff(changes: LineChange[]): boolean {
             // that we can use this to seperate multiple changes without worrying about
             // the diff splitting words into multiple change chunks
             const isSuitableSeparator = /\s/.test(incomingChange.text)
-            const isLastChange = i === changes.length - 1
+            const isLastChange = i === groupedChanges.length - 1
             if (!isSuitableSeparator && !isLastChange) {
                 return false
             }
