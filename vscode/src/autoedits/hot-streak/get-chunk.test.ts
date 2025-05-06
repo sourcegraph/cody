@@ -213,6 +213,55 @@ describe('getHotStreakChunk', () => {
         `)
     })
 
+    it('does not count last empty line of a prediction as a changed line', () => {
+        const code = dedent`
+            struct Canvas {
+                pub pixels: Vec,
+                pub stride: u8,
+                pub size: Size,
+                pub format: Format,
+            }█`
+
+        const { document, position } = documentAndPosition(code)
+        const codeToReplaceData = createCodeToReplaceDataForTest(code, {
+            maxPrefixLength: 1000,
+            maxSuffixLength: 1000,
+            maxPrefixLinesInArea: 2,
+            maxSuffixLinesInArea: 2,
+            codeToRewritePrefixLines: 4,
+            codeToRewriteSuffixLines: 30,
+            prefixTokens: 100,
+            suffixTokens: 100,
+        })
+
+        // Notice the empty new line at the end of the prediction
+        const prediction = `    pub pixels: Vec,
+    pub stride: u8,
+    pub size: Size,
+    pub format: Format,
+}\n`
+        const params = {
+            prediction,
+            document,
+            position,
+            codeToReplaceData,
+            response: createSuggestedResponse(prediction, 'success'),
+        }
+        const result = getHotStreakChunk(params) as HotStreakChunk
+
+        // We ignored the last empty line of the prediction while diffing against the current document text
+        // which means there are no changes suggested in this prediction.
+        expect(result.firstLineChanged).toBeNull()
+        expect(result.text).toBe(prediction)
+        expect(document.getText(result.range)).toMatchInlineSnapshot(`
+          "    pub pixels: Vec,
+              pub stride: u8,
+              pub size: Size,
+              pub format: Format,
+          }"
+        `)
+    })
+
     it('prediction with lines added before the range', () => {
         const { document, position } = documentAndPosition(MOCK_EXISTING_CODE)
         const params = createTestParams({
@@ -252,6 +301,7 @@ describe('getHotStreakChunk', () => {
               // Check if numberToChange is 1
               if (numberToChange === 1) {
                   return false
+              }
           "
         `)
         expect(document.getText(result.range)).toMatchInlineSnapshot(`
@@ -264,6 +314,7 @@ describe('getHotStreakChunk', () => {
               // Check if numberToChange is 1
               if (numberToChange === 1) {
                   return false
+              }
           "
         `)
     })
