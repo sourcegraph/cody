@@ -9,9 +9,10 @@ interface AddServerDialogProps {
     onAddServer: (server: ServerType) => void
     className?: string
     serverToEdit?: ServerType | null
+    setServerToEdit: (server: ServerType | null) => void
 }
 
-export function AddServerView({ onAddServer, serverToEdit }: AddServerDialogProps) {
+export function AddServerView({ onAddServer, serverToEdit, setServerToEdit }: AddServerDialogProps) {
     const [open, setOpen] = React.useState(false)
 
     useEffect(() => {
@@ -20,9 +21,15 @@ export function AddServerView({ onAddServer, serverToEdit }: AddServerDialogProp
         }
     }, [serverToEdit])
 
+    const handleToggle = (value: boolean) => {
+        setOpen(value)
+        if (!value) setServerToEdit(null)
+    }
+
     const handleAddServer = (server: ServerType) => {
         onAddServer(server)
         setOpen(false)
+        setServerToEdit(null)
     }
 
     return (
@@ -31,7 +38,7 @@ export function AddServerView({ onAddServer, serverToEdit }: AddServerDialogProp
                 variant="outline"
                 size="sm"
                 className="tw-inline-flex tw-w-full"
-                onClick={() => setOpen(!open)}
+                onClick={() => handleToggle(!open)}
             >
                 <Plus size={12} className="tw-mr-1" />{' '}
                 {open ? 'Cancel' : serverToEdit ? 'Edit Server' : 'MCP Server'}

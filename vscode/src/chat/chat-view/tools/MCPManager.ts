@@ -280,7 +280,10 @@ export class MCPManager {
     private async loadServersFromConfig(): Promise<void> {
         try {
             const config = vscode.workspace.getConfiguration(MCPManager.CONFIG_SECTION)
-            const mcpServers = config.get(MCPManager.MCP_SERVERS_KEY, {})
+            const mcpServers = config.get(MCPManager.MCP_SERVERS_KEY, undefined)
+            if (mcpServers === undefined) {
+                return
+            }
             const result = McpSettingsSchema.safeParse({ mcpServers })
 
             if (result.success) {
