@@ -330,7 +330,6 @@ ${result.response.prediction}
               parser.add_argument('--project_id', help='Project ID')
 
               args = parser.parse_args()
-
           "
         `)
 
