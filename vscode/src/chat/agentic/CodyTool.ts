@@ -6,6 +6,7 @@ import {
     type ContextMentionProviderMetadata,
     ProcessType,
     PromptString,
+    UIToolStatus,
     currentOpenCtxController,
     firstValueFrom,
     logDebug,
@@ -13,38 +14,23 @@ import {
     pendingOperation,
     ps,
 } from '@sourcegraph/cody-shared'
+import type { McpTool } from '@sourcegraph/cody-shared/src/llm-providers/mcp/types'
 import * as uuid from 'uuid'
 import { URI } from 'vscode-uri'
 import { getContextFromRelativePath } from '../../commands/context/file-path'
 import { getContextFileFromShell } from '../../commands/context/shell'
 import { type ContextRetriever, toStructuredMentions } from '../chat-view/ContextRetriever'
+import { MCPManager } from '../chat-view/tools/MCPManager'
 import { getChatContextItemsForMention } from '../context/chatContext'
 import { getCorpusContextItemsForEditorState } from '../initialContext'
 import { CodyChatMemory } from './CodyChatMemory'
-import type { ToolStatusCallback } from './CodyToolProvider'
 import { RawTextProcessor } from './DeepCody'
-
-/**
- * Configuration interface for CodyTool instances.
- */
-export interface CodyToolConfig {
-    // The title of the tool. For UI display purposes.
-    title: string
-    tags: {
-        tag: PromptString
-        subTag: PromptString
-    }
-    prompt: {
-        instruction: PromptString
-        placeholder: PromptString
-        examples: PromptString[]
-    }
-}
+import type { CodyToolConfig, ICodyTool, ToolStatusCallback } from './types'
 
 /**
  * Abstract base class for Cody tools.
  */
-export abstract class CodyTool {
+export abstract class CodyTool implements ICodyTool {
     protected readonly performedQueries = new Set<string>()
     constructor(public readonly config: CodyToolConfig) {}
 
@@ -410,6 +396,102 @@ class MemoryTool extends CodyTool {
             CodyChatMemory.load(memory)
             logDebug('Cody Memory', 'added', { verbose: memory })
         }
+    }
+}
+
+/**
+ * McpToolImpl implements a CodyTool that interfaces with Model Context Protocol tools.
+ * It handles the execution of MCP tools and formats their results for display in the UI.
+ */
+export class McpToolImpl extends CodyTool {
+    constructor(
+        toolConfig: CodyToolConfig,
+        private tool: McpTool,
+        private toolName: string,
+        private serverName: string,
+        private parseQueryToArgs: (queries: string[], tool: McpTool) => Record<string, unknown>
+    ) {
+        super(toolConfig)
+    }
+
+    public async execute(span: Span, queries: string[]): Promise<ContextItem[]> {
+        span.addEvent('executeMcpTool')
+        if (!queries.length) {
+            return []
+        }
+
+        try {
+            // Parse queries into args object
+            const args = this.parseQueryToArgs(queries, this.tool)
+
+            // Get the instance and execute the tool
+            const mcpInstance = MCPManager.instance
+            if (!mcpInstance) {
+                throw new Error('MCP Manager instance not available')
+            }
+
+            // Execute the tool and format results
+            return await this.executeMcpToolAndFormatResults(
+                mcpInstance,
+                args,
+                this.serverName,
+                this.tool.name,
+                this.toolName
+            )
+        } catch (error) {
+            return this.handleMcpToolError(error, this.tool.name, this.toolName)
+        }
+    }
+
+    private async executeMcpToolAndFormatResults(
+        mcpInstance: MCPManager,
+        args: Record<string, unknown>,
+        serverName: string,
+        toolName: string,
+        displayToolName: string
+    ): Promise<ContextItem[]> {
+        // Use the MCPManager's executeTool method which properly delegates to serverManager
+        const result = await mcpInstance.executeTool(serverName, toolName, args)
+
+        const prefix = `${toolName} tool was executed with ${JSON.stringify(args)} and `
+
+        const statusReport =
+            result.status !== UIToolStatus.Error
+                ? `completed: ${result?.content || 'invoked'}`
+                : `failed: ${result.content}`
+
+        return [
+            ...(result.context ?? []),
+            {
+                type: 'file',
+                content: prefix + statusReport,
+                uri: URI.parse(`mcp://${displayToolName}-result`),
+                source: ContextItemSource.Agentic,
+                title: displayToolName,
+            },
+        ]
+    }
+
+    private handleMcpToolError(
+        error: unknown,
+        toolName: string,
+        displayToolName: string
+    ): ContextItem[] {
+        logDebug('CodyToolProvider', `Error executing ${displayToolName}`, {
+            verbose: error,
+        })
+
+        const errorStr = error instanceof Error ? error.message : String(error)
+
+        return [
+            {
+                type: 'file',
+                content: `Error executing MCP tool ${toolName}: ${errorStr}`,
+                uri: URI.parse(`mcp://$${displayToolName}-error`),
+                source: ContextItemSource.Agentic,
+                title: displayToolName,
+            },
+        ]
     }
 }
 

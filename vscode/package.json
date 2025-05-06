@@ -1200,6 +1200,11 @@
           "markdownDescription": "OpenCtx providers configuration.",
           "default": {}
         },
+        "cody.mcpServers": {
+          "type": "object",
+          "markdownDescription": "Configuration for MCP servers to use with agentic chat.",
+          "default": {}
+        },
         "cody.internal.unstable": {
           "order": 999,
           "type": "boolean",

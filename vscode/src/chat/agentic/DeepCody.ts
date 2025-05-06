@@ -25,9 +25,10 @@ import { getCategorizedMentions, isUserAddedItem } from '../../prompt-builder/ut
 import type { ChatBuilder } from '../chat-view/ChatBuilder'
 import { DefaultPrompter } from '../chat-view/prompt'
 import type { CodyTool } from './CodyTool'
-import { CodyToolProvider, type ToolStatusCallback } from './CodyToolProvider'
+import { CodyToolProvider } from './CodyToolProvider'
 import { ProcessManager } from './ProcessManager'
 import { ACTIONS_TAGS, CODYAGENT_PROMPTS } from './prompts'
+import type { ToolStatusCallback } from './types'
 
 /**
  * A DeepCodyAgent handles advanced context retrieval and analysis for chat interactions.
@@ -70,7 +71,7 @@ export class DeepCodyAgent {
         postRequest: (step: ProcessingStep) => Promise<boolean>
     ) {
         // Initialize tools, handlers and mixins in constructor
-        this.tools = CodyToolProvider.getTools()
+        this.tools = CodyToolProvider.getAllTools()
         this.initializeMultiplexer(this.tools)
         this.buildPrompt(this.tools)
 
@@ -230,8 +231,13 @@ export class DeepCodyAgent {
 
             const step = this.stepsManager.addStep({ title: 'Retrieving context' })
 
-            const results = await Promise.all(
-                this.tools.map(async tool => {
+            // Separate MCP tools from non-MCP tools
+            const mcpTools = this.tools.filter(tool => (tool.config.metadata as any)?.isMcpTool)
+            const nonMcpTools = this.tools.filter(tool => !(tool.config.metadata as any)?.isMcpTool)
+
+            // Run non-MCP tools in parallel
+            const nonMcpResults = await Promise.all(
+                nonMcpTools.map(async tool => {
                     try {
                         if (chatAbortSignal.aborted) return []
                         return await tool.run(span, this.statusCallback)
@@ -249,13 +255,35 @@ export class DeepCodyAgent {
                 })
             )
 
-            const newContext = results.flat().filter(isDefined)
+            // Run MCP tools sequentially
+            const mcpResults: ContextItem[][] = []
+            for (const tool of mcpTools) {
+                try {
+                    if (chatAbortSignal.aborted) break
+                    const result = await tool.run(span, this.statusCallback)
+                    mcpResults.push(result)
+                } catch (error) {
+                    const errorMessage =
+                        error instanceof Error
+                            ? error.message
+                            : typeof error === 'object' && error !== null
+                              ? JSON.stringify(error)
+                              : String(error)
+                    const errorObject = error instanceof Error ? error : new Error(errorMessage)
+                    this.statusCallback.onComplete(tool.config.tags.tag.toString(), errorObject)
+                    mcpResults.push([])
+                }
+            }
+
+            // Combine all results
+            const newContext = [...nonMcpResults.flat(), ...mcpResults.flat()].filter(isDefined)
+
             if (newContext.length > 0) {
                 this.stats.context = this.stats.context + newContext.length
                 this.statusCallback.onUpdate(step.id, `fetched ${toPlural(newContext.length, 'item')}`)
             }
 
-            const reviewed = []
+            const reviewed: ContextItem[] = []
             const currentContext = [
                 ...this.context,
                 ...this.chatBuilder
@@ -271,9 +299,18 @@ export class DeepCodyAgent {
             for (const contextName of contextNames) {
                 for (const item of currentContext) {
                     if (item.uri.path.endsWith(contextName)) {
-                        // Try getting the full content for the requested file.
-                        const file = (await getContextFromRelativePath(contextName)) || item
-                        reviewed.push({ ...file, source: ContextItemSource.Agentic })
+                        try {
+                            // Try getting the full content for the requested file.
+                            const file =
+                                item.uri.scheme === 'file'
+                                    ? await getContextFromRelativePath(contextName)
+                                    : item
+                            reviewed.push({ ...(file || item), source: ContextItemSource.Agentic })
+                        } catch (error) {
+                            logDebug('Deep Cody', `failed to get context from ${contextName}`, {
+                                verbose: { error, contextName },
+                            })
+                        }
                     }
                 }
             }
@@ -286,7 +323,7 @@ export class DeepCodyAgent {
                     title: 'Optimizing context',
                     content: `selected ${toPlural(reviewed.length, 'item')}`,
                 })
-                const userAdded = this.context.filter(c => isUserAddedItem(c))
+                const userAdded = this.context.filter(c => isUserAddedItem(c) || c.type === 'media')
                 reviewed.push(...userAdded)
                 this.context = reviewed
             }
