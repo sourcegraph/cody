@@ -1,6 +1,7 @@
 import { ps } from '@sourcegraph/cody-shared'
 import type { ChatClient } from '@sourcegraph/cody-shared'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
+import * as autoeditsConfig from '../autoedits-config'
 import type { AutoeditModelOptions, SuccessModelResponse } from './base'
 import { SourcegraphChatAdapter } from './sourcegraph-chat'
 import { getMaxOutputTokensForAutoedits } from './utils'
@@ -39,6 +40,60 @@ describe('SourcegraphChatAdapter', () => {
 
     afterAll(() => {
         vi.restoreAllMocks()
+    })
+
+    it('includes rewrite speculation parameters when hot streak is enabled', async () => {
+        vi.spyOn(autoeditsConfig, 'isHotStreakEnabled').mockReturnValue(true)
+
+        const mockChat = vi.fn().mockResolvedValue({
+            async *[Symbol.asyncIterator]() {
+                yield { type: 'change', text: 'response' }
+                yield { type: 'complete' }
+            },
+        })
+
+        mockChatClient.chat = mockChat
+
+        const generator = await adapter.getModelResponse(options)
+        await generator.next()
+
+        // Extract the options passed to chat
+        const [_, chatOptions] = mockChat.mock.calls[0]
+
+        // Verify rewrite speculation parameters
+        expect(chatOptions).toMatchObject({
+            rewriteSpeculation: true,
+            adaptiveSpeculation: true,
+            speculationLengthOnStrongMatch: 500,
+            speculationMinLengthOnStrongMatch: 500,
+            speculationStrongMatchThreshold: 20,
+        })
+    })
+
+    it('does not include rewrite speculation parameters when hot streak is disabled', async () => {
+        vi.spyOn(autoeditsConfig, 'isHotStreakEnabled').mockReturnValue(false)
+
+        const mockChat = vi.fn().mockResolvedValue({
+            async *[Symbol.asyncIterator]() {
+                yield { type: 'change', text: 'response' }
+                yield { type: 'complete' }
+            },
+        })
+
+        mockChatClient.chat = mockChat
+
+        const generator = await adapter.getModelResponse(options)
+        await generator.next()
+
+        // Extract the options passed to chat
+        const [_, chatOptions] = mockChat.mock.calls[0]
+
+        // Verify no rewrite speculation parameters
+        expect(chatOptions.rewriteSpeculation).toBeUndefined()
+        expect(chatOptions.adaptiveSpeculation).toBeUndefined()
+        expect(chatOptions.speculationLengthOnStrongMatch).toBeUndefined()
+        expect(chatOptions.speculationMinLengthOnStrongMatch).toBeUndefined()
+        expect(chatOptions.speculationStrongMatchThreshold).toBeUndefined()
     })
 
     it('sends correct request parameters', async () => {

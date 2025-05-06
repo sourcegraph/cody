@@ -44,6 +44,50 @@ describe('FireworksAdapter', () => {
         vi.restoreAllMocks()
     })
 
+    it('includes speculation parameters when hot streak is enabled', async () => {
+        vi.spyOn(autoeditsConfig, 'isHotStreakEnabled').mockReturnValue(true)
+
+        mockFetchSpy.mockResolvedValueOnce({
+            status: 200,
+            headers: new Headers(),
+            json: () => Promise.resolve({ choices: [{ message: { content: 'response' } }] }),
+        })
+
+        const generator = await adapter.getModelResponse(options)
+        await generator.next() // Trigger the API call
+
+        const requestBody = JSON.parse(mockFetchSpy.mock.calls[0][1].body)
+        expect(requestBody).toEqual(
+            expect.objectContaining({
+                rewrite_speculation: true,
+                adaptive_speculation: true,
+                speculation_length_on_strong_match: 500,
+                speculation_min_length_on_strong_match: 500,
+                speculation_strong_match_threshold: 20,
+            })
+        )
+    })
+
+    it('does not include speculation parameters when hot streak is disabled', async () => {
+        vi.spyOn(autoeditsConfig, 'isHotStreakEnabled').mockReturnValue(false)
+
+        mockFetchSpy.mockResolvedValueOnce({
+            status: 200,
+            headers: new Headers(),
+            json: () => Promise.resolve({ choices: [{ message: { content: 'response' } }] }),
+        })
+
+        const generator = await adapter.getModelResponse(options)
+        await generator.next() // Trigger the API call
+
+        const requestBody = JSON.parse(mockFetchSpy.mock.calls[0][1].body)
+        expect(requestBody.rewrite_speculation).toBeUndefined()
+        expect(requestBody.adaptive_speculation).toBeUndefined()
+        expect(requestBody.speculation_length_on_strong_match).toBeUndefined()
+        expect(requestBody.speculation_min_length_on_strong_match).toBeUndefined()
+        expect(requestBody.speculation_strong_match_threshold).toBeUndefined()
+    })
+
     it('sends correct request parameters for chat model', async () => {
         mockFetchSpy.mockResolvedValueOnce({
             status: 200,
