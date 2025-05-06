@@ -2,8 +2,9 @@ import * as vscode from 'vscode'
 
 import type { AutoeditRequestState } from '../analytics-logger/types'
 import { type AutoeditsProviderConfig, autoeditsProviderConfig } from '../autoedits-config'
-import type { DecorationInfo } from '../renderer/decorators/base'
 import { getDecorationInfo } from '../renderer/diff-utils'
+import { type GeneratedImageSuggestion, generateSuggestionAsImage } from '../renderer/image-gen'
+import { makeVisualDiff } from '../renderer/image-gen/visual-diff'
 import type { AutoeditDebugMessageFromExtension } from './debug-protocol'
 import { type AutoeditSessionStats, SessionStatsTracker } from './session-stats'
 
@@ -18,12 +19,8 @@ export interface AutoeditRequestDebugState {
     updatedAt: number
     /** The autoedits provider config used for this request */
     autoeditsProviderConfig: AutoeditsProviderConfig
-    /**
-     * The side-by-side diff decoration info for the auto-edit request
-     * Different from the `state.updatedDecorationInfo` by the regex used to split
-     * the code in chunks for diffing it.
-     */
-    sideBySideDiffDecorationInfo?: DecorationInfo
+    /** The unified diff of the suggestion */
+    unifiedDiff?: GeneratedImageSuggestion
     /** Session statistics for the request */
     sessionStats?: AutoeditSessionStats
 }
@@ -69,7 +66,7 @@ export class AutoeditDebugStore implements vscode.Disposable {
         this.autoeditRequests[index] = this.createDebugState(state, {
             ...entry,
             state,
-            sideBySideDiffDecorationInfo: this.calculateSideBySideDiff(state),
+            unifiedDiff: this.calculateUnifiedDiff(state),
         })
 
         this.notifyChange()
@@ -91,7 +88,7 @@ export class AutoeditDebugStore implements vscode.Disposable {
             state,
             updatedAt: Date.now(),
             autoeditsProviderConfig: { ...autoeditsProviderConfig },
-            sideBySideDiffDecorationInfo: this.calculateSideBySideDiff(state),
+            unifiedDiff: this.calculateUnifiedDiff(state),
             ...baseState,
         }
 
@@ -106,10 +103,26 @@ export class AutoeditDebugStore implements vscode.Disposable {
         return entry
     }
 
-    private calculateSideBySideDiff(state: AutoeditRequestState): DecorationInfo | undefined {
-        return 'prediction' in state && state.prediction
-            ? getDecorationInfo(state.codeToReplaceData.codeToRewrite, state.prediction, CHARACTER_REGEX)
-            : undefined
+    private calculateUnifiedDiff(state: AutoeditRequestState): GeneratedImageSuggestion | undefined {
+        const decorationInfo =
+            'prediction' in state && state.prediction
+                ? getDecorationInfo(
+                      state.codeToReplaceData.codeToRewrite,
+                      state.prediction,
+                      CHARACTER_REGEX
+                  )
+                : undefined
+
+        if (!decorationInfo) {
+            return
+        }
+
+        const { diff } = makeVisualDiff(decorationInfo, 'unified', state.document)
+        return generateSuggestionAsImage({
+            diff,
+            lang: state.document.languageId,
+            mode: 'unified',
+        })
     }
 
     private enforceMaxEntries(): void {

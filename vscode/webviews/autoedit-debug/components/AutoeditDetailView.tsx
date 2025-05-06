@@ -17,7 +17,7 @@ import { PromptSection } from '../sections/PromptSection'
 import { RenderOutputSection } from '../sections/RenderOutputSection'
 import { TimelineSection } from '../sections/TimelineSection'
 import { FeedbackSection } from './FeedbackSection'
-import { SideBySideDiff } from './side-by-side-diff/SideBySideDiff'
+import { UnifiedDiff } from './unified-diff'
 
 export const AutoeditDetailView: FC<{
     entries: AutoeditRequestDebugState[]
@@ -90,19 +90,14 @@ export const AutoeditDetailView: FC<{
                     </h2>
 
                     {/* Diff View Section */}
-                    {entry.sideBySideDiffDecorationInfo && (
+                    {entry.unifiedDiff && (
                         <div className="tw-mt-8">
-                            <SideBySideDiff
-                                sideBySideDiffDecorationInfo={entry.sideBySideDiffDecorationInfo}
-                                languageId={entry.state.payload.languageId}
-                                codeToRewrite={codeToRewrite || ''}
-                                prediction={prediction || ''}
-                            />
+                            <UnifiedDiff unifiedDiff={entry.unifiedDiff} />
                         </div>
                     )}
 
                     {/* Prediction text */}
-                    {!entry.sideBySideDiffDecorationInfo && prediction && (
+                    {!entry.unifiedDiff && prediction && (
                         <div className="tw-mt-4 tw-p-4 tw-border tw-border-gray-200 tw-dark:tw-border-gray-700 tw-rounded">
                             <h4 className="tw-text-md tw-font-semibold tw-mb-3">Prediction Text</h4>
                             <pre className="tw-bg-gray-100 tw-dark:tw-bg-gray-800 tw-p-3 tw-rounded tw-text-xs tw-overflow-auto tw-max-h-[200px]">
@@ -112,7 +107,7 @@ export const AutoeditDetailView: FC<{
                     )}
 
                     {/* Code to rewrite */}
-                    {!entry.sideBySideDiffDecorationInfo && codeToRewrite && (
+                    {!entry.unifiedDiff && codeToRewrite && (
                         <div className="tw-mt-4 tw-p-4 tw-border tw-border-gray-200 tw-dark:tw-border-gray-700 tw-rounded">
                             <h4 className="tw-text-md tw-font-semibold tw-mb-3">Code to Rewrite</h4>
                             <pre className="tw-bg-gray-100 tw-dark:tw-bg-gray-800 tw-p-3 tw-rounded tw-text-xs tw-overflow-auto tw-max-h-[200px]">
