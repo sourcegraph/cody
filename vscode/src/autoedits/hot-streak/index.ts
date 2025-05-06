@@ -15,7 +15,7 @@ import type {
     IgnoredPredictionResult,
     SuggestedPredictionResult,
 } from '../autoedits-provider'
-import { getCodeToReplaceData } from '../prompt/prompt-utils'
+import { getCodeToReplaceData } from '../prompt/prompt-utils/code-to-replace'
 import { isDuplicatingTextFromRewriteArea } from '../utils'
 
 import { getHotStreakChunk } from './get-chunk'

@@ -1,7 +1,7 @@
 import * as vscode from 'vscode'
 
+import type { CodeToReplaceData } from '@sourcegraph/cody-shared'
 import { getNewLineChar } from '../../completions/text-processing'
-import type { CodeToReplaceData } from '../prompt/prompt-utils'
 
 import { autoeditsOutputChannelLogger } from '../output-channel-logger'
 import { DefaultDecorator } from './decorators/default-decorator'

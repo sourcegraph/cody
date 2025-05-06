@@ -4,7 +4,7 @@ import type * as vscode from 'vscode'
 
 import type { PredictionResult, SuggestedPredictionResult } from './autoedits-provider'
 
-import type { DocumentContext } from '@sourcegraph/cody-shared'
+import type { CodeToReplaceData, DocumentContext } from '@sourcegraph/cody-shared'
 import { forkSignal } from '../completions/utils'
 import { AutoeditStopReason } from './adapters/base'
 import type {
@@ -15,7 +15,6 @@ import type {
 } from './analytics-logger'
 import { autoeditAnalyticsLogger, autoeditSource, autoeditTriggerKind } from './analytics-logger'
 import type { ProcessedHotStreakResponse } from './hot-streak'
-import type { CodeToReplaceData } from './prompt/prompt-utils'
 import { isNotRecyclable, isRequestNotRelevant } from './request-recycling'
 
 export interface AutoeditRequestManagerParams {
