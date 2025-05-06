@@ -453,15 +453,11 @@ export class McpToolImpl extends CodyTool {
         // Use the MCPManager's executeTool method which properly delegates to serverManager
         const result = await mcpInstance.executeTool(serverName, toolName, args)
 
-        const imageResultInfo = result.context?.some(i => i.type === 'media')
-            ? `Image captured for ${JSON.stringify(args)} and will be available for the next request.`
-            : ''
-
         const prefix = `${toolName} tool was executed with ${JSON.stringify(args)} and `
 
         const statusReport =
             result.status !== UIToolStatus.Error
-                ? `completed: ${result?.content || 'invoked'}${imageResultInfo}`
+                ? `completed: ${result?.content || 'invoked'}`
                 : `failed: ${result.content}`
 
         return [

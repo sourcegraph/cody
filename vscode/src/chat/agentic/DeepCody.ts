@@ -231,25 +231,11 @@ export class DeepCodyAgent {
 
             const step = this.stepsManager.addStep({ title: 'Retrieving context' })
 
-            // Group tools by server to avoid overwhelming MCP servers
-            const mcpToolsByServer = new Map<string, CodyTool[]>()
-            const nonMcpTools: CodyTool[] = []
+            // Separate MCP tools from non-MCP tools
+            const mcpTools = this.tools.filter(tool => (tool.config.metadata as any)?.isMcpTool)
+            const nonMcpTools = this.tools.filter(tool => !(tool.config.metadata as any)?.isMcpTool)
 
-            // Separate MCP tools by server and non-MCP tools
-            for (const tool of this.tools) {
-                const metadata = tool.config.metadata as
-                    | { serverName?: string; isMcpTool?: boolean }
-                    | undefined
-                if (metadata?.isMcpTool && metadata.serverName) {
-                    const serverTools = mcpToolsByServer.get(metadata.serverName) || []
-                    serverTools.push(tool)
-                    mcpToolsByServer.set(metadata.serverName, serverTools)
-                } else {
-                    nonMcpTools.push(tool)
-                }
-            }
-
-            // Process non-MCP tools concurrently
+            // Run non-MCP tools in parallel
             const nonMcpResults = await Promise.all(
                 nonMcpTools.map(async tool => {
                     try {
@@ -269,41 +255,29 @@ export class DeepCodyAgent {
                 })
             )
 
-            // Process MCP tools sequentially by server
+            // Run MCP tools sequentially
             const mcpResults: ContextItem[][] = []
-            for (const [serverName, serverTools] of mcpToolsByServer.entries()) {
-                if (chatAbortSignal.aborted) break
-
-                // Log that we're processing tools for this server
-                logDebug(
-                    'Deep Cody',
-                    `Processing ${serverTools.length} tools for MCP server: ${serverName}`
-                )
-
-                // Process tools for this server sequentially
-                for (const tool of serverTools) {
+            for (const tool of mcpTools) {
+                try {
                     if (chatAbortSignal.aborted) break
-                    try {
-                        const result = await tool.run(span, this.statusCallback)
-                        mcpResults.push(result)
-                    } catch (error) {
-                        const errorMessage =
-                            error instanceof Error
-                                ? error.message
-                                : typeof error === 'object' && error !== null
-                                  ? JSON.stringify(error)
-                                  : String(error)
-                        const errorObject = error instanceof Error ? error : new Error(errorMessage)
-                        this.statusCallback.onComplete(tool.config.tags.tag.toString(), errorObject)
-                        mcpResults.push([])
-                    }
+                    const result = await tool.run(span, this.statusCallback)
+                    mcpResults.push(result)
+                } catch (error) {
+                    const errorMessage =
+                        error instanceof Error
+                            ? error.message
+                            : typeof error === 'object' && error !== null
+                              ? JSON.stringify(error)
+                              : String(error)
+                    const errorObject = error instanceof Error ? error : new Error(errorMessage)
+                    this.statusCallback.onComplete(tool.config.tags.tag.toString(), errorObject)
+                    mcpResults.push([])
                 }
             }
 
             // Combine all results
-            const results = [...nonMcpResults, ...mcpResults]
+            const newContext = [...nonMcpResults.flat(), ...mcpResults.flat()].filter(isDefined)
 
-            const newContext = results.flat().filter(isDefined)
             if (newContext.length > 0) {
                 this.stats.context = this.stats.context + newContext.length
                 this.statusCallback.onUpdate(step.id, `fetched ${toPlural(newContext.length, 'item')}`)

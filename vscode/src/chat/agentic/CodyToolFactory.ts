@@ -185,7 +185,9 @@ export class ToolFactory {
             .map(tool => {
                 const _toolName = tool.name
                 // Format to match topic name requirements in bot-response-multiplexer (only digits, letters, hyphens)
-                const toolName = `${serverName}-${_toolName}`.replace(/[^\dA-Za-z-]/g, '-')
+                const normalizedName = `${serverName}-${_toolName}`.replace(/[^\dA-Za-z-]/g, '-')
+                // Create a version that exactly matches what will be used in the XML responses
+                const toolName = `TOOL${normalizedName.toUpperCase()}`
 
                 // Create a proper tool configuration
                 const toolConfig = this.createMcpToolConfig(tool, toolName, serverName)
