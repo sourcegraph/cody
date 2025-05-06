@@ -246,6 +246,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
             this.contextMixer,
             this.rendererManager,
             this.modelAdapter,
+            this.nextCursorManager,
             vscode.window.onDidChangeTextEditorSelection(this.onSelectionChangeDebounced),
             vscode.workspace.onDidChangeTextDocument(event => {
                 this.onDidChangeTextDocument(event)
