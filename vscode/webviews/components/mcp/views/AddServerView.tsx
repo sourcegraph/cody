@@ -1,4 +1,4 @@
-import { Plus } from 'lucide-react'
+import { Plus, XIcon } from 'lucide-react'
 import * as React from 'react'
 import { useEffect } from 'react'
 import { Button } from '../../shadcn/ui/button'
@@ -16,9 +16,7 @@ export function AddServerView({ onAddServer, serverToEdit, setServerToEdit }: Ad
     const [open, setOpen] = React.useState(false)
 
     useEffect(() => {
-        if (serverToEdit) {
-            setOpen(true)
-        }
+        setOpen(!!serverToEdit)
     }, [serverToEdit])
 
     const handleToggle = (value: boolean) => {
@@ -28,8 +26,8 @@ export function AddServerView({ onAddServer, serverToEdit, setServerToEdit }: Ad
 
     const handleAddServer = (server: ServerType) => {
         onAddServer(server)
-        setOpen(false)
         setServerToEdit(null)
+        setOpen(false)
     }
 
     return (
@@ -39,16 +37,14 @@ export function AddServerView({ onAddServer, serverToEdit, setServerToEdit }: Ad
                 size="sm"
                 className="tw-inline-flex tw-w-full"
                 onClick={() => handleToggle(!open)}
+                title={open ? 'Cancel' : 'Add a new MCP Server'}
             >
-                <Plus size={12} className="tw-mr-1" />{' '}
-                {open ? 'Cancel' : serverToEdit ? 'Edit Server' : 'MCP Server'}
+                {open ? <XIcon size={12} className="tw-mr-1" /> : <Plus size={12} className="tw-mr-1" />}
+                {open ? 'Cancel' : 'MCP Server'}
             </Button>
             {open && (
                 <div className="tw-sm:max-w-[500px] tw-my-4">
-                    <AddServerForm
-                        onAddServer={handleAddServer}
-                        _server={open ? serverToEdit || undefined : undefined}
-                    />
+                    <AddServerForm onAddServer={handleAddServer} _server={serverToEdit || undefined} />
                 </div>
             )}
         </div>
