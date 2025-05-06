@@ -14,7 +14,6 @@ import { z } from 'zod'
 import type { AgentTool } from '.'
 import { MCPConnectionManager } from './MCPConnectionManager'
 import { MCPServerManager } from './MCPServerManager'
-import { registerMCPCommands } from './mcp'
 
 /**
  * Debounce function with improved promise handling
@@ -138,7 +137,6 @@ export class MCPManager {
     )
 
     constructor() {
-        registerMCPCommands(this.disposables)
         this.connectionManager = new MCPConnectionManager()
         this.serverManager = new MCPServerManager(this.connectionManager)
         // Create debounced version of sync method
