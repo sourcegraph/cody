@@ -17,9 +17,9 @@ import type {
 } from '../autoedits-provider'
 import { getCodeToReplaceData } from '../prompt/prompt-utils'
 import { isDuplicatingTextFromRewriteArea } from '../utils'
-
 import { getHotStreakChunk } from './get-chunk'
 import { getStableSuggestion } from './stable-suggestion'
+import { postProcessCompletion } from './utils'
 
 export interface ProcessHotStreakResponsesParams {
     responseGenerator: AsyncGenerator<ModelResponse>
@@ -66,6 +66,11 @@ export async function* processHotStreakResponses({
     const document = wrapVSCodeTextDocument(virtualDocument)
 
     for await (const response of responseGenerator) {
+        // Post process the prediction
+        if (response.type !== 'aborted') {
+            response.prediction = postProcessCompletion(response.prediction)
+        }
+
         const canHotStreak = hotStreakId
             ? // If we have already started emitted hot-streak suggestions, then we should treat all responses as hot-streaks
               response.type === 'partial' || response.type === 'success'

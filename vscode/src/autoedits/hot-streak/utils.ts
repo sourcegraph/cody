@@ -1,4 +1,5 @@
 import * as vscode from 'vscode'
+import { LONG_SUGGESTION_USER_CURSOR_MARKER } from '../prompt/constants'
 
 export function trimPredictionToLastFullLine(prediction: string): string {
     if (!prediction) {
@@ -18,6 +19,11 @@ export function trimPredictionToLastFullLine(prediction: string): string {
 
     // Return everything up to and including the last newline
     return prediction.substring(0, lastNewlineIndex + 1)
+}
+
+export function postProcessCompletion(prediction: string): string {
+    const cursorMarker = LONG_SUGGESTION_USER_CURSOR_MARKER.toString()
+    return prediction.replace(cursorMarker, '')
 }
 
 export function isHotStreakEnabledInSettings() {
