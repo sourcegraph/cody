@@ -322,38 +322,37 @@ function hasCleanReplacements(changes: LineChange[]): boolean {
             if (currentSegment) {
                 segments.push(currentSegment)
             }
-            currentSegment = { type: segmentType, changes: [change] }
-        } else {
-            currentSegment.changes.push(change)
+            // First change, always simple at this point
+            continue
+        }
+
+        const incomingModification = incomingChange.type !== 'unchanged'
+        if (lastChange.isReplacement && incomingModification) {
+            // We just had a replacement and now we have another change.
+            // This creates a diff that is difficult to read
+            return false
+        }
+
+        if (incomingChange.type === 'unchanged') {
+            // Check if the unchanged text contains some whitespace, this is an indicator
+            // that we can use this to seperate multiple changes without worrying about
+            // the diff splitting words into multiple change chunks
+            const isSuitableSeparator = /\s/.test(incomingChange.text)
+            const isLastChange = i === changes.length - 1
+            if (!isSuitableSeparator && !isLastChange) {
+                return false
+            }
+            lastChange = { type: incomingChange.type, isReplacement: false }
+            continue
+        }
+
+        lastChange = {
+            type: incomingChange.type,
+            isReplacement: lastChange.type !== 'unchanged',
         }
     }
 
-    if (currentSegment) {
-        segments.push(currentSegment)
-    }
-
-    // Check for clean replacement patterns:
-    // 1. Unchanged -> Modification -> Unchanged
-    // 2. Unchanged? -> Modification -> Unchanged?
-    if (segments.length <= 3) {
-        if (segments.length === 1) {
-            return segments[0].type === 'unchanged'
-        }
-
-        if (segments.length === 2) {
-            return segments.some(segment => segment.type === 'unchanged')
-        }
-
-        // For 3 segments, we expect: Unchanged -> Modification -> Unchanged
-        return (
-            segments[0].type === 'unchanged' &&
-            segments[1].type === 'modification' &&
-            segments[2].type === 'unchanged'
-        )
-    }
-
-    // Too many segments or unexpected pattern
-    return false
+    return true
 }
 
 /**
