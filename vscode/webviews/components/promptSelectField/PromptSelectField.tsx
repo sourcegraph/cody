@@ -10,8 +10,8 @@ import {
 } from 'react'
 import { useTelemetryRecorder } from '../../utils/telemetry'
 import { useConfig } from '../../utils/useConfig'
-import type { FilterValue, Organization } from '../promptAllFilters/PromptAllFilters'
-import { PromptAllFilters } from '../promptAllFilters/PromptAllFilters'
+import type { Organization } from '../promptOwnerFilter/PromptOwnerFilter'
+import { PromptOwnerFilter } from '../promptOwnerFilter/PromptOwnerFilter'
 import { PromptList, type PromptsFilterArgs } from '../promptList/PromptList'
 import { PromptTagsFilter } from '../promptTagsFilter/PromptTagsFilter'
 import { Button } from '../shadcn/ui/button'
@@ -36,8 +36,8 @@ export const PromptSelectField: React.FunctionComponent<{
 }> = ({ onSelect, onCloseByEscape, className, __storybook__open, promptSelectorRef }) => {
     const telemetryRecorder = useTelemetryRecorder()
     const [selectedTagId, setSelectedTagId] = useState<string | null>(null)
-    const [filterValue, setFilterValue] = useState<FilterValue>({ type: 'all' })
-    const { value: userId } = useCurrentUserId()
+    const [ownerFilterValue, setOwnerFilterValue] = useState<string | null>(null)
+    const { value: userId , error: userIdError } = useCurrentUserId()
     const { authStatus } = useConfig()
 
     // Use a ref to control the popover
@@ -53,7 +53,7 @@ export const PromptSelectField: React.FunctionComponent<{
         []
     )
 
-    // Convert the organizations from authStatus to the format expected by PromptAllFilters
+    // Convert the organizations from authStatus to the format expected by PromptOwnerFilter
     const organizations = useMemo<Organization[]>(() => {
         if (!authStatus.authenticated || !authStatus.organizations) {
             return []
@@ -96,34 +96,18 @@ export const PromptSelectField: React.FunctionComponent<{
     )
 
     const promptFilters = useMemo(() => {
-        // Combine both filters' values
         const filters: PromptsFilterArgs = {}
 
-        // Add tag filter if present
         if (selectedTagId) {
             filters.tags = [selectedTagId]
         }
 
-        // Add user/org filter if present
-        switch (filterValue.type) {
-            case 'user':
-                if (userId && typeof userId === 'string') {
-                    filters.owner = userId
-                }
-                break
-            case 'org':
-                // Note: Since the PromptsFilterArgs doesn't support organizationID directly,
-                // we're using tags as a workaround - might want to extend the interface
-                if (filterValue.orgId && !filters.tags) {
-                    filters.tags = [filterValue.orgId]
-                } else if (filterValue.orgId) {
-                    filters.tags?.push(filterValue.orgId)
-                }
-                break
+        if (ownerFilterValue) {
+            filters.owner = ownerFilterValue
         }
 
         return Object.keys(filters).length > 0 ? filters : undefined
-    }, [selectedTagId, filterValue, userId])
+    }, [selectedTagId, ownerFilterValue])
 
     return (
         <ToolbarPopoverItem
@@ -138,11 +122,12 @@ export const PromptSelectField: React.FunctionComponent<{
                 <div className="tw-flex tw-flex-col tw-max-h-[500px] tw-overflow-auto tw-relative">
                     <div className="tw-flex tw-flex-row tw-gap-4 tw-px-2 tw-py-3 tw-border-b tw-border-border tw-mb-1">
                         <div className="tw-flex tw-flex-row tw-gap-2 tw-justify-start">
-                            <PromptAllFilters
-                                filterValue={filterValue}
-                                onFilterChange={setFilterValue}
+                            <PromptOwnerFilter
+                                value={ownerFilterValue}
+                                onFilterChange={setOwnerFilterValue}
                                 className="!tw-px-0 !tw-py-0 !tw-border-b-0"
                                 organizations={organizations}
+                                userId={userId && !userIdError ? userId as string : undefined}
                             />
                             <PromptTagsFilter
                                 selectedTagId={selectedTagId}
