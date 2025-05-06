@@ -204,86 +204,61 @@ function getModifiedLineChanges({
     })
 }
 
-function isSingleConsecutiveChunk(changes: LineChange[]): boolean {
-    const modifications = changes
-        .filter(change => change.type === 'insert' || change.type === 'delete')
-        .sort((a, b) => a.originalRange.start.character - b.originalRange.start.character)
-
-    if (modifications.length <= 1) {
+/**
+ * Checks if a line change within a diff is simple enough to show to the user.
+ * This is if the diff is set of suitable modifications that are separated by suitable unchanged areas.
+ *    Suitable modifications: Pure insertions/deletions or "replacement" changes where an insertion is immediately followed by a deletion or vice versa.
+ *    Suitable unchanged areas: An unchanged area that contains some whitespace. This is so we can guard against cases where a character diff splits a word into multiple chunks
+ *                              whilst still allowing multiple changes in a line.
+ */
+function isSimpleLineDiff(changes: LineChange[]): boolean {
+    if (changes.length <= 1) {
         return true
     }
 
-    return modifications.every((modification, i) => {
-        if (i === 0) {
-            // First modification, always a continuous range at this point
-            return true
-        }
+    let lastChange = {
+        type: null as LineChange['type'] | null,
+        isReplacement: false,
+    }
 
-        const previousModification = modifications[i - 1]
-
-        // This modification must be adjacent or overlap with the previous one
-        return (
-            modification.originalRange.start.character <=
-            previousModification.originalRange.end.character + 1
-        )
-    })
-}
-
-/**
- * Checks if the changes are clean replacements.
- * For example:
- * 1. Unchanged -> Insertion/Deletion -> Unchanged
- * 2. Unchanged -> Insertion -> Deletion -> Unchanged
- * 3. Unchanged -> Deletion -> Insertion -> Unchanged
- *
- * A "dirty" replacement is where we end up with 3 or more deletions/insertions that are adjacent
- * For example:
- * 1. Insertion -> Deletion -> Insertion -> Unchanged
- */
-function hasCleanReplacements(changes: LineChange[]): boolean {
-    const segments: { type: 'unchanged' | 'modification'; changes: LineChange[] }[] = []
-    let currentSegment: { type: 'unchanged' | 'modification'; changes: LineChange[] } | null = null
-
-    for (const change of changes) {
-        const isModification = change.type === 'insert' || change.type === 'delete'
-        const segmentType = isModification ? 'modification' : 'unchanged'
-
-        if (!currentSegment || currentSegment.type !== segmentType) {
-            if (currentSegment) {
-                segments.push(currentSegment)
+    for (let i = 0; i < changes.length; i++) {
+        const incomingChange = changes[i]
+        if (!lastChange.type) {
+            lastChange = {
+                type: incomingChange.type,
+                isReplacement: false,
             }
-            currentSegment = { type: segmentType, changes: [change] }
-        } else {
-            currentSegment.changes.push(change)
+            // First change, always simple at this point
+            continue
+        }
+
+        const incomingModification = incomingChange.type !== 'unchanged'
+        if (lastChange.isReplacement && incomingModification) {
+            // We just had a replacement and now we have another change.
+            // This creates a diff that is difficult to read
+            return false
+        }
+
+        if (incomingChange.type === 'unchanged') {
+            // Check if the unchanged text contains some whitespace, this is an indicator
+            // that we can use this to seperate multiple changes without worrying about
+            // the diff splitting words into multiple change chunks
+            const isSuitableSeparator = /\s/.test(incomingChange.text)
+            const isLastChange = i === changes.length - 1
+            if (!isSuitableSeparator && !isLastChange) {
+                return false
+            }
+            lastChange = { type: incomingChange.type, isReplacement: false }
+            continue
+        }
+
+        lastChange = {
+            type: incomingChange.type,
+            isReplacement: lastChange.type !== 'unchanged',
         }
     }
 
-    if (currentSegment) {
-        segments.push(currentSegment)
-    }
-
-    // Check for clean replacement patterns:
-    // 1. Unchanged -> Modification -> Unchanged
-    // 2. Unchanged? -> Modification -> Unchanged?
-    if (segments.length <= 3) {
-        if (segments.length === 1) {
-            return segments[0].type === 'unchanged'
-        }
-
-        if (segments.length === 2) {
-            return segments.some(segment => segment.type === 'unchanged')
-        }
-
-        // For 3 segments, we expect: Unchanged -> Modification -> Unchanged
-        return (
-            segments[0].type === 'unchanged' &&
-            segments[1].type === 'modification' &&
-            segments[2].type === 'unchanged'
-        )
-    }
-
-    // Too many segments or unexpected pattern
-    return false
+    return true
 }
 
 /**
@@ -298,9 +273,9 @@ function createModifiedLineInfo(params: {
 }): ModifiedLineInfo {
     let changes = getModifiedLineChanges({ ...params, chunkRegex: CHARACTER_REGEX })
 
-    if (!hasCleanReplacements(changes)) {
-        // The modified line changes form a single consecutive chunk.
-        // It is likely that character based diffing will be a better representation of the diff here
+    if (!isSimpleLineDiff(changes)) {
+        // We weren't able to make a simple line diff with our character diffing
+        // Let's recalculate the changes with a word diff, which is likely to be more readable in this case.
         changes = getModifiedLineChanges(params)
     }
 
