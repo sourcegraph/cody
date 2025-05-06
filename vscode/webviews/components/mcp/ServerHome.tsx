@@ -151,26 +151,16 @@ export function ServerHome({ mcpServers }: ServerHomeProps) {
         )
     }, [searchQuery, servers])
 
-    // Loading state
-    if (!mcpServers) {
-        return (
-            <div className="tw-w-full tw-p-4">
-                <div className="tw-w-full tw-col-span-full tw-text-center tw-py-12 tw-border tw-rounded-lg tw-border-none">
-                    <Server className="tw-h-12 tw-w-12 tw-mx-auto tw-mb-4 tw-text-muted-foreground" />
-                    <h3 className="tw-text-md tw-font-medium">Connecting...</h3>
-                </div>
-            </div>
-        )
-    }
-
     // Empty state
-    if (!mcpServers.length) {
+    if (!mcpServers?.length) {
         return (
             <div className="tw-w-full tw-p-4">
                 <div className="tw-w-full tw-col-span-full tw-text-center tw-py-12 tw-border tw-rounded-lg tw-border-none">
                     <Server className="tw-h-12 tw-w-12 tw-mx-auto tw-mb-4 tw-text-muted-foreground" />
-                    <h3 className="tw-text-md tw-font-medium">No servers found</h3>
-                    <p className="tw-text-muted-foreground tw-mt-1">Add a new server to get started</p>
+                    <h3 className="tw-text-md tw-font-medium">Waiting for server connections...</h3>
+                    <p className="tw-text-muted-foreground tw-mt-1">
+                        Or add a new server to get started
+                    </p>
                 </div>
                 <AddServerView
                     onAddServer={addServer}
@@ -305,13 +295,18 @@ export function getMcpServerType(server: McpServer): ServerType {
         mcpServerConfig.url = config.url
         mcpServerConfig.command = config.command
         mcpServerConfig.args = config.args
-        mcpServerConfig.env = Object.entries(config.env).map(([key, value]) => ({
-            name: key,
-            value: value,
-        }))
+
+        // Only map env entries if config.env exists
+        mcpServerConfig.env = config.env
+            ? Object.entries(config.env).map(([key, value]) => ({
+                  name: key,
+                  value: value,
+              }))
+            : undefined
 
         return { ...base, ...mcpServerConfig }
     } catch (error) {
+        console.error('Error parsing MCP server config:', error, server.config)
         return base
     }
 }
