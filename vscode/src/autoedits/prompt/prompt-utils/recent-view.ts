@@ -17,8 +17,12 @@ export function getRecentSnippetViewPromptWithMaxSnippetAge(
             item.metadata.timeSinceActionMs < maxAgeContextMs
     )
 
+    if (recentViewedSnippets.length === 0) {
+        return ps``
+    }
+
     return joinPromptsWithNewlineSeparator([
-        constants.SHORT_TERM_SNIPPET_VIEWS_INSTRUCTION,
+        constants.LONG_TERM_SNIPPET_VIEWS_INSTRUCTION,
         getRecentlyViewedSnippetsPrompt(recentViewedSnippets),
     ])
 }
