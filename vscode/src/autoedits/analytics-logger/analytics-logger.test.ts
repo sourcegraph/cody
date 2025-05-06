@@ -14,7 +14,8 @@ import { getCurrentDocContext } from '../../completions/get-current-doc-context'
 import { documentAndPosition } from '../../completions/test-helpers'
 import * as sentryModule from '../../services/sentry/sentry'
 import { type AutoeditModelOptions, AutoeditStopReason } from '../adapters/base'
-import { getCodeToReplaceData, getCurrentFilePath } from '../prompt/prompt-utils'
+import { getCodeToReplaceData } from '../prompt/prompt-utils/code-to-replace'
+import { getCurrentFilePath } from '../prompt/prompt-utils/common'
 import { getDecorationInfo } from '../renderer/diff-utils'
 
 import { AutoeditAnalyticsLogger } from './analytics-logger'
@@ -78,7 +79,7 @@ describe('AutoeditAnalyticsLogger', () => {
         return {
             startedAt: performance.now(),
             filePath: getCurrentFilePath(document).toString(),
-            docContext,
+            requestDocContext: docContext,
             document,
             position,
             codeToReplaceData: codeToReplace,
@@ -120,7 +121,7 @@ describe('AutoeditAnalyticsLogger', () => {
             cacheId: uuid.v4() as AutoeditCacheID,
             prompt: modelOptions.prompt,
             codeToReplaceData: codeToReplace,
-            docContext,
+            predictionDocContext: docContext,
             editPosition: position,
             modelResponse: {
                 type: 'success',

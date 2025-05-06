@@ -29,7 +29,7 @@ export class PromptsManager implements vscode.Disposable {
                 items: prompts.map(
                     prompt =>
                         ({
-                            label: prompt.name,
+                            label: prompt.name + `${prompt.draft ? ' (Draft)' : ''}`,
                             detail: prompt.description,
                             value: JSON.stringify({
                                 id: prompt.id,

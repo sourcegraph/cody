@@ -12,6 +12,21 @@ import type {
     ModifiedLineInfo,
 } from './decorators/base'
 
+export function getDecorationInfoFromPrediction(
+    document: vscode.TextDocument,
+    prediction: string,
+    range: vscode.Range
+): DecorationInfo {
+    const currentFileText = document.getText()
+    const predictedFileText =
+        currentFileText.slice(0, document.offsetAt(range.start)) +
+        prediction +
+        currentFileText.slice(document.offsetAt(range.end))
+
+    const decorationInfo = getDecorationInfo(currentFileText, predictedFileText)
+    return decorationInfo
+}
+
 /**
  * Generates decoration information by computing the differences between two texts.
  */

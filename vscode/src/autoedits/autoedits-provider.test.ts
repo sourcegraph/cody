@@ -495,6 +495,10 @@ describe('AutoeditsProvider', () => {
                 id,
                 insertText: completionItem.text,
                 range: completionItem.range,
+                withoutCurrentLinePrefix: {
+                    insertText: completionItem.text,
+                    range: completionItem.range,
+                },
             }),
         ])
     })
