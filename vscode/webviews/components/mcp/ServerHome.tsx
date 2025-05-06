@@ -151,28 +151,28 @@ export function ServerHome({ mcpServers }: ServerHomeProps) {
         )
     }, [searchQuery, servers])
 
-    // Loading state
-    if (mcpServers?.length === 0) {
-        return (
-            <div className="tw-w-full tw-p-4">
-                <div className="tw-w-full tw-col-span-full tw-text-center tw-py-12 tw-border tw-rounded-lg tw-border-border">
-                    <Server className="tw-h-12 tw-w-12 tw-mx-auto tw-mb-4 tw-text-muted-foreground" />
-                    <h3 className="tw-text-md tw-font-medium">Connecting...</h3>
-                </div>
-            </div>
-        )
-    }
-
     // Empty state
-    if (!servers.length) {
+    if (mcpServers === null) {
         return (
             <div className="tw-w-full tw-p-4">
-                <div className="tw-w-full tw-col-span-full tw-text-center tw-py-12 tw-border tw-rounded-lg tw-border-border">
+                <div className="tw-w-full tw-col-span-full tw-text-center tw-py-12 tw-border tw-rounded-lg tw-border-none">
                     <Server className="tw-h-12 tw-w-12 tw-mx-auto tw-mb-4 tw-text-muted-foreground" />
                     <h3 className="tw-text-md tw-font-medium">No servers found</h3>
                     <p className="tw-text-muted-foreground tw-mt-1">Add a new server to get started</p>
                 </div>
                 <AddServerView onAddServer={addServer} className="tw-my-4 tw-w-full tw-py-1" />
+            </div>
+        )
+    }
+
+    // Loading state
+    if (!servers.length) {
+        return (
+            <div className="tw-w-full tw-p-4">
+                <div className="tw-w-full tw-col-span-full tw-text-center tw-py-12 tw-border tw-rounded-lg tw-border-none">
+                    <Server className="tw-h-12 tw-w-12 tw-mx-auto tw-mb-4 tw-text-muted-foreground" />
+                    <h3 className="tw-text-md tw-font-medium">Connecting...</h3>
+                </div>
             </div>
         )
     }
@@ -242,7 +242,7 @@ export function ServerHome({ mcpServers }: ServerHomeProps) {
                                             {server.tools.map(tool => (
                                                 <Badge
                                                     key={`${server.name}-${tool.name}-tool`}
-                                                    variant={tool.disabled ? 'disabled' : 'secondary'}
+                                                    variant={tool.disabled ? 'disabled' : 'outline'}
                                                     className={`tw-truncate tw-max-w-[250px] tw-text-foreground tw-cursor-pointer ${
                                                         tool.disabled
                                                             ? 'tw-opacity-50 tw-line-through'

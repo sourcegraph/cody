@@ -108,18 +108,21 @@ export class MCPManager {
     }>()
 
     // Observable for server changes
-    public static observable: Observable<McpServer[]> = combineLatest(
+    public static observable: Observable<McpServer[] | null> = combineLatest(
         featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.AgenticChatWithMCP),
         this.changeNotifications.pipe(startWith({ type: 'all' })),
         this.toolsChangeNotifications.pipe(startWith({ type: 'all' }))
     ).pipe(
         map(([mcpEnabled, serverChange, toolChange]) => {
             if (!mcpEnabled || !MCPManager.instance) {
-                return []
+                return null
             }
             return MCPManager.instance.getServers()
         }),
         distinctUntilChanged((prev, curr) => {
+            if (!prev || !curr) {
+                return false
+            }
             if (prev.length === 0 && curr.length === 0) {
                 return true
             }

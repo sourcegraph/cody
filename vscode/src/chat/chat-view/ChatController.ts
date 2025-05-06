@@ -1943,15 +1943,14 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     // Existing tools endpoint - update to include MCP tools
                     mcpSettings: () => {
                         return featureFlagProvider
-                            .evaluatedFeatureFlag(FeatureFlag.NextAgenticChatInternal)
+                            .evaluatedFeatureFlag(FeatureFlag.AgenticChatWithMCP)
                             .pipe(
-                                // Simplify the flow with map and distinctUntilChanged
                                 distinctUntilChanged(),
                                 startWith(null),
-                                // When disabled, return an empty array
+                                // When disabled, return null
                                 switchMap(experimentalAgentMode => {
                                     if (!experimentalAgentMode) {
-                                        return Observable.of([] as McpServer[])
+                                        return Observable.of(null as McpServer[] | null)
                                     }
                                     // When enabled, get servers from the manager
                                     return MCPManager.observable
