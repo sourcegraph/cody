@@ -4,13 +4,17 @@ import type * as vscode from 'vscode'
 
 import type { PredictionResult, SuggestedPredictionResult } from './autoedits-provider'
 
-import type { DocumentContext } from '@sourcegraph/cody-shared'
+import type { CodeToReplaceData, DocumentContext } from '@sourcegraph/cody-shared'
 import { forkSignal } from '../completions/utils'
 import { AutoeditStopReason } from './adapters/base'
-import type { AutoeditCacheID, AutoeditHotStreakID, AutoeditRequestID } from './analytics-logger'
-import { autoeditAnalyticsLogger, autoeditSource } from './analytics-logger'
+import type {
+    AutoeditCacheID,
+    AutoeditHotStreakID,
+    AutoeditRequestID,
+    AutoeditTriggerKindMetadata,
+} from './analytics-logger'
+import { autoeditAnalyticsLogger, autoeditSource, autoeditTriggerKind } from './analytics-logger'
 import type { ProcessedHotStreakResponse } from './hot-streak'
-import type { CodeToReplaceData } from './prompt/prompt-utils'
 import { isNotRecyclable, isRequestNotRelevant } from './request-recycling'
 
 export interface AutoeditRequestManagerParams {
@@ -20,9 +24,10 @@ export interface AutoeditRequestManagerParams {
     documentText: string
     documentVersion: number
     codeToReplaceData: CodeToReplaceData
-    docContext: DocumentContext
+    requestDocContext: DocumentContext
     position: vscode.Position
     abortSignal: AbortSignal
+    triggerKind: AutoeditTriggerKindMetadata
 }
 
 export class RequestManager implements vscode.Disposable {
@@ -48,10 +53,12 @@ export class RequestManager implements vscode.Disposable {
         params: AutoeditRequestManagerParams,
         makeRequest: (abortSignal: AbortSignal) => Promise<AsyncGenerator<ProcessedHotStreakResponse>>
     ): Promise<PredictionResult> {
-        // 1. First check the cache for exact matches
-        const cachedResponse = this.checkCache(params)
-        if (cachedResponse) {
-            return cachedResponse
+        // 1. First check the cache for exact matches if trigger kind is not manual
+        if (params.triggerKind !== autoeditTriggerKind.manual) {
+            const cachedResponse = this.checkCache(params)
+            if (cachedResponse) {
+                return cachedResponse
+            }
         }
 
         // 2. Then check for a matching in-flight request

@@ -1,11 +1,10 @@
 import type * as vscode from 'vscode'
 
-import type { DocumentContext } from '@sourcegraph/cody-shared'
+import type { CodeToReplaceData, DocumentContext } from '@sourcegraph/cody-shared'
 import type { InlineCompletionItemRetrievedContext } from '../../../src/completions/analytics-logger'
 import type { ContextSummary } from '../../completions/context/context-mixer'
 import type { CodeGenEventMetadata } from '../../services/CharactersLogger'
 import type { ModelResponse } from '../adapters/base'
-import type { CodeToReplaceData } from '../prompt/prompt-utils'
 import type { DecorationStats } from '../renderer/diff-utils'
 import type { AutoEditRenderOutput } from '../renderer/render-output'
 
@@ -191,7 +190,7 @@ export interface StartedState extends AutoeditBaseState {
     codeToReplaceData: CodeToReplaceData
     document: vscode.TextDocument
     position: vscode.Position
-    docContext: DocumentContext
+    requestDocContext: DocumentContext
 
     /** Partial payload for this phase. Will be augmented with more info as we progress. */
     payload: {
@@ -257,6 +256,7 @@ export interface LoadedState extends Omit<ContextLoadedState, 'phase' | 'payload
     hotStreakId?: AutoeditHotStreakID
     hotStreakChunks?: HotStreakChunk[]
     editPosition: vscode.Position
+    predictionDocContext: DocumentContext
     payload: ContextLoadedState['payload'] & {
         /**
          * An ID to uniquely identify a suggest autoedit. Note: It is possible for this ID to be part

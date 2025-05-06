@@ -69,7 +69,7 @@ export enum FeatureFlag {
     CodyAutoEditInlineRendering = 'cody-autoedit-inline-rendering',
 
     // Enables hot-streak for autoedit suggestions
-    CodyAutoEditHotStreak = 'cody-autoedit-hot-streak',
+    CodyAutoEditHotStreak = 'cody-autoedit-hot-streak-v1',
 
     // Enables gpt-4o-mini as a default Edit model
     CodyEditDefaultToGpt4oMini = 'cody-edit-default-to-gpt-4o-mini',

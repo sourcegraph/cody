@@ -2,8 +2,8 @@ import type { CodeToReplaceData, DocumentContext } from '@sourcegraph/cody-share
 import * as uui from 'uuid'
 
 import * as vscode from 'vscode'
-
 import { TextDocument } from 'vscode-languageserver-textdocument'
+
 import { getCurrentDocContext } from '../../completions/get-current-doc-context'
 import { getNewLineChar } from '../../completions/text-processing'
 import { wrapVSCodeTextDocument } from '../../editor/utils/virtual-text-document'
@@ -15,15 +15,17 @@ import type {
     IgnoredPredictionResult,
     SuggestedPredictionResult,
 } from '../autoedits-provider'
-import { getCodeToReplaceData } from '../prompt/prompt-utils'
+import { getCodeToReplaceData } from '../prompt/prompt-utils/code-to-replace'
 import { isDuplicatingTextFromRewriteArea } from '../utils'
-import { getHotStreakChunk, getStableSuggestion } from './get-chunk'
+import { getHotStreakChunk } from './get-chunk'
+import { getStableSuggestion } from './stable-suggestion'
+import { postProcessCompletion } from './utils'
 
 export interface ProcessHotStreakResponsesParams {
     responseGenerator: AsyncGenerator<ModelResponse>
     document: vscode.TextDocument
     codeToReplaceData: CodeToReplaceData
-    docContext: DocumentContext
+    requestDocContext: DocumentContext
     position: vscode.Position
     options: {
         // If hot-streak is actually enabled. If it is not, we will not attempt to emit
@@ -50,7 +52,7 @@ export async function* processHotStreakResponses({
     responseGenerator,
     document: originalDocument,
     codeToReplaceData,
-    docContext,
+    requestDocContext,
     position,
     options,
 }: ProcessHotStreakResponsesParams): AsyncGenerator<ProcessedHotStreakResponse> {
@@ -64,6 +66,11 @@ export async function* processHotStreakResponses({
     const document = wrapVSCodeTextDocument(virtualDocument)
 
     for await (const response of responseGenerator) {
+        // Post process the prediction
+        if (response.type !== 'aborted') {
+            response.prediction = postProcessCompletion(response.prediction)
+        }
+
         const canHotStreak = hotStreakId
             ? // If we have already started emitted hot-streak suggestions, then we should treat all responses as hot-streaks
               response.type === 'partial' || response.type === 'success'
@@ -96,25 +103,34 @@ export async function* processHotStreakResponses({
                 continue
             }
 
-            // The hot streak prediction excludes part of the prefix. This means that it fundamentally relies
-            // on the prefix existing in the document to be a valid suggestion. We need to update the docContext
-            // to reflect this.
+            // TODO: Right now we always use the provided `position` in which the auto-edit was triggered from.
+            // This works great for the first chunk, but we should try to match the position of the users' cursor
+            // on the assumption that they have accepted the previous chunk (if present). For example, if the previous
+            // chunk was an inline completion, the cursor is moved to the end of the completion range when accepted.
+            // If we matched this new position, it would mean it would be possible to chain inline completions.
+            const hotStreakPosition = position
+
+            // The hot streak prediction excludes part of the prediction. This means that it fundamentally relies
+            // on this prediction part existing in the document to be a valid suggestion. We need to update the
+            // docContext to reflect this.
             const updatedDocContext = getCurrentDocContext({
                 document,
-                position: predictionChunk.range.start,
-                maxPrefixLength: docContext.maxPrefixLength,
-                maxSuffixLength: docContext.maxSuffixLength,
+                position: hotStreakPosition,
+                maxPrefixLength: requestDocContext.maxPrefixLength,
+                maxSuffixLength: requestDocContext.maxSuffixLength,
             })
 
+            const lengthOfChunk = predictionChunk.range.end.line - predictionChunk.range.start.line - 1
             const adjustedCodeToReplace = getCodeToReplaceData({
                 docContext: updatedDocContext,
                 document,
-                position: predictionChunk.range.start,
+                position: hotStreakPosition,
                 tokenBudget: {
                     ...autoeditsProviderConfig.tokenLimit,
-                    codeToRewritePrefixLines: 0,
-                    codeToRewriteSuffixLines:
-                        predictionChunk.range.end.line - predictionChunk.range.start.line - 1,
+                    codeToRewriteSuffixLines: Math.max(
+                        lengthOfChunk - autoeditsProviderConfig.tokenLimit.codeToRewritePrefixLines,
+                        0
+                    ),
                 },
             })
 
@@ -189,7 +205,7 @@ export async function* processHotStreakResponses({
                 type: 'suggested',
                 response,
                 uri: document.uri.toString(),
-                docContext,
+                docContext: requestDocContext,
                 codeToReplaceData,
                 // Note: We still emit a position when hot streak is disabled, but it is not an accurate
                 // `editPosition`. This is just so we can maintain a single type whilst the feature flag is used.
@@ -217,7 +233,7 @@ export async function* processHotStreakResponses({
             type: 'suggested',
             response,
             uri: document.uri.toString(),
-            docContext,
+            docContext: requestDocContext,
             codeToReplaceData,
             // Note that an `editPosition` is returned here regardless of whether the suggestion is a hot-streak.
             // This is so this can still be used as a "next cursor" prediction source for a scenario where we have

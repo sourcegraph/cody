@@ -25,6 +25,9 @@ Some more text
 ${CLEAN_RESPONSE}
 \`\`\``
 
+const C_RESPONSE = 'int* current_ptr = &currentValue;'
+const CSHARP_RESPONSE =
+    'public List&lt;object&gt; FindNext(Drone drone, HashSet&lt; int&gt; testHashSet)'
 const DEFAULT_TASK = { document: { languageId: 'typescript' } } as FixupTask
 
 export const RESPONSE_TEST_FIXTURES: Record<string, ResponseTestFixture> = {
@@ -67,6 +70,16 @@ export const RESPONSE_TEST_FIXTURES: Record<string, ResponseTestFixture> = {
         response: CLEAN_RESPONSE.replace(/</g, '&lt;').replace(/>/g, '&gt;'),
         expected: CLEAN_RESPONSE,
         task: DEFAULT_TASK,
+    },
+    withCsharpHtmlEntities: {
+        response: CSHARP_RESPONSE,
+        expected: CSHARP_RESPONSE.replace(/&lt;/g, '<').replace(/&gt;/g, '>'),
+        task: { ...DEFAULT_TASK, document: { languageId: 'csharp' } } as FixupTask,
+    },
+    withAmpersAndSemicolonInC: {
+        response: C_RESPONSE,
+        expected: C_RESPONSE,
+        task: { ...DEFAULT_TASK, document: { languageId: 'c' } } as FixupTask,
     },
     withLeadingSpaces: {
         response: '   \n\n' + CLEAN_RESPONSE,

@@ -1,4 +1,5 @@
-import { CodyIDE, type UserLocalHistory } from '@sourcegraph/cody-shared'
+import { CodyIDE } from '@sourcegraph/cody-shared'
+import type { LightweightChatTranscript } from '@sourcegraph/cody-shared/src/chat/transcript'
 import type { Meta, StoryObj } from '@storybook/react'
 import { VSCodeStandaloneComponent } from '../storybook/VSCodeStoryDecorator'
 import { HistoryTabWithData } from './HistoryTab'
@@ -62,35 +63,23 @@ export const MultiDay: Story = {
 
 export const Paginated: Story = {
     args: {
+        IDE: CodyIDE.VSCode,
+        setView: () => {},
         chats: getMockedChatData(50),
     },
 }
 
-function getMockedChatData(items: number): UserLocalHistory['chat'][string][] {
-    const mockedChatData: UserLocalHistory['chat'][string][] = []
+function getMockedChatData(items: number): LightweightChatTranscript[] {
+    const mockedChatData: LightweightChatTranscript[] = []
 
     for (let i = 3; i <= items; i++) {
-        const numInteractions = Math.floor(Math.random() * 3) + 1 // 1-3 interactions
-        const interactions = []
         const lastTimestamp = Date.now() - Math.floor(Math.random() * 7) * 86400000 // Randomly within the last 7 days
-
-        for (let j = 0; j < numInteractions; j++) {
-            const humanMessageText = `Question about topic ${i}-${j + 1}`
-            interactions.push({
-                humanMessage: {
-                    speaker: 'human' as const,
-                    text: humanMessageText,
-                },
-                assistantMessage: {
-                    speaker: 'assistant' as const,
-                    text: `Answer to question ${i}-${j + 1}`,
-                },
-            })
-        }
+        const firstHumanMessageText = `Question about topic ${i}-1`
 
         mockedChatData.push({
             id: String(i),
-            interactions: interactions,
+            chatTitle: `Chat about topic ${i}`,
+            firstHumanMessageText,
             lastInteractionTimestamp: new Date(lastTimestamp).toISOString(),
         })
     }

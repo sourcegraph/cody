@@ -2,14 +2,10 @@ import { ContextItemSource } from '@sourcegraph/cody-shared'
 import { type Mock, beforeEach, describe, expect, it, vi } from 'vitest'
 import { URI } from 'vscode-uri'
 import type { Repository } from '../../repository/builtinGitExtension'
-import { doesFileExist } from '../utils/workspace-files'
 import { getContextFilesFromGitDiff } from './git-api'
 
 vi.mock('../repository')
 vi.mock('../utils')
-vi.mock('../utils/workspace-files', () => ({
-    doesFileExist: vi.fn(),
-}))
 
 describe('getContextFilesFromGitDiff', () => {
     const mockGitRepo = {
@@ -21,7 +17,6 @@ describe('getContextFilesFromGitDiff', () => {
     const diffIndexWithHEAD = mockGitRepo.diffIndexWithHEAD as Mock
     const diffWithHEAD = mockGitRepo.diffWithHEAD as Mock
     const diff = mockGitRepo.diff as Mock
-    const mockDoesFileExist = doesFileExist as Mock
 
     beforeEach(() => {
         vi.clearAllMocks()
@@ -37,8 +32,6 @@ describe('getContextFilesFromGitDiff', () => {
                 '@@ -1,1 +1,2 @@\n' +
                 '+console.log("Hello World");\n'
         )
-
-        mockDoesFileExist.mockResolvedValue(true)
 
         const result = await getContextFilesFromGitDiff(mockGitRepo)
 
@@ -62,8 +55,6 @@ describe('getContextFilesFromGitDiff', () => {
                 '+console.log("Unstaged change");\n'
         )
 
-        mockDoesFileExist.mockResolvedValue(true)
-
         const result = await getContextFilesFromGitDiff(mockGitRepo)
 
         expect(result).toHaveLength(1)
@@ -80,7 +71,7 @@ describe('getContextFilesFromGitDiff', () => {
         diffWithHEAD.mockResolvedValue([])
         diff.mockResolvedValue('')
 
-        await expect(getContextFilesFromGitDiff(mockGitRepo)).rejects.toThrow('Failed to get git diff.')
+        await expect(getContextFilesFromGitDiff(mockGitRepo)).rejects.toThrow('Empty git diff output.')
     })
 
     it('should handle multiple files in diffs', async () => {
@@ -102,24 +93,8 @@ describe('getContextFilesFromGitDiff', () => {
                 '+console.log("File 2");\n'
         )
 
-        mockDoesFileExist.mockResolvedValue(true)
         const result = await getContextFilesFromGitDiff(mockGitRepo)
         expect(result).toHaveLength(2)
-    })
-
-    it('should skip files that do not exist', async () => {
-        diffIndexWithHEAD.mockResolvedValue([{ uri: URI.parse('file:///path/to/nonexistent.ts') }])
-        diffWithHEAD.mockResolvedValue([])
-        diff.mockResolvedValue(
-            'diff --git a/nonexistent.ts b/nonexistent.ts\n' +
-                '--- a/nonexistent.ts\n' +
-                '+++ b/nonexistent.ts\n' +
-                '@@ -0,0 +1 @@\n' +
-                '+This file does not exist\n'
-        )
-
-        mockDoesFileExist.mockResolvedValue(false)
-        await expect(getContextFilesFromGitDiff(mockGitRepo)).rejects.toThrow('Failed to get git diff.')
     })
 
     it('should handle Windows OS paths', async () => {
@@ -138,13 +113,37 @@ describe('getContextFilesFromGitDiff', () => {
             displayPath: vi.fn().mockReturnValue('path\\to\\file3.ts'),
         }))
 
-        mockDoesFileExist.mockResolvedValue(true)
         const result = await getContextFilesFromGitDiff(mockGitRepo)
         expect(result).toHaveLength(1)
         expect(result[0]).toMatchObject({
             type: 'file',
             title: 'git diff --cached',
             uri: URI.parse('file:///c:/path/to/file3.ts'),
+            source: ContextItemSource.Terminal,
+        })
+    })
+
+    it('should handle deleted files', async () => {
+        diffIndexWithHEAD.mockResolvedValue([{ uri: URI.parse('file:///path/to/deleted.file.txt') }])
+        diffWithHEAD.mockResolvedValue([])
+        diff.mockResolvedValue(
+            'diff --git a/path/to/deleted.file.txt b/path/to/deleted.file.txt\n' +
+                'deleted file mode 100644\n' +
+                'index 5b85839..0000000\n' +
+                '--- a/new.txt\n' +
+                '+++ /dev/null\n' +
+                '@@ -1,3 +0,0 @@\n' +
+                '-first line\n' +
+                '-line 2\n' +
+                '-another line 2'
+        )
+
+        const result = await getContextFilesFromGitDiff(mockGitRepo)
+        expect(result).toHaveLength(1)
+        expect(result[0]).toMatchObject({
+            type: 'file',
+            title: 'git diff --cached',
+            uri: URI.parse('file:///path/to/deleted.file.txt'),
             source: ContextItemSource.Terminal,
         })
     })

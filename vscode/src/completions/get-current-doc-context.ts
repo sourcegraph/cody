@@ -6,7 +6,9 @@ import {
     type DocumentContext,
     type DocumentDependentContext,
     type LinesContext,
+    PromptString,
     getEditorInsertSpaces,
+    ps,
 } from '@sourcegraph/cody-shared'
 import { detectMultiline } from './detect-multiline'
 import {
@@ -115,9 +117,18 @@ function getPrefix(params: GetPrefixParams): string {
     return prefixLines.join('\n')
 }
 
-export function getPrefixWithCharLimit(prefixLines: string[], maxPrefixLength: number): string {
+// Type guard to check if the array is PromptString[]
+function isPromptStringArray(arr: (string | PromptString)[]): arr is PromptString[] {
+    return arr.length > 0 && arr[0] instanceof PromptString
+}
+
+export function getPrefixWithCharLimit<T extends string | PromptString>(
+    prefixLines: T[],
+    maxPrefixLength: number
+): T {
     let total = 0
     let startLine = prefixLines.length
+
     for (let i = prefixLines.length - 1; i >= 0; i--) {
         if (total + prefixLines[i].length > maxPrefixLength) {
             break
@@ -125,10 +136,17 @@ export function getPrefixWithCharLimit(prefixLines: string[], maxPrefixLength: n
         startLine = i
         total += prefixLines[i].length
     }
-    return prefixLines.slice(startLine).join('\n')
+    const relevantLines = prefixLines.slice(startLine)
+    if (isPromptStringArray(prefixLines)) {
+        return PromptString.join(relevantLines as PromptString[], ps`\n`) as T
+    }
+    return relevantLines.join('\n') as T
 }
 
-export function getSuffixWithCharLimit(suffixLines: string[], maxSuffixLength: number): string {
+export function getSuffixWithCharLimit<T extends string | PromptString>(
+    suffixLines: T[],
+    maxSuffixLength: number
+): T {
     let totalSuffix = 0
     let endLine = 0
     for (let i = 0; i < suffixLines.length; i++) {
@@ -138,7 +156,11 @@ export function getSuffixWithCharLimit(suffixLines: string[], maxSuffixLength: n
         endLine = i + 1
         totalSuffix += suffixLines[i].length
     }
-    return suffixLines.slice(0, endLine).join('\n')
+    const relevantLines = suffixLines.slice(0, endLine)
+    if (isPromptStringArray(suffixLines)) {
+        return PromptString.join(relevantLines as PromptString[], ps`\n`) as T
+    }
+    return relevantLines.join('\n') as T
 }
 
 interface GetDerivedDocContextParams {
@@ -325,4 +347,20 @@ function getLinesContext(params: GetLinesContextParams): LinesContext {
         prevNonEmptyLine,
         nextNonEmptyLine,
     }
+}
+
+export function getCurrentLinePrefixAndSuffix({
+    document,
+    position,
+}: {
+    document: vscode.TextDocument
+    position: vscode.Position
+}) {
+    const currentLineStartPosition = new vscode.Position(position.line, 0)
+    const currentLinePrefix = document.getText(new vscode.Range(currentLineStartPosition, position))
+
+    const currentLineEndPosition = document.lineAt(position.line).range.end
+    const currentLineSuffix = document.getText(new vscode.Range(position, currentLineEndPosition))
+
+    return { currentLinePrefix, currentLineSuffix }
 }

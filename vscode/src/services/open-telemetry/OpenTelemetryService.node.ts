@@ -18,11 +18,7 @@ import {
 
 import { DiagConsoleLogger, DiagLogLevel, diag, metrics } from '@opentelemetry/api'
 import { OTLPMetricExporter } from '@opentelemetry/exporter-metrics-otlp-http'
-import {
-    ConsoleMetricExporter,
-    MeterProvider,
-    PeriodicExportingMetricReader,
-} from '@opentelemetry/sdk-metrics'
+import { MeterProvider, PeriodicExportingMetricReader } from '@opentelemetry/sdk-metrics'
 import { BatchSpanProcessor } from '@opentelemetry/sdk-trace-base'
 import { externalAuthRefresh } from '@sourcegraph/cody-shared/src/configuration/auth-resolver'
 import { isEqual } from 'lodash'
@@ -100,15 +96,6 @@ export class OpenTelemetryService {
                             exportIntervalMillis: 60 * 1000,
                         })
                     )
-                    // Enable the console exporter only in the development environment.
-                    if (process.env.NODE_ENV === 'development') {
-                        this.meterProvider?.addMetricReader(
-                            new PeriodicExportingMetricReader({
-                                exporter: new ConsoleMetricExporter(),
-                                exportIntervalMillis: 5 * 1000,
-                            })
-                        )
-                    }
 
                     const newConfig = {
                         isTracingEnabled: this.isTracingEnabled,

@@ -15,6 +15,7 @@ import type { FireworksResponse } from './model-response/fireworks'
 import {
     type AutoeditsRequestBody,
     type FireworksCompatibleRequestParams,
+    getFireworksCompatibleRewriteSpeculationParams,
     getMaxOutputTokensForAutoedits,
     getOpenaiCompatibleChatPrompt,
 } from './utils'
@@ -106,8 +107,7 @@ export class FireworksWebSocketAdapter implements AutoeditsModelAdapter {
         const maxTokens = getMaxOutputTokensForAutoedits(options.codeToRewrite)
         const baseParams: FireworksCompatibleRequestParams = {
             stream: true,
-            // TODO(CODY-5528): allow user to specify models
-            // model: options.model,
+            model: options.model,
             temperature: 0.1,
             max_tokens: maxTokens,
             response_format: {
@@ -120,6 +120,7 @@ export class FireworksWebSocketAdapter implements AutoeditsModelAdapter {
                 content: options.codeToRewrite,
             },
             user: options.userId || undefined,
+            ...getFireworksCompatibleRewriteSpeculationParams(),
         }
 
         if (options.isChatModel) {

@@ -38,7 +38,7 @@ export const HistoryTab: React.FC<HistoryTabProps> = ({
     const chats = useMemo(() => (userHistory ? Object.values(userHistory) : userHistory), [userHistory])
 
     return (
-        <div className="tw-flex tw-overflow-hidden tw-h-full tw-w-full">
+        <div className="tw-flex tw-flex-col tw-justify-center tw-overflow-hidden tw-h-full tw-w-full">
             {!chats ? (
                 <LoadingDots />
             ) : (

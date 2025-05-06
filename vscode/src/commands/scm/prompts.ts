@@ -7,9 +7,9 @@ If provided, the title of the commit message must align with the style of the sh
 {COMMIT_TEMPLATE}
 Do not enclose the suggested commit message in backticks. Skip preamble. Only respond with the commit message.`
 
-const COMMMIT_TEMPLATE = ps`The commit message should strictly adhere to the commit format from the shared git commit template.`
+const COMMIT_TEMPLATE = ps`The commit message should strictly adhere to the commit format from the shared git commit template.`
 
-const COMMMIT_TEMPLATE_NOT_FOUNT = ps`The commit message should adhere to the conventional commit format`
+const COMMIT_TEMPLATE_NOT_FOUND = ps`The commit message should adhere to the conventional commit format`
 
 export const COMMIT_COMMAND_PROMPTS = {
     /**
@@ -23,9 +23,9 @@ export const COMMIT_COMMAND_PROMPTS = {
     /**
      * The prompt when there is a COMMIT_TEMPLATE found.
      */
-    template: COMMMIT_TEMPLATE,
+    template: COMMIT_TEMPLATE,
     /**
      * The prompt when COMMIT_TEMPLATE is not found.
      */
-    noTemplate: COMMMIT_TEMPLATE_NOT_FOUNT,
+    noTemplate: COMMIT_TEMPLATE_NOT_FOUND,
 }
