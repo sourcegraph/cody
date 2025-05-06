@@ -105,7 +105,7 @@ export function AddServerForm({ onAddServer, _server }: AddServerFormProps) {
                             value={formData.name}
                             name="name"
                             onChange={e => setFormData({ ...formData, name: e.target.value })}
-                            className="tw-block tw-py-2.5 tw-px-0 tw-w-full tw-text-sm tw-text-gray-900 tw-bg-transparent tw-border-0 tw-border-b-2 tw-border-gray-300 tw-appearance-none dark:tw-text-white dark:tw-border-gray-600 dark:focus:tw-border-blue-500 focus:tw-outline-none focus:tw-ring-0 focus:tw-border-blue-600 peer"
+                            className="tw-block tw-py-2.5 tw-px-0 tw-w-full tw-text-sm tw-text-input-foreground tw-bg-transparent tw-border-0 tw-border-b-2 tw-border-gray-300 tw-appearance-none dark:tw-border-gray-600 dark:focus:tw-border-blue-500 focus:tw-outline-none focus:tw-ring-0 focus:tw-border-blue-600 peer"
                             placeholder=" "
                             required
                         />
@@ -118,7 +118,7 @@ export function AddServerForm({ onAddServer, _server }: AddServerFormProps) {
                         id="command"
                         value={formData.command}
                         onChange={e => setFormData({ ...formData, command: e.target.value })}
-                        className="tw-block tw-py-2.5 tw-px-0 tw-w-full tw-text-sm tw-text-gray-900 tw-bg-transparent tw-border-0 tw-border-b-2 tw-border-gray-300 tw-appearance-none dark:tw-text-white dark:tw-border-gray-600 dark:focus:tw-border-blue-500 focus:tw-outline-none focus:tw-ring-0 focus:tw-border-blue-600 peer"
+                        className="tw-block tw-py-2.5 tw-px-0 tw-w-full tw-text-sm tw-text-input-foreground tw-bg-transparent tw-border-0 tw-border-b-2 tw-border-gray-300 tw-appearance-none dark:tw-border-gray-600 dark:focus:tw-border-blue-500 focus:tw-outline-none focus:tw-ring-0 focus:tw-border-blue-600 peer"
                         placeholder="npx"
                         required={!formData.url}
                     />
@@ -139,7 +139,7 @@ export function AddServerForm({ onAddServer, _server }: AddServerFormProps) {
                                 value={arg}
                                 placeholder=""
                                 onChange={e => updateArg(index, e.target.value)}
-                                className="tw-block tw-py-2.5 tw-px-0 tw-w-full tw-text-sm tw-text-gray-900 tw-bg-transparent tw-border-0 tw-border-b-2 tw-border-gray-300 tw-appearance-none dark:tw-text-white dark:tw-border-gray-600 dark:focus:tw-border-blue-500 focus:tw-outline-none focus:tw-ring-0 focus:tw-border-blue-600 peer"
+                                className="tw-block tw-py-2.5 tw-px-0 tw-w-full tw-text-sm tw-text-input-foreground tw-bg-transparent tw-border-0 tw-border-b-2 tw-border-gray-300 tw-appearance-none dark:tw-border-gray-600 dark:focus:tw-border-blue-500 focus:tw-outline-none focus:tw-ring-0 focus:tw-border-blue-600 peer"
                             />
                             <Button
                                 type="button"
@@ -161,7 +161,7 @@ export function AddServerForm({ onAddServer, _server }: AddServerFormProps) {
                         size={12}
                         value={formData.url}
                         onChange={e => setFormData({ ...formData, url: e.target.value })}
-                        className="tw-block tw-py-2.5 tw-px-0 tw-w-full tw-text-sm tw-text-gray-900 tw-bg-transparent tw-border-0 tw-border-b-2 tw-border-gray-300 tw-appearance-none dark:tw-text-white dark:tw-border-gray-600 dark:focus:tw-border-blue-500 focus:tw-outline-none focus:tw-ring-0 focus:tw-border-blue-600 peer"
+                        className="tw-block tw-py-2.5 tw-px-0 tw-w-full tw-text-sm tw-text-input-foreground tw-bg-transparent tw-border-0 tw-border-b-2 tw-border-gray-300 tw-appearance-none dark:tw-border-gray-600 dark:focus:tw-border-blue-500 focus:tw-outline-none focus:tw-ring-0 focus:tw-border-blue-600 peer"
                         placeholder="Make sure you pass in the absolute path to your server."
                     />
                 </div>
@@ -182,7 +182,7 @@ export function AddServerForm({ onAddServer, _server }: AddServerFormProps) {
                                 value={env.name}
                                 placeholder=""
                                 onChange={e => updateEnvVar(index, 'name', e.target.value)}
-                                className="tw-block tw-py-2.5 tw-px-0 tw-w-full tw-text-sm tw-text-gray-900 tw-bg-transparent tw-border-0 tw-border-b-2 tw-border-gray-300 tw-appearance-none dark:tw-text-white dark:tw-border-gray-600 dark:focus:tw-border-blue-500 focus:tw-outline-none focus:tw-ring-0 focus:tw-border-blue-600 peer"
+                                className="tw-block tw-py-2.5 tw-px-0 tw-w-full tw-text-sm tw-text-input-foreground tw-bg-transparent tw-border-0 tw-border-b-2 tw-border-gray-300 tw-appearance-none dark:tw-border-gray-600 dark:focus:tw-border-blue-500 focus:tw-outline-none focus:tw-ring-0 focus:tw-border-blue-600 peer"
                             />
                             <span className="tw-mx-1">=</span>
                             <input
@@ -190,7 +190,7 @@ export function AddServerForm({ onAddServer, _server }: AddServerFormProps) {
                                 placeholder=""
                                 onChange={e => updateEnvVar(index, 'value', e.target.value)}
                                 type="password"
-                                className="tw-block tw-py-2.5 tw-px-0 tw-w-full tw-text-sm tw-text-gray-900 tw-bg-transparent tw-border-0 tw-border-b-2 tw-border-gray-300 tw-appearance-none dark:tw-text-white dark:tw-border-gray-600 dark:focus:tw-border-blue-500 focus:tw-outline-none focus:tw-ring-0 focus:tw-border-blue-600 peer"
+                                className="tw-block tw-py-2.5 tw-px-0 tw-w-full tw-text-sm tw-text-input-foreground tw-bg-transparent tw-border-0 tw-border-b-2 tw-border-gray-300 tw-appearance-none dark:tw-border-gray-600 dark:focus:tw-border-blue-500 focus:tw-outline-none focus:tw-ring-0 focus:tw-border-blue-600 peer"
                             />
                             <Button
                                 type="button"
