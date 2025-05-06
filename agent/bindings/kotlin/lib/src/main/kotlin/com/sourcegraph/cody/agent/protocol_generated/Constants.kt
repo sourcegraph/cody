@@ -99,6 +99,7 @@ object Constants {
   const val priority = "priority"
   const val pro = "pro"
   const val read = "read"
+  const val readyToBeRendered = "readyToBeRendered"
   const val reasoning = "reasoning"
   const val `recently-used` = "recently used"
   const val recommended = "recommended"
