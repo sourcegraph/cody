@@ -1,5 +1,4 @@
 import { type AutocompleteContextSnippet, PromptString, ps } from '@sourcegraph/cody-shared'
-import { groupConsecutiveItemsByPredicate } from '../../completions/context/retrievers/recent-user-actions/recent-edits-diff-helpers/utils'
 import { RetrieverIdentifier } from '../../completions/context/utils'
 
 import { AutoeditsUserPromptStrategy, type UserPromptArgs } from './base'
@@ -7,20 +6,24 @@ import * as constants from './constants'
 import {
     getContextItemMappingWithTokenLimit,
     getContextItemsForIdentifier,
-    getCurrentFileLongSuggestionPrompt,
-    getLintErrorsPrompt,
     getPromptForTheContextSource,
     getPromptWithNewline,
-    getRecentEditsPrompt,
-    getRecentlyViewedSnippetsPrompt,
     joinPromptsWithNewlineSeparator,
-} from './prompt-utils'
+} from './prompt-utils/common'
+import { getCurrentFileLongSuggestionPrompt } from './prompt-utils/current-file'
+import { getLintErrorsPrompt } from './prompt-utils/lint'
+import {
+    getRecentEditsPrompt,
+    groupConsecutiveRecentEditsItemsFromSameFile,
+} from './prompt-utils/recent-edits'
+import { getRecentlyViewedSnippetsPrompt } from './prompt-utils/recent-view'
 
 export class LongTermPromptStrategy extends AutoeditsUserPromptStrategy {
     getUserPrompt({ context, tokenBudget, codeToReplaceData, document }: UserPromptArgs): PromptString {
         const contextItemMapping = getContextItemMappingWithTokenLimit(
             context,
-            tokenBudget.contextSpecificTokenLimit
+            tokenBudget.contextSpecificTokenLimit,
+            tokenBudget.contextSpecificNumItemsLimit
         )
         const recentViewsPrompt = getPromptForTheContextSource(
             contextItemMapping.get(RetrieverIdentifier.RecentViewPortRetriever) || [],
@@ -82,28 +85,10 @@ export class LongTermPromptStrategy extends AutoeditsUserPromptStrategy {
     }
 
     private computeLongTermRecentEditsPrompt(contextItems: AutocompleteContextSnippet[]): PromptString {
-        if (contextItems.length === 0) {
+        const combinedContextItems = groupConsecutiveRecentEditsItemsFromSameFile(contextItems)
+        if (combinedContextItems.length === 0) {
             return ps``
         }
-        // Group consecutive items by file name
-        const groupedContextItems = groupConsecutiveItemsByPredicate(
-            contextItems,
-            (a, b) => a.uri.toString() === b.uri.toString()
-        )
-        const combinedContextItems: AutocompleteContextSnippet[] = []
-        for (const group of groupedContextItems) {
-            const combinedItem = {
-                ...group[0],
-                // The group content is from the latest to the oldest item.
-                // We need to reverse the order of the content to get diff from old to new.
-                content: group
-                    .map(item => item.content)
-                    .reverse()
-                    .join('\nthen\n'),
-            }
-            combinedContextItems.push(combinedItem)
-        }
-
         return joinPromptsWithNewlineSeparator([
             constants.RECENT_EDITS_INSTRUCTION,
             getRecentEditsPrompt(combinedContextItems),

@@ -42,6 +42,13 @@ export const defaultTokenLimit: AutoEditsTokenLimit = {
         [RetrieverIdentifier.DiagnosticsRetriever]: 250,
         [RetrieverIdentifier.RecentViewPortRetriever]: 1000,
     },
+    contextSpecificNumItemsLimit: {
+        [RetrieverIdentifier.RecentEditsRetriever]: 10,
+        [RetrieverIdentifier.JaccardSimilarityRetriever]: 0,
+        [RetrieverIdentifier.RecentCopyRetriever]: 0,
+        [RetrieverIdentifier.DiagnosticsRetriever]: 2,
+        [RetrieverIdentifier.RecentViewPortRetriever]: 2,
+    },
 } as const satisfies AutoEditsTokenLimit
 
 export const hotStreakTokenLimit: AutoEditsTokenLimit = {
@@ -54,6 +61,13 @@ export const hotStreakTokenLimit: AutoEditsTokenLimit = {
         [RetrieverIdentifier.RecentCopyRetriever]: 0,
         [RetrieverIdentifier.DiagnosticsRetriever]: 100,
         [RetrieverIdentifier.RecentViewPortRetriever]: 500,
+    },
+    contextSpecificNumItemsLimit: {
+        [RetrieverIdentifier.RecentEditsRetriever]: 10,
+        [RetrieverIdentifier.JaccardSimilarityRetriever]: 0,
+        [RetrieverIdentifier.RecentCopyRetriever]: 0,
+        [RetrieverIdentifier.DiagnosticsRetriever]: 2,
+        [RetrieverIdentifier.RecentViewPortRetriever]: 2,
     },
 } as const satisfies AutoEditsTokenLimit
 

@@ -1,4 +1,4 @@
-package com.sourcegraph.cody.agent.protocol
+package com.sourcegraph.cody.agent.protocol_extensions
 
 import com.intellij.openapi.application.WriteAction
 import com.intellij.openapi.editor.Document
@@ -7,7 +7,6 @@ import com.intellij.openapi.fileEditor.impl.text.TextEditorProvider
 import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
-import com.sourcegraph.cody.agent.protocol_extensions.ProtocolTextDocumentExt
 import com.sourcegraph.cody.agent.protocol_generated.Position
 import com.sourcegraph.cody.agent.protocol_generated.ProtocolTextDocument
 import com.sourcegraph.cody.agent.protocol_generated.Range
