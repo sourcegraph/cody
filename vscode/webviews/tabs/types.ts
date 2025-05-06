@@ -5,4 +5,5 @@ export enum View {
     Account = 'account',
     Prompts = 'prompts',
     Settings = 'settings',
+    Mcp = 'mcp',
 }

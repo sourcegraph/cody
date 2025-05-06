@@ -160,6 +160,7 @@ export enum FeatureFlag {
      * This is not for external use and should not be exposed to users.
      */
     NextAgenticChatInternal = 'next-agentic-chat-internal',
+    AgenticChatWithMCP = 'agentic-chat-mcp-enabled',
 }
 
 const ONE_HOUR = 60 * 60 * 1000

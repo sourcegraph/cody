@@ -324,7 +324,7 @@ const register = async (
     disposables.push(
         subscriptionDisposable(
             featureFlagProvider
-                .evaluatedFeatureFlag(FeatureFlag.NextAgenticChatInternal)
+                .evaluatedFeatureFlag(FeatureFlag.AgenticChatWithMCP)
                 .pipe(distinctUntilChanged())
                 .subscribe(async isEnabled => {
                     if (isEnabled) {

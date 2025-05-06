@@ -110,7 +110,7 @@ export class MCPManager {
 
     // Observable for server changes
     public static observable: Observable<McpServer[]> = combineLatest(
-        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.NextAgenticChatInternal),
+        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.AgenticChatWithMCP),
         this.changeNotifications.pipe(startWith({ type: 'all' })),
         this.toolsChangeNotifications.pipe(startWith({ type: 'all' }))
     ).pipe(
