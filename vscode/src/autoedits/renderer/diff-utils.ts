@@ -229,9 +229,10 @@ function groupLineChanges(changes: LineChange[]): LineChange[] {
                     change.modifiedRange.end.character
                 ),
             }
-            // Update the previous item
+            // Update the previous stored group to match `currentGroup`
             groupedChanges[groupedChanges.length - 1] = currentGroup
         } else {
+            // New group, push it immediately. We may update it later
             currentGroup = { ...change }
             groupedChanges.push(currentGroup)
         }
@@ -247,7 +248,7 @@ function groupLineChanges(changes: LineChange[]): LineChange[] {
  *    Suitable unchanged areas: An unchanged area that contains some whitespace. This is so we can guard against cases where a character diff splits a word into multiple chunks
  *                              whilst still allowing multiple changes in a line.
  */
-function isSimpleLineDiff(changes: LineChange[]): boolean {
+export function isSimpleLineDiff(changes: LineChange[]): boolean {
     if (changes.length <= 1) {
         return true
     }

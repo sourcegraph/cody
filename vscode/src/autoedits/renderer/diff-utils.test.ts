@@ -1,8 +1,13 @@
 import dedent from 'dedent'
+import * as uuid from 'uuid'
 import { describe, expect, it } from 'vitest'
+import * as vscode from 'vscode'
 
 import type { DecorationInfo, ModifiedLineInfo } from './decorators/base'
 import { getDecorationInfo, getDecorationStats } from './diff-utils'
+
+import type { LineChange } from './decorators/base'
+import { isSimpleLineDiff } from './diff-utils'
 
 /**
  * A more concise version of `decorationInfo` for test assertions.
@@ -532,5 +537,112 @@ describe('getDecorationStats', () => {
             removedChars: 'unused'.length,
             unchangedChars: 100,
         })
+    })
+})
+
+describe('isSimpleLineDiff', () => {
+    function createLineChange(type: 'insert' | 'delete' | 'unchanged', text: string): LineChange {
+        return {
+            id: uuid.v4(),
+            type,
+            text,
+            originalRange: new vscode.Range(0, 0, 0, text.length),
+            modifiedRange: new vscode.Range(0, 0, 0, text.length),
+        }
+    }
+
+    it('should return true for a single change', () => {
+        const changes: LineChange[] = [createLineChange('insert', 'new text')]
+
+        expect(isSimpleLineDiff(changes)).toBe(true)
+    })
+
+    it('should return true for empty changes array', () => {
+        const changes: LineChange[] = []
+
+        expect(isSimpleLineDiff(changes)).toBe(true)
+    })
+
+    it('should return true for a simple replacement (delete followed by insert)', () => {
+        const changes: LineChange[] = [
+            createLineChange('delete', 'old text'),
+            createLineChange('insert', 'new text'),
+        ]
+
+        expect(isSimpleLineDiff(changes)).toBe(true)
+    })
+
+    it('should return true for an insert followed by delete with whitespace separator', () => {
+        const changes: LineChange[] = [
+            createLineChange('insert', 'new text'),
+            createLineChange('unchanged', ' '),
+            createLineChange('delete', 'old text'),
+        ]
+
+        expect(isSimpleLineDiff(changes)).toBe(true)
+    })
+
+    it('should return true for an insert followed by insert with whitespace separator', () => {
+        const changes: LineChange[] = [
+            createLineChange('insert', 'new text'),
+            createLineChange('unchanged', ' '),
+            createLineChange('insert', 'another new text'),
+        ]
+
+        expect(isSimpleLineDiff(changes)).toBe(true)
+    })
+
+    it('should return false for multiple changes without whitespace separation', () => {
+        const changes: LineChange[] = [
+            createLineChange('insert', 'first'),
+            createLineChange('unchanged', 'nowhitespace'), // No whitespace
+            createLineChange('insert', 'second'),
+        ]
+
+        expect(isSimpleLineDiff(changes)).toBe(false)
+    })
+
+    it('should return false for a replacement followed immediately by another change', () => {
+        const changes: LineChange[] = [
+            createLineChange('delete', 'old text'),
+            createLineChange('insert', 'new text'),
+            createLineChange('delete', 'another deletion'),
+        ]
+
+        expect(isSimpleLineDiff(changes)).toBe(false)
+    })
+
+    it('should return false for complex sequences of changes', () => {
+        const changes: LineChange[] = [
+            createLineChange('insert', 'first'),
+            createLineChange('delete', 'old'),
+            // No whitespace in the middle, not suitable to use as a dividr
+            createLineChange('unchanged', 'middle'),
+            createLineChange('delete', 'removed'),
+            createLineChange('insert', 'new'),
+        ]
+
+        expect(isSimpleLineDiff(changes)).toBe(false)
+    })
+
+    it('should return true when the last segment is unchanged regardless of whitespace', () => {
+        const changes: LineChange[] = [
+            createLineChange('insert', 'inserted text'),
+            // Last segment, allowed even though it isn't containing whitespace
+            createLineChange('unchanged', 'nowhitespace'),
+        ]
+
+        expect(isSimpleLineDiff(changes)).toBe(true)
+    })
+
+    it('should return true for grouped changes of the same type', () => {
+        const changes: LineChange[] = [
+            createLineChange('insert', 'first part of '),
+            createLineChange('insert', 'insertion'),
+            createLineChange('delete', 'to be '),
+            createLineChange('delete', 'removed'),
+        ]
+
+        expect(isSimpleLineDiff(changes)).toBe(true)
     })
 })
