@@ -1,5 +1,6 @@
 import { Globe, Plus, SaveIcon, X } from 'lucide-react'
 import * as React from 'react'
+import { useEffect } from 'react'
 import { Button } from '../../shadcn/ui/button'
 import { Label } from '../../shadcn/ui/label'
 import type { ServerType } from '../types'
@@ -24,7 +25,11 @@ interface AddServerFormProps {
     className?: string
 }
 export function AddServerForm({ onAddServer, _server }: AddServerFormProps) {
-    const [formData, setFormData] = React.useState<ServerType>({ ...DEFAULT_CONFIG, ..._server })
+    const [formData, setFormData] = React.useState<ServerType>({ ...DEFAULT_CONFIG })
+
+    useEffect(() => {
+        setFormData({ ..._DEFAULT_CONFIG, ..._server })
+    }, [_server])
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault()
@@ -150,7 +155,7 @@ export function AddServerForm({ onAddServer, _server }: AddServerFormProps) {
                 </div>
 
                 <div className="tw-space-y-2">
-                    <Label htmlFor="url">URL</Label>
+                    <Label htmlFor="url">URL (SSE only)</Label>
                     <input
                         id="url"
                         size={12}
@@ -184,6 +189,7 @@ export function AddServerForm({ onAddServer, _server }: AddServerFormProps) {
                                 value={env.value}
                                 placeholder=""
                                 onChange={e => updateEnvVar(index, 'value', e.target.value)}
+                                type="password"
                                 className="tw-block tw-py-2.5 tw-px-0 tw-w-full tw-text-sm tw-text-gray-900 tw-bg-transparent tw-border-0 tw-border-b-2 tw-border-gray-300 tw-appearance-none dark:tw-text-white dark:tw-border-gray-600 dark:focus:tw-border-blue-500 focus:tw-outline-none focus:tw-ring-0 focus:tw-border-blue-600 peer"
                             />
                             <Button

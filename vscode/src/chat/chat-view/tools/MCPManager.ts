@@ -117,13 +117,6 @@ export class MCPManager {
             if (!mcpEnabled || !MCPManager.instance) {
                 return []
             }
-            if (
-                serverChange?.type === 'server' &&
-                'serverName' in serverChange &&
-                serverChange.serverName
-            ) {
-                return MCPManager.instance.getServers()
-            }
             return MCPManager.instance.getServers()
         }),
         distinctUntilChanged((prev, curr) => {
@@ -186,10 +179,7 @@ export class MCPManager {
      * Static initialization
      */
     public static async init(): Promise<MCPManager | undefined> {
-        if (MCPManager.instance) {
-            return MCPManager.instance
-        }
-        return new MCPManager()
+        return MCPManager.instance ? MCPManager.instance : new MCPManager()
     }
 
     /**

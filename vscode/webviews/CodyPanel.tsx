@@ -10,7 +10,6 @@ import {
     firstValueFrom,
 } from '@sourcegraph/cody-shared'
 import { useExtensionAPI, useObservable } from '@sourcegraph/prompt-editor'
-import { DatabaseBackup } from 'lucide-react'
 import type React from 'react'
 import { type FunctionComponent, useEffect, useMemo, useRef } from 'react'
 import type { ConfigurationSubsetForWebview, LocalEnv } from '../src/chat/protocol'
@@ -20,7 +19,7 @@ import { useClientActionDispatcher } from './client/clientState'
 import { Notices } from './components/Notices'
 import { StateDebugOverlay } from './components/StateDebugOverlay'
 import type { ServerType } from './components/mcp'
-import { ServerHome } from './components/mcp/ServerHome'
+import { ServerHome, getMcpServerType } from './components/mcp/ServerHome'
 import { TabContainer, TabRoot } from './components/shadcn/ui/tabs'
 import { HistoryTab, PromptsTab, TabsBar, View } from './tabs'
 import type { VSCodeWrapper } from './utils/VSCodeApi'
@@ -80,18 +79,7 @@ export const CodyPanel: FunctionComponent<CodyPanelProps> = ({
     const { value: chatModels } = useObservable(useMemo(() => api.chatModels(), [api.chatModels]))
     const { value: mcpServers } = useObservable<ServerType[]>(
         useMemo(
-            () =>
-                api.mcpSettings()?.map(servers =>
-                    (servers || [])?.map(s => ({
-                        id: s.name,
-                        name: s.name,
-                        tools: s.tools,
-                        status: s.status === 'connected' ? 'online' : 'offline',
-                        icon: DatabaseBackup,
-                        type: 'mcp',
-                        error: s.error,
-                    }))
-                ),
+            () => api.mcpSettings()?.map(servers => (servers || [])?.map(s => getMcpServerType(s))),
             [api.mcpSettings]
         )
     )

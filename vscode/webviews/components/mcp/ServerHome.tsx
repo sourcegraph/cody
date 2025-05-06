@@ -1,4 +1,5 @@
-import { Server, XIcon } from 'lucide-react'
+import type { McpServer } from '@sourcegraph/cody-shared/src/llm-providers/mcp/types'
+import { DatabaseBackup, Server, XIcon } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { getVSCodeAPI } from '../../utils/VSCodeApi'
 import { Badge } from '../shadcn/ui/badge'
@@ -62,43 +63,60 @@ export function ServerHome({ mcpServers }: ServerHomeProps) {
         return () => window.removeEventListener('message', messageHandler)
     }, [])
 
-    const addServer = useCallback((server: ServerType) => {
-        // Transform the UI server type to the format expected by MCPManager
-        const mcpServerConfig: Record<string, any> = {
-            transportType: server.url ? 'sse' : 'stdio',
-        }
-        // Add URL for SSE transport
-        if (server.url) {
-            mcpServerConfig.url = server.url
-        }
-        // Add command and args for stdio transport
-        if (server.command) {
-            mcpServerConfig.command = server.command
-            // Only add non-empty args
-            if (server.args?.length) {
-                mcpServerConfig.args = server.args.filter(arg => arg.trim())
-            }
-        }
-        // Add environment variables
-        if (server.env?.length) {
-            const envVars: Record<string, string> = {}
-            for (const env of server.env) {
-                if (env.name.trim()) {
-                    envVars[env.name] = env.value
-                }
-            }
-            if (Object.keys(envVars).length) {
-                mcpServerConfig.env = envVars
-            }
-        }
-        // Send message to extension
+    const removeServer = useCallback((serverName: string) => {
+        setSelectedServer(null)
         getVSCodeAPI().postMessage({
             command: 'mcp',
-            type: 'addServer',
-            name: server.name,
-            config: mcpServerConfig,
+            type: 'removeServer',
+            name: serverName,
         })
     }, [])
+
+    const addServer = useCallback(
+        (server: ServerType) => {
+            // If editing an existing server, remove it first
+            if (selectedServer && server.id === selectedServer.id) {
+                setSelectedServer(null)
+                removeServer(selectedServer.name)
+            }
+            // Transform the UI server type to the format expected by MCPManager
+            const mcpServerConfig: Record<string, any> = {
+                transportType: server.url ? 'sse' : 'stdio',
+            }
+            // Add URL for SSE transport
+            if (server.url) {
+                mcpServerConfig.url = server.url
+            }
+            // Add command and args for stdio transport
+            if (server.command) {
+                mcpServerConfig.command = server.command
+                // Only add non-empty args
+                if (server.args?.length) {
+                    mcpServerConfig.args = server.args.filter(arg => arg.trim())
+                }
+            }
+            // Add environment variables
+            if (server.env?.length) {
+                const envVars: Record<string, string> = {}
+                for (const env of server.env) {
+                    if (env.name.trim()) {
+                        envVars[env.name] = env.value
+                    }
+                }
+                if (Object.keys(envVars).length) {
+                    mcpServerConfig.env = envVars
+                }
+            }
+            // Send message to extension
+            getVSCodeAPI().postMessage({
+                command: 'mcp',
+                type: 'addServer',
+                name: server.name,
+                config: mcpServerConfig,
+            })
+        },
+        [selectedServer, removeServer]
+    )
 
     const toggleTool = useCallback((serverName: string, toolName: string, isDisabled: boolean) => {
         getVSCodeAPI().postMessage({
@@ -123,14 +141,6 @@ export function ServerHome({ mcpServers }: ServerHomeProps) {
         )
     }, [])
 
-    const removeServer = useCallback((serverName: string) => {
-        getVSCodeAPI().postMessage({
-            command: 'mcp',
-            type: 'removeServer',
-            name: serverName,
-        })
-    }, [])
-
     // Filter servers based on search query
     const filteredServers = useMemo(() => {
         return servers.filter(
@@ -145,7 +155,7 @@ export function ServerHome({ mcpServers }: ServerHomeProps) {
     if (mcpServers?.length === 0) {
         return (
             <div className="tw-w-full tw-p-4">
-                <div className="tw-w-full tw-col-span-full tw-text-center tw-py-12 tw-border tw-rounded-lg tw-border-dashed">
+                <div className="tw-w-full tw-col-span-full tw-text-center tw-py-12 tw-border tw-rounded-lg tw-border-border">
                     <Server className="tw-h-12 tw-w-12 tw-mx-auto tw-mb-4 tw-text-muted-foreground" />
                     <h3 className="tw-text-md tw-font-medium">Connecting...</h3>
                 </div>
@@ -157,7 +167,7 @@ export function ServerHome({ mcpServers }: ServerHomeProps) {
     if (!servers.length) {
         return (
             <div className="tw-w-full tw-p-4">
-                <div className="tw-w-full tw-col-span-full tw-text-center tw-py-12 tw-border tw-rounded-lg tw-border-dashed">
+                <div className="tw-w-full tw-col-span-full tw-text-center tw-py-12 tw-border tw-rounded-lg tw-border-border">
                     <Server className="tw-h-12 tw-w-12 tw-mx-auto tw-mb-4 tw-text-muted-foreground" />
                     <h3 className="tw-text-md tw-font-medium">No servers found</h3>
                     <p className="tw-text-muted-foreground tw-mt-1">Add a new server to get started</p>
@@ -261,9 +271,42 @@ export function ServerHome({ mcpServers }: ServerHomeProps) {
                     </CommandItem>
                 ))}
                 <div className="tw-flex tw-flex-col tw-justify-center tw-mt-4 tw-w-full">
-                    <AddServerView onAddServer={addServer} className="tw-my-4 tw-w-full tw-px-2" />
+                    <AddServerView
+                        onAddServer={addServer}
+                        className="tw-my-4 tw-w-full tw-px-2"
+                        serverToEdit={selectedServer}
+                    />
                 </div>
             </CommandList>
         </Command>
     )
+}
+
+export function getMcpServerType(server: McpServer): ServerType {
+    const base = {
+        id: server.name,
+        name: server.name,
+        tools: server.tools,
+        status: server.status === 'connected' ? 'online' : 'offline',
+        icon: DatabaseBackup,
+        type: 'mcp',
+        error: server.error,
+    } satisfies ServerType
+    try {
+        const config = JSON.parse(server.config)
+        if (!config) return base
+        base.type = config.url ? 'sse' : 'stdio'
+        const mcpServerConfig: Record<string, any> = {}
+        mcpServerConfig.url = config.url
+        mcpServerConfig.command = config.command
+        mcpServerConfig.args = config.args
+        mcpServerConfig.env = Object.entries(config.env).map(([key, value]) => ({
+            name: key,
+            value: value,
+        }))
+
+        return { ...base, ...mcpServerConfig }
+    } catch (error) {
+        return base
+    }
 }
