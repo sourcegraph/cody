@@ -29,9 +29,19 @@ import type { MCPConnectionManager } from './MCPConnectionManager'
  */
 export class MCPServerManager {
     // Event emitter for tool changes
-    private toolsEmitter = new vscode.EventEmitter<AgentTool[]>()
+    private toolsEmitter = new vscode.EventEmitter<{
+        serverName: string
+        toolName?: string
+        tools: AgentTool[]
+    }>()
     private tools: AgentTool[] = []
-    private toolsChangeNotifications = new Subject<void>()
+    private disabledTools: Set<string> = new Set<string>()
+    private toolStateChangeEmitter = new vscode.EventEmitter<{
+        serverName: string
+        toolName: string
+        disabled: boolean
+    }>()
+    private toolsChangeNotifications = new Subject<{ serverName: string; toolName?: string }>()
 
     constructor(private connectionManager: MCPConnectionManager) {}
 
@@ -165,6 +175,9 @@ export class MCPServerManager {
         const _agentTools = []
         for (const tool of tools) {
             try {
+                // Determine if the tool is disabled
+                const isDisabled = this.disabledTools.has(`${serverName}_${tool.name}`)
+
                 // Create an agent tool
                 const agentTool: AgentTool = {
                     spec: {
@@ -182,9 +195,22 @@ export class MCPServerManager {
                             throw error
                         }
                     },
+                    // Set disabled based on current state
+                    disabled: isDisabled,
                 }
 
                 _agentTools.push(agentTool)
+
+                // Also update the disabled state in the server's tool directly
+                const connection = this.connectionManager.getConnection(serverName)
+                if (connection?.server.tools) {
+                    connection.server.tools = connection.server.tools.map(t => {
+                        if (t.name === tool.name) {
+                            return { ...t, disabled: isDisabled }
+                        }
+                        return t
+                    })
+                }
 
                 logDebug('MCPServerManager', `Created agent tool for ${tool.name || ''}`, {
                     verbose: { tool },
@@ -197,10 +223,10 @@ export class MCPServerManager {
         }
 
         // Only remove and update tools for this specific server
-        this.updateTools([
-            ...this.tools.filter(t => !t.spec.name.startsWith(`${serverName}_`)),
-            ..._agentTools,
-        ])
+        this.updateTools(
+            [...this.tools.filter(t => !t.spec.name.startsWith(`${serverName}_`)), ..._agentTools],
+            serverName
+        )
 
         logDebug('MCPServerManager', `Created ${_agentTools.length} agent tools from ${serverName}`, {
             verbose: { _agentTools },
@@ -210,11 +236,11 @@ export class MCPServerManager {
     /**
      * Update the list of available tools
      */
-    private updateTools(tools: AgentTool[]): void {
+    private updateTools(tools: AgentTool[], serverName?: string, toolName?: string): void {
         this.tools = tools
-        this.toolsEmitter.fire(this.tools)
-        // Trigger change notification to update observable
-        this.toolsChangeNotifications.next()
+        this.toolsEmitter.fire({ serverName: serverName || '', toolName, tools: this.tools })
+        // Trigger change notification to update observable with specific info
+        this.toolsChangeNotifications.next({ serverName: serverName || '', toolName })
     }
 
     /**
@@ -227,7 +253,9 @@ export class MCPServerManager {
     /**
      * Subscribe to tool changes
      */
-    public onToolsChanged(listener: (tools: AgentTool[]) => void): vscode.Disposable {
+    public onToolsChanged(
+        listener: (event: { serverName: string; toolName?: string; tools: AgentTool[] }) => void
+    ): vscode.Disposable {
         return this.toolsEmitter.event(listener)
     }
 
@@ -239,6 +267,10 @@ export class MCPServerManager {
         toolName: string,
         args: Record<string, unknown> = {}
     ): Promise<ContextItemToolState> {
+        // Check if tool is disabled
+        if (this.disabledTools.has(`${serverName}_${toolName}`)) {
+            throw new Error(`Tool "${toolName}" is disabled`)
+        }
         const connection = this.connectionManager.getConnection(serverName)
         if (!connection) {
             throw new Error(`MCP server "${serverName}" not found`)
@@ -324,10 +356,113 @@ export class MCPServerManager {
     }
 
     /**
+     * Enable or disable a tool
+     */
+    public setToolState(serverName: string, toolName: string, disabled: boolean): void {
+        const fullToolName = `${serverName}_${toolName}`
+
+        if (disabled) {
+            this.disabledTools.add(fullToolName)
+        } else {
+            this.disabledTools.delete(fullToolName)
+        }
+
+        // Update the disabled state of the tool in the tools list
+        this.tools = this.tools.map(tool => {
+            if (tool.spec.name === fullToolName) {
+                return {
+                    ...tool,
+                    disabled,
+                }
+            }
+            return tool
+        })
+
+        // Also update the tool in the server object directly
+        const connection = this.connectionManager.getConnection(serverName)
+        if (connection?.server.tools) {
+            connection.server.tools = connection.server.tools.map(tool => {
+                if (tool.name === toolName) {
+                    return { ...tool, disabled }
+                }
+                return tool
+            })
+        }
+
+        // Fire events with specific server and tool information
+        this.toolsEmitter.fire({ serverName, toolName, tools: this.tools })
+        this.toolStateChangeEmitter.fire({ serverName, toolName, disabled })
+        this.toolsChangeNotifications.next({ serverName, toolName })
+    }
+
+    /**
+     * Get all disabled tools
+     */
+    public getDisabledTools(): string[] {
+        return Array.from(this.disabledTools)
+    }
+
+    /**
+     * Set disabled tools
+     */
+    public setDisabledTools(tools: string[], append = false): void {
+        if (append) {
+            // Add to existing set instead of replacing
+            for (const tool of tools) {
+                this.disabledTools.add(tool)
+            }
+        } else {
+            // Replace the entire set
+            this.disabledTools = new Set(tools)
+        }
+
+        // Update the tools list with disabled state
+        this.tools = this.tools.map(tool => ({
+            ...tool,
+            disabled: this.disabledTools.has(tool.spec.name),
+        }))
+
+        // Get affected server names from the tool names
+        const affectedServers = new Set(tools.map(t => t.split('_')[0]).filter(Boolean))
+
+        // Update tools in the server objects directly
+        for (const serverName of affectedServers) {
+            const connection = this.connectionManager.getConnection(serverName)
+            if (connection?.server.tools) {
+                connection.server.tools = connection.server.tools.map(tool => {
+                    const fullToolName = `${serverName}_${tool.name}`
+                    return {
+                        ...tool,
+                        disabled: this.disabledTools.has(fullToolName),
+                    }
+                })
+            }
+        }
+
+        this.toolsEmitter.fire({
+            serverName: affectedServers.size === 1 ? Array.from(affectedServers)[0] : '',
+            tools: this.tools,
+        })
+        this.toolsChangeNotifications.next({
+            serverName: affectedServers.size === 1 ? Array.from(affectedServers)[0] : '',
+        })
+    }
+
+    /**
+     * Subscribe to tool state changes
+     */
+    public onToolStateChanged(
+        listener: (event: { serverName: string; toolName: string; disabled: boolean }) => void
+    ): vscode.Disposable {
+        return this.toolStateChangeEmitter.event(listener)
+    }
+
+    /**
      * Clean up resources
      */
     public dispose(): void {
         this.toolsEmitter.dispose()
+        this.toolStateChangeEmitter.dispose()
     }
 }
 

@@ -22,6 +22,7 @@ import type { BillingCategory, BillingProduct } from '@sourcegraph/cody-shared/s
 
 import type { TelemetryEventParameters } from '@sourcegraph/telemetry'
 
+import type { McpServer } from '@sourcegraph/cody-shared/src/llm-providers/mcp/types'
 import type { Uri } from 'vscode'
 import type { View } from '../../webviews/tabs/types'
 import type { FixupTaskID } from '../non-stop/FixupTask'
@@ -170,7 +171,10 @@ export type WebviewMessage =
           command: 'mcp'
           type: 'addServer' | 'removeServer' | 'updateServer'
           name: string
+          disabled?: boolean | undefined | null
           config?: Record<string, any> | undefined | null
+          toolName?: string | undefined | null
+          toolDisabled?: boolean | undefined | null
       }
 
 export interface SmartApplyResult {
@@ -221,7 +225,7 @@ export type ExtensionMessage =
               | { id: string; status: 'error'; error: string }
               | undefined
               | null
-          mcpServerAdded?: { name: string } | undefined | null
+          mcpServerChanged?: { name: string; server?: McpServer | undefined | null } | undefined | null
           mcpServerError?: { name: string; error: string } | undefined | null
       }
     | ({ type: 'attribution' } & ExtensionAttributionMessage)

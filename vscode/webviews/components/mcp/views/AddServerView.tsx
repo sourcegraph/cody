@@ -1,4 +1,3 @@
-import { Dialog, DialogContent, DialogTrigger } from '@radix-ui/react-dialog'
 import { Plus } from 'lucide-react'
 import * as React from 'react'
 import { Button } from '../../shadcn/ui/button'
@@ -19,15 +18,20 @@ export function AddServerView({ onAddServer, className }: AddServerDialogProps) 
     }
 
     return (
-        <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild>
-                <Button variant="outline" size="sm" className="tw-inline-flex tw-w-full" disabled={open}>
-                    <Plus size={12} className="tw-mr-1" /> MCP Server
-                </Button>
-            </DialogTrigger>
-            <DialogContent className="tw-sm:max-w-[500px] tw-my-4">
-                <AddServerForm onAddServer={handleAddServer} />
-            </DialogContent>
-        </Dialog>
+        <div className="tw-px-2 tw-my-4">
+            <Button
+                variant="outline"
+                size="sm"
+                className="tw-inline-flex tw-w-full"
+                onClick={() => setOpen(!open)}
+            >
+                <Plus size={12} className="tw-mr-1" /> {open ? 'Cancel' : 'MCP Server'}
+            </Button>
+            {open && (
+                <div className="tw-sm:max-w-[500px] tw-my-4">
+                    <AddServerForm onAddServer={handleAddServer} />
+                </div>
+            )}
+        </div>
     )
 }

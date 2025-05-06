@@ -119,18 +119,6 @@ export function AddServerForm({ onAddServer, _server }: AddServerFormProps) {
                     />
                 </div>
 
-                <div className="tw-space-y-2">
-                    <Label htmlFor="url">URL</Label>
-                    <input
-                        id="url"
-                        size={12}
-                        value={formData.url}
-                        onChange={e => setFormData({ ...formData, url: e.target.value })}
-                        className="tw-block tw-py-2.5 tw-px-0 tw-w-full tw-text-sm tw-text-gray-900 tw-bg-transparent tw-border-0 tw-border-b-2 tw-border-gray-300 tw-appearance-none dark:tw-text-white dark:tw-border-gray-600 dark:focus:tw-border-blue-500 focus:tw-outline-none focus:tw-ring-0 focus:tw-border-blue-600 peer"
-                        placeholder="Make sure you pass in the absolute path to your server."
-                    />
-                </div>
-
                 <div className="tw-space-y-3">
                     <div className="tw-flex tw-items-center tw-justify-between">
                         <Label>Arguments</Label>
@@ -159,6 +147,18 @@ export function AddServerForm({ onAddServer, _server }: AddServerFormProps) {
                             </Button>
                         </div>
                     ))}
+                </div>
+
+                <div className="tw-space-y-2">
+                    <Label htmlFor="url">URL</Label>
+                    <input
+                        id="url"
+                        size={12}
+                        value={formData.url}
+                        onChange={e => setFormData({ ...formData, url: e.target.value })}
+                        className="tw-block tw-py-2.5 tw-px-0 tw-w-full tw-text-sm tw-text-gray-900 tw-bg-transparent tw-border-0 tw-border-b-2 tw-border-gray-300 tw-appearance-none dark:tw-text-white dark:tw-border-gray-600 dark:focus:tw-border-blue-500 focus:tw-outline-none focus:tw-ring-0 focus:tw-border-blue-600 peer"
+                        placeholder="Make sure you pass in the absolute path to your server."
+                    />
                 </div>
 
                 <div className="tw-space-y-2">
