@@ -6,15 +6,12 @@ import {
     type CommandAction,
     CustomCommandType,
     type PromptAction,
-    PromptMode,
 } from '@sourcegraph/cody-shared'
 
 import {
-    BetweenHorizontalEnd,
     BookOpen,
     FileQuestion,
     Hammer,
-    MessageSquare,
     Pencil,
     PencilLine,
     PencilRuler,
@@ -93,21 +90,6 @@ const ActionPrompt: FC<ActionPromptProps> = props => {
             <div className={styles.promptContent}>
                 <div className={styles.promptTitle}>
                     <strong className={styles.promptName}>{prompt.name}</strong>
-                    <span className={styles.modeIcon}>
-                        {prompt.mode === PromptMode.CHAT && (
-                            <MessageSquare size={12} strokeWidth={1.5} className={styles.promptIcon} />
-                        )}
-                        {prompt.mode === PromptMode.EDIT && (
-                            <Pencil size={12} strokeWidth={1.5} className={styles.promptIcon} />
-                        )}
-                        {prompt.mode === PromptMode.INSERT && (
-                            <BetweenHorizontalEnd
-                                size={12}
-                                strokeWidth={1.5}
-                                className={styles.promptIcon}
-                            />
-                        )}
-                    </span>
                     {prompt.draft && (
                         <Badge variant="secondary" className="tw-text-xxs tw-mt-0.5">
                             Draft
@@ -126,7 +108,7 @@ const ActionPrompt: FC<ActionPromptProps> = props => {
                             <TooltipTrigger asChild>
                                 <Pencil size={12} className={styles.promptIcon} />
                             </TooltipTrigger>
-                            <TooltipContent>Edit prompt</TooltipContent>
+                            <TooltipContent>This is an edit prompt</TooltipContent>
                         </Tooltip>
                     )}
                 </div>
