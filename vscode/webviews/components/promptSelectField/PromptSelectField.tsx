@@ -10,9 +10,9 @@ import {
 } from 'react'
 import { useTelemetryRecorder } from '../../utils/telemetry'
 import { useConfig } from '../../utils/useConfig'
+import { PromptList, type PromptsFilterArgs } from '../promptList/PromptList'
 import type { Organization } from '../promptOwnerFilter/PromptOwnerFilter'
 import { PromptOwnerFilter } from '../promptOwnerFilter/PromptOwnerFilter'
-import { PromptList, type PromptsFilterArgs } from '../promptList/PromptList'
 import { PromptTagsFilter } from '../promptTagsFilter/PromptTagsFilter'
 import { Button } from '../shadcn/ui/button'
 import { ToolbarPopoverItem } from '../shadcn/ui/toolbar'
@@ -37,7 +37,7 @@ export const PromptSelectField: React.FunctionComponent<{
     const telemetryRecorder = useTelemetryRecorder()
     const [selectedTagId, setSelectedTagId] = useState<string | null>(null)
     const [ownerFilterValue, setOwnerFilterValue] = useState<string | null>(null)
-    const { value: userId , error: userIdError } = useCurrentUserId()
+    const { value: userId, error: userIdError } = useCurrentUserId()
     const { authStatus } = useConfig()
 
     // Use a ref to control the popover
@@ -127,7 +127,7 @@ export const PromptSelectField: React.FunctionComponent<{
                                 onFilterChange={setOwnerFilterValue}
                                 className="!tw-px-0 !tw-py-0 !tw-border-b-0"
                                 organizations={organizations}
-                                userId={userId && !userIdError ? userId as string : undefined}
+                                userId={userId && !userIdError ? (userId as string) : undefined}
                             />
                             <PromptTagsFilter
                                 selectedTagId={selectedTagId}
