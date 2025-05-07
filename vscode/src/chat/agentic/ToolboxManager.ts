@@ -83,7 +83,7 @@ class ToolboxManager {
      */
     public readonly observable: Observable<AgentToolboxSettings | null> = combineLatest(
         authStatus,
-        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.DeepCody),
+        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.AgenticContextDisabled),
         featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.ContextAgentDefaultChatModel),
         featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.DeepCodyShellContext),
         userProductSubscription.pipe(distinctUntilChanged()),
@@ -93,7 +93,7 @@ class ToolboxManager {
         ),
         this.changeNotifications.pipe(startWith(undefined))
     ).pipe(
-        map(([auth, deepCodyEnabled, useDefaultChatModel, instanceShellContextFlag, sub, models]) => {
+        map(([auth, isDisabled, useDefaultChatModel, instanceShellContextFlag, sub, models]) => {
             // Return null if:
             // - Subscription is pending
             // - Users can upgrade (free user)
@@ -102,7 +102,7 @@ class ToolboxManager {
                 sub === pendingOperation ||
                 sub?.userCanUpgrade ||
                 !models ||
-                (!isDotCom(auth.endpoint) && !deepCodyEnabled)
+                (!isDotCom(auth.endpoint) && isDisabled)
             ) {
                 DeepCodyAgent.model = undefined
                 this.isEnabled = false
