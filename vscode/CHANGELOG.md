@@ -4,6 +4,39 @@ This is a log of all notable changes to Cody for VS Code.
 
 <!--- {/_ CHANGELOG_START _/} -->
 
+## 1.92.0
+
+### Fix
+
+#### Auto-Edit
+
+- do not suggest empty line insertions [#7866](https://github.com/sourcegraph/cody/pull/7866)
+- Fix the view prompt for active editor [#7864](https://github.com/sourcegraph/cody/pull/7864)
+- dispose next cursor manager [#7854](https://github.com/sourcegraph/cody/pull/7854)
+- use correct doc context version to show inline completions more often [#7840](https://github.com/sourcegraph/cody/pull/7840)
+
+#### Autoedit
+
+- Add common post processing pipeline for prediction from the model [#7865](https://github.com/sourcegraph/cody/pull/7865)
+- Adjust the config for long suggestion model [#7856](https://github.com/sourcegraph/cody/pull/7856)
+
+### Chore
+
+#### Auto-Edit
+
+- allow custom models for websocket requests [#7838](https://github.com/sourcegraph/cody/pull/7838)
+
+### Reverts
+
+  There were no reverts for this release
+
+### Uncategorized
+
+#### Others
+
+- Changelog for 1.90.0 [#7834](https://github.com/sourcegraph/cody/pull/7834)
+
+
 ## 1.90.0
 
 ### Features
