@@ -1,5 +1,10 @@
 import type { InlineCompletionItemRetrievedContext } from '../../completions/analytics-logger'
 import type { ModelResponse, PartialModelResponse, SuccessModelResponse } from '../adapters/base'
+import type {
+    AutoeditDiscardReasonMetadata,
+    AutoeditTriggerKindMetadata,
+    HotStreakChunk,
+} from '../analytics-logger'
 import type { AutoEditRenderOutput } from '../renderer/render-output'
 import { getDetailedTimingInfo } from './autoedit-latency-utils'
 import type { AutoeditRequestDebugState } from './debug-store'
@@ -135,7 +140,7 @@ export const getContext = (entry: AutoeditRequestDebugState): InlineCompletionIt
  */
 export const getTriggerKind = (entry: AutoeditRequestDebugState): string => {
     if ('payload' in entry.state && 'triggerKind' in entry.state.payload) {
-        const triggerMap: Record<number, string> = {
+        const triggerMap: Record<AutoeditTriggerKindMetadata, string> = {
             1: 'Automatic',
             2: 'Manual',
             3: 'Suggest Widget',
@@ -163,7 +168,7 @@ export const getPositionInfo = (entry: AutoeditRequestDebugState): string => {
 /**
  * Map of discard reason codes to human-readable messages
  */
-export const DISCARD_REASONS: Record<number, string> = {
+export const DISCARD_REASONS: Record<AutoeditDiscardReasonMetadata, string> = {
     1: 'Client Aborted',
     2: 'Empty Prediction',
     3: 'Prediction Equals Code to Rewrite',
@@ -174,6 +179,7 @@ export const DISCARD_REASONS: Record<number, string> = {
     8: 'Conflicting Decoration With Edits',
     9: 'Not Enough Lines in Editor',
     10: 'Stale Throttled Request',
+    11: 'Next Cursor Suggestion Shown Instead',
 }
 
 /**
@@ -245,21 +251,6 @@ export const getRequestId = (entry: AutoeditRequestDebugState): string => {
 }
 
 /**
- * Format a trigger kind number into a readable string
- */
-export const formatTriggerKind = (triggerKind?: number): string => {
-    if (!triggerKind) return 'Unknown'
-
-    const triggerMap: Record<number, string> = {
-        1: 'Automatic',
-        2: 'Manual',
-        3: 'Suggest Widget',
-        4: 'Cursor',
-    }
-    return triggerMap[triggerKind] || 'Unknown'
-}
-
-/**
  * Get the prediction text if available
  */
 export const getPrediction = (entry: AutoeditRequestDebugState): string | null => {
@@ -307,11 +298,7 @@ export const getSuccessModelResponse = (
 /**
  * Get hot streak chunks if available
  */
-export const getHotStreakChunks = (
-    entry: AutoeditRequestDebugState
-):
-    | { prediction: string; loadedAt: number; modelResponse: ModelResponse; fullPrediction?: string }[]
-    | null => {
+export const getHotStreakChunks = (entry: AutoeditRequestDebugState): HotStreakChunk[] | null => {
     if (
         'hotStreakChunks' in entry.state &&
         Array.isArray(entry.state.hotStreakChunks) &&
@@ -379,7 +366,6 @@ export const AutoeditDataSDK = {
     getDecorationStats,
     getPayload,
     getRequestId,
-    formatTriggerKind,
     getPrediction,
     getDocument,
     getPosition,

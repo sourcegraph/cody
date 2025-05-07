@@ -68,6 +68,11 @@ export const AutoeditDebugPanel: FC<{
                     'editPosition' in a.state ? a.state.editPosition.line : a.state.position.line
                 const posB =
                     'editPosition' in b.state ? b.state.editPosition.line : b.state.position.line
+
+                if (posA === posB) {
+                    return a.state.startedAt - b.state.startedAt
+                }
+
                 return posA - posB
             })
         }
