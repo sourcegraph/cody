@@ -9,17 +9,15 @@ import {
     type LucideProps,
     MessageSquarePlusIcon,
     MessagesSquareIcon,
-    ServerIcon,
     Trash2Icon,
 } from 'lucide-react'
 import { getVSCodeAPI } from '../utils/VSCodeApi'
 import { View } from './types'
 
-import { type AuthenticatedAuthStatus, CodyIDE, FeatureFlag, isDefined } from '@sourcegraph/cody-shared'
+import { type AuthenticatedAuthStatus, CodyIDE, isDefined } from '@sourcegraph/cody-shared'
 import { type FC, Fragment, forwardRef, memo, useCallback, useMemo, useState } from 'react'
 import { Tooltip, TooltipContent, TooltipTrigger } from '../components/shadcn/ui/tooltip'
 import { useConfig } from '../utils/useConfig'
-import { useFeatureFlag } from '../utils/useFeatureFlags'
 
 import { useExtensionAPI } from '@sourcegraph/prompt-editor'
 import { isEqual } from 'lodash'
@@ -172,6 +170,7 @@ export const TabsBar = memo<TabsBarProps>(props => {
                                 className="!tw-opacity-100 tw-h-full"
                                 isWorkspacesUpgradeCtaEnabled={props.isWorkspacesUpgradeCtaEnabled}
                                 IDE={IDE}
+                                setTabView={setView}
                             />
                         )}
                     </div>
@@ -360,7 +359,6 @@ TabButton.displayName = 'TabButton'
  */
 function useTabs(input: Pick<TabsBarProps, 'user'>): TabConfig[] {
     const IDE = input.user.IDE
-    const isMcpEnabled = useFeatureFlag(FeatureFlag.NextAgenticChatInternal)
     const extensionAPI = useExtensionAPI<'userHistory'>()
 
     return useMemo<TabConfig[]>(
@@ -409,16 +407,8 @@ function useTabs(input: Pick<TabsBarProps, 'user'>): TabConfig[] {
                                 : undefined,
                         changesView: true,
                     },
-                    isMcpEnabled
-                        ? {
-                              view: View.Settings,
-                              title: 'MCP Servers',
-                              Icon: ServerIcon,
-                              changesView: true,
-                          }
-                        : null,
                 ] as (TabConfig | null)[]
             ).filter(isDefined),
-        [IDE, extensionAPI, isMcpEnabled]
+        [IDE, extensionAPI]
     )
 }

@@ -1,5 +1,6 @@
 import { Globe, Plus, SaveIcon, X } from 'lucide-react'
 import * as React from 'react'
+import { useEffect } from 'react'
 import { Button } from '../../shadcn/ui/button'
 import { Label } from '../../shadcn/ui/label'
 import type { ServerType } from '../types'
@@ -24,7 +25,11 @@ interface AddServerFormProps {
     className?: string
 }
 export function AddServerForm({ onAddServer, _server }: AddServerFormProps) {
-    const [formData, setFormData] = React.useState<ServerType>({ ...DEFAULT_CONFIG, ..._server })
+    const [formData, setFormData] = React.useState<ServerType>({ ...DEFAULT_CONFIG })
+
+    useEffect(() => {
+        setFormData({ ..._DEFAULT_CONFIG, ..._server })
+    }, [_server])
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault()
@@ -39,19 +44,11 @@ export function AddServerForm({ onAddServer, _server }: AddServerFormProps) {
         setFormData({ ...DEFAULT_CONFIG })
     }
 
-    const updateArg = (index: number, arg: string) => {
-        const args = [...(formData.args || [])]
-        args[index] = arg
+    const updateArg = (argStr: string) => {
         setFormData({
             ...formData,
-            args,
+            args: argStr.split(' '),
         })
-    }
-
-    const addArg = () => {
-        const newFormData = { ...formData }
-        newFormData.args = [...(newFormData.args || []), '']
-        setFormData(newFormData)
     }
 
     const addEnvVar = () => {
@@ -60,14 +57,6 @@ export function AddServerForm({ onAddServer, _server }: AddServerFormProps) {
         setFormData(newFormData)
     }
 
-    const removeArg = (index: number) => {
-        const args = [...(formData.args || [])]
-        args.splice(index, 1)
-        setFormData({
-            ...formData,
-            args,
-        })
-    }
     const updateEnvVar = (index: number, field: 'name' | 'value', value: string) => {
         const env = formData.env || DEFAULT_CONFIG.env
         const newEnv = [...env]
@@ -97,10 +86,10 @@ export function AddServerForm({ onAddServer, _server }: AddServerFormProps) {
                         <input
                             type="text"
                             id="name"
-                            value={formData.name}
+                            value={formData.name.replace(' ', '-')}
                             name="name"
                             onChange={e => setFormData({ ...formData, name: e.target.value })}
-                            className="tw-block tw-py-2.5 tw-px-0 tw-w-full tw-text-sm tw-text-gray-900 tw-bg-transparent tw-border-0 tw-border-b-2 tw-border-gray-300 tw-appearance-none dark:tw-text-white dark:tw-border-gray-600 dark:focus:tw-border-blue-500 focus:tw-outline-none focus:tw-ring-0 focus:tw-border-blue-600 peer"
+                            className="tw-block tw-py-2.5 tw-px-0 tw-w-full tw-text-sm tw-text-input-foreground tw-bg-transparent tw-border-0 tw-border-b-2 tw-border-gray-300 tw-appearance-none dark:tw-border-gray-600 dark:focus:tw-border-blue-500 focus:tw-outline-none focus:tw-ring-0 focus:tw-border-blue-600 peer"
                             placeholder=" "
                             required
                         />
@@ -113,52 +102,20 @@ export function AddServerForm({ onAddServer, _server }: AddServerFormProps) {
                         id="command"
                         value={formData.command}
                         onChange={e => setFormData({ ...formData, command: e.target.value })}
-                        className="tw-block tw-py-2.5 tw-px-0 tw-w-full tw-text-sm tw-text-gray-900 tw-bg-transparent tw-border-0 tw-border-b-2 tw-border-gray-300 tw-appearance-none dark:tw-text-white dark:tw-border-gray-600 dark:focus:tw-border-blue-500 focus:tw-outline-none focus:tw-ring-0 focus:tw-border-blue-600 peer"
-                        placeholder="npx"
-                        required={!formData.url}
+                        className="tw-block tw-py-2.5 tw-px-0 tw-w-full tw-text-sm tw-text-input-foreground tw-bg-transparent tw-border-0 tw-border-b-2 tw-border-gray-300 tw-appearance-none dark:tw-border-gray-600 dark:focus:tw-border-blue-500 focus:tw-outline-none focus:tw-ring-0 focus:tw-border-blue-600 peer"
+                        required={true}
                     />
                 </div>
 
                 <div className="tw-space-y-2">
-                    <Label htmlFor="url">URL</Label>
+                    <Label htmlFor="arguments">Arguments (whitespace-separated)</Label>
                     <input
-                        id="url"
-                        size={12}
-                        value={formData.url}
-                        onChange={e => setFormData({ ...formData, url: e.target.value })}
-                        className="tw-block tw-py-2.5 tw-px-0 tw-w-full tw-text-sm tw-text-gray-900 tw-bg-transparent tw-border-0 tw-border-b-2 tw-border-gray-300 tw-appearance-none dark:tw-text-white dark:tw-border-gray-600 dark:focus:tw-border-blue-500 focus:tw-outline-none focus:tw-ring-0 focus:tw-border-blue-600 peer"
-                        placeholder="Make sure you pass in the absolute path to your server."
+                        id="arguments"
+                        value={formData?.args}
+                        onChange={e => updateArg(e.target?.value?.trim())}
+                        className="tw-block tw-py-2.5 tw-px-0 tw-w-full tw-text-sm tw-text-input-foreground tw-bg-transparent tw-border-0 tw-border-b-2 tw-border-gray-300 tw-appearance-none dark:tw-border-gray-600 dark:focus:tw-border-blue-500 focus:tw-outline-none focus:tw-ring-0 focus:tw-border-blue-600 peer"
+                        required={true}
                     />
-                </div>
-
-                <div className="tw-space-y-3">
-                    <div className="tw-flex tw-items-center tw-justify-between">
-                        <Label>Arguments</Label>
-                        <Button type="button" variant="ghost" size="sm" onClick={addArg}>
-                            <Plus size={14} />
-                        </Button>
-                    </div>
-
-                    {formData?.args?.map((arg, index) => (
-                        // biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
-                        <div key={index} className="tw-flex tw-gap-2 tw-items-center">
-                            <input
-                                value={arg}
-                                placeholder=""
-                                onChange={e => updateArg(index, e.target.value)}
-                                className="tw-block tw-py-2.5 tw-px-0 tw-w-full tw-text-sm tw-text-gray-900 tw-bg-transparent tw-border-0 tw-border-b-2 tw-border-gray-300 tw-appearance-none dark:tw-text-white dark:tw-border-gray-600 dark:focus:tw-border-blue-500 focus:tw-outline-none focus:tw-ring-0 focus:tw-border-blue-600 peer"
-                            />
-                            <Button
-                                type="button"
-                                variant="ghost"
-                                size="icon"
-                                className="tw-shrink-0"
-                                onClick={() => removeArg(index)}
-                            >
-                                <X size={14} className="tw-ml-1" />
-                            </Button>
-                        </div>
-                    ))}
                 </div>
 
                 <div className="tw-space-y-2">
@@ -177,14 +134,15 @@ export function AddServerForm({ onAddServer, _server }: AddServerFormProps) {
                                 value={env.name}
                                 placeholder=""
                                 onChange={e => updateEnvVar(index, 'name', e.target.value)}
-                                className="tw-block tw-py-2.5 tw-px-0 tw-w-full tw-text-sm tw-text-gray-900 tw-bg-transparent tw-border-0 tw-border-b-2 tw-border-gray-300 tw-appearance-none dark:tw-text-white dark:tw-border-gray-600 dark:focus:tw-border-blue-500 focus:tw-outline-none focus:tw-ring-0 focus:tw-border-blue-600 peer"
+                                className="tw-block tw-py-2.5 tw-px-0 tw-w-full tw-text-sm tw-text-input-foreground tw-bg-transparent tw-border-0 tw-border-b-2 tw-border-gray-300 tw-appearance-none dark:tw-border-gray-600 dark:focus:tw-border-blue-500 focus:tw-outline-none focus:tw-ring-0 focus:tw-border-blue-600 peer"
                             />
                             <span className="tw-mx-1">=</span>
                             <input
                                 value={env.value}
                                 placeholder=""
                                 onChange={e => updateEnvVar(index, 'value', e.target.value)}
-                                className="tw-block tw-py-2.5 tw-px-0 tw-w-full tw-text-sm tw-text-gray-900 tw-bg-transparent tw-border-0 tw-border-b-2 tw-border-gray-300 tw-appearance-none dark:tw-text-white dark:tw-border-gray-600 dark:focus:tw-border-blue-500 focus:tw-outline-none focus:tw-ring-0 focus:tw-border-blue-600 peer"
+                                type="password"
+                                className="tw-block tw-py-2.5 tw-px-0 tw-w-full tw-text-sm tw-text-input-foreground tw-bg-transparent tw-border-0 tw-border-b-2 tw-border-gray-300 tw-appearance-none dark:tw-border-gray-600 dark:focus:tw-border-blue-500 focus:tw-outline-none focus:tw-ring-0 focus:tw-border-blue-600 peer"
                             />
                             <Button
                                 type="button"
@@ -199,9 +157,11 @@ export function AddServerForm({ onAddServer, _server }: AddServerFormProps) {
                     ))}
                 </div>
             </div>
-            <div>
-                <Button variant="default" size="sm" className="tw-inline-flex tw-w-full">
-                    <SaveIcon size={12} className="tw-mr-1" /> Save
+            <div className="tw-px-2 tw-my-4">
+                <Button variant="default" className="tw-inline-flex tw-px-4 tw-w-auto" type="submit">
+                    <div className="tw-flex tw-items-center">
+                        <SaveIcon size={16} className="tw-mr-3" /> Save
+                    </div>
                 </Button>
             </div>
         </form>

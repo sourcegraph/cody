@@ -85,6 +85,15 @@ describe('MCPServerManager helper functions', () => {
                     ],
                 },
             },
+            {
+                name: 'handles empty input array',
+                input: [],
+                toolName: 'testTool',
+                expected: {
+                    context: [],
+                    contents: [],
+                },
+            },
         ])('$name', ({ input, toolName, expected }) => {
             const result = transforMCPToolResult(input, toolName)
             expect(result.contents).toEqual(expected.contents)

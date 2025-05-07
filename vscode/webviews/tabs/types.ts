@@ -4,4 +4,5 @@ export enum View {
     History = 'history',
     Account = 'account',
     Settings = 'settings',
+    Mcp = 'mcp',
 }
