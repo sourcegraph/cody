@@ -29,7 +29,6 @@ import type { UserProductSubscription } from '../sourcegraph-api/userProductSubs
 import { telemetryRecorder } from '../telemetry-v2/singleton'
 import { CHAT_INPUT_TOKEN_BUDGET } from '../token/constants'
 import { isError } from '../utils'
-import { TOOL_CODY_MODEL } from './client'
 import { type Model, type ServerModel, createModel, createModelFromServerModel } from './model'
 import type {
     DefaultsAndUserPreferencesForEndpoint,
@@ -177,11 +176,6 @@ export function syncModels({
                                         primaryModels: [],
                                     }
 
-                                    // For DotCom users with early access or on the waitlist, replace the waitlist tag with the appropriate tags.
-                                    const enableToolCody: Observable<boolean> = resolvedConfig.pipe(
-                                        map(c => !!c.configuration.experimentalMinionAnthropicKey),
-                                        distinctUntilChanged()
-                                    )
                                     return combineLatest(
                                         featureFlagProvider.evaluatedFeatureFlag(
                                             FeatureFlag.CodyEarlyAccess
@@ -189,7 +183,6 @@ export function syncModels({
                                         featureFlagProvider.evaluatedFeatureFlag(
                                             FeatureFlag.CodyChatDefaultToClaude35Haiku
                                         ),
-                                        enableToolCody,
                                         featureFlagProvider.evaluatedFeatureFlag(
                                             FeatureFlag.EnhancedContextWindow,
                                             true /** force refresh */
@@ -203,7 +196,6 @@ export function syncModels({
                                             ([
                                                 hasEarlyAccess,
                                                 defaultToHaiku,
-                                                isToolCodyEnabled,
                                                 enhancedContextWindowFlag,
                                                 fallbackToFlashFlag,
                                             ]) => {
@@ -270,36 +262,6 @@ export function syncModels({
                                                             ? m.tags
                                                             : m.tags.filter(t => t !== ModelTag.Vision),
                                                 }))
-
-                                                const clientModels = []
-
-                                                // Add Tool Cody
-                                                if (
-                                                    isToolCodyEnabled &&
-                                                    !data.primaryModels.some(m =>
-                                                        m.id.includes(TOOL_CODY_MODEL.modelRef)
-                                                    )
-                                                ) {
-                                                    clientModels.push(TOOL_CODY_MODEL)
-                                                }
-
-                                                // Add the client models to the list of models.
-                                                data.primaryModels.push(
-                                                    ...maybeAdjustContextWindows(clientModels, {
-                                                        tier: isDotComUser
-                                                            ? isCodyProUser(
-                                                                  authStatus,
-                                                                  userProductSubscription
-                                                              )
-                                                                ? 'pro'
-                                                                : 'free'
-                                                            : 'enterprise',
-                                                        // the feature flag is for serverModels, so it's always false for client models
-                                                        enhancedContextWindowFlagEnabled: false,
-                                                    }).map(model =>
-                                                        createModelFromServerModel(model, false)
-                                                    )
-                                                )
 
                                                 // Set the default model to Haiku for free users.
                                                 const haikuModel = data.primaryModels.find(m =>

@@ -1,7 +1,4 @@
-import Anthropic from '@anthropic-ai/sdk'
 import type { ChatMessage } from '@sourcegraph/cody-shared'
-import { ToolCodyModelRef } from '@sourcegraph/cody-shared/src/models/client'
-import { getConfiguration } from '../../../configuration'
 import { toolboxManager } from '../../agentic/ToolboxManager'
 import { isAgentTesting } from '../chat-helpers'
 import { AgenticHandler } from './AgenticHandler'
@@ -9,7 +6,6 @@ import { ChatHandler } from './ChatHandler'
 import { DeepCodyHandler } from './DeepCodyHandler'
 import { EditHandler } from './EditHandler'
 import { SearchHandler } from './SearchHandler'
-import { ExperimentalToolHandler } from './ToolHandler'
 import type { AgentHandler, AgentTools } from './interfaces'
 
 /**
@@ -21,17 +17,6 @@ const agentRegistry = new Map<string, (id: string, tools: AgentTools) => AgentHa
     [
         'insert',
         (_id, { contextRetriever, editor }) => new EditHandler('insert', contextRetriever, editor),
-    ],
-    [
-        ToolCodyModelRef,
-        (_id, _tools) => {
-            const config = getConfiguration()
-            return new ExperimentalToolHandler(
-                new Anthropic({
-                    apiKey: config.experimentalMinionAnthropicKey,
-                })
-            )
-        },
     ],
 ])
 
