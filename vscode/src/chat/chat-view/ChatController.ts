@@ -124,6 +124,8 @@ import {
 import { openExternalLinks } from '../../services/utils/workspace-action'
 import { TestSupport } from '../../test-support'
 import type { MessageErrorType } from '../MessageProvider'
+import { DeepCodyAgent } from '../agentic/DeepCody'
+import { toolboxManager } from '../agentic/ToolboxManager'
 import { getMentionMenuData } from '../context/chatContext'
 import { observeDefaultContext } from '../initialContext'
 import type {
@@ -142,7 +144,7 @@ import type { ContextRetriever } from './ContextRetriever'
 import { InitDoer } from './InitDoer'
 import { getChatPanelTitle, isAgentTesting } from './chat-helpers'
 import { OmniboxTelemetry } from './handlers/OmniboxTelemetry'
-import { getAgent, getAgentName } from './handlers/registry'
+import { getAgent } from './handlers/registry'
 import { getPromptsMigrationInfo, startPromptsMigration } from './prompts-migration'
 import { MCPManager } from './tools/MCPManager'
 
@@ -409,6 +411,34 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             case 'command':
                 vscode.commands.executeCommand(message.id, message.arg)
                 break
+            case 'mcp': {
+                try {
+                    const mcpManager = MCPManager.instance
+                    if (!mcpManager || !message.name) {
+                        throw new Error('MCP Manager is not initialized')
+                    }
+
+                    if (message.type === 'addServer' && message.config) {
+                        await mcpManager.addServer(message.name, message.config)
+                        void this.postMessage({
+                            type: 'clientAction',
+                            mcpServerAdded: { name: message.name },
+                        })
+                    }
+
+                    if (message.type === 'removeServer') {
+                        await mcpManager.deleteServer(message.name)
+                    }
+                } catch (error) {
+                    const errorMessage = error instanceof Error ? error.message : String(error)
+                    void this.postMessage({
+                        type: 'clientAction',
+                        mcpServerError: { name: message.name, error: errorMessage },
+                    })
+                }
+
+                break
+            }
             case 'recordEvent':
                 telemetryRecorder.recordEvent(
                     // 👷 HACK: We have no control over what gets sent over JSON RPC,
@@ -704,7 +734,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         manuallySelectedIntent?: ChatMessage['intent'] | undefined | null
         traceparent?: string | undefined | null
         model?: string | undefined
-        chatAgent?: string | undefined
     }): Promise<void> {
         return context.with(extractContextFromTraceparent(traceparent), () => {
             return tracer.startActiveSpan('chat.handleUserMessage', async (span): Promise<void> => {
@@ -722,13 +751,11 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
 
                 this.chatBuilder.setSelectedModel(model)
 
-                const chatAgent = getAgentName(manuallySelectedIntent, model)
-
                 this.chatBuilder.addHumanMessage({
                     text: inputText,
                     editorState,
                     intent: manuallySelectedIntent,
-                    agent: chatAgent,
+                    agent: toolboxManager.isAgenticChatEnabled() ? DeepCodyAgent.id : undefined,
                 })
 
                 this.setCustomChatTitle(requestID, inputText, signal)
@@ -748,7 +775,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                         command,
                         manuallySelectedIntent,
                         model,
-                        chatAgent,
                     },
                     span
                 )

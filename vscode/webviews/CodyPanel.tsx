@@ -89,6 +89,7 @@ export const CodyPanel: FunctionComponent<CodyPanelProps> = ({
                         status: s.status === 'connected' ? 'online' : 'offline',
                         icon: DatabaseBackup,
                         type: 'mcp',
+                        error: s.error,
                     }))
                 ),
             [api.mcpSettings]

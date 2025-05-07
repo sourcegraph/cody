@@ -50,7 +50,7 @@ export const AutoeditDebugPanel: FC<{
 
     // Use the external store for hot streak data
     const { setEntries: setHotStreakEntries, getHotStreakChainForId } = useHotStreakStore()
-    
+
     // Update the store when entries change
     useEffect(() => {
         setHotStreakEntries(entries)

@@ -7,6 +7,7 @@ import type { Histogram } from '@opentelemetry/api'
 import {
     type ChatClient,
     type ClientCapabilities,
+    type CodeToReplaceData,
     type DocumentContext,
     clientCapabilities,
     currentResolvedConfig,
@@ -54,8 +55,8 @@ import { createMockResponseGenerator } from './mock-response-generator'
 import { autoeditsOutputChannelLogger } from './output-channel-logger'
 import type { AutoeditsUserPromptStrategy } from './prompt/base'
 import { createPromptProvider } from './prompt/create-prompt-provider'
-import { type CodeToReplaceData, getCodeToReplaceData } from './prompt/prompt-utils'
-import { getCurrentFilePath } from './prompt/prompt-utils'
+import { getCodeToReplaceData } from './prompt/prompt-utils/code-to-replace'
+import { getCurrentFilePath } from './prompt/prompt-utils/common'
 import { DefaultDecorator } from './renderer/decorators/default-decorator'
 import { InlineDiffDecorator } from './renderer/decorators/inline-diff-decorator'
 import { getAddedLines, getDecorationInfoFromPrediction } from './renderer/diff-utils'

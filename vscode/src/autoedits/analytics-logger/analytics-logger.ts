@@ -6,6 +6,7 @@ import type * as vscode from 'vscode'
 import {
     type BillingCategory,
     type BillingProduct,
+    type CodeToReplaceData,
     type DocumentContext,
     isDotComAuthed,
     isNetworkError,
@@ -21,7 +22,6 @@ import { captureException, shouldErrorBeReported } from '../../services/sentry/s
 import { splitSafeMetadata } from '../../services/telemetry-v2'
 import type { AutoeditsPrompt, PartialModelResponse, SuccessModelResponse } from '../adapters/base'
 import { autoeditsOutputChannelLogger } from '../output-channel-logger'
-import type { CodeToReplaceData } from '../prompt/prompt-utils'
 import type { DecorationInfo } from '../renderer/decorators/base'
 import { getDecorationStats } from '../renderer/diff-utils'
 

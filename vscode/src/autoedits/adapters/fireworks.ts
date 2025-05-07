@@ -7,6 +7,7 @@ import { getFireworksModelResponse } from './model-response/fireworks'
 import {
     type AutoeditsRequestBody,
     type FireworksCompatibleRequestParams,
+    getFireworksCompatibleRewriteSpeculationParams,
     getMaxOutputTokensForAutoedits,
     getOpenaiCompatibleChatPrompt,
 } from './utils'
@@ -83,6 +84,7 @@ export class FireworksAdapter implements AutoeditsModelAdapter {
                 content: options.codeToRewrite,
             },
             user: options.userId || undefined,
+            ...getFireworksCompatibleRewriteSpeculationParams(),
         }
 
         if (options.isChatModel) {

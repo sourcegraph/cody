@@ -13,7 +13,7 @@ import { documentAndPosition } from '../../completions/test-helpers'
 
 import type { UserPromptArgs } from './base'
 import { LongTermPromptStrategy } from './long-prompt-experimental'
-import { getCodeToReplaceData } from './prompt-utils'
+import { getCodeToReplaceData } from './prompt-utils/code-to-replace'
 
 describe('LongTermPromptStrategy', () => {
     beforeEach(() => {
@@ -67,6 +67,7 @@ describe('LongTermPromptStrategy', () => {
                     [RetrieverIdentifier.JaccardSimilarityRetriever]: 100,
                     [RetrieverIdentifier.DiagnosticsRetriever]: 100,
                 },
+                contextSpecificNumItemsLimit: {},
             }
             const codeToReplaceData = getCodeToReplaceData({
                 docContext,
