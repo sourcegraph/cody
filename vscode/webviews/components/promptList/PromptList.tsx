@@ -231,6 +231,7 @@ export const PromptList: FC<PromptListProps> = props => {
                 )}
                 {!recommendedOnly &&
                     result &&
+                    result.arePromptsSupported &&
                     sortedActions.filter(action => action.actionType === 'prompt').length === 0 && (
                         <CommandLoading className={itemPaddingClass}>
                             {result?.query === '' && !anyPromptFilterActive ? (

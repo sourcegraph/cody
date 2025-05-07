@@ -1,4 +1,4 @@
-import { FIXTURE_MODELS } from '@sourcegraph/cody-shared'
+import { type DefaultContext, FIXTURE_MODELS } from '@sourcegraph/cody-shared'
 import { ExtensionAPIProviderForTestsOnly, MOCK_API } from '@sourcegraph/prompt-editor'
 import type { Meta, StoryObj } from '@storybook/react'
 import { Observable } from 'observable-fns'
@@ -49,6 +49,9 @@ export const EmptyWithPromptLibraryUnsupported: StoryObj<typeof meta> = {
         <ExtensionAPIProviderForTestsOnly
             value={{
                 ...MOCK_API,
+                userHistory: () => Observable.of(null),
+                defaultContext: () =>
+                    Observable.of<DefaultContext>({ initialContext: [], corpusContext: [] }),
                 prompts: makePromptsAPIWithData({
                     arePromptsSupported: false,
                     prompts: [],
@@ -68,6 +71,9 @@ export const EmptyWithNoPrompts: StoryObj<typeof meta> = {
         <ExtensionAPIProviderForTestsOnly
             value={{
                 ...MOCK_API,
+                userHistory: () => Observable.of(null),
+                defaultContext: () =>
+                    Observable.of<DefaultContext>({ initialContext: [], corpusContext: [] }),
                 prompts: makePromptsAPIWithData({
                     prompts: [],
                     commands: FIXTURE_COMMANDS,

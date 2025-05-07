@@ -21,7 +21,7 @@ export const Default: StoryObj<typeof meta> = {
     argTypes: {
         variant: {
             control: { type: 'radio' },
-            options: ['secondary'],
+            options: ['secondary', 'info'],
         },
     },
 

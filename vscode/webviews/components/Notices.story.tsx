@@ -51,6 +51,7 @@ export const SgTeammateNotice: Story = {
                 ],
             },
         },
+        instanceNotices: [],
     },
 }
 
@@ -60,6 +61,7 @@ export const NoNotices: Story = {
             ...baseUser,
             isDotComUser: false,
         },
+        instanceNotices: [],
     },
 }
 
@@ -69,5 +71,6 @@ export const WebUserNoNotices: Story = {
             ...baseUser,
             IDE: CodyIDE.Web,
         },
+        instanceNotices: [],
     },
 }

@@ -52,5 +52,12 @@ export const NetworkError: StoryObj<typeof meta> = {
                 userCanUpgrade: true,
             },
         },
+        instanceNotices: [
+            {
+                key: '1',
+                title: 'Error',
+                message: new AvailabilityError().message,
+            },
+        ],
     },
 }

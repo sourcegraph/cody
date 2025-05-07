@@ -1,5 +1,6 @@
 import { ExtensionAPIProviderForTestsOnly, MOCK_API } from '@sourcegraph/prompt-editor'
 import type { Meta, StoryObj } from '@storybook/react'
+import { Observable } from 'observable-fns'
 import { FIXTURE_COMMANDS, makePromptsAPIWithData } from '../components/promptList/fixtures'
 import { FIXTURE_PROMPTS } from '../components/promptSelectField/fixtures'
 import { VSCodeStandaloneComponent } from '../storybook/VSCodeStoryDecorator'
@@ -29,6 +30,20 @@ export const WithPromptsAndCommands: Story = {
                     prompts: FIXTURE_PROMPTS,
                     commands: FIXTURE_COMMANDS,
                 }),
+
+                promptTags: () =>
+                    new Observable<any[]>(observer => {
+                        observer.next([
+                            { id: 'tag1', name: 'Tag 1' },
+                            { id: 'tag2', name: 'Tag 2' },
+                        ])
+                        return () => {}
+                    }),
+                getCurrentUserId: () =>
+                    new Observable<string>(observer => {
+                        observer.next('user123')
+                        return () => {}
+                    }),
             }}
         >
             <PromptsTab {...args} />
@@ -46,6 +61,19 @@ export const WithOnlyCommands: Story = {
                     prompts: [],
                     commands: FIXTURE_COMMANDS,
                 }),
+                promptTags: () =>
+                    new Observable<any[]>(observer => {
+                        observer.next([
+                            { id: 'tag1', name: 'Tag 1' },
+                            { id: 'tag2', name: 'Tag 2' },
+                        ])
+                        return () => {}
+                    }),
+                getCurrentUserId: () =>
+                    new Observable<string>(observer => {
+                        observer.next('user123')
+                        return () => {}
+                    }),
             }}
         >
             <PromptsTab {...args} />

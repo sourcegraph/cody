@@ -1,4 +1,5 @@
 import type { Prompt } from '@sourcegraph/cody-shared'
+import { PromptMode } from '@sourcegraph/cody-shared'
 
 export const FIXTURE_PROMPTS: Prompt[] = [
     {
@@ -8,6 +9,7 @@ export const FIXTURE_PROMPTS: Prompt[] = [
         owner: { namespaceName: 'alice' },
         description: 'Generate unit tests for a given function',
         draft: false,
+        mode: PromptMode.CHAT,
         definition: { text: 'Generate unit tests for vitest' },
         url: 'https://example.com',
         recommended: false,
@@ -26,6 +28,7 @@ export const FIXTURE_PROMPTS: Prompt[] = [
         description: 'Suggest improvements for an OpenCtx provider',
         draft: true,
         recommended: false,
+        mode: PromptMode.CHAT,
         definition: { text: 'Review the following OpenCtx provider code' },
         url: 'https://example.com',
         createdBy: {
@@ -42,6 +45,7 @@ export const FIXTURE_PROMPTS: Prompt[] = [
         owner: { namespaceName: 'myorg' },
         draft: false,
         recommended: false,
+        mode: PromptMode.CHAT,
         definition: { text: 'Generate a JUnit integration test' },
         url: 'https://example.com',
         createdBy: {
@@ -58,6 +62,7 @@ export const FIXTURE_PROMPTS: Prompt[] = [
         owner: { namespaceName: 'myorg' },
         draft: false,
         recommended: false,
+        mode: PromptMode.CHAT,
         definition: { text: 'Fix common issues in this Bazel BUILD file' },
         url: 'https://example.com',
         createdBy: {
@@ -74,6 +79,7 @@ export const FIXTURE_PROMPTS: Prompt[] = [
         owner: { namespaceName: 'abc-corp' },
         // Long text to test wrapping.
         description: 'Convert from a React class component to a function component',
+        mode: PromptMode.CHAT,
         draft: false,
         recommended: false,
         definition: { text: 'Convert from a React class component to a function component' },

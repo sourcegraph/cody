@@ -24,9 +24,12 @@ export const Default: Story = {
             title: 'File View',
             toolId: 'file',
             toolName: 'get_file',
-            content: 'This is the file ontent',
+            content: 'This is the file content',
         } as ContextItemToolState,
         defaultOpen: false,
+        onFileLinkClicked: (uri: URI) => {
+            console.log('File link clicked:', uri.toString())
+        },
     },
 }
 

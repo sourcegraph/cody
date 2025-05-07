@@ -82,7 +82,7 @@ export const DiffCell: FC<DiffCellProps> = ({
                 <tbody>
                     {result?.changes.map((change, index) => (
                         <tr
-                            key={change.lineNumber}
+                            key={`${index}-${change.lineNumber}`}
                             className={cn(
                                 'hover:tw-bg-zinc-800/50',
                                 change.type === 'added' && 'tw-bg-emerald-950/30',
