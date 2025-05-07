@@ -3,13 +3,11 @@ import { TokenCounterUtils } from '../token/counter'
 
 import type { PromptString } from './prompt-string'
 
-export function truncatePromptString(text: PromptString, maxTokens: number): PromptString
-
-export function truncatePromptString(text: PromptString, maxTokens: number) {
-    const encoded = TokenCounterUtils.encode(text.toString())
+export async function truncatePromptString(text: PromptString, maxTokens: number) {
+    const encoded = await TokenCounterUtils.encode(text.toString())
     return encoded.length <= maxTokens
         ? text
-        : text.slice(0, TokenCounterUtils.decode(encoded.slice(0, maxTokens))?.length).trim()
+        : text.slice(0, (await TokenCounterUtils.decode(encoded.slice(0, maxTokens)))?.length).trim()
 }
 
 /**
@@ -51,15 +49,18 @@ export function truncateTextNearestLine(
 /**
  * Truncates text to the given number of tokens, keeping the end of the text.
  */
-export function truncateTextStart(text: string, maxTokens: number): string {
-    const encoded = TokenCounterUtils.encode(text)
+export async function truncateTextStart(text: string, maxTokens: number): Promise<string> {
+    const encoded = await TokenCounterUtils.encode(text)
     return encoded.length <= maxTokens
         ? text
-        : TokenCounterUtils.decode(encoded.slice(-maxTokens)).trim()
+        : (await TokenCounterUtils.decode(encoded.slice(-maxTokens))).trim()
 }
 
-export function truncatePromptStringStart(text: PromptString, maxTokens: number): PromptString {
-    const encoded = TokenCounterUtils.encode(text.toString())
+export async function truncatePromptStringStart(
+    text: PromptString,
+    maxTokens: number
+): Promise<PromptString> {
+    const encoded = await TokenCounterUtils.encode(text.toString())
 
     if (encoded.length <= maxTokens) {
         return text
@@ -69,6 +70,6 @@ export function truncatePromptStringStart(text: PromptString, maxTokens: number)
     // considered unsafe. Instead, we use the string representation to get the updated
     // character count
 
-    const decoded = TokenCounterUtils.decode(encoded.slice(-maxTokens))
+    const decoded = await TokenCounterUtils.decode(encoded.slice(-maxTokens))
     return text.slice(-decoded.length - 1).trim()
 }

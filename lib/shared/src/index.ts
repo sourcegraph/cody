@@ -362,10 +362,7 @@ export {
     type ContextMentionProviderID,
     type ContextMentionProviderMetadata,
 } from './mentions/api'
-export {
-    TokenCounter,
-    TokenCounterUtils,
-} from './token/counter'
+export { TokenCounter, getTokenCounterUtils, TokenCounterUtils } from './token/counter'
 export { CORPUS_CONTEXT_ALLOCATION as ENHANCED_CONTEXT_ALLOCATION } from './token/constants'
 export { tokensToChars, charsToTokens } from './token/utils'
 export * from './prompt/prompt-string'
