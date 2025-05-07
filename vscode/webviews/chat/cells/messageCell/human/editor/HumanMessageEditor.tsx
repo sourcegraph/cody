@@ -30,7 +30,7 @@ import {
 } from 'react'
 import type { UserAccountInfo } from '../../../../../Chat'
 import { type ClientActionListener, useClientActionListener } from '../../../../../client/clientState'
-import { promptModeToIntent } from '../../../../../prompts/PromptsTab'
+import { promptModeToIntent } from '../../../../../prompts/promptUtils'
 import { useTelemetryRecorder } from '../../../../../utils/telemetry'
 import { useConfig } from '../../../../../utils/useConfig'
 import { useLinkOpener } from '../../../../../utils/useLinkOpener'
