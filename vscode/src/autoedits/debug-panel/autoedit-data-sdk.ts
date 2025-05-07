@@ -2,6 +2,7 @@ import type { InlineCompletionItemRetrievedContext } from '../../completions/ana
 import type { ModelResponse, PartialModelResponse, SuccessModelResponse } from '../adapters/base'
 import type {
     AutoeditDiscardReasonMetadata,
+    AutoeditHotStreakID,
     AutoeditTriggerKindMetadata,
     HotStreakChunk,
 } from '../analytics-logger'
@@ -312,7 +313,7 @@ export const getHotStreakChunks = (entry: AutoeditRequestDebugState): HotStreakC
 /**
  * Get the hot streak ID if available
  */
-export const getHotStreakId = (entry: AutoeditRequestDebugState): string | null => {
+export const getHotStreakId = (entry: AutoeditRequestDebugState): AutoeditHotStreakID | null => {
     if ('hotStreakId' in entry.state && entry.state.hotStreakId) {
         return entry.state.hotStreakId
     }

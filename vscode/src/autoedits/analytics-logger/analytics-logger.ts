@@ -121,6 +121,7 @@ export class AutoeditAnalyticsLogger {
             phase: 'started',
             startedAt,
             filePath,
+            requestCodeToReplaceData: codeToReplaceData,
             codeToReplaceData,
             document,
             position,

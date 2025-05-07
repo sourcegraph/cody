@@ -2,6 +2,7 @@ import React, { type FC } from 'react'
 
 import {
     getHotStreakChunks,
+    getHotStreakId,
     getModelResponse,
     getStartTime,
     getSuccessModelResponse,
@@ -12,6 +13,7 @@ import {
 } from '../../../src/autoedits/debug-panel/autoedit-latency-utils'
 import type { AutoeditRequestDebugState } from '../../../src/autoedits/debug-panel/debug-store'
 import { JsonViewer } from '../components/JsonViewer'
+import { useHotStreakStore } from '../store/hotStreakStore'
 
 export const NetworkRequestSection: FC<{
     entry: AutoeditRequestDebugState
@@ -69,9 +71,17 @@ export const NetworkResponseSection: FC<{
 
     // Extract modelResponse and hot streak data if available
     const modelResponse = getSuccessModelResponse(entry)
-    const hotStreakChunks = getHotStreakChunks(entry)
     const startTime = getStartTime(entry)
     const detailedTimingInfo = getDetailedTimingInfo(entry)
+
+    const hotStreakId = getHotStreakId(entry)
+    const { getHotStreakChainForId } = useHotStreakStore()
+    const hotStreakChainStartEntry = getHotStreakChainForId(hotStreakId).find(entry =>
+        getHotStreakChunks(entry)
+    )
+    const hotStreakChunks = hotStreakChainStartEntry
+        ? getHotStreakChunks(hotStreakChainStartEntry)
+        : undefined
 
     return (
         <div className="tw-grid tw-grid-cols-2 tw-gap-4">

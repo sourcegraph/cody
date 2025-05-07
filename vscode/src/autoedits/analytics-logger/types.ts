@@ -193,8 +193,13 @@ export interface StartedState extends AutoeditBaseState {
     /** The relative file path of the document being edited. */
     filePath: string
 
-    /** Metadata required to show a suggestion based on `requestId` only. */
+    /**
+     * Metadata required to show a suggestion based on `requestId` only.
+     * Is replaced with predictionCodeToReplaceData once the prediction is loaded.
+     * TODO: rename appropriately
+     */
     codeToReplaceData: CodeToReplaceData
+    requestCodeToReplaceData: CodeToReplaceData
     document: vscode.TextDocument
     position: vscode.Position
     requestDocContext: DocumentContext
