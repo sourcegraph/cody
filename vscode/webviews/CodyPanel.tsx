@@ -129,7 +129,7 @@ export const CodyPanel: FunctionComponent<CodyPanelProps> = ({
                         setView={setView}
                         endpointHistory={config.endpointHistory ?? []}
                         isWorkspacesUpgradeCtaEnabled={isWorkspacesUpgradeCtaEnabled}
-                        showOpenInEditor={!!config?.multipleWebviewsEnabled && !transcript.length}
+                        showOpenInEditor={!!config?.multipleWebviewsEnabled}
                     />
                 )}
                 {errorMessages && <ErrorBanner errors={errorMessages} setErrors={setErrorMessages} />}

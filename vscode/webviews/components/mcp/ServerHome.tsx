@@ -1,5 +1,5 @@
 import type { McpServer } from '@sourcegraph/cody-shared/src/llm-providers/mcp/types'
-import { DatabaseBackup, Server, XIcon } from 'lucide-react'
+import { DatabaseBackup, Minus, PencilRulerIcon, Server, ServerIcon } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { getVSCodeAPI } from '../../utils/VSCodeApi'
 import { Badge } from '../shadcn/ui/badge'
@@ -158,9 +158,7 @@ export function ServerHome({ mcpServers }: ServerHomeProps) {
                 <div className="tw-w-full tw-col-span-full tw-text-center tw-py-12 tw-border tw-rounded-lg tw-border-none">
                     <Server className="tw-h-12 tw-w-12 tw-mx-auto tw-mb-4 tw-text-muted-foreground" />
                     <h3 className="tw-text-md tw-font-medium">Waiting for server connections...</h3>
-                    <p className="tw-text-muted-foreground tw-mt-1">
-                        Or add a new server to get started
-                    </p>
+                    <p className="tw-text-muted-foreground tw-mt-1">Add a new server to get started</p>
                 </div>
                 <AddServerView
                     onAddServer={addServer}
@@ -180,6 +178,23 @@ export function ServerHome({ mcpServers }: ServerHomeProps) {
             className="tw-flex tw-flex-col tw-h-full tw-py-4 tw-bg-transparent tw-px-2 tw-mb-4 tw-overscroll-auto"
             disablePointerSelection={true}
         >
+            <header className="tw-inline-flex tw-mt-4 tw-px-4 tw-gap-4">
+                <Button
+                    variant="secondary"
+                    className="tw-bg-popover tw-border tw-border-border !tw-justify-between"
+                    onClick={() =>
+                        getVSCodeAPI().postMessage({
+                            command: 'command',
+                            id: 'workbench.action.openSettings',
+                            arg: '@ext:sourcegraph.cody-ai cody.mcpServers',
+                        })
+                    }
+                >
+                    <div className="tw-flex tw-items-center">
+                        <ServerIcon size={16} className="tw-mr-3" /> MCP Servers Configurations
+                    </div>
+                </Button>
+            </header>
             <div className="tw-flex tw-items-center tw-justify-between tw-px-2 tw-py-1">
                 <CommandList className="tw-flex-1">
                     <CommandInput
@@ -195,13 +210,17 @@ export function ServerHome({ mcpServers }: ServerHomeProps) {
                 {filteredServers.map(server => (
                     <CommandItem
                         key={server.id}
-                        className="tw-text-left tw-truncate tw-w-full tw-rounded-md tw-text-sm tw-overflow-hidden tw-text-sidebar-foreground tw-align-baseline hover:tw-bg-transparent [&[aria-selected='true']]:tw-bg-transparent tw-mt-2"
+                        className="tw-text-left tw-truncate tw-w-full tw-rounded-md tw-text-sm tw-overflow-hidden tw-text-sidebar-foreground tw-align-baseline hover:tw-bg-transparent [&[aria-selected='true']]:tw-bg-transparent tw-my-2"
                         onSelect={() => setSelectedServer(server)}
                     >
                         <div className="tw-truncate tw-w-full tw-flex tw-flex-col tw-gap-2">
                             <div className="tw-flex tw-items-center tw-justify-between tw-gap-2">
-                                <div className="tw-flex tw-items-center tw-gap-2">
-                                    <Server className="tw-w-8 tw-h-8" strokeWidth={1.25} size={16} />
+                                <div className="tw-flex tw-self-end tw-gap-2">
+                                    <PencilRulerIcon
+                                        className="tw-w-8 tw-h-8"
+                                        strokeWidth={1.25}
+                                        size={16}
+                                    />
                                     <strong>{server.name}</strong>
                                 </div>
                                 {server.name === selectedServer?.name && (
@@ -215,7 +234,7 @@ export function ServerHome({ mcpServers }: ServerHomeProps) {
                                         }}
                                         title="Delete server"
                                     >
-                                        <XIcon size={16} />
+                                        <Minus size={16} />
                                     </Button>
                                 )}
                             </div>
@@ -237,7 +256,7 @@ export function ServerHome({ mcpServers }: ServerHomeProps) {
                                                 <Badge
                                                     key={`${server.name}-${tool.name}-tool`}
                                                     variant={tool.disabled ? 'disabled' : 'outline'}
-                                                    className={`tw-truncate tw-max-w-[250px] tw-text-foreground tw-cursor-pointer ${
+                                                    className={`tw-truncate tw-max-w-[250px] tw-text-foreground tw-cursor-pointer tw-font-thin ${
                                                         tool.disabled
                                                             ? 'tw-opacity-50 tw-line-through'
                                                             : ''
