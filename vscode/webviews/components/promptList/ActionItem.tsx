@@ -12,13 +12,13 @@ import {
 import {
     BetweenHorizontalEnd,
     BookOpen,
-    BookUp2,
     FileQuestion,
     Hammer,
     MessageSquare,
     Pencil,
     PencilLine,
     PencilRuler,
+    Pin,
     TextSearch,
 } from 'lucide-react'
 
@@ -116,9 +116,17 @@ const ActionPrompt: FC<ActionPromptProps> = props => {
                     {prompt.recommended && (
                         <Tooltip>
                             <TooltipTrigger asChild>
-                                <BookUp2 size={12} className={styles.promptIcon} />
+                                <Pin size={12} className={styles.promptIcon} />
                             </TooltipTrigger>
                             <TooltipContent>This prompt was recommended by your admin</TooltipContent>
+                        </Tooltip>
+                    )}
+                    {prompt.mode !== 'CHAT' && (
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Pencil size={12} className={styles.promptIcon} />
+                            </TooltipTrigger>
+                            <TooltipContent>Edit prompt</TooltipContent>
                         </Tooltip>
                     )}
                 </div>

@@ -69,18 +69,15 @@ export class SourcegraphCompletionsAdapter implements AutoeditsModelAdapter {
         requestBody: CodeCompletionsParams
     ): AsyncGenerator<ModelResponse> {
         let prediction = ''
-        let responseBody: any = null
-        let responseHeaders: Record<string, string> = {}
-        let requestHeaders: Record<string, string> = {}
-        let requestUrl = options.url
         let isAborted = false
 
+        // Create a shared result object that will be updated
         const sharedResult = {
-            responseHeaders,
-            requestHeaders,
-            requestUrl,
+            responseHeaders: {} as Record<string, string>,
+            requestHeaders: {} as Record<string, string>,
+            requestUrl: options.url,
             requestBody,
-            responseBody,
+            responseBody: null as any,
         }
 
         for await (const msg of completionResponseGenerator) {
@@ -93,19 +90,19 @@ export class SourcegraphCompletionsAdapter implements AutoeditsModelAdapter {
             if (msg.metadata) {
                 if (msg.metadata.response) {
                     // Extract headers into a plain object
-                    responseHeaders = {}
+                    sharedResult.responseHeaders = {}
                     msg.metadata.response.headers.forEach((value, key) => {
-                        responseHeaders[key] = value
+                        sharedResult.responseHeaders[key] = value
                     })
                 }
 
                 // Capture request metadata
                 if (msg.metadata.requestHeaders) {
-                    requestHeaders = msg.metadata.requestHeaders
+                    sharedResult.requestHeaders = msg.metadata.requestHeaders
                 }
 
                 if (msg.metadata.requestUrl) {
-                    requestUrl = msg.metadata.requestUrl
+                    sharedResult.requestUrl = msg.metadata.requestUrl
                 }
 
                 if (msg.metadata.isAborted) {
@@ -114,7 +111,7 @@ export class SourcegraphCompletionsAdapter implements AutoeditsModelAdapter {
 
                 // Store the full response body if available
                 if (msg.completionResponse) {
-                    responseBody = msg.completionResponse
+                    sharedResult.responseBody = msg.completionResponse
                 }
             }
 

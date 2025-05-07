@@ -54,14 +54,6 @@ export const HistoryTab: Story = {
     },
 }
 
-export const PromptsTab: Story = {
-    args: {
-        currentView: View.Prompts,
-        setView: () => {},
-        user: mockUser,
-    },
-}
-
 export const SettingsTab: Story = {
     args: {
         currentView: View.Settings,

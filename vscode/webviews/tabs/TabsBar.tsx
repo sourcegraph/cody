@@ -3,7 +3,6 @@ import * as Tabs from '@radix-ui/react-tabs'
 
 import clsx from 'clsx'
 import {
-    BookTextIcon,
     ColumnsIcon,
     DownloadIcon,
     HistoryIcon,
@@ -406,12 +405,6 @@ function useTabs(input: Pick<TabsBarProps, 'user'>): TabConfig[] {
                                       },
                                   ].filter(isDefined)
                                 : undefined,
-                        changesView: true,
-                    },
-                    {
-                        view: View.Prompts,
-                        title: 'Prompts',
-                        Icon: BookTextIcon,
                         changesView: true,
                     },
                 ] as (TabConfig | null)[]

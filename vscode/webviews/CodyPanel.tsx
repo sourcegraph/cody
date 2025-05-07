@@ -21,7 +21,7 @@ import { StateDebugOverlay } from './components/StateDebugOverlay'
 import type { ServerType } from './components/mcp'
 import { ServerHome, getMcpServerType } from './components/mcp/ServerHome'
 import { TabContainer, TabRoot } from './components/shadcn/ui/tabs'
-import { HistoryTab, PromptsTab, TabsBar, View } from './tabs'
+import { HistoryTab, TabsBar, View } from './tabs'
 import type { VSCodeWrapper } from './utils/VSCodeApi'
 import { useUserAccountInfo } from './utils/useConfig'
 import { useFeatureFlag } from './utils/useFeatureFlags'
@@ -157,9 +157,6 @@ export const CodyPanel: FunctionComponent<CodyPanelProps> = ({
                             webviewType={config.webviewType}
                             multipleWebviewsEnabled={config.multipleWebviewsEnabled}
                         />
-                    )}
-                    {view === View.Prompts && (
-                        <PromptsTab IDE={clientCapabilities.agentIDE} setView={setView} />
                     )}
                     {view === View.Mcp && mcpServers?.length !== -1 && (
                         <ServerHome mcpServers={mcpServers} />

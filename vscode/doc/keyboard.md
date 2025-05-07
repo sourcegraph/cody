@@ -10,6 +10,15 @@ The Keyboard Shortcuts editor allows you to easily update the key bindings for a
 1. Open the Cody sidebar and expand the `**SETTINGS AND SUPPORT**` section.
 2. Click on the `**Keyboard Shortcuts**` icon.
 
+## Chat Interface Shortcuts
+
+Cody provides keyboard shortcuts for quick access to key features in the chat interface:
+
+- **Model Selection**: `⌘M` (macOS) or `Ctrl+M` (Windows/Linux) - Opens the model selector dropdown
+- **Mode Selection**: `⌘.` (macOS) or `Ctrl+.` (Windows/Linux) - Cycles through available chat modes (Chat, Search, Edit, Agent)
+- **Prompt Library**: `⌘/` (macOS) or `Ctrl+/` (Windows/Linux) - Opens the prompt selector dropdown
+- **Escape**: Closes any open dropdown 
+
 ## Custom Commands
 
 ![editor](images/keyboard_editor.png)
