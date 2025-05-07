@@ -58,16 +58,16 @@ describe('CharactersLogger', () => {
         // Cody writes code
         const codyCode = 'function codyGeneratedCode() {}'
         vi.spyOn(codeBlockUtils, 'isCodeFromChatCodeBlockAction').mockResolvedValueOnce({
-        operation: 'insert',
-        code: codyCode,
-        lineCount: 1,
-        charCount: codyCode.length,
-        eventName: 'insert',
-        source: 'chat',
+            operation: 'insert',
+            code: codyCode,
+            lineCount: 1,
+            charCount: codyCode.length,
+            eventName: 'insert',
+            source: 'chat',
         })
 
         await onDidChangeTextDocument(
-        createChange({ text: codyCode, range: range(1, 0, 1, 0), rangeLength: 0 })
+            createChange({ text: codyCode, range: range(1, 0, 1, 0), rangeLength: 0 })
         )
 
         // Advance time to trigger the flush
@@ -431,26 +431,26 @@ describe('CharactersLogger', () => {
         // Check by combining ALL telemetry flush events
         const allFlushEvents = recordSpy.mock.calls
             .filter(call => call[0] === 'cody.characters' && call[1] === 'flush')
-        .map(call => call[2])
+            .map(call => call[2])
 
         // Calculate totals across all events
-        let totalHumanInsertions = 0;
-        let totalCodyInsertions = 0;
+        let totalHumanInsertions = 0
+        let totalCodyInsertions = 0
 
         // Calculate the combined total of human and Cody contributions across all events
         for (const event of allFlushEvents) {
             const humanInserts = calculateHumanInsertions(event)
             const codyInserts = event.metadata.cody_chat_inserted || 0
 
-            totalHumanInsertions += humanInserts;
-            totalCodyInsertions += codyInserts;
+            totalHumanInsertions += humanInserts
+            totalCodyInsertions += codyInserts
         }
 
         // Calculate true PCW using all events
-        const PCW = totalCodyInsertions / (totalHumanInsertions + totalCodyInsertions);
+        const PCW = totalCodyInsertions / (totalHumanInsertions + totalCodyInsertions)
 
         // The PCW considering all events should be 31/74(31cody+43human) ≈ 0.419
-        expect(PCW).toBeCloseTo(31/74, 3)
+        expect(PCW).toBeCloseTo(31 / 74, 3)
     })
 
     it('should update PCW correctly when human deletes Cody-generated code', async () => {
@@ -554,7 +554,8 @@ describe('CharactersLogger', () => {
         expect(finalPcw).toBeLessThan(initialPcw)
 
         // expect PCW with specific value - using the finalPcw formula directly
-        const calculatedPcw = (finalCodyInsertions - finalCodyDeletions) / (humanInsertions + finalCodyInsertions)
+        const calculatedPcw =
+            (finalCodyInsertions - finalCodyDeletions) / (humanInsertions + finalCodyInsertions)
         expect(finalPcw).toBeCloseTo(calculatedPcw, 3)
     })
 })
