@@ -364,7 +364,9 @@ export {
 } from './mentions/api'
 export {
     TokenCounter,
+    getTokenCounterUtils,
     TokenCounterUtils,
+    useFakeTokenCounterUtils,
 } from './token/counter'
 export { CORPUS_CONTEXT_ALLOCATION as ENHANCED_CONTEXT_ALLOCATION } from './token/constants'
 export { tokensToChars, charsToTokens } from './token/utils'
