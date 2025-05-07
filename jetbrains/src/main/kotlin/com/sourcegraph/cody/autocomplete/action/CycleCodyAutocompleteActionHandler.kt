@@ -40,9 +40,12 @@ class CycleCodyAutocompleteActionHandler(private val cycleDirection: CycleDirect
             CycleDirection.BACKWARD -> oldItems.takeLast(1) + oldItems.dropLast(1)
           }
       ApplicationManager.getApplication().invokeLater {
-        CodyAutocompleteManager.instance.let {
-          it.clearAutocompleteSuggestions(editor)
-          it.displayAutocomplete(editor, caret.offset, newItems, editor.inlayModel)
+        val project = editor.project
+        if (project != null) {
+          CodyAutocompleteManager.getInstance(project).let {
+            it.clearAutocompleteSuggestions(editor)
+            it.displayInlay(editor, caret.offset, newItems)
+          }
         }
         autocompleteItemsCache[cacheKey] = newItems
       }

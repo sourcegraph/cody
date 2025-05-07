@@ -143,6 +143,10 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
 
                 const toolResults = results?.map(result => result.tool_result).filter(isDefined)
                 const toolOutputs = results?.map(result => result.output).filter(isDefined)
+                const outputParts = toolOutputs
+                    ?.map(o => o.parts)
+                    .filter(isDefined)
+                    .flat()
 
                 botResponse.contextFiles = toolOutputs
 
@@ -152,7 +156,7 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
 
                 // Add a human message to hold tool results
                 chatBuilder.addHumanMessage({
-                    content: toolResults,
+                    content: [...toolResults, ...outputParts],
                     intent: 'agentic',
                     contextFiles: toolOutputs,
                 })

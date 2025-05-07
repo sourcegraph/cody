@@ -2,7 +2,7 @@ import dedent from 'dedent'
 import { describe, expect, it, vitest } from 'vitest'
 import * as vscode from 'vscode'
 
-import { range } from '../../testutils/textDocument'
+import { range } from '../../editor/utils/virtual-text-document'
 import type { CompletionLogID } from '../analytics-logger'
 import { getCurrentDocContext } from '../get-current-doc-context'
 import {

@@ -89,6 +89,7 @@ export const CodyPanel: FunctionComponent<CodyPanelProps> = ({
                         status: s.status === 'connected' ? 'online' : 'offline',
                         icon: DatabaseBackup,
                         type: 'mcp',
+                        error: s.error,
                     }))
                 ),
             [api.mcpSettings]
@@ -163,6 +164,7 @@ export const CodyPanel: FunctionComponent<CodyPanelProps> = ({
                     {view === View.History && (
                         <HistoryTab
                             IDE={clientCapabilities.agentIDE}
+                            extensionAPI={api}
                             setView={setView}
                             webviewType={config.webviewType}
                             multipleWebviewsEnabled={config.multipleWebviewsEnabled}

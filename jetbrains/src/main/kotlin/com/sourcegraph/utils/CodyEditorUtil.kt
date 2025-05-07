@@ -16,7 +16,6 @@ import com.intellij.openapi.fileEditor.*
 import com.intellij.openapi.fileTypes.FileTypeRegistry
 import com.intellij.openapi.fileTypes.PlainTextLanguage
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.project.ProjectManager
 import com.intellij.openapi.util.Key
 import com.intellij.openapi.util.TextRange
 import com.intellij.openapi.vfs.LocalFileSystem
@@ -24,16 +23,14 @@ import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.VirtualFileManager
 import com.intellij.util.concurrency.annotations.RequiresEdt
+import com.intellij.util.io.createFile
 import com.sourcegraph.cody.agent.protocol_extensions.toOffsetRange
 import com.sourcegraph.cody.agent.protocol_generated.Range
 import com.sourcegraph.config.ConfigUtil
 import com.sourcegraph.utils.ThreadingUtil.runInEdtAndGet
 import java.net.URISyntaxException
 import java.net.URLDecoder
-import kotlin.io.path.createDirectories
-import kotlin.io.path.createFile
-import kotlin.io.path.exists
-import kotlin.io.path.toPath
+import kotlin.io.path.*
 
 object CodyEditorUtil {
   private val logger = Logger.getInstance(CodyEditorUtil::class.java)
@@ -62,24 +59,24 @@ object CodyEditorUtil {
   }
 
   @JvmStatic
-  fun getAllOpenEditors(): Set<Editor> {
-    return ProjectManager.getInstance()
-        .openProjects
-        .flatMap { project: Project -> FileEditorManager.getInstance(project).allEditors.toList() }
+  fun getAllOpenEditors(project: Project): Set<Editor> {
+    return FileEditorManager.getInstance(project)
+        .allEditors
+        .toList()
         .filterIsInstance<TextEditor>()
         .map { fileEditor: FileEditor -> (fileEditor as TextEditor).editor }
         .toSet()
   }
 
   @JvmStatic
-  fun getSelectedEditors(project: Project): Array<out Editor> {
-    if (project.isDisposed) return emptyArray()
-    return FileEditorManager.getInstance(project).selectedTextEditorWithRemotes
+  fun getSelectedEditors(project: Project): Set<Editor> {
+    if (project.isDisposed) return emptySet()
+    return FileEditorManager.getInstance(project).selectedTextEditorWithRemotes.toSet()
   }
 
   @JvmStatic
-  fun getEditorForDocument(document: Document): Editor? {
-    return getAllOpenEditors().find { it.document == document }
+  fun getEditorForDocument(project: Project, document: Document): Editor? {
+    return getAllOpenEditors(project).find { it.document == document }
   }
 
   @JvmStatic
@@ -205,12 +202,14 @@ object CodyEditorUtil {
   fun createFileOrScratchFromUntitled(
       project: Project,
       uriString: String,
-      content: String? = null
+      content: String? = null,
+      overwrite: Boolean = false
   ): VirtualFile? {
     try {
       val fileUri = VfsUtil.toUri(fixUriString(uriString)) ?: return null
-      if (!fileUri.toPath().exists()) {
+      if (overwrite || fileUri.toPath().notExists()) {
         fileUri.toPath().parent?.createDirectories()
+        fileUri.toPath().deleteIfExists()
         fileUri.toPath().createFile()
         val vf = LocalFileSystem.getInstance().refreshAndFindFileByNioFile(fileUri.toPath())
 

@@ -13,7 +13,7 @@ import { documentAndPosition } from '../../completions/test-helpers'
 
 import type { UserPromptArgs } from './base'
 import { PromptCacheOptimizedV1 } from './prompt-cache-optimized-v1'
-import { getCodeToReplaceData } from './prompt-utils'
+import { getCodeToReplaceData } from './prompt-utils/code-to-replace'
 
 describe('PromptCacheOptimizedV1', () => {
     beforeEach(() => {
@@ -65,6 +65,10 @@ describe('PromptCacheOptimizedV1', () => {
                 [RetrieverIdentifier.RecentCopyRetriever]: 100,
                 [RetrieverIdentifier.JaccardSimilarityRetriever]: 100,
                 [RetrieverIdentifier.DiagnosticsRetriever]: 100,
+            },
+            contextSpecificNumItemsLimit: {
+                [RetrieverIdentifier.DiagnosticsRetriever]: 4,
+                [RetrieverIdentifier.RecentViewPortRetriever]: 2,
             },
         }
 
@@ -368,30 +372,6 @@ describe('PromptCacheOptimizedV1', () => {
             expect(result.mostRecentEditsPrompt.toString()).toContain('most recent edit')
             expect(result.shortTermEditsPrompt.toString()).toContain('short term edit')
             expect(result.longTermEditsPrompt.toString()).toContain('long term edit')
-        })
-    })
-
-    describe('getDiagnosticsPrompt', () => {
-        const strategy = new PromptCacheOptimizedV1()
-
-        it('returns empty prompt when no diagnostics are provided', () => {
-            const result = (strategy as any).getDiagnosticsPrompt([])
-            expect(result.toString()).toBe('')
-        })
-
-        it('limits the number of diagnostics to DIAGNOSTICS_MAX_COUNT', () => {
-            const diagnostics = Array.from({ length: 6 }, (_, i) =>
-                getContextItem(
-                    `diagnostic ${i}`,
-                    100,
-                    RetrieverIdentifier.DiagnosticsRetriever,
-                    `test${i}.ts`
-                )
-            )
-
-            const result = (strategy as any).getDiagnosticsPrompt(diagnostics)
-            const matches = result.toString().match(/diagnostic \d/g) || []
-            expect(matches.length).toBe(4) // DIAGNOSTICS_MAX_COUNT is 4
         })
     })
 })

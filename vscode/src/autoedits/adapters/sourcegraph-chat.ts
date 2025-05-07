@@ -6,7 +6,11 @@ import {
     type AutoeditsModelAdapter,
     type ModelResponse,
 } from './base'
-import { getMaxOutputTokensForAutoedits, getSourcegraphCompatibleChatPrompt } from './utils'
+import {
+    getMaxOutputTokensForAutoedits,
+    getSourcegraphCompatibleChatPrompt,
+    getSourcegraphRewriteSpeculationParams,
+} from './utils'
 
 export class SourcegraphChatAdapter implements AutoeditsModelAdapter {
     constructor(private readonly chatClient: ChatClient) {}
@@ -48,6 +52,7 @@ export class SourcegraphChatAdapter implements AutoeditsModelAdapter {
                     type: 'content',
                     content: option.codeToRewrite,
                 },
+                ...getSourcegraphRewriteSpeculationParams(),
             },
             option.abortSignal
         )
@@ -63,6 +68,8 @@ export class SourcegraphChatAdapter implements AutoeditsModelAdapter {
                     prediction: accumulated,
                     requestUrl: option.url,
                     requestHeaders: {},
+                    responseHeaders: {},
+                    responseBody: {},
                 }
             } else if (msg.type === 'complete' || msg.type === 'error') {
                 break

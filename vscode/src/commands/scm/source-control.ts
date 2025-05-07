@@ -17,9 +17,14 @@ import {
     telemetryRecorder,
 } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
+import { outputChannelLogger } from '../../output-channel-logger'
 import { PromptBuilder } from '../../prompt-builder'
 import type { API, GitExtension, InputBox, Repository } from '../../repository/builtinGitExtension'
-import { getContextFilesFromGitApi } from '../context/git-api'
+import {
+    getContextFilesFromGitDiff,
+    getContextFilesFromGitLog,
+    getGitCommitTemplateContextFile,
+} from '../context/git-api'
 import { COMMIT_COMMAND_PROMPTS } from './prompts'
 
 export class CodySourceControl implements vscode.Disposable {
@@ -114,12 +119,29 @@ export class CodySourceControl implements vscode.Disposable {
 
         // Get Commit Template from config and set it when available.
         if (!this.commitTemplate) {
-            const [localTemplate, globalTemplate] = await Promise.all([
-                repository.getConfig('commit.template'),
-                repository.getGlobalConfig('commit.template'),
-            ])
-
-            this.commitTemplate = scm?.commitTemplate ?? localTemplate ?? globalTemplate
+            if (scm?.commitTemplate) {
+                this.commitTemplate = scm.commitTemplate
+            } else {
+                // In the case that VSCode's SCM integration didn't read the commit template,
+                // look for via `git config --get`
+                const [localTemplateFilePath, globalTemplateFilePath] = await Promise.all([
+                    repository.getConfig('commit.template'),
+                    repository.getGlobalConfig('commit.template'),
+                ])
+                const commitTemplateFilePath = localTemplateFilePath ?? globalTemplateFilePath
+                if (commitTemplateFilePath) {
+                    try {
+                        this.commitTemplate = await vscode.workspace.fs
+                            .readFile(vscode.Uri.file(commitTemplateFilePath))
+                            .then(buffer => new TextDecoder().decode(buffer))
+                    } catch (error) {
+                        console.error(
+                            `Failed to read commit template file: ${commitTemplateFilePath}`,
+                            error
+                        )
+                    }
+                }
+            }
         }
 
         // Open the vscode source control view to show the progress.
@@ -134,7 +156,7 @@ export class CodySourceControl implements vscode.Disposable {
                 cancellable: true,
             },
             async (progress, token) => {
-                this.stream(repository, sourceControlInputbox, progress, token, scm?.commitTemplate)
+                this.stream(repository, sourceControlInputbox, progress, token, this.commitTemplate)
             }
         )
     }
@@ -173,15 +195,40 @@ export class CodySourceControl implements vscode.Disposable {
             }
 
             const { id: model, contextWindow } = this.model
-            const context = await getContextFilesFromGitApi(repository, commitTemplate).catch(() => [])
-            const { prompt, ignoredContext } = await this.buildPrompt(
+
+            const diffContext = await getContextFilesFromGitDiff(repository)
+
+            const logContext = await getContextFilesFromGitLog(repository).catch(error => {
+                // we can generate a commit message without log context
+                // but in case the user wants to see what happened, record the error
+                outputChannelLogger.logError('getContextFilesFromGitLog', 'failed', error)
+                return []
+            })
+
+            const context = [...diffContext, ...logContext]
+
+            if (commitTemplate) {
+                context.push(await getGitCommitTemplateContextFile(commitTemplate))
+            }
+
+            const { prompt, ignoredContext, contextTooBig } = await this.buildPrompt(
                 contextWindow,
                 getSimplePreamble(model, 1, 'Default', COMMIT_COMMAND_PROMPTS.intro),
-                context
-            ).catch(error => {
-                sourceControlInputbox.value = `${error}`
-                throw new Error()
-            })
+                context,
+                commitTemplate
+            )
+
+            if (ignoredContext.length === diffContext.length) {
+                // All of the files being committed are either too big for the context window,
+                // or are on the Cody ignore list.
+                // No matter the reason, all of them are being skipped,
+                // and we can't generate a commit message without any context.
+                let message = 'Cody was forced to skip all of the files being committed'
+                if (contextTooBig) {
+                    message += ' because they exceeded the context window limit'
+                }
+                throw new Error(message)
+            }
 
             const stream = await this.chatClient.chat(
                 prompt,
@@ -198,21 +245,31 @@ export class CodySourceControl implements vscode.Disposable {
             await streaming(stream, abortController, updateInputBox, progress)
 
             if (ignoredContext.length > 0) {
-                vscode.window.showInformationMessage(
-                    `Cody was forced to skip ${ignoredContext.length} ${pluralize(
-                        'file',
+                let message = `Cody was forced to skip ${ignoredContext.length} ${pluralize(
+                    'file',
+                    ignoredContext.length,
+                    'files'
+                )} when generating the commit message`
+                if (contextTooBig) {
+                    message += ` because ${pluralize(
+                        'it',
                         ignoredContext.length,
-                        'files'
-                    )} when generating the commit message.`
-                )
+                        'they'
+                    )} exceeded the context token limit`
+                }
+                outputChannelLogger.logError('Generate Commit Message', message)
+                vscode.window.showInformationMessage(message)
             }
         } catch (error) {
             this.statusUpdate()
             progress.report({ message: 'Error' })
+            sourceControlInputbox.value = initialInputBoxValue // Revert to initial value on error
+            outputChannelLogger.logError('Generate Commit Message', 'failed', error)
+            let errorMessage = 'Could not generate a commit message'
             if (error instanceof Error && error.message) {
-                sourceControlInputbox.value = initialInputBoxValue // Revert to initial value on error
-                vscode.window.showInformationMessage(`Generate commit message failed: ${error.message}`)
+                errorMessage += `: ${error.message}`
             }
+            vscode.window.showInformationMessage(errorMessage)
         } finally {
             if (initialPlaceholder !== undefined) {
                 ;(sourceControlInputbox as vscode.SourceControlInputBox).placeholder = initialPlaceholder
@@ -223,13 +280,14 @@ export class CodySourceControl implements vscode.Disposable {
     private async buildPrompt(
         contextWindow: ModelContextWindow,
         preamble: Message[],
-        context: ContextItem[]
-    ): Promise<{ prompt: Message[]; ignoredContext: ContextItem[] }> {
+        context: ContextItem[],
+        commitTemplate?: string
+    ): Promise<{ prompt: Message[]; ignoredContext: ContextItem[]; contextTooBig: boolean }> {
         if (!context.length) {
             throw new Error('Failed to get git output.')
         }
 
-        const templatePrompt = this.commitTemplate
+        const templatePrompt = commitTemplate
             ? COMMIT_COMMAND_PROMPTS.template
             : COMMIT_COMMAND_PROMPTS.noTemplate
         const text = COMMIT_COMMAND_PROMPTS.instruction.replace('{COMMIT_TEMPLATE}', templatePrompt)
@@ -239,8 +297,9 @@ export class CodySourceControl implements vscode.Disposable {
         promptBuilder.tryAddToPrefix(preamble)
         promptBuilder.tryAddMessages(transcript.reverse())
 
-        const { ignored: ignoredContext } = await promptBuilder.tryAddContext('user', context)
-        return { prompt: promptBuilder.build(), ignoredContext }
+        const { ignored: ignoredContext, limitReached: contextTooBig } =
+            await promptBuilder.tryAddContext('user', context)
+        return { prompt: promptBuilder.build(), ignoredContext, contextTooBig }
     }
 
     /**

@@ -8,8 +8,8 @@ open class BaseAutocompleteTest {
 
   protected fun BaseIntegrationTextFixture.triggerAutocomplete() {
     ReadAction.run<Throwable> {
-      CodyAutocompleteManager.instance.triggerAutocomplete(
-          editor, editor.caretModel.offset, InlineCompletionTriggerKind.INVOKE)
+      CodyAutocompleteManager.getInstance(project)
+          .triggerAutocomplete(editor, editor.caretModel.offset, InlineCompletionTriggerKind.INVOKE)
     }
   }
 }

@@ -11,7 +11,7 @@ const GROQ_CHAT_API_URL = new URL('https://api.groq.com/openai/v1/chat/completio
 /**
  * NOTE: Behind `chat.dev.models` configuration flag for internal dev testing purpose only!
  *
- * Calls the Gork API for chat completions.
+ * Calls the Groq API for chat completions.
  * This also works with the OpenAI API or any OpenAI compatible providers.
  * The endpoint can be changed via the apiEndpoint field in the `chat.dev.models` configuration.
  */

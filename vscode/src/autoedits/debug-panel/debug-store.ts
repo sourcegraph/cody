@@ -107,7 +107,7 @@ export class AutoeditDebugStore implements vscode.Disposable {
     }
 
     private calculateSideBySideDiff(state: AutoeditRequestState): DecorationInfo | undefined {
-        return 'prediction' in state
+        return 'prediction' in state && state.prediction
             ? getDecorationInfo(state.codeToReplaceData.codeToRewrite, state.prediction, CHARACTER_REGEX)
             : undefined
     }

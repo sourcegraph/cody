@@ -8,16 +8,19 @@ import type { Attribution } from '@sourcegraph/cody-shared/src/guardrails'
 import { LRUCache } from 'lru-cache'
 import { RefreshCwIcon } from 'lucide-react'
 import type React from 'react'
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import styles from '../chat/ChatMessageContent/ChatMessageContent.module.css'
 import { GuardrailsStatus } from './GuardrailsStatus'
 
 interface GuardrailsApplicatorProps {
-    code: string
+    plainCode: string
+    markdownCode: string
     language?: string
     fileName?: string
     guardrails: Guardrails
+    isMessageLoading: boolean
     isCodeComplete: boolean
+    onRegenerate?: (code: string, language?: string) => void
     children: (props: GuardrailsRenderProps) => React.ReactNode
 }
 
@@ -152,11 +155,14 @@ const guardrailsCache = new GuardrailsCache()
  * consistent UI state across component re-renders.
  */
 export const GuardrailsApplicator: React.FC<GuardrailsApplicatorProps> = ({
-    code,
+    plainCode,
+    markdownCode,
     language,
     fileName,
     guardrails,
+    isMessageLoading,
     isCodeComplete,
+    onRegenerate,
     children,
 }: GuardrailsApplicatorProps) => {
     // State which can trigger updating the guardrails status indicator.
@@ -165,7 +171,7 @@ export const GuardrailsApplicator: React.FC<GuardrailsApplicatorProps> = ({
         // TypeScript can't tie the knot of the setGuardrailsResult type if we
         // use setGuardrailsResult here. Instead, we rely on the effect below
         // collecting the asynchronous result if necessary.
-        guardrailsCache.getStatus(guardrails, isCodeComplete, code, language, () => {})
+        guardrailsCache.getStatus(guardrails, isCodeComplete, plainCode, language, () => {})
     )
 
     // Performs a guardrails check, if necessary. This is cheap to call
@@ -175,7 +181,7 @@ export const GuardrailsApplicator: React.FC<GuardrailsApplicatorProps> = ({
     // checks complete.
     useEffect(() => {
         if (isCodeComplete) {
-            if (!guardrails.needsAttribution({ code, language })) {
+            if (!guardrails.needsAttribution({ code: plainCode, language })) {
                 setGuardrailsResult({
                     status: GuardrailsCheckStatus.Skipped,
                 })
@@ -185,13 +191,13 @@ export const GuardrailsApplicator: React.FC<GuardrailsApplicatorProps> = ({
                 guardrailsCache.getStatus(
                     guardrails,
                     isCodeComplete,
-                    code,
+                    plainCode,
                     language,
                     setGuardrailsResult
                 )
             )
         }
-    }, [guardrails, isCodeComplete, code, language])
+    }, [guardrails, isCodeComplete, plainCode, language])
 
     const hideCode =
         guardrails.shouldHideCodeBeforeAttribution &&
@@ -224,12 +230,31 @@ export const GuardrailsApplicator: React.FC<GuardrailsApplicatorProps> = ({
     // network error)
     const handleRetry = () => {
         // Delete the old result.
-        guardrailsCache.delete(guardrails, code)
+        guardrailsCache.delete(guardrails, plainCode)
         // Set status to the best available (loading) state and update it later.
         setGuardrailsResult(
-            guardrailsCache.getStatus(guardrails, isCodeComplete, code, language, setGuardrailsResult)
+            guardrailsCache.getStatus(
+                guardrails,
+                isCodeComplete,
+                plainCode,
+                language,
+                setGuardrailsResult
+            )
         )
     }
+
+    const handleRegenerate = useCallback(() => {
+        onRegenerate?.(markdownCode, language)
+    }, [onRegenerate, markdownCode, language])
+
+    const onSuccessAuxClick = useCallback(
+        (event: React.MouseEvent<Element>) => {
+            if (!isMessageLoading && event.shiftKey) {
+                handleRegenerate()
+            }
+        },
+        [isMessageLoading, handleRegenerate]
+    )
 
     const statusDisplay = (
         <GuardrailsStatus
@@ -237,6 +262,7 @@ export const GuardrailsApplicator: React.FC<GuardrailsApplicatorProps> = ({
             filename={fileName}
             tooltip={tooltip}
             className={styles.metadataContainer}
+            onSuccessAuxClick={onSuccessAuxClick}
         >
             {guardrailsResult.status === GuardrailsCheckStatus.Error && (
                 <button
@@ -251,6 +277,24 @@ export const GuardrailsApplicator: React.FC<GuardrailsApplicatorProps> = ({
                     <span className="tw-hidden xs:tw-block">Retry</span>
                 </button>
             )}
+            {
+                // We only display the regenerate button when loading the whole
+                // message is done. Otherwise continued streaming output would
+                // clobber the regenerated code.
+                guardrailsResult.status === GuardrailsCheckStatus.Failed && !isMessageLoading && (
+                    <button
+                        className={styles.button}
+                        type="button"
+                        onClick={handleRegenerate}
+                        title="Try regenerating code"
+                    >
+                        <div className={styles.iconContainer}>
+                            <RefreshCwIcon size={14} />
+                        </div>
+                        <span className="tw-hidden xs:tw-block">Regenerate</span>
+                    </button>
+                )
+            }
         </GuardrailsStatus>
     )
 

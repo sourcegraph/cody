@@ -1,12 +1,15 @@
 import * as vscode from 'vscode'
 
-import { type DocumentContext, tokensToChars } from '@sourcegraph/cody-shared'
+import { type CodeToReplaceData, type DocumentContext, tokensToChars } from '@sourcegraph/cody-shared'
 
 import {
     completionMatchesSuffix,
     getLatestVisibilityContext,
     isCompletionVisible,
 } from '../../completions/is-completion-visible'
+import { isRunningInsideAgent } from '../../jsonrpc/isRunningInsideAgent'
+import type { FixupController } from '../../non-stop/FixupController'
+import { CodyTaskState } from '../../non-stop/state'
 import {
     type AutoeditAcceptReasonMetadata,
     type AutoeditRejectReasonMetadata,
@@ -18,21 +21,18 @@ import {
     autoeditDiscardReason,
     autoeditRejectReason,
 } from '../analytics-logger'
+import { AutoeditCompletionItem } from '../autoedit-completion-item'
 import { autoeditsProviderConfig } from '../autoedits-config'
-import type { CodeToReplaceData } from '../prompt/prompt-utils'
+import type { AutoeditClientCapabilities } from '../autoedits-provider'
+import { autoeditsOutputChannelLogger } from '../output-channel-logger'
+import type { RequestManager } from '../request-manager'
 import {
     adjustPredictionIfInlineCompletionPossible,
     areSameUriDocs,
     extractInlineCompletionFromRewrittenCode,
 } from '../utils'
 
-import { isRunningInsideAgent } from '../../jsonrpc/isRunningInsideAgent'
-import type { FixupController } from '../../non-stop/FixupController'
-import { CodyTaskState } from '../../non-stop/state'
-import { AutoeditCompletionItem } from '../autoedit-completion-item'
-import type { AutoeditClientCapabilities } from '../autoedits-provider'
-import { autoeditsOutputChannelLogger } from '../output-channel-logger'
-import type { RequestManager } from '../request-manager'
+import { getCurrentLinePrefixAndSuffix } from '../../completions/get-current-doc-context'
 import type { AutoEditDecorations, AutoEditsDecorator, DecorationInfo } from './decorators/base'
 import {
     type AutoEditRenderOutput,
@@ -256,7 +256,7 @@ export class AutoEditsDefaultRendererManager
                     const {
                         document: invokedDocument,
                         position: invokedPosition,
-                        docContext,
+                        predictionDocContext,
                         renderOutput,
                     } = this.activeRequest
 
@@ -285,7 +285,7 @@ export class AutoEditsDefaultRendererManager
                             invokedPosition,
                             invokedDocument,
                             activeTextEditor,
-                            docContext,
+                            docContext: predictionDocContext,
                             inlineCompletionContext: undefined,
                             maxPrefixLength: tokensToChars(
                                 autoeditsProviderConfig.tokenLimit.prefixTokens
@@ -357,11 +357,7 @@ export class AutoEditsDefaultRendererManager
             return this.rejectActiveEdit(autoeditRejectReason.acceptActiveEdit)
         }
 
-        this.requestManager.removeFromCache({
-            uri: activeRequest.document.uri.toString(),
-            documentVersion: activeRequest.document.version,
-            position: activeRequest.position,
-        })
+        this.requestManager.removeFromCache(activeRequest.cacheId)
 
         // Reset the testing promise when accepting
         this.testing_completionSuggestedPromise = undefined
@@ -371,6 +367,10 @@ export class AutoEditsDefaultRendererManager
             requestId: activeRequest.requestId,
             acceptReason,
         })
+
+        // If we have a hot-streak ID, store it so that we can use it when searching in the cache
+        // in the next call to `provideInlineCompletionItems`.
+        this.requestManager.lastAcceptedHotStreakId = activeRequest.hotStreakId
 
         if (isRunningInsideAgent()) {
             // We rely on the agent for accepting
@@ -394,18 +394,14 @@ export class AutoEditsDefaultRendererManager
         const { activeRequest, decorator } = this
 
         if (activeRequest) {
-            this.requestManager.removeFromCache({
-                uri: activeRequest.document.uri.toString(),
-                documentVersion: activeRequest.document.version,
-                position: activeRequest.position,
-            })
+            this.requestManager.removeFromCache(activeRequest.cacheId)
         }
 
         // Reset the testing promise when rejecting
         this.testing_completionSuggestedPromise = undefined
 
         if (decorator) {
-            await this.handleDidHideSuggestion(this.decorator)
+            await this.handleDidHideSuggestion(decorator)
         }
 
         if (activeRequest) {
@@ -429,14 +425,7 @@ export class AutoEditsDefaultRendererManager
     }
 
     public getRenderOutput(
-        {
-            requestId,
-            prediction,
-            codeToReplaceData,
-            document,
-            position,
-            docContext,
-        }: GetRenderOutputArgs,
+        { requestId, prediction, codeToReplaceData, document, position }: GetRenderOutputArgs,
         capabilities?: AutoeditClientCapabilities
     ): AutoEditRenderOutput {
         const updatedPrediction = adjustPredictionIfInlineCompletionPossible(
@@ -444,31 +433,36 @@ export class AutoEditsDefaultRendererManager
             codeToReplaceData.codeToRewritePrefix,
             codeToReplaceData.codeToRewriteSuffix
         )
+
+        const { currentLinePrefix, currentLineSuffix } = getCurrentLinePrefixAndSuffix({
+            document,
+            position,
+        })
         const codeToRewriteAfterCurrentLine = codeToReplaceData.codeToRewriteSuffix.slice(
-            docContext.currentLineSuffix.length + 1 // Additional char for newline
+            currentLineSuffix.length + 1 // Additional char for newline
         )
         const isPrefixMatch = updatedPrediction.startsWith(codeToReplaceData.codeToRewritePrefix)
         const isSuffixMatch =
             // The current line suffix should not require any char removals to render the completion.
-            completionMatchesSuffix(updatedPrediction, docContext.currentLineSuffix) &&
+            completionMatchesSuffix(updatedPrediction, currentLineSuffix) &&
             // The new lines suggested after the current line must be equal to the prediction.
             updatedPrediction.endsWith(codeToRewriteAfterCurrentLine)
 
         if (isPrefixMatch && isSuffixMatch) {
-            const autocompleteInlineResponse = extractInlineCompletionFromRewrittenCode(
+            const insertText = extractInlineCompletionFromRewrittenCode(
                 updatedPrediction,
                 codeToReplaceData.codeToRewritePrefix,
                 codeToReplaceData.codeToRewriteSuffix
             )
 
-            if (autocompleteInlineResponse.trimEnd().length === 0) {
+            if (insertText.trimEnd().length === 0) {
                 return { type: 'none' }
             }
 
-            const insertText = docContext.currentLinePrefix + autocompleteInlineResponse
+            const completionText = currentLinePrefix + insertText
             const inlineCompletionItem = new AutoeditCompletionItem({
                 id: requestId,
-                insertText,
+                insertText: completionText,
                 range: new vscode.Range(
                     document.lineAt(position).range.start,
                     document.lineAt(position).range.end
@@ -481,6 +475,10 @@ export class AutoEditsDefaultRendererManager
                             requestId,
                         },
                     ],
+                },
+                withoutCurrentLinePrefix: {
+                    insertText,
+                    range: new vscode.Range(position, position),
                 },
             })
             autoeditsOutputChannelLogger.logDebug('tryMakeInlineCompletions', 'insert text', {

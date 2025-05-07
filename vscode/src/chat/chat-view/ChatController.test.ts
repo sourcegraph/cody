@@ -42,7 +42,7 @@ describe('ChatController', () => {
     }
     const mockGuardrails: SourcegraphGuardrailsClient = {} as any
 
-    vi.spyOn(featureFlagProviderModule.featureFlagProvider, 'evaluateFeatureFlag').mockReturnValue(
+    vi.spyOn(featureFlagProviderModule.featureFlagProvider, 'evaluatedFeatureFlag').mockReturnValue(
         Observable.of(true)
     )
 
@@ -140,7 +140,7 @@ describe('ChatController', () => {
         expect(addBotMessageSpy).not.toHaveBeenCalled()
     })
 
-    test('verifies interactionId is passed through chat requests', { timeout: 3000 }, async () => {
+    test('verifies interactionId is passed through chat requests', { timeout: 5000 }, async () => {
         const mockRequestID = '0'
         mockContextRetriever.retrieveContext.mockResolvedValue([])
 

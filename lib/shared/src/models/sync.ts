@@ -29,7 +29,7 @@ import type { UserProductSubscription } from '../sourcegraph-api/userProductSubs
 import { telemetryRecorder } from '../telemetry-v2/singleton'
 import { CHAT_INPUT_TOKEN_BUDGET } from '../token/constants'
 import { isError } from '../utils'
-import { DEEP_CODY_MODEL, TOOL_CODY_MODEL } from './client'
+import { TOOL_CODY_MODEL } from './client'
 import { type Model, type ServerModel, createModel, createModelFromServerModel } from './model'
 import type {
     DefaultsAndUserPreferencesForEndpoint,
@@ -183,26 +183,25 @@ export function syncModels({
                                         distinctUntilChanged()
                                     )
                                     return combineLatest(
-                                        featureFlagProvider.evaluateFeatureFlag(
+                                        featureFlagProvider.evaluatedFeatureFlag(
                                             FeatureFlag.CodyEarlyAccess
                                         ),
-                                        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.DeepCody),
-                                        featureFlagProvider.evaluateFeatureFlag(
+                                        featureFlagProvider.evaluatedFeatureFlag(
                                             FeatureFlag.CodyChatDefaultToClaude35Haiku
                                         ),
                                         enableToolCody,
-                                        featureFlagProvider.evaluateFeatureFlag(
+                                        featureFlagProvider.evaluatedFeatureFlag(
                                             FeatureFlag.EnhancedContextWindow,
                                             true /** force refresh */
                                         ),
-                                        featureFlagProvider.evaluateFeatureFlag(
-                                            FeatureFlag.FallbackToFlash
+                                        featureFlagProvider.evaluatedFeatureFlag(
+                                            FeatureFlag.FallbackToFlash,
+                                            true /** force refresh */
                                         )
                                     ).pipe(
                                         switchMap(
                                             ([
                                                 hasEarlyAccess,
-                                                hasAgenticChatFlag,
                                                 defaultToHaiku,
                                                 isToolCodyEnabled,
                                                 enhancedContextWindowFlag,
@@ -241,16 +240,6 @@ export function syncModels({
                                                         )
                                                 }
 
-                                                // NOTE: Calling `registerModelsFromVSCodeConfiguration()` doesn't
-                                                // entirely make sense in a world where LLM models are managed
-                                                // server-side. However, this is how Cody can be extended to use locally
-                                                // running LLMs such as Ollama. (Though some more testing is needed.)
-                                                // See:
-                                                // https://sourcegraph.com/blog/local-code-completion-with-ollama-and-cody
-                                                data.primaryModels.push(
-                                                    ...getModelsFromVSCodeConfiguration(config)
-                                                )
-
                                                 // TODO(sqs): remove waitlist from localStorage when user has access
                                                 if (isDotComUser && hasEarlyAccess) {
                                                     data.primaryModels = data.primaryModels.map(
@@ -284,33 +273,14 @@ export function syncModels({
 
                                                 const clientModels = []
 
-                                                // Handle agentic chat features
-                                                const isAgenticChatEnabled =
-                                                    hasAgenticChatFlag ||
-                                                    (isDotComUser && !isCodyFreeUser)
-                                                // Handle agentic chat features
-                                                const haikuModel = data.primaryModels.find(m =>
-                                                    m.id.includes('5-haiku')
-                                                )
-                                                // Look for any sonnet model to add Deep Cody.
-                                                const sonnetModel = data.primaryModels.find(m =>
-                                                    m.id.includes('sonnet')
-                                                )
-                                                const hasDeepCody = data.primaryModels.some(m =>
-                                                    m.id.includes('deep-cody')
-                                                )
+                                                // Add Tool Cody
                                                 if (
-                                                    !hasDeepCody &&
-                                                    isAgenticChatEnabled &&
-                                                    sonnetModel &&
-                                                    haikuModel
+                                                    isToolCodyEnabled &&
+                                                    !data.primaryModels.some(m =>
+                                                        m.id.includes(TOOL_CODY_MODEL.modelRef)
+                                                    )
                                                 ) {
-                                                    // Add Deep Cody
-                                                    clientModels.push(DEEP_CODY_MODEL)
-                                                    // Add Tool Cody
-                                                    if (isToolCodyEnabled) {
-                                                        clientModels.push(TOOL_CODY_MODEL)
-                                                    }
+                                                    clientModels.push(TOOL_CODY_MODEL)
                                                 }
 
                                                 // Add the client models to the list of models.
@@ -332,6 +302,9 @@ export function syncModels({
                                                 )
 
                                                 // Set the default model to Haiku for free users.
+                                                const haikuModel = data.primaryModels.find(m =>
+                                                    m.id.includes('5-haiku')
+                                                )
                                                 if (
                                                     isDotComUser &&
                                                     isCodyFreeUser &&
@@ -472,6 +445,16 @@ export function syncModels({
                                                         }
                                                     }
                                                 }
+
+                                                // NOTE: Calling `registerModelsFromVSCodeConfiguration()` doesn't
+                                                // entirely make sense in a world where LLM models are managed
+                                                // server-side. However, this is how Cody can be extended to use locally
+                                                // running LLMs such as Ollama (BYOK). (Though some more testing is needed.)
+                                                // See:
+                                                // https://sourcegraph.com/blog/local-code-completion-with-ollama-and-cody
+                                                data.primaryModels.push(
+                                                    ...getModelsFromVSCodeConfiguration(config)
+                                                )
 
                                                 data.primaryModels = data.primaryModels.map(model => {
                                                     if (

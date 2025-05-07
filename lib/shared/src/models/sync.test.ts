@@ -42,7 +42,7 @@ vi.mock('../services/LocalStorageProvider')
 vi.mock('../experimentation/FeatureFlagProvider')
 
 // Returns true for all feature flags enabled during synctests.
-vi.spyOn(featureFlagProvider, 'evaluateFeatureFlag').mockReturnValue(Observable.of(true))
+vi.spyOn(featureFlagProvider, 'evaluatedFeatureFlag').mockReturnValue(Observable.of(true))
 
 mockClientCapabilities(CLIENT_CAPABILITIES_FIXTURE)
 
@@ -106,7 +106,7 @@ describe('server sent models', async () => {
     }
 
     const mockFetchServerSideModels = vi.fn(() => Promise.resolve(SERVER_MODELS))
-    vi.mocked(featureFlagProvider).evaluateFeatureFlag.mockReturnValue(Observable.of(false))
+    vi.mocked(featureFlagProvider).evaluatedFeatureFlag.mockReturnValue(Observable.of(false))
 
     const result = await firstValueFrom(
         syncModels({
@@ -428,7 +428,7 @@ describe('syncModels', () => {
         }
 
         const mockFetchServerSideModels = vi.fn(() => Promise.resolve(SERVER_MODELS))
-        vi.mocked(featureFlagProvider).evaluateFeatureFlag.mockReturnValue(Observable.of(true))
+        vi.mocked(featureFlagProvider).evaluatedFeatureFlag.mockReturnValue(Observable.of(true))
 
         const result = await firstValueFrom(
             syncModels({
@@ -453,8 +453,8 @@ describe('syncModels', () => {
         expect(storage.data?.[AUTH_STATUS_FIXTURE_AUTHED.endpoint]!.selected.chat).toBe(undefined)
         vi.spyOn(modelsService, 'modelsChanges', 'get').mockReturnValue(Observable.of(result))
 
-        // Check if Deep Cody model is in the primary models list.
-        expect(result.primaryModels.some(model => model.id.includes('deep-cody'))).toBe(true)
+        // Check if Deep Cody model is no longer in the models list.
+        expect(result.primaryModels.some(model => model.id.includes('deep-cody'))).toBe(false)
 
         // preference should not be affected and remains unchanged as this is handled in a later step.
         expect(result.preferences.selected.chat).toBe(undefined)
@@ -505,14 +505,14 @@ describe('syncModels', () => {
         async function getModelResult(featureFlagEnabled: boolean, userCanUpgrade: boolean) {
             // set the feature flag
             if (featureFlagEnabled) {
-                vi.spyOn(featureFlagProvider, 'evaluateFeatureFlag').mockImplementation(
+                vi.spyOn(featureFlagProvider, 'evaluatedFeatureFlag').mockImplementation(
                     (flagName: FeatureFlag, _forceRefresh?: boolean) =>
                         flagName === FeatureFlag.CodyChatDefaultToClaude35Haiku
                             ? Observable.of(featureFlagEnabled)
                             : Observable.of(false)
                 )
             } else {
-                vi.spyOn(featureFlagProvider, 'evaluateFeatureFlag').mockImplementation(
+                vi.spyOn(featureFlagProvider, 'evaluatedFeatureFlag').mockImplementation(
                     (flagName: FeatureFlag, _forceRefresh?: boolean) =>
                         flagName === FeatureFlag.CodyChatDefaultToClaude35Haiku
                             ? Observable.of(featureFlagEnabled)

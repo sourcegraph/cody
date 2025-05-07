@@ -1,25 +1,20 @@
 import {
     FeatureFlag,
-    type MessagePart,
-    UIToolStatus,
     combineLatest,
     distinctUntilChanged,
     featureFlagProvider,
     logDebug,
     startWith,
 } from '@sourcegraph/cody-shared'
-import {
-    ContextItemSource,
-    type ContextItemToolState,
-} from '@sourcegraph/cody-shared/src/codebase-context/messages'
+import type { ContextItemToolState } from '@sourcegraph/cody-shared/src/codebase-context/messages'
 import type { McpServer } from '@sourcegraph/cody-shared/src/llm-providers/mcp/types'
 import { type Observable, Subject, map } from 'observable-fns'
 import * as vscode from 'vscode'
-import { URI } from 'vscode-uri'
 import { z } from 'zod'
 import type { AgentTool } from '.'
 import { MCPConnectionManager } from './MCPConnectionManager'
 import { MCPServerManager } from './MCPServerManager'
+import { registerMCPCommands } from './mcp'
 
 // Debounce function to prevent rapid consecutive calls
 function debounce<T extends (...args: any[]) => Promise<void>>(
@@ -66,6 +61,8 @@ const AutoApproveSchema = z.array(z.string()).default([])
 const BaseConfigSchema = z.object({
     autoApprove: AutoApproveSchema.optional(),
     disabled: z.boolean().optional(),
+    // Error messages
+    error: z.string().optional(),
 })
 
 // Schema for configs with a URL (SSE)
@@ -106,14 +103,14 @@ export class MCPManager {
     private static readonly DEBOUNCE_TIMEOUT = 1000 // 1 second debounce timeout
 
     private connectionManager: MCPConnectionManager
-    private serverManager: MCPServerManager
+    public serverManager: MCPServerManager
     private disposables: vscode.Disposable[] = []
     private debouncedSync: (mcpServers: Record<string, any>) => Promise<void>
 
     private static changeNotifications = new Subject<void>()
     private static toolsChangeNotifications = new Subject<void>()
     public static observable: Observable<McpServer[]> = combineLatest(
-        featureFlagProvider.evaluateFeatureFlag(FeatureFlag.NextAgenticChatInternal),
+        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.NextAgenticChatInternal),
         this.changeNotifications.pipe(startWith(undefined)),
         this.toolsChangeNotifications.pipe(startWith(undefined))
     ).pipe(
@@ -136,6 +133,8 @@ export class MCPManager {
     )
 
     constructor() {
+        registerMCPCommands(this.disposables)
+
         this.connectionManager = new MCPConnectionManager()
         this.serverManager = new MCPServerManager(this.connectionManager)
 
@@ -151,6 +150,11 @@ export class MCPManager {
                         verbose: { error },
                     })
                 })
+            }
+            const conn = this.connectionManager.getConnection(event.serverName)
+            if (conn && event.error && conn.server.error) {
+                // Update the error message for the server without saving them in user config
+                conn.server.error = event.error
             }
             // Notify about server changes
             MCPManager.changeNotifications.next()
@@ -286,9 +290,10 @@ export class MCPManager {
                 return
             }
             const parsedConfig = result.data
-            // Add the connection
+            // Add the connection (respect the disabled flag)
             await this.connectionManager.addConnection(name, configWithDefaults, parsedConfig?.disabled)
 
+            MCPManager.changeNotifications.next()
             // If connection was successful, initialize server data
             const connection = this.connectionManager.getConnection(name)
             if (connection && connection.server.status === 'connected') {
@@ -307,22 +312,45 @@ export class MCPManager {
         const connection = this.connectionManager.getConnection(serverName)
         if (!connection || connection.server.status !== 'connected') return
 
+        // Fetch tools
         try {
-            // Fetch tools and resources
             const tools = await this.serverManager.getToolList(serverName)
-            const resources = await this.serverManager.getResourceList(serverName)
-            const resourceTemplates = await this.serverManager.getResourceTemplateList(serverName)
-            // Update server data
             connection.server.tools = tools
-            connection.server.resources = resources
-            connection.server.resourceTemplates = resourceTemplates
-            logDebug('MCPManager', `Initialized data for server: ${serverName}`)
-            MCPManager.changeNotifications.next()
+            logDebug('MCPManager', `Initialized tools for server: ${serverName}`)
         } catch (error) {
-            logDebug('MCPManager', `Failed to initialize data for server ${serverName}`, {
+            logDebug('MCPManager', `Failed to initialize tools for server ${serverName}`, {
                 verbose: { error },
             })
         }
+
+        MCPManager.toolsChangeNotifications.next()
+        MCPManager.changeNotifications.next()
+
+        // Fetch resources
+        try {
+            const resources = await this.serverManager.getResourceList(serverName)
+            connection.server.resources = resources
+            logDebug('MCPManager', `Initialized resources for server: ${serverName}`)
+        } catch (error) {
+            logDebug('MCPManager', `Failed to initialize resources for server ${serverName}`, {
+                verbose: { error },
+            })
+        }
+
+        // Fetch resource templates - currently not supported
+        try {
+            const resourceTemplates = await this.serverManager.getResourceTemplateList(serverName)
+            connection.server.resourceTemplates = resourceTemplates
+            logDebug('MCPManager', `Initialized resource templates for server: ${serverName}`)
+        } catch (error) {
+            logDebug('MCPManager', `Failed to initialize resource templates for server ${serverName}`, {
+                verbose: { error },
+            })
+        }
+
+        // Notify about server changes regardless of individual fetch outcomes
+        MCPManager.toolsChangeNotifications.next()
+        MCPManager.changeNotifications.next()
     }
 
     /**
@@ -357,7 +385,7 @@ export class MCPManager {
         serverName: string,
         toolName: string,
         args: Record<string, unknown> = {}
-    ): Promise<any> {
+    ): Promise<ContextItemToolState> {
         return this.serverManager.executeTool(serverName, toolName, args)
     }
 
@@ -460,9 +488,12 @@ export class MCPManager {
                 vscode.ConfigurationTarget.Global
             )
 
-            // Connect to the new server
+            // Connect only the new server
             await this.addConnection(name, config)
             logDebug('MCPManager', `Added MCP server: ${name}`, { verbose: { config } })
+
+            // Notify about server changes
+            MCPManager.changeNotifications.next()
         } catch (error) {
             logDebug('MCPManager', `Failed to add MCP server: ${name}`, { verbose: { error } })
             throw error
@@ -498,7 +529,8 @@ export class MCPManager {
             }
 
             // Update the server configuration
-            mcpServers[name] = configWithDefaults
+            // Do not store the error message in config
+            mcpServers[name] = { ...config, error: null }
 
             // Update configuration
             await vsConfig.update(
@@ -507,16 +539,103 @@ export class MCPManager {
                 vscode.ConfigurationTarget.Global
             )
 
-            // Reconnect to the server with new configuration
+            // Only disconnect and reconnect the updated server
             await this.connectionManager.removeConnection(name)
             await this.addConnection(name, configWithDefaults)
 
             logDebug('MCPManager', `Updated MCP server: ${name}`, {
                 verbose: { config: configWithDefaults },
             })
+
+            // Notify about server changes
+            MCPManager.changeNotifications.next()
         } catch (error) {
             vscode.window.showErrorMessage(
                 `Failed to update MCP server: ${error instanceof Error ? error.message : String(error)}`
+            )
+            throw error
+        }
+    }
+
+    // Disable an MCP server
+    public async disableServer(name: string): Promise<void> {
+        try {
+            // Get current configuration
+            const vsConfig = vscode.workspace.getConfiguration(MCPManager.CONFIG_SECTION)
+            const mcpServers = { ...vsConfig.get<Record<string, any>>(MCPManager.MCP_SERVERS_KEY, {}) }
+
+            // Check if server exists
+            if (!mcpServers[name]) {
+                throw new Error(`MCP server "${name}" does not exist`)
+            }
+
+            // Update the disabled flag
+            mcpServers[name] = {
+                ...mcpServers[name],
+                disabled: true,
+            }
+
+            // Update configuration
+            await vsConfig.update(
+                MCPManager.MCP_SERVERS_KEY,
+                mcpServers,
+                vscode.ConfigurationTarget.Global
+            )
+
+            // If the server is connected, disconnect it
+            await this.connectionManager.removeConnection(name)
+
+            logDebug('MCPManager', `Disabled MCP server: ${name}`)
+            // Notify about server changes
+            MCPManager.changeNotifications.next()
+        } catch (error) {
+            vscode.window.showErrorMessage(
+                `Failed to disable MCP server: ${error instanceof Error ? error.message : String(error)}`
+            )
+            throw error
+        }
+    }
+
+    // Enable an MCP server
+    public async enableServer(name: string): Promise<void> {
+        try {
+            // Get current configuration
+            const vsConfig = vscode.workspace.getConfiguration(MCPManager.CONFIG_SECTION)
+            const mcpServers = { ...vsConfig.get<Record<string, any>>(MCPManager.MCP_SERVERS_KEY, {}) }
+
+            // Check if server exists
+            if (!mcpServers[name]) {
+                throw new Error(`MCP server "${name}" does not exist`)
+            }
+
+            // Remove the disabled flag
+            mcpServers[name] = {
+                ...mcpServers[name],
+                disabled: false,
+            }
+
+            // Update configuration
+            await vsConfig.update(
+                MCPManager.MCP_SERVERS_KEY,
+                mcpServers,
+                vscode.ConfigurationTarget.Global
+            )
+
+            // Try to connect to the server
+            try {
+                await this.addConnection(name, mcpServers[name])
+                logDebug('MCPManager', `Enabled and connected to MCP server: ${name}`)
+            } catch (error) {
+                logDebug('MCPManager', `Enabled MCP server but failed to connect: ${name}`, {
+                    verbose: { error },
+                })
+            }
+
+            // Notify about server changes
+            MCPManager.changeNotifications.next()
+        } catch (error) {
+            vscode.window.showErrorMessage(
+                `Failed to enable MCP server: ${error instanceof Error ? error.message : String(error)}`
             )
             throw error
         }
@@ -538,39 +657,5 @@ export class MCPManager {
         // Notify subscribers that servers have changed
         MCPManager.changeNotifications.next()
         logDebug('MCPManager', 'disposed')
-    }
-}
-
-/**
- * Create a tool state object from MCP tool execution result
- */
-export function createMCPToolState(
-    serverName: string,
-    toolName: string,
-    parts: MessagePart[],
-    status = UIToolStatus.Done
-): ContextItemToolState {
-    const textContent = parts
-        .filter(p => p.type === 'text')
-        .map(p => p.text)
-        .join('\n')
-
-    // TODO: Handle image_url parts appropriately
-    // const imagePart = parts.find(p => p.type === 'image_url')
-
-    return {
-        type: 'tool-state',
-        toolId: `mcp-${toolName}-${Date.now()}`,
-        status,
-        toolName: `${serverName}_${toolName}`,
-        content: textContent,
-        // ContextItemCommon properties
-        outputType: 'mcp',
-        uri: URI.parse(''),
-        title: serverName + ' - ' + toolName,
-        description: textContent,
-        source: ContextItemSource.Agentic,
-        icon: 'database',
-        metadata: ['mcp', toolName],
     }
 }

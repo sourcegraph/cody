@@ -56,7 +56,9 @@ export async function anthropicChatClient({
 
                 for await (const messageStreamEvent of stream) {
                     if (messageStreamEvent.type === 'content_block_delta') {
-                        result.completion += messageStreamEvent.delta.text
+                        if (messageStreamEvent.delta.type === 'text_delta') {
+                            result.completion += messageStreamEvent.delta.text
+                        }
                         cb.onChange(result.completion)
                     }
 

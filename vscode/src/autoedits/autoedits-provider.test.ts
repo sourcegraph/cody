@@ -127,7 +127,7 @@ describe('AutoeditsProvider', () => {
               "category": "billable",
               "product": "cody",
             },
-            "interactionID": "stable-id-for-tests-2",
+            "interactionID": "stable-id-for-tests-3",
             "metadata": {
               "acceptReason": 1,
               "contextSummary.duration": 0,
@@ -166,7 +166,7 @@ describe('AutoeditsProvider', () => {
               },
               "decorationStats": undefined,
               "gatewayLatency": undefined,
-              "id": "stable-id-for-tests-2",
+              "id": "stable-id-for-tests-3",
               "inlineCompletionStats": {
                 "charCount": 2,
                 "lineCount": 2,
@@ -190,7 +190,7 @@ describe('AutoeditsProvider', () => {
               "category": "core",
               "product": "cody",
             },
-            "interactionID": "stable-id-for-tests-2",
+            "interactionID": "stable-id-for-tests-3",
             "metadata": {
               "acceptReason": 1,
               "contextSummary.duration": 0,
@@ -229,7 +229,7 @@ describe('AutoeditsProvider', () => {
               },
               "decorationStats": undefined,
               "gatewayLatency": undefined,
-              "id": "stable-id-for-tests-2",
+              "id": "stable-id-for-tests-3",
               "inlineCompletionStats": {
                 "charCount": 2,
                 "lineCount": 2,
@@ -267,7 +267,7 @@ describe('AutoeditsProvider', () => {
               "category": "billable",
               "product": "cody",
             },
-            "interactionID": "stable-id-for-tests-2",
+            "interactionID": "stable-id-for-tests-3",
             "metadata": {
               "contextSummary.duration": 0,
               "contextSummary.prefixChars": 10,
@@ -299,7 +299,7 @@ describe('AutoeditsProvider', () => {
               },
               "decorationStats": undefined,
               "gatewayLatency": undefined,
-              "id": "stable-id-for-tests-2",
+              "id": "stable-id-for-tests-3",
               "inlineCompletionStats": {
                 "charCount": 2,
                 "lineCount": 2,
@@ -495,6 +495,10 @@ describe('AutoeditsProvider', () => {
                 id,
                 insertText: completionItem.text,
                 range: completionItem.range,
+                withoutCurrentLinePrefix: {
+                    insertText: completionItem.text,
+                    range: completionItem.range,
+                },
             }),
         ])
     })
@@ -590,9 +594,7 @@ describe('AutoeditsProvider', () => {
             // `customGetModelResponse` function has returned.
             expect(result1).toBeNull()
 
-            // Insert text includes duplicated the existing numbers becase we have inline decorations
-            // to remove "123" and replace it with "12345".
-            expect(result2?.inlineCompletionItems[0].insertText).toBe('const x = 12312345')
+            expect(result2?.inlineCompletionItems[0].insertText).toBe('const x = 12345')
 
             // The first call is executed immediately.
             expect(calls[0].getModelResponseCalledAt).toBe(0)
@@ -692,7 +694,7 @@ describe('AutoeditsProvider', () => {
             expect(result1).toBeNull()
             expect(result2).toBeNull()
             expect(result3).toBeNull()
-            expect(result4?.inlineCompletionItems[0].insertText).toBe('const y = 1212345')
+            expect(result4?.inlineCompletionItems[0].insertText).toBe('const y = 12345')
 
             // The first call is executed immediately.
             expect(calls[0].getModelResponseCalledAt).toBe(0)

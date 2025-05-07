@@ -17,6 +17,50 @@ import {
 import type { CodeBlockActionsProps } from './ChatMessageContent'
 import styles from './ChatMessageContent.module.css'
 
+export const CopyButton = ({
+    text,
+    onCopy,
+    className = styles.button,
+    showLabel = true,
+    title = 'Copy Code',
+    label = 'Copy',
+    icon: customIcon,
+}: {
+    text: string
+    onCopy?: CodeBlockActionsProps['copyButtonOnSubmit']
+    className?: string
+    showLabel?: boolean
+    title?: string
+    label?: string
+    icon?: JSX.Element
+}): React.ReactElement => {
+    const [currentLabel, setCurrentLabel] = useState(label)
+    const [icon, setIcon] = useState<JSX.Element>(customIcon || CopyCodeBlockIcon)
+
+    const handleClick = useCallback(() => {
+        setIcon(CheckCodeBlockIcon)
+        setCurrentLabel('Copied')
+        navigator.clipboard.writeText(text).catch(error => console.error(error))
+        if (onCopy) {
+            onCopy(text, 'Button')
+        }
+        // Log for `chat assistant response code buttons` e2e test.
+        console.log('Code: Copy to Clipboard', text)
+
+        setTimeout(() => {
+            setIcon(customIcon || CopyCodeBlockIcon)
+            setCurrentLabel(label)
+        }, 5000)
+    }, [onCopy, text, label, customIcon])
+
+    return (
+        <button type="button" className={className} onClick={handleClick} title={title}>
+            <div className={styles.iconContainer}>{icon}</div>
+            {showLabel && <span className="tw-hidden xs:tw-block">{currentLabel}</span>}
+        </button>
+    )
+}
+
 export type CreateEditButtonsParams = {
     // TODO: Remove this when there is a portable abstraction for popup menus, instead of special-casing VSCode.
     isVSCode: boolean
@@ -43,7 +87,7 @@ export function createEditButtons(params: CreateEditButtonsParams): React.ReactE
           )
 }
 
-export function createEditButtonsBasic(
+function createEditButtonsBasic(
     preText: string,
     copyButtonOnSubmit?: CodeBlockActionsProps['copyButtonOnSubmit'],
     insertButtonOnSubmit?: CodeBlockActionsProps['insertButtonOnSubmit'],
@@ -53,36 +97,13 @@ export function createEditButtonsBasic(
         return <div />
     }
 
-    const codeBlockActions = {
-        copy: copyButtonOnSubmit,
-        insert: insertButtonOnSubmit,
-    }
-
     return (
         <>
-            {createCodeBlockActionButton(
-                'copy',
-                preText,
-                'Copy Code',
-                CopyCodeBlockIcon,
-                codeBlockActions
-            )}
+            <CopyButton text={preText} onCopy={copyButtonOnSubmit} />
             {insertButtonOnSubmit && (
                 <div className={styles.insertButtons}>
-                    {createCodeBlockActionButton(
-                        'insert',
-                        preText,
-                        'Insert Code at Cursor',
-                        InsertCodeBlockIcon,
-                        codeBlockActions
-                    )}
-                    {createCodeBlockActionButton(
-                        'new',
-                        preText,
-                        'Save Code to New File...',
-                        SaveCodeBlockIcon,
-                        codeBlockActions
-                    )}
+                    {createInsertButton(preText, insertButtonOnSubmit)}
+                    {createSaveButton(preText, insertButtonOnSubmit)}
                 </div>
             )}
             {onExecute && createExecuteButton(onExecute)}
@@ -122,7 +143,7 @@ export function createAdditionsDeletions({
     )
 }
 
-export function createEditButtonsSmartApply({
+function createEditButtonsSmartApply({
     preText,
     isVSCode,
     copyButtonOnSubmit,
@@ -133,11 +154,11 @@ export function createEditButtonsSmartApply({
     smartApplyId,
     smartApplyState,
 }: CreateEditButtonsParams): React.ReactElement {
-    const copyButton = createCopyButton(preText, copyButtonOnSubmit ?? (() => {}))
-
     return (
         <>
-            {smartApplyState !== CodyTaskState.Applied && copyButtonOnSubmit && copyButton}
+            {smartApplyState !== CodyTaskState.Applied && copyButtonOnSubmit && (
+                <CopyButton text={preText} onCopy={copyButtonOnSubmit} />
+            )}
             {smartApply && smartApplyId && smartApplyState === CodyTaskState.Applied && (
                 <>
                     {createAcceptButton(smartApplyId, smartApply)}
@@ -175,7 +196,8 @@ function createInsertButton(
             className={styles.button}
             onClick={() => insertButtonOnSubmit?.(preText, false)}
         >
-            {InsertCodeBlockIcon}
+            <div className={styles.iconContainer}>{InsertCodeBlockIcon}</div>
+            <span className="tw-hidden xs:tw-block">Insert</span>
         </button>
     )
 }
@@ -191,80 +213,8 @@ function createSaveButton(
             className={styles.button}
             onClick={() => insertButtonOnSubmit?.(preText, true)}
         >
-            {SaveCodeBlockIcon}
-        </button>
-    )
-}
-
-// TODO: De-dup this with createCopyButton, etc. below.
-/**
- * Creates a button to perform an action on a code block.
- * @returns The button element.
- */
-function createCodeBlockActionButton(
-    type: 'copy' | 'insert' | 'new',
-    text: string,
-    title: string,
-    defaultIcon: JSX.Element,
-    codeBlockActions: {
-        copy: CodeBlockActionsProps['copyButtonOnSubmit']
-        insert?: CodeBlockActionsProps['insertButtonOnSubmit']
-    }
-): React.ReactElement {
-    const [icon, setIcon] = useState<JSX.Element>(defaultIcon)
-    const handleClick = useCallback(() => {
-        switch (type) {
-            case 'copy': {
-                setIcon(CheckCodeBlockIcon)
-                setTimeout(() => setIcon(defaultIcon), 5000)
-                navigator.clipboard.writeText(text).catch(error => console.error(error))
-                codeBlockActions.copy(text, 'Button')
-                // Log for `chat assistant response code buttons` e2e test.
-                console.log('Code: Copy to Clipboard', text)
-                break
-            }
-            case 'insert': {
-                codeBlockActions.insert?.(text, false)
-                break
-            }
-            case 'new': {
-                codeBlockActions.insert?.(text, true)
-                break
-            }
-        }
-    }, [defaultIcon, type, text, codeBlockActions])
-    return (
-        <button
-            type="button"
-            className={type === 'copy' ? styles.copyButton : styles.insertButton}
-            title={title}
-            onClick={handleClick}
-        >
-            {icon}
-        </button>
-    )
-}
-
-function createCopyButton(
-    preText: string,
-    onCopy: CodeBlockActionsProps['copyButtonOnSubmit']
-): React.ReactElement {
-    const [[label, icon], setLabel] = useState(['Copy', CopyCodeBlockIcon])
-
-    const onClick = useCallback(() => {
-        setLabel(['Copied', CheckCodeBlockIcon])
-        navigator.clipboard.writeText(preText).catch(error => console.error(error))
-        onCopy(preText, 'Button')
-        setTimeout(() => {
-            setLabel(['Copy', CopyCodeBlockIcon])
-        }, 5000)
-        // Log for `chat assistant response code buttons` e2e test.
-        console.log('Code: Copy to Clipboard', preText)
-    }, [onCopy, preText])
-    return (
-        <button type="button" className={styles.button} onClick={onClick}>
-            <div className={styles.iconContainer}>{icon}</div>
-            <span className="tw-hidden xs:tw-block">{label}</span>
+            <div className={styles.iconContainer}>{SaveCodeBlockIcon}</div>
+            <span className="tw-hidden xs:tw-block">Save</span>
         </button>
     )
 }
@@ -273,20 +223,22 @@ function createApplyButton(
     onSmartApply: () => void,
     smartApplyState?: CodyTaskState
 ): React.ReactElement {
-    let [disabled, label, icon, onClick]: [boolean, string, JSX.Element, (() => void) | undefined] = [
-        false,
-        'Apply',
-        SparkleIcon,
-        onSmartApply,
-    ]
+    let disabled = false
+    let label = 'Apply'
+    let icon = SparkleIcon
+    let onClick: () => void = onSmartApply
 
     switch (smartApplyState) {
         case 'Working':
-            ;[disabled, label, icon, onClick] = [true, 'Applying', SyncSpinIcon, undefined]
+            disabled = true
+            label = 'Applying'
+            icon = SyncSpinIcon
+            onClick = () => {}
             break
         case 'Applied':
         case 'Finished':
-            ;[disabled, label, icon, onClick] = [false, 'Reapply', RefreshIcon, onSmartApply]
+            label = 'Reapply'
+            icon = RefreshIcon
             break
     }
 
@@ -299,21 +251,16 @@ function createApplyButton(
             disabled={disabled}
         >
             <div className={styles.iconContainer}>{icon}</div>
-            <span className="tw-hidden xs_tw-block">{label}</span>
+            <span className="tw-hidden xs:tw-block">{label}</span>
         </button>
     )
 }
 
-/**
- * Creates a button that sends the command to the editor terminal on click.
- *
- * @param onExecute - the callback to run when the button is clicked.
- */
-export function createExecuteButton(onExecute: () => void): React.ReactElement {
+function createExecuteButton(onExecute: () => void): React.ReactElement {
     return (
         <button type="button" className={styles.button} onClick={onExecute} title="Execute in Terminal">
             <div className={clsx(styles.iconContainer, 'tw-align-middle codicon codicon-terminal')} />
-            Execute
+            <span className="tw-hidden xs:tw-block">Execute</span>
         </button>
     )
 }
@@ -323,9 +270,14 @@ function createAcceptButton(
     smartApply: CodeBlockActionsProps['smartApply']
 ): React.ReactElement {
     return (
-        <button type="button" className={styles.button} onClick={() => smartApply.onAccept(id)}>
+        <button
+            type="button"
+            className={styles.button}
+            onClick={() => smartApply.onAccept(id)}
+            title="Accept"
+        >
             <div className={styles.iconContainer}>{TickIcon}</div>
-            Accept
+            <span className="tw-hidden xs:tw-block">Accept</span>
         </button>
     )
 }
@@ -335,9 +287,14 @@ function createRejectButton(
     smartApply: CodeBlockActionsProps['smartApply']
 ): React.ReactElement {
     return (
-        <button type="button" className={styles.button} onClick={() => smartApply.onReject(id)}>
+        <button
+            type="button"
+            className={styles.button}
+            onClick={() => smartApply.onReject(id)}
+            title="Reject"
+        >
             <div className={styles.iconContainer}>{CloseIcon}</div>
-            Reject
+            <span className="tw-hidden xs:tw-block">Reject</span>
         </button>
     )
 }

@@ -14,11 +14,13 @@ import { getCurrentDocContext } from '../../completions/get-current-doc-context'
 import { documentAndPosition } from '../../completions/test-helpers'
 import * as sentryModule from '../../services/sentry/sentry'
 import { type AutoeditModelOptions, AutoeditStopReason } from '../adapters/base'
-import { getCodeToReplaceData, getCurrentFilePath } from '../prompt/prompt-utils'
+import { getCodeToReplaceData } from '../prompt/prompt-utils/code-to-replace'
+import { getCurrentFilePath } from '../prompt/prompt-utils/common'
 import { getDecorationInfo } from '../renderer/diff-utils'
 
 import { AutoeditAnalyticsLogger } from './analytics-logger'
 import {
+    type AutoeditCacheID,
     type AutoeditRequestID,
     autoeditAcceptReason,
     autoeditDiscardReason,
@@ -45,7 +47,7 @@ describe('AutoeditAnalyticsLogger', () => {
         maxSuffixLength: 1000,
     })
 
-    const codeToReplaceData = getCodeToReplaceData({
+    const codeToReplace = getCodeToReplaceData({
         docContext,
         position,
         document,
@@ -54,6 +56,8 @@ describe('AutoeditAnalyticsLogger', () => {
             maxSuffixLinesInArea: 2,
             codeToRewritePrefixLines: 1,
             codeToRewriteSuffixLines: 1,
+            prefixTokens: 100,
+            suffixTokens: 100,
         },
     })
 
@@ -75,10 +79,10 @@ describe('AutoeditAnalyticsLogger', () => {
         return {
             startedAt: performance.now(),
             filePath: getCurrentFilePath(document).toString(),
-            docContext,
+            requestDocContext: docContext,
             document,
             position,
-            codeToReplaceData,
+            codeToReplaceData: codeToReplace,
             payload: {
                 languageId: 'typescript',
                 model: 'autoedit-model',
@@ -132,6 +136,14 @@ describe('AutoeditAnalyticsLogger', () => {
         })
 
         autoeditLogger.markAsPostProcessed({
+            requestId,
+            cacheId: uuid.v4() as AutoeditCacheID,
+            codeToReplaceData: codeToReplace,
+            predictionDocContext: docContext,
+            editPosition: position,
+        })
+
+        autoeditLogger.markAsReadyToBeRendered({
             requestId,
             prediction,
             renderOutput: { type: 'none' },

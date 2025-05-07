@@ -1,7 +1,6 @@
-package com.sourcegraph.cody.agent.protocol
+package com.sourcegraph.cody.agent.protocol_extensions
 
 import com.intellij.openapi.editor.Editor
-import com.sourcegraph.cody.agent.protocol_extensions.toOffsetRange
 import com.sourcegraph.cody.agent.protocol_generated.Range
 import junit.framework.TestCase
 

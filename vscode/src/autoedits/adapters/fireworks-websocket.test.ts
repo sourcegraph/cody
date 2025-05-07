@@ -44,6 +44,7 @@ describe('FireworksWebsocketAdapter', () => {
         server.addListener('connection', client => {
             client.addEventListener('message', event => {
                 const request = JSON.parse(event.data as string)
+                // Pass the parsed request to messageFn
                 const response = messageFn(request)
                 client.send(response)
             })
@@ -51,7 +52,7 @@ describe('FireworksWebsocketAdapter', () => {
     })
 
     beforeEach(() => {
-        adapter = new FireworksWebSocketAdapter()
+        adapter = new FireworksWebSocketAdapter(webSocketEndpoint)
         vi.useFakeTimers()
     })
 
@@ -59,6 +60,71 @@ describe('FireworksWebsocketAdapter', () => {
         adapter.dispose()
         vi.clearAllTimers()
         vi.restoreAllMocks()
+    })
+
+    it('includes speculation parameters when hot streak is enabled', async () => {
+        // Mock hot streak enabled
+        vi.spyOn(autoeditsConfig, 'isHotStreakEnabled').mockReturnValue(true)
+
+        messageFn.mockReturnValueOnce(
+            JSON.stringify({
+                'x-message-id': 'm_0',
+                'x-message-headers': {},
+                'x-message-body': {
+                    data: {
+                        choices: [{ message: { content: 'response' } }],
+                    },
+                },
+                'x-message-status': 200,
+                'x-message-status-text': 'OK',
+            })
+        )
+
+        const generator = await adapter.getModelResponse(options)
+        await generator.next()
+
+        // Get the request object directly from the mock call
+        const request = messageFn.mock.calls[0][0]
+        expect(request['x-message-body']).toEqual(
+            expect.objectContaining({
+                rewrite_speculation: true,
+                adaptive_speculation: true,
+                speculation_length_on_strong_match: 500,
+                speculation_min_length_on_strong_match: 500,
+                speculation_strong_match_threshold: 20,
+            })
+        )
+    })
+
+    it('does not include speculation parameters when hot streak is disabled', async () => {
+        // Mock hot streak disabled
+        vi.spyOn(autoeditsConfig, 'isHotStreakEnabled').mockReturnValue(false)
+
+        messageFn.mockReturnValueOnce(
+            JSON.stringify({
+                'x-message-id': 'm_0',
+                'x-message-headers': {},
+                'x-message-body': {
+                    data: {
+                        choices: [{ message: { content: 'response' } }],
+                    },
+                },
+                'x-message-status': 200,
+                'x-message-status-text': 'OK',
+            })
+        )
+
+        const generator = await adapter.getModelResponse(options)
+        await generator.next()
+
+        // Get the request object directly from the mock call
+        const request = messageFn.mock.calls[0][0]
+        const body = request['x-message-body']
+        expect(body.rewrite_speculation).toBeUndefined()
+        expect(body.adaptive_speculation).toBeUndefined()
+        expect(body.speculation_length_on_strong_match).toBeUndefined()
+        expect(body.speculation_min_length_on_strong_match).toBeUndefined()
+        expect(body.speculation_strong_match_threshold).toBeUndefined()
     })
 
     it('sends correct request parameters for chat model', async () => {

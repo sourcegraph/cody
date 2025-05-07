@@ -33,8 +33,10 @@
     justify-content: space-between;
 }
 
+.insert-buttons,
 .action-buttons {
     display: flex;
+    flex-shrink: 0;
     gap: 0.25rem;
 }
 
@@ -55,12 +57,9 @@
     outline-offset: -1px;
 }
 
-.button:not(:first-child) {
-    margin-left: 0.25rem;
-}
-
 .button .icon-container, .status .icon-container {
-    margin-right: 0.25rem
+    margin-right: 0.25rem;
+    flex-shrink: 0;
 }
 
 .addition {
@@ -80,7 +79,6 @@
     all: unset;
     padding: 3px;
     min-width: 16px;  /* Status element needs to be able to expand. */
-    height: 16px;
     background-color: transparent;
 }
 
@@ -120,8 +118,10 @@
 .file-name-container {
     font-size: 12px;
     color: var(--vscode-descriptionForeground);
-    display: flex;
-    align-items: center;
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
 }
 
 .attribution-container {

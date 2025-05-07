@@ -145,7 +145,7 @@ export class FixupTask {
     }
 
     private getDefaultSelectionRange(proposedRange: vscode.Range): vscode.Range {
-        if (this.intent === 'add') {
+        if (this.intent === 'add' || proposedRange.isEmpty) {
             // We are only adding new code, no need to expand the range
             return proposedRange
         }
@@ -153,7 +153,13 @@ export class FixupTask {
         // For all other Edits, we always expand the range to encompass all characters from the selection lines
         // This is so we can calculate an optimal diff, and the LLM has the best chance at understanding
         // the indentation in the returned code.
-        return new vscode.Range(proposedRange.start.line, 0, proposedRange.end.line + 1, 0)
+        const isLastLine = proposedRange.end.line === this.document.lineCount - 1
+        return new vscode.Range(
+            proposedRange.start.line,
+            0,
+            proposedRange.end.line + (isLastLine ? 0 : 1),
+            isLastLine ? this.document.lineAt(this.document.lineCount - 1).range.end.character : 0
+        )
     }
 
     /**

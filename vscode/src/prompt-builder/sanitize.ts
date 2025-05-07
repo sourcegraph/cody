@@ -63,18 +63,18 @@ export function sanitizedChatMessages(messages: ChatMessage[]): any[] {
                         }
                         return sanitizeToolResult(part as ToolResultContentPart)
                     }
-                    if (part.type === 'text') {
-                        message.text = undefined
-                    }
                     return part
                 })
                 .filter(isDefined)
                 // Filter out empty text parts
                 .filter(part => !(part.type === 'text' && part.text === ''))
-
+            if (message.text?.toString()) {
+                sanitizedContent.unshift({ type: 'text', text: message.text?.toString() })
+            }
             return {
                 ...message,
                 content: sanitizedContent,
+                text: undefined,
             }
         }
         return message

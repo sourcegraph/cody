@@ -4,11 +4,6 @@ name: agent-bindings
 on:
   workflow_dispatch:
   pull_request:
-    paths:
-      - "**.ts"
-      - "**.tsx"
-      - "**.js"
-      - "**.kt"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}

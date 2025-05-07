@@ -7,11 +7,14 @@ import { getFireworksModelResponse } from './model-response/fireworks'
 import {
     type AutoeditsRequestBody,
     type FireworksCompatibleRequestParams,
+    getFireworksCompatibleRewriteSpeculationParams,
     getMaxOutputTokensForAutoedits,
     getOpenaiCompatibleChatPrompt,
 } from './utils'
 
 export class FireworksAdapter implements AutoeditsModelAdapter {
+    private readonly defaultTimeoutMs = 5000
+
     async getModelResponse(option: AutoeditModelOptions): Promise<AsyncGenerator<ModelResponse>> {
         const requestBody = this.getMessageBody(option)
         try {
@@ -40,7 +43,7 @@ export class FireworksAdapter implements AutoeditsModelAdapter {
                             return response.choices?.[0]?.text ?? ''
                         },
                     }),
-                    option.timeoutMs,
+                    option.timeoutMs ?? this.defaultTimeoutMs,
                     abortController
                 ),
                 error => {
@@ -81,6 +84,7 @@ export class FireworksAdapter implements AutoeditsModelAdapter {
                 content: options.codeToRewrite,
             },
             user: options.userId || undefined,
+            ...getFireworksCompatibleRewriteSpeculationParams(),
         }
 
         if (options.isChatModel) {

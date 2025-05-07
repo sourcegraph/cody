@@ -11,6 +11,7 @@ import { AutoeditDetailView } from './components/AutoeditDetailView'
 import { AutoeditListItem } from './components/AutoeditListItem'
 import { EmptyState } from './components/EmptyState'
 import { SessionStatsPage } from './session-stats/SessionStatsPage'
+import { useHotStreakStore } from './store/hotStreakStore'
 
 // All possible phases for filtering
 const ALL_PHASES = [
@@ -46,6 +47,14 @@ export const AutoeditDebugPanel: FC<{
             return phases.some(phase => phase.name === phaseFilter)
         })
     }, [entries, phaseFilter])
+
+    // Use the external store for hot streak data
+    const { setEntries: setHotStreakEntries, getHotStreakChainForId } = useHotStreakStore()
+
+    // Update the store when entries change
+    useEffect(() => {
+        setHotStreakEntries(entries)
+    }, [entries, setHotStreakEntries])
 
     // Ensure we always have a valid selectedEntryId that exists in filteredEntries
     const [selectedEntryId, setSelectedEntryId] = useState<string | null>(null)
@@ -205,14 +214,20 @@ export const AutoeditDebugPanel: FC<{
                     No entries match the selected phase filter
                 </div>
             ) : (
-                filteredEntries.map(entry => (
-                    <AutoeditListItem
-                        key={entry.state.requestId}
-                        entry={entry}
-                        isSelected={entry.state.requestId === selectedEntryId}
-                        onSelect={handleEntrySelect}
-                    />
-                ))
+                filteredEntries.map(entry => {
+                    // Find related entries for this entry if it's part of a hot streak
+                    const hotStreakId = 'hotStreakId' in entry.state ? entry.state.hotStreakId : null
+                    const hotStreakChain = getHotStreakChainForId(hotStreakId)
+                    return (
+                        <AutoeditListItem
+                            key={entry.state.requestId}
+                            entry={entry}
+                            isSelected={entry.state.requestId === selectedEntryId}
+                            onSelect={handleEntrySelect}
+                            hotStreakChain={hotStreakChain}
+                        />
+                    )
+                })
             )}
         </div>
     )

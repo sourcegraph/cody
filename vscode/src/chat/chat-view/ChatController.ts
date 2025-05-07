@@ -80,6 +80,7 @@ import * as vscode from 'vscode'
 
 import { type Span, context } from '@opentelemetry/api'
 import { captureException } from '@sentry/core'
+import { ChatHistoryType } from '@sourcegraph/cody-shared/src/chat/transcript'
 import type { SubMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { resolveAuth } from '@sourcegraph/cody-shared/src/configuration/auth-resolver'
 import type { McpServer } from '@sourcegraph/cody-shared/src/llm-providers/mcp/types'
@@ -123,6 +124,8 @@ import {
 import { openExternalLinks } from '../../services/utils/workspace-action'
 import { TestSupport } from '../../test-support'
 import type { MessageErrorType } from '../MessageProvider'
+import { DeepCodyAgent } from '../agentic/DeepCody'
+import { toolboxManager } from '../agentic/ToolboxManager'
 import { getMentionMenuData } from '../context/chatContext'
 import { observeDefaultContext } from '../initialContext'
 import type {
@@ -136,11 +139,12 @@ import { countGeneratedCode } from '../utils'
 import { ChatBuilder, prepareChatMessage } from './ChatBuilder'
 import { chatHistory } from './ChatHistoryManager'
 import { CodyChatEditorViewType } from './ChatsController'
+import { CodeBlockRegenerator, type RegenerateRequestParams } from './CodeBlockRegenerator'
 import type { ContextRetriever } from './ContextRetriever'
 import { InitDoer } from './InitDoer'
 import { getChatPanelTitle, isAgentTesting } from './chat-helpers'
 import { OmniboxTelemetry } from './handlers/OmniboxTelemetry'
-import { getAgent, getAgentName } from './handlers/registry'
+import { getAgent } from './handlers/registry'
 import { getPromptsMigrationInfo, startPromptsMigration } from './prompts-migration'
 import { MCPManager } from './tools/MCPManager'
 
@@ -407,6 +411,34 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             case 'command':
                 vscode.commands.executeCommand(message.id, message.arg)
                 break
+            case 'mcp': {
+                try {
+                    const mcpManager = MCPManager.instance
+                    if (!mcpManager || !message.name) {
+                        throw new Error('MCP Manager is not initialized')
+                    }
+
+                    if (message.type === 'addServer' && message.config) {
+                        await mcpManager.addServer(message.name, message.config)
+                        void this.postMessage({
+                            type: 'clientAction',
+                            mcpServerAdded: { name: message.name },
+                        })
+                    }
+
+                    if (message.type === 'removeServer') {
+                        await mcpManager.deleteServer(message.name)
+                    }
+                } catch (error) {
+                    const errorMessage = error instanceof Error ? error.message : String(error)
+                    void this.postMessage({
+                        type: 'clientAction',
+                        mcpServerError: { name: message.name, error: errorMessage },
+                    })
+                }
+
+                break
+            }
             case 'recordEvent':
                 telemetryRecorder.recordEvent(
                     // 👷 HACK: We have no control over what gets sent over JSON RPC,
@@ -554,6 +586,17 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 localStorage.setDevicePixelRatio(message.devicePixelRatio)
                 break
             }
+            case 'regenerateCodeBlock': {
+                await this.handleRegenerateCodeBlock({
+                    requestID: message.id,
+                    code: PromptString.unsafe_fromLLMResponse(message.code),
+                    language: message.language
+                        ? PromptString.unsafe_fromLLMResponse(message.language)
+                        : undefined,
+                    index: message.index,
+                })
+                break
+            }
         }
     }
 
@@ -569,9 +612,11 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         const { configuration, auth } = await currentResolvedConfig()
         const [experimentalPromptEditorEnabled, internalAgenticChatEnabled] = await Promise.all([
             firstValueFrom(
-                featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyExperimentalPromptEditor)
+                featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyExperimentalPromptEditor)
             ),
-            firstValueFrom(featureFlagProvider.evaluateFeatureFlag(FeatureFlag.NextAgenticChatInternal)),
+            firstValueFrom(
+                featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.NextAgenticChatInternal)
+            ),
         ])
         const experimentalAgenticChatEnabled = internalAgenticChatEnabled && isS2(auth.serverEndpoint)
         const sidebarViewOnly = this.extensionClient.capabilities?.webviewNativeConfig?.view === 'single'
@@ -660,6 +705,11 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         this.initDoer.signalInitialized()
     }
 
+    async regenerateCodeBlock(params: RegenerateRequestParams): Promise<PromptString> {
+        const regenerator = new CodeBlockRegenerator(this.chatClient)
+        return await regenerator.regenerate(params)
+    }
+
     /**
      * Handles user input text for both new and edit submissions
      */
@@ -684,7 +734,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         manuallySelectedIntent?: ChatMessage['intent'] | undefined | null
         traceparent?: string | undefined | null
         model?: string | undefined
-        chatAgent?: string | undefined
     }): Promise<void> {
         return context.with(extractContextFromTraceparent(traceparent), () => {
             return tracer.startActiveSpan('chat.handleUserMessage', async (span): Promise<void> => {
@@ -702,13 +751,11 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
 
                 this.chatBuilder.setSelectedModel(model)
 
-                const chatAgent = getAgentName(manuallySelectedIntent, model)
-
                 this.chatBuilder.addHumanMessage({
                     text: inputText,
                     editorState,
                     intent: manuallySelectedIntent,
-                    agent: chatAgent,
+                    agent: toolboxManager.isAgenticChatEnabled() ? DeepCodyAgent.id : undefined,
                 })
 
                 this.setCustomChatTitle(requestID, inputText, signal)
@@ -728,7 +775,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                         command,
                         manuallySelectedIntent,
                         model,
-                        chatAgent,
                     },
                     span
                 )
@@ -1185,6 +1231,76 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 return
             }
             this.postError(new Error('Failed to edit prompt'), 'transcript')
+        }
+    }
+
+    /**
+     * Regenerates a single code block in the transcript.
+     */
+    async handleRegenerateCodeBlock({
+        requestID,
+        code,
+        language,
+        index,
+    }: {
+        requestID: string
+        code: PromptString
+        language: PromptString | undefined
+        index: number
+    }): Promise<void> {
+        const abort = this.startNewSubmitOrEditOperation()
+
+        telemetryRecorder.recordEvent('cody.regenerateCodeBlock', 'clicked', {
+            billingMetadata: {
+                product: 'cody',
+                category: 'billable',
+            },
+        })
+
+        // TODO: Add trace spans around this operation
+
+        try {
+            const model: ChatModel | undefined = await wrapInActiveSpan('chat.resolveModel', () =>
+                firstResultFromOperation(ChatBuilder.resolvedModelForChat(this.chatBuilder), abort)
+            )
+            if (!model) {
+                throw new Error('no chat model selected')
+            }
+            this.postMessage({
+                type: 'clientAction',
+                regenerateStatus: { id: requestID, status: 'regenerating' },
+            })
+            const newCode = await this.regenerateCodeBlock({
+                abort,
+                code,
+                language,
+                model,
+                requestID,
+            })
+            // Paste up the chat transcript replacing `code` with `newCode`
+            if (this.chatBuilder.replaceInMessage(index, code, newCode)) {
+                // Post the updated transcript to the webview
+                this.postViewTranscript()
+                // Save the newly generated code to the transcript.
+                await this.saveSession()
+            }
+            this.postMessage({
+                type: 'clientAction',
+                regenerateStatus: { id: requestID, status: 'done' },
+            })
+        } catch (error) {
+            this.postMessage({
+                type: 'clientAction',
+                regenerateStatus: {
+                    id: requestID,
+                    status: 'error',
+                    error: `${error}`,
+                },
+            })
+            if (isAbortErrorOrSocketHangUp(error)) {
+                return
+            }
+            this.postError(new Error(`Failed to regenerate code: ${error}`), 'system')
         }
     }
 
@@ -1677,7 +1793,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 {
                     mentionMenuData: query => {
                         return featureFlagProvider
-                            .evaluateFeatureFlag(FeatureFlag.CodyExperimentalPromptEditor)
+                            .evaluatedFeatureFlag(FeatureFlag.CodyExperimentalPromptEditor)
                             .pipe(
                                 switchMap((experimentalPromptEditor: boolean) =>
                                     getMentionMenuData({
@@ -1695,7 +1811,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                         return promiseFactoryToObservable(this.getFrequentlyUsedContextItemsFromStorage)
                     },
                     clientActionBroadcast: () => this.clientBroadcast,
-                    evaluateFeatureFlag: flag => featureFlagProvider.evaluateFeatureFlag(flag),
+                    evaluatedFeatureFlag: flag => featureFlagProvider.evaluatedFeatureFlag(flag),
                     hydratePromptMessage: (promptText, initialContext) =>
                         promiseFactoryToObservable(() =>
                             hydratePromptText(promptText, initialContext ?? [])
@@ -1749,7 +1865,10 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     authStatus: () => authStatus,
                     transcript: () =>
                         this.chatBuilder.changes.pipe(map(chat => chat.getDehydratedMessages())),
-                    userHistory: () => chatHistory.lightweightChanges,
+                    userHistory: type =>
+                        type === ChatHistoryType.Full
+                            ? chatHistory.changes
+                            : chatHistory.lightweightChanges,
                     userProductSubscription: () =>
                         userProductSubscription.pipe(
                             map(value => (value === pendingOperation ? null : value))
@@ -1757,7 +1876,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     // Existing tools endpoint - update to include MCP tools
                     mcpSettings: () => {
                         return featureFlagProvider
-                            .evaluateFeatureFlag(FeatureFlag.NextAgenticChatInternal)
+                            .evaluatedFeatureFlag(FeatureFlag.NextAgenticChatInternal)
                             .pipe(
                                 // Simplify the flow with map and distinctUntilChanged
                                 distinctUntilChanged(),

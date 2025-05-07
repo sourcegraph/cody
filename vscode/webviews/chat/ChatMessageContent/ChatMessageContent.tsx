@@ -5,6 +5,7 @@ import { useCallback, useMemo } from 'react'
 import { RichMarkdown } from '../../components/RichMarkdown'
 import { getVSCodeAPI } from '../../utils/VSCodeApi'
 import { useConfig } from '../../utils/useConfig'
+import type { RegeneratingCodeBlockState } from '../Transcript'
 import type { PriorHumanMessageInfo } from '../cells/messageCell/assistant/AssistantMessageCell'
 import styles from './ChatMessageContent.module.css'
 import { ThinkingCell } from './ThinkingCell'
@@ -24,6 +25,8 @@ export interface CodeBlockActionsProps {
         onAccept: (id: string) => void
         onReject: (id: string) => void
     }
+    onRegenerate: (code: string, language: string | undefined) => void
+    regeneratingCodeBlocks: RegeneratingCodeBlockState[]
 }
 
 interface ChatMessageContentProps {
@@ -33,6 +36,8 @@ interface ChatMessageContentProps {
 
     copyButtonOnSubmit?: CodeBlockActionsProps['copyButtonOnSubmit']
     insertButtonOnSubmit?: CodeBlockActionsProps['insertButtonOnSubmit']
+    onRegenerate: (code: string, language: string | undefined) => void
+    regeneratingCodeBlocks: CodeBlockActionsProps['regeneratingCodeBlocks']
 
     smartApply?: CodeBlockActionsProps['smartApply']
 
@@ -52,6 +57,8 @@ export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps
     humanMessage,
     copyButtonOnSubmit,
     insertButtonOnSubmit,
+    onRegenerate,
+    regeneratingCodeBlocks,
     guardrails,
     className,
     smartApply,
@@ -98,11 +105,13 @@ export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps
             )}
             <RichMarkdown
                 markdown={displayContent}
-                isLoading={isMessageLoading}
+                isMessageLoading={isMessageLoading}
                 guardrails={guardrails}
                 onCopy={onCopy}
                 onInsert={onInsert}
                 onExecute={onExecute}
+                onRegenerate={onRegenerate}
+                regeneratingCodeBlocks={regeneratingCodeBlocks}
                 smartApply={smartApply}
                 className={clsx(styles.content, className)}
                 hasEditIntent={humanMessage?.intent === 'edit'}

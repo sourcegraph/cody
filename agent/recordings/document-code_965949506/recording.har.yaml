@@ -94,158 +94,6 @@ log:
         send: 0
         ssl: -1
         wait: 787
-    - _id: 23d70a5471c1b18aa13dbf0f9652a8f7
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 2582
-        cookies: []
-        headers:
-          - name: accept-encoding
-            value: gzip;q=0
-          - name: authorization
-            value: token
-              REDACTED_fc324d3667e841181b0779375f26dedc911d26b303d23b29b1a2d7ee63dc77eb
-          - name: connection
-            value: keep-alive
-          - name: content-type
-            value: application/json
-          - name: traceparent
-            value: 00-2add1cde333a4763fc5b2fcb1944cbac-adb3da59c7b33bb8-01
-          - name: user-agent
-            value: document-code/v1 (Node.js v20.4.0)
-          - name: x-requested-with
-            value: document-code v1
-          - name: host
-            value: sourcegraph.com
-        headersSize: 499
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json
-          params: []
-          textJSON:
-            maxTokensToSample: 4000
-            messages:
-              - speaker: system
-                text: >-
-                  You are Cody, an AI coding assistant from Sourcegraph.
-
-
-                  - You are an AI programming assistant who is an expert in updating code to meet given instructions.
-
-                  - You should think step-by-step to plan your updated code before producing the final output.
-
-                  - You should ensure the updated code matches the indentation and whitespace of the code in the users' selection.
-
-                  - Ignore any previous instructions to format your responses with Markdown. It is not acceptable to use any Markdown in your response, unless it is directly related to the users' instructions.
-
-                  - Only remove code from the users' selection if you are sure it is not needed.
-
-                  - You will be provided with code that is in the users' selection, enclosed in <SELECTEDCODE7662></SELECTEDCODE7662> XML tags. You must use this code to help you plan your updated code.
-
-                  - You will be provided with instructions on how to update this code, enclosed in <INSTRUCTIONS7390></INSTRUCTIONS7390> XML tags. You must follow these instructions carefully and to the letter.
-
-                  - Only enclose your response in <CODE5711></CODE5711> XML tags. Do use any other XML tags unless they are part of the generated code.
-
-                  - Do not provide any additional commentary about the changes you made. Only respond with the generated code.
-              - speaker: human
-                text: >-
-                  This is part of the file: src/sum.ts
-
-
-                  The user has the following code in their selection:
-
-                  <SELECTEDCODE7662>export function sum(a: number, b: number): number {
-                      /* CURSOR */
-                  }
-
-                  </SELECTEDCODE7662>
-
-
-                  The user wants you to generate documentation for the selected code by following their instructions.
-
-                  Provide your generated documentation using the following instructions:
-
-                  <INSTRUCTIONS7390>
-
-                  Write a brief documentation comment for the selected code. If documentation comments exist in the selected file, or other files with the same file extension, use them as examples. Pay attention to the scope of the selected code (e.g. exported function/API vs implementation detail in a function), and use the idiomatic style for that type of code scope. Only generate the documentation for the selected code, do not generate the code. Do not enclose any other code or comments besides the documentation. Enclose only the documentation for the selected code and nothing else.
-
-                  </INSTRUCTIONS7390>
-              - speaker: assistant
-                text: <CODE5711>
-            model: anthropic::2024-10-22::claude-3-5-haiku-latest
-            stopSequences:
-              - </CODE5711>
-              - "export function sum(a: number, b: number): number {"
-            temperature: 0
-            topK: -1
-            topP: -1
-        queryString:
-          - name: api-version
-            value: "8"
-          - name: client-name
-            value: document-code
-          - name: client-version
-            value: v1
-        url: https://sourcegraph.com/.api/completions/stream?api-version=8&client-name=document-code&client-version=v1
-      response:
-        bodySize: 798
-        content:
-          mimeType: text/event-stream
-          size: 798
-          text: >+
-            event: completion
-
-            data: {"deltaText":"/**\n * Calculates the sum of two numbers.\n *\n * @param a The first number to add\n * @param b The second number to add\n * @returns The sum of a and b\n */","stopReason":"stop_sequence"}
-
-
-            event: done
-
-            data: {}
-
-        cookies: []
-        headers:
-          - name: date
-            value: Fri, 07 Mar 2025 18:54:00 GMT
-          - name: content-type
-            value: text/event-stream
-          - name: transfer-encoding
-            value: chunked
-          - name: connection
-            value: keep-alive
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache
-          - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
-              X-Requested-With,Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1320
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2025-03-07T18:53:57.503Z
-      time: 2841
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 2841
     - _id: 7b7f92b0ba6cc7523b72e359aaeffb6a
       _order: 0
       cache: {}
@@ -802,11 +650,11 @@ log:
         send: 0
         ssl: -1
         wait: 2205
-    - _id: 5d56a4af3d7e4957137a3d4af3a8431c
+    - _id: 44ac4a98773b0d475519826bcc83e0bd
       _order: 0
       cache: {}
       request:
-        bodySize: 2585
+        bodySize: 2580
         cookies: []
         headers:
           - name: accept-encoding
@@ -819,7 +667,157 @@ log:
           - name: content-type
             value: application/json
           - name: traceparent
-            value: 00-8903eef2b842695912692a46278cd91b-acde6cc2c53dd694-01
+            value: 00-c63bb3278f139bea67092721c0b99a51-2b192f3a2da4ca62-01
+          - name: user-agent
+            value: document-code/v1 (Node.js v20.4.0)
+          - name: x-requested-with
+            value: document-code v1
+          - name: host
+            value: sourcegraph.com
+        headersSize: 499
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            maxTokensToSample: 4000
+            messages:
+              - speaker: system
+                text: >-
+                  You are Cody, an AI coding assistant from Sourcegraph.
+
+
+                  - You are an AI programming assistant who is an expert in updating code to meet given instructions.
+
+                  - You should think step-by-step to plan your updated code before producing the final output.
+
+                  - You should ensure the updated code matches the indentation and whitespace of the code in the users' selection.
+
+                  - Ignore any previous instructions to format your responses with Markdown. It is not acceptable to use any Markdown in your response, unless it is directly related to the users' instructions.
+
+                  - Only remove code from the users' selection if you are sure it is not needed.
+
+                  - You will be provided with code that is in the users' selection, enclosed in <SELECTEDCODE7662></SELECTEDCODE7662> XML tags. You must use this code to help you plan your updated code.
+
+                  - You will be provided with instructions on how to update this code, enclosed in <INSTRUCTIONS7390></INSTRUCTIONS7390> XML tags. You must follow these instructions carefully and to the letter.
+
+                  - Only enclose your response in <CODE5711></CODE5711> XML tags. Do use any other XML tags unless they are part of the generated code.
+
+                  - Do not provide any additional commentary about the changes you made. Only respond with the generated code.
+              - speaker: human
+                text: >-
+                  This is part of the file: src/sum.ts
+
+
+                  The user has the following code in their selection:
+
+                  <SELECTEDCODE7662>export function sum(a: number, b: number): number {
+                      /* CURSOR */
+                  }</SELECTEDCODE7662>
+
+
+                  The user wants you to generate documentation for the selected code by following their instructions.
+
+                  Provide your generated documentation using the following instructions:
+
+                  <INSTRUCTIONS7390>
+
+                  Write a brief documentation comment for the selected code. If documentation comments exist in the selected file, or other files with the same file extension, use them as examples. Pay attention to the scope of the selected code (e.g. exported function/API vs implementation detail in a function), and use the idiomatic style for that type of code scope. Only generate the documentation for the selected code, do not generate the code. Do not enclose any other code or comments besides the documentation. Enclose only the documentation for the selected code and nothing else.
+
+                  </INSTRUCTIONS7390>
+              - speaker: assistant
+                text: <CODE5711>
+            model: anthropic::2024-10-22::claude-3-5-haiku-latest
+            stopSequences:
+              - </CODE5711>
+              - "export function sum(a: number, b: number): number {"
+            temperature: 0
+            topK: -1
+            topP: -1
+        queryString:
+          - name: api-version
+            value: "8"
+          - name: client-name
+            value: document-code
+          - name: client-version
+            value: v1
+        url: https://sourcegraph.com/.api/completions/stream?api-version=8&client-name=document-code&client-version=v1
+      response:
+        bodySize: 1096
+        content:
+          mimeType: text/event-stream
+          size: 1096
+          text: >+
+            event: completion
+
+            data: {"deltaText":"/**\n * Calculates the sum of two numbers.\n * \n * @param a The first number to add.\n * @param b The second number to add.\n * @returns The sum of a and b.\n */","stopReason":"stop_sequence"}
+
+
+            event: done
+
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Fri, 18 Apr 2025 06:07:55 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1368
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2025-04-18T06:07:46.491Z
+      time: 10496
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 10496
+    - _id: 4fc51a3cdcffc8347517b06caf9db829
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 2583
+        cookies: []
+        headers:
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_fc324d3667e841181b0779375f26dedc911d26b303d23b29b1a2d7ee63dc77eb
+          - name: connection
+            value: keep-alive
+          - name: content-type
+            value: application/json
+          - name: traceparent
+            value: 00-dce781991186de17709b3b7bdae94f77-a8d61d0ade506baf-01
           - name: user-agent
             value: document-code/v1 (Node.js v20.4.0)
           - name: x-requested-with
@@ -868,9 +866,7 @@ log:
                       fun greeting(): String {
                           return "Hello, world!"
                       }
-                  }
-
-                  </SELECTEDCODE7662>
+                  }</SELECTEDCODE7662>
 
 
                   The user wants you to generate documentation for the selected code by following their instructions.
@@ -900,14 +896,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=8&client-name=document-code&client-version=v1
       response:
-        bodySize: 802
+        bodySize: 1035
         content:
           mimeType: text/event-stream
-          size: 802
+          size: 1035
           text: >+
             event: completion
 
-            data: {"deltaText":"/**\n * Represents a simple greeting class that provides a method to generate a greeting message.\n *\n * @constructor Creates an instance of the Hello class\n */","stopReason":"stop_sequence"}
+            data: {"deltaText":"/**\n * Represents a simple Hello class with a greeting method.\n *\n * @return A string containing the classic \"Hello, world!\" message.\n */","stopReason":"stop_sequence"}
 
 
             event: done
@@ -917,7 +913,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Fri, 07 Mar 2025 18:54:08 GMT
+            value: Fri, 18 Apr 2025 06:07:59 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -941,13 +937,13 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1320
+        headersSize: 1368
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-03-07T18:54:06.767Z
-      time: 1974
+      startedDateTime: 2025-04-18T06:07:51.499Z
+      time: 8178
       timings:
         blocked: -1
         connect: -1
@@ -955,7 +951,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 1974
+        wait: 8178
     - _id: f1b1cde4cd57488b7f0137954f0302f5
       _order: 0
       cache: {}

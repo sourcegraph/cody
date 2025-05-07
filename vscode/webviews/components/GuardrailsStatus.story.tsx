@@ -24,10 +24,11 @@ export const AllStatuses: Story = {
                 status={GuardrailsCheckStatus.Failed}
                 tooltip="Found in X repositories: Y, Z"
             />
-            <GuardrailsStatus
-                status={GuardrailsCheckStatus.Error}
-                onRetry={() => console.log('Retry clicked')}
-            />
+            <GuardrailsStatus status={GuardrailsCheckStatus.Error}>
+                <button type="button" onClick={() => alert('retry clicked')}>
+                    Retry
+                </button>
+            </GuardrailsStatus>
         </div>
     ),
 }
