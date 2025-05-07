@@ -16,6 +16,7 @@ import {
 import { DeepCodyAgentID } from '@sourcegraph/cody-shared/src/models/client'
 import { type Observable, Subject, map } from 'observable-fns'
 import { env } from 'vscode'
+import { isAgentTesting } from '../chat-view/chat-helpers'
 import { DeepCodyAgent } from './DeepCody'
 
 // Using a readonly interface improves performance by preventing mutations
@@ -34,7 +35,7 @@ class ToolboxManager {
     private static instance?: ToolboxManager
 
     private constructor() {
-        // Using private constructor for Singleton pattern
+        this.isEnabled = !isAgentTesting
     }
 
     private isEnabled = false
@@ -63,7 +64,7 @@ class ToolboxManager {
     }
 
     public isAgenticChatEnabled(): boolean {
-        return this.isEnabled && Boolean(DeepCodyAgent.model)
+        return !isAgentTesting && this.isEnabled && Boolean(DeepCodyAgent.model)
     }
 
     public setIsRateLimited(hasHitLimit: boolean): void {
@@ -102,6 +103,7 @@ class ToolboxManager {
                 sub === pendingOperation ||
                 sub?.userCanUpgrade ||
                 !models ||
+                isAgentTesting ||
                 (!isDotCom(auth.endpoint) && isDisabled)
             ) {
                 DeepCodyAgent.model = undefined
