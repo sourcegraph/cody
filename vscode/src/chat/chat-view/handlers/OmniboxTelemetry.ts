@@ -2,9 +2,10 @@ import type { Span } from '@opentelemetry/api'
 import {
     type ChatMessage,
     type ContextItem,
-    TokenCounterUtils,
+    type TokenCounterUtils,
     currentAuthStatusAuthed,
     firstResultFromOperation,
+    getTokenCounterUtils,
     logError,
     telemetryEvents,
     wrapInActiveSpan,
@@ -29,6 +30,9 @@ export class OmniboxTelemetry {
     public static async create(
         baseProperties: Omit<SharedProperties, 'repoMetadata' | 'repoIsPublic' | 'authStatus'>
     ): Promise<OmniboxTelemetry> {
+        const tokenCounterUtils = wrapInActiveSpan('chat.getTokenCounterUtils', () =>
+            getTokenCounterUtils()
+        )
         const { isPublic: repoIsPublic, repoMetadata } = await wrapInActiveSpan(
             'chat.getRepoMetadata',
             () => firstResultFromOperation(publicRepoMetadataIfAllWorkspaceReposArePublic)
@@ -41,7 +45,7 @@ export class OmniboxTelemetry {
                 repoIsPublic,
                 repoMetadata,
             },
-            TokenCounterUtils
+            await tokenCounterUtils
         )
     }
 
