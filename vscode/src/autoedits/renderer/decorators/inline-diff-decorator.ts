@@ -9,15 +9,32 @@ export class InlineDiffDecorator implements vscode.Disposable, AutoEditsDecorato
         borderWidth: '1px 1px 0 0',
     })
 
-    constructor(private readonly editor: vscode.TextEditor) {}
-
-    setDecorations(decorations: AutoEditDecorations): void {
-        if (!decorations) {
-            throw new Error('InlineDiffDecorator relies on pre-computed decorations')
+    public setDecorations(uri: vscode.Uri, decorations: AutoEditDecorations): void {
+        const editor = this.getEditorForUri(uri)
+        if (!editor) {
+            return
         }
-        this.editor.setDecorations(this.addedTextDecorationType, decorations.insertionDecorations)
-        this.editor.setDecorations(this.removedTextDecorationType, decorations.deletionDecorations)
-        this.editor.setDecorations(this.insertMarkerDecorationType, decorations.insertMarkerDecorations)
+
+        editor.setDecorations(this.addedTextDecorationType, decorations.insertionDecorations)
+        editor.setDecorations(this.removedTextDecorationType, decorations.deletionDecorations)
+        editor.setDecorations(this.insertMarkerDecorationType, decorations.insertMarkerDecorations)
+    }
+
+    public hideDecorations(uri: vscode.Uri): void {
+        const editor = this.getEditorForUri(uri)
+        if (!editor) {
+            return
+        }
+
+        editor.setDecorations(this.addedTextDecorationType, [])
+        editor.setDecorations(this.removedTextDecorationType, [])
+        editor.setDecorations(this.insertMarkerDecorationType, [])
+    }
+
+    private getEditorForUri(uri: vscode.Uri): vscode.TextEditor | undefined {
+        return vscode.window.visibleTextEditors.find(
+            editor => editor.document.uri.toString() === uri.toString()
+        )
     }
 
     public dispose(): void {

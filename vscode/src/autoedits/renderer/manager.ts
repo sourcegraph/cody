@@ -21,6 +21,7 @@ import type { RequestManager } from '../request-manager'
 import { areSameUriDocs } from '../utils'
 
 import type { AutoEditDecorations, AutoEditsDecorator, DecorationInfo } from './decorators/base'
+import { InlineDiffDecorator } from './decorators/inline-diff-decorator'
 import { AutoEditsRenderOutput } from './render-output'
 
 export interface TryMakeInlineCompletionsArgs {
@@ -39,7 +40,7 @@ export class AutoEditsRendererManager extends AutoEditsRenderOutput {
     // Keeps track of the current active edit (there can only be one active edit at a time)
     protected activeRequestId: AutoeditRequestID | null = null
     protected disposables: vscode.Disposable[] = []
-    protected decorator: AutoEditsDecorator | null = null
+    protected decorator: AutoEditsDecorator = new InlineDiffDecorator()
 
     /**
      * The amount of time before we consider a suggestion to be "visible" to the user.
@@ -47,7 +48,6 @@ export class AutoEditsRendererManager extends AutoEditsRenderOutput {
     private autoeditSuggestedTimeoutId: NodeJS.Timeout | undefined
 
     constructor(
-        protected createDecorator: (editor: vscode.TextEditor) => AutoEditsDecorator,
         protected fixupController: FixupController,
         // Used to remove cached suggestions when one is accepted or rejected.
         protected requestManager: RequestManager
@@ -192,12 +192,7 @@ export class AutoEditsRendererManager extends AutoEditsRenderOutput {
     protected get activeRequest() {
         if (this.activeRequestId) {
             const request = autoeditAnalyticsLogger.getRequest(this.activeRequestId)
-            if (
-                request &&
-                'renderOutput' in request &&
-                request.renderOutput.type !== 'none' &&
-                this.decorator
-            ) {
+            if (request && 'renderOutput' in request && request.renderOutput.type !== 'none') {
                 return request
             }
         }
@@ -251,7 +246,6 @@ export class AutoEditsRendererManager extends AutoEditsRenderOutput {
             return
         }
 
-        this.decorator = this.createDecorator(vscode.window.activeTextEditor!)
         this.activeRequestId = requestId
         autoeditAnalyticsLogger.markAsSuggested(requestId)
 
@@ -336,27 +330,27 @@ export class AutoEditsRendererManager extends AutoEditsRenderOutput {
         })
     }
 
-    protected async handleDidHideSuggestion(decorator: AutoEditsDecorator | null): Promise<void> {
-        if (decorator) {
-            decorator.dispose()
-            // Hide inline decorations
-            await vscode.commands.executeCommand('setContext', 'cody.supersuggest.active', false)
-        }
+    protected async handleDidHideSuggestion(uri: vscode.Uri): Promise<void> {
+        // Hide inline decorations
+        this.decorator.hideDecorations()
+        await vscode.commands.executeCommand('setContext', 'cody.supersuggest.active', false)
 
         // Hide inline completion provider item ghost text
         await vscode.commands.executeCommand('editor.action.inlineSuggest.hide')
 
         this.activeRequestId = null
-        this.decorator = null
     }
 
     public handleDidAcceptCompletionItem(requestId: AutoeditRequestID): Promise<void> {
         return this.acceptActiveEdit(autoeditAcceptReason.acceptCommand)
     }
 
-    protected async acceptActiveEdit(acceptReason: AutoeditAcceptReasonMetadata): Promise<void> {
+    protected async acceptActiveEdit(
+        acceptReason: AutoeditAcceptReasonMetadata,
+        uri: vscode.Uri
+    ): Promise<void> {
         const editor = vscode.window.activeTextEditor
-        const { activeRequest, decorator } = this
+        const { activeRequest } = this
 
         // Compute this variable before the `handleDidHideSuggestion` call which removes the active request.
         const hasInlineDecorations = this.hasInlineDecorations()
@@ -366,7 +360,7 @@ export class AutoEditsRendererManager extends AutoEditsRenderOutput {
             !activeRequest ||
             !areSameUriDocs(editor.document, this.activeRequest?.document)
         ) {
-            return this.rejectActiveEdit(autoeditRejectReason.acceptActiveEdit)
+            return this.rejectActiveEdit(autoeditRejectReason.acceptActiveEdit, uri)
         }
 
         this.requestManager.removeFromCache(activeRequest.cacheId)
@@ -374,7 +368,7 @@ export class AutoEditsRendererManager extends AutoEditsRenderOutput {
         // Reset the testing promise when accepting
         this.testing_completionSuggestedPromise = undefined
 
-        await this.handleDidHideSuggestion(decorator)
+        await this.handleDidHideSuggestion(activeRequest.document.uri)
         autoeditAnalyticsLogger.markAsAccepted({
             requestId: activeRequest.requestId,
             acceptReason,
@@ -402,8 +396,11 @@ export class AutoEditsRendererManager extends AutoEditsRenderOutput {
         })
     }
 
-    protected async rejectActiveEdit(rejectReason: AutoeditRejectReasonMetadata): Promise<void> {
-        const { activeRequest, decorator } = this
+    protected async rejectActiveEdit(
+        rejectReason: AutoeditRejectReasonMetadata,
+        uri: vscode.Uri
+    ): Promise<void> {
+        const { activeRequest } = this
 
         if (activeRequest) {
             this.requestManager.removeFromCache(activeRequest.cacheId)
@@ -412,9 +409,7 @@ export class AutoEditsRendererManager extends AutoEditsRenderOutput {
         // Reset the testing promise when rejecting
         this.testing_completionSuggestedPromise = undefined
 
-        if (decorator) {
-            await this.handleDidHideSuggestion(decorator)
-        }
+        await this.handleDidHideSuggestion(uri)
 
         if (activeRequest) {
             autoeditAnalyticsLogger.markAsRejected({

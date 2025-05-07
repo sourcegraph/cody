@@ -57,7 +57,6 @@ import type { AutoeditsUserPromptStrategy } from './prompt/base'
 import { createPromptProvider } from './prompt/create-prompt-provider'
 import { getCodeToReplaceData } from './prompt/prompt-utils/code-to-replace'
 import { getCurrentFilePath } from './prompt/prompt-utils/common'
-import { InlineDiffDecorator } from './renderer/decorators/inline-diff-decorator'
 import { getAddedLines, getDecorationInfoFromPrediction } from './renderer/diff-utils'
 import { initImageSuggestionService } from './renderer/image-gen'
 import { AutoEditsRendererManager } from './renderer/manager'
@@ -224,11 +223,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
             allowUsingWebSocket: this.features.allowUsingWebSocket,
         })
 
-        this.rendererManager = new AutoEditsRendererManager(
-            editor => new InlineDiffDecorator(editor),
-            fixupController,
-            this.requestManager
-        )
+        this.rendererManager = new AutoEditsRendererManager(fixupController, this.requestManager)
 
         this.onSelectionChangeDebounced = debounce(
             (event: vscode.TextEditorSelectionChangeEvent) => this.onSelectionChange(event),
