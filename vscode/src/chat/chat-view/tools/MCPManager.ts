@@ -109,11 +109,12 @@ export class MCPManager {
     // Observable for server changes
     public static observable: Observable<McpServer[] | null> = combineLatest(
         featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.AgenticChatWithMCP),
+        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.AgenticContextDisabled),
         this.changeNotifications.pipe(startWith({ type: 'all' })),
         this.toolsChangeNotifications.pipe(startWith({ type: 'all' }))
     ).pipe(
-        map(([mcpEnabled, serverChange, toolChange]) => {
-            if (!mcpEnabled || !MCPManager.instance) {
+        map(([mcpEnabled, featureDisabled, serverChange, toolChange]) => {
+            if (!mcpEnabled || featureDisabled || !MCPManager.instance) {
                 return null
             }
             return MCPManager.instance.getServers()
@@ -930,5 +931,11 @@ export class MCPManager {
         // Notify subscribers that servers have changed
         MCPManager.changeNotifications.next({ type: 'all' })
         logDebug('MCPManager', 'disposed')
+    }
+
+    public static dispose(): void {
+        MCPManager.instance?.dispose().catch(error => {
+            logDebug('MCPManager', 'Error disposing MCPManager', { verbose: { error } })
+        })
     }
 }

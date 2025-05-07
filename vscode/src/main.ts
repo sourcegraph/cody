@@ -320,28 +320,21 @@ const register = async (
     resolvedConfig.pipe(take(1)).subscribe(({ auth }) => showSetupNotification(auth))
 
     // Initialize MCP Manager based on the feature flag
-    let mcpManager: MCPManager | undefined
     disposables.push(
         subscriptionDisposable(
-            featureFlagProvider
-                .evaluatedFeatureFlag(FeatureFlag.AgenticChatWithMCP)
-                .pipe(distinctUntilChanged())
+            combineLatest(
+                featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.AgenticChatWithMCP),
+                featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.AgenticContextDisabled)
+            )
+                .pipe(
+                    map(([mcpEnabled, agenticDisabled]) => mcpEnabled && !agenticDisabled),
+                    distinctUntilChanged()
+                )
                 .subscribe(async isEnabled => {
                     if (isEnabled) {
-                        // Initialize MCP Manager if feature flag is enabled
-                        if (!mcpManager) {
-                            mcpManager = await MCPManager.init()
-                            if (mcpManager) {
-                                logDebug('main', 'MCPManager initialized')
-                            }
-                        }
+                        await MCPManager?.init()
                     } else {
-                        // Dispose MCP Manager if feature flag is disabled
-                        if (mcpManager) {
-                            await mcpManager.dispose()
-                            mcpManager = undefined
-                            logDebug('main', 'MCPManager disposed')
-                        }
+                        MCPManager?.dispose()
                     }
                 })
         )

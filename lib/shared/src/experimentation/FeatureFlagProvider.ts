@@ -160,7 +160,17 @@ export enum FeatureFlag {
      * This is not for external use and should not be exposed to users.
      */
     NextAgenticChatInternal = 'next-agentic-chat-internal',
+
+    /**
+     * Allow Deep Cody to use MCP tools during context fetching steps.
+     */
     AgenticChatWithMCP = 'agentic-chat-mcp-enabled',
+
+    /**
+     * Disable agentic context for chat - Deep Cody disabled
+     * When set to true, context will not be added to chat automatically.
+     */
+    AgenticContextDisabled = 'agentic-context-disabled',
 }
 
 const ONE_HOUR = 60 * 60 * 1000
