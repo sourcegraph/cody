@@ -88,7 +88,6 @@ const McpSettingsSchema = z.object({
  * Main MCP Manager class that coordinates connection and server management
  */
 export class MCPManager {
-    // Static properties
     public static instance: MCPManager | undefined
     private static readonly CONFIG_SECTION = 'cody'
     private static readonly MCP_SERVERS_KEY = 'mcpServers'
@@ -155,7 +154,6 @@ export class MCPManager {
     }
 
     /**
-     * Handle connection status changes
      */
     private handleConnectionStatusChange(event: {
         status: string
@@ -179,14 +177,12 @@ export class MCPManager {
     }
 
     /**
-     * Static initialization
      */
     public static async init(): Promise<MCPManager | undefined> {
         return MCPManager.instance ? MCPManager.instance : new MCPManager()
     }
 
     /**
-     * Instance initialization
      */
     private async init(): Promise<void> {
         try {
