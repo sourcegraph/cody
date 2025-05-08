@@ -55,7 +55,7 @@ describe('Autoedits RequestManager', () => {
             await vi.advanceTimersByTimeAsync(100)
             yield createSuccessResponse(
                 prediction,
-                params.documentUri,
+                params.document.uri.toString(),
                 params.requestDocContext,
                 params.codeToReplaceData
             )
@@ -350,7 +350,7 @@ async function startRequests({
             }
             yield createSuccessResponse(
                 prediction,
-                requestParams.documentUri,
+                requestParams.document.uri.toString(),
                 requestParams.requestDocContext,
                 requestParams.codeToReplaceData
             )
@@ -413,6 +413,11 @@ function createRequestParams(
     const documentText = isTemplateStringsArray(code) ? dedent(code) : code.toString()
     const { document, position } = documentAndPosition(documentText)
 
+    const documentWithVersion = {
+        ...document,
+        version: documentVersion,
+    }
+
     const codeToReplaceData = createCodeToReplaceDataForTest(code, {
         maxPrefixLength: 100,
         maxSuffixLength: 100,
@@ -426,9 +431,7 @@ function createRequestParams(
 
     return {
         requestId: 'test-request-id' as any,
-        documentUri: document.uri.toString(),
-        documentText: document.getText(),
-        documentVersion,
+        document: documentWithVersion,
         position,
         requestUrl: 'https://test.com',
         abortSignal: new AbortController().signal,
