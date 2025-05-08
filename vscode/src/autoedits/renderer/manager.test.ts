@@ -12,7 +12,6 @@ import { getCodeToReplaceForRenderer } from '../prompt/test-helper'
 import { AutoEditsRendererManager } from '../renderer/manager'
 
 import { RequestManager } from '../request-manager'
-import { InlineDiffDecorator } from './decorators/inline-diff-decorator'
 import type { TryMakeInlineCompletionsArgs } from './manager'
 import type { CompletionRenderOutput } from './render-output'
 
@@ -57,11 +56,7 @@ describe('AutoEditsDefaultRendererManager', () => {
         const fixupController = new FixupController(extensionClient)
 
         beforeEach(() => {
-            manager = new AutoEditsRendererManager(
-                (editor: vscode.TextEditor) => new InlineDiffDecorator(editor),
-                fixupController,
-                new RequestManager()
-            )
+            manager = new AutoEditsRendererManager(fixupController, new RequestManager())
         })
 
         const assertInlineCompletionItems = (
