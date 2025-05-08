@@ -300,62 +300,6 @@ export function isSimpleLineDiff(changes: LineChange[]): boolean {
 }
 
 /**
- * Checks if the changes are clean replacements.
- * For example:
- * 1. Unchanged -> Insertion/Deletion -> Unchanged
- * 2. Unchanged -> Insertion -> Deletion -> Unchanged
- * 3. Unchanged -> Deletion -> Insertion -> Unchanged
- *
- * A "dirty" replacement is where we end up with 3 or more deletions/insertions that are adjacent
- * For example:
- * 1. Insertion -> Deletion -> Insertion -> Unchanged
- */
-function hasCleanReplacements(changes: LineChange[]): boolean {
-    const segments: { type: 'unchanged' | 'modification'; changes: LineChange[] }[] = []
-    let currentSegment: { type: 'unchanged' | 'modification'; changes: LineChange[] } | null = null
-
-    for (const change of changes) {
-        const isModification = change.type === 'insert' || change.type === 'delete'
-        const segmentType = isModification ? 'modification' : 'unchanged'
-
-        if (!currentSegment || currentSegment.type !== segmentType) {
-            if (currentSegment) {
-                segments.push(currentSegment)
-            }
-            // First change, always simple at this point
-            continue
-        }
-
-        const incomingModification = incomingChange.type !== 'unchanged'
-        if (lastChange.isReplacement && incomingModification) {
-            // We just had a replacement and now we have another change.
-            // This creates a diff that is difficult to read
-            return false
-        }
-
-        if (incomingChange.type === 'unchanged') {
-            // Check if the unchanged text contains some whitespace, this is an indicator
-            // that we can use this to seperate multiple changes without worrying about
-            // the diff splitting words into multiple change chunks
-            const isSuitableSeparator = /\s/.test(incomingChange.text)
-            const isLastChange = i === changes.length - 1
-            if (!isSuitableSeparator && !isLastChange) {
-                return false
-            }
-            lastChange = { type: incomingChange.type, isReplacement: false }
-            continue
-        }
-
-        lastChange = {
-            type: incomingChange.type,
-            isReplacement: lastChange.type !== 'unchanged',
-        }
-    }
-
-    return true
-}
-
-/**
  * Creates a ModifiedLineInfo object by computing insertions and deletions within a line.
  */
 function createModifiedLineInfo(params: {
