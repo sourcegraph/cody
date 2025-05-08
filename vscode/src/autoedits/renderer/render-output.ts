@@ -26,6 +26,7 @@ export interface GetRenderOutputArgs {
     position: vscode.Position
     decorationInfo: DecorationInfo
     codeToReplaceData: CodeToReplaceData
+    inlineCompletionContext: vscode.InlineCompletionContext
 }
 
 interface NoCompletionRenderOutput {
@@ -190,6 +191,7 @@ export class AutoEditsRenderOutput {
         args: GetRenderOutputArgs,
         capabilities: AutoeditClientCapabilities
     ): CompletionRenderOutput | CompletionWithDecorationsRenderOutput | null {
+        console.log('UMPOX CODE TO REWIRTE', args.codeToReplaceData.codeToRewrite)
         const completions = this.tryMakeInlineCompletions(args)
         if (!completions) {
             // Cannot render a completion
@@ -237,27 +239,58 @@ export class AutoEditsRenderOutput {
         return null
     }
 
+    private getInsertionPositionForInlineCompletion(
+        position: vscode.Position,
+        inlineCompletionContext: vscode.InlineCompletionContext
+    ) {
+        const { selectedCompletionInfo } = inlineCompletionContext
+        if (!selectedCompletionInfo) {
+            // No need to modify the cursor position
+            return position
+        }
+
+        const selectedCompletionLines = selectedCompletionInfo.text.split('\n')
+        if (selectedCompletionLines.length === 1) {
+            return new vscode.Position(
+                selectedCompletionInfo.range.start.line,
+                selectedCompletionInfo.range.start.character + selectedCompletionInfo.text.length
+            )
+        }
+
+        const lastInsertionLine = selectedCompletionLines[selectedCompletionLines.length - 1]
+        return new vscode.Position(
+            selectedCompletionInfo.range.start.line + selectedCompletionLines.length - 1,
+            lastInsertionLine.length
+        )
+    }
+
     private tryMakeInlineCompletions({
         requestId,
         position,
         prediction,
         document,
         decorationInfo,
+        inlineCompletionContext,
     }: GetRenderOutputArgs): {
         type: 'full' | 'partial'
         inlineCompletionItems: AutoeditCompletionItem[]
         updatedDecorationInfo: DecorationInfo
         updatedPrediction: string
     } | null {
+        const insertionPosition = this.getInsertionPositionForInlineCompletion(
+            position,
+            inlineCompletionContext
+        )
         const { insertText, usedChangeIds } = getCompletionText({
             prediction,
-            cursorPosition: position,
+            cursorPosition: insertionPosition,
             decorationInfo,
         })
 
         const { currentLinePrefix, currentLineSuffix } = getCurrentLinePrefixAndSuffix({
             document,
-            position,
+            position: insertionPosition,
+            inlineCompletionContext,
         })
 
         if (insertText.length === 0) {

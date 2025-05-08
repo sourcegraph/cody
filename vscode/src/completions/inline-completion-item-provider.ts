@@ -82,6 +82,8 @@ interface CompletionRequest {
 
 export const PRELOAD_DEBOUNCE_INTERVAL = 150
 
+
+
 interface PreloadCompletionContext extends vscode.InlineCompletionContext {
     isPreload: true
 

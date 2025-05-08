@@ -15,13 +15,20 @@ import type {
 export function getDecorationInfoFromPrediction(
     document: vscode.TextDocument,
     prediction: string,
-    range: vscode.Range
+    range: vscode.Range,
+    inlineCompletionContext: vscode.InlineCompletionContext
 ): DecorationInfo {
     const currentFileText = document.getText()
     const predictedFileText =
         currentFileText.slice(0, document.offsetAt(range.start)) +
         prediction +
         currentFileText.slice(document.offsetAt(range.end))
+
+    console.log('UMPOX COMPARING', {
+        before: document.getText(range),
+        after: prediction,
+        inlineCompletionContext,
+    })
 
     const decorationInfo = getDecorationInfo(currentFileText, predictedFileText)
     return decorationInfo

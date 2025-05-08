@@ -46,11 +46,12 @@ import {
     autoeditTriggerKind,
     getTimeNowInMillis,
 } from './analytics-logger'
-import { AutoeditCompletionItem } from './autoedit-completion-item'
+import type { AutoeditCompletionItem } from './autoedit-completion-item'
 import { autoeditsOnboarding } from './autoedit-onboarding'
 import { autoeditsProviderConfig } from './autoedits-config'
 import { FilterPredictionBasedOnRecentEdits } from './filter-prediction-edits'
 import { processHotStreakResponses } from './hot-streak'
+import { getCompletionContextAwareDocument } from './inline-completion-context'
 import { createMockResponseGenerator } from './mock-response-generator'
 import { autoeditsOutputChannelLogger } from './output-channel-logger'
 import type { AutoeditsUserPromptStrategy } from './prompt/base'
@@ -322,7 +323,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
     }
 
     public async provideInlineCompletionItems(
-        document: vscode.TextDocument,
+        invokedDocument: vscode.TextDocument,
         position: vscode.Position,
         inlineCompletionContext: vscode.InlineCompletionContext,
         token?: vscode.CancellationToken
@@ -330,28 +331,8 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
         let stopLoading: (() => void) | undefined
         const startedAt = getTimeNowInMillis()
 
-        if (inlineCompletionContext.selectedCompletionInfo !== undefined) {
-            const { range, text } = inlineCompletionContext.selectedCompletionInfo
-            const completion = new AutoeditCompletionItem({
-                id: null,
-                insertText: text,
-                range,
-                withoutCurrentLinePrefix: { insertText: text, range },
-            })
-            // User has a currently selected item in the autocomplete widget.
-            // Instead of attempting to suggest an auto-edit, just show the selected item
-            // as the completion. This is to avoid an undesirable edit conflicting with the acceptance
-            // of the item shown in the widget.
-            // TODO: We should consider the optimal solution here, it may be better to show an
-            // inline completion (not an edit) that includes the currently selected item.
-            return {
-                items: [completion],
-                inlineCompletionItems: [completion],
-                decoratedEditItems: [],
-            }
-        }
-
         try {
+            const document = getCompletionContextAwareDocument(invokedDocument, inlineCompletionContext)
             const triggerKind =
                 this.lastManualTriggerTimestamp > performance.now() - 50
                     ? autoeditTriggerKind.manual
@@ -400,6 +381,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                 position,
                 maxPrefixLength: tokensToChars(autoeditsProviderConfig.tokenLimit.prefixTokens),
                 maxSuffixLength: tokensToChars(autoeditsProviderConfig.tokenLimit.suffixTokens),
+                context: inlineCompletionContext,
             })
 
             // Determine the code to replace for this specific request
@@ -480,6 +462,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                 prompt,
                 codeToReplaceData: requestCodeToReplaceData,
                 requestDocContext,
+                inlineCompletionContext,
                 abortSignal,
                 triggerKind,
             })
@@ -587,7 +570,8 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
             const decorationInfo = getDecorationInfoFromPrediction(
                 document,
                 prediction,
-                predictionCodeToReplaceData.range
+                predictionCodeToReplaceData.range,
+                inlineCompletionContext
             )
 
             if (
@@ -615,6 +599,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                     position,
                     decorationInfo,
                     codeToReplaceData: predictionCodeToReplaceData,
+                    inlineCompletionContext,
                 },
                 this.capabilities
             )
@@ -624,6 +609,23 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                     startedAt,
                     requestId,
                     discardReason: 'emptyPredictionAfterInlineCompletionExtraction',
+                    prediction: initialPrediction,
+                })
+                return null
+            }
+
+            if (
+                inlineCompletionContext.selectedCompletionInfo &&
+                renderOutput.type !== 'completion' &&
+                renderOutput.type !== 'legacy-completion'
+            ) {
+                // We ensure that `codeToRewrite` includes the `selectedCompletionInfo` but we also guard against
+                // suggestions from the LLM where it isn't a pure inline completion. This is because it would be unexpected
+                // to Tab to accept an item from `selectedCompletionInfo` and have an auto-edit also remove code.
+                this.discardSuggestion({
+                    startedAt,
+                    requestId,
+                    discardReason: 'incompatibleWithSelectedCompletionContextItem',
                     prediction: initialPrediction,
                 })
                 return null
@@ -856,6 +858,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
         position,
         codeToReplaceData,
         requestDocContext,
+        inlineCompletionContext,
         prompt,
         abortSignal,
         triggerKind,
@@ -865,6 +868,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
         position: vscode.Position
         codeToReplaceData: CodeToReplaceData
         requestDocContext: DocumentContext
+        inlineCompletionContext: vscode.InlineCompletionContext
         prompt: AutoeditsPrompt
         abortSignal: AbortSignal
         triggerKind: AutoeditTriggerKindMetadata
@@ -902,6 +906,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                             document,
                             codeToReplaceData,
                             requestDocContext,
+                            inlineCompletionContext,
                             position,
                             options: {
                                 hotStreakEnabled: this.features.shouldHotStreak,
@@ -936,6 +941,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                 document,
                 codeToReplaceData,
                 requestDocContext,
+                inlineCompletionContext,
                 position,
                 options: {
                     hotStreakEnabled: this.features.shouldHotStreak,
