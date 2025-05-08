@@ -301,7 +301,6 @@ describe('getHotStreakChunk', () => {
               // Check if numberToChange is 1
               if (numberToChange === 1) {
                   return false
-              }
           "
         `)
         expect(document.getText(result.range)).toMatchInlineSnapshot(`
@@ -314,7 +313,6 @@ describe('getHotStreakChunk', () => {
               // Check if numberToChange is 1
               if (numberToChange === 1) {
                   return false
-              }
           "
         `)
     })

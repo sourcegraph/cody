@@ -6,6 +6,7 @@ import type { CodeToReplaceData } from '@sourcegraph/cody-shared'
 import type { PartialModelResponse, SuccessModelResponse } from '../adapters/base'
 import { shrinkPredictionUntilSuffix } from '../shrink-prediction'
 
+import { getNewLineChar } from '../../completions/text-processing'
 import { SHOULD_USE_HOT_STREAK_CHUNK_THRESHOLD } from './constants'
 
 // Helper enum for code readability when handling slices
@@ -31,6 +32,29 @@ interface StableSuggestion {
     removedLines: string[]
 }
 
+export function normalizePrediction(prediction: string, codeToReplaceData: CodeToReplaceData): string {
+    const truncatedPrediction = shrinkPredictionUntilSuffix({
+        prediction,
+        codeToReplaceData,
+    })
+    const codeToRewriteNewLine = getNewLineChar(codeToReplaceData.codeToRewrite)
+    const codeToRewriteEndsWithNewLine = codeToReplaceData.codeToRewrite.endsWith(codeToRewriteNewLine)
+    const predictionNewLine = getNewLineChar(truncatedPrediction)
+    const predictionEndsWithNewLine = truncatedPrediction.endsWith(predictionNewLine)
+
+    if (codeToRewriteEndsWithNewLine && !predictionEndsWithNewLine) {
+        // Prediction needs to end with a new line to be safely diffed with the code to rewrite
+        return truncatedPrediction + predictionNewLine
+    }
+
+    if (!codeToRewriteEndsWithNewLine && predictionEndsWithNewLine) {
+        // Prediction needs to remove the final new line to be safely diffed with the code to rewrite
+        return truncatedPrediction.slice(0, -predictionNewLine.length)
+    }
+
+    return truncatedPrediction
+}
+
 /**
  * Given a _proposed_ prediction and a _proposed_ range, attempts to form a stable suggestion
  * that is accurate and can be used for diffing purposes.
@@ -46,17 +70,8 @@ export function getStableSuggestion({
     response,
 }: StableSuggestionParams): StableSuggestion | null {
     const originalLines = document.getText(range).split('\n')
-    const truncatedPrediction = shrinkPredictionUntilSuffix({
-        prediction,
-        codeToReplaceData,
-    })
-    let predictionLines = truncatedPrediction.split('\n')
-
-    // Since we always expect that a prediction ends with a new line, which actually is a start
-    // of the existing suffix line we should not this line for diffing
-    if (predictionLines.at(-1) === '') {
-        predictionLines = predictionLines.slice(0, -1)
-    }
+    const normalizedPrediction = normalizePrediction(prediction, codeToReplaceData)
+    const predictionLines = normalizedPrediction.split('\n')
 
     // TODO (umpox): `calcSlices` is useful here as it splits the diff into change hunks.
     // It would be preferable if this would use the exact same diff logic as `getDecorationInfo`.
@@ -138,10 +153,6 @@ export function getStableSuggestion({
     const canSuggest = response.type === 'success' || state.canSuggestDiff
     if (!canSuggest) {
         return null
-    }
-
-    if (prediction.slice(codeToReplaceData.codeToRewrite.length) === '\n' && state.firstLineChanged) {
-        console.log('suspect!')
     }
 
     return {
