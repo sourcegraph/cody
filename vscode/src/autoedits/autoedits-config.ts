@@ -53,7 +53,7 @@ export const defaultTokenLimit: AutoEditsTokenLimit = {
 
 export const hotStreakTokenLimit: AutoEditsTokenLimit = {
     ...defaultTokenLimit,
-    codeToRewritePrefixLines: 1,
+    codeToRewritePrefixLines: 4,
     codeToRewriteSuffixLines: 24,
     contextSpecificTokenLimit: {
         [RetrieverIdentifier.RecentEditsRetriever]: 1000,
