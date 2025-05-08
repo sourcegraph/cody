@@ -6,8 +6,9 @@ import {
     serializedPromptEditorStateFromChatMessage,
 } from '@sourcegraph/cody-shared'
 import type { PromptEditorRefAPI } from '@sourcegraph/prompt-editor'
-import { type FC, memo, useMemo } from 'react'
+import { type FC, memo, useEffect, useMemo, useRef } from 'react'
 import type { UserAccountInfo } from '../../../../Chat'
+import { getVSCodeAPI } from '../../../../utils/VSCodeApi'
 import { BaseMessageCell } from '../BaseMessageCell'
 import { HumanMessageEditor } from './editor/HumanMessageEditor'
 
@@ -96,34 +97,58 @@ const HumanMessageCellContent = memo<HumanMessageCellContent>(props => {
         intent,
     } = props
 
+    const containerRef = useRef<HTMLDivElement>(null)
+
+    useEffect(() => {
+        if (!containerRef.current) return
+        const handleCopy = (event: ClipboardEvent) => {
+            const selectedText = window.getSelection()?.toString() || ''
+            getVSCodeAPI().postMessage({
+                command: 'copy',
+                text: selectedText,
+                eventType: 'Keydown',
+            })
+        }
+
+        containerRef.current.addEventListener('copy', handleCopy)
+
+        return () => {
+            if (containerRef.current) {
+                containerRef.current.removeEventListener('copy', handleCopy)
+            }
+        }
+    }, [])
+
     return (
         <BaseMessageCell
             content={
-                <HumanMessageEditor
-                    models={models}
-                    userInfo={userInfo}
-                    initialEditorState={initialEditorState}
-                    placeholder={
-                        isFirstMessage
-                            ? 'Ask anything. Use @ to specify context...'
-                            : 'Use @ to add more context...'
-                    }
-                    isFirstMessage={isFirstMessage}
-                    isSent={isSent}
-                    isPendingPriorResponse={isPendingPriorResponse}
-                    onChange={onChange}
-                    onSubmit={onSubmit}
-                    onStop={onStop}
-                    disabled={!chatEnabled}
-                    isFirstInteraction={isFirstInteraction}
-                    isLastInteraction={isLastInteraction}
-                    isEditorInitiallyFocused={isEditorInitiallyFocused}
-                    editorRef={editorRef}
-                    __storybook__focus={__storybook__focus}
-                    onEditorFocusChange={onEditorFocusChange}
-                    selectedIntent={intent}
-                    manuallySelectIntent={manuallySelectIntent}
-                />
+                <div ref={containerRef}>
+                    <HumanMessageEditor
+                        models={models}
+                        userInfo={userInfo}
+                        initialEditorState={initialEditorState}
+                        placeholder={
+                            isFirstMessage
+                                ? 'Ask anything. Use @ to specify context...'
+                                : 'Use @ to add more context...'
+                        }
+                        isFirstMessage={isFirstMessage}
+                        isSent={isSent}
+                        isPendingPriorResponse={isPendingPriorResponse}
+                        onChange={onChange}
+                        onSubmit={onSubmit}
+                        onStop={onStop}
+                        disabled={!chatEnabled}
+                        isFirstInteraction={isFirstInteraction}
+                        isLastInteraction={isLastInteraction}
+                        isEditorInitiallyFocused={isEditorInitiallyFocused}
+                        editorRef={editorRef}
+                        __storybook__focus={__storybook__focus}
+                        onEditorFocusChange={onEditorFocusChange}
+                        selectedIntent={intent}
+                        manuallySelectIntent={manuallySelectIntent}
+                    />
+                </div>
             }
             className={className}
         />
