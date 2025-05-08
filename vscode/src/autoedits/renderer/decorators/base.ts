@@ -64,8 +64,6 @@ export interface AutoEditsDecorator extends vscode.Disposable {
 
     /**
      * Hides decorations from all editors where they might be shown
-     *
-     * @param uri The document URI where decorations should be applied
      */
     hideDecorations(): void
 }

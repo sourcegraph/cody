@@ -357,7 +357,7 @@ export class AutoEditsRendererManager extends AutoEditsRenderOutput {
             !activeRequest ||
             !areSameUriDocs(editor.document, this.activeRequest?.document)
         ) {
-            return this.rejectActiveEdit(autoeditRejectReason.acceptActiveEdit, uri)
+            return this.rejectActiveEdit(autoeditRejectReason.acceptActiveEdit)
         }
 
         this.requestManager.removeFromCache(activeRequest.cacheId)
