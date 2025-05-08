@@ -20,15 +20,12 @@ export class InlineDiffDecorator implements vscode.Disposable, AutoEditsDecorato
         editor.setDecorations(this.insertMarkerDecorationType, decorations.insertMarkerDecorations)
     }
 
-    public hideDecorations(uri: vscode.Uri): void {
-        const editor = this.getEditorForUri(uri)
-        if (!editor) {
-            return
+    public hideDecorations(): void {
+        for (const editor of vscode.window.visibleTextEditors) {
+            editor.setDecorations(this.addedTextDecorationType, [])
+            editor.setDecorations(this.removedTextDecorationType, [])
+            editor.setDecorations(this.insertMarkerDecorationType, [])
         }
-
-        editor.setDecorations(this.addedTextDecorationType, [])
-        editor.setDecorations(this.removedTextDecorationType, [])
-        editor.setDecorations(this.insertMarkerDecorationType, [])
     }
 
     private getEditorForUri(uri: vscode.Uri): vscode.TextEditor | undefined {

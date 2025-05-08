@@ -330,7 +330,7 @@ export class AutoEditsRendererManager extends AutoEditsRenderOutput {
         })
     }
 
-    protected async handleDidHideSuggestion(uri: vscode.Uri): Promise<void> {
+    protected async handleDidHideSuggestion(): Promise<void> {
         // Hide inline decorations
         this.decorator.hideDecorations()
         await vscode.commands.executeCommand('setContext', 'cody.supersuggest.active', false)
@@ -345,10 +345,7 @@ export class AutoEditsRendererManager extends AutoEditsRenderOutput {
         return this.acceptActiveEdit(autoeditAcceptReason.acceptCommand)
     }
 
-    protected async acceptActiveEdit(
-        acceptReason: AutoeditAcceptReasonMetadata,
-        uri: vscode.Uri
-    ): Promise<void> {
+    protected async acceptActiveEdit(acceptReason: AutoeditAcceptReasonMetadata): Promise<void> {
         const editor = vscode.window.activeTextEditor
         const { activeRequest } = this
 
@@ -368,7 +365,7 @@ export class AutoEditsRendererManager extends AutoEditsRenderOutput {
         // Reset the testing promise when accepting
         this.testing_completionSuggestedPromise = undefined
 
-        await this.handleDidHideSuggestion(activeRequest.document.uri)
+        await this.handleDidHideSuggestion()
         autoeditAnalyticsLogger.markAsAccepted({
             requestId: activeRequest.requestId,
             acceptReason,
@@ -396,10 +393,7 @@ export class AutoEditsRendererManager extends AutoEditsRenderOutput {
         })
     }
 
-    protected async rejectActiveEdit(
-        rejectReason: AutoeditRejectReasonMetadata,
-        uri: vscode.Uri
-    ): Promise<void> {
+    protected async rejectActiveEdit(rejectReason: AutoeditRejectReasonMetadata): Promise<void> {
         const { activeRequest } = this
 
         if (activeRequest) {
@@ -409,7 +403,7 @@ export class AutoEditsRendererManager extends AutoEditsRenderOutput {
         // Reset the testing promise when rejecting
         this.testing_completionSuggestedPromise = undefined
 
-        await this.handleDidHideSuggestion(uri)
+        await this.handleDidHideSuggestion()
 
         if (activeRequest) {
             autoeditAnalyticsLogger.markAsRejected({
@@ -419,12 +413,11 @@ export class AutoEditsRendererManager extends AutoEditsRenderOutput {
         }
     }
 
-    public async renderInlineDecorations(decorations: AutoEditDecorations): Promise<void> {
-        if (!this.decorator) {
-            // No decorator to render the decorations
-            return
-        }
-        this.decorator.setDecorations(decorations)
+    public async renderInlineDecorations(
+        uri: vscode.Uri,
+        decorations: AutoEditDecorations
+    ): Promise<void> {
+        this.decorator.setDecorations(uri, decorations)
         await vscode.commands.executeCommand('setContext', 'cody.supersuggest.active', true)
     }
 

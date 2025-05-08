@@ -667,7 +667,10 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
             }
 
             if ('decorations' in renderOutput) {
-                await this.rendererManager.renderInlineDecorations(renderOutput.decorations)
+                await this.rendererManager.renderInlineDecorations(
+                    document.uri,
+                    renderOutput.decorations
+                )
             }
 
             if ('inlineCompletionItems' in renderOutput) {
