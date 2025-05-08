@@ -89,7 +89,7 @@ export function isRequestNotRelevant(
     oldParams: AutoeditRequestManagerParams,
     currentParams: AutoeditRequestManagerParams
 ): NotRecyclableReason | false {
-    if (oldParams.documentUri !== currentParams.documentUri) {
+    if (oldParams.document.uri !== currentParams.document.uri) {
         return notRecyclableReason.notSameFile
     }
 

@@ -872,9 +872,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
         const requestParams: AutoeditRequestManagerParams = {
             requestId,
             requestUrl: autoeditsProviderConfig.url,
-            documentUri: document.uri.toString(),
-            documentText: document.getText(),
-            documentVersion: document.version,
+            document,
             codeToReplaceData,
             requestDocContext,
             position,

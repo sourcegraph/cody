@@ -20,9 +20,7 @@ import { isNotRecyclable, isRequestNotRelevant } from './request-recycling'
 export interface AutoeditRequestManagerParams {
     requestId: AutoeditRequestID
     requestUrl: string
-    documentUri: string
-    documentText: string
-    documentVersion: number
+    document: vscode.TextDocument
     codeToReplaceData: CodeToReplaceData
     requestDocContext: DocumentContext
     position: vscode.Position
@@ -177,8 +175,7 @@ export class RequestManager implements vscode.Disposable {
         params: AutoeditRequestManagerParams
     ): InflightRequest | undefined {
         const key = createRequestKey({
-            documentUri: params.documentUri,
-            documentVersion: params.documentVersion,
+            document: params.document,
             position: params.position,
         })
 
@@ -212,7 +209,7 @@ export class RequestManager implements vscode.Disposable {
             })
         }
 
-        const matches = this.getValidCacheItemsForDocument(params.documentText, params.documentUri)
+        const matches = this.getValidCacheItemsForDocument(params.document)
         if (matches.length === 0) {
             // No matches found
             return null
@@ -235,15 +232,12 @@ export class RequestManager implements vscode.Disposable {
         return closestMatch
     }
 
-    public getValidCacheItemsForDocument(
-        documentText: string,
-        documentUri: string
-    ): SuggestedPredictionResult[] {
+    public getValidCacheItemsForDocument(document: vscode.TextDocument): SuggestedPredictionResult[] {
         const matchingItems: SuggestedPredictionResult[] = []
 
         for (const key of [...this.cache.keys()]) {
             const item = this.cache.get(key)
-            if (!item || item.uri !== documentUri) {
+            if (!item || item.uri !== document.uri.toString()) {
                 continue
             }
 
@@ -254,9 +248,24 @@ export class RequestManager implements vscode.Disposable {
                 item.codeToReplaceData.codeToRewrite +
                 item.codeToReplaceData.suffixInArea
 
-            if (documentText.includes(rewriteArea)) {
-                matchingItems.push(item)
+            const fullDocumentText = document.getText()
+            if (!fullDocumentText.includes(rewriteArea)) {
+                // Document text does not include the rewrite area. It is likely that code has changed
+                // which means this suggestion is not relevant right now.
+                continue
             }
+
+            const rewriteText = document.getText(item.codeToReplaceData.range)
+            if (rewriteText !== item.codeToReplaceData.codeToRewrite) {
+                // Although the rewriteArea is present, it no longer matches the original range
+                // We cannot reliably use this suggestion anymore
+                // TODO: Consider if we can recover here by adjusting the codeToReplaceData to the intended rewrite area
+                continue
+            }
+
+            // rewriteArea is present and the codeToReplaceData is still valid
+            // We can use this suggestion
+            matchingItems.push(item)
         }
 
         return matchingItems
@@ -372,8 +381,7 @@ export class InflightRequest {
 
     constructor(public params: AutoeditRequestManagerParams) {
         this.key = createRequestKey({
-            documentUri: params.documentUri,
-            documentVersion: params.documentVersion,
+            document: params.document,
             position: params.position,
         })
         // TODO: decouple the autoedit provider abort signal from the one used by the request manager
@@ -402,17 +410,16 @@ export class InflightRequest {
      */
     public coversSameArea(params: AutoeditRequestManagerParams): boolean {
         return (
-            params.documentUri === this.params.documentUri &&
-            params.documentVersion === this.params.documentVersion &&
+            params.document.uri.toString() === this.params.document.uri.toString() &&
+            params.document.version === this.params.document.version &&
             params.position.line - this.params.position.line >= 0 &&
             params.position.line - this.params.position.line <= 1
         )
     }
 }
 
-interface RequestKeyParams
-    extends Pick<AutoeditRequestManagerParams, 'documentUri' | 'documentVersion' | 'position'> {}
+interface RequestKeyParams extends Pick<AutoeditRequestManagerParams, 'document' | 'position'> {}
 
-function createRequestKey({ documentUri, documentVersion, position }: RequestKeyParams): string {
-    return `${documentUri}:${documentVersion}:${position.line}`
+function createRequestKey({ document, position }: RequestKeyParams): string {
+    return `${document.uri.toString()}:${document.version}:${position.line}`
 }
