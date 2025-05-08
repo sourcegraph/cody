@@ -1,71 +1,120 @@
 package com.sourcegraph.common
 
-import com.intellij.openapi.vfs.VfsUtil
-import com.intellij.util.withPath
 import java.net.URI
 import java.net.URLDecoder
-import java.nio.file.InvalidPathException
+import java.nio.charset.StandardCharsets
 import java.nio.file.Path
 import java.nio.file.Paths
-import kotlin.io.path.toPath
+import java.util.Objects
 
-class CodyFileUri private constructor(val originalScheme: String, val uri: URI) {
-  val isUntitled: Boolean
-    get() = originalScheme == "untitled"
-
-  fun toPath(basePath: String?): Path {
-    var path = uri.toPath()
-    if (!path.isAbsolute && basePath != null) {
-      val fixedPath = Paths.get(path.toString().trimStart('/', '\\'))
-      path = Paths.get(basePath).resolve(fixedPath)
-    }
-    return path.normalize()
+class CodyFileUri
+private constructor(
+    val originalScheme: String?,
+    private val uri: URI,
+    private val basePath: String?
+) {
+  fun toPath(): Path {
+    return Paths.get(uri)
   }
 
-  fun toPath(): Path = uri.toPath()
+  fun toAbsolutePath(): Path {
+    var path = Paths.get(uri)
+    if (!path.isAbsolute && basePath != null) {
+      path = Paths.get(basePath).resolve(path)
+    }
+    return path
+  }
 
-  override fun toString() = uri.toString()
+  override fun toString(): String {
+    return uri.toString()
+  }
+
+  fun toUri(): URI {
+    return uri
+  }
+
+  fun isUntitled(): Boolean {
+    return Objects.equals(originalScheme, "untitled")
+  }
 
   companion object {
-    private fun getPath(path: String): Path? {
-      return try {
-        Paths.get(path)
-      } catch (e: InvalidPathException) {
-        null
+    @JvmStatic
+    fun parse(input: String, basePath: String?): CodyFileUri {
+      val uri: URI
+      val scheme: String?
+
+      if (input.startsWith("file:") || input.startsWith("untitled:")) {
+        var fixedInput = addSlashesToWinPath(input)
+        fixedInput = fixedInput.replace("//wsl.localhost", "////wsl.localhost")
+        uri = URI(fixedInput)
+        scheme = uri.scheme
+
+        var modifiedUri = uri
+        if (!Objects.equals(scheme, "file")) {
+          modifiedUri = replaceScheme(modifiedUri, "file")
+        }
+
+        if (!modifiedUri.schemeSpecificPart.startsWith("///")) {
+          modifiedUri = replacePath(modifiedUri, "///" + modifiedUri.schemeSpecificPart)
+        }
+
+        return CodyFileUri(scheme, modifiedUri, basePath)
+      } else {
+        val decodedInput = URLDecoder.decode(input, StandardCharsets.UTF_8)
+        scheme = null
+
+        var processedInput = decodedInput
+        if (processedInput.length > 1 &&
+            Character.isLetter(processedInput[0]) &&
+            processedInput[1] == ':') {
+          processedInput = processedInput.replace("\\", "/")
+        }
+
+        uri = URI("file:///" + processedInput.trimStart('/'))
       }
+
+      return CodyFileUri(scheme, uri, basePath)
     }
 
-    fun parse(input: String): CodyFileUri {
-      if (input.isEmpty()) throw IllegalArgumentException("Input cannot be empty")
+    private fun replacePath(originalUri: URI, newPath: String): URI {
+      val uriString = originalUri.toString()
+      val schemePos = uriString.indexOf(":")
+      val scheme = uriString.substring(0, schemePos + 1)
+      return URI(scheme + newPath)
+    }
 
-      var processedInput = input
-      if (processedInput.contains("%")) {
-        processedInput = URLDecoder.decode(processedInput, "UTF-8")
+    private fun replaceScheme(originalUri: URI, newScheme: String): URI {
+      val uriString = originalUri.toString().replace(originalUri.scheme + ":", "$newScheme:")
+      return URI(uriString)
+    }
+
+    private fun addSlashesToWinPath(uri: String?): String {
+      if (uri.isNullOrEmpty()) {
+        return uri ?: ""
       }
 
-      var uri: URI
-      val scheme: String
-      val path = getPath(processedInput)
-      if (path != null) {
-        uri = path.toUri()
-        scheme = ""
-      } else {
-        val colonIndex = processedInput.indexOf(':')
-        scheme = processedInput.substring(0, colonIndex)
-        processedInput = "file:///${processedInput.substring(colonIndex + 1).trimStart('/')}"
+      var processedUri = uri.replace("%3A", ":")
 
-        uri =
-            VfsUtil.toUri(processedInput)
-                ?: throw IllegalArgumentException("input is not valid uri")
-        if (uri.path == null) {
-          uri = uri.withPath("/" + uri.schemeSpecificPart)
-        }
-        if (uri.path.contains("wsl.localhost")) {
-          uri = uri.withPath("////" + uri.path.trimStart('/'))
-        }
+      val schemePos = processedUri.indexOf(":")
+      if (schemePos == -1) {
+        return processedUri
       }
 
-      return CodyFileUri(scheme, uri)
+      // Extract the scheme part (e.g., "file:" or "untitled:")
+      val scheme = processedUri.substring(0, schemePos + 1)
+
+      // Get the rest of the URI after the scheme
+      val path = processedUri.substring(schemePos + 1)
+
+      // Check if the path starts with slashes followed by a drive letter pattern
+      if (path.matches("/{0,2}[a-zA-Z]:/.*".toRegex())) {
+        // Extract the drive letter part
+        val drivePath = path.replaceFirst("^/+".toRegex(), "")
+        // Ensure we have exactly three slashes between scheme and drive letter
+        return "$scheme///$drivePath"
+      }
+
+      return processedUri
     }
   }
 }

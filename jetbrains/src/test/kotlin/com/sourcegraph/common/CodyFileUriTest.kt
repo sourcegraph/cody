@@ -10,7 +10,7 @@ class CodyFileUriTest(private val uri: String, private val expectedUri: String) 
 
   @Test
   fun `can parse uri from agent`() {
-    val result = CodyFileUri.parse(uri)
+    val result = CodyFileUri.parse(uri, null)
 
     assertEquals(expectedUri, result.toString())
   }
