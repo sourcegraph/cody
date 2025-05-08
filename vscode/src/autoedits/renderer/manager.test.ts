@@ -7,14 +7,19 @@ import { documentAndPosition } from '../../completions/test-helpers'
 import { defaultVSCodeExtensionClient } from '../../extension-client'
 import { FixupController } from '../../non-stop/FixupController'
 import type { AutoeditRequestID } from '../analytics-logger'
-import { getDecorationInfoFromPrediction } from '../autoedits-provider'
+import { type AutoeditClientCapabilities, getDecorationInfoFromPrediction } from '../autoedits-provider'
 import { getCodeToReplaceForRenderer } from '../prompt/test-helper'
-import { AutoEditsDefaultRendererManager } from '../renderer/manager'
+import { AutoEditsRendererManager } from '../renderer/manager'
 
 import { RequestManager } from '../request-manager'
-import { DefaultDecorator } from './decorators/default-decorator'
 import type { TryMakeInlineCompletionsArgs } from './manager'
 import type { CompletionRenderOutput } from './render-output'
+
+const mockCapabilities: AutoeditClientCapabilities = {
+    autoedit: 'enabled',
+    autoeditInlineDiff: 'insertions-and-deletions',
+    autoeditAsideDiff: 'diff',
+}
 
 describe('AutoEditsDefaultRendererManager', () => {
     const getAutoeditRendererManagerArgs = (
@@ -46,16 +51,12 @@ describe('AutoEditsDefaultRendererManager', () => {
     }
 
     describe('tryMakeInlineCompletions', () => {
-        let manager: AutoEditsDefaultRendererManager
+        let manager: AutoEditsRendererManager
         const extensionClient = defaultVSCodeExtensionClient()
         const fixupController = new FixupController(extensionClient)
 
         beforeEach(() => {
-            manager = new AutoEditsDefaultRendererManager(
-                (editor: vscode.TextEditor) => new DefaultDecorator(editor),
-                fixupController,
-                new RequestManager()
-            )
+            manager = new AutoEditsRendererManager(fixupController, new RequestManager())
         })
 
         const assertInlineCompletionItems = (
@@ -78,10 +79,10 @@ describe('AutoEditsDefaultRendererManager', () => {
             `
             const prediction = dedent`const c = 3
                 console.log(a, b, c)
-                function greet() { console.log("Hello") }
+                function greet() { console.log("Hello") }\n
             `
             const args = getAutoeditRendererManagerArgs(documentText, prediction)
-            const result = manager.getRenderOutput(args) as CompletionRenderOutput
+            const result = manager.getRenderOutput(args, mockCapabilities) as CompletionRenderOutput
             expect(result).toBeDefined()
             assertInlineCompletionItems(
                 result.inlineCompletionItems,
@@ -105,10 +106,10 @@ describe('AutoEditsDefaultRendererManager', () => {
                 console.log(a, b, c)
                 const d = 10
                 const e = 20
-                function greet() { console.log("Hello") }
+                function greet() { console.log("Hello") }\n
             `
             const args = getAutoeditRendererManagerArgs(documentText, prediction)
-            const result = manager.getRenderOutput(args) as CompletionRenderOutput
+            const result = manager.getRenderOutput(args, mockCapabilities) as CompletionRenderOutput
             expect(result).toBeDefined()
             assertInlineCompletionItems(
                 result.inlineCompletionItems,
@@ -132,10 +133,10 @@ describe('AutoEditsDefaultRendererManager', () => {
             `
             const prediction = dedent`const c = 3
                 console.log(a, b, c)
-                function greet() { console.log("Hello") }
+                function greet() { console.log("Hello") }\n
             `
             const args = getAutoeditRendererManagerArgs(documentText, prediction)
-            const result = manager.getRenderOutput(args) as CompletionRenderOutput
+            const result = manager.getRenderOutput(args, mockCapabilities) as CompletionRenderOutput
             expect(result).toBeDefined()
             assertInlineCompletionItems(
                 result.inlineCompletionItems,

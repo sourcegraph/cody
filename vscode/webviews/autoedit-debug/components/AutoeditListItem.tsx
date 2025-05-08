@@ -20,12 +20,10 @@ const getFriendlyRenderOutputType = (type?: AutoEditRenderOutput['type']): strin
         case 'image':
             return 'Image'
         case 'decorations':
-        case 'legacy-decorations':
             return 'Decoration'
         case 'completion-with-decorations':
             return 'Completion/Decoration'
         case 'completion':
-        case 'legacy-completion':
             return 'Completion'
         default:
             return null
