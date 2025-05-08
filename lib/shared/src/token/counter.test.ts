@@ -125,8 +125,8 @@ describe('TokenCounter class', () => {
     })
 
     it('should return false when exceeds limits (sharing budget)', async () => {
-        const counter = TokenCounter.create({ input: 30, output: 0 })
-        expect(TokenCounterUtils.getMessagesTokenCount(preamble)).toBe(3)
+        const counter = await TokenCounter.create({ input: 30, output: 0 })
+        expect(await TokenCounterUtils.getMessagesTokenCount(preamble)).toBe(3)
         expect(counter.updateUsage('preamble', preamble)).toEqual({ succeeded: true })
         // Remaining tokens: 30 - 3 = 27
 
@@ -134,7 +134,7 @@ describe('TokenCounter class', () => {
             { speaker: 'human', text: ps`Hello` },
             { speaker: 'assistant', text: ps`Hi there!` },
         ] as Message[]
-        expect(TokenCounterUtils.getMessagesTokenCount(chatInputMessages)).toBe(4)
+        expect(await TokenCounterUtils.getMessagesTokenCount(chatInputMessages)).toBe(4)
         expect(counter.updateUsage('input', chatInputMessages)).toEqual({ succeeded: true })
         // Remaining tokens: 30 - 3 - 4 = 23
 
@@ -144,7 +144,7 @@ describe('TokenCounter class', () => {
             { speaker: 'human', text: ps`Here is my selected code...` },
             { speaker: 'assistant', text: ps`ok` },
         ] as Message[]
-        expect(TokenCounterUtils.getMessagesTokenCount(userContextMessages)).toBe(14)
+        expect(await TokenCounterUtils.getMessagesTokenCount(userContextMessages)).toBe(14)
         expect(counter.updateUsage('user', userContextMessages)).toEqual({ succeeded: true })
         // ADDED: Remaining tokens: 30 - 3 - 4 - 14 = 9
 
@@ -154,7 +154,7 @@ describe('TokenCounter class', () => {
             { speaker: 'human', text: ps`Here is my corpus context...` },
             { speaker: 'assistant', text: ps`ok` },
         ] as Message[]
-        expect(TokenCounterUtils.getMessagesTokenCount(corpusContextMessages)).toBe(7)
+        expect(await TokenCounterUtils.getMessagesTokenCount(corpusContextMessages)).toBe(7)
         expect(counter.updateUsage('corpus', corpusContextMessages)).toEqual({
             succeeded: false,
             reason: 'corpus context tokens exceeded remaining corpus context tokens (7 > 5)',
@@ -165,7 +165,7 @@ describe('TokenCounter class', () => {
             { speaker: 'human', text: ps`Need 5 tokens` },
             { speaker: 'assistant', text: ps`ok` },
         ] as Message[]
-        expect(TokenCounterUtils.getMessagesTokenCount(fiveTokensMessages)).toBe(5)
+        expect(await TokenCounterUtils.getMessagesTokenCount(fiveTokensMessages)).toBe(5)
         expect(counter.updateUsage('corpus', fiveTokensMessages)).toEqual({ succeeded: true })
         // ADDED: 5 tokens needed, within the remaining token budget of 5
     })
@@ -179,7 +179,7 @@ describe('TokenCounter class', () => {
             { speaker: 'human', text: ps`Hello` },
             { speaker: 'assistant', text: ps`Hi there!` },
         ] as Message[] // 4 tokens needed
-        expect(TokenCounterUtils.getMessagesTokenCount(greetings)).toBe(4)
+        expect(await TokenCounterUtils.getMessagesTokenCount(greetings)).toBe(4)
         expect(counter.updateUsage('input', greetings)).toEqual({ succeeded: true })
         // ADDED: Remaining input tokens: 17 - 4 = 13 & Remaining user tokens: 20
 
@@ -197,7 +197,7 @@ describe('TokenCounter class', () => {
             { speaker: 'human', text: ps`Hi` },
             { speaker: 'assistant', text: ps`ok` },
         ] as Message[]
-        expect(TokenCounterUtils.getMessagesTokenCount(shortMessages)).toBe(2)
+        expect(await TokenCounterUtils.getMessagesTokenCount(shortMessages)).toBe(2)
         expect(counter.updateUsage('corpus', shortMessages)).toEqual({ succeeded: true })
         // ADDED: Remaining input tokens: 13 - 2 = 11 & Remaining user tokens: 6
 
@@ -209,7 +209,7 @@ describe('TokenCounter class', () => {
             { speaker: 'assistant', text: ps`limit exceeded` },
         ] as Message[]
         // 11 exceeds the limit of the Enhanced Token Budget (7 * 0.6 = Round down to 4)
-        expect(TokenCounterUtils.getMessagesTokenCount(longMessages)).toBe(11)
+        expect(await TokenCounterUtils.getMessagesTokenCount(longMessages)).toBe(11)
         expect(counter.updateUsage('corpus', longMessages)).toEqual({
             succeeded: false,
             reason: 'corpus context tokens exceeded remaining corpus context tokens (11 > 5)',
@@ -299,7 +299,7 @@ describe('TokenCounter static', () => {
                 text: ps`This is a sample message.`,
                 speaker: 'human',
             }
-            const tokenCount = TokenCounterUtils.getMessagesTokenCount([message])
+            const tokenCount = await TokenCounterUtils.getMessagesTokenCount([message])
             expect(tokenCount).toBe(6)
         })
 
@@ -309,13 +309,13 @@ describe('TokenCounter static', () => {
                 { text: ps`How are you?`, speaker: 'assistant' },
                 { text: ps`I am doing well, thank you.`, speaker: 'human' },
             ]
-            const tokenCount = TokenCounterUtils.getMessagesTokenCount(messages)
+            const tokenCount = await TokenCounterUtils.getMessagesTokenCount(messages)
             expect(tokenCount).toBe(13)
         })
 
         it('should return 0 for an empty array of messages', async () => {
             const messages: Message[] = []
-            const tokenCount = TokenCounterUtils.getMessagesTokenCount(messages)
+            const tokenCount = await TokenCounterUtils.getMessagesTokenCount(messages)
             expect(tokenCount).toBe(0)
         })
     })
