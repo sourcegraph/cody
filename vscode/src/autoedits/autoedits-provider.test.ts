@@ -386,6 +386,14 @@ describe('AutoeditsProvider', () => {
             [
               "setContext",
               "cody.supersuggest.active",
+              false,
+            ],
+            [
+              "editor.action.inlineSuggest.hide",
+            ],
+            [
+              "setContext",
+              "cody.supersuggest.active",
               true,
             ],
             [
@@ -409,57 +417,96 @@ describe('AutoeditsProvider', () => {
         const prediction = 'const x = 1\n'
         await autoeditResultFor('const x = █\n', { prediction })
         expect(executedCommands).toMatchInlineSnapshot(`
-            []
+          [
+            [
+              "setContext",
+              "cody.supersuggest.active",
+              false,
+            ],
+            [
+              "editor.action.inlineSuggest.hide",
+            ],
+          ]
         `)
     })
 
     it('set the cody.supersuggest.active context for inline decoration items', async () => {
         const prediction = 'const a = 1\n'
         await autoeditResultFor('const x = █\n', { prediction })
-        expect(executedCommands).toMatchInlineSnapshot(`
-            [
-              [
-                "setContext",
-                "cody.supersuggest.active",
-                true,
-              ],
-            ]
-        `)
-        await acceptSuggestionCommand()
-
-        // Deactives the context after accepting the suggestion
-        expect(executedCommands.length).toBe(3)
-        expect(executedCommands[1]).toMatchInlineSnapshot(`
+        const currentExecutedCommands = [...executedCommands]
+        expect(currentExecutedCommands).toMatchInlineSnapshot(`
+          [
             [
               "setContext",
               "cody.supersuggest.active",
               false,
-            ]
+            ],
+            [
+              "editor.action.inlineSuggest.hide",
+            ],
+            [
+              "setContext",
+              "cody.supersuggest.active",
+              true,
+            ],
+          ]
+        `)
+        await acceptSuggestionCommand()
+
+        // Deactives the context after accepting the suggestion
+        const nextExecutedCommands = executedCommands.slice(currentExecutedCommands.length)
+        expect(nextExecutedCommands.length).toBe(2)
+        expect(nextExecutedCommands).toMatchInlineSnapshot(`
+          [
+            [
+              "setContext",
+              "cody.supersuggest.active",
+              false,
+            ],
+            [
+              "editor.action.inlineSuggest.hide",
+            ],
+          ]
         `)
     })
 
     it('unset the cody.supersuggest.active context for inline decoration rejection', async () => {
         const prediction = 'const a = 1\n'
         await autoeditResultFor('const x = █\n', { prediction })
-        expect(executedCommands).toMatchInlineSnapshot(`
-            [
-              [
-                "setContext",
-                "cody.supersuggest.active",
-                true,
-              ],
-            ]
-        `)
-        await rejectSuggestionCommand()
-
-        // Deactives the context after accepting the suggestion
-        expect(executedCommands.length).toBe(3)
-        expect(executedCommands[1]).toMatchInlineSnapshot(`
+        const currentExecutedCommands = [...executedCommands]
+        expect(currentExecutedCommands).toMatchInlineSnapshot(`
+          [
             [
               "setContext",
               "cody.supersuggest.active",
               false,
-            ]
+            ],
+            [
+              "editor.action.inlineSuggest.hide",
+            ],
+            [
+              "setContext",
+              "cody.supersuggest.active",
+              true,
+            ],
+          ]
+        `)
+        await rejectSuggestionCommand()
+
+        const nextExecutedCommands = executedCommands.slice(currentExecutedCommands.length)
+        // Deactives the context after accepting the suggestion
+        expect(nextExecutedCommands.length).toBe(2)
+        expect(nextExecutedCommands).toMatchInlineSnapshot(`
+          [
+            [
+              "setContext",
+              "cody.supersuggest.active",
+              false,
+            ],
+            [
+              "editor.action.inlineSuggest.hide",
+            ],
+          ]
         `)
     })
 
