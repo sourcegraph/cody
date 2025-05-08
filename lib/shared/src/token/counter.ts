@@ -15,9 +15,10 @@ export async function getTokenCounterUtils() {
     const { detect } = await import('detect-browser')
     const browser = detect()
     if (browser && browser.name === 'safari') {
-        _tokenCounterUtilsPromise = import('js-tiktoken/ranks/cl100k_base').then(tokenizer =>
-            createTokenCounterUtils(tokenizer)
-        )
+        _tokenCounterUtilsPromise = import('js-tiktoken/ranks/cl100k_base').then(async tokenizer => {
+            const tiktoken = await import('js-tiktoken/lite')
+            return createTokenCounterUtils(new tiktoken.Tiktoken(tokenizer.default))
+        })
     } else {
         _tokenCounterUtilsPromise = import('gpt-tokenizer/encoding/cl100k_base').then(tokenizer =>
             createTokenCounterUtils(tokenizer)
