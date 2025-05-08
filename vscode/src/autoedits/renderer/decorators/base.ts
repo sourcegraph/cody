@@ -56,17 +56,16 @@ export interface AutoEditsDecorator extends vscode.Disposable {
     /**
      * Applies decorations to the editor based on the provided decoration information.
      *
+     * @param uri The document URI where decorations should be applied
      * @param decorationInfo Contains the line-by-line information about text changes
      *        and how they should be decorated in the editor.
      */
-    setDecorations(
-        /**
-         * @deprecated Decorations are pre-computed by the manager in `getRenderOutput`.
-         * Use `decorations` instead.
-         */
-        decorationInfo: DecorationInfo,
-        decorations?: AutoEditDecorations
-    ): void
+    setDecorations(uri: vscode.Uri, decorations: AutoEditDecorations): void
+
+    /**
+     * Hides decorations from all editors where they might be shown
+     */
+    hideDecorations(): void
 }
 
 /**

@@ -54,7 +54,6 @@ import {
 import { createAutoEditsProvider } from './autoedits/create-autoedits-provider'
 import { autoeditDebugStore } from './autoedits/debug-panel/debug-store'
 import { autoeditsOutputChannelLogger } from './autoedits/output-channel-logger'
-import { registerAutoEditTestRenderCommand } from './autoedits/renderer/mock-renderer'
 import type { MessageProviderOptions } from './chat/MessageProvider'
 import { CodyToolProvider } from './chat/agentic/CodyToolProvider'
 import { ChatsController, CodyChatEditorViewType } from './chat/chat-view/ChatsController'
@@ -496,14 +495,6 @@ async function registerCodyCommands({
     // Initialize autoedit provider if experimental feature is enabled
     registerAutoEdits({ chatClient, fixupController, statusBar, disposables, context })
 
-    // Initialize autoedit tester
-    disposables.push(
-        enableFeature(
-            ({ configuration }) => configuration.experimentalAutoEditRendererTesting !== false,
-            () => registerAutoEditTestRenderCommand()
-        )
-    )
-
     disposables.push(
         subscriptionDisposable(
             featureFlagProvider
@@ -764,7 +755,6 @@ function registerAutoEdits({
                 featureFlagProvider.evaluatedFeatureFlag(
                     FeatureFlag.CodyAutoEditExperimentEnabledFeatureFlag
                 ),
-                featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyAutoEditInlineRendering),
                 featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyAutoEditHotStreak),
                 featureFlagProvider.evaluatedFeatureFlag(
                     FeatureFlag.CodyAutoEditUseWebSocketForFireworksConnections
@@ -783,7 +773,6 @@ function registerAutoEdits({
                             config,
                             authStatus,
                             autoeditFeatureFlagEnabled,
-                            autoeditInlineRenderingEnabled,
                             autoeditHotStreakEnabled,
                             autoeditUseWebSocketEnabled,
                         ]) => {
@@ -792,7 +781,6 @@ function registerAutoEdits({
                                 authStatus,
                                 chatClient,
                                 autoeditFeatureFlagEnabled,
-                                autoeditInlineRenderingEnabled,
                                 autoeditHotStreakEnabled,
                                 autoeditUseWebSocketEnabled,
                                 fixupController,

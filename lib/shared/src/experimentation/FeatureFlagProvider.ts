@@ -65,9 +65,6 @@ export enum FeatureFlag {
 
     CodyAutoEditExperimentEnabledFeatureFlag = 'cody-autoedit-experiment-enabled-flag',
 
-    // Enables inline rendering of autoedit suggestions
-    CodyAutoEditInlineRendering = 'cody-autoedit-inline-rendering',
-
     // Enables hot-streak for autoedit suggestions
     CodyAutoEditHotStreak = 'cody-autoedit-hot-streak-v1',
 
