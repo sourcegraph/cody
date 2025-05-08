@@ -1,6 +1,5 @@
 import { type AutocompleteContextSnippet, PromptString, ps } from '@sourcegraph/cody-shared'
 
-import { groupConsecutiveItemsByPredicate } from '../../completions/context/retrievers/recent-user-actions/recent-edits-diff-helpers/utils'
 import { RetrieverIdentifier } from '../../completions/context/utils'
 import { shortenPromptForOutputChannel } from '../../completions/output-channel-logger'
 import { autoeditsOutputChannelLogger } from '../output-channel-logger'
@@ -10,14 +9,17 @@ import * as constants from './constants'
 import {
     getContextItemMappingWithTokenLimit,
     getContextItemsForIdentifier,
-    getCurrentFilePromptComponents,
-    getLintErrorsPrompt,
     getPromptForTheContextSource,
     getPromptWithNewline,
-    getRecentEditsPrompt,
-    getRecentlyViewedSnippetsPrompt,
     joinPromptsWithNewlineSeparator,
-} from './prompt-utils'
+} from './prompt-utils/common'
+import { getCurrentFilePromptComponents } from './prompt-utils/current-file'
+import { getLintErrorsPrompt } from './prompt-utils/lint'
+import {
+    getRecentEditsPrompt,
+    groupConsecutiveRecentEditsItemsFromSameFile,
+} from './prompt-utils/recent-edits'
+import { getRecentlyViewedSnippetsPrompt } from './prompt-utils/recent-view'
 
 interface RecentEditsPromptComponents {
     mostRecentEditsPrompt: PromptString
@@ -31,16 +33,12 @@ export class PromptCacheOptimizedV1 extends AutoeditsUserPromptStrategy {
     private readonly RECENT_EDIT_SHORT_TERM_TIME_MS = 60 * 1000 // 1 minute
     // Oldest timestamp for a snippet view that can be included in the prompt.
     private readonly SNIPPET_VIEW_MAX_TIMESTAMP_MS = 10 * 60 * 1000 // 10 minutes
-    // Maximum number of snippet views that can be included in the prompt.
-    private readonly SNIPPET_VIEW_MAX_COUNT = 2
-    // Diagnostics are ordered based on the absolute distance from the current cursor position.
-    // This is the maximum number of diagnostics that can be included in the prompt.
-    private readonly DIAGNOSTICS_MAX_COUNT = 4
 
     getUserPrompt({ context, tokenBudget, codeToReplaceData, document }: UserPromptArgs): PromptString {
         const contextItemMapping = getContextItemMappingWithTokenLimit(
             context,
-            tokenBudget.contextSpecificTokenLimit
+            tokenBudget.contextSpecificTokenLimit,
+            tokenBudget.contextSpecificNumItemsLimit
         )
         const recentViewedSnippetsPrompt = this.getRecentSnippetViewPrompt(
             contextItemMapping.get(RetrieverIdentifier.RecentViewPortRetriever) || []
@@ -80,7 +78,7 @@ export class PromptCacheOptimizedV1 extends AutoeditsUserPromptStrategy {
     }
 
     private getDiagnosticsPrompt(diagnosticsItems: AutocompleteContextSnippet[]): PromptString {
-        const diagnostics = diagnosticsItems.slice(0, this.DIAGNOSTICS_MAX_COUNT)
+        const diagnostics = diagnosticsItems
         return getPromptForTheContextSource(
             diagnostics,
             constants.LINT_ERRORS_INSTRUCTION,
@@ -92,13 +90,11 @@ export class PromptCacheOptimizedV1 extends AutoeditsUserPromptStrategy {
         const recentViewedSnippets = getContextItemsForIdentifier(
             contextItems,
             RetrieverIdentifier.RecentViewPortRetriever
+        ).filter(
+            item =>
+                item.metadata?.timeSinceActionMs !== undefined &&
+                item.metadata.timeSinceActionMs < this.SNIPPET_VIEW_MAX_TIMESTAMP_MS
         )
-            .filter(
-                item =>
-                    item.metadata?.timeSinceActionMs !== undefined &&
-                    item.metadata.timeSinceActionMs < this.SNIPPET_VIEW_MAX_TIMESTAMP_MS
-            )
-            .slice(0, this.SNIPPET_VIEW_MAX_COUNT)
 
         return joinPromptsWithNewlineSeparator([
             constants.SHORT_TERM_SNIPPET_VIEWS_INSTRUCTION,
@@ -120,7 +116,9 @@ export class PromptCacheOptimizedV1 extends AutoeditsUserPromptStrategy {
         const otherRecentEditsContextItems =
             recentEditsSnippets.length > 1 ? recentEditsSnippets.slice(1) : []
 
-        const groupedContextItems = this.groupConsecutiveEditsFromSameFile(otherRecentEditsContextItems)
+        const groupedContextItems = groupConsecutiveRecentEditsItemsFromSameFile(
+            otherRecentEditsContextItems
+        )
 
         const { shortTermSnippets, longTermSnippets } = this.splitContextItemsIntoShortAndLongTerm(
             groupedContextItems,
@@ -167,32 +165,5 @@ export class PromptCacheOptimizedV1 extends AutoeditsUserPromptStrategy {
             shortTermSnippets,
             longTermSnippets,
         }
-    }
-
-    private groupConsecutiveEditsFromSameFile(
-        contextItems: AutocompleteContextSnippet[]
-    ): AutocompleteContextSnippet[] {
-        if (contextItems.length === 0) {
-            return []
-        }
-        // Group consecutive items by file name
-        const groupedContextItems = groupConsecutiveItemsByPredicate(
-            contextItems,
-            (a, b) => a.uri.toString() === b.uri.toString()
-        )
-        const combinedContextItems: AutocompleteContextSnippet[] = []
-        for (const group of groupedContextItems) {
-            const combinedItem = {
-                ...group[0],
-                // The group content is from the latest to the oldest item.
-                // We need to reverse the order of the content to get diff from old to new.
-                content: group
-                    .map(item => item.content)
-                    .reverse()
-                    .join('\nthen\n'),
-            }
-            combinedContextItems.push(combinedItem)
-        }
-        return combinedContextItems
     }
 }

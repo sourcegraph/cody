@@ -1,7 +1,7 @@
 import dedent from 'dedent'
 import { describe, expect, it } from 'vitest'
 
-import type { CodeToReplaceData } from './prompt/prompt-utils'
+import type { CodeToReplaceData } from '@sourcegraph/cody-shared'
 import { createCodeToReplaceDataForTest } from './prompt/test-helper'
 import { shrinkPredictionUntilSuffix } from './shrink-prediction'
 

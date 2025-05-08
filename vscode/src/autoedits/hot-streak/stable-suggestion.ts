@@ -1,9 +1,11 @@
-import type { CodeToReplaceData } from '@sourcegraph/cody-shared'
 import { calcSlices } from 'fast-myers-diff'
 import * as vscode from 'vscode'
-import type { PartialModelResponse, SuccessModelResponse } from '../adapters/base'
 
+import type { CodeToReplaceData } from '@sourcegraph/cody-shared'
+
+import type { PartialModelResponse, SuccessModelResponse } from '../adapters/base'
 import { shrinkPredictionUntilSuffix } from '../shrink-prediction'
+
 import { SHOULD_USE_HOT_STREAK_CHUNK_THRESHOLD } from './constants'
 
 // Helper enum for code readability when handling slices
@@ -44,11 +46,17 @@ export function getStableSuggestion({
     response,
 }: StableSuggestionParams): StableSuggestion | null {
     const originalLines = document.getText(range).split('\n')
-    const shrinkedPrediction = shrinkPredictionUntilSuffix({
+    const truncatedPrediction = shrinkPredictionUntilSuffix({
         prediction,
         codeToReplaceData,
     })
-    const predictionLines = shrinkedPrediction.split('\n')
+    let predictionLines = truncatedPrediction.split('\n')
+
+    // Since we always expect that a prediction ends with a new line, which actually is a start
+    // of the existing suffix line we should not this line for diffing
+    if (predictionLines.at(-1) === '') {
+        predictionLines = predictionLines.slice(0, -1)
+    }
 
     // TODO (umpox): `calcSlices` is useful here as it splits the diff into change hunks.
     // It would be preferable if this would use the exact same diff logic as `getDecorationInfo`.
@@ -130,6 +138,10 @@ export function getStableSuggestion({
     const canSuggest = response.type === 'success' || state.canSuggestDiff
     if (!canSuggest) {
         return null
+    }
+
+    if (prediction.slice(codeToReplaceData.codeToRewrite.length) === '\n' && state.firstLineChanged) {
+        console.log('suspect!')
     }
 
     return {

@@ -3,6 +3,6 @@ export enum View {
     Login = 'login',
     History = 'history',
     Account = 'account',
-    Prompts = 'prompts',
     Settings = 'settings',
+    Mcp = 'mcp',
 }

@@ -16,7 +16,11 @@ import {
     type AutoeditsModelAdapter,
     type ModelResponse,
 } from './base'
-import { getMaxOutputTokensForAutoedits, getSourcegraphCompatibleChatPrompt } from './utils'
+import {
+    getMaxOutputTokensForAutoedits,
+    getSourcegraphCompatibleChatPrompt,
+    getSourcegraphRewriteSpeculationParams,
+} from './utils'
 
 export class SourcegraphCompletionsAdapter implements AutoeditsModelAdapter {
     private client: CodeCompletionsClient
@@ -27,6 +31,7 @@ export class SourcegraphCompletionsAdapter implements AutoeditsModelAdapter {
     dispose() {}
 
     async getModelResponse(options: AutoeditModelOptions): Promise<AsyncGenerator<ModelResponse>> {
+        const speculationParams = getSourcegraphRewriteSpeculationParams()
         try {
             const maxTokens = getMaxOutputTokensForAutoedits(options.codeToRewrite)
             const messages: Message[] = getSourcegraphCompatibleChatPrompt({
@@ -43,8 +48,8 @@ export class SourcegraphCompletionsAdapter implements AutoeditsModelAdapter {
                     type: 'content',
                     content: options.codeToRewrite,
                 },
+                ...speculationParams,
             }
-
             const abortController = forkSignal(options.abortSignal)
             const completionResponseGenerator = await this.client.complete(requestBody, abortController)
             return this.processCompletionResponse(completionResponseGenerator, options, requestBody)
@@ -64,11 +69,16 @@ export class SourcegraphCompletionsAdapter implements AutoeditsModelAdapter {
         requestBody: CodeCompletionsParams
     ): AsyncGenerator<ModelResponse> {
         let prediction = ''
-        let responseBody: any = null
-        let responseHeaders: Record<string, string> = {}
-        let requestHeaders: Record<string, string> = {}
-        let requestUrl = options.url
         let isAborted = false
+
+        // Create a shared result object that will be updated
+        const sharedResult = {
+            responseHeaders: {} as Record<string, string>,
+            requestHeaders: {} as Record<string, string>,
+            requestUrl: options.url,
+            requestBody,
+            responseBody: null as any,
+        }
 
         for await (const msg of completionResponseGenerator) {
             const newText = msg.completionResponse?.completion
@@ -80,19 +90,19 @@ export class SourcegraphCompletionsAdapter implements AutoeditsModelAdapter {
             if (msg.metadata) {
                 if (msg.metadata.response) {
                     // Extract headers into a plain object
-                    responseHeaders = {}
+                    sharedResult.responseHeaders = {}
                     msg.metadata.response.headers.forEach((value, key) => {
-                        responseHeaders[key] = value
+                        sharedResult.responseHeaders[key] = value
                     })
                 }
 
                 // Capture request metadata
                 if (msg.metadata.requestHeaders) {
-                    requestHeaders = msg.metadata.requestHeaders
+                    sharedResult.requestHeaders = msg.metadata.requestHeaders
                 }
 
                 if (msg.metadata.requestUrl) {
-                    requestUrl = msg.metadata.requestUrl
+                    sharedResult.requestUrl = msg.metadata.requestUrl
                 }
 
                 if (msg.metadata.isAborted) {
@@ -101,27 +111,16 @@ export class SourcegraphCompletionsAdapter implements AutoeditsModelAdapter {
 
                 // Store the full response body if available
                 if (msg.completionResponse) {
-                    responseBody = msg.completionResponse
+                    sharedResult.responseBody = msg.completionResponse
                 }
             }
 
             yield {
+                ...sharedResult,
                 type: 'partial',
                 stopReason: AutoeditStopReason.StreamingChunk,
                 prediction,
-                requestUrl,
-                requestHeaders,
-                responseHeaders,
-                responseBody,
             }
-        }
-
-        const sharedResult = {
-            responseHeaders,
-            requestHeaders,
-            requestUrl,
-            requestBody,
-            responseBody,
         }
 
         if (isAborted) {

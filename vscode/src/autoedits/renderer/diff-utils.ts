@@ -188,10 +188,7 @@ function computeDiffOperations(
     return lineInfos
 }
 
-/**
- * Creates a ModifiedLineInfo object by computing insertions and deletions within a line.
- */
-function createModifiedLineInfo({
+function getModifiedLineChanges({
     originalLineNumber,
     modifiedLineNumber,
     originalText,
@@ -203,24 +200,138 @@ function createModifiedLineInfo({
     originalText: string
     modifiedText: string
     chunkRegex: RegExp
-}): ModifiedLineInfo {
+}): LineChange[] {
     const oldChunks = splitLineIntoChunks(originalText, chunkRegex)
     const newChunks = splitLineIntoChunks(modifiedText, chunkRegex)
-    const lineChanges = computeLineChanges({
+    return computeLineChanges({
         oldChunks,
         newChunks,
         originalLineNumber,
         modifiedLineNumber,
     })
+}
+
+/**
+ * Groups changes from a line by merging consecutive changes of the same type
+ */
+function groupLineChanges(changes: LineChange[]): LineChange[] {
+    const groupedChanges: LineChange[] = []
+    let currentGroup: LineChange | null = null
+
+    for (const change of changes) {
+        if (currentGroup && currentGroup.type === change.type) {
+            currentGroup = {
+                ...change,
+                text: currentGroup.text + change.text,
+                originalRange: new vscode.Range(
+                    currentGroup.originalRange.start.line,
+                    currentGroup.originalRange.start.character,
+                    change.originalRange.end.line,
+                    change.originalRange.end.character
+                ),
+                modifiedRange: new vscode.Range(
+                    currentGroup.modifiedRange.start.line,
+                    currentGroup.modifiedRange.start.character,
+                    change.modifiedRange.end.line,
+                    change.modifiedRange.end.character
+                ),
+            }
+            // Update the previous stored group to match `currentGroup`
+            groupedChanges[groupedChanges.length - 1] = currentGroup
+        } else {
+            // New group, push it immediately. We may update it later
+            currentGroup = { ...change }
+            groupedChanges.push(currentGroup)
+        }
+    }
+
+    return groupedChanges
+}
+
+/**
+ * Checks if a line change within a diff is simple enough to show to the user.
+ * This is if the diff is set of suitable modifications that are separated by suitable unchanged areas.
+ *    Suitable modifications: Pure insertions/deletions or "replacement" changes where an insertion is immediately followed by a deletion or vice versa.
+ *    Suitable unchanged areas: An unchanged area that contains some whitespace. This is so we can guard against cases where a character diff splits a word into multiple chunks
+ *                              whilst still allowing multiple changes in a line.
+ */
+export function isSimpleLineDiff(changes: LineChange[]): boolean {
+    if (changes.length <= 1) {
+        return true
+    }
+
+    let lastChange = {
+        type: null as LineChange['type'] | null,
+        isReplacement: false,
+    }
+
+    const groupedChanges = groupLineChanges(changes)
+    for (let i = 0; i < groupedChanges.length; i++) {
+        const incomingChange = groupedChanges[i]
+        if (!lastChange.type) {
+            lastChange = {
+                type: incomingChange.type,
+                isReplacement: false,
+            }
+            // First change, always simple at this point
+            continue
+        }
+
+        const incomingModification = incomingChange.type !== 'unchanged'
+        if (lastChange.isReplacement && incomingModification) {
+            // We just had a replacement and now we have another change.
+            // This creates a diff that is difficult to read
+            return false
+        }
+
+        if (incomingChange.type === 'unchanged') {
+            // Check if the unchanged text contains some whitespace, this is an indicator
+            // that we can use this to seperate multiple changes without worrying about
+            // the diff splitting words into multiple change chunks
+            const isSuitableSeparator = /\s/.test(incomingChange.text)
+            const isLastChange = i === groupedChanges.length - 1
+            if (!isSuitableSeparator && !isLastChange) {
+                return false
+            }
+            lastChange = { type: incomingChange.type, isReplacement: false }
+            continue
+        }
+
+        lastChange = {
+            type: incomingChange.type,
+            isReplacement: lastChange.type !== 'unchanged',
+        }
+    }
+
+    return true
+}
+
+/**
+ * Creates a ModifiedLineInfo object by computing insertions and deletions within a line.
+ */
+function createModifiedLineInfo(params: {
+    originalLineNumber: number
+    modifiedLineNumber: number
+    originalText: string
+    modifiedText: string
+    chunkRegex: RegExp
+}): ModifiedLineInfo {
+    let changes = getModifiedLineChanges({ ...params, chunkRegex: CHARACTER_REGEX })
+
+    if (!isSimpleLineDiff(changes)) {
+        // We weren't able to make a simple line diff with our character diffing
+        // Let's recalculate the changes with a word diff, which is likely to be more readable in this case.
+        changes = getModifiedLineChanges(params)
+    }
 
     return {
         id: uuid.v4(),
         type: 'modified',
-        originalLineNumber,
-        modifiedLineNumber,
-        oldText: originalText,
-        newText: modifiedText,
-        changes: lineChanges,
+        originalLineNumber: params.originalLineNumber,
+        modifiedLineNumber: params.modifiedLineNumber,
+        oldText: params.originalText,
+        newText: params.modifiedText,
+        changes,
     }
 }
 
@@ -487,6 +598,9 @@ function computeLineChanges({
 
 // Split line into words, consecutive spaces and punctuation marks
 const WORDS_AND_PUNCTUATION_REGEX = /(\w+|\s+|\W)/g
+
+// Split lines by characters
+const CHARACTER_REGEX = /./g
 
 /**
  * Splits a line into chunks for fine-grained diffing.

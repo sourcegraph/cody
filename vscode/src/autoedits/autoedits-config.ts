@@ -42,6 +42,13 @@ export const defaultTokenLimit: AutoEditsTokenLimit = {
         [RetrieverIdentifier.DiagnosticsRetriever]: 250,
         [RetrieverIdentifier.RecentViewPortRetriever]: 1000,
     },
+    contextSpecificNumItemsLimit: {
+        [RetrieverIdentifier.RecentEditsRetriever]: 10,
+        [RetrieverIdentifier.JaccardSimilarityRetriever]: 0,
+        [RetrieverIdentifier.RecentCopyRetriever]: 0,
+        [RetrieverIdentifier.DiagnosticsRetriever]: 2,
+        [RetrieverIdentifier.RecentViewPortRetriever]: 2,
+    },
 } as const satisfies AutoEditsTokenLimit
 
 export const hotStreakTokenLimit: AutoEditsTokenLimit = {
@@ -55,6 +62,13 @@ export const hotStreakTokenLimit: AutoEditsTokenLimit = {
         [RetrieverIdentifier.DiagnosticsRetriever]: 100,
         [RetrieverIdentifier.RecentViewPortRetriever]: 500,
     },
+    contextSpecificNumItemsLimit: {
+        [RetrieverIdentifier.RecentEditsRetriever]: 10,
+        [RetrieverIdentifier.JaccardSimilarityRetriever]: 0,
+        [RetrieverIdentifier.RecentCopyRetriever]: 0,
+        [RetrieverIdentifier.DiagnosticsRetriever]: 2,
+        [RetrieverIdentifier.RecentViewPortRetriever]: 2,
+    },
 } as const satisfies AutoEditsTokenLimit
 
 let hotStreakEnabled = false
@@ -66,7 +80,7 @@ featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyAutoEditHotStreak).subs
 /**
  * Determines if hot streak mode should be enabled based on feature flag and settings.
  */
-function isHotStreakEnabled(): boolean {
+export function isHotStreakEnabled(): boolean {
     return hotStreakEnabled || isHotStreakEnabledInSettings()
 }
 
