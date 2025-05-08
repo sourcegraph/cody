@@ -35,7 +35,7 @@ class ToolboxManager {
     private static instance?: ToolboxManager
 
     private constructor() {
-        this.isEnabled = !isAgentTesting
+        this.isEnabled = false
     }
 
     private isEnabled = false
@@ -64,7 +64,7 @@ class ToolboxManager {
     }
 
     public isAgenticChatEnabled(): boolean {
-        return !isAgentTesting && this.isEnabled && Boolean(DeepCodyAgent.model)
+        return this.isEnabled && Boolean(DeepCodyAgent.model) && !isAgentTesting
     }
 
     public setIsRateLimited(hasHitLimit: boolean): void {
@@ -98,13 +98,13 @@ class ToolboxManager {
             // Return null if:
             // - Subscription is pending
             // - Users can upgrade (free user)
-            // - Enterprise without deep-cody feature flag
+            // - Feature flag to disabled is on.
             if (
                 sub === pendingOperation ||
-                sub?.userCanUpgrade ||
+                (isDotCom(auth.endpoint) && sub?.userCanUpgrade) ||
                 !models ||
                 isAgentTesting ||
-                (!isDotCom(auth.endpoint) && isDisabled)
+                isDisabled
             ) {
                 DeepCodyAgent.model = undefined
                 this.isEnabled = false
