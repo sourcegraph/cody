@@ -7,7 +7,7 @@ import type { PartialModelResponse, SuccessModelResponse } from '../adapters/bas
 import { shrinkPredictionUntilSuffix } from '../shrink-prediction'
 
 import { getNewLineChar } from '../../completions/text-processing'
-import { SHOULD_USE_HOT_STREAK_CHUNK_THRESHOLD } from './constants'
+import { SHOULD_USE_STABLE_UNCHANGED_HUNK_THRESHOLD } from './constants'
 
 // Helper enum for code readability when handling slices
 enum SliceKind {
@@ -98,10 +98,7 @@ export function getStableSuggestion({
                 continue
             }
 
-            const meetsLineThreshold =
-                response.type === 'success' ||
-                state.predictionLines.length >= SHOULD_USE_HOT_STREAK_CHUNK_THRESHOLD
-            if (state.predictionIncludesChange && meetsLineThreshold) {
+            if (state.predictionIncludesChange) {
                 state.canSuggestDiff = true
                 // We already have a change further up in the diff.
                 // As we have now reached an unchanged "stable" hunk, it means we can reliably
@@ -171,6 +168,11 @@ const CODE_DELIMITER_REGEX = /^[\[\]{}().,;:]+$/
  * designed to improve the stability of a partial diff.
  */
 export function isStableUnchangedHunk(hunk: string[]): boolean {
+    if (hunk.length < SHOULD_USE_STABLE_UNCHANGED_HUNK_THRESHOLD) {
+        // Hunk isn't classed as big enough to be considered stable.
+        return false
+    }
+
     /**
      * Filter hunk lines to find relevant ones that:
      * 1. Contain more than just whitespace
