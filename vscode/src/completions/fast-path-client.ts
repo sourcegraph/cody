@@ -227,7 +227,10 @@ export function createFastPathClient(
                 throw new TracedError('No completion response received', traceId)
             }
 
-            if (!result.completionResponse.stopReason) {
+            if (
+                !result.completionResponse.stopReason ||
+                result.completionResponse.stopReason === CompletionStopReason.StreamingChunk
+            ) {
                 result.completionResponse.stopReason = CompletionStopReason.RequestFinished
             }
 

@@ -119,6 +119,7 @@ export async function* fetchAndProcessDynamicMultilineCompletions(
             multiline,
             currentLinePrefix: docContext.currentLinePrefix,
             text: rawCompletion,
+            stopReason,
         })
 
         if (hotStreakExtractor) {
