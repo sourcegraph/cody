@@ -5,7 +5,6 @@ import {
     OPENING_CODE_TAG,
     extractFromCodeBlock,
     fixBadCompletionStart,
-    getHeadAndTail,
     trimLeadingWhitespaceUntilNewline,
 } from '../text-processing'
 import {
@@ -15,7 +14,15 @@ import {
     type GetOllamaPromptParams,
 } from './default'
 
-export class OpenAIV1 extends DefaultModel {
+/**
+ * OpenAI autocomplete model helper focused on gpt-4.1-mini and gpt-4.1-nano support
+ *
+ * Key differences compared to OpenAIV1
+ * - We do not put the current line prefix into the model's mouth.
+ * - We allow opening code tag in the responses.
+ * - We expect the model to often reply with the current line prefix in the response.
+ */
+export class OpenAIV2 extends DefaultModel {
     public stopSequences = [CLOSING_CODE_TAG.toString()]
 
     private instructions =
@@ -32,20 +39,23 @@ export class OpenAIV1 extends DefaultModel {
     formatPrompt(params: FormatPromptParams): PromptString {
         const { intro, prefix, suffix, fileName } = params
 
-        const { head, tail } = getHeadAndTail(prefix)
-        const infillBlock = tail.trimmed.toString().endsWith('{\n')
-            ? tail.trimmed.trimEnd()
-            : tail.trimmed
+        return ps`Below is the code from file path ${fileName}. Review the code outside the XML tags to detect the functionality, formats, style, patterns, and logics in use. Then, use what you detect and reuse methods/libraries to complete and enclose completed code only inside XML tags precisely without duplicating existing implementations. Do NOT wrap code in triple backticks. Here is the code:\n\`\`\`\n${intro}${prefix}${OPENING_CODE_TAG}${CLOSING_CODE_TAG}${suffix}\n\`\`\`
 
-        const infillPrefix = head.raw || ''
-
-        return ps`Below is the code from file path ${fileName}. Review the code outside the XML tags to detect the functionality, formats, style, patterns, and logics in use. Then, use what you detect and reuse methods/libraries to complete and enclose completed code only inside XML tags precisely without duplicating existing implementations. Here is the code:\n\`\`\`\n${intro}${infillPrefix}${OPENING_CODE_TAG}${CLOSING_CODE_TAG}${suffix}\n\`\`\`
-
-${OPENING_CODE_TAG}${infillBlock}`
+${OPENING_CODE_TAG}`
     }
 
     public postProcess(content: string, docContext: DocumentContext): string {
-        let completion = extractFromCodeBlock(content)
+        let completion = extractFromCodeBlock(content, true /** allow opening code tag */)
+
+        if (docContext.currentLinePrefix.length && completion.startsWith(docContext.currentLinePrefix)) {
+            completion = completion.slice(docContext.currentLinePrefix.length)
+        }
+        if (
+            docContext.currentLinePrefix.length &&
+            completion.startsWith(docContext.currentLinePrefix.trimStart())
+        ) {
+            completion = completion.slice(docContext.currentLinePrefix.trimStart().length)
+        }
 
         const trimmedPrefixContainNewline = docContext.prefix
             .slice(docContext.prefix.trimEnd().length)
