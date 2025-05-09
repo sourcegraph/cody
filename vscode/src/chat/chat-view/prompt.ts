@@ -8,7 +8,6 @@ import {
     isDefined,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
-import { DeepCodyAgentID } from '@sourcegraph/cody-shared/src/models/client'
 import { logDebug } from '../../output-channel-logger'
 import { PromptBuilder } from '../../prompt-builder'
 import { ChatBuilder } from './ChatBuilder'
@@ -29,12 +28,7 @@ export interface PromptInfo {
 export class DefaultPrompter {
     constructor(
         private explicitContext: ContextItem[],
-        private corpusContext: ContextItem[],
-        /**
-         * Whether the current message is from a default command.
-         * We will apply context assist prompt for non-command chat messages.
-         */
-        private isCommand = false
+        private corpusContext: ContextItem[]
     ) {}
     // Constructs the raw prompt to send to the LLM, with message order reversed, so we can construct
     // an array with the most important messages (which appear most important first in the reverse-prompt.
@@ -63,22 +57,6 @@ export class DefaultPrompter {
             const historyItems = reverseTranscript
                 .flatMap(m => (m.contextFiles ? [...m.contextFiles].reverse() : []))
                 .filter(isDefined)
-
-            const isContextAgentEnabled = reverseTranscript[0]?.agent === DeepCodyAgentID
-
-            // Apply the context preamble via the prompt mixin to the last open-ended human message that is not a command.
-            // The context preamble provides additional instructions on how Cody should respond using the attached context items,
-            // allowing Cody to provide more contextually relevant responses.
-            //
-            // Adding the preamble before the final build step ensures it is included in the final prompt but not displayed in the UI.
-            // It also allows adding the preamble only when there is context to display, without wasting tokens on the same preamble repeatedly.
-            if (
-                !this.isCommand &&
-                !isContextAgentEnabled &&
-                Boolean(this.explicitContext.length || historyItems.length || this.corpusContext.length)
-            ) {
-                mixins.push(PromptMixin.getContextMixin())
-            }
 
             reverseTranscript[0] = PromptMixin.mixInto(reverseTranscript[0], chat.selectedModel, mixins)
 

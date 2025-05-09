@@ -16,6 +16,7 @@ import type { VSCodeEditor } from '../../editor/vscode-editor'
 import type { EditIntent } from '../types'
 
 import { truncatePromptString, truncatePromptStringStart } from '@sourcegraph/cody-shared'
+import { isCodyTesting } from '../../chat/chat-view/chat-helpers'
 import { resolveContextItems } from '../../editor/utils/editor-context'
 import { PROMPT_TOPICS } from './constants'
 import { extractContextItemsFromContextMessages } from './utils'
@@ -143,8 +144,6 @@ const getContextFromIntent = async ({
     }
 }
 
-const isAgentTesting = process.env.CODY_SHIM_TESTING === 'true'
-
 interface GetContextOptions extends GetContextFromIntentOptions {
     userContextItems: ContextItem[]
     editor: VSCodeEditor
@@ -155,7 +154,7 @@ export const getContext = async ({
     editor,
     ...options
 }: GetContextOptions): Promise<ContextItem[]> => {
-    if (isAgentTesting) {
+    if (isCodyTesting) {
         // Need deterministic ordering of context files for the tests to pass
         // consistently across different file systems.
         userContextItems.sort((a, b) => a.uri.path.localeCompare(b.uri.path))

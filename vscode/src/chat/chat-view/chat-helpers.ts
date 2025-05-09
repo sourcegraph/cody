@@ -15,3 +15,5 @@ export function getChatPanelTitle(lastHumanText?: string, truncateTitle = true):
 }
 
 export const isAgentTesting = process.env.CODY_SHIM_TESTING === 'true'
+export const isCodyTesting =
+    process.env.CODY_TESTING === 'true' || process.env.CODY_SHIM_TESTING === 'true'

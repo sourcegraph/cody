@@ -205,11 +205,11 @@ log:
         send: 0
         ssl: -1
         wait: 883
-    - _id: df1ab905e321e4e90193f857f73d629d
+    - _id: b3d23188281333a76d66b0880c0ca96e
       _order: 0
       cache: {}
       request:
-        bodySize: 913
+        bodySize: 859
         cookies: []
         headers:
           - name: accept-encoding
@@ -256,10 +256,7 @@ log:
                 text: Ok.
               - speaker: human
                 text: >-
-                  Answer positively without apologizing. 
-
-
-                  You have access to the provided codebase context.
+                  Answer positively without apologizing.
 
 
                   Question: implement a cow. Only print the code without any explanation.
@@ -276,10 +273,10 @@ log:
             value: 6.0.0-SNAPSHOT
         url: https://sourcegraph.sourcegraph.com/.api/completions/stream?api-version=5&client-name=jetbrains&client-version=6.0.0-SNAPSHOT
       response:
-        bodySize: 640
+        bodySize: 904
         content:
           mimeType: text/event-stream
-          size: 640
+          size: 904
           text: >+
             event: completion
 
@@ -293,7 +290,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Fri, 07 Mar 2025 16:54:32 GMT
+            value: Thu, 08 May 2025 03:07:46 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -317,13 +314,13 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1411
+        headersSize: 1259
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-03-07T16:54:31.527Z
-      time: 1559
+      startedDateTime: 2025-05-08T03:07:45.288Z
+      time: 2916
       timings:
         blocked: -1
         connect: -1
@@ -331,7 +328,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 1559
+        wait: 2916
     - _id: 5d0e29776bf0857beffb22b778ce488b
       _order: 0
       cache: {}
