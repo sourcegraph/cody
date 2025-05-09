@@ -7,7 +7,10 @@ import type { PartialModelResponse, SuccessModelResponse } from '../adapters/bas
 import { shrinkPredictionUntilSuffix } from '../shrink-prediction'
 
 import { getNewLineChar } from '../../completions/text-processing'
-import { SHOULD_USE_HOT_STREAK_CHUNK_THRESHOLD } from './constants'
+import {
+    SHOULD_USE_HOT_STREAK_CHUNK_THRESHOLD,
+    SHOULD_USE_STABLE_UNCHANGED_HUNK_THRESHOLD,
+} from './constants'
 
 // Helper enum for code readability when handling slices
 enum SliceKind {
@@ -171,6 +174,11 @@ const CODE_DELIMITER_REGEX = /^[\[\]{}().,;:]+$/
  * designed to improve the stability of a partial diff.
  */
 export function isStableUnchangedHunk(hunk: string[]): boolean {
+    if (hunk.length < SHOULD_USE_STABLE_UNCHANGED_HUNK_THRESHOLD) {
+        // Hunk isn't classed as big enough to be considered stable.
+        return false
+    }
+
     /**
      * Filter hunk lines to find relevant ones that:
      * 1. Contain more than just whitespace

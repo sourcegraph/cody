@@ -27,6 +27,7 @@ export function isEvenOrOdd(target: number): boolean {
     // Check if target is 1
     if (numberToChange === 1) {
         return false
+    }
 
 Prediction:
 
@@ -36,6 +37,7 @@ export function isEvenOrOdd(target: number): boolean {
     }
     if (target === 1) {
         return false
+    }
 
             
 Code to Rewrite:
@@ -50,6 +52,7 @@ export function isEvenOrOdd(target: number): boolean {
     // Check if target is 2
     if (numberToChange === 2) {
         return true
+    }
 
 Prediction:
 
@@ -62,6 +65,7 @@ export function isEvenOrOdd(target: number): boolean {
     }
     if (target === 2) {
         return true
+    }
 
             
 Code to Rewrite:
@@ -79,6 +83,7 @@ export function isEvenOrOdd(target: number): boolean {
     // Check if target is 3
     if (numberToChange === 3) {
         return false
+    }
 
 Prediction:
 
@@ -94,6 +99,7 @@ export function isEvenOrOdd(target: number): boolean {
     }
     if (target === 3) {
         return false
+    }
 
             
 Code to Rewrite:
@@ -114,6 +120,7 @@ export function isEvenOrOdd(target: number): boolean {
     // Check if target is 4
     if (numberToChange === 4) {
         return true
+    }
 
 Prediction:
 
@@ -132,6 +139,7 @@ export function isEvenOrOdd(target: number): boolean {
     }
     if (target === 4) {
         return true
+    }
 
             
 Code to Rewrite:
@@ -155,6 +163,7 @@ export function isEvenOrOdd(target: number): boolean {
     // Check if target is 5
     if (numberToChange === 5) {
         return false
+    }
 
 Prediction:
 
@@ -176,6 +185,7 @@ export function isEvenOrOdd(target: number): boolean {
     }
     if (target === 5) {
         return false
+    }
 
             "
 `;
