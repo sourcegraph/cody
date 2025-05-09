@@ -101,8 +101,8 @@ export function syncModels({
                 ? Observable.of([]) // disable Ollama local models for Cody Web
                 : promiseFactoryToObservable(signal => fetchLocalOllamaModels().catch(() => []))
         ),
-        // Keep the old localModels results while we're fetching the new ones, to avoid UI jitter.
-        shareReplay()
+        // Only keep one set of models and clean up when there are no subscribers
+        shareReplay({ shouldCountRefs: true })
     )
 
     const relevantConfig = resolvedConfig.pipe(
@@ -499,11 +499,15 @@ export function syncModels({
                     'rateLimited' in currentAuthStatus && currentAuthStatus.rateLimited
                 )
 
+                const dedupModels = (models: Model[]): Model[] => [
+                    ...new Map(models.map(model => [model.id, model])).values(),
+                ]
+
                 return {
-                    localModels,
+                    localModels: dedupModels(localModels),
                     primaryModels: isError(remoteModelsData)
                         ? []
-                        : normalizeModelList(remoteModelsData.primaryModels),
+                        : dedupModels(normalizeModelList(remoteModelsData.primaryModels)),
                     preferences: isError(remoteModelsData)
                         ? userModelPreferences
                         : resolveModelPreferences(remoteModelsData.preferences, userModelPreferences),
@@ -521,7 +525,7 @@ export function syncModels({
                 )
             }
         }),
-        shareReplay()
+        shareReplay({ shouldCountRefs: true })
     )
 }
 
