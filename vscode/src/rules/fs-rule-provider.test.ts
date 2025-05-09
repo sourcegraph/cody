@@ -11,6 +11,14 @@ describe('createFileSystemRuleProvider', () => {
         vi.spyOn(vscode.workspace, 'onDidDeleteFiles').mockReturnValue({ dispose() {} })
         vi.spyOn(vscode.workspace, 'onDidChangeTextDocument').mockReturnValue({ dispose() {} })
         vi.spyOn(vscode.workspace, 'onDidChangeWorkspaceFolders').mockReturnValue({ dispose() {} })
+
+        // Mock stat to return a valid stat for directories
+        vi.spyOn(vscode.workspace.fs, 'stat').mockResolvedValue({
+            type: vscode.FileType.Directory,
+            ctime: 0,
+            mtime: 0,
+            size: 0,
+        })
     })
 
     it('should read and parse rule files from workspace directories', async () => {
@@ -22,9 +30,11 @@ describe('createFileSystemRuleProvider', () => {
         const testFile = URI.parse('file:///workspace/src/test.ts')
         const ruleContent = Buffer.from('foo instruction')
         vi.spyOn(vscode.workspace, 'getWorkspaceFolder').mockReturnValue(mockWorkspaceFolder)
+
         vi.spyOn(vscode.workspace.fs, 'readDirectory').mockResolvedValue([
             ['foo.rule.md', vscode.FileType.File],
         ])
+
         vi.spyOn(vscode.workspace.fs, 'readFile').mockImplementation(uri => {
             if (uri.toString() === 'file:///workspace/.sourcegraph/foo.rule.md') {
                 return Promise.resolve(ruleContent)
@@ -35,6 +45,7 @@ describe('createFileSystemRuleProvider', () => {
         const rules = await firstValueFrom(
             createFileSystemRuleProvider().candidateRulesForPaths([testFile])
         )
+
         expect(rules).toHaveLength(1)
         expect(rules[0]).toMatchObject<CandidateRule>({
             rule: {
@@ -61,6 +72,7 @@ describe('createFileSystemRuleProvider', () => {
         vi.spyOn(vscode.workspace, 'getWorkspaceFolder').mockImplementation(uri =>
             mockWorkspaceFolders.find(folder => uri.toString().startsWith(folder.uri.toString()))
         )
+
         vi.spyOn(vscode.workspace.fs, 'readDirectory').mockImplementation(uri => {
             const rulesByDir: Record<string, [string, vscode.FileType][]> = {
                 'file:///w1/.sourcegraph': [['r0.rule.md', vscode.FileType.File]],
@@ -70,6 +82,7 @@ describe('createFileSystemRuleProvider', () => {
             }
             return Promise.resolve(rulesByDir[uri.toString()] || [])
         })
+
         vi.spyOn(vscode.workspace.fs, 'readFile').mockImplementation(uri => {
             return Promise.resolve(Buffer.from('instruction ' + uriBasename(uri)))
         })
@@ -77,6 +90,7 @@ describe('createFileSystemRuleProvider', () => {
         const rules = await firstValueFrom(
             createFileSystemRuleProvider().candidateRulesForPaths(testFiles)
         )
+
         expect(rules).toHaveLength(4)
         expect(rules[0]).toMatchObject<CandidateRule>({
             rule: {

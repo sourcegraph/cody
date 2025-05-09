@@ -259,7 +259,7 @@ interface ErrorEventPayload {
 interface FormatEventPayload {
     // `formatCompletion` duration.
     duration: number
-    // Current document langauge ID
+    // Current document language ID
     languageId: string
     // Formatter name extracted from user settings JSON.
     formatter?: string
