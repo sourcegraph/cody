@@ -16,6 +16,7 @@ import {
 import { DeepCodyAgentID } from '@sourcegraph/cody-shared/src/models/client'
 import { type Observable, Subject, map } from 'observable-fns'
 import { env } from 'vscode'
+import { isCodyTesting } from '../chat-view/chat-helpers'
 import { DeepCodyAgent } from './DeepCody'
 
 // Using a readonly interface improves performance by preventing mutations
@@ -34,7 +35,7 @@ class ToolboxManager {
     private static instance?: ToolboxManager
 
     private constructor() {
-        // Using private constructor for Singleton pattern
+        this.isEnabled = false
     }
 
     private isEnabled = false
@@ -63,7 +64,7 @@ class ToolboxManager {
     }
 
     public isAgenticChatEnabled(): boolean {
-        return this.isEnabled && Boolean(DeepCodyAgent.model)
+        return this.isEnabled && Boolean(DeepCodyAgent.model) && !isCodyTesting
     }
 
     public setIsRateLimited(hasHitLimit: boolean): void {
@@ -97,12 +98,13 @@ class ToolboxManager {
             // Return null if:
             // - Subscription is pending
             // - Users can upgrade (free user)
-            // - Enterprise without deep-cody feature flag
+            // - Feature flag to disabled is on.
             if (
                 sub === pendingOperation ||
-                sub?.userCanUpgrade ||
+                (isDotCom(auth.endpoint) && sub?.userCanUpgrade) ||
                 !models ||
-                (!isDotCom(auth.endpoint) && isDisabled)
+                isCodyTesting ||
+                isDisabled
             ) {
                 DeepCodyAgent.model = undefined
                 this.isEnabled = false
