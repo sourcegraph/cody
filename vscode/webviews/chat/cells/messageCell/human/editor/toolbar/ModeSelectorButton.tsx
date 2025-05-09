@@ -1,6 +1,6 @@
 import type { ChatMessage } from '@sourcegraph/cody-shared'
 import { isMacOS } from '@sourcegraph/cody-shared'
-import { MessageSquare, Pencil, Search, Sparkle } from 'lucide-react'
+import { MessageSquare, Pencil, Sparkle } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Badge } from '../../../../../../components/shadcn/ui/badge'
 import { Command, CommandItem, CommandList } from '../../../../../../components/shadcn/ui/command'
@@ -13,7 +13,6 @@ const isMac = isMacOS()
 export enum IntentEnum {
     Agentic = 'Agent',
     Chat = 'Chat',
-    Search = 'Search',
     Edit = 'Edit',
     Insert = 'Insert',
 }
@@ -22,7 +21,6 @@ export enum IntentEnum {
 export const INTENT_MAPPING: Record<string, IntentEnum> = {
     agentic: IntentEnum.Agentic,
     chat: IntentEnum.Chat,
-    search: IntentEnum.Search,
     edit: IntentEnum.Edit,
     insert: IntentEnum.Insert,
 }
@@ -64,14 +62,6 @@ export const ModeSelectorField: React.FunctionComponent<{
                 value: IntentEnum.Chat,
             },
             {
-                title: 'Search',
-                badge: isDotComUser ? 'Enterprise' : undefined,
-                icon: Search,
-                intent: 'search',
-                disabled: isDotComUser,
-                value: IntentEnum.Search,
-            },
-            {
                 title: 'Edit',
                 icon: Pencil,
                 intent: 'edit',
@@ -90,7 +80,7 @@ export const ModeSelectorField: React.FunctionComponent<{
                 value: IntentEnum.Agentic,
             },
         ].filter(option => !option.hidden) as IntentOption[]
-    }, [edit, config?.experimentalAgenticChatEnabled, isDotComUser])
+    }, [edit, config?.experimentalAgenticChatEnabled])
 
     // Get available (non-disabled) options
     const availableOptions = useMemo(

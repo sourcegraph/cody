@@ -6,7 +6,6 @@ import {
     type SerializedPromptEditorValue,
     deserializeContextItem,
     isAbortErrorOrSocketHangUp,
-    serializedPromptEditorStateFromText,
 } from '@sourcegraph/cody-shared'
 import type { PromptEditorRefAPI } from '@sourcegraph/prompt-editor'
 import { clsx } from 'clsx'
@@ -27,7 +26,6 @@ import type { ApiPostMessage } from '../Chat'
 import { getVSCodeAPI } from '../utils/VSCodeApi'
 import { SpanManager } from '../utils/spanManager'
 import { getTraceparentFromSpanContext } from '../utils/telemetry'
-import { useOmniBox } from '../utils/useOmniBox'
 import type { CodeBlockActionsProps } from './ChatMessageContent/ChatMessageContent'
 import {
     AssistantMessageCell,
@@ -44,7 +42,6 @@ import { useLocalStorage } from '../components/hooks'
 import { AgenticContextCell } from './cells/agenticCell/AgenticContextCell'
 import ApprovalCell from './cells/agenticCell/ApprovalCell'
 import { ContextCell } from './cells/contextCell/ContextCell'
-import { DidYouMeanNotice } from './cells/messageCell/assistant/DidYouMean'
 import { ToolStatusCell } from './cells/toolCell/ToolStatusCell'
 import { LoadingDots } from './components/LoadingDots'
 import { LastEditorContext } from './context'
@@ -316,9 +313,6 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
         [humanMessage, setActiveChatContext, isLastSentInteraction, lastEditorRef]
     )
 
-    // Omnibox is enabled if the user is not a dotcom user and the omnibox is enabled
-    const omniboxEnabled = useOmniBox() && !userInfo?.isDotComUser
-
     const vscodeAPI = getVSCodeAPI()
     const onStop = useCallback(() => {
         vscodeAPI.postMessage({
@@ -326,11 +320,8 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
         })
     }, [vscodeAPI])
 
-    const isSearchIntent = omniboxEnabled && humanMessage.intent === 'search'
-
     const isContextLoading = Boolean(
-        !isSearchIntent &&
-            humanMessage.contextFiles === undefined &&
+        humanMessage.contextFiles === undefined &&
             isLastSentInteraction &&
             assistantMessage?.text === undefined &&
             assistantMessage?.subMessages === undefined
@@ -501,22 +492,6 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
         [humanMessage.index]
     )
 
-    const editAndSubmitSearch = useCallback(
-        (text: string) => {
-            setSelectedIntent('search')
-            editHumanMessage({
-                messageIndexInTranscript: humanMessage.index,
-                editorValue: {
-                    text,
-                    contextItems: [],
-                    editorState: serializedPromptEditorStateFromText(text),
-                },
-                manuallySelectedIntent: 'search',
-            })
-        },
-        [humanMessage]
-    )
-
     // We track, ephemerally, the code blocks that are being regenerated so
     // we can show an accurate loading indicator or error message on those
     // blocks.
@@ -601,16 +576,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
             />
             {!isAgenticMode && (
                 <>
-                    {omniboxEnabled && assistantMessage?.didYouMeanQuery && (
-                        <DidYouMeanNotice
-                            query={assistantMessage?.didYouMeanQuery}
-                            disabled={!!assistantMessage?.isLoading}
-                            switchToSearch={() => {
-                                editAndSubmitSearch(assistantMessage?.didYouMeanQuery ?? '')
-                            }}
-                        />
-                    )}
-                    {!isSearchIntent && humanMessage.agent && (
+                    {humanMessage.agent && (
                         <AgenticContextCell
                             key={`${humanMessage.index}-${humanMessage.intent}-process`}
                             isContextLoading={isContextLoading}
@@ -621,8 +587,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                         <ApprovalCell vscodeAPI={vscodeAPI} />
                     )}
                     {!(humanMessage.agent && isContextLoading) &&
-                        (humanMessage.contextFiles || assistantMessage || isContextLoading) &&
-                        !isSearchIntent && (
+                        (humanMessage.contextFiles || assistantMessage || isContextLoading) && (
                             <ContextCell
                                 key={`${humanMessage.index}-${humanMessage.intent}-context`}
                                 contextItems={humanMessage.contextFiles}
