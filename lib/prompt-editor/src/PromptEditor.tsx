@@ -110,7 +110,11 @@ export const PromptEditor: FunctionComponent<Props> = ({
             setEditorState(state: SerializedPromptEditorState): void {
                 const editor = editorRef.current
                 if (editor) {
-                    editor.setEditorState(editor.parseEditorState(state.lexicalEditorState))
+                    // Use requestAnimationFrame to ensure the editor state is set outside of React's render cycle
+                    // This prevents the flushSync warning
+                    requestAnimationFrame(() => {
+                        editor.setEditorState(editor.parseEditorState(state.lexicalEditorState))
+                    })
                 }
             },
             getSerializedValue(): SerializedPromptEditorValue {
@@ -325,7 +329,11 @@ export const PromptEditor: FunctionComponent<Props> = ({
                 const currentEditorState = normalizeEditorStateJSON(editor.getEditorState().toJSON())
                 const newEditorState = initialEditorState.lexicalEditorState
                 if (!isEqual(currentEditorState, newEditorState)) {
-                    editor.setEditorState(editor.parseEditorState(newEditorState))
+                    // Use requestAnimationFrame to ensure the editor state is set outside of React's render cycle
+                    // NOTE: This addresses the flushSync warning.
+                    requestAnimationFrame(() => {
+                        editor.setEditorState(editor.parseEditorState(newEditorState))
+                    })
                 }
             }
         }
