@@ -164,11 +164,15 @@ export const AssistantMessageCell: FunctionComponent<{
                                 </div>
                             </div>
                         )}
-                        <div
-                            className={`tw-flex tw-items-center tw-justify-end tw-gap-4  ${styles.buttonsContainer}`}
-                        >
-                            {!isLoading && (!message.error || isAborted) && !isSearchIntent && (
-                                <>
+                        {!isLoading &&
+                            (!message.error || isAborted) &&
+                            !isSearchIntent &&
+                            // Do not display copy button for non-chat mode.
+                            // NOTE: Empty intent is defaulted to chat.
+                            (humanMessage?.intent || humanMessage?.intent !== 'chat') && (
+                                <div
+                                    className={`tw-flex tw-items-center tw-justify-end tw-gap-4  ${styles.buttonsContainer}`}
+                                >
                                     <CopyButton
                                         text={message.text?.toString() || ''}
                                         onCopy={copyButtonOnSubmit}
@@ -176,9 +180,8 @@ export const AssistantMessageCell: FunctionComponent<{
                                         className={'tw-transition tw-opacity-65 hover:tw-opacity-100'}
                                         title="Copy Message"
                                     />
-                                </>
+                                </div>
                             )}
-                        </div>
                     </div>
                 }
             />
