@@ -1,0 +1,40 @@
+name: Semantic Pull Request
+
+on:
+  pull_request_target:
+    types:
+      - opened
+      - edited
+      - synchronize
+      - ready_for_review
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate-pr-title:
+    name: Validate PR title
+    runs-on: ubuntu-latest
+    # Skip validation for draft PRs
+    if: github.event.pull_request.draft == false
+    steps:
+      - uses: amannn/action-semantic-pull-request@v5
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          # Configure types according to your conventional commits setup
+          types:
+            - feat
+            - fix
+            - docs
+            - style
+            - refactor
+            - perf
+            - test
+            - build
+            - ci
+            - chore
+            - revert
+          # Non-blocking for now, will only show warnings but not fail the check
+          warnOnFailure: true
