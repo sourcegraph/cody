@@ -7,7 +7,10 @@ import type { PartialModelResponse, SuccessModelResponse } from '../adapters/bas
 import { shrinkPredictionUntilSuffix } from '../shrink-prediction'
 
 import { getNewLineChar } from '../../completions/text-processing'
-import { SHOULD_USE_HOT_STREAK_CHUNK_THRESHOLD } from './constants'
+import {
+    SHOULD_USE_HOT_STREAK_CHUNK_THRESHOLD,
+    SHOULD_USE_STABLE_UNCHANGED_HUNK_THRESHOLD,
+} from './constants'
 
 // Helper enum for code readability when handling slices
 enum SliceKind {
@@ -181,5 +184,5 @@ export function isStableUnchangedHunk(hunk: string[]): boolean {
         return lineContent.length > 0 && !CODE_DELIMITER_REGEX.test(lineContent)
     })
 
-    return relevantHunkLines.length > 0
+    return relevantHunkLines.length > SHOULD_USE_STABLE_UNCHANGED_HUNK_THRESHOLD
 }
