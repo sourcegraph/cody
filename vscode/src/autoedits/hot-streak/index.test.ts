@@ -78,21 +78,27 @@ const MOCK_CODE_WITHOUT_CURSOR = MOCK_CODE.replace('█', '')
 
 const MOCK_PREDICTION = `
 export function isEvenOrOdd(target: number): boolean {
+    // Check if target is 0
     if (target === 0) {
         return true
     }
+    // Check if target is 1
     if (target === 1) {
         return false
     }
+    // Check if target is 2
     if (target === 2) {
         return true
     }
+    // Check if target is 3
     if (target === 3) {
         return false
     }
+    // Check if target is 4
     if (target === 4) {
         return true
     }
+    // Check if target is 5
     if (target === 5) {
         return false
     }
@@ -111,7 +117,7 @@ function createHotStreakParams(
         maxPrefixLinesInArea: 2,
         maxSuffixLinesInArea: 2,
         codeToRewritePrefixLines: 1,
-        codeToRewriteSuffixLines: 30,
+        codeToRewriteSuffixLines: 40,
         prefixTokens: 100,
         suffixTokens: 100,
     })
