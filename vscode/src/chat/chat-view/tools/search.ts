@@ -18,7 +18,7 @@ import { zodToolSchema } from '../utils/parse'
 import { type CodeSearchInput, CodeSearchSchema } from './schema'
 
 export async function getCodebaseSearchTool(
-    contextRetriever: Pick<ContextRetriever, 'retrieveContext' | 'computeDidYouMean'>,
+    contextRetriever: Pick<ContextRetriever, 'retrieveContext'>,
     span: Span
 ): Promise<AgentTool> {
     const searchTool: AgentTool = {
