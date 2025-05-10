@@ -306,7 +306,7 @@ export const HumanMessageEditor: FunctionComponent<{
                         new Promise<void>(async resolve => {
                             // If noInitialContext flag is set, skip loading context
                             let contextToUse: ContextItem[] = []
-                            
+
                             if (!setPromptAsInput.noInitialContext) {
                                 // Only fetch initial context if not explicitly skipped
                                 const { initialContext } = await firstValueFrom(
@@ -314,7 +314,7 @@ export const HumanMessageEditor: FunctionComponent<{
                                 )
                                 contextToUse = initialContext
                             }
-                            
+
                             // hydrate raw prompt text
                             const promptEditorState = await firstValueFrom(
                                 extensionAPI.hydratePromptMessage(setPromptAsInput.text, contextToUse)
