@@ -30,6 +30,9 @@ import {
 } from '../../services/utils/codeblock-action-tracker'
 import { CodyToolProvider } from '../agentic/CodyToolProvider'
 import type { SmartApplyResult } from '../protocol'
+
+import { requestEmptyDefaultContext } from '../initialContext'
+
 import {
     ChatController,
     type ChatSession,
@@ -108,12 +111,11 @@ export class ChatsController implements vscode.Disposable {
         autoSubmit,
     }: { text: string; mode: PromptMode; autoSubmit: boolean }): Promise<void> {
         // Get the appropriate controller (active editor, sidebar, or new instance)
-        const controller = await this.getControllerForPrompt()
+        const [controller, isNew] = await this.getControllerForPrompt()
 
-        // Now that we have an initialized webview, send messages
         if (controller.webviewPanelOrView) {
-            if (controller.webviewPanelOrView.title === 'New Chat') {
-                //Add a small delay before setting the prompt to ensure the webview has processed the previous messages
+            if (isNew) {
+                // Add a small delay before setting the prompt to ensure the webview has fully loaded
                 await new Promise(resolve => setTimeout(resolve, 1500))
             }
 
@@ -130,16 +132,17 @@ export class ChatsController implements vscode.Disposable {
 
     /**
      * Gets the most appropriate controller for showing a prompt based on visibility and preference.
+     * Returns a tuple with the controller and a boolean indicating if it's a newly created controller.
      */
-    private async getControllerForPrompt(): Promise<ChatController> {
+    public async getControllerForPrompt(): Promise<[ChatController, boolean]> {
         // Use existing active editor chat if available to avoid creating new instances
         if (this.activeEditor?.webviewPanelOrView?.visible) {
-            return this.activeEditor
+            return [this.activeEditor, false]
         }
 
         // Use sidebar if visible
         if (this.panel.isVisible()) {
-            return this.panel
+            return [this.panel, false]
         }
 
         // Otherwise follow location preference
@@ -147,7 +150,7 @@ export class ChatsController implements vscode.Disposable {
 
         if (chatLocation === 'sidebar') {
             await vscode.commands.executeCommand('cody.chat.focus')
-            return this.panel
+            return [this.panel, false]
         }
 
         if (this.editors.length > 0) {
@@ -156,12 +159,14 @@ export class ChatsController implements vscode.Disposable {
             if (controller.webviewPanelOrView) {
                 revealWebviewViewOrPanel(controller.webviewPanelOrView)
             }
-            return controller
+            return [controller, false]
         }
 
+        // Set the flag to use the empty default context before creating a new controller
+        requestEmptyDefaultContext()
         // Create a new editor if none exist
         const controller = await this.getOrCreateEditorChatController()
-        return controller
+        return [controller, true] // Flag as newly created
     }
 
     public registerViewsAndCommands() {

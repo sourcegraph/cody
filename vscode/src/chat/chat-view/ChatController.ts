@@ -125,7 +125,7 @@ import { openExternalLinks } from '../../services/utils/workspace-action'
 import { TestSupport } from '../../test-support'
 import type { MessageErrorType } from '../MessageProvider'
 import { getMentionMenuData } from '../context/chatContext'
-import { observeDefaultContext } from '../initialContext'
+import { getEmptyOrDefaultContextObservable } from '../initialContext'
 import type {
     ConfigurationSubsetForWebview,
     ExtensionMessage,
@@ -1750,7 +1750,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         )
 
         // Listen for API calls from the webview.
-        const defaultContext = observeDefaultContext({
+        const defaultContext = getEmptyOrDefaultContextObservable({
             chatBuilder: this.chatBuilder.changes,
         }).pipe(shareReplay())
 

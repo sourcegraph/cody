@@ -39,6 +39,29 @@ import {
     contextItemMentionFromOpenCtxItem,
 } from './context/chatContext'
 
+type DefaultContextPolicy = 'full' | 'empty'
+let currentDefaultContextPolicy: DefaultContextPolicy = 'full'
+
+export function requestEmptyDefaultContext(): void {
+    currentDefaultContextPolicy = 'empty'
+}
+
+// Get an empty or default context observable
+export function getEmptyOrDefaultContextObservable({
+    chatBuilder,
+}: {
+    chatBuilder: Observable<ChatBuilder>
+}): Observable<DefaultContext | typeof pendingOperation> {
+    // Capture and reset policy
+    const policy = currentDefaultContextPolicy
+    if (policy === 'empty') {
+        currentDefaultContextPolicy = 'full'
+        return Observable.of({ initialContext: [], corpusContext: [] })
+    }
+
+    return observeDefaultContext({ chatBuilder }).pipe(shareReplay())
+}
+
 /**
  * Observe the initial context that should be populated in the chat message input field.
  */
