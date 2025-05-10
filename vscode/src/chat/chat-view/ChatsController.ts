@@ -135,31 +135,15 @@ export class ChatsController implements vscode.Disposable {
      * Returns a tuple with the controller and a boolean indicating if it's a newly created controller.
      */
     public async getControllerForPrompt(): Promise<[ChatController, boolean]> {
-        // Use existing active editor chat if available to avoid creating new instances
-        if (this.activeEditor?.webviewPanelOrView?.visible) {
-            return [this.activeEditor, false]
-        }
-
-        // Use sidebar if visible
-        if (this.panel.isVisible()) {
-            return [this.panel, false]
-        }
-
-        // Otherwise follow location preference
         const chatLocation = getNewChatLocation()
 
         if (chatLocation === 'sidebar') {
             await vscode.commands.executeCommand('cody.chat.focus')
             return [this.panel, false]
         }
-
-        if (this.editors.length > 0) {
-            // Reuse an existing editor chat if available
-            const controller = this.editors[0]
-            if (controller.webviewPanelOrView) {
-                revealWebviewViewOrPanel(controller.webviewPanelOrView)
-            }
-            return [controller, false]
+        // Use existing active editor chat if available to avoid creating new instances
+        if (this.activeEditor?.webviewPanelOrView?.visible) {
+            return [this.activeEditor, false]
         }
 
         // Set the flag to use the empty default context before creating a new controller
