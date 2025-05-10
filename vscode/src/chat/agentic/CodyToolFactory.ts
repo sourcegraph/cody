@@ -160,7 +160,7 @@ export class ToolFactory {
                 instruction: PromptString.unsafe_fromUserQuery(
                     ((tool as any).description as string) || ''
                 ),
-                placeholder: ps`ARGS`,
+                placeholder: PromptString.unsafe_fromUserQuery(JSON.stringify(tool.input_schema)),
                 examples: [],
             },
             // Add metadata to identify tools from the same MCP server
