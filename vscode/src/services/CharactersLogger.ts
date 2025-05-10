@@ -165,7 +165,7 @@ export class CharactersLogger implements vscode.Disposable {
     }
 
     private async onDidChangeTextDocument(event: vscode.TextDocumentChangeEvent): Promise<void> {
-        if (!isFileURI(event.document.uri)) {
+        if (event.document.uri.scheme !== 'untitled' && !isFileURI(event.document.uri)) {
             return
         }
 
