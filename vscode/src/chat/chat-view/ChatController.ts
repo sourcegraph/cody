@@ -409,7 +409,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 }
                 break
             case 'command':
-                vscode.commands.executeCommand(message.id, message.arg)
+                vscode.commands.executeCommand(message.id, message.arg ?? message.args)
                 break
             case 'mcp': {
                 try {
