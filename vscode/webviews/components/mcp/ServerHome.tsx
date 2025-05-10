@@ -151,24 +151,6 @@ export function ServerHome({ mcpServers }: ServerHomeProps) {
         )
     }, [searchQuery, servers])
 
-    // Empty state
-    if (!mcpServers?.length) {
-        return (
-            <div className="tw-w-full tw-p-4">
-                <div className="tw-w-full tw-col-span-full tw-text-center tw-py-12 tw-border tw-rounded-lg tw-border-none">
-                    <Server className="tw-h-12 tw-w-12 tw-mx-auto tw-mb-4 tw-text-muted-foreground" />
-                    <h3 className="tw-text-md tw-font-medium">Waiting for server connections...</h3>
-                    <p className="tw-text-muted-foreground tw-mt-1">Add a new server to get started</p>
-                </div>
-                <AddServerView
-                    onAddServer={addServer}
-                    className="tw-my-4 tw-w-full tw-py-1"
-                    setServerToEdit={setSelectedServer}
-                />
-            </div>
-        )
-    }
-
     return (
         <Command
             loop={true}
@@ -199,7 +181,7 @@ export function ServerHome({ mcpServers }: ServerHomeProps) {
                     </div>
                 </Button>
             </header>
-            {!mcpServers.length ? (
+            {!mcpServers?.length ? (
                 <div className="tw-w-full tw-col-span-full tw-text-center tw-py-12 tw-border tw-rounded-lg tw-border-none">
                     <Server className="tw-h-12 tw-w-12 tw-mx-auto tw-mb-4 tw-text-muted-foreground" />
                     <h3 className="tw-text-md tw-font-medium">Waiting for server connections...</h3>
