@@ -16,7 +16,6 @@
 !dist/*.ttf
 
 !resources/*
-!walkthroughs/*.md
 
 !package.json
 !LICENSE
