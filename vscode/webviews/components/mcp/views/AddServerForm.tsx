@@ -112,7 +112,7 @@ export function AddServerForm({ onAddServer, _server }: AddServerFormProps) {
                     <input
                         id="arguments"
                         value={formData?.args}
-                        onChange={e => updateArg(e.target?.value?.trim())}
+                        onChange={e => updateArg(e.target?.value)}
                         className="tw-block tw-py-2.5 tw-px-0 tw-w-full tw-text-sm tw-text-input-foreground tw-bg-transparent tw-border-0 tw-border-b-2 tw-border-gray-300 tw-appearance-none dark:tw-border-gray-600 dark:focus:tw-border-blue-500 focus:tw-outline-none focus:tw-ring-0 focus:tw-border-blue-600 peer"
                         required={true}
                     />
