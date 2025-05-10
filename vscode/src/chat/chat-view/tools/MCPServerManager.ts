@@ -525,7 +525,7 @@ export function createMCPToolState(
         toolId: `mcp-${toolName}-${Date.now()}`,
         status,
         toolName: `${serverName}_${toolName}`,
-        content: textContent,
+        content: `<TOOLRESULT tool='${toolName}'>${textContent}\n[Please communicate the result to the user]</TOOLRESULT>`,
         outputType: 'mcp',
         uri: URI.parse(''),
         title: serverName + ' - ' + toolName,

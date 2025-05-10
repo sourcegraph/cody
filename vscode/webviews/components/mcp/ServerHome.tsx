@@ -74,11 +74,6 @@ export function ServerHome({ mcpServers }: ServerHomeProps) {
 
     const addServer = useCallback(
         (server: ServerType) => {
-            // If editing an existing server, remove it first
-            if (selectedServer && server.id === selectedServer.id) {
-                setSelectedServer(null)
-                removeServer(selectedServer.name)
-            }
             // Transform the UI server type to the format expected by MCPManager
             const mcpServerConfig: Record<string, any> = {
                 transportType: server.url ? 'sse' : 'stdio',
@@ -107,13 +102,40 @@ export function ServerHome({ mcpServers }: ServerHomeProps) {
                     mcpServerConfig.env = envVars
                 }
             }
-            // Send message to extension
-            getVSCodeAPI().postMessage({
-                command: 'mcp',
-                type: 'addServer',
-                name: server.name,
-                config: mcpServerConfig,
-            })
+
+            // Check if we're editing an existing server
+            if (selectedServer && server.id === selectedServer.id) {
+                // If the name hasn't changed, use updateServer instead of addServer
+                if (server.name === selectedServer.name) {
+                    // Update existing server
+                    getVSCodeAPI().postMessage({
+                        command: 'mcp',
+                        type: 'updateServer',
+                        name: server.name,
+                        config: mcpServerConfig,
+                    })
+                } else {
+                    // Name changed, need to remove old and add new
+                    // Remove old server first
+                    removeServer(selectedServer.name)
+                    // Then add new server with updated name
+                    getVSCodeAPI().postMessage({
+                        command: 'mcp',
+                        type: 'addServer',
+                        name: server.name,
+                        config: mcpServerConfig,
+                    })
+                }
+                setSelectedServer(null)
+            } else {
+                // Add new server
+                getVSCodeAPI().postMessage({
+                    command: 'mcp',
+                    type: 'addServer',
+                    name: server.name,
+                    config: mcpServerConfig,
+                })
+            }
         },
         [selectedServer, removeServer]
     )
