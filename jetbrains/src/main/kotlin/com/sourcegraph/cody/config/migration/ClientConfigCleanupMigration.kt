@@ -7,8 +7,6 @@ import com.sourcegraph.cody.initialization.Activity
 import com.sourcegraph.config.ConfigUtil
 import com.typesafe.config.ConfigFactory
 import kotlin.io.path.exists
-import kotlin.io.path.readText
-import kotlin.io.path.writeText
 
 /**
  * Migration to clean up temporary client-side configuration variables that were incorrectly written
@@ -28,6 +26,7 @@ class ClientConfigCleanupMigration : Activity {
         mapOf(
             "cody.autocomplete.advanced.model" to null,
             "cody.autocomplete.advanced.provider" to null,
+            "cody.autocomplete.enabled" to true,
             "cody.codebase" to null,
             "cody.debug.verbose" to false,
             "cody.experimental.foldingRanges" to "indentation-based",
@@ -53,44 +52,27 @@ class ClientConfigCleanupMigration : Activity {
     }
 
     try {
-      val fileContent = settingsFile.readText()
-      val config = ConfigFactory.parseString(fileContent).resolve()
+      val config = ConfigFactory.parseFile(settingsFile.toFile())
+      val validEntries = mutableMapOf<String, Any>()
 
-      var modified = false
-      var updatedConfig = config
-
-      // 1. First remove the client-side temporary values that should always be removed
-      for (path in pathsToAlwaysRemove) {
-        if (config.hasPath(path)) {
-          LOG.info("Removing temporary client configuration from settings: $path")
-          updatedConfig = updatedConfig.withoutPath(path)
-          modified = true
+      config.entrySet().forEach { configEntry ->
+        val unquotedKey =
+            com.typesafe.config.ConfigUtil.splitPath(configEntry.key).joinToString(".")
+        val shouldBeRemoved =
+            pathsToAlwaysRemove.any { unquotedKey.startsWith(it) } ||
+                defaultValues.any {
+                  it.key == unquotedKey && configEntry.value.unwrapped() == it.value
+                }
+        if (shouldBeRemoved) {
+          LOG.info("Removing default value from settings: ${configEntry.key}")
+        } else {
+          validEntries[configEntry.key] = configEntry.value
         }
       }
 
-      // 2. Now check for default values that can be cleaned up
-      for ((path, defaultValue) in defaultValues) {
-        if (config.hasPath(path)) {
-          val value =
-              when (defaultValue) {
-                is Boolean -> config.getBoolean(path)
-                is String -> config.getString(path)
-                null -> null
-                else -> "not-null"
-              }
-
-          if (value == defaultValue) {
-            LOG.info("Removing default value from settings: $path")
-            updatedConfig = updatedConfig.withoutPath(path)
-            modified = true
-          }
-        }
-      }
-
-      if (modified) {
+      if (validEntries.size != config.entrySet().size) {
         LOG.info("Writing cleaned up configuration to $settingsFile")
-        val content = updatedConfig.root().render(ConfigUtil.renderOptions)
-        settingsFile.writeText(content)
+        val content = ConfigFactory.parseMap(validEntries).root().render(ConfigUtil.renderOptions)
         ConfigUtil.setCustomConfiguration(project, content)
       } else {
         LOG.info("No configuration to clean up found")
