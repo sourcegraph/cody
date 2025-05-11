@@ -1,7 +1,26 @@
-import { type Message, type PromptString, charsToTokens } from '@sourcegraph/cody-shared'
+import {
+    type CompletionsRewriteSpeculationParams,
+    type Message,
+    type PromptString,
+    charsToTokens,
+} from '@sourcegraph/cody-shared'
+import { isHotStreakEnabled } from '../autoedits-config'
 import type { InceptionLabsRequestParams } from './inceptionlabs'
 
-export interface FireworksCompatibleRequestParams {
+export interface FireworksCompatibleRewriteSpeculationArgs {
+    // Rewrite speculation enabled speculating the tokens from predicted outputs even after first token mis-match.
+    rewrite_speculation?: boolean
+    // Adaptive speculation adjust the length of speculation tokens dynamically.
+    adaptive_speculation?: boolean
+    // Number of tokens to speculate.
+    speculation_length_on_strong_match?: number
+    // Minimum number of tokens to speculate.
+    speculation_min_length_on_strong_match?: number
+    // Speculation threshold.
+    speculation_strong_match_threshold?: number
+}
+
+export interface FireworksCompatibleRequestParams extends FireworksCompatibleRewriteSpeculationArgs {
     stream: boolean
     model: string
     temperature: number
@@ -13,8 +32,6 @@ export interface FireworksCompatibleRequestParams {
         type: string
         content: string
     }
-    rewrite_speculation?: boolean
-    adaptive_speculation?: boolean
     user?: string
 }
 
@@ -64,4 +81,32 @@ export function getSourcegraphCompatibleChatPrompt(param: {
     }
     prompt.push({ speaker: 'human', text: param.userMessage })
     return prompt
+}
+
+export function getFireworksCompatibleRewriteSpeculationParams(): FireworksCompatibleRewriteSpeculationArgs {
+    if (!isHotStreakEnabled()) {
+        return {}
+    }
+    // The rewrite speculation parameter values are decided based on the offline experiments.
+    // Check the PR https://github.com/sourcegraph/cody-chat-eval/pull/157 for more details.
+    return {
+        rewrite_speculation: true,
+        adaptive_speculation: true,
+        speculation_length_on_strong_match: 500,
+        speculation_min_length_on_strong_match: 500,
+        speculation_strong_match_threshold: 20,
+    }
+}
+
+export function getSourcegraphRewriteSpeculationParams(): CompletionsRewriteSpeculationParams {
+    if (!isHotStreakEnabled()) {
+        return {}
+    }
+    return {
+        rewriteSpeculation: true,
+        adaptiveSpeculation: true,
+        speculationLengthOnStrongMatch: 500,
+        speculationMinLengthOnStrongMatch: 500,
+        speculationStrongMatchThreshold: 20,
+    }
 }

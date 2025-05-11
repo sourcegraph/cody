@@ -370,6 +370,8 @@ data class ContextItemToolState(
   val duration: Long? = null,
   val outputType: OutputTypeEnum, // Oneof: search-result, terminal-output, file-diff, file-view, status, mcp
   val searchResultItems: List<ContextItem>? = null,
+  val parts: List<MessagePart>? = null,
+  val context: List<ContextItem>? = null,
 ) : ContextItem() {
 
   enum class TypeEnum {

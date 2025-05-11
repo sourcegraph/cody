@@ -54,7 +54,6 @@ import {
 import { createAutoEditsProvider } from './autoedits/create-autoedits-provider'
 import { autoeditDebugStore } from './autoedits/debug-panel/debug-store'
 import { autoeditsOutputChannelLogger } from './autoedits/output-channel-logger'
-import { registerAutoEditTestRenderCommand } from './autoedits/renderer/mock-renderer'
 import type { MessageProviderOptions } from './chat/MessageProvider'
 import { CodyToolProvider } from './chat/agentic/CodyToolProvider'
 import { ChatsController, CodyChatEditorViewType } from './chat/chat-view/ChatsController'
@@ -320,28 +319,21 @@ const register = async (
     resolvedConfig.pipe(take(1)).subscribe(({ auth }) => showSetupNotification(auth))
 
     // Initialize MCP Manager based on the feature flag
-    let mcpManager: MCPManager | undefined
     disposables.push(
         subscriptionDisposable(
-            featureFlagProvider
-                .evaluatedFeatureFlag(FeatureFlag.NextAgenticChatInternal)
-                .pipe(distinctUntilChanged())
+            combineLatest(
+                featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.AgenticChatWithMCP),
+                featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.AgenticContextDisabled)
+            )
+                .pipe(
+                    map(([mcpEnabled, agenticDisabled]) => mcpEnabled && !agenticDisabled),
+                    distinctUntilChanged()
+                )
                 .subscribe(async isEnabled => {
                     if (isEnabled) {
-                        // Initialize MCP Manager if feature flag is enabled
-                        if (!mcpManager) {
-                            mcpManager = await MCPManager.init()
-                            if (mcpManager) {
-                                logDebug('main', 'MCPManager initialized')
-                            }
-                        }
+                        await MCPManager?.init()
                     } else {
-                        // Dispose MCP Manager if feature flag is disabled
-                        if (mcpManager) {
-                            await mcpManager.dispose()
-                            mcpManager = undefined
-                            logDebug('main', 'MCPManager disposed')
-                        }
+                        MCPManager?.dispose()
                     }
                 })
         )
@@ -502,14 +494,6 @@ async function registerCodyCommands({
 
     // Initialize autoedit provider if experimental feature is enabled
     registerAutoEdits({ chatClient, fixupController, statusBar, disposables, context })
-
-    // Initialize autoedit tester
-    disposables.push(
-        enableFeature(
-            ({ configuration }) => configuration.experimentalAutoEditRendererTesting !== false,
-            () => registerAutoEditTestRenderCommand()
-        )
-    )
 
     disposables.push(
         subscriptionDisposable(
@@ -771,7 +755,6 @@ function registerAutoEdits({
                 featureFlagProvider.evaluatedFeatureFlag(
                     FeatureFlag.CodyAutoEditExperimentEnabledFeatureFlag
                 ),
-                featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyAutoEditInlineRendering),
                 featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyAutoEditHotStreak),
                 featureFlagProvider.evaluatedFeatureFlag(
                     FeatureFlag.CodyAutoEditUseWebSocketForFireworksConnections
@@ -790,7 +773,6 @@ function registerAutoEdits({
                             config,
                             authStatus,
                             autoeditFeatureFlagEnabled,
-                            autoeditInlineRenderingEnabled,
                             autoeditHotStreakEnabled,
                             autoeditUseWebSocketEnabled,
                         ]) => {
@@ -799,7 +781,6 @@ function registerAutoEdits({
                                 authStatus,
                                 chatClient,
                                 autoeditFeatureFlagEnabled,
-                                autoeditInlineRenderingEnabled,
                                 autoeditHotStreakEnabled,
                                 autoeditUseWebSocketEnabled,
                                 fixupController,

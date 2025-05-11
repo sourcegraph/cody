@@ -1,11 +1,9 @@
-import * as vscode from 'vscode'
+import type * as vscode from 'vscode'
 
+import type { CodeToReplaceData } from '@sourcegraph/cody-shared'
 import { getNewLineChar } from '../../completions/text-processing'
-import type { CodeToReplaceData } from '../prompt/prompt-utils'
 
 import { autoeditsOutputChannelLogger } from '../output-channel-logger'
-import { DefaultDecorator } from './decorators/default-decorator'
-import { getDecorationInfo } from './diff-utils'
 
 export const INITIAL_TEXT_START_MARKER = '\n<<<<\n'
 export const REPLACER_TEXT_START_MARKER = '\n====\n'
@@ -88,59 +86,6 @@ function offsetToLineNumber(text: string, offset: number): number {
     }
 
     return text.slice(0, offset).split('\n').length - 1
-}
-
-export function registerAutoEditTestRenderCommand(): vscode.Disposable {
-    return vscode.commands.registerCommand('cody.supersuggest.testExample', () => {
-        const editor = vscode.window.activeTextEditor
-        const document = editor?.document
-
-        if (!editor || !document) {
-            return
-        }
-
-        const text = editor.document.getText()
-
-        // extract replace start line and end line, replacerText, and replacerCol
-        const ret = extractAutoEditResponseFromCurrentDocumentCommentTemplate(
-            document,
-            editor.selection.active
-        )
-        if (!ret) {
-            return
-        }
-
-        const replacerText = ret.replacer.text
-        const replaceStartOffset = text.indexOf(ret.initial.text, ret.replacer.endOffset)
-        if (replaceStartOffset === -1) {
-            console.error('Could not find replacement text')
-            return
-        }
-        const replaceEndOffset = replaceStartOffset + ret.initial.text.length
-
-        const replaceStartLine = editor.document.positionAt(replaceStartOffset).line
-        const replaceEndLine = editor.document.positionAt(replaceEndOffset).line
-
-        const decorator = new DefaultDecorator(editor)
-
-        // Splice replacerText into currentFileText at replaceStartLine and replaceEndLine
-        const newLineChar = getNewLineChar(text)
-        const lines = text.split(newLineChar)
-
-        const predictedFileText = [
-            ...lines.slice(0, replaceStartLine),
-            replacerText,
-            ...lines.slice(replaceEndLine + 1),
-        ].join(newLineChar)
-
-        const decorationInformation = getDecorationInfo(text, predictedFileText)
-        decorator.setDecorations(decorationInformation)
-
-        const listener = vscode.window.onDidChangeTextEditorSelection(e => {
-            decorator.dispose()
-            listener.dispose()
-        })
-    })
 }
 
 export function getTextBetweenMarkers({

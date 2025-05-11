@@ -16,7 +16,7 @@ sealed class MessagePart {
           "text" -> context.deserialize<TextContentPart>(element, TextContentPart::class.java)
           "context_file" -> context.deserialize<ContextFileMessagePart>(element, ContextFileMessagePart::class.java)
           "context_repo" -> context.deserialize<ContextRepoMessagePart>(element, ContextRepoMessagePart::class.java)
-          "image_url" -> context.deserialize<ImageUrlMessagePart>(element, ImageUrlMessagePart::class.java)
+          "image_url" -> context.deserialize<ImageContentPart>(element, ImageContentPart::class.java)
           "tool_call" -> context.deserialize<ToolCallContentPart>(element, ToolCallContentPart::class.java)
           "tool_result" -> context.deserialize<ToolResultContentPart>(element, ToolResultContentPart::class.java)
           else -> throw Exception("Unknown discriminator ${element}")
@@ -56,7 +56,7 @@ data class ContextRepoMessagePart(
   }
 }
 
-data class ImageUrlMessagePart(
+data class ImageContentPart(
   val type: TypeEnum, // Oneof: image_url
   val image_url: Image_urlParams,
 ) : MessagePart() {

@@ -11,13 +11,18 @@ import { IndexDBStorage } from './index-db-storage'
 
 const conn = createMessageConnection(new BrowserMessageReader(self), new BrowserMessageWriter(self))
 
+const isDemo = self.name === 'demo'
+const isSafari = self.navigator.userAgent.toLowerCase().includes('safari')
+
 const agent = new Agent({
     conn,
     extensionActivate: createActivation({
         // Since agent is running within web-worker web sentry service will fail
         // since it relies on DOM API which is not available in web-worker
         createSentryService: undefined,
-        createStorage: () => IndexDBStorage.create(),
+
+        // Workaround for IndexDBStorage bug which fail ąto initialize in Safari
+        createStorage: isDemo && isSafari ? undefined : () => IndexDBStorage.create(),
 
         createCommandsProvider: () => new CommandsProvider(),
 

@@ -9,6 +9,7 @@ import {
 } from '@sourcegraph/cody-shared'
 import { DeepCodyAgent } from '../../agentic/DeepCody'
 import { DeepCodyRateLimiter } from '../../agentic/DeepCodyRateLimiter'
+import { toolboxManager } from '../../agentic/ToolboxManager'
 import type { ChatBuilder } from '../ChatBuilder'
 import type { HumanInput } from '../context'
 import { ChatHandler } from './ChatHandler'
@@ -50,7 +51,11 @@ export class DeepCodyHandler extends ChatHandler implements AgentHandler {
             skipQueryRewriteForDeepCody
         )
         // Early return if basic conditions aren't met.
-        if (baseContextResult.error || baseContextResult.abort) {
+        if (
+            !toolboxManager.isAgenticChatEnabled() ||
+            baseContextResult.error ||
+            baseContextResult.abort
+        ) {
             return baseContextResult
         }
         // Check session and query constraints
@@ -77,8 +82,13 @@ export class DeepCodyHandler extends ChatHandler implements AgentHandler {
 
         const retryTime = deepCodyRateLimiter.isAtLimit()
         if (retryTime) {
+            // Update the rate limit status in the config
+            toolboxManager.setIsRateLimited(true)
             return { error: deepCodyRateLimiter.getRateLimitError(retryTime), abort: true }
         }
+
+        // Reset rate limited status if we're proceeding
+        toolboxManager.setIsRateLimited(false)
 
         const baseContext = baseContextResult.contextItems ?? []
         const agent = new DeepCodyAgent(

@@ -29,7 +29,6 @@ import type { UserProductSubscription } from '../sourcegraph-api/userProductSubs
 import { telemetryRecorder } from '../telemetry-v2/singleton'
 import { CHAT_INPUT_TOKEN_BUDGET } from '../token/constants'
 import { isError } from '../utils'
-import { DEEP_CODY_MODEL, TOOL_CODY_MODEL } from './client'
 import { type Model, type ServerModel, createModel, createModelFromServerModel } from './model'
 import type {
     DefaultsAndUserPreferencesForEndpoint,
@@ -177,20 +176,13 @@ export function syncModels({
                                         primaryModels: [],
                                     }
 
-                                    // For DotCom users with early access or on the waitlist, replace the waitlist tag with the appropriate tags.
-                                    const enableToolCody: Observable<boolean> = resolvedConfig.pipe(
-                                        map(c => !!c.configuration.experimentalMinionAnthropicKey),
-                                        distinctUntilChanged()
-                                    )
                                     return combineLatest(
                                         featureFlagProvider.evaluatedFeatureFlag(
                                             FeatureFlag.CodyEarlyAccess
                                         ),
-                                        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.DeepCody),
                                         featureFlagProvider.evaluatedFeatureFlag(
                                             FeatureFlag.CodyChatDefaultToClaude35Haiku
                                         ),
-                                        enableToolCody,
                                         featureFlagProvider.evaluatedFeatureFlag(
                                             FeatureFlag.EnhancedContextWindow,
                                             true /** force refresh */
@@ -203,9 +195,7 @@ export function syncModels({
                                         switchMap(
                                             ([
                                                 hasEarlyAccess,
-                                                hasAgenticChatFlag,
                                                 defaultToHaiku,
-                                                isToolCodyEnabled,
                                                 enhancedContextWindowFlag,
                                                 fallbackToFlashFlag,
                                             ]) => {
@@ -273,56 +263,10 @@ export function syncModels({
                                                             : m.tags.filter(t => t !== ModelTag.Vision),
                                                 }))
 
-                                                const clientModels = []
-
-                                                // Handle agentic chat features
-                                                const isAgenticChatEnabled =
-                                                    hasAgenticChatFlag ||
-                                                    (isDotComUser && !isCodyFreeUser)
-                                                // Handle agentic chat features
+                                                // Set the default model to Haiku for free users.
                                                 const haikuModel = data.primaryModels.find(m =>
                                                     m.id.includes('5-haiku')
                                                 )
-                                                // Look for any sonnet model to add Deep Cody.
-                                                const sonnetModel = data.primaryModels.find(m =>
-                                                    m.id.includes('sonnet')
-                                                )
-                                                const hasDeepCody = data.primaryModels.some(m =>
-                                                    m.id.includes('deep-cody')
-                                                )
-                                                if (
-                                                    !hasDeepCody &&
-                                                    isAgenticChatEnabled &&
-                                                    sonnetModel &&
-                                                    haikuModel
-                                                ) {
-                                                    // Add Deep Cody
-                                                    clientModels.push(DEEP_CODY_MODEL)
-                                                    // Add Tool Cody
-                                                    if (isToolCodyEnabled) {
-                                                        clientModels.push(TOOL_CODY_MODEL)
-                                                    }
-                                                }
-
-                                                // Add the client models to the list of models.
-                                                data.primaryModels.push(
-                                                    ...maybeAdjustContextWindows(clientModels, {
-                                                        tier: isDotComUser
-                                                            ? isCodyProUser(
-                                                                  authStatus,
-                                                                  userProductSubscription
-                                                              )
-                                                                ? 'pro'
-                                                                : 'free'
-                                                            : 'enterprise',
-                                                        // the feature flag is for serverModels, so it's always false for client models
-                                                        enhancedContextWindowFlagEnabled: false,
-                                                    }).map(model =>
-                                                        createModelFromServerModel(model, false)
-                                                    )
-                                                )
-
-                                                // Set the default model to Haiku for free users.
                                                 if (
                                                     isDotComUser &&
                                                     isCodyFreeUser &&

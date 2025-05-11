@@ -124,6 +124,8 @@ import {
 import { openExternalLinks } from '../../services/utils/workspace-action'
 import { TestSupport } from '../../test-support'
 import type { MessageErrorType } from '../MessageProvider'
+import { DeepCodyAgent } from '../agentic/DeepCody'
+import { toolboxManager } from '../agentic/ToolboxManager'
 import { getMentionMenuData } from '../context/chatContext'
 import { getEmptyOrDefaultContextObservable } from '../initialContext'
 import type {
@@ -142,7 +144,7 @@ import type { ContextRetriever } from './ContextRetriever'
 import { InitDoer } from './InitDoer'
 import { getChatPanelTitle, isAgentTesting } from './chat-helpers'
 import { OmniboxTelemetry } from './handlers/OmniboxTelemetry'
-import { getAgent, getAgentName } from './handlers/registry'
+import { getAgent } from './handlers/registry'
 import { getPromptsMigrationInfo, startPromptsMigration } from './prompts-migration'
 import { MCPManager } from './tools/MCPManager'
 
@@ -409,6 +411,101 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             case 'command':
                 vscode.commands.executeCommand(message.id, message.arg)
                 break
+            case 'mcp': {
+                try {
+                    const mcpManager = MCPManager.instance
+                    if (!mcpManager) {
+                        throw new Error('MCP Manager is not initialized')
+                    }
+                    // All other operations require a server name
+                    if (!message.name) {
+                        // Special case for updateServer without name (to refresh server list)
+                        if (message.type === 'updateServer') {
+                            await mcpManager.refreshServers()
+                            break
+                        }
+                        throw new Error('Missing name property in MCP message')
+                    }
+                    switch (message.type) {
+                        case 'addServer':
+                            if (!message.config) {
+                                throw new Error('Missing config for addServer operation')
+                            }
+                            try {
+                                await mcpManager.addServer(message.name, message.config)
+
+                                // Send specific message to the UI about the new server
+                                const newServer = mcpManager
+                                    .getServers()
+                                    .find(s => s.name === message.name)
+                                if (newServer) {
+                                    void this.postMessage({
+                                        type: 'clientAction',
+                                        mcpServerChanged: {
+                                            name: newServer.name,
+                                            server: newServer,
+                                        },
+                                    })
+                                }
+                            } catch (error) {
+                                const errorMessage =
+                                    error instanceof Error ? error.message : String(error)
+                                vscode.window.showErrorMessage(`Failed to add server: ${errorMessage}`)
+                                throw error
+                            }
+                            break
+                        case 'updateServer':
+                            if (message.config) {
+                                // Update with full config
+                                await mcpManager.updateServer(message.name, message.config)
+                            } else if (message.toolName) {
+                                // Toggle single tool state
+                                const isDisabled = message.toolDisabled === true
+                                await mcpManager.setToolState(message.name, message.toolName, isDisabled)
+                            }
+                            break
+                        case 'removeServer':
+                            if (!message.name) {
+                                throw new Error('Missing name for removeServer operation')
+                            }
+                            try {
+                                // Store server name before deleting it
+                                const serverName = message.name
+                                await mcpManager.deleteServer(serverName)
+                                this.postMessage({
+                                    type: 'clientAction',
+                                    mcpServerChanged: {
+                                        name: serverName,
+                                        server: null,
+                                    },
+                                })
+                            } catch (error) {
+                                const errorMessage =
+                                    error instanceof Error ? error.message : String(error)
+                                vscode.window.showErrorMessage(
+                                    `Failed to remove server: ${errorMessage}`
+                                )
+                                throw error
+                            }
+                            break
+
+                        default:
+                            throw new Error(`Unknown MCP operation: ${message.type}`)
+                    }
+                } catch (error) {
+                    const errorMessage = error instanceof Error ? error.message : String(error)
+                    void this.postMessage({
+                        type: 'clientAction',
+                        mcpServerError: {
+                            name: 'name' in message ? message.name : '',
+                            error: errorMessage,
+                        },
+                        mcpServerChanged: null,
+                    })
+                }
+                break
+            }
+
             case 'recordEvent':
                 telemetryRecorder.recordEvent(
                     // 👷 HACK: We have no control over what gets sent over JSON RPC,
@@ -704,7 +801,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         manuallySelectedIntent?: ChatMessage['intent'] | undefined | null
         traceparent?: string | undefined | null
         model?: string | undefined
-        chatAgent?: string | undefined
     }): Promise<void> {
         return context.with(extractContextFromTraceparent(traceparent), () => {
             return tracer.startActiveSpan('chat.handleUserMessage', async (span): Promise<void> => {
@@ -722,13 +818,11 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
 
                 this.chatBuilder.setSelectedModel(model)
 
-                const chatAgent = getAgentName(manuallySelectedIntent, model)
-
                 this.chatBuilder.addHumanMessage({
                     text: inputText,
                     editorState,
                     intent: manuallySelectedIntent,
-                    agent: chatAgent,
+                    agent: toolboxManager.isAgenticChatEnabled() ? DeepCodyAgent.id : undefined,
                 })
 
                 this.setCustomChatTitle(requestID, inputText, signal)
@@ -748,7 +842,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                         command,
                         manuallySelectedIntent,
                         model,
-                        chatAgent,
                     },
                     span
                 )
@@ -1850,15 +1943,14 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     // Existing tools endpoint - update to include MCP tools
                     mcpSettings: () => {
                         return featureFlagProvider
-                            .evaluatedFeatureFlag(FeatureFlag.NextAgenticChatInternal)
+                            .evaluatedFeatureFlag(FeatureFlag.AgenticChatWithMCP)
                             .pipe(
-                                // Simplify the flow with map and distinctUntilChanged
                                 distinctUntilChanged(),
                                 startWith(null),
-                                // When disabled, return an empty array
+                                // When disabled, return null
                                 switchMap(experimentalAgentMode => {
                                     if (!experimentalAgentMode) {
-                                        return Observable.of([] as McpServer[])
+                                        return Observable.of(null as McpServer[] | null)
                                     }
                                     // When enabled, get servers from the manager
                                     return MCPManager.observable

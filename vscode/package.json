@@ -3,7 +3,7 @@
   "name": "cody-ai",
   "private": true,
   "displayName": "Cody: AI Code Assistant",
-  "version": "1.90.0",
+  "version": "1.92.0",
   "publisher": "sourcegraph",
   "license": "Apache-2.0",
   "icon": "resources/sourcegraph.png",
@@ -1198,6 +1198,11 @@
         "openctx.providers": {
           "type": "object",
           "markdownDescription": "OpenCtx providers configuration.",
+          "default": {}
+        },
+        "cody.mcpServers": {
+          "type": "object",
+          "markdownDescription": "Configuration for MCP servers to use with agentic chat.",
           "default": {}
         },
         "cody.internal.unstable": {

@@ -1,5 +1,5 @@
 import { ps } from '@sourcegraph/cody-shared'
-import type { CodyToolConfig } from './CodyTool'
+import type { CodyToolConfig } from './types'
 
 // Known tools that can be used in the chat.
 export const OPENCTX_TOOL_CONFIG: Record<string, CodyToolConfig> = {
