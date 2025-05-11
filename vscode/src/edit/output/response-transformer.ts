@@ -108,6 +108,15 @@ export function responseTransformer(
     isMessageInProgress: boolean
 ): string {
     const updatedText = extractSmartApplyCustomModelResponse(text, task)
+
+    // if we use the new Qwen based smart apply which performs an entire-file
+    // replace it's enough for us to just remove the start and end newline
+    if (
+        task.intent === 'smartApply' &&
+        Object.values(SMART_APPLY_MODEL_IDENTIFIERS).includes(task.model)
+    ) {
+        return updatedText.replace(LEADING_SPACES_AND_NEW_LINES, '')
+    }
     const strippedText = stripText(updatedText, task)
 
     // Trim leading spaces
