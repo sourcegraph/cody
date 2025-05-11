@@ -107,6 +107,13 @@ export function responseTransformer(
     task: FixupTask,
     isMessageInProgress: boolean
 ): string {
+    if (
+        task.intent === 'smartApply' &&
+        Object.values(SMART_APPLY_MODEL_IDENTIFIERS).includes(task.model) &&
+        isMessageInProgress
+    ) {
+        return text
+    }
     const updatedText = extractSmartApplyCustomModelResponse(text, task)
 
     // if we use the new Qwen based smart apply which performs an entire-file
@@ -115,7 +122,7 @@ export function responseTransformer(
         task.intent === 'smartApply' &&
         Object.values(SMART_APPLY_MODEL_IDENTIFIERS).includes(task.model)
     ) {
-        return updatedText.replace(LEADING_SPACES_AND_NEW_LINES, '')
+        return task.original.endsWith('\n') ? updatedText : updatedText.trimEnd()
     }
     const strippedText = stripText(updatedText, task)
 
