@@ -195,6 +195,18 @@ object ConfigUtil {
   }
 
   @JvmStatic
+  fun updateCustomConfiguration(project: Project, key: String, value: String? = null) {
+    val config = ConfigFactory.parseString(getSettingsFile(project).readText()).resolve()
+    val updatedConfig =
+        if (value == null) {
+          config.withoutPath(key)
+        } else {
+          config.withValue(key, ConfigValueFactory.fromAnyRef(value))
+        }
+    setCustomConfiguration(project, updatedConfig.root().render(renderOptions))
+  }
+
+  @JvmStatic
   fun setCustomConfiguration(project: Project, customConfigContent: String): VirtualFile? {
     val config = ConfigFactory.parseString(customConfigContent).resolve()
     val content = config.root().render(renderOptions)
