@@ -1,6 +1,5 @@
 import {
     type ChatMessage,
-    type ContextItem,
     type ContextItemMedia,
     FAST_CHAT_INPUT_TOKEN_BUDGET,
     type Model,
@@ -304,20 +303,13 @@ export const HumanMessageEditor: FunctionComponent<{
                     updates.push(
                         // biome-ignore lint/suspicious/noAsyncPromiseExecutor: <explanation>
                         new Promise<void>(async resolve => {
-                            // If noInitialContext flag is set, skip loading context
-                            let contextToUse: ContextItem[] = []
-
-                            if (!setPromptAsInput.noInitialContext) {
-                                // Only fetch initial context if not explicitly skipped
-                                const { initialContext } = await firstValueFrom(
-                                    extensionAPI.defaultContext().pipe(skipPendingOperation())
-                                )
-                                contextToUse = initialContext
-                            }
-
+                            // get initial context
+                            const { initialContext } = await firstValueFrom(
+                                extensionAPI.defaultContext().pipe(skipPendingOperation())
+                            )
                             // hydrate raw prompt text
                             const promptEditorState = await firstValueFrom(
-                                extensionAPI.hydratePromptMessage(setPromptAsInput.text, contextToUse)
+                                extensionAPI.hydratePromptMessage(setPromptAsInput.text, initialContext)
                             )
 
                             // update editor state

@@ -221,7 +221,6 @@ export type ExtensionMessage =
                     text: string
                     mode?: PromptMode | undefined | null
                     autoSubmit: boolean
-                    noInitialContext?: boolean
                 }
               | undefined
               | null
