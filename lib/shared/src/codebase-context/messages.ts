@@ -299,6 +299,16 @@ export interface ContextItemToolState extends ContextItemCommon {
      * For search results, the list of found items
      */
     searchResultItems?: ContextItem[]
+
+    /**
+     * For tools that return multiple content parts, the raw parts are stored here
+     */
+    parts?: MessagePart[]
+
+    /**
+     * For tools that return context items, the context items are stored here
+     */
+    context?: ContextItem[]
 }
 
 /** The valid kinds of a symbol. */

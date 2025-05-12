@@ -15,7 +15,6 @@ import {
     promiseFactoryToObservable,
     skipPendingOperation,
 } from '@sourcegraph/cody-shared'
-import { isRunningInsideAgent } from '../jsonrpc/isRunningInsideAgent'
 import type { FixupController } from '../non-stop/FixupController'
 
 import type { CodyStatusBar } from '../services/StatusBar'
@@ -51,7 +50,6 @@ interface AutoeditsItemProviderArgs {
     authStatus: AuthStatus
     chatClient: ChatClient
     autoeditFeatureFlagEnabled: boolean
-    autoeditInlineRenderingEnabled: boolean
     autoeditHotStreakEnabled: boolean
     autoeditUseWebSocketEnabled: boolean
     fixupController: FixupController
@@ -64,7 +62,6 @@ export function createAutoEditsProvider({
     authStatus,
     chatClient,
     autoeditFeatureFlagEnabled,
-    autoeditInlineRenderingEnabled,
     autoeditHotStreakEnabled,
     autoeditUseWebSocketEnabled,
     fixupController,
@@ -97,22 +94,7 @@ export function createAutoEditsProvider({
                 return []
             }
 
-            const enabledRendererInSettings = vscode.workspace
-                .getConfiguration()
-                .get<'default' | 'inline'>('cody.experimental.autoedit.renderer', 'default')
-
-            /**
-             * Render inline when any of the following is true:
-             * 1. Feature flag is enabled
-             * 2. Setting is enabled
-             * 3. Running inside agent - The default renderer logic is not suitable to use inside agent.
-             */
-            const shouldRenderInline =
-                autoeditInlineRenderingEnabled ||
-                enabledRendererInSettings === 'inline' ||
-                isRunningInsideAgent()
             const provider = new AutoeditsProvider(chatClient, fixupController, statusBar, {
-                shouldRenderInline,
                 shouldHotStreak: autoeditHotStreakEnabled || isHotStreakEnabledInSettings(),
                 allowUsingWebSocket: autoeditUseWebSocketEnabled,
             })

@@ -13,6 +13,7 @@ export function isEvenOrOdd(numberToChange: number): boolean {
 Prediction:
 
 export function isEvenOrOdd(target: number): boolean {
+    // Check if target is 0
     if (target === 0) {
         return true
     }
@@ -21,161 +22,206 @@ export function isEvenOrOdd(target: number): boolean {
 Code to Rewrite:
 
 export function isEvenOrOdd(target: number): boolean {
+    // Check if target is 0
     if (target === 0) {
         return true
     }
     // Check if target is 1
     if (numberToChange === 1) {
         return false
+    }
 
 Prediction:
 
 export function isEvenOrOdd(target: number): boolean {
+    // Check if target is 0
     if (target === 0) {
         return true
     }
+    // Check if target is 1
     if (target === 1) {
         return false
+    }
 
             
 Code to Rewrite:
 
 export function isEvenOrOdd(target: number): boolean {
+    // Check if target is 0
     if (target === 0) {
         return true
     }
+    // Check if target is 1
     if (target === 1) {
         return false
     }
     // Check if target is 2
     if (numberToChange === 2) {
         return true
+    }
 
 Prediction:
 
 export function isEvenOrOdd(target: number): boolean {
+    // Check if target is 0
     if (target === 0) {
         return true
     }
+    // Check if target is 1
     if (target === 1) {
         return false
     }
+    // Check if target is 2
     if (target === 2) {
         return true
+    }
 
             
 Code to Rewrite:
 
 export function isEvenOrOdd(target: number): boolean {
+    // Check if target is 0
     if (target === 0) {
         return true
     }
+    // Check if target is 1
     if (target === 1) {
         return false
     }
+    // Check if target is 2
     if (target === 2) {
         return true
     }
     // Check if target is 3
     if (numberToChange === 3) {
         return false
+    }
 
 Prediction:
 
 export function isEvenOrOdd(target: number): boolean {
+    // Check if target is 0
     if (target === 0) {
         return true
     }
+    // Check if target is 1
     if (target === 1) {
         return false
     }
+    // Check if target is 2
     if (target === 2) {
         return true
     }
+    // Check if target is 3
     if (target === 3) {
         return false
+    }
 
             
 Code to Rewrite:
 
 export function isEvenOrOdd(target: number): boolean {
+    // Check if target is 0
     if (target === 0) {
         return true
     }
+    // Check if target is 1
     if (target === 1) {
         return false
     }
+    // Check if target is 2
     if (target === 2) {
         return true
     }
+    // Check if target is 3
     if (target === 3) {
         return false
     }
     // Check if target is 4
     if (numberToChange === 4) {
         return true
+    }
 
 Prediction:
 
 export function isEvenOrOdd(target: number): boolean {
+    // Check if target is 0
     if (target === 0) {
         return true
     }
+    // Check if target is 1
     if (target === 1) {
         return false
     }
+    // Check if target is 2
     if (target === 2) {
         return true
     }
+    // Check if target is 3
     if (target === 3) {
         return false
     }
+    // Check if target is 4
     if (target === 4) {
         return true
+    }
 
             
 Code to Rewrite:
 
 export function isEvenOrOdd(target: number): boolean {
+    // Check if target is 0
     if (target === 0) {
         return true
     }
+    // Check if target is 1
     if (target === 1) {
         return false
     }
+    // Check if target is 2
     if (target === 2) {
         return true
     }
+    // Check if target is 3
     if (target === 3) {
         return false
     }
+    // Check if target is 4
     if (target === 4) {
         return true
     }
     // Check if target is 5
     if (numberToChange === 5) {
         return false
+    }
 
 Prediction:
 
 export function isEvenOrOdd(target: number): boolean {
+    // Check if target is 0
     if (target === 0) {
         return true
     }
+    // Check if target is 1
     if (target === 1) {
         return false
     }
+    // Check if target is 2
     if (target === 2) {
         return true
     }
+    // Check if target is 3
     if (target === 3) {
         return false
     }
+    // Check if target is 4
     if (target === 4) {
         return true
     }
+    // Check if target is 5
     if (target === 5) {
         return false
+    }
 
             "
 `;

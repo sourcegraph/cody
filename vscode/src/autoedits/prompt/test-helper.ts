@@ -1,8 +1,9 @@
+import type { CodeToReplaceData } from '@sourcegraph/cody-shared'
 import dedent from 'dedent'
 
 import { getCurrentDocContext } from '../../completions/get-current-doc-context'
 import { documentAndPosition } from '../../completions/test-helpers'
-import { type CodeToReplaceData, getCodeToReplaceData } from '../prompt/prompt-utils'
+import { getCodeToReplaceData } from '../prompt/prompt-utils/code-to-replace'
 
 interface CodeToReplaceTestOptions {
     maxPrefixLength: number

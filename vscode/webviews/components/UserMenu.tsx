@@ -1,4 +1,10 @@
-import { type AuthenticatedAuthStatus, CodyIDE, isDotCom } from '@sourcegraph/cody-shared'
+import {
+    type AuthenticatedAuthStatus,
+    CodyIDE,
+    FeatureFlag,
+    isDotCom,
+    isWorkspaceInstance,
+} from '@sourcegraph/cody-shared'
 import {
     ArrowLeftRightIcon,
     BookOpenText,
@@ -11,6 +17,7 @@ import {
     ExternalLinkIcon,
     LogOutIcon,
     PlusIcon,
+    ServerIcon,
     Settings2Icon,
     UserCircleIcon,
     ZapIcon,
@@ -25,8 +32,10 @@ import {
     isSourcegraphToken,
 } from '../../src/chat/protocol'
 import { SourcegraphLogo } from '../icons/SourcegraphLogo'
+import { View } from '../tabs'
 import { getVSCodeAPI } from '../utils/VSCodeApi'
 import { useTelemetryRecorder } from '../utils/telemetry'
+import { useFeatureFlag } from '../utils/useFeatureFlags'
 import { UserAvatar } from './UserAvatar'
 import { Badge } from './shadcn/ui/badge'
 import { Button } from './shadcn/ui/button'
@@ -47,6 +56,7 @@ interface UserMenuProps {
     // Whether to show the Sourcegraph Teams upgrade CTA or not.
     isWorkspacesUpgradeCtaEnabled?: boolean
     IDE: CodyIDE
+    setTabView: (tab: View) => void
 }
 
 type MenuView = 'main' | 'switch' | 'add' | 'remove' | 'debug' | 'help'
@@ -61,10 +71,21 @@ export const UserMenu: React.FunctionComponent<UserMenuProps> = ({
     __storybook__open,
     isWorkspacesUpgradeCtaEnabled,
     IDE,
+    setTabView,
 }) => {
     const telemetryRecorder = useTelemetryRecorder()
     const { displayName, username, primaryEmail, endpoint } = authStatus
     const isDotComUser = isDotCom(endpoint)
+    const isWorkspaceUser = isWorkspaceInstance(endpoint)
+    const isMcpEnabled = useFeatureFlag(FeatureFlag.AgenticChatWithMCP)
+
+    const userType = isDotComUser
+        ? isProUser
+            ? 'Pro'
+            : 'Free'
+        : isWorkspaceUser
+          ? 'Enterprise Starter'
+          : 'Enterprise'
 
     const [userMenuView, setUserMenuView] = useState<MenuView>('main')
 
@@ -478,11 +499,11 @@ export const UserMenu: React.FunctionComponent<UserMenuProps> = ({
                                             </p>
                                         </div>
                                         <Badge
-                                            variant={isProUser ? 'cody' : 'secondary'}
-                                            className="tw-opacity-85 tw-text-xs tw-h-fit tw-self-center"
+                                            variant={'secondary'}
+                                            className="tw-opacity-85 tw-text-xs tw-h-fit tw-self-center tw-flex-shrink-0"
                                             title={endpoint}
                                         >
-                                            {isDotComUser ? (isProUser ? 'Pro' : 'Free') : 'Enterprise'}
+                                            {userType}
                                         </Badge>
                                     </div>
                                 </CommandItem>
@@ -525,6 +546,7 @@ export const UserMenu: React.FunctionComponent<UserMenuProps> = ({
                                             />
                                         </svg>
                                         <span className="tw-flex-grow">Upgrade to Pro</span>
+                                        <ExternalLinkIcon size={16} strokeWidth={1.25} />
                                     </CommandLink>
                                 )}
                                 {isDotComUser && (
@@ -553,6 +575,17 @@ export const UserMenu: React.FunctionComponent<UserMenuProps> = ({
                                         />
                                         <span className="tw-flex-grow">Manage Account</span>
                                         <ExternalLinkIcon size={16} strokeWidth={1.25} />
+                                    </CommandItem>
+                                )}
+                                {isMcpEnabled && (
+                                    <CommandItem
+                                        onSelect={() => {
+                                            setTabView(View.Mcp)
+                                            close()
+                                        }}
+                                    >
+                                        <ServerIcon size={16} strokeWidth={1.25} className="tw-mr-2" />
+                                        <span className="tw-flex-grow">MCP Settings</span>
                                     </CommandItem>
                                 )}
                                 <CommandItem

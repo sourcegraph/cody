@@ -1,7 +1,8 @@
-import type { Tool } from '@anthropic-ai/sdk/resources/beta/tools/messages.mjs'
+import type { Tool } from '@anthropic-ai/sdk/resources/messages/messages.mjs'
 
 export interface McpTool extends Tool {
     autoApprove?: boolean
+    disabled?: boolean
 }
 
 // Define types for MCP entities

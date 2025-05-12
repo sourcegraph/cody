@@ -36,7 +36,7 @@ import {
 import { HumanMessageCell } from './cells/messageCell/human/HumanMessageCell'
 
 import { type Context, type Span, context, trace } from '@opentelemetry/api'
-import { DeepCodyAgentID, ToolCodyModelName } from '@sourcegraph/cody-shared/src/models/client'
+import { DeepCodyAgentID } from '@sourcegraph/cody-shared/src/models/client'
 import * as uuid from 'uuid'
 import { isCodeSearchContextItem } from '../../src/context/openctx/codeSearch'
 import { useClientActionListener } from '../client/clientState'
@@ -256,8 +256,6 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
             setSelectedIntent('chat')
         }
     }, [humanMessage, isFirstInteraction, isLastInteraction])
-
-    const usingToolCody = assistantMessage?.model?.includes(ToolCodyModelName)
 
     const onUserAction = useCallback(
         (action: 'edit' | 'submit', manuallySelectedIntent: ChatMessage['intent']) => {
@@ -603,7 +601,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
             />
             {!isAgenticMode && (
                 <>
-                    {!usingToolCody && omniboxEnabled && assistantMessage?.didYouMeanQuery && (
+                    {omniboxEnabled && assistantMessage?.didYouMeanQuery && (
                         <DidYouMeanNotice
                             query={assistantMessage?.didYouMeanQuery}
                             disabled={!!assistantMessage?.isLoading}
@@ -612,7 +610,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                             }}
                         />
                     )}
-                    {!usingToolCody && !isSearchIntent && humanMessage.agent && (
+                    {!isSearchIntent && humanMessage.agent && (
                         <AgenticContextCell
                             key={`${humanMessage.index}-${humanMessage.intent}-process`}
                             isContextLoading={isContextLoading}
@@ -622,8 +620,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                     {humanMessage.agent && assistantMessage?.isLoading && (
                         <ApprovalCell vscodeAPI={vscodeAPI} />
                     )}
-                    {!usingToolCody &&
-                        !(humanMessage.agent && isContextLoading) &&
+                    {!(humanMessage.agent && isContextLoading) &&
                         (humanMessage.contextFiles || assistantMessage || isContextLoading) &&
                         !isSearchIntent && (
                             <ContextCell

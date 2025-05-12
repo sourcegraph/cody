@@ -1,10 +1,13 @@
-import type { CodeToReplaceData } from '@sourcegraph/cody-shared'
 import { calcSlices } from 'fast-myers-diff'
 import * as vscode from 'vscode'
-import type { PartialModelResponse, SuccessModelResponse } from '../adapters/base'
 
+import type { CodeToReplaceData } from '@sourcegraph/cody-shared'
+
+import type { PartialModelResponse, SuccessModelResponse } from '../adapters/base'
 import { shrinkPredictionUntilSuffix } from '../shrink-prediction'
-import { SHOULD_USE_HOT_STREAK_CHUNK_THRESHOLD } from './constants'
+
+import { getNewLineChar } from '../../completions/text-processing'
+import { SHOULD_USE_STABLE_UNCHANGED_HUNK_THRESHOLD } from './constants'
 
 // Helper enum for code readability when handling slices
 enum SliceKind {
@@ -29,6 +32,29 @@ interface StableSuggestion {
     removedLines: string[]
 }
 
+export function normalizePrediction(prediction: string, codeToReplaceData: CodeToReplaceData): string {
+    const truncatedPrediction = shrinkPredictionUntilSuffix({
+        prediction,
+        codeToReplaceData,
+    })
+    const codeToRewriteNewLine = getNewLineChar(codeToReplaceData.codeToRewrite)
+    const codeToRewriteEndsWithNewLine = codeToReplaceData.codeToRewrite.endsWith(codeToRewriteNewLine)
+    const predictionNewLine = getNewLineChar(truncatedPrediction)
+    const predictionEndsWithNewLine = truncatedPrediction.endsWith(predictionNewLine)
+
+    if (codeToRewriteEndsWithNewLine && !predictionEndsWithNewLine) {
+        // Prediction needs to end with a new line to be safely diffed with the code to rewrite
+        return truncatedPrediction + predictionNewLine
+    }
+
+    if (!codeToRewriteEndsWithNewLine && predictionEndsWithNewLine) {
+        // Prediction needs to remove the final new line to be safely diffed with the code to rewrite
+        return truncatedPrediction.slice(0, -predictionNewLine.length)
+    }
+
+    return truncatedPrediction
+}
+
 /**
  * Given a _proposed_ prediction and a _proposed_ range, attempts to form a stable suggestion
  * that is accurate and can be used for diffing purposes.
@@ -44,11 +70,8 @@ export function getStableSuggestion({
     response,
 }: StableSuggestionParams): StableSuggestion | null {
     const originalLines = document.getText(range).split('\n')
-    const shrinkedPrediction = shrinkPredictionUntilSuffix({
-        prediction,
-        codeToReplaceData,
-    })
-    const predictionLines = shrinkedPrediction.split('\n')
+    const normalizedPrediction = normalizePrediction(prediction, codeToReplaceData)
+    const predictionLines = normalizedPrediction.split('\n')
 
     // TODO (umpox): `calcSlices` is useful here as it splits the diff into change hunks.
     // It would be preferable if this would use the exact same diff logic as `getDecorationInfo`.
@@ -75,10 +98,7 @@ export function getStableSuggestion({
                 continue
             }
 
-            const meetsLineThreshold =
-                response.type === 'success' ||
-                state.predictionLines.length >= SHOULD_USE_HOT_STREAK_CHUNK_THRESHOLD
-            if (state.predictionIncludesChange && meetsLineThreshold) {
+            if (state.predictionIncludesChange) {
                 state.canSuggestDiff = true
                 // We already have a change further up in the diff.
                 // As we have now reached an unchanged "stable" hunk, it means we can reliably
@@ -148,6 +168,11 @@ const CODE_DELIMITER_REGEX = /^[\[\]{}().,;:]+$/
  * designed to improve the stability of a partial diff.
  */
 export function isStableUnchangedHunk(hunk: string[]): boolean {
+    if (hunk.length < SHOULD_USE_STABLE_UNCHANGED_HUNK_THRESHOLD) {
+        // Hunk isn't classed as big enough to be considered stable.
+        return false
+    }
+
     /**
      * Filter hunk lines to find relevant ones that:
      * 1. Contain more than just whitespace

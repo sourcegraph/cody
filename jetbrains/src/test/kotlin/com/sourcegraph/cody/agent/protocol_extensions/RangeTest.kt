@@ -1,12 +1,18 @@
 package com.sourcegraph.cody.agent.protocol_extensions
 
-import com.intellij.mock.MockDocument
+import com.intellij.openapi.editor.Document
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
 import com.sourcegraph.cody.agent.protocol_generated.Range
+import java.util.UUID
 
 class RangeTest : BasePlatformTestCase() {
 
-  private fun createDocument(text: String) = MockDocument().also { it.insertString(0, text) }
+  private fun createDocument(text: String): Document {
+    val filename = "range_test_${UUID.randomUUID()}.txt"
+    val file = myFixture.createFile(filename, text)
+    myFixture.openFileInEditor(file)
+    return myFixture.editor.document
+  }
 
   fun `test toOffsetRange handles normal range within document`() {
     val document = createDocument("Hello World")
@@ -42,7 +48,7 @@ class RangeTest : BasePlatformTestCase() {
 
   fun `test toOffsetRange handles both positions outside document`() {
     val document = createDocument("Hello")
-    val range = Range(Position(2, 10), Position(3, 20))
+    val range = Range(Position(-1, 10), Position(3, 20))
 
     val result = range.toOffsetRange(document)
 

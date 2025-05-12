@@ -1,11 +1,11 @@
 import dedent from 'dedent'
 import { describe, expect, it } from 'vitest'
-
 import { type ProcessHotStreakResponsesParams, processHotStreakResponses } from '.'
 import { getCurrentDocContext } from '../../completions/get-current-doc-context'
 import { documentAndPosition } from '../../completions/test-helpers'
 import { AutoeditStopReason, type ModelResponse } from '../adapters/base'
 import type { SuggestedPredictionResult } from '../autoedits-provider'
+import { LONG_SUGGESTION_USER_CURSOR_MARKER } from '../prompt/constants'
 import { createCodeToReplaceDataForTest } from '../prompt/test-helper'
 
 // Helper to create a generator for model responses
@@ -78,21 +78,27 @@ const MOCK_CODE_WITHOUT_CURSOR = MOCK_CODE.replace('█', '')
 
 const MOCK_PREDICTION = `
 export function isEvenOrOdd(target: number): boolean {
+    // Check if target is 0
     if (target === 0) {
         return true
     }
+    // Check if target is 1
     if (target === 1) {
         return false
     }
+    // Check if target is 2
     if (target === 2) {
         return true
     }
+    // Check if target is 3
     if (target === 3) {
         return false
     }
+    // Check if target is 4
     if (target === 4) {
         return true
     }
+    // Check if target is 5
     if (target === 5) {
         return false
     }
@@ -111,7 +117,7 @@ function createHotStreakParams(
         maxPrefixLinesInArea: 2,
         maxSuffixLinesInArea: 2,
         codeToRewritePrefixLines: 1,
-        codeToRewriteSuffixLines: 30,
+        codeToRewriteSuffixLines: 40,
         prefixTokens: 100,
         suffixTokens: 100,
     })
@@ -135,6 +141,31 @@ function createHotStreakParams(
 }
 
 describe('processHotStreakResponses', () => {
+    it('post-processes predictions to filter out marker tokens', async () => {
+        // Create prediction with the marker token that should be filtered out
+        const markerToken = LONG_SUGGESTION_USER_CURSOR_MARKER
+        const predictionWithMarker = MOCK_PREDICTION.replace('return true', `${markerToken}return true`)
+        const responseGenerator = createModelResponseGenerator([predictionWithMarker])
+        const params = createHotStreakParams(MOCK_CODE, responseGenerator)
+        const resultGenerator = processHotStreakResponses(params)
+
+        // Collect all results
+        const results = []
+        for await (const result of resultGenerator) {
+            results.push(result)
+        }
+
+        // Verify the marker has been filtered out in all results
+        for (const result of results) {
+            if (result.type !== 'aborted') {
+                expect(result.response.prediction).not.toContain(markerToken)
+            }
+        }
+
+        // Verify we got at least one result
+        expect(results.length).toBeGreaterThan(0)
+    })
+
     it('does not emit hot streaks if disabled', async () => {
         const responseGenerator = createModelResponseGenerator(MOCK_PREDICTION.split('\n'))
         const params = createHotStreakParams(MOCK_CODE, responseGenerator)

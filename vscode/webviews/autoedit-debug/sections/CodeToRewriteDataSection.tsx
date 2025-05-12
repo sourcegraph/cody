@@ -1,6 +1,7 @@
 import type { FC } from 'react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 
+import { getCodeToRewrite } from '../../../src/autoedits/debug-panel/autoedit-data-sdk'
 import type { AutoeditRequestDebugState } from '../../../src/autoedits/debug-panel/debug-store'
 
 export const CodeToRewriteDataSection: FC<{ entry: AutoeditRequestDebugState }> = ({ entry }) => {
@@ -8,8 +9,7 @@ export const CodeToRewriteDataSection: FC<{ entry: AutoeditRequestDebugState }> 
     const [isModalOpen, setIsModalOpen] = useState(false)
     const [copySuccess, setCopySuccess] = useState(false)
     const codeToRewriteDataRef = useRef<HTMLPreElement>(null)
-
-    const codeToRewriteData = 'codeToReplaceData' in entry.state ? entry.state.codeToReplaceData : null
+    const codeToRewriteData = getCodeToRewrite(entry)
 
     // Format the prompt content
     const formattedCodeToRewriteData = formatCodeToRewriteData()

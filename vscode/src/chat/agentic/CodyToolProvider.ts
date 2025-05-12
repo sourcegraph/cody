@@ -1,35 +1,19 @@
 import {
-    type ContextMentionProviderMetadata,
-    type ProcessingStep,
-    PromptString,
     type Unsubscribable,
-    isDefined,
+    logDebug,
     openCtxProviderMetadata,
     openctxController,
-    ps,
     switchMap,
 } from '@sourcegraph/cody-shared'
+import type { McpTool } from '@sourcegraph/cody-shared/src/llm-providers/mcp/types'
 import { map } from 'observable-fns'
 import type { ContextRetriever } from '../chat-view/ContextRetriever'
-import { type CodyTool, type CodyToolConfig, OpenCtxTool, TOOL_CONFIGS } from './CodyTool'
+import type { CodyTool } from './CodyTool'
+import { ToolFactory } from './CodyToolFactory'
 import { toolboxManager } from './ToolboxManager'
-import { OPENCTX_TOOL_CONFIG } from './config'
+import type { CodyToolConfig } from './types'
 
 type Retriever = Pick<ContextRetriever, 'retrieveContext'>
-
-/**
- * Interface for tool execution status callbacks.
- * Used to track and report tool execution progress.
- */
-export interface ToolStatusCallback {
-    onUpdate(id: string, content: string): void
-    onStream(step: Partial<ProcessingStep>): void
-    onComplete(id?: string, error?: Error): void
-    onConfirmationNeeded(
-        id: string,
-        step: Omit<ProcessingStep, 'id' | 'type' | 'state'>
-    ): Promise<boolean>
-}
 
 /**
  * Configuration interface for registering new tools.
@@ -38,112 +22,6 @@ export interface ToolStatusCallback {
 export interface ToolConfiguration extends CodyToolConfig {
     name: string
     createInstance: (config: CodyToolConfig, retriever?: Retriever) => CodyTool
-}
-
-/**
- * ToolFactory manages the creation and registration of Cody tools.
- *
- * Responsibilities:
- * - Maintains a registry of tool configurations
- * - Creates tool instances on demand
- * - Handles both default tools (Search, File, CLI, Memory) and OpenCtx tools
- * - Manages tool configuration and instantiation with proper context
- */
-class ToolFactory {
-    private tools: Map<string, ToolConfiguration> = new Map()
-
-    constructor(private contextRetriever: Retriever) {
-        // Register default tools
-        for (const [name, { tool, useContextRetriever }] of Object.entries(TOOL_CONFIGS)) {
-            this.register({
-                name,
-                ...tool.prototype.config,
-                createInstance: useContextRetriever
-                    ? (_, contextRetriever) => {
-                          if (!contextRetriever) {
-                              throw new Error(`Context retriever required for ${name}`)
-                          }
-                          return new tool(contextRetriever)
-                      }
-                    : () => new tool(),
-            })
-        }
-    }
-
-    public register(toolConfig: ToolConfiguration): void {
-        this.tools.set(toolConfig.name, toolConfig)
-    }
-
-    public createTool(name: string, retriever?: Retriever): CodyTool | undefined {
-        const config = this.tools.get(name)
-        if (!config) {
-            return undefined
-        }
-        const instance = config.createInstance(config, retriever)
-        return instance
-    }
-
-    public getInstances(): CodyTool[] {
-        return Array.from(this.tools.entries())
-            .filter(([name]) => name !== 'CliTool' || toolboxManager.getSettings()?.shell?.enabled)
-            .map(([_, config]) => config.createInstance(config, this.contextRetriever))
-            .filter(isDefined)
-    }
-
-    public createDefaultTools(contextRetriever?: Retriever): CodyTool[] {
-        return Object.entries(TOOL_CONFIGS)
-            .map(([name]) => this.createTool(name, contextRetriever))
-            .filter(isDefined)
-    }
-
-    public createOpenCtxTools(providers: ContextMentionProviderMetadata[]): CodyTool[] {
-        return providers
-            .map(provider => {
-                const toolName = this.generateToolName(provider)
-                const config = this.getToolConfig(provider)
-                this.register({
-                    name: toolName,
-                    ...config,
-                    createInstance: cfg => new OpenCtxTool(provider, cfg),
-                })
-                return this.createTool(toolName)
-            })
-            .filter(isDefined)
-    }
-
-    private generateToolName(provider: ContextMentionProviderMetadata): string {
-        const suffix = provider.id.includes('modelcontextprotocol') ? 'MCP' : ''
-        return (
-            'TOOL' +
-            provider.title
-                .split('/')
-                .pop()
-                ?.replace(/\s+/g, '')
-                ?.toUpperCase()
-                ?.replace(/[^A-Z0-9]/g, '') +
-            suffix
-        )
-    }
-
-    private getToolConfig(provider: ContextMentionProviderMetadata): CodyToolConfig {
-        const defaultConfig = Object.entries(OPENCTX_TOOL_CONFIG).find(
-            c => provider.id.toLowerCase().includes(c[0]) || provider.title.toLowerCase().includes(c[0])
-        )
-        return (
-            defaultConfig?.[1] ?? {
-                title: provider.title,
-                tags: {
-                    tag: PromptString.unsafe_fromUserQuery(this.generateToolName(provider)),
-                    subTag: ps`get`,
-                },
-                prompt: {
-                    instruction: PromptString.unsafe_fromUserQuery(provider.queryLabel),
-                    placeholder: ps`QUERY`,
-                    examples: [],
-                },
-            }
-        )
-    }
 }
 
 /**
@@ -185,6 +63,30 @@ export class CodyToolProvider {
 
     public static getTools(): CodyTool[] {
         return CodyToolProvider.instance?.factory.getInstances() ?? []
+    }
+
+    /**
+     * Get all tools including dynamically registered ones
+     * This ensures MCP tools are properly included in the available tools
+     */
+    public static getAllTools(): CodyTool[] {
+        return CodyToolProvider.getTools()
+    }
+
+    /**
+     * Register MCP tools from a server
+     * @param serverName The name of the MCP server
+     * @param tools The list of MCP tools to register
+     */
+    public static registerMcpTools(serverName: string, tools: McpTool[]): CodyTool[] {
+        if (!CodyToolProvider.instance) {
+            logDebug('CodyToolProvider', 'Cannot register MCP tools - instance not initialized')
+            return []
+        }
+        logDebug('CodyToolProvider', `Registering ${tools.length} MCP tools from ${serverName}`)
+        const createdTools = CodyToolProvider.instance.factory.createMcpTools(tools, serverName)
+        logDebug('CodyToolProvider', `Registered ${createdTools.length} MCP tools successfully`)
+        return createdTools
     }
 
     private static setupOpenCtxProviderListener(): void {

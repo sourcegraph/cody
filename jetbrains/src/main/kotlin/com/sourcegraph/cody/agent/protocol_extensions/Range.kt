@@ -4,16 +4,7 @@ import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.editor.Document
 import com.sourcegraph.cody.agent.protocol_generated.Range
 
-typealias RangePair = Pair<Long, Long>
-
 typealias RangeOffset = Pair<Int, Int>
-
-// We need to .plus(1) since the ranges use 0-based indexing
-// but IntelliJ presents it as 1-based indexing.
-public fun Range.intellijRange(): RangePair = RangePair(start.line.plus(1), end.line.plus(1))
-
-// The link to Sourcegraph Search on the other hand looks like this:
-fun Range.toSearchRange(): RangePair = RangePair(start.line.plus(1), end.line)
 
 /**
  * Converts the range represented by this [Range] object to a pair of offsets within the given
@@ -34,11 +25,7 @@ fun Range.toOffsetRange(document: Document): RangeOffset? {
     return null
   }
 
-  val startOffset = if (start.isOutsideOfDocument(document)) 0 else start.toOffsetOrZero(document)
-  val endOffset =
-      if (end.isOutsideOfDocument(document)) document.textLength else end.toOffsetOrZero(document)
-
-  return RangeOffset(startOffset, endOffset)
+  return RangeOffset(start.toBoundedOffset(document), end.toBoundedOffset(document))
 }
 
 fun Range.length() = end.line - start.line + 1
