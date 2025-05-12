@@ -166,8 +166,7 @@ export function ServerHome({ mcpServers }: ServerHomeProps) {
                 </div>
                 <Button
                     variant="ghost"
-                    size="icon"
-                    className="tw-h-8"
+                    className="tw-h-8 tw-w-auto"
                     onClick={() =>
                         getVSCodeAPI().postMessage({
                             command: 'command',
@@ -179,9 +178,9 @@ export function ServerHome({ mcpServers }: ServerHomeProps) {
                             },
                         })
                     }
-                    title="Server configuration settings"
+                    title="Configure settings in JSON"
                 >
-                    <Settings size={16} />
+                    <Settings size={16} /> View JSON
                 </Button>
             </header>
             {!mcpServers?.length ? (
