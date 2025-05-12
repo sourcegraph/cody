@@ -5,7 +5,6 @@ import { type ClientConfiguration, CodyIDE } from '@sourcegraph/cody-shared'
 
 import { defaultConfigurationValue } from '../../vscode/src/configuration-keys'
 
-import type { AgentEventEmitter } from '../../vscode/src/testutils/AgentEventEmitter'
 import type { ClientInfo, ExtensionConfiguration } from './protocol-alias'
 
 export class AgentWorkspaceConfiguration implements vscode.WorkspaceConfiguration {
@@ -13,8 +12,7 @@ export class AgentWorkspaceConfiguration implements vscode.WorkspaceConfiguratio
         private prefix: string[],
         private clientInfo: () => ClientInfo | undefined,
         private extensionConfig: () => ExtensionConfiguration | undefined,
-        private onDidChange: AgentEventEmitter<vscode.ConfigurationChangeEvent> | undefined = undefined,
-        private dictionary: any = {}
+        private onUpdate: (section: string, value: any) => Promise<void> = async () => {}
     ) {}
 
     public withPrefix(prefix: string): AgentWorkspaceConfiguration {
@@ -22,14 +20,11 @@ export class AgentWorkspaceConfiguration implements vscode.WorkspaceConfiguratio
             this.prefix.concat(prefix),
             this.clientInfo,
             this.extensionConfig,
-            this.onDidChange,
-            this.dictionary
+            this.onUpdate
         )
     }
 
-    private put(key: string, value: any): void {
-        _.set(this.dictionary, key, value)
-    }
+    private dictionary: any = {}
 
     private actualSection(section: string): string {
         if (this.prefix.length === 0) {
@@ -204,9 +199,12 @@ export class AgentWorkspaceConfiguration implements vscode.WorkspaceConfiguratio
             return Promise.resolve()
         }
 
-        this.put(section, value)
-        if (this.onDidChange) {
-            await this.onDidChange.cody_fireAsync({ affectsConfiguration: () => true })
+        if (value === undefined) {
+            _.unset(this.dictionary, section)
+        } else {
+            _.set(this.dictionary, section, value)
         }
+
+        await this.onUpdate(section, value)
     }
 }

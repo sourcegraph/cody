@@ -10,6 +10,7 @@ import com.intellij.util.concurrency.AppExecutorUtil
 import com.sourcegraph.cody.agent.CodyAgentService
 import com.sourcegraph.cody.config.CodySettingsFileChangeListener
 import com.sourcegraph.cody.config.CodyWindowAdapter
+import com.sourcegraph.cody.config.migration.ClientConfigCleanupMigration
 import com.sourcegraph.cody.config.migration.SettingsMigration
 import com.sourcegraph.cody.config.notification.CodySettingChangeListener
 import com.sourcegraph.cody.config.ui.CheckUpdatesTask
@@ -33,6 +34,7 @@ class PostStartupActivity : ProjectActivity {
         .getInstance() // Initialize Sentry as early as possible to report early unhandled errors
     VerifyJavaBootRuntimeVersion().runActivity(project)
     SettingsMigration().runActivity(project)
+    ClientConfigCleanupMigration().runActivity(project)
     CodyWindowAdapter.addWindowFocusListener(project)
 
     AppExecutorUtil.getAppScheduledExecutorService()
