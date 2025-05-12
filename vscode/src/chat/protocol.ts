@@ -94,7 +94,12 @@ export type WebviewMessage =
           command: 'show-page'
           page: string
       }
-    | { command: 'command'; id: string; arg?: string | undefined | null }
+    | {
+          command: 'command'
+          id: string
+          arg?: string | undefined | null
+          args?: Record<string, any> | undefined | null
+      }
     | ({ command: 'edit' } & WebviewEditMessage)
     | { command: 'insert'; text: string }
     | { command: 'newFile'; text: string }
@@ -304,6 +309,7 @@ export interface ConfigurationSubsetForWebview
  * URLs for the Sourcegraph instance and app.
  */
 export const CODY_DOC_URL = new URL('https://sourcegraph.com/docs/cody')
+export const CODY_DOC_QUICKSTART_URL = new URL('https://sourcegraph.com/docs/cody/quickstart')
 export const SG_CHANGELOG_URL = new URL('https://sourcegraph.com/changelog')
 export const VSCODE_CHANGELOG_URL = new URL(
     'https://github.com/sourcegraph/cody/blob/main/vscode/CHANGELOG.md'
@@ -312,9 +318,6 @@ export const VSCODE_CHANGELOG_URL = new URL(
 export const DISCORD_URL = new URL('https://discord.gg/s2qDtYGnAE')
 export const CODY_FEEDBACK_URL = new URL('https://github.com/sourcegraph/cody/issues/new/choose')
 export const CODY_SUPPORT_URL = new URL('https://srcgr.ph/cody-support')
-export const CODY_OLLAMA_DOCS_URL = new URL(
-    'https://sourcegraph.com/docs/cody/clients/install-vscode#supported-local-ollama-models-with-cody'
-)
 // Account
 export const ENTERPRISE_STARTER_PRICING_URL = new URL('https://sourcegraph.com/pricing')
 export const CODY_PRO_SUBSCRIPTION_URL = new URL('https://accounts.sourcegraph.com/cody/subscription')

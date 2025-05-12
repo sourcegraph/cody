@@ -6,6 +6,8 @@ import { DeepseekCoder } from './deepseek'
 import { DefaultModel } from './default'
 import { Gemini } from './gemini'
 import { Mistral } from './mistral'
+import { OpenAIV1 } from './openai'
+import { OpenAIV2 } from './openai-v2'
 import { StarCoder } from './starcoder'
 
 export * from './default'
@@ -45,6 +47,14 @@ export function getModelHelpers(model: string): DefaultModel {
 
     if (model.includes('claude')) {
         return new Claude()
+    }
+
+    if (model.includes('gpt-4.1-mini') || model.includes('gpt-4.1-nano')) {
+        return new OpenAIV2()
+    }
+
+    if (model.includes('openai')) {
+        return new OpenAIV1()
     }
 
     return new DefaultModel()
