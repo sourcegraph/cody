@@ -1,10 +1,6 @@
 import type { ProcessingStep } from '@sourcegraph/cody-shared'
 import { type FC, type FunctionComponent, memo } from 'react'
 
-// const CELL_NAME = 'agentic-chat-items'
-
-const DEFAULT_STATUS = 'Retrieving context'
-
 /**
  * A component displaying the agentic chat status.
  * Only shows if there are tool steps in the action list.
@@ -14,26 +10,23 @@ export const AgenticContextCell: FunctionComponent<{
     className?: string
     processes?: ProcessingStep[]
 }> = memo(({ isContextLoading, processes }) => {
-    const hasError = processes?.some(p => p.error) ? ' failed' : ''
+    const hasError = processes?.some(p => p.error)
     const toolSteps = processes?.filter(p => p.type === 'tool')
     const currentProcess = processes?.findLast(p => p.id === 'deep-cody')?.title
-    const status = currentProcess || DEFAULT_STATUS + hasError
-
-    if (!processes?.length) {
-        return null
-    }
+    const title = isContextLoading ? 'Retrieving context' : 'Context retrieved'
+    const action = currentProcess || title
 
     return (
         <div className="tw-bg-inherit tw-rounded-md tw-mt-2 tw-shadow tw-w-full">
             <div className="tw-text-xs tw-text-muted-foreground tw-mb-2 tw-font-semibold tw-uppercase tw-tracking-wider">
-                {status}
-                {toolSteps?.length && (
+                {action}
+                {hasError && (
                     <span className="tw-float-right tw-text-xs tw-font-normal tw-text-muted-foreground">
-                        {toolSteps.length} tool
+                        FAILED
                     </span>
                 )}
             </div>
-            {toolSteps?.length && (
+            {toolSteps && toolSteps?.length > 0 && (
                 <div className="tw-flex tw-flex-col tw-w-full tw-gap-2">
                     {toolSteps.map((process, i) => (
                         <ActionRow
@@ -65,7 +58,7 @@ const ActionRow: FC<{
 
     return (
         <div
-            className="tw-flex tw-items-center tw-gap-3 tw-py-2 tw-border-b tw-border-border"
+            className="tw-flex tw-items-center tw-gap-3 tw-py-2"
             style={isLast ? { borderBottom: 'none' } : {}}
         >
             <div className="tw-flex-1 tw-min-w-0">
@@ -76,7 +69,7 @@ const ActionRow: FC<{
                     <div className="tw-text-xs tw-text-muted-foreground tw-truncate">
                         {process.content}
                         {' - '}
-                        {`${process?.items?.length ?? '0'} context items`}
+                        {`${process?.items?.length ?? '0'} context selected`}
                     </div>
                 )}
             </div>
