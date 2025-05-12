@@ -104,8 +104,6 @@ export class MCPServerManager {
      */
     public async getResourceList(serverName: string): Promise<McpResource[]> {
         try {
-            if (!serverName) return [] // <-- Skip until we support resources
-
             const connection = this.connectionManager.getConnection(serverName)
             if (!connection) return []
 
@@ -136,14 +134,12 @@ export class MCPServerManager {
     }
 
     /**
-     * TODO: Add support for prompts templates
+     * TODO: Add support for prompts templates - currently not supported.
      * NOTE: Currently not supported.
      * Fetches the list of resource templates from the MCP server.
      */
     public async getResourceTemplateList(serverName: string): Promise<McpResourceTemplate[]> {
         try {
-            if (serverName) return [] // <-- Skip until we support templates
-
             const connection = this.connectionManager.getConnection(serverName)
             if (!connection) return []
 
