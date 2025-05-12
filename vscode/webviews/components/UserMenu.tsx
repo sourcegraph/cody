@@ -597,7 +597,7 @@ export const UserMenu: React.FunctionComponent<UserMenuProps> = ({
                                         rel="noreferrer"
                                         onSelect={() => {
                                             telemetryRecorder.recordEvent(
-                                                'cody.userMenu.exploreEnterprisePlanLink',
+                                                'cody.userMenu.docsQuickstartLink',
                                                 'open',
                                                 {}
                                             )
