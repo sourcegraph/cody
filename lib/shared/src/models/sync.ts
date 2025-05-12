@@ -207,8 +207,9 @@ export function syncModels({
                                                                 m.status !== 'deprecated' &&
                                                                 (isDotComUser || m.status !== 'waitlist')
                                                         )
-                                                    data.primaryModels.push(
-                                                        ...maybeAdjustContextWindows(filteredModels, {
+                                                    data.primaryModels = maybeAdjustContextWindows(
+                                                        filteredModels,
+                                                        {
                                                             tier: isDotComUser
                                                                 ? isCodyProUser(
                                                                       authStatus,
@@ -219,13 +220,14 @@ export function syncModels({
                                                                 : 'enterprise',
                                                             enhancedContextWindowFlagEnabled:
                                                                 enhancedContextWindowFlag,
-                                                        }).map(model =>
-                                                            createModelFromServerModel(
-                                                                model,
-                                                                enhancedContextWindowFlag
-                                                            )
+                                                        }
+                                                    ).map(model =>
+                                                        createModelFromServerModel(
+                                                            model,
+                                                            enhancedContextWindowFlag
                                                         )
                                                     )
+
                                                     data.preferences!.defaults =
                                                         defaultModelPreferencesFromServerModelsConfig(
                                                             serverModelsConfig
