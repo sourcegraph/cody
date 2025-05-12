@@ -94,7 +94,12 @@ export type WebviewMessage =
           command: 'show-page'
           page: string
       }
-    | { command: 'command'; id: string; arg?: string | undefined | null }
+    | {
+          command: 'command'
+          id: string
+          arg?: string | undefined | null
+          args?: Record<string, any> | undefined | null
+      }
     | ({ command: 'edit' } & WebviewEditMessage)
     | { command: 'insert'; text: string }
     | { command: 'newFile'; text: string }
