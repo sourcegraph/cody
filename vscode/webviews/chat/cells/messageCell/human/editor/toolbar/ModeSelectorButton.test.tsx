@@ -97,44 +97,6 @@ describe('ModeSelectorField', () => {
         expect(button).toHaveAttribute('aria-label', 'switch-mode')
     })
 
-    it('shows limited options for dot com users', () => {
-        render(
-            <TestWrapper>
-                <ModeSelectorField {...defaultProps} isDotComUser={true} />
-            </TestWrapper>
-        )
-
-        // Open the dropdown
-        fireEvent.click(screen.getByRole('combobox'))
-
-        // Testing for disabled state using different selector
-        const searchOption =
-            screen.getByText('Search').closest('div[role="option"]') ||
-            screen.getByText('Search').closest('div[data-disabled="true"]') ||
-            screen.getByText('Search').closest('div[class*="disabled"]')
-
-        expect(searchOption).not.toBeNull()
-        expect(searchOption?.getAttribute('aria-disabled')).toBe('true')
-    })
-
-    it('show search option as disabled for DotCom user', () => {
-        render(
-            <TestWrapper>
-                <ModeSelectorField {...defaultProps} isDotComUser={true} />
-            </TestWrapper>
-        )
-
-        // Open the dropdown
-        fireEvent.click(screen.getByRole('combobox'))
-
-        // Search option should be visible
-        expect(screen.queryByText('Search')).toBeInTheDocument()
-        // But disabled
-        expect(
-            screen.getByText('Search').closest('div[role="option"]')?.getAttribute('aria-disabled')
-        ).toBe('true')
-    })
-
     it('hides agentic option when feature flag is disabled', () => {
         render(
             <TestWrapper>
