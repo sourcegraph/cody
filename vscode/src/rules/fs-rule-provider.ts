@@ -57,7 +57,7 @@ export function createFileSystemRuleProvider(): RuleProvider {
                     for (const uri of files) {
                         // Do not search for rules outside of a workspace folder.
                         const root = vscode.workspace.getWorkspaceFolder(uri)
-                        if (!root) {
+                        if (!root || !vscode.workspace.isTrusted) {
                             continue
                         }
                         const searchPaths = ruleSearchPaths(uri, root.uri)
@@ -79,7 +79,7 @@ export function createFileSystemRuleProvider(): RuleProvider {
                                     const rootFolder = vscode.workspace.getWorkspaceFolder(searchPath)
                                     // There should always be a root since we checked it above, but
                                     // be defensive.
-                                    if (!rootFolder) {
+                                    if (!rootFolder || !vscode.workspace.isTrusted) {
                                         return []
                                     }
                                     const root = rootFolder.uri
