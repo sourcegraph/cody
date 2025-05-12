@@ -1,6 +1,6 @@
 import { CodyIDE } from '@sourcegraph/cody-shared'
 import type { ComponentProps, FunctionComponent } from 'react'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useMemo } from 'react'
 import Markdown, { defaultUrlTransform } from 'react-markdown'
 import type { Components, UrlTransform } from 'react-markdown/lib'
 import rehypeHighlight, { type Options as RehypeHighlightOptions } from 'rehype-highlight'
@@ -8,7 +8,7 @@ import rehypeSanitize, { type Options as RehypeSanitizeOptions, defaultSchema } 
 import remarkGFM from 'remark-gfm'
 import type { Pluggable } from 'unified/lib'
 import { remarkAttachFilePathToCodeBlocks } from '../chat/extract-file-path'
-import { getVSCodeAPI } from '../utils/VSCodeApi'
+import { useCopyHandler } from '../utils/CopyHandlerContext'
 import { SYNTAX_HIGHLIGHTING_LANGUAGES } from '../utils/highlight'
 import { useConfig } from '../utils/useConfig'
 
@@ -104,46 +104,6 @@ const childrenTransform = (children: string): string => {
     return children.slice(0, lastIdx) + '````' + children.slice(lastIdx + 3)
 }
 
-const CodeBlock: Components['code'] = props => {
-    const codeRef = useRef<HTMLElement>(null)
-    const [wasKeyboardCopy, setWasKeyboardCopy] = useState(false)
-
-    useEffect(() => {
-        const element = codeRef.current
-        if (!element) return
-
-        const handleKeyDown = (e: KeyboardEvent) => {
-            const isSelected = window.getSelection()?.containsNode(element, true)
-            if (isSelected && e.metaKey && e.key === 'c') {
-                setWasKeyboardCopy(true)
-                const selectedText = window.getSelection()?.toString() || ''
-                getVSCodeAPI().postMessage({
-                    command: 'copy',
-                    text: selectedText,
-                    eventType: 'Keydown',
-                })
-                setTimeout(() => setWasKeyboardCopy(false), 100)
-            }
-        }
-
-        document.addEventListener('keydown', handleKeyDown)
-        return () => document.removeEventListener('keydown', handleKeyDown)
-    }, [])
-
-    const handleCopy = () => {
-        if (!wasKeyboardCopy) {
-            const selectedText = window.getSelection()?.toString() || ''
-            getVSCodeAPI().postMessage({
-                command: 'copy',
-                text: selectedText,
-                eventType: 'Keydown',
-            })
-        }
-    }
-
-    return <code {...props} ref={codeRef} onCopy={handleCopy} style={{ cursor: 'pointer' }} />
-}
-
 export const MarkdownFromCody: FunctionComponent<{
     className?: string
     prefixRemarkPlugins?: Pluggable[]
@@ -153,13 +113,14 @@ export const MarkdownFromCody: FunctionComponent<{
     const clientType = useConfig().clientCapabilities.agentIDE
     const urlTransform = useMemo(() => URL_PROCESSORS[clientType] ?? defaultUrlProcessor, [clientType])
     const chatReplyTransformed = childrenTransform(children)
+    useCopyHandler()
 
     return (
         <Markdown
             className={className}
             {...markdownPluginProps(prefixRemarkPlugins ?? [])}
             urlTransform={urlTransform}
-            components={{ ...components, code: CodeBlock }}
+            components={components ?? {}}
         >
             {chatReplyTransformed}
         </Markdown>

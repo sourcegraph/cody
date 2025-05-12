@@ -24,6 +24,7 @@ import {
 } from 'react'
 import type { UserAccountInfo } from '../Chat'
 import type { ApiPostMessage } from '../Chat'
+import { useCopyHandler, useRegisterCopyHandler } from '../utils/CopyHandlerContext'
 import { getVSCodeAPI } from '../utils/VSCodeApi'
 import { SpanManager } from '../utils/spanManager'
 import { getTraceparentFromSpanContext } from '../utils/telemetry'
@@ -87,6 +88,9 @@ export const Transcript: FC<TranscriptProps> = props => {
     )
 
     const lastHumanEditorRef = useRef<PromptEditorRefAPI | null>(null)
+
+    useCopyHandler()
+    useRegisterCopyHandler(copyButtonOnSubmit)
 
     return (
         <div
