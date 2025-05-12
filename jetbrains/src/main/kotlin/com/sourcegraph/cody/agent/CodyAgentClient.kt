@@ -289,9 +289,9 @@ class CodyAgentClient(private val project: Project, private val webview: NativeW
   }
 
   @JsonNotification("extensionConfiguration/didUpdate")
-  fun extensionConfiguration_didUpdate(params: String) {
+  fun extensionConfiguration_didUpdate(params: ExtensionConfiguration_DidUpdateParams) {
     if (!project.isDisposed) {
-      ConfigUtil.setCustomConfiguration(project, params)
+      ConfigUtil.updateCustomConfiguration(project, params.key, params.value)
     }
   }
 
