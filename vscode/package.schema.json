@@ -8,13 +8,6 @@
     "contributes": {
       "type": "object",
       "properties": {
-        "walkthroughs": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "additionalProperties": true
-          }
-        },
         "colors": {
           "type": "array",
           "items": {

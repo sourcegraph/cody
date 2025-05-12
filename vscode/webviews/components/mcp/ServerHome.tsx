@@ -173,24 +173,6 @@ export function ServerHome({ mcpServers }: ServerHomeProps) {
         )
     }, [searchQuery, servers])
 
-    // Empty state
-    if (!mcpServers?.length) {
-        return (
-            <div className="tw-w-full tw-p-4">
-                <div className="tw-w-full tw-col-span-full tw-text-center tw-py-12 tw-border tw-rounded-lg tw-border-none">
-                    <Server className="tw-h-12 tw-w-12 tw-mx-auto tw-mb-4 tw-text-muted-foreground" />
-                    <h3 className="tw-text-md tw-font-medium">Waiting for server connections...</h3>
-                    <p className="tw-text-muted-foreground tw-mt-1">Add a new server to get started</p>
-                </div>
-                <AddServerView
-                    onAddServer={addServer}
-                    className="tw-my-4 tw-w-full tw-py-1"
-                    setServerToEdit={setSelectedServer}
-                />
-            </div>
-        )
-    }
-
     return (
         <Command
             loop={true}
@@ -207,8 +189,12 @@ export function ServerHome({ mcpServers }: ServerHomeProps) {
                     onClick={() =>
                         getVSCodeAPI().postMessage({
                             command: 'command',
-                            id: 'workbench.action.openSettings',
-                            arg: '@ext:sourcegraph.cody-ai cody.mcpServers',
+                            id: 'workbench.action.openSettingsJson',
+                            args: {
+                                revealSetting: {
+                                    key: 'cody.mcpServers',
+                                },
+                            },
                         })
                     }
                 >
@@ -217,103 +203,115 @@ export function ServerHome({ mcpServers }: ServerHomeProps) {
                     </div>
                 </Button>
             </header>
-            <div className="tw-flex tw-items-center tw-justify-between tw-px-2 tw-py-1">
-                <CommandList className="tw-flex-1">
-                    <CommandInput
-                        value={searchQuery}
-                        onValueChange={setSearchQuery}
-                        placeholder="Search..."
-                        autoFocus={true}
-                        className="tw-m-[0.5rem] !tw-p-[0.5rem] tw-rounded tw-bg-input-background tw-text-input-foreground focus:tw-shadow-[0_0_0_0.125rem_var(--vscode-focusBorder)]"
-                    />
-                </CommandList>
-            </div>
-            <CommandList className="tw-flex-1 tw-overflow-y-auto tw-m-2 tw-gap-6 !tw-bg-transparent focus:tw-bg-inherit">
-                {filteredServers.map(server => (
-                    <CommandItem
-                        key={server.id}
-                        className="tw-text-left tw-truncate tw-w-full tw-rounded-md tw-text-sm tw-overflow-hidden tw-text-sidebar-foreground tw-align-baseline hover:tw-bg-transparent [&[aria-selected='true']]:tw-bg-transparent tw-my-2"
-                        onSelect={() => setSelectedServer(server)}
-                    >
-                        <div className="tw-truncate tw-w-full tw-flex tw-flex-col tw-gap-2">
-                            <div className="tw-flex tw-items-center tw-justify-between tw-gap-2">
-                                <div className="tw-flex tw-self-end tw-gap-2">
-                                    <PencilRulerIcon
-                                        className="tw-w-8 tw-h-8"
-                                        strokeWidth={1.25}
-                                        size={16}
-                                    />
-                                    <strong>{server.name}</strong>
-                                </div>
-                                {server.name === selectedServer?.name && (
-                                    <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        className="tw-p-2 tw-z-10"
-                                        onClick={e => {
-                                            e.stopPropagation()
-                                            removeServer(server.name)
-                                        }}
-                                        title="Delete server"
-                                    >
-                                        <Minus size={16} />
-                                    </Button>
-                                )}
-                            </div>
-                            <div className="tw-flex tw-align-top tw-justify-between tw-my-1 tw-flex-wrap">
-                                {server.error && (
-                                    <div className="tw-mt-2 tw-mb-1 tw-w-full">
-                                        <p
-                                            className="tw-text-xs tw-text-pink-300 tw-mt-1 tw-truncate"
-                                            title={server.error}
-                                        >
-                                            {server.error}
-                                        </p>
-                                    </div>
-                                )}
-                                {server.tools && server.tools?.length > 0 && (
-                                    <div className="tw-mt-2">
-                                        <div className="tw-flex tw-flex-wrap tw-gap-4">
-                                            {server.tools.map(tool => (
-                                                <Badge
-                                                    key={`${server.name}-${tool.name}-tool`}
-                                                    variant={tool.disabled ? 'disabled' : 'outline'}
-                                                    className={`tw-truncate tw-max-w-[250px] tw-text-foreground tw-cursor-pointer tw-font-thin ${
-                                                        tool.disabled
-                                                            ? 'tw-opacity-50 tw-line-through'
-                                                            : ''
-                                                    }`}
-                                                    onClick={e => {
-                                                        e.stopPropagation()
-                                                        toggleTool(
-                                                            server.name,
-                                                            tool.name,
-                                                            tool.disabled !== true
-                                                        )
-                                                    }}
-                                                    title={`${tool.disabled ? '[Disabled] ' : ''} ${
-                                                        tool.description
-                                                    }`}
-                                                >
-                                                    {tool.name}
-                                                </Badge>
-                                            ))}
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                    </CommandItem>
-                ))}
-                <div className="tw-flex tw-flex-col tw-justify-center tw-mt-4 tw-w-full">
-                    <AddServerView
-                        onAddServer={addServer}
-                        className="tw-my-4 tw-w-full tw-px-2"
-                        serverToEdit={selectedServer}
-                        setServerToEdit={setSelectedServer}
-                    />
+            {!mcpServers?.length ? (
+                <div className="tw-w-full tw-col-span-full tw-text-center tw-py-12 tw-border tw-rounded-lg tw-border-none">
+                    <Server className="tw-h-12 tw-w-12 tw-mx-auto tw-mb-4 tw-text-muted-foreground" />
+                    <h3 className="tw-text-md tw-font-medium">Waiting for server connections...</h3>
+                    <p className="tw-text-muted-foreground tw-mt-1">Add a new server to get started</p>
                 </div>
-            </CommandList>
+            ) : (
+                <div>
+                    <div className="tw-flex tw-items-center tw-justify-between tw-px-2 tw-py-1">
+                        <CommandList className="tw-flex-1">
+                            <CommandInput
+                                value={searchQuery}
+                                onValueChange={setSearchQuery}
+                                placeholder="Search..."
+                                autoFocus={true}
+                                className="tw-m-[0.5rem] !tw-p-[0.5rem] tw-rounded tw-bg-input-background tw-text-input-foreground focus:tw-shadow-[0_0_0_0.125rem_var(--vscode-focusBorder)]"
+                            />
+                        </CommandList>
+                    </div>
+                    <CommandList className="tw-flex-1 tw-overflow-y-auto tw-m-2 tw-gap-6 !tw-bg-transparent focus:tw-bg-inherit">
+                        {filteredServers.map(server => (
+                            <CommandItem
+                                key={server.id}
+                                className="tw-text-left tw-truncate tw-w-full tw-rounded-md tw-text-sm tw-overflow-hidden tw-text-sidebar-foreground tw-align-baseline hover:tw-bg-transparent [&[aria-selected='true']]:tw-bg-transparent tw-my-2"
+                                onSelect={() => setSelectedServer(server)}
+                            >
+                                <div className="tw-truncate tw-w-full tw-flex tw-flex-col tw-gap-2">
+                                    <div className="tw-flex tw-items-center tw-justify-between tw-gap-2">
+                                        <div className="tw-flex tw-self-end tw-gap-2">
+                                            <PencilRulerIcon
+                                                className="tw-w-8 tw-h-8"
+                                                strokeWidth={1.25}
+                                                size={16}
+                                            />
+                                            <strong>{server.name}</strong>
+                                        </div>
+                                        {server.name === selectedServer?.name && (
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                className="tw-p-2 tw-z-10"
+                                                onClick={e => {
+                                                    e.stopPropagation()
+                                                    removeServer(server.name)
+                                                }}
+                                                title="Delete server"
+                                            >
+                                                <Minus size={16} />
+                                            </Button>
+                                        )}
+                                    </div>
+                                    <div className="tw-flex tw-align-top tw-justify-between tw-my-1 tw-flex-wrap">
+                                        {server.error && (
+                                            <div className="tw-mt-2 tw-mb-1 tw-w-full">
+                                                <p
+                                                    className="tw-text-xs tw-text-pink-300 tw-mt-1 tw-truncate"
+                                                    title={server.error}
+                                                >
+                                                    {server.error}
+                                                </p>
+                                            </div>
+                                        )}
+                                        {server.tools && server.tools?.length > 0 && (
+                                            <div className="tw-mt-2">
+                                                <div className="tw-flex tw-flex-wrap tw-gap-4">
+                                                    {server.tools.map(tool => (
+                                                        <Badge
+                                                            key={`${server.name}-${tool.name}-tool`}
+                                                            variant={
+                                                                tool.disabled ? 'disabled' : 'outline'
+                                                            }
+                                                            className={`tw-truncate tw-max-w-[250px] tw-text-foreground tw-cursor-pointer tw-font-thin ${
+                                                                tool.disabled
+                                                                    ? 'tw-opacity-50 tw-line-through'
+                                                                    : ''
+                                                            }`}
+                                                            onClick={e => {
+                                                                e.stopPropagation()
+                                                                toggleTool(
+                                                                    server.name,
+                                                                    tool.name,
+                                                                    tool.disabled !== true
+                                                                )
+                                                            }}
+                                                            title={`${
+                                                                tool.disabled ? '[Disabled] ' : ''
+                                                            } ${tool.description}`}
+                                                        >
+                                                            {tool.name}
+                                                        </Badge>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            </CommandItem>
+                        ))}
+                        <div className="tw-flex tw-flex-col tw-justify-center tw-mt-4 tw-w-full">
+                            <AddServerView
+                                onAddServer={addServer}
+                                className="tw-my-4 tw-w-full tw-px-2"
+                                serverToEdit={selectedServer}
+                                setServerToEdit={setSelectedServer}
+                            />
+                        </div>
+                    </CommandList>
+                </div>
+            )}
         </Command>
     )
 }

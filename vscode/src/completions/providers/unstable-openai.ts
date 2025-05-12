@@ -1,7 +1,5 @@
 import type { CodeCompletionsParams } from '@sourcegraph/cody-shared'
 
-import { OpenAI } from '../model-helpers/openai'
-
 import {
     BYOK_MODEL_ID_FOR_LOGS,
     type GenerateCompletionsOptions,
@@ -10,8 +8,6 @@ import {
 } from './shared/provider'
 
 class UnstableOpenAIProvider extends Provider {
-    protected modelHelper = new OpenAI()
-
     public getRequestParams(generateOptions: GenerateCompletionsOptions): CodeCompletionsParams {
         const { document, docContext, snippets } = generateOptions
 

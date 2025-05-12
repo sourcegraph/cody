@@ -21,7 +21,11 @@ export const CLOSING_CODE_TAG = ps`</CODE5711>`
  * @param completion The raw completion result received from Anthropic
  * @returns the extracted code block
  */
-export function extractFromCodeBlock(completion: string): string {
+export function extractFromCodeBlock(completion: string, allowOpeningCodeTag = false): string {
+    if (allowOpeningCodeTag && completion.startsWith(OPENING_CODE_TAG.toString())) {
+        completion = completion.slice(OPENING_CODE_TAG.length)
+    }
+
     if (completion.includes(OPENING_CODE_TAG.toString())) {
         logCompletionBookkeepingEvent('containsOpeningTag')
         return ''
