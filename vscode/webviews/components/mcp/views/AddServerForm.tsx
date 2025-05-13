@@ -82,16 +82,23 @@ export function AddServerForm({ onAddServer, _server }: AddServerFormProps) {
             <div className="tw-grid tw-gap-4 tw-py-4 tw-text-sm">
                 <div className="tw-grid tw-grid-cols-2 tw-gap-4">
                     <div className="tw-space-y-2">
-                        <Label htmlFor="name">Name</Label>
+                        <Label htmlFor="name" className={_server?.name && ' tw-cursor-not-allowed'}>
+                            Name
+                        </Label>
                         <input
                             type="text"
                             id="name"
                             value={formData.name.replace(' ', '-')}
                             name="name"
                             onChange={e => setFormData({ ...formData, name: e.target.value })}
-                            className="tw-block tw-py-2.5 tw-px-0 tw-w-full tw-text-sm tw-text-input-foreground tw-bg-transparent tw-border-0 tw-border-b-2 tw-border-gray-300 tw-appearance-none dark:tw-border-gray-600 dark:focus:tw-border-blue-500 focus:tw-outline-none focus:tw-ring-0 focus:tw-border-blue-600 peer"
+                            className={
+                                (_server?.name && 'tw-cursor-not-allowed tw-text-muted-foreground ') +
+                                'tw-block tw-py-2.5 tw-px-0 tw-w-full tw-text-sm tw-text-input-foreground tw-bg-transparent tw-border-0 tw-border-b-2 tw-border-gray-300 tw-appearance-none dark:tw-border-gray-600 dark:focus:tw-border-blue-500 focus:tw-outline-none focus:tw-ring-0 focus:tw-border-blue-600 peer'
+                            }
                             placeholder=" "
                             required
+                            disabled={Boolean(_server?.name)}
+                            readOnly={Boolean(_server?.name)}
                         />
                     </div>
                 </div>

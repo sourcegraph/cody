@@ -1,7 +1,6 @@
 import type { McpServer } from '@sourcegraph/cody-shared/src/llm-providers/mcp/types'
 import {
     DatabaseBackup,
-    Loader,
     Minus,
     PencilRulerIcon,
     RefreshCw,
@@ -14,6 +13,7 @@ import { getVSCodeAPI } from '../../utils/VSCodeApi'
 import { Badge } from '../shadcn/ui/badge'
 import { Button } from '../shadcn/ui/button'
 import { Command, CommandInput, CommandItem, CommandList } from '../shadcn/ui/command'
+import { Skeleton } from '../shadcn/ui/skeleton'
 import type { ServerType } from './types'
 import { AddServerView } from './views/AddServerView'
 
@@ -25,6 +25,16 @@ export function ServerHome({ mcpServers }: ServerHomeProps) {
     const [servers, setServers] = useState<ServerType[]>([])
     const [searchQuery, setSearchQuery] = useState('')
     const [selectedServer, setSelectedServer] = useState<ServerType | null>(null)
+    const [showSkeletonAnimation, setShowSkeletonAnimation] = useState(true)
+
+    // Effect to disable skeleton animation after 5 seconds
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setShowSkeletonAnimation(false)
+        }, 5000)
+
+        return () => clearTimeout(timer)
+    }, [])
 
     // Update servers when mcpServers prop changes
     useEffect(() => {
@@ -97,13 +107,8 @@ export function ServerHome({ mcpServers }: ServerHomeProps) {
 
     const addServer = useCallback(
         (server: ServerType) => {
-            // Create a new serializable object without React components
-            const { id, name } = server
-
             // Transform the UI server type to the format expected by MCPManager
             const mcpServerConfig: Record<string, any> = {
-                id,
-                name,
                 transportType: server.url ? 'sse' : 'stdio',
             }
             if (server.url) {
@@ -134,10 +139,9 @@ export function ServerHome({ mcpServers }: ServerHomeProps) {
                 getVSCodeAPI().postMessage({
                     command: 'mcp',
                     type: 'updateServer',
-                    name: selectedServer.name,
+                    name: server.name,
                     config: mcpServerConfig,
                 })
-                setSelectedServer(null)
             } else {
                 // Add new server
                 getVSCodeAPI().postMessage({
@@ -299,41 +303,53 @@ export function ServerHome({ mcpServers }: ServerHomeProps) {
                                         )}
                                         <div className="tw-mt-2">
                                             <div className="tw-flex tw-flex-wrap tw-gap-4">
-                                                {server.tools !== undefined
-                                                    ? server.tools?.map(tool => (
-                                                          <Badge
-                                                              key={`${server.name}-${tool.name}-tool`}
-                                                              variant={
-                                                                  tool.disabled ? 'disabled' : 'outline'
-                                                              }
-                                                              className={`tw-truncate tw-max-w-[250px] tw-text-foreground tw-cursor-pointer tw-font-thin ${
-                                                                  tool.disabled
-                                                                      ? 'tw-opacity-50 tw-line-through'
-                                                                      : ''
-                                                              }`}
-                                                              onClick={e => {
-                                                                  e.stopPropagation()
-                                                                  toggleTool(
-                                                                      server.name,
-                                                                      tool.name,
-                                                                      tool.disabled !== true
-                                                                  )
-                                                              }}
-                                                              title={`${
-                                                                  tool.disabled ? '[Disabled] ' : ''
-                                                              } ${tool.description}`}
-                                                          >
-                                                              {tool.name}
-                                                          </Badge>
-                                                      ))
-                                                    : !server?.error && (
-                                                          <div className="tw-w-full tw-flex tw-justify-center tw-container">
-                                                              <Loader
-                                                                  className="tw-animate-spin"
-                                                                  size="sm"
-                                                              />
-                                                          </div>
-                                                      )}
+                                                {server.tools?.map(tool => (
+                                                    <Badge
+                                                        key={`${server.name}-${tool.name}-tool`}
+                                                        variant={tool.disabled ? 'disabled' : 'outline'}
+                                                        className={`tw-truncate tw-max-w-[250px] tw-text-foreground tw-cursor-pointer tw-font-thin ${
+                                                            tool.disabled
+                                                                ? 'tw-opacity-50 tw-line-through'
+                                                                : ''
+                                                        }`}
+                                                        onClick={e => {
+                                                            e.stopPropagation()
+                                                            toggleTool(
+                                                                server.name,
+                                                                tool.name,
+                                                                tool.disabled !== true
+                                                            )
+                                                        }}
+                                                        title={`${tool.disabled ? '[Disabled] ' : ''} ${
+                                                            tool.description
+                                                        }`}
+                                                    >
+                                                        {tool.name}
+                                                    </Badge>
+                                                ))}
+                                                {server?.tools === undefined && !server?.error && (
+                                                    <div className="tw-flex tw-flex-wrap tw-gap-2 tw-overflow-hidden tw-flex-1">
+                                                        {[1, 2, 3, 4].map(index => (
+                                                            <Badge
+                                                                key={`skeleton-${index}`}
+                                                                variant="outline"
+                                                                className={`tw-truncate tw-max-w-[90px] tw-min-w-[70px] ${
+                                                                    showSkeletonAnimation
+                                                                        ? 'tw-animate-pulse'
+                                                                        : ''
+                                                                }`}
+                                                            >
+                                                                <Skeleton
+                                                                    className={`tw-h-4 tw-w-full tw-bg-zinc-800 ${
+                                                                        showSkeletonAnimation
+                                                                            ? 'tw-animate-pulse'
+                                                                            : ''
+                                                                    }`}
+                                                                />
+                                                            </Badge>
+                                                        ))}
+                                                    </div>
+                                                )}
                                             </div>
                                         </div>
                                     </div>
