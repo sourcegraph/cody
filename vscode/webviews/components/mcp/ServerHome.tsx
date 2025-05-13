@@ -26,6 +26,7 @@ export function ServerHome({ mcpServers }: ServerHomeProps) {
     const [searchQuery, setSearchQuery] = useState('')
     const [selectedServer, setSelectedServer] = useState<ServerType | null>(null)
     const [showSkeletonAnimation, setShowSkeletonAnimation] = useState(true)
+    const [pendingServer, setPendingServer] = useState<string | null>(null)
 
     // Effect to disable skeleton animation after 5 seconds
     useEffect(() => {
@@ -50,6 +51,13 @@ export function ServerHome({ mcpServers }: ServerHomeProps) {
 
             if (message.mcpServerChanged?.name) {
                 const { name, server } = message.mcpServerChanged
+                // Check if server is the same as the one in the state
+
+                if (pendingServer === name) {
+                    setPendingServer(null)
+                    return
+                }
+
                 setServers(prevServers => {
                     if (name && server === null) {
                         // Remove server if it doesn't exist
@@ -94,7 +102,7 @@ export function ServerHome({ mcpServers }: ServerHomeProps) {
 
         window.addEventListener('message', messageHandler)
         return () => window.removeEventListener('message', messageHandler)
-    }, [])
+    }, [pendingServer])
 
     const removeServer = useCallback((serverName: string) => {
         setSelectedServer(null)
@@ -163,6 +171,7 @@ export function ServerHome({ mcpServers }: ServerHomeProps) {
             toolName,
             toolDisabled: isDisabled,
         })
+        setPendingServer(serverName)
         // Update local state optimistically
         setServers(prevServers =>
             prevServers.map(server =>
@@ -261,11 +270,14 @@ export function ServerHome({ mcpServers }: ServerHomeProps) {
                                 />
                             </CommandList>
                         </div>
-                        <CommandList className="tw-flex-1 tw-overflow-y-auto tw-m-2 tw-gap-6 !tw-bg-transparent focus:tw-bg-inherit">
+                        <CommandList
+                            id="mcp-server-list"
+                            className="tw-flex tw-h-full tw-w-full tw-m-2 tw-gap-6 !tw-bg-transparent focus:tw-bg-inherit tw-overflow-y-auto tw-max-h-[60vh]"
+                        >
                             {filteredServers.map(server => (
                                 <CommandItem
                                     key={server.id}
-                                    className="tw-text-left tw-truncate tw-w-full tw-rounded-md tw-text-sm tw-overflow-hidden tw-text-sidebar-foreground tw-align-baseline hover:tw-bg-transparent [&[aria-selected='true']]:tw-bg-transparent tw-my-2"
+                                    className="tw-text-left tw-truncate tw-w-full tw-rounded-md tw-text-sm tw-text-sidebar-foreground tw-align-baseline hover:tw-bg-transparent [&[aria-selected='true']]:tw-bg-transparent tw-my-2"
                                     onSelect={() => setSelectedServer(server)}
                                 >
                                     <div className="tw-truncate tw-w-full tw-flex tw-flex-col tw-gap-2">
