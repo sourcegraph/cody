@@ -422,37 +422,27 @@ export class McpToolImpl extends CodyTool {
         try {
             // Parse queries into args object
             const args = this.parseQueryToArgs(queries)
-
-            // Get the instance and execute the tool
-            const mcpInstance = MCPManager.instance
-            if (!mcpInstance || !args) {
-                throw new Error('MCP Manager instance not available')
-            }
-
             // Execute the tool and format results
-            return await this.executeMcpToolAndFormatResults(
-                mcpInstance,
-                args,
-                this.serverName,
-                this.tool.name,
-                this.toolName
-            )
+            return await this.executeMcpToolAndFormatResults(args, this.serverName)
         } catch (error) {
-            return this.handleMcpToolError(error, this.tool.name, this.toolName)
+            return this.handleMcpToolError(error)
         }
     }
 
     private async executeMcpToolAndFormatResults(
-        mcpInstance: MCPManager,
         args: Record<string, unknown>,
-        serverName: string,
-        toolName: string,
-        displayToolName: string
+        serverName: string
     ): Promise<ContextItem[]> {
-        // Use the MCPManager's executeTool method which properly delegates to serverManager
-        const result = await mcpInstance.executeTool(serverName, toolName, args)
+        // Get the instance and execute the tool
+        const mcpInstance = MCPManager.instance
+        if (!mcpInstance) {
+            throw new Error('MCP Manager instance not available')
+        }
 
-        const prefix = `${toolName} tool was executed with ${JSON.stringify(args)} and `
+        // Use the MCPManager's executeTool method which properly delegates to serverManager
+        const result = await mcpInstance.executeTool(serverName, this.tool.name, args)
+
+        const prefix = `${this.tool.name} tool was executed with ${JSON.stringify(args)} and `
 
         const statusReport =
             result.status !== UIToolStatus.Error
@@ -464,18 +454,15 @@ export class McpToolImpl extends CodyTool {
             {
                 type: 'file',
                 content: prefix + statusReport,
-                uri: URI.parse(`mcp://${displayToolName}-result`),
+                uri: URI.parse(`mcp://${this.tool.name}-result`),
                 source: ContextItemSource.Agentic,
-                title: displayToolName,
+                title: this.toolName,
             },
         ]
     }
 
-    private handleMcpToolError(
-        error: unknown,
-        toolName: string,
-        displayToolName: string
-    ): ContextItem[] {
+    private handleMcpToolError(error: unknown): ContextItem[] {
+        const displayToolName = this.toolName || this.tool.name
         logDebug('CodyToolProvider', `Error executing ${displayToolName}`, {
             verbose: error,
         })
@@ -485,7 +472,7 @@ export class McpToolImpl extends CodyTool {
         return [
             {
                 type: 'file',
-                content: `Error executing MCP tool ${toolName}: ${errorStr}`,
+                content: `Error executing MCP tool ${this.tool.name}: ${errorStr}`,
                 uri: URI.parse(`mcp://$${displayToolName}-error`),
                 source: ContextItemSource.Agentic,
                 title: displayToolName,

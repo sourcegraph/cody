@@ -75,7 +75,6 @@ export class MCPServerManager {
             // Register tools with CodyToolProvider
             try {
                 CodyToolProvider.registerMcpTools(serverName, tools)
-                logDebug('MCPServerManager', `Registered ${tools.length} tools with CodyToolProvider`)
             } catch (error) {
                 logDebug(
                     'MCPServerManager',
@@ -87,6 +86,7 @@ export class MCPServerManager {
             }
 
             await this.registerAgentTools(serverName, tools)
+
             return tools
         } catch (error) {
             logDebug('MCPServerManager', `Failed to fetch tools for ${serverName}:`, {
@@ -188,7 +188,13 @@ export class MCPServerManager {
                             logDebug('MCPServerManager', `Error executing tool ${tool.name}:`, {
                                 verbose: { error },
                             })
-                            throw error
+                            return createMCPToolState(
+                                serverName,
+                                tool.name,
+                                [{ type: 'text', text: `[${tool.name}] ERROR: ${error}` }],
+                                undefined,
+                                UIToolStatus.Error
+                            )
                         }
                     },
                     // Set disabled based on current state
@@ -207,10 +213,6 @@ export class MCPServerManager {
                         return t
                     })
                 }
-
-                logDebug('MCPServerManager', `Created agent tool for ${tool.name || ''}`, {
-                    verbose: { tool },
-                })
             } catch (error) {
                 logDebug('MCPServerManager', `Error creating agent tool for ${tool.name || ''}`, {
                     verbose: { error },
@@ -305,13 +307,10 @@ export class MCPServerManager {
             logDebug('MCPServerManager', `Error calling tool ${toolName} on server ${serverName}`, {
                 verbose: error,
             })
-
-            // Create an error state instead of throwing
-            const errorMessage = error instanceof Error ? error.message : String(error)
             return createMCPToolState(
                 serverName,
                 toolName,
-                [{ type: 'text', text: `[${toolName}] ERROR: ${errorMessage}` }],
+                [{ type: 'text', text: `[${toolName}] ERROR: ${error}` }],
                 undefined,
                 UIToolStatus.Error
             )

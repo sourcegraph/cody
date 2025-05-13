@@ -185,7 +185,7 @@ export class MCPConnectionManager {
             })
 
             // Update status with error if connection object was created
-            const conn = this.connections.find(c => c.server.name === name)
+            const conn = this.connections.find(c => c.server.name === name) ?? connection
             if (conn) {
                 conn.server.status = 'disconnected'
                 this.setConnectionError(conn, errorMessage)
@@ -193,15 +193,6 @@ export class MCPConnectionManager {
                     serverName: name,
                     status: 'disconnected',
                     error: conn.server.error,
-                })
-            } else if (connection) {
-                // If connection object exists but wasn't pushed yet
-                connection.server.status = 'disconnected'
-                this.setConnectionError(connection, errorMessage)
-                this.statusChangeEmitter.fire({
-                    serverName: name,
-                    status: 'disconnected',
-                    error: connection.server.error,
                 })
             }
 

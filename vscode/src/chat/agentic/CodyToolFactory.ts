@@ -119,18 +119,6 @@ export class ToolFactory {
         }
     }
 
-    /**
-     * Create a class that extends CodyTool specifically for an MCP tool
-     */
-    private createMcpToolClass(
-        tool: McpTool,
-        toolConfig: CodyToolConfig,
-        toolName: string,
-        serverName: string
-    ) {
-        return new McpToolImpl(toolConfig, tool, toolName, serverName)
-    }
-
     public createMcpTools(mcpTools: McpTool[], serverName: string): CodyTool[] {
         return mcpTools
             .map(tool => {
@@ -143,14 +131,11 @@ export class ToolFactory {
                 // Create a proper tool configuration
                 const toolConfig = this.createMcpToolConfig(tool, toolName, serverName)
 
-                // Create the tool instance
-                const mcpToolInstance = this.createMcpToolClass(tool, toolConfig, toolName, serverName)
-
                 // Register the tool
                 this.register({
                     name: toolName,
                     ...toolConfig,
-                    createInstance: () => mcpToolInstance,
+                    createInstance: cfg => new McpToolImpl(cfg, tool, toolName, serverName),
                 })
 
                 return this.createTool(toolName)
