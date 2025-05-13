@@ -1,5 +1,5 @@
 import type { McpServer } from '@sourcegraph/cody-shared/src/llm-providers/mcp/types'
-import { DatabaseBackup, Minus, PencilRulerIcon, Server, ServerIcon } from 'lucide-react'
+import { DatabaseBackup, Minus, PencilRulerIcon, Server, ServerIcon, Settings } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { getVSCodeAPI } from '../../utils/VSCodeApi'
 import { Badge } from '../shadcn/ui/badge'
@@ -182,10 +182,13 @@ export function ServerHome({ mcpServers }: ServerHomeProps) {
             className="tw-flex tw-flex-col tw-h-full tw-py-4 tw-bg-transparent tw-px-2 tw-mb-4 tw-overscroll-auto"
             disablePointerSelection={true}
         >
-            <header className="tw-inline-flex tw-mt-4 tw-px-4 tw-gap-4">
+            <header className="tw-flex tw-items-center tw-justify-between tw-mt-4 tw-px-4">
+                <div className="tw-flex tw-items-center tw-font-semibold tw-text-lg">
+                    <ServerIcon size={16} className="tw-mr-3" /> MCP Servers
+                </div>
                 <Button
-                    variant="secondary"
-                    className="tw-bg-popover tw-border tw-border-border !tw-justify-between"
+                    variant="ghost"
+                    className="tw-h-8 tw-w-auto"
                     onClick={() =>
                         getVSCodeAPI().postMessage({
                             command: 'command',
@@ -197,10 +200,9 @@ export function ServerHome({ mcpServers }: ServerHomeProps) {
                             },
                         })
                     }
+                    title="Configure settings in JSON"
                 >
-                    <div className="tw-flex tw-items-center">
-                        <ServerIcon size={16} className="tw-mr-3" /> MCP Servers Configurations
-                    </div>
+                    <Settings size={16} /> View JSON
                 </Button>
             </header>
             {!mcpServers?.length ? (
