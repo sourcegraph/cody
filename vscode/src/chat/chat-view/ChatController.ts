@@ -471,21 +471,16 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     }
                 } catch (error) {
                     const errorMessage = error instanceof Error ? error.message : String(error)
+                    logDebug('ChatController', `Failed to ${message.type} server`, errorMessage)
 
-                    if (message.type === 'addServer') {
-                        vscode.window.showErrorMessage(`Failed to add server: ${errorMessage}`)
-                    } else {
-                        logDebug('ChatController', `Failed to ${message.type} server`, errorMessage)
-
-                        void this.postMessage({
-                            type: 'clientAction',
-                            mcpServerError: {
-                                name: 'name' in message ? serverName : '',
-                                error: errorMessage,
-                            },
-                            mcpServerChanged: null,
-                        })
-                    }
+                    void this.postMessage({
+                        type: 'clientAction',
+                        mcpServerError: {
+                            name: 'name' in message ? serverName : '',
+                            error: errorMessage,
+                        },
+                        mcpServerChanged: null,
+                    })
                 }
                 break
             }

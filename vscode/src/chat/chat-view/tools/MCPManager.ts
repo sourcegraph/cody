@@ -243,7 +243,7 @@ export class MCPManager {
         if (!connection) return
         try {
             logDebug('MCPManager', `Initializing tools for server: ${serverName}`)
-            connection.server.tools = await this.serverManager.getToolList(serverName)
+            connection.server.tools = (await this.serverManager.getToolList(serverName)) || []
             logDebug('MCPManager', `Initialized tools for server: ${serverName}`, {
                 verbose: { toolCount: connection.server.tools.length },
             })

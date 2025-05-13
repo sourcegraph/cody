@@ -106,11 +106,14 @@ export function ServerHome({ mcpServers }: ServerHomeProps) {
                 name,
                 transportType: server.url ? 'sse' : 'stdio',
             }
-
-            // Add command and args for stdio transport
-            // Only add non-empty args
-            if (server.args?.length) {
-                mcpServerConfig.args = server.args.filter(arg => arg.trim())
+            if (server.url) {
+                mcpServerConfig.url = server.url
+            } else if (server.command) {
+                mcpServerConfig.command = server.command
+                // Only add non-empty args
+                if (server.args?.length) {
+                    mcpServerConfig.args = server.args.filter(arg => arg.trim())
+                }
             }
             // Add environment variables
             if (server.env?.length) {
@@ -296,38 +299,41 @@ export function ServerHome({ mcpServers }: ServerHomeProps) {
                                         )}
                                         <div className="tw-mt-2">
                                             <div className="tw-flex tw-flex-wrap tw-gap-4">
-                                                {server.tools !== undefined ? (
-                                                    server.tools?.map(tool => (
-                                                        <Badge
-                                                            key={`${server.name}-${tool.name}-tool`}
-                                                            variant={
-                                                                tool.disabled ? 'disabled' : 'outline'
-                                                            }
-                                                            className={`tw-truncate tw-max-w-[250px] tw-text-foreground tw-cursor-pointer tw-font-thin ${
-                                                                tool.disabled
-                                                                    ? 'tw-opacity-50 tw-line-through'
-                                                                    : ''
-                                                            }`}
-                                                            onClick={e => {
-                                                                e.stopPropagation()
-                                                                toggleTool(
-                                                                    server.name,
-                                                                    tool.name,
-                                                                    tool.disabled !== true
-                                                                )
-                                                            }}
-                                                            title={`${
-                                                                tool.disabled ? '[Disabled] ' : ''
-                                                            } ${tool.description}`}
-                                                        >
-                                                            {tool.name}
-                                                        </Badge>
-                                                    ))
-                                                ) : (
-                                                    <div className="tw-w-full tw-flex tw-justify-center tw-container">
-                                                        <Loader className="tw-animate-spin" />
-                                                    </div>
-                                                )}
+                                                {server.tools !== undefined
+                                                    ? server.tools?.map(tool => (
+                                                          <Badge
+                                                              key={`${server.name}-${tool.name}-tool`}
+                                                              variant={
+                                                                  tool.disabled ? 'disabled' : 'outline'
+                                                              }
+                                                              className={`tw-truncate tw-max-w-[250px] tw-text-foreground tw-cursor-pointer tw-font-thin ${
+                                                                  tool.disabled
+                                                                      ? 'tw-opacity-50 tw-line-through'
+                                                                      : ''
+                                                              }`}
+                                                              onClick={e => {
+                                                                  e.stopPropagation()
+                                                                  toggleTool(
+                                                                      server.name,
+                                                                      tool.name,
+                                                                      tool.disabled !== true
+                                                                  )
+                                                              }}
+                                                              title={`${
+                                                                  tool.disabled ? '[Disabled] ' : ''
+                                                              } ${tool.description}`}
+                                                          >
+                                                              {tool.name}
+                                                          </Badge>
+                                                      ))
+                                                    : !server?.error && (
+                                                          <div className="tw-w-full tw-flex tw-justify-center tw-container">
+                                                              <Loader
+                                                                  className="tw-animate-spin"
+                                                                  size="sm"
+                                                              />
+                                                          </div>
+                                                      )}
                                             </div>
                                         </div>
                                     </div>
