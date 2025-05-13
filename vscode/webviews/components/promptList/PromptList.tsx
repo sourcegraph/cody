@@ -94,8 +94,6 @@ export const PromptList: FC<PromptListProps> = props => {
 
     const { value: result, error } = usePromptsQuery(promptInput)
 
-    console.log('result', result)
-
     const onSelect = useCallback(
         (rowValue: string): void => {
             const action = result?.actions.find(p => commandRowValue(p) === rowValue)
@@ -171,8 +169,6 @@ export const PromptList: FC<PromptListProps> = props => {
             const shouldExcludeBuiltinCommands =
                 promptFilters?.promoted || promptFilters?.owner || promptFilters?.tags
 
-            console.log('shouldExcludeBuiltinCommands', shouldExcludeBuiltinCommands)
-
             const isEditEnabled = clientCapabilities.edit === 'enabled'
             // Prompts that perform edits are not usable on clients that don't support editing.
             // To avoid cluttering the list with unusable prompts we ignore them completely.
@@ -185,7 +181,6 @@ export const PromptList: FC<PromptListProps> = props => {
                 return actions.filter(action => action.actionType === 'prompt' && !action.builtin)
             }
 
-            console.log('filteredActions', actions.length)
             return actions
         },
         [promptFilters, clientCapabilities.edit]
@@ -196,13 +191,8 @@ export const PromptList: FC<PromptListProps> = props => {
         ? result?.actions.filter(action => action.actionType === 'prompt' || action.mode === 'ask') ?? []
         : result?.actions ?? []
 
-    console.log('allActions', allActions?.length)
-
     const sortedActions = filteredActions(allActions)
     const actions = showFirstNItems ? sortedActions.slice(0, showFirstNItems) : sortedActions
-
-    console.log('sortedActions', sortedActions?.length)
-    console.log('actions', actions?.length)
 
     const inputPaddingClass =
         paddingLevels !== 'none' ? (paddingLevels === 'middle' ? '!tw-p-0' : '!tw-p-2') : ''
