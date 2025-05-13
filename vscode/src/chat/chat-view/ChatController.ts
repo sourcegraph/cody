@@ -142,7 +142,7 @@ import { CodyChatEditorViewType } from './ChatsController'
 import { CodeBlockRegenerator, type RegenerateRequestParams } from './CodeBlockRegenerator'
 import type { ContextRetriever } from './ContextRetriever'
 import { InitDoer } from './InitDoer'
-import { getChatPanelTitle, isAgentTesting } from './chat-helpers'
+import { getChatPanelTitle, isCodyTesting } from './chat-helpers'
 import { OmniboxTelemetry } from './handlers/OmniboxTelemetry'
 import { getAgent } from './handlers/registry'
 import { getPromptsMigrationInfo, startPromptsMigration } from './prompts-migration'
@@ -409,7 +409,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 }
                 break
             case 'command':
-                vscode.commands.executeCommand(message.id, message.arg)
+                vscode.commands.executeCommand(message.id, message.arg ?? message.args)
                 break
             case 'mcp': {
                 try {
@@ -1534,7 +1534,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             const model = (speeds.find(m => m.id.includes('flash-lite')) || speeds?.[0])?.id
             const messages = this.chatBuilder.getMessages()
             // Returns early if this is not the first message or if this is a testing session.
-            if (messages.length > 1 || !model || isAgentTesting) {
+            if (messages.length > 1 || !model || isCodyTesting) {
                 return
             }
             const prompt = ps`${getDefaultSystemPrompt()} Your task is to generate a concise title (in about 10 words without quotation) for <codyUserInput>${inputText}</codyUserInput>.

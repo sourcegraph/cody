@@ -5,6 +5,7 @@ import {
     featureFlagProvider,
     logDebug,
     startWith,
+    telemetryRecorder,
 } from '@sourcegraph/cody-shared'
 import type { ContextItemToolState } from '@sourcegraph/cody-shared/src/codebase-context/messages'
 import type { McpServer } from '@sourcegraph/cody-shared/src/llm-providers/mcp/types'
@@ -12,6 +13,7 @@ import { type Observable, Subject, map } from 'observable-fns'
 import * as vscode from 'vscode'
 import { z } from 'zod'
 import type { AgentTool } from '.'
+import { DeepCodyAgent } from '../../agentic/DeepCody'
 import { MCPConnectionManager } from './MCPConnectionManager'
 import { MCPServerManager } from './MCPServerManager'
 
@@ -408,31 +410,6 @@ export class MCPManager {
 
         this.loadDisabledToolsForServer(serverName)
 
-        MCPManager.toolsChangeNotifications.next({ type: 'tool', serverName })
-        MCPManager.changeNotifications.next({ type: 'server', serverName })
-
-        // Fetch resources
-        try {
-            const resources = await this.serverManager.getResourceList(serverName)
-            connection.server.resources = resources
-            logDebug('MCPManager', `Initialized resources for server: ${serverName}`)
-        } catch (error) {
-            logDebug('MCPManager', `Failed to initialize resources for server ${serverName}`, {
-                verbose: { error },
-            })
-        }
-
-        // Fetch resource templates
-        try {
-            const resourceTemplates = await this.serverManager.getResourceTemplateList(serverName)
-            connection.server.resourceTemplates = resourceTemplates
-            logDebug('MCPManager', `Initialized resource templates for server: ${serverName}`)
-        } catch (error) {
-            logDebug('MCPManager', `Failed to initialize resource templates for server ${serverName}`, {
-                verbose: { error },
-            })
-        }
-
         // Final notifications
         MCPManager.toolsChangeNotifications.next({ type: 'tool', serverName })
         MCPManager.changeNotifications.next({ type: 'server', serverName })
@@ -554,6 +531,19 @@ export class MCPManager {
         toolName: string,
         args: Record<string, unknown> = {}
     ): Promise<ContextItemToolState> {
+        telemetryRecorder.recordEvent('cody.deep-cody.tool', 'executed', {
+            privateMetadata: {
+                model: DeepCodyAgent.model,
+                chatAgent: DeepCodyAgent.id,
+                tool_name: toolName,
+                server_name: serverName,
+                args: JSON.stringify(args),
+            },
+            billingMetadata: {
+                product: 'cody',
+                category: 'billable',
+            },
+        })
         return this.serverManager.executeTool(serverName, toolName, args)
     }
 
@@ -561,6 +551,18 @@ export class MCPManager {
     public async setToolState(serverName: string, toolName: string, disabled: boolean): Promise<void> {
         // Update the tool state in the server manager
         this.serverManager.setToolState(serverName, toolName, disabled)
+        telemetryRecorder.recordEvent('cody.deep-cody.tool', disabled ? 'disabled' : 'enabled', {
+            privateMetadata: {
+                model: DeepCodyAgent.model,
+                chatAgent: DeepCodyAgent.id,
+                tool_name: toolName,
+                server_name: serverName,
+            },
+            billingMetadata: {
+                product: 'cody',
+                category: 'billable',
+            },
+        })
 
         // Update the configuration
         await this.updateToolStateInConfig(serverName, toolName, disabled)
@@ -617,7 +619,7 @@ export class MCPManager {
             // Save to VS Code configuration
             await config.update(
                 MCPManager.MCP_SERVERS_KEY,
-                mcpServers,
+                { ...mcpServers, transportType: undefined, error: undefined },
                 vscode.ConfigurationTarget.Global
             )
 
@@ -715,6 +717,17 @@ export class MCPManager {
             // Reset flags after operation is complete
             MCPManager.isUpdatingConfig = false
             MCPManager.updatingServerName = null
+            telemetryRecorder.recordEvent('cody.deep-cody.server', 'removed', {
+                privateMetadata: {
+                    model: DeepCodyAgent.model,
+                    chatAgent: DeepCodyAgent.id,
+                    server_name: serverName,
+                },
+                billingMetadata: {
+                    product: 'cody',
+                    category: 'billable',
+                },
+            })
         }
     }
 
@@ -774,6 +787,17 @@ export class MCPManager {
             // Reset flags after operation is complete
             MCPManager.isUpdatingConfig = false
             MCPManager.updatingServerName = null
+            telemetryRecorder.recordEvent('cody.deep-cody.server', 'added', {
+                privateMetadata: {
+                    model: DeepCodyAgent.model,
+                    chatAgent: DeepCodyAgent.id,
+                    server_name: name,
+                },
+                billingMetadata: {
+                    product: 'cody',
+                    category: 'billable',
+                },
+            })
         }
     }
 
@@ -868,6 +892,18 @@ export class MCPManager {
                 `Failed to disable MCP server: ${error instanceof Error ? error.message : String(error)}`
             )
             throw error
+        } finally {
+            telemetryRecorder.recordEvent('cody.deep-cody.server', 'disabled', {
+                privateMetadata: {
+                    model: DeepCodyAgent.model,
+                    chatAgent: DeepCodyAgent.id,
+                    server_name: name,
+                },
+                billingMetadata: {
+                    product: 'cody',
+                    category: 'billable',
+                },
+            })
         }
     }
 
@@ -912,6 +948,18 @@ export class MCPManager {
                 `Failed to enable MCP server: ${error instanceof Error ? error.message : String(error)}`
             )
             throw error
+        } finally {
+            telemetryRecorder.recordEvent('cody.deep-cody.server', 'enabled', {
+                privateMetadata: {
+                    model: DeepCodyAgent.model,
+                    chatAgent: DeepCodyAgent.id,
+                    server_name: name,
+                },
+                billingMetadata: {
+                    product: 'cody',
+                    category: 'billable',
+                },
+            })
         }
     }
 

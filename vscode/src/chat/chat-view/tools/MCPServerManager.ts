@@ -75,7 +75,6 @@ export class MCPServerManager {
             // Register tools with CodyToolProvider
             try {
                 CodyToolProvider.registerMcpTools(serverName, tools)
-                logDebug('MCPServerManager', `Registered ${tools.length} tools with CodyToolProvider`)
             } catch (error) {
                 logDebug(
                     'MCPServerManager',
@@ -87,6 +86,7 @@ export class MCPServerManager {
             }
 
             await this.registerAgentTools(serverName, tools)
+
             return tools
         } catch (error) {
             logDebug('MCPServerManager', `Failed to fetch tools for ${serverName}:`, {
@@ -104,8 +104,6 @@ export class MCPServerManager {
      */
     public async getResourceList(serverName: string): Promise<McpResource[]> {
         try {
-            if (!serverName) return [] // <-- Skip until we support resources
-
             const connection = this.connectionManager.getConnection(serverName)
             if (!connection) return []
 
@@ -136,14 +134,12 @@ export class MCPServerManager {
     }
 
     /**
-     * TODO: Add support for prompts templates
+     * TODO: Add support for prompts templates - currently not supported.
      * NOTE: Currently not supported.
      * Fetches the list of resource templates from the MCP server.
      */
     public async getResourceTemplateList(serverName: string): Promise<McpResourceTemplate[]> {
         try {
-            if (serverName) return [] // <-- Skip until we support templates
-
             const connection = this.connectionManager.getConnection(serverName)
             if (!connection) return []
 
@@ -192,7 +188,13 @@ export class MCPServerManager {
                             logDebug('MCPServerManager', `Error executing tool ${tool.name}:`, {
                                 verbose: { error },
                             })
-                            throw error
+                            return createMCPToolState(
+                                serverName,
+                                tool.name,
+                                [{ type: 'text', text: `[${tool.name}] ERROR: ${error}` }],
+                                undefined,
+                                UIToolStatus.Error
+                            )
                         }
                     },
                     // Set disabled based on current state
@@ -211,10 +213,6 @@ export class MCPServerManager {
                         return t
                     })
                 }
-
-                logDebug('MCPServerManager', `Created agent tool for ${tool.name || ''}`, {
-                    verbose: { tool },
-                })
             } catch (error) {
                 logDebug('MCPServerManager', `Error creating agent tool for ${tool.name || ''}`, {
                     verbose: { error },
@@ -309,13 +307,10 @@ export class MCPServerManager {
             logDebug('MCPServerManager', `Error calling tool ${toolName} on server ${serverName}`, {
                 verbose: error,
             })
-
-            // Create an error state instead of throwing
-            const errorMessage = error instanceof Error ? error.message : String(error)
             return createMCPToolState(
                 serverName,
                 toolName,
-                [{ type: 'text', text: `[${toolName}] ERROR: ${errorMessage}` }],
+                [{ type: 'text', text: `[${toolName}] ERROR: ${error}` }],
                 undefined,
                 UIToolStatus.Error
             )
@@ -525,7 +520,7 @@ export function createMCPToolState(
         toolId: `mcp-${toolName}-${Date.now()}`,
         status,
         toolName: `${serverName}_${toolName}`,
-        content: textContent,
+        content: `<TOOLRESULT tool='${toolName}'>${textContent}\n[Please communicate the result to the user]</TOOLRESULT>`,
         outputType: 'mcp',
         uri: URI.parse(''),
         title: serverName + ' - ' + toolName,

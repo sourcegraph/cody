@@ -13,7 +13,7 @@ The YAML front matter has the following fields:
 - title (required string)
 - description (optional string)
 - tags (optional string[])
-- langauge (optional string)
+- language (optional string)
 - language_filters, repo_filters, path_filters, text_content_filters (optional {include: string[], exclude: string[]})
 
 The Markdown body is an LLM prompt that is included in AI code chat and editing on files that the rule applies to:

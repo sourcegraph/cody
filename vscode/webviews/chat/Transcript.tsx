@@ -88,6 +88,22 @@ export const Transcript: FC<TranscriptProps> = props => {
 
     const lastHumanEditorRef = useRef<PromptEditorRefAPI | null>(null)
 
+    useEffect(() => {
+        const handleCopyEvent = (event: ClipboardEvent) => {
+            const selectedText = window.getSelection()?.toString() || ''
+            if (!selectedText) return
+            getVSCodeAPI().postMessage({
+                command: 'copy',
+                text: selectedText,
+                eventType: 'Keydown',
+            })
+        }
+        document.addEventListener('copy', handleCopyEvent)
+        return () => {
+            document.removeEventListener('copy', handleCopyEvent)
+        }
+    }, [])
+
     return (
         <div
             className={clsx(' tw-px-8 tw-py-4 tw-flex tw-flex-col tw-gap-4', {

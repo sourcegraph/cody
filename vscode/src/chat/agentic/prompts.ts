@@ -61,7 +61,8 @@ In this environment you have access to this set of tools you can use to fetch co
 <user_input>
 
 ## IMPORTANT
-Skip preamble. ONLY include the expected tags in your response and nothing else.
+Skip preamble. ONLY include the expected tags in your response and nothing else. DO NOT enclose your answers in markdown code blocks.
+Always follow the instruction for each tool and their expected schema!
 This is an auto-generated message and your response will be processed by a bot using the expected tags.`
     .replace(/{{ANSWER_TAG}}/g, ACTIONS_TAGS.ANSWER)
     .replace(/{{CONTEXT_TAG}}/g, ACTIONS_TAGS.CONTEXT)
