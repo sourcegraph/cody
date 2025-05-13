@@ -65,18 +65,21 @@ export const PromptOwnerFilter: FC<PromptOwnerFilterProps> = ({
                         variant="outline"
                         className="tw-inline-flex tw-justify-between tw-items-center tw-w-full"
                     >
-                        <div className="tw-flex tw-items-center">
-                            <FilterIcon size={14} className="tw-mr-2 tw-text-muted-foreground" />
+                        <div className="tw-flex tw-items-center tw-min-w-0 tw-mr-2">
+                            <FilterIcon
+                                size={14}
+                                className="tw-mr-2 tw-text-muted-foreground tw-flex-shrink-0"
+                            />
                             <Tooltip>
                                 <TooltipTrigger asChild>
-                                    <span className="tw-truncate tw-inline-block tw-max-w-[100px]">
+                                    <span className="tw-truncate tw-inline-block tw-max-w-[95px]">
                                         {filterText}
                                     </span>
                                 </TooltipTrigger>
                                 <TooltipContent side="bottom">{filterText}</TooltipContent>
                             </Tooltip>
                         </div>
-                        <ChevronDown size={14} className="tw-ml-2 tw-text-muted-foreground" />
+                        <ChevronDown size={14} className="tw-text-muted-foreground tw-flex-shrink-0" />
                     </Button>
                 </PopoverTrigger>
                 <PopoverContent className="tw-w-[220px] !tw-p-0" side="bottom" align="start">
