@@ -320,7 +320,7 @@ export function ServerHome({ mcpServers }: ServerHomeProps) {
             tabIndex={0}
             shouldFilter={false}
             defaultValue="empty"
-            className="tw-flex tw-flex-col tw-h-full tw-py-4 tw-bg-transparent tw-px-2 tw-mb-4 tw-overscroll-auto"
+            className="tw-flex tw-flex-col tw-h-full tw-py-4 tw-bg-transparent tw-px-2 tw-mb-4 tw-overflow-hidden"
             disablePointerSelection={true}
         >
             <header className="tw-flex tw-items-center tw-justify-between tw-mt-4 tw-px-4">
@@ -372,33 +372,33 @@ export function ServerHome({ mcpServers }: ServerHomeProps) {
                 </div>
             ) : (
                 <div>
-                    <div className="tw-flex tw-items-center tw-justify-between tw-px-2 tw-py-1">
-                        <CommandList className="tw-flex-1">
+                    <div className="tw-flex tw-items-center tw-justify-between tw-px-2">
+                        <div className="tw-flex-1">
                             <CommandInput
                                 value={searchQuery}
                                 onValueChange={setSearchQuery}
-                                placeholder="Search..."
+                                placeholder="Search servers and tools..."
                                 autoFocus={true}
-                                className="tw-m-[0.5rem] !tw-p-[0.5rem] tw-rounded tw-bg-input-background tw-text-input-foreground focus:tw-shadow-[0_0_0_0.125rem_var(--vscode-focusBorder)]"
+                                className="tw-my-2 tw-mx-1 !tw-p-[0.5rem] tw-rounded tw-bg-input-background tw-text-input-foreground focus:tw-shadow-[0_0_0_0.125rem_var(--vscode-focusBorder)]"
                             />
-                        </CommandList>
+                        </div>
                     </div>
-                    <CommandList className="tw-flex-1 tw-overflow-y-auto tw-m-2 tw-gap-6 !tw-bg-transparent focus:tw-bg-inherit">
+                    <CommandList className="tw-flex-1 tw-overflow-y-auto tw-mx-2 tw-gap-4 !tw-bg-transparent focus:tw-bg-inherit tw-max-h-[calc(100vh-150px)] tw-scrollbar-thin tw-scrollbar-thumb-gray-400 tw-scrollbar-track-transparent">
                         {filteredServers.map(server => (
                             <CommandItem
                                 key={server.id}
-                                className="tw-text-left tw-truncate tw-w-full tw-rounded-md tw-text-sm tw-overflow-hidden tw-text-sidebar-foreground tw-align-baseline hover:tw-bg-transparent [&[aria-selected='true']]:tw-bg-transparent tw-my-2"
+                                className="tw-text-left tw-truncate tw-w-full tw-rounded-md tw-text-sm tw-overflow-hidden tw-text-sidebar-foreground tw-align-baseline hover:tw-bg-transparent [&[aria-selected='true']]:tw-bg-transparent tw-my-2 tw-border tw-border-gray-700/20"
                                 onSelect={() => setSelectedServer(server)}
                             >
-                                <div className="tw-truncate tw-w-full tw-flex tw-flex-col tw-gap-2">
-                                    <div className="tw-flex tw-items-center tw-justify-between tw-gap-2">
-                                        <div className="tw-flex tw-self-end tw-gap-2">
+                                <div className="tw-truncate tw-w-full tw-flex tw-flex-col tw-gap-2 tw-p-0.5">
+                                    <div className="tw-flex tw-items-center tw-justify-between tw-gap-2 tw-rounded-t-md tw-py-2 tw-px-3">
+                                        <div className="tw-flex tw-items-center tw-gap-2">
                                             <PencilRulerIcon
-                                                className="tw-w-8 tw-h-8"
+                                                className="tw-text-primary"
                                                 strokeWidth={1.25}
-                                                size={16}
+                                                size={18}
                                             />
-                                            <strong>{server.name}</strong>
+                                            <strong className="tw-truncate tw-max-w-[300px] tw-text-base">{server.name}</strong>
                                         </div>
                                         {server.name === selectedServer?.name && (
                                             <Button
@@ -417,22 +417,22 @@ export function ServerHome({ mcpServers }: ServerHomeProps) {
                                     </div>
                                     <div className="tw-flex tw-align-top tw-justify-between tw-my-1 tw-flex-wrap">
                                         {server.error && (
-                                            <div className="tw-mt-2 tw-mb-1 tw-w-full">
+                                            <div className="tw-mb-1 tw-w-full">
                                                 <p
-                                                    className="tw-text-xs tw-text-pink-300 tw-mt-1 tw-truncate"
+                                                    className="tw-text-xs tw-text-pink-300 tw-truncate tw-px-2"
                                                     title={server.error}
                                                 >
                                                     {server.error}
                                                 </p>
                                             </div>
                                         )}
-                                        <div className="tw-mt-2">
-                                            <div className="tw-flex tw-flex-wrap tw-gap-4">
+                                        <div className="tw-w-full tw-px-2">
+                                            <div className="tw-flex tw-flex-wrap tw-gap-2">
                                                 {server.tools?.map(tool => (
                                                     <Badge
                                                         key={`${server.name}-${tool.name}-tool`}
                                                         variant={tool.disabled ? 'disabled' : 'outline'}
-                                                        className={`tw-truncate tw-max-w-[250px] tw-text-foreground tw-cursor-pointer tw-font-thin ${
+                                                        className={`tw-truncate tw-max-w-[250px] tw-text-foreground tw-cursor-pointer tw-font-thin tw-flex tw-items-center tw-gap-1 tw-py-1 ${
                                                             tool.disabled
                                                                 ? 'tw-opacity-50 tw-line-through'
                                                                 : ''
@@ -449,23 +449,25 @@ export function ServerHome({ mcpServers }: ServerHomeProps) {
                                                             tool.description
                                                         }`}
                                                     >
+                                                        <span className="tw-inline-block tw-w-2 tw-h-2 tw-rounded-full tw-bg-current"></span>
                                                         {tool.name}
                                                     </Badge>
                                                 ))}
                                                 {server?.tools === undefined && !server?.error && (
-                                                    <div className="tw-flex tw-flex-wrap tw-gap-2 tw-overflow-hidden tw-flex-1">
+                                                    <div className="tw-flex tw-flex-wrap tw-gap-2 tw-overflow-hidden tw-w-full">
                                                         {Array.from({ length: server.toolCount || 2 }).map((_, index) => (
                                                             <Badge
                                                                 key={`skeleton-${server.id}-${index}`}
                                                                 variant="outline"
-                                                                className={`tw-truncate tw-max-w-[90px] tw-min-w-[70px] ${
+                                                                className={`tw-flex tw-items-center tw-gap-1 tw-py-1 tw-truncate tw-max-w-[120px] tw-min-w-[80px] ${
                                                                     showSkeletonAnimation
                                                                         ? 'tw-animate-pulse'
                                                                         : ''
                                                                 }`}
                                                             >
+                                                                <span className="tw-inline-block tw-w-2 tw-h-2 tw-rounded-full tw-bg-current"></span>
                                                                 <Skeleton
-                                                                    className={`tw-h-4 tw-w-full tw-bg-zinc-800 ${
+                                                                    className={`tw-h-4 tw-w-16 tw-bg-zinc-800 ${
                                                                         showSkeletonAnimation
                                                                             ? 'tw-animate-pulse'
                                                                             : ''
@@ -481,7 +483,7 @@ export function ServerHome({ mcpServers }: ServerHomeProps) {
                                 </div>
                             </CommandItem>
                         ))}
-                        <div className="tw-flex tw-flex-col tw-justify-center tw-mt-4 tw-w-full">
+                        <div className="tw-flex tw-flex-col tw-justify-center tw-mt-4 tw-w-full tw-pb-6">
                             <AddServerView
                                 onAddServer={addServer}
                                 className="tw-my-4 tw-w-full tw-px-2"
