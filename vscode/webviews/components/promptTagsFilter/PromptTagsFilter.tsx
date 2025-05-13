@@ -35,7 +35,9 @@ export const PromptTagsFilter: FC<PromptTagsFilterProps> = ({
                             <Tag size={14} className="tw-mr-2 tw-text-muted-foreground" />
                             <Tooltip>
                                 <TooltipTrigger asChild>
-                                    <span className="tw-truncate tw-inline-block tw-max-w-[100px]">{selectedTagName || 'All tags'}</span>
+                                    <span className="tw-truncate tw-inline-block tw-max-w-[100px]">
+                                        {selectedTagName || 'All tags'}
+                                    </span>
                                 </TooltipTrigger>
                                 <TooltipContent side="bottom">
                                     {selectedTagName || 'All tags'}

@@ -69,7 +69,9 @@ export const PromptOwnerFilter: FC<PromptOwnerFilterProps> = ({
                             <FilterIcon size={14} className="tw-mr-2 tw-text-muted-foreground" />
                             <Tooltip>
                                 <TooltipTrigger asChild>
-                                    <span className="tw-truncate tw-inline-block tw-max-w-[100px]">{filterText}</span>
+                                    <span className="tw-truncate tw-inline-block tw-max-w-[100px]">
+                                        {filterText}
+                                    </span>
                                 </TooltipTrigger>
                                 <TooltipContent side="bottom">{filterText}</TooltipContent>
                             </Tooltip>
