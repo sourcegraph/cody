@@ -193,12 +193,16 @@ export class DeepCodyAgent {
             this.stats.loop++
             const step = this.stepsManager.addStep({ title: 'Reflecting' })
             const newContext = await this.review(requestID, span, chatAbortSignal)
-            this.statusCallback.onComplete(step.id)
-            if (!newContext.length) break
+            // Make sure the review is completed
+            if (!newContext?.length) {
+                this.statusCallback.onComplete(step.id)
+                break
+            }
             // Filter and add new context items in one pass
             const validItems = newContext.filter(c => c.title !== 'TOOLCONTEXT')
             this.context.push(...validItems)
             this.stats.context += validItems.length
+            this.statusCallback.onComplete(step.id)
             if (newContext.every(isUserAddedItem)) break
         }
         this.statusCallback.onComplete()

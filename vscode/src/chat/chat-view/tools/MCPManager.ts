@@ -408,31 +408,6 @@ export class MCPManager {
 
         this.loadDisabledToolsForServer(serverName)
 
-        MCPManager.toolsChangeNotifications.next({ type: 'tool', serverName })
-        MCPManager.changeNotifications.next({ type: 'server', serverName })
-
-        // Fetch resources
-        try {
-            const resources = await this.serverManager.getResourceList(serverName)
-            connection.server.resources = resources
-            logDebug('MCPManager', `Initialized resources for server: ${serverName}`)
-        } catch (error) {
-            logDebug('MCPManager', `Failed to initialize resources for server ${serverName}`, {
-                verbose: { error },
-            })
-        }
-
-        // Fetch resource templates
-        try {
-            const resourceTemplates = await this.serverManager.getResourceTemplateList(serverName)
-            connection.server.resourceTemplates = resourceTemplates
-            logDebug('MCPManager', `Initialized resource templates for server: ${serverName}`)
-        } catch (error) {
-            logDebug('MCPManager', `Failed to initialize resource templates for server ${serverName}`, {
-                verbose: { error },
-            })
-        }
-
         // Final notifications
         MCPManager.toolsChangeNotifications.next({ type: 'tool', serverName })
         MCPManager.changeNotifications.next({ type: 'server', serverName })
@@ -617,7 +592,7 @@ export class MCPManager {
             // Save to VS Code configuration
             await config.update(
                 MCPManager.MCP_SERVERS_KEY,
-                mcpServers,
+                { ...mcpServers, transportType: undefined, error: undefined },
                 vscode.ConfigurationTarget.Global
             )
 
