@@ -33,6 +33,8 @@ export type ConnectionStatusChangeEvent = {
 export type ServerChangeNotification = {
     type: 'server' | 'tool'
     serverName?: string
+    isToggleOperation?: boolean
+    toolName?: string
 }
 
 export class MCPConnectionManager {
@@ -50,8 +52,13 @@ export class MCPConnectionManager {
         this.serverChangeNotifications.next({ type: 'server', serverName })
     }
 
-    public notifyToolChanged(serverName?: string): void {
-        this.serverChangeNotifications.next({ type: 'tool', serverName })
+    public notifyToolChanged(serverName?: string, toolName?: string, isToggleOperation?: boolean): void {
+        this.serverChangeNotifications.next({ 
+            type: 'tool', 
+            serverName,
+            toolName,
+            isToggleOperation
+        })
     }
 
     private createMCPClient(name: string, version: string, config: any): MCPServerSpec {

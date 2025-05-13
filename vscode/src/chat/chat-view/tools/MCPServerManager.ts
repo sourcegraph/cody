@@ -33,6 +33,7 @@ export class MCPServerManager {
         serverName: string
         toolName?: string
         tools: AgentTool[]
+        isToggleOperation?: boolean
     }>()
     private tools: AgentTool[] = []
     private disabledTools: Set<string> = new Set<string>()
@@ -41,7 +42,11 @@ export class MCPServerManager {
         toolName: string
         disabled: boolean
     }>()
-    private toolsChangeNotifications = new Subject<{ serverName: string; toolName?: string }>()
+    private toolsChangeNotifications = new Subject<{ 
+        serverName: string; 
+        toolName?: string;
+        isToggleOperation?: boolean 
+    }>()
 
     constructor(private connectionManager: MCPConnectionManager) {}
 
@@ -263,7 +268,12 @@ export class MCPServerManager {
      * Subscribe to tool changes
      */
     public onToolsChanged(
-        listener: (event: { serverName: string; toolName?: string; tools: AgentTool[] }) => void
+        listener: (event: { 
+            serverName: string; 
+            toolName?: string; 
+            tools: AgentTool[];
+            isToggleOperation?: boolean;
+        }) => void
     ): vscode.Disposable {
         return this.toolsEmitter.event(listener)
     }
@@ -396,9 +406,16 @@ export class MCPServerManager {
         }
 
         // Fire events with specific server and tool information
-        this.toolsEmitter.fire({ serverName, toolName, tools: this.tools })
         this.toolStateChangeEmitter.fire({ serverName, toolName, disabled })
-        this.toolsChangeNotifications.next({ serverName, toolName })
+        
+        // Only fire toolsEmitter for non-toggle operations
+        // to prevent full tool list reload in the UI
+        if (process.env.CODY_TOGGLE_RELOAD !== 'force') {
+            this.toolsChangeNotifications.next({ serverName, toolName, isToggleOperation: true })
+        } else {
+            this.toolsEmitter.fire({ serverName, toolName, tools: this.tools })
+            this.toolsChangeNotifications.next({ serverName, toolName })
+        }
     }
 
     /**

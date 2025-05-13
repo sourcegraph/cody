@@ -451,8 +451,55 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                             if (message.config) {
                                 await mcpManager.updateServer(serverName, message.config)
                             } else if (message.toolName) {
+                                const toolName = message.toolName as string; // Ensure it's treated as string
                                 const isDisabled = message.toolDisabled === true
-                                await mcpManager.setToolState(serverName, message.toolName, isDisabled)
+                                
+                                // First update the UI to prevent flickering
+                                void this.postMessage({
+                                    type: 'clientAction',
+                                    mcpToolStateChanged: {
+                                        serverName,
+                                        toolName,
+                                        disabled: isDisabled
+                                    }
+                                });
+                                
+                                // Then update backend state
+                                await mcpManager.setToolState(serverName, toolName, isDisabled)
+                            }
+                            break
+                        case 'toggleTool':
+                            if (message.toolName) {
+                                const toolName = message.toolName as string; // Ensure it's treated as string
+                                const isDisabled = message.toolDisabled === true
+                                
+                                // First immediately update the UI to prevent flickering
+                                this.postMessage({
+                                    type: 'clientAction',
+                                    mcpToolStateChanged: {
+                                        serverName,
+                                        toolName,
+                                        disabled: isDisabled
+                                    }
+                                }).then(() => {
+                                    // Using a timeout to prevent race conditions
+                                    setTimeout(async () => {
+                                        // Then update the server state
+                                        await mcpManager.setToolState(serverName, toolName, isDisabled);
+                                        
+                                        // Confirm state change to client without triggering a full reload
+                                        void this.postMessage({
+                                            type: 'clientAction',
+                                            // Use mcpToolStateChanged again to maintain compatibility
+                                            mcpToolStateChanged: {
+                                                serverName,
+                                                toolName,
+                                                disabled: isDisabled,
+                                                isConfirmation: true
+                                            }
+                                        });
+                                    }, 50);
+                                });
                             }
                             break
                         case 'removeServer': {

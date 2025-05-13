@@ -23,6 +23,9 @@ export interface ServerType {
     env?: EnvironmentVariable[]
     metrics?: ServerMetrics
     tools?: McpTool[]
+    toolCount?: number
+    // Record of tool state updates by tool name
+    toolUpdates?: Record<string, boolean>
     error?: string
 }
 

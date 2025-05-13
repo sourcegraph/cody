@@ -36,12 +36,76 @@ export function ServerHome({ mcpServers }: ServerHomeProps) {
         return () => clearTimeout(timer)
     }, [])
 
+    // Track server state locally to survive refreshes
+    const [localToolState, setLocalToolState] = useState<Record<string, Record<string, boolean>>>({});
+    
+    // When tool state changes, update our local state cache
+    const updateLocalToolState = useCallback((serverName: string, toolName: string, disabled: boolean) => {
+        setLocalToolState(prev => ({
+            ...prev,
+            [serverName]: {
+                ...(prev[serverName] || {}),
+                [toolName]: disabled
+            }
+        }));
+    }, []);
+    
     // Update servers when mcpServers prop changes
     useEffect(() => {
         if (mcpServers) {
-            setServers(mcpServers)
+            setServers(prevServers => {
+                // Map the incoming mcpServers, but preserve any local state like tool updates
+                return mcpServers.map(newServer => {
+                    // Find existing server with the same name if it exists
+                    const existingServer = prevServers.find(s => s.name === newServer.name);
+                    
+                    // Get stored tool states from both sources - existing state and persistent local state
+                    const serverToolStates = {
+                        ...(existingServer?.toolUpdates || {}),
+                        ...(localToolState[newServer.name] || {})
+                    };
+                    
+                    // Apply tool states to tools
+                    const processedTools = newServer.tools?.map(tool => {
+                        const toolName = tool.name;
+                        // Apply stored state if it exists
+                        if (serverToolStates[toolName] !== undefined) {
+                            return { ...tool, disabled: serverToolStates[toolName] };
+                        }
+                        return tool;
+                    });
+                    
+                    // Calculate proper tool count
+                    const toolCount = Math.max(
+                        newServer.tools?.length || 0,
+                        existingServer?.toolCount || 0,
+                        processedTools?.length || 0,
+                        2 // Minimum of 2 as fallback
+                    );
+                    
+                    if (existingServer) {
+                        // For existing server, merge and preserve local state
+                        return {
+                            ...newServer,
+                            toolCount,
+                            // Use processed tools that have local state applied
+                            tools: processedTools || existingServer.tools,
+                            // Keep track of all tool updates
+                            toolUpdates: serverToolStates
+                        };
+                    }
+                    
+                    // For new servers
+                    return {
+                        ...newServer,
+                        toolCount,
+                        tools: processedTools || newServer.tools,
+                        toolUpdates: serverToolStates
+                    };
+                });
+            });
         }
-    }, [mcpServers])
+    }, [mcpServers, localToolState])
 
     useEffect(() => {
         const messageHandler = (event: MessageEvent) => {
@@ -61,11 +125,17 @@ export function ServerHome({ mcpServers }: ServerHomeProps) {
                     if (existingServerIndex >= 0) {
                         // Update existing server but preserve tool state if not explicitly provided
                         const existingServer = prevServers[existingServerIndex]
+                        
+                        // If new server has tools, track their count for skeleton loading
+                        const toolCount = server?.tools?.length || existingServer.toolCount || 0;
+                        
                         const updatedServer = {
                             ...existingServer,
                             ...server,
                             // Preserve tools if they weren't explicitly provided in the update
                             tools: server.tools || existingServer.tools,
+                            // Store the tool count so we can use it for loading skeletons
+                            toolCount: server.tools?.length || toolCount,
                         }
 
                         const newServers = [...prevServers]
@@ -73,15 +143,60 @@ export function ServerHome({ mcpServers }: ServerHomeProps) {
                         return newServers
                     }
 
+                    // For new servers, calculate tool count for skeleton loading
+                    const toolCount = server?.tools?.length || 0;
+                    
                     const newServer = {
                         id: `server-${Date.now()}`, // Generate a unique ID
                         name: name,
                         type: server?.type || 'Server',
                         status: server?.status || 'connecting',
+                        toolCount: toolCount > 0 ? toolCount : 2, // Default to at least 2 skeleton items
                         ...(server || {}),
                     }
                     return [...prevServers, newServer]
                 })
+            }
+
+            // Handle individual tool state changes
+            if (message.mcpToolStateChanged) {
+                const { serverName, toolName, disabled, isConfirmation } = message.mcpToolStateChanged
+                
+                // Skip UI updates for confirmation messages - they're just acknowledgements
+                if (isConfirmation) {
+                    // We can use confirmations to apply visual feedback if needed
+                    return;
+                }
+                
+                // First update our local tool state tracking for persistence
+                updateLocalToolState(serverName, toolName, disabled);
+                
+                // Update the UI state immediately without waiting for any server updates
+                setServers(prevServers => {
+                    // When updating the local UI state, mark the tool as disabled immediately
+                    return prevServers.map(server => {
+                        if (server.name !== serverName) return server;
+                        
+                        // Make a new copy of tools array with the updated tool
+                        const updatedTools = server.tools?.map(tool => 
+                            tool.name === toolName 
+                                ? { ...tool, disabled } 
+                                : tool
+                        );
+                        
+                        // Preserve all existing server data but update the specific tool
+                        return {
+                            ...server,
+                            // Important: use the updated tools array
+                            tools: updatedTools,
+                            // Store the tool state so we can preserve across updates
+                            toolUpdates: {
+                                ...(server.toolUpdates || {}),
+                                [toolName]: disabled
+                            }
+                        };
+                    });
+                });
             }
 
             // Handle server error
@@ -156,14 +271,10 @@ export function ServerHome({ mcpServers }: ServerHomeProps) {
     )
 
     const toggleTool = useCallback((serverName: string, toolName: string, isDisabled: boolean) => {
-        getVSCodeAPI().postMessage({
-            command: 'mcp',
-            type: 'updateServer',
-            name: serverName,
-            toolName,
-            toolDisabled: isDisabled,
-        })
-        // Update local state optimistically
+        // First update our local persistent state
+        updateLocalToolState(serverName, toolName, isDisabled);
+        
+        // Next update UI state optimistically
         setServers(prevServers =>
             prevServers.map(server =>
                 server.name === serverName
@@ -172,11 +283,25 @@ export function ServerHome({ mcpServers }: ServerHomeProps) {
                           tools: server.tools?.map(tool =>
                               tool.name === toolName ? { ...tool, disabled: isDisabled } : tool
                           ),
+                          // Update toolUpdates to reflect the change
+                          toolUpdates: {
+                              ...(server.toolUpdates || {}),
+                              [toolName]: isDisabled
+                          }
                       }
                     : server
             )
-        )
-    }, [])
+        );
+        
+        // Then send message to backend
+        getVSCodeAPI().postMessage({
+            command: 'mcp',
+            type: 'toggleTool',
+            name: serverName,
+            toolName,
+            toolDisabled: isDisabled,
+        });
+    }, [updateLocalToolState])
 
     // Filter servers based on search query
     const filteredServers = useMemo(() => {
@@ -329,9 +454,9 @@ export function ServerHome({ mcpServers }: ServerHomeProps) {
                                                 ))}
                                                 {server?.tools === undefined && !server?.error && (
                                                     <div className="tw-flex tw-flex-wrap tw-gap-2 tw-overflow-hidden tw-flex-1">
-                                                        {[1, 2, 3, 4].map(index => (
+                                                        {Array.from({ length: server.toolCount || 2 }).map((_, index) => (
                                                             <Badge
-                                                                key={`skeleton-${index}`}
+                                                                key={`skeleton-${server.id}-${index}`}
                                                                 variant="outline"
                                                                 className={`tw-truncate tw-max-w-[90px] tw-min-w-[70px] ${
                                                                     showSkeletonAnimation
@@ -371,7 +496,11 @@ export function ServerHome({ mcpServers }: ServerHomeProps) {
     )
 }
 
-export function getMcpServerType(server: McpServer): ServerType {
+export function getMcpServerType(
+    server: McpServer, 
+    existingServer?: ServerType, 
+    localToolState?: Record<string, Record<string, boolean>>
+): ServerType {
     if (!server) {
         // Return a default ServerType if server is null
         return {
@@ -382,15 +511,47 @@ export function getMcpServerType(server: McpServer): ServerType {
             icon: DatabaseBackup,
         }
     }
+    
+    // Combine tool states from both sources for maximum persistence
+    const combinedToolStates = {
+        ...(existingServer?.toolUpdates || {}),
+        ...(localToolState?.[server.name] || {})
+    };
+    
+    // Track tool count for skeleton loading
+    const toolCount = Math.max(
+        server.tools?.length || 0,
+        existingServer?.toolCount || 0,
+        2 // Minimum default
+    );
+    
+    // Process tools with combined states
+    const processedTools = server.tools?.map(tool => {
+        const toolName = tool.name;
+        // Apply stored tool state if it exists in any of our sources
+        if (combinedToolStates[toolName] !== undefined) {
+            return {
+                ...tool,
+                disabled: combinedToolStates[toolName]
+            };
+        }
+        return tool;
+    });
+    
     const base = {
         id: server.name,
         name: server.name,
-        tools: server.tools,
+        // Use tools with all state changes applied
+        tools: processedTools || server.tools,
+        toolCount, 
+        // Store all tool updates for persistence
+        toolUpdates: combinedToolStates,
         status: server.status === 'connected' ? 'online' : 'offline',
         icon: DatabaseBackup,
         type: 'mcp',
         error: server.error,
     } satisfies ServerType
+    
     try {
         const config = server.config ? JSON.parse(server.config) : null
         if (!config) return base

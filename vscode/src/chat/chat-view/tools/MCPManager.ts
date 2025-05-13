@@ -79,7 +79,9 @@ export class MCPManager {
         // Set up connection status change handlers
         this.connectionManager.onStatusChange(this.handleConnectionStatusChange.bind(this))
         this.serverManager.onToolsChanged(event => {
-            this.connectionManager.notifyToolChanged(event.serverName)
+            this.connectionManager.notifyToolChanged(event.serverName, event.toolName, 
+                // Pass through toggle operation flag if present
+                event.isToggleOperation)
         })
 
         this.init()
