@@ -103,7 +103,6 @@ export async function mergedPromptsAndLegacyCommands(
     const auth = currentAuthStatus()
     const recentlyUsedPromptIds = auth.authenticated ? getRecentlyUsedPrompts({ authStatus: auth }) : []
 
-    // Create all promises for parallel execution
     const [recentlyUsedCustomPrompts, customPrompts, isUnifiedPromptsEnabled, isNewPromptsSgVersion] =
         await Promise.all([
             // Fetch recently used prompts
@@ -142,10 +141,10 @@ export async function mergedPromptsAndLegacyCommands(
     if (customPrompts === 'unsupported' || recentlyUsedCustomPrompts === 'unsupported') {
         actions = matchingCommands
     } else {
-        // Use all recently used prompts if filter is enabled, otherwise just the top 3
+        // Use all recently used prompts if filter is enabled, otherwise just the top 4
         const usableRecentPrompts = recentlyUsedOnly
             ? recentlyUsedCustomPrompts
-            : recentlyUsedCustomPrompts.slice(0, 3)
+            : recentlyUsedCustomPrompts.slice(0, 4)
 
         // Only include other prompts if we're not filtering to recently used only
         const otherPrompts = recentlyUsedOnly
