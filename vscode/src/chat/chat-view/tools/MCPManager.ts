@@ -592,7 +592,7 @@ export class MCPManager {
             // Save to VS Code configuration
             await config.update(
                 MCPManager.MCP_SERVERS_KEY,
-                mcpServers,
+                { ...mcpServers, transportType: undefined, error: undefined },
                 vscode.ConfigurationTarget.Global
             )
 

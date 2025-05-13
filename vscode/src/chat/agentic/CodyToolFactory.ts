@@ -100,53 +100,6 @@ export class ToolFactory {
     }
 
     /**
-     * Parse query strings into args object for MCP tool execution
-     */
-    private parseQueryToArgs(queries: string[], tool: McpTool): Record<string, unknown> {
-        // Initialize args object
-        let args: Record<string, unknown> = {}
-
-        // Process the queries into a proper args object
-        if (queries.length > 0) {
-            try {
-                // Try to parse as JSON first
-                const parsedJson = JSON.parse(queries[0])
-                if (typeof parsedJson === 'object' && parsedJson !== null) {
-                    // If it's a valid object, use it directly
-                    args = parsedJson
-                } else {
-                    // If it's not an object, use it as a 'value' parameter
-                    args = { value: parsedJson }
-                }
-            } catch (e) {
-                // If not valid JSON, treat the query as a string argument
-                // Extract parameter names from input_schema if available
-                // Use type assertion since McpTool doesn't have these properties in its type definition
-                const toolAny = tool as any
-                const inputSchema = toolAny.input_schema?.properties || {}
-                const paramNames = Object.keys(inputSchema)
-
-                if (paramNames.length > 0) {
-                    // Use the first parameter name from the schema
-                    args = { [paramNames[0]]: queries[0] }
-
-                    // If there are multiple query strings, try to map them to additional parameters
-                    if (queries.length > 1 && paramNames.length > 1) {
-                        for (let i = 1; i < queries.length && i < paramNames.length; i++) {
-                            args[paramNames[i]] = queries[i]
-                        }
-                    }
-                } else {
-                    // Fallback to using 'query' as the parameter name
-                    args = { query: queries[0] }
-                }
-            }
-        }
-
-        return args
-    }
-
-    /**
      * Create tool config for MCP tool
      */
     private createMcpToolConfig(tool: McpTool, toolName: string, serverName: string): CodyToolConfig {
@@ -154,12 +107,10 @@ export class ToolFactory {
             title: tool.name,
             tags: {
                 tag: PromptString.unsafe_fromUserQuery(toolName),
-                subTag: ps`call`,
+                subTag: ps`CALL`,
             },
             prompt: {
-                instruction: PromptString.unsafe_fromUserQuery(
-                    ((tool as any).description as string) || ''
-                ),
+                instruction: PromptString.unsafe_fromUserQuery(tool.description || toolName),
                 placeholder: PromptString.unsafe_fromUserQuery(JSON.stringify(tool.input_schema)),
                 examples: [],
             },
@@ -177,7 +128,7 @@ export class ToolFactory {
         toolName: string,
         serverName: string
     ) {
-        return new McpToolImpl(toolConfig, tool, toolName, serverName, this.parseQueryToArgs.bind(this))
+        return new McpToolImpl(toolConfig, tool, toolName, serverName)
     }
 
     public createMcpTools(mcpTools: McpTool[], serverName: string): CodyTool[] {
