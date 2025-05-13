@@ -103,10 +103,11 @@ export class ChatsController implements vscode.Disposable {
     }
 
     public async executePrompt({
+        id,
         text,
         mode,
         autoSubmit,
-    }: { text: string; mode: PromptMode; autoSubmit: boolean }): Promise<void> {
+    }: { id: string; text: string; mode: PromptMode; autoSubmit: boolean }): Promise<void> {
         await vscode.commands.executeCommand('cody.chat.new')
 
         const webviewPanelOrView =
@@ -116,7 +117,7 @@ export class ChatsController implements vscode.Disposable {
             () =>
                 webviewPanelOrView.webview.postMessage({
                     type: 'clientAction',
-                    setPromptAsInput: { text, mode, autoSubmit },
+                    setPromptAsInput: { id, text, mode, autoSubmit },
                 }),
             1000
         )

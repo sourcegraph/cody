@@ -40,6 +40,7 @@ export function useActionSelect() {
                 dispatchClientAction(
                     {
                         setPromptAsInput: {
+                            id: action.id,
                             text: action.definition.text,
                             mode: action.mode,
                             autoSubmit: action.autoSubmit || false,

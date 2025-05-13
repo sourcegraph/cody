@@ -98,7 +98,7 @@ export async function startPromptsMigration(): Promise<void> {
         try {
             const prompts = await graphqlClient.queryPrompts({
                 query: commandKey.replace(/\s+/g, '-'),
-                first: undefined,
+                first: 100,
                 recommendedOnly: false,
             })
 

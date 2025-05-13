@@ -3,7 +3,6 @@ import { type FC, useCallback, useMemo, useState } from 'react'
 
 import type { Action, PromptsInput } from '@sourcegraph/cody-shared'
 
-import { useLocalStorage } from '../../components/hooks'
 import { useTelemetryRecorder } from '../../utils/telemetry'
 import { useConfig } from '../../utils/useConfig'
 import { useDebounce } from '../../utils/useDebounce'
@@ -31,6 +30,7 @@ export interface PromptsFilterArgs {
     tags?: string[]
     promoted?: boolean
     core?: boolean
+    recentlyUsedOnly?: boolean
 }
 interface PromptListProps {
     showSearch: boolean
@@ -43,8 +43,6 @@ interface PromptListProps {
     inputClassName?: string
     paddingLevels?: 'none' | 'middle' | 'big'
     appearanceMode?: 'flat-list' | 'chips-list'
-    lastUsedSorting?: boolean
-    recommendedOnly?: boolean
     onSelect: (item: Action) => void
     promptFilters?: PromptsFilterArgs
 }
@@ -66,15 +64,12 @@ export const PromptList: FC<PromptListProps> = props => {
         inputClassName,
         paddingLevels = 'none',
         appearanceMode = 'flat-list',
-        lastUsedSorting,
-        recommendedOnly,
         onSelect: parentOnSelect,
         promptFilters,
     } = props
     const { clientCapabilities, authStatus } = useConfig()
     const endpointURL = new URL(authStatus.endpoint)
     const telemetryRecorder = useTelemetryRecorder()
-    const [lastUsedActions = {}] = useLocalStorage<Record<string, number>>('last-used-actions-v2', {})
 
     const telemetryPublicMetadata: Record<string, number> = {
         [`in${telemetryLocation}`]: 1,
@@ -87,15 +82,19 @@ export const PromptList: FC<PromptListProps> = props => {
         () => ({
             query: debouncedQuery,
             first: showFirstNItems,
-            recommendedOnly: promptFilters?.promoted ?? recommendedOnly ?? false,
+            recommendedOnly: promptFilters?.promoted ?? false,
             builtinOnly: promptFilters?.core ?? false,
             tags: promptFilters?.tags,
             owner: promptFilters?.owner,
+            includeViewerDrafts: true,
+            recentlyUsedOnly: promptFilters?.recentlyUsedOnly ?? false,
         }),
-        [debouncedQuery, showFirstNItems, recommendedOnly, promptFilters]
+        [debouncedQuery, showFirstNItems, promptFilters]
     )
 
     const { value: result, error } = usePromptsQuery(promptInput)
+
+    console.log('result', result)
 
     const onSelect = useCallback(
         (rowValue: string): void => {
@@ -172,6 +171,8 @@ export const PromptList: FC<PromptListProps> = props => {
             const shouldExcludeBuiltinCommands =
                 promptFilters?.promoted || promptFilters?.owner || promptFilters?.tags
 
+            console.log('shouldExcludeBuiltinCommands', shouldExcludeBuiltinCommands)
+
             const isEditEnabled = clientCapabilities.edit === 'enabled'
             // Prompts that perform edits are not usable on clients that don't support editing.
             // To avoid cluttering the list with unusable prompts we ignore them completely.
@@ -184,6 +185,7 @@ export const PromptList: FC<PromptListProps> = props => {
                 return actions.filter(action => action.actionType === 'prompt' && !action.builtin)
             }
 
+            console.log('filteredActions', actions.length)
             return actions
         },
         [promptFilters, clientCapabilities.edit]
@@ -194,10 +196,13 @@ export const PromptList: FC<PromptListProps> = props => {
         ? result?.actions.filter(action => action.actionType === 'prompt' || action.mode === 'ask') ?? []
         : result?.actions ?? []
 
-    const sortedActions = lastUsedSorting
-        ? getSortedActions(filteredActions(allActions), lastUsedActions)
-        : filteredActions(allActions)
+    console.log('allActions', allActions?.length)
+
+    const sortedActions = filteredActions(allActions)
     const actions = showFirstNItems ? sortedActions.slice(0, showFirstNItems) : sortedActions
+
+    console.log('sortedActions', sortedActions?.length)
+    console.log('actions', actions?.length)
 
     const inputPaddingClass =
         paddingLevels !== 'none' ? (paddingLevels === 'middle' ? '!tw-p-0' : '!tw-p-2') : ''
@@ -233,8 +238,7 @@ export const PromptList: FC<PromptListProps> = props => {
                 {!result && !error && (
                     <CommandLoading className={itemPaddingClass}>Loading...</CommandLoading>
                 )}
-                {!recommendedOnly &&
-                    result &&
+                {result &&
                     sortedActions.filter(action => action.actionType === 'prompt').length === 0 && (
                         <CommandLoading className={itemPaddingClass}>
                             {result?.query === '' && !anyPromptFilterActive ? (
@@ -280,15 +284,4 @@ export const PromptList: FC<PromptListProps> = props => {
             </CommandList>
         </Command>
     )
-}
-
-function getSortedActions(actions: Action[], lastUsedActions: Record<string, number>): Action[] {
-    return [...actions].sort((action1, action2) => {
-        const action1Key = action1.actionType === 'prompt' ? action1.id : action1.key
-        const action2Key = action2.actionType === 'prompt' ? action2.id : action2.key
-        const action1Count = lastUsedActions[action1Key] ?? 0
-        const action2Count = lastUsedActions[action2Key] ?? 0
-
-        return action2Count - action1Count
-    })
 }

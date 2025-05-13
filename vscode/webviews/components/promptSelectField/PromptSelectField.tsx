@@ -11,7 +11,7 @@ import {
 import { useTelemetryRecorder } from '../../utils/telemetry'
 import { useConfig } from '../../utils/useConfig'
 import { PromptList, type PromptsFilterArgs } from '../promptList/PromptList'
-import type { Organization } from '../promptOwnerFilter/PromptOwnerFilter'
+import type { Organization, PromptFilterValue } from '../promptOwnerFilter/PromptOwnerFilter'
 import { PromptOwnerFilter } from '../promptOwnerFilter/PromptOwnerFilter'
 import { PromptTagsFilter } from '../promptTagsFilter/PromptTagsFilter'
 import { Button } from '../shadcn/ui/button'
@@ -36,7 +36,10 @@ export const PromptSelectField: React.FunctionComponent<{
 }> = ({ onSelect, onCloseByEscape, className, __storybook__open, promptSelectorRef }) => {
     const telemetryRecorder = useTelemetryRecorder()
     const [selectedTagId, setSelectedTagId] = useState<string | null>(null)
-    const [ownerFilterValue, setOwnerFilterValue] = useState<string | null>(null)
+    const [ownerFilterValue, setOwnerFilterValue] = useState<PromptFilterValue>({
+        owner: null,
+        recentlyUsedOnly: false,
+    })
     const { value: userId, error: userIdError } = useCurrentUserId()
     const { authStatus } = useConfig()
 
@@ -102,8 +105,12 @@ export const PromptSelectField: React.FunctionComponent<{
             filters.tags = [selectedTagId]
         }
 
-        if (ownerFilterValue) {
-            filters.owner = ownerFilterValue
+        if (ownerFilterValue.owner) {
+            filters.owner = ownerFilterValue.owner
+        }
+
+        if (ownerFilterValue.recentlyUsedOnly) {
+            filters.recentlyUsedOnly = true
         }
 
         return Object.keys(filters).length > 0 ? filters : undefined
@@ -146,8 +153,6 @@ export const PromptSelectField: React.FunctionComponent<{
                         telemetryLocation="PromptSelectField"
                         showOnlyPromptInsertableCommands={true}
                         showPromptLibraryUnsupportedMessage={true}
-                        lastUsedSorting={true}
-                        recommendedOnly={false}
                         inputClassName="tw-bg-popover"
                         promptFilters={promptFilters}
                     />

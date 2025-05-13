@@ -31,6 +31,7 @@ import {
 import type { UserAccountInfo } from '../../../../../Chat'
 import { type ClientActionListener, useClientActionListener } from '../../../../../client/clientState'
 import { promptModeToIntent } from '../../../../../prompts/promptUtils'
+import { getVSCodeAPI } from '../../../../../utils/VSCodeApi'
 import { useTelemetryRecorder } from '../../../../../utils/telemetry'
 import { useConfig } from '../../../../../utils/useConfig'
 import { useLinkOpener } from '../../../../../utils/useLinkOpener'
@@ -299,6 +300,12 @@ export const HumanMessageEditor: FunctionComponent<{
                     // set the intent
                     promptIntent = promptModeToIntent(setPromptAsInput.mode)
                     manuallySelectIntent(promptIntent)
+
+                    // Save the prompt ID to recently used prompts
+                    getVSCodeAPI().postMessage({
+                        command: 'saveRecentlyUsedPrompt',
+                        id: setPromptAsInput.id,
+                    })
 
                     updates.push(
                         // biome-ignore lint/suspicious/noAsyncPromiseExecutor: <explanation>

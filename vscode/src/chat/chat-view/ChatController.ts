@@ -108,6 +108,7 @@ import { migrateAndNotifyForOutdatedModels } from '../../models/modelMigrator'
 import { logDebug, outputChannelLogger } from '../../output-channel-logger'
 import { hydratePromptText } from '../../prompts/prompt-hydration'
 import { listPromptTags, mergedPromptsAndLegacyCommands } from '../../prompts/prompts'
+import { saveRecentlyUsedPrompt } from '../../prompts/recent'
 import { workspaceFolderForRepo } from '../../repository/remoteRepos'
 import { repoNameResolver } from '../../repository/repo-name-resolver'
 import { authProvider } from '../../services/AuthProvider'
@@ -390,6 +391,15 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 break
             case 'show-page':
                 await vscode.commands.executeCommand('cody.show-page', message.page)
+                break
+            case 'saveRecentlyUsedPrompt':
+                {
+                    const auth = currentAuthStatusAuthed()
+                    saveRecentlyUsedPrompt({
+                        authStatus: auth,
+                        id: message.id,
+                    })
+                }
                 break
             case 'attribution-search':
                 await this.handleAttributionSearch(message.snippet)

@@ -85,6 +85,11 @@ export type WebviewMessage =
           tryLocal?: boolean | undefined | null
       }
     | {
+          // Save a recently used prompt ID
+          command: 'saveRecentlyUsedPrompt'
+          id: string
+      }
+    | {
           command: 'openFileLink'
           uri: Uri
           range?: RangeData | undefined | null
@@ -222,7 +227,7 @@ export type ExtensionMessage =
           smartApplyResult?: SmartApplyResult | undefined | null
           submitHumanInput?: boolean | undefined | null
           setPromptAsInput?:
-              | { text: string; mode?: PromptMode | undefined | null; autoSubmit: boolean }
+              | { id: string; text: string; mode?: PromptMode | undefined | null; autoSubmit: boolean }
               | undefined
               | null
           regenerateStatus?:

@@ -1305,9 +1305,10 @@ export class SourcegraphGraphQLAPIClient {
         owner,
         includeViewerDrafts,
         builtinOnly,
+        include,
     }: {
         query?: string
-        first: number | undefined
+        first: number
         recommendedOnly?: boolean
         tags?: string[]
         signal?: AbortSignal
@@ -1315,6 +1316,7 @@ export class SourcegraphGraphQLAPIClient {
         owner?: string
         includeViewerDrafts?: boolean
         builtinOnly?: boolean
+        include?: string[]
     }): Promise<Prompt[]> {
         const [hasIncludeViewerDraftsArg, hasPromptTagsField, hasOrderByRelevance] = await Promise.all([
             this.isValidSiteVersion({
@@ -1325,7 +1327,6 @@ export class SourcegraphGraphQLAPIClient {
             }),
             this.isValidSiteVersion({
                 minimumVersion: '6.3.1',
-                insider: false,
             }),
         ])
 
@@ -1337,12 +1338,13 @@ export class SourcegraphGraphQLAPIClient {
 
         const input = {
             query,
-            first: first ?? 100,
+            first,
             recommendedOnly: recommendedOnly,
             tags: hasPromptTagsField ? tags : undefined,
             owner,
             includeViewerDrafts: includeViewerDrafts ?? true,
             builtinOnly,
+            include,
             orderBy: hasOrderByRelevance ? PromptsOrderBy.PROMPT_RELEVANCE : undefined,
             orderByMultiple: hasOrderByRelevance
                 ? undefined

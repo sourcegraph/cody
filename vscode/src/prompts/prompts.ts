@@ -7,6 +7,7 @@ import {
     type PromptsInput,
     type PromptsResult,
     clientCapabilities,
+    currentAuthStatus,
     featureFlagProvider,
     graphqlClient,
     isAbortError,
@@ -15,6 +16,7 @@ import {
 } from '@sourcegraph/cody-shared'
 import { FIXTURE_COMMANDS } from '../../webviews/components/promptList/fixtures'
 import { getCodyCommandList } from '../commands/CommandsController'
+import { getRecentlyUsedPrompts } from './recent'
 
 /** For testing only. */
 const USE_CUSTOM_COMMANDS_FIXTURE = false
@@ -94,27 +96,40 @@ export async function mergedPromptsAndLegacyCommands(
     input: PromptsInput,
     signal: AbortSignal
 ): Promise<PromptsResult> {
-    const { query, recommendedOnly, first, tags, owner, includeViewerDrafts, builtinOnly } = input
+    const { query, first = 100, recentlyUsedOnly = false, ...args } = input
     const queryLower = query.toLowerCase()
-    const [customPrompts, isUnifiedPromptsEnabled, isNewPromptsSgVersion] = await Promise.all([
-        fetchCustomPrompts(
-            queryLower,
-            first,
-            recommendedOnly,
-            signal,
-            tags,
-            owner,
-            includeViewerDrafts,
-            builtinOnly
-        ),
 
-        // Unified prompts flag provides prompts-like commands API
-        featureFlagProvider.evaluateFeatureFlagEphemerally(FeatureFlag.CodyUnifiedPrompts),
+    // Get recently used prompt IDs
+    const auth = currentAuthStatus()
+    const recentlyUsedPromptIds = auth.authenticated ? getRecentlyUsedPrompts({ authStatus: auth }) : []
 
-        // 5.10.0 Contains new prompts library API which provides unified prompts
-        // and standard (built-in) prompts
-        isValidVersion({ minimumVersion: '5.10.0' }),
-    ])
+    // Create all promises for parallel execution
+    const [recentlyUsedCustomPrompts, customPrompts, isUnifiedPromptsEnabled, isNewPromptsSgVersion] =
+        await Promise.all([
+            // Fetch recently used prompts
+            recentlyUsedPromptIds.length > 0
+                ? fetchCustomPrompts({
+                      ...args,
+                      query: queryLower,
+                      first,
+                      signal,
+                      include: recentlyUsedPromptIds,
+                  })
+                : Promise.resolve([]),
+            // Fetch all custom prompts only if not filtering to recently used
+            recentlyUsedOnly
+                ? Promise.resolve([])
+                : fetchCustomPrompts({
+                      ...args,
+                      query: queryLower,
+                      first,
+                      signal,
+                  }),
+            // Get feature flags
+            featureFlagProvider.evaluateFeatureFlagEphemerally(FeatureFlag.CodyUnifiedPrompts),
+            // Check version
+            isValidVersion({ minimumVersion: '5.10.0' }),
+        ])
 
     const matchingCommands = await getLocalCommands({
         query: queryLower,
@@ -122,13 +137,30 @@ export async function mergedPromptsAndLegacyCommands(
         remoteBuiltinPrompts: isNewPromptsSgVersion,
     })
 
-    const actions =
-        customPrompts === 'unsupported' ? matchingCommands : [...customPrompts, ...matchingCommands]
+    let actions: Action[] = []
+
+    if (customPrompts === 'unsupported' || recentlyUsedCustomPrompts === 'unsupported') {
+        actions = matchingCommands
+    } else {
+        // Use all recently used prompts if filter is enabled, otherwise just the top 3
+        const usableRecentPrompts = recentlyUsedOnly
+            ? recentlyUsedCustomPrompts
+            : recentlyUsedCustomPrompts.slice(0, 3)
+
+        // Only include other prompts if we're not filtering to recently used only
+        const otherPrompts = recentlyUsedOnly
+            ? []
+            : customPrompts.filter(p => !usableRecentPrompts.some(r => r.id === p.id))
+
+        // Combine prompts and commands
+        actions = [...usableRecentPrompts, ...otherPrompts, ...matchingCommands].slice(0, first)
+    }
 
     return {
         query,
         actions,
-        arePromptsSupported: customPrompts !== 'unsupported',
+        arePromptsSupported:
+            customPrompts !== 'unsupported' && recentlyUsedCustomPrompts !== 'unsupported',
     }
 }
 
@@ -140,26 +172,32 @@ function matchesQuery(query: string, text: string): boolean {
     }
 }
 
-async function fetchCustomPrompts(
-    query: string,
-    first: number | undefined,
-    recommendedOnly: boolean,
-    signal: AbortSignal,
-    tags?: string[],
-    owner?: string,
-    includeViewerDrafts?: boolean,
+interface FetchCustomPromptsArgs {
+    query: string
+    first: number
+    recommendedOnly: boolean
+    signal: AbortSignal
+    tags?: string[]
+    owner?: string
+    includeViewerDrafts?: boolean
     builtinOnly?: boolean
+    include?: string[]
+}
+
+async function fetchCustomPrompts(
+    args: FetchCustomPromptsArgs
 ): Promise<PromptAction[] | 'unsupported'> {
     try {
         const prompts = await graphqlClient.queryPrompts({
-            query,
-            first,
-            recommendedOnly,
-            signal,
-            tags,
-            owner,
-            includeViewerDrafts,
-            builtinOnly,
+            query: args.query,
+            first: args.first,
+            recommendedOnly: args.recommendedOnly,
+            signal: args.signal,
+            tags: args.tags,
+            owner: args.owner,
+            includeViewerDrafts: args.includeViewerDrafts,
+            builtinOnly: args.builtinOnly,
+            include: args.include,
         })
         return prompts.map(prompt => ({ ...prompt, actionType: 'prompt' }))
     } catch (error) {
