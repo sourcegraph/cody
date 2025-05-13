@@ -45,9 +45,6 @@ export class MCPServerManager {
 
     constructor(private connectionManager: MCPConnectionManager) {}
 
-    /**
-     * Tool and resource management
-     */
     public async getToolList(serverName: string): Promise<McpTool[]> {
         try {
             const connection = this.connectionManager.getConnection(serverName)
@@ -60,13 +57,18 @@ export class MCPServerManager {
 
             if (!response?.tools) return []
 
-            // Convert to McpTool format
+            // Convert to McpTool format and add disabled status
             const tools =
-                response?.tools?.map(tool => ({
-                    name: tool.name || '',
-                    description: tool.description || '',
-                    input_schema: tool.inputSchema || {},
-                })) || []
+                response?.tools?.map(tool => {
+                    const fullToolName = `${serverName}_${tool.name || ''}`
+                    const isDisabled = this.disabledTools.has(fullToolName)
+                    return {
+                        name: tool.name || '',
+                        description: tool.description || '',
+                        input_schema: tool.inputSchema || {},
+                        disabled: isDisabled, // Add disabled status
+                    }
+                }) || []
 
             logDebug('MCPServerManager', `Fetched ${tools.length} tools for ${serverName}`, {
                 verbose: { tools },
@@ -95,6 +97,9 @@ export class MCPServerManager {
             return []
         } finally {
             logDebug('MCPServerManager', `Tool list retrieval process completed for ${serverName}`)
+
+            // Notify about tool changes through the connection manager
+            this.connectionManager.notifyToolChanged(serverName)
         }
     }
 
@@ -229,6 +234,9 @@ export class MCPServerManager {
         logDebug('MCPServerManager', `Created ${_agentTools.length} agent tools from ${serverName}`, {
             verbose: { _agentTools },
         })
+
+        // Make sure to notify the connection manager about tool changes
+        this.connectionManager.notifyToolChanged(serverName)
     }
 
     /**
@@ -237,8 +245,9 @@ export class MCPServerManager {
     private updateTools(tools: AgentTool[], serverName?: string, toolName?: string): void {
         this.tools = tools
         this.toolsEmitter.fire({ serverName: serverName || '', toolName, tools: this.tools })
-        // Trigger change notification to update observable with specific info
-        this.toolsChangeNotifications.next({ serverName: serverName || '', toolName })
+
+        // Ensure tool changes are propagated to the connection manager
+        this.connectionManager.notifyToolChanged(serverName)
     }
 
     /**
@@ -440,6 +449,9 @@ export class MCPServerManager {
         })
         this.toolsChangeNotifications.next({
             serverName: affectedServers.size === 1 ? Array.from(affectedServers)[0] : '',
+        })
+        logDebug('MCPServerManager', `Loaded ${tools.length} disabled tools`, {
+            verbose: { disabled: tools },
         })
     }
 

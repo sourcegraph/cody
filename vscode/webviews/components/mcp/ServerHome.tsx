@@ -1,5 +1,13 @@
 import type { McpServer } from '@sourcegraph/cody-shared/src/llm-providers/mcp/types'
-import { DatabaseBackup, Minus, PencilRulerIcon, Server, ServerIcon, Settings } from 'lucide-react'
+import {
+    DatabaseBackup,
+    Minus,
+    PencilRulerIcon,
+    RefreshCw,
+    Server,
+    ServerIcon,
+    Settings,
+} from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { getVSCodeAPI } from '../../utils/VSCodeApi'
 import { Badge } from '../shadcn/ui/badge'
@@ -186,24 +194,42 @@ export function ServerHome({ mcpServers }: ServerHomeProps) {
                 <div className="tw-flex tw-items-center tw-font-semibold tw-text-lg">
                     <ServerIcon size={16} className="tw-mr-3" /> MCP Servers
                 </div>
-                <Button
-                    variant="ghost"
-                    className="tw-h-8 tw-w-auto"
-                    onClick={() =>
-                        getVSCodeAPI().postMessage({
-                            command: 'command',
-                            id: 'workbench.action.openSettingsJson',
-                            args: {
-                                revealSetting: {
-                                    key: 'cody.mcpServers',
+                <div className=" tw-inline-flex tw-gap-2">
+                    <Button
+                        variant="outline"
+                        className="tw-px-2"
+                        onClick={() =>
+                            getVSCodeAPI().postMessage({
+                                command: 'command',
+                                id: 'workbench.action.openSettingsJson',
+                                args: {
+                                    revealSetting: {
+                                        key: 'cody.mcpServers',
+                                    },
                                 },
-                            },
-                        })
-                    }
-                    title="Configure settings in JSON"
-                >
-                    <Settings size={16} /> View JSON
-                </Button>
+                            })
+                        }
+                        title="Configure settings in JSON"
+                    >
+                        <Settings size={16} /> View JSON
+                    </Button>
+                    <Button
+                        variant="outline"
+                        className="tw-px-2"
+                        onClick={() => {
+                            setServers([])
+                            setSelectedServer(null)
+                            getVSCodeAPI().postMessage({
+                                command: 'mcp',
+                                type: 'updateServer',
+                                name: '',
+                            })
+                        }}
+                        title="Refresh server list"
+                    >
+                        <RefreshCw size={16} /> Reload
+                    </Button>
+                </div>
             </header>
             {!mcpServers?.length ? (
                 <div className="tw-w-full tw-col-span-full tw-text-center tw-py-12 tw-border tw-rounded-lg tw-border-none">

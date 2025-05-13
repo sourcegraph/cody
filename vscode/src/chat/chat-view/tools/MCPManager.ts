@@ -1,7 +1,6 @@
 import {
     FeatureFlag,
     combineLatest,
-    distinctUntilChanged,
     featureFlagProvider,
     logDebug,
     startWith,
@@ -9,51 +8,13 @@ import {
 } from '@sourcegraph/cody-shared'
 import type { ContextItemToolState } from '@sourcegraph/cody-shared/src/codebase-context/messages'
 import type { McpServer } from '@sourcegraph/cody-shared/src/llm-providers/mcp/types'
-import { type Observable, Subject, map } from 'observable-fns'
+import { type Observable, map } from 'observable-fns'
 import * as vscode from 'vscode'
 import { z } from 'zod'
 import type { AgentTool } from '.'
 import { DeepCodyAgent } from '../../agentic/DeepCody'
 import { MCPConnectionManager } from './MCPConnectionManager'
 import { MCPServerManager } from './MCPServerManager'
-
-/**
- * Debounce function with improved promise handling
- */
-function debounce<T extends (...args: any[]) => Promise<void>>(
-    func: T,
-    wait: number
-): (...args: Parameters<T>) => Promise<void> {
-    let timeout: NodeJS.Timeout | null = null
-    let pendingPromise: Promise<void> | null = null
-
-    return async (...args: Parameters<T>): Promise<void> => {
-        if (timeout) {
-            clearTimeout(timeout)
-        }
-
-        if (pendingPromise) {
-            return pendingPromise
-        }
-
-        pendingPromise = new Promise<void>((resolve, reject) => {
-            timeout = setTimeout(() => {
-                timeout = null
-                func(...args)
-                    .then(() => {
-                        pendingPromise = null
-                        resolve()
-                    })
-                    .catch(err => {
-                        pendingPromise = null
-                        reject(err)
-                    })
-            }, wait)
-        })
-
-        return pendingPromise
-    }
-}
 
 /**
  * Base schema with common properties
@@ -93,180 +54,90 @@ export class MCPManager {
     public static instance: MCPManager | undefined
     private static readonly CONFIG_SECTION = 'cody'
     private static readonly MCP_SERVERS_KEY = 'mcpServers'
-    private static readonly DEBOUNCE_TIMEOUT = 1000 // 1 second debounce timeout
 
-    private connectionManager: MCPConnectionManager
+    private connectionManager = MCPConnectionManager.instance
     public serverManager: MCPServerManager
     private disposables: vscode.Disposable[] = []
-    private debouncedSync: (mcpServers: Record<string, any>) => Promise<void>
-    private static isUpdatingConfig = false
-    private static updatingServerName: string | null = null
-    private static changeNotifications = new Subject<{ type: 'server' | 'all'; serverName?: string }>()
-    private static toolsChangeNotifications = new Subject<{
-        type: 'tool' | 'all'
-        serverName?: string
-        toolName?: string
-    }>()
 
     // Observable for server changes
     public static observable: Observable<McpServer[] | null> = combineLatest(
         featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.AgenticChatWithMCP),
         featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.AgenticContextDisabled),
-        this.changeNotifications.pipe(startWith({ type: 'all' })),
-        this.toolsChangeNotifications.pipe(startWith({ type: 'all' }))
+        MCPConnectionManager.instance.serverChanges.pipe(startWith(undefined))
     ).pipe(
-        map(([mcpEnabled, featureDisabled, serverChange, toolChange]) => {
+        map(([mcpEnabled, featureDisabled]) => {
             if (!mcpEnabled || featureDisabled || !MCPManager.instance) {
                 return null
             }
             return MCPManager.instance.getServers()
-        }),
-        distinctUntilChanged((prev, curr) => {
-            if (!prev || !curr) {
-                return false
-            }
-            if (prev.length === 0 && curr.length === 0) {
-                return true
-            }
-            const prevJson = JSON.stringify(prev.map(c => ({ name: c.name, tools: c.tools })))
-            const currJson = JSON.stringify(curr.map(c => ({ name: c.name, tools: c.tools })))
-            return prevJson === currJson
         })
     )
 
     constructor() {
-        this.connectionManager = new MCPConnectionManager()
         this.serverManager = new MCPServerManager(this.connectionManager)
-        // Create debounced version of sync method
-        this.debouncedSync = debounce(this.sync.bind(this), MCPManager.DEBOUNCE_TIMEOUT)
 
-        // Set up connection status change handler
+        // Set up connection status change handlers
         this.connectionManager.onStatusChange(this.handleConnectionStatusChange.bind(this))
-
-        // Forward tool changes
         this.serverManager.onToolsChanged(event => {
-            const serverName = event.serverName || ''
-            MCPManager.toolsChangeNotifications.next({
-                type: 'tool',
-                serverName,
-                toolName: event.toolName,
-            })
+            this.connectionManager.notifyToolChanged(event.serverName)
         })
 
         this.init()
     }
 
-    /**
-     */
-    private handleConnectionStatusChange(event: {
-        status: string
-        serverName: string
-        error?: string
-    }): void {
-        if (event.status === 'connected') {
-            this.initializeServerData(event.serverName).catch(error => {
-                logDebug('MCPManager', `Error initializing server data for ${event.serverName}`, {
-                    verbose: { error },
-                })
-            })
-        }
-
-        const conn = this.connectionManager.getConnection(event.serverName)
-        if (conn && event.error && conn.server.error) {
-            conn.server.error = event.error
-        }
-
-        MCPManager.changeNotifications.next({ type: 'server', serverName: event.serverName })
-    }
-
-    /**
-     */
     public static async init(): Promise<MCPManager | undefined> {
         return MCPManager.instance ? MCPManager.instance : new MCPManager()
     }
 
-    /**
-     */
     private async init(): Promise<void> {
         try {
+            MCPManager.instance = this
             await this.loadServersFromConfig()
             this.observeConfigChanges()
             this.setupToolStateListeners()
-            MCPManager.instance = this
         } catch (error) {
             logDebug('MCPManager', 'Failed to initialize MCP manager', { verbose: { error } })
             MCPManager.instance = undefined
         }
     }
 
-    /**
-     * Set up tool state change listeners
-     */
+    private async handleConnectionStatusChange(event: {
+        status: string
+        serverName: string
+        error?: string
+    }): Promise<void> {
+        if (event.status === 'connected') {
+            await this.initializeServerData(event.serverName).catch(error => {
+                logDebug('MCPManager', `Error initializing server data for ${event.serverName}`, {
+                    verbose: { error },
+                })
+            })
+        }
+
+        // Connection errors are now handled in MCPConnectionManager
+    }
+
     private setupToolStateListeners(): void {
-        this.serverManager.onToolStateChanged(event => {
-            this.updateToolStateInConfig(event.serverName, event.toolName, event.disabled).catch(
-                error => {
-                    logDebug('MCPManager', `Failed to update tool state in config: ${error}`, {
-                        verbose: { error },
-                    })
+        this.serverManager.onToolStateChanged(async event => {
+            await this.updateToolStateInConfig(event.serverName, event.toolName, event.disabled).catch(
+                e => {
+                    logDebug('MCPManager', `Failed to update ${event.serverName} config`, { verbose: e })
                 }
             )
         })
     }
 
-    /**
-     * Observe configuration changes
-     */
     public observeConfigChanges(): void {
-        const configWatcher = vscode.workspace.onDidChangeConfiguration(event => {
+        const configWatcher = vscode.workspace.onDidChangeConfiguration(async event => {
             if (
                 event.affectsConfiguration(`${MCPManager.CONFIG_SECTION}.${MCPManager.MCP_SERVERS_KEY}`)
             ) {
-                if (MCPManager.isUpdatingConfig) {
-                    // Config was changed through our API calls
-                    logDebug(
-                        'MCPManager',
-                        `Configuration change detected while updating config via API. Server: ${
-                            MCPManager.updatingServerName || 'unknown'
-                        }`
-                    )
+                // Config was changed externally (e.g., by user editing settings.json)
+                logDebug('MCPManager', 'Configuration change detected')
 
-                    // If we know which server was updated, only refresh that one
-                    if (MCPManager.updatingServerName) {
-                        const config = vscode.workspace.getConfiguration(MCPManager.CONFIG_SECTION)
-                        const mcpServers = config.get<Record<string, any>>(
-                            MCPManager.MCP_SERVERS_KEY,
-                            {}
-                        )
-
-                        // If server was added, initialize it
-                        if (mcpServers[MCPManager.updatingServerName]) {
-                            // For adds, the connect part is already handled in addServer
-                            logDebug(
-                                'MCPManager',
-                                `Selective refresh for server: ${MCPManager.updatingServerName}`
-                            )
-                        } else {
-                            // For deletes, the connection removal is already handled in deleteServer
-                            logDebug(
-                                'MCPManager',
-                                `Server was deleted: ${MCPManager.updatingServerName}`
-                            )
-                        }
-                    }
-                    // No need to do a full reload as the individual operations handle their own connections
-                } else {
-                    // Config was changed externally (e.g., by user editing settings.json)
-                    logDebug(
-                        'MCPManager',
-                        'External configuration change detected, reloading all servers...'
-                    )
-                    this.loadServersFromConfig().catch(error => {
-                        logDebug('MCPManager', 'Error reloading settings from configuration', {
-                            verbose: { error },
-                        })
-                    })
-                }
+                await this.loadServersFromConfig().catch(e => {
+                    logDebug('MCPManager', 'Error reloading servers from config', { verbose: e })
+                })
             }
         })
 
@@ -277,26 +148,17 @@ export class MCPManager {
      * Load servers from VS Code configuration
      */
     private async loadServersFromConfig(): Promise<void> {
-        try {
-            const config = vscode.workspace.getConfiguration(MCPManager.CONFIG_SECTION)
-            const mcpServers = config.get(MCPManager.MCP_SERVERS_KEY, undefined)
-            if (mcpServers === undefined) {
-                return
-            }
-            const result = McpSettingsSchema.safeParse({ mcpServers })
-
-            if (result.success) {
-                await this.debouncedSync(mcpServers)
-                logDebug('MCPManager', 'MCP servers initialized successfully from configuration')
-            } else {
-                logDebug('MCPManager', 'Invalid MCP settings format in configuration', {
-                    verbose: { errors: result.error.format() },
-                })
-            }
-        } catch (error) {
-            logDebug('MCPManager', 'Failed to initialize MCP servers from configuration', {
-                verbose: { error },
-            })
+        const config = vscode.workspace.getConfiguration(MCPManager.CONFIG_SECTION)
+        const mcpServers = config.get(MCPManager.MCP_SERVERS_KEY, undefined)
+        if (mcpServers === undefined) {
+            return
+        }
+        const result = McpSettingsSchema.safeParse({ mcpServers })
+        if (result.success) {
+            await this.sync(mcpServers)
+            logDebug('MCPManager', 'MCP servers initialized successfully from configuration')
+        } else {
+            throw new Error('Invalid MCP server configuration: ' + result.error.format())
         }
     }
 
@@ -318,41 +180,49 @@ export class MCPManager {
             }
         }
 
-        // Update or add servers
+        // Collect all disabled tools from all servers
+        const allDisabledTools: string[] = []
+
+        // Update or add servers and collect their disabled tools
         for (const [name, config] of Object.entries(mcpServers)) {
             const currentConnection = this.connectionManager.getConnection(name)
-            if (!currentConnection) {
-                // New server
-                try {
-                    await this.addConnection(name, config)
-                } catch (error) {
-                    logDebug('MCPManager', `Failed to connect to MCP server ${name}`, {
-                        verbose: { error },
-                    })
+            try {
+                if (currentConnection) {
+                    const curConfig = normalizeConfig(JSON.parse(currentConnection.server.config))
+                    const userConfig = normalizeConfig(config)
+                    if (curConfig === userConfig) {
+                        return // No changes detected
+                    }
                 }
-                // Notify about server changes
-                MCPManager.changeNotifications.next({ type: 'server', serverName: name })
-            } else if (
-                JSON.stringify(JSON.parse(currentConnection.server.config)) !== JSON.stringify(config)
-            ) {
                 // Existing server with changed config
-                try {
-                    await this.connectionManager.removeConnection(name)
-                    await this.addConnection(name, config)
-                    logDebug('MCPManager', `Reconnected MCP server with updated config: ${name}`)
-                    // Notify about server changes
-                    MCPManager.changeNotifications.next({ type: 'server', serverName: name })
-                } catch (error) {
-                    logDebug('MCPManager', `Failed to reconnect MCP server ${name}`, {
-                        verbose: { error },
-                    })
+                await this.addConnection(name, config)
+
+                // Process disabled tools for this server
+                if (config.disabledTools && Array.isArray(config.disabledTools)) {
+                    // Always add server prefix to tool names
+                    const toolsWithPrefix = config.disabledTools.map(
+                        (toolName: string) => `${name}_${toolName}`
+                    )
+                    allDisabledTools.push(...toolsWithPrefix)
                 }
+            } catch (error) {
+                logDebug('MCPManager', `Failed to reconnect MCP server ${name}`, {
+                    verbose: { error },
+                })
+            }
+
+            // Process disabled tools for this server
+            if (config.disabledTools && Array.isArray(config.disabledTools)) {
+                // Always add server prefix to tool names
+                const toolsWithPrefix = config.disabledTools.map(
+                    (toolName: string) => `${name}_${toolName}`
+                )
+                allDisabledTools.push(...toolsWithPrefix)
             }
         }
-        // Load disabled tools from configuration
-        this.loadDisabledToolsFromConfig(mcpServers)
-        // Notify about server changes
-        MCPManager.changeNotifications.next({ type: 'all' })
+
+        // Set all collected disabled tools in the server manager
+        this.serverManager.setDisabledTools(allDisabledTools)
     }
 
     /**
@@ -360,34 +230,15 @@ export class MCPManager {
      */
     private async addConnection(name: string, config: any): Promise<void> {
         try {
-            // Determine transport type and set defaults
-            const isSSE = 'url' in config
-            const configWithDefaults = {
-                ...config,
-                transportType: isSSE ? 'sse' : 'stdio',
-            }
-            // Validate the config
-            const result = ServerConfigSchema.safeParse(configWithDefaults)
+            const result = validateServerConfig(config)
             if (!result.success) {
-                logDebug('MCPManager', `Invalid config for "${name}": missing or invalid parameters`, {
-                    verbose: { errors: result.error.format() },
-                })
                 return
             }
             // Add the connection
             const parsedConfig = result.data
-            await this.connectionManager.addConnection(name, configWithDefaults, parsedConfig?.disabled)
-
-            MCPManager.changeNotifications.next({ type: 'server', serverName: name })
-
-            // Initialize server data if connected
-            const connection = this.connectionManager.getConnection(name)
-            if (connection?.server.status === 'connected') {
-                await this.initializeServerData(name)
-            }
+            await this.connectionManager.addConnection(name, config, parsedConfig?.disabled)
         } catch (error) {
             logDebug('MCPManager', `Error adding connection for ${name}`, { verbose: { error } })
-            throw error
         }
     }
 
@@ -396,23 +247,18 @@ export class MCPManager {
      */
     private async initializeServerData(serverName: string): Promise<void> {
         const connection = this.connectionManager.getConnection(serverName)
-        if (!connection || connection.server.status !== 'connected') return
-        // Fetch tools
+        if (!connection) return
         try {
-            const tools = await this.serverManager.getToolList(serverName)
-            connection.server.tools = tools
             logDebug('MCPManager', `Initialized tools for server: ${serverName}`)
+            connection.server.tools = await this.serverManager.getToolList(serverName)
         } catch (error) {
-            logDebug('MCPManager', `Failed to initialize tools for server ${serverName}`, {
-                verbose: { error },
-            })
+            logDebug('MCPManager', `Failed to initialize ${serverName}`, { verbose: error })
         }
+        this.connectionManager.notifyServerChanged(serverName)
+    }
 
-        this.loadDisabledToolsForServer(serverName)
-
-        // Final notifications
-        MCPManager.toolsChangeNotifications.next({ type: 'tool', serverName })
-        MCPManager.changeNotifications.next({ type: 'server', serverName })
+    public static get tools(): AgentTool[] {
+        return MCPManager.instance?.serverManager.getTools() || []
     }
 
     /**
@@ -422,105 +268,11 @@ export class MCPManager {
         return this.connectionManager.getAllConnections().map(conn => conn.server)
     }
 
-    /**
-     * Get all available tools
-     */
-    public static get tools(): AgentTool[] {
-        return MCPManager.instance?.serverManager.getTools() || []
-    }
-
-    /**
-     * Subscribe to tool changes
-     */
-    public static onToolsChanged(
-        listener: (event: { serverName: string; toolName?: string; tools: AgentTool[] }) => void
-    ): vscode.Disposable {
-        return MCPManager.instance?.serverManager.onToolsChanged(listener) || { dispose: () => {} }
-    }
-
-    /**
-     * Load disabled tools from configuration
-     */
-    private loadDisabledToolsFromConfig(mcpServers: Record<string, any>): void {
-        const allDisabledTools: string[] = []
-
-        // Collect all disabled tools from all servers
-        for (const [serverName, config] of Object.entries(mcpServers)) {
-            if (config.disabledTools && Array.isArray(config.disabledTools)) {
-                // Always add server prefix to tool names
-                const toolsWithPrefix = config.disabledTools.map(
-                    (toolName: string) => `${serverName}_${toolName}`
-                )
-
-                allDisabledTools.push(...toolsWithPrefix)
-            }
-        }
-
-        // Set the disabled tools in the server manager
-        if (allDisabledTools.length > 0) {
-            this.serverManager.setDisabledTools(allDisabledTools)
-            logDebug(
-                'MCPManager',
-                `Loaded ${allDisabledTools.length} disabled tools from configuration`,
-                {
-                    verbose: { disabledTools: allDisabledTools },
-                }
-            )
-        }
-    }
-
-    /**
-     * Load disabled tools for a specific server
-     */
-    private loadDisabledToolsForServer(serverName: string): void {
-        const conn = this.connectionManager.getConnection(serverName)
-        if (!conn?.server.config) return
-
-        try {
-            const config = JSON.parse(conn.server.config)
-            if (config.disabledTools && Array.isArray(config.disabledTools)) {
-                // Always add server prefix to tool names
-                const toolsWithPrefix = config.disabledTools.map(
-                    (toolName: string) => `${serverName}_${toolName}`
-                )
-
-                if (toolsWithPrefix.length > 0) {
-                    // Use append=true to add to the existing set rather than replacing it
-                    this.serverManager.setDisabledTools(toolsWithPrefix, true)
-                    logDebug('MCPManager', `Loaded disabled tools for server: ${serverName}`, {
-                        verbose: { disabledTools: toolsWithPrefix },
-                    })
-                }
-            }
-        } catch (error) {
-            logDebug('MCPManager', `Error loading disabled tools from config: ${error}`, {
-                verbose: { error },
-            })
-        }
-    }
-
-    /**
-     * Refresh all MCP servers
-     */
     public async refreshServers(): Promise<void> {
-        try {
-            logDebug('MCPManager', 'Manually refreshing MCP servers')
-            // Get current configuration directly instead of using the debounced method
-            const config = vscode.workspace.getConfiguration(MCPManager.CONFIG_SECTION)
-            const mcpServers = config.get(MCPManager.MCP_SERVERS_KEY, {})
-            // Call sync directly instead of using the debounced version to ensure immediate execution
-            await this.sync(mcpServers)
-            // Only notify after sync has fully completed
-            MCPManager.changeNotifications.next({ type: 'all' })
-        } catch (error) {
-            logDebug('MCPManager', 'Failed to refresh MCP servers', { verbose: { error } })
-            vscode.window.showErrorMessage(
-                `Failed to refresh MCP servers: ${
-                    error instanceof Error ? error.message : String(error)
-                }`
-            )
-            throw error
-        }
+        await this.loadServersFromConfig().catch(error =>
+            console.error('Error refreshing servers', error)
+        )
+        this.connectionManager.notifyServerChanged()
     }
 
     /**
@@ -566,162 +318,228 @@ export class MCPManager {
 
         // Update the configuration
         await this.updateToolStateInConfig(serverName, toolName, disabled)
-
-        // Notify through the toolsChangeNotifications subject
-        MCPManager.toolsChangeNotifications.next({ type: 'tool', serverName, toolName })
     }
 
-    // Update tool state in the user configuration
+    /**
+     * Update tool state in the user configuration
+     */
     private async updateToolStateInConfig(
         serverName: string,
         toolName: string,
         disabled: boolean
     ): Promise<void> {
         try {
-            // Set the flag to prevent config change events from triggering a reload
-            MCPManager.isUpdatingConfig = true
-
             // Get current configuration
             const config = vscode.workspace.getConfiguration(MCPManager.CONFIG_SECTION)
-            const mcpServers = { ...config.get<Record<string, any>>(MCPManager.MCP_SERVERS_KEY, {}) }
+            const mcpServers = config.get<Record<string, any>>(MCPManager.MCP_SERVERS_KEY, {})
 
-            // Check if server exists
-            if (!mcpServers[serverName]) {
+            // Verify server exists
+            const serverConfig = mcpServers[serverName]
+            if (!serverConfig) {
                 throw new Error(`MCP server "${serverName}" does not exist in configuration`)
             }
 
-            // Get server config
-            const serverConfig = mcpServers[serverName]
-
-            // Get or initialize disabledTools array
+            // Get existing disabled tools or create new array
             const disabledTools = Array.isArray(serverConfig.disabledTools)
                 ? [...serverConfig.disabledTools]
                 : []
 
-            // Update the disabled tools list
-            if (disabled) {
-                // Add to disabled list if not already there
-                if (!disabledTools.includes(toolName)) {
-                    disabledTools.push(toolName) // Store without server prefix
-                }
+            // Update disabled tools list (add or remove as needed)
+            const toolIndex = disabledTools.indexOf(toolName)
+            if (disabled && toolIndex === -1) {
+                disabledTools.push(toolName)
+            } else if (!disabled && toolIndex !== -1) {
+                disabledTools.splice(toolIndex, 1)
             } else {
-                // Remove from disabled list if there
-                const index = disabledTools.indexOf(toolName)
-                if (index !== -1) disabledTools.splice(index, 1)
+                // No change needed, exit early
+                return
             }
 
-            // Update the server config
-            mcpServers[serverName] = {
-                ...serverConfig,
-                disabledTools,
-            }
-
-            // Save to VS Code configuration
-            await config.update(
-                MCPManager.MCP_SERVERS_KEY,
-                { ...mcpServers, transportType: undefined, error: undefined },
-                vscode.ConfigurationTarget.Global
-            )
-
-            logDebug(
-                'MCPManager',
-                `Updated tool state in config: ${serverName}_${toolName} disabled=${disabled}`,
-                {
-                    verbose: { disabledTools },
-                }
-            )
+            // Update configuration with modified server config
+            await this.updateMcpServerConfig({
+                ...mcpServers,
+                [serverName]: {
+                    ...serverConfig,
+                    disabledTools,
+                },
+            })
         } catch (error) {
             logDebug('MCPManager', `Failed to update tool state in config: ${error}`, {
                 verbose: { error },
             })
             throw error
-        } finally {
-            // Reset the flag after the update is complete
-            MCPManager.isUpdatingConfig = false
         }
     }
 
     /**
-     * Read a resource from an MCP server
+     * Manages server operations with common error handling and telemetry
      */
-    public async readResource(serverName: string, uri: string): Promise<any> {
-        return this.serverManager.readResource(serverName, uri)
-    }
-
-    /**
-     * Restart a MCP server connection
-     */
-    public async restartServer(serverName: string): Promise<void> {
-        const connection = this.connectionManager.getConnection(serverName)
-        if (!connection) {
-            throw new Error(`MCP server "${serverName}" not found`)
-        }
-
-        const config = connection.server.config
-        if (config) {
-            try {
-                await this.connectionManager.removeConnection(serverName)
-                const parsedConfig = JSON.parse(config)
-                const isSSE = parsedConfig.url !== undefined
-                parsedConfig.transportType = isSSE ? 'sse' : 'stdio'
-
-                // Try to connect again using existing config
-                await this.addConnection(serverName, parsedConfig)
-            } catch (error) {
-                logDebug('MCPManager', `Failed to restart connection for ${serverName}`, {
-                    verbose: { error },
-                })
-                vscode.window.showErrorMessage(`Failed to connect to ${serverName} MCP server`)
-                throw error
-            }
-        }
-    }
-
-    /**
-     * Delete an MCP server from configuration
-     */
-    public async deleteServer(serverName: string): Promise<void> {
+    private async manageServerOperation(
+        operation: 'add' | 'update' | 'delete',
+        name: string,
+        config?: any
+    ): Promise<void> {
         try {
-            // Set flags to track that we're updating a specific server
-            MCPManager.isUpdatingConfig = true
-            MCPManager.updatingServerName = serverName
-
             // Get current configuration
-            const config = vscode.workspace.getConfiguration(MCPManager.CONFIG_SECTION)
-            const mcpServers = { ...config.get<Record<string, any>>(MCPManager.MCP_SERVERS_KEY, {}) }
+            const vsConfig = vscode.workspace.getConfiguration(MCPManager.CONFIG_SECTION)
+            const mcpServers = { ...vsConfig.get<Record<string, any>>(MCPManager.MCP_SERVERS_KEY, {}) }
 
-            if (mcpServers[serverName]) {
+            // Perform the requested operation
+            if (operation === 'add') {
+                if (mcpServers[name]) {
+                    throw new Error(`An MCP server named "${name}" already exists`)
+                }
+
+                const result = validateServerConfig(config)
+                if (!result.success) {
+                    throw new Error('Invalid server configuration')
+                }
+
+                // Add the new server
+                mcpServers[name] = config
+            } else if (operation === 'update') {
+                if (!mcpServers[name]) {
+                    throw new Error(`MCP server "${name}" does not exist`)
+                }
+
+                // Merge existing config with new config
+                const mergedConfig = {
+                    ...mcpServers[name],
+                    ...config,
+                }
+
+                // Set default transport type if not provided
+                const configWithDefaults = {
+                    transportType: 'stdio',
+                    ...mergedConfig,
+                }
+
+                const result = validateServerConfig(configWithDefaults)
+
+                if (!result.success) {
+                    throw new Error('Invalid server configuration')
+                }
+
+                // Update server with merged config
+                mcpServers[name] = mergedConfig
+            } else if (operation === 'delete') {
+                if (!mcpServers[name]) {
+                    logDebug('MCPManager', `${name} not found in MCP configuration`)
+                    return
+                }
+
                 // Remove server from configuration
-                delete mcpServers[serverName]
+                delete mcpServers[name]
+            }
 
-                // Update configuration
-                await config.update(
-                    MCPManager.MCP_SERVERS_KEY,
-                    mcpServers,
-                    vscode.ConfigurationTarget.Global
-                )
+            // Use the centralized method to update configuration
+            await this.updateMcpServerConfig(mcpServers)
 
-                // Remove connection
-                await this.connectionManager.removeConnection(serverName)
-                logDebug('MCPManager', `Deleted MCP server: ${serverName}`)
+            // Handle connections
+            if (operation === 'delete') {
+                await this.connectionManager.removeConnection(name)
+                logDebug('MCPManager', `Deleted MCP server: ${name}`)
+            } else if (operation === 'update') {
+                // Reconnect with new configuration
+                await this.connectionManager.removeConnection(name)
+                await this.addConnection(name, mcpServers[name]) // Use the merged config here
+                logDebug('MCPManager', `Updated ${name}`, {
+                    verbose: { config: mcpServers[name] },
+                })
+            } else if (operation === 'add') {
+                // Connect to new server
+                await this.addConnection(name, config)
+                logDebug('MCPManager', `Added MCP server: ${name}`, { verbose: { config } })
 
-                // Explicitly notify about server  removal to update UI
-                MCPManager.changeNotifications.next({ type: 'server', serverName })
-            } else {
-                logDebug('MCPManager', `${serverName} not found in MCP configuration`)
+                // Initialize tools if connected
+                const connection = this.connectionManager.getConnection(name)
+                if (connection?.server.status === 'connected') {
+                    await this.initializeServerData(name)
+                }
             }
         } catch (error) {
-            logDebug('MCPManager', `Failed to delete MCP server: ${serverName}`, { verbose: { error } })
-            throw error
+            logDebug('MCPManager', `Failed to ${operation} MCP server: ${name}`, { verbose: { error } })
+
+            if (operation === 'update') {
+                vscode.window.showErrorMessage(
+                    `Failed to update MCP server: ${
+                        error instanceof Error ? error.message : String(error)
+                    }`
+                )
+            } else {
+                throw error
+            }
         } finally {
-            // Reset flags after operation is complete
-            MCPManager.isUpdatingConfig = false
-            MCPManager.updatingServerName = null
-            telemetryRecorder.recordEvent('cody.deep-cody.server', 'removed', {
+            // Record telemetry
+            const telemetryAction =
+                operation === 'add' ? 'added' : operation === 'update' ? 'updated' : 'removed'
+
+            telemetryRecorder.recordEvent('cody.deep-cody.server', telemetryAction, {
                 privateMetadata: {
                     model: DeepCodyAgent.model,
                     chatAgent: DeepCodyAgent.id,
-                    server_name: serverName,
+                    server_name: name,
+                },
+                billingMetadata: {
+                    product: 'cody',
+                    category: 'billable',
+                },
+            })
+        }
+    }
+
+    private async setServerState(name: string, enabled: boolean): Promise<void> {
+        try {
+            // Get current configuration
+            const vsConfig = vscode.workspace.getConfiguration(MCPManager.CONFIG_SECTION)
+            const mcpServers = { ...vsConfig.get<Record<string, any>>(MCPManager.MCP_SERVERS_KEY, {}) }
+
+            // Check if server exists
+            if (!mcpServers[name]) {
+                throw new Error(`MCP server "${name}" does not exist`)
+            }
+
+            // Update the disabled flag (disabled is the opposite of enabled)
+            mcpServers[name] = {
+                ...mcpServers[name],
+                disabled: !enabled,
+            }
+
+            // Use the centralized method to update configuration
+            await this.updateMcpServerConfig(mcpServers)
+
+            // Handle connection based on state
+            if (enabled) {
+                // Try to connect to the server when enabling
+                try {
+                    await this.addConnection(name, mcpServers[name])
+                    logDebug('MCPManager', `Enabled and connected to MCP server: ${name}`)
+                } catch (error) {
+                    logDebug('MCPManager', `Enabled MCP server but failed to connect: ${name}`, {
+                        verbose: { error },
+                    })
+                }
+            } else {
+                // Disconnect when disabling
+                await this.connectionManager.removeConnection(name)
+                logDebug('MCPManager', `Disabled MCP server: ${name}`)
+            }
+        } catch (error) {
+            const action = enabled ? 'enable' : 'disable'
+            vscode.window.showErrorMessage(
+                `Failed to ${action} MCP server: ${
+                    error instanceof Error ? error.message : String(error)
+                }`
+            )
+            throw error
+        } finally {
+            // Record appropriate telemetry event
+            const eventType = enabled ? 'enabled' : 'disabled'
+            telemetryRecorder.recordEvent('cody.deep-cody.server', eventType, {
+                privateMetadata: {
+                    model: DeepCodyAgent.model,
+                    chatAgent: DeepCodyAgent.id,
+                    server_name: name,
                 },
                 billingMetadata: {
                     product: 'cody',
@@ -732,238 +550,53 @@ export class MCPManager {
     }
 
     public async addServer(name: string, config: any): Promise<void> {
-        try {
-            // Set flags to track that we're updating a specific server
-            MCPManager.isUpdatingConfig = true
-            MCPManager.updatingServerName = name
-
-            // Get current configuration
-            const vsConfig = vscode.workspace.getConfiguration(MCPManager.CONFIG_SECTION)
-            const mcpServers = { ...vsConfig.get<Record<string, any>>(MCPManager.MCP_SERVERS_KEY, {}) }
-
-            // Check if server already exists
-            if (mcpServers[name]) {
-                throw new Error(`An MCP server named "${name}" already exists`)
-            }
-
-            // Validate config based on transport type
-            let isValid = false
-            if (config.transportType === 'stdio') {
-                isValid = StdioConfigSchema.safeParse(config).success
-            } else if (config.transportType === 'sse') {
-                isValid = SseConfigSchema.safeParse(config).success
-            }
-
-            if (!isValid) {
-                throw new Error('Invalid server configuration')
-            }
-
-            // Add the new server
-            mcpServers[name] = config
-
-            // Update configuration
-            await vsConfig.update(
-                MCPManager.MCP_SERVERS_KEY,
-                mcpServers,
-                vscode.ConfigurationTarget.Global
-            )
-
-            // Connect only the new server
-            await this.addConnection(name, config)
-            logDebug('MCPManager', `Added MCP server: ${name}`, { verbose: { config } })
-
-            // Ensure tools and other server data are fully initialized before notifying UI
-            const connection = this.connectionManager.getConnection(name)
-            if (connection?.server.status === 'connected') {
-                // Wait for tool initialization to complete
-                await this.initializeServerData(name)
-                // Now send notifications after all data is initialized
-                MCPManager.changeNotifications.next({ type: 'server', serverName: name })
-            }
-        } catch (error) {
-            logDebug('MCPManager', `Failed to add MCP server: ${name}`, { verbose: { error } })
-            throw error
-        } finally {
-            // Reset flags after operation is complete
-            MCPManager.isUpdatingConfig = false
-            MCPManager.updatingServerName = null
-            telemetryRecorder.recordEvent('cody.deep-cody.server', 'added', {
-                privateMetadata: {
-                    model: DeepCodyAgent.model,
-                    chatAgent: DeepCodyAgent.id,
-                    server_name: name,
-                },
-                billingMetadata: {
-                    product: 'cody',
-                    category: 'billable',
-                },
-            })
-        }
+        return this.manageServerOperation('add', name, config)
     }
-
     public async updateServer(name: string, config: any): Promise<void> {
-        try {
-            // Get current configuration
-            const vsConfig = vscode.workspace.getConfiguration(MCPManager.CONFIG_SECTION)
-            const mcpServers = { ...vsConfig.get<Record<string, any>>(MCPManager.MCP_SERVERS_KEY, {}) }
-
-            // Check if server exists
-            if (!mcpServers[name]) {
-                throw new Error(`MCP server "${name}" does not exist`)
-            }
-
-            // Set default transport type if not provided
-            const configWithDefaults = {
-                transportType: 'stdio',
-                ...config,
-            }
-
-            // Validate config based on transport type
-            const isSSE = configWithDefaults.transportType === 'sse'
-            const result = isSSE
-                ? SseConfigSchema.safeParse(configWithDefaults)
-                : StdioConfigSchema.safeParse(configWithDefaults)
-
-            if (!result.success) {
-                throw new Error('Invalid server configuration')
-            }
-
-            // Update the server configuration (don't store error in config)
-            mcpServers[name] = { ...config, error: null }
-
-            // Update configuration
-            await vsConfig.update(
-                MCPManager.MCP_SERVERS_KEY,
-                mcpServers,
-                vscode.ConfigurationTarget.Global
-            )
-
-            // Only disconnect and reconnect the updated server
-            await this.connectionManager.removeConnection(name)
-            await this.addConnection(name, configWithDefaults)
-
-            logDebug('MCPManager', `Updated MCP server: ${name}`, {
-                verbose: { config: configWithDefaults },
-            })
-
-            // Notify about server changes with specific server name
-            MCPManager.changeNotifications.next({ type: 'server', serverName: name })
-        } catch (error) {
-            vscode.window.showErrorMessage(
-                `Failed to update MCP server: ${error instanceof Error ? error.message : String(error)}`
-            )
-            throw error
-        }
+        return this.manageServerOperation('update', name, config)
     }
-
+    public async deleteServer(name: string): Promise<void> {
+        return this.manageServerOperation('delete', name)
+    }
     public async disableServer(name: string): Promise<void> {
-        try {
-            // Get current configuration
-            const vsConfig = vscode.workspace.getConfiguration(MCPManager.CONFIG_SECTION)
-            const mcpServers = { ...vsConfig.get<Record<string, any>>(MCPManager.MCP_SERVERS_KEY, {}) }
-
-            // Check if server exists
-            if (!mcpServers[name]) {
-                throw new Error(`MCP server "${name}" does not exist`)
-            }
-
-            // Update the disabled flag
-            mcpServers[name] = {
-                ...mcpServers[name],
-                disabled: true,
-            }
-
-            // Update configuration
-            await vsConfig.update(
-                MCPManager.MCP_SERVERS_KEY,
-                mcpServers,
-                vscode.ConfigurationTarget.Global
-            )
-
-            // If the server is connected, disconnect it
-            await this.connectionManager.removeConnection(name)
-
-            logDebug('MCPManager', `Disabled MCP server: ${name}`)
-
-            // Notify about server changes with specific server name
-            MCPManager.changeNotifications.next({ type: 'server', serverName: name })
-        } catch (error) {
-            vscode.window.showErrorMessage(
-                `Failed to disable MCP server: ${error instanceof Error ? error.message : String(error)}`
-            )
-            throw error
-        } finally {
-            telemetryRecorder.recordEvent('cody.deep-cody.server', 'disabled', {
-                privateMetadata: {
-                    model: DeepCodyAgent.model,
-                    chatAgent: DeepCodyAgent.id,
-                    server_name: name,
-                },
-                billingMetadata: {
-                    product: 'cody',
-                    category: 'billable',
-                },
-            })
-        }
+        return this.setServerState(name, false)
     }
-
     public async enableServer(name: string): Promise<void> {
-        try {
-            // Get current configuration
-            const vsConfig = vscode.workspace.getConfiguration(MCPManager.CONFIG_SECTION)
-            const mcpServers = { ...vsConfig.get<Record<string, any>>(MCPManager.MCP_SERVERS_KEY, {}) }
-
-            // Check if server exists
-            if (!mcpServers[name]) {
-                throw new Error(`MCP server "${name}" does not exist`)
-            }
-
-            // Remove the disabled flag
-            mcpServers[name] = {
-                ...mcpServers[name],
-                disabled: false,
-            }
-
-            // Update configuration
-            await vsConfig.update(
-                MCPManager.MCP_SERVERS_KEY,
-                mcpServers,
-                vscode.ConfigurationTarget.Global
-            )
-
-            // Try to connect to the server
-            try {
-                await this.addConnection(name, mcpServers[name])
-                logDebug('MCPManager', `Enabled and connected to MCP server: ${name}`)
-            } catch (error) {
-                logDebug('MCPManager', `Enabled MCP server but failed to connect: ${name}`, {
-                    verbose: { error },
-                })
-            }
-
-            // Notify about server changes
-            MCPManager.changeNotifications.next({ type: 'server', serverName: name })
-        } catch (error) {
-            vscode.window.showErrorMessage(
-                `Failed to enable MCP server: ${error instanceof Error ? error.message : String(error)}`
-            )
-            throw error
-        } finally {
-            telemetryRecorder.recordEvent('cody.deep-cody.server', 'enabled', {
-                privateMetadata: {
-                    model: DeepCodyAgent.model,
-                    chatAgent: DeepCodyAgent.id,
-                    server_name: name,
-                },
-                billingMetadata: {
-                    product: 'cody',
-                    category: 'billable',
-                },
-            })
-        }
+        return this.setServerState(name, true)
     }
 
-    // Clean up resources
+    /**
+     * Updates the MCP servers configuration in user settings
+     * Always removes transportType and error fields before saving
+     */
+    private async updateMcpServerConfig(updatedServers: Record<string, any>): Promise<void> {
+        // Clean up servers configuration before writing to user settings
+        const cleanedServers = Object.entries(updatedServers).reduce(
+            (acc, [serverName, serverConfig]) => {
+                // Create a shallow copy and remove fields that shouldn't be persisted
+                const cleanConfig = { ...serverConfig }
+                cleanConfig.transportType = undefined
+                cleanConfig.error = undefined
+
+                acc[serverName] = cleanConfig
+                return acc
+            },
+            {} as Record<string, any>
+        )
+
+        // Get configuration and update it
+        const config = vscode.workspace.getConfiguration(MCPManager.CONFIG_SECTION)
+        await config.update(
+            MCPManager.MCP_SERVERS_KEY,
+            cleanedServers,
+            vscode.ConfigurationTarget.Global
+        )
+
+        logDebug('MCPManager', 'Updated MCP servers configuration', {
+            verbose: { serverCount: Object.keys(cleanedServers).length },
+        })
+    }
+
     public async dispose(): Promise<void> {
         // Dispose the connection manager
         await this.connectionManager.dispose()
@@ -976,8 +609,6 @@ export class MCPManager {
         this.disposables = []
         // Clear the static instance
         MCPManager.instance = undefined
-        // Notify subscribers that servers have changed
-        MCPManager.changeNotifications.next({ type: 'all' })
         logDebug('MCPManager', 'disposed')
     }
 
@@ -986,4 +617,33 @@ export class MCPManager {
             logDebug('MCPManager', 'Error disposing MCPManager', { verbose: { error } })
         })
     }
+}
+
+function normalizeConfig(config: any): string {
+    return JSON.stringify({
+        ...config,
+        transportType: undefined,
+        error: undefined,
+    })
+}
+
+function validateServerConfig(config: any): { success: boolean; data?: any; error?: Error } {
+    const isSSE = config.transportType === 'sse' || 'url' in config
+    const configWithDefaults = {
+        ...config,
+        transportType: isSSE ? 'sse' : 'stdio',
+    }
+
+    const result = isSSE
+        ? SseConfigSchema.safeParse(configWithDefaults)
+        : StdioConfigSchema.safeParse(configWithDefaults)
+
+    if (!result.success) {
+        return {
+            success: false,
+            error: new Error('Invalid server configuration: ' + JSON.stringify(result.error.format())),
+        }
+    }
+
+    return { success: true, data: result.data }
 }
