@@ -174,7 +174,7 @@ export type WebviewMessage =
     | { command: 'devicePixelRatio'; devicePixelRatio: number }
     | {
           command: 'mcp'
-          type: 'addServer' | 'removeServer' | 'updateServer'
+          type: 'addServer' | 'removeServer' | 'updateServer' | 'toggleTool'
           name: string
           disabled?: boolean | undefined | null
           config?: Record<string, any> | undefined | null
@@ -221,6 +221,7 @@ export type ExtensionMessage =
           setLastHumanInputIntent?: ChatMessage['intent'] | null | undefined
           smartApplyResult?: SmartApplyResult | undefined | null
           submitHumanInput?: boolean | undefined | null
+          mcpToolStateChanged?: any | null
           setPromptAsInput?:
               | { text: string; mode?: PromptMode | undefined | null; autoSubmit: boolean }
               | undefined

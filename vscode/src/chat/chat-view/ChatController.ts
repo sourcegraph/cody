@@ -412,92 +412,118 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 vscode.commands.executeCommand(message.id, message.arg ?? message.args)
                 break
             case 'mcp': {
+                const mcpManager = MCPManager.instance
+                if (!mcpManager) {
+                    logDebug('ChatController', 'MCP Manager is not initialized')
+                    break
+                }
+                const serverName = message.name
                 try {
-                    const mcpManager = MCPManager.instance
-                    if (!mcpManager) {
-                        throw new Error('MCP Manager is not initialized')
+                    // Special case for updateServer without name (to refresh server list)
+                    if (message.type === 'updateServer' && !serverName) {
+                        mcpManager.refreshServers()
+                        break
                     }
                     // All other operations require a server name
-                    if (!message.name) {
-                        // Special case for updateServer without name (to refresh server list)
-                        if (message.type === 'updateServer') {
-                            await mcpManager.refreshServers()
-                            break
-                        }
-                        throw new Error('Missing name property in MCP message')
+                    if (!serverName) {
+                        break
                     }
                     switch (message.type) {
-                        case 'addServer':
+                        case 'addServer': {
                             if (!message.config) {
-                                throw new Error('Missing config for addServer operation')
+                                break
                             }
-                            try {
-                                await mcpManager.addServer(message.name, message.config)
-
-                                // Send specific message to the UI about the new server
-                                const newServer = mcpManager
-                                    .getServers()
-                                    .find(s => s.name === message.name)
-                                if (newServer) {
-                                    void this.postMessage({
-                                        type: 'clientAction',
-                                        mcpServerChanged: {
-                                            name: newServer.name,
-                                            server: newServer,
-                                        },
-                                    })
-                                }
-                            } catch (error) {
-                                const errorMessage =
-                                    error instanceof Error ? error.message : String(error)
-                                vscode.window.showErrorMessage(`Failed to add server: ${errorMessage}`)
-                                throw error
-                            }
-                            break
-                        case 'updateServer':
-                            if (message.config) {
-                                // Update with full config
-                                await mcpManager.updateServer(message.name, message.config)
-                            } else if (message.toolName) {
-                                // Toggle single tool state
-                                const isDisabled = message.toolDisabled === true
-                                await mcpManager.setToolState(message.name, message.toolName, isDisabled)
-                            }
-                            break
-                        case 'removeServer':
-                            if (!message.name) {
-                                throw new Error('Missing name for removeServer operation')
-                            }
-                            try {
-                                // Store server name before deleting it
-                                const serverName = message.name
-                                await mcpManager.deleteServer(serverName)
-                                this.postMessage({
+                            await mcpManager.addServer(serverName, message.config)
+                            // Send specific message to the UI about the new server
+                            const newServer = mcpManager.getServers().find(s => s.name === serverName)
+                            if (newServer) {
+                                void this.postMessage({
                                     type: 'clientAction',
                                     mcpServerChanged: {
-                                        name: serverName,
-                                        server: null,
+                                        name: newServer.name,
+                                        server: newServer,
                                     },
                                 })
-                            } catch (error) {
-                                const errorMessage =
-                                    error instanceof Error ? error.message : String(error)
-                                vscode.window.showErrorMessage(
-                                    `Failed to remove server: ${errorMessage}`
-                                )
-                                throw error
                             }
                             break
-
+                        }
+                        case 'updateServer':
+                            if (message.config) {
+                                await mcpManager.updateServer(serverName, message.config)
+                            } else if (message.toolName) {
+                                const toolName = message.toolName as string; // Ensure it's treated as string
+                                const isDisabled = message.toolDisabled === true
+                                
+                                // First update the UI to prevent flickering
+                                void this.postMessage({
+                                    type: 'clientAction',
+                                    mcpToolStateChanged: {
+                                        serverName,
+                                        toolName,
+                                        disabled: isDisabled
+                                    }
+                                });
+                                
+                                // Then update backend state
+                                await mcpManager.setToolState(serverName, toolName, isDisabled)
+                            }
+                            break
+                        case 'toggleTool':
+                            if (message.toolName) {
+                                const toolName = message.toolName as string; // Ensure it's treated as string
+                                const isDisabled = message.toolDisabled === true
+                                
+                                // First immediately update the UI to prevent flickering
+                                this.postMessage({
+                                    type: 'clientAction',
+                                    mcpToolStateChanged: {
+                                        serverName,
+                                        toolName,
+                                        disabled: isDisabled
+                                    }
+                                }).then(() => {
+                                    // Using a timeout to prevent race conditions
+                                    setTimeout(async () => {
+                                        // Then update the server state
+                                        await mcpManager.setToolState(serverName, toolName, isDisabled);
+                                        
+                                        // Confirm state change to client without triggering a full reload
+                                        void this.postMessage({
+                                            type: 'clientAction',
+                                            // Use mcpToolStateChanged again to maintain compatibility
+                                            mcpToolStateChanged: {
+                                                serverName,
+                                                toolName,
+                                                disabled: isDisabled,
+                                                isConfirmation: true
+                                            }
+                                        });
+                                    }, 50);
+                                });
+                            }
+                            break
+                        case 'removeServer': {
+                            await mcpManager.deleteServer(serverName)
+                            this.postMessage({
+                                type: 'clientAction',
+                                mcpServerChanged: {
+                                    name: serverName,
+                                    server: null,
+                                },
+                            })
+                            break
+                        }
                         default:
-                            throw new Error(`Unknown MCP operation: ${message.type}`)
+                            logDebug('ChatController', `Unknown MCP operation: ${message.type}`)
                     }
                 } catch (error) {
                     const errorMessage = error instanceof Error ? error.message : String(error)
+                    logDebug('ChatController', `Failed to ${message.type} server`, errorMessage)
+
                     void this.postMessage({
                         type: 'clientAction',
                         mcpServerError: {
-                            name: 'name' in message ? message.name : '',
+                            name: 'name' in message ? serverName : '',
                             error: errorMessage,
                         },
                         mcpServerChanged: null,

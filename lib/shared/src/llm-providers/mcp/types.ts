@@ -5,11 +5,13 @@ export interface McpTool extends Tool {
     disabled?: boolean
 }
 
+export type McpConnectionStatus = 'connecting' | 'connected' | 'disconnected' | 'removed'
+
 // Define types for MCP entities
 export interface McpServer {
     name: string
     config: string
-    status: 'connecting' | 'connected' | 'disconnected'
+    status: McpConnectionStatus
     disabled?: boolean
     error?: string
     tools?: McpTool[]
