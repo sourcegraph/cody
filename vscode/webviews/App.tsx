@@ -14,7 +14,6 @@ import { AuthPage } from './AuthPage'
 import { LoadingPage } from './LoadingPage'
 import { useClientActionDispatcher } from './client/clientState'
 import { WebviewOpenTelemetryService } from './utils/webviewOpenTelemetryService'
-import { CopyHandlerProvider } from './utils/CopyHandlerContext'
 
 import { ExtensionAPIProviderFromVSCodeAPI } from '@sourcegraph/prompt-editor'
 import { CodyPanel } from './CodyPanel'
@@ -256,9 +255,5 @@ export function getAppWrappers({
             component: LinkOpenerProvider,
             props: { vscodeAPI },
         } satisfies Wrapper<any, ComponentProps<typeof LinkOpenerProvider>>,
-        {
-            component: CopyHandlerProvider,
-            props: {},
-        } satisfies Wrapper<any, ComponentProps<typeof CopyHandlerProvider>>,
     ]
 }

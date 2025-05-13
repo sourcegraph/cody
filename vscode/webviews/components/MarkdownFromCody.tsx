@@ -8,7 +8,6 @@ import rehypeSanitize, { type Options as RehypeSanitizeOptions, defaultSchema } 
 import remarkGFM from 'remark-gfm'
 import type { Pluggable } from 'unified/lib'
 import { remarkAttachFilePathToCodeBlocks } from '../chat/extract-file-path'
-import { useCopyHandler } from '../utils/CopyHandlerContext'
 import { SYNTAX_HIGHLIGHTING_LANGUAGES } from '../utils/highlight'
 import { useConfig } from '../utils/useConfig'
 
@@ -113,7 +112,6 @@ export const MarkdownFromCody: FunctionComponent<{
     const clientType = useConfig().clientCapabilities.agentIDE
     const urlTransform = useMemo(() => URL_PROCESSORS[clientType] ?? defaultUrlProcessor, [clientType])
     const chatReplyTransformed = childrenTransform(children)
-    useCopyHandler()
 
     return (
         <Markdown

@@ -24,7 +24,6 @@ import {
 } from 'react'
 import type { UserAccountInfo } from '../Chat'
 import type { ApiPostMessage } from '../Chat'
-import { useCopyHandler, useRegisterCopyHandler } from '../utils/CopyHandlerContext'
 import { getVSCodeAPI } from '../utils/VSCodeApi'
 import { SpanManager } from '../utils/spanManager'
 import { getTraceparentFromSpanContext } from '../utils/telemetry'
@@ -89,8 +88,21 @@ export const Transcript: FC<TranscriptProps> = props => {
 
     const lastHumanEditorRef = useRef<PromptEditorRefAPI | null>(null)
 
-    useCopyHandler()
-    useRegisterCopyHandler(copyButtonOnSubmit)
+    useEffect(() => {
+        const handleCopyEvent = (event: ClipboardEvent) => {
+            const selectedText = window.getSelection()?.toString() || ''
+            if (!selectedText) return
+            getVSCodeAPI().postMessage({
+                command: 'copy',
+                text: selectedText,
+                eventType: 'Keydown',
+            })
+        }
+        document.addEventListener('copy', handleCopyEvent)
+        return () => {
+            document.removeEventListener('copy', handleCopyEvent)
+        }
+    }, [])
 
     return (
         <div
