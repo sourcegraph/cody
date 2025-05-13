@@ -25,7 +25,7 @@ interface AddServerFormProps {
     className?: string
 }
 export function AddServerForm({ onAddServer, _server }: AddServerFormProps) {
-    const [formData, setFormData] = React.useState<ServerType>({ ...DEFAULT_CONFIG })
+    const [formData, setFormData] = React.useState<ServerType>({ ...DEFAULT_CONFIG, ..._server })
 
     useEffect(() => {
         setFormData({ ..._DEFAULT_CONFIG, ..._server })
@@ -78,7 +78,7 @@ export function AddServerForm({ onAddServer, _server }: AddServerFormProps) {
     }
 
     return (
-        <form onSubmit={handleSubmit}>
+        <form id={_server?.id || ''} onSubmit={handleSubmit}>
             <div className="tw-grid tw-gap-4 tw-py-4 tw-text-sm">
                 <div className="tw-grid tw-grid-cols-2 tw-gap-4">
                     <div className="tw-space-y-2">

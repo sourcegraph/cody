@@ -1,6 +1,7 @@
 import type { McpServer } from '@sourcegraph/cody-shared/src/llm-providers/mcp/types'
 import {
     DatabaseBackup,
+    Loader,
     Minus,
     PencilRulerIcon,
     RefreshCw,
@@ -32,28 +33,42 @@ export function ServerHome({ mcpServers }: ServerHomeProps) {
         }
     }, [mcpServers])
 
-    // Handle messages from the extension
     useEffect(() => {
         const messageHandler = (event: MessageEvent) => {
             const message = event.data
             if (message.type !== 'clientAction') return
 
-            // Handle server-specific updates
             if (message.mcpServerChanged?.name) {
                 const { name, server } = message.mcpServerChanged
                 setServers(prevServers => {
-                    // Check if this server already exists in our state
-                    if (prevServers.some(s => s.name === name)) {
-                        // Update existing server
-                        return prevServers.map(s => (s.name === name ? { ...s, ...server } : s))
+                    if (name && server === null) {
+                        // Remove server if it doesn't exist
+                        return prevServers.filter(s => s.name !== name)
                     }
-                    // Add new server
+
+                    // Check if this server already exists in our state
+                    const existingServerIndex = prevServers.findIndex(s => s.name === name)
+                    if (existingServerIndex >= 0) {
+                        // Update existing server but preserve tool state if not explicitly provided
+                        const existingServer = prevServers[existingServerIndex]
+                        const updatedServer = {
+                            ...existingServer,
+                            ...server,
+                            // Preserve tools if they weren't explicitly provided in the update
+                            tools: server.tools || existingServer.tools,
+                        }
+
+                        const newServers = [...prevServers]
+                        newServers[existingServerIndex] = updatedServer
+                        return newServers
+                    }
+
                     const newServer = {
                         id: `server-${Date.now()}`, // Generate a unique ID
                         name: name,
-                        type: server.type || 'Server',
-                        status: server.status || 'connecting',
-                        ...server,
+                        type: server?.type || 'Server',
+                        status: server?.status || 'connecting',
+                        ...(server || {}),
                     }
                     return [...prevServers, newServer]
                 })
@@ -82,21 +97,20 @@ export function ServerHome({ mcpServers }: ServerHomeProps) {
 
     const addServer = useCallback(
         (server: ServerType) => {
+            // Create a new serializable object without React components
+            const { id, name } = server
+
             // Transform the UI server type to the format expected by MCPManager
             const mcpServerConfig: Record<string, any> = {
+                id,
+                name,
                 transportType: server.url ? 'sse' : 'stdio',
             }
-            // Add URL for SSE transport
-            if (server.url) {
-                mcpServerConfig.url = server.url
-            }
+
             // Add command and args for stdio transport
-            if (server.command) {
-                mcpServerConfig.command = server.command
-                // Only add non-empty args
-                if (server.args?.length) {
-                    mcpServerConfig.args = server.args.filter(arg => arg.trim())
-                }
+            // Only add non-empty args
+            if (server.args?.length) {
+                mcpServerConfig.args = server.args.filter(arg => arg.trim())
             }
             // Add environment variables
             if (server.env?.length) {
@@ -112,28 +126,14 @@ export function ServerHome({ mcpServers }: ServerHomeProps) {
             }
 
             // Check if we're editing an existing server
-            if (selectedServer && server.id === selectedServer.id) {
-                // If the name hasn't changed, use updateServer instead of addServer
-                if (server.name === selectedServer.name) {
-                    // Update existing server
-                    getVSCodeAPI().postMessage({
-                        command: 'mcp',
-                        type: 'updateServer',
-                        name: server.name,
-                        config: mcpServerConfig,
-                    })
-                } else {
-                    // Name changed, need to remove old and add new
-                    // Remove old server first
-                    removeServer(selectedServer.name)
-                    // Then add new server with updated name
-                    getVSCodeAPI().postMessage({
-                        command: 'mcp',
-                        type: 'addServer',
-                        name: server.name,
-                        config: mcpServerConfig,
-                    })
-                }
+            if (server.id === selectedServer?.id) {
+                // Update existing server
+                getVSCodeAPI().postMessage({
+                    command: 'mcp',
+                    type: 'updateServer',
+                    name: selectedServer.name,
+                    config: mcpServerConfig,
+                })
                 setSelectedServer(null)
             } else {
                 // Add new server
@@ -145,7 +145,7 @@ export function ServerHome({ mcpServers }: ServerHomeProps) {
                 })
             }
         },
-        [selectedServer, removeServer]
+        [selectedServer]
     )
 
     const toggleTool = useCallback((serverName: string, toolName: string, isDisabled: boolean) => {
@@ -175,9 +175,10 @@ export function ServerHome({ mcpServers }: ServerHomeProps) {
     const filteredServers = useMemo(() => {
         return servers.filter(
             server =>
-                server.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                server.type.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                server.tools?.some(tool => tool.name.toLowerCase().includes(searchQuery.toLowerCase()))
+                server?.name?.toLowerCase()?.includes(searchQuery?.toLowerCase()) ||
+                server?.tools?.some(tool =>
+                    tool?.name?.toLowerCase()?.includes(searchQuery?.toLowerCase())
+                )
         )
     }, [searchQuery, servers])
 
@@ -293,10 +294,10 @@ export function ServerHome({ mcpServers }: ServerHomeProps) {
                                                 </p>
                                             </div>
                                         )}
-                                        {server.tools && server.tools?.length > 0 && (
-                                            <div className="tw-mt-2">
-                                                <div className="tw-flex tw-flex-wrap tw-gap-4">
-                                                    {server.tools.map(tool => (
+                                        <div className="tw-mt-2">
+                                            <div className="tw-flex tw-flex-wrap tw-gap-4">
+                                                {server.tools !== undefined ? (
+                                                    server.tools?.map(tool => (
                                                         <Badge
                                                             key={`${server.name}-${tool.name}-tool`}
                                                             variant={
@@ -321,10 +322,14 @@ export function ServerHome({ mcpServers }: ServerHomeProps) {
                                                         >
                                                             {tool.name}
                                                         </Badge>
-                                                    ))}
-                                                </div>
+                                                    ))
+                                                ) : (
+                                                    <div className="tw-w-full tw-flex tw-justify-center tw-container">
+                                                        <Loader className="tw-animate-spin" />
+                                                    </div>
+                                                )}
                                             </div>
-                                        )}
+                                        </div>
                                     </div>
                                 </div>
                             </CommandItem>
@@ -345,6 +350,16 @@ export function ServerHome({ mcpServers }: ServerHomeProps) {
 }
 
 export function getMcpServerType(server: McpServer): ServerType {
+    if (!server) {
+        // Return a default ServerType if server is null
+        return {
+            id: `default-${Date.now()}`,
+            name: 'Unknown Server',
+            type: 'mcp',
+            status: 'offline',
+            icon: DatabaseBackup,
+        }
+    }
     const base = {
         id: server.name,
         name: server.name,
@@ -355,13 +370,13 @@ export function getMcpServerType(server: McpServer): ServerType {
         error: server.error,
     } satisfies ServerType
     try {
-        const config = JSON.parse(server.config)
+        const config = server.config ? JSON.parse(server.config) : null
         if (!config) return base
         base.type = config.url ? 'sse' : 'stdio'
         const mcpServerConfig: Record<string, any> = {}
-        mcpServerConfig.url = config.url
-        mcpServerConfig.command = config.command
-        mcpServerConfig.args = config.args
+        mcpServerConfig.url = config.url || undefined
+        mcpServerConfig.command = config.command || undefined
+        mcpServerConfig.args = config.args || undefined
 
         // Only map env entries if config.env exists
         mcpServerConfig.env = config.env

@@ -45,6 +45,7 @@ export class MCPServerManager {
 
     constructor(private connectionManager: MCPConnectionManager) {}
 
+    // Update getToolList method to include disabled status
     public async getToolList(serverName: string): Promise<McpTool[]> {
         try {
             const connection = this.connectionManager.getConnection(serverName)
@@ -62,6 +63,7 @@ export class MCPServerManager {
                 response?.tools?.map(tool => {
                     const fullToolName = `${serverName}_${tool.name || ''}`
                     const isDisabled = this.disabledTools.has(fullToolName)
+
                     return {
                         name: tool.name || '',
                         description: tool.description || '',

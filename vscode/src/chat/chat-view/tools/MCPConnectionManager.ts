@@ -2,7 +2,10 @@ import { Client } from '@modelcontextprotocol/sdk/client/index.js'
 import { SSEClientTransport } from '@modelcontextprotocol/sdk/client/sse.js'
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js'
 import { logDebug } from '@sourcegraph/cody-shared'
-import type { McpServer } from '@sourcegraph/cody-shared/src/llm-providers/mcp/types'
+import type {
+    McpConnectionStatus,
+    McpServer,
+} from '@sourcegraph/cody-shared/src/llm-providers/mcp/types'
 import { Subject } from 'observable-fns'
 import * as vscode from 'vscode'
 
@@ -21,11 +24,9 @@ export type MCPServerSpec = {
     transport: McpTransport
 }
 
-export type ConnectionStatus = 'connecting' | 'connected' | 'disconnected'
-
 export type ConnectionStatusChangeEvent = {
     serverName: string
-    status: ConnectionStatus
+    status: McpConnectionStatus
     error?: string
 }
 
@@ -82,7 +83,7 @@ export class MCPConnectionManager {
 
     private updateConnectionStatus(
         connection: McpConnection,
-        status: ConnectionStatus,
+        status: McpConnectionStatus,
         error?: string
     ): void {
         const { name } = connection.server
@@ -233,6 +234,7 @@ export class MCPConnectionManager {
             })
         }
 
+        this.statusChangeEmitter.fire({ serverName: name, status: 'removed' })
         this.notifyServerChanged(name)
     }
 

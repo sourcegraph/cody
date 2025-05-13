@@ -52,8 +52,8 @@ const McpSettingsSchema = z.object({
  */
 export class MCPManager {
     public static instance: MCPManager | undefined
-    private static readonly CONFIG_SECTION = 'cody'
-    private static readonly MCP_SERVERS_KEY = 'mcpServers'
+    public static readonly CONFIG_SECTION = 'cody'
+    public static readonly MCP_SERVERS_KEY = 'mcpServers'
 
     private connectionManager = MCPConnectionManager.instance
     public serverManager: MCPServerManager
@@ -106,6 +106,8 @@ export class MCPManager {
         serverName: string
         error?: string
     }): Promise<void> {
+        logDebug('MCPManager', `Connection status changed for ${event.serverName}: ${event.status}`)
+
         if (event.status === 'connected') {
             await this.initializeServerData(event.serverName).catch(error => {
                 logDebug('MCPManager', `Error initializing server data for ${event.serverName}`, {
@@ -113,8 +115,6 @@ export class MCPManager {
                 })
             })
         }
-
-        // Connection errors are now handled in MCPConnectionManager
     }
 
     private setupToolStateListeners(): void {
@@ -148,8 +148,7 @@ export class MCPManager {
      * Load servers from VS Code configuration
      */
     private async loadServersFromConfig(): Promise<void> {
-        const config = vscode.workspace.getConfiguration(MCPManager.CONFIG_SECTION)
-        const mcpServers = config.get(MCPManager.MCP_SERVERS_KEY, undefined)
+        const mcpServers = getMcpServersConfig()
         if (mcpServers === undefined) {
             return
         }
@@ -191,7 +190,7 @@ export class MCPManager {
                     const curConfig = normalizeConfig(JSON.parse(currentConnection.server.config))
                     const userConfig = normalizeConfig(config)
                     if (curConfig === userConfig) {
-                        return // No changes detected
+                        continue // Changed from return to continue to process all servers
                     }
                 }
                 // Existing server with changed config
@@ -210,19 +209,13 @@ export class MCPManager {
                     verbose: { error },
                 })
             }
-
-            // Process disabled tools for this server
-            if (config.disabledTools && Array.isArray(config.disabledTools)) {
-                // Always add server prefix to tool names
-                const toolsWithPrefix = config.disabledTools.map(
-                    (toolName: string) => `${name}_${toolName}`
-                )
-                allDisabledTools.push(...toolsWithPrefix)
-            }
         }
 
         // Set all collected disabled tools in the server manager
         this.serverManager.setDisabledTools(allDisabledTools)
+
+        // Explicitly notify about server changes after sync
+        this.connectionManager.notifyServerChanged()
     }
 
     /**
@@ -249,12 +242,16 @@ export class MCPManager {
         const connection = this.connectionManager.getConnection(serverName)
         if (!connection) return
         try {
-            logDebug('MCPManager', `Initialized tools for server: ${serverName}`)
+            logDebug('MCPManager', `Initializing tools for server: ${serverName}`)
             connection.server.tools = await this.serverManager.getToolList(serverName)
+            logDebug('MCPManager', `Initialized tools for server: ${serverName}`, {
+                verbose: { toolCount: connection.server.tools.length },
+            })
+            // Make sure we notify about the server change
+            this.connectionManager.notifyServerChanged(serverName)
         } catch (error) {
             logDebug('MCPManager', `Failed to initialize ${serverName}`, { verbose: error })
         }
-        this.connectionManager.notifyServerChanged(serverName)
     }
 
     public static get tools(): AgentTool[] {
@@ -330,8 +327,7 @@ export class MCPManager {
     ): Promise<void> {
         try {
             // Get current configuration
-            const config = vscode.workspace.getConfiguration(MCPManager.CONFIG_SECTION)
-            const mcpServers = config.get<Record<string, any>>(MCPManager.MCP_SERVERS_KEY, {})
+            const mcpServers = getMcpServersConfig()
 
             // Verify server exists
             const serverConfig = mcpServers[serverName]
@@ -381,8 +377,7 @@ export class MCPManager {
     ): Promise<void> {
         try {
             // Get current configuration
-            const vsConfig = vscode.workspace.getConfiguration(MCPManager.CONFIG_SECTION)
-            const mcpServers = { ...vsConfig.get<Record<string, any>>(MCPManager.MCP_SERVERS_KEY, {}) }
+            const mcpServers = getMcpServersConfig()
 
             // Perform the requested operation
             if (operation === 'add') {
@@ -396,10 +391,10 @@ export class MCPManager {
                 }
 
                 // Add the new server
-                mcpServers[name] = config
+                mcpServers[config?.name ?? name] = config
             } else if (operation === 'update') {
-                if (!mcpServers[name]) {
-                    throw new Error(`MCP server "${name}" does not exist`)
+                if (!mcpServers[name] || !mcpServers[config?.name]) {
+                    logDebug('', `MCP server "${name}" does not exist`)
                 }
 
                 // Merge existing config with new config
@@ -421,15 +416,14 @@ export class MCPManager {
                 }
 
                 // Update server with merged config
-                mcpServers[name] = mergedConfig
+                mcpServers[config?.name ?? name] = mergedConfig
             } else if (operation === 'delete') {
-                if (!mcpServers[name]) {
+                if (mcpServers[name]) {
+                    // Remove server from configuration
+                    delete mcpServers[name]
+                } else {
                     logDebug('MCPManager', `${name} not found in MCP configuration`)
-                    return
                 }
-
-                // Remove server from configuration
-                delete mcpServers[name]
             }
 
             // Use the centralized method to update configuration
@@ -491,8 +485,7 @@ export class MCPManager {
     private async setServerState(name: string, enabled: boolean): Promise<void> {
         try {
             // Get current configuration
-            const vsConfig = vscode.workspace.getConfiguration(MCPManager.CONFIG_SECTION)
-            const mcpServers = { ...vsConfig.get<Record<string, any>>(MCPManager.MCP_SERVERS_KEY, {}) }
+            const mcpServers = getMcpServersConfig()
 
             // Check if server exists
             if (!mcpServers[name]) {
@@ -646,4 +639,9 @@ function validateServerConfig(config: any): { success: boolean; data?: any; erro
     }
 
     return { success: true, data: result.data }
+}
+
+function getMcpServersConfig(): Record<string, any> {
+    const vsConfig = vscode.workspace.getConfiguration(MCPManager.CONFIG_SECTION)
+    return { ...vsConfig.get<Record<string, any>>(MCPManager.MCP_SERVERS_KEY, {}) }
 }
