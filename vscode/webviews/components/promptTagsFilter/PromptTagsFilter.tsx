@@ -3,6 +3,7 @@ import { type FC, useState } from 'react'
 import { Button } from '../shadcn/ui/button'
 import { Command, CommandGroup, CommandItem, CommandList } from '../shadcn/ui/command'
 import { Popover, PopoverContent, PopoverTrigger } from '../shadcn/ui/popover'
+import { Tooltip, TooltipContent, TooltipTrigger } from '../shadcn/ui/tooltip'
 import { usePromptTagsQuery } from './usePromptTagsQuery'
 
 interface PromptTagsFilterProps {
@@ -28,11 +29,18 @@ export const PromptTagsFilter: FC<PromptTagsFilterProps> = ({
                 <PopoverTrigger asChild onClick={() => setIsOpen(!isOpen)}>
                     <Button
                         variant="outline"
-                        className="tw-inline-flex tw-justify-between tw-items-center tw-w-auto"
+                        className="tw-inline-flex tw-justify-between tw-items-center tw-w-full"
                     >
                         <div className="tw-flex tw-items-center">
                             <Tag size={14} className="tw-mr-2 tw-text-muted-foreground" />
-                            <span>{selectedTagName || 'All tags'}</span>
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <span className="tw-truncate tw-inline-block tw-max-w-[100px]">{selectedTagName || 'All tags'}</span>
+                                </TooltipTrigger>
+                                <TooltipContent side="bottom">
+                                    {selectedTagName || 'All tags'}
+                                </TooltipContent>
+                            </Tooltip>
                         </div>
                         <ChevronDown size={14} className="tw-ml-2 tw-text-muted-foreground" />
                     </Button>

@@ -122,18 +122,22 @@ export const PromptSelectField: React.FunctionComponent<{
                 <div className="tw-flex tw-flex-col tw-max-h-[500px] tw-overflow-auto tw-relative">
                     <div className="tw-flex tw-flex-row tw-gap-4 tw-px-2 tw-py-3 tw-border-b tw-border-border tw-mb-1">
                         <div className="tw-flex tw-flex-row tw-gap-2 tw-justify-start">
-                            <PromptOwnerFilter
-                                value={ownerFilterValue}
-                                onFilterChange={setOwnerFilterValue}
-                                className="!tw-px-0 !tw-py-0 !tw-border-b-0"
-                                organizations={organizations}
-                                userId={userId && !userIdError ? (userId as string) : undefined}
-                            />
-                            <PromptTagsFilter
-                                selectedTagId={selectedTagId}
-                                onTagChange={setSelectedTagId}
-                                className="!tw-px-0 !tw-py-0 !tw-border-b-0"
-                            />
+                            <div className="tw-w-1/2">
+                                <PromptOwnerFilter
+                                    value={ownerFilterValue}
+                                    onFilterChange={setOwnerFilterValue}
+                                    className="!tw-px-0 !tw-py-0 !tw-border-b-0"
+                                    organizations={organizations}
+                                    userId={userId && !userIdError ? (userId as string) : undefined}
+                                />
+                            </div>
+                            <div className="tw-w-1/2">
+                                <PromptTagsFilter
+                                    selectedTagId={selectedTagId}
+                                    onTagChange={setSelectedTagId}
+                                    className="!tw-px-0 !tw-py-0 !tw-border-b-0"
+                                />
+                            </div>
                         </div>
                     </div>
                     <PromptList
