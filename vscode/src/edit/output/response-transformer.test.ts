@@ -16,7 +16,12 @@ describe('Smart Apply Response Extraction', () => {
         const text = `<${SMART_APPLY_CUSTOM_PROMPT_TOPICS.FINAL_CODE}>const x = 1;</${SMART_APPLY_CUSTOM_PROMPT_TOPICS.FINAL_CODE}>`
         const task = createTask('smartApply', SMART_APPLY_MODEL_IDENTIFIERS.FireworksQwenCodeDefault)
 
-        const result = responseTransformer(text, task, true)
+        // When isMessageInProgress is true, the original text is returned without processing
+        const resultInProgress = responseTransformer(text, task, true)
+        expect(resultInProgress).toBe(text)
+
+        // When isMessageInProgress is false, the text is processed
+        const result = responseTransformer(text, task, false)
         expect(result).toBe('const x = 1;')
     })
 
@@ -48,7 +53,12 @@ describe('Smart Apply Response Extraction', () => {
         const text = `<${SMART_APPLY_CUSTOM_PROMPT_TOPICS.FINAL_CODE}>outer <${SMART_APPLY_CUSTOM_PROMPT_TOPICS.FINAL_CODE}>inner</${SMART_APPLY_CUSTOM_PROMPT_TOPICS.FINAL_CODE}> content</${SMART_APPLY_CUSTOM_PROMPT_TOPICS.FINAL_CODE}>`
         const task = createTask('smartApply', SMART_APPLY_MODEL_IDENTIFIERS.FireworksQwenCodeDefault)
 
-        const result = responseTransformer(text, task, true)
+        // When isMessageInProgress is true, the original text is returned without processing
+        const resultInProgress = responseTransformer(text, task, true)
+        expect(resultInProgress).toBe(text)
+
+        // When isMessageInProgress is false, the text is processed
+        const result = responseTransformer(text, task, false)
         expect(result).toBe(
             `outer <${SMART_APPLY_CUSTOM_PROMPT_TOPICS.FINAL_CODE}>inner</${SMART_APPLY_CUSTOM_PROMPT_TOPICS.FINAL_CODE}> content`
         )
@@ -58,7 +68,12 @@ describe('Smart Apply Response Extraction', () => {
         const text = `<${SMART_APPLY_CUSTOM_PROMPT_TOPICS.FINAL_CODE}></${SMART_APPLY_CUSTOM_PROMPT_TOPICS.FINAL_CODE}>`
         const task = createTask('smartApply', SMART_APPLY_MODEL_IDENTIFIERS.FireworksQwenCodeDefault)
 
-        const result = responseTransformer(text, task, true)
+        // When isMessageInProgress is true, the original text is returned without processing
+        const resultInProgress = responseTransformer(text, task, true)
+        expect(resultInProgress).toBe(text)
+
+        // When isMessageInProgress is false, the text is processed
+        const result = responseTransformer(text, task, false)
         expect(result).toBe('')
     })
 
@@ -90,6 +105,50 @@ describe('Smart Apply Response Extraction', () => {
         const result = responseTransformer(text, task, false)
         expect(result).toBe('const x = 1;\n')
         expect(result.endsWith('\n')).toBe(true)
+    })
+
+    it('should preserve newlines based on original text', () => {
+        const text = `<${SMART_APPLY_CUSTOM_PROMPT_TOPICS.FINAL_CODE}>\nconst x = 1;\n</${SMART_APPLY_CUSTOM_PROMPT_TOPICS.FINAL_CODE}>`
+
+        // Test 1: Original has no newlines, result should have no newlines
+        const task1 = {
+            ...createTask('smartApply', SMART_APPLY_MODEL_IDENTIFIERS.FireworksQwenCodeDefault),
+            original: 'const y = 2;',
+        } as any
+        const result1 = responseTransformer(text, task1, false)
+        expect(result1).toBe('const x = 1;')
+        expect(result1.startsWith('\n')).toBe(false)
+        expect(result1.endsWith('\n')).toBe(false)
+
+        // Test 2: Original has starting newline, result should have starting newline
+        const task2 = {
+            ...createTask('smartApply', SMART_APPLY_MODEL_IDENTIFIERS.FireworksQwenCodeDefault),
+            original: '\nconst y = 2;',
+        } as any
+        const result2 = responseTransformer(text, task2, false)
+        expect(result2).toBe('\nconst x = 1;')
+        expect(result2.startsWith('\n')).toBe(true)
+        expect(result2.endsWith('\n')).toBe(false)
+
+        // Test 3: Original has ending newline, result should have ending newline
+        const task3 = {
+            ...createTask('smartApply', SMART_APPLY_MODEL_IDENTIFIERS.FireworksQwenCodeDefault),
+            original: 'const y = 2;\n',
+        } as any
+        const result3 = responseTransformer(text, task3, false)
+        expect(result3).toBe('const x = 1;\n')
+        expect(result3.startsWith('\n')).toBe(false)
+        expect(result3.endsWith('\n')).toBe(true)
+
+        // Test 4: Original has both newlines, result should have both newlines
+        const task4 = {
+            ...createTask('smartApply', SMART_APPLY_MODEL_IDENTIFIERS.FireworksQwenCodeDefault),
+            original: '\nconst y = 2;\n',
+        } as any
+        const result4 = responseTransformer(text, task4, false)
+        expect(result4).toBe('\nconst x = 1;\n')
+        expect(result4.startsWith('\n')).toBe(true)
+        expect(result4.endsWith('\n')).toBe(true)
     })
 })
 

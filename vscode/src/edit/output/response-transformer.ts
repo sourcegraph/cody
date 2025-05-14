@@ -39,6 +39,13 @@ const LEADING_SPACES_AND_NEW_LINES = /^\s*\n/
 const LEADING_SPACES = /^[ ]+/
 
 /**
+ * Checks if the task is using a smart apply custom model
+ */
+function taskUsesSmartApplyCustomModel(task: FixupTask): boolean {
+    return Object.values(SMART_APPLY_MODEL_IDENTIFIERS).includes(task.model)
+}
+
+/**
  * Strips the text of any unnecessary content.
  * This includes:
  * 1. Prompt topics, e.g. <CODE511>. These are used by the LLM to wrap the output code.
@@ -62,10 +69,7 @@ function stripText(text: string, task: FixupTask): string {
 }
 
 function extractSmartApplyCustomModelResponse(text: string, task: FixupTask): string {
-    if (
-        task.intent !== 'smartApply' ||
-        !Object.values(SMART_APPLY_MODEL_IDENTIFIERS).includes(task.model)
-    ) {
+    if (!taskUsesSmartApplyCustomModel(task)) {
         return text
     }
 
@@ -86,15 +90,33 @@ function extractSmartApplyCustomModelResponse(text: string, task: FixupTask): st
 }
 
 /**
-- * Regular expression to detect potential HTML entities.
-- * Checks for named (&name;), decimal (&#digits;), or hex (&#xhex;) entities.
-+ * Regular expression to detect the *few* entities we actually care about.
-+ * We purposefully limit the named-entity part to the common escaping
-+ * sequences that LLMs emit in source code:
-+ *   &lt;  &gt;  &amp;  &quot;  &apos;
-+ * Everything else (e.g. &nbsp;, &curren;, &copy;, …) is ignored so that we
-+ * don’t accidentally alter code like “&current_value;”.
-  */
+ * Preserves or removes newlines at the start and end of the text based on the original text.
+ * If the original text doesn't start/end with a newline, the corresponding newline in the updated text is removed.
+ */
+function trimLLMNewlines(text: string, original: string): string {
+    let result = text
+
+    // Handle starting newline
+    if (result.startsWith('\n') && !original.startsWith('\n')) {
+        result = result.replace(/^\n/, '')
+    }
+
+    // Handle ending newline
+    if (result.endsWith('\n') && !original.endsWith('\n')) {
+        result = result.replace(/\n$/, '')
+    }
+
+    return result
+}
+
+/**
+ * Regular expression to detect the *few* entities we actually care about.
+ * We purposefully limit the named-entity part to the common escaping
+ * sequences that LLMs emit in source code:
+ *   &lt;  &gt;  &amp;  &quot;  &apos;
+ * Everything else (e.g. &nbsp;, &curren;, &copy;, …) is ignored so that we
+ * don't accidentally alter code like "&current_value;".
+ */
 const POTENTIAL_HTML_ENTITY_REGEX = /&(?:(?:lt|gt|amp|quot|apos)|#\d+|#x[0-9a-fA-F]+);/
 
 /**
@@ -107,24 +129,19 @@ export function responseTransformer(
     task: FixupTask,
     isMessageInProgress: boolean
 ): string {
-    if (
-        task.intent === 'smartApply' &&
-        Object.values(SMART_APPLY_MODEL_IDENTIFIERS).includes(task.model) &&
-        isMessageInProgress
-    ) {
-        return text
-    }
-    const updatedText = extractSmartApplyCustomModelResponse(text, task)
+    // Skip processing for in-progress messages from smart apply custom models
+    if (taskUsesSmartApplyCustomModel(task)) {
+        if (isMessageInProgress) {
+            return text
+        }
 
-    // if we use the new Qwen based smart apply which performs an entire-file
-    // replace it's enough for us to just remove the start and end newline
-    if (
-        task.intent === 'smartApply' &&
-        Object.values(SMART_APPLY_MODEL_IDENTIFIERS).includes(task.model)
-    ) {
-        return task.original.endsWith('\n') ? updatedText : updatedText.trimEnd()
+        const updatedText = extractSmartApplyCustomModelResponse(text, task)
+
+        // Preserve newlines only if they were in the original text
+        return trimLLMNewlines(updatedText, task.original)
     }
-    const strippedText = stripText(updatedText, task)
+
+    const strippedText = stripText(text, task)
 
     // Trim leading spaces
     // - For `add` insertions, the LLM will attempt to continue the code from the position of the cursor, we handle the `insertionPoint`
