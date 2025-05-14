@@ -3,6 +3,7 @@ import { type FC, useMemo, useState } from 'react'
 import { Button } from '../shadcn/ui/button'
 import { Command, CommandGroup, CommandItem, CommandList } from '../shadcn/ui/command'
 import { Popover, PopoverContent, PopoverTrigger } from '../shadcn/ui/popover'
+import { Tooltip, TooltipContent, TooltipTrigger } from '../shadcn/ui/tooltip'
 
 export interface Organization {
     id: string
@@ -62,13 +63,23 @@ export const PromptOwnerFilter: FC<PromptOwnerFilterProps> = ({
                 <PopoverTrigger asChild onClick={() => setIsOpen(!isOpen)}>
                     <Button
                         variant="outline"
-                        className="tw-inline-flex tw-justify-between tw-items-center tw-w-auto"
+                        className="tw-inline-flex tw-justify-between tw-items-center tw-w-full"
                     >
-                        <div className="tw-flex tw-items-center">
-                            <FilterIcon size={14} className="tw-mr-2 tw-text-muted-foreground" />
-                            <span>{filterText}</span>
+                        <div className="tw-flex tw-items-center tw-min-w-0 tw-mr-2">
+                            <FilterIcon
+                                size={14}
+                                className="tw-mr-2 tw-text-muted-foreground tw-flex-shrink-0"
+                            />
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <span className="tw-truncate tw-inline-block tw-max-w-[95px]">
+                                        {filterText}
+                                    </span>
+                                </TooltipTrigger>
+                                <TooltipContent side="bottom">{filterText}</TooltipContent>
+                            </Tooltip>
                         </div>
-                        <ChevronDown size={14} className="tw-ml-2 tw-text-muted-foreground" />
+                        <ChevronDown size={14} className="tw-text-muted-foreground tw-flex-shrink-0" />
                     </Button>
                 </PopoverTrigger>
                 <PopoverContent className="tw-w-[220px] !tw-p-0" side="bottom" align="start">

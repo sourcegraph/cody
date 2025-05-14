@@ -177,7 +177,20 @@ const configuration = new AgentWorkspaceConfiguration(
     [],
     () => clientInfo,
     () => extensionConfiguration,
-    onDidChangeConfiguration
+    async (section, value) => {
+        if (onDidChangeConfiguration) {
+            await onDidChangeConfiguration.cody_fireAsync({
+                affectsConfiguration: key => key.includes(section),
+            })
+        }
+
+        if (agent && section.startsWith('cody')) {
+            agent.notify('extensionConfiguration/didUpdate', {
+                key: section,
+                value: value === undefined ? undefined : JSON.stringify(value),
+            })
+        }
+    }
 )
 
 export interface WorkspaceDocuments {

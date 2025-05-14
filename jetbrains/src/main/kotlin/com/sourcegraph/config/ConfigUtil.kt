@@ -35,8 +35,7 @@ object ConfigUtil {
   const val CODE_SEARCH_DISPLAY_NAME = "Code Search"
   const val SOURCEGRAPH_DISPLAY_NAME = "Sourcegraph"
   private const val FEATURE_FLAGS_ENV_VAR = "CODY_JETBRAINS_FEATURES"
-  private val renderOptions =
-      ConfigRenderOptions.defaults().setComments(false).setOriginComments(false)
+  val renderOptions = ConfigRenderOptions.defaults().setComments(false).setOriginComments(false)
 
   private val logger = Logger.getInstance(ConfigUtil::class.java)
 
@@ -192,6 +191,18 @@ object ConfigUtil {
       logger.error("Failed to parse Cody config", e)
       return ""
     }
+  }
+
+  @JvmStatic
+  fun updateCustomConfiguration(project: Project, key: String, value: String? = null) {
+    val config = ConfigFactory.parseString(getSettingsFile(project).readText()).resolve()
+    val updatedConfig =
+        if (value == null) {
+          config.withoutPath(key)
+        } else {
+          config.withValue(key, ConfigValueFactory.fromAnyRef(value))
+        }
+    setCustomConfiguration(project, updatedConfig.root().render(renderOptions))
   }
 
   @JvmStatic

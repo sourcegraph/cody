@@ -142,7 +142,7 @@ import { CodyChatEditorViewType } from './ChatsController'
 import { CodeBlockRegenerator, type RegenerateRequestParams } from './CodeBlockRegenerator'
 import type { ContextRetriever } from './ContextRetriever'
 import { InitDoer } from './InitDoer'
-import { getChatPanelTitle, isAgentTesting } from './chat-helpers'
+import { getChatPanelTitle, isCodyTesting } from './chat-helpers'
 import { OmniboxTelemetry } from './handlers/OmniboxTelemetry'
 import { getAgent } from './handlers/registry'
 import { getPromptsMigrationInfo, startPromptsMigration } from './prompts-migration'
@@ -325,7 +325,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 await handleCodeFromInsertAtCursor(message.text)
                 break
             case 'copy':
-                await handleCopiedCode(message.text, message.eventType === 'Button')
+                await handleCopiedCode(message.text, message.eventType)
                 break
             case 'smartApplyPrefetch':
             case 'smartApplySubmit':
@@ -409,95 +409,74 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 }
                 break
             case 'command':
-                vscode.commands.executeCommand(message.id, message.arg)
+                vscode.commands.executeCommand(message.id, message.arg ?? message.args)
                 break
             case 'mcp': {
+                const mcpManager = MCPManager.instance
+                if (!mcpManager) {
+                    logDebug('ChatController', 'MCP Manager is not initialized')
+                    break
+                }
+                const serverName = message.name
                 try {
-                    const mcpManager = MCPManager.instance
-                    if (!mcpManager) {
-                        throw new Error('MCP Manager is not initialized')
+                    // Special case for updateServer without name (to refresh server list)
+                    if (message.type === 'updateServer' && !serverName) {
+                        mcpManager.refreshServers()
+                        break
                     }
                     // All other operations require a server name
-                    if (!message.name) {
-                        // Special case for updateServer without name (to refresh server list)
-                        if (message.type === 'updateServer') {
-                            await mcpManager.refreshServers()
-                            break
-                        }
-                        throw new Error('Missing name property in MCP message')
+                    if (!serverName) {
+                        break
                     }
                     switch (message.type) {
-                        case 'addServer':
+                        case 'addServer': {
                             if (!message.config) {
-                                throw new Error('Missing config for addServer operation')
+                                break
                             }
-                            try {
-                                await mcpManager.addServer(message.name, message.config)
-
-                                // Send specific message to the UI about the new server
-                                const newServer = mcpManager
-                                    .getServers()
-                                    .find(s => s.name === message.name)
-                                if (newServer) {
-                                    void this.postMessage({
-                                        type: 'clientAction',
-                                        mcpServerChanged: {
-                                            name: newServer.name,
-                                            server: newServer,
-                                        },
-                                    })
-                                }
-                            } catch (error) {
-                                const errorMessage =
-                                    error instanceof Error ? error.message : String(error)
-                                vscode.window.showErrorMessage(`Failed to add server: ${errorMessage}`)
-                                throw error
-                            }
-                            break
-                        case 'updateServer':
-                            if (message.config) {
-                                // Update with full config
-                                await mcpManager.updateServer(message.name, message.config)
-                            } else if (message.toolName) {
-                                // Toggle single tool state
-                                const isDisabled = message.toolDisabled === true
-                                await mcpManager.setToolState(message.name, message.toolName, isDisabled)
-                            }
-                            break
-                        case 'removeServer':
-                            if (!message.name) {
-                                throw new Error('Missing name for removeServer operation')
-                            }
-                            try {
-                                // Store server name before deleting it
-                                const serverName = message.name
-                                await mcpManager.deleteServer(serverName)
-                                this.postMessage({
+                            await mcpManager.addServer(serverName, message.config)
+                            // Send specific message to the UI about the new server
+                            const newServer = mcpManager.getServers().find(s => s.name === serverName)
+                            if (newServer) {
+                                void this.postMessage({
                                     type: 'clientAction',
                                     mcpServerChanged: {
-                                        name: serverName,
-                                        server: null,
+                                        name: newServer.name,
+                                        server: newServer,
                                     },
                                 })
-                            } catch (error) {
-                                const errorMessage =
-                                    error instanceof Error ? error.message : String(error)
-                                vscode.window.showErrorMessage(
-                                    `Failed to remove server: ${errorMessage}`
-                                )
-                                throw error
                             }
                             break
-
+                        }
+                        case 'updateServer':
+                            if (message.config) {
+                                await mcpManager.updateServer(serverName, message.config)
+                            } else if (message.toolName) {
+                                const isDisabled = message.toolDisabled === true
+                                await mcpManager.setToolState(serverName, message.toolName, isDisabled)
+                            }
+                            break
+                        case 'removeServer': {
+                            await mcpManager.deleteServer(serverName)
+                            this.postMessage({
+                                type: 'clientAction',
+                                mcpServerChanged: {
+                                    name: serverName,
+                                    server: null,
+                                },
+                            })
+                            break
+                        }
                         default:
-                            throw new Error(`Unknown MCP operation: ${message.type}`)
+                            logDebug('ChatController', `Unknown MCP operation: ${message.type}`)
                     }
                 } catch (error) {
                     const errorMessage = error instanceof Error ? error.message : String(error)
+                    logDebug('ChatController', `Failed to ${message.type} server`, errorMessage)
+
                     void this.postMessage({
                         type: 'clientAction',
                         mcpServerError: {
-                            name: 'name' in message ? message.name : '',
+                            name: 'name' in message ? serverName : '',
                             error: errorMessage,
                         },
                         mcpServerChanged: null,
@@ -1534,7 +1513,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             const model = (speeds.find(m => m.id.includes('flash-lite')) || speeds?.[0])?.id
             const messages = this.chatBuilder.getMessages()
             // Returns early if this is not the first message or if this is a testing session.
-            if (messages.length > 1 || !model || isAgentTesting) {
+            if (messages.length > 1 || !model || isCodyTesting) {
                 return
             }
             const prompt = ps`${getDefaultSystemPrompt()} Your task is to generate a concise title (in about 10 words without quotation) for <codyUserInput>${inputText}</codyUserInput>.
