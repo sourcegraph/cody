@@ -69,7 +69,7 @@ function setLastStoredCode({
 }): void {
     // All non-copy events are considered as insertions since we don't need to listen for paste events
     const source = 'chat'
-    insertInProgress = !eventName.includes('copy')
+    insertInProgress = !eventName.toLowerCase().includes('copy')
     const { lineCount, charCount } = countCode(code)
     const codeCount = { code, lineCount, charCount, eventName, source }
 
@@ -269,10 +269,10 @@ export async function handleCodeFromSaveToNewFile(text: string, editor: VSCodeEd
 /**
  * Handles copying code and detecting a paste event.
  */
-export async function handleCopiedCode(text: string, isButtonClickEvent: boolean): Promise<void> {
+export async function handleCopiedCode(text: string, eventType: string): Promise<void> {
     // If it's a Button event, then the text is already passed in from the whole code block
-    const copiedCode = isButtonClickEvent ? text : await vscode.env.clipboard.readText()
-    const eventName = isButtonClickEvent ? 'copyButton' : 'keyDown.Copy'
+    const copiedCode = text ?? (await vscode.env.clipboard.readText())
+    const eventName = eventType.toLowerCase().includes('button') ? 'copyButton' : 'keyDown.Copy'
     // Set for tracking
     if (copiedCode) {
         setLastStoredCode({ code: copiedCode, eventName })
