@@ -25,7 +25,6 @@ export const WelcomeMessage: FunctionComponent<WelcomeMessageProps> = ({ setView
                 <PromptList
                     showSearch={false}
                     showFirstNItems={4}
-                    recommendedOnly={true}
                     showCommandOrigins={true}
                     showOnlyPromptInsertableCommands={false}
                     showPromptLibraryUnsupportedMessage={false}

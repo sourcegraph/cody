@@ -364,8 +364,8 @@ export enum PromptsOrderBy {
 }
 
 export const LEGACY_PROMPTS_QUERY_6_3 = `
-query ViewerPrompts($query: String, $first: Int!, $recommendedOnly: Boolean!, $orderByMultiple: [PromptsOrderBy!], $tags: [ID!], $owner: ID, $includeViewerDrafts: Boolean!) {
-    prompts(query: $query, first: $first, includeDrafts: false, recommendedOnly: $recommendedOnly, includeViewerDrafts: $includeViewerDrafts, viewerIsAffiliated: true, orderByMultiple: $orderByMultiple, tags: $tags, owner: $owner) {
+query ViewerPrompts($query: String, $first: Int!, $recommendedOnly: Boolean!, $orderByMultiple: [PromptsOrderBy!], $tags: [ID!], $owner: ID, $includeViewerDrafts: Boolean!, $include: [ID!]) {
+    prompts(query: $query, first: $first, includeDrafts: false, recommendedOnly: $recommendedOnly, includeViewerDrafts: $includeViewerDrafts, viewerIsAffiliated: true, orderByMultiple: $orderByMultiple, tags: $tags, owner: $owner, include: $include) {
         nodes {
             id
             name
@@ -400,8 +400,8 @@ query ViewerPrompts($query: String, $first: Int!, $recommendedOnly: Boolean!, $o
 }`
 
 export const PROMPTS_QUERY = `
-query ViewerPrompts($query: String, $first: Int!, $recommendedOnly: Boolean!, $orderBy: PromptsOrderBy!, $tags: [ID!], $owner: ID, $includeViewerDrafts: Boolean!) {
-    prompts(query: $query, first: $first, includeDrafts: false, recommendedOnly: $recommendedOnly, includeViewerDrafts: $includeViewerDrafts, viewerIsAffiliated: true, orderBy: $orderBy, tags: $tags, owner: $owner) {
+query ViewerPrompts($query: String, $first: Int!, $recommendedOnly: Boolean!, $orderBy: PromptsOrderBy!, $tags: [ID!], $owner: ID, $includeViewerDrafts: Boolean!, $include: [ID!]) {
+    prompts(query: $query, first: $first, includeDrafts: false, recommendedOnly: $recommendedOnly, includeViewerDrafts: $includeViewerDrafts, viewerIsAffiliated: true, orderBy: $orderBy, tags: $tags, owner: $owner, include: $include) {
         nodes {
             id
             name

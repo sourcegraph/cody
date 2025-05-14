@@ -53,14 +53,16 @@ export class PromptsManager implements vscode.Disposable {
                 }
 
                 const {
+                    id,
                     text,
                     mode,
                     autoSubmit,
-                }: { text: string; mode: PromptMode; autoSubmit: boolean } = JSON.parse(
+                }: { id: string; text: string; mode: PromptMode; autoSubmit: boolean } = JSON.parse(
                     (item as unknown as { value: string }).value
                 )
 
                 this.chatsController.executePrompt({
+                    id,
                     text,
                     mode,
                     autoSubmit,

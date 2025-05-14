@@ -200,6 +200,7 @@ export interface PromptsInput {
     owner?: string
     includeViewerDrafts?: boolean
     builtinOnly?: boolean
+    recentlyUsedOnly?: boolean
 }
 
 export type Action = PromptAction | CommandAction
