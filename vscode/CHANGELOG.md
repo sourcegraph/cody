@@ -10,22 +10,23 @@ This is a log of all notable changes to Cody for VS Code.
 
 #### Auto-Edit
 
-- use prediction/code_to_rewrite feedback button [#7868](https://github.com/sourcegraph/cody/pull/7868)
-- add `readyToBeRendered` state to the analytics logger [#7867](https://github.com/sourcegraph/cody/pull/7867)
-
-#### Autoedit
-
+- Use prediction/code_to_rewrite feedback button [#7868](https://github.com/sourcegraph/cody/pull/7868)
+- Add `readyToBeRendered` state to the analytics logger [#7867](https://github.com/sourcegraph/cody/pull/7867)
 - Use a character diff for modified lines when suitable [#7869](https://github.com/sourcegraph/cody/pull/7869)
 - Refactor the prompt utils code into separate files [#7857](https://github.com/sourcegraph/cody/pull/7857)
 
 #### Chat
 
-- open mcp settings in json [#7910](https://github.com/sourcegraph/cody/pull/7910)
-- add copy message button to copy message output [#7807](https://github.com/sourcegraph/cody/pull/7807)
+- Open mcp settings in json [#7910](https://github.com/sourcegraph/cody/pull/7910)
+- Add copy message button to copy message output [#7807](https://github.com/sourcegraph/cody/pull/7807)
+- Use Gemini Flash mode as default [#7831](https://github.com/sourcegraph/cody/pull/7831)
+- No error message in input box when there are no changes to commit [#7827](https://github.com/sourcegraph/cody/pull/7827)
+- Use agentic chat by default [#7761](https://github.com/sourcegraph/cody/pull/7761)
 
 #### Mcp
 
-- add tool enable/disable [#7870](https://github.com/sourcegraph/cody/pull/7870)
+- Add tool enable/disable [#7870](https://github.com/sourcegraph/cody/pull/7870)
+- Implement MCP server management with UI [#7812](https://github.com/sourcegraph/cody/pull/7812)
 
 #### Prompts
 
@@ -37,44 +38,39 @@ This is a log of all notable changes to Cody for VS Code.
 
 - Only trim hot streak predictions when codeToReplace is missing a final new line [#7889](https://github.com/sourcegraph/cody/pull/7889)
 - Fix the view prompt for active editor [#7862](https://github.com/sourcegraph/cody/pull/7862)
-- do not suggest empty line insertions [#7855](https://github.com/sourcegraph/cody/pull/7855)
-- dispose next cursor manager [#7852](https://github.com/sourcegraph/cody/pull/7852)
+- Do not suggest empty line insertions [#7855](https://github.com/sourcegraph/cody/pull/7855)
+- Dispose next cursor manager [#7852](https://github.com/sourcegraph/cody/pull/7852)
 - Add the prompt in debug panel for hot-streak [#7842](https://github.com/sourcegraph/cody/pull/7842)
-- use correct doc context version to show inline completions more often [#7837](https://github.com/sourcegraph/cody/pull/7837)
-
-#### Autoedit
-
+- Use correct doc context version to show inline completions more often [#7837](https://github.com/sourcegraph/cody/pull/7837)
 - Add common post processing pipeline for prediction from the model [#7851](https://github.com/sourcegraph/cody/pull/7851)
 - Adjust the config for long suggestion model [#7850](https://github.com/sourcegraph/cody/pull/7850)
 
 #### Chat
 
-- add MCP tool schema to tool config prompt [#7911](https://github.com/sourcegraph/cody/pull/7911)
+- Add MCP tool schema to tool config prompt [#7911](https://github.com/sourcegraph/cody/pull/7911)
 - Allow spaces in mcp server arguments [#7909](https://github.com/sourcegraph/cody/pull/7909)
 - Update prompt list UI [#7796](https://github.com/sourcegraph/cody/pull/7796)
+- Fix bugs in Range and Position computing [#7858](https://github.com/sourcegraph/cody/pull/7858)
 
 #### Edit-Buttons
 
-- display of insert and copy buttons on non VSCode clients [#7849](https://github.com/sourcegraph/cody/pull/7849)
+- Display of insert and copy buttons on non VSCode clients [#7849](https://github.com/sourcegraph/cody/pull/7849)
 
-#### History-Tab
+#### History Tab
 
-- improve layout for empty state [#7836](https://github.com/sourcegraph/cody/pull/7836)
+- Improve layout for empty state [#7836](https://github.com/sourcegraph/cody/pull/7836)
 
-#### Usermenu
+#### User Menu
 
 - Show Enterprise Starter for user type instead of Enterprise for ES users [#7846](https://github.com/sourcegraph/cody/pull/7846)
-- add external link icon to upgrade to pro link [#7845](https://github.com/sourcegraph/cody/pull/7845)
+- Add external link icon to upgrade to pro link [#7845](https://github.com/sourcegraph/cody/pull/7845)
 
 ### Chore
 
 #### Auto-Edit
 
 - Prepare hot-streak for dogfooding [#7894](https://github.com/sourcegraph/cody/pull/7894)
-- allow custom models for websocket requests [#7791](https://github.com/sourcegraph/cody/pull/7791)
-
-#### Autoedit
-
+- Allow custom models for websocket requests [#7791](https://github.com/sourcegraph/cody/pull/7791)
 - Consolidate renderers/decorators [#7890](https://github.com/sourcegraph/cody/pull/7890)
 
 ### Refactor
@@ -82,28 +78,9 @@ This is a log of all notable changes to Cody for VS Code.
 #### Chat
 
 - Remove parenthesis wrapping of other files when calling `selectedCodePromptWithExtraFiles` [#7022](https://github.com/sourcegraph/cody/pull/7022)
-
-### Reverts
-
-  There were no reverts for this release
-
-### Uncategorized
-
-#### Others
-
-- [Backport M94] Enable prompts sort by relevance for insider builds [#7919](https://github.com/sourcegraph/cody/pull/7919)
-- [Backport M94] Fix handling of client-side temporary settings in cody_settings.json [#7907](https://github.com/sourcegraph/cody/pull/7907)
-- [Backport M94] Fix issue with duplicated models in the model selection [#7906](https://github.com/sourcegraph/cody/pull/7906)
-- Refactor: Remove Tool Cody model [#7881](https://github.com/sourcegraph/cody/pull/7881)
+- Remove Tool Cody model [#7881](https://github.com/sourcegraph/cody/pull/7881)
 - Remove duplicate mode icon [#7880](https://github.com/sourcegraph/cody/pull/7880)
-- Changelog for 1.92.0 [#7876](https://github.com/sourcegraph/cody/pull/7876)
 - Prompt Picker Improvements [#7861](https://github.com/sourcegraph/cody/pull/7861)
-- Fix bugs in Range and Position computing [#7858](https://github.com/sourcegraph/cody/pull/7858)
-- Changelog for 1.90.0 [#7834](https://github.com/sourcegraph/cody/pull/7834)
-- Feat(agentic chat): Use Gemini Flash mode as default [#7831](https://github.com/sourcegraph/cody/pull/7831)
-- Fix(commit message): No error message in input box when there are no changes to commit [#7827](https://github.com/sourcegraph/cody/pull/7827)
-- Feat(agentic chat): Implement MCP server management with UI [#7812](https://github.com/sourcegraph/cody/pull/7812)
-- Feat(agentic context): use agentic chat by default [#7761](https://github.com/sourcegraph/cody/pull/7761)
 
 
 ## 1.92.0
