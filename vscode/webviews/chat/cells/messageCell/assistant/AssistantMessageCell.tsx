@@ -105,7 +105,7 @@ export const AssistantMessageCell: FunctionComponent<{
                                 />
                             )
                         ) : null}
-                        {omniboxEnabled && !isLoading && message.search ? (
+                        {!isLoading && message.search ? (
                             <SearchResults
                                 message={message as ChatMessageWithSearch}
                                 onSelectedFiltersUpdate={onSelectedFiltersUpdate}
