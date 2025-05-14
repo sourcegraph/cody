@@ -18,7 +18,6 @@ import type { PromptEditorRefAPI } from '@sourcegraph/prompt-editor'
 import isEqual from 'lodash/isEqual'
 import { type FunctionComponent, type RefObject, memo, useMemo } from 'react'
 import type { ApiPostMessage, UserAccountInfo } from '../../../../Chat'
-import { useOmniBox } from '../../../../utils/useOmniBox'
 import {
     ChatMessageContent,
     type CodeBlockActionsProps,
@@ -87,9 +86,8 @@ export const AssistantMessageCell: FunctionComponent<{
 
         const hasLongerResponseTime = chatModel?.tags?.includes(ModelTag.StreamDisabled)
 
-        const omniboxEnabled = useOmniBox()
-
-        const isSearchIntent = omniboxEnabled && humanMessage?.intent === 'search'
+        const messageIntent = humanMessage?.intent ?? message.intent ?? 'chat'
+        const isSearchIntent = messageIntent === 'search'
 
         return (
             <BaseMessageCell
@@ -166,10 +164,9 @@ export const AssistantMessageCell: FunctionComponent<{
                         )}
                         {!isLoading &&
                             (!message.error || isAborted) &&
-                            !isSearchIntent &&
                             // Do not display copy button for non-chat mode.
                             // NOTE: Empty intent is defaulted to chat.
-                            (humanMessage?.intent || humanMessage?.intent !== 'chat') && (
+                            messageIntent === 'chat' && (
                                 <div
                                     className={`tw-flex tw-items-center tw-justify-end tw-gap-4  ${styles.buttonsContainer}`}
                                 >
