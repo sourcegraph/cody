@@ -57,6 +57,9 @@ export class MCPManager {
 
     private connectionManager = MCPConnectionManager.instance
     public serverManager: MCPServerManager
+
+    private programmaticConfigChangeInProgress = false
+
     private disposables: vscode.Disposable[] = []
 
     // Observable for server changes
@@ -132,6 +135,12 @@ export class MCPManager {
             if (
                 event.affectsConfiguration(`${MCPManager.CONFIG_SECTION}.${MCPManager.MCP_SERVERS_KEY}`)
             ) {
+                // Skip processing if this is a programmatic change
+                if (this.programmaticConfigChangeInProgress) {
+                    logDebug('MCPManager', 'Ignoring programmatic configuration change')
+                    return
+                }
+
                 // Config was changed externally (e.g., by user editing settings.json)
                 logDebug('MCPManager', 'Configuration change detected')
 
@@ -563,31 +572,37 @@ export class MCPManager {
      * Always removes transportType and error fields before saving
      */
     private async updateMcpServerConfig(updatedServers: Record<string, any>): Promise<void> {
-        // Clean up servers configuration before writing to user settings
-        const cleanedServers = Object.entries(updatedServers).reduce(
-            (acc, [serverName, serverConfig]) => {
-                // Create a shallow copy and remove fields that shouldn't be persisted
-                const cleanConfig = { ...serverConfig }
-                cleanConfig.transportType = undefined
-                cleanConfig.error = undefined
+        try {
+            // Set flag before making the update to prevent firing the config change event.
+            this.programmaticConfigChangeInProgress = true
 
-                acc[serverName] = cleanConfig
-                return acc
-            },
-            {} as Record<string, any>
-        )
+            // Clean up servers configuration before writing to user settings
+            const cleanedServers = Object.entries(updatedServers).reduce(
+                (acc, [serverName, serverConfig]) => {
+                    // Create a shallow copy and remove fields that shouldn't be persisted
+                    const cleanConfig = { ...serverConfig }
+                    cleanConfig.transportType = undefined
+                    cleanConfig.error = undefined
 
-        // Get configuration and update it
-        const config = vscode.workspace.getConfiguration(MCPManager.CONFIG_SECTION)
-        await config.update(
-            MCPManager.MCP_SERVERS_KEY,
-            cleanedServers,
-            vscode.ConfigurationTarget.Global
-        )
+                    acc[serverName] = cleanConfig
+                    return acc
+                },
+                {} as Record<string, any>
+            )
+            // Get configuration and update it
+            const config = vscode.workspace.getConfiguration(MCPManager.CONFIG_SECTION)
+            await config.update(
+                MCPManager.MCP_SERVERS_KEY,
+                cleanedServers,
+                vscode.ConfigurationTarget.Global
+            )
 
-        logDebug('MCPManager', 'Updated MCP servers configuration', {
-            verbose: { serverCount: Object.keys(cleanedServers).length },
-        })
+            logDebug('MCPManager', 'Updated MCP servers configuration', {
+                verbose: { serverCount: Object.keys(cleanedServers).length },
+            })
+        } finally {
+            this.programmaticConfigChangeInProgress = false
+        }
     }
 
     public async dispose(): Promise<void> {
