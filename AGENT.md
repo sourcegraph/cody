@@ -23,3 +23,4 @@
 - Follow telemetry naming convention: `cody.<feature>` for feature parameter
 - Telemetry: Use numeric values for exportable metadata, protect sensitive data
 - Error handling: Prefer type-safe error handling patterns
+hello world
