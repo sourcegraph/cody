@@ -229,13 +229,18 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
 
             switch (message.type) {
                 case 'change': {
+                    const deltaText = message.text.slice(streamed.text?.length)
                     streamed.text = message.text
-                    delegate.postMessageInProgress({
-                        speaker: 'assistant',
-                        content: [streamed],
-                        text: PromptString.unsafe_fromLLMResponse(streamed.text),
-                        model,
-                    })
+                    // Only process if there's actual new content
+                    if (deltaText) {
+                        delegate.postMessageInProgress({
+                            speaker: 'assistant',
+                            content: [streamed],
+                            text: PromptString.unsafe_fromLLMResponse(message.text),
+                            model,
+                        })
+                    }
+
                     // Process tool calls in the response
                     const toolCalledParts = message?.content?.filter(c => c.type === 'tool_call') || []
                     for (const toolCall of toolCalledParts) {
