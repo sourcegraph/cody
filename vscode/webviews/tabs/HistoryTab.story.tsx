@@ -61,7 +61,7 @@ export const MultiDay: Story = {
     },
 }
 
-export const Paginated: Story = {
+export const LazyLoaded: Story = {
     args: {
         IDE: CodyIDE.VSCode,
         setView: () => {},

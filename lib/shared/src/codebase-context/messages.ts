@@ -66,7 +66,7 @@ interface ContextItemCommon {
     isTooLarge?: boolean
 
     /**
-     * If isTooLarage is true, the reason why the file was deemed too long to be included in the context.
+     * If isTooLarge is true, the reason why the file was deemed too long to be included in the context.
      */
     isTooLargeReason?: string
 
