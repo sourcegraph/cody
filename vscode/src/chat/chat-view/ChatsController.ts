@@ -404,14 +404,21 @@ export class ChatsController implements vscode.Disposable {
         const authStatus = currentAuthStatus()
         if (authStatus.authenticated) {
             try {
-                const historyJson = chatHistory.getLocalHistory(authStatus)
+                const historyJson = chatHistory.getLocalHistory(authStatus)?.chat
+                if (!historyJson || Object.values(historyJson).length === 0) {
+                    return
+                }
+
+                const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5) // Format: YYYY-MM-DDTHH-mm
                 const exportPath = await vscode.window.showSaveDialog({
+                    defaultUri: vscode.Uri.file(`cody-chat-history-${timestamp}.json`),
                     title: 'Cody: Export Chat History',
                     filters: { 'Chat History': ['json'] },
                 })
-                if (!exportPath || !historyJson) {
+                if (!exportPath) {
                     return
                 }
+
                 const logContent = new TextEncoder().encode(JSON.stringify(historyJson))
                 await vscode.workspace.fs.writeFile(exportPath, logContent)
                 // Display message and ask if user wants to open file

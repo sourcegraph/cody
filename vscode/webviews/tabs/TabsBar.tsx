@@ -19,10 +19,8 @@ import { type FC, Fragment, forwardRef, memo, useCallback, useMemo, useState } f
 import { Tooltip, TooltipContent, TooltipTrigger } from '../components/shadcn/ui/tooltip'
 import { useConfig } from '../utils/useConfig'
 
-import { useExtensionAPI } from '@sourcegraph/prompt-editor'
 import { isEqual } from 'lodash'
 import type { UserAccountInfo } from '../Chat'
-import { downloadChatHistory } from '../chat/downloadChatHistory'
 import { UserMenu } from '../components/UserMenu'
 import { Button } from '../components/shadcn/ui/button'
 import styles from './TabsBar.module.css'
@@ -359,8 +357,6 @@ TabButton.displayName = 'TabButton'
  */
 function useTabs(input: Pick<TabsBarProps, 'user'>): TabConfig[] {
     const IDE = input.user.IDE
-    const extensionAPI = useExtensionAPI<'userHistory'>()
-
     return useMemo<TabConfig[]>(
         () =>
             (
@@ -382,7 +378,6 @@ function useTabs(input: Pick<TabsBarProps, 'user'>): TabConfig[] {
                                           title: 'Export',
                                           Icon: DownloadIcon,
                                           command: 'cody.chat.history.export',
-                                          callback: () => downloadChatHistory(extensionAPI),
                                       },
                                       {
                                           title: 'Delete all',
@@ -409,6 +404,6 @@ function useTabs(input: Pick<TabsBarProps, 'user'>): TabConfig[] {
                     },
                 ] as (TabConfig | null)[]
             ).filter(isDefined),
-        [IDE, extensionAPI]
+        [IDE]
     )
 }

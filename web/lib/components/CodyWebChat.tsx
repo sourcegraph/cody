@@ -207,7 +207,7 @@ const CodyWebPanel: FC<CodyWebPanelProps> = props => {
                     break
                 case 'history.download': {
                     if (extensionApiRef.current) {
-                        downloadChatHistory(extensionApiRef.current)
+                        downloadChatHistory(vscodeAPI)
                     }
                     break
                 }

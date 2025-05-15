@@ -131,7 +131,7 @@ export const HistoryTabWithData: React.FC<HistoryTabProps & { chats: Lightweight
         setView(View.Chat)
     }
 
-    const onExportClick = useCallback(() => downloadChatHistory(extensionAPI), [extensionAPI])
+    const onExportClick = useCallback(() => downloadChatHistory(vscodeAPI), [vscodeAPI])
 
     // Reset visible items when search changes
     useEffect(() => {
