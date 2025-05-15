@@ -8,7 +8,7 @@ import {
     tokensToChars,
 } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
-
+import { getDynamicCodeToRewrite } from './dynamic-rewrite-range'
 import { getTextFromNotebookCells } from '../../../completions/context/retrievers/recent-user-actions/notebook-utils'
 import {
     getCellIndexInActiveNotebookEditor,
@@ -126,6 +126,22 @@ export function getCodeToReplaceData(options: CurrentFilePromptOptions): CodeToR
         suffixAfterArea: suffixAfterArea.toString(),
         range: ranges.codeToRewrite,
     }
+}
+
+function getCodeToRewrite(
+    document: vscode.TextDocument,
+    position: vscode.Position,
+    charLimit: number,
+    prefixTokenFraction: number,
+    shouldReturnDynamicCodeToRewrite: boolean
+): {
+    codeToRewriteStart: number
+    codeToRewriteEnd: number
+} {
+    if (shouldReturnDynamicCodeToRewrite) {
+        return getDynamicCodeToRewrite(document, position, charLimit, prefixTokenFraction)
+    }
+    return document.getText(ranges.codeToRewrite)
 }
 
 function getUpdatedCurrentFilePrefixAndSuffixOutsideArea(
