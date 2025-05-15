@@ -67,30 +67,16 @@ function releaseGlobalAgent() {
 export function useCodyWebAgent(input: UseCodyWebAgentInput): CodyWebAgent | Error | null {
     const [agent, setAgent] = useState<CodyWebAgent | Error | null>(null)
 
-    // Force a new agent instance when the component is remounted or when key properties change
-    // This ensures all shared dependencies (models, extensionAPI, config) are properly refreshed
-    // biome-ignore lint/correctness/useExhaustiveDependencies: Only recreate agent when connection or identity properties change
+    // Create global agent here so that we
+    if (!globalAgent) {
+        globalAgent = createCodyAgent(input)
+    }
+
     useEffect(() => {
-        const createAndSetNewAgent = () => {
-            // Create a new agent instance
-            globalAgent = createCodyAgent(input)
-            globalAgent.then(setAgent, setAgent)
-        }
-
-        if (globalAgent) {
-            globalAgent
-                .then(existingAgent => existingAgent.client.dispose())
-                .catch(() => {
-                    /* Ignore errors from disposing */
-                })
-                .finally(createAndSetNewAgent)
-        } else {
-            createAndSetNewAgent()
-        }
-
+        globalAgent?.then(setAgent, setAgent)
         retainGlobalAgent()
         return releaseGlobalAgent
-    }, [input.serverEndpoint, input.accessToken, input.telemetryClientName, input.customHeaders])
+    }, [])
 
     return agent
 }
