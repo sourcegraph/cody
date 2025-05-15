@@ -178,7 +178,7 @@ class CodyAgentClient(private val project: Project, private val webview: NativeW
   }
 
   override fun window_focusSidebar(params: Null?) {
-    TODO("Not yet implemented")
+    // TODO: Implement this.
   }
 
   override fun authStatus_didUpdate(params: ProtocolAuthStatus) {
