@@ -418,13 +418,9 @@ export type ServerNotifications = {
     'extensionConfiguration/didUpdate': [{ key: string; value?: string | undefined | null }]
     'extensionConfiguration/openSettings': [null]
 
-    // Certain properties of the task are updated:
-    // - State
-    // - The associated range has changed because the document was edited
-    // Only sent if client capabilities fixupControls === 'events'
+    /** @deprecated Use `codeLenses/display` instead */
     'editTask/didUpdate': [EditTask]
-    // The task is deleted because it has been accepted or cancelled.
-    // Only sent if client capabilities fixupControls === 'events'.
+    /** @deprecated Use `codeLenses/display` instead */
     'editTask/didDelete': [EditTask]
 
     'codeLenses/display': [DisplayCodeLensParams]

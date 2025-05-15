@@ -1,26 +1,26 @@
 package com.sourcegraph.cody.ui.web
 
 import com.intellij.openapi.project.Project
-import com.sourcegraph.cody.agent.WebviewPostMessageStringEncodedParams
-import com.sourcegraph.cody.agent.WebviewRegisterWebviewViewProviderParams
-import com.sourcegraph.cody.agent.WebviewSetHtmlParams
-import com.sourcegraph.cody.agent.WebviewSetOptionsParams
-import com.sourcegraph.cody.agent.WebviewSetTitleParams
-import com.sourcegraph.cody.agent.protocol.WebviewCreateWebviewPanelParams
+import com.sourcegraph.cody.agent.protocol_generated.Webview_CreateWebviewPanelParams
+import com.sourcegraph.cody.agent.protocol_generated.Webview_PostMessageStringEncodedParams
+import com.sourcegraph.cody.agent.protocol_generated.Webview_RegisterWebviewViewProviderParams
+import com.sourcegraph.cody.agent.protocol_generated.Webview_SetHtmlParams
+import com.sourcegraph.cody.agent.protocol_generated.Webview_SetOptionsParams
+import com.sourcegraph.cody.agent.protocol_generated.Webview_SetTitleParams
 
 /// The subset of the Agent client interface that relates to webviews.
 interface NativeWebviewProvider {
-  fun createPanel(params: WebviewCreateWebviewPanelParams)
+  fun createPanel(params: Webview_CreateWebviewPanelParams)
 
-  fun receivedPostMessage(params: WebviewPostMessageStringEncodedParams)
+  fun receivedPostMessage(params: Webview_PostMessageStringEncodedParams)
 
-  fun registerViewProvider(params: WebviewRegisterWebviewViewProviderParams)
+  fun registerViewProvider(params: Webview_RegisterWebviewViewProviderParams)
 
-  fun setHtml(params: WebviewSetHtmlParams)
+  fun setHtml(params: Webview_SetHtmlParams)
 
-  fun setOptions(params: WebviewSetOptionsParams)
+  fun setOptions(params: Webview_SetOptionsParams)
 
-  fun setTitle(params: WebviewSetTitleParams)
+  fun setTitle(params: Webview_SetTitleParams)
 }
 
 /// A NativeWebviewProvider that thunks to WebUIService.
@@ -34,29 +34,29 @@ class WebUIServiceWebviewProvider(val project: Project) : NativeWebviewProvider 
     }
   }
 
-  override fun createPanel(params: WebviewCreateWebviewPanelParams) = withProjectNotDisposed {
+  override fun createPanel(params: Webview_CreateWebviewPanelParams) = withProjectNotDisposed {
     createWebviewPanel(params)
   }
 
-  override fun receivedPostMessage(params: WebviewPostMessageStringEncodedParams) =
+  override fun receivedPostMessage(params: Webview_PostMessageStringEncodedParams) =
       withProjectNotDisposed {
         postMessageHostToWebview(params.id, params.stringEncodedMessage)
       }
 
-  override fun registerViewProvider(params: WebviewRegisterWebviewViewProviderParams) =
+  override fun registerViewProvider(params: Webview_RegisterWebviewViewProviderParams) =
       withProjectNotDisposed {
         views.registerProvider(params.viewId, params.retainContextWhenHidden)
       }
 
-  override fun setHtml(params: WebviewSetHtmlParams) = withProjectNotDisposed {
+  override fun setHtml(params: Webview_SetHtmlParams) = withProjectNotDisposed {
     setHtml(params.handle, params.html)
   }
 
-  override fun setOptions(params: WebviewSetOptionsParams) = withProjectNotDisposed {
+  override fun setOptions(params: Webview_SetOptionsParams) = withProjectNotDisposed {
     setOptions(params.handle, params.options)
   }
 
-  override fun setTitle(params: WebviewSetTitleParams) = withProjectNotDisposed {
+  override fun setTitle(params: Webview_SetTitleParams) = withProjectNotDisposed {
     setTitle(params.handle, params.title)
   }
 }

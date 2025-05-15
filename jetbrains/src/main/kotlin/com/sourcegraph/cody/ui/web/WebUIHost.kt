@@ -11,7 +11,7 @@ import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.options.ShowSettingsUtil
 import com.intellij.openapi.project.Project
 import com.sourcegraph.cody.agent.CodyAgentService
-import com.sourcegraph.cody.agent.protocol.WebviewOptions
+import com.sourcegraph.cody.agent.protocol_generated.DefiniteWebviewOptions
 import com.sourcegraph.cody.agent.protocol_generated.ExecuteCommandParams
 import com.sourcegraph.cody.agent.protocol_generated.Webview_DidDisposeNativeParams
 import com.sourcegraph.cody.agent.protocol_generated.Webview_ReceiveMessageStringEncodedParams
@@ -33,7 +33,7 @@ internal interface WebUIHost {
   // Provides, sinks Webview state from VSCode webview setState, getState API.
   var stateAsJSONString: String
 
-  fun setOptions(options: WebviewOptions)
+  fun setOptions(options: DefiniteWebviewOptions)
 
   fun setTitle(value: String)
 
@@ -47,7 +47,7 @@ internal interface WebUIHost {
 internal class WebUIHostImpl(
     val project: Project,
     val handle: String,
-    private var _options: WebviewOptions
+    private var _options: DefiniteWebviewOptions
 ) : WebUIHost {
   var view: WebviewViewDelegate? = null
 
@@ -95,7 +95,7 @@ internal class WebUIHostImpl(
     }
   }
 
-  override fun setOptions(options: WebviewOptions) {
+  override fun setOptions(options: DefiniteWebviewOptions) {
     // TODO:
     // When TypeScript uses these WebView options, implement them:
     // - retainContextWhenHidden: false and dispose the browser when hidden.
@@ -124,8 +124,7 @@ internal class WebUIHostImpl(
                 null
               }
             } ?: emptyList()
-    if (_options.enableCommandUris == true ||
-        (_options.enableCommandUris as List<*>).contains(commandName)) {
+    if (_options.enableOnlyCommandUris?.contains(commandName) == true) {
       CodyAgentService.withAgent(project) {
         it.server.command_execute(ExecuteCommandParams(commandName, arguments))
       }

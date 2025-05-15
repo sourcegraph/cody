@@ -6,8 +6,6 @@ import com.intellij.openapi.ui.ComboBox
 import com.intellij.ui.MutableCollectionComboBoxModel
 import com.intellij.util.concurrency.annotations.RequiresEdt
 import com.sourcegraph.cody.agent.CodyAgentService
-import com.sourcegraph.cody.agent.ConfigFeatures
-import com.sourcegraph.cody.agent.CurrentConfigFeatures
 import com.sourcegraph.cody.agent.protocol.ModelUsage
 import com.sourcegraph.cody.agent.protocol_extensions.isCodyProOnly
 import com.sourcegraph.cody.agent.protocol_extensions.isDeprecated
@@ -34,7 +32,6 @@ class LlmDropdown(
     isVisible = false
     isOpaque = false
 
-    subscribeToFeatureUpdates()
     updateModels()
   }
 
@@ -45,19 +42,6 @@ class LlmDropdown(
           chatModels.completeOnTimeout(null, 10, TimeUnit.SECONDS).get()?.models ?: return@withAgent
 
       invokeLater { updateModelsInUI(models) }
-    }
-  }
-
-  private fun subscribeToFeatureUpdates() {
-    val currentConfigFeatures: CurrentConfigFeatures =
-        project.getService(CurrentConfigFeatures::class.java)
-    currentConfigFeatures.attach(::handleConfigUpdate)
-  }
-
-  private fun handleConfigUpdate(config: ConfigFeatures) {
-    if (!isVisible && config.serverSentModels) {
-      isVisible = true
-      revalidate()
     }
   }
 
