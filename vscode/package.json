@@ -1373,6 +1373,7 @@
     "agent-base": "^7.1.1",
     "async-mutex": "^0.4.0",
     "axios": "^1.3.6",
+    "browser-fs-access": "^0.37.0",
     "canvaskit-wasm": "^0.39.1",
     "class-variance-authority": "^0.7.0",
     "classnames": "^2.5.1",
