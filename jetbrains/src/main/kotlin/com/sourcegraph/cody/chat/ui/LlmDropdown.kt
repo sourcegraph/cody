@@ -37,16 +37,20 @@ class LlmDropdown(
 
   private fun updateModels() {
     CodyAgentService.withAgent(project) { agent ->
-      val chatModels = agent.server.chat_models(Chat_ModelsParams(modelUsage.value))
-      val models =
-          chatModels.completeOnTimeout(null, 10, TimeUnit.SECONDS).get()?.models ?: return@withAgent
-
-      invokeLater { updateModelsInUI(models) }
+      val chatModels =
+          agent.server
+              .chat_models(Chat_ModelsParams(modelUsage.value))
+              .completeOnTimeout(null, 10, TimeUnit.SECONDS)
+              .get()
+      invokeLater {
+        updateModelsInUI(
+            readOnly = chatModels?.readOnly ?: true, models = chatModels?.models ?: emptyList())
+      }
     }
   }
 
   @RequiresEdt
-  private fun updateModelsInUI(models: List<ModelAvailabilityStatus>) {
+  private fun updateModelsInUI(readOnly: Boolean, models: List<ModelAvailabilityStatus>) {
     if (project.isDisposed) return
     this.removeAllItems()
 
@@ -60,7 +64,7 @@ class LlmDropdown(
         availableModels.find { it.model.id == fixedModel || it.model.id == defaultLlm?.id }
             ?: models.firstOrNull()
 
-    isEnabled = fixedModel == null
+    isEnabled = !readOnly && fixedModel == null
     isVisible = selectedItem != null
     setMaximumRowCount(15)
 
