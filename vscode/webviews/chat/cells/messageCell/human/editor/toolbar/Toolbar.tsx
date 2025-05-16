@@ -119,10 +119,6 @@ export const Toolbar: FunctionComponent<{
         return () => window.removeEventListener('keydown', handleKeyboardShortcuts)
     }, [])
 
-    if (models?.length < 2) {
-        return null
-    }
-
     return (
         <menu
             role="toolbar"
@@ -159,15 +155,17 @@ export const Toolbar: FunctionComponent<{
                     isCodyProUser={userInfo?.isCodyProUser}
                     manuallySelectIntent={setLastManuallySelectedIntent}
                 />
-                <ModelSelectFieldToolbarItem
-                    models={models}
-                    userInfo={userInfo}
-                    focusEditor={focusEditor}
-                    modelSelectorRef={modelSelectorRef}
-                    className="tw-mr-1"
-                    extensionAPI={extensionAPI}
-                    intent={intent}
-                />
+                {models?.length >= 2 && (
+                    <ModelSelectFieldToolbarItem
+                        models={models}
+                        userInfo={userInfo}
+                        focusEditor={focusEditor}
+                        modelSelectorRef={modelSelectorRef}
+                        className="tw-mr-1"
+                        extensionAPI={extensionAPI}
+                        intent={intent}
+                    />
+                )}
             </div>
             <div className="tw-flex-1 tw-flex tw-justify-end">
                 <SubmitButton onClick={onSubmitClick} state={submitState} />
