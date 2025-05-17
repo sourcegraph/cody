@@ -46,7 +46,7 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
     protected tools: AgentTool[] = []
 
     constructor(
-        contextRetriever: Pick<ContextRetriever, 'retrieveContext' | 'computeDidYouMean'>,
+        contextRetriever: Pick<ContextRetriever, 'retrieveContext'>,
         editor: ChatControllerOptions['editor'],
         protected readonly chatClient: ChatControllerOptions['chatClient']
     ) {
