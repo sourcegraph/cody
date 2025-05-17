@@ -1,4 +1,7 @@
-import { describe, expect, it } from 'vitest'
+import { TokenCounterUtils, ps } from '@sourcegraph/cody-shared'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import * as vscode from 'vscode'
+import { CustomModelSelectionProvider } from '../prompt/smart-apply/selection/custom-model'
 import type { ModelParametersInput } from './base'
 import { SmartApplyCustomModelParameterProvider } from './smart-apply-custom'
 
@@ -103,5 +106,45 @@ describe('SmartApplyCustomModelParameterProvider', () => {
             rewriteSpeculation: true,
             adaptiveSpeculation: true,
         })
+    })
+})
+
+describe('CustomModelSelectionProvider token count validation', () => {
+    beforeEach(() => {
+        vi.spyOn(TokenCounterUtils, 'countPromptString').mockImplementation(async () => 1500)
+
+        vi.spyOn(vscode, 'Range').mockImplementation(() => ({}) as vscode.Range)
+    })
+
+    afterEach(() => {
+        vi.restoreAllMocks()
+    })
+
+    it('should throw an error when token count exceeds context window input limit', async () => {
+        const mockDocument = {
+            lineCount: 100,
+            uri: { fsPath: 'test.ts' },
+            getText: vi.fn().mockReturnValue('mock document text'),
+        } as unknown as vscode.TextDocument
+
+        // Mock token count to exceed context window input
+        const contextWindow = { input: 1000, output: 500 }
+
+        const provider = new CustomModelSelectionProvider({ shouldAlwaysUseEntireFile: false })
+
+        await expect(
+            provider.getSelectedText({
+                instruction: ps`test instruction`,
+                replacement: ps`test replacement`,
+                document: mockDocument,
+                model: 'gpt-4',
+                chatClient: {} as any,
+                contextWindow,
+                codyApiVersion: 1,
+            })
+        ).rejects.toThrow("The amount of text in this document exceeds Cody's current capacity.")
+
+        // Verify the token counter was called with the document text
+        expect(TokenCounterUtils.countPromptString).toHaveBeenCalled()
     })
 })
