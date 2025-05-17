@@ -38,11 +38,13 @@ const MARKDOWN_CODE_BLOCK_REGEX = new RegExp(
 const LEADING_SPACES_AND_NEW_LINES = /^\s*\n/
 const LEADING_SPACES = /^[ ]+/
 
+const SMART_APPLY_MODEL_SET = new Set(Object.values(SMART_APPLY_MODEL_IDENTIFIERS))
+
 /**
  * Checks if the task is using a smart apply custom model
  */
 function taskUsesSmartApplyCustomModel(task: FixupTask): boolean {
-    return Object.values(SMART_APPLY_MODEL_IDENTIFIERS).includes(task.model)
+    return SMART_APPLY_MODEL_SET.has(task.model)
 }
 
 /**
@@ -97,13 +99,11 @@ function trimLLMNewlines(text: string, original: string): string {
     let result = text
 
     // Handle starting newline
-    if (result.startsWith('\n') && !original.startsWith('\n')) {
-        result = result.replace(/^\n/, '')
+    if (result.match(/^\r?\n/) && !original.match(/^\r?\n/)) {
+        result = result.replace(/^\r?\n/, '')
     }
-
-    // Handle ending newline
-    if (result.endsWith('\n') && !original.endsWith('\n')) {
-        result = result.replace(/\n$/, '')
+    if (result.match(/\r?\n$/) && !original.match(/\r?\n$/)) {
+        result = result.replace(/\r?\n$/, '')
     }
 
     return result
