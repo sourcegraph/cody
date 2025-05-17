@@ -131,7 +131,7 @@ export function responseTransformer(
 ): string {
     // Skip processing for in-progress messages from smart apply custom models
     if (taskUsesSmartApplyCustomModel(task)) {
-        if (isMessageInProgress) {
+        if (isMessageInProgress || task.mode === 'insert') {
             return text
         }
 

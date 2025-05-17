@@ -78,7 +78,7 @@ describe('Smart Apply Response Extraction', () => {
     })
 
     it('should not add newline for smartApply with empty selection range', () => {
-        const text = `<${SMART_APPLY_CUSTOM_PROMPT_TOPICS.FINAL_CODE}>const x = 1;</${SMART_APPLY_CUSTOM_PROMPT_TOPICS.FINAL_CODE}>`
+        const text = 'const x = 1;'
         const task = {
             ...createTask('smartApply', SMART_APPLY_MODEL_IDENTIFIERS.FireworksQwenCodeDefault),
             mode: 'insert',
@@ -90,21 +90,6 @@ describe('Smart Apply Response Extraction', () => {
         const result = responseTransformer(text, task, false)
         expect(result).toBe('const x = 1;')
         expect(result.endsWith('\n')).toBe(false)
-    })
-
-    it('should add newline for smartApply without empty selection range', () => {
-        const text = `<${SMART_APPLY_CUSTOM_PROMPT_TOPICS.FINAL_CODE}>const x = 1;</${SMART_APPLY_CUSTOM_PROMPT_TOPICS.FINAL_CODE}>`
-        const task = {
-            ...createTask('smartApply', SMART_APPLY_MODEL_IDENTIFIERS.FireworksQwenCodeDefault),
-            mode: 'insert',
-            selectionRange: { isEmpty: false },
-            original: 'existing content',
-            fixupFile: { uri: {} as any },
-        } as any
-
-        const result = responseTransformer(text, task, false)
-        expect(result).toBe('const x = 1;\n')
-        expect(result.endsWith('\n')).toBe(true)
     })
 
     it('should preserve newlines based on original text', () => {
