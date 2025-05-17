@@ -59,7 +59,7 @@ export type ClientRequests = {
     // Primary is used only in cody web client
     'chat/delete': [{ chatId: string }, ChatExportResult[]]
 
-    'chat/models': [{ modelUsage: ModelUsage }, { models: ModelAvailabilityStatus[] }]
+    'chat/models': [{ modelUsage: ModelUsage }, { readOnly: boolean; models: ModelAvailabilityStatus[] }]
     'chat/export': [null | { fullHistory: boolean }, ChatExportResult[]]
 
     // history is Map of {endpoint}-{username} to chat transcripts by date
