@@ -9,7 +9,10 @@ import {
     useRef,
     useState,
 } from 'react'
+import { useThinkingState } from '../hooks/useThinkingState'
 import { URI } from 'vscode-uri'
+import { debugExtractThinking } from '../agent/debug-message-logging'
+import { enhancedDebugExtractThinking } from '../agent/enhanced-debug'
 
 import {
     type ChatMessage,
@@ -29,7 +32,7 @@ import type { VSCodeWrapper } from 'cody-ai/webviews/utils/VSCodeApi'
 
 import { ChatMentionContext, type ChatMentionsSettings } from '@sourcegraph/prompt-editor'
 import { getAppWrappers } from 'cody-ai/webviews/App'
-import { CodyPanel } from 'cody-ai/webviews/CodyPanel'
+import { CodyPanel } from './CodyPanel'
 import { useClientActionDispatcher } from 'cody-ai/webviews/client/clientState'
 import type { View } from 'cody-ai/webviews/tabs'
 import { ComposedWrappers, type Wrapper } from 'cody-ai/webviews/utils/composeWrappers'
@@ -123,6 +126,21 @@ export const CodyWebChat: FunctionComponent<CodyWebChatProps> = ({
     viewType,
 }) => {
     const agent = useCodyWebAgent(agentConfig)
+    const [messageInProgress, setMessageInProgress] = useState<ChatMessage | null>(null)
+    
+    // Use thinking state hook to process and manage thinking content
+    const thinkingState = useThinkingState(messageInProgress)
+    
+    // Debug output
+    useEffect(() => {
+        console.log('CodyWebChat: thinking state updated', thinkingState)
+        // Debug extract thinking from current message
+        if (messageInProgress) {
+            // Use both debug functions for more comprehensive output
+            debugExtractThinking(messageInProgress)
+            enhancedDebugExtractThinking(messageInProgress)
+        }
+    }, [thinkingState, messageInProgress])
 
     useEffect(() => {
         if (agent && !isErrorLike(agent)) {
@@ -145,12 +163,28 @@ export const CodyWebChat: FunctionComponent<CodyWebChatProps> = ({
         <AppWrapper>
             <div className={classNames(className, styles.root)}>
                 <CodyWebPanel
-                    vscodeAPI={agent.vscodeAPI}
+                    vscodeAPI={{
+                        ...agent.vscodeAPI,
+                        // Wrap onMessage with logging
+                        onMessage: handler => {
+                            console.log('Setting up message handler with logging')
+                            const wrappedHandler = (message: any) => {
+                                if (message.type === 'transcript') {
+                                    console.log('⚡ DEBUG - Transcript message received in wrapper', message)
+                                }
+                                handler(message)
+                            }
+                            return agent.vscodeAPI.onMessage(wrappedHandler)
+                        }
+                    }}
                     initialContext={initialContext}
                     className={styles.container}
                     onExternalApiReady={onExternalApiReady}
                     webview={viewType === 'page' ? 'editor' : 'sidebar'}
                     controller={controller}
+                    thinkingState={thinkingState}
+                    messageInProgress={messageInProgress}
+                    setMessageInProgress={setMessageInProgress}
                 />
             </div>
         </AppWrapper>
@@ -164,6 +198,14 @@ interface CodyWebPanelProps {
     onExternalApiReady?: (api: CodyExternalApi) => void
     webview: WebviewType
     controller?: CodyWebChatController
+    messageInProgress?: ChatMessage | null
+    setMessageInProgress?: React.Dispatch<React.SetStateAction<ChatMessage | null>>
+    thinkingState?: {
+        thinkContent: string
+        isThinking: boolean
+        isThoughtProcessOpened: boolean
+        setThoughtProcessOpened: (open: boolean) => void
+    }
 }
 
 const CodyWebPanel: FC<CodyWebPanelProps> = props => {
@@ -174,17 +216,30 @@ const CodyWebPanel: FC<CodyWebPanelProps> = props => {
         onExternalApiReady,
         webview,
         controller,
+        thinkingState,
+        messageInProgress: externalMessageInProgress,
+        setMessageInProgress: externalSetMessageInProgress,
     } = props
 
     const dispatchClientAction = useClientActionDispatcher()
     const [errorMessages, setErrorMessages] = useState<string[]>([])
     const [messageInProgress, setMessageInProgress] = useState<ChatMessage | null>(null)
+    
+    // Use external state handlers if provided
+    const currentMessageInProgress = externalMessageInProgress ?? messageInProgress
+    const currentSetMessageInProgress = externalSetMessageInProgress ?? setMessageInProgress
+
     const [transcript, setTranscript] = useState<ChatMessage[]>([])
     const [config, setConfig] = useState<Config | null>(null)
     const [clientConfig, setClientConfig] = useState<CodyClientConfig | null>(null)
     const [view, setView] = useState<View | undefined>()
     const extensionApiRef = useRef<WebviewToExtensionAPI | null>(null)
 
+    // This would be the message processing function, but we'll fix the errors by commenting it out
+    // We'll need to re-implement this logic after fixing the state references
+    
+    // Thinking state is now managed by the useThinkingState hook
+    
     useLayoutEffect(() => {
         return controller?.onMessage(message => {
             switch (message.type) {
@@ -246,13 +301,30 @@ const CodyWebPanel: FC<CodyWebPanelProps> = props => {
                     const deserializedMessages = message.messages.map(
                         PromptString.unsafe_deserializeChatMessage
                     )
+                    console.log('CodyWebPanel: transcript update', {
+                        isMessageInProgress: message.isMessageInProgress,
+                        messages: deserializedMessages,
+                        // Add more details about the messages
+                        messagesDetails: deserializedMessages.map(msg => ({
+                            speaker: msg.speaker,
+                            hasText: !!msg.text,
+                            textLength: msg.text ? msg.text.toString().length : 0,
+                            hasThinkTag: msg.text ? msg.text.toString().includes('<think>') : false,
+                            // Show a sample of the message text
+                            textSample: msg.text ? 
+                                msg.text.toString().substring(0, 50) + (msg.text.toString().length > 50 ? '...' : '') 
+                                : '[no text]'
+                        }))
+                    })
                     if (message.isMessageInProgress) {
                         const msgLength = deserializedMessages.length - 1
                         handleTranscriptChange(deserializedMessages.slice(0, msgLength))
-                        setMessageInProgress(deserializedMessages[msgLength])
+                        const currentMessage = deserializedMessages[msgLength]
+                        console.log('CodyWebPanel: updating message in progress', currentMessage)
+                        currentSetMessageInProgress(currentMessage)
                     } else {
                         handleTranscriptChange(deserializedMessages)
-                        setMessageInProgress(null)
+                        currentSetMessageInProgress(null)
                     }
                     break
                 }
@@ -277,7 +349,7 @@ const CodyWebPanel: FC<CodyWebPanelProps> = props => {
                     break
             }
         })
-    }, [vscodeAPI, dispatchClientAction, handleTranscriptChange, handleViewChange, webview])
+    }, [vscodeAPI, dispatchClientAction, handleTranscriptChange, handleViewChange, webview, currentSetMessageInProgress])
 
     // V2 telemetry recorder
     const telemetryRecorder = useMemo(() => createWebviewTelemetryRecorder(vscodeAPI), [vscodeAPI])
@@ -405,11 +477,12 @@ const CodyWebPanel: FC<CodyWebPanelProps> = props => {
                             instanceNotices={clientConfig?.notices ?? []}
                             showWelcomeMessage={true}
                             showIDESnippetActions={false}
-                            messageInProgress={messageInProgress}
+                            messageInProgress={currentMessageInProgress}
                             transcript={transcript}
                             vscodeAPI={vscodeAPI}
                             onExternalApiReady={onExternalApiReady}
                             onExtensionApiReady={onExtensionApiReady}
+                            thinkingState={thinkingState}
                         />
                     </ComposedWrappers>
                 </ChatMentionContext.Provider>

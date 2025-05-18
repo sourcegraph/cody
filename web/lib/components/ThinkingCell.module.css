@@ -1,0 +1,50 @@
+.thinkingContainer {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    width: 100%;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.thinkingHeader {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    padding: 0.5rem;
+    background-color: var(--vscode-button-secondaryBackground, #f3f3f3);
+    border-radius: 4px;
+}
+
+.spinnerIcon {
+    animation: spin 1s linear infinite;
+    margin-right: 0.5rem;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.headerText {
+    flex: 1;
+    font-size: 0.9rem;
+}
+
+.expandIcon {
+    font-size: 0.7rem;
+    transition: transform 0.2s ease;
+}
+
+.thoughtContent {
+    padding-left: 1rem;
+    color: var(--vscode-editor-foreground, #555);
+    border-left: 1px solid var(--vscode-editorWidget-border, #ddd);
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    white-space: pre-wrap;
+    font-family: var(--vscode-editor-font-family, monospace);
+    font-size: 0.9rem;
+}

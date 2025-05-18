@@ -1,5 +1,6 @@
 import type { FC } from 'react'
 import { CodyWebChat, type InitialContext } from '../lib'
+import { ThinkingDemo } from '../lib/components/ThinkingDemo'
 
 // @ts-ignore
 import AgentWorker from '../lib/agent/agent.worker.ts?worker&x=2'
@@ -11,7 +12,7 @@ const CREATE_AGENT_WORKER = (): Worker => new AgentWorker({ name: 'demo' }) as W
 import '../../vscode/webviews/utils/highlight.css'
 import styles from './App.module.css'
 
-const DEFAULT_SERVER_ENDPOINT = 'https://sourcegraph.sourcegraph.com'
+const DEFAULT_SERVER_ENDPOINT = 'https://sourcegraph.com'
 
 // To set:
 // localStorage.setItem('serverEndpoint', 'https://sourcegraph.test:3443')
@@ -43,9 +44,20 @@ const agentConfig = {
 }
 
 export const App: FC = () => {
+    // For debugging purposes, set to true to show the ThinkingDemo instead of CodyWebChat
+    const showThinkingDemo = false // Enable ThinkingDemo for testing
+
     return (
         <div className={styles.root}>
-            <CodyWebChat agentConfig={agentConfig} initialContext={INITIAL_CONTEXT} viewType="sidebar" />
+            {showThinkingDemo ? (
+                <ThinkingDemo />
+            ) : (
+                <CodyWebChat
+                    agentConfig={agentConfig}
+                    initialContext={INITIAL_CONTEXT}
+                    viewType="sidebar"
+                />
+            )}
         </div>
     )
 }

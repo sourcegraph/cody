@@ -7,6 +7,7 @@ export {
     type ControllerMessage,
     type CodyWebChatMessage,
 } from './components/CodyWebChat'
+export { ThinkingDemo } from './components/ThinkingDemo'
 export { CodyPromptTemplate, type CodyPromptTemplateProps } from './components/CodyPromptTemplate'
 export { ChatSkeleton } from './components/skeleton/ChatSkeleton'
 
