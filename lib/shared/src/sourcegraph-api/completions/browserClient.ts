@@ -13,6 +13,8 @@ import { parseCompletionJSON } from './parse'
 import type { CompletionCallbacks, CompletionParameters, CompletionResponse, Event } from './types'
 import { getSerializedParams } from './utils'
 
+import type { CompletionContentData } from './types'
+
 declare const WorkerGlobalScope: never
 const isRunningInWebWorker =
     typeof WorkerGlobalScope !== 'undefined' && self instanceof WorkerGlobalScope
@@ -83,11 +85,21 @@ export class SourcegraphBrowserCompletionsClient extends SourcegraphCompletionsC
                         if (isError(data)) {
                             throw data
                         }
+
+                        builder.nextThinking(data.delta_thinking)
+                        const completion = builder.nextCompletion(data.completion, data.deltaText)
+                        const toolCalls = builder.nextToolCalls(data?.delta_tool_calls)
+                        const content: CompletionContentData[] = []
+                        if (completion) {
+                            content.push({ type: 'text', text: completion })
+                        }
+                        content.push(...toolCalls)
                         events.push({
                             type: 'completion',
                             // concatenate deltas when using api-version>=2
-                            completion: builder.nextCompletion(data.completion, data.deltaText),
+                            completion: completion,
                             stopReason: data.stopReason,
+                            content: content,
                         })
                     } else {
                         events.push({ type: message.event, ...JSON.parse(message.data) })
@@ -117,7 +129,7 @@ export class SourcegraphBrowserCompletionsClient extends SourcegraphCompletionsC
 
         // 'fetchEventSource' does not emit any event/message when the signal gets abborted. Instead,
         // the returned promise gets resolved. However we cannot really differentiate between the
-        // promising resolving because the signal got abborted and the stream ended.
+        // promising resolving because the signal got aborted and the stream ended.
         // That's why we subscribe to the signal directly and trigger the completion callback.
         onAbort(signal, cb.onComplete)
     }
