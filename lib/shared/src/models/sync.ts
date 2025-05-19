@@ -445,7 +445,7 @@ export function syncModels({
                                                 )
 
                                                 if (isAgenticChatEnabled && !hasDeepCody) {
-                                                    data.primaryModels.unshift(
+                                                    data.primaryModels.push(
                                                         createModelFromServerModel(
                                                             DEEP_CODY_MODEL,
                                                             false // Should not affect the context window set for Agentic chat
