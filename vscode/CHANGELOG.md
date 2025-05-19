@@ -4,6 +4,15 @@ This is a log of all notable changes to Cody for VS Code.
 
 <!--- {/_ CHANGELOG_START _/} -->
 
+## 1.94.1
+
+### Fix
+
+#### Prompts
+
+- Bump min version for new prompt api
+
+
 ## 1.94.0
 
 ### Features
