@@ -51,11 +51,7 @@ export class DeepCodyHandler extends ChatHandler implements AgentHandler {
             skipQueryRewriteForDeepCody
         )
         // Early return if basic conditions aren't met.
-        if (
-            !toolboxManager.isAgenticChatEnabled() ||
-            baseContextResult.error ||
-            baseContextResult.abort
-        ) {
+        if (baseContextResult.error || baseContextResult.abort) {
             return baseContextResult
         }
         // Check session and query constraints

@@ -42,7 +42,7 @@ export function getAgent(model: string, intent: ChatMessage['intent'], tools: Ag
     // Use agentic chat (Deep Cody) handler if enabled.
     // Skip in agent testing mode to avoid non-deterministic results causing
     // recordings to fail consistently.
-    if (toolboxManager.isAgenticChatEnabled() && !isAgentTesting) {
+    if (toolboxManager.isAgenticChatEnabled(model) && !isAgentTesting) {
         return new DeepCodyHandler(contextRetriever, editor, chatClient)
     }
 
