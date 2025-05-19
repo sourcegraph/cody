@@ -1324,7 +1324,7 @@ export class SourcegraphGraphQLAPIClient {
                 minimumVersion: '5.11.0',
             }),
             this.isValidSiteVersion({
-                minimumVersion: '6.3.1',
+                minimumVersion: '6.4.0',
             }),
         ])
 
