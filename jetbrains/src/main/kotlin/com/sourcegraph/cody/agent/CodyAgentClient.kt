@@ -4,7 +4,6 @@ import com.intellij.notification.Notification
 import com.intellij.notification.NotificationType
 import com.intellij.openapi.actionSystem.*
 import com.intellij.openapi.actionSystem.impl.SimpleDataContext
-import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.ReadAction
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.diagnostic.Logger
@@ -38,6 +37,8 @@ import com.sourcegraph.common.NotificationGroups
 import com.sourcegraph.common.ui.SimpleDumbAwareEDTAction
 import com.sourcegraph.config.ConfigUtil
 import com.sourcegraph.utils.CodyEditorUtil
+import com.sourcegraph.utils.ThreadingUtil.runInBackground
+import com.sourcegraph.utils.ThreadingUtil.runInEdtFuture
 import java.nio.file.Paths
 import java.util.concurrent.CompletableFuture
 
@@ -52,38 +53,19 @@ class CodyAgentClient(private val project: Project, private val webview: NativeW
     private val logger = Logger.getInstance(CodyAgentClient::class.java)
   }
 
-  /**
-   * Helper to run client request/notification handlers on the IntelliJ event thread. Use this
-   * helper for handlers that require access to the IntelliJ editor, for example to read the text
-   * contents of the open editor.
-   */
-  private fun <R> acceptOnEventThreadAndGet(
-      callback: (() -> R),
-  ): CompletableFuture<R> {
-    val result = CompletableFuture<R>()
-    ApplicationManager.getApplication().invokeLater {
-      try {
-        result.complete(callback.invoke())
-      } catch (e: Exception) {
-        result.completeExceptionally(e)
-      }
-    }
-    return result
-  }
-
   // =============
   // Requests
   // =============
 
   override fun env_openExternal(params: Env_OpenExternalParams): CompletableFuture<Boolean> {
-    return acceptOnEventThreadAndGet {
+    return runInEdtFuture {
       BrowserOpener.openInBrowser(project, params.uri)
       true
     }
   }
 
   override fun workspace_edit(params: WorkspaceEditParams): CompletableFuture<Boolean> {
-    return acceptOnEventThreadAndGet {
+    return runInEdtFuture {
       try {
         EditService.getInstance(project).performWorkspaceEdit(params)
       } catch (e: RuntimeException) {
@@ -94,7 +76,7 @@ class CodyAgentClient(private val project: Project, private val webview: NativeW
   }
 
   override fun textDocument_edit(params: TextDocumentEditParams): CompletableFuture<Boolean> {
-    return acceptOnEventThreadAndGet {
+    return runInEdtFuture {
       try {
         EditService.getInstance(project).performTextEdits(params.uri, params.edits)
       } catch (e: RuntimeException) {
@@ -105,42 +87,41 @@ class CodyAgentClient(private val project: Project, private val webview: NativeW
   }
 
   override fun textDocument_show(params: TextDocument_ShowParams): CompletableFuture<Boolean> {
-    val vf =
-        acceptOnEventThreadAndGet { CodyEditorUtil.findFileOrScratch(project, params.uri) }.get()
-
-    val result =
-        if (vf != null) {
-          val selection = params.options?.selection
-          val preserveFocus = params.options?.preserveFocus
-          CodyEditorUtil.showDocument(project, vf, selection, preserveFocus)
-        } else {
-          false
-        }
-
-    return CompletableFuture.completedFuture(result)
+    return runInBackground {
+      val vf =
+          runInEdtFuture { CodyEditorUtil.findFileOrScratch(project, params.uri) }.get()
+              ?: return@runInBackground false
+      val selection = params.options?.selection
+      val preserveFocus = params.options?.preserveFocus
+      CodyEditorUtil.showDocument(project, vf, selection, preserveFocus)
+    }
   }
 
   override fun textDocument_openUntitledDocument(
       params: UntitledTextDocument
   ): CompletableFuture<ProtocolTextDocument?> {
-    return acceptOnEventThreadAndGet {
+    return runInEdtFuture {
       val vf = CodyEditorUtil.createFileOrScratchFromUntitled(project, params.uri, params.content)
       vf?.let { ProtocolTextDocumentExt.fromVirtualFile(it) }
     }
   }
 
   override fun secrets_get(params: Secrets_GetParams): CompletableFuture<String?> {
-    return CompletableFuture.completedFuture(CodySecureStore.getFromSecureStore(params.key))
+    return runInBackground { CodySecureStore.getFromSecureStore(params.key) }
   }
 
   override fun secrets_store(params: Secrets_StoreParams): CompletableFuture<Null?> {
-    CodySecureStore.writeToSecureStore(params.key, params.value)
-    return CompletableFuture.completedFuture(null)
+    return runInBackground {
+      CodySecureStore.writeToSecureStore(params.key, params.value)
+      null
+    }
   }
 
   override fun secrets_delete(params: Secrets_DeleteParams): CompletableFuture<Null?> {
-    CodySecureStore.writeToSecureStore(params.key, null)
-    return CompletableFuture.completedFuture(null)
+    return runInBackground {
+      CodySecureStore.writeToSecureStore(params.key, null)
+      null
+    }
   }
 
   override fun window_showSaveDialog(params: SaveDialogOptionsParams): CompletableFuture<String?> {
@@ -163,14 +144,11 @@ class CodyAgentClient(private val project: Project, private val webview: NativeW
     val title = params.title ?: "Cody: Save as New File"
     val descriptor = FileSaverDescriptor(title, "Save file")
 
-    val saveFileFuture = CompletableFuture<String?>()
-    runInEdt {
+    return runInEdtFuture {
       val dialog = FileChooserFactory.getInstance().createSaveFileDialog(descriptor, project)
       val result = dialog.save(outputDir, fileName)
-      saveFileFuture.complete(result?.file?.path)
+      result?.file?.path
     }
-
-    return saveFileFuture
   }
 
   override fun window_didChangeContext(params: Window_DidChangeContextParams) {
@@ -182,21 +160,19 @@ class CodyAgentClient(private val project: Project, private val webview: NativeW
   }
 
   override fun authStatus_didUpdate(params: ProtocolAuthStatus) {
-    runInEdt {
-      if (project.isDisposed) return@runInEdt
+    if (project.isDisposed) return
 
-      val authService = CodyAuthService.getInstance(project)
-      if (params is ProtocolAuthenticatedAuthStatus) {
-        SentryService.getInstance().setUser(params.primaryEmail, params.username)
-        authService.setActivated(true, params.pendingValidation)
-        authService.setEndpoint(SourcegraphServerPath(params.endpoint))
-      } else if (params is ProtocolUnauthenticatedAuthStatus) {
-        SentryService.getInstance().setUser(null, null)
-        authService.setActivated(false, params.pendingValidation)
-        authService.setEndpoint(SourcegraphServerPath(params.endpoint))
-      }
-      CodyStatusService.resetApplication(project)
+    val authService = CodyAuthService.getInstance(project)
+    if (params is ProtocolAuthenticatedAuthStatus) {
+      SentryService.getInstance().setUser(params.primaryEmail, params.username)
+      authService.setActivated(true, params.pendingValidation)
+      authService.setEndpoint(SourcegraphServerPath(params.endpoint))
+    } else if (params is ProtocolUnauthenticatedAuthStatus) {
+      SentryService.getInstance().setUser(null, null)
+      authService.setActivated(false, params.pendingValidation)
+      authService.setEndpoint(SourcegraphServerPath(params.endpoint))
     }
+    CodyStatusService.resetApplication(project)
   }
 
   override fun window_showMessage(params: ShowWindowMessageParams): CompletableFuture<String?> {
