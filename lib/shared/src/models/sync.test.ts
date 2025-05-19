@@ -386,7 +386,7 @@ describe('syncModels', () => {
         }
     )
 
-    it('not to set Agentic Chat as default chat model when feature flag is enabled', async () => {
+    it('set Agentic Chat as default chat model when feature flag is enabled', async () => {
         const serverSonnet: ServerModel = {
             modelRef: 'anthropic::unknown::claude-3-5-sonnet',
             displayName: 'Sonnet',
@@ -454,7 +454,7 @@ describe('syncModels', () => {
         vi.spyOn(modelsService, 'modelsChanges', 'get').mockReturnValue(Observable.of(result))
 
         // Check if Deep Cody model is no longer in the models list.
-        expect(result.primaryModels.some(model => model.id.includes('deep-cody'))).toBe(false)
+        expect(result.primaryModels.some(model => model.id.includes('deep-cody'))).toBe(true)
 
         // preference should not be affected and remains unchanged as this is handled in a later step.
         expect(result.preferences.selected.chat).toBe(undefined)
