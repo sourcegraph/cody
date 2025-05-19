@@ -52,27 +52,31 @@ class CodySecureStore {
   @TestOnly fun getKeyStoreFile() = keyStoreFile
 
   fun getFromSecureStore(key: String): String? {
-    val keyStore = getKeyStore()
-    if (!keyStore.containsAlias(key)) return null
+    synchronized(this) {
+      val keyStore = getKeyStore()
+      if (!keyStore.containsAlias(key)) return null
 
-    val protParam = KeyStore.PasswordProtection(getKeystorePassword().toCharArray())
-    val entry = keyStore.getEntry(key, protParam) as? KeyStore.SecretKeyEntry
-    return entry?.secretKey?.encoded?.toString(Charsets.UTF_8)
+      val protParam = KeyStore.PasswordProtection(getKeystorePassword().toCharArray())
+      val entry = keyStore.getEntry(key, protParam) as? KeyStore.SecretKeyEntry
+      return entry?.secretKey?.encoded?.toString(Charsets.UTF_8)
+    }
   }
 
   fun writeToSecureStore(key: String, value: String?) {
-    val keyStore = getKeyStore()
-    val password = getKeystorePassword().toCharArray()
-    if (value == null) {
-      keyStore.deleteEntry(key)
-    } else {
-      val secretKey = SecretKeySpec(value.toByteArray(Charsets.UTF_8), "AES")
-      val keyEntry = KeyStore.SecretKeyEntry(secretKey)
-      val protParam = KeyStore.PasswordProtection(password)
-      keyStore.setEntry(key, keyEntry, protParam)
-    }
+    synchronized(this) {
+      val keyStore = getKeyStore()
+      val password = getKeystorePassword().toCharArray()
+      if (value == null) {
+        keyStore.deleteEntry(key)
+      } else {
+        val secretKey = SecretKeySpec(value.toByteArray(Charsets.UTF_8), "AES")
+        val keyEntry = KeyStore.SecretKeyEntry(secretKey)
+        val protParam = KeyStore.PasswordProtection(password)
+        keyStore.setEntry(key, keyEntry, protParam)
+      }
 
-    FileOutputStream(keyStoreFile).use { fos -> keyStore.store(fos, password) }
+      FileOutputStream(keyStoreFile).use { fos -> keyStore.store(fos, password) }
+    }
   }
 
   private fun getKeystorePassword(): OneTimeString {
