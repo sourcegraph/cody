@@ -61,7 +61,7 @@ open class BaseIntegrationTextFixture(
     project = myFixture.project
     Disposer.register(myFixture.testRootDisposable) { shutdown() }
 
-    CodyEditorUtil.createFileOrScratchFromUntitled(
+    CodyEditorUtil.createFileOrUseExisting(
         project, ConfigUtil.getSettingsFile(project).toUri().toString(), codySettingsContent)
 
     initCredentialsAndAgent()
