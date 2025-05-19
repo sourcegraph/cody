@@ -182,6 +182,25 @@ class LocalStorage implements LocalStorageForModelPreferences {
         history: UserLocalHistory
     ): Promise<void> {
         try {
+            // Filter out chats older than a month
+            const oneMonthAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
+
+            if (history?.chat) {
+                const filteredChat = Object.entries(history.chat)
+                    .filter(
+                        ([_, chat]) => new Date(chat.lastInteractionTimestamp) >= new Date(oneMonthAgo)
+                    )
+                    .reduce(
+                        (obj, [id, chat]) => {
+                            obj[id] = chat
+                            return obj
+                        },
+                        {} as Record<string, any>
+                    )
+
+                history.chat = filteredChat
+            }
+
             const key = getKeyForAuthStatus(authStatus)
             let fullHistory = this.storage.get<AccountKeyedChatHistory | null>(
                 this.KEY_LOCAL_HISTORY,
@@ -232,26 +251,6 @@ class LocalStorage implements LocalStorageForModelPreferences {
 
     public clearChatHistory(): void {
         this._storage?.update(this.KEY_LOCAL_HISTORY, null)
-    }
-
-    public async clearOldChatHistory(authStatus: AuthenticatedAuthStatus): Promise<void> {
-        const userHistory = this.getChatHistory(authStatus)
-        const oneMonthAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
-
-        if (userHistory?.chat) {
-            const filteredChat = Object.entries(userHistory.chat)
-                .filter(([_, chat]) => new Date(chat.lastInteractionTimestamp) >= new Date(oneMonthAgo))
-                .reduce(
-                    (obj, [id, chat]) => {
-                        obj[id] = chat
-                        return obj
-                    },
-                    {} as Record<string, any>
-                )
-
-            userHistory.chat = filteredChat
-            await this.setChatHistory(authStatus, userHistory)
-        }
     }
 
     public async isAutoEditBetaEnrolled(): Promise<boolean> {
