@@ -182,11 +182,6 @@ class LocalStorage implements LocalStorageForModelPreferences {
         history: UserLocalHistory
     ): Promise<void> {
         try {
-            // Filter out chats older than a month
-            const oneMonthAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
-
-            this.filterChatHistoryOlderThan(oneMonthAgo, history)
-
             const key = getKeyForAuthStatus(authStatus)
             let fullHistory = this.storage.get<AccountKeyedChatHistory | null>(
                 this.KEY_LOCAL_HISTORY,
@@ -233,22 +228,6 @@ class LocalStorage implements LocalStorageForModelPreferences {
                 console.error(error)
             }
         }
-    }
-
-    public filterChatHistoryOlderThan(days: Date, history: UserLocalHistory): void {
-        const filteredChat = Object.entries(history.chat)
-            .filter(
-                ([_, chat]) => new Date(chat.lastInteractionTimestamp) >= new Date(days.toISOString())
-            )
-            .reduce(
-                (obj, [id, chat]) => {
-                    obj[id] = chat
-                    return obj
-                },
-                {} as Record<string, any>
-            )
-
-        history.chat = filteredChat
     }
 
     public async isAutoEditBetaEnrolled(): Promise<boolean> {
