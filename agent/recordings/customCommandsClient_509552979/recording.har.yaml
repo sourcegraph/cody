@@ -1533,6 +1533,118 @@ log:
         send: 0
         ssl: -1
         wait: 360
+    - _id: 56a492772232c45792c5aa50a02c5fa2
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 247
+        cookies: []
+        headers:
+          - _fromType: array
+            name: accept
+            value: application/json
+          - _fromType: array
+            name: authorization
+            value: token
+              REDACTED_fc324d3667e841181b0779375f26dedc911d26b303d23b29b1a2d7ee63dc77eb
+          - _fromType: array
+            name: content-type
+            value: application/json; charset=utf-8
+          - _fromType: array
+            name: traceparent
+            value: 00-17c9911d5c550de20184a6941e41f687-9b751723b5e97a5d-01
+          - _fromType: array
+            name: user-agent
+            value: customcommandsclient/v1 (Node.js v20.4.0)
+          - _fromType: array
+            name: x-requested-with
+            value: customcommandsclient v1
+          - _fromType: array
+            name: content-length
+            value: "247"
+          - _fromType: array
+            name: accept-encoding
+            value: gzip,deflate
+          - name: host
+            value: sourcegraph.com
+        headersSize: 533
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json; charset=utf-8
+          params: []
+          textJSON:
+            query: |
+              
+              query Repositories($names: [String!]!, $first: Int!) {
+                  repositories(names: $names, first: $first) {
+                    nodes {
+                      name
+                      id
+                    }
+                  }
+                }
+            variables:
+              first: 10
+              names:
+                - github.com/sourcegraph/cody
+        queryString:
+          - name: Repositories
+            value: null
+        url: https://sourcegraph.com/.api/graphql?Repositories
+      response:
+        bodySize: 191
+        content:
+          encoding: base64
+          mimeType: application/json
+          size: 191
+          text: "[\"H4sIAAAAAAAAAwAAAP//\",\"FMexDsIgFAXQf7mzsYlOknRwcqIu6GIcKO+lZaCPAI0h\
+            hH833c5pIFssVEPiKNkXSZ7z8U3owKdhs4GhsPiy7vPZSRiy7MnxkmxcBydUcYInKLz\
+            C+zdfp0iPW2UjF210nYyuz/s4on97738AAAD//wMATXa4bHAAAAA=\"]"
+        cookies: []
+        headers:
+          - name: date
+            value: Mon, 19 May 2025 10:40:03 GMT
+          - name: content-type
+            value: application/json
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: close
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache, max-age=0
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+          - name: content-encoding
+            value: gzip
+        headersSize: 1397
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2025-05-19T10:40:03.158Z
+      time: 379
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 379
     - _id: 4504fab53d7cb602861f73dc2aa883d2
       _order: 0
       cache: {}

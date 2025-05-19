@@ -3295,6 +3295,124 @@ log:
         send: 0
         ssl: -1
         wait: 241
+    - _id: 56a492772232c45792c5aa50a02c5fa2
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 247
+        cookies: []
+        headers:
+          - _fromType: array
+            name: accept
+            value: application/json
+          - _fromType: array
+            name: authorization
+            value: token
+              REDACTED_fc324d3667e841181b0779375f26dedc911d26b303d23b29b1a2d7ee63dc77eb
+          - _fromType: array
+            name: content-type
+            value: application/json; charset=utf-8
+          - _fromType: array
+            name: traceparent
+            value: 00-6d879ae67c30dad7c79d97ac1467b55f-a8c97d2ab43e0821-01
+          - _fromType: array
+            name: user-agent
+            value: defaultclient/v1 (Node.js v20.4.0)
+          - _fromType: array
+            name: x-requested-with
+            value: defaultclient v1
+          - _fromType: array
+            name: content-length
+            value: "247"
+          - _fromType: array
+            name: accept-encoding
+            value: gzip,deflate
+          - name: host
+            value: sourcegraph.com
+        headersSize: 512
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json; charset=utf-8
+          params: []
+          textJSON:
+            query: |
+              
+              query Repositories($names: [String!]!, $first: Int!) {
+                  repositories(names: $names, first: $first) {
+                    nodes {
+                      name
+                      id
+                    }
+                  }
+                }
+            variables:
+              first: 10
+              names:
+                - github.com/sourcegraph/cody
+        queryString:
+          - name: Repositories
+            value: null
+        url: https://sourcegraph.com/.api/graphql?Repositories
+      response:
+        bodySize: 180
+        content:
+          encoding: base64
+          mimeType: application/json
+          size: 180
+          text: "[\"H4sIAAAAAAAAAxTHsQ7CIBQF0H+5s7GJTpJ0cHKiLuhiHCjvpWWgjwCNIYR/N93OaSBbL\
+            FRD4ijZF0me8/FN6MCnYbOBobD4su7z2UkYsuzJ8ZJsXAcnVHGCJyi8wvs3X6dIj1tl\
+            IxdtdJ2Mrs/7OKJ/e+9/AAAA//8DAE12uGxwAAAA\"]"
+          textDecoded:
+            data:
+              repositories:
+                nodes:
+                  - id: UmVwb3NpdG9yeTo2MTMyNTMyOA==
+                    name: github.com/sourcegraph/cody
+        cookies: []
+        headers:
+          - name: date
+            value: Mon, 19 May 2025 10:40:03 GMT
+          - name: content-type
+            value: application/json
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: close
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache, max-age=0
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+          - name: content-encoding
+            value: gzip
+        headersSize: 1397
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2025-05-19T10:40:03.150Z
+      time: 382
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 382
     - _id: 4504fab53d7cb602861f73dc2aa883d2
       _order: 0
       cache: {}
