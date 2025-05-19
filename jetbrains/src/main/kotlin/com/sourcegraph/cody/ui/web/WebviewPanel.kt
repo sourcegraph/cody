@@ -7,6 +7,7 @@ import com.intellij.openapi.fileEditor.impl.EditorHistoryManager.IncludeInEditor
 import com.intellij.openapi.project.Project
 import com.intellij.testFramework.LightVirtualFile
 import com.sourcegraph.cody.agent.protocol_generated.Webview_CreateWebviewPanelParams
+import com.sourcegraph.utils.ThreadingUtil
 import java.util.concurrent.CompletableFuture
 
 // Responsibilities:
@@ -38,24 +39,20 @@ internal class WebviewPanelManager(private val project: Project) {
     }
   }
 
-  fun reset(): CompletableFuture<Void> {
-    val result = CompletableFuture<Void>()
-    runInEdt {
-      try {
-        if (project.isDisposed) {
-          return@runInEdt
-        }
-        val fileEditorManager = FileEditorManager.getInstance(project)
-        val openFiles = fileEditorManager.openFiles
-        for (file in openFiles) {
-          if (file.fileType == WebPanelFileType.INSTANCE) {
-            fileEditorManager.closeFile(file)
-          }
-        }
-      } finally {
-        result.complete(null)
+  fun reset(): CompletableFuture<Unit> {
+    return ThreadingUtil.runInEdtFuture {
+      if (project.isDisposed) {
+        return@runInEdtFuture
       }
+
+      val fileEditorManager = FileEditorManager.getInstance(project)
+      val openFiles = fileEditorManager.openFiles
+      for (file in openFiles) {
+        if (file.fileType == WebPanelFileType.INSTANCE) {
+          fileEditorManager.closeFile(file)
+        }
+      }
+      return@runInEdtFuture
     }
-    return result
   }
 }

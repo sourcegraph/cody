@@ -38,7 +38,7 @@ class WebUIService(private val project: Project) : Disposable {
   internal val panels = WebviewPanelManager(project)
   internal val views = WebviewViewManager(project)
 
-  fun reset(): CompletableFuture<Void> {
+  fun reset(): CompletableFuture<Unit> {
     proxies.clear()
     views.reset()
     return panels.reset()

@@ -2,12 +2,12 @@ package com.sourcegraph.cody.edit.lenses
 
 import com.intellij.codeInsight.codeVision.CodeVisionHost
 import com.intellij.codeInsight.codeVision.CodeVisionInitializer
-import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.util.concurrency.annotations.RequiresEdt
 import com.sourcegraph.cody.agent.protocol_generated.ProtocolCodeLens
 import com.sourcegraph.config.ConfigUtil
 import com.sourcegraph.utils.CodyEditorUtil
@@ -57,23 +57,24 @@ class LensesService(val project: Project) {
     listeners.remove(listener)
   }
 
+  @RequiresEdt
   fun updateLenses(uriString: String, codeLens: List<ProtocolCodeLens>) {
+    if (project.isDisposed) return
+
     val vf = CodyEditorUtil.findFileOrScratch(project, uriString) ?: return
     synchronized(this) { lensGroups[vf] = codeLens }
 
-    runInEdt {
-      if (project.isDisposed) return@runInEdt
-      // Find the specific editor matching the file
-      CodyEditorUtil.getAllOpenEditors(project)
-          .find { editor -> editor.virtualFile == vf }
-          ?.let { matchingEditor ->
-            CodeVisionInitializer.getInstance(project)
-                .getCodeVisionHost()
-                .invalidateProvider(
-                    CodeVisionHost.LensInvalidateSignal(
-                        matchingEditor, EditCodeVisionProvider.allEditProviders().map { it.id }))
-          }
-    }
+    // Find the specific editor matching the file
+    CodyEditorUtil.getAllOpenEditors(project)
+        .find { editor -> editor.virtualFile == vf }
+        ?.let { matchingEditor ->
+          CodeVisionInitializer.getInstance(project)
+              .getCodeVisionHost()
+              .invalidateProvider(
+                  CodeVisionHost.LensInvalidateSignal(
+                      matchingEditor, EditCodeVisionProvider.allEditProviders().map { it.id }))
+        }
+
     listeners.forEach { it.onLensesUpdate(vf, codeLens) }
   }
 
