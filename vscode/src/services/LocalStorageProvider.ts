@@ -235,7 +235,7 @@ class LocalStorage implements LocalStorageForModelPreferences {
         }
     }
 
-    private filterChatHistoryOlderThan(days: Date, history: UserLocalHistory): void {
+    public filterChatHistoryOlderThan(days: Date, history: UserLocalHistory): void {
         const filteredChat = Object.entries(history.chat)
             .filter(
                 ([_, chat]) => new Date(chat.lastInteractionTimestamp) >= new Date(days.toISOString())
