@@ -22,6 +22,7 @@ import {
     switchMapReplayOperation,
 } from '@sourcegraph/cody-shared'
 
+import { getConfiguration } from '../configuration'
 import { logDebug } from '../output-channel-logger'
 
 import { gitRemoteUrlsForUri } from './remote-urls-from-parent-dirs'
@@ -29,6 +30,19 @@ import { gitRemoteUrlsForUri } from './remote-urls-from-parent-dirs'
 type RemoteUrl = string
 type RepoName = string
 type UriFsPath = string
+
+export function fakeGitURLFromCodebase(codebaseName: string | undefined): string | undefined {
+    if (!codebaseName) {
+        return undefined
+    }
+    try {
+        return new URL(codebaseName).toString()
+    } catch (error) {
+        // Convert a codebase name like example.com/foo/bar to git@example.com:foo/bar
+        const slash = codebaseName.indexOf('/')
+        return `git@${codebaseName.slice(0, slash)}:${codebaseName.slice(slash + 1)}`
+    }
+}
 
 export class RepoNameResolver {
     /**
@@ -39,6 +53,18 @@ export class RepoNameResolver {
      * conversion function. ❗️
      */
     public getRepoNamesContainingUri(uri: vscode.Uri): MaybePendingObservable<RepoName[]> {
+        // Check for manually configured codebase URL
+        const config = getConfiguration()
+        if (config.codebase) {
+            const codebaseUrl = fakeGitURLFromCodebase(config.codebase)
+            if (codebaseUrl) {
+                const repoName = convertGitCloneURLToCodebaseName(codebaseUrl)
+                if (repoName) {
+                    return Observable.of([repoName])
+                }
+            }
+        }
+
         // Fast-path (for Cody Web): if a workspace root is `repo:my/repo`, then files under it
         // have repo name `my/repo`.
         const root = vscode.workspace.getWorkspaceFolder(uri)
