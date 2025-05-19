@@ -2,6 +2,7 @@ package com.sourcegraph.cody.auth
 
 import com.intellij.credentialStore.CredentialAttributes
 import com.intellij.credentialStore.Credentials
+import com.intellij.credentialStore.OneTimeString
 import com.intellij.credentialStore.generateServiceName
 import com.intellij.ide.passwordSafe.PasswordSafe
 import com.intellij.notification.Notification
@@ -22,6 +23,7 @@ import java.security.KeyStore
 import java.util.UUID
 import javax.crypto.spec.SecretKeySpec
 import org.apache.commons.lang.RandomStringUtils
+import org.jetbrains.annotations.TestOnly
 
 @Service(Service.Level.APP)
 class CodySecureStore {
@@ -36,7 +38,9 @@ class CodySecureStore {
         file.deleteOnExit()
         file
       } else {
-        File(System.getProperty("user.home"), ".sourcegraph/cody.v$storageVersion.keystore")
+        File(System.getProperty("user.home"))
+            .resolve(".sourcegraph")
+            .resolve("cody.v$storageVersion.keystore")
       }
 
   init {
@@ -45,37 +49,39 @@ class CodySecureStore {
     }
   }
 
+  @TestOnly fun getKeyStoreFile() = keyStoreFile
+
   fun getFromSecureStore(key: String): String? {
     val keyStore = getKeyStore()
     if (!keyStore.containsAlias(key)) return null
 
-    val protParam = KeyStore.PasswordProtection(getKeystorePassword())
+    val protParam = KeyStore.PasswordProtection(getKeystorePassword().toCharArray())
     val entry = keyStore.getEntry(key, protParam) as? KeyStore.SecretKeyEntry
     return entry?.secretKey?.encoded?.toString(Charsets.UTF_8)
-        ?: CodyPasswordStore.getFromPasswordStore(key)
   }
 
   fun writeToSecureStore(key: String, value: String?) {
     val keyStore = getKeyStore()
+    val password = getKeystorePassword().toCharArray()
     if (value == null) {
       keyStore.deleteEntry(key)
     } else {
       val secretKey = SecretKeySpec(value.toByteArray(Charsets.UTF_8), "AES")
       val keyEntry = KeyStore.SecretKeyEntry(secretKey)
-      val protParam = KeyStore.PasswordProtection(getKeystorePassword())
+      val protParam = KeyStore.PasswordProtection(password)
       keyStore.setEntry(key, keyEntry, protParam)
     }
 
-    FileOutputStream(keyStoreFile).use { fos -> keyStore.store(fos, getKeystorePassword()) }
+    FileOutputStream(keyStoreFile).use { fos -> keyStore.store(fos, password) }
   }
 
-  private fun getKeystorePassword(): CharArray {
+  private fun getKeystorePassword(): OneTimeString {
     var password = CodyPasswordStore.getFromPasswordStore(passwordKey)
     if (password == null) {
-      password = RandomStringUtils.randomAlphabetic(64)
+      password = OneTimeString(RandomStringUtils.randomAlphanumeric(64))
       CodyPasswordStore.writeToPasswordStore(passwordKey, password)
     }
-    return password!!.toCharArray()
+    return password
   }
 
   private fun showInMemoryOnlyPasswordWarning() {
@@ -116,7 +122,7 @@ class CodySecureStore {
     if (!keyStoreFile.exists()) {
       keyStoreFile.parentFile.mkdirs()
       val keyStore = KeyStore.getInstance(KeyStore.getDefaultType())
-      val password = getKeystorePassword()
+      val password = getKeystorePassword().toCharArray()
       keyStore.load(null, password)
       FileOutputStream(keyStoreFile).use { fos -> keyStore.store(fos, password) }
     }
@@ -125,7 +131,9 @@ class CodySecureStore {
   private fun getKeyStore(reinitializeOnError: Boolean = true): KeyStore {
     try {
       val keyStore = KeyStore.getInstance(KeyStore.getDefaultType())
-      FileInputStream(keyStoreFile).use { fis -> keyStore.load(fis, getKeystorePassword()) }
+      FileInputStream(keyStoreFile).use { fis ->
+        keyStore.load(fis, getKeystorePassword().toCharArray(clear = true))
+      }
       return keyStore
     } catch (e: Exception) {
       if (reinitializeOnError) {
@@ -140,12 +148,12 @@ class CodySecureStore {
     private fun credentialAttributes(key: String): CredentialAttributes =
         CredentialAttributes(generateServiceName("Sourcegraph", key))
 
-    fun getFromPasswordStore(key: String): String? {
-      return PasswordSafe.instance.get(credentialAttributes(key))?.getPasswordAsString()
+    fun getFromPasswordStore(key: String): OneTimeString? {
+      return PasswordSafe.instance.get(credentialAttributes(key))?.password
     }
 
-    fun writeToPasswordStore(key: String, value: String?) {
-      PasswordSafe.instance.set(credentialAttributes(key), Credentials(user = "", value))
+    fun writeToPasswordStore(key: String, password: OneTimeString?) {
+      PasswordSafe.instance.set(credentialAttributes(key), Credentials(user = "", password))
     }
   }
 
