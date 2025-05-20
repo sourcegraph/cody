@@ -13,7 +13,7 @@ import {
     startWith,
     userProductSubscription,
 } from '@sourcegraph/cody-shared'
-import { DeepCodyAgentID } from '@sourcegraph/cody-shared/src/models/client'
+import { DeepCodyAgentID, DeepCodyModelRef } from '@sourcegraph/cody-shared/src/models/client'
 import { type Observable, Subject, map } from 'observable-fns'
 import { env } from 'vscode'
 import { isCodyTesting } from '../chat-view/chat-helpers'
@@ -63,7 +63,11 @@ class ToolboxManager {
         }
     }
 
-    public isAgenticChatEnabled(): boolean {
+    public isAgenticChatEnabled(model?: string): boolean {
+        // TODO: Remove hard-coded model name once agentic chat goes GA.
+        if (model !== DeepCodyModelRef) {
+            return false
+        }
         return this.isEnabled && Boolean(DeepCodyAgent.model) && !isCodyTesting
     }
 
@@ -84,6 +88,7 @@ class ToolboxManager {
      */
     public readonly observable: Observable<AgentToolboxSettings | null> = combineLatest(
         authStatus,
+        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.DeepCody),
         featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.AgenticContextDisabled),
         featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.ContextAgentDefaultChatModel),
         featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.DeepCodyShellContext),
@@ -94,42 +99,53 @@ class ToolboxManager {
         ),
         this.changeNotifications.pipe(startWith(undefined))
     ).pipe(
-        map(([auth, isDisabled, useDefaultChatModel, instanceShellContextFlag, sub, models]) => {
-            // Return null if:
-            // - Subscription is pending
-            // - Users can upgrade (free user)
-            // - Feature flag to disabled is on.
-            if (
-                sub === pendingOperation ||
-                (isDotCom(auth.endpoint) && sub?.userCanUpgrade) ||
-                !models ||
-                isCodyTesting ||
-                isDisabled
-            ) {
-                DeepCodyAgent.model = undefined
-                this.isEnabled = false
-                return null
+        map(
+            ([
+                auth,
+                isOldFlagEnagled,
+                isDisabled,
+                useDefaultChatModel,
+                instanceShellContextFlag,
+                sub,
+                models,
+            ]) => {
+                // Return null if:
+                // - Subscription is pending
+                // - Users can upgrade (free user)
+                // - Feature flag to disabled is on.
+                if (
+                    sub === pendingOperation ||
+                    (isDotCom(auth.endpoint) && sub?.userCanUpgrade) ||
+                    !models ||
+                    isCodyTesting ||
+                    !isOldFlagEnagled ||
+                    isDisabled
+                ) {
+                    DeepCodyAgent.model = undefined
+                    this.isEnabled = false
+                    return null
+                }
+
+                // If the feature flag to use the default chat model is enabled, use the default chat model.
+                // Otherwise, use gemini-flash or haiku 3.5 model if available.
+                // If neither is available, use the first model with speed tag in the list.
+                const defaultChatModel = models.preferences?.defaults?.chat
+                if (useDefaultChatModel && defaultChatModel) {
+                    DeepCodyAgent.model = defaultChatModel
+                } else {
+                    DeepCodyAgent.model = getDeepCodyModel(models.primaryModels)?.id
+                }
+
+                this.isEnabled = Boolean(DeepCodyAgent.model)
+
+                Object.assign(this.shellConfig, {
+                    instance: instanceShellContextFlag,
+                    client: Boolean(env.shell),
+                })
+
+                return this.getSettings()
             }
-
-            // If the feature flag to use the default chat model is enabled, use the default chat model.
-            // Otherwise, use gemini-flash or haiku 3.5 model if available.
-            // If neither is available, use the first model with speed tag in the list.
-            const defaultChatModel = models.preferences?.defaults?.chat
-            if (useDefaultChatModel && defaultChatModel) {
-                DeepCodyAgent.model = defaultChatModel
-            } else {
-                DeepCodyAgent.model = getDeepCodyModel(models.primaryModels)?.id
-            }
-
-            this.isEnabled = Boolean(DeepCodyAgent.model)
-
-            Object.assign(this.shellConfig, {
-                instance: instanceShellContextFlag,
-                client: Boolean(env.shell),
-            })
-
-            return this.getSettings()
-        })
+        )
     )
 
     private getFeatureError(feature: string): string | undefined {

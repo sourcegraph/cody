@@ -1,6 +1,5 @@
 import type { ContextItem, ProcessingStep, SerializedPromptEditorState } from '@sourcegraph/cody-shared'
 import { DeepCodyAgent } from '../../agentic/DeepCody'
-import { toolboxManager } from '../../agentic/ToolboxManager'
 import type { ChatBuilder } from '../ChatBuilder'
 import type { HumanInput } from '../context'
 import { ChatHandler } from './ChatHandler'
@@ -32,11 +31,7 @@ export class DeepCodyHandler extends ChatHandler implements AgentHandler {
             skipQueryRewriteForDeepCody
         )
         // Early return if basic conditions aren't met.
-        if (
-            !toolboxManager.isAgenticChatEnabled() ||
-            baseContextResult.error ||
-            baseContextResult.abort
-        ) {
+        if (baseContextResult.error || baseContextResult.abort) {
             return baseContextResult
         }
 
