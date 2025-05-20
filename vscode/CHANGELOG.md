@@ -4,6 +4,20 @@ This is a log of all notable changes to Cody for VS Code.
 
 <!--- {/_ CHANGELOG_START _/} -->
 
+## 1.94.2
+
+### Fix
+
+#### Chat
+
+- only run saveSession after LLM response [#7954](https://github.com/sourcegraph/cody/pull/7954)
+
+### Revert
+
+#### Chat
+
+- enable agentic chat based on feature flag and model[#7957](https://github.com/sourcegraph/cody/pull/7957)
+
 ## 1.94.1
 
 ### Fix
@@ -11,7 +25,6 @@ This is a log of all notable changes to Cody for VS Code.
 #### Prompts
 
 - Bump min version for new prompt api [#7943](https://github.com/sourcegraph/cody/pull/7943)
-
 
 ## 1.94.0
 
