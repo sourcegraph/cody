@@ -18,6 +18,8 @@ export interface CodyToolConfig {
         examples: PromptString[]
     }
 
+    disabled?: boolean
+
     // Optional metadata for tool-specific information
     metadata?: Record<string, unknown>
 }
