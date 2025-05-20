@@ -107,19 +107,19 @@ class CodyAgentClient(private val project: Project, private val webview: NativeW
   }
 
   override fun secrets_get(params: Secrets_GetParams): CompletableFuture<String?> {
-    return runInBackground { CodySecureStore.getFromSecureStore(params.key) }
+    return runInBackground { CodySecureStore.getInstance().getFromSecureStore(params.key) }
   }
 
   override fun secrets_store(params: Secrets_StoreParams): CompletableFuture<Null?> {
     return runInBackground {
-      CodySecureStore.writeToSecureStore(params.key, params.value)
+      CodySecureStore.getInstance().writeToSecureStore(params.key, params.value)
       null
     }
   }
 
   override fun secrets_delete(params: Secrets_DeleteParams): CompletableFuture<Null?> {
     return runInBackground {
-      CodySecureStore.writeToSecureStore(params.key, null)
+      CodySecureStore.getInstance().writeToSecureStore(params.key, null)
       null
     }
   }
