@@ -6,7 +6,6 @@ import {
     type SerializedPromptEditorValue,
     deserializeContextItem,
     isAbortErrorOrSocketHangUp,
-    serializedPromptEditorStateFromText,
 } from '@sourcegraph/cody-shared'
 import type { PromptEditorRefAPI } from '@sourcegraph/prompt-editor'
 import { clsx } from 'clsx'
@@ -44,7 +43,6 @@ import { useLocalStorage } from '../components/hooks'
 import { AgenticContextCell } from './cells/agenticCell/AgenticContextCell'
 import ApprovalCell from './cells/agenticCell/ApprovalCell'
 import { ContextCell } from './cells/contextCell/ContextCell'
-import { DidYouMeanNotice } from './cells/messageCell/assistant/DidYouMean'
 import { ToolStatusCell } from './cells/toolCell/ToolStatusCell'
 import { LoadingDots } from './components/LoadingDots'
 import { LastEditorContext } from './context'
@@ -517,22 +515,6 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
         [humanMessage.index]
     )
 
-    const editAndSubmitSearch = useCallback(
-        (text: string) => {
-            setSelectedIntent('search')
-            editHumanMessage({
-                messageIndexInTranscript: humanMessage.index,
-                editorValue: {
-                    text,
-                    contextItems: [],
-                    editorState: serializedPromptEditorStateFromText(text),
-                },
-                manuallySelectedIntent: 'search',
-            })
-        },
-        [humanMessage]
-    )
-
     // We track, ephemerally, the code blocks that are being regenerated so
     // we can show an accurate loading indicator or error message on those
     // blocks.
@@ -617,15 +599,6 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
             />
             {!isAgenticMode && (
                 <>
-                    {omniboxEnabled && assistantMessage?.didYouMeanQuery && (
-                        <DidYouMeanNotice
-                            query={assistantMessage?.didYouMeanQuery}
-                            disabled={!!assistantMessage?.isLoading}
-                            switchToSearch={() => {
-                                editAndSubmitSearch(assistantMessage?.didYouMeanQuery ?? '')
-                            }}
-                        />
-                    )}
                     {!isSearchIntent && humanMessage.agent && (
                         <AgenticContextCell
                             key={`${humanMessage.index}-${humanMessage.intent}-process`}
@@ -634,12 +607,9 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                             contextItems={humanMessage.contextFiles}
                         />
                     )}
-                    {humanMessage.agent && assistantMessage?.isLoading && (
-                        <ApprovalCell vscodeAPI={vscodeAPI} />
-                    )}
+                    {humanMessage.agent && isContextLoading && <ApprovalCell vscodeAPI={vscodeAPI} />}
                     {!(humanMessage.agent && isContextLoading) &&
-                        humanMessage.contextFiles &&
-                        humanMessage.contextFiles.length > 0 &&
+                        (humanMessage.contextFiles || assistantMessage || isContextLoading) &&
                         !isSearchIntent && (
                             <ContextCell
                                 key={`${humanMessage.index}-${humanMessage.intent}-context`}

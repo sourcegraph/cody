@@ -129,7 +129,8 @@ export const ContextCell: FunctionComponent<{
             (contextItemsToDisplay && contextItemsToDisplay.length > 0) ||
             !isForFirstMessage
 
-        if (!contextItemsToDisplay?.length) {
+        // Skip the context cell if there is no content from agentic chat
+        if (!contextItemsToDisplay?.length && isAgenticChat) {
             return null
         }
 
