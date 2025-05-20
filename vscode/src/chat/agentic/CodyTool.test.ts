@@ -276,7 +276,7 @@ describe('CodyTool', () => {
             } as any)
 
             const tools = CodyToolProvider.getTools()
-            expect(tools.some(t => t.config.title.includes('Cody Memory'))).toBeTruthy()
+            expect(tools.some(t => t.config.title.includes('Cody Memory'))).toBeFalsy()
             expect(tools.some(t => t.config.title.includes('Code Search'))).toBeTruthy()
             expect(tools.some(t => t.config.title.includes('Codebase File'))).toBeTruthy()
             expect(tools.some(t => t.config.title.includes('Terminal'))).toBeTruthy()

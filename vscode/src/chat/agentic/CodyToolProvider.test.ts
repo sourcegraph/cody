@@ -73,7 +73,7 @@ describe('CodyToolProvider', () => {
         const tools = CodyToolProvider.getTools()
         expect(tools.length).toBeGreaterThan(0)
         expect(tools.some(tool => tool.config.title.includes('Code Search'))).toBe(true)
-        expect(tools.some(tool => tool.config.title.includes('Cody Memory'))).toBe(true)
+        expect(tools.some(tool => tool.config.title.includes('Cody Memory'))).toBe(false)
     })
 
     it('should set up OpenCtx provider listener and build OpenCtx tools from provider metadata', async () => {
