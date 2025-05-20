@@ -16,6 +16,7 @@ const meta: Meta<typeof HumanMessageCell> = {
         userInfo: FIXTURE_USER_ACCOUNT_INFO,
         chatEnabled: true,
         onSubmit: () => {},
+        models: [FIXTURE_MODEL],
     },
 
     decorators: [VSCodeCell],

@@ -45,6 +45,7 @@ export const FileCell: FC<FileCellProps> = ({
         <BaseCell
             icon={isError ? FileX : FileCode}
             headerContent={renderHeaderContent()}
+            bodyContent={result?.content}
             className={className}
             defaultOpen={defaultOpen} // Always closed since there's no content to show
             status={result?.status}

@@ -1,6 +1,5 @@
 package com.sourcegraph.cody.ui.web
 
-import com.google.gson.JsonParser
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.components.Service
@@ -9,10 +8,8 @@ import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.project.Project
 import com.jetbrains.rd.util.AtomicReference
 import com.jetbrains.rd.util.ConcurrentHashMap
-import com.sourcegraph.cody.agent.ConfigFeatures
-import com.sourcegraph.cody.agent.CurrentConfigFeatures
-import com.sourcegraph.cody.agent.protocol.WebviewCreateWebviewPanelParams
-import com.sourcegraph.cody.agent.protocol.WebviewOptions
+import com.sourcegraph.cody.agent.protocol_generated.DefiniteWebviewOptions
+import com.sourcegraph.cody.agent.protocol_generated.Webview_CreateWebviewPanelParams
 import com.sourcegraph.cody.sidebar.WebTheme
 import com.sourcegraph.cody.sidebar.WebThemeController
 import java.util.concurrent.CompletableFuture
@@ -41,7 +38,7 @@ class WebUIService(private val project: Project) : Disposable {
   internal val panels = WebviewPanelManager(project)
   internal val views = WebviewViewManager(project)
 
-  fun reset(): CompletableFuture<Void> {
+  fun reset(): CompletableFuture<Unit> {
     proxies.clear()
     views.reset()
     return panels.reset()
@@ -88,15 +85,6 @@ class WebUIService(private val project: Project) : Disposable {
   }
 
   internal fun postMessageHostToWebview(handle: String, stringEncodedJsonMessage: String) {
-    // Handle the config message
-    val decodedJson = JsonParser.parseString(stringEncodedJsonMessage).asJsonObject
-    if (decodedJson.get("type")?.asString == "config") {
-      val configFeatures = decodedJson.getAsJsonObject("configFeatures")
-      val serverSentModels = configFeatures?.get("serverSentModels")?.asBoolean ?: false
-      val currentConfigFeatures = project.service<CurrentConfigFeatures>()
-      currentConfigFeatures.update(ConfigFeatures(serverSentModels = serverSentModels))
-    }
-
     withProxy(handle) { it.postMessageHostToWebview(stringEncodedJsonMessage) }
   }
 
@@ -108,10 +96,10 @@ class WebUIService(private val project: Project) : Disposable {
         WebUIHostImpl(
             project,
             handle,
-            WebviewOptions(
+            DefiniteWebviewOptions(
                 enableScripts = false,
                 enableForms = false,
-                enableCommandUris = false,
+                enableOnlyCommandUris = null,
                 localResourceRoots = emptyList(),
                 portMapping = emptyList(),
                 enableFindWidget = false,
@@ -136,9 +124,20 @@ class WebUIService(private val project: Project) : Disposable {
         null
       }
 
-  internal fun createWebviewPanel(params: WebviewCreateWebviewPanelParams) {
+  internal fun createWebviewPanel(params: Webview_CreateWebviewPanelParams) {
     runInEdt {
-      val delegate = WebUIHostImpl(project, params.handle, params.options)
+      val delegate =
+          WebUIHostImpl(
+              project,
+              params.handle,
+              DefiniteWebviewOptions(
+                  enableScripts = params.options.enableScripts,
+                  enableForms = params.options.enableForms,
+                  enableOnlyCommandUris = params.options.enableOnlyCommandUris,
+                  localResourceRoots = params.options.localResourceRoots,
+                  portMapping = params.options.portMapping,
+                  enableFindWidget = params.options.enableFindWidget,
+                  retainContextWhenHidden = params.options.retainContextWhenHidden))
       val proxy = WebUIProxy.create(delegate)
       delegate.view = panels.createPanel(proxy, params)
       proxy.updateTheme(themeController.getTheme())
@@ -156,7 +155,7 @@ class WebUIService(private val project: Project) : Disposable {
     withProxy(handle) { it.html = html }
   }
 
-  internal fun setOptions(handle: String, options: WebviewOptions) {
+  internal fun setOptions(handle: String, options: DefiniteWebviewOptions) {
     withProxy(handle) { it.setOptions(options) }
   }
 

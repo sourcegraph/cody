@@ -11,6 +11,7 @@ import {
 
 import { RetrieverIdentifier } from '../completions/context/utils'
 import { getConfiguration } from '../configuration'
+import { isRunningInsideAgent } from '../jsonrpc/isRunningInsideAgent'
 import { isHotStreakEnabledInSettings } from './hot-streak/utils'
 
 interface BaseAutoeditsProviderConfig {
@@ -81,6 +82,10 @@ featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyAutoEditHotStreak).subs
  * Determines if hot streak mode should be enabled based on feature flag and settings.
  */
 export function isHotStreakEnabled(): boolean {
+    if (isRunningInsideAgent()) {
+        return false
+    }
+
     return hotStreakEnabled || isHotStreakEnabledInSettings()
 }
 

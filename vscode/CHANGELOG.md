@@ -4,6 +4,107 @@ This is a log of all notable changes to Cody for VS Code.
 
 <!--- {/_ CHANGELOG_START _/} -->
 
+## 1.94.2
+
+### Fix
+
+#### Chat
+
+- only run saveSession after LLM response [#7954](https://github.com/sourcegraph/cody/pull/7954)
+
+### Revert
+
+#### Chat
+
+- enable agentic chat based on feature flag and model[#7957](https://github.com/sourcegraph/cody/pull/7957)
+
+## 1.94.1
+
+### Fix
+
+#### Prompts
+
+- Bump min version for new prompt api [#7943](https://github.com/sourcegraph/cody/pull/7943)
+
+## 1.94.0
+
+### Features
+
+#### Auto-Edit
+
+- Use prediction/code_to_rewrite feedback button [#7868](https://github.com/sourcegraph/cody/pull/7868)
+- Add `readyToBeRendered` state to the analytics logger [#7867](https://github.com/sourcegraph/cody/pull/7867)
+- Use a character diff for modified lines when suitable [#7869](https://github.com/sourcegraph/cody/pull/7869)
+- Refactor the prompt utils code into separate files [#7857](https://github.com/sourcegraph/cody/pull/7857)
+
+#### Chat
+
+- Open mcp settings in json [#7910](https://github.com/sourcegraph/cody/pull/7910)
+- Add copy message button to copy message output [#7807](https://github.com/sourcegraph/cody/pull/7807)
+- Use Gemini Flash mode as default [#7831](https://github.com/sourcegraph/cody/pull/7831)
+- No error message in input box when there are no changes to commit [#7827](https://github.com/sourcegraph/cody/pull/7827)
+- Use agentic chat by default [#7761](https://github.com/sourcegraph/cody/pull/7761)
+
+#### Mcp
+
+- Add tool enable/disable [#7870](https://github.com/sourcegraph/cody/pull/7870)
+- Implement MCP server management with UI [#7812](https://github.com/sourcegraph/cody/pull/7812)
+
+#### Prompts
+
+- Display draft notice for prompts in the quick prompts selector [#7844](https://github.com/sourcegraph/cody/pull/7844)
+
+### Fix
+
+#### Auto-Edit
+
+- Only trim hot streak predictions when codeToReplace is missing a final new line [#7889](https://github.com/sourcegraph/cody/pull/7889)
+- Fix the view prompt for active editor [#7862](https://github.com/sourcegraph/cody/pull/7862)
+- Do not suggest empty line insertions [#7855](https://github.com/sourcegraph/cody/pull/7855)
+- Dispose next cursor manager [#7852](https://github.com/sourcegraph/cody/pull/7852)
+- Add the prompt in debug panel for hot-streak [#7842](https://github.com/sourcegraph/cody/pull/7842)
+- Use correct doc context version to show inline completions more often [#7837](https://github.com/sourcegraph/cody/pull/7837)
+- Add common post processing pipeline for prediction from the model [#7851](https://github.com/sourcegraph/cody/pull/7851)
+- Adjust the config for long suggestion model [#7850](https://github.com/sourcegraph/cody/pull/7850)
+
+#### Chat
+
+- Add MCP tool schema to tool config prompt [#7911](https://github.com/sourcegraph/cody/pull/7911)
+- Allow spaces in mcp server arguments [#7909](https://github.com/sourcegraph/cody/pull/7909)
+- Update prompt list UI [#7796](https://github.com/sourcegraph/cody/pull/7796)
+- Fix bugs in Range and Position computing [#7858](https://github.com/sourcegraph/cody/pull/7858)
+
+#### Edit-Buttons
+
+- Display of insert and copy buttons on non VSCode clients [#7849](https://github.com/sourcegraph/cody/pull/7849)
+
+#### History Tab
+
+- Improve layout for empty state [#7836](https://github.com/sourcegraph/cody/pull/7836)
+
+#### User Menu
+
+- Show Enterprise Starter for user type instead of Enterprise for ES users [#7846](https://github.com/sourcegraph/cody/pull/7846)
+- Add external link icon to upgrade to pro link [#7845](https://github.com/sourcegraph/cody/pull/7845)
+
+### Chore
+
+#### Auto-Edit
+
+- Prepare hot-streak for dogfooding [#7894](https://github.com/sourcegraph/cody/pull/7894)
+- Allow custom models for websocket requests [#7791](https://github.com/sourcegraph/cody/pull/7791)
+- Consolidate renderers/decorators [#7890](https://github.com/sourcegraph/cody/pull/7890)
+
+### Refactor
+
+#### Chat
+
+- Remove parenthesis wrapping of other files when calling `selectedCodePromptWithExtraFiles` [#7022](https://github.com/sourcegraph/cody/pull/7022)
+- Remove Tool Cody model [#7881](https://github.com/sourcegraph/cody/pull/7881)
+- Remove duplicate mode icon [#7880](https://github.com/sourcegraph/cody/pull/7880)
+- Prompt Picker Improvements [#7861](https://github.com/sourcegraph/cody/pull/7861)
+
+
 ## 1.92.0
 
 ### Fix

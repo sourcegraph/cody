@@ -19,7 +19,7 @@ export const Simple: StoryObj<typeof meta> = {
     render: () => <App vscodeAPI={dummyVSCodeAPI} />,
 }
 
-export const dummyVSCodeAPI: VSCodeWrapper = {
+const dummyVSCodeAPI: VSCodeWrapper = {
     onMessage: cb => {
         // Send initial message so that the component is fully rendered.
         cb({

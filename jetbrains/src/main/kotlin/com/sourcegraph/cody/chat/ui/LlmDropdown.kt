@@ -6,8 +6,6 @@ import com.intellij.openapi.ui.ComboBox
 import com.intellij.ui.MutableCollectionComboBoxModel
 import com.intellij.util.concurrency.annotations.RequiresEdt
 import com.sourcegraph.cody.agent.CodyAgentService
-import com.sourcegraph.cody.agent.ConfigFeatures
-import com.sourcegraph.cody.agent.CurrentConfigFeatures
 import com.sourcegraph.cody.agent.protocol.ModelUsage
 import com.sourcegraph.cody.agent.protocol_extensions.isCodyProOnly
 import com.sourcegraph.cody.agent.protocol_extensions.isDeprecated
@@ -34,35 +32,25 @@ class LlmDropdown(
     isVisible = false
     isOpaque = false
 
-    subscribeToFeatureUpdates()
     updateModels()
   }
 
   private fun updateModels() {
     CodyAgentService.withAgent(project) { agent ->
-      val chatModels = agent.server.chat_models(Chat_ModelsParams(modelUsage.value))
-      val models =
-          chatModels.completeOnTimeout(null, 10, TimeUnit.SECONDS).get()?.models ?: return@withAgent
-
-      invokeLater { updateModelsInUI(models) }
-    }
-  }
-
-  private fun subscribeToFeatureUpdates() {
-    val currentConfigFeatures: CurrentConfigFeatures =
-        project.getService(CurrentConfigFeatures::class.java)
-    currentConfigFeatures.attach(::handleConfigUpdate)
-  }
-
-  private fun handleConfigUpdate(config: ConfigFeatures) {
-    if (!isVisible && config.serverSentModels) {
-      isVisible = true
-      revalidate()
+      val chatModels =
+          agent.server
+              .chat_models(Chat_ModelsParams(modelUsage.value))
+              .completeOnTimeout(null, 10, TimeUnit.SECONDS)
+              .get()
+      invokeLater {
+        updateModelsInUI(
+            readOnly = chatModels?.readOnly ?: true, models = chatModels?.models ?: emptyList())
+      }
     }
   }
 
   @RequiresEdt
-  private fun updateModelsInUI(models: List<ModelAvailabilityStatus>) {
+  private fun updateModelsInUI(readOnly: Boolean, models: List<ModelAvailabilityStatus>) {
     if (project.isDisposed) return
     this.removeAllItems()
 
@@ -76,7 +64,7 @@ class LlmDropdown(
         availableModels.find { it.model.id == fixedModel || it.model.id == defaultLlm?.id }
             ?: models.firstOrNull()
 
-    isEnabled = fixedModel == null
+    isEnabled = !readOnly && fixedModel == null
     isVisible = selectedItem != null
     setMaximumRowCount(15)
 

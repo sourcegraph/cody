@@ -31,7 +31,8 @@ export function AddServerView({ onAddServer, serverToEdit, setServerToEdit }: Ad
     }
 
     return (
-        <div className="tw-px-2 tw-my-4">
+        <div className="tw-w-full tw-p-4 tw-flex tw-flex-col tw-items-center tw-gap-2">
+            {open && <AddServerForm onAddServer={handleAddServer} _server={serverToEdit || undefined} />}
             <Button
                 variant="outline"
                 size="sm"
@@ -42,11 +43,6 @@ export function AddServerView({ onAddServer, serverToEdit, setServerToEdit }: Ad
                 {open ? <XIcon size={12} className="tw-mr-1" /> : <Plus size={12} className="tw-mr-1" />}
                 {open ? 'Cancel' : 'MCP Server'}
             </Button>
-            {open && (
-                <div className="tw-sm:max-w-[500px] tw-my-4">
-                    <AddServerForm onAddServer={handleAddServer} _server={serverToEdit || undefined} />
-                </div>
-            )}
         </div>
     )
 }
