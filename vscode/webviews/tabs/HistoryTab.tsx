@@ -7,6 +7,10 @@ import { DownloadIcon, HistoryIcon, MessageSquarePlusIcon, Trash2Icon, TrashIcon
 import type React from 'react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { WebviewType } from '../../src/chat/protocol'
+import {
+    INTENT_MAPPING,
+    IntentEnum,
+} from '../chat/cells/messageCell/human/editor/toolbar/ModeSelectorButton'
 import { LoadingDots } from '../chat/components/LoadingDots'
 import { downloadChatHistory } from '../chat/downloadChatHistory'
 import { Button } from '../components/shadcn/ui/button'
@@ -325,13 +329,14 @@ export const HistoryTabWithData: React.FC<HistoryTabProps & { chats: Lightweight
             <CommandList className="tw-flex-1 tw-overflow-y-auto tw-m-2">
                 {displayedChats.map((chat: LightweightChatTranscript) => {
                     const id = chat.lastInteractionTimestamp
-                    const chatTitle = chat.chatTitle
                     const lastMessage = chat.firstHumanMessageText
+                    const chatTitle = chat.chatTitle || lastMessage
                     // Show the last interaction timestamp in a human-readable format
                     const timestamp = new Date(chat.lastInteractionTimestamp)
                         .toLocaleString()
                         .replace('T', ', ')
                         .replace('Z', '')
+                    const mode = INTENT_MAPPING[chat.mode || 'chat']
 
                     return (
                         <CommandItem
@@ -343,9 +348,12 @@ export const HistoryTabWithData: React.FC<HistoryTabProps & { chats: Lightweight
                                     chatID: id,
                                 })
                             }
+                            title={chat.model}
                         >
                             <div className="tw-truncate tw-w-full tw-flex tw-flex-col tw-gap-2">
-                                <div>{chatTitle || lastMessage}</div>
+                                <div>
+                                    {mode !== IntentEnum.Chat ? `[${mode}] ${chatTitle}` : chatTitle}
+                                </div>
                                 <div className="tw-text-left tw-text-muted-foreground">{timestamp}</div>
                             </div>
                             <Button
