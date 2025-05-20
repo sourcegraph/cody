@@ -13,7 +13,7 @@ import {
     startWith,
     userProductSubscription,
 } from '@sourcegraph/cody-shared'
-import { DeepCodyAgentID } from '@sourcegraph/cody-shared/src/models/client'
+import { DeepCodyAgentID, DeepCodyModelRef } from '@sourcegraph/cody-shared/src/models/client'
 import { type Observable, Subject, map } from 'observable-fns'
 import { env } from 'vscode'
 import { DeepCodyAgent } from './DeepCody'
@@ -62,7 +62,10 @@ class ToolboxManager {
         }
     }
 
-    public isAgenticChatEnabled(): boolean {
+    public isAgenticChatEnabled(model?: string): boolean {
+        if (model !== DeepCodyModelRef) {
+            return false
+        }
         return this.isEnabled && Boolean(DeepCodyAgent.model)
     }
 
