@@ -2,6 +2,7 @@
 
 import { CodyIDE, type WebviewToExtensionAPI } from '@sourcegraph/cody-shared'
 import type { LightweightChatTranscript } from '@sourcegraph/cody-shared/src/chat/transcript'
+import clsx from 'clsx'
 import { DownloadIcon, HistoryIcon, MessageSquarePlusIcon, Trash2Icon, TrashIcon } from 'lucide-react'
 import type React from 'react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
@@ -38,7 +39,14 @@ export const HistoryTab: React.FC<HistoryTabProps> = ({
     const chats = useMemo(() => (userHistory ? Object.values(userHistory) : userHistory), [userHistory])
 
     return (
-        <div className="tw-flex tw-flex-col tw-justify-center tw-overflow-hidden tw-h-full tw-w-full tw-m-4">
+        <div
+            className={clsx(
+                'tw-flex tw-flex-col tw-justify-center tw-overflow-hidden tw-h-full tw-w-full tw-m-4',
+                {
+                    'tw-items-center': !chats,
+                }
+            )}
+        >
             {!chats ? (
                 <LoadingDots />
             ) : (
