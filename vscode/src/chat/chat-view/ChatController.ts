@@ -807,7 +807,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 this.setCustomChatTitle(requestID, inputText, signal)
                 this.postViewTranscript({ speaker: 'assistant' })
 
-                await this.saveSession()
                 signal.throwIfAborted()
 
                 return this.sendChat(
@@ -1532,7 +1531,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     } else if (message.type === 'complete') {
                         if (title) {
                             this.chatBuilder.setChatTitle(title)
-                            await this.saveSession()
                         }
                         break
                     }
