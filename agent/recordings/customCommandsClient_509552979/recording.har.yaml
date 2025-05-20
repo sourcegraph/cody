@@ -530,11 +530,11 @@ log:
         send: 0
         ssl: -1
         wait: 1571
-    - _id: a62a3d603f55852828dd4e700975f339
+    - _id: 3c19f6e582b3e4f27fdcf59570d4a27b
       _order: 0
       cache: {}
       request:
-        bodySize: 1315
+        bodySize: 1369
         cookies: []
         headers:
           - name: accept-encoding
@@ -547,7 +547,7 @@ log:
           - name: content-type
             value: application/json
           - name: traceparent
-            value: 00-4f7de229cc5674ebd726aca885532b3c-d0365df58493ae8f-01
+            value: 00-ca271810bdd3f565caebe17adf9c4751-44d75aa09efa9ecf-01
           - name: user-agent
             value: customcommandsclient/v1 (Node.js v20.4.0)
           - name: x-requested-with
@@ -599,7 +599,10 @@ log:
                 text: Ok.
               - speaker: human
                 text: >-
-                  Answer positively without apologizing.
+                  Answer positively without apologizing. 
+
+
+                  You have access to the provided codebase context.
 
 
                   Question: Give me the names of the files I have shared with you so far. Format the response as a bulleted list. Only include the raw filename, no extra formatting like quotes.
@@ -616,14 +619,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=8&client-name=customcommandsclient&client-version=v1
       response:
-        bodySize: 427
+        bodySize: 645
         content:
           mimeType: text/event-stream
-          size: 427
+          size: 645
           text: >+
             event: completion
 
-            data: {"deltaText":"- example1.ts\n- example2.ts\n- example3.ts","stopReason":"end_turn"}
+            data: {"deltaText":"Here are all the files shared:\n\n• src/example1.ts\n• src/example2.ts\n• src/example3.ts","stopReason":"end_turn"}
 
 
             event: done
@@ -633,7 +636,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Fri, 02 May 2025 09:58:36 GMT
+            value: Tue, 20 May 2025 00:15:46 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -662,8 +665,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-05-02T09:58:35.274Z
-      time: 1398
+      startedDateTime: 2025-05-20T00:15:43.624Z
+      time: 3006
       timings:
         blocked: -1
         connect: -1
@@ -671,12 +674,12 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 1398
-    - _id: 31561df860761d96d71a8879dbca2888
+        wait: 3006
+    - _id: d5645b3130d2337b849d3f71f76875b0
       _order: 0
       cache: {}
       request:
-        bodySize: 2072
+        bodySize: 2126
         cookies: []
         headers:
           - name: accept-encoding
@@ -689,7 +692,7 @@ log:
           - name: content-type
             value: application/json
           - name: traceparent
-            value: 00-a9b40592920bc801b49fed1e7f64a4b3-3f86253ae09f56d7-01
+            value: 00-08098dba6b2b806ff7c4a529a5d56e72-eadce5e4f4a909f7-01
           - name: user-agent
             value: customcommandsclient/v1 (Node.js v20.4.0)
           - name: x-requested-with
@@ -782,7 +785,10 @@ log:
                 text: Ok.
               - speaker: human
                 text: >-
-                  Answer positively without apologizing.
+                  Answer positively without apologizing. 
+
+
+                  You have access to the provided codebase context.
 
 
                   Question: How many file context have I shared with you? Reply single number. Skip preamble.
@@ -799,10 +805,10 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=8&client-name=customcommandsclient&client-version=v1
       response:
-        bodySize: 300
+        bodySize: 298
         content:
           mimeType: text/event-stream
-          size: 300
+          size: 298
           text: |+
             event: completion
             data: {"deltaText":"7","stopReason":"end_turn"}
@@ -813,7 +819,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Fri, 02 May 2025 09:58:38 GMT
+            value: Tue, 20 May 2025 00:15:49 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -842,8 +848,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-05-02T09:58:36.717Z
-      time: 1524
+      startedDateTime: 2025-05-20T00:15:46.673Z
+      time: 3247
       timings:
         blocked: -1
         connect: -1
@@ -851,7 +857,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 1524
+        wait: 3247
     - _id: f1b1cde4cd57488b7f0137954f0302f5
       _order: 0
       cache: {}
