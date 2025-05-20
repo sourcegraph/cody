@@ -31,9 +31,9 @@ export const Default: Story = {
                 type: ProcessType.Tool,
             },
             {
-                id: 'GitHub',
+                id: 'Terminal',
                 state: 'success',
-                content: 'Checked pull requests',
+                content: 'Executed git status command',
                 type: ProcessType.Tool,
             },
         ],
@@ -51,9 +51,9 @@ export const Loading: Story = {
                 type: ProcessType.Tool,
             },
             {
-                id: 'Documentation',
+                id: 'Codebase File',
                 state: 'pending',
-                content: 'Scanning docs...',
+                content: 'Loading file content...',
                 type: ProcessType.Tool,
             },
         ],
@@ -71,9 +71,9 @@ export const WithErrors: Story = {
                 type: ProcessType.Tool,
             },
             {
-                id: 'API Call',
+                id: 'Terminal',
                 state: 'error',
-                content: 'Failed to connect',
+                content: 'Failed to execute command',
                 type: ProcessType.Tool,
             },
         ],
@@ -92,7 +92,7 @@ export const MixedStatuses: Story = {
         isContextLoading: true,
         processes: [
             {
-                id: 'search-1',
+                id: 'Code Search',
                 state: 'pending',
                 content: 'Searching for relevant files...',
                 type: ProcessType.Tool,
@@ -103,15 +103,15 @@ export const MixedStatuses: Story = {
                 content: 'Review completed successfully.',
             },
             {
-                id: 'api-call',
+                id: 'Terminal',
                 state: 'error',
-                content: 'API call failed due to timeout.',
+                content: 'Command execution failed.',
                 type: ProcessType.Tool,
             },
             {
-                id: 'docs',
+                id: 'Cody Memory',
                 state: 'pending',
-                content: 'Scanning documentation...',
+                content: 'Retrieving from memory...',
                 type: ProcessType.Tool,
             },
         ],
@@ -123,9 +123,9 @@ export const SinglePending: Story = {
         isContextLoading: true,
         processes: [
             {
-                id: 'pending-action',
+                id: 'Codebase File',
                 state: 'pending',
-                content: 'Waiting for response from server...',
+                content: 'Retrieving file content...',
                 type: ProcessType.Tool,
             },
         ],
@@ -137,9 +137,9 @@ export const SingleError: Story = {
         isContextLoading: false,
         processes: [
             {
-                id: 'error-action',
+                id: 'Terminal',
                 state: 'error',
-                content: 'Failed to fetch data: network error.',
+                content: 'Failed to execute command: Permission denied.',
                 type: ProcessType.Tool,
             },
         ],
@@ -151,9 +151,9 @@ export const SingleSuccess: Story = {
         isContextLoading: false,
         processes: [
             {
-                id: 'success-action',
+                id: 'Code Search',
                 state: 'success',
-                content: 'Action completed successfully.',
+                content: 'Found 3 matching results.',
                 type: ProcessType.Tool,
             },
         ],
@@ -165,10 +165,10 @@ export const WithErrorProperty: Story = {
         isContextLoading: false,
         processes: [
             {
-                id: 'error-with-property',
+                id: 'Codebase File',
                 state: 'pending',
-                error: errorToChatError(new Error('Something went wrong')),
-                content: 'Processing...',
+                error: errorToChatError(new Error('File not found')),
+                content: 'Loading file...',
                 type: ProcessType.Tool,
             },
         ],
@@ -186,9 +186,9 @@ export const WithItems: Story = {
         isContextLoading: false,
         processes: [
             {
-                id: 'context-items',
+                id: 'Code Search',
                 state: 'success',
-                content: 'Selected context',
+                content: 'Found relevant files',
                 items: [FIXTURE_CONTEXT_ITEM, FIXTURE_CONTEXT_ITEM, FIXTURE_CONTEXT_ITEM], // 3 items
                 type: ProcessType.Tool,
             },
@@ -201,7 +201,7 @@ export const NoContent: Story = {
         isContextLoading: false,
         processes: [
             {
-                id: 'no-content',
+                id: 'Cody Memory',
                 state: 'success',
                 content: '',
                 type: ProcessType.Tool,
@@ -215,9 +215,9 @@ export const NoTitle: Story = {
         isContextLoading: false,
         processes: [
             {
-                id: 'no-title',
+                id: 'Terminal',
                 state: 'success',
-                content: 'No title present',
+                content: 'Command executed successfully',
                 type: ProcessType.Tool,
             },
         ],
@@ -236,9 +236,9 @@ export const DeepCodyProcess: Story = {
                 type: ProcessType.Tool,
             },
             {
-                id: 'other-tool',
+                id: 'Cody Memory',
                 state: 'pending',
-                content: 'Other tool running',
+                content: 'Retrieving memory data',
                 type: ProcessType.Tool,
             },
         ],

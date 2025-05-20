@@ -631,13 +631,15 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                             key={`${humanMessage.index}-${humanMessage.intent}-process`}
                             isContextLoading={isContextLoading}
                             processes={humanMessage?.processes ?? undefined}
+                            contextItems={humanMessage.contextFiles}
                         />
                     )}
                     {humanMessage.agent && assistantMessage?.isLoading && (
                         <ApprovalCell vscodeAPI={vscodeAPI} />
                     )}
                     {!(humanMessage.agent && isContextLoading) &&
-                        (humanMessage.contextFiles || assistantMessage || isContextLoading) &&
+                        humanMessage.contextFiles &&
+                        humanMessage.contextFiles.length > 0 &&
                         !isSearchIntent && (
                             <ContextCell
                                 key={`${humanMessage.index}-${humanMessage.intent}-context`}
