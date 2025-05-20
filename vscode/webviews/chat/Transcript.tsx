@@ -104,11 +104,31 @@ export const Transcript: FC<TranscriptProps> = props => {
         }
     }, [])
 
+    useEffect(() => {
+        if (messageInProgress?.text) {
+            // Auto-scroll to keep the growing content visible
+            const scrollableContainer = document.querySelector('[data-scrollable]')
+            if (scrollableContainer && scrollableContainer instanceof HTMLElement) {
+                // Calculate space needed for the input box
+                const lastEditor = document.querySelector<HTMLElement>(
+                    '[data-lexical-editor]:last-of-type'
+                )
+                const editorHeight = lastEditor ? lastEditor.getBoundingClientRect().height + 32 : 120 // Add some padding
+
+                // Scroll to the bottom minus the height of the editor
+                const scrollHeight = scrollableContainer.scrollHeight
+                scrollableContainer.scrollTop =
+                    scrollHeight - scrollableContainer.clientHeight + editorHeight
+            }
+        }
+    }, [messageInProgress?.text]) // Re-run this effect when the message text changes during streaming
+
     return (
         <div
             className={clsx(' tw-px-8 tw-py-4 tw-flex tw-flex-col tw-gap-4', {
                 'tw-flex-grow': transcript.length > 0,
             })}
+            data-scrollable="true"
         >
             <LastEditorContext.Provider value={lastHumanEditorRef}>
                 {interactions.map((interaction, i) => (
@@ -611,7 +631,11 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                 isLastInteraction={isLastInteraction}
                 isEditorInitiallyFocused={isLastInteraction}
                 editorRef={humanEditorRef}
-                className={!isFirstInteraction && isLastInteraction ? 'tw-mt-auto' : ''}
+                className={
+                    !isFirstInteraction && isLastInteraction
+                        ? 'tw-sticky tw-bottom-0 tw-mt-auto tw-bg-[var(--vscode-input-background)]'
+                        : 'tw-transition'
+                }
                 intent={selectedIntent}
                 manuallySelectIntent={setSelectedIntent}
             />
@@ -698,14 +722,6 @@ export function focusLastHumanMessageEditor(): void {
     }
 
     lastEditor.focus()
-
-    // Only scroll the nearest scrollable ancestor container, not all scrollable ancestors, to avoid
-    // a bug in VS Code where the iframe is pushed up by ~5px.
-    const container = lastEditor?.closest('[data-scrollable]')
-    const editorScrollItemInContainer = lastEditor.parentElement
-    if (container && container instanceof HTMLElement && editorScrollItemInContainer) {
-        container.scrollTop = editorScrollItemInContainer.offsetTop - container.offsetTop
-    }
 }
 
 export function regenerateCodeBlock({
@@ -745,7 +761,9 @@ export function editHumanMessage({
         contextItems: editorValue.contextItems.map(deserializeContextItem),
         manuallySelectedIntent,
     })
-    focusLastHumanMessageEditor()
+    setTimeout(() => {
+        focusLastHumanMessageEditor()
+    }, 50)
 }
 
 function submitHumanMessage({
@@ -765,7 +783,9 @@ function submitHumanMessage({
         manuallySelectedIntent,
         traceparent,
     })
-    focusLastHumanMessageEditor()
+    setTimeout(() => {
+        focusLastHumanMessageEditor()
+    }, 50)
 }
 
 function reevaluateSearchWithSelectedFilters({
