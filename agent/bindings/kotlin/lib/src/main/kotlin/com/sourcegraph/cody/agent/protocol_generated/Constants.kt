@@ -118,6 +118,7 @@ object Constants {
   const val started = "started"
   const val stateless = "stateless"
   const val status = "status"
+  const val step = "step"
   const val `stream-disabled` = "stream-disabled"
   const val streaming = "streaming"
   const val `string-encoded` = "string-encoded"
