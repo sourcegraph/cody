@@ -255,7 +255,7 @@ export const HistoryTabWithData: React.FC<HistoryTabProps & { chats: Lightweight
             disablePointerSelection={true}
         >
             {IDE !== CodyIDE.Web && (
-                <header className="tw-inline-flex tw-mt-4 tw-px-4 tw-gap-4">
+                <header className="tw-inline-flex tw-px-4 tw-gap-4">
                     <Button
                         variant="secondary"
                         className="tw-bg-popover tw-border tw-border-border !tw-justify-between"

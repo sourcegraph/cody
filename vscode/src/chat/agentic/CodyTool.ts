@@ -104,12 +104,13 @@ export abstract class CodyTool implements ICodyTool {
         try {
             const queries = this.parse()
             if (queries.length) {
-                cb?.onStream({
+                const process = {
                     id: toolID,
                     title: this.config.title,
                     content: queries.join(', '),
                     type: ProcessType.Tool,
-                })
+                }
+                cb?.onStream(process)
                 // Create a timeout promise
                 const timeoutPromise = new Promise<ContextItem[]>((_, reject) => {
                     setTimeout(() => {
@@ -123,7 +124,7 @@ export abstract class CodyTool implements ICodyTool {
                 // Race between execution and timeout
                 const results = await Promise.race([this.execute(span, queries, cb), timeoutPromise])
                 // Notify that tool execution is complete
-                cb?.onComplete(toolID)
+                cb?.onUpdate(process.id, { ...process, items: results, state: 'success' })
                 return results
             }
         } catch (error) {
@@ -179,7 +180,7 @@ class CliTool extends CodyTool {
         if (!approvedCommands.size) {
             throw new Error('No commands approved for execution')
         }
-        callback.onUpdate(toolID, [...approvedCommands].join(', '))
+        callback.onUpdate(toolID, { content: [...approvedCommands].join(', ') })
         logDebug('CodyTool', `executing ${approvedCommands.size} commands...`)
         return Promise.all([...approvedCommands].map(getContextFileFromShell)).then(results =>
             results.flat()
@@ -266,14 +267,6 @@ class SearchTool extends CodyTool {
             true
         )
         const maxSearchItems = 30 // Keep the latest n items and remove the rest.
-        const searchQueryItem = {
-            type: 'file',
-            content: 'Queries performed: ' + Array.from(this.performedQueries).join(', '),
-            uri: URI.file('search-history'),
-            source: ContextItemSource.Agentic,
-            title: 'TOOLCONTEXT',
-        } satisfies ContextItem
-        context.push(searchQueryItem)
         return context.slice(-maxSearchItems)
     }
 }
@@ -415,7 +408,7 @@ export class McpToolImpl extends CodyTool {
 
     public async execute(span: Span, queries: string[]): Promise<ContextItem[]> {
         span.addEvent('executeMcpTool')
-        if (!queries.length) {
+        if (!queries?.length) {
             return []
         }
 
