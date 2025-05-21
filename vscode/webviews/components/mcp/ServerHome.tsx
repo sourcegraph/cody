@@ -1,12 +1,13 @@
+import { CodyIDE } from '@sourcegraph/cody-shared'
 import type { McpServer } from '@sourcegraph/cody-shared/src/llm-providers/mcp/types'
 import {
     DatabaseBackup,
-    Minus,
     PencilRulerIcon,
     RefreshCw,
     Server,
     ServerIcon,
     Settings,
+    XIcon,
 } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { getVSCodeAPI } from '../../utils/VSCodeApi'
@@ -18,15 +19,17 @@ import type { ServerType } from './types'
 import { AddServerView } from './views/AddServerView'
 
 interface ServerHomeProps {
+    IDE: CodyIDE
     mcpServers?: ServerType[]
 }
 
-export function ServerHome({ mcpServers }: ServerHomeProps) {
+export function ServerHome({ IDE, mcpServers }: ServerHomeProps) {
     const [servers, setServers] = useState<ServerType[]>([])
     const [searchQuery, setSearchQuery] = useState('')
     const [selectedServer, setSelectedServer] = useState<ServerType | null>(null)
     const [showSkeletonAnimation, setShowSkeletonAnimation] = useState(true)
     const [pendingServer, setPendingServer] = useState<string | null>(null)
+    const [isReloading, setIsReloading] = useState(false)
 
     // Effect to disable skeleton animation after 5 seconds
     useEffect(() => {
@@ -39,10 +42,10 @@ export function ServerHome({ mcpServers }: ServerHomeProps) {
 
     // Update servers when mcpServers prop changes
     useEffect(() => {
-        if (mcpServers) {
+        if (IDE !== CodyIDE.Web && mcpServers) {
             setServers(mcpServers)
         }
-    }, [mcpServers])
+    }, [IDE, mcpServers])
 
     useEffect(() => {
         const messageHandler = (event: MessageEvent) => {
@@ -213,28 +216,33 @@ export function ServerHome({ mcpServers }: ServerHomeProps) {
                         <ServerIcon size={16} className="tw-mr-3" /> MCP Servers
                     </div>
                     <div className=" tw-inline-flex tw-gap-2">
-                        <Button
-                            variant="outline"
-                            className="tw-px-2"
-                            onClick={() =>
-                                getVSCodeAPI().postMessage({
-                                    command: 'command',
-                                    id: 'workbench.action.openSettingsJson',
-                                    args: {
-                                        revealSetting: {
-                                            key: 'cody.mcpServers',
+                        {IDE === CodyIDE.VSCode && (
+                            <Button
+                                variant="outline"
+                                className="tw-px-2"
+                                onClick={() =>
+                                    getVSCodeAPI().postMessage({
+                                        command: 'command',
+                                        id: 'workbench.action.openSettingsJson',
+                                        args: {
+                                            revealSetting: {
+                                                key: 'cody.mcpServers',
+                                            },
                                         },
-                                    },
-                                })
-                            }
-                            title="Configure settings in JSON"
-                        >
-                            <Settings size={16} /> View JSON
-                        </Button>
+                                    })
+                                }
+                                title="Configure settings in JSON"
+                            >
+                                <Settings size={16} />
+                                <span className="tw-hidden sm:tw-inline-flex tw-ml-2">View JSON</span>
+                            </Button>
+                        )}
                         <Button
                             variant="outline"
                             className="tw-px-2"
+                            disabled={isReloading}
                             onClick={() => {
+                                setIsReloading(true)
                                 setServers([])
                                 setSelectedServer(null)
                                 getVSCodeAPI().postMessage({
@@ -242,20 +250,30 @@ export function ServerHome({ mcpServers }: ServerHomeProps) {
                                     type: 'updateServer',
                                     name: '',
                                 })
+
+                                // Add a minimum loading time
+                                setTimeout(() => {
+                                    setIsReloading(false)
+                                }, 1000)
                             }}
                             title="Refresh server list"
                         >
-                            <RefreshCw size={16} /> Reload
+                            <RefreshCw size={16} className={isReloading ? 'tw-animate-spin' : ''} />{' '}
+                            <span className="tw-hidden sm:tw-inline-flex tw-ml-2">
+                                {isReloading ? 'Reloading...' : 'Reload'}
+                            </span>
                         </Button>
                     </div>
                 </header>
-                {!mcpServers?.length ? (
+                {isReloading || !mcpServers?.length ? (
                     <div className="tw-w-full tw-col-span-full tw-text-center tw-py-12 tw-border tw-rounded-lg tw-border-none">
                         <Server className="tw-h-12 tw-w-12 tw-mx-auto tw-mb-4 tw-text-muted-foreground" />
                         <h3 className="tw-text-md tw-font-medium">Waiting for server connections...</h3>
-                        <p className="tw-text-muted-foreground tw-mt-1">
-                            Add a new server to get started
-                        </p>
+                        {!isReloading && (
+                            <p className="tw-text-muted-foreground tw-mt-1">
+                                Add a new server to get started
+                            </p>
+                        )}
                     </div>
                 ) : (
                     <div>
@@ -288,20 +306,22 @@ export function ServerHome({ mcpServers }: ServerHomeProps) {
                                                     strokeWidth={1.25}
                                                     size={16}
                                                 />
-                                                <strong>{server.name}</strong>
+                                                <span className="tw-font-semibold tw-uppercase tw-tracking-wider">
+                                                    {server.name}
+                                                </span>
                                             </div>
                                             {server.name === selectedServer?.name && (
                                                 <Button
                                                     variant="ghost"
                                                     size="sm"
-                                                    className="tw-p-2 tw-z-10"
+                                                    className="tw-z-10"
                                                     onClick={e => {
                                                         e.stopPropagation()
                                                         removeServer(server.name)
                                                     }}
                                                     title="Delete server"
                                                 >
-                                                    <Minus size={16} />
+                                                    <XIcon size={16} />
                                                 </Button>
                                             )}
                                         </div>
@@ -322,9 +342,9 @@ export function ServerHome({ mcpServers }: ServerHomeProps) {
                                                         <Badge
                                                             key={`${server.name}-${tool.name}-tool`}
                                                             variant={
-                                                                tool.disabled ? 'disabled' : 'outline'
+                                                                tool.disabled ? 'disabled' : 'primary'
                                                             }
-                                                            className={`tw-truncate tw-max-w-[250px] tw-text-foreground tw-cursor-pointer tw-font-thin ${
+                                                            className={`tw-truncate tw-max-w-[250px] tw-cursor-pointer tw-font-thin ${
                                                                 tool.disabled
                                                                     ? 'tw-opacity-50 tw-line-through'
                                                                     : ''
@@ -350,14 +370,14 @@ export function ServerHome({ mcpServers }: ServerHomeProps) {
                                                                 <Badge
                                                                     key={`skeleton-${index}`}
                                                                     variant="outline"
-                                                                    className={`tw-truncate tw-max-w-[90px] tw-min-w-[70px] ${
+                                                                    className={`tw-truncate tw-max-w-[90px] tw-min-w-[70px] tw-h-5 ${
                                                                         showSkeletonAnimation
                                                                             ? 'tw-animate-pulse'
                                                                             : ''
                                                                     }`}
                                                                 >
                                                                     <Skeleton
-                                                                        className={`tw-h-4 tw-w-full tw-bg-zinc-800 ${
+                                                                        className={`tw-h-5 tw-w-full tw-bg-zinc-800 ${
                                                                             showSkeletonAnimation
                                                                                 ? 'tw-animate-pulse'
                                                                                 : ''

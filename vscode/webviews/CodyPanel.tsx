@@ -159,7 +159,7 @@ export const CodyPanel: FunctionComponent<CodyPanelProps> = ({
                         />
                     )}
                     {view === View.Mcp && mcpServers?.length !== -1 && (
-                        <ServerHome mcpServers={mcpServers} />
+                        <ServerHome mcpServers={mcpServers} IDE={clientCapabilities.agentIDE} />
                     )}
                 </TabContainer>
                 <StateDebugOverlay />
