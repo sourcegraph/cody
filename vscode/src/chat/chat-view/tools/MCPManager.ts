@@ -238,7 +238,7 @@ export class MCPManager {
             }
             // Add the connection
             const parsedConfig = result.data
-            await this.connectionManager.addConnection(name, config, parsedConfig?.disabled)
+            await this.connectionManager.addConnection(name, parsedConfig, parsedConfig?.disabled)
         } catch (error) {
             logDebug('MCPManager', `Error adding connection for ${name}`, { verbose: { error } })
         }
