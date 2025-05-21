@@ -1,4 +1,5 @@
 import type { SerializedChatTranscript } from '.'
+import type { ChatMessage } from './messages'
 
 /**
  * Enum representing the type of chat history.
@@ -26,6 +27,12 @@ export interface LightweightChatTranscript {
 
     /** The first human message text (used as fallback title) */
     firstHumanMessageText?: string
+
+    /** The model used for the chat */
+    model?: string
+
+    /** The mode of the chat */
+    mode?: ChatMessage['intent']
 }
 
 /**
@@ -46,11 +53,16 @@ export function toLightweightChatTranscript(
     const firstHumanMessage = transcript.interactions.find(
         i => !!transcript.chatTitle || !!i.humanMessage?.editorState
     )?.humanMessage
+    const lastAssistantMessage = transcript.interactions.findLast(
+        i => !!i.assistantMessage?.model
+    )?.assistantMessage
 
     return {
         id: transcript.id,
         chatTitle: transcript.chatTitle || firstHumanMessage?.text,
         lastInteractionTimestamp: transcript.lastInteractionTimestamp,
         firstHumanMessageText: firstHumanMessage?.text,
+        model: lastAssistantMessage?.model,
+        mode: lastAssistantMessage?.intent ?? 'chat',
     }
 }

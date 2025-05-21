@@ -19,7 +19,7 @@ export enum IntentEnum {
 }
 
 // Mapping between ChatMessage intent and IntentEnum for faster lookups
-export const INTENT_MAPPING: Record<string, IntentEnum> = {
+export const INTENT_MAPPING: Record<NonNullable<ChatMessage['intent']>, IntentEnum> = {
     agentic: IntentEnum.Agentic,
     chat: IntentEnum.Chat,
     search: IntentEnum.Search,
@@ -135,7 +135,7 @@ export const ModeSelectorField: React.FunctionComponent<{
             return
         }
 
-        if (INTENT_MAPPING[_intent || IntentEnum.Chat] !== currentSelectedIntent) {
+        if (INTENT_MAPPING[_intent || 'chat'] !== currentSelectedIntent) {
             setCurrentSelectedIntent(INTENT_MAPPING[_intent || 'chat'] || IntentEnum.Chat)
         }
 
