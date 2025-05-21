@@ -162,7 +162,17 @@ object ConfigUtil {
   }
 
   @JvmStatic
-  fun getCustomConfiguration(project: Project, customConfigContent: String?): String {
+  fun getConfigurationEntries(project: Project, key: String): List<Pair<String, Any>> {
+    val config = ConfigFactory.parseString(getCustomConfiguration(project)).resolve()
+    return config.entrySet().mapNotNull { configEntry ->
+      val parts = com.typesafe.config.ConfigUtil.splitPath(configEntry.key)
+      if (parts.joinToString(".").startsWith(key)) parts.last() to configEntry.value.unwrapped()
+      else null
+    }
+  }
+
+  @JvmStatic
+  fun getCustomConfiguration(project: Project, customConfigContent: String? = null): String {
     // Needed by Edit commands to trigger smart-selection; without it things break.
     // So it isn't optional in JetBrains clients, which do not offer language-neutral solutions
     // to this problem; instead we hardwire it to use the indentation-based provider.
