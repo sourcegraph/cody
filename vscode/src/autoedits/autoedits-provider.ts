@@ -49,6 +49,7 @@ import {
 import { AutoeditCompletionItem } from './autoedit-completion-item'
 import { autoeditsOnboarding } from './autoedit-onboarding'
 import { autoeditsProviderConfig } from './autoedits-config'
+import { isBigModification } from './big-diff-modification'
 import { FilterPredictionBasedOnRecentEdits } from './filter-prediction-edits'
 import { processHotStreakResponses } from './hot-streak'
 import { createMockResponseGenerator } from './mock-response-generator'
@@ -565,6 +566,17 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                     startedAt,
                     requestId,
                     discardReason: 'recentEdits',
+                    prediction: initialPrediction,
+                })
+                return null
+            }
+
+            const isBigDiff = isBigModification(document, prediction, predictionCodeToReplaceData.range)
+            if (isBigDiff) {
+                this.discardSuggestion({
+                    startedAt,
+                    requestId,
+                    discardReason: 'bigDiff',
                     prediction: initialPrediction,
                 })
                 return null
