@@ -35,13 +35,13 @@ class LocalStorage implements LocalStorageForModelPreferences {
     public readonly ANONYMOUS_USER_ID_KEY = 'sourcegraphAnonymousUid'
     public readonly LAST_USED_ENDPOINT = 'SOURCEGRAPH_CODY_ENDPOINT'
     private readonly MODEL_PREFERENCES_KEY = 'cody-model-preferences'
-    private readonly CODY_CHAT_MEMORY = 'cody-chat-memory'
     private readonly AUTO_EDITS_BETA_ENROLLED = 'cody-auto-edit-beta-onboard'
     private readonly DEVICE_PIXEL_RATIO = 'device-pixel-ratio'
 
-    public readonly keys = {
+    public readonly deprecatedKeys = {
         deepCodyLastUsedDate: 'DEEP_CODY_LAST_USED_DATE',
         deepCodyDailyUsageCount: 'DEEP_CODY_DAILY_CHAT_USAGE',
+        CODY_CHAT_MEMORY: 'cody-chat-memory',
     }
 
     /**
@@ -67,6 +67,7 @@ class LocalStorage implements LocalStorageForModelPreferences {
         } else {
             this._storage = storage
         }
+        this.clearDeprecatedKeys()
     }
 
     public getClientState(): ClientState {
@@ -328,26 +329,6 @@ class LocalStorage implements LocalStorageForModelPreferences {
         await this.set(this.MODEL_PREFERENCES_KEY, preferences)
     }
 
-    public getChatMemory(): string[] | null {
-        return this.get<string[]>(this.CODY_CHAT_MEMORY) ?? null
-    }
-
-    public async setChatMemory(memories: string[] | null): Promise<void> {
-        await this.set(this.CODY_CHAT_MEMORY, memories)
-    }
-
-    public getDeepCodyUsage(): { quota: number | undefined; lastUsed: string | undefined } {
-        const quota = this.get<number>(this.keys.deepCodyDailyUsageCount) ?? undefined
-        const lastUsed = this.get<string>(this.keys.deepCodyLastUsedDate) ?? undefined
-
-        return { quota, lastUsed }
-    }
-
-    public async setDeepCodyUsage(newQuota: number, lastUsed: string): Promise<void> {
-        await this.set(this.keys.deepCodyDailyUsageCount, newQuota)
-        await this.set(this.keys.deepCodyLastUsedDate, lastUsed)
-    }
-
     public getDevicePixelRatio(): number | null {
         return this.get<number>(this.DEVICE_PIXEL_RATIO)
     }
@@ -374,6 +355,18 @@ class LocalStorage implements LocalStorageForModelPreferences {
     public async delete(key: string): Promise<void> {
         await this.storage.update(key, undefined)
         this.onChange.fire()
+    }
+
+    public async clearDeprecatedKeys(): Promise<void> {
+        try {
+            const deprecatedKeys = Object.values(this.deprecatedKeys)
+            for (const key of deprecatedKeys) {
+                const value = this.storage.get(key)
+                if (value) await this.storage.update(key, null)
+            }
+        } catch (error) {
+            console.error('Error clearing deprecated keys:', error)
+        }
     }
 }
 

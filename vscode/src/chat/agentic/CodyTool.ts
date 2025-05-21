@@ -23,7 +23,6 @@ import { type ContextRetriever, toStructuredMentions } from '../chat-view/Contex
 import { MCPManager } from '../chat-view/tools/MCPManager'
 import { getChatContextItemsForMention } from '../context/chatContext'
 import { getCorpusContextItemsForEditorState } from '../initialContext'
-import { CodyChatMemory } from './CodyChatMemory'
 import { RawTextProcessor } from './DeepCody'
 import type { CodyToolConfig, ICodyTool, ToolStatusCallback } from './types'
 
@@ -200,8 +199,8 @@ class FileTool extends CodyTool {
                 subTag: ps`name`,
             },
             prompt: {
-                instruction: ps`To retrieve full content of a codebase file-DO NOT retrieve files that may contain secrets`,
-                placeholder: ps`FILENAME`,
+                instruction: ps`To retrieve full content of a codebase file using non-relative path filename-DO NOT retrieve files that may contain secrets`,
+                placeholder: ps`FULL_FILENAME`,
                 examples: [
                     ps`See the content of different files: \`<TOOLFILE><name>path/foo.ts</name><name>path/bar.ts</name></TOOLFILE>\``,
                 ],
@@ -213,9 +212,9 @@ class FileTool extends CodyTool {
         span.addEvent('executeFileTool')
         if (filePaths.length === 0) return []
         logDebug('CodyTool', `requesting ${filePaths.length} files`)
-        return Promise.all(filePaths.map(getContextFromRelativePath)).then(results =>
-            results.filter((item): item is ContextItem => item !== null)
-        )
+        return Promise.all(filePaths.map(getContextFromRelativePath))
+            .then(results => results.filter((item): item is ContextItem => item !== null))
+            .catch(() => [])
     }
 }
 
@@ -338,57 +337,6 @@ export class OpenCtxTool extends CodyTool {
             logDebug('CodyTool', `OpenCtx item retrieval failed for ${queries}`)
         }
         return results
-    }
-}
-
-/**
- * Tool for storing and retrieving temporary memory.
- */
-class MemoryTool extends CodyTool {
-    constructor() {
-        CodyChatMemory.initialize()
-        super({
-            title: 'Cody Memory',
-            tags: {
-                tag: ps`TOOLMEMORY`,
-                subTag: ps`store`,
-            },
-            prompt: {
-                instruction: ps`Add info about the user and their preferences (e.g. name, preferred tool, language etc) based on the question, or when asked. DO NOT store summarized questions. DO NOT clear memory unless requested`,
-                placeholder: ps`SUMMARIZED_TEXT`,
-                examples: [
-                    ps`Add user info to memory: \`<TOOLMEMORY><store>info</store></TOOLMEMORY>\``,
-                    ps`Get the stored user info: \`<TOOLMEMORY><store>GET</store></TOOLMEMORY>\``,
-                    ps`ONLY clear memory ON REQUEST: \`<TOOLMEMORY><store>FORGET</store></TOOLMEMORY>\``,
-                ],
-            },
-        })
-    }
-
-    private memoryOnStart = CodyChatMemory.retrieve()
-
-    public async execute(span: Span): Promise<ContextItem[]> {
-        span.addEvent('executeMemoryTool')
-        const storedMemory = this.memoryOnStart
-        this.processResponse()
-        // Reset the memory after first retrieval to avoid duplication during loop.
-        this.memoryOnStart = undefined
-        return storedMemory ? [storedMemory] : []
-    }
-
-    public processResponse(): void {
-        const newMemories = this.parse()
-        for (const memory of newMemories) {
-            if (memory === 'FORGET') {
-                CodyChatMemory.unload()
-                return
-            }
-            if (memory === 'GET') {
-                return
-            }
-            CodyChatMemory.load(memory)
-            logDebug('Cody Memory', 'added', { verbose: memory })
-        }
     }
 }
 
@@ -541,7 +489,6 @@ export class McpToolImpl extends CodyTool {
 
 // Define tools configuration once to avoid repetition
 export const TOOL_CONFIGS = {
-    MemoryTool: { tool: MemoryTool, useContextRetriever: false },
     SearchTool: { tool: SearchTool, useContextRetriever: true },
     CliTool: { tool: CliTool, useContextRetriever: false },
     FileTool: { tool: FileTool, useContextRetriever: false },
