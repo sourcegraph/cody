@@ -37,16 +37,17 @@ class CodyToolWindowContent(val project: Project) {
 
   @RequiresEdt
   fun refreshPanelsVisibility() {
+    if (isCurrentRuntimeMissingJcef()) {
+      showView(MissingJcefPanel())
+      return
+    }
+
     val errorOnProxyCreation = WebUIService.getInstance(project).proxyCreationException.get()
     if (errorOnProxyCreation == null) {
       webview?.proxy?.component?.let { showView(it) }
     } else {
-      if (isCurrentRuntimeMissingJcef()) {
-        showView(MissingJcefPanel())
-      } else {
-        showView(ErrorPanel())
-        logger.error(errorOnProxyCreation)
-      }
+      showView(ErrorPanel())
+      logger.error(errorOnProxyCreation)
     }
   }
 
