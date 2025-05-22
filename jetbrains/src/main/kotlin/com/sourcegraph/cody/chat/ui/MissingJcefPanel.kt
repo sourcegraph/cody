@@ -1,9 +1,9 @@
 package com.sourcegraph.cody.chat.ui
 
 import com.intellij.openapi.projectRoots.impl.jdkDownloader.RuntimeChooserUtil
-import com.sourcegraph.cody.initialization.VerifyJavaBootRuntimeVersion
 import com.intellij.ui.SimpleTextAttributes
 import com.intellij.util.ui.JBUI
+import com.sourcegraph.cody.initialization.VerifyJavaBootRuntimeVersion
 import com.sourcegraph.common.CodyBundle
 import java.awt.GridBagConstraints
 import java.awt.GridBagLayout
@@ -26,7 +26,7 @@ class MissingJcefPanel : JPanel(GridBagLayout()) {
   // Primary action: auto-switch to a JCEF runtime
   private val autoSwitchButton =
       JButton(CodyBundle.getString("switchToJcefRuntime.button")).apply {
-        addActionListener { switchToLatestJcefRuntime() }
+        addActionListener { VerifyJavaBootRuntimeVersion.chooseJcefRuntimeAutomatically() }
       }
 
   // Secondary action: manual runtime selection
@@ -46,12 +46,5 @@ class MissingJcefPanel : JPanel(GridBagLayout()) {
     add(jcefDescription, constraints)
     add(autoSwitchButton, constraints)
     add(manualChoiceButton, constraints)
-  }
-
-  /**
-   * Automatically finds the latest JCEF-supporting runtime and switches to it.
-   */
-  private fun switchToLatestJcefRuntime() {
-    VerifyJavaBootRuntimeVersion.chooseJcefRuntimeAutomatically()
   }
 }

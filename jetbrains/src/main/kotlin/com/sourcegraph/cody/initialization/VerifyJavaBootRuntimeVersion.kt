@@ -1,7 +1,5 @@
 package com.sourcegraph.cody.initialization
 
-import com.intellij.application.options.RegistryManager
-import com.intellij.ide.util.PropertiesComponent
 import com.intellij.lang.LangBundle
 import com.intellij.notification.Notification
 import com.intellij.notification.NotificationAction
@@ -9,15 +7,16 @@ import com.intellij.notification.NotificationType
 import com.intellij.notification.impl.NotificationFullContent
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.application.ApplicationInfo
-import com.intellij.openapi.application.PathManager
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
+import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.progress.Task
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.projectRoots.impl.jdkDownloader.*
 import com.intellij.openapi.util.io.FileUtil
 import com.intellij.openapi.util.registry.Registry
+import com.intellij.util.asSafely
 import com.sourcegraph.Icons
 import com.sourcegraph.common.CodyBundle
 import com.sourcegraph.common.NotificationGroups
@@ -34,56 +33,57 @@ class VerifyJavaBootRuntimeVersion : Activity {
   }
 
   companion object {
-    private val LOGGER = com.intellij.openapi.diagnostic.Logger.getInstance(VerifyJavaBootRuntimeVersion::class.java)
+    private val logger = thisLogger()
+
     fun isCurrentRuntimeMissingJcef(): Boolean {
       val model = RuntimeChooserCurrentItem.currentRuntime()
       val doesNameContainJcefSuffix = model.version?.endsWith("-jcef") ?: true
       return !doesNameContainJcefSuffix
     }
-    
+
     fun chooseJcefRuntimeAutomatically() {
       object :
-          Task.Backgroundable(
-              null,
-              LangBundle.message(
-                  "progress.title.choose.ide.runtime.downloading.jetbrains.runtime.list")) {
-        override fun run(indicator: ProgressIndicator) {
-          // Get available runtimes and filter for JCEF-enabled ones
-          val builds =
-              service<RuntimeChooserJbrListDownloader>()
-                  .downloadForUI(indicator)
-                  .filter { RuntimeChooserJreValidator.isSupportedSdkItem(it) }
-                  .filter { it.isDefaultItem }
-                  // JCEF runtimes can be identified by "jcef" in the suggestedSdkName
-                  // or "JCEF" in the product flavour description
-                  // Example: suggestedSdkName = "jbr_jcef-17.0.12-osx-aarch64-b1000.54"
-                  // Example: product.flavour = "JBR with JCEF (bundled by default)"
-                  .filter { it.suggestedSdkName?.contains("jcef", ignoreCase = true) == true || 
-                           it.product.flavour?.contains("JCEF", ignoreCase = true) == true }
-                  .map { RuntimeChooserDownloadableItem(it) }
+              Task.Backgroundable(
+                  null,
+                  LangBundle.message(
+                      "progress.title.choose.ide.runtime.downloading.jetbrains.runtime.list")) {
+            override fun run(indicator: ProgressIndicator) {
 
-          if (builds.isEmpty()) {
-            // If no JCEF runtimes are found, log it and fallback to showing the manual chooser
-            LOGGER.warn("No JCEF-supporting runtimes found. Showing manual runtime chooser.")
-            RuntimeChooserUtil.showRuntimeChooserPopup()
-            return
+              val builds =
+                  service<RuntimeChooserJbrListDownloader>()
+                      .downloadForUI(indicator)
+                      .filter { RuntimeChooserJreValidator.isSupportedSdkItem(it) }
+                      .filter { it.isDefaultItem }
+                      // JCEF runtimes can be identified by "jcef" in the suggestedSdkName
+                      // or "JCEF" in the product flavour description
+                      // Example: suggestedSdkName = "jbr_jcef-17.0.12-osx-aarch64-b1000.54"
+                      // Example: product.flavour = "JBR with JCEF (bundled by default)"
+                      .filter {
+                        it.suggestedSdkName.contains("jcef", ignoreCase = true) ||
+                            it.product.flavour?.contains("JCEF", ignoreCase = true) == true
+                      }
+                      .map { RuntimeChooserDownloadableItem(it) }
+
+              if (builds.isEmpty()) {
+                logger.warn("No JCEF-supporting runtimes found. Showing manual runtime chooser.")
+                RuntimeChooserUtil.showRuntimeChooserPopup()
+                return
+              }
+
+              // The list of builds is sorted by default, get the latest one
+              val first = builds.first()
+              val item = first.asSafely<RuntimeChooserDownloadableItem>()?.item ?: return
+
+              logger.info("Installing JCEF-supporting runtime: ${item.fullPresentationText}")
+              val pathText = getDefaultInstallPathFor(item)
+              val path = getInstallPathFromText(item, pathText)
+              service<RuntimeChooserPaths>().installCustomJdk(item.fullPresentationText) { indicator
+                ->
+                service<RuntimeChooserDownloader>().downloadAndUse(indicator, item, path)
+              }
+            }
           }
-
-          // The list of builds is sorted by default, get the latest one
-          val first = builds.first()
-
-          val item = first.asSafely<RuntimeChooserDownloadableItem>()?.item ?: return
-          
-          // Log the runtime we're going to install
-          LOGGER.info("Installing JCEF-supporting runtime: ${item.fullPresentationText}")
-          val pathText = getDefaultInstallPathFor(item)
-          val path = getInstallPathFromText(item, pathText)
-          service<RuntimeChooserPaths>().installCustomJdk(item.fullPresentationText) { indicator ->
-            service<RuntimeChooserDownloader>().downloadAndUse(indicator, item, path)
-          }
-        }
-      }
-      .queue()
+          .queue()
     }
 
     private fun getDefaultInstallPathFor(item: JdkItem): String {
@@ -131,28 +131,20 @@ class JcefRuntimeNotification :
   init {
     icon = Icons.CodyLogoSlash
 
-    // Primary action: automatically switch to a JCEF-supporting runtime
     addAction(
         object : NotificationAction(CodyBundle.getString("switchToJcefRuntime.button")) {
           override fun actionPerformed(anActionEvent: AnActionEvent, notification: Notification) {
-            switchToLatestJcefRuntime()
+            VerifyJavaBootRuntimeVersion.chooseJcefRuntimeAutomatically()
             notification.expire()
           }
         })
 
-    // Secondary action: manually choose a runtime with JCEF
     addAction(
         object : NotificationAction(CodyBundle.getString("chooseRuntimeWithJcef.button")) {
           override fun actionPerformed(anActionEvent: AnActionEvent, notification: Notification) {
             RuntimeChooserUtil.showRuntimeChooserPopup()
+            notification.expire()
           }
         })
-  }
-
-  /**
-   * Automatically finds the latest JCEF-supporting runtime and switches to it.
-   */
-  private fun switchToLatestJcefRuntime() {
-    VerifyJavaBootRuntimeVersion.chooseJcefRuntimeAutomatically()
   }
 }
