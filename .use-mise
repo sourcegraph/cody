@@ -1,0 +1,6 @@
+Stateless CI agents use the presence of this file to determine whether it should install tools with mise or install them with ASDF.
+Thus if you delete this file, CI will use ASDF to install tools and not mise.
+
+The file is only meant to be here while we transition to using mise completely.
+
+For more information you can reach out to the dev-infra team on #discuss-dev-infra.
