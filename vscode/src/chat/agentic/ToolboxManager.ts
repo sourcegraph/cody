@@ -14,7 +14,7 @@ import {
     startWith,
     userProductSubscription,
 } from '@sourcegraph/cody-shared'
-import { DeepCodyAgentID, DeepCodyModelRef } from '@sourcegraph/cody-shared/src/models/client'
+import { DeepCodyAgentID } from '@sourcegraph/cody-shared/src/models/client'
 import { type Observable, Subject, map } from 'observable-fns'
 import { env } from 'vscode'
 import { isCodyTesting } from '../chat-view/chat-helpers'
@@ -30,7 +30,7 @@ const DEFAULT_SHELL_CONFIG = Object.freeze({
 /**
  * ToolboxManager manages the toolbox settings for the Cody chat agents.
  * NOTE: This is a Singleton class.
- * TODO: Clean up this class and remove unused code.
+ * TODO: Merge this class into DeepCodyHandler
  */
 class ToolboxManager {
     private static instance?: ToolboxManager
@@ -40,10 +40,7 @@ class ToolboxManager {
     }
 
     private isEnabled = false
-    /**
-     * Only runs agentic chat if the model is Agentic chat
-     */
-    private isAgenticModelOnly = true
+
     private readonly changeNotifications = new Subject<void>()
     private shellConfig = { ...DEFAULT_SHELL_CONFIG }
 
@@ -57,8 +54,9 @@ class ToolboxManager {
             return null
         }
         const shellError = this.getFeatureError('shell')
-        // TODO: Remove hard-coded agent once we have a proper agentic chat selection UI
         return {
+            // @Deprecated Keeping this for backward compatibility to avoid breaking
+            // telemetry and existing code.
             agent: { name: this.isEnabled ? DeepCodyAgentID : undefined },
             shell: {
                 enabled: shellError === undefined,
@@ -67,11 +65,7 @@ class ToolboxManager {
         }
     }
 
-    public isAgenticChatEnabled(model?: string): boolean {
-        // TODO: Remove hard-coded model name once agentic chat goes GA.
-        if (this.isAgenticModelOnly && model !== DeepCodyModelRef) {
-            return false
-        }
+    public isAgenticChatEnabled(): boolean {
         return this.isEnabled && Boolean(DeepCodyAgent.model) && !isCodyTesting
     }
 
@@ -88,7 +82,6 @@ class ToolboxManager {
         featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.AgenticContextDisabled),
         featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.ContextAgentDefaultChatModel),
         featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.DeepCodyShellContext),
-        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.NextAgenticChatInternal),
         userProductSubscription.pipe(distinctUntilChanged()),
         modelsService.modelsChanges.pipe(
             map(models => (models === pendingOperation ? null : models)),
@@ -103,7 +96,6 @@ class ToolboxManager {
                 isDisabledOnInstance,
                 useDefaultChatModel,
                 instanceShellContextFlag,
-                agentModeFlag,
                 sub,
                 models,
                 config,
@@ -135,7 +127,6 @@ class ToolboxManager {
                 } else {
                     DeepCodyAgent.model = getDeepCodyModel(models.primaryModels)?.id
                 }
-                this.isAgenticModelOnly = !agentModeFlag || isDotComUser
                 this.isEnabled = Boolean(DeepCodyAgent.model)
 
                 Object.assign(this.shellConfig, {

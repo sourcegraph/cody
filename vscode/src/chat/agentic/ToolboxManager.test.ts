@@ -136,7 +136,6 @@ describe('ToolboxManager', () => {
                 name: 'should return settings with agent when enabled and not rate limited',
                 setup: () => {
                     vi.spyOn(toolboxManager as any, 'isEnabled', 'get').mockReturnValue(true)
-                    vi.spyOn(toolboxManager as any, 'isAgenticModelOnly', 'get').mockReturnValue(false)
                     vi.spyOn(toolboxManager as any, 'getFeatureError').mockReturnValue(undefined)
                 },
                 expected: {
@@ -151,7 +150,6 @@ describe('ToolboxManager', () => {
                 name: 'should return settings with shell error when shell not supported',
                 setup: () => {
                     vi.spyOn(toolboxManager as any, 'isEnabled', 'get').mockReturnValue(true)
-                    vi.spyOn(toolboxManager as any, 'isAgenticModelOnly', 'get').mockReturnValue(false)
                     vi.spyOn(toolboxManager as any, 'getFeatureError').mockReturnValue(
                         'Not supported by the instance.'
                     )

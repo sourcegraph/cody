@@ -801,7 +801,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     text: inputText,
                     editorState,
                     intent: manuallySelectedIntent,
-                    agent: toolboxManager.isAgenticChatEnabled(model) ? DeepCodyAgent.id : undefined,
+                    agent: toolboxManager.isAgenticChatEnabled() ? DeepCodyAgent.id : undefined,
                 })
 
                 this.setCustomChatTitle(requestID, inputText, signal)
