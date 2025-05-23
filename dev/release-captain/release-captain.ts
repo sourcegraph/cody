@@ -10,7 +10,6 @@ import inquirer from 'inquirer'
 enum ReleaseStage {
     CREATE_BRANCH = 'create-branch',
     STABILIZE = 'stabilize',
-    SHIP_STABLE = 'ship-stable',
     WRAP_UP = 'wrap-up',
 }
 // Define types for release completion
@@ -23,47 +22,6 @@ interface ReleaseCompletion {
     [stage: string]: ReleaseCompletionStatus
 }
 
-// Define choices for inquirer prompts
-interface InquirerChoice {
-    name: string
-    value: string | ReleaseStage
-    description?: string
-}
-
-// Define various prompt responses
-interface MilestoneReleasePrompt {
-    milestone: number
-}
-
-interface StageSelectionPrompt {
-    stage: ReleaseStage
-}
-
-interface ConfirmationPrompt {
-    [key: string]: boolean
-}
-
-interface TaskSelectionPrompt {
-    selectedTask: string
-}
-
-interface ReleaseSelectionPrompt {
-    selectedRelease: string
-}
-
-interface NextStagePrompt {
-    nextStage: string | ReleaseStage
-}
-
-interface BackportPR {
-    number: number
-    title: string
-    url: string
-}
-
-interface BuildTypePrompt {
-    buildType: 'jetbrains' | 'vscode' | 'both'
-}
 interface ReleaseConfig {
     milestone: number
     branchPoint?: string
@@ -97,7 +55,7 @@ class ReleaseCaptain {
 
         this.program
             .command('create-branch')
-            .description('Create the release branch')
+            .description('Cut pre-release build')
             .action(() => {
                 this.dryRun = !!this.program.opts().dryRun
                 this.createReleaseBranch()
@@ -105,23 +63,15 @@ class ReleaseCaptain {
 
         this.program
             .command('stabilize')
-            .description('Stabilize the release branch')
+            .description('Cut patch release after applying backports')
             .action(() => {
                 this.dryRun = !!this.program.opts().dryRun
                 this.stabilizeRelease()
             })
 
         this.program
-            .command('ship')
-            .description('Ship the stable release')
-            .action(() => {
-                this.dryRun = !!this.program.opts().dryRun
-                this.shipStableRelease()
-            })
-
-        this.program
             .command('wrap-up')
-            .description('Wrap up the release process')
+            .description('Cut stable release build')
             .action(() => {
                 this.dryRun = !!this.program.opts().dryRun
                 this.wrapUpRelease()
@@ -245,12 +195,11 @@ class ReleaseCaptain {
             {
                 type: 'list',
                 name: 'stage',
-                message: 'Which stage of the release process would you like to start with?',
+                message: 'Which release process are we performing today??',
                 choices: [
-                    { name: 'Create release branch (Day 1)', value: ReleaseStage.CREATE_BRANCH },
-                    { name: 'Stabilize release branch (Days 2-6)', value: ReleaseStage.STABILIZE },
-                    { name: 'Ship stable release (Day 7)', value: ReleaseStage.SHIP_STABLE },
-                    { name: 'Wrap up the release', value: ReleaseStage.WRAP_UP },
+                    { name: 'Cut pre-release', value: ReleaseStage.CREATE_BRANCH },
+                    { name: 'Cut stable release', value: ReleaseStage.WRAP_UP },
+                    { name: 'Cut patch release after backports', value: ReleaseStage.STABILIZE },
                 ],
             },
         ])
@@ -261,9 +210,6 @@ class ReleaseCaptain {
                 break
             case ReleaseStage.STABILIZE:
                 await this.stabilizeRelease()
-                break
-            case ReleaseStage.SHIP_STABLE:
-                await this.shipStableRelease()
                 break
             case ReleaseStage.WRAP_UP:
                 await this.wrapUpRelease()
@@ -391,9 +337,7 @@ class ReleaseCaptain {
         // Notify teams
         console.log(chalk.blue('\n📣 Next Steps:'))
         console.log(chalk.yellow('1. Notify the Cody Core team in #team-cody-core about:'))
-        console.log(
-            `   - Release versions (M${this.config.milestone})`
-        )
+        console.log(`   - Release versions (M${this.config.milestone})`)
         console.log(`   - Branch point (${this.config.branchPoint})`)
         console.log('   - Remind team members about deadlines and dogfooding')
 
@@ -412,7 +356,7 @@ class ReleaseCaptain {
                 name: 'nextStage',
                 message: 'What would you like to do next?',
                 choices: [
-                    { name: 'Continue to stabilize release branch', value: ReleaseStage.STABILIZE },
+                    { name: 'Continue to cut patch release', value: ReleaseStage.STABILIZE },
                     { name: 'Exit', value: 'exit' },
                 ],
             },
@@ -428,7 +372,7 @@ class ReleaseCaptain {
             this.config = await this.promptForConfig()
         }
 
-        console.log(chalk.blue('🛠️ Stabilizing Release Branch - Days 2-6'))
+        console.log(chalk.blue('🛠️ Cutting Patch Release After Backports - Days 2-6'))
         console.log(chalk.yellow(`Release milestone: M${this.config.milestone}`))
 
         const stabilizationTasks = [
@@ -467,7 +411,7 @@ class ReleaseCaptain {
                 message: 'What stabilization task would you like to perform?',
                 choices: [
                     ...stabilizationTasks,
-                    { name: 'Continue to ship stable release', value: 'continue' },
+                    { name: 'Continue to cut stable release', value: 'continue' },
                     { name: 'Exit', value: 'exit' },
                 ],
             },
@@ -479,7 +423,7 @@ class ReleaseCaptain {
 
         if (selectedTask === 'continue') {
             this.saveCompletionStatus(ReleaseStage.STABILIZE)
-            await this.shipStableRelease()
+            await this.wrapUpRelease()
             return
         }
 
@@ -576,99 +520,6 @@ class ReleaseCaptain {
         } catch (error) {
             console.error(chalk.red('Error creating prerelease builds:'), error)
         }
-    }
-
-    private async shipStableRelease(): Promise<void> {
-        if (!this.loadConfig()) {
-            this.config = await this.promptForConfig()
-        }
-
-        console.log(chalk.blue('🚢 Shipping Stable Release - Day 7'))
-        console.log(chalk.yellow(`Release milestone: M${this.config.milestone}`))
-
-        console.log(chalk.yellow('Before proceeding, perform these checks:'))
-        console.log('1. Create a thread in #team-cody-core for shipping this release')
-        console.log('2. Do a final check for problems (same as days 2-6)')
-        console.log('3. If ship blockers exist, consult with EM, TL and team')
-
-        const { noShipBlockers } = await inquirer.prompt([
-            {
-                type: 'confirm',
-                name: 'noShipBlockers',
-                message: 'Have you confirmed there are no ship blockers?',
-                default: false,
-            },
-        ])
-
-        if (!noShipBlockers) {
-            console.log(
-                chalk.red('⛔ Do not proceed with the release until ship blockers are resolved.')
-            )
-            return
-        }
-
-        const releaseOptions = [
-            {
-                name: 'Ship VSCode to Stable',
-                value: 'vscode_stable',
-            },
-            {
-                name: 'Ship JetBrains to Stable',
-                value: 'jetbrains_stable',
-            },
-            {
-                name: 'Ship agent CLI release',
-                value: 'agent_cli',
-            },
-            {
-                name: 'Ship Cody Web to Sourcegraph',
-                value: 'cody_web',
-            },
-        ]
-
-        const { selectedRelease } = await inquirer.prompt([
-            {
-                type: 'list',
-                name: 'selectedRelease',
-                message: 'What would you like to release?',
-                choices: [
-                    ...releaseOptions,
-                    { name: 'Continue to wrap up', value: 'continue' },
-                    { name: 'Exit', value: 'exit' },
-                ],
-            },
-        ])
-
-        if (selectedRelease === 'exit') {
-            return
-        }
-
-        if (selectedRelease === 'continue') {
-            this.saveCompletionStatus(ReleaseStage.SHIP_STABLE)
-            await this.wrapUpRelease()
-            return
-        }
-
-        switch (selectedRelease) {
-            case 'vscode_stable':
-                await this.shipVSCodeStable()
-                break
-
-            case 'jetbrains_stable':
-                await this.shipJetBrainsStable()
-                break
-
-            case 'agent_cli':
-                await this.shipAgentCLI()
-                break
-
-            case 'cody_web':
-                await this.shipCodyWeb()
-                break
-        }
-
-        // Return to ship stable menu
-        await this.shipStableRelease()
     }
 
     private async shipVSCodeStable(): Promise<void> {
@@ -883,16 +734,281 @@ class ReleaseCaptain {
     private async shipCodyWeb(): Promise<void> {
         console.log(chalk.yellow('📦 Shipping Cody Web to Sourcegraph'))
 
-        console.log('Follow the Cody Web publishing guide:')
-        console.log(
-            'https://sourcegraph.sourcegraph.com/github.com/sourcegraph/cody/-/blob/web/publish.md'
-        )
+        // Check prerequisites
+        console.log(chalk.yellow('Prerequisites:'))
+        console.log('- Access to publish to the @sourcegraph organization on npm')
+        console.log('- npm login credentials from 1Password')
+        console.log('- Access to the sourcegraph/sourcegraph repository')
 
-        console.log(
-            chalk.blue(
-                '\nRefer to the detailed steps in the guide for releasing Cody Web from the stable release branch.'
+        const { prerequisitesMet } = await inquirer.prompt([
+            {
+                type: 'confirm',
+                name: 'prerequisitesMet',
+                message: 'Have you met all prerequisites?',
+                default: false,
+            },
+        ])
+
+        if (!prerequisitesMet) {
+            console.log(chalk.red('Please meet all prerequisites before continuing.'))
+            console.log('Login to npm using: npm login')
+            console.log('Credentials can be found in 1Password')
+            return
+        }
+
+        // Get current version
+        let currentVersion = '0.0.0'
+        try {
+            const packageJsonPath = path.join(process.cwd(), 'web', 'package.json')
+            if (fs.existsSync(packageJsonPath)) {
+                const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'))
+                currentVersion = packageJson.version || '0.0.0'
+            }
+        } catch (error) {
+            console.error(chalk.yellow('Could not read current version from web/package.json'))
+        }
+
+        console.log(chalk.blue(`Current @sourcegraph/cody-web version: ${currentVersion}`))
+
+        // Prompt for version update type
+        const { versionType } = await inquirer.prompt([
+            {
+                type: 'list',
+                name: 'versionType',
+                message: 'What type of version update is this?',
+                choices: [
+                    { name: 'Minor version (new release)', value: 'minor' },
+                    { name: 'Patch version (bug fix)', value: 'patch' },
+                    { name: 'Custom version', value: 'custom' },
+                ],
+            },
+        ])
+
+        let newVersion = currentVersion
+        if (versionType === 'minor') {
+            const parts = currentVersion.split('.')
+            newVersion = `${parts[0]}.${Number.parseInt(parts[1], 10) + 1}.0`
+        } else if (versionType === 'patch') {
+            const parts = currentVersion.split('.')
+            newVersion = `${parts[0]}.${parts[1]}.${Number.parseInt(parts[2], 10) + 1}`
+        } else {
+            const { customVersion } = await inquirer.prompt([
+                {
+                    type: 'input',
+                    name: 'customVersion',
+                    message: 'Enter the new version:',
+                    validate: (value: string) => {
+                        if (!/^\d+\.\d+\.\d+$/.test(value)) {
+                            return 'Please enter a valid version (X.Y.Z)'
+                        }
+                        return true
+                    },
+                },
+            ])
+            newVersion = customVersion
+        }
+
+        console.log(chalk.green(`New version will be: ${newVersion}`))
+
+        // Step 1: Update version in web/package.json
+        const { confirmVersionUpdate } = await inquirer.prompt([
+            {
+                type: 'confirm',
+                name: 'confirmVersionUpdate',
+                message: `Update @sourcegraph/cody-web version from ${currentVersion} to ${newVersion}?`,
+                default: true,
+            },
+        ])
+
+        if (!confirmVersionUpdate) {
+            console.log(chalk.yellow('Version update cancelled.'))
+            return
+        }
+
+        try {
+            console.log(chalk.blue('Step 1: Updating version in web/package.json...'))
+            this.runCommand(`cd web && npm version ${newVersion} --no-git-tag-version`)
+            console.log(chalk.green('✓ Version updated in web/package.json'))
+        } catch (error) {
+            console.error(chalk.red('Error updating version:'), error)
+            return
+        }
+
+        // Step 2: Test locally
+        const { skipLocalTest } = await inquirer.prompt([
+            {
+                type: 'confirm',
+                name: 'skipLocalTest',
+                message: 'Do you want to skip local testing? (not recommended)',
+                default: false,
+            },
+        ])
+
+        if (!skipLocalTest) {
+            console.log(chalk.blue('\nStep 2: Testing locally...'))
+            console.log(chalk.yellow('Building the package...'))
+
+            try {
+                this.runCommand('cd web && pnpm build')
+                console.log(chalk.green('✓ Package built successfully'))
+
+                console.log(chalk.yellow('\nCreating global link for testing...'))
+                this.runCommand('cd web && pnpm link --global')
+                console.log(chalk.green('✓ Global link created'))
+
+                console.log(chalk.yellow('\nTo test in Sourcegraph repository:'))
+                console.log('1. cd ../sourcegraph')
+                console.log('2. cd client/web-sveltekit/ && pnpm link @sourcegraph/cody-web --global')
+                console.log('3. cd ../web && pnpm link @sourcegraph/cody-web --global')
+                console.log('4. Add the following to sg.config.overwrite.yaml:')
+                console.log(
+                    chalk.cyan(`
+commands:
+  web-standalone-http:
+    install: |
+      pnpm run generate
+  web-sveltekit-server:
+    install: |
+      pnpm run generate
+`)
+                )
+                console.log('5. Run: sg start web-standalone')
+                console.log('6. Test Cody functionality in code search')
+
+                const { testingComplete } = await inquirer.prompt([
+                    {
+                        type: 'confirm',
+                        name: 'testingComplete',
+                        message: 'Have you completed local testing and verified everything works?',
+                        default: false,
+                    },
+                ])
+
+                if (!testingComplete) {
+                    console.log(chalk.yellow('Please complete testing before continuing.'))
+                    return
+                }
+            } catch (error) {
+                console.error(chalk.red('Error during testing:'), error)
+                return
+            }
+        }
+
+        // Step 3: Commit changes in Cody repository
+        console.log(chalk.blue('\nStep 3: Committing changes in Cody repository...'))
+
+        const { createCommit } = await inquirer.prompt([
+            {
+                type: 'confirm',
+                name: 'createCommit',
+                message: 'Create commit for version bump?',
+                default: true,
+            },
+        ])
+
+        if (createCommit) {
+            try {
+                this.runCommand('git add web/package.json')
+                this.runCommand(
+                    `git commit -m "chore: bump @sourcegraph/cody-web version to ${newVersion}"`
+                )
+                console.log(chalk.green('✓ Commit created'))
+
+                console.log(
+                    chalk.yellow('\nPlease create a PR with this commit and get it reviewed and merged.')
+                )
+                console.log(
+                    'You can use: gh pr create --title "chore: bump @sourcegraph/cody-web version to ' +
+                        newVersion +
+                        '"'
+                )
+
+                const { prMerged } = await inquirer.prompt([
+                    {
+                        type: 'confirm',
+                        name: 'prMerged',
+                        message: 'Has the PR been reviewed and merged?',
+                        default: false,
+                    },
+                ])
+
+                if (!prMerged) {
+                    console.log(chalk.yellow('Please get the PR merged before continuing.'))
+                    return
+                }
+            } catch (error) {
+                console.error(chalk.red('Error creating commit:'), error)
+                return
+            }
+        }
+
+        // Step 4: Publish the package
+        console.log(chalk.blue('\nStep 4: Publishing the package to npm...'))
+
+        const { confirmPublish } = await inquirer.prompt([
+            {
+                type: 'confirm',
+                name: 'confirmPublish',
+                message: `Ready to publish @sourcegraph/cody-web@${newVersion} to npm?`,
+                default: false,
+            },
+        ])
+
+        if (confirmPublish) {
+            try {
+                // Ensure we're on the latest merged code
+                console.log('Fetching latest changes...')
+                this.runCommand('git fetch origin')
+                this.runCommand(`git checkout origin/M${this.config.milestone}`)
+
+                console.log('Building package for production...')
+                this.runCommand('cd web && pnpm build')
+
+                console.log('Publishing to npm...')
+                this.runCommand('cd web && pnpm publish')
+
+                console.log(
+                    chalk.green(`✓ Successfully published @sourcegraph/cody-web@${newVersion} to npm`)
+                )
+                console.log(
+                    chalk.yellow(
+                        'You can verify at: https://www.npmjs.com/package/@sourcegraph/cody-web'
+                    )
+                )
+            } catch (error) {
+                console.error(chalk.red('Error publishing package:'), error)
+                console.log(chalk.yellow('You may need to run: cd web && pnpm publish'))
+                return
+            }
+        }
+
+        // Step 5: Update Sourcegraph repository
+        console.log(chalk.blue('\nStep 5: Updating Sourcegraph repository...'))
+        console.log(chalk.yellow('You need to update the @sourcegraph/cody-web version in:'))
+        console.log('- client/web-sveltekit/package.json')
+        console.log('- client/web/package.json (if applicable)')
+        console.log(`\nUpdate both to version: ${newVersion}`)
+        console.log('\nThen create a PR in the sourcegraph/sourcegraph repository.')
+
+        const { sourcegraphUpdated } = await inquirer.prompt([
+            {
+                type: 'confirm',
+                name: 'sourcegraphUpdated',
+                message: 'Have you created and merged the PR in the sourcegraph repository?',
+                default: false,
+            },
+        ])
+
+        if (sourcegraphUpdated) {
+            console.log(chalk.green('\n🎉 Cody Web release completed successfully!'))
+            console.log(chalk.blue('Summary:'))
+            console.log(`- Published @sourcegraph/cody-web@${newVersion} to npm`)
+            console.log('- Updated version in sourcegraph repository')
+        } else {
+            console.log(
+                chalk.yellow('\nRemember to update the sourcegraph repository to complete the release.')
             )
-        )
+        }
     }
 
     private async wrapUpRelease(): Promise<void> {
@@ -900,14 +1016,91 @@ class ReleaseCaptain {
             this.config = await this.promptForConfig()
         }
 
-        console.log(chalk.blue('🎉 Wrapping Up Release'))
+        console.log(chalk.blue('🚢 Cutting Stable Release Build - Day 7'))
         console.log(chalk.yellow(`Release milestone: M${this.config.milestone}`))
 
-        console.log(chalk.green('Final steps:'))
-        console.log('1. Send a message to the release thread in #team-cody-core')
-        console.log('   - Let them know VSCode stable release is done')
-        console.log('   - JetBrains release is waiting for Marketplace approval')
-        console.log('2. Be available for emergency backports if needed')
+        console.log(chalk.yellow('Before proceeding, perform these checks:'))
+        console.log('1. Create a thread in #team-cody-core for shipping this release')
+        console.log('2. Do a final check for problems (same as days 2-6)')
+        console.log('3. If ship blockers exist, consult with EM, TL and team')
+
+        const { noShipBlockers } = await inquirer.prompt([
+            {
+                type: 'confirm',
+                name: 'noShipBlockers',
+                message: 'Have you confirmed there are no ship blockers?',
+                default: false,
+            },
+        ])
+
+        if (!noShipBlockers) {
+            console.log(
+                chalk.red('⛔ Do not proceed with the release until ship blockers are resolved.')
+            )
+            return
+        }
+
+        const releaseOptions = [
+            {
+                name: 'Ship VSCode to Stable',
+                value: 'vscode_stable',
+            },
+            {
+                name: 'Ship JetBrains to Stable',
+                value: 'jetbrains_stable',
+            },
+            {
+                name: 'Ship agent CLI release',
+                value: 'agent_cli',
+            },
+            {
+                name: 'Ship Cody Web to Sourcegraph',
+                value: 'cody_web',
+            },
+        ]
+
+        const { selectedRelease } = await inquirer.prompt([
+            {
+                type: 'list',
+                name: 'selectedRelease',
+                message: 'What would you like to release?',
+                choices: [
+                    ...releaseOptions,
+                    { name: 'Finish release process', value: 'finish' },
+                    { name: 'Exit', value: 'exit' },
+                ],
+            },
+        ])
+
+        if (selectedRelease === 'exit') {
+            return
+        }
+
+        if (selectedRelease === 'finish') {
+            await this.finishReleaseProcess()
+            return
+        }
+
+        switch (selectedRelease) {
+            case 'vscode_stable':
+                await this.shipVSCodeStable()
+                break
+
+            case 'jetbrains_stable':
+                await this.shipJetBrainsStable()
+                break
+
+            case 'agent_cli':
+                await this.shipAgentCLI()
+                break
+
+            case 'cody_web':
+                await this.shipCodyWeb()
+                break
+        }
+
+        // Return to wrap up menu
+        await this.wrapUpRelease()
 
         console.log(chalk.blue('\nSuggestions for improvement:'))
         console.log('Add ideas to the Cody extension release improvements project in Linear:')
@@ -918,6 +1111,32 @@ class ReleaseCaptain {
         this.saveCompletionStatus(ReleaseStage.WRAP_UP)
 
         console.log(chalk.green('\n🎉 Congratulations! You have completed the release process.'))
+        console.log(
+            chalk.yellow(
+                'Remember to check that JetBrains approves the stable release and it appears in JetBrains Marketplace.'
+            )
+        )
+    }
+
+    private async finishReleaseProcess(): Promise<void> {
+        console.log(chalk.blue('🎉 Finishing Release Process'))
+        console.log(chalk.yellow(`Release milestone: M${this.config.milestone}`))
+
+        console.log(chalk.green('Final steps:'))
+        console.log('1. Send a message to the release thread in #team-cody-core')
+        console.log('   - Let them know VSCode stable release is done')
+        console.log('   - JetBrains release is waiting for Marketplace approval')
+        console.log('2. Be available for emergency backports if needed')
+
+        console.log(chalk.blue('\\nSuggestions for improvement:'))
+        console.log('Add ideas to the Cody extension release improvements project in Linear:')
+        console.log(
+            'https://linear.app/sourcegraph/project/cody-extension-release-improvements-4adca5f5d51b/overview'
+        )
+
+        this.saveCompletionStatus(ReleaseStage.WRAP_UP)
+
+        console.log(chalk.green('\\n🎉 Congratulations! You have completed the release process.'))
         console.log(
             chalk.yellow(
                 'Remember to check that JetBrains approves the stable release and it appears in JetBrains Marketplace.'
@@ -996,11 +1215,11 @@ class ReleaseCaptain {
     }
 
     private getConfigPath(): string {
-        return path.join(process.cwd(), '.release-captain-config.json')
+        return path.join(process.cwd(), 'dist/.release-captain-config.json')
     }
 
     private getCompletionPath(): string {
-        return path.join(process.cwd(), '.release-captain-completion.json')
+        return path.join(process.cwd(), 'dist/.release-captain-completion.json')
     }
 
     private saveConfig(): void {

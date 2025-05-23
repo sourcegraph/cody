@@ -14,6 +14,12 @@ For details about the release process, see the [Release Captain Playbook](https:
 
 ## Installation
 
+### Requirements
+
+- Node.js 16+
+- Git
+- GitHub CLI (`gh`)
+
 ### Standard Build
 
 ```bash
