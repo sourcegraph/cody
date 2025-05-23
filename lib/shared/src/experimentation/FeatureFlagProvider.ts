@@ -155,7 +155,7 @@ export enum FeatureFlag {
     /**
      * Allow Deep Cody to use MCP tools during context fetching steps.
      */
-    AgenticChatWithMCP = 'agentic-chat-mcp-enabled',
+    AgenticChatWithMCP = 'agentic-context-mcp-enabled',
 
     /**
      * Disable agentic context for chat - Deep Cody disabled

@@ -29,7 +29,6 @@ import type { UserProductSubscription } from '../sourcegraph-api/userProductSubs
 import { telemetryRecorder } from '../telemetry-v2/singleton'
 import { CHAT_INPUT_TOKEN_BUDGET } from '../token/constants'
 import { isError } from '../utils'
-import { DEEP_CODY_MODEL } from './client'
 import { type Model, type ServerModel, createModel, createModelFromServerModel } from './model'
 import type {
     DefaultsAndUserPreferencesForEndpoint,
@@ -191,8 +190,7 @@ export function syncModels({
                                         featureFlagProvider.evaluatedFeatureFlag(
                                             FeatureFlag.FallbackToFlash,
                                             true /** force refresh */
-                                        ),
-                                        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.DeepCody)
+                                        )
                                     ).pipe(
                                         switchMap(
                                             ([
@@ -200,7 +198,6 @@ export function syncModels({
                                                 defaultToHaiku,
                                                 enhancedContextWindowFlag,
                                                 fallbackToFlashFlag,
-                                                hasAgenticChatFlag,
                                             ]) => {
                                                 if (serverModelsConfig) {
                                                     // Remove deprecated models from the list, filter out waitlisted models for Enterprise.
@@ -435,23 +432,6 @@ export function syncModels({
                                                     }
                                                     return model
                                                 })
-
-                                                // Handle agentic chat features
-                                                const isAgenticChatEnabled =
-                                                    hasAgenticChatFlag ||
-                                                    (isDotComUser && !isCodyFreeUser)
-                                                const hasDeepCody = data.primaryModels.some(m =>
-                                                    m.id.includes('deep-cody')
-                                                )
-
-                                                if (isAgenticChatEnabled && !hasDeepCody) {
-                                                    data.primaryModels.push(
-                                                        createModelFromServerModel(
-                                                            DEEP_CODY_MODEL,
-                                                            false // Should not affect the context window set for Agentic chat
-                                                        )
-                                                    )
-                                                }
 
                                                 return Observable.of(data)
                                             }

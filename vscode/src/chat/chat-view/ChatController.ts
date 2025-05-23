@@ -656,7 +656,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
 
     private async getConfigForWebview(): Promise<ConfigurationSubsetForWebview & LocalEnv> {
         const { configuration, auth } = await currentResolvedConfig()
-        const [experimentalPromptEditorEnabled, internalAgenticChatEnabled] = await Promise.all([
+        const [experimentalPromptEditorEnabled, internalAgentModeEnabled] = await Promise.all([
             firstValueFrom(
                 featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyExperimentalPromptEditor)
             ),
@@ -664,7 +664,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.NextAgenticChatInternal)
             ),
         ])
-        const experimentalAgenticChatEnabled = internalAgenticChatEnabled && isS2(auth.serverEndpoint)
+        const experimentalAgenticChatEnabled = internalAgentModeEnabled && isS2(auth.serverEndpoint)
         const sidebarViewOnly = this.extensionClient.capabilities?.webviewNativeConfig?.view === 'single'
         const isEditorViewType = this.webviewPanelOrView?.viewType === 'cody.editorPanel'
         const webviewType = isEditorViewType && !sidebarViewOnly ? 'editor' : 'sidebar'
@@ -801,7 +801,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     text: inputText,
                     editorState,
                     intent: manuallySelectedIntent,
-                    agent: toolboxManager.isAgenticChatEnabled(model) ? DeepCodyAgent.id : undefined,
+                    agent: toolboxManager.isAgenticChatEnabled() ? DeepCodyAgent.id : undefined,
                 })
 
                 this.setCustomChatTitle(requestID, inputText, signal)
