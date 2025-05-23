@@ -136,7 +136,7 @@ describe('getConfiguration', () => {
                         return false
                     case 'cody.agentic.context.experimentalOptions':
                         return { shell: { allow: ['git'] } }
-                    case 'cody.agentic.chat':
+                    case 'cody.agentic.context':
                         return false
                     case 'cody.auth.externalProviders':
                         return []
