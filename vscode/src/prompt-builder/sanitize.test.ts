@@ -24,7 +24,7 @@ describe('sanitizedChatMessages', () => {
             { speaker: 'assistant', text: ps`Response` },
         ]
         const result = sanitizedChatMessages(messages)
-        expect(result[0].text).toEqual(ps`Keep this text`)
+        expect(result[0].text).toEqual('Keep this text')
     })
 
     it('should only process <think> tags if they start at the beginning of the message', () => {
@@ -45,7 +45,7 @@ describe('sanitizedChatMessages', () => {
             { speaker: 'assistant', text: ps`Response` },
         ]
         const result = sanitizedChatMessages(messages)
-        expect(result[0].text).toEqual(ps`Keep\n\nthis<think>And \nalso this \n</think>`)
+        expect(result[0].text).toEqual('Keep\n\nthis<think>And \nalso this \n</think>')
     })
 
     it('should not modify human message without <think> tags', () => {
@@ -193,5 +193,177 @@ describe('sanitizedChatMessages', () => {
         ]
         const result = sanitizedChatMessages(messages)
         expect(result[0].content).toEqual([{ type: 'text', text: 'Hello' }])
+    })
+
+    it('should not duplicate text content when message has both text and content with same text', () => {
+        const messages: ChatMessage[] = [
+            {
+                speaker: 'human',
+                text: ps`Hello world`,
+                content: [{ type: 'text', text: 'Hello world' }],
+            },
+        ]
+        const result = sanitizedChatMessages(messages)
+        expect(result[0].content).toEqual([{ type: 'text', text: 'Hello world' }])
+    })
+
+    it('should not duplicate text content when called multiple times', () => {
+        const messages: ChatMessage[] = [
+            {
+                speaker: 'human',
+                text: ps`Hello world`,
+                content: [],
+            },
+        ]
+        
+        // First call adds text to content
+        const result1 = sanitizedChatMessages(messages)
+        expect(result1[0].content).toEqual([{ type: 'text', text: 'Hello world' }])
+        
+        // Simulate calling again with the processed result
+        const processedMessages = [{
+            ...result1[0],
+            text: ps`Hello world`,
+        }]
+        const result2 = sanitizedChatMessages(processedMessages)
+        expect(result2[0].content).toEqual([{ type: 'text', text: 'Hello world' }])
+        expect(result2[0].content.length).toBe(1)
+    })
+
+    it('should handle text deduplication with think tags correctly', () => {
+        const messages: ChatMessage[] = [
+            {
+                speaker: 'human',
+                text: ps`<think>Remove this</think>Keep this`,
+                content: [{ type: 'text', text: 'Keep this' }], // Already has processed text
+            },
+        ]
+        const result = sanitizedChatMessages(messages)
+        // Should not duplicate the text since processed text already exists
+        expect(result[0].content).toEqual([{ type: 'text', text: 'Keep this' }])
+        expect(result[0].content.length).toBe(1)
+    })
+
+    it('should remove tool_call from ANY assistant message if next human has no corresponding tool_result', () => {
+        const messages: ChatMessage[] = [
+            {
+                speaker: 'assistant',
+                content: [
+                    { type: 'text', text: 'First assistant' },
+                    { type: 'tool_call', tool_call: { id: '123', name: 'test1', arguments: '{}' } },
+                ],
+            },
+            {
+                speaker: 'human',
+                content: [{ type: 'text', text: 'No tool result here' }],
+            },
+            {
+                speaker: 'assistant',
+                content: [
+                    { type: 'text', text: 'Second assistant' },
+                    { type: 'tool_call', tool_call: { id: '456', name: 'test2', arguments: '{}' } },
+                ],
+            },
+            {
+                speaker: 'human',
+                content: [
+                    { type: 'text', text: 'Has tool result' },
+                    { type: 'tool_result', tool_result: { id: '456', content: 'result' } },
+                ],
+            },
+        ]
+        const result = sanitizedChatMessages(messages)
+        
+        // First assistant message should have tool_call removed
+        expect(result[0].content).toEqual([{ type: 'text', text: 'First assistant' }])
+        
+        // Second assistant message should keep tool_call
+        expect(result[2].content).toEqual([
+            { type: 'text', text: 'Second assistant' },
+            { type: 'tool_call', tool_call: { id: '456', name: 'test2', arguments: '{}' } },
+        ])
+    })
+
+    it('should remove tool_call if some tool calls have no corresponding results', () => {
+        const messages: ChatMessage[] = [
+            {
+                speaker: 'assistant',
+                content: [
+                    { type: 'text', text: 'Multiple tools' },
+                    { type: 'tool_call', tool_call: { id: '123', name: 'test1', arguments: '{}' } },
+                    { type: 'tool_call', tool_call: { id: '456', name: 'test2', arguments: '{}' } },
+                ],
+            },
+            {
+                speaker: 'human',
+                content: [
+                    { type: 'text', text: 'Only one result' },
+                    { type: 'tool_result', tool_result: { id: '123', content: 'result for 123' } },
+                    // Missing tool_result for id '456'
+                ],
+            },
+        ]
+        const result = sanitizedChatMessages(messages)
+        
+        // All tool_calls should be removed since one is orphaned
+        expect(result[0].content).toEqual([{ type: 'text', text: 'Multiple tools' }])
+    })
+
+    it('should remove tool_call if there is no next message', () => {
+        const messages: ChatMessage[] = [
+            {
+                speaker: 'assistant',
+                content: [
+                    { type: 'text', text: 'Last message' },
+                    { type: 'tool_call', tool_call: { id: '123', name: 'test', arguments: '{}' } },
+                ],
+            },
+        ]
+        const result = sanitizedChatMessages(messages)
+        
+        // Tool call should be removed since there's no following message
+        expect(result[0].content).toEqual([{ type: 'text', text: 'Last message' }])
+    })
+
+    it('should remove tool_call if next message is not human', () => {
+        const messages: ChatMessage[] = [
+            {
+                speaker: 'assistant',
+                content: [
+                    { type: 'text', text: 'First assistant' },
+                    { type: 'tool_call', tool_call: { id: '123', name: 'test', arguments: '{}' } },
+                ],
+            },
+            {
+                speaker: 'assistant',
+                content: [{ type: 'text', text: 'Another assistant message' }],
+            },
+        ]
+        const result = sanitizedChatMessages(messages)
+        
+        // Tool call should be removed since next message is not human
+        expect(result[0].content).toEqual([{ type: 'text', text: 'First assistant' }])
+    })
+
+    it('should handle complex content deduplication', () => {
+        const messages: ChatMessage[] = [
+            {
+                speaker: 'human',
+                text: ps`Main text`,
+                content: [
+                    { type: 'text', text: 'Main text' },
+                    { type: 'text', text: 'Additional text' },
+                    { type: 'tool_result', tool_result: { id: '123', content: 'result' } },
+                ],
+            },
+        ]
+        const result = sanitizedChatMessages(messages)
+        
+        // Should not duplicate "Main text" but keep other content
+        expect(result[0].content).toEqual([
+            { type: 'text', text: 'Main text' },
+            { type: 'text', text: 'Additional text' },
+            { type: 'tool_result', tool_result: { id: '123', content: 'result' } },
+        ])
     })
 })
