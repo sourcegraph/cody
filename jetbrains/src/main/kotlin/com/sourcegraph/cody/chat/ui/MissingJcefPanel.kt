@@ -3,6 +3,7 @@ package com.sourcegraph.cody.chat.ui
 import com.intellij.openapi.projectRoots.impl.jdkDownloader.RuntimeChooserUtil
 import com.intellij.ui.SimpleTextAttributes
 import com.intellij.util.ui.JBUI
+import com.sourcegraph.cody.initialization.VerifyJavaBootRuntimeVersion
 import com.sourcegraph.common.CodyBundle
 import java.awt.GridBagConstraints
 import java.awt.GridBagLayout
@@ -22,7 +23,12 @@ class MissingJcefPanel : JPanel(GridBagLayout()) {
         styledDocument.setParagraphAttributes(0, styledDocument.length, center, false)
       }
 
-  private val jcefButton =
+  private val autoSwitchButton =
+      JButton(CodyBundle.getString("switchToJcefRuntime.button")).apply {
+        addActionListener { VerifyJavaBootRuntimeVersion.chooseJcefRuntimeAutomatically() }
+      }
+
+  private val manualChoiceButton =
       JButton(CodyBundle.getString("chooseRuntimeWithJcef.button")).apply {
         addActionListener { RuntimeChooserUtil.showRuntimeChooserPopup() }
       }
@@ -32,10 +38,11 @@ class MissingJcefPanel : JPanel(GridBagLayout()) {
         GridBagConstraints().apply {
           fill = GridBagConstraints.HORIZONTAL
           gridx = 0
-          insets = JBUI.insets(20)
+          insets = JBUI.insets(20, 20, 0, 20)
         }
 
     add(jcefDescription, constraints)
-    add(jcefButton, constraints)
+    add(autoSwitchButton, constraints)
+    add(manualChoiceButton, constraints)
   }
 }
