@@ -171,7 +171,7 @@ describe('getConfiguration', () => {
             },
             commandCodeLenses: true,
             agenticContextExperimentalOptions: { shell: { allow: ['git'] } },
-            agenticChat: false,
+            agenticContext: false,
             experimentalSupercompletions: false,
             experimentalAutoEditEnabled: false,
             experimentalAutoEditConfigOverride: undefined,

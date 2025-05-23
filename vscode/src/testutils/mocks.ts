@@ -938,7 +938,7 @@ export const DEFAULT_VSCODE_SETTINGS = {
     internalDebugContext: false,
     internalDebugState: false,
     agenticContextExperimentalOptions: {},
-    agenticChat: true,
+    agenticContext: true,
     autocompleteAdvancedProvider: 'default',
     autocompleteAdvancedModel: null,
     autocompleteCompleteSuggestWidgetSelection: true,

@@ -119,7 +119,7 @@ class ToolboxManager {
                     !models ||
                     isCodyTesting ||
                     isDisabledOnInstance ||
-                    !config.configuration?.agenticChat
+                    !config.configuration?.agenticContext
                 ) {
                     DeepCodyAgent.model = undefined
                     this.isEnabled = false
