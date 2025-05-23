@@ -24,7 +24,7 @@ describe('sanitizedChatMessages', () => {
             { speaker: 'assistant', text: ps`Response` },
         ]
         const result = sanitizedChatMessages(messages)
-        expect(result[0].text).toEqual('Keep this text')
+        expect(result[0].text).toEqual(ps`Keep this text`)
     })
 
     it('should only process <think> tags if they start at the beginning of the message', () => {
@@ -45,7 +45,7 @@ describe('sanitizedChatMessages', () => {
             { speaker: 'assistant', text: ps`Response` },
         ]
         const result = sanitizedChatMessages(messages)
-        expect(result[0].text).toEqual('Keep\n\nthis<think>And \nalso this \n</think>')
+        expect(result[0].text).toEqual(ps`Keep\n\nthis<think>And \nalso this \n</think>`)
     })
 
     it('should not modify human message without <think> tags', () => {
@@ -215,16 +215,18 @@ describe('sanitizedChatMessages', () => {
                 content: [],
             },
         ]
-        
+
         // First call adds text to content
         const result1 = sanitizedChatMessages(messages)
         expect(result1[0].content).toEqual([{ type: 'text', text: 'Hello world' }])
-        
+
         // Simulate calling again with the processed result
-        const processedMessages = [{
-            ...result1[0],
-            text: ps`Hello world`,
-        }]
+        const processedMessages = [
+            {
+                ...result1[0],
+                text: ps`Hello world`,
+            },
+        ]
         const result2 = sanitizedChatMessages(processedMessages)
         expect(result2[0].content).toEqual([{ type: 'text', text: 'Hello world' }])
         expect(result2[0].content.length).toBe(1)
@@ -273,10 +275,10 @@ describe('sanitizedChatMessages', () => {
             },
         ]
         const result = sanitizedChatMessages(messages)
-        
+
         // First assistant message should have tool_call removed
         expect(result[0].content).toEqual([{ type: 'text', text: 'First assistant' }])
-        
+
         // Second assistant message should keep tool_call
         expect(result[2].content).toEqual([
             { type: 'text', text: 'Second assistant' },
@@ -304,7 +306,7 @@ describe('sanitizedChatMessages', () => {
             },
         ]
         const result = sanitizedChatMessages(messages)
-        
+
         // All tool_calls should be removed since one is orphaned
         expect(result[0].content).toEqual([{ type: 'text', text: 'Multiple tools' }])
     })
@@ -320,7 +322,7 @@ describe('sanitizedChatMessages', () => {
             },
         ]
         const result = sanitizedChatMessages(messages)
-        
+
         // Tool call should be removed since there's no following message
         expect(result[0].content).toEqual([{ type: 'text', text: 'Last message' }])
     })
@@ -340,7 +342,7 @@ describe('sanitizedChatMessages', () => {
             },
         ]
         const result = sanitizedChatMessages(messages)
-        
+
         // Tool call should be removed since next message is not human
         expect(result[0].content).toEqual([{ type: 'text', text: 'First assistant' }])
     })
@@ -358,7 +360,7 @@ describe('sanitizedChatMessages', () => {
             },
         ]
         const result = sanitizedChatMessages(messages)
-        
+
         // Should not duplicate "Main text" but keep other content
         expect(result[0].content).toEqual([
             { type: 'text', text: 'Main text' },

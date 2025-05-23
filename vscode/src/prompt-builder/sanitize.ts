@@ -1,9 +1,11 @@
 import {
     type ChatMessage,
     type MessagePart,
+    type PromptString,
     type ToolCallContentPart,
     type ToolResultContentPart,
     isDefined,
+    ps,
 } from '@sourcegraph/cody-shared'
 
 export function sanitizedChatMessages(messages: ChatMessage[]): any[] {
@@ -12,26 +14,23 @@ export function sanitizedChatMessages(messages: ChatMessage[]): any[] {
     }
 
     // Find the first human message index for <think> tag processing
-    const firstHumanIndex = messages.findIndex(m => m.speaker === 'human')
 
     // Create a helper to remove <think> tags from text that starts with them
-    const removeThinkTags = (text: string | undefined): string => {
-        if (!text) return ''
-        return text.startsWith('<think>') && text.includes('</think>')
-            ? text.replace(/<think>.*?<\/think>/, '')
-            : text
+    const removeThinkTags = (text: PromptString | undefined): PromptString => {
+        if (!text) return ps``
+        const textString = text.toString()?.trim()
+        return textString.startsWith('<think>') ? text.replace(/<think>.*?<\/think>/, ps``) : text
     }
 
     // Process messages
     return messages.map((message, messageIndex) => {
-        const isFirstHuman = message.speaker === 'human' && messageIndex === firstHumanIndex
         const processedMessage = { ...message }
 
         // Handle messages with only text property (no content array)
         if (!message.content) {
-            if (isFirstHuman && message.text) {
-                const processedText = removeThinkTags(message.text.toString())
-                if (processedText !== message.text.toString()) {
+            if (message.text) {
+                const processedText = removeThinkTags(message.text)
+                if (processedText?.toString() !== message.text?.toString()) {
                     return {
                         ...processedMessage,
                         text: processedText,
@@ -46,25 +45,27 @@ export function sanitizedChatMessages(messages: ChatMessage[]): any[] {
 
         // Add text content if present and not already in content
         if (message.text?.toString()) {
-            const text = isFirstHuman
-                ? removeThinkTags(message.text.toString())
-                : message.text.toString()
+            const processedText = removeThinkTags(message.text)
+            const processedTextString = processedText.toString()
 
             // Check if this processed text already exists in content
             // This prevents duplicates when the function is called multiple times
             const textAlreadyInContent = message.content.some(
-                part => part.type === 'text' && part.text === text
+                part => part.type === 'text' && part.text === processedTextString
             )
 
-            if (text && !textAlreadyInContent) {
-                contentParts.push({ type: 'text', text })
+            if (processedTextString && !textAlreadyInContent) {
+                contentParts.push({ type: 'text', text: processedTextString })
             }
         }
 
         // Add existing content parts (but avoid duplicating text parts)
         for (const part of message.content) {
             // Skip text parts that match the text we just added
-            if (part.type === 'text' && contentParts.some(p => p.type === 'text' && p.text === part.text)) {
+            if (
+                part.type === 'text' &&
+                contentParts.some(p => p.type === 'text' && p.text === part.text)
+            ) {
                 continue
             }
             contentParts.push(part)
@@ -72,7 +73,7 @@ export function sanitizedChatMessages(messages: ChatMessage[]): any[] {
 
         // Sanitize content parts
         let sanitizedContent = contentParts
-            .map(part => sanitizeContentPart(part, message.speaker, isFirstHuman))
+            .map(part => sanitizeContentPart(part, message.speaker))
             .filter(isDefined)
             .filter(part => !(part.type === 'text' && !part.text)) // Remove empty text parts
 
@@ -80,7 +81,7 @@ export function sanitizedChatMessages(messages: ChatMessage[]): any[] {
         if (message.speaker === 'assistant') {
             const nextMessage = messages[messageIndex + 1]
             const hasToolCall = sanitizedContent.some(part => part.type === 'tool_call')
-            
+
             if (hasToolCall) {
                 // Check if next message is human and has corresponding tool results
                 if (!nextMessage || nextMessage.speaker !== 'human') {
@@ -92,13 +93,13 @@ export function sanitizedChatMessages(messages: ChatMessage[]): any[] {
                         .filter(part => part.type === 'tool_call')
                         .map(part => (part as ToolCallContentPart).tool_call?.id)
                         .filter(isDefined)
-                    
+
                     const nextMessageParts = normalizeContent(nextMessage)
                     const toolResultIds = nextMessageParts
                         .filter(part => part.type === 'tool_result')
                         .map(part => (part as ToolResultContentPart).tool_result?.id)
                         .filter(isDefined)
-                    
+
                     // If any tool call doesn't have a corresponding result, remove all tool calls
                     const hasOrphanedToolCall = toolCallIds.some(id => !toolResultIds.includes(id))
                     if (hasOrphanedToolCall) {
@@ -111,19 +112,18 @@ export function sanitizedChatMessages(messages: ChatMessage[]): any[] {
         return {
             ...processedMessage,
             content: sanitizedContent,
-            text: undefined,
+            text: removeThinkTags(message.text),
         }
     })
 }
 
 function sanitizeContentPart(
     part: MessagePart,
-    speaker: 'human' | 'assistant' | 'system',
-    isFirstHuman: boolean
+    speaker: 'human' | 'assistant' | 'system'
 ): MessagePart | undefined {
     switch (part.type) {
         case 'text':
-            if (isFirstHuman) {
+            {
                 const text = part.text?.toString()
                 if (text?.startsWith('<think>') && text.includes('</think>')) {
                     const sanitized = text.replace(/<think>.*?<\/think>/, '')
@@ -144,8 +144,6 @@ function sanitizeContentPart(
             return part
     }
 }
-
-
 
 function normalizeContent(message: ChatMessage): MessagePart[] {
     const parts: MessagePart[] = []
