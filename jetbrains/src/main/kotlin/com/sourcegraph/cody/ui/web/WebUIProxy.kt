@@ -310,6 +310,10 @@ internal class WebUIProxy(private val host: WebUIHost, private val browser: JBCe
       browser.loadURL("$MAIN_RESOURCE_URL?${value.hashCode()}")
     }
 
+  fun forceReload() {
+    browser.cefBrowser.reload()
+  }
+
   fun setOptions(value: DefiniteWebviewOptions) {
     host.setOptions(value)
   }
