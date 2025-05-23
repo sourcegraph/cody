@@ -121,6 +121,8 @@ export function getConfiguration(
          */
         agenticContextExperimentalOptions: config.get(CONFIG_KEY.agenticContextExperimentalOptions, {}),
 
+        agenticChat: config.get(CONFIG_KEY.agenticChat, true),
+
         authExternalProviders: config.get(CONFIG_KEY.authExternalProviders, []),
 
         /**

@@ -136,6 +136,8 @@ describe('getConfiguration', () => {
                         return false
                     case 'cody.agentic.context.experimentalOptions':
                         return { shell: { allow: ['git'] } }
+                    case 'cody.agentic.chat':
+                        return false
                     case 'cody.auth.externalProviders':
                         return []
                     case 'cody.rules.enabled':
@@ -169,6 +171,7 @@ describe('getConfiguration', () => {
             },
             commandCodeLenses: true,
             agenticContextExperimentalOptions: { shell: { allow: ['git'] } },
+            agenticChat: false,
             experimentalSupercompletions: false,
             experimentalAutoEditEnabled: false,
             experimentalAutoEditConfigOverride: undefined,

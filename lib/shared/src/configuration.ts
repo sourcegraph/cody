@@ -129,6 +129,7 @@ interface RawClientConfiguration {
 
     // Deep Cody
     agenticContextExperimentalOptions?: AgenticContextConfiguration
+    agenticChat: boolean
 
     //#region Autocomplete
     autocomplete: boolean

@@ -10,6 +10,7 @@ import {
     isDotCom,
     modelsService,
     pendingOperation,
+    resolvedConfig,
     startWith,
     userProductSubscription,
 } from '@sourcegraph/cody-shared'
@@ -84,7 +85,6 @@ class ToolboxManager {
      */
     public readonly observable: Observable<AgentToolboxSettings | null> = combineLatest(
         authStatus,
-        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.DeepCody),
         featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.AgenticContextDisabled),
         featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.ContextAgentDefaultChatModel),
         featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.DeepCodyShellContext),
@@ -94,18 +94,19 @@ class ToolboxManager {
             map(models => (models === pendingOperation ? null : models)),
             distinctUntilChanged()
         ),
+        resolvedConfig,
         this.changeNotifications.pipe(startWith(undefined))
     ).pipe(
         map(
             ([
                 auth,
-                isOldFlagEnagled,
-                isDisabled,
+                isDisabledOnInstance,
                 useDefaultChatModel,
                 instanceShellContextFlag,
                 agentModeFlag,
                 sub,
                 models,
+                config,
             ]) => {
                 // Return null if:
                 // - Subscription is pending
@@ -117,8 +118,8 @@ class ToolboxManager {
                     (isDotComUser && sub?.userCanUpgrade) ||
                     !models ||
                     isCodyTesting ||
-                    !isOldFlagEnagled ||
-                    isDisabled
+                    isDisabledOnInstance ||
+                    !config.configuration?.agenticChat
                 ) {
                     DeepCodyAgent.model = undefined
                     this.isEnabled = false
