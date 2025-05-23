@@ -36,7 +36,7 @@ export async function evaluateFixStrategy(
         await runVoidCommand(options.installCommand, options.workspace)
     }
 
-    const llm = new LlmJudge(options)
+    const llm = new LlmJudge(options, options.judgeModel)
     let totalErrors = 0
     let fixedErrors = 0
     const absoluteFiles = glob.sync(`${options.workspace}/**`, {
@@ -52,7 +52,9 @@ export async function evaluateFixStrategy(
         }
         const document = EvaluationDocument.from(params, options)
         const textDocument = new AgentTextDocument(
-            ProtocolTextDocumentWithUri.from(params.uri, { content: params.content })
+            ProtocolTextDocumentWithUri.from(params.uri, {
+                content: params.content,
+            })
         )
         client.openFile(params.uri, { text: params.content })
         const { diagnostics } = await client.request('testing/diagnostics', {
@@ -70,7 +72,9 @@ export async function evaluateFixStrategy(
                 console.log(prettyDiagnostic(diagnostic))
                 continue
             }
-            const editTask = await client.request('codeActions/trigger', { id: fixAction.id })
+            const editTask = await client.request('codeActions/trigger', {
+                id: fixAction.id,
+            })
             await client.acceptEditTask(params.uri, editTask)
             const { diagnostics: newDiagnostics } = await client.request('testing/diagnostics', {
                 uri: params.uri.toString(),
@@ -112,7 +116,10 @@ export async function evaluateFixStrategy(
                 console.log(prettyDiagnostic(newDiagnostic))
             }
             const unifiedDiff = renderUnifiedDiff(
-                { header: `${params.uri.fsPath} (before)`, text: params.content },
+                {
+                    header: `${params.uri.fsPath} (before)`,
+                    text: params.content,
+                },
                 { header: `${params.uri.fsPath} (after)`, text: newText }
             )
             console.log(unifiedDiff)
