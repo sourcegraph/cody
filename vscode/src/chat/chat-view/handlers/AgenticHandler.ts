@@ -25,8 +25,8 @@ import type { AgentHandler, AgentHandlerDelegate, AgentRequest } from './interfa
 import { buildAgentPrompt } from './prompts'
 
 enum AGENT_MODELS {
-    ExtendedThinking = 'anthropic::2024-10-22::claude-3-7-sonnet-extended-thinking',
-    Base = 'anthropic::2024-10-22::claude-3-7-sonnet-latest',
+    ExtendedThinking = 'anthropic::2024-10-22::claude-sonnet-4-thinking-latest',
+    Base = 'anthropic::2024-10-22::claude-sonnet-4-latest',
 }
 
 interface ToolResult {
@@ -235,7 +235,6 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
                     if (deltaText) {
                         delegate.postMessageInProgress({
                             speaker: 'assistant',
-                            content: [streamed],
                             text: PromptString.unsafe_fromLLMResponse(message.text),
                             model,
                         })
