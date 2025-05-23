@@ -112,7 +112,7 @@ export function sanitizedChatMessages(messages: ChatMessage[]): any[] {
         return {
             ...processedMessage,
             content: sanitizedContent,
-            text: removeThinkTags(message.text),
+            text: message.text ? removeThinkTags(message.text) : undefined,
         }
     })
 }
