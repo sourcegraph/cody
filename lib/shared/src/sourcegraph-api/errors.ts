@@ -33,10 +33,9 @@ export class RateLimitError extends Error {
         public readonly retryAfter?: string | null
     ) {
         super(message)
-        this.userMessage =
-            feature === 'Agentic Chat'
-                ? `You've reached the daily limit for agentic context (experimental).`
-                : `You've used all of your ${feature} for ${upgradeIsAvailable ? 'the month' : 'today'}.`
+        this.userMessage = `You've used all of your ${feature} for ${
+            upgradeIsAvailable ? 'the month' : 'today'
+        }.`
         this.retryAfterDate = retryAfter
             ? /^\d+$/.test(retryAfter)
                 ? new Date(Date.now() + Number.parseInt(retryAfter, 10) * 1000)

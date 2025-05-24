@@ -136,7 +136,7 @@ class CodyAgentService(private val project: Project) : Disposable {
     return codyAgent
   }
 
-  fun stopAgent(): CompletableFuture<Void>? {
+  fun stopAgent(): CompletableFuture<Unit>? {
     try {
       val shutdownFuture = codyAgent.getNow(null)?.shutdown()
       return (shutdownFuture ?: CompletableFuture.completedFuture(null)).thenCompose {

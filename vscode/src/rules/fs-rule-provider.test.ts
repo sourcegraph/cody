@@ -1,16 +1,38 @@
 import { type CandidateRule, firstValueFrom, uriBasename } from '@sourcegraph/cody-shared'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import * as vscode from 'vscode'
 import { URI } from 'vscode-uri'
 import { createFileSystemRuleProvider } from './fs-rule-provider'
 
 describe('createFileSystemRuleProvider', () => {
+    // Store original value of isTrusted
+    const originalIsTrusted = vscode.workspace.isTrusted
+
+    // Restore original value after tests
+    afterEach(() => {
+        Object.defineProperty(vscode.workspace, 'isTrusted', {
+            value: originalIsTrusted,
+            configurable: true,
+        })
+    })
+
     beforeEach(() => {
         vi.resetAllMocks()
         vi.spyOn(vscode.workspace, 'onDidCreateFiles').mockReturnValue({ dispose() {} })
         vi.spyOn(vscode.workspace, 'onDidDeleteFiles').mockReturnValue({ dispose() {} })
         vi.spyOn(vscode.workspace, 'onDidChangeTextDocument').mockReturnValue({ dispose() {} })
         vi.spyOn(vscode.workspace, 'onDidChangeWorkspaceFolders').mockReturnValue({ dispose() {} })
+
+        // Mock the isTrusted property
+        Object.defineProperty(vscode.workspace, 'isTrusted', { value: true, configurable: true })
+
+        // Mock stat to return a valid stat for directories
+        vi.spyOn(vscode.workspace.fs, 'stat').mockResolvedValue({
+            type: vscode.FileType.Directory,
+            ctime: 0,
+            mtime: 0,
+            size: 0,
+        })
     })
 
     it('should read and parse rule files from workspace directories', async () => {
@@ -22,12 +44,14 @@ describe('createFileSystemRuleProvider', () => {
         const testFile = URI.parse('file:///workspace/src/test.ts')
         const ruleContent = Buffer.from('foo instruction')
         vi.spyOn(vscode.workspace, 'getWorkspaceFolder').mockReturnValue(mockWorkspaceFolder)
+
         vi.spyOn(vscode.workspace.fs, 'readDirectory').mockResolvedValue([
             ['foo.rule.md', vscode.FileType.File],
         ])
+
         vi.spyOn(vscode.workspace.fs, 'readFile').mockImplementation(uri => {
             if (uri.toString() === 'file:///workspace/.sourcegraph/foo.rule.md') {
-                return Promise.resolve(ruleContent)
+                return Promise.resolve(ruleContent) as unknown as Thenable<Uint8Array>
             }
             throw new vscode.FileSystemError(uri)
         })
@@ -35,6 +59,7 @@ describe('createFileSystemRuleProvider', () => {
         const rules = await firstValueFrom(
             createFileSystemRuleProvider().candidateRulesForPaths([testFile])
         )
+
         expect(rules).toHaveLength(1)
         expect(rules[0]).toMatchObject<CandidateRule>({
             rule: {
@@ -61,6 +86,7 @@ describe('createFileSystemRuleProvider', () => {
         vi.spyOn(vscode.workspace, 'getWorkspaceFolder').mockImplementation(uri =>
             mockWorkspaceFolders.find(folder => uri.toString().startsWith(folder.uri.toString()))
         )
+
         vi.spyOn(vscode.workspace.fs, 'readDirectory').mockImplementation(uri => {
             const rulesByDir: Record<string, [string, vscode.FileType][]> = {
                 'file:///w1/.sourcegraph': [['r0.rule.md', vscode.FileType.File]],
@@ -70,13 +96,17 @@ describe('createFileSystemRuleProvider', () => {
             }
             return Promise.resolve(rulesByDir[uri.toString()] || [])
         })
+
         vi.spyOn(vscode.workspace.fs, 'readFile').mockImplementation(uri => {
-            return Promise.resolve(Buffer.from('instruction ' + uriBasename(uri)))
+            return Promise.resolve(
+                Buffer.from('instruction ' + uriBasename(uri))
+            ) as unknown as Thenable<Uint8Array>
         })
 
         const rules = await firstValueFrom(
             createFileSystemRuleProvider().candidateRulesForPaths(testFiles)
         )
+
         expect(rules).toHaveLength(4)
         expect(rules[0]).toMatchObject<CandidateRule>({
             rule: {

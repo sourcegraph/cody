@@ -88,43 +88,42 @@ object Utils {
         resultOuter.cancel(true)
       } else {
         val completions = agent.server.autocomplete_execute(params)
-
         // Important: we have to `.cancel()` the original `CompletableFuture<T>` from lsp4j. As soon
         // as we use `thenAccept()` we get a new instance of `CompletableFuture<Void>` which does
         // not correctly propagate the cancellation to the agent.
-        cancellationToken.onCancellationRequested { completions.cancel(true) }
-
-        ApplicationManager.getApplication().executeOnPooledThread {
-          completions
-              .handle { result, error ->
-                if (error != null) {
-                  if (triggerKind == InlineCompletionTriggerKind.INVOKE ||
-                      !UpgradeToCodyProNotification.isFirstRLEOnAutomaticAutocompletionsShown) {
-                    handleError(project, error)
-                  }
-                } else if (result != null &&
-                    (result.inlineCompletionItems.isNotEmpty() ||
-                        result.decoratedEditItems.isNotEmpty())) {
-                  UpgradeToCodyProNotification.isFirstRLEOnAutomaticAutocompletionsShown = false
-                  UpgradeToCodyProNotification.autocompleteRateLimitError.set(null)
-                  successCallback(result)
-                  resultOuter.complete(result)
-                }
-
-                null
-              }
-              .exceptionally { error: Throwable? ->
-                if (!(error is CancellationException || error is CompletionException)) {
-                  logger.warn("failed autocomplete request $params", error)
-                }
-                null
-              }
-              .completeOnTimeout(null, 3, TimeUnit.SECONDS)
-              .thenRun { // This is a terminal operation, so we needn't call get().
-                resetApplication(project)
-                resultOuter.complete(null)
-              }
+        cancellationToken.onCancellationRequested {
+          ApplicationManager.getApplication().executeOnPooledThread { completions.cancel(true) }
         }
+
+        completions
+            .handle { result, error ->
+              if (error != null) {
+                if (triggerKind == InlineCompletionTriggerKind.INVOKE ||
+                    !UpgradeToCodyProNotification.isFirstRLEOnAutomaticAutocompletionsShown) {
+                  handleError(project, error)
+                }
+              } else if (result != null &&
+                  (result.inlineCompletionItems.isNotEmpty() ||
+                      result.decoratedEditItems.isNotEmpty())) {
+                UpgradeToCodyProNotification.isFirstRLEOnAutomaticAutocompletionsShown = false
+                UpgradeToCodyProNotification.autocompleteRateLimitError.set(null)
+                successCallback(result)
+                resultOuter.complete(result)
+              }
+
+              null
+            }
+            .exceptionally { error: Throwable? ->
+              if (!(error is CancellationException || error is CompletionException)) {
+                logger.warn("failed autocomplete request $params", error)
+              }
+              null
+            }
+            .completeOnTimeout(null, 3, TimeUnit.SECONDS)
+            .thenRun { // This is a terminal operation, so we needn't call get().
+              resetApplication(project)
+              resultOuter.complete(null)
+            }
       }
     }
     cancellationToken.onCancellationRequested { resultOuter.cancel(true) }

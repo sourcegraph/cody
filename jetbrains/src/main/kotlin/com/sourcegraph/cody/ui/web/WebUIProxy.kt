@@ -11,7 +11,7 @@ import com.intellij.ui.jcef.JBCefBrowserBuilder
 import com.intellij.ui.jcef.JBCefJSQuery
 import com.sourcegraph.cody.agent.CodyAgent
 import com.sourcegraph.cody.agent.CodyAgentService
-import com.sourcegraph.cody.agent.protocol.WebviewOptions
+import com.sourcegraph.cody.agent.protocol_generated.DefiniteWebviewOptions
 import com.sourcegraph.cody.config.CodyApplicationSettings
 import com.sourcegraph.cody.error.SentryService
 import com.sourcegraph.cody.sidebar.WebTheme
@@ -136,7 +136,9 @@ internal class WebUIProxy(private val host: WebUIHost, private val browser: JBCe
               event.isConsumed &&
               (event.keyCode == KeyEvent.VK_ENTER ||
                   event.keyCode == KeyEvent.VK_DELETE ||
-                  event.keyCode == KeyEvent.VK_BACK_SPACE)) {
+                  event.keyCode == KeyEvent.VK_BACK_SPACE ||
+                  (event.isControlDown && event.keyCode == KeyEvent.VK_C) // Ctrl+C
+              )) {
 
             // trying to un-consume the event via reflection
             val consumedField = AWTEvent::class.java.getDeclaredField("consumed")
@@ -308,7 +310,7 @@ internal class WebUIProxy(private val host: WebUIHost, private val browser: JBCe
       browser.loadURL("$MAIN_RESOURCE_URL?${value.hashCode()}")
     }
 
-  fun setOptions(value: WebviewOptions) {
+  fun setOptions(value: DefiniteWebviewOptions) {
     host.setOptions(value)
   }
 

@@ -25,8 +25,8 @@ import type { AgentHandler, AgentHandlerDelegate, AgentRequest } from './interfa
 import { buildAgentPrompt } from './prompts'
 
 enum AGENT_MODELS {
-    ExtendedThinking = 'anthropic::2024-10-22::claude-3-7-sonnet-extended-thinking',
-    Base = 'anthropic::2024-10-22::claude-3-7-sonnet-latest',
+    ExtendedThinking = 'anthropic::2024-10-22::claude-sonnet-4-thinking-latest',
+    Base = 'anthropic::2024-10-22::claude-sonnet-4-latest',
 }
 
 interface ToolResult {
@@ -229,13 +229,17 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
 
             switch (message.type) {
                 case 'change': {
+                    const deltaText = message.text.slice(streamed.text?.length)
                     streamed.text = message.text
-                    delegate.postMessageInProgress({
-                        speaker: 'assistant',
-                        content: [streamed],
-                        text: PromptString.unsafe_fromLLMResponse(streamed.text),
-                        model,
-                    })
+                    // Only process if there's actual new content
+                    if (deltaText) {
+                        delegate.postMessageInProgress({
+                            speaker: 'assistant',
+                            text: PromptString.unsafe_fromLLMResponse(message.text),
+                            model,
+                        })
+                    }
+
                     // Process tool calls in the response
                     const toolCalledParts = message?.content?.filter(c => c.type === 'tool_call') || []
                     for (const toolCall of toolCalledParts) {

@@ -35,8 +35,7 @@ object ConfigUtil {
   const val CODE_SEARCH_DISPLAY_NAME = "Code Search"
   const val SOURCEGRAPH_DISPLAY_NAME = "Sourcegraph"
   private const val FEATURE_FLAGS_ENV_VAR = "CODY_JETBRAINS_FEATURES"
-  private val renderOptions =
-      ConfigRenderOptions.defaults().setComments(false).setOriginComments(false)
+  val renderOptions = ConfigRenderOptions.defaults().setComments(false).setOriginComments(false)
 
   private val logger = Logger.getInstance(ConfigUtil::class.java)
 
@@ -127,7 +126,7 @@ object ConfigUtil {
         }
       }
     } else {
-      val token = CodySecureStore.getFromSecureStore(endpoint.url)
+      val token = CodySecureStore.getInstance().getFromSecureStore(endpoint.url)
       if (token != null) {
         authHeaders.complete(mapOf("Authorization" to "token $token"))
       }
@@ -163,7 +162,17 @@ object ConfigUtil {
   }
 
   @JvmStatic
-  fun getCustomConfiguration(project: Project, customConfigContent: String?): String {
+  fun getConfigurationEntries(project: Project, key: String): List<Pair<String, Any>> {
+    val config = ConfigFactory.parseString(getCustomConfiguration(project)).resolve()
+    return config.entrySet().mapNotNull { configEntry ->
+      val parts = com.typesafe.config.ConfigUtil.splitPath(configEntry.key)
+      if (parts.joinToString(".").startsWith(key)) parts.last() to configEntry.value.unwrapped()
+      else null
+    }
+  }
+
+  @JvmStatic
+  fun getCustomConfiguration(project: Project, customConfigContent: String? = null): String {
     // Needed by Edit commands to trigger smart-selection; without it things break.
     // So it isn't optional in JetBrains clients, which do not offer language-neutral solutions
     // to this problem; instead we hardwire it to use the indentation-based provider.
@@ -192,6 +201,18 @@ object ConfigUtil {
       logger.error("Failed to parse Cody config", e)
       return ""
     }
+  }
+
+  @JvmStatic
+  fun updateCustomConfiguration(project: Project, key: String, value: String? = null) {
+    val config = ConfigFactory.parseString(getSettingsFile(project).readText()).resolve()
+    val updatedConfig =
+        if (value == null) {
+          config.withoutPath(key)
+        } else {
+          config.withValue(key, ConfigValueFactory.fromAnyRef(value))
+        }
+    setCustomConfiguration(project, updatedConfig.root().render(renderOptions))
   }
 
   @JvmStatic

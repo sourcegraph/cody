@@ -6,6 +6,7 @@ import {
     type ContextItem,
     ContextItemSource,
     type Message,
+    ProcessType,
     type ProcessingStep,
     type PromptMixin,
     PromptString,
@@ -63,6 +64,7 @@ export class DeepCodyAgent {
      * - loop: how many loop was run.
      */
     private stats = { context: 0, loop: 0 }
+    private readonly mainProcess: ProcessingStep
 
     constructor(
         protected readonly chatBuilder: ChatBuilder,
@@ -81,19 +83,13 @@ export class DeepCodyAgent {
         )
 
         this.statusCallback = {
-            onUpdate: (id, content) => {
-                this.stepsManager.updateStep(id, content)
-            },
-            onStream: step => {
-                this.stepsManager.addStep(step)
-            },
-            onComplete: (id, error) => {
-                this.stepsManager.completeStep(id, error)
-            },
-            onConfirmationNeeded: async (id, step) => {
-                return this.stepsManager.addConfirmationStep(id, step)
-            },
+            onUpdate: (id, step) => this.stepsManager.updateStep(id, step),
+            onStream: step => this.stepsManager.addStep(step),
+            onComplete: (id, error) => this.stepsManager.completeStep(id, error),
+            onConfirmationNeeded: async (id, step) => this.stepsManager.addConfirmationStep(id, step),
         }
+
+        this.mainProcess = this.stepsManager.addStep({ id: DeepCodyAgent.id, title: 'Reflecting' })
     }
 
     /**
@@ -189,11 +185,11 @@ export class DeepCodyAgent {
         maxLoops: number
     ): Promise<void> {
         span.addEvent('reviewLoop')
+        const mainProcessID = this.mainProcess.id
         for (let i = 0; i < maxLoops && !chatAbortSignal.aborted; i++) {
             this.stats.loop++
-            const step = this.stepsManager.addStep({ title: 'Reflecting' })
             const newContext = await this.review(requestID, span, chatAbortSignal)
-            this.statusCallback.onComplete(step.id)
+            if (newContext) this.statusCallback.onComplete(mainProcessID)
             if (!newContext.length) break
             // Filter and add new context items in one pass
             const validItems = newContext.filter(c => c.title !== 'TOOLCONTEXT')
@@ -229,7 +225,11 @@ export class DeepCodyAgent {
                 return []
             }
 
-            const step = this.stepsManager.addStep({ title: 'Retrieving context' })
+            const mainProcessID = this.mainProcess.id
+            this.stepsManager.updateStep(mainProcessID, {
+                ...this.mainProcess,
+                title: 'Retrieving context',
+            })
 
             // Separate MCP tools from non-MCP tools
             const mcpTools = this.tools.filter(tool => (tool.config.metadata as any)?.isMcpTool)
@@ -280,53 +280,15 @@ export class DeepCodyAgent {
 
             if (newContext.length > 0) {
                 this.stats.context = this.stats.context + newContext.length
-                this.statusCallback.onUpdate(step.id, `fetched ${toPlural(newContext.length, 'item')}`)
+                this.statusCallback.onUpdate(mainProcessID, {
+                    ...this.mainProcess,
+                    content: `Retrieved ${toPlural(newContext.length, 'item')}`,
+                })
             }
 
-            const reviewed: ContextItem[] = []
-            const currentContext = [
-                ...this.context,
-                ...this.chatBuilder
-                    .getDehydratedMessages()
-                    .flatMap(m => (m.contextFiles ? [...m.contextFiles].reverse() : []))
-                    .filter(isDefined),
-            ]
-            // Extract context items that are enclosed with context tags from the response.
-            // We will validate the context items by checking if the context item is in the current context,
-            // which is a list of context that we have fetched in this round, and the ones from user's current
-            // chat session.
-            const contextNames = RawTextProcessor.extract(res, contextTag)
-            for (const contextName of contextNames) {
-                for (const item of currentContext) {
-                    if (item.uri.path.endsWith(contextName)) {
-                        try {
-                            // Try getting the full content for the requested file.
-                            const file =
-                                item.uri.scheme === 'file'
-                                    ? await getContextFromRelativePath(contextName)
-                                    : item
-                            reviewed.push({ ...(file || item), source: ContextItemSource.Agentic })
-                        } catch (error) {
-                            logDebug('Deep Cody', `failed to get context from ${contextName}`, {
-                                verbose: { error, contextName },
-                            })
-                        }
-                    }
-                }
-            }
-            // When there are context items matched, we will replace the current context with
-            // the reviewed context list, but first we will make sure all the user added context
-            // items are not removed from the updated context list. We will let the prompt builder
-            // at the final stage to do the unique context check.
-            if (reviewed.length > 0) {
-                this.statusCallback.onStream({
-                    title: 'Optimizing context',
-                    content: `selected ${toPlural(reviewed.length, 'item')}`,
-                })
-                const userAdded = this.context.filter(c => isUserAddedItem(c) || c.type === 'media')
-                reviewed.push(...userAdded)
-                this.context = reviewed
-            }
+            // Extract context names from the response for reflection
+            // Perform reflection if there are context names to process
+            await this.reflect(RawTextProcessor.extract(res, contextTag))
 
             return newContext
         } catch (error) {
@@ -334,6 +296,90 @@ export class DeepCodyAgent {
             logDebug('Deep Cody', `context review failed: ${error}`, { verbose: { prompt, error } })
             return []
         }
+    }
+
+    /**
+     * Reflects on the retrieved context and optimizes it based on extracted context names.
+     * This process:
+     * 1. Creates a reflection step for tracking
+     * 2. Matches context names with current context items
+     * 3. Retrieves full content for matched items
+     * 4. Updates the context with optimized items while preserving user-added content
+     */
+    private async reflect(contextNames: string[]): Promise<void> {
+        // Perform reflection if there are context names to process
+        if (!contextNames?.length || !this.context?.length) {
+            return
+        }
+        const mainProcessID = this.mainProcess.id
+
+        const reviewed: ContextItem[] = []
+
+        const currentContext = [
+            ...this.context,
+            ...this.chatBuilder
+                .getDehydratedMessages()
+                .flatMap(m => (m.contextFiles ? [...m.contextFiles].reverse() : []))
+                .filter(isDefined),
+        ]
+
+        this.stepsManager.updateStep(mainProcessID, {
+            ...this.mainProcess,
+            title: 'Reviewing context...',
+        })
+
+        // Start the reflection process
+        const reflectStep = {
+            id: `reflect-${this.stats.loop}`,
+            title: 'Optimize context',
+            content: `Reviewing ${toPlural(currentContext?.length, 'item')}`,
+            type: ProcessType.Tool,
+            items: reviewed,
+        }
+        this.statusCallback.onStream(reflectStep)
+
+        // Run the reflect step to optimize the retrieved context
+        for (const contextName of contextNames) {
+            for (const item of currentContext) {
+                if (item.uri.path.endsWith(contextName)) {
+                    try {
+                        // Try getting the full content for the requested file.
+                        const file =
+                            item.uri.scheme === 'file'
+                                ? await getContextFromRelativePath(contextName)
+                                : item
+                        reviewed.push({ ...(file || item), source: ContextItemSource.Agentic })
+                    } catch (error) {
+                        logDebug('Deep Cody', `failed to get context from ${contextName}`, {
+                            verbose: { error, contextName },
+                        })
+                    }
+                }
+            }
+        }
+
+        // When there are context items matched, we will replace the current context with
+        // the reviewed context list, but first we will make sure all the user added context
+        // items are not removed from the updated context list. We will let the prompt builder
+        // at the final stage to do the unique context check.
+        if (reviewed.length > 0) {
+            const userAdded = this.context.filter(c => isUserAddedItem(c) || c.type === 'media')
+            reviewed.push(...userAdded)
+            this.context = reviewed
+        }
+
+        // Update the reflection step with results
+        this.statusCallback.onUpdate(reflectStep.id, {
+            ...reflectStep,
+            items: reviewed,
+            state: 'success',
+            content: `Reviewed ${toPlural(currentContext?.length, 'item')}`,
+        })
+
+        this.stepsManager.updateStep(mainProcessID, {
+            ...this.mainProcess,
+            title: 'Context Reviewed & Optimized',
+        })
     }
 
     protected async processStream(

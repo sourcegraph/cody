@@ -112,12 +112,6 @@ export enum FeatureFlag {
     /** Whether Context Agent (Deep Cody) should use the default chat model or 3.5 Haiku */
     ContextAgentDefaultChatModel = 'agentic-chat-use-default-chat-model',
 
-    /** Enable Rate Limit for Deep Cody */
-    DeepCodyRateLimitBase = 'deep-cody-experimental-rate-limit',
-    DeepCodyRateLimitMultiplier = 'deep-cody-experimental-rate-limit-multiplier',
-    /** Enable Rate Limit per chat session for agentic chat */
-    AgenticContextSessionLimit = 'agentic-chat-experimental-session-limit',
-
     /**
      * Whether the current repo context chip is shown in the chat input by default
      */

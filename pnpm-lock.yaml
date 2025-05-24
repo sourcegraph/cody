@@ -630,6 +630,9 @@ importers:
       axios:
         specifier: ^1.3.6
         version: 1.3.6
+      browser-fs-access:
+        specifier: ^0.37.0
+        version: 0.37.0
       canvaskit-wasm:
         specifier: ^0.39.1
         version: 0.39.1
@@ -8493,6 +8496,10 @@ packages:
   /browser-assert@1.2.1:
     resolution: {integrity: sha512-nfulgvOR6S4gt9UKCeGJOuSGBPGiFT6oQ/2UBnvTY/5aQ1PnksW72fhZkM30DzoRRv2WpwZf1vHHEr3mtuXIWQ==}
     dev: true
+
+  /browser-fs-access@0.37.0:
+    resolution: {integrity: sha512-MKpvZrKtv6pBJ2ACd+VwfS9XauBKTMVZg2UBibypuK1gfiXM7euZjbdKmvRsyxeQRhfzNVQrzCSVGXs19/LP8Q==}
+    dev: false
 
   /browser-stdout@1.3.1:
     resolution: {integrity: sha512-qhAVI1+Av2X7qelOfAIYwXONood6XlZE/fXaBSmW/T5SzLAmCgzi+eiWE7fUvbHaeNBQH13UftjpXxsfLkMpgw==}

@@ -113,7 +113,8 @@ describe('MCPServerManager helper functions', () => {
                 expected: {
                     type: 'tool-state',
                     toolName: 'testServer_testTool',
-                    content: 'Hello world',
+                    content: `<TOOLRESULT tool='testTool'>Hello world
+[Please communicate the result to the user]</TOOLRESULT>`,
                     outputType: 'mcp',
                     uri: URI.parse(''),
                     title: 'testServer - testTool',
@@ -137,7 +138,8 @@ describe('MCPServerManager helper functions', () => {
                 expected: {
                     type: 'tool-state',
                     toolName: 'errServer_errTool',
-                    content: 'Error occurred',
+                    content: `<TOOLRESULT tool='errTool'>Error occurred
+[Please communicate the result to the user]</TOOLRESULT>`,
                     outputType: 'mcp',
                     uri: URI.parse(''),
                     title: 'errServer - errTool',
@@ -175,7 +177,9 @@ describe('MCPServerManager helper functions', () => {
                 expected: {
                     type: 'tool-state',
                     toolName: 'testServer_testTool',
-                    content: 'First part\nSecond part',
+                    content: `<TOOLRESULT tool='testTool'>First part
+Second part
+[Please communicate the result to the user]</TOOLRESULT>`,
                     outputType: 'mcp',
                     uri: URI.parse(''),
                     title: 'testServer - testTool',
