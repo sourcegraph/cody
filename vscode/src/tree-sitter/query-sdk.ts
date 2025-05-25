@@ -186,7 +186,7 @@ function getLanguageSpecificQueryWrappers(
             const symbol = findLast(symbolCaptures, ({ node }) => {
                 return (
                     node.startPosition.row === start.row &&
-                    (node.startPosition.column <= start.column || node.startPosition.row < start.row) &&
+                    (node.startPosition.column <= start.column || node.startPosition.row <= start.row) &&
                     (start.column <= node.endPosition.column || start.row < node.endPosition.row)
                 )
             })
@@ -227,8 +227,10 @@ function getLanguageSpecificQueryWrappers(
              * For all other cases, docstrings should be attached above the symbol range, use this.
              */
             const docStringLine =
-                languageId === 'python' && insertionPoint
-                    ? insertionPoint.node.startPosition.row + 1
+                languageId === 'python'
+                    ? insertionPoint
+                        ? insertionPoint.node.startPosition.row + 1
+                        : start.row + 1
                     : start.row - 1
             const docstringCaptures = queries.documentableNodes.compiled
                 .captures(root, {

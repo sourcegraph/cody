@@ -18,6 +18,7 @@ import { PersistenceTracker } from '../common/persistence-tracker'
 import { lines } from '../completions/text-processing'
 import { executeEdit } from '../edit/execute'
 import { type QuickPickInput, getInput } from '../edit/input/get-input'
+
 import {
     type EditIntent,
     EditIntentTelemetryMetadataMapping,
@@ -942,26 +943,69 @@ export class FixupController
             return false
         }
 
-        // Get the index of the first non-whitespace character on the line where the insertion point is.
-        const nonEmptyStartIndex = document.lineAt(
-            task.insertionPoint.line
-        ).firstNonWhitespaceCharacterIndex
-        // Split the text into lines and prepend each line with spaces to match the indentation level
-        // of the line where the insertion point is.
-        const textLines = text.split('\n').map(line => ' '.repeat(nonEmptyStartIndex) + line)
-        // Join the lines back into a single string with newline characters
-        // Remove any leading whitespace from the first line, as we are inserting at the insertionPoint
-        // Keep any trailing whitespace on the last line to preserve the original indentation.
-        const replacementText = textLines.join('\n').trimStart()
+        // Get the indentation context for the insertion point
+        const insertionLine = document.lineAt(task.insertionPoint.line)
+        let targetIndentSize = insertionLine.firstNonWhitespaceCharacterIndex
 
-        // Insert the updated text at the specified insertionPoint.
+        // Special case for Python documentation
+        if (targetIndentSize === 0 && task.document.languageId === 'python' && task.intent === 'doc') {
+            targetIndentSize = 4
+        }
+
+        // Calculate indentation adjustments
+        const textIndentSize = text.search(/\S/) || 0
+        const needsIndentAdjustment = targetIndentSize > textIndentSize
+        const indentDifference = needsIndentAdjustment ? targetIndentSize - textIndentSize : 0
+
+        // Process the text lines
+        const textLines = text.split('\n')
+        const processedLines = textLines.map((line, index) => {
+            // Don't add extra indentation to empty lines
+            if (line.trim() === '') {
+                return line
+            }
+
+            // For the first line, only add indentation if we're at the start of a line
+            if (
+                index === 0 &&
+                task.insertionPoint.character > 0 &&
+                line.startsWith(' '.repeat(textIndentSize))
+            ) {
+                return line.trimStart()
+            }
+
+            // Add the calculated indentation difference
+            return ' '.repeat(indentDifference) + line
+        })
+
+        // Ensure proper line ending and handle insertion at line start
+        const proposedText =
+            processedLines.join('\n') +
+            (task.document.languageId !== 'python'
+                ? task.insertionPoint.character > 0
+                    ? ' '.repeat(targetIndentSize)
+                    : ''
+                : '')
+
+        const replacementText = proposedText
+        const startLine = task.insertionPoint.line > 0 ? task.insertionPoint.line - 1 : 0
+        const startLineText = document.lineAt(startLine).text
+
+        // Insert the updated text at the specified insertionPoint
         if (edit instanceof vscode.WorkspaceEdit) {
             edit.insert(document.uri, task.insertionPoint, replacementText)
             return vscode.workspace.applyEdit(edit)
         }
 
         return edit(editBuilder => {
-            editBuilder.insert(task.insertionPoint, replacementText)
+            // Replace the code block if the start line matches the start of the text
+            // This happens sometimes with python document code action where instead
+            // of adding only the docstring, the LLM returns the entire code block
+            if (startLine > 0 && startLineText && text.startsWith(startLineText)) {
+                editBuilder.replace(task.originalRange, replacementText)
+            } else {
+                editBuilder.insert(task.insertionPoint, replacementText)
+            }
         }, options)
     }
 
