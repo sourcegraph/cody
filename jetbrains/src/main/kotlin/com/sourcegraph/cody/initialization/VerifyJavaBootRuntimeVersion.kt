@@ -38,8 +38,6 @@ class VerifyJavaBootRuntimeVersion : Activity {
     fun isCurrentRuntimeMissingJcef(): Boolean {
       val model = RuntimeChooserCurrentItem.currentRuntime()
       val doesNameContainJcefSuffix = model.version?.endsWith("-jcef") ?: true
-
-      return true
       return !doesNameContainJcefSuffix
     }
 
