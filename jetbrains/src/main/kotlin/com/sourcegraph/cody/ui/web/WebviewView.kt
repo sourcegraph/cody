@@ -6,6 +6,9 @@ import com.intellij.openapi.project.Project
 import com.sourcegraph.cody.CodyToolWindowContent
 import com.sourcegraph.cody.agent.CodyAgentService
 import com.sourcegraph.cody.agent.protocol_generated.Webview_ResolveWebviewViewParams
+import java.awt.AWTEvent
+import java.awt.Toolkit
+import java.awt.event.AWTEventListener
 
 /// A view that can host a browser component.
 private interface WebviewHost {
@@ -27,6 +30,8 @@ internal class CodyToolWindowContentWebviewHost(private val owner: CodyToolWindo
   var proxy: WebUIProxy? = null
     private set
 
+  private var displayChangeListener = AWTEventListener { proxy?.forceRepaint() }
+
   override val viewDelegate =
       object : WebviewViewDelegate {
         override fun setTitle(newTitle: String) {
@@ -41,13 +46,19 @@ internal class CodyToolWindowContentWebviewHost(private val owner: CodyToolWindo
       if (proxy.component == null) {
         thisLogger().warn("expected browser component to be created, but was null")
       }
+
       owner.setWebviewComponent(this)
     }
+
+    Toolkit.getDefaultToolkit()
+        .addAWTEventListener(displayChangeListener, AWTEvent.PAINT_EVENT_MASK)
   }
 
   override fun reset() {
     owner.setWebviewComponent(null)
     this.proxy = null
+
+    Toolkit.getDefaultToolkit().removeAWTEventListener(displayChangeListener)
   }
 }
 
