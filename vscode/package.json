@@ -1167,7 +1167,7 @@
           "markdownDeprecationMessage": "**Deprecated** Enable Agents like Deep Cody to autonomously execute shell commands in your environment for context. Enable with caution as mistakes are possible.",
           "deprecationMessage": "Deprecated. Now configurable via UI."
         },
-        "cody.agentic.context": {
+        "cody.chat.agenticContext": {
           "order": 13,
           "title": "Agentic context for chat",
           "type": "boolean",
