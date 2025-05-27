@@ -210,7 +210,12 @@ object ConfigUtil {
         if (value == null) {
           config.withoutPath(key)
         } else {
-          config.withValue(key, ConfigValueFactory.fromAnyRef(value))
+          try {
+            val subconfig = ConfigFactory.parseString(value)
+            config.withValue(key, subconfig.root())
+          } catch (e: Exception) {
+            config.withValue(key, ConfigValueFactory.fromAnyRef(value))
+          }
         }
     setCustomConfiguration(project, updatedConfig.root().render(renderOptions))
   }

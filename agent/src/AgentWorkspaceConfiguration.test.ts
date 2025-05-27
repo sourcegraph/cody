@@ -39,6 +39,15 @@ describe('AgentWorkspaceConfiguration', () => {
                 }
             },
             "dotted.property.name": 42
+          },
+          "mcpServers" : {
+            "mcp-server1" : {
+                "args" : [
+                    "-y",
+                    "@modelcontextprotocol/server-everything"
+                ],
+                "command" : "npx"
+            }
           }
         }
     `
@@ -273,6 +282,26 @@ describe('AgentWorkspaceConfiguration', () => {
         it('updates boolean values', async () => {
             await config.update('feature.enabled', false)
             expect(config.get('feature.enabled')).toBe(false)
+        })
+
+        it('updates configuration section', async () => {
+            const codySection = config.withPrefix('cody')
+            await codySection.update('test.entry', true)
+            expect(config.get('cody.test.entry')).toBe(true)
+        })
+
+        it('updates configuration with object and arrays', async () => {
+            const codySection = config.withPrefix('cody')
+            await codySection.update('mcpServers', {
+                'mcp-server1': {
+                    args: ['-y', '@playwright/mcp'],
+                    command: 'npx',
+                },
+            })
+            expect(config.get('cody.mcpServers.mcp-server1.args')).toStrictEqual([
+                '-y',
+                '@playwright/mcp',
+            ])
         })
     })
 })
