@@ -1129,7 +1129,7 @@
         },
         "cody.mcpServers": {
           "type": "object",
-          "markdownDescription": "Configuration for MCP servers to use with agentic chat.",
+          "markdownDescription": "Configuration for MCP servers to use with agentic chat. Enterprise instance with feature flag enabled required.",
           "default": {}
         },
         "cody.internal.unstable": {
@@ -1166,6 +1166,13 @@
           "value": false,
           "markdownDeprecationMessage": "**Deprecated** Enable Agents like Deep Cody to autonomously execute shell commands in your environment for context. Enable with caution as mistakes are possible.",
           "deprecationMessage": "Deprecated. Now configurable via UI."
+        },
+        "cody.chat.agenticContext": {
+          "order": 13,
+          "title": "Agentic context for chat",
+          "type": "boolean",
+          "markdownDescription": "Enable agentic context for chat.",
+          "default": true
         },
         "cody.agentic.context.experimentalOptions": {
           "type": "object",
