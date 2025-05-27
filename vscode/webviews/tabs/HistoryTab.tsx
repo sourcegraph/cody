@@ -218,7 +218,7 @@ export const HistoryTabWithData: React.FC<HistoryTabProps & { chats: Lightweight
         }
     }, [hasMoreItems, filteredChats.length, isLoading])
 
-    if (!filteredChats.length && !searchText) {
+    if (!nonEmptyChats.length) {
         return (
             <div className="tw-flex tw-flex-col tw-items-center tw-p-6">
                 <HistoryIcon size={20} strokeWidth={1.25} className="tw-mb-5 tw-text-muted-foreground" />
