@@ -2,6 +2,7 @@ import clsx from 'clsx'
 import type React from 'react'
 import { useCallback, useState } from 'react'
 import { CodyTaskState } from '../../../src/non-stop/state'
+import { Tooltip, TooltipContent, TooltipTrigger } from '../../components/shadcn/ui/tooltip'
 import {
     CheckCodeBlockIcon,
     CloseIcon,
@@ -54,10 +55,15 @@ export const CopyButton = ({
     }, [onCopy, text, label, customIcon])
 
     return (
-        <button type="button" className={className} onClick={handleClick} title={title}>
-            <div className={styles.iconContainer}>{icon}</div>
-            {showLabel && <span className="tw-hidden xs:tw-block">{currentLabel}</span>}
-        </button>
+        <Tooltip>
+            <TooltipTrigger asChild>
+                <button type="button" className={className} onClick={handleClick}>
+                    <div className={styles.iconContainer}>{icon}</div>
+                    {showLabel && <span className="tw-hidden xs:tw-block">{currentLabel}</span>}
+                </button>
+            </TooltipTrigger>
+            <TooltipContent>{title}</TooltipContent>
+        </Tooltip>
     )
 }
 
@@ -190,15 +196,19 @@ function createInsertButton(
     insertButtonOnSubmit?: CodeBlockActionsProps['insertButtonOnSubmit']
 ): React.ReactElement {
     return (
-        <button
-            type="button"
-            title="Insert Code at Cursor"
-            className={styles.button}
-            onClick={() => insertButtonOnSubmit?.(preText, false)}
-        >
-            <div className={styles.iconContainer}>{InsertCodeBlockIcon}</div>
-            <span className="tw-hidden xs:tw-block">Insert</span>
-        </button>
+        <Tooltip>
+            <TooltipTrigger asChild>
+                <button
+                    type="button"
+                    className={styles.button}
+                    onClick={() => insertButtonOnSubmit?.(preText, false)}
+                >
+                    <div className={styles.iconContainer}>{InsertCodeBlockIcon}</div>
+                    <span className="tw-hidden xs:tw-block">Insert</span>
+                </button>
+            </TooltipTrigger>
+            <TooltipContent>Insert Code at Cursor</TooltipContent>
+        </Tooltip>
     )
 }
 
@@ -207,15 +217,19 @@ function createSaveButton(
     insertButtonOnSubmit?: CodeBlockActionsProps['insertButtonOnSubmit']
 ): React.ReactElement {
     return (
-        <button
-            type="button"
-            title="Save Code to New File..."
-            className={styles.button}
-            onClick={() => insertButtonOnSubmit?.(preText, true)}
-        >
-            <div className={styles.iconContainer}>{SaveCodeBlockIcon}</div>
-            <span className="tw-hidden xs:tw-block">Save</span>
-        </button>
+        <Tooltip>
+            <TooltipTrigger asChild>
+                <button
+                    type="button"
+                    className={styles.button}
+                    onClick={() => insertButtonOnSubmit?.(preText, true)}
+                >
+                    <div className={styles.iconContainer}>{SaveCodeBlockIcon}</div>
+                    <span className="tw-hidden xs:tw-block">Save</span>
+                </button>
+            </TooltipTrigger>
+            <TooltipContent>Save Code to New File…</TooltipContent>
+        </Tooltip>
     )
 }
 
@@ -243,25 +257,34 @@ function createApplyButton(
     }
 
     return (
-        <button
-            type="button"
-            className={styles.button}
-            onClick={onClick}
-            title="Apply in Editor"
-            disabled={disabled}
-        >
-            <div className={styles.iconContainer}>{icon}</div>
-            <span className="tw-hidden xs:tw-block">{label}</span>
-        </button>
+        <Tooltip>
+            <TooltipTrigger asChild>
+                <button type="button" className={styles.button} onClick={onClick} disabled={disabled}>
+                    <div className={styles.iconContainer}>{icon}</div>
+                    <span className="tw-hidden xs:tw-block">{label}</span>
+                </button>
+            </TooltipTrigger>
+            <TooltipContent>Apply in Editor</TooltipContent>
+        </Tooltip>
     )
 }
 
 function createExecuteButton(onExecute: () => void): React.ReactElement {
     return (
-        <button type="button" className={styles.button} onClick={onExecute} title="Execute in Terminal">
-            <div className={clsx(styles.iconContainer, 'tw-align-middle codicon codicon-terminal')} />
-            <span className="tw-hidden xs:tw-block">Execute</span>
-        </button>
+        <Tooltip>
+            <TooltipTrigger asChild>
+                <button type="button" className={styles.button} onClick={onExecute}>
+                    <div
+                        className={clsx(
+                            styles.iconContainer,
+                            'tw-align-middle codicon codicon-terminal'
+                        )}
+                    />
+                    <span className="tw-hidden xs:tw-block">Execute</span>
+                </button>
+            </TooltipTrigger>
+            <TooltipContent>Execute in Terminal</TooltipContent>
+        </Tooltip>
     )
 }
 
@@ -270,15 +293,15 @@ function createAcceptButton(
     smartApply: CodeBlockActionsProps['smartApply']
 ): React.ReactElement {
     return (
-        <button
-            type="button"
-            className={styles.button}
-            onClick={() => smartApply.onAccept(id)}
-            title="Accept"
-        >
-            <div className={styles.iconContainer}>{TickIcon}</div>
-            <span className="tw-hidden xs:tw-block">Accept</span>
-        </button>
+        <Tooltip>
+            <TooltipTrigger asChild>
+                <button type="button" className={styles.button} onClick={() => smartApply.onAccept(id)}>
+                    <div className={styles.iconContainer}>{TickIcon}</div>
+                    <span className="tw-hidden xs:tw-block">Accept</span>
+                </button>
+            </TooltipTrigger>
+            <TooltipContent>Accept</TooltipContent>
+        </Tooltip>
     )
 }
 
@@ -287,15 +310,15 @@ function createRejectButton(
     smartApply: CodeBlockActionsProps['smartApply']
 ): React.ReactElement {
     return (
-        <button
-            type="button"
-            className={styles.button}
-            onClick={() => smartApply.onReject(id)}
-            title="Reject"
-        >
-            <div className={styles.iconContainer}>{CloseIcon}</div>
-            <span className="tw-hidden xs:tw-block">Reject</span>
-        </button>
+        <Tooltip>
+            <TooltipTrigger asChild>
+                <button type="button" className={styles.button} onClick={() => smartApply.onReject(id)}>
+                    <div className={styles.iconContainer}>{CloseIcon}</div>
+                    <span className="tw-hidden xs:tw-block">Reject</span>
+                </button>
+            </TooltipTrigger>
+            <TooltipContent>Reject</TooltipContent>
+        </Tooltip>
     )
 }
 
@@ -324,15 +347,22 @@ function createActionsDropdown(preText: string): React.ReactElement {
         event.stopPropagation()
     }, [])
 
+    const tooltip = 'More Actions…'
+
     return (
-        <button
-            type="button"
-            title="More Actions..."
-            className={styles.button}
-            data-vscode-context={JSON.stringify(vscodeContext)}
-            onClick={handleClick}
-        >
-            {EllipsisIcon}
-        </button>
+        <Tooltip>
+            <TooltipTrigger asChild>
+                <button
+                    type="button"
+                    className={styles.button}
+                    aria-label={tooltip}
+                    data-vscode-context={JSON.stringify(vscodeContext)}
+                    onClick={handleClick}
+                >
+                    {EllipsisIcon}
+                </button>
+            </TooltipTrigger>
+            <TooltipContent>{tooltip}</TooltipContent>
+        </Tooltip>
     )
 }
