@@ -1,7 +1,8 @@
 import path from 'node:path'
-import { getDotComDefaultModels, modelsService, ps } from '@sourcegraph/cody-shared'
+import { FIXTURE_MODELS, modelsService, ps } from '@sourcegraph/cody-shared'
 import { afterAll, beforeAll } from 'vitest'
 import { describe, expect, it } from 'vitest'
+import { vi } from 'vitest'
 import type * as vscode from 'vscode'
 import { executeSmartApply } from '../../vscode/src/edit/smart-apply'
 import { TESTING_CREDENTIALS } from '../../vscode/src/testutils/testing-credentials'
@@ -69,9 +70,11 @@ describe('Edit', { timeout: 5000 }, () => {
                 document: newDocument,
                 model: undefined,
                 isNewFile: true,
+                traceparent: null,
             },
             source: 'chat',
         })
+        expect(fixupTask).toBeDefined()
         const task = AgentFixupControls.serialize(fixupTask!)
 
         const initiallyActiveFileLenses = client.codeLenses.get(initiallyActiveFileUri.toString()) ?? []
