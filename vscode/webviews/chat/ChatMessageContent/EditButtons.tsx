@@ -347,19 +347,22 @@ function createActionsDropdown(preText: string): React.ReactElement {
         event.stopPropagation()
     }, [])
 
+    const tooltip = 'More Actions…'
+
     return (
         <Tooltip>
             <TooltipTrigger asChild>
                 <button
                     type="button"
                     className={styles.button}
+                    aria-label={tooltip}
                     data-vscode-context={JSON.stringify(vscodeContext)}
                     onClick={handleClick}
                 >
                     {EllipsisIcon}
                 </button>
             </TooltipTrigger>
-            <TooltipContent>More Actions…</TooltipContent>
+            <TooltipContent>{tooltip}</TooltipContent>
         </Tooltip>
     )
 }
