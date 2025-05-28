@@ -3,6 +3,71 @@
 This is a log of all notable changes to Cody for VS Code.
 
 <!--- {/_ CHANGELOG_START _/} -->
+
+## 1.98.0
+
+### Features
+
+#### Chat
+
+- add `cody.chat.agenticContext` configuration option [#7998](https://github.com/sourcegraph/cody/pull/7998)
+- make last editor sticky [#7961](https://github.com/sourcegraph/cody/pull/7961)
+
+### Fix
+
+#### Autoedit
+
+- Disable hot streak experimental model in agent [#7962](https://github.com/sourcegraph/cody/pull/7962)
+
+#### Chat
+
+- center empty history tab [#7965](https://github.com/sourcegraph/cody/pull/7965)
+- only run saveSession after LLM response [#7952](https://github.com/sourcegraph/cody/pull/7952)
+- show toolbar even when only one model is available [#7936](https://github.com/sourcegraph/cody/pull/7936)
+
+#### Cody-Web
+
+- display thinking tags for reasoning models [#7942](https://github.com/sourcegraph/cody/pull/7942)
+
+### Chore
+
+#### Chat
+
+- remove rate limiting and enable agentic chat default with flag [#7971](https://github.com/sourcegraph/cody/pull/7971)
+
+#### Release
+
+- Bump package version and update changelog for M96 [#7973](https://github.com/sourcegraph/cody/pull/7973)
+
+### Refactor
+
+#### Chat
+
+- add more info to show in history tab [#7966](https://github.com/sourcegraph/cody/pull/7966)
+- clear deprecated storage keys and remove chat memory [#7964](https://github.com/sourcegraph/cody/pull/7964)
+- update agentic context UI [#7908](https://github.com/sourcegraph/cody/pull/7908)
+
+### Reverts
+
+- Revert: fix(web): Fix agent recreation in Cody Web component to properly respond to config changes [#-1](https://github.com/sourcegraph/cody/pull/7787)
+
+### Uncategorized
+
+#### Others
+
+- [Backport M98] Do not trigger autocompletion on Delete [#7991](https://github.com/sourcegraph/cody/pull/7991)
+- [Backport M98] Refresh Cody window on display configuration change [#7987](https://github.com/sourcegraph/cody/pull/7987)
+- Autoedit: Add filter on the big diff modifications [#7970](https://github.com/sourcegraph/cody/pull/7970)
+- Fix missing JCEF panel [#7968](https://github.com/sourcegraph/cody/pull/7968)
+- Add settings for custom node process args and env variables [#7963](https://github.com/sourcegraph/cody/pull/7963)
+- Changelog for 1.94.2 [#7959](https://github.com/sourcegraph/cody/pull/7959)
+- Changelog for 1.94.1 [#7948](https://github.com/sourcegraph/cody/pull/7948)
+- Add config.condebase check to repoNameResolver [#7944](https://github.com/sourcegraph/cody/pull/7944)
+- Bump min version for new prompt api [#7943](https://github.com/sourcegraph/cody/pull/7943)
+- Do not throw exceptions from unimplemented protocol methods [#7929](https://github.com/sourcegraph/cody/pull/7929)
+- Replace native file picker with polyfill implementation [#7928](https://github.com/sourcegraph/cody/pull/7928)
+- Properly use generated protocol classes [#7922](https://github.com/sourcegraph/cody/pull/7922)
+
 ## 1.96.0
 
 ### Fix
