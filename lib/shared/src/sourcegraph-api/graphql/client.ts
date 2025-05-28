@@ -1006,7 +1006,11 @@ export class SourcegraphGraphQLAPIClient {
         first,
         after,
         query,
-    }: { first: number; after?: string; query?: string }): Promise<RepoListResponse | Error> {
+    }: {
+        first: number
+        after?: string
+        query?: string
+    }): Promise<RepoListResponse | Error> {
         return this.fetchSourcegraphAPI<APIResponse<RepoListResponse>>(REPOSITORY_LIST_QUERY, {
             first,
             after: after || null,
@@ -1547,14 +1551,16 @@ export class SourcegraphGraphQLAPIClient {
                 },
                 signal
             ).then(response => {
-                return extractDataOrError(response, data =>
-                    data.evaluatedFeatureFlags.reduce(
-                        (acc: Record<string, boolean>, { name, value }) => {
-                            acc[name] = value
-                            return acc
-                        },
-                        {}
-                    )
+                return extractDataOrError(
+                    response,
+                    data =>
+                        data.evaluatedFeatureFlags?.reduce(
+                            (acc: Record<string, boolean>, { name, value }) => {
+                                acc[name] = value
+                                return acc
+                            },
+                            {}
+                        ) || {}
                 )
             })
         }
@@ -1564,11 +1570,16 @@ export class SourcegraphGraphQLAPIClient {
             {},
             signal
         ).then(response => {
-            return extractDataOrError(response, data =>
-                data.evaluatedFeatureFlags.reduce((acc: Record<string, boolean>, { name, value }) => {
-                    acc[name] = value
-                    return acc
-                }, {})
+            return extractDataOrError(
+                response,
+                data =>
+                    data.evaluatedFeatureFlags?.reduce(
+                        (acc: Record<string, boolean>, { name, value }) => {
+                            acc[name] = value
+                            return acc
+                        },
+                        {}
+                    ) || {}
             )
         })
     }
