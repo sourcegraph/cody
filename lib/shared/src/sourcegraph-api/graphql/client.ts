@@ -42,6 +42,7 @@ import {
     CURRENT_USER_INFO_QUERY,
     CURRENT_USER_ROLE_QUERY,
     DELETE_ACCESS_TOKEN_MUTATION,
+    EVALUATE_FEATURE_FLAGS_QUERY,
     EVALUATE_FEATURE_FLAG_QUERY,
     FILE_CONTENTS_QUERY,
     FILE_MATCH_SEARCH_QUERY,
@@ -1521,9 +1522,43 @@ export class SourcegraphGraphQLAPIClient {
         ).then(response => extractDataOrError(response, data => data.snippetAttribution))
     }
 
+    /**
+     *
+     * https://github.com/sourcegraph/sourcegraph/pull/3513 introduced a new GraphQL query evaluateFeatureFlags
+     * flagNames allow multiple flags to be evaluaed.
+     * This reduces the number of requests a client needs to make.
+     *
+     * Deprecated: evaluatedFeatureFlags
+     */
     public async getEvaluatedFeatureFlags(
+        flagNames: string[],
         signal?: AbortSignal
     ): Promise<Record<string, boolean> | Error> {
+        const [hasEvaluateFeatureFlags] = await Promise.all([
+            this.isValidSiteVersion({ minimumVersion: '6.2.1106' }),
+        ])
+        // sg version 6.2 and above
+        if (hasEvaluateFeatureFlags) {
+            const names = flagNames.filter(name => name !== 'test-flag-do-not-use')
+            return this.fetchSourcegraphAPI<APIResponse<EvaluatedFeatureFlagsResponse>>(
+                EVALUATE_FEATURE_FLAGS_QUERY,
+                {
+                    flagNames: names,
+                },
+                signal
+            ).then(response => {
+                return extractDataOrError(response, data =>
+                    data.evaluatedFeatureFlags.reduce(
+                        (acc: Record<string, boolean>, { name, value }) => {
+                            acc[name] = value
+                            return acc
+                        },
+                        {}
+                    )
+                )
+            })
+        }
+        // sg version before 6.2
         return this.fetchSourcegraphAPI<APIResponse<EvaluatedFeatureFlagsResponse>>(
             GET_FEATURE_FLAGS_QUERY,
             {},
