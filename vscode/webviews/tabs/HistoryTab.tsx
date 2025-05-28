@@ -261,8 +261,7 @@ export const HistoryTabWithData: React.FC<HistoryTabProps & { chats: Lightweight
             {IDE !== CodyIDE.Web && (
                 <header className="tw-inline-flex tw-px-4 tw-gap-4">
                     <Button
-                        variant="secondary"
-                        className="tw-bg-popover tw-border tw-border-border !tw-justify-between"
+                        className="tw-bg-popover tw-border tw-border-border !tw-justify-between tw-text-sidebar-foreground"
                         onClick={onExportClick}
                     >
                         <div className="tw-flex tw-items-center">
@@ -270,8 +269,7 @@ export const HistoryTabWithData: React.FC<HistoryTabProps & { chats: Lightweight
                         </div>
                     </Button>
                     <Button
-                        variant="secondary"
-                        className="tw-bg-popover tw-border tw-border-border !tw-justify-between"
+                        className="tw-bg-popover tw-border tw-border-border !tw-justify-between tw-text-sidebar-foreground"
                         onClick={() => setIsDeleteAllActive(true)}
                     >
                         <div className="tw-flex tw-items-center">
@@ -282,7 +280,7 @@ export const HistoryTabWithData: React.FC<HistoryTabProps & { chats: Lightweight
             )}
             {isDeleteAllActive && (
                 <div
-                    className="tw-my-4 tw-p-4 tw-mx-[0.5rem] tw-border tw-border-red-300 tw-rounded-lg tw-bg-muted-transparent dark:tw-text-red-400 dark:tw-border-red-800"
+                    className="tw-my-4 tw-p-4 tw-mx-[0.5rem] tw-border tw-bg-muted-transparent tw-border-red-800 tw-rounded-lg"
                     role="alert"
                 >
                     <div className="tw-flex tw-items-center">
@@ -293,11 +291,11 @@ export const HistoryTabWithData: React.FC<HistoryTabProps & { chats: Lightweight
                     <div className="tw-mt-2 tw-mb-4 tw-text-sm tw-text-muted-foreground">
                         You will not be able to recover them once deleted.
                     </div>
-                    <div className="tw-flex">
+                    <div className="tw-flex tw-gap-2">
                         <Button
                             size="sm"
                             aria-label="Delete all chats"
-                            className="tw-text-white tw-bg-red-800 hover:tw-bg-red-900 focus:tw-ring-4 focus:tw-outline-none focus:tw-ring-red-200 tw-font-medium tw-rounded-lg tw-text-xs tw-px-3 tw-py-1.5 tw-me-2 tw-text-center tw-inline-flex tw-items-center dark:tw-bg-red-600 dark:hover:tw-bg-red-700 dark:focus:tw-ring-red-800"
+                            className="tw-bg-popover tw-border tw-border-border tw-text-white tw-bg-red-800 hover:tw-bg-red-900 focus:tw-ring-4"
                             onClick={e => {
                                 onDeleteButtonClick(e, 'clear-all-no-confirm')
                                 setIsDeleteAllActive(false)
@@ -307,7 +305,7 @@ export const HistoryTabWithData: React.FC<HistoryTabProps & { chats: Lightweight
                         </Button>
                         <Button
                             size="sm"
-                            className="tw-text-red-800 tw-bg-transparent tw-border tw-border-red-800 hover:tw-bg-red-900 hover:tw-text-white focus:tw-ring-4 focus:tw-outline-none focus:tw-ring-red-200 tw-font-medium tw-rounded-lg tw-text-xs tw-px-3 tw-py-1.5 tw-text-center dark:hover:tw-bg-red-600 dark:tw-border-red-600 dark:tw-text-red-400 dark:hover:tw-text-white dark:focus:tw-ring-red-800"
+                            className="tw-bg-popover tw-border tw-border-border tw-text-sidebar-foreground"
                             onClick={() => setIsDeleteAllActive(false)}
                             aria-label="Cancel"
                         >
