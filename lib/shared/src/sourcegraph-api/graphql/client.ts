@@ -1529,10 +1529,9 @@ export class SourcegraphGraphQLAPIClient {
     /**
      *
      * https://github.com/sourcegraph/sourcegraph/pull/3513 introduced a new GraphQL query evaluateFeatureFlags
-     * flagNames allow multiple flags to be evaluaed.
-     * This reduces the number of requests a client needs to make.
+     * @param flagNames allows multiple flags to be evaluated.
      *
-     * Deprecated: evaluatedFeatureFlags
+     * Deprecated API: evaluatedFeatureFlags
      */
     public async getEvaluatedFeatureFlags(
         flagNames: string[],
