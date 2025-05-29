@@ -596,6 +596,10 @@ interface EvaluatedFeatureFlagsResponse {
     evaluatedFeatureFlags: EvaluatedFeatureFlag[]
 }
 
+interface EvaluatedFeatureFlagsResponse {
+    evaluateFeatureFlags: EvaluatedFeatureFlag[]
+}
+
 interface EvaluateFeatureFlagResponse {
     evaluateFeatureFlag: boolean
 }
@@ -1553,7 +1557,7 @@ export class SourcegraphGraphQLAPIClient {
                 return extractDataOrError(
                     response,
                     data =>
-                        data.evaluatedFeatureFlags?.reduce(
+                        data.evaluateFeatureFlags?.reduce(
                             (acc: Record<string, boolean>, { name, value }) => {
                                 acc[name] = value
                                 return acc
