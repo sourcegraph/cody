@@ -457,7 +457,6 @@ class LocalStorage implements LocalStorageForModelPreferences {
                 }
             }
 
-            console.log(`Trimming ${oldestChats.length} old chat conversations to reduce storage size`)
 
             // Remove the chats from history
             for (const { accountKey, chatId } of oldestChats) {
