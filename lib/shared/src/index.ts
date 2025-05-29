@@ -155,7 +155,7 @@ export {
     defaultPathFunctions,
 } from './common/path'
 export { parseEvents } from './sourcegraph-api/completions/parse'
-export { isWindows, isMacOS } from './common/platform'
+export { isWindows, isMacOS, isLinux, isUbuntu } from './common/platform'
 export {
     assertFileURI,
     isFileURI,
