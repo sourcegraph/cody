@@ -315,22 +315,35 @@ const CodyWebPanel: FC<CodyWebPanelProps> = props => {
                 } as ContextItemOpenCtx)
             } else {
                 // Common file mention with possible file range positions
+                // Always add the current file item
                 initialContext.push({
                     type: 'file',
                     isIgnored: false,
-                    title: initialContextData?.fileRange ? 'Current Selection' : 'Current File',
-                    range: initialContextData?.fileRange
-                        ? {
-                              start: { line: initialContextData.fileRange.startLine, character: 0 },
-                              end: { line: initialContextData.fileRange.endLine + 1, character: 0 },
-                          }
-                        : undefined,
+                    title: 'Current File',
                     repoName: repository.name,
                     remoteRepositoryName: repository.name,
                     uri: URI.file(`${repository.name}/${fileURL}`),
                     source: ContextItemSource.Initial,
                     icon: 'file',
                 })
+
+                // Add the current selection item if there's a range
+                if (initialContextData?.fileRange) {
+                    initialContext.push({
+                        type: 'file',
+                        isIgnored: false,
+                        title: 'Current Selection',
+                        range: {
+                            start: { line: initialContextData.fileRange.startLine, character: 0 },
+                            end: { line: initialContextData.fileRange.endLine + 1, character: 0 },
+                        },
+                        repoName: repository.name,
+                        remoteRepositoryName: repository.name,
+                        uri: URI.file(`${repository.name}/${fileURL}`),
+                        source: ContextItemSource.Initial,
+                        icon: 'list-selection',
+                    })
+                }
             }
         }
 
