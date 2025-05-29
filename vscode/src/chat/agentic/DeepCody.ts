@@ -24,6 +24,7 @@ import { getContextFromRelativePath } from '../../commands/context/file-path'
 import { forkSignal } from '../../completions/utils'
 import { getCategorizedMentions, isUserAddedItem } from '../../prompt-builder/utils'
 import type { ChatBuilder } from '../chat-view/ChatBuilder'
+import { DeepCodyHandler } from '../chat-view/handlers/DeepCodyHandler'
 import { DefaultPrompter } from '../chat-view/prompt'
 import type { CodyTool } from './CodyTool'
 import { CodyToolProvider } from './CodyToolProvider'
@@ -46,16 +47,12 @@ import type { ToolStatusCallback } from './types'
  */
 export class DeepCodyAgent {
     public static readonly id = DeepCodyAgentID
-    /**
-     * NOTE: Currently A/B test to default to 3.5 Haiku / 3.5 Sonnet for the review step.
-     */
-    public static model: string | undefined = undefined
 
     protected readonly multiplexer = new BotResponseMultiplexer()
     protected readonly promptMixins: PromptMixin[] = []
     protected readonly tools: CodyTool[]
-    protected statusCallback: ToolStatusCallback
-    private stepsManager: ProcessManager
+    protected readonly statusCallback: ToolStatusCallback
+    private readonly stepsManager: ProcessManager
 
     protected context: ContextItem[] = []
     /**
@@ -157,10 +154,11 @@ export class DeepCodyAgent {
         span.setAttribute('sampled', true)
         const startTime = performance.now()
         await this.reviewLoop(requestID, span, chatAbortSignal, maxLoops)
+        const durationMs = performance.now() - startTime
         telemetryRecorder.recordEvent('cody.deep-cody.context', 'reviewed', {
             privateMetadata: {
                 requestID,
-                model: DeepCodyAgent.model,
+                model: DeepCodyHandler.model,
                 traceId: span.spanContext().traceId,
                 chatAgent: DeepCodyAgent.id,
             },
@@ -168,13 +166,14 @@ export class DeepCodyAgent {
                 loop: this.stats.loop, // Number of loops run.
                 fetched: this.stats.context, // Number of context fetched.
                 context: this.context.length, // Number of context used.
-                durationMs: performance.now() - startTime,
+                durationMs,
             },
             billingMetadata: {
                 product: 'cody',
                 category: 'billable',
             },
         })
+        this.statusCallback.onComplete(this.mainProcess.id)
         return this.context
     }
 
@@ -185,19 +184,16 @@ export class DeepCodyAgent {
         maxLoops: number
     ): Promise<void> {
         span.addEvent('reviewLoop')
-        const mainProcessID = this.mainProcess.id
         for (let i = 0; i < maxLoops && !chatAbortSignal.aborted; i++) {
             this.stats.loop++
             const newContext = await this.review(requestID, span, chatAbortSignal)
-            if (newContext) this.statusCallback.onComplete(mainProcessID)
-            if (!newContext.length) break
+            if (!newContext?.length) break
             // Filter and add new context items in one pass
             const validItems = newContext.filter(c => c.title !== 'TOOLCONTEXT')
             this.context.push(...validItems)
             this.stats.context += validItems.length
             if (newContext.every(isUserAddedItem)) break
         }
-        this.statusCallback.onComplete()
     }
 
     /**
@@ -219,7 +215,12 @@ export class DeepCodyAgent {
         const { prompt } = await prompter.makePrompt(this.chatBuilder, 1, this.promptMixins)
         span.addEvent('sendReviewRequest')
         try {
-            const res = await this.processStream(requestID, prompt, chatAbortSignal, DeepCodyAgent.model)
+            const res = await this.processStream(
+                requestID,
+                prompt,
+                chatAbortSignal,
+                DeepCodyHandler.model
+            )
             // If the response is empty or only contains the answer token, it's ready to answer.
             if (!res || isReadyToAnswer(res)) {
                 return []

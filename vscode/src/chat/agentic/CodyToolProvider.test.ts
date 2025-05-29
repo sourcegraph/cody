@@ -5,9 +5,9 @@ import { URI } from 'vscode-uri'
 import * as openctxAPI from '../../../../lib/shared/src/context/openctx/api'
 import { mockLocalStorage } from '../../services/LocalStorageProvider'
 import type { ContextRetriever } from '../chat-view/ContextRetriever'
+import { DeepCodyHandler } from '../chat-view/handlers/DeepCodyHandler'
 import { CodyTool } from './CodyTool'
 import { CodyToolProvider, TestToolFactory, type ToolConfiguration } from './CodyToolProvider'
-import { toolboxManager } from './ToolboxManager'
 import type { CodyToolConfig } from './types'
 
 const localStorageData: { [key: string]: unknown } = {}
@@ -88,7 +88,7 @@ describe('CodyToolProvider', () => {
     })
 
     it('should not include CLI tool if shell is disabled', () => {
-        vi.spyOn(toolboxManager, 'getSettings').mockReturnValue({
+        vi.spyOn(DeepCodyHandler, 'getSettings').mockReturnValue({
             agent: { name: 'deep-cody' },
             shell: { enabled: false },
         })
@@ -97,7 +97,7 @@ describe('CodyToolProvider', () => {
     })
 
     it('should include CLI tool if shell is enabled', () => {
-        vi.spyOn(toolboxManager, 'getSettings').mockReturnValue({
+        vi.spyOn(DeepCodyHandler, 'getSettings').mockReturnValue({
             agent: { name: 'deep-cody' },
             shell: { enabled: true },
         })

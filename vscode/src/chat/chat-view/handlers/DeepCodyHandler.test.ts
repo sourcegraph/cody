@@ -1,11 +1,17 @@
 import { type Model, ModelTag } from '@sourcegraph/cody-shared'
 import { DeepCodyAgentID } from '@sourcegraph/cody-shared/src/models/client'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { DeepCodyAgent } from './DeepCody'
-import { getDeepCodyModel, toolboxManager } from './ToolboxManager'
+import { DeepCodyHandler, getDeepCodyModel } from './DeepCodyHandler'
 
 // Set up mocks with vi.mocked approach
-vi.mock('vscode', () => ({ env: { shell: undefined } }))
+vi.mock('vscode', () => ({
+    env: { shell: undefined },
+    workspace: {
+        getConfiguration: vi.fn(),
+        onDidChangeConfiguration: vi.fn(),
+        workspaceFolders: [],
+    },
+}))
 
 vi.mock('@sourcegraph/cody-shared', () => ({
     authStatus: { pipe: vi.fn().mockReturnThis(), next: vi.fn(), subscribe: vi.fn() },
@@ -38,11 +44,20 @@ vi.mock('@sourcegraph/cody-shared', () => ({
     resolvedConfig: { pipe: vi.fn().mockReturnThis(), next: vi.fn(), subscribe: vi.fn() },
 }))
 
-vi.mock('./DeepCody', () => ({
-    DeepCodyAgent: {
-        model: undefined,
-    },
-}))
+vi.mock('./DeepCody', async importOriginal => {
+    const actual = (await importOriginal()) as any
+    return {
+        ...actual,
+        DeepCodyAgent: {
+            model: undefined,
+            getInstance: vi.fn().mockReturnValue({
+                getSettings: vi.fn(),
+                isAgenticChatEnabled: vi.fn(),
+                observable: { pipe: vi.fn().mockReturnThis(), subscribe: vi.fn() },
+            }),
+        },
+    }
+})
 
 // Mocks are defined at the top of the file
 
@@ -50,7 +65,7 @@ describe('ToolboxManager', () => {
     // Reset mocks between tests
     beforeEach(() => {
         vi.clearAllMocks()
-        DeepCodyAgent.model = undefined
+        DeepCodyHandler.model = undefined
     })
 
     afterEach(() => {
@@ -114,29 +129,21 @@ describe('ToolboxManager', () => {
         }
     })
 
-    describe('ToolboxManager singleton', () => {
-        it('should return the same instance when getInstance is called multiple times', () => {
-            const instance1 = toolboxManager
-            const instance2 = toolboxManager
-            expect(instance1).toBe(instance2)
-        })
-    })
-
     describe('getSettings', () => {
         const testCases = [
             {
                 name: 'should return null when disabled',
                 setup: () => {
                     // Set internal state to disabled
-                    vi.spyOn(toolboxManager as any, 'isEnabled', 'get').mockReturnValue(false)
+                    vi.spyOn(DeepCodyHandler as any, 'isToolboxEnabled', 'get').mockReturnValue(false)
                 },
                 expected: null,
             },
             {
                 name: 'should return settings with agent when enabled and not rate limited',
                 setup: () => {
-                    vi.spyOn(toolboxManager as any, 'isEnabled', 'get').mockReturnValue(true)
-                    vi.spyOn(toolboxManager as any, 'getFeatureError').mockReturnValue(undefined)
+                    vi.spyOn(DeepCodyHandler as any, 'isToolboxEnabled', 'get').mockReturnValue(true)
+                    vi.spyOn(DeepCodyHandler as any, 'getFeatureError').mockReturnValue(undefined)
                 },
                 expected: {
                     agent: { name: DeepCodyAgentID },
@@ -149,8 +156,8 @@ describe('ToolboxManager', () => {
             {
                 name: 'should return settings with shell error when shell not supported',
                 setup: () => {
-                    vi.spyOn(toolboxManager as any, 'isEnabled', 'get').mockReturnValue(true)
-                    vi.spyOn(toolboxManager as any, 'getFeatureError').mockReturnValue(
+                    vi.spyOn(DeepCodyHandler as any, 'isToolboxEnabled', 'get').mockReturnValue(true)
+                    vi.spyOn(DeepCodyHandler as any, 'getFeatureError').mockReturnValue(
                         'Not supported by the instance.'
                     )
                 },
@@ -167,7 +174,7 @@ describe('ToolboxManager', () => {
         for (const testCase of testCases) {
             it(testCase.name, () => {
                 testCase.setup()
-                const settings = toolboxManager.getSettings()
+                const settings = DeepCodyHandler.getSettings()
                 expect(settings).toEqual(testCase.expected)
             })
         }
