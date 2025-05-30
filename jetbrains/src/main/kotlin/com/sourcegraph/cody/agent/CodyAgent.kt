@@ -1,5 +1,6 @@
 package com.sourcegraph.cody.agent
 
+import com.intellij.execution.configurations.GeneralCommandLine
 import com.intellij.ide.plugins.PluginManagerCore
 import com.intellij.openapi.application.ApplicationInfo
 import com.intellij.openapi.diagnostic.Logger
@@ -236,22 +237,22 @@ private constructor(
                   jsonRpcArgs)
               .flatten()
 
-      val processBuilder = ProcessBuilder(command)
+      val environment = mutableMapOf<String, String>()
 
       if (nodeEnv.isNotEmpty()) {
-        processBuilder.environment().putAll(nodeEnv)
+        environment.putAll(nodeEnv)
       }
 
       if (java.lang.Boolean.getBoolean("cody.accept-non-trusted-certificates-automatically") ||
           ConfigUtil.getShouldAcceptNonTrustedCertificatesAutomatically()) {
-        processBuilder.environment()["CODY_NODE_TLS_REJECT_UNAUTHORIZED"] = "0"
+        environment["CODY_NODE_TLS_REJECT_UNAUTHORIZED"] = "0"
       }
 
       if (java.lang.Boolean.getBoolean("cody.log-events-to-connected-instance-only")) {
-        processBuilder.environment()["CODY_LOG_EVENT_MODE"] = "connected-instance-only"
+        environment["CODY_LOG_EVENT_MODE"] = "connected-instance-only"
       }
 
-      configureIntegrationTestingProcess(processBuilder)
+      configureIntegrationTestingProcess(environment)
 
       val proxy = HttpConfigurable.getInstance()
       val proxyUrl = proxy.PROXY_HOST + ":" + proxy.PROXY_PORT
@@ -276,13 +277,15 @@ private constructor(
           }
       if (proxy.USE_HTTP_PROXY) {
         if (!proxy.PROXY_EXCEPTIONS.isNullOrEmpty()) {
-          processBuilder.environment()["CODY_NODE_NO_PROXY"] = proxy.PROXY_EXCEPTIONS
+          environment["CODY_NODE_NO_PROXY"] = proxy.PROXY_EXCEPTIONS
         }
-        processBuilder.environment()["CODY_NODE_DEFAULT_PROXY"] =
-            "${proxyProto}//${proxyAuth}${proxyUrl}"
+        environment["CODY_NODE_DEFAULT_PROXY"] = "${proxyProto}//${proxyAuth}${proxyUrl}"
       }
 
-      logger.info("starting Cody agent ${command.joinToString(" ")}")
+      logger.info("Starting Cody agent ${command.joinToString(" ")}")
+
+      val processBuilder =
+          GeneralCommandLine(command).withEnvironment(environment).toProcessBuilder()
 
       val process =
           processBuilder
@@ -309,15 +312,14 @@ private constructor(
       return AgentConnection.ProcessConnection(process)
     }
 
-    private fun configureIntegrationTestingProcess(processBuilder: ProcessBuilder) {
+    private fun configureIntegrationTestingProcess(environment: MutableMap<String, String>) {
       if (!ConfigUtil.isIntegrationTestModeEnabled()) return
 
-      processBuilder.environment()["CODY_RECORDING_NAME"] =
-          System.getProperty("CODY_RECORDING_NAME")
+      environment["CODY_RECORDING_NAME"] = System.getProperty("CODY_RECORDING_NAME")
 
-      processBuilder.environment()["CODY_TESTING"] = "true"
+      environment["CODY_TESTING"] = "true"
 
-      processBuilder.environment().apply {
+      environment.apply {
         // N.B. If you set CODY_RECORDING_MODE, you must set CODY_RECORDING_DIRECTORY,
         // or the Agent will throw an error and your test will fail.
         when (val mode = System.getenv("CODY_RECORDING_MODE")) {
