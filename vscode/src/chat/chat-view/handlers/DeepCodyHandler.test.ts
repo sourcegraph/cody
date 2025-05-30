@@ -1,48 +1,39 @@
 import { type Model, ModelTag } from '@sourcegraph/cody-shared'
 import { DeepCodyAgentID } from '@sourcegraph/cody-shared/src/models/client'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { DeepCodyHandler, getDeepCodyModel } from './DeepCodyHandler'
 
 // Set up mocks with vi.mocked approach
-vi.mock('vscode', () => ({
-    env: { shell: undefined },
-    workspace: {
-        getConfiguration: vi.fn(),
-        onDidChangeConfiguration: vi.fn(),
-        workspaceFolders: [],
-    },
-}))
+vi.mock('vscode', async () => {
+    const { vsCodeMocks } = await import('../../../testutils/mocks')
+    return vsCodeMocks
+})
 
-vi.mock('@sourcegraph/cody-shared', () => ({
-    authStatus: { pipe: vi.fn().mockReturnThis(), next: vi.fn(), subscribe: vi.fn() },
-    featureFlagProvider: {
-        evaluatedFeatureFlag: vi.fn().mockImplementation(() => ({
-            pipe: vi.fn().mockReturnThis(),
-            next: vi.fn(),
-            subscribe: vi.fn(),
-        })),
-    },
-    userProductSubscription: { pipe: vi.fn().mockReturnThis(), next: vi.fn(), subscribe: vi.fn() },
-    modelsService: {
-        modelsChanges: { pipe: vi.fn().mockReturnThis(), next: vi.fn(), subscribe: vi.fn() },
-    },
-    isDotCom: vi.fn().mockReturnValue(true),
-    combineLatest: vi.fn().mockReturnValue({ pipe: vi.fn().mockReturnThis(), subscribe: vi.fn() }),
-    startWith: vi.fn().mockImplementation(() => (source: any) => source),
-    distinctUntilChanged: vi.fn().mockImplementation(() => (source: any) => source),
-    map: vi.fn().mockImplementation(() => (source: any) => source),
-    FeatureFlag: {
-        DeepCody: 'deep-cody',
-        ContextAgentDefaultChatModel: 'context-agent-default-chat-model',
-        DeepCodyShellContext: 'deep-cody-shell-context',
-    },
-    ModelTag: {
-        Speed: 'speed',
-    },
-    pendingOperation: Symbol('pendingOperation'),
+import { DeepCodyHandler, getDeepCodyModel } from './DeepCodyHandler'
 
-    resolvedConfig: { pipe: vi.fn().mockReturnThis(), next: vi.fn(), subscribe: vi.fn() },
-}))
+vi.mock('@sourcegraph/cody-shared', async (importOriginal) => {
+    const actual = (await importOriginal()) as any
+    return {
+        ...actual,
+        authStatus: { pipe: vi.fn().mockReturnThis(), next: vi.fn(), subscribe: vi.fn() },
+        featureFlagProvider: {
+            evaluatedFeatureFlag: vi.fn().mockImplementation(() => ({
+                pipe: vi.fn().mockReturnThis(),
+                next: vi.fn(),
+                subscribe: vi.fn(),
+            })),
+        },
+        userProductSubscription: { pipe: vi.fn().mockReturnThis(), next: vi.fn(), subscribe: vi.fn() },
+        modelsService: {
+            modelsChanges: { pipe: vi.fn().mockReturnThis(), next: vi.fn(), subscribe: vi.fn() },
+        },
+        isDotCom: vi.fn().mockReturnValue(true),
+        combineLatest: vi.fn().mockReturnValue({ pipe: vi.fn().mockReturnThis(), subscribe: vi.fn() }),
+        startWith: vi.fn().mockImplementation(() => (source: any) => source),
+        distinctUntilChanged: vi.fn().mockImplementation(() => (source: any) => source),
+        map: vi.fn().mockImplementation(() => (source: any) => source),
+        resolvedConfig: { pipe: vi.fn().mockReturnThis(), next: vi.fn(), subscribe: vi.fn() },
+    }
+})
 
 vi.mock('./DeepCody', async importOriginal => {
     const actual = (await importOriginal()) as any
