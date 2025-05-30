@@ -1,4 +1,6 @@
+import { FeatureFlag } from '@sourcegraph/cody-shared'
 import type { FunctionComponent } from 'react'
+import { useFeatureFlag } from '../utils/useFeatureFlags'
 
 interface TokenUsageDisplayProps {
     tokenUsage?: {
@@ -9,7 +11,10 @@ interface TokenUsageDisplayProps {
 }
 
 export const TokenUsageDisplay: FunctionComponent<TokenUsageDisplayProps> = ({ tokenUsage }) => {
+    const enableTokenLogs = useFeatureFlag(FeatureFlag.EnableTokenLogs)
+
     if (
+        !enableTokenLogs ||
         !tokenUsage ||
         (!tokenUsage.completionTokens && !tokenUsage.promptTokens && !tokenUsage.totalTokens)
     ) {
