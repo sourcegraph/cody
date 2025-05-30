@@ -7,7 +7,6 @@ import {
 } from '@sourcegraph/cody-shared'
 
 export function sanitizedChatMessages(messages: ChatMessage[]): any[] {
-    // Check if the last assistant message has a tool_call and the current human message doesn't have a tool_result
     const processedMessages = [...messages] // Create a copy to avoid mutating the original array
 
     // Process all human messages to remove content between <think> tags
@@ -23,25 +22,47 @@ export function sanitizedChatMessages(messages: ChatMessage[]): any[] {
         }
     }
 
-    // Find the last assistant message index
-    const lastAssistantIndex = processedMessages.map(m => m.speaker).lastIndexOf('assistant')
+    // Process all assistant messages for tool call removal
+    for (let i = 0; i < processedMessages.length; i++) {
+        const message = processedMessages[i]
+        if (message.speaker === 'assistant' && message.content) {
+            const toolCalls = message.content.filter(
+                part => part.type === 'tool_call'
+            ) as ToolCallContentPart[]
 
-    // Check if there's a human message after the last assistant message
-    if (lastAssistantIndex >= 0 && lastAssistantIndex < processedMessages.length - 1) {
-        const lastAssistantMessage = processedMessages[lastAssistantIndex]
-        const nextHumanMessage = processedMessages[lastAssistantIndex + 1]
+            if (toolCalls.length > 0) {
+                const nextMessage = processedMessages[i + 1]
+                let shouldRemoveToolCalls = false
 
-        // Check if the last assistant message has a tool_call
-        const hasToolCall = lastAssistantMessage.content?.some(part => part.type === 'tool_call')
+                // Remove tool calls if:
+                // 1. There's no next message
+                // 2. Next message is not human
+                // 3. Next human message doesn't have corresponding tool_results for ALL tool calls
+                if (!nextMessage || nextMessage.speaker !== 'human') {
+                    shouldRemoveToolCalls = true
+                } else {
+                    const toolResults =
+                        (nextMessage.content?.filter(
+                            part => part.type === 'tool_result'
+                        ) as ToolResultContentPart[]) || []
+                    const toolResultIds = new Set(toolResults.map(result => result.tool_result?.id))
 
-        // Check if the next human message has a tool_result
-        const hasToolResult = nextHumanMessage.content?.some(part => part.type === 'tool_result')
+                    // Check if all tool calls have corresponding results
+                    const allToolCallsHaveResults = toolCalls.every(call =>
+                        toolResultIds.has(call.tool_call?.id)
+                    )
 
-        // If the assistant has a tool_call but the human doesn't have a tool_result, remove the tool_call
-        if (hasToolCall && !hasToolResult && lastAssistantMessage.content) {
-            lastAssistantMessage.content = lastAssistantMessage.content
-                .map(part => (part.type === 'tool_call' ? undefined : part))
-                .filter(isDefined)
+                    if (!allToolCallsHaveResults) {
+                        shouldRemoveToolCalls = true
+                    }
+                }
+
+                if (shouldRemoveToolCalls) {
+                    message.content = message.content
+                        .map(part => (part.type === 'tool_call' ? undefined : part))
+                        .filter(isDefined)
+                }
+            }
         }
     }
 
@@ -67,14 +88,17 @@ export function sanitizedChatMessages(messages: ChatMessage[]): any[] {
                 })
                 .filter(isDefined)
                 // Filter out empty text parts
-                .filter(part => !(part.type === 'text' && part.text === ''))
+                .filter(part => !(part.type === 'text' && (part.text === '' || part.text === undefined)))
+
+            // Only add text from message.text if it exists and isn't already in content
+            const messageText = message.text?.toString()
             if (
-                !sanitizedContent.some(
-                    part => part.type === 'text' && part.text && part.text === message.text?.toString()
-                )
+                messageText &&
+                !sanitizedContent.some(part => part.type === 'text' && part.text === messageText)
             ) {
-                sanitizedContent.unshift({ type: 'text', text: message.text?.toString() })
+                sanitizedContent.unshift({ type: 'text', text: messageText })
             }
+
             return {
                 ...message,
                 content: sanitizedContent,
