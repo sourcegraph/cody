@@ -1,6 +1,5 @@
 import path from 'node:path'
-import { ModelTag, ModelUsage, toModelRefStr } from '@sourcegraph/cody-shared'
-import { isUbuntu } from '@sourcegraph/cody-shared/src/common/platform'
+import { ModelTag, ModelUsage, isLinux, toModelRefStr } from '@sourcegraph/cody-shared'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import {
     TESTING_CREDENTIALS,
@@ -142,7 +141,7 @@ describe(
         })
 
         // Skipped this test because of flakiness on ubuntu 18.
-        it.skipIf(isUbuntu(18))('switches to a different account', async () => {
+        it.skipIf(isLinux())('switches to a different account', async () => {
             // Re-authenticate to a different endpoint so we can switch from it. It is important to
             // do this even if the preceding test does it because we might not be running the prior
             // tests or we might be running with `repeats > 0`.

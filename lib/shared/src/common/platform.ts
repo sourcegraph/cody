@@ -48,49 +48,6 @@ export function isLinux(): boolean {
 
     return false
 }
-
-/** Reports whether the current OS is Ubuntu version 18 or 20. */
-export function isUbuntu(version: 18 | 20): boolean {
-    // Only check in Node environments on Linux
-    if (!isLinux()) {
-        return false
-    }
-
-    // Try the most reliable method first: lsb_release
-    try {
-        const { execSync } = require('node:child_process')
-        const output = execSync('lsb_release -r -s', { encoding: 'utf8' }).trim()
-        return output.startsWith(`${version}.`)
-    } catch {
-        // lsb_release not available, continue to fallback
-    }
-
-    // Fallback: kernel version heuristic (less reliable but faster)
-    try {
-        const os = require('node:os')
-        const release = os.release()
-        const [, major, minor] = release.match(/^(\d+)\.(\d+)/) || []
-
-        if (!major || !minor) return false
-
-        const majorNum = Number(major)
-        const minorNum = Number(minor)
-
-        // Ubuntu 18.04: kernel 4.15.x - 5.3.x
-        // Ubuntu 20.04: kernel 5.4.x+
-        if (version === 18) {
-            return (majorNum === 4 && minorNum >= 15) || (majorNum === 5 && minorNum < 4)
-        }
-        if (version === 20) {
-            return (majorNum === 5 && minorNum >= 4) || majorNum > 5
-        }
-    } catch {
-        // Kernel check failed
-    }
-
-    return false
-}
-
 export function getPlatform(): string {
     const platform = process.platform
     switch (platform) {
