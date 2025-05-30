@@ -17,7 +17,7 @@ import type { SmartApplyResult } from '../chat/protocol'
 import { PersistenceTracker } from '../common/persistence-tracker'
 import { lines } from '../completions/text-processing'
 import { executeEdit } from '../edit/execute'
-import { type QuickPickInput, getInput } from '../edit/input/get-input'
+import { type EditInput, getInput } from '../edit/input/get-input'
 import {
     type EditIntent,
     EditIntentTelemetryMetadataMapping,
@@ -57,7 +57,7 @@ export interface CreateTaskOptions {
     selectionRange: vscode.Range
     intent: EditIntent
     isStreamed: boolean
-    mode: EditMode
+    mode?: EditMode
     model: EditModel
     rules: Rule[] | null
     source?: EventSource
@@ -383,7 +383,7 @@ export class FixupController
     public async retry(
         task: FixupTask,
         source: EventSource,
-        previousInput?: QuickPickInput
+        previousInput?: EditInput
     ): Promise<FixupTask | undefined> {
         const document = await vscode.workspace.openTextDocument(task.fixupFile.uri)
         // Prompt the user for a new instruction, and create a new fixup
@@ -392,12 +392,12 @@ export class FixupController
             (await getInput(
                 document,
                 {
-                    initialInputValue: task.instruction,
-                    initialRange: task.selectionRange,
-                    initialSelectedContextItems: task.userContextItems,
-                    initialModel: task.model,
-                    initialIntent: task.intent,
-                    initialRules: task.rules,
+                    instruction: task.instruction,
+                    range: task.selectionRange,
+                    userContextFiles: task.userContextItems,
+                    model: task.model,
+                    intent: task.intent,
+                    rules: task.rules,
                 },
                 source
             ))
@@ -462,7 +462,6 @@ export class FixupController
         document: vscode.TextDocument,
         range: vscode.Range,
         expandedRange: vscode.Range | undefined,
-        mode: EditMode,
         model: EditModel,
         rules: Rule[] | null,
         intent: EditIntent,
@@ -474,16 +473,17 @@ export class FixupController
         const input = await getInput(
             document,
             {
-                initialRange: range,
-                initialExpandedRange: expandedRange,
-                initialModel: model,
-                initialIntent: intent,
-                initialInputValue: preInstruction,
-                initialRules: rules,
+                range: range,
+                expandedRange: expandedRange,
+                model: model,
+                intent: intent,
+                instruction: preInstruction,
+                rules: rules,
+                userContextFiles: [],
             },
             source
         )
-        if (!input) {
+        if (!input || !input.instruction) {
             return null
         }
 
@@ -546,7 +546,7 @@ export class FixupController
             intent,
             isStreamed,
             selectionRange,
-            mode,
+            mode!,
             overriddenModel,
             rules,
             source,

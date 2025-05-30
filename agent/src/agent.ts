@@ -63,7 +63,7 @@ import type { CompletionItemID } from '../../vscode/src/completions/analytics-lo
 import { loadTscRetriever } from '../../vscode/src/completions/context/retrievers/tsc/load-tsc-retriever'
 import { supportedTscLanguages } from '../../vscode/src/completions/context/retrievers/tsc/supportedTscLanguages'
 import { type ExecuteEditArguments, executeEdit } from '../../vscode/src/edit/execute'
-import type { QuickPickInput } from '../../vscode/src/edit/input/get-input'
+import type { EditInput } from '../../vscode/src/edit/input/get-input'
 import { getModelOptionItems } from '../../vscode/src/edit/input/get-items/model'
 import { getEditSmartSelection } from '../../vscode/src/edit/utils/edit-selection'
 import type { ExtensionClient } from '../../vscode/src/extension-client'
@@ -1188,7 +1188,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
                 true,
                 await checkIfEnterpriseUser()
             )
-            const previousInput: QuickPickInput = {
+            const previousInput: EditInput = {
                 instruction: instruction,
                 userContextFiles: [],
                 model: models.find(item => item.modelTitle === params.model)?.model ?? models[0].model,
