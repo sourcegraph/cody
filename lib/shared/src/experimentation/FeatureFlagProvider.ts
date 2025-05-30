@@ -228,7 +228,7 @@ export class FeatureFlagProviderImpl implements FeatureFlagProvider {
             promiseFactoryToObservable(signal =>
                 process.env.DISABLE_FEATURE_FLAGS
                     ? Promise.resolve({})
-                    : graphqlClient.getEvaluatedFeatureFlags(signal)
+                    : graphqlClient.getEvaluatedFeatureFlags(Object.values(FeatureFlag), signal)
             ).pipe(
                 map(resultOrError => {
                     if (isError(resultOrError)) {
