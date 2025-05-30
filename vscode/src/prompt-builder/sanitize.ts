@@ -1,7 +1,5 @@
 import {
     type ChatMessage,
-    type MessagePart,
-    type PromptString,
     type ToolCallContentPart,
     type ToolResultContentPart,
     isDefined,
@@ -9,155 +7,85 @@ import {
 } from '@sourcegraph/cody-shared'
 
 export function sanitizedChatMessages(messages: ChatMessage[]): any[] {
-    if (!messages.length) {
-        return []
+    // Check if the last assistant message has a tool_call and the current human message doesn't have a tool_result
+    const processedMessages = [...messages] // Create a copy to avoid mutating the original array
+
+    // Process all human messages to remove content between <think> tags
+    for (const message of processedMessages) {
+        if (message.speaker === 'human') {
+            const text = message.text?.toString()
+            // Check if text starts with <think> tags and contains close tag
+            if (text?.startsWith('<think>') && text?.includes('</think>')) {
+                // Process text parts to remove content between <think> tags, including the tags.
+                // Only remove the content from the first pair.
+                message.text = message.text?.replace(/<think>.*?<\/think>/, ps``)
+            }
+        }
     }
 
-    // Find the first human message index for <think> tag processing
+    // Find the last assistant message index
+    const lastAssistantIndex = processedMessages.map(m => m.speaker).lastIndexOf('assistant')
 
-    // Create a helper to remove <think> tags from text that starts with them
-    const removeThinkTags = (text: PromptString | undefined): PromptString => {
-        if (!text) return ps``
-        const textString = text.toString()?.trim()
-        return textString.startsWith('<think>') ? text.replace(/<think>.*?<\/think>/, ps``) : text
+    // Check if there's a human message after the last assistant message
+    if (lastAssistantIndex >= 0 && lastAssistantIndex < processedMessages.length - 1) {
+        const lastAssistantMessage = processedMessages[lastAssistantIndex]
+        const nextHumanMessage = processedMessages[lastAssistantIndex + 1]
+
+        // Check if the last assistant message has a tool_call
+        const hasToolCall = lastAssistantMessage.content?.some(part => part.type === 'tool_call')
+
+        // Check if the next human message has a tool_result
+        const hasToolResult = nextHumanMessage.content?.some(part => part.type === 'tool_result')
+
+        // If the assistant has a tool_call but the human doesn't have a tool_result, remove the tool_call
+        if (hasToolCall && !hasToolResult && lastAssistantMessage.content) {
+            lastAssistantMessage.content = lastAssistantMessage.content
+                .map(part => (part.type === 'tool_call' ? undefined : part))
+                .filter(isDefined)
+        }
     }
 
-    // Process messages
-    return messages.map((message, messageIndex) => {
-        const processedMessage = { ...message }
-
-        // Handle messages with only text property (no content array)
-        if (!message.content) {
-            if (message.text) {
-                const processedText = removeThinkTags(message.text)
-                if (processedText?.toString() !== message.text?.toString()) {
-                    return {
-                        ...processedMessage,
-                        text: processedText,
+    return processedMessages.map(message => {
+        if (message.content) {
+            const sanitizedContent = message.content
+                .map(part => {
+                    if (part.type === 'tool_call') {
+                        // Removes tool calls from the human
+                        if (message.speaker !== 'assistant') {
+                            return undefined
+                        }
+                        return sanitizeToolCall(part as ToolCallContentPart)
                     }
-                }
-            }
-            return processedMessage
-        }
-
-        // Handle messages with content array
-        const contentParts: MessagePart[] = []
-
-        // Add text content if present and not already in content
-        if (message.text?.toString()) {
-            const processedText = removeThinkTags(message.text)
-            const processedTextString = processedText.toString()
-
-            // Check if this processed text already exists in content
-            // This prevents duplicates when the function is called multiple times
-            const textAlreadyInContent = message.content.some(
-                part => part.type === 'text' && part.text === processedTextString
-            )
-
-            if (processedTextString && !textAlreadyInContent) {
-                contentParts.push({ type: 'text', text: processedTextString })
-            }
-        }
-
-        // Add existing content parts (but avoid duplicating text parts)
-        for (const part of message.content) {
-            // Skip text parts that match the text we just added
+                    if (part.type === 'tool_result') {
+                        // Removes tool results from the assistant
+                        if (message.speaker === 'assistant') {
+                            return undefined
+                        }
+                        return sanitizeToolResult(part as ToolResultContentPart)
+                    }
+                    return part
+                })
+                .filter(isDefined)
+                // Filter out empty text parts
+                .filter(part => !(part.type === 'text' && part.text === ''))
             if (
-                part.type === 'text' &&
-                contentParts.some(p => p.type === 'text' && p.text === part.text)
+                !sanitizedContent.some(
+                    part => part.type === 'text' && part.text && part.text === message.text?.toString()
+                )
             ) {
-                continue
+                sanitizedContent.unshift({ type: 'text', text: message.text?.toString() })
             }
-            contentParts.push(part)
-        }
-
-        // Sanitize content parts
-        let sanitizedContent = contentParts
-            .map(part => sanitizeContentPart(part, message.speaker))
-            .filter(isDefined)
-            .filter(part => !(part.type === 'text' && !part.text)) // Remove empty text parts
-
-        // Check ALL assistant messages for orphaned tool calls
-        if (message.speaker === 'assistant') {
-            const nextMessage = messages[messageIndex + 1]
-            const hasToolCall = sanitizedContent.some(part => part.type === 'tool_call')
-
-            if (hasToolCall) {
-                // Check if next message is human and has corresponding tool results
-                if (!nextMessage || nextMessage.speaker !== 'human') {
-                    // No human message follows, remove tool calls
-                    sanitizedContent = sanitizedContent.filter(part => part.type !== 'tool_call')
-                } else {
-                    // Check if all tool calls have corresponding results
-                    const toolCallIds = sanitizedContent
-                        .filter(part => part.type === 'tool_call')
-                        .map(part => (part as ToolCallContentPart).tool_call?.id)
-                        .filter(isDefined)
-
-                    const nextMessageParts = normalizeContent(nextMessage)
-                    const toolResultIds = nextMessageParts
-                        .filter(part => part.type === 'tool_result')
-                        .map(part => (part as ToolResultContentPart).tool_result?.id)
-                        .filter(isDefined)
-
-                    // If any tool call doesn't have a corresponding result, remove all tool calls
-                    const hasOrphanedToolCall = toolCallIds.some(id => !toolResultIds.includes(id))
-                    if (hasOrphanedToolCall) {
-                        sanitizedContent = sanitizedContent.filter(part => part.type !== 'tool_call')
-                    }
-                }
+            return {
+                ...message,
+                content: sanitizedContent,
+                text: undefined,
             }
         }
-
-        return {
-            ...processedMessage,
-            content: sanitizedContent,
-            text: message.text ? removeThinkTags(message.text) : undefined,
-        }
+        return message
     })
 }
-
-function sanitizeContentPart(
-    part: MessagePart,
-    speaker: 'human' | 'assistant' | 'system'
-): MessagePart | undefined {
-    switch (part.type) {
-        case 'text':
-            {
-                const text = part.text?.toString()
-                if (text?.startsWith('<think>') && text.includes('</think>')) {
-                    const sanitized = text.replace(/<think>.*?<\/think>/, '')
-                    return sanitized ? { ...part, text: sanitized } : undefined
-                }
-            }
-            return part
-
-        case 'tool_call':
-            // Tool calls are only allowed in assistant messages
-            return speaker === 'assistant' ? sanitizeToolCall(part as ToolCallContentPart) : undefined
-
-        case 'tool_result':
-            // Tool results are only allowed in human messages
-            return speaker === 'human' ? sanitizeToolResult(part as ToolResultContentPart) : undefined
-
-        default:
-            return part
-    }
-}
-
-function normalizeContent(message: ChatMessage): MessagePart[] {
-    const parts: MessagePart[] = []
-    if (message.text?.toString()) {
-        parts.push({ type: 'text', text: message.text.toString() })
-    }
-    if (message.content) {
-        parts.push(...message.content)
-    }
-    return parts
-}
-
 function sanitizeToolCall(toolCall: ToolCallContentPart): ToolCallContentPart | undefined {
-    if (!toolCall.tool_call) {
+    if (!toolCall.tool_call?.id || !toolCall.tool_call?.name || !toolCall.tool_call?.arguments) {
         return undefined
     }
     return {
