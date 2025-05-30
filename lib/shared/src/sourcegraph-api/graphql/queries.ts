@@ -534,6 +534,9 @@ export const EVALUATE_FEATURE_FLAG_QUERY = `
     }
 `
 
+// Replacing GET_FEATURE_FLAGS_QUERY with EVALUATE_FEATURE_FLAGS_QUERY, starting from sg v6.2
+// GET_FEATURE_FLAGS_QUERY(deprecated) lists all the feature flags on the instance. 
+// EVALUATE_FEATURE_FLAGS_QUERY checks what the value should be given the user's and organization's overrides.
 export const EVALUATE_FEATURE_FLAGS_QUERY = `
     query EvaluateFeatureFlags($flagNames: [String!]!) {
         evaluateFeatureFlags(flagNames: $flagNames) {
