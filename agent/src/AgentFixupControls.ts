@@ -1,5 +1,5 @@
 import type * as vscode from 'vscode'
-import type { QuickPickInput } from '../../vscode/src/edit/input/get-input'
+import type { EditInput } from '../../vscode/src/edit/input/get-input'
 import type { FixupFile } from '../../vscode/src/non-stop/FixupFile'
 import type { FixupTask, FixupTaskID } from '../../vscode/src/non-stop/FixupTask'
 import { FixupCodeLenses } from '../../vscode/src/non-stop/codelenses/provider'
@@ -36,7 +36,7 @@ export class AgentFixupControls extends FixupCodeLenses {
         }
     }
 
-    public retry(id: FixupTaskID, previousInput: QuickPickInput): Promise<FixupTask | undefined> {
+    public retry(id: FixupTaskID, previousInput: EditInput): Promise<FixupTask | undefined> {
         const task = this.fixups.taskForId(id)
         if (task) {
             return this.fixups.retry(task, 'code-lens', previousInput)
