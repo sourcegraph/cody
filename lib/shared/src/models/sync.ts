@@ -670,6 +670,10 @@ export const maybeAdjustContextWindows = (
         const ctWindow = model.modelConfigAllTiers
             ? model.modelConfigAllTiers[config.tier].contextWindow
             : { maxInputTokens, maxOutputTokens }
+        // TODO: move this after the server-side change is done
+        if (model.modelRef.includes('claude-opus-4-thinking') && config.tier === 'enterprise') {
+            ctWindow.maxOutputTokens = 32000
+        }
 
         // Return model with adjusted context window
         return {
