@@ -6,8 +6,8 @@ import {
 } from '@sourcegraph/cody-shared'
 import type { McpTool } from '@sourcegraph/cody-shared/src/llm-providers/mcp/types'
 import type { ContextRetriever } from '../chat-view/ContextRetriever'
+import { DeepCodyHandler } from '../chat-view/handlers/DeepCodyHandler'
 import { type CodyTool, McpToolImpl, OpenCtxTool, TOOL_CONFIGS } from './CodyTool'
-import { toolboxManager } from './ToolboxManager'
 import { OPENCTX_TOOL_CONFIG } from './config'
 import type { CodyToolConfig } from './types'
 
@@ -74,7 +74,7 @@ export class ToolFactory {
                 // Include all tools except CliTool which has special handling
                 // Also filter out disabled tools
                 return (
-                    (name !== 'CliTool' || toolboxManager.getSettings()?.shell?.enabled) &&
+                    (name !== 'CliTool' || DeepCodyHandler.getSettings()?.shell?.enabled) &&
                     !config.disabled
                 )
             })

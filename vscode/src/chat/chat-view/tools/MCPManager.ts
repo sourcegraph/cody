@@ -13,6 +13,7 @@ import * as vscode from 'vscode'
 import { z } from 'zod'
 import type { AgentTool } from '.'
 import { DeepCodyAgent } from '../../agentic/DeepCody'
+import { DeepCodyHandler } from '../handlers/DeepCodyHandler'
 import { MCPConnectionManager } from './MCPConnectionManager'
 import { MCPServerManager } from './MCPServerManager'
 
@@ -291,7 +292,7 @@ export class MCPManager {
     ): Promise<ContextItemToolState> {
         telemetryRecorder.recordEvent('cody.deep-cody.tool', 'executed', {
             privateMetadata: {
-                model: DeepCodyAgent.model,
+                model: DeepCodyHandler.model,
                 chatAgent: DeepCodyAgent.id,
                 tool_name: toolName,
                 server_name: serverName,
@@ -311,7 +312,7 @@ export class MCPManager {
         this.serverManager.setToolState(serverName, toolName, disabled)
         telemetryRecorder.recordEvent('cody.deep-cody.tool', disabled ? 'disabled' : 'enabled', {
             privateMetadata: {
-                model: DeepCodyAgent.model,
+                model: DeepCodyHandler.model,
                 chatAgent: DeepCodyAgent.id,
                 tool_name: toolName,
                 server_name: serverName,
@@ -479,7 +480,7 @@ export class MCPManager {
 
             telemetryRecorder.recordEvent('cody.deep-cody.server', telemetryAction, {
                 privateMetadata: {
-                    model: DeepCodyAgent.model,
+                    model: DeepCodyHandler.model,
                     chatAgent: DeepCodyAgent.id,
                     server_name: name,
                 },
@@ -539,7 +540,7 @@ export class MCPManager {
             const eventType = enabled ? 'enabled' : 'disabled'
             telemetryRecorder.recordEvent('cody.deep-cody.server', eventType, {
                 privateMetadata: {
-                    model: DeepCodyAgent.model,
+                    model: DeepCodyHandler.model,
                     chatAgent: DeepCodyAgent.id,
                     server_name: name,
                 },
