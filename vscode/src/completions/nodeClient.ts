@@ -190,7 +190,7 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                         // For failed requests, we just want to read the entire body and
                         // ultimately return it to the error callback.
                         // Bytes which have not been decoded as UTF-8 text
-                        let bufferBin = Buffer.of()
+                        let bufferBin: Buffer = Buffer.of()
                         // Text which has not been decoded as a server-sent event (SSE)
                         let errorMessage = ''
                         res.on('data', chunk => {
@@ -199,7 +199,12 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                             }
                             // Messages are expected to be UTF-8, but a chunk can terminate
                             // in the middle of a character
-                            const { str, buf } = toPartialUtf8String(Buffer.concat([bufferBin, chunk]))
+                            const { str, buf } = toPartialUtf8String(
+                                Buffer.concat([
+                                    bufferBin as unknown as Uint8Array,
+                                    chunk as unknown as Uint8Array,
+                                ])
+                            )
                             errorMessage += str
                             bufferBin = buf
                         })
@@ -222,7 +227,7 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                     }
 
                     // Bytes which have not been decoded as UTF-8 text
-                    let bufferBin = Buffer.of()
+                    let bufferBin: Buffer = Buffer.of()
 
                     res.on('data', chunk => {
                         if (!(chunk instanceof Buffer)) {
@@ -230,7 +235,12 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                         }
                         // text/event-stream messages are always UTF-8, but a chunk
                         // may terminate in the middle of a character
-                        const { str, buf } = toPartialUtf8String(Buffer.concat([bufferBin, chunk]))
+                        const { str, buf } = toPartialUtf8String(
+                            Buffer.concat([
+                                bufferBin as unknown as Uint8Array,
+                                chunk as unknown as Uint8Array,
+                            ])
+                        )
                         bufferText += str
                         bufferBin = buf
 
