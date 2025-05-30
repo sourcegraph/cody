@@ -361,22 +361,27 @@ async function createContextFileFromUri(
 }
 
 /**
- * Filters the given context files to remove files larger than 1MB and non-text files.
+ * Processes the given context files to handle files larger than 1MB and non-text files.
+ * Instead of removing large files, they are marked with isTooLarge: true so they can still
+ * be found in searches but with a warning.
  */
 export async function filterContextItemFiles(
     contextFiles: ContextItemFile[]
 ): Promise<ContextItemFile[]> {
     const filtered = []
     for (const cf of contextFiles) {
-        // Remove file larger than 1MB and non-text files
-        // NOTE: Sourcegraph search only includes files up to 1MB
+        // Check if file is valid and get its stats
         const fileStat = await vscode.workspace.fs.stat(cf.uri)?.then(
             stat => stat,
             error => undefined
         )
-        if (cf.type !== 'file' || fileStat?.type !== vscode.FileType.File || fileStat?.size > 1000000) {
+        if (cf.type !== 'file' || fileStat?.type !== vscode.FileType.File) {
             continue
         }
+
+        // Mark files larger than 1MB as too large but still include them
+        const isTooLarge = fileStat.size > 1000000
+
         // TODO (bee) consider a better way to estimate the token size of a file
         // We cannot get the exact token size without parsing the file, which is expensive.
         // Instead, we divide the file size in bytes by 4.5 for non-markdown as a rough estimate of the token size.
@@ -387,6 +392,13 @@ export async function filterContextItemFiles(
         // via 'right-click on a selection' that only involves reading a single context item, allowing us to read
         // the file content on-demand instead of in bulk. We would then label the file size more accurately with the tokenizer.
         cf.size = Math.floor(fileStat.size / (cf.uri.fsPath.endsWith('.md') ? 3.5 : 4.5))
+
+        // Mark the file as too large if it exceeds the size limit
+        if (isTooLarge) {
+            cf.isTooLarge = true
+            cf.isTooLargeReason = 'File exceeds 1MB size limit'
+        }
+
         filtered.push(cf)
     }
     return filtered
@@ -526,6 +538,17 @@ async function resolveFileOrSymbolContextItem(
                 source: ContextItemSource.Unified,
                 size: await TokenCounterUtils.countTokens(resultOrError),
             }
+        }
+    }
+
+    // If the file is marked as too large but doesn't have a range specified,
+    // we should warn the user to use a range instead of including the entire file
+    if (contextItem.isTooLarge && !contextItem.range) {
+        // Return a placeholder message instead of the full content
+        return {
+            ...contextItem,
+            content: `This file is too large (exceeds 1MB). Please specify a line range to include a portion of the file.`,
+            size: contextItem.size || 0,
         }
     }
 
