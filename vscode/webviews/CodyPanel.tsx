@@ -42,6 +42,11 @@ interface CodyPanelProps {
     instanceNotices: CodyNotice[]
     messageInProgress: ChatMessage | null
     transcript: ChatMessage[]
+    tokenUsage?: {
+        completionTokens?: number
+        promptTokens?: number
+        totalTokens?: number
+    }
     vscodeAPI: Pick<VSCodeWrapper, 'postMessage' | 'onMessage'>
     setErrorMessages: (errors: string[]) => void
     guardrails: Guardrails
@@ -64,6 +69,7 @@ export const CodyPanel: FunctionComponent<CodyPanelProps> = ({
     instanceNotices,
     messageInProgress,
     transcript,
+    tokenUsage,
     vscodeAPI,
     showIDESnippetActions,
     showWelcomeMessage,
@@ -145,6 +151,7 @@ export const CodyPanel: FunctionComponent<CodyPanelProps> = ({
                             chatEnabled={chatEnabled}
                             messageInProgress={messageInProgress}
                             transcript={transcript}
+                            tokenUsage={tokenUsage}
                             models={chatModels || []}
                             vscodeAPI={vscodeAPI}
                             guardrails={guardrails}
