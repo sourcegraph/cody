@@ -66,9 +66,6 @@ function parseEventData(
             const completion = builder.nextCompletion(data.completion, data.deltaText)
             const toolCalls = builder.nextToolCalls(data?.delta_tool_calls)
             const content: CompletionContentData[] = []
-            if (completion) {
-                content.push({ type: 'text', text: completion })
-            }
             content.push(...toolCalls)
             return {
                 type: eventType,
