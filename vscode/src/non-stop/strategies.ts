@@ -1,7 +1,9 @@
 // FixupController has pluggable strategies for controls and presentation. This
 // file defines the interfaces for those strategies.
 
+import type { EventSource } from '@sourcegraph/cody-shared'
 import type * as vscode from 'vscode'
+import type { EditInput } from '../edit/input/get-input'
 import type { FixupFile } from './FixupFile'
 import type { FixupTask } from './FixupTask'
 
@@ -17,4 +19,9 @@ export interface FixupControlApplicator extends vscode.Disposable {
     // an empty or unchanged set of files efficiently. Unearth a consistent
     // API here.
     visibleFilesWithTasksMaybeChanged(files: readonly FixupFile[]): void
+    getUserInput(
+        document: vscode.TextDocument,
+        editInput: EditInput,
+        source: EventSource
+    ): Promise<EditInput | null>
 }

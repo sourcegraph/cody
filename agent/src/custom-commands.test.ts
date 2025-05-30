@@ -91,7 +91,7 @@ describe('Custom Commands', () => {
             key: '/hello',
         })) as CustomEditCommandResult
         expect(result.type).toBe('edit')
-        await client.taskHasReachedAppliedPhase(result.editResult)
+        await client.acceptLensWasShown(sumUri)
 
         const originalDocument = client.workspace.getDocument(sumUri)!
         expect(trimEndOfLine(originalDocument.getText())).toMatchSnapshot()
@@ -104,7 +104,7 @@ describe('Custom Commands', () => {
             key: '/newField',
         })) as CustomEditCommandResult
         expect(result.type).toBe('edit')
-        await client.taskHasReachedAppliedPhase(result.editResult)
+        await client.acceptLensWasShown(animalUri)
 
         const originalDocument = client.workspace.getDocument(animalUri)!
         expect(trimEndOfLine(originalDocument.getText())).toMatchSnapshot()

@@ -14,8 +14,6 @@ import {
 import * as vscode from 'vscode'
 
 import { telemetryRecorder } from '@sourcegraph/cody-shared'
-import { EventSourceTelemetryMetadataMapping } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
-import { ACCOUNT_UPGRADE_URL } from '../../chat/protocol'
 import { executeDocCommand, executeTestEditCommand } from '../../commands/execute'
 import { getEditor } from '../../editor/active-editor'
 import type { EditIntent, EditMode } from '../types'
@@ -64,13 +62,6 @@ export const getInput = async (
         return null
     }
 
-    telemetryRecorder.recordEvent('cody.menu.edit', 'clicked', {
-        metadata: {
-            source: EventSourceTelemetryMetadataMapping[source],
-        },
-        privateMetadata: { source },
-    })
-
     const editFlow = new EditInputFlow(document, initialValues)
     await editFlow.init()
 
@@ -91,9 +82,8 @@ export const getInput = async (
             if (editInput) editInput.input.title = newTitle
         }
 
-        const rangeListenerCallback = (newRange: vscode.Range, newTitle: string) => {
+        const titleListenerCallback = (newTitle: string) => {
             editor.setDecorations(PREVIEW_RANGE_DECORATION, [])
-            editor.selection = new vscode.Selection(newRange.start, newRange.end)
             updateTitle(newTitle)
         }
 
@@ -115,7 +105,7 @@ export const getInput = async (
             }
         }
 
-        editFlow.setRangeListener(rangeListenerCallback)
+        editFlow.setTitleListener(titleListenerCallback)
 
         const modelInput = createQuickPick({
             title: editFlow.getActiveTitle(),
@@ -133,22 +123,7 @@ export const getInput = async (
                     billingMetadata: { product: 'cody', category: 'billable' },
                 })
 
-                const modelSelectionResult = await editFlow.selectModel(acceptedItem)
-                if (modelSelectionResult.requiresUpgrade) {
-                    const option = await vscode.window.showInformationMessage(
-                        'Upgrade to Cody Pro',
-                        {
-                            modal: true,
-                            detail: `Upgrade to Cody Pro to use ${modelSelectionResult.modelTitle} for Edit`,
-                        },
-                        'Upgrade',
-                        'See Plans'
-                    )
-                    if (option) {
-                        void vscode.env.openExternal(vscode.Uri.parse(ACCOUNT_UPGRADE_URL.toString()))
-                    }
-                    return
-                }
+                await editFlow.selectModel(acceptedItem.model)
                 editInput.render(editInput.input.value)
             },
         })

@@ -43,8 +43,11 @@ describe.skipIf(isWindows())('Fix', () => {
         if (fixAction === undefined) {
             throw new Error('Could not find fix action')
         }
-        const editTask = await client.request('codeActions/trigger', { id: fixAction.id })
-        await client.acceptEditTask(uri, editTask)
+        const taskId = await client.request('codeActions/trigger', fixAction.id)
+        if (!taskId) {
+            throw new Error('Task cannot be null or undefined')
+        }
+        await client.acceptEditTask(uri, taskId)
         expect(client.workspace.getDocument(uri)?.getText()).toMatchInlineSnapshot(`
           "export function fixCommandExample(): number {
               return 42;

@@ -54,7 +54,7 @@ export async function evaluateFixStrategy(
         const textDocument = new AgentTextDocument(
             ProtocolTextDocumentWithUri.from(params.uri, { content: params.content })
         )
-        client.openFile(params.uri, { text: params.content })
+        await client.openFile(params.uri, { text: params.content })
         const { diagnostics } = await client.request('testing/diagnostics', {
             uri: params.uri.toString(),
         })
@@ -70,8 +70,11 @@ export async function evaluateFixStrategy(
                 console.log(prettyDiagnostic(diagnostic))
                 continue
             }
-            const editTask = await client.request('codeActions/trigger', { id: fixAction.id })
-            await client.acceptEditTask(params.uri, editTask)
+            const taskId = await client.request('codeActions/trigger', fixAction.id)
+            if (!taskId) {
+                throw new Error('Task cannot be null or undefined')
+            }
+            await client.acceptEditTask(params.uri, taskId)
             const { diagnostics: newDiagnostics } = await client.request('testing/diagnostics', {
                 uri: params.uri.toString(),
             })

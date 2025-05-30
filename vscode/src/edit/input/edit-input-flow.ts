@@ -2,20 +2,20 @@ import {
     type ContextItem,
     type EditModel,
     type MentionQuery,
-    type Model,
+    type ModelAvailabilityStatus,
     ModelUsage,
     PromptString,
     type Rule,
     checkIfEnterpriseUser,
     currentUserProductSubscription,
     displayLineRange,
-    firstResultFromOperation,
     firstValueFrom,
     modelsService,
 } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 
 import type { QuickPickItem } from 'vscode'
+import { ACCOUNT_UPGRADE_URL } from '../../chat/protocol'
 import { getEditor } from '../../editor/active-editor'
 import { type TextChange, updateRangeMultipleChanges } from '../../non-stop/tracked-range'
 import { ruleService } from '../../rules/service'
@@ -32,12 +32,14 @@ import type { GetItemsResult } from './quick-pick'
 import { fetchDocumentSymbols, getLabelForContextItem, removeAfterLastAt } from './utils'
 
 export class EditInputFlow implements vscode.Disposable {
+    private editor: vscode.TextEditor
     private document: vscode.TextDocument
     private editInput: EditInput
     private symbolsPromise: Promise<vscode.DocumentSymbol[]>
     private activeRange: vscode.Range
     private activeModel: EditModel
     private activeModelItem: EditModelItem | undefined
+    private modelItems: EditModelItem[] | undefined
     private activeRangeItem: QuickPickItem
     private activeModelContextWindow: number
     private rulesToApply: Rule[] | null = null
@@ -45,20 +47,20 @@ export class EditInputFlow implements vscode.Disposable {
     private selectedContextItems = new Map<string, ContextItem>()
     private contextItems = new Map<string, ContextItem>()
     private textDocumentListener: vscode.Disposable | undefined
-    private modelOptions: Model[] = []
+    private modelAvailability: ModelAvailabilityStatus[] = []
     private isCodyPro = false
     private isEnterpriseUser = false
-    private onRangeChangeCallback: ((newRange: vscode.Range, newTitle: string) => void) | undefined =
-        undefined
+    private onTitleChangeCallback: ((newTitle: string) => void) | undefined = undefined
 
     constructor(document: vscode.TextDocument, editInput: EditInput) {
         this.document = document
         this.editInput = editInput
 
-        const editor = getEditor().active
-        if (!editor) {
+        const maybeEditor = getEditor().active
+        if (!maybeEditor) {
             throw new Error('No active editor found for EditInputLogic initialization.')
         }
+        this.editor = maybeEditor
 
         this.activeRange = editInput.expandedRange || editInput.range
         this.activeRangeItem =
@@ -94,14 +96,17 @@ export class EditInputFlow implements vscode.Disposable {
         this.isEnterpriseUser = await checkIfEnterpriseUser()
         this.isCodyPro = Boolean(sub && !sub.userCanUpgrade)
 
-        this.modelOptions = await firstResultFromOperation(modelsService.getModels(ModelUsage.Edit))
-        const modelItems = getModelOptionItems(this.modelOptions, this.isCodyPro, this.isEnterpriseUser)
-        this.activeModelItem = modelItems.find(item => item.model === this.editInput.model)
-        this.showModelSelector = this.modelOptions.length > 1
+        this.modelAvailability = await modelsService.getModelsAvailabilityStatus(ModelUsage.Edit)
+        const modelOptions = this.modelAvailability.map(it => it.model)
+        this.modelItems = getModelOptionItems(modelOptions, this.isCodyPro, this.isEnterpriseUser)
+        this.activeModelItem = this.modelItems.find(item => item.model === this.activeModel)
+        this.showModelSelector = modelOptions.length > 1
 
         this.rulesToApply =
             this.editInput.rules ??
             (await firstValueFrom(ruleService.rulesForPaths([this.document.uri])))
+
+        this.editor.revealRange(this.activeRange, vscode.TextEditorRevealType.InCenterIfOutsideViewport)
     }
 
     public getEditInputItems(input: string): GetItemsResult {
@@ -116,7 +121,7 @@ export class EditInputFlow implements vscode.Disposable {
 
     public getModelInputItems(): GetItemsResult {
         return getModelInputItems(
-            this.modelOptions,
+            this.modelAvailability.map(it => it.model),
             this.activeModel,
             this.isCodyPro,
             this.isEnterpriseUser
@@ -136,9 +141,17 @@ export class EditInputFlow implements vscode.Disposable {
         )
     }
 
+    public getAvailableModels(): ModelAvailabilityStatus[] {
+        return this.modelAvailability
+    }
+
     private getContextWindowForModel(model: EditModel): number {
         const latestContextWindow = modelsService.getContextWindowByID(model)
         return latestContextWindow.input + (latestContextWindow.context?.user ?? 0)
+    }
+
+    public getActiveModel(): EditModel {
+        return this.activeModel
     }
 
     public getActiveRange(): vscode.Range {
@@ -150,8 +163,8 @@ export class EditInputFlow implements vscode.Disposable {
         return `Edit ${relativeFilePath}:${displayLineRange(this.activeRange)} with Cody`
     }
 
-    public setRangeListener(onRangeChangeCallback: (newRange: vscode.Range, newTitle: string) => void) {
-        this.onRangeChangeCallback = onRangeChangeCallback
+    public setTitleListener(onTitleChangeCallback: (newTitle: string) => void) {
+        this.onTitleChangeCallback = onTitleChangeCallback
     }
 
     public updateActiveRange(range: vscode.Range, rangeItem?: EditRangeItem): void {
@@ -159,7 +172,8 @@ export class EditInputFlow implements vscode.Disposable {
         if (rangeItem) {
             this.activeRangeItem = rangeItem
         }
-        this.onRangeChangeCallback?.(this.activeRange, this.getActiveTitle())
+        this.editor.selection = new vscode.Selection(range.start, range.end)
+        this.onTitleChangeCallback?.(this.getActiveTitle())
     }
 
     public dispose(): void {
@@ -168,17 +182,40 @@ export class EditInputFlow implements vscode.Disposable {
     }
 
     public async selectModel(
-        item: EditModelItem
+        model: EditModel
     ): Promise<{ requiresUpgrade: boolean; modelTitle?: string }> {
-        if (item.codyProOnly && !this.isCodyPro && !this.isEnterpriseUser) {
-            return { requiresUpgrade: true, modelTitle: item.modelTitle }
+        const item = this?.modelItems?.find(item => item.model === model)
+        if (!item) {
+            throw new Error(
+                `Model ${model} not found in model items. Options: ${this?.modelItems?.map(
+                    x => x.model + '\n``'
+                )}`
+            )
         }
 
-        await modelsService.setSelectedModel(ModelUsage.Edit, item.model)
+        if (item.codyProOnly && !this.isCodyPro && !this.isEnterpriseUser) {
+            const option = await vscode.window.showInformationMessage(
+                'Upgrade to Cody Pro',
+                {
+                    modal: true,
+                    detail: `Upgrade to Cody Pro to use ${item.modelTitle} for Edit`,
+                },
+                'Upgrade',
+                'See Plans'
+            )
+            if (option) {
+                void vscode.env.openExternal(vscode.Uri.parse(ACCOUNT_UPGRADE_URL.toString()))
+            }
+        }
+
+        try {
+            await modelsService.setSelectedModel(ModelUsage.Edit, item.model)
+        } catch (e) {}
+
         this.activeModelItem = item
         this.activeModel = item.model
         this.activeModelContextWindow = this.getContextWindowForModel(item.model)
-        return { requiresUpgrade: false }
+        return { requiresUpgrade: false, modelTitle: item.modelTitle }
     }
 
     public async getMatchingContextForQuery(

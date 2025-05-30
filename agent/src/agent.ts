@@ -9,8 +9,6 @@ import {
     ClientConfigSingleton,
     type CodyCommand,
     CodyIDE,
-    ModelUsage,
-    checkIfEnterpriseUser,
     currentAuthStatus,
     currentAuthStatusAuthed,
     firstNonPendingAuthStatus,
@@ -33,7 +31,6 @@ import {
     type BillingCategory,
     type BillingProduct,
     FeatureFlag,
-    PromptString,
     contextFiltersProvider,
     convertGitCloneURLToCodebaseName,
     featureFlagProvider,
@@ -52,7 +49,7 @@ import { copySync } from 'fs-extra'
 import levenshtein from 'js-levenshtein'
 import * as uuid from 'uuid'
 import type { MessageConnection } from 'vscode-jsonrpc'
-import type { CommandResult } from '../../vscode/src/CommandResult'
+import type { ChatCommandResult, CommandResult, EditCommandResult } from '../../vscode/src/CommandResult'
 import { formatURL } from '../../vscode/src/auth/auth'
 import type { AutoeditRequestID } from '../../vscode/src/autoedits/analytics-logger'
 import { chatHistory } from '../../vscode/src/chat/chat-view/ChatHistoryManager'
@@ -63,13 +60,12 @@ import type { CompletionItemID } from '../../vscode/src/completions/analytics-lo
 import { loadTscRetriever } from '../../vscode/src/completions/context/retrievers/tsc/load-tsc-retriever'
 import { supportedTscLanguages } from '../../vscode/src/completions/context/retrievers/tsc/supportedTscLanguages'
 import { type ExecuteEditArguments, executeEdit } from '../../vscode/src/edit/execute'
-import type { EditInput } from '../../vscode/src/edit/input/get-input'
-import { getModelOptionItems } from '../../vscode/src/edit/input/get-items/model'
 import { getEditSmartSelection } from '../../vscode/src/edit/utils/edit-selection'
 import type { ExtensionClient } from '../../vscode/src/extension-client'
 import { ProtocolTextDocumentWithUri } from '../../vscode/src/jsonrpc/TextDocumentWithUri'
 import type * as agent_protocol from '../../vscode/src/jsonrpc/agent-protocol'
 import { IndentationBasedFoldingRangeProvider } from '../../vscode/src/lsp/foldingRanges'
+import type { FixupTask } from '../../vscode/src/non-stop/FixupTask'
 import type { FixupActor, FixupFileCollection } from '../../vscode/src/non-stop/roles'
 import type { FixupControlApplicator } from '../../vscode/src/non-stop/strategies'
 import { authProvider } from '../../vscode/src/services/AuthProvider'
@@ -98,7 +94,6 @@ import type {
     ClientInfo,
     CodyError,
     CustomCommandResult,
-    EditTask,
     ExtensionConfiguration,
     GetDocumentsParams,
     GetDocumentsResult,
@@ -307,6 +302,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
     public codeLens = new AgentProviders<vscode.CodeLensProvider>()
     public codeAction = new AgentProviders<vscode.CodeActionProvider>()
     public workspace = new AgentWorkspaceDocuments({
+        agent: this,
         doPanic: (message: string) => {
             const panicMessage =
                 '!PANIC! Client document content is out of sync with server document content'
@@ -672,7 +668,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
             return { codeActions }
         })
 
-        this.registerAuthenticatedRequest('codeActions/trigger', async ({ id }) => {
+        this.registerAuthenticatedRequest('codeActions/trigger', async id => {
             const codeAction = codeActionById.get(id)
             if (!codeAction || !codeAction.command) {
                 throw new Error(`codeActions/trigger: unknown ID ${id}`)
@@ -681,12 +677,12 @@ export class Agent extends MessageHandler implements ExtensionClient {
             if (!args) {
                 throw new Error(`codeActions/trigger: no arguments for ID ${id}`)
             }
-            return this.createEditTask(
-                executeEdit(args).then<CommandResult | undefined>(task => ({
+            return executeEdit(args)
+                .then<EditCommandResult | undefined>(task => ({
                     type: 'edit',
                     task,
                 }))
-            )
+                .then(result => result?.task?.id)
         })
 
         this.registerAuthenticatedRequest('diagnostics/publish', async params => {
@@ -1157,50 +1153,36 @@ export class Agent extends MessageHandler implements ExtensionClient {
             return this.createChatPanel(executeExplainCommand(commandArgs))
         })
 
-        this.registerAuthenticatedRequest('editTask/accept', async ({ id }) => {
-            this.fixups?.accept(id)
+        this.registerAuthenticatedRequest('editTask/accept', async id => {
+            vscode.commands.executeCommand('cody.fixup.codelens.accept', id)
             return null
         })
 
-        this.registerAuthenticatedRequest('editTask/undo', async ({ id }) => {
-            this.fixups?.undo(id)
+        this.registerAuthenticatedRequest('editTask/undo', async id => {
+            vscode.commands.executeCommand('cody.fixup.codelens.undo', id)
             return null
         })
 
-        this.registerAuthenticatedRequest('editTask/cancel', async ({ id }) => {
-            this.fixups?.cancel(id)
+        this.registerAuthenticatedRequest('editTask/cancel', async id => {
+            vscode.commands.executeCommand('cody.fixup.codelens.cancel', id)
             return null
         })
 
-        this.registerAuthenticatedRequest('editTask/getTaskDetails', async ({ id }) => {
-            const task = this.fixups?.getTask(id)
-            if (task) {
-                return AgentFixupControls.serialize(task)
+        this.registerAuthenticatedRequest('editTask/getTaskDetails', async id => {
+            const taskDetails = this.fixups?.getTaskDetails(id)
+            if (taskDetails) {
+                return taskDetails
             }
 
             return Promise.reject(`No task with id ${id}`)
         })
 
-        this.registerAuthenticatedRequest('editTask/retry', async params => {
-            const instruction = PromptString.unsafe_fromUserQuery(params.instruction)
-            const models = getModelOptionItems(
-                await firstResultFromOperation(modelsService.getModels(ModelUsage.Edit)),
-                true,
-                await checkIfEnterpriseUser()
+        this.registerAuthenticatedRequest('editTask/retry', async id => {
+            const fixupTask = vscode.commands.executeCommand<FixupTask | undefined>(
+                'cody.fixup.codelens.retry',
+                id
             )
-            const previousInput: EditInput = {
-                instruction: instruction,
-                userContextFiles: [],
-                model: models.find(item => item.modelTitle === params.model)?.model ?? models[0].model,
-                range: vscodeRange(params.range),
-                intent: 'edit',
-                mode: params.mode,
-                rules: params.rules ?? null,
-            }
-
-            if (!this.fixups) return Promise.reject()
-            const retryResult = this.fixups.retry(params.id, previousInput)
-            return this.createEditTask(retryResult.then(task => task && { type: 'edit', task }))
+            return fixupTask.then(task => task?.id)
         })
 
         this.registerAuthenticatedRequest(
@@ -1229,22 +1211,9 @@ export class Agent extends MessageHandler implements ExtensionClient {
             }
         )
 
-        this.registerAuthenticatedRequest('editCommands/code', params => {
-            const instruction = PromptString.unsafe_fromUserQuery(params.instruction)
-            const args: ExecuteEditArguments = {
-                configuration: {
-                    instruction,
-                    model: params.model ?? undefined,
-                    mode: params.mode ?? 'edit',
-                },
-            }
-            return this.createEditTask(executeEdit(args).then(task => task && { type: 'edit', task }))
-        })
-
-        this.registerAuthenticatedRequest('editCommands/document', () => {
-            return this.createEditTask(
-                vscode.commands.executeCommand<CommandResult | undefined>('cody.command.document-code')
-            )
+        this.registerAuthenticatedRequest('editTask/start', async () => {
+            const task = await executeEdit({})
+            return task?.id
         })
 
         this.registerAuthenticatedRequest('commands/smell', () => {
@@ -1496,7 +1465,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
     public createFixupControlApplicator(
         files: FixupActor & FixupFileCollection
     ): FixupControlApplicator {
-        this.fixups = new AgentFixupControls(files, this.notify.bind(this))
+        this.fixups = new AgentFixupControls(files, this.notify.bind(this), this.request.bind(this))
         return this.fixups
     }
 
@@ -1697,23 +1666,11 @@ export class Agent extends MessageHandler implements ExtensionClient {
         await panel.receiveMessage.cody_fireAsync(message)
     }
 
-    private async createEditTask(commandResult: Thenable<CommandResult | undefined>): Promise<EditTask> {
-        const result = (await commandResult) ?? { type: 'empty-command-result' }
-        if (result?.type !== 'edit' || result.task === undefined) {
-            throw new TypeError(
-                `Expected a non-empty edit command result. Got ${JSON.stringify(result)}`
-            )
-        }
-        return AgentFixupControls.serialize(result.task)
-    }
-
-    private async createChatPanel(commandResult: Thenable<CommandResult | undefined>): Promise<string> {
-        const result = (await commandResult) ?? { type: 'empty-command-result' }
-        if (result?.type !== 'chat') {
-            throw new TypeError(`Expected chat command result, got ${result.type}`)
-        }
-
-        const { sessionID, webviewPanelOrView: webviewPanel } = result.session ?? {}
+    private async createChatPanel(
+        commandResult: Thenable<ChatCommandResult | undefined>
+    ): Promise<string> {
+        const result = await commandResult
+        const { sessionID, webviewPanelOrView: webviewPanel } = result?.session ?? {}
         if (sessionID === undefined || webviewPanel === undefined) {
             throw new Error('chatID is undefined')
         }
@@ -1743,14 +1700,14 @@ export class Agent extends MessageHandler implements ExtensionClient {
         if (result?.type === 'chat') {
             return {
                 type: 'chat',
-                chatResult: await this.createChatPanel(commandResult),
+                chatResult: await this.createChatPanel(commandResult as Promise<ChatCommandResult>),
             }
         }
 
         if (result?.type === 'edit') {
             return {
                 type: 'edit',
-                editResult: await this.createEditTask(commandResult),
+                editResult: result?.task?.id,
             }
         }
 
