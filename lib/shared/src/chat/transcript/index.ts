@@ -39,7 +39,6 @@ export function serializeChatMessage(chatMessage: ChatMessage): SerializedChatMe
         agent: chatMessage.agent,
         subMessages: chatMessage.subMessages,
         content: chatMessage.content,
-        tokenUsage: chatMessage.tokenUsage,
     }
 }
 
