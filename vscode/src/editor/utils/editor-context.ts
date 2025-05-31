@@ -547,7 +547,8 @@ async function resolveFileOrSymbolContextItem(
         // Return a placeholder message instead of the full content
         return {
             ...contextItem,
-            content: `This file is too large (exceeds 1MB). Please specify a line range to include a portion of the file.`,
+            content:
+                'This file is too large (exceeds 1MB). Please specify a line range to include a portion of the file.',
             size: contextItem.size || 0,
         }
     }
