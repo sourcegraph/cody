@@ -12,7 +12,12 @@ export interface LlmJudgeScore {
 
 export class LlmJudge {
     client: SourcegraphNodeCompletionsClient
-    constructor(options: Pick<CodyBenchOptions, 'srcAccessToken' | 'srcEndpoint'>) {
+    private model: string
+
+    constructor(
+        options: Pick<CodyBenchOptions, 'srcAccessToken' | 'srcEndpoint'>,
+        model = 'anthropic/claude-3-5-sonnet-20240620'
+    ) {
         localStorage.setStorage('noop')
         setStaticResolvedConfigurationWithAuthCredentials({
             configuration: { customHeaders: undefined },
@@ -21,8 +26,12 @@ export class LlmJudge {
                 serverEndpoint: options.srcEndpoint,
             },
         })
-        setClientCapabilities({ configuration: {}, agentCapabilities: undefined })
+        setClientCapabilities({
+            configuration: {},
+            agentCapabilities: undefined,
+        })
         this.client = new SourcegraphNodeCompletionsClient()
+        this.model = model
     }
 
     public async judge(prompt: PromptString): Promise<LlmJudgeScore> {
@@ -39,7 +48,7 @@ export class LlmJudge {
                 temperature: 0,
                 topK: 1,
                 fast: true,
-                model: 'anthropic/claude-3-5-sonnet-20240620',
+                model: this.model,
             },
             { apiVersion: 0 }
         )

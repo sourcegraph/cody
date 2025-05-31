@@ -92,3 +92,43 @@ describe.skip('LLM-as-judge', () => {
         expect(score.reasoning).toMatchSnapshot()
     }, 20_000)
 })
+
+// Unit tests for the new judgeModel functionality
+describe('LlmJudge constructor and model configuration', () => {
+    const mockOptions = {
+        srcAccessToken: 'test-token',
+        srcEndpoint: 'https://test.sourcegraph.com',
+    }
+
+    it('should use default model when no model parameter provided', () => {
+        const judge = new LlmJudge(mockOptions)
+        expect((judge as any).model).toBe('anthropic/claude-3-5-sonnet-20240620')
+    })
+
+    it('should use provided model parameter', () => {
+        const customModel = 'anthropic/claude-3-haiku-20240307'
+        const judge = new LlmJudge(mockOptions, customModel)
+        expect((judge as any).model).toBe(customModel)
+    })
+
+    it('should handle different model formats', () => {
+        const models = [
+            'anthropic/claude-3-5-sonnet-20240620',
+            'anthropic/claude-3-haiku',
+            'openai/gpt-4',
+            'custom-model',
+        ]
+
+        for (const model of models) {
+            const judge = new LlmJudge(mockOptions, model)
+            expect((judge as any).model).toBe(model)
+        }
+    })
+
+    it('should maintain backward compatibility with existing constructor usage', () => {
+        // This tests that the old way of creating LlmJudge still works
+        const judge = new LlmJudge(mockOptions)
+        expect(judge).toBeInstanceOf(LlmJudge)
+        expect((judge as any).model).toBe('anthropic/claude-3-5-sonnet-20240620')
+    })
+})

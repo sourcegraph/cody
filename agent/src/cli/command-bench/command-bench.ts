@@ -68,6 +68,7 @@ export interface CodyBenchOptions {
     gitLogFilter?: string
     fixture: EvaluationFixture
     context?: { sourcesDir: string }
+    judgeModel?: string
 
     verbose: boolean
     insecureTls?: boolean
@@ -294,6 +295,11 @@ export const benchCommand = new commander.Command('bench')
         booleanOption,
         true
     )
+    .option(
+        '--judge-model <model>',
+        'The model to use for LLM judging (e.g., anthropic/claude-3-5-sonnet-20240620, anthropic/claude-3-haiku, etc.)',
+        'anthropic/claude-3-5-sonnet-20240620'
+    )
     .option('--insecure-tls', 'Allow insecure server connections when using SSL', false)
     .action(async (options: CodyBenchOptions) => {
         if (!options.srcAccessToken) {
@@ -370,9 +376,15 @@ async function evaluateWorkspace(options: CodyBenchOptions, recordingDirectory: 
     console.log(`starting evaluation: fixture=${options.fixture.name} workspace=${options.workspace}`)
 
     createOrUpdateTelemetryRecorderProvider(true)
-    setClientCapabilities({ configuration: getConfiguration(), agentCapabilities: undefined })
+    setClientCapabilities({
+        configuration: getConfiguration(),
+        agentCapabilities: undefined,
+    })
 
-    const workspaceRootUri = vscode.Uri.from({ scheme: 'file', path: options.workspace })
+    const workspaceRootUri = vscode.Uri.from({
+        scheme: 'file',
+        path: options.workspace,
+    })
 
     const baseGlobalState: Record<string, any> = {}
     const editModel = options.fixture.customConfiguration?.['cody-bench.editModel']
