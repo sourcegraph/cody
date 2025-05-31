@@ -9,7 +9,6 @@ import {
     REMOTE_DIRECTORY_PROVIDER_URI,
     REMOTE_FILE_PROVIDER_URI,
     type SerializedContextItem,
-    contextItemMentionNodeDisplayText,
     getMentionOperations,
     serializeContextItem,
 } from '@sourcegraph/cody-shared'
@@ -233,11 +232,7 @@ export function handleSelectMenuItem(item: MenuItem, api: MenuSelectionAPI) {
     }
 
     // When selecting a large file without range, add the selected option as text node with : at the end.
-    // This allows users to autocomplete the file path, and provide them with the options to add range.
-    if (item.isTooLarge && !item.range) {
-        api.setAtMentionValue(contextItemMentionNodeDisplayText(serializeContextItem(item)) + ':')
-        return
-    }
+    // (Removed: previously blocked adding large files as mentions. Now allows adding them with a warning in the tooltip.)
 
     if (item.type === 'open-link') {
         // "open-link" items are links to documentation, you can not commit them as mentions.

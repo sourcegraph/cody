@@ -1,9 +1,4 @@
-import {
-    ContextItemSource,
-    type SerializedContextItem,
-    displayPath,
-    displayPathWithLines,
-} from '@sourcegraph/cody-shared'
+import { type SerializedContextItem, displayPath, displayPathWithLines } from '@sourcegraph/cody-shared'
 import * as v from 'valibot'
 import { URI } from 'vscode-uri'
 
@@ -27,13 +22,13 @@ export function tooltipForContextItem(item: SerializedContextItem): string | und
         return item.title || 'Local workspace'
     }
     if (item.type === 'file') {
-        return item.isTooLarge
-            ? item.source === ContextItemSource.Initial
-                ? 'File is too large. Select a smaller range of lines from the file.'
-                : 'File is too large. Try adding the file again with a smaller range of lines.'
-            : item.range
-              ? displayPathWithLines(URI.parse(item.uri), item.range)
-              : displayPath(URI.parse(item.uri))
+        const baseTooltip = item.range
+            ? displayPathWithLines(URI.parse(item.uri), item.range)
+            : displayPath(URI.parse(item.uri))
+        if (item.isTooLarge) {
+            return `warning: large file. ${baseTooltip}`
+        }
+        return baseTooltip
     }
     if (v.is(OpenCtxItemWithTooltipSchema, item)) {
         return item.mention.data.tooltip
