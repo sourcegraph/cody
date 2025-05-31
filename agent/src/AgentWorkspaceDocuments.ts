@@ -180,6 +180,33 @@ export class AgentWorkspaceDocuments implements vscode_shim.WorkspaceDocuments {
         this.agentDocuments.delete(uri.toString())
     }
 
+    public renameDocument(oldUri: vscode.Uri, newUri: vscode.Uri): void {
+        const documentAndEditor = this.agentDocuments.get(oldUri.toString())
+        if (documentAndEditor) {
+            this.agentDocuments.delete(oldUri.toString())
+            const { document, editor } = documentAndEditor
+
+            const newDocument = new AgentTextDocument(
+                ProtocolTextDocumentWithUri.fromDocument({
+                    uri: newUri.toString(),
+                    content: document.protocolDocument.underlying.content,
+                    selection: document.protocolDocument.underlying.selection,
+                    contentChanges: document.protocolDocument.underlying.contentChanges,
+                    visibleRange: document.protocolDocument.underlying.visibleRange,
+                    testing: document.protocolDocument.underlying.testing,
+                })
+            )
+            this.agentDocuments.set(newUri.toString(), { document: newDocument, editor })
+            
+            // Update activeTextEditor if the renamed document was the active one
+            if (this.activeDocumentFilePath?.toString() === oldUri.toString()) {
+                // Create a new editor with the updated document
+                const updatedEditor = new AgentTextEditor(newDocument, { edit: this.params?.edit })
+                this.setActiveTextEditor(updatedEditor)
+            }
+        }
+    }
+
     private vscodeTab(uri: vscode.Uri): vscode.Tab {
         return {
             input: {
