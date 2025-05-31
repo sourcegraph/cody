@@ -162,6 +162,11 @@ export enum FeatureFlag {
      * When set to true, context will not be added to chat automatically.
      */
     AgenticContextDisabled = 'agentic-context-disabled',
+
+    /**
+     * Enable token logs for chat.
+     */
+    EnableTokenLogs = 'enable-token-logs',
 }
 
 const ONE_HOUR = 60 * 60 * 1000

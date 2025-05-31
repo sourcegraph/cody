@@ -8,6 +8,11 @@ interface DoneEvent {
 interface CompletionEvent extends CompletionResponse {
     type: 'completion'
     content?: CompletionContentData[] | undefined | null
+    usage?: {
+        completionTokens?: number
+        promptTokens?: number
+        totalTokens?: number
+    }
 }
 
 export type CompletionContentData = TextContentPart | ToolCallContentPart
@@ -146,7 +151,15 @@ export interface SerializedCompletionParameters extends Omit<CompletionParameter
 }
 
 export interface CompletionCallbacks {
-    onChange: (text: string, content?: CompletionContentData[] | undefined | null) => void
+    onChange: (
+        text: string,
+        content?: CompletionContentData[] | undefined | null,
+        tokenUsage?: {
+            completionTokens?: number
+            promptTokens?: number
+            totalTokens?: number
+        }
+    ) => void
     onComplete: (result?: CompletionResponse) => void
     onError: (error: Error, statusCode?: number) => void
 }
@@ -162,6 +175,15 @@ export interface CompletionCallbacks {
  *   a "complete" event, and no other callbacks will be called afterwards.
  */
 export type CompletionGeneratorValue =
-    | { type: 'change'; text: string; content?: CompletionContentData[] }
+    | {
+          type: 'change'
+          text: string
+          content?: CompletionContentData[]
+          tokenUsage?: {
+              completionTokens?: number
+              promptTokens?: number
+              totalTokens?: number
+          }
+      }
     | { type: 'complete' }
     | { type: 'error'; error: Error; statusCode?: number }

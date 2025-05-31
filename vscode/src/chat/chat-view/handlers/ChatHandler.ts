@@ -126,20 +126,29 @@ export class ChatHandler implements AgentHandler {
         model: ChatModel,
         chatBuilder: ChatBuilder,
         callbacks: {
-            update: (response: string) => void
-            close: (finalResponse: string) => void
+            update: (
+                response: string,
+                tokenUsage?: { completionTokens?: number; promptTokens?: number; totalTokens?: number }
+            ) => void
+            close: (
+                finalResponse: string,
+                tokenUsage?: { completionTokens?: number; promptTokens?: number; totalTokens?: number }
+            ) => void
             error: (completedResponse: string, error: Error) => void
         },
         abortSignal: AbortSignal
     ): Promise<void> {
         let lastContent = ''
+        let lastTokenUsage:
+            | { completionTokens?: number; promptTokens?: number; totalTokens?: number }
+            | undefined
         const typewriter = new Typewriter({
             update: content => {
                 lastContent = content
-                callbacks.update(content)
+                callbacks.update(content, lastTokenUsage)
             },
             close: () => {
-                callbacks.close(lastContent)
+                callbacks.close(lastContent, lastTokenUsage)
             },
             error: error => {
                 callbacks.error(lastContent, error)
@@ -165,6 +174,13 @@ export class ChatHandler implements AgentHandler {
             for await (const message of stream) {
                 switch (message.type) {
                     case 'change': {
+                        if (message.tokenUsage) {
+                            lastTokenUsage = {
+                                completionTokens: message.tokenUsage.completionTokens,
+                                promptTokens: message.tokenUsage.promptTokens,
+                                totalTokens: message.tokenUsage.totalTokens,
+                            }
+                        }
                         typewriter.update(message.text)
                         break
                     }
@@ -199,18 +215,20 @@ export class ChatHandler implements AgentHandler {
             model,
             chatBuilder,
             {
-                update: content => {
+                update: (content, tokenUsage) => {
                     delegate.postMessageInProgress({
                         speaker: 'assistant',
                         text: PromptString.unsafe_fromLLMResponse(content),
                         model,
+                        tokenUsage,
                     })
                 },
-                close: content => {
+                close: (content, tokenUsage) => {
                     delegate.postMessageInProgress({
                         speaker: 'assistant',
                         text: PromptString.unsafe_fromLLMResponse(content),
                         model,
+                        tokenUsage,
                     })
                     delegate.postDone()
                 },

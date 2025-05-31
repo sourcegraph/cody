@@ -284,6 +284,11 @@ export interface ExtensionTranscriptMessage {
     messages: SerializedChatMessage[]
     isMessageInProgress: boolean
     chatID: string
+    tokenUsage?: {
+        completionTokens?: number
+        promptTokens?: number
+        totalTokens?: number
+    }
 }
 
 /**

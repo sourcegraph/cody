@@ -38,6 +38,15 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
 
     const [transcript, setTranscript] = useState<ChatMessage[]>([])
 
+    const [tokenUsage, setTokenUsage] = useState<
+        | {
+              completionTokens?: number
+              promptTokens?: number
+              totalTokens?: number
+          }
+        | undefined
+    >(undefined)
+
     const [errorMessages, setErrorMessages] = useState<string[]>([])
 
     const dispatchClientAction = useClientActionDispatcher()
@@ -78,6 +87,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                             setTranscript(deserializedMessages)
                             setMessageInProgress(null)
                         }
+                        setTokenUsage(message.tokenUsage)
                         vscodeAPI.setState(message.chatID)
                         break
                     }
@@ -211,6 +221,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                     instanceNotices={clientConfig?.notices ?? []}
                     messageInProgress={messageInProgress}
                     transcript={transcript}
+                    tokenUsage={tokenUsage}
                     vscodeAPI={vscodeAPI}
                     guardrails={guardrails}
                 />

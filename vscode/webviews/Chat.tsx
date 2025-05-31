@@ -26,6 +26,11 @@ interface ChatboxProps {
     chatEnabled: boolean
     messageInProgress: ChatMessage | null
     transcript: ChatMessage[]
+    tokenUsage?: {
+        completionTokens?: number
+        promptTokens?: number
+        totalTokens?: number
+    }
     models: Model[]
     vscodeAPI: Pick<VSCodeWrapper, 'postMessage' | 'onMessage'>
     guardrails: Guardrails
@@ -39,6 +44,7 @@ interface ChatboxProps {
 export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>> = ({
     messageInProgress,
     transcript,
+    tokenUsage,
     models,
     vscodeAPI,
     chatEnabled = true,
@@ -213,6 +219,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                 activeChatContext={activeChatContext}
                 setActiveChatContext={setActiveChatContext}
                 transcript={transcript}
+                tokenUsage={tokenUsage}
                 models={models}
                 messageInProgress={messageInProgress}
                 copyButtonOnSubmit={copyButtonOnSubmit}

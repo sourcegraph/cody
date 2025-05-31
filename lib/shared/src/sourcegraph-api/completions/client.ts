@@ -67,7 +67,15 @@ export abstract class SourcegraphCompletionsClient {
             switch (event.type) {
                 case 'completion': {
                     span?.addEvent('yield', { stopReason: event.stopReason })
-                    cb.onChange(event.completion, event.content)
+                    const tokenUsage = event.usage
+                        ? {
+                              completionTokens: event.usage.completionTokens,
+                              promptTokens: event.usage.promptTokens,
+                              totalTokens: event.usage.totalTokens,
+                          }
+                        : undefined
+
+                    cb.onChange(event.completion, event.content, tokenUsage)
                     break
                 }
                 case 'error': {
@@ -156,11 +164,15 @@ export abstract class SourcegraphCompletionsClient {
             )
         }
         const callbacks: CompletionCallbacks = {
-            onChange(text, content) {
+            onChange(text, content, tokenUsage) {
                 const value: CompletionGeneratorValue = { type: 'change', text }
                 // Include the content field if it exists (contains delta_tool_calls)
                 if (content) {
                     value.content = content
+                }
+                // Include the tokenUsage field if it exists
+                if (tokenUsage) {
+                    value.tokenUsage = tokenUsage
                 }
                 send(value)
             },
