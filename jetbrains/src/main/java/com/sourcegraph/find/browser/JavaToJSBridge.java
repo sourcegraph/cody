@@ -8,6 +8,7 @@ import com.intellij.openapi.Disposable;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.ui.jcef.JBCefBrowserBase;
 import com.intellij.ui.jcef.JBCefJSQuery;
+import com.sourcegraph.cody.error.SentryService;
 import com.sourcegraph.config.ThemeUtil;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -23,6 +24,7 @@ public class JavaToJSBridge implements Disposable {
   private JBCefJSQuery query;
   private final Lock lock;
   private Function<String, JBCefJSQuery.Response> handler = null;
+  private final Logger logger = Logger.getInstance(JavaToJSBridge.class);
 
   public JavaToJSBridge(JBCefBrowserBase browser) {
     this.browser = browser;
@@ -38,6 +40,14 @@ public class JavaToJSBridge implements Disposable {
   }
 
   public void callJS(@NotNull String action, @Nullable JsonObject arguments) {
+    if (this.query == null) {
+      var message = "Cannot call JS, query is null! Action: " + action;
+      logger.error(message);
+      SentryService.getInstance().report(null, message, null);
+
+      return;
+    }
+
     this.callJS(action, arguments, null);
   }
 
@@ -54,7 +64,6 @@ public class JavaToJSBridge implements Disposable {
     // would never be called.
     new Thread(
             () -> {
-              Logger logger = Logger.getInstance(this.getClass());
               // Reason for the locking:
               // JBCefJSQuery objects MUST be created before the browser is loaded, otherwise an
               // error is thrown.
