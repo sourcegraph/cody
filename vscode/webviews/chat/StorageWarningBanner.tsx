@@ -44,7 +44,7 @@ export const StorageWarningBanner = ({
                     <h1 style={{ color: '#3b82f6' }}>Storage is Full</h1>
                     <p style={{ color: '#6b7280' }}>
                         Please remove some chat history to avoid performance issues and continue using
-                        the application smoothly.
+                        Cody smoothly.
                     </p>
                 </header>
                 <div
@@ -76,7 +76,6 @@ export const StorageWarningBanner = ({
                     </Button>
                 </div>
             </div>
-            {/* Close button in top right corner */}
             <button
                 type="button"
                 className="absolute top-1 right-2 h-4 w-4 flex items-center justify-center hover:bg-gray-100 rounded cursor-pointer"

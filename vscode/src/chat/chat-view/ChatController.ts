@@ -660,7 +660,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
 
     private async sendStorageWarningState(): Promise<void> {
         const shouldShow = localStorage.shouldShowStorageWarning()
-        console.log('ChatController: sendStorageWarningState', { shouldShow })
         await this.postMessage({
             type: 'storageWarning',
             showWarning: shouldShow,
@@ -743,8 +742,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         logDebug('ChatController', 'updateViewConfig', {
             verbose: configForWebview,
         })
-
-        // Send storage warning state after config
         await this.sendStorageWarningState()
     }
 

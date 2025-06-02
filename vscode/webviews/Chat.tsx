@@ -23,6 +23,7 @@ import type { VSCodeWrapper } from './utils/VSCodeApi'
 import { SpanManager } from './utils/spanManager'
 import { getTraceparentFromSpanContext } from './utils/telemetry'
 import { useUserAccountInfo } from './utils/useConfig'
+
 interface ChatboxProps {
     chatEnabled: boolean
     messageInProgress: ChatMessage | null
@@ -217,7 +218,6 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                     Cody chat is disabled by your Sourcegraph site administrator
                 </div>
             )}
-            {/* Storage warning banner at top level */}
             {showStorageWarning && onTrimChatHistory && onClearAllChatHistory && (
                 <StorageWarningBanner
                     extensionAPI={extensionAPI}

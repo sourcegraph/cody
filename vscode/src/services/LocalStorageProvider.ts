@@ -38,7 +38,7 @@ class LocalStorage implements LocalStorageForModelPreferences {
     private readonly CODY_CHAT_MEMORY = 'cody-chat-memory'
     private readonly AUTO_EDITS_BETA_ENROLLED = 'cody-auto-edit-beta-onboard'
     private readonly DEVICE_PIXEL_RATIO = 'device-pixel-ratio'
-    private readonly STORAGE_SIZE_BIG = 5000 //50_000 * 1024 // 50,000 KB
+    private readonly STORAGE_SIZE_BIG = 50_000 * 1024 // 50,000 KB
     private readonly NUM_CHATS_TO_TRIM = 5
 
     public readonly keys = {
@@ -359,22 +359,15 @@ class LocalStorage implements LocalStorageForModelPreferences {
         await this.set(this.DEVICE_PIXEL_RATIO, ratio)
     }
 
-    /**
-     * Checks if storage is too big and user should be warned
-     */
     public shouldShowStorageWarning(): boolean {
         const storageSize = this.getStorageSize(this.KEY_LOCAL_HISTORY)
         const shouldShow = storageSize > this.STORAGE_SIZE_BIG
         return shouldShow
     }
 
-    /**
-     * Clears all chat history for all accounts
-     */
     public async clearAllChatHistory(): Promise<void> {
         try {
             await this.set(this.KEY_LOCAL_HISTORY, null)
-            console.log('Cleared all chat history')
             this.logStorageSize(this.KEY_LOCAL_HISTORY)
         } catch (error) {
             console.error('Failed to clear all chat history:', error)
@@ -413,9 +406,6 @@ class LocalStorage implements LocalStorageForModelPreferences {
         }
     }
 
-    /**
-     * Logs information about storage size to console
-     */
     public logStorageSize(key: string): number {
         const bytes = this.getStorageSize(key)
         const kb = (bytes / 1024).toFixed(2)
