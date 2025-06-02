@@ -8,7 +8,6 @@ import {
 import type { PromptEditorRefAPI } from '@sourcegraph/prompt-editor'
 import { type FC, memo, useMemo } from 'react'
 import type { UserAccountInfo } from '../../../../Chat'
-
 import { BaseMessageCell } from '../BaseMessageCell'
 import { HumanMessageEditor } from './editor/HumanMessageEditor'
 

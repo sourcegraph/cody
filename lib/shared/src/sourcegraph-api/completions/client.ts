@@ -170,7 +170,7 @@ export abstract class SourcegraphCompletionsClient {
                 if (content) {
                     value.content = content
                 }
-                // Include the tokenUsage field if it exists
+
                 if (tokenUsage) {
                     value.tokenUsage = tokenUsage
                 }

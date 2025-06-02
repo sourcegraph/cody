@@ -61,7 +61,6 @@ function parseEventData(
                 const dataLineObj = JSON.parse(jsonStr)
                 const rawUsage = dataLineObj.usage
 
-                // Only set values that are not null/undefined
                 const partialUsage: {
                     completionTokens?: number
                     promptTokens?: number
@@ -78,7 +77,6 @@ function parseEventData(
                     partialUsage.totalTokens = rawUsage.total_tokens
                 }
 
-                // Only keep usage object if it has at least one valid value
                 if (Object.keys(partialUsage).length > 0) {
                     usage = partialUsage
                 }

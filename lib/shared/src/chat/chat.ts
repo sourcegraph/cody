@@ -74,20 +74,7 @@ export class ChatClient {
             })),
         } as CompletionParameters
 
-        const stream = this.completions.stream(completionParams, requestParams, abortSignal)
-
-        // Debug logging to track tokenUsage flow
-        return (async function* () {
-            for await (const value of stream) {
-                console.log(
-                    'chat.ts - CompletionGeneratorValue:',
-                    value.type,
-                    'tokenUsage:',
-                    'tokenUsage' in value ? value.tokenUsage : 'N/A'
-                )
-                yield value
-            }
-        })()
+        return this.completions.stream(completionParams, requestParams, abortSignal)
     }
 }
 

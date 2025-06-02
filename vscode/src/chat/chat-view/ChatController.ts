@@ -1479,13 +1479,11 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             messages.push(messageInProgress)
         }
 
-        // Find the last message with token usage data
         const lastTokenUsage = messages
             .slice()
             .reverse()
             .find(msg => msg.tokenUsage)?.tokenUsage
 
-        // Only update stored token usage if we have new data
         if (lastTokenUsage !== undefined) {
             this.lastKnownTokenUsage = lastTokenUsage
         }
