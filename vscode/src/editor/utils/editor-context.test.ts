@@ -142,13 +142,7 @@ describe('filterContextItemFiles', () => {
                 isTooLargeReason: 'File exceeds 1MB size limit',
                 size: 222222,
                 type: 'file',
-                uri: {
-                    authority: '',
-                    fragment: '',
-                    path: '/large-file.txt',
-                    query: '',
-                    scheme: 'file',
-                },
+                uri: largeFile.uri,
             },
         ])
     })
