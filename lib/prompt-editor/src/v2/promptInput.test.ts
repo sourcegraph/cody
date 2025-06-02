@@ -438,7 +438,7 @@ describe('mentions menu', () => {
             })
 
             expect(getText(editor), 'file name and line range seperator are added').toBe(
-                'test @file.txt:'
+                'test file.txt:'
             )
             expect(hasAtMention(getEditorState(editor))).toBe(true)
         })
