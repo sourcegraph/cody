@@ -300,6 +300,7 @@ describe('ChatController', () => {
                 "text": undefined,
               },
             ],
+            "tokenUsage": undefined,
             "type": "transcript",
           }
         `

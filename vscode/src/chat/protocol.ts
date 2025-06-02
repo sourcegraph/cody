@@ -284,11 +284,14 @@ export interface ExtensionTranscriptMessage {
     messages: SerializedChatMessage[]
     isMessageInProgress: boolean
     chatID: string
-    tokenUsage?: {
-        completionTokens?: number
-        promptTokens?: number
-        totalTokens?: number
-    }
+    tokenUsage?:
+        | {
+              completionTokens?: number | null | undefined
+              promptTokens?: number | null | undefined
+              totalTokens?: number | null | undefined
+          }
+        | null
+        | undefined
 }
 
 /**

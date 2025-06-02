@@ -3,11 +3,14 @@ import type { FunctionComponent } from 'react'
 import { useFeatureFlag } from '../utils/useFeatureFlags'
 
 interface TokenUsageDisplayProps {
-    tokenUsage?: {
-        completionTokens?: number
-        promptTokens?: number
-        totalTokens?: number
-    }
+    tokenUsage?:
+        | {
+              completionTokens?: number | null | undefined
+              promptTokens?: number | null | undefined
+              totalTokens?: number | null | undefined
+          }
+        | null
+        | undefined
 }
 
 export const TokenUsageDisplay: FunctionComponent<TokenUsageDisplayProps> = ({ tokenUsage }) => {

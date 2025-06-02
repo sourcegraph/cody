@@ -40,10 +40,11 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
 
     const [tokenUsage, setTokenUsage] = useState<
         | {
-              completionTokens?: number
-              promptTokens?: number
-              totalTokens?: number
+              completionTokens?: number | null | undefined
+              promptTokens?: number | null | undefined
+              totalTokens?: number | null | undefined
           }
+        | null
         | undefined
     >(undefined)
 

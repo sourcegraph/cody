@@ -54,11 +54,14 @@ interface TranscriptProps {
     setActiveChatContext: (context: Context | undefined) => void
     chatEnabled: boolean
     transcript: ChatMessage[]
-    tokenUsage?: {
-        completionTokens?: number
-        promptTokens?: number
-        totalTokens?: number
-    }
+    tokenUsage?:
+        | {
+              completionTokens?: number | null | undefined
+              promptTokens?: number | null | undefined
+              totalTokens?: number | null | undefined
+          }
+        | null
+        | undefined
     models: Model[]
     userInfo: UserAccountInfo
     messageInProgress: ChatMessage | null
