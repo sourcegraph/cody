@@ -57,7 +57,7 @@ export interface CreateTaskOptions {
     selectionRange: vscode.Range
     intent: EditIntent
     isStreamed: boolean
-    mode?: EditMode
+    mode: EditMode
     model: EditModel
     rules: Rule[] | null
     source?: EventSource
@@ -398,6 +398,7 @@ export class FixupController
                     model: task.model,
                     intent: task.intent,
                     rules: task.rules,
+                    mode: task.mode,
                 },
                 source
             ))
@@ -467,6 +468,7 @@ export class FixupController
         intent: EditIntent,
         canStream: boolean,
         source: EventSource,
+        mode: EditMode,
         telemetryMetadata?: FixupTelemetryMetadata,
         smartApplyMetadata?: SmartApplyAdditionalMetadata
     ): Promise<FixupTask | null> {
@@ -480,6 +482,7 @@ export class FixupController
                 instruction: preInstruction,
                 rules: rules,
                 userContextFiles: [],
+                mode: mode,
             },
             source
         )

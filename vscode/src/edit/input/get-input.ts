@@ -41,7 +41,7 @@ export interface EditInput {
      */
     intent: EditIntent
     /** The derived mode from the users' selected range */
-    mode?: EditMode
+    mode: EditMode
     /** Rules to apply. */
     rules: Rule[] | null
     expandedRange?: vscode.Range

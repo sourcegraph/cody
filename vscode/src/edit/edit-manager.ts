@@ -217,6 +217,7 @@ export class EditManager implements vscode.Disposable {
             intent,
             canStream,
             source,
+            mode,
             telemetryMetadata
         )
     }
