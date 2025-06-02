@@ -137,17 +137,17 @@ describe('filterContextItemFiles', () => {
         const filtered = await filterContextItemFiles([largeFile])
 
         expect(filtered).toEqual([
-            Object {
-                "isTooLarge": true,
-                "isTooLargeReason": "File exceeds 1MB size limit",
-                "size": 222222,
-                "type": "file",
-                "uri": Object {
-                    "authority": "",
-                    "fragment": "",
-                    "path": "/large-file.txt",
-                    "query": "",
-                    "scheme": "file",
+            {
+                isTooLarge: true,
+                isTooLargeReason: 'File exceeds 1MB size limit',
+                size: 222222,
+                type: 'file',
+                uri: {
+                    authority: '',
+                    fragment: '',
+                    path: '/large-file.txt',
+                    query: '',
+                    scheme: 'file',
                 },
             },
         ])
