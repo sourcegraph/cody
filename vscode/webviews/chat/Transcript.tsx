@@ -85,6 +85,8 @@ export const Transcript: FC<TranscriptProps> = props => {
     )
 
     const lastHumanEditorRef = useRef<PromptEditorRefAPI | null>(null)
+    const userHasScrolledRef = useRef(false)
+    const lastScrollTopRef = useRef(0)
 
     useEffect(() => {
         const handleCopyEvent = (event: ClipboardEvent) => {
@@ -103,23 +105,62 @@ export const Transcript: FC<TranscriptProps> = props => {
     }, [])
 
     useEffect(() => {
-        if (messageInProgress?.text) {
-            // Auto-scroll to keep the growing content visible
-            const scrollableContainer = document.querySelector('[data-scrollable]')
-            if (scrollableContainer && scrollableContainer instanceof HTMLElement) {
-                // Calculate space needed for the input box
-                const lastEditor = document.querySelector<HTMLElement>(
-                    '[data-lexical-editor]:last-of-type'
-                )
-                const editorHeight = lastEditor ? lastEditor.getBoundingClientRect().height + 32 : 120 // Add some padding
+        const scrollableContainer = document.querySelector('[data-scrollable]')
+        if (!scrollableContainer || !(scrollableContainer instanceof HTMLElement)) {
+            return
+        }
 
-                // Scroll to the bottom minus the height of the editor
-                const scrollHeight = scrollableContainer.scrollHeight
-                scrollableContainer.scrollTop =
-                    scrollHeight - scrollableContainer.clientHeight + editorHeight
+        const handleScroll = () => {
+            const currentScrollTop = scrollableContainer.scrollTop
+            const scrollHeight = scrollableContainer.scrollHeight
+            const clientHeight = scrollableContainer.clientHeight
+            const isAtBottom = Math.abs(scrollHeight - clientHeight - currentScrollTop) < 10
+
+            // Reset user scroll flag if they scroll back to bottom
+            if (isAtBottom) {
+                userHasScrolledRef.current = false
+            } else {
+                // Check if user manually scrolled (not from auto-scroll)
+                const expectedAutoScrollTop = lastScrollTopRef.current
+                if (Math.abs(currentScrollTop - expectedAutoScrollTop) > 5) {
+                    userHasScrolledRef.current = true
+                }
             }
         }
-    }, [messageInProgress?.text]) // Re-run this effect when the message text changes during streaming
+
+        scrollableContainer.addEventListener('scroll', handleScroll)
+        return () => {
+            scrollableContainer.removeEventListener('scroll', handleScroll)
+        }
+    }, [])
+
+    useEffect(() => {
+        if (messageInProgress?.text) {
+            // Only auto-scroll if user hasn't manually scrolled away
+            if (!userHasScrolledRef.current) {
+                const scrollableContainer = document.querySelector('[data-scrollable]')
+                if (scrollableContainer && scrollableContainer instanceof HTMLElement) {
+                    // Calculate space needed for the input box
+                    const lastEditor = document.querySelector<HTMLElement>(
+                        '[data-lexical-editor]:last-of-type'
+                    )
+                    const editorHeight = lastEditor
+                        ? lastEditor.getBoundingClientRect().height + 32
+                        : 120
+
+                    // Scroll to the bottom minus the height of the editor
+                    const scrollHeight = scrollableContainer.scrollHeight
+                    const targetScrollTop =
+                        scrollHeight - scrollableContainer.clientHeight + editorHeight
+                    lastScrollTopRef.current = targetScrollTop
+                    scrollableContainer.scrollTop = targetScrollTop
+                }
+            }
+        } else {
+            // Reset user scroll flag when message streaming stops
+            userHasScrolledRef.current = false
+        }
+    }, [messageInProgress?.text])
 
     return (
         <div
