@@ -11,12 +11,14 @@ describe('parseEvents', () => {
                 stopReason: undefined,
                 content: [],
                 type: 'completion',
+                usage: undefined,
             },
             {
                 completion: 'Hello, world!',
                 stopReason: undefined,
                 content: [],
                 type: 'completion',
+                usage: undefined,
             },
         ],
         remainingBuffer: dedent`event: done

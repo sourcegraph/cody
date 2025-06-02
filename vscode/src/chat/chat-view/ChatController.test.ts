@@ -183,6 +183,7 @@ describe('ChatController', () => {
             Extract<ExtensionMessage, { type: 'transcript' }>
         >({
             type: 'transcript',
+            tokenUsage: undefined,
             isMessageInProgress: true,
             chatID: mockNowDate.toUTCString(),
             messages: [
