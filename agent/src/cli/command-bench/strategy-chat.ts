@@ -30,7 +30,7 @@ export async function evaluateChatStrategy(
             'Missing cody-bench.chatModel. To fix this problem, add "customConfiguration": { "cody-bench.chatModel": "claude-3-sonnet" } to the cody-bench JSON config.'
         )
     }
-    const llm = new LlmJudge(options)
+    const llm = new LlmJudge(options, options.judgeModel)
     const scores: LlmJudgeScore[] = []
     const files = absoluteFiles.map(file => path.relative(options.workspace, file))
     const yamlFiles = files.filter(file => file.endsWith('question.yaml'))
