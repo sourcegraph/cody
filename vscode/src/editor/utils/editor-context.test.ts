@@ -114,7 +114,9 @@ describe('getFileContextFiles', () => {
         setFiles(['large-file.go'])
 
         expect(await runSearch('large', 5)).toMatchInlineSnapshot(`
-          []
+          [
+            "large-file.go",
+          ]
         `)
 
         expect(vscode.workspace.findFiles).toBeCalledTimes(1)
@@ -134,7 +136,15 @@ describe('filterContextItemFiles', () => {
 
         const filtered = await filterContextItemFiles([largeFile])
 
-        expect(filtered).toEqual([])
+        expect(filtered).toEqual([
+            {
+                isTooLarge: true,
+                isTooLargeReason: 'File exceeds 1MB size limit',
+                size: 222222,
+                type: 'file',
+                uri: largeFile.uri,
+            },
+        ])
     })
 
     it('filters out non-text files', async () => {
