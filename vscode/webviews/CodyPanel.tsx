@@ -48,6 +48,7 @@ interface CodyPanelProps {
     showWelcomeMessage?: boolean
     showIDESnippetActions?: boolean
     onExternalApiReady?: (api: CodyExternalApi) => void
+    showStorageWarning?: boolean
     onExtensionApiReady?: (api: WebviewToExtensionAPI) => void
 }
 
@@ -70,6 +71,7 @@ export const CodyPanel: FunctionComponent<CodyPanelProps> = ({
     onExternalApiReady,
     onExtensionApiReady,
     guardrails,
+    showStorageWarning,
 }) => {
     const tabContainerRef = useRef<HTMLDivElement>(null)
 
@@ -112,6 +114,14 @@ export const CodyPanel: FunctionComponent<CodyPanelProps> = ({
         }
     }, [api.clientActionBroadcast])
 
+    const handleTrimChatHistory = () => {
+        vscodeAPI.postMessage({ command: 'trimChatHistory' })
+    }
+
+    const handleClearAllChatHistory = () => {
+        vscodeAPI.postMessage({ command: 'clearAllChatHistory' })
+    }
+
     return (
         <TabViewContext.Provider value={useMemo(() => ({ view, setView }), [view, setView])}>
             <TabRoot
@@ -147,6 +157,9 @@ export const CodyPanel: FunctionComponent<CodyPanelProps> = ({
                             scrollableParent={tabContainerRef.current}
                             setView={setView}
                             isWorkspacesUpgradeCtaEnabled={isWorkspacesUpgradeCtaEnabled}
+                            showStorageWarning={showStorageWarning}
+                            onTrimChatHistory={handleTrimChatHistory}
+                            onClearAllChatHistory={handleClearAllChatHistory}
                         />
                     )}
                     {view === View.History && (

@@ -10,8 +10,10 @@ import {
     type Model,
     type PromptString,
 } from '@sourcegraph/cody-shared'
+import { useExtensionAPI } from '@sourcegraph/prompt-editor'
 
 import styles from './Chat.module.css'
+import { StorageWarningBanner } from './chat/StorageWarningBanner'
 import { Transcript, focusLastHumanMessageEditor } from './chat/Transcript'
 import { WelcomeMessage } from './chat/components/WelcomeMessage'
 import { WelcomeNotice } from './chat/components/WelcomeNotice'
@@ -21,7 +23,6 @@ import type { VSCodeWrapper } from './utils/VSCodeApi'
 import { SpanManager } from './utils/spanManager'
 import { getTraceparentFromSpanContext } from './utils/telemetry'
 import { useUserAccountInfo } from './utils/useConfig'
-
 interface ChatboxProps {
     chatEnabled: boolean
     messageInProgress: ChatMessage | null
@@ -34,6 +35,9 @@ interface ChatboxProps {
     showIDESnippetActions?: boolean
     setView: (view: View) => void
     isWorkspacesUpgradeCtaEnabled?: boolean
+    showStorageWarning?: boolean
+    onTrimChatHistory?: () => void
+    onClearAllChatHistory?: () => void
 }
 
 export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>> = ({
@@ -48,7 +52,11 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     showIDESnippetActions = true,
     setView,
     isWorkspacesUpgradeCtaEnabled,
+    showStorageWarning,
+    onTrimChatHistory,
+    onClearAllChatHistory,
 }) => {
+    const extensionAPI = useExtensionAPI()
     const transcriptRef = useRef(transcript)
     transcriptRef.current = transcript
 
@@ -208,6 +216,14 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                 <div className={styles.chatDisabled}>
                     Cody chat is disabled by your Sourcegraph site administrator
                 </div>
+            )}
+            {/* Storage warning banner at top level */}
+            {showStorageWarning && onTrimChatHistory && onClearAllChatHistory && (
+                <StorageWarningBanner
+                    extensionAPI={extensionAPI}
+                    onTrim={onTrimChatHistory}
+                    onClearAll={onClearAllChatHistory}
+                />
             )}
             <Transcript
                 activeChatContext={activeChatContext}

@@ -39,6 +39,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     const [transcript, setTranscript] = useState<ChatMessage[]>([])
 
     const [errorMessages, setErrorMessages] = useState<string[]>([])
+    const [showStorageWarning, setShowStorageWarning] = useState<boolean>(false)
 
     const dispatchClientAction = useClientActionDispatcher()
 
@@ -118,6 +119,9 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                                 new Error(message.error)
                             )
                         }
+                        break
+                    case 'storageWarning':
+                        setShowStorageWarning(message.showWarning)
                         break
                 }
             }),
@@ -213,6 +217,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                     transcript={transcript}
                     vscodeAPI={vscodeAPI}
                     guardrails={guardrails}
+                    showStorageWarning={showStorageWarning}
                 />
             )}
         </ComposedWrappers>
