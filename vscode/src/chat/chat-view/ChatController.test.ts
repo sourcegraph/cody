@@ -401,6 +401,7 @@ describe('ChatController', () => {
                     subMessages: undefined,
                 },
             ],
+            tokenUsage: undefined,
         })
 
         // Now try editing the message.
@@ -493,6 +494,7 @@ describe('ChatController', () => {
                     subMessages: undefined,
                 },
             ],
+            tokenUsage: undefined,
         })
     })
 
