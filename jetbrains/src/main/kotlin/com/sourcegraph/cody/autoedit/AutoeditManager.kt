@@ -1,6 +1,8 @@
 package com.sourcegraph.cody.autoedit
 
+import com.intellij.codeInsight.hint.HintManagerImpl
 import com.intellij.openapi.Disposable
+import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.editor.Document
@@ -89,7 +91,10 @@ class AutoeditManager(private val project: Project) {
   }
 
   fun hide() {
-    disposable.dispose()
+    runInEdt {
+      HintManagerImpl.getInstanceImpl().hideAllHints()
+      disposable.dispose()
+    }
   }
 
   companion object {
