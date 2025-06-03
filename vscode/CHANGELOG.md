@@ -4,6 +4,25 @@ This is a log of all notable changes to Cody for VS Code.
 
 <!--- {/_ CHANGELOG_START _/} -->
 
+## 1.98.1
+
+### Fix
+
+#### Chat
+
+- chat transcript scrolling [#8021](https://github.com/sourcegraph/cody/pull/8021)
+
+### Reverts
+
+  There were no reverts for this release
+
+### Uncategorized
+
+#### Others
+
+- [Backport M98] Changelog for 1.98.0 [#8005](https://github.com/sourcegraph/cody/pull/8005)
+
+
 ## 1.98.0
 
 ### Features
