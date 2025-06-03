@@ -238,7 +238,7 @@ export async function executeDocCommand(
                 selectionText
                     ? selectionText.slice(0, 70) + (selectionText.length > 70 ? '...' : '')
                     : 'null'
-            }`
+            }` 
         )
 
         return {

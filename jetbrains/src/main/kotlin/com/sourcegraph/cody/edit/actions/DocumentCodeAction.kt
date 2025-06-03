@@ -7,7 +7,7 @@ class DocumentCodeAction :
     BaseEditCodeAction({ editor ->
       editor.project?.let { project ->
         CodyAgentService.withAgent(project) { agent ->
-          agent.server.commands_custom(Commands_CustomParams("cody.command.document-code")).get()
+          agent.server.commands_custom(Commands_CustomParams("doc"))
         }
       }
     }) {

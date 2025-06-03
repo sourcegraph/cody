@@ -7,7 +7,7 @@ class TestCodeAction :
     BaseEditCodeAction({ editor ->
       editor.project?.let { project ->
         CodyAgentService.withAgent(project) { agent ->
-          agent.server.commands_custom(Commands_CustomParams("cody.command.unit-tests")).get()
+          agent.server.commands_custom(Commands_CustomParams("test"))
         }
       }
     }) {
