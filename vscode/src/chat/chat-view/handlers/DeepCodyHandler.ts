@@ -184,7 +184,7 @@ export class DeepCodyHandler extends ChatHandler implements AgentHandler {
                     return 'Shell commands are not supported by the instance.'
                 }
                 if (!DeepCodyHandler.shellConfig.client) {
-                    return 'Not supported by the client.'
+                    return 'Shell commands are not supported by the client.'
                 }
                 break
         }
