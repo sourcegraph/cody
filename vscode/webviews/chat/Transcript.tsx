@@ -40,6 +40,8 @@ import * as uuid from 'uuid'
 import { isCodeSearchContextItem } from '../../src/context/openctx/codeSearch'
 import { useClientActionListener } from '../client/clientState'
 import { useLocalStorage } from '../components/hooks'
+
+import { TokenUsageDisplay } from './TokenUsageDisplay'
 import { AgenticContextCell } from './cells/agenticCell/AgenticContextCell'
 import ApprovalCell from './cells/agenticCell/ApprovalCell'
 import { ContextCell } from './cells/contextCell/ContextCell'
@@ -52,6 +54,14 @@ interface TranscriptProps {
     setActiveChatContext: (context: Context | undefined) => void
     chatEnabled: boolean
     transcript: ChatMessage[]
+    tokenUsage?:
+        | {
+              completionTokens?: number | null | undefined
+              promptTokens?: number | null | undefined
+              totalTokens?: number | null | undefined
+          }
+        | null
+        | undefined
     models: Model[]
     userInfo: UserAccountInfo
     messageInProgress: ChatMessage | null
@@ -69,6 +79,7 @@ export const Transcript: FC<TranscriptProps> = props => {
         setActiveChatContext,
         chatEnabled,
         transcript,
+        tokenUsage,
         models,
         userInfo,
         messageInProgress,
@@ -175,6 +186,7 @@ export const Transcript: FC<TranscriptProps> = props => {
                         key={interaction.humanMessage.index}
                         activeChatContext={activeChatContext}
                         setActiveChatContext={setActiveChatContext}
+                        tokenUsage={tokenUsage}
                         models={models}
                         chatEnabled={chatEnabled}
                         userInfo={userInfo}
@@ -302,6 +314,7 @@ export type RegeneratingCodeBlockState = {
 const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
     const {
         interaction: { humanMessage, assistantMessage },
+        tokenUsage,
         models,
         isFirstInteraction,
         isLastInteraction,
@@ -639,6 +652,12 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
         <>
             {/* Show loading state on the last interaction */}
             {isLastInteraction && priorAssistantMessageIsLoading && <LoadingDots />}
+            {/* Show token usage above and aligned to the right for followup editor */}
+            {humanMessage.isUnsentFollowup && tokenUsage && (
+                <div className="tw-flex tw-justify-end tw-mb-2">
+                    <TokenUsageDisplay tokenUsage={tokenUsage} />
+                </div>
+            )}
             <HumanMessageCell
                 key={humanMessage.index}
                 userInfo={userInfo}

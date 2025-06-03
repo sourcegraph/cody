@@ -203,6 +203,14 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
 
     private readonly startTokenReceiver: typeof startTokenReceiver | undefined
 
+    private lastKnownTokenUsage:
+        | {
+              completionTokens?: number
+              promptTokens?: number
+              totalTokens?: number
+          }
+        | undefined = undefined
+
     private disposables: vscode.Disposable[] = []
 
     public readonly clientBroadcast = new Subject<ClientActionBroadcast>()
@@ -684,6 +692,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             webviewType,
             multipleWebviewsEnabled: !sidebarViewOnly,
             internalDebugContext: configuration.internalDebugContext,
+            internalDebugTokenUsage: configuration.internalDebugTokenUsage,
             allowEndpointChange: configuration.overrideServerEndpoint === undefined,
             experimentalPromptEditorEnabled,
             experimentalAgenticChatEnabled,
@@ -1471,6 +1480,15 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             messages.push(messageInProgress)
         }
 
+        const lastTokenUsage = messages
+            .slice()
+            .reverse()
+            .find(msg => msg.tokenUsage)?.tokenUsage
+
+        if (lastTokenUsage !== undefined) {
+            this.lastKnownTokenUsage = lastTokenUsage
+        }
+
         // We never await on postMessage, because it can sometimes hang indefinitely:
         // https://github.com/microsoft/vscode/issues/159431
         void this.postMessage({
@@ -1478,6 +1496,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             messages: messages.map(prepareChatMessage).map(serializeChatMessage),
             isMessageInProgress: !!messageInProgress,
             chatID: this.chatBuilder.sessionID,
+            tokenUsage: this.lastKnownTokenUsage,
         })
 
         this.syncPanelTitle()
@@ -1664,6 +1683,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         this.cancelSubmitOrEditOperation()
         const newModel = newChatModelFromSerializedChatTranscript(oldTranscript, undefined)
         this.chatBuilder = newModel
+        this.lastKnownTokenUsage = undefined
 
         this.postViewTranscript()
     }
@@ -1715,6 +1735,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         // Only clear the session if session is not empty.
         if (!this.chatBuilder?.isEmpty()) {
             this.chatBuilder = new ChatBuilder(this.chatBuilder.selectedModel, undefined, chatMessages)
+            this.lastKnownTokenUsage = undefined
             this.postViewTranscript()
         }
     }

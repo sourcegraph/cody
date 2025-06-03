@@ -183,6 +183,7 @@ describe('ChatController', () => {
             Extract<ExtensionMessage, { type: 'transcript' }>
         >({
             type: 'transcript',
+            tokenUsage: undefined,
             isMessageInProgress: true,
             chatID: mockNowDate.toUTCString(),
             messages: [
@@ -299,6 +300,7 @@ describe('ChatController', () => {
                 "text": undefined,
               },
             ],
+            "tokenUsage": undefined,
             "type": "transcript",
           }
         `
@@ -399,6 +401,7 @@ describe('ChatController', () => {
                     subMessages: undefined,
                 },
             ],
+            tokenUsage: undefined,
         })
 
         // Now try editing the message.
@@ -491,6 +494,7 @@ describe('ChatController', () => {
                     subMessages: undefined,
                 },
             ],
+            tokenUsage: undefined,
         })
     })
 

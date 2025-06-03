@@ -1138,6 +1138,12 @@
           "markdownDescription": "[INTERNAL ONLY] Enable all unstable experimental features.",
           "default": false
         },
+        "cody.internal.debug.tokenUsage": {
+          "order": 999,
+          "type": "boolean",
+          "markdownDescription": "[INTERNAL ONLY] Enable debug display of token usage in chat messages.",
+          "default": false
+        },
         "cody.net.mode": {
           "type": "string",
           "enum": ["auto", "bypass", "vscode"],

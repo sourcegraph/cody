@@ -55,6 +55,32 @@ function parseEventData(
     switch (eventType) {
         case 'completion': {
             const data = parseCompletionJSON(jsonData)
+            let usage = undefined
+            if (dataLine.includes('completion_tokens')) {
+                const jsonStr = dataLine.replace(/^data: /, '')
+                const dataLineObj = JSON.parse(jsonStr)
+                const rawUsage = dataLineObj.usage
+
+                const partialUsage: {
+                    completionTokens?: number
+                    promptTokens?: number
+                    totalTokens?: number
+                } = {}
+
+                if (rawUsage.completion_tokens != null) {
+                    partialUsage.completionTokens = rawUsage.completion_tokens
+                }
+                if (rawUsage.prompt_tokens != null) {
+                    partialUsage.promptTokens = rawUsage.prompt_tokens
+                }
+                if (rawUsage.total_tokens != null) {
+                    partialUsage.totalTokens = rawUsage.total_tokens
+                }
+
+                if (Object.keys(partialUsage).length > 0) {
+                    usage = partialUsage
+                }
+            }
             if (isError(data)) {
                 return data
             }
@@ -72,6 +98,7 @@ function parseEventData(
                 completion,
                 stopReason: data.stopReason,
                 content,
+                usage,
             }
         }
         case 'error': {

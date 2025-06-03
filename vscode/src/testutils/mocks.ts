@@ -937,6 +937,7 @@ export const DEFAULT_VSCODE_SETTINGS = {
     internalUnstable: false,
     internalDebugContext: false,
     internalDebugState: false,
+    internalDebugTokenUsage: false,
     agenticContextExperimentalOptions: {},
     chatAgenticContext: true,
     autocompleteAdvancedProvider: 'default',
