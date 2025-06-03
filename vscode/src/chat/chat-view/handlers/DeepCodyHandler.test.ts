@@ -10,7 +10,7 @@ vi.mock('vscode', async () => {
 
 import { DeepCodyHandler, getDeepCodyModel } from './DeepCodyHandler'
 
-vi.mock('@sourcegraph/cody-shared', async (importOriginal) => {
+vi.mock('@sourcegraph/cody-shared', async importOriginal => {
     const actual = (await importOriginal()) as any
     return {
         ...actual,
