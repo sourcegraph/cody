@@ -125,7 +125,6 @@ import { openExternalLinks } from '../../services/utils/workspace-action'
 import { TestSupport } from '../../test-support'
 import type { MessageErrorType } from '../MessageProvider'
 import { DeepCodyAgent } from '../agentic/DeepCody'
-import { toolboxManager } from '../agentic/ToolboxManager'
 import { getMentionMenuData } from '../context/chatContext'
 import { getEmptyOrDefaultContextObservable } from '../initialContext'
 import type {
@@ -143,6 +142,7 @@ import { CodeBlockRegenerator, type RegenerateRequestParams } from './CodeBlockR
 import type { ContextRetriever } from './ContextRetriever'
 import { InitDoer } from './InitDoer'
 import { getChatPanelTitle, isCodyTesting } from './chat-helpers'
+import { DeepCodyHandler } from './handlers/DeepCodyHandler'
 import { OmniboxTelemetry } from './handlers/OmniboxTelemetry'
 import { getAgent } from './handlers/registry'
 import { getPromptsMigrationInfo, startPromptsMigration } from './prompts-migration'
@@ -810,7 +810,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     text: inputText,
                     editorState,
                     intent: manuallySelectedIntent,
-                    agent: toolboxManager.isAgenticChatEnabled() ? DeepCodyAgent.id : undefined,
+                    agent: DeepCodyHandler.isAgenticChatEnabled() ? DeepCodyAgent.id : undefined,
                 })
 
                 this.setCustomChatTitle(requestID, inputText, signal)
