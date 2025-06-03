@@ -93,37 +93,16 @@ export type ClientRequests = {
     'customCommands/list': [null, CodyCommand[]]
 
     // Trigger commands that edit the code.
-    'editCommands/code': [
-        {
-            instruction: string
-            model?: string | undefined | null
-            mode?: 'edit' | 'insert' | undefined | null
-            range?: Range | undefined | null
-        },
-        EditTask,
-    ]
-    'editCommands/test': [null, EditTask]
-    'editCommands/document': [null, EditTask]
-
+    'editTask/start': [null, FixupTaskID | undefined | null]
     // If the task is "applied", discards the task.
-    'editTask/accept': [{ id: FixupTaskID }, null]
+    'editTask/accept': [FixupTaskID, null]
     // If the task is "applied", attempts to revert the task's edit, then
     // discards the task.
-    'editTask/undo': [{ id: FixupTaskID }, null]
+    'editTask/undo': [FixupTaskID, null]
     // Discards the task. Applicable to tasks in any state.
-    'editTask/cancel': [{ id: FixupTaskID }, null]
-    'editTask/retry': [
-        {
-            id: FixupTaskID
-            instruction: string
-            model: string
-            mode: 'edit' | 'insert'
-            range: Range
-            rules?: Rule[] | undefined | null
-        },
-        EditTask,
-    ]
-    'editTask/getTaskDetails': [{ id: FixupTaskID }, EditTask]
+    'editTask/cancel': [FixupTaskID, null]
+    'editTask/retry': [FixupTaskID, FixupTaskID | undefined | null]
+    'editTask/getTaskDetails': [FixupTaskID, EditTask]
 
     // Utility for clients that don't have language-neutral folding-range support.
     // Provides a list of all the computed folding ranges in the specified document.
@@ -146,7 +125,7 @@ export type ClientRequests = {
     ]
     // The ID parameter should match ProtocolCodeAction.id from
     // codeActions/provide.
-    'codeActions/trigger': [{ id: string }, EditTask]
+    'codeActions/trigger': [FixupTaskID, FixupTaskID | undefined | null]
 
     'autocomplete/execute': [AutocompleteParams, AutocompleteResult]
 
@@ -307,6 +286,10 @@ export type ServerRequests = {
         },
         boolean,
     ]
+
+    'textEditor/selection': [{ uri: string; selection: Range }, null]
+    'textEditor/revealRange': [{ uri: string; range: Range }, null]
+
     'workspace/edit': [WorkspaceEditParams, boolean]
 
     'secrets/get': [{ key: string }, string | null | undefined]
@@ -316,6 +299,8 @@ export type ServerRequests = {
     // TODO: Add VSCode support for registerWebviewPanelSerializer.
 
     'env/openExternal': [{ uri: string }, boolean]
+
+    'editTask/getUserInput': [UserEditPromptRequest, UserEditPromptResult | undefined | null]
 }
 
 // The JSON-RPC notifications of the Cody Agent protocol. Notifications are
@@ -417,11 +402,6 @@ export type ServerNotifications = {
 
     'extensionConfiguration/didUpdate': [{ key: string; value?: string | undefined | null }]
     'extensionConfiguration/openSettings': [null]
-
-    /** @deprecated Use `codeLenses/display` instead */
-    'editTask/didUpdate': [EditTask]
-    /** @deprecated Use `codeLenses/display` instead */
-    'editTask/didDelete': [EditTask]
 
     'codeLenses/display': [DisplayCodeLensParams]
 
@@ -1033,7 +1013,7 @@ export interface CustomChatCommandResult {
 }
 export interface CustomEditCommandResult {
     type: 'edit'
-    editResult: EditTask
+    editResult?: FixupTaskID | undefined | null
 }
 
 export interface GetFoldingRangeParams {
@@ -1117,4 +1097,15 @@ export interface GetDocumentsParams {
 
 export interface GetDocumentsResult {
     documents: ProtocolTextDocument[]
+}
+
+export interface UserEditPromptRequest {
+    instruction?: string | undefined | null
+    selectedModelId: string
+    availableModels: ModelAvailabilityStatus[]
+}
+
+export interface UserEditPromptResult {
+    instruction: string
+    selectedModelId: string
 }

@@ -17,7 +17,7 @@ import type { SmartApplyResult } from '../chat/protocol'
 import { PersistenceTracker } from '../common/persistence-tracker'
 import { lines } from '../completions/text-processing'
 import { executeEdit } from '../edit/execute'
-import { type EditInput, getInput } from '../edit/input/get-input'
+import type { EditInput } from '../edit/input/get-input'
 import {
     type EditIntent,
     EditIntentTelemetryMetadataMapping,
@@ -389,7 +389,7 @@ export class FixupController
         // Prompt the user for a new instruction, and create a new fixup
         const input =
             previousInput ??
-            (await getInput(
+            (await this.controlApplicator.getUserInput(
                 document,
                 {
                     instruction: task.instruction,
@@ -472,7 +472,14 @@ export class FixupController
         telemetryMetadata?: FixupTelemetryMetadata,
         smartApplyMetadata?: SmartApplyAdditionalMetadata
     ): Promise<FixupTask | null> {
-        const input = await getInput(
+        telemetryRecorder.recordEvent('cody.menu.edit', 'clicked', {
+            metadata: {
+                source: EventSourceTelemetryMetadataMapping[source],
+            },
+            privateMetadata: { source },
+        })
+
+        const input = await this.controlApplicator.getUserInput(
             document,
             {
                 range: range,

@@ -24,18 +24,14 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.ui.util.preferredHeight
 import com.intellij.util.concurrency.annotations.RequiresEdt
 import com.intellij.util.ui.JBUI
-import com.sourcegraph.cody.agent.CodyAgentService
-import com.sourcegraph.cody.agent.protocol.ModelUsage
-import com.sourcegraph.cody.agent.protocol_generated.EditCommands_CodeParams
-import com.sourcegraph.cody.agent.protocol_generated.EditTask
-import com.sourcegraph.cody.agent.protocol_generated.EditTask_RetryParams
 import com.sourcegraph.cody.agent.protocol_generated.ModelAvailabilityStatus
+import com.sourcegraph.cody.agent.protocol_generated.UserEditPromptRequest
+import com.sourcegraph.cody.agent.protocol_generated.UserEditPromptResult
 import com.sourcegraph.cody.chat.PromptHistory
 import com.sourcegraph.cody.chat.ui.LlmDropdown
 import com.sourcegraph.cody.edit.EditUtil.namedButton
 import com.sourcegraph.cody.edit.EditUtil.namedLabel
 import com.sourcegraph.cody.edit.EditUtil.namedPanel
-import com.sourcegraph.cody.edit.actions.EditCodeAction
 import com.sourcegraph.cody.ui.TextAreaHistoryManager
 import java.awt.BorderLayout
 import java.awt.Color
@@ -44,6 +40,7 @@ import java.awt.Cursor
 import java.awt.Dimension
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
+import java.util.concurrent.CompletableFuture
 import javax.swing.BorderFactory
 import javax.swing.Box
 import javax.swing.BoxLayout
@@ -60,8 +57,10 @@ class EditCommandPrompt(
     val project: Project,
     val editor: Editor,
     private val dialogTitle: String,
-    private val previousEdit: EditTask? = null
+    private val promptRequest: UserEditPromptRequest
 ) : DataProvider {
+
+  private val promptResult: CompletableFuture<UserEditPromptResult?> = CompletableFuture()
 
   private var popup: JBPopup? = null
 
@@ -69,7 +68,9 @@ class EditCommandPrompt(
 
   private val offset = editor.caretModel.primaryCaret.offset
 
-  private var model: String? = previousEdit?.model
+  private var model: String? = promptRequest.selectedModelId
+
+  private val availableModels = promptRequest.availableModels
 
   private val okButton =
       namedButton("ok-button").apply {
@@ -118,17 +119,17 @@ class EditCommandPrompt(
       }
 
   private val instructionsField =
-      InstructionsInputTextArea().apply { text = previousEdit?.instruction ?: lastPrompt }
+      InstructionsInputTextArea().apply { text = promptRequest.instruction ?: lastPrompt }
 
   private val historyManager = TextAreaHistoryManager(instructionsField, promptHistory)
 
   private val llmDropdown =
       LlmDropdown(
-              modelUsage = ModelUsage.EDIT,
               project = project,
               onSetSelectedItem = { model = it.id },
-              this,
-              fixedModel = model)
+              promptRequest.availableModels,
+              selectedModel = model,
+              this)
           .apply {
             foreground = boldLabelColor()
             background = textFieldBackground()
@@ -194,6 +195,8 @@ class EditCommandPrompt(
     createAndShowPopup()
   }
 
+  fun getUserEditPromptResult(): CompletableFuture<UserEditPromptResult?> = promptResult
+
   private fun createAndShowPopup() {
     popup =
         JBPopupFactory.getInstance()
@@ -219,6 +222,7 @@ class EditCommandPrompt(
                 action.actionPerformed(actionEvent)
               } else {
                 lastPrompt = instructionsField.text
+                promptResult.complete(null)
               }
             } finally {
               if (popup === event.asPopup()) {
@@ -370,37 +374,22 @@ class EditCommandPrompt(
     if (editor.project == null) {
       val msg = "Null project for new edit session"
       logger.warn(msg)
+      popup?.cancel()
       return
     }
 
     val currentModel = model
     if (currentModel == null) {
       logger.warn("Model for new edit cannot be null")
+      popup?.cancel()
       return
     }
 
-    CodyAgentService.withAgent(project) { agent ->
-      val result =
-          if (previousEdit != null) {
-            val params =
-                EditTask_RetryParams(
-                    previousEdit.id,
-                    text,
-                    currentModel,
-                    EditTask_RetryParams.ModeEnum.Edit,
-                    previousEdit.selectionRange)
-            agent.server.editTask_retry(params).get()
-          } else {
-            agent.server
-                .editCommands_code(
-                    EditCommands_CodeParams(
-                        instruction = text,
-                        model = currentModel,
-                        mode = EditCommands_CodeParams.ModeEnum.Edit))
-                .get()
-          }
-      EditCodeAction.completedEditTasks[result.id] = result
-    }
+    promptResult.complete(
+        UserEditPromptResult(
+            instruction = text,
+            selectedModelId = currentModel,
+        ))
   }
 
   companion object {

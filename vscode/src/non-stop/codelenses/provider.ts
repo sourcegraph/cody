@@ -1,6 +1,7 @@
 import * as vscode from 'vscode'
 
-import { telemetryRecorder } from '@sourcegraph/cody-shared'
+import { type EventSource, telemetryRecorder } from '@sourcegraph/cody-shared'
+import { type EditInput, getInput } from '../../edit/input/get-input'
 import { isRunningInsideAgent } from '../../jsonrpc/isRunningInsideAgent'
 import { ContentProvider } from '../FixupContentStore'
 import type { FixupFile } from '../FixupFile'
@@ -296,5 +297,13 @@ export class FixupCodeLenses implements vscode.CodeLensProvider, FixupControlApp
             disposable.dispose()
         }
         this._disposables = []
+    }
+
+    async getUserInput(
+        document: vscode.TextDocument,
+        editInput: EditInput,
+        source: EventSource
+    ): Promise<EditInput | null> {
+        return await getInput(document, editInput, source)
     }
 }

@@ -10,6 +10,7 @@ import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.editor.Document
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.EditorKind
+import com.intellij.openapi.editor.ScrollType
 import com.intellij.openapi.editor.ex.EditorEx
 import com.intellij.openapi.editor.impl.ImaginaryEditor
 import com.intellij.openapi.fileEditor.*
@@ -23,6 +24,7 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.VirtualFileManager
 import com.intellij.util.concurrency.annotations.RequiresEdt
 import com.intellij.util.io.createFile
+import com.sourcegraph.cody.agent.protocol_extensions.toBoundedOffset
 import com.sourcegraph.cody.agent.protocol_extensions.toOffsetRange
 import com.sourcegraph.cody.agent.protocol_generated.Range
 import com.sourcegraph.common.CodyFileUri
@@ -218,5 +220,18 @@ object CodyEditorUtil {
     return ScratchRootType.getInstance()
         .createScratchFile(
             project, fileName, language, content ?: "", ScratchFileService.Option.create_if_missing)
+  }
+
+  @JvmStatic
+  @RequiresEdt
+  fun selectAndScrollToRange(project: Project, uri: String, range: Range, shouldScroll: Boolean) {
+    val vf = findFileOrScratch(project, uri) ?: return
+    val textEditor = getSelectedEditors(project).find { it.virtualFile == vf } ?: return
+    textEditor.selectionModel.setSelection(
+        range.start.toBoundedOffset(textEditor.document),
+        range.end.toBoundedOffset(textEditor.document))
+    if (shouldScroll) {
+      textEditor.scrollingModel.scrollToCaret(ScrollType.MAKE_VISIBLE)
+    }
   }
 }

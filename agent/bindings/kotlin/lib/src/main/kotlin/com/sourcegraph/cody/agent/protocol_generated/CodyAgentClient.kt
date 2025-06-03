@@ -20,6 +20,10 @@ interface CodyAgentClient {
   fun textDocument_openUntitledDocument(params: UntitledTextDocument): CompletableFuture<ProtocolTextDocument?>
   @JsonRequest("textDocument/show")
   fun textDocument_show(params: TextDocument_ShowParams): CompletableFuture<Boolean>
+  @JsonRequest("textEditor/selection")
+  fun textEditor_selection(params: TextEditor_SelectionParams): CompletableFuture<Null?>
+  @JsonRequest("textEditor/revealRange")
+  fun textEditor_revealRange(params: TextEditor_RevealRangeParams): CompletableFuture<Null?>
   @JsonRequest("workspace/edit")
   fun workspace_edit(params: WorkspaceEditParams): CompletableFuture<Boolean>
   @JsonRequest("secrets/get")
@@ -30,6 +34,8 @@ interface CodyAgentClient {
   fun secrets_delete(params: Secrets_DeleteParams): CompletableFuture<Null?>
   @JsonRequest("env/openExternal")
   fun env_openExternal(params: Env_OpenExternalParams): CompletableFuture<Boolean>
+  @JsonRequest("editTask/getUserInput")
+  fun editTask_getUserInput(params: UserEditPromptRequest): CompletableFuture<UserEditPromptResult?>
 
   // =============
   // Notifications
@@ -44,10 +50,6 @@ interface CodyAgentClient {
   fun extensionConfiguration_didUpdate(params: ExtensionConfiguration_DidUpdateParams)
   @JsonNotification("extensionConfiguration/openSettings")
   fun extensionConfiguration_openSettings(params: Null?)
-  @JsonNotification("editTask/didUpdate")
-  fun editTask_didUpdate(params: EditTask)
-  @JsonNotification("editTask/didDelete")
-  fun editTask_didDelete(params: EditTask)
   @JsonNotification("codeLenses/display")
   fun codeLenses_display(params: DisplayCodeLensParams)
   @JsonNotification("ignore/didChange")

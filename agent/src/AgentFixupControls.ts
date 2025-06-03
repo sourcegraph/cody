@@ -1,7 +1,9 @@
+import type { EventSource } from '@sourcegraph/cody-shared'
 import type * as vscode from 'vscode'
+import { EditInputFlow } from '../../vscode/src/edit/input/edit-input-flow'
 import type { EditInput } from '../../vscode/src/edit/input/get-input'
 import type { FixupFile } from '../../vscode/src/non-stop/FixupFile'
-import type { FixupTask, FixupTaskID } from '../../vscode/src/non-stop/FixupTask'
+import type { FixupTaskID } from '../../vscode/src/non-stop/FixupTask'
 import { FixupCodeLenses } from '../../vscode/src/non-stop/codelenses/provider'
 import type { FixupActor, FixupFileCollection } from '../../vscode/src/non-stop/roles'
 import { type Agent, errorToCodyError } from './agent'
@@ -10,56 +12,51 @@ import type { EditTask, ProtocolCommand } from './protocol-alias'
 export class AgentFixupControls extends FixupCodeLenses {
     constructor(
         private readonly fixups: FixupActor & FixupFileCollection,
-        private readonly notify: typeof Agent.prototype.notify
+        private readonly notify: typeof Agent.prototype.notify,
+        private readonly request: typeof Agent.prototype.request
     ) {
         super(fixups)
     }
 
-    public accept(id: FixupTaskID): void {
+    async getUserInput(
+        document: vscode.TextDocument,
+        editInput: EditInput,
+        _: EventSource
+    ): Promise<EditInput | null> {
+        const inputFlow = new EditInputFlow(document, editInput)
+        await inputFlow.init()
+
+        const result = await this.request('editTask/getUserInput', {
+            instruction: editInput.instruction?.toString(),
+            selectedModelId: inputFlow.getActiveModel(),
+            availableModels: inputFlow.getAvailableModels(),
+        })
+
+        if (result === null || result === undefined) return null
+
+        await inputFlow.selectModel(result.selectedModelId)
+        return inputFlow.finalizeInput(result.instruction)
+    }
+
+    public getTaskDetails(id: FixupTaskID): EditTask | undefined {
         const task = this.fixups.taskForId(id)
         if (task) {
-            this.fixups.accept(task)
+            return {
+                id: task.id,
+                state: task.state,
+                error: errorToCodyError(task.error),
+                selectionRange: task.selectionRange,
+                instruction: task.instruction?.toString().trim(),
+                model: task.model.toString().trim(),
+                originalText: task.original,
+                rules: task.rules,
+            }
         }
-    }
 
-    public undo(id: FixupTaskID): void {
-        const task = this.fixups.taskForId(id)
-        if (task) {
-            this.fixups.undo(task)
-        }
-    }
-
-    public cancel(id: FixupTaskID): void {
-        const task = this.fixups.taskForId(id)
-        if (task) {
-            this.fixups.cancel(task)
-        }
-    }
-
-    public retry(id: FixupTaskID, previousInput: EditInput): Promise<FixupTask | undefined> {
-        const task = this.fixups.taskForId(id)
-        if (task) {
-            return this.fixups.retry(task, 'code-lens', previousInput)
-        }
-        return Promise.resolve(undefined)
-    }
-
-    public getTask(id: FixupTaskID): FixupTask | undefined {
-        return this.fixups.taskForId(id)
-    }
-
-    didUpdateTask(task: FixupTask): void {
-        super.didUpdateTask(task)
-        this.notify('editTask/didUpdate', AgentFixupControls.serialize(task))
-    }
-    didDeleteTask(task: FixupTask): void {
-        super.didDeleteTask(task)
-        this.notify('editTask/didDelete', AgentFixupControls.serialize(task))
+        return undefined
     }
 
     visibleFilesWithTasksMaybeChanged(files: readonly FixupFile[]): void {}
-
-    dispose() {}
 
     override notifyCodeLensesChanged(uri: vscode.Uri, codeLenses: vscode.CodeLens[]) {
         super.notifyCodeLensesChanged(uri, codeLenses)
@@ -105,18 +102,5 @@ export class AgentFixupControls extends FixupCodeLenses {
         }
 
         return { text: title.replace(this.labelWithIconsRegex, ''), icons }
-    }
-
-    public static serialize(task: FixupTask): EditTask {
-        return {
-            id: task.id,
-            state: task.state,
-            error: errorToCodyError(task.error),
-            selectionRange: task.selectionRange,
-            instruction: task.instruction?.toString().trim(),
-            model: task.model.toString().trim(),
-            originalText: task.original,
-            rules: task.rules,
-        }
     }
 }
