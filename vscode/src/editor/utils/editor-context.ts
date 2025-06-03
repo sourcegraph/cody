@@ -361,21 +361,20 @@ async function createContextFileFromUri(
 }
 
 /**
- * Processes the given context files to handle files larger than 1MB and non-text files.
- * Instead of removing large files, they are marked with isTooLarge: true so they can still
- * be found in searches but with a warning.
+ * Filters the given context files to remove files larger than 1MB and non-text files.
  */
 export async function filterContextItemFiles(
     contextFiles: ContextItemFile[]
 ): Promise<ContextItemFile[]> {
     const filtered = []
     for (const cf of contextFiles) {
-        // Check if file is valid and get its stats
+        // Remove file larger than 1MB and non-text files
+        // NOTE: Sourcegraph search only includes files up to 1MB
         const fileStat = await vscode.workspace.fs.stat(cf.uri)?.then(
             stat => stat,
             error => undefined
         )
-        if (cf.type !== 'file' || fileStat?.type !== vscode.FileType.File) {
+        if (cf.type !== 'file' || fileStat?.type !== vscode.FileType.File || fileStat?.size > 1000000) {
             continue
         }
 
@@ -538,18 +537,6 @@ async function resolveFileOrSymbolContextItem(
                 source: ContextItemSource.Unified,
                 size: await TokenCounterUtils.countTokens(resultOrError),
             }
-        }
-    }
-
-    // If the file is marked as too large but doesn't have a range specified,
-    // we should warn the user to use a range instead of including the entire file
-    if (contextItem.isTooLarge && !contextItem.range) {
-        // Return a placeholder message instead of the full content
-        return {
-            ...contextItem,
-            content:
-                'This file is too large (exceeds 1MB). Please specify a line range to include a portion of the file.',
-            size: contextItem.size || 0,
         }
     }
 
