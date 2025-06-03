@@ -14,14 +14,13 @@ This is a log of all notable changes to Cody for VS Code.
 
 ### Reverts
 
-  There were no reverts for this release
+There were no reverts for this release
 
 ### Uncategorized
 
 #### Others
 
-- [Backport M98] Changelog for 1.98.0 [#8005](https://github.com/sourcegraph/cody/pull/8005)
-
+- Changelog for 1.98.0 [#8005](https://github.com/sourcegraph/cody/pull/8005)
 
 ## 1.98.0
 
@@ -90,39 +89,42 @@ This is a log of all notable changes to Cody for VS Code.
 ## 1.96.0
 
 ### Fix
-- [Backport M96] fix(chat): only run saveSession after LLM response  [pull/7955](https://github.com/sourcegraph/cody/pull/7955)
-- [Backport M96] Do not throw exceptions from unimplemented protocol methods  [pull/7933](https://github.com/sourcegraph/cody/pull/7933)
-- Properly use generated protocol classes  [pull/7922](https://github.com/sourcegraph/cody/pull/7922)
-- fix(chat): prompt hydration in the right editor when using the prompt quickPick option  [pull/7902](https://github.com/sourcegraph/cody/pull/7902)
-- fix(chat): Hide copy button in non-chat mode  [pull/7895](https://github.com/sourcegraph/cody/pull/7895)
-- fix(chat): track code paste event  [pull/7918](https://github.com/sourcegraph/cody/pull/7918)
-- fix(rules): avoid duplicate .sourcegraph paths in rule search  [pull/7805](https://github.com/sourcegraph/cody/pull/7805)
-- Fix handling of client-side temporary settings in cody_settings.json  [pull/7904](https://github.com/sourcegraph/cody/pull/7904)
-- Fix issue with duplicated models in the model selection  [pull/7905](https://github.com/sourcegraph/cody/pull/7905)
-- fix(autocomplete): fix stop reason in the default completions client  [pull/7872](https://github.com/sourcegraph/cody/pull/7872)
-- fix(analytics): enable characters logger for untitled doc  [pull/7873](https://github.com/sourcegraph/cody/pull/7873)
-- rm erroneously included tmp file  [pull/7903](https://github.com/sourcegraph/cody/pull/7903)
-- Fix demo app on safari & remove tiktoken dependency  [pull/7887](https://github.com/sourcegraph/cody/pull/7887)
+
+- [Backport M96] fix(chat): only run saveSession after LLM response [pull/7955](https://github.com/sourcegraph/cody/pull/7955)
+- [Backport M96] Do not throw exceptions from unimplemented protocol methods [pull/7933](https://github.com/sourcegraph/cody/pull/7933)
+- Properly use generated protocol classes [pull/7922](https://github.com/sourcegraph/cody/pull/7922)
+- fix(chat): prompt hydration in the right editor when using the prompt quickPick option [pull/7902](https://github.com/sourcegraph/cody/pull/7902)
+- fix(chat): Hide copy button in non-chat mode [pull/7895](https://github.com/sourcegraph/cody/pull/7895)
+- fix(chat): track code paste event [pull/7918](https://github.com/sourcegraph/cody/pull/7918)
+- fix(rules): avoid duplicate .sourcegraph paths in rule search [pull/7805](https://github.com/sourcegraph/cody/pull/7805)
+- Fix handling of client-side temporary settings in cody_settings.json [pull/7904](https://github.com/sourcegraph/cody/pull/7904)
+- Fix issue with duplicated models in the model selection [pull/7905](https://github.com/sourcegraph/cody/pull/7905)
+- fix(autocomplete): fix stop reason in the default completions client [pull/7872](https://github.com/sourcegraph/cody/pull/7872)
+- fix(analytics): enable characters logger for untitled doc [pull/7873](https://github.com/sourcegraph/cody/pull/7873)
+- rm erroneously included tmp file [pull/7903](https://github.com/sourcegraph/cody/pull/7903)
+- Fix demo app on safari & remove tiktoken dependency [pull/7887](https://github.com/sourcegraph/cody/pull/7887)
 
 ### Features
-- refactor(chat): MCP server management and tool state  [pull/7915](https://github.com/sourcegraph/cody/pull/7915)
-- Enable prompts sort bvy relevance for insider builds  [pull/7913](https://github.com/sourcegraph/cody/pull/7913)
-- feat(chat): Remove rate limiting and default flag for Deep Cody  [pull/7882](https://github.com/sourcegraph/cody/pull/7882)
-- feat(chat): move mcp setting btn and add storybook  [pull/7901](https://github.com/sourcegraph/cody/pull/7901)
-- feat(logging): Add telemetry to code copy events to ensure accuracy of insert rate metric  [pull/7897](https://github.com/sourcegraph/cody/pull/7897)
-- Added support for Ctrl+C not working in Rider/Windows  [pull/7798](https://github.com/sourcegraph/cody/pull/7798)
-- feat(autocomplete): better autocomplete support for gpt-4.1-mini  [pull/7871](https://github.com/sourcegraph/cody/pull/7871)
-- Make TokenCounterUtils implementation environment dependent  [pull/7875](https://github.com/sourcegraph/cody/pull/7875)
-- add AGENT.md for use with Amp  [pull/7891](https://github.com/sourcegraph/cody/pull/7891)
+
+- refactor(chat): MCP server management and tool state [pull/7915](https://github.com/sourcegraph/cody/pull/7915)
+- Enable prompts sort bvy relevance for insider builds [pull/7913](https://github.com/sourcegraph/cody/pull/7913)
+- feat(chat): Remove rate limiting and default flag for Deep Cody [pull/7882](https://github.com/sourcegraph/cody/pull/7882)
+- feat(chat): move mcp setting btn and add storybook [pull/7901](https://github.com/sourcegraph/cody/pull/7901)
+- feat(logging): Add telemetry to code copy events to ensure accuracy of insert rate metric [pull/7897](https://github.com/sourcegraph/cody/pull/7897)
+- Added support for Ctrl+C not working in Rider/Windows [pull/7798](https://github.com/sourcegraph/cody/pull/7798)
+- feat(autocomplete): better autocomplete support for gpt-4.1-mini [pull/7871](https://github.com/sourcegraph/cody/pull/7871)
+- Make TokenCounterUtils implementation environment dependent [pull/7875](https://github.com/sourcegraph/cody/pull/7875)
+- add AGENT.md for use with Amp [pull/7891](https://github.com/sourcegraph/cody/pull/7891)
 
 ### Chores
-- chore(storybook): fixed stories that rendered with errors due to API changes  [pull/7848](https://github.com/sourcegraph/cody/pull/7848)
-- chore(ci and release): Remove bundle size checks  [pull/7916](https://github.com/sourcegraph/cody/pull/7916)
-- chore(walkthroughs): remove walkthroughts in favor of linking to quickstart docs  [pull/7847](https://github.com/sourcegraph/cody/pull/7847)
+
+- chore(storybook): fixed stories that rendered with errors due to API changes [pull/7848](https://github.com/sourcegraph/cody/pull/7848)
+- chore(ci and release): Remove bundle size checks [pull/7916](https://github.com/sourcegraph/cody/pull/7916)
+- chore(walkthroughs): remove walkthroughts in favor of linking to quickstart docs [pull/7847](https://github.com/sourcegraph/cody/pull/7847)
 
 ### Reverts
-- [Backport M96] revert(chat): enable agentic chat based on feature flag and model  [pull/7956](https://github.com/sourcegraph/cody/pull/7956)
 
+- [Backport M96] revert(chat): enable agentic chat based on feature flag and model [pull/7956](https://github.com/sourcegraph/cody/pull/7956)
 
 ## 1.94.2
 
@@ -223,7 +225,6 @@ This is a log of all notable changes to Cody for VS Code.
 - Remove Tool Cody model [#7881](https://github.com/sourcegraph/cody/pull/7881)
 - Remove duplicate mode icon [#7880](https://github.com/sourcegraph/cody/pull/7880)
 - Prompt Picker Improvements [#7861](https://github.com/sourcegraph/cody/pull/7861)
-
 
 ## 1.92.0
 
