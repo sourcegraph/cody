@@ -6,7 +6,8 @@ import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.fileEditor.impl.EditorHistoryManager.IncludeInEditorHistoryFile
 import com.intellij.openapi.project.Project
 import com.intellij.testFramework.LightVirtualFile
-import com.sourcegraph.cody.agent.protocol.WebviewCreateWebviewPanelParams
+import com.sourcegraph.cody.agent.protocol_generated.Webview_CreateWebviewPanelParams
+import com.sourcegraph.utils.ThreadingUtil
 import java.util.concurrent.CompletableFuture
 
 // Responsibilities:
@@ -14,7 +15,10 @@ import java.util.concurrent.CompletableFuture
 // them.
 // - Closes Webview panels. Used when Agent stops.
 internal class WebviewPanelManager(private val project: Project) {
-  fun createPanel(proxy: WebUIProxy, params: WebviewCreateWebviewPanelParams): WebviewViewDelegate {
+  fun createPanel(
+      proxy: WebUIProxy,
+      params: Webview_CreateWebviewPanelParams
+  ): WebviewViewDelegate {
     val file = object : LightVirtualFile("Cody"), IncludeInEditorHistoryFile {}
     file.fileType = WebPanelFileType.INSTANCE
     file.putUserData(WebPanelTabTitleProvider.WEB_PANEL_TITLE_KEY, params.title)
@@ -35,24 +39,20 @@ internal class WebviewPanelManager(private val project: Project) {
     }
   }
 
-  fun reset(): CompletableFuture<Void> {
-    val result = CompletableFuture<Void>()
-    runInEdt {
-      try {
-        if (project.isDisposed) {
-          return@runInEdt
-        }
-        val fileEditorManager = FileEditorManager.getInstance(project)
-        val openFiles = fileEditorManager.openFiles
-        for (file in openFiles) {
-          if (file.fileType == WebPanelFileType.INSTANCE) {
-            fileEditorManager.closeFile(file)
-          }
-        }
-      } finally {
-        result.complete(null)
+  fun reset(): CompletableFuture<Unit> {
+    return ThreadingUtil.runInEdtFuture {
+      if (project.isDisposed) {
+        return@runInEdtFuture
       }
+
+      val fileEditorManager = FileEditorManager.getInstance(project)
+      val openFiles = fileEditorManager.openFiles
+      for (file in openFiles) {
+        if (file.fileType == WebPanelFileType.INSTANCE) {
+          fileEditorManager.closeFile(file)
+        }
+      }
+      return@runInEdtFuture
     }
-    return result
   }
 }

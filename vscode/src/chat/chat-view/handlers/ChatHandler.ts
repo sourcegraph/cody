@@ -76,7 +76,7 @@ export class ChatHandler implements AgentHandler {
         signal.throwIfAborted()
 
         const { explicitMentions, implicitMentions } = getCategorizedMentions(corpusContext)
-        const prompter = new DefaultPrompter(explicitMentions, implicitMentions, false)
+        const prompter = new DefaultPrompter(explicitMentions, implicitMentions)
 
         const versions = await currentSiteVersion()
         if (isError(versions)) {

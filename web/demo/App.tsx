@@ -2,8 +2,9 @@ import type { FC } from 'react'
 import { CodyWebChat, type InitialContext } from '../lib'
 
 // @ts-ignore
-import AgentWorker from '../lib/agent/agent.worker.ts?worker'
-const CREATE_AGENT_WORKER = (): Worker => new AgentWorker() as Worker
+import AgentWorker from '../lib/agent/agent.worker.ts?worker&x=2'
+
+const CREATE_AGENT_WORKER = (): Worker => new AgentWorker({ name: 'demo' }) as Worker
 
 // Include highlights styles for demo purpose, clients like
 // Sourcegraph import highlights styles themselves
@@ -13,7 +14,6 @@ import styles from './App.module.css'
 const DEFAULT_SERVER_ENDPOINT = 'https://sourcegraph.sourcegraph.com'
 
 // To set:
-//
 // localStorage.setItem('serverEndpoint', 'https://sourcegraph.test:3443')
 const serverEndpoint = localStorage.getItem('serverEndpoint') || DEFAULT_SERVER_ENDPOINT
 

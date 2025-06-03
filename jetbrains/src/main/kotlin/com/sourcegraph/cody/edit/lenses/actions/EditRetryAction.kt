@@ -9,9 +9,7 @@ class EditRetryAction :
       runInEdt {
         val completedFixup = EditCodeAction.completedEditTasks[taskId]
         if (completedFixup != null) {
-          runInEdt {
-            EditCommandPrompt(project, editor, "Edit instructions and Retry", completedFixup)
-          }
+          EditCommandPrompt(project, editor, "Edit instructions and Retry", completedFixup)
         }
       }
     }) {

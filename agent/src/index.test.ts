@@ -112,7 +112,7 @@ describe('Agent', () => {
     const animalUri = workspace.file('src', 'animal.ts')
     const squirrelUri = workspace.file('src', 'squirrel.ts')
 
-    async function setChatModel(model = 'mistral::v1::mixtral-8x7b-instruct'): Promise<string> {
+    async function setChatModel(model = 'google::v1::gemini-1.5-flash'): Promise<string> {
         // Use the same chat model regardless of the server response (in case it changes on the
         // remote endpoint so we don't need to regenerate all the recordings).
         const freshChatID = await client.request('chat/new', null)
@@ -401,7 +401,7 @@ describe('Agent', () => {
             const id = await client.request('chat/new', null)
             await client.request('chat/setModel', {
                 id,
-                model: 'mistral::v1::mixtral-8x7b-instruct',
+                model: 'google::v1::gemini-1.5-flash',
             })
             await client.sendMessage(
                 id,
@@ -440,7 +440,7 @@ describe('Agent', () => {
                     const id = await client.request('chat/new', null)
                     await client.request('chat/setModel', {
                         id,
-                        model: 'mistral::v1::mixtral-8x7b-instruct',
+                        model: 'google::v1::gemini-1.5-flash',
                     })
                     await client.sendMessage(
                         id,
@@ -486,7 +486,7 @@ describe('Agent', () => {
                 const id = await client.request('chat/new', null)
                 await client.request('chat/setModel', {
                     id,
-                    model: 'mistral::v1::mixtral-8x7b-instruct',
+                    model: 'google::v1::gemini-1.5-flash',
                 })
                 // edits by index replaces message at index, and erases all subsequent messages
                 await client.sendMessage(
@@ -535,7 +535,7 @@ describe('Agent', () => {
 
             // Assert that the server is not using IDs between `chat/new` and
             // `chat/explain`. In VS Code, we try to reuse empty webview panels,
-            // which is undesireable for agent clients.
+            // which is undesirable for agent clients.
             expect(id).not.toStrictEqual(freshChatID)
 
             const lastMessage = await client.firstNonEmptyTranscript(id)

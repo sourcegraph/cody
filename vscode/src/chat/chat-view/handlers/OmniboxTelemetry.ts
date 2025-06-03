@@ -2,7 +2,6 @@ import type { Span } from '@opentelemetry/api'
 import {
     type ChatMessage,
     type ContextItem,
-    TokenCounterUtils,
     currentAuthStatusAuthed,
     firstResultFromOperation,
     logError,
@@ -21,10 +20,7 @@ interface IntentInfo {
  */
 export class OmniboxTelemetry {
     private intentInfo?: IntentInfo
-    constructor(
-        private baseProperties: SharedProperties,
-        private tokenCounterUtils: TokenCounterUtils
-    ) {}
+    constructor(private baseProperties: SharedProperties) {}
 
     public static async create(
         baseProperties: Omit<SharedProperties, 'repoMetadata' | 'repoIsPublic' | 'authStatus'>
@@ -34,22 +30,16 @@ export class OmniboxTelemetry {
             () => firstResultFromOperation(publicRepoMetadataIfAllWorkspaceReposArePublic)
         )
 
-        return new OmniboxTelemetry(
-            {
-                ...baseProperties,
-                authStatus: currentAuthStatusAuthed(),
-                repoIsPublic,
-                repoMetadata,
-            },
-            TokenCounterUtils
-        )
+        return new OmniboxTelemetry({
+            ...baseProperties,
+            authStatus: currentAuthStatusAuthed(),
+            repoIsPublic,
+            repoMetadata,
+        })
     }
 
     public recordChatQuestionSubmitted(mentions: ContextItem[]) {
-        telemetryEvents['cody.chat-question/submitted'].record(
-            { ...this.baseProperties, mentions },
-            this.tokenCounterUtils
-        )
+        telemetryEvents['cody.chat-question/submitted'].record({ ...this.baseProperties, mentions })
     }
 
     public setIntentInfo(intentInfo: IntentInfo) {
@@ -76,8 +66,7 @@ export class OmniboxTelemetry {
                 ...this.intentInfo,
                 context,
             },
-            spans,
-            this.tokenCounterUtils
+            spans
         )
     }
 }

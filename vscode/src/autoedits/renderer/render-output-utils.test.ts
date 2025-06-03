@@ -68,6 +68,14 @@ describe('getCompletionText', () => {
         expect(completionText).toBe('')
     })
 
+    it('handles mixed insertions and deletions on a single line', () => {
+        const currentFileText = 'const c = 3\nconsole█c)\nfunction greet() { console.log("Hello") }'
+        const predictedFileText =
+            'const c = 3\nconsole.log(a, b, c)\nfunction greet() { console.log("Hello") }'
+        const completionText = getCompletionTextFromStrings(currentFileText, predictedFileText)
+        expect(completionText).toMatchInlineSnapshot(`".log(a, b, c)"`)
+    })
+
     it('handles mixed insertions, deletions and new line additions', () => {
         const currentFileText = 'top 10█px left 10px fixed'
         const predictedFileText = "top: '10px',\n left: '10px',\n position: 'fixed',"

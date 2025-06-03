@@ -1,17 +1,11 @@
-import Anthropic from '@anthropic-ai/sdk'
-import type { ChatMessage, ChatModel } from '@sourcegraph/cody-shared'
-import {
-    DeepCodyAgentID,
-    DeepCodyModelRef,
-    ToolCodyModelRef,
-} from '@sourcegraph/cody-shared/src/models/client'
-import { getConfiguration } from '../../../configuration'
+import type { ChatMessage } from '@sourcegraph/cody-shared'
+import { toolboxManager } from '../../agentic/ToolboxManager'
+import { isCodyTesting } from '../chat-helpers'
 import { AgenticHandler } from './AgenticHandler'
 import { ChatHandler } from './ChatHandler'
 import { DeepCodyHandler } from './DeepCodyHandler'
 import { EditHandler } from './EditHandler'
 import { SearchHandler } from './SearchHandler'
-import { ExperimentalToolHandler } from './ToolHandler'
 import type { AgentHandler, AgentTools } from './interfaces'
 
 /**
@@ -23,22 +17,6 @@ const agentRegistry = new Map<string, (id: string, tools: AgentTools) => AgentHa
     [
         'insert',
         (_id, { contextRetriever, editor }) => new EditHandler('insert', contextRetriever, editor),
-    ],
-    [
-        ToolCodyModelRef,
-        (_id, _tools) => {
-            const config = getConfiguration()
-            return new ExperimentalToolHandler(
-                new Anthropic({
-                    apiKey: config.experimentalMinionAnthropicKey,
-                })
-            )
-        },
-    ],
-    [
-        DeepCodyModelRef,
-        (_id, { contextRetriever, editor, chatClient }) =>
-            new DeepCodyHandler(contextRetriever, editor, chatClient),
     ],
 ])
 
@@ -61,25 +39,12 @@ export function getAgent(model: string, intent: ChatMessage['intent'], tools: Ag
     const modelHandler = agentRegistry.get(model)
     if (modelHandler) return modelHandler(model, tools)
 
-    return new ChatHandler(contextRetriever, editor, chatClient)
-}
+    // Use agentic chat (Deep Cody) handler if enabled.
+    // Skip in agent testing mode to avoid non-deterministic results causing
+    // recordings to fail consistently.
+    if (!isCodyTesting && toolboxManager.isAgenticChatEnabled()) {
+        return new DeepCodyHandler(contextRetriever, editor, chatClient)
+    }
 
-/**
- * Gets the agent name based on the intent and model
- * @param intent The intent of the chat message
- * @param model The model of the chat message
- * @returns The agent name or undefined if not applicable
- */
-export function getAgentName(intent: ChatMessage['intent'], model?: ChatModel): string | undefined {
-    // Special case for agentic intent
-    if (intent === 'agentic') {
-        return 'agent-mode'
-    }
-    if (model === ToolCodyModelRef) {
-        return ToolCodyModelRef
-    }
-    if (model === DeepCodyModelRef) {
-        return DeepCodyAgentID
-    }
-    return undefined
+    return new ChatHandler(contextRetriever, editor, chatClient)
 }

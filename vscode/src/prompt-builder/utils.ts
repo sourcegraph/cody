@@ -3,6 +3,7 @@ import {
     ContextItemSource,
     type ContextMessage,
     type ContextTokenUsageType,
+    type ImageContentPart,
     type MessagePart,
     PromptString,
     displayPath,
@@ -18,16 +19,6 @@ export function renderContextItem(contextItem: ContextItem): ContextMessage | nu
     const { source, range, type } = contextItem
     const { content, repoName, title } = PromptString.fromContextItem(contextItem)
 
-    // If true, this context item appears in the chat input as a context chip.
-    const isRequestedInChatInput =
-        source === ContextItemSource.User || source === ContextItemSource.Initial
-
-    // Do not create context item for empty file unless the context item is
-    // explicitly listed in the chat input. See CODY-3421 why we want to include
-    // empty files so that they can target URIs for smart apply.
-    if (content === undefined || (!isRequestedInChatInput && content.trim().length === 0)) {
-        return null
-    }
     const data = type === 'media' ? contextItem.data : undefined
     const mimeType = type === 'media' ? contextItem.mimeType : undefined
     const fileName = type === 'media' ? contextItem.filename : undefined
@@ -39,15 +30,29 @@ export function renderContextItem(contextItem: ContextItem): ContextMessage | nu
             content: [
                 {
                     type: 'image_url',
-                    image_url: { url: data },
+                    image_url: {
+                        url: data.startsWith('data:') ? data : `data:${mimeType};base64,${data}`,
+                    },
                 } satisfies MessagePart,
             ],
         }
     }
 
+    // If true, this context item appears in the chat input as a context chip.
+    const isRequestedInChatInput =
+        source === ContextItemSource.User || source === ContextItemSource.Initial
+
+    // Do not create context item for empty file unless the context item is
+    // explicitly listed in the chat input. See CODY-3421 why we want to include
+    // empty files so that they can target URIs for smart apply.
+    if (content === undefined || (!isRequestedInChatInput && content.trim().length === 0)) {
+        return null
+    }
+
     const uri = getContextItemLocalUri(contextItem)
 
     let messageText: PromptString
+    let contentParts: MessagePart[] | undefined
 
     switch (source) {
         case ContextItemSource.Selection:
@@ -73,12 +78,18 @@ export function renderContextItem(contextItem: ContextItem): ContextMessage | nu
                     .replace('{title}', title)
                     .replace('{displayPath}', PromptString.fromDisplayPath(uri))
                     .concat(content)
+            } else if (contextItem.type === 'tool-state') {
+                messageText = ps``
+                // Extract content parts from the tool-state context item
+                if (contextItem.parts) {
+                    contentParts = contextItem.parts
+                }
             } else {
                 messageText = populateCodeContextTemplate(content, uri, repoName)
             }
     }
 
-    return { speaker: 'human', text: messageText, file: contextItem }
+    return { speaker: 'human', text: messageText, file: contextItem, content: contentParts }
 }
 
 export function getContextItemTokenUsageType(item: ContextItem): ContextTokenUsageType {
@@ -142,4 +153,19 @@ export function getCategorizedMentions(mentions: ContextItem[]): {
     }
 
     return { explicitMentions, implicitMentions }
+}
+
+export function getImageContent(data: string, mimeType: string): ImageContentPart {
+    // Clean and validate the base64 data
+    let cleanBase64 = data
+
+    // Remove any whitespace, newlines, or other non-base64 characters
+    cleanBase64 = cleanBase64.replace(/\s/g, '')
+
+    // Ensure proper base64 padding (must be multiple of 4)
+    while (cleanBase64.length % 4 !== 0) {
+        cleanBase64 += '='
+    }
+    const dataUrl = `data:${mimeType};base64,${cleanBase64}`
+    return { type: 'image_url', image_url: { url: dataUrl } }
 }

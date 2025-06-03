@@ -4,7 +4,6 @@ import com.intellij.notification.Notification
 import com.intellij.notification.NotificationType
 import com.intellij.openapi.actionSystem.*
 import com.intellij.openapi.actionSystem.impl.SimpleDataContext
-import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.ReadAction
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.diagnostic.Logger
@@ -17,7 +16,6 @@ import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.vfs.VirtualFile
 import com.jetbrains.rd.util.firstOrNull
 import com.sourcegraph.Icons
-import com.sourcegraph.cody.agent.protocol.WebviewCreateWebviewPanelParams
 import com.sourcegraph.cody.agent.protocol_extensions.ProtocolTextDocumentExt
 import com.sourcegraph.cody.agent.protocol_generated.*
 import com.sourcegraph.cody.auth.CodyAuthService
@@ -39,55 +37,35 @@ import com.sourcegraph.common.NotificationGroups
 import com.sourcegraph.common.ui.SimpleDumbAwareEDTAction
 import com.sourcegraph.config.ConfigUtil
 import com.sourcegraph.utils.CodyEditorUtil
+import com.sourcegraph.utils.ThreadingUtil.runInBackground
+import com.sourcegraph.utils.ThreadingUtil.runInEdtFuture
 import java.nio.file.Paths
 import java.util.concurrent.CompletableFuture
-import org.eclipse.lsp4j.jsonrpc.services.JsonNotification
-import org.eclipse.lsp4j.jsonrpc.services.JsonRequest
 
 /**
  * Implementation of the client part of the Cody agent protocol. This class dispatches the requests
  * and notifications sent by the agent.
  */
 @Suppress("unused", "FunctionName")
-class CodyAgentClient(private val project: Project, private val webview: NativeWebviewProvider) {
+class CodyAgentClient(private val project: Project, private val webview: NativeWebviewProvider) :
+    com.sourcegraph.cody.agent.protocol_generated.CodyAgentClient {
   companion object {
     private val logger = Logger.getInstance(CodyAgentClient::class.java)
-  }
-
-  /**
-   * Helper to run client request/notification handlers on the IntelliJ event thread. Use this
-   * helper for handlers that require access to the IntelliJ editor, for example to read the text
-   * contents of the open editor.
-   */
-  private fun <R> acceptOnEventThreadAndGet(
-      callback: (() -> R),
-  ): CompletableFuture<R> {
-    val result = CompletableFuture<R>()
-    ApplicationManager.getApplication().invokeLater {
-      try {
-        result.complete(callback.invoke())
-      } catch (e: Exception) {
-        result.completeExceptionally(e)
-      }
-    }
-    return result
   }
 
   // =============
   // Requests
   // =============
 
-  @JsonRequest("env/openExternal")
-  fun env_openExternal(params: Env_OpenExternalParams): CompletableFuture<Boolean> {
-    return acceptOnEventThreadAndGet {
+  override fun env_openExternal(params: Env_OpenExternalParams): CompletableFuture<Boolean> {
+    return runInEdtFuture {
       BrowserOpener.openInBrowser(project, params.uri)
       true
     }
   }
 
-  @JsonRequest("workspace/edit")
-  fun workspace_edit(params: WorkspaceEditParams): CompletableFuture<Boolean> {
-    return acceptOnEventThreadAndGet {
+  override fun workspace_edit(params: WorkspaceEditParams): CompletableFuture<Boolean> {
+    return runInEdtFuture {
       try {
         EditService.getInstance(project).performWorkspaceEdit(params)
       } catch (e: RuntimeException) {
@@ -97,9 +75,8 @@ class CodyAgentClient(private val project: Project, private val webview: NativeW
     }
   }
 
-  @JsonRequest("textDocument/edit")
-  fun textDocument_edit(params: TextDocumentEditParams): CompletableFuture<Boolean> {
-    return acceptOnEventThreadAndGet {
+  override fun textDocument_edit(params: TextDocumentEditParams): CompletableFuture<Boolean> {
+    return runInEdtFuture {
       try {
         EditService.getInstance(project).performTextEdits(params.uri, params.edits)
       } catch (e: RuntimeException) {
@@ -109,52 +86,45 @@ class CodyAgentClient(private val project: Project, private val webview: NativeW
     }
   }
 
-  @JsonRequest("textDocument/show")
-  fun textDocument_show(params: TextDocument_ShowParams): CompletableFuture<Boolean> {
-    val vf =
-        acceptOnEventThreadAndGet { CodyEditorUtil.findFileOrScratch(project, params.uri) }.get()
-
-    val result =
-        if (vf != null) {
-          val selection = params.options?.selection
-          val preserveFocus = params.options?.preserveFocus
-          CodyEditorUtil.showDocument(project, vf, selection, preserveFocus)
-        } else {
-          false
-        }
-
-    return CompletableFuture.completedFuture(result)
+  override fun textDocument_show(params: TextDocument_ShowParams): CompletableFuture<Boolean> {
+    return runInBackground {
+      val vf =
+          runInEdtFuture { CodyEditorUtil.findFileOrScratch(project, params.uri) }.get()
+              ?: return@runInBackground false
+      val selection = params.options?.selection
+      val preserveFocus = params.options?.preserveFocus
+      CodyEditorUtil.showDocument(project, vf, selection, preserveFocus)
+    }
   }
 
-  @JsonRequest("textDocument/openUntitledDocument")
-  fun textDocument_openUntitledDocument(
+  override fun textDocument_openUntitledDocument(
       params: UntitledTextDocument
   ): CompletableFuture<ProtocolTextDocument?> {
-    return acceptOnEventThreadAndGet {
+    return runInEdtFuture {
       val vf = CodyEditorUtil.createFileOrUseExisting(project, params.uri, params.content)
       vf?.let { ProtocolTextDocumentExt.fromVirtualFile(it) }
     }
   }
 
-  @JsonRequest("secrets/get")
-  fun secrets_get(params: Secrets_GetParams): CompletableFuture<String?> {
-    return CompletableFuture.completedFuture(CodySecureStore.getFromSecureStore(params.key))
+  override fun secrets_get(params: Secrets_GetParams): CompletableFuture<String?> {
+    return runInBackground { CodySecureStore.getInstance().getFromSecureStore(params.key) }
   }
 
-  @JsonRequest("secrets/store")
-  fun secrets_store(params: Secrets_StoreParams): CompletableFuture<Null?> {
-    CodySecureStore.writeToSecureStore(params.key, params.value)
-    return CompletableFuture.completedFuture(null)
+  override fun secrets_store(params: Secrets_StoreParams): CompletableFuture<Null?> {
+    return runInBackground {
+      CodySecureStore.getInstance().writeToSecureStore(params.key, params.value)
+      null
+    }
   }
 
-  @JsonRequest("secrets/delete")
-  fun secrets_delete(params: Secrets_DeleteParams): CompletableFuture<Null?> {
-    CodySecureStore.writeToSecureStore(params.key, null)
-    return CompletableFuture.completedFuture(null)
+  override fun secrets_delete(params: Secrets_DeleteParams): CompletableFuture<Null?> {
+    return runInBackground {
+      CodySecureStore.getInstance().writeToSecureStore(params.key, null)
+      null
+    }
   }
 
-  @JsonRequest("window/showSaveDialog")
-  fun window_showSaveDialog(params: SaveDialogOptionsParams): CompletableFuture<String> {
+  override fun window_showSaveDialog(params: SaveDialogOptionsParams): CompletableFuture<String?> {
     // Let's use the first possible extension as default.
     val ext = params.filters?.firstOrNull()?.value?.firstOrNull() ?: ""
     var fileName = "Untitled.$ext".removeSuffix(".")
@@ -174,42 +144,38 @@ class CodyAgentClient(private val project: Project, private val webview: NativeW
     val title = params.title ?: "Cody: Save as New File"
     val descriptor = FileSaverDescriptor(title, "Save file")
 
-    val saveFileFuture = CompletableFuture<String>()
-    runInEdt {
+    return runInEdtFuture {
       val dialog = FileChooserFactory.getInstance().createSaveFileDialog(descriptor, project)
       val result = dialog.save(outputDir, fileName)
-      saveFileFuture.complete(result?.file?.path)
+      result?.file?.path
     }
-
-    return saveFileFuture
   }
 
-  @JsonNotification("window/didChangeContext")
-  fun window_didChangeContext(params: Window_DidChangeContextParams) {
+  override fun window_didChangeContext(params: Window_DidChangeContextParams) {
     logger.debug("Received context change: ${params.key} = ${params.value}")
   }
 
-  @JsonNotification("authStatus/didUpdate")
-  fun authStatus_didUpdate(params: ProtocolAuthStatus) {
-    runInEdt {
-      if (project.isDisposed) return@runInEdt
-
-      val authService = CodyAuthService.getInstance(project)
-      if (params is ProtocolAuthenticatedAuthStatus) {
-        SentryService.getInstance().setUser(params.primaryEmail, params.username)
-        authService.setActivated(true, params.pendingValidation)
-        authService.setEndpoint(SourcegraphServerPath(params.endpoint))
-      } else if (params is ProtocolUnauthenticatedAuthStatus) {
-        SentryService.getInstance().setUser(null, null)
-        authService.setActivated(false, params.pendingValidation)
-        authService.setEndpoint(SourcegraphServerPath(params.endpoint))
-      }
-      CodyStatusService.resetApplication(project)
-    }
+  override fun window_focusSidebar(params: Null?) {
+    // TODO: Implement this.
   }
 
-  @JsonRequest("window/showMessage")
-  fun window_showMessage(params: ShowWindowMessageParams): CompletableFuture<String?> {
+  override fun authStatus_didUpdate(params: ProtocolAuthStatus) {
+    if (project.isDisposed) return
+
+    val authService = CodyAuthService.getInstance(project)
+    if (params is ProtocolAuthenticatedAuthStatus) {
+      SentryService.getInstance().setUser(params.primaryEmail, params.username)
+      authService.setActivated(true, params.pendingValidation)
+      authService.setEndpoint(SourcegraphServerPath(params.endpoint))
+    } else if (params is ProtocolUnauthenticatedAuthStatus) {
+      SentryService.getInstance().setUser(null, null)
+      authService.setActivated(false, params.pendingValidation)
+      authService.setEndpoint(SourcegraphServerPath(params.endpoint))
+    }
+    CodyStatusService.resetApplication(project)
+  }
+
+  override fun window_showMessage(params: ShowWindowMessageParams): CompletableFuture<String?> {
     val severity =
         when (params.severity) {
           ShowWindowMessageParams.SeverityEnum.Error -> NotificationType.ERROR
@@ -255,13 +221,11 @@ class CodyAgentClient(private val project: Project, private val webview: NativeW
   // Notifications
   // =============
 
-  @JsonNotification("autocomplete/didHide")
-  fun autocomplete_didHide(params: Null?) {
+  override fun autocomplete_didHide(params: Null?) {
     AutoeditManager.getInstance(project).hide()
   }
 
-  @JsonNotification("autocomplete/didTrigger")
-  fun autocomplete_didTrigger(params: Null?) {
+  override fun autocomplete_didTrigger(params: Null?) {
     FileEditorManager.getInstance(project).selectedTextEditor?.let { editor ->
       ReadAction.run<Throwable> {
         CodyAutocompleteManager.getInstance(project)
@@ -271,32 +235,27 @@ class CodyAgentClient(private val project: Project, private val webview: NativeW
     }
   }
 
-  @JsonNotification("codeLenses/display")
-  fun codeLenses_display(params: DisplayCodeLensParams) {
+  override fun codeLenses_display(params: DisplayCodeLensParams) {
     runInEdt { LensesService.getInstance(project).updateLenses(params.uri, params.codeLenses) }
   }
 
-  @JsonNotification("ignore/didChange")
-  fun ignore_didChange(params: Null?) {
+  override fun ignore_didChange(params: Null?) {
     IgnoreOracle.getInstance(project).onIgnoreDidChange()
   }
 
-  @JsonNotification("debug/message")
-  fun debug_message(params: DebugMessage) {
+  override fun debug_message(params: DebugMessage) {
     if (!project.isDisposed) {
       CodyConsole.getInstance(project).addMessage(params)
     }
   }
 
-  @JsonNotification("extensionConfiguration/didUpdate")
-  fun extensionConfiguration_didUpdate(params: String) {
+  override fun extensionConfiguration_didUpdate(params: ExtensionConfiguration_DidUpdateParams) {
     if (!project.isDisposed) {
-      ConfigUtil.setCustomConfiguration(project, params)
+      ConfigUtil.updateCustomConfiguration(project, params.key, params.value)
     }
   }
 
-  @JsonNotification("extensionConfiguration/openSettings")
-  fun extensionConfiguration_openSettings(params: Null?) {
+  override fun extensionConfiguration_openSettings(params: Null?) {
     if (!project.isDisposed) {
       val actionEvent =
           AnActionEvent(
@@ -310,55 +269,63 @@ class CodyAgentClient(private val project: Project, private val webview: NativeW
     }
   }
 
+  @Deprecated("Use `codeLenses/display` instead")
+  override fun editTask_didUpdate(params: EditTask) {}
+
+  @Deprecated("Use `codeLenses/display` instead")
+  override fun editTask_didDelete(params: EditTask) {}
+
+  override fun progress_start(params: ProgressStartParams) {
+    // TODO: Implement this.
+  }
+
+  override fun progress_report(params: ProgressReportParams) {
+    // TODO: Implement this.
+  }
+
+  override fun progress_end(params: Progress_EndParams) {
+    // TODO: Implement this.
+  }
+
   // ================================================
   // Webviews, forwarded to the NativeWebviewProvider
   // ================================================
 
-  @JsonNotification("webview/createWebviewPanel")
-  fun webviewCreateWebviewPanel(params: WebviewCreateWebviewPanelParams) {
-    webview.createPanel(params)
-  }
-
-  @JsonNotification("webview/postMessageStringEncoded")
-  fun webviewPostMessageStringEncoded(params: WebviewPostMessageStringEncodedParams) {
+  override fun webview_postMessageStringEncoded(params: Webview_PostMessageStringEncodedParams) {
     webview.receivedPostMessage(params)
   }
 
-  @JsonNotification("webview/registerWebviewViewProvider")
-  fun webviewRegisterWebviewViewProvider(params: WebviewRegisterWebviewViewProviderParams) {
+  override fun webview_registerWebviewViewProvider(
+      params: Webview_RegisterWebviewViewProviderParams
+  ) {
     webview.registerViewProvider(params)
   }
 
-  @JsonNotification("webview/setHtml")
-  fun webviewSetHtml(params: WebviewSetHtmlParams) {
+  override fun webview_createWebviewPanel(params: Webview_CreateWebviewPanelParams) {
+    webview.createPanel(params)
+  }
+
+  override fun webview_setHtml(params: Webview_SetHtmlParams) {
     webview.setHtml(params)
   }
 
-  @JsonNotification("webview/setIconPath")
-  fun webviewSetIconPath(params: WebviewSetIconPathParams) {
+  override fun webview_setIconPath(params: Webview_SetIconPathParams) {
     // TODO: Implement this.
-    println("TODO, implement webview/setIconPath")
   }
 
-  @JsonNotification("webview/setOptions")
-  fun webviewSetOptions(params: WebviewSetOptionsParams) {
+  override fun webview_setOptions(params: Webview_SetOptionsParams) {
     webview.setOptions(params)
   }
 
-  @JsonNotification("webview/setTitle")
-  fun webviewSetTitle(params: WebviewSetTitleParams) {
+  override fun webview_setTitle(params: Webview_SetTitleParams) {
     webview.setTitle(params)
   }
 
-  @JsonNotification("webview/reveal")
-  fun webviewReveal(params: WebviewRevealParams) {
+  override fun webview_reveal(params: Webview_RevealParams) {
     // TODO: Implement this.
-    println("TODO, implement webview/reveal")
   }
 
-  @JsonNotification("webview/dispose")
-  fun webviewDispose(params: WebviewDisposeParams) {
+  override fun webview_dispose(params: Webview_DisposeParams) {
     // TODO: Implement this.
-    println("TODO, implement webview/dispose")
   }
 }

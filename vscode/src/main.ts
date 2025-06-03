@@ -38,7 +38,6 @@ import {
     subscriptionDisposable,
     switchMap,
     take,
-    telemetryRecorder,
 } from '@sourcegraph/cody-shared'
 
 import { isReinstalling } from '../uninstall/reinstall'
@@ -54,19 +53,13 @@ import {
 import { createAutoEditsProvider } from './autoedits/create-autoedits-provider'
 import { autoeditDebugStore } from './autoedits/debug-panel/debug-store'
 import { autoeditsOutputChannelLogger } from './autoedits/output-channel-logger'
-import { registerAutoEditTestRenderCommand } from './autoedits/renderer/mock-renderer'
 import type { MessageProviderOptions } from './chat/MessageProvider'
 import { CodyToolProvider } from './chat/agentic/CodyToolProvider'
 import { ChatsController, CodyChatEditorViewType } from './chat/chat-view/ChatsController'
 import { ContextRetriever } from './chat/chat-view/ContextRetriever'
 import { SourcegraphRemoteFileProvider } from './chat/chat-view/sourcegraphRemoteFile'
 import { MCPManager } from './chat/chat-view/tools/MCPManager'
-import {
-    ACCOUNT_LIMITS_INFO_URL,
-    ACCOUNT_UPGRADE_URL,
-    CODY_FEEDBACK_URL,
-    CODY_OLLAMA_DOCS_URL,
-} from './chat/protocol'
+import { ACCOUNT_LIMITS_INFO_URL, ACCOUNT_UPGRADE_URL, CODY_FEEDBACK_URL } from './chat/protocol'
 import { CodeActionProvider } from './code-actions/CodeActionProvider'
 import { commandControllerInit, executeCodyCommand } from './commands/CommandsController'
 import { GhostHintDecorator } from './commands/GhostHintDecorator'
@@ -320,28 +313,21 @@ const register = async (
     resolvedConfig.pipe(take(1)).subscribe(({ auth }) => showSetupNotification(auth))
 
     // Initialize MCP Manager based on the feature flag
-    let mcpManager: MCPManager | undefined
     disposables.push(
         subscriptionDisposable(
-            featureFlagProvider
-                .evaluatedFeatureFlag(FeatureFlag.NextAgenticChatInternal)
-                .pipe(distinctUntilChanged())
+            combineLatest(
+                featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.AgenticChatWithMCP),
+                featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.AgenticContextDisabled)
+            )
+                .pipe(
+                    map(([mcpEnabled, agenticDisabled]) => mcpEnabled && !agenticDisabled),
+                    distinctUntilChanged()
+                )
                 .subscribe(async isEnabled => {
                     if (isEnabled) {
-                        // Initialize MCP Manager if feature flag is enabled
-                        if (!mcpManager) {
-                            mcpManager = await MCPManager.init()
-                            if (mcpManager) {
-                                logDebug('main', 'MCPManager initialized')
-                            }
-                        }
+                        await MCPManager?.init()
                     } else {
-                        // Dispose MCP Manager if feature flag is disabled
-                        if (mcpManager) {
-                            await mcpManager.dispose()
-                            mcpManager = undefined
-                            logDebug('main', 'MCPManager disposed')
-                        }
+                        MCPManager?.dispose()
                     }
                 })
         )
@@ -419,29 +405,7 @@ async function registerOtherCommands(disposables: vscode.Disposable[]) {
         // Walkthrough / Support
         vscode.commands.registerCommand('cody.feedback', () =>
             vscode.env.openExternal(vscode.Uri.parse(CODY_FEEDBACK_URL.href))
-        ),
-        vscode.commands.registerCommand('cody.welcome', async () => {
-            telemetryRecorder.recordEvent('cody.walkthrough', 'clicked', {
-                billingMetadata: {
-                    category: 'billable',
-                    product: 'cody',
-                },
-            })
-            // Hack: We have to run this twice to force VS Code to register the walkthrough
-            // Open issue: https://github.com/microsoft/vscode/issues/186165
-            await vscode.commands.executeCommand('workbench.action.openWalkthrough')
-            return vscode.commands.executeCommand(
-                'workbench.action.openWalkthrough',
-                'sourcegraph.cody-ai#welcome',
-                false
-            )
-        }),
-
-        // StatusBar Commands
-        vscode.commands.registerCommand('cody.statusBar.ollamaDocs', () => {
-            vscode.commands.executeCommand('vscode.open', CODY_OLLAMA_DOCS_URL.href)
-            telemetryRecorder.recordEvent('cody.statusBar.ollamaDocs', 'opened')
-        })
+        )
     )
 }
 
@@ -502,14 +466,6 @@ async function registerCodyCommands({
 
     // Initialize autoedit provider if experimental feature is enabled
     registerAutoEdits({ chatClient, fixupController, statusBar, disposables, context })
-
-    // Initialize autoedit tester
-    disposables.push(
-        enableFeature(
-            ({ configuration }) => configuration.experimentalAutoEditRendererTesting !== false,
-            () => registerAutoEditTestRenderCommand()
-        )
-    )
 
     disposables.push(
         subscriptionDisposable(
@@ -771,7 +727,6 @@ function registerAutoEdits({
                 featureFlagProvider.evaluatedFeatureFlag(
                     FeatureFlag.CodyAutoEditExperimentEnabledFeatureFlag
                 ),
-                featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyAutoEditInlineRendering),
                 featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyAutoEditHotStreak),
                 featureFlagProvider.evaluatedFeatureFlag(
                     FeatureFlag.CodyAutoEditUseWebSocketForFireworksConnections
@@ -790,7 +745,6 @@ function registerAutoEdits({
                             config,
                             authStatus,
                             autoeditFeatureFlagEnabled,
-                            autoeditInlineRenderingEnabled,
                             autoeditHotStreakEnabled,
                             autoeditUseWebSocketEnabled,
                         ]) => {
@@ -799,7 +753,6 @@ function registerAutoEdits({
                                 authStatus,
                                 chatClient,
                                 autoeditFeatureFlagEnabled,
-                                autoeditInlineRenderingEnabled,
                                 autoeditHotStreakEnabled,
                                 autoeditUseWebSocketEnabled,
                                 fixupController,

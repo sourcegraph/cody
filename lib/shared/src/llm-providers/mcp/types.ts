@@ -1,14 +1,17 @@
-import type { Tool } from '@anthropic-ai/sdk/resources/beta/tools/messages.mjs'
+import type { Tool } from '@anthropic-ai/sdk/resources/messages/messages.mjs'
 
 export interface McpTool extends Tool {
     autoApprove?: boolean
+    disabled?: boolean
 }
+
+export type McpConnectionStatus = 'connecting' | 'connected' | 'disconnected' | 'removed'
 
 // Define types for MCP entities
 export interface McpServer {
     name: string
     config: string
-    status: 'connecting' | 'connected' | 'disconnected'
+    status: McpConnectionStatus
     disabled?: boolean
     error?: string
     tools?: McpTool[]

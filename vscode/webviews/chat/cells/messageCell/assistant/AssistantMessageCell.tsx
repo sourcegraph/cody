@@ -18,7 +18,6 @@ import type { PromptEditorRefAPI } from '@sourcegraph/prompt-editor'
 import isEqual from 'lodash/isEqual'
 import { type FunctionComponent, type RefObject, memo, useMemo } from 'react'
 import type { ApiPostMessage, UserAccountInfo } from '../../../../Chat'
-import { useOmniBox } from '../../../../utils/useOmniBox'
 import {
     ChatMessageContent,
     type CodeBlockActionsProps,
@@ -87,9 +86,8 @@ export const AssistantMessageCell: FunctionComponent<{
 
         const hasLongerResponseTime = chatModel?.tags?.includes(ModelTag.StreamDisabled)
 
-        const omniboxEnabled = useOmniBox()
-
-        const isSearchIntent = omniboxEnabled && humanMessage?.intent === 'search'
+        const messageIntent = humanMessage?.intent ?? message.intent ?? 'chat'
+        const isSearchIntent = messageIntent === 'search'
 
         return (
             <BaseMessageCell
@@ -107,7 +105,7 @@ export const AssistantMessageCell: FunctionComponent<{
                                 />
                             )
                         ) : null}
-                        {omniboxEnabled && !isLoading && message.search ? (
+                        {!isLoading && message.search ? (
                             <SearchResults
                                 message={message as ChatMessageWithSearch}
                                 onSelectedFiltersUpdate={onSelectedFiltersUpdate}
@@ -164,11 +162,14 @@ export const AssistantMessageCell: FunctionComponent<{
                                 </div>
                             </div>
                         )}
-                        <div
-                            className={`tw-flex tw-items-center tw-justify-end tw-gap-4  ${styles.buttonsContainer}`}
-                        >
-                            {!isLoading && (!message.error || isAborted) && !isSearchIntent && (
-                                <>
+                        {!isLoading &&
+                            (!message.error || isAborted) &&
+                            // Do not display copy button for non-chat mode.
+                            // NOTE: Empty intent is defaulted to chat.
+                            messageIntent === 'chat' && (
+                                <div
+                                    className={`tw-flex tw-items-center tw-justify-end tw-gap-4  ${styles.buttonsContainer}`}
+                                >
                                     <CopyButton
                                         text={message.text?.toString() || ''}
                                         onCopy={copyButtonOnSubmit}
@@ -176,9 +177,8 @@ export const AssistantMessageCell: FunctionComponent<{
                                         className={'tw-transition tw-opacity-65 hover:tw-opacity-100'}
                                         title="Copy Message"
                                     />
-                                </>
+                                </div>
                             )}
-                        </div>
                     </div>
                 }
             />

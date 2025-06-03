@@ -3,9 +3,14 @@ import { ChevronDown, ChevronRight } from 'lucide-react'
 import type { FC } from 'react'
 import { useState } from 'react'
 import type { AutoeditFeedbackData } from '../../../src/autoedits/analytics-logger/types'
-import { AutoeditDataSDK } from '../../../src/autoedits/debug-panel/autoedit-data-sdk'
+import {
+    AutoeditDataSDK,
+    getHotStreakChunks,
+    getHotStreakId,
+} from '../../../src/autoedits/debug-panel/autoedit-data-sdk'
 import type { AutoeditRequestDebugState } from '../../../src/autoedits/debug-panel/debug-store'
 import { Label } from '../../components/shadcn/ui/label'
+import { useHotStreakStore } from '../store/hotStreakStore'
 import { vscode } from '../webview-api'
 
 interface FeedbackSectionProps {
@@ -20,7 +25,8 @@ export const FeedbackSection: FC<FeedbackSectionProps> = ({ entry }) => {
     const [isSubmitting, setIsSubmitting] = useState(false)
 
     const codeToReplaceData = entry.state.codeToReplaceData
-    const { filePath, context, prediction } = AutoeditDataSDK.extractAutoeditData(entry)
+    const { filePath, context, prediction, codeToRewrite } = AutoeditDataSDK.extractAutoeditData(entry)
+    const { getHotStreakChainForId } = useHotStreakStore()
 
     if (!prediction) {
         return (
@@ -29,6 +35,20 @@ export const FeedbackSection: FC<FeedbackSectionProps> = ({ entry }) => {
             </div>
         )
     }
+
+    const hotStreakId = getHotStreakId(entry)
+    const hotStreakChainStartEntry = getHotStreakChainForId(hotStreakId).find(entry =>
+        getHotStreakChunks(entry)
+    )
+
+    const hotStreakChunks = hotStreakChainStartEntry
+        ? getHotStreakChunks(hotStreakChainStartEntry)
+        : undefined
+
+    const fullPrediction = hotStreakChunks?.at(-1)?.fullPrediction ?? prediction
+    const initialCodeToRewrite = hotStreakChainStartEntry
+        ? hotStreakChainStartEntry.state.requestCodeToReplaceData.codeToRewrite
+        : codeToRewrite!
 
     const feedbackJson: AutoeditFeedbackData = {
         source: 'feedback',
@@ -68,6 +88,22 @@ export const FeedbackSection: FC<FeedbackSectionProps> = ({ entry }) => {
         <Form.Root className="tw-space-y-6">
             <Form.Field name="expected-code" className="tw-space-y-2">
                 <Label htmlFor="expected-code">Expected Code</Label>
+                <div className="tw-flex tw-gap-2 tw-mb-2">
+                    <button
+                        type="button"
+                        onClick={() => setExpectedCode(fullPrediction)}
+                        className="tw-text-xs tw-bg-gray-100 hover:tw-bg-gray-200 dark:tw-bg-gray-700 dark:hover:tw-bg-gray-600 tw-rounded tw-px-2 tw-py-1 tw-transition-colors tw-duration-150"
+                    >
+                        Use Full Prediction
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => setExpectedCode(initialCodeToRewrite)}
+                        className="tw-text-xs tw-bg-gray-100 hover:tw-bg-gray-200 dark:tw-bg-gray-700 dark:hover:tw-bg-gray-600 tw-rounded tw-px-2 tw-py-1 tw-transition-colors tw-duration-150"
+                    >
+                        Use Initial Code
+                    </button>
+                </div>
                 <Form.Control asChild>
                     <textarea
                         id="expected-code"

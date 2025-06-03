@@ -6,6 +6,7 @@ import {
     type AccountKeyedChatHistory,
     type ChatHistoryKey,
     type ClientCapabilities,
+    ClientConfigSingleton,
     type CodyCommand,
     CodyIDE,
     ModelUsage,
@@ -15,6 +16,7 @@ import {
     firstNonPendingAuthStatus,
     firstResultFromOperation,
     getAuthHeaders,
+    isDotCom,
     resolvedConfig,
     telemetryRecorder,
     waitUntilComplete,
@@ -61,7 +63,7 @@ import type { CompletionItemID } from '../../vscode/src/completions/analytics-lo
 import { loadTscRetriever } from '../../vscode/src/completions/context/retrievers/tsc/load-tsc-retriever'
 import { supportedTscLanguages } from '../../vscode/src/completions/context/retrievers/tsc/supportedTscLanguages'
 import { type ExecuteEditArguments, executeEdit } from '../../vscode/src/edit/execute'
-import type { QuickPickInput } from '../../vscode/src/edit/input/get-input'
+import type { EditInput } from '../../vscode/src/edit/input/get-input'
 import { getModelOptionItems } from '../../vscode/src/edit/input/get-items/model'
 import { getEditSmartSelection } from '../../vscode/src/edit/utils/edit-selection'
 import type { ExtensionClient } from '../../vscode/src/extension-client'
@@ -379,16 +381,6 @@ export class Agent extends MessageHandler implements ExtensionClient {
     ) {
         super(params.conn)
         vscode_shim.setAgent(this)
-
-        vscode_shim.onDidChangeConfiguration.event(() => {
-            const config = vscode_shim.workspace.getConfiguration().get('cody')
-            if (config) {
-                const codyConfig = {
-                    cody: config,
-                }
-                this.notify('extensionConfiguration/didUpdate', JSON.stringify(codyConfig))
-            }
-        })
 
         this.registerRequest('initialize', async clientInfo => {
             vscode.languages.registerFoldingRangeProvider(
@@ -1196,7 +1188,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
                 true,
                 await checkIfEnterpriseUser()
             )
-            const previousInput: QuickPickInput = {
+            const previousInput: EditInput = {
                 instruction: instruction,
                 userContextFiles: [],
                 model: models.find(item => item.modelTitle === params.model)?.model ?? models[0].model,
@@ -1303,7 +1295,9 @@ export class Agent extends MessageHandler implements ExtensionClient {
         })
 
         this.registerAuthenticatedRequest('chat/models', async ({ modelUsage }) => {
+            const clientConfig = await ClientConfigSingleton.getInstance().getConfig()
             return {
+                readOnly: !(isDotCom(currentAuthStatus()) || clientConfig?.modelsAPIEnabled),
                 models: await modelsService.getModelsAvailabilityStatus(modelUsage),
             }
         })

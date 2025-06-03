@@ -65,11 +65,8 @@ export enum FeatureFlag {
 
     CodyAutoEditExperimentEnabledFeatureFlag = 'cody-autoedit-experiment-enabled-flag',
 
-    // Enables inline rendering of autoedit suggestions
-    CodyAutoEditInlineRendering = 'cody-autoedit-inline-rendering',
-
     // Enables hot-streak for autoedit suggestions
-    CodyAutoEditHotStreak = 'cody-autoedit-hot-streak-v1',
+    CodyAutoEditHotStreak = 'cody-autoedit-hot-streak-v2',
 
     // Enables gpt-4o-mini as a default Edit model
     CodyEditDefaultToGpt4oMini = 'cody-edit-default-to-gpt-4o-mini',
@@ -115,12 +112,6 @@ export enum FeatureFlag {
     /** Whether Context Agent (Deep Cody) should use the default chat model or 3.5 Haiku */
     ContextAgentDefaultChatModel = 'agentic-chat-use-default-chat-model',
 
-    /** Enable Rate Limit for Deep Cody */
-    DeepCodyRateLimitBase = 'deep-cody-experimental-rate-limit',
-    DeepCodyRateLimitMultiplier = 'deep-cody-experimental-rate-limit-multiplier',
-    /** Enable Rate Limit per chat session for agentic chat */
-    AgenticContextSessionLimit = 'agentic-chat-experimental-session-limit',
-
     /**
      * Whether the current repo context chip is shown in the chat input by default
      */
@@ -160,6 +151,17 @@ export enum FeatureFlag {
      * This is not for external use and should not be exposed to users.
      */
     NextAgenticChatInternal = 'next-agentic-chat-internal',
+
+    /**
+     * Allow Deep Cody to use MCP tools during context fetching steps.
+     */
+    AgenticChatWithMCP = 'agentic-context-mcp-enabled',
+
+    /**
+     * Disable agentic context for chat - Deep Cody disabled
+     * When set to true, context will not be added to chat automatically.
+     */
+    AgenticContextDisabled = 'agentic-context-disabled',
 }
 
 const ONE_HOUR = 60 * 60 * 1000
@@ -226,7 +228,7 @@ export class FeatureFlagProviderImpl implements FeatureFlagProvider {
             promiseFactoryToObservable(signal =>
                 process.env.DISABLE_FEATURE_FLAGS
                     ? Promise.resolve({})
-                    : graphqlClient.getEvaluatedFeatureFlags(signal)
+                    : graphqlClient.getEvaluatedFeatureFlags(Object.values(FeatureFlag), signal)
             ).pipe(
                 map(resultOrError => {
                     if (isError(resultOrError)) {

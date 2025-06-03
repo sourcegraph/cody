@@ -360,11 +360,48 @@ export enum PromptsOrderBy {
     PROMPT_NAME_WITH_OWNER = 'PROMPT_NAME_WITH_OWNER',
     PROMPT_UPDATED_AT = 'PROMPT_UPDATED_AT',
     PROMPT_RECOMMENDED = 'PROMPT_RECOMMENDED',
+    PROMPT_RELEVANCE = 'PROMPT_RELEVANCE',
 }
 
-export const PROMPTS_QUERY = `
+export const LEGACY_PROMPTS_QUERY_6_3 = `
 query ViewerPrompts($query: String, $first: Int!, $recommendedOnly: Boolean!, $orderByMultiple: [PromptsOrderBy!], $tags: [ID!], $owner: ID, $includeViewerDrafts: Boolean!) {
     prompts(query: $query, first: $first, includeDrafts: false, recommendedOnly: $recommendedOnly, includeViewerDrafts: $includeViewerDrafts, viewerIsAffiliated: true, orderByMultiple: $orderByMultiple, tags: $tags, owner: $owner) {
+        nodes {
+            id
+            name
+            nameWithOwner
+            recommended
+            owner {
+                namespaceName
+            }
+            description
+            draft
+            autoSubmit
+            mode
+            definition {
+                text
+            }
+            url
+            createdBy {
+                id
+                username
+                displayName
+                avatarURL
+            }
+            tags(first: 999) {
+                nodes {
+                    id
+                    name
+                }
+            }
+        }
+        totalCount
+    }
+}`
+
+export const PROMPTS_QUERY = `
+query ViewerPrompts($query: String, $first: Int!, $recommendedOnly: Boolean!, $orderBy: PromptsOrderBy!, $tags: [ID!], $owner: ID, $includeViewerDrafts: Boolean!) {
+    prompts(query: $query, first: $first, includeDrafts: false, recommendedOnly: $recommendedOnly, includeViewerDrafts: $includeViewerDrafts, viewerIsAffiliated: true, orderBy: $orderBy, tags: $tags, owner: $owner) {
         nodes {
             id
             name
@@ -494,6 +531,18 @@ export const GET_FEATURE_FLAGS_QUERY = `
 export const EVALUATE_FEATURE_FLAG_QUERY = `
     query EvaluateFeatureFlag($flagName: String!) {
         evaluateFeatureFlag(flagName: $flagName)
+    }
+`
+
+// Replacing GET_FEATURE_FLAGS_QUERY with EVALUATE_FEATURE_FLAGS_QUERY, starting from sg v6.2
+// GET_FEATURE_FLAGS_QUERY(deprecated) lists all the feature flags on the instance.
+// EVALUATE_FEATURE_FLAGS_QUERY checks what the value should be given the user's and organization's overrides.
+export const EVALUATE_FEATURE_FLAGS_QUERY = `
+    query EvaluateFeatureFlags($flagNames: [String!]!) {
+        evaluateFeatureFlags(flagNames: $flagNames) {
+            name
+            value
+        }
     }
 `
 

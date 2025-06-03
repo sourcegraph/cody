@@ -59,7 +59,7 @@ export type ClientRequests = {
     // Primary is used only in cody web client
     'chat/delete': [{ chatId: string }, ChatExportResult[]]
 
-    'chat/models': [{ modelUsage: ModelUsage }, { models: ModelAvailabilityStatus[] }]
+    'chat/models': [{ modelUsage: ModelUsage }, { readOnly: boolean; models: ModelAvailabilityStatus[] }]
     'chat/export': [null | { fullHistory: boolean }, ChatExportResult[]]
 
     // history is Map of {endpoint}-{username} to chat transcripts by date
@@ -415,16 +415,12 @@ export type ServerNotifications = {
 
     'debug/message': [DebugMessage]
 
-    'extensionConfiguration/didUpdate': [string]
+    'extensionConfiguration/didUpdate': [{ key: string; value?: string | undefined | null }]
     'extensionConfiguration/openSettings': [null]
 
-    // Certain properties of the task are updated:
-    // - State
-    // - The associated range has changed because the document was edited
-    // Only sent if client capabilities fixupControls === 'events'
+    /** @deprecated Use `codeLenses/display` instead */
     'editTask/didUpdate': [EditTask]
-    // The task is deleted because it has been accepted or cancelled.
-    // Only sent if client capabilities fixupControls === 'events'.
+    /** @deprecated Use `codeLenses/display` instead */
     'editTask/didDelete': [EditTask]
 
     'codeLenses/display': [DisplayCodeLensParams]

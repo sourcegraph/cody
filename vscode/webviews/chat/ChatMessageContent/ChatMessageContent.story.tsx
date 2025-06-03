@@ -119,6 +119,7 @@ const meta: Meta<typeof ChatMessageContent> = {
         insertButtonOnSubmit: undefined,
         smartApply: undefined,
         guardrails: new MockNoGuardrails(),
+        regeneratingCodeBlocks: [],
     },
 
     decorators: [VSCodeWebview],

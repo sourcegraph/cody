@@ -26,7 +26,10 @@ export default defineProjectWithDefaults(__dirname, {
     base: '/',
     logLevel: 'info',
     worker: { format: 'es' },
-    server: { strictPort: true, port: 5777 },
+    server: {
+        strictPort: true,
+        port: 5777,
+    },
     plugins: [
         // @ts-ignore
         react({ devTarget: 'esnext' }),

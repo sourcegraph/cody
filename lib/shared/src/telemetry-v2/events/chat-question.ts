@@ -17,7 +17,6 @@ import type { PromptString } from '../../prompt/prompt-string'
 import { truncatePromptString } from '../../prompt/truncation'
 import { isDotCom, isS2 } from '../../sourcegraph-api/environments'
 import { CHAT_INPUT_TOKEN_BUDGET } from '../../token/constants'
-import type { TokenCounterUtils } from '../../token/counter'
 import { telemetryRecorder } from '../singleton'
 import { event, fallbackValue, pickDefined } from './internal'
 
@@ -41,8 +40,7 @@ export const events = [
             (
                 params: {
                     mentions: ContextItem[]
-                } & SharedProperties,
-                tokenCounterUtils: TokenCounterUtils
+                } & SharedProperties
             ) => {
                 const recordTranscript = params.authStatus.endpoint && isDotCom(params.authStatus)
 
@@ -103,8 +101,7 @@ export const events = [
                 spans: {
                     current: Span
                     addMetadata: boolean
-                },
-                tokenCounterUtils: TokenCounterUtils
+                }
             ) => {
                 const recordTranscript =
                     params.authStatus.endpoint &&

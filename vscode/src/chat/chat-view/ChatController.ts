@@ -124,8 +124,10 @@ import {
 import { openExternalLinks } from '../../services/utils/workspace-action'
 import { TestSupport } from '../../test-support'
 import type { MessageErrorType } from '../MessageProvider'
+import { DeepCodyAgent } from '../agentic/DeepCody'
+import { toolboxManager } from '../agentic/ToolboxManager'
 import { getMentionMenuData } from '../context/chatContext'
-import { observeDefaultContext } from '../initialContext'
+import { getEmptyOrDefaultContextObservable } from '../initialContext'
 import type {
     ConfigurationSubsetForWebview,
     ExtensionMessage,
@@ -140,9 +142,9 @@ import { CodyChatEditorViewType } from './ChatsController'
 import { CodeBlockRegenerator, type RegenerateRequestParams } from './CodeBlockRegenerator'
 import type { ContextRetriever } from './ContextRetriever'
 import { InitDoer } from './InitDoer'
-import { getChatPanelTitle, isAgentTesting } from './chat-helpers'
+import { getChatPanelTitle, isCodyTesting } from './chat-helpers'
 import { OmniboxTelemetry } from './handlers/OmniboxTelemetry'
-import { getAgent, getAgentName } from './handlers/registry'
+import { getAgent } from './handlers/registry'
 import { getPromptsMigrationInfo, startPromptsMigration } from './prompts-migration'
 import { MCPManager } from './tools/MCPManager'
 
@@ -323,7 +325,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 await handleCodeFromInsertAtCursor(message.text)
                 break
             case 'copy':
-                await handleCopiedCode(message.text, message.eventType === 'Button')
+                await handleCopiedCode(message.text, message.eventType)
                 break
             case 'smartApplyPrefetch':
             case 'smartApplySubmit':
@@ -407,8 +409,82 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 }
                 break
             case 'command':
-                vscode.commands.executeCommand(message.id, message.arg)
+                vscode.commands.executeCommand(message.id, message.arg ?? message.args)
                 break
+            case 'mcp': {
+                const mcpManager = MCPManager.instance
+                if (!mcpManager) {
+                    logDebug('ChatController', 'MCP Manager is not initialized')
+                    break
+                }
+                const serverName = message.name
+                try {
+                    // Special case for updateServer without name (to refresh server list)
+                    if (message.type === 'updateServer' && !serverName) {
+                        mcpManager.refreshServers()
+                        break
+                    }
+                    // All other operations require a server name
+                    if (!serverName) {
+                        break
+                    }
+                    switch (message.type) {
+                        case 'addServer': {
+                            if (!message.config) {
+                                break
+                            }
+                            await mcpManager.addServer(serverName, message.config)
+                            // Send specific message to the UI about the new server
+                            const newServer = mcpManager.getServers().find(s => s.name === serverName)
+                            if (newServer) {
+                                void this.postMessage({
+                                    type: 'clientAction',
+                                    mcpServerChanged: {
+                                        name: newServer.name,
+                                        server: newServer,
+                                    },
+                                })
+                            }
+                            break
+                        }
+                        case 'updateServer':
+                            if (message.config) {
+                                await mcpManager.updateServer(serverName, message.config)
+                            } else if (message.toolName) {
+                                const isDisabled = message.toolDisabled === true
+                                await mcpManager.setToolState(serverName, message.toolName, isDisabled)
+                            }
+                            break
+                        case 'removeServer': {
+                            await mcpManager.deleteServer(serverName)
+                            this.postMessage({
+                                type: 'clientAction',
+                                mcpServerChanged: {
+                                    name: serverName,
+                                    server: null,
+                                },
+                            })
+                            break
+                        }
+                        default:
+                            logDebug('ChatController', `Unknown MCP operation: ${message.type}`)
+                    }
+                } catch (error) {
+                    const errorMessage = error instanceof Error ? error.message : String(error)
+                    logDebug('ChatController', `Failed to ${message.type} server`, errorMessage)
+
+                    void this.postMessage({
+                        type: 'clientAction',
+                        mcpServerError: {
+                            name: 'name' in message ? serverName : '',
+                            error: errorMessage,
+                        },
+                        mcpServerChanged: null,
+                    })
+                }
+                break
+            }
+
             case 'recordEvent':
                 telemetryRecorder.recordEvent(
                     // 👷 HACK: We have no control over what gets sent over JSON RPC,
@@ -580,7 +656,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
 
     private async getConfigForWebview(): Promise<ConfigurationSubsetForWebview & LocalEnv> {
         const { configuration, auth } = await currentResolvedConfig()
-        const [experimentalPromptEditorEnabled, internalAgenticChatEnabled] = await Promise.all([
+        const [experimentalPromptEditorEnabled, internalAgentModeEnabled] = await Promise.all([
             firstValueFrom(
                 featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyExperimentalPromptEditor)
             ),
@@ -588,7 +664,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.NextAgenticChatInternal)
             ),
         ])
-        const experimentalAgenticChatEnabled = internalAgenticChatEnabled && isS2(auth.serverEndpoint)
+        const experimentalAgenticChatEnabled = internalAgentModeEnabled && isS2(auth.serverEndpoint)
         const sidebarViewOnly = this.extensionClient.capabilities?.webviewNativeConfig?.view === 'single'
         const isEditorViewType = this.webviewPanelOrView?.viewType === 'cody.editorPanel'
         const webviewType = isEditorViewType && !sidebarViewOnly ? 'editor' : 'sidebar'
@@ -704,7 +780,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         manuallySelectedIntent?: ChatMessage['intent'] | undefined | null
         traceparent?: string | undefined | null
         model?: string | undefined
-        chatAgent?: string | undefined
     }): Promise<void> {
         return context.with(extractContextFromTraceparent(traceparent), () => {
             return tracer.startActiveSpan('chat.handleUserMessage', async (span): Promise<void> => {
@@ -722,19 +797,16 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
 
                 this.chatBuilder.setSelectedModel(model)
 
-                const chatAgent = getAgentName(manuallySelectedIntent, model)
-
                 this.chatBuilder.addHumanMessage({
                     text: inputText,
                     editorState,
                     intent: manuallySelectedIntent,
-                    agent: chatAgent,
+                    agent: toolboxManager.isAgenticChatEnabled() ? DeepCodyAgent.id : undefined,
                 })
 
                 this.setCustomChatTitle(requestID, inputText, signal)
                 this.postViewTranscript({ speaker: 'assistant' })
 
-                await this.saveSession()
                 signal.throwIfAborted()
 
                 return this.sendChat(
@@ -748,7 +820,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                         command,
                         manuallySelectedIntent,
                         model,
-                        chatAgent,
                     },
                     span
                 )
@@ -1441,7 +1512,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             const model = (speeds.find(m => m.id.includes('flash-lite')) || speeds?.[0])?.id
             const messages = this.chatBuilder.getMessages()
             // Returns early if this is not the first message or if this is a testing session.
-            if (messages.length > 1 || !model || isAgentTesting) {
+            if (messages.length > 1 || !model || isCodyTesting) {
                 return
             }
             const prompt = ps`${getDefaultSystemPrompt()} Your task is to generate a concise title (in about 10 words without quotation) for <codyUserInput>${inputText}</codyUserInput>.
@@ -1460,7 +1531,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     } else if (message.type === 'complete') {
                         if (title) {
                             this.chatBuilder.setChatTitle(title)
-                            await this.saveSession()
                         }
                         break
                     }
@@ -1750,7 +1820,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         )
 
         // Listen for API calls from the webview.
-        const defaultContext = observeDefaultContext({
+        const defaultContext = getEmptyOrDefaultContextObservable({
             chatBuilder: this.chatBuilder.changes,
         }).pipe(shareReplay())
 
@@ -1850,15 +1920,14 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     // Existing tools endpoint - update to include MCP tools
                     mcpSettings: () => {
                         return featureFlagProvider
-                            .evaluatedFeatureFlag(FeatureFlag.NextAgenticChatInternal)
+                            .evaluatedFeatureFlag(FeatureFlag.AgenticChatWithMCP)
                             .pipe(
-                                // Simplify the flow with map and distinctUntilChanged
                                 distinctUntilChanged(),
                                 startWith(null),
-                                // When disabled, return an empty array
+                                // When disabled, return null
                                 switchMap(experimentalAgentMode => {
                                     if (!experimentalAgentMode) {
-                                        return Observable.of([] as McpServer[])
+                                        return Observable.of(null as McpServer[] | null)
                                     }
                                     // When enabled, get servers from the manager
                                     return MCPManager.observable

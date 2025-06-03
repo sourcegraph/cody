@@ -1,6 +1,8 @@
 import { type Model, ModelTag } from '@sourcegraph/cody-shared'
 import { DeepCodyAgentID } from '@sourcegraph/cody-shared/src/models/client'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { DeepCodyAgent } from './DeepCody'
+import { getDeepCodyModel, toolboxManager } from './ToolboxManager'
 
 // Set up mocks with vi.mocked approach
 vi.mock('vscode', () => ({ env: { shell: undefined } }))
@@ -32,6 +34,8 @@ vi.mock('@sourcegraph/cody-shared', () => ({
         Speed: 'speed',
     },
     pendingOperation: Symbol('pendingOperation'),
+
+    resolvedConfig: { pipe: vi.fn().mockReturnThis(), next: vi.fn(), subscribe: vi.fn() },
 }))
 
 vi.mock('./DeepCody', () => ({
@@ -39,10 +43,6 @@ vi.mock('./DeepCody', () => ({
         model: undefined,
     },
 }))
-
-// Import after setting up mocks
-import { DeepCodyAgent } from './DeepCody'
-import { getDeepCodyModel, toolboxManager } from './ToolboxManager'
 
 // Mocks are defined at the top of the file
 
@@ -136,7 +136,6 @@ describe('ToolboxManager', () => {
                 name: 'should return settings with agent when enabled and not rate limited',
                 setup: () => {
                     vi.spyOn(toolboxManager as any, 'isEnabled', 'get').mockReturnValue(true)
-                    vi.spyOn(toolboxManager as any, 'isRateLimited', 'get').mockReturnValue(false)
                     vi.spyOn(toolboxManager as any, 'getFeatureError').mockReturnValue(undefined)
                 },
                 expected: {
@@ -148,25 +147,9 @@ describe('ToolboxManager', () => {
                 },
             },
             {
-                name: 'should return settings without agent when rate limited',
-                setup: () => {
-                    vi.spyOn(toolboxManager as any, 'isEnabled', 'get').mockReturnValue(true)
-                    vi.spyOn(toolboxManager as any, 'isRateLimited', 'get').mockReturnValue(true)
-                    vi.spyOn(toolboxManager as any, 'getFeatureError').mockReturnValue(undefined)
-                },
-                expected: {
-                    agent: { name: undefined },
-                    shell: {
-                        enabled: true,
-                        error: undefined,
-                    },
-                },
-            },
-            {
                 name: 'should return settings with shell error when shell not supported',
                 setup: () => {
                     vi.spyOn(toolboxManager as any, 'isEnabled', 'get').mockReturnValue(true)
-                    vi.spyOn(toolboxManager as any, 'isRateLimited', 'get').mockReturnValue(false)
                     vi.spyOn(toolboxManager as any, 'getFeatureError').mockReturnValue(
                         'Not supported by the instance.'
                     )
@@ -188,75 +171,5 @@ describe('ToolboxManager', () => {
                 expect(settings).toEqual(testCase.expected)
             })
         }
-    })
-    describe('setIsRateLimited', () => {
-        // Before each test, replace the implementation of setIsRateLimited with a mock
-        let originalSetIsRateLimited: any
-        let mockIsRateLimited = false
-
-        beforeEach(() => {
-            originalSetIsRateLimited = toolboxManager.setIsRateLimited
-
-            // Create a mock implementation of setIsRateLimited
-            toolboxManager.setIsRateLimited = vi.fn().mockImplementation(function (
-                this: typeof toolboxManager,
-                hasHitLimit: boolean
-            ) {
-                if ((this as any).isEnabled && mockIsRateLimited !== hasHitLimit) {
-                    mockIsRateLimited = hasHitLimit
-                    ;(this as any).changeNotifications.next()
-                }
-            }) as any
-        })
-
-        // Restore original method after each test
-        afterEach(() => {
-            toolboxManager.setIsRateLimited = originalSetIsRateLimited
-        })
-
-        it('should update rate limit status and trigger notification when enabled', () => {
-            // Setup
-            vi.spyOn(toolboxManager as any, 'isEnabled', 'get').mockReturnValue(true)
-            mockIsRateLimited = false
-
-            const nextSpy = vi.spyOn((toolboxManager as any).changeNotifications, 'next')
-
-            // Test
-            toolboxManager.setIsRateLimited(true)
-
-            // Verify
-            expect(nextSpy).toHaveBeenCalled()
-            expect(mockIsRateLimited).toBe(true)
-        })
-
-        it('should not trigger notification when disabled', () => {
-            // Setup
-            vi.spyOn(toolboxManager as any, 'isEnabled', 'get').mockReturnValue(false)
-            mockIsRateLimited = false
-
-            const nextSpy = vi.spyOn((toolboxManager as any).changeNotifications, 'next')
-
-            // Test
-            toolboxManager.setIsRateLimited(true)
-
-            // Verify
-            expect(nextSpy).not.toHaveBeenCalled()
-            expect(mockIsRateLimited).toBe(false) // Should not change
-        })
-
-        it('should not trigger notification when rate limit status does not change', () => {
-            // Setup
-            vi.spyOn(toolboxManager as any, 'isEnabled', 'get').mockReturnValue(true)
-            mockIsRateLimited = true
-
-            const nextSpy = vi.spyOn((toolboxManager as any).changeNotifications, 'next')
-
-            // Test
-            toolboxManager.setIsRateLimited(true)
-
-            // Verify
-            expect(nextSpy).not.toHaveBeenCalled()
-            expect(mockIsRateLimited).toBe(true)
-        })
     })
 })

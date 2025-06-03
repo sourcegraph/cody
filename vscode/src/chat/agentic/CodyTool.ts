@@ -6,6 +6,7 @@ import {
     type ContextMentionProviderMetadata,
     ProcessType,
     PromptString,
+    UIToolStatus,
     currentOpenCtxController,
     firstValueFrom,
     logDebug,
@@ -13,38 +14,22 @@ import {
     pendingOperation,
     ps,
 } from '@sourcegraph/cody-shared'
+import type { McpTool } from '@sourcegraph/cody-shared/src/llm-providers/mcp/types'
 import * as uuid from 'uuid'
 import { URI } from 'vscode-uri'
 import { getContextFromRelativePath } from '../../commands/context/file-path'
 import { getContextFileFromShell } from '../../commands/context/shell'
 import { type ContextRetriever, toStructuredMentions } from '../chat-view/ContextRetriever'
+import { MCPManager } from '../chat-view/tools/MCPManager'
 import { getChatContextItemsForMention } from '../context/chatContext'
 import { getCorpusContextItemsForEditorState } from '../initialContext'
-import { CodyChatMemory } from './CodyChatMemory'
-import type { ToolStatusCallback } from './CodyToolProvider'
 import { RawTextProcessor } from './DeepCody'
-
-/**
- * Configuration interface for CodyTool instances.
- */
-export interface CodyToolConfig {
-    // The title of the tool. For UI display purposes.
-    title: string
-    tags: {
-        tag: PromptString
-        subTag: PromptString
-    }
-    prompt: {
-        instruction: PromptString
-        placeholder: PromptString
-        examples: PromptString[]
-    }
-}
+import type { CodyToolConfig, ICodyTool, ToolStatusCallback } from './types'
 
 /**
  * Abstract base class for Cody tools.
  */
-export abstract class CodyTool {
+export abstract class CodyTool implements ICodyTool {
     protected readonly performedQueries = new Set<string>()
     constructor(public readonly config: CodyToolConfig) {}
 
@@ -118,12 +103,13 @@ export abstract class CodyTool {
         try {
             const queries = this.parse()
             if (queries.length) {
-                cb?.onStream({
+                const process = {
                     id: toolID,
                     title: this.config.title,
                     content: queries.join(', '),
                     type: ProcessType.Tool,
-                })
+                }
+                cb?.onStream(process)
                 // Create a timeout promise
                 const timeoutPromise = new Promise<ContextItem[]>((_, reject) => {
                     setTimeout(() => {
@@ -137,7 +123,7 @@ export abstract class CodyTool {
                 // Race between execution and timeout
                 const results = await Promise.race([this.execute(span, queries, cb), timeoutPromise])
                 // Notify that tool execution is complete
-                cb?.onComplete(toolID)
+                cb?.onUpdate(process.id, { ...process, items: results, state: 'success' })
                 return results
             }
         } catch (error) {
@@ -193,7 +179,7 @@ class CliTool extends CodyTool {
         if (!approvedCommands.size) {
             throw new Error('No commands approved for execution')
         }
-        callback.onUpdate(toolID, [...approvedCommands].join(', '))
+        callback.onUpdate(toolID, { content: [...approvedCommands].join(', ') })
         logDebug('CodyTool', `executing ${approvedCommands.size} commands...`)
         return Promise.all([...approvedCommands].map(getContextFileFromShell)).then(results =>
             results.flat()
@@ -213,8 +199,8 @@ class FileTool extends CodyTool {
                 subTag: ps`name`,
             },
             prompt: {
-                instruction: ps`To retrieve full content of a codebase file-DO NOT retrieve files that may contain secrets`,
-                placeholder: ps`FILENAME`,
+                instruction: ps`To retrieve full content of a codebase file using non-relative path filename-DO NOT retrieve files that may contain secrets`,
+                placeholder: ps`FULL_FILENAME`,
                 examples: [
                     ps`See the content of different files: \`<TOOLFILE><name>path/foo.ts</name><name>path/bar.ts</name></TOOLFILE>\``,
                 ],
@@ -226,9 +212,9 @@ class FileTool extends CodyTool {
         span.addEvent('executeFileTool')
         if (filePaths.length === 0) return []
         logDebug('CodyTool', `requesting ${filePaths.length} files`)
-        return Promise.all(filePaths.map(getContextFromRelativePath)).then(results =>
-            results.filter((item): item is ContextItem => item !== null)
-        )
+        return Promise.all(filePaths.map(getContextFromRelativePath))
+            .then(results => results.filter((item): item is ContextItem => item !== null))
+            .catch(() => [])
     }
 }
 
@@ -280,14 +266,6 @@ class SearchTool extends CodyTool {
             true
         )
         const maxSearchItems = 30 // Keep the latest n items and remove the rest.
-        const searchQueryItem = {
-            type: 'file',
-            content: 'Queries performed: ' + Array.from(this.performedQueries).join(', '),
-            uri: URI.file('search-history'),
-            source: ContextItemSource.Agentic,
-            title: 'TOOLCONTEXT',
-        } satisfies ContextItem
-        context.push(searchQueryItem)
         return context.slice(-maxSearchItems)
     }
 }
@@ -363,59 +341,154 @@ export class OpenCtxTool extends CodyTool {
 }
 
 /**
- * Tool for storing and retrieving temporary memory.
+ * McpToolImpl implements a CodyTool that interfaces with Model Context Protocol tools.
+ * It handles the execution of MCP tools and formats their results for display in the UI.
  */
-class MemoryTool extends CodyTool {
-    constructor() {
-        CodyChatMemory.initialize()
-        super({
-            title: 'Cody Memory',
-            tags: {
-                tag: ps`TOOLMEMORY`,
-                subTag: ps`store`,
-            },
-            prompt: {
-                instruction: ps`Add info about the user and their preferences (e.g. name, preferred tool, language etc) based on the question, or when asked. DO NOT store summarized questions. DO NOT clear memory unless requested`,
-                placeholder: ps`SUMMARIZED_TEXT`,
-                examples: [
-                    ps`Add user info to memory: \`<TOOLMEMORY><store>info</store></TOOLMEMORY>\``,
-                    ps`Get the stored user info: \`<TOOLMEMORY><store>GET</store></TOOLMEMORY>\``,
-                    ps`ONLY clear memory ON REQUEST: \`<TOOLMEMORY><store>FORGET</store></TOOLMEMORY>\``,
-                ],
-            },
-        })
+export class McpToolImpl extends CodyTool {
+    constructor(
+        toolConfig: CodyToolConfig,
+        private tool: McpTool,
+        private toolName: string,
+        private serverName: string
+    ) {
+        super(toolConfig)
     }
 
-    private memoryOnStart = CodyChatMemory.retrieve()
-
-    public async execute(span: Span): Promise<ContextItem[]> {
-        span.addEvent('executeMemoryTool')
-        const storedMemory = this.memoryOnStart
-        this.processResponse()
-        // Reset the memory after first retrieval to avoid duplication during loop.
-        this.memoryOnStart = undefined
-        return storedMemory ? [storedMemory] : []
-    }
-
-    public processResponse(): void {
-        const newMemories = this.parse()
-        for (const memory of newMemories) {
-            if (memory === 'FORGET') {
-                CodyChatMemory.unload()
-                return
-            }
-            if (memory === 'GET') {
-                return
-            }
-            CodyChatMemory.load(memory)
-            logDebug('Cody Memory', 'added', { verbose: memory })
+    public async execute(span: Span, queries: string[]): Promise<ContextItem[]> {
+        span.addEvent('executeMcpTool')
+        if (!queries?.length) {
+            return []
         }
+
+        try {
+            // Parse queries into args object
+            const args = this.parseQueryToArgs(queries)
+            // Execute the tool and format results
+            return await this.executeMcpToolAndFormatResults(args, this.serverName)
+        } catch (error) {
+            return this.handleMcpToolError(error)
+        }
+    }
+
+    private async executeMcpToolAndFormatResults(
+        args: Record<string, unknown>,
+        serverName: string
+    ): Promise<ContextItem[]> {
+        // Get the instance and execute the tool
+        const mcpInstance = MCPManager.instance
+        if (!mcpInstance) {
+            throw new Error('MCP Manager instance not available')
+        }
+
+        // Use the MCPManager's executeTool method which properly delegates to serverManager
+        const result = await mcpInstance.executeTool(serverName, this.tool.name, args)
+
+        const prefix = `${this.tool.name} tool was executed with ${JSON.stringify(args)} and `
+
+        const statusReport =
+            result.status !== UIToolStatus.Error
+                ? `completed: ${result?.content || 'invoked'}`
+                : `failed: ${result.content}`
+
+        return [
+            ...(result.context ?? []),
+            {
+                type: 'file',
+                content: prefix + statusReport,
+                uri: URI.parse(`mcp://${this.tool.name}-result`),
+                source: ContextItemSource.Agentic,
+                title: this.toolName,
+            },
+        ]
+    }
+
+    private handleMcpToolError(error: unknown): ContextItem[] {
+        const displayToolName = this.toolName || this.tool.name
+        logDebug('CodyToolProvider', `Error executing ${displayToolName}`, {
+            verbose: error,
+        })
+
+        const errorStr = error instanceof Error ? error.message : String(error)
+
+        return [
+            {
+                type: 'file',
+                content: `Error executing MCP tool ${this.tool.name}: ${errorStr}`,
+                uri: URI.parse(`mcp://$${displayToolName}-error`),
+                source: ContextItemSource.Agentic,
+                title: displayToolName,
+            },
+        ]
+    }
+
+    /**
+     * Parse query strings into args object for MCP tool execution
+     */
+    private parseQueryToArgs(queries: string[]): Record<string, unknown> {
+        // Extract parameter names from input_schema if available
+        const inputSchema = this.tool.input_schema
+        const paramNames = Object.keys(inputSchema)
+        const args: Record<string, unknown> = {}
+
+        if (paramNames.length > 0) {
+            // Map each query to each parameter name in order
+            for (let i = 0; i < queries.length && i < paramNames.length; i++) {
+                try {
+                    // First try to parse as a direct JSON object
+                    let parsedValue: unknown
+                    try {
+                        parsedValue = JSON.parse(queries[i])
+                    } catch (e) {
+                        // If direct parsing fails, treat as a string
+                        parsedValue = queries[i]
+                    }
+
+                    // If the parsed value is an object and this is the first parameter,
+                    // and we're dealing with an object schema, spread its properties
+                    if (
+                        i === 0 &&
+                        typeof parsedValue === 'object' &&
+                        parsedValue !== null &&
+                        inputSchema.type === 'object'
+                    ) {
+                        Object.assign(args, parsedValue)
+                    } else {
+                        // Otherwise assign to the parameter directly
+                        args[paramNames[i]] = parsedValue
+                    }
+                } catch (e) {
+                    // Fallback to using the original string
+                    args[paramNames[i]] = queries[i]
+                }
+            }
+        } else if (queries.length > 0) {
+            // Fallback to using 'query' as the parameter name
+            try {
+                // First try to parse as JSON
+                try {
+                    const parsedValue = JSON.parse(queries[0])
+
+                    // If it's an object, use its properties directly for a more flexible interface
+                    if (typeof parsedValue === 'object' && parsedValue !== null) {
+                        Object.assign(args, parsedValue)
+                    } else {
+                        args.query = parsedValue
+                    }
+                } catch (e) {
+                    // If parsing fails, use the original string
+                    args.query = queries[0]
+                }
+            } catch (e) {
+                args.query = queries[0]
+            }
+        }
+
+        return args
     }
 }
 
 // Define tools configuration once to avoid repetition
 export const TOOL_CONFIGS = {
-    MemoryTool: { tool: MemoryTool, useContextRetriever: false },
     SearchTool: { tool: SearchTool, useContextRetriever: true },
     CliTool: { tool: CliTool, useContextRetriever: false },
     FileTool: { tool: FileTool, useContextRetriever: false },

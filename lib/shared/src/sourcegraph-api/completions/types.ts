@@ -59,7 +59,7 @@ export type MessagePart =
     | TextContentPart // natively supported by LLM
     | { type: 'context_file'; uri: string; content?: string } // Cody extension
     | { type: 'context_repo'; repoId: string } // Cody extension
-    | { type: 'image_url'; image_url: { url: string } } // natively supported by LLM
+    | ImageContentPart // natively supported by LLM
     | ToolCallContentPart // Assistant-only
     | ToolResultContentPart // Human-only
 
@@ -138,6 +138,7 @@ export interface CompletionParameters extends CompletionsRewriteSpeculationParam
         type: 'content'
         content: string
     }
+    tools?: any[]
 }
 
 export interface SerializedCompletionParameters extends Omit<CompletionParameters, 'messages'> {
@@ -146,7 +147,7 @@ export interface SerializedCompletionParameters extends Omit<CompletionParameter
 
 export interface CompletionCallbacks {
     onChange: (text: string, content?: CompletionContentData[] | undefined | null) => void
-    onComplete: () => void
+    onComplete: (result?: CompletionResponse) => void
     onError: (error: Error, statusCode?: number) => void
 }
 

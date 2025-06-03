@@ -201,6 +201,14 @@ describe('getHotStreakChunk', () => {
               if (target === 0) {
                   return true
               }
+
+              // We are adding some comments
+              // To make a ...wonderful diff!
+
+              // Check if numberToChange is 1
+              if (numberToChange === 1) {
+                  return false
+              }
           "
         `)
         expect(document.getText(result.range)).toMatchInlineSnapshot(`
@@ -208,6 +216,11 @@ describe('getHotStreakChunk', () => {
               // Check if numberToChange is 0
               if (numberToChange === 0) {
                   return true
+              }
+
+              // Check if numberToChange is 1
+              if (numberToChange === 1) {
+                  return false
               }
           "
         `)
@@ -301,7 +314,6 @@ describe('getHotStreakChunk', () => {
               // Check if numberToChange is 1
               if (numberToChange === 1) {
                   return false
-              }
           "
         `)
         expect(document.getText(result.range)).toMatchInlineSnapshot(`
@@ -314,7 +326,6 @@ describe('getHotStreakChunk', () => {
               // Check if numberToChange is 1
               if (numberToChange === 1) {
                   return false
-              }
           "
         `)
     })

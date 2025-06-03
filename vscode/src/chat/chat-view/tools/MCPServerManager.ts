@@ -5,7 +5,7 @@ import {
     ListToolsResultSchema,
     ReadResourceResultSchema,
 } from '@modelcontextprotocol/sdk/types.js'
-import { type MessagePart, logDebug } from '@sourcegraph/cody-shared'
+import { ContextItemSource, type MessagePart, UIToolStatus, logDebug } from '@sourcegraph/cody-shared'
 import type {
     McpResource,
     McpResourceTemplate,
@@ -14,24 +14,39 @@ import type {
 import { Subject } from 'observable-fns'
 import * as vscode from 'vscode'
 import type { AgentTool } from '.'
+import { CodyToolProvider } from '../../../chat/agentic/CodyToolProvider'
 
+import type {
+    ContextItem,
+    ContextItemToolState,
+} from '@sourcegraph/cody-shared/src/codebase-context/messages'
+import { URI } from 'vscode-uri'
+import { getImageContent } from '../../../prompt-builder/utils'
+import { ToolFactory } from '../../agentic/CodyToolFactory'
 import type { MCPConnectionManager } from './MCPConnectionManager'
-import { createMCPToolState } from './MCPManager'
 
 /**
  * MCPServerManager handles server-specific operations like tool and resource management
  */
 export class MCPServerManager {
     // Event emitter for tool changes
-    private toolsEmitter = new vscode.EventEmitter<AgentTool[]>()
+    private toolsEmitter = new vscode.EventEmitter<{
+        serverName: string
+        toolName?: string
+        tools: AgentTool[]
+    }>()
     private tools: AgentTool[] = []
-    private toolsChangeNotifications = new Subject<void>()
+    private disabledTools: Set<string> = new Set<string>()
+    private toolStateChangeEmitter = new vscode.EventEmitter<{
+        serverName: string
+        toolName: string
+        disabled: boolean
+    }>()
+    private toolsChangeNotifications = new Subject<{ serverName: string; toolName?: string }>()
 
     constructor(private connectionManager: MCPConnectionManager) {}
 
-    /**
-     * Tool and resource management
-     */
+    // Update getToolList method to include disabled status
     public async getToolList(serverName: string): Promise<McpTool[]> {
         try {
             const connection = this.connectionManager.getConnection(serverName)
@@ -44,18 +59,46 @@ export class MCPServerManager {
 
             if (!response?.tools) return []
 
-            // Convert to McpTool format
+            // Convert to McpTool format and add disabled status
             const tools =
-                response?.tools?.map(tool => ({
-                    name: tool.name || '',
-                    description: tool.description || '',
-                    input_schema: tool.inputSchema || {},
-                })) || []
+                response?.tools?.map(tool => {
+                    const fullToolName = `${serverName}_${tool.name || ''}`
+                    const isDisabled = this.disabledTools.has(fullToolName)
+
+                    return {
+                        name: tool.name || '',
+                        description: tool.description || '',
+                        input_schema: tool.inputSchema || {},
+                        disabled: isDisabled, // Add disabled status
+                    }
+                }) || []
 
             logDebug('MCPServerManager', `Fetched ${tools.length} tools for ${serverName}`, {
                 verbose: { tools },
             })
+
+            // Register tools with CodyToolProvider
+            try {
+                const enabledTools = tools.filter(tool => !tool.disabled)
+                const disabledTools = tools.filter(tool => tool.disabled)
+                CodyToolProvider.registerMcpTools(serverName, enabledTools)
+                // Ensure disabled state is consistent in CodyToolProvider
+                for (const tool of disabledTools) {
+                    const codyToolName = ToolFactory.getCodyToolName(tool.name, serverName)
+                    CodyToolProvider.updateToolDisabledState(codyToolName, true)
+                }
+            } catch (error) {
+                logDebug(
+                    'MCPServerManager',
+                    `Failed to register tools with CodyToolProvider: ${error}`,
+                    {
+                        verbose: { error },
+                    }
+                )
+            }
+
             await this.registerAgentTools(serverName, tools)
+
             return tools
         } catch (error) {
             logDebug('MCPServerManager', `Failed to fetch tools for ${serverName}:`, {
@@ -64,6 +107,9 @@ export class MCPServerManager {
             return []
         } finally {
             logDebug('MCPServerManager', `Tool list retrieval process completed for ${serverName}`)
+
+            // Notify about tool changes through the connection manager
+            this.connectionManager.notifyToolChanged(serverName)
         }
     }
 
@@ -73,8 +119,6 @@ export class MCPServerManager {
      */
     public async getResourceList(serverName: string): Promise<McpResource[]> {
         try {
-            if (!serverName) return [] // <-- Skip until we support resources
-
             const connection = this.connectionManager.getConnection(serverName)
             if (!connection) return []
 
@@ -105,14 +149,12 @@ export class MCPServerManager {
     }
 
     /**
-     * TODO: Add support for prompts templates
+     * TODO: Add support for prompts templates - currently not supported.
      * NOTE: Currently not supported.
      * Fetches the list of resource templates from the MCP server.
      */
     public async getResourceTemplateList(serverName: string): Promise<McpResourceTemplate[]> {
         try {
-            if (serverName) return [] // <-- Skip until we support templates
-
             const connection = this.connectionManager.getConnection(serverName)
             if (!connection) return []
 
@@ -144,6 +186,9 @@ export class MCPServerManager {
         const _agentTools = []
         for (const tool of tools) {
             try {
+                // Determine if the tool is disabled
+                const isDisabled = this.disabledTools.has(`${serverName}_${tool.name}`)
+
                 // Create an agent tool
                 const agentTool: AgentTool = {
                     spec: {
@@ -158,15 +203,31 @@ export class MCPServerManager {
                             logDebug('MCPServerManager', `Error executing tool ${tool.name}:`, {
                                 verbose: { error },
                             })
+                            return createMCPToolState(
+                                serverName,
+                                tool.name,
+                                [{ type: 'text', text: `[${tool.name}] ERROR: ${error}` }],
+                                undefined,
+                                UIToolStatus.Error
+                            )
                         }
                     },
+                    // Set disabled based on current state
+                    disabled: isDisabled,
                 }
 
                 _agentTools.push(agentTool)
 
-                logDebug('MCPServerManager', `Created agent tool for ${tool.name || ''}`, {
-                    verbose: { tool },
-                })
+                // Also update the disabled state in the server's tool directly
+                const connection = this.connectionManager.getConnection(serverName)
+                if (connection?.server.tools) {
+                    connection.server.tools = connection.server.tools.map(t => {
+                        if (t.name === tool.name) {
+                            return { ...t, disabled: isDisabled }
+                        }
+                        return t
+                    })
+                }
             } catch (error) {
                 logDebug('MCPServerManager', `Error creating agent tool for ${tool.name || ''}`, {
                     verbose: { error },
@@ -174,24 +235,29 @@ export class MCPServerManager {
             }
         }
 
-        this.updateTools([
-            ...this.tools.filter(t => !t.spec.name.startsWith(`${serverName}_`)),
-            ..._agentTools,
-        ])
+        // Only remove and update tools for this specific server
+        this.updateTools(
+            [...this.tools.filter(t => !t.spec.name.startsWith(`${serverName}_`)), ..._agentTools],
+            serverName
+        )
 
         logDebug('MCPServerManager', `Created ${_agentTools.length} agent tools from ${serverName}`, {
             verbose: { _agentTools },
         })
+
+        // Make sure to notify the connection manager about tool changes
+        this.connectionManager.notifyToolChanged(serverName)
     }
 
     /**
      * Update the list of available tools
      */
-    private updateTools(tools: AgentTool[]): void {
+    private updateTools(tools: AgentTool[], serverName?: string, toolName?: string): void {
         this.tools = tools
-        this.toolsEmitter.fire(this.tools)
-        // Trigger change notification to update observable
-        this.toolsChangeNotifications.next()
+        this.toolsEmitter.fire({ serverName: serverName || '', toolName, tools: this.tools })
+
+        // Ensure tool changes are propagated to the connection manager
+        this.connectionManager.notifyToolChanged(serverName)
     }
 
     /**
@@ -204,7 +270,9 @@ export class MCPServerManager {
     /**
      * Subscribe to tool changes
      */
-    public onToolsChanged(listener: (tools: AgentTool[]) => void): vscode.Disposable {
+    public onToolsChanged(
+        listener: (event: { serverName: string; toolName?: string; tools: AgentTool[] }) => void
+    ): vscode.Disposable {
         return this.toolsEmitter.event(listener)
     }
 
@@ -215,7 +283,11 @@ export class MCPServerManager {
         serverName: string,
         toolName: string,
         args: Record<string, unknown> = {}
-    ): Promise<any> {
+    ): Promise<ContextItemToolState> {
+        // Check if tool is disabled
+        if (this.disabledTools.has(`${serverName}_${toolName}`)) {
+            throw new Error(`Tool "${toolName}" is disabled`)
+        }
         const connection = this.connectionManager.getConnection(serverName)
         if (!connection) {
             throw new Error(`MCP server "${serverName}" not found`)
@@ -243,31 +315,24 @@ export class MCPServerManager {
                 throw new Error('unexpected response')
             }
 
-            // Process content parts
-            const contentParts = result?.content?.map(p => {
-                if (p?.type === 'text') {
-                    return { type: 'text', text: p.text || 'EMPTY' }
-                }
-                if (p?.type === 'image') {
-                    const mimeType = p.mimeType || 'image/png'
-                    const url = `data:${mimeType};base64,${p.data}`
-                    return { type: 'image_url', image_url: { url } }
-                }
-                logDebug('MCPServerManager', `Unsupported content: ${p?.type}`, { verbose: { p } })
-                return { type: 'text', text: JSON.stringify(p) }
-            }) satisfies MessagePart[]
+            const { context, contents } = transforMCPToolResult(result.content, toolName)
 
             logDebug('MCPServerManager', `Tool ${toolName} executed successfully`, {
-                verbose: { contentParts },
+                verbose: { context, contents },
             })
 
-            return createMCPToolState(serverName, toolName, contentParts)
+            return createMCPToolState(serverName, toolName, contents, context)
         } catch (error) {
             logDebug('MCPServerManager', `Error calling tool ${toolName} on server ${serverName}`, {
                 verbose: error,
             })
-            console.error('MCPServerManager', error)
-            throw error
+            return createMCPToolState(
+                serverName,
+                toolName,
+                [{ type: 'text', text: `[${toolName}] ERROR: ${error}` }],
+                undefined,
+                UIToolStatus.Error
+            )
         }
     }
 
@@ -305,9 +370,212 @@ export class MCPServerManager {
     }
 
     /**
+     * Enable or disable a tool
+     */
+    public setToolState(serverName: string, toolName: string, disabled: boolean): void {
+        const fullToolName = `${serverName}_${toolName}`
+
+        if (disabled) {
+            this.disabledTools.add(fullToolName)
+        } else {
+            this.disabledTools.delete(fullToolName)
+        }
+
+        // Update the disabled state of the tool in the tools list
+        this.tools = this.tools.map(tool => {
+            if (tool.spec.name === fullToolName) {
+                return {
+                    ...tool,
+                    disabled,
+                }
+            }
+            return tool
+        })
+
+        // Also update the tool in the server object directly
+        const connection = this.connectionManager.getConnection(serverName)
+        if (connection?.server.tools) {
+            connection.server.tools = connection.server.tools.map(tool => {
+                if (tool.name === toolName) {
+                    return { ...tool, disabled }
+                }
+                return tool
+            })
+        }
+
+        // Update the disabled state in CodyToolProvider
+        try {
+            const codyToolName = ToolFactory.getCodyToolName(toolName, serverName)
+            CodyToolProvider.updateToolDisabledState(codyToolName, disabled)
+        } catch (error) {
+            logDebug('MCPServerManager', `Failed to update tool state in CodyToolProvider: ${error}`, {
+                verbose: { error },
+            })
+        }
+
+        // Fire events with specific server and tool information
+        this.toolsEmitter.fire({ serverName, toolName, tools: this.tools })
+        this.toolStateChangeEmitter.fire({ serverName, toolName, disabled })
+        this.toolsChangeNotifications.next({ serverName, toolName })
+    }
+
+    /**
+     * Get all disabled tools
+     */
+    public getDisabledTools(): string[] {
+        return Array.from(this.disabledTools)
+    }
+
+    /**
+     * Set disabled tools
+     */
+    public setDisabledTools(tools: string[], append = false): void {
+        if (append) {
+            // Add to existing set instead of replacing
+            for (const tool of tools) {
+                this.disabledTools.add(tool)
+            }
+        } else {
+            // Replace the entire set
+            this.disabledTools = new Set(tools)
+        }
+
+        // Update the tools list with disabled state
+        this.tools = this.tools.map(tool => ({
+            ...tool,
+            disabled: this.disabledTools.has(tool.spec.name),
+        }))
+
+        // Get affected server names from the tool names
+        const affectedServers = new Set(tools.map(t => t.split('_')[0]).filter(Boolean))
+
+        // Update tools in the server objects directly
+        for (const serverName of affectedServers) {
+            const connection = this.connectionManager.getConnection(serverName)
+            if (connection?.server.tools) {
+                connection.server.tools = connection.server.tools.map(tool => {
+                    const fullToolName = `${serverName}_${tool.name}`
+                    return {
+                        ...tool,
+                        disabled: this.disabledTools.has(fullToolName),
+                    }
+                })
+            }
+
+            // Update each tool in CodyToolProvider
+            try {
+                if (connection?.server?.tools) {
+                    for (const tool of connection.server.tools) {
+                        const isDisabled = this.disabledTools.has(`${serverName}_${tool.name}`)
+                        const codyToolName = ToolFactory.getCodyToolName(tool.name, serverName)
+                        CodyToolProvider.updateToolDisabledState(codyToolName, isDisabled)
+                    }
+                }
+            } catch (error) {
+                logDebug('MCPServerManager', 'Failed to update tool states in CodyToolProvider', {
+                    verbose: { error },
+                })
+            }
+        }
+
+        this.toolsEmitter.fire({
+            serverName: affectedServers.size === 1 ? Array.from(affectedServers)[0] : '',
+            tools: this.tools,
+        })
+        this.toolsChangeNotifications.next({
+            serverName: affectedServers.size === 1 ? Array.from(affectedServers)[0] : '',
+        })
+        logDebug('MCPServerManager', `Loaded ${tools.length} disabled tools`, {
+            verbose: { disabled: tools },
+        })
+    }
+
+    /**
+     * Subscribe to tool state changes
+     */
+    public onToolStateChanged(
+        listener: (event: { serverName: string; toolName: string; disabled: boolean }) => void
+    ): vscode.Disposable {
+        return this.toolStateChangeEmitter.event(listener)
+    }
+
+    /**
      * Clean up resources
      */
     public dispose(): void {
         this.toolsEmitter.dispose()
+        this.toolStateChangeEmitter.dispose()
+    }
+}
+
+/**
+ * Transform tool execution result content into context items and message parts
+ */
+export function transforMCPToolResult(
+    content: any[],
+    toolName: string
+): { context: ContextItem[]; contents: MessagePart[] } {
+    const context: ContextItem[] = []
+    const contents: MessagePart[] = []
+
+    for (const p of content || []) {
+        if (p?.type === 'text') {
+            contents.push({ type: 'text', text: p.text || 'EMPTY' })
+        } else if (p?.type === 'image') {
+            const mimeType = p.mimeType || 'image/png'
+
+            context.push({
+                type: 'media',
+                title: `${toolName}_result`,
+                uri: URI.parse(''),
+                mimeType: mimeType,
+                filename: 'mcp_tool_result',
+                data: p.data,
+                content: 'tool result',
+            })
+
+            const imageContent = getImageContent(p.data, mimeType)
+            contents.push(imageContent)
+        } else {
+            contents.push({
+                type: 'text',
+                text: `${toolName} returned unsupported result type: ${p.type}`,
+            })
+        }
+    }
+
+    return { context, contents }
+}
+
+/**
+ * Create a tool state object from MCP tool execution result
+ */
+export function createMCPToolState(
+    serverName: string,
+    toolName: string,
+    parts: MessagePart[],
+    context?: ContextItem[],
+    status = UIToolStatus.Done
+): ContextItemToolState {
+    const textContent = parts
+        .filter(p => p.type === 'text')
+        .map(p => p.text)
+        .join('\n')
+
+    return {
+        type: 'tool-state',
+        toolId: `mcp-${toolName}-${Date.now()}`,
+        status,
+        toolName: `${serverName}_${toolName}`,
+        content: `<TOOLRESULT tool='${toolName}'>${textContent}\n[Please communicate the result to the user]</TOOLRESULT>`,
+        outputType: 'mcp',
+        uri: URI.parse(''),
+        title: serverName + ' - ' + toolName,
+        description: textContent,
+        source: ContextItemSource.Agentic,
+        icon: 'database',
+        metadata: ['mcp', toolName],
+        parts,
+        context,
     }
 }

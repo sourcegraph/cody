@@ -102,7 +102,7 @@ function createDiagnosticToolState(
     const toolId = `diagnostic-${Date.now()}`
     const hasProblems = diagnostics?.length > 0 || error !== undefined
     const content = hasProblems
-        ? `Diagnostics for ${name}:\n${diagnostics.map(d => d.message).join('\n')}`
+        ? `Diagnostics for ${fileName}:\n${diagnostics.map(d => d.message).join('\n')}`
         : error ?? 'EMPTY'
     const icon = hasProblems ? 'alarm-clock-check' : 'alarm-clock-minus'
     const status = error ? UIToolStatus.Error : hasProblems ? UIToolStatus.Info : UIToolStatus.Done

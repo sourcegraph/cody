@@ -22,6 +22,7 @@ import type { BillingCategory, BillingProduct } from '@sourcegraph/cody-shared/s
 
 import type { TelemetryEventParameters } from '@sourcegraph/telemetry'
 
+import type { McpServer } from '@sourcegraph/cody-shared/src/llm-providers/mcp/types'
 import type { Uri } from 'vscode'
 import type { View } from '../../webviews/tabs/types'
 import type { FixupTaskID } from '../non-stop/FixupTask'
@@ -93,7 +94,12 @@ export type WebviewMessage =
           command: 'show-page'
           page: string
       }
-    | { command: 'command'; id: string; arg?: string | undefined | null }
+    | {
+          command: 'command'
+          id: string
+          arg?: string | undefined | null
+          args?: Record<string, any> | undefined | null
+      }
     | ({ command: 'edit' } & WebviewEditMessage)
     | { command: 'insert'; text: string }
     | { command: 'newFile'; text: string }
@@ -166,6 +172,15 @@ export type WebviewMessage =
       }
     | { command: 'action/confirmation'; id: string; response: boolean }
     | { command: 'devicePixelRatio'; devicePixelRatio: number }
+    | {
+          command: 'mcp'
+          type: 'addServer' | 'removeServer' | 'updateServer'
+          name: string
+          disabled?: boolean | undefined | null
+          config?: Record<string, any> | undefined | null
+          toolName?: string | undefined | null
+          toolDisabled?: boolean | undefined | null
+      }
 
 export interface SmartApplyResult {
     taskId: FixupTaskID
@@ -215,6 +230,8 @@ export type ExtensionMessage =
               | { id: string; status: 'error'; error: string }
               | undefined
               | null
+          mcpServerChanged?: { name: string; server?: McpServer | undefined | null } | undefined | null
+          mcpServerError?: { name: string; error: string } | undefined | null
       }
     | ({ type: 'attribution' } & ExtensionAttributionMessage)
     | { type: 'rpc/response'; message: ResponseMessage }
@@ -292,6 +309,7 @@ export interface ConfigurationSubsetForWebview
  * URLs for the Sourcegraph instance and app.
  */
 export const CODY_DOC_URL = new URL('https://sourcegraph.com/docs/cody')
+export const CODY_DOC_QUICKSTART_URL = new URL('https://sourcegraph.com/docs/cody/quickstart')
 export const SG_CHANGELOG_URL = new URL('https://sourcegraph.com/changelog')
 export const VSCODE_CHANGELOG_URL = new URL(
     'https://github.com/sourcegraph/cody/blob/main/vscode/CHANGELOG.md'
@@ -300,9 +318,6 @@ export const VSCODE_CHANGELOG_URL = new URL(
 export const DISCORD_URL = new URL('https://discord.gg/s2qDtYGnAE')
 export const CODY_FEEDBACK_URL = new URL('https://github.com/sourcegraph/cody/issues/new/choose')
 export const CODY_SUPPORT_URL = new URL('https://srcgr.ph/cody-support')
-export const CODY_OLLAMA_DOCS_URL = new URL(
-    'https://sourcegraph.com/docs/cody/clients/install-vscode#supported-local-ollama-models-with-cody'
-)
 // Account
 export const ENTERPRISE_STARTER_PRICING_URL = new URL('https://sourcegraph.com/pricing')
 export const CODY_PRO_SUBSCRIPTION_URL = new URL('https://accounts.sourcegraph.com/cody/subscription')

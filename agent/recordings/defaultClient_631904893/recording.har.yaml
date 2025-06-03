@@ -322,382 +322,6 @@ log:
         send: 0
         ssl: -1
         wait: 4251
-    - _id: 5bef09527925bb34aae394a7b364e104
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 2272
-        cookies: []
-        headers:
-          - name: accept-encoding
-            value: gzip;q=0
-          - name: authorization
-            value: token
-              REDACTED_fc324d3667e841181b0779375f26dedc911d26b303d23b29b1a2d7ee63dc77eb
-          - name: connection
-            value: keep-alive
-          - name: content-type
-            value: application/json
-          - name: traceparent
-            value: 00-f7fbb17c191c8a9f37dfedb21e470661-9ed30daf72b8b95d-01
-          - name: user-agent
-            value: defaultclient/v1 (Node.js v20.4.0)
-          - name: x-requested-with
-            value: defaultclient v1
-          - name: host
-            value: sourcegraph.com
-        headersSize: 535
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json
-          params: []
-          textJSON:
-            maxTokensToSample: 4000
-            messages:
-              - speaker: system
-                text: >-
-                  You are Cody, an AI coding assistant from Sourcegraph.If your
-                  answer contains fenced code blocks in Markdown, include the
-                  relevant full file path in the code block tag using this
-                  structure: ```$LANGUAGE:$FILEPATH```
-
-                  For executable terminal commands: enclose each command in individual "bash" language code block without comments and new lines inside.
-              - speaker: human
-                text: >-
-                  Codebase context from file src/squirrel.ts:
-
-                  ```typescript:src/squirrel.ts
-
-                  /**
-                   * Squirrel is an interface that mocks something completely unrelated to squirrels.
-                   * It is related to the implementation of precise code navigation in Sourcegraph.
-                   */
-                  export interface Squirrel {}
-
-                  ```
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: |-
-                  Codebase context from file src/Heading.tsx:
-                  ```typescript:src/Heading.tsx
-                  import React = require("react");
-
-                  interface HeadingProps {
-                      text: string;
-                      level?: number;
-                  }
-
-                  /* CURSOR */
-                  ```
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: |-
-                  Codebase context from file src/ChatColumn.tsx:
-                  ```typescript:src/ChatColumn.tsx
-                  import { useEffect } from "react";
-                  import React = require("react");
-
-                  /* SELECTION_START */ export default function ChatColumn({
-                  	messages,
-                  	setChatID,
-                  	isLoading,
-                  }) {
-                  	/* SELECTION_END */
-                  	useEffect(() => {
-                  		if (!isLoading) {
-                  			setChatID(messages[0].chatID);
-                  		}
-                  	}, [messages]);
-                  	return (
-                  		<>
-                  			<h1>Messages</h1>
-                  			<ul>
-                  				{messages.map((message) => (
-                  					<li>{message.text}</li>```
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: |-
-                  Codebase context from file src/animal.ts:
-                  ```typescript:src/animal.ts
-                  /* SELECTION_START */
-                  export interface Animal {
-                      name: string
-                      makeAnimalSound(): string
-                      isMammal: boolean
-                  }
-                  /* SELECTION_END */
-                  ```
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: >-
-                  Answer positively without apologizing. 
-
-
-                  You have access to the provided codebase context.
-
-
-                  Question: Write a class Dog that implements the Animal interface in my workspace. Show the code only, no explanation needed.
-            model: anthropic::2024-10-22::claude-3-5-sonnet-latest
-            temperature: 0
-            topK: -1
-            topP: -1
-        queryString:
-          - name: api-version
-            value: "8"
-          - name: client-name
-            value: defaultclient
-          - name: client-version
-            value: v1
-        url: https://sourcegraph.com/.api/completions/stream?api-version=8&client-name=defaultclient&client-version=v1
-      response:
-        bodySize: 936
-        content:
-          mimeType: text/event-stream
-          size: 936
-          text: >+
-            event: completion
-
-            data: {"deltaText":"```typescript:src/dog.ts\nexport class Dog implements Animal {\n    name: string;\n    isMammal: boolean = true;\n\n    constructor(name: string) {\n        this.name = name;\n    }\n\n    makeAnimalSound(): string {\n        return \"Woof!\";\n    }\n}\n```","stopReason":"end_turn"}
-
-
-            event: done
-
-            data: {}
-
-        cookies: []
-        headers:
-          - name: date
-            value: Fri, 07 Mar 2025 18:54:01 GMT
-          - name: content-type
-            value: text/event-stream
-          - name: transfer-encoding
-            value: chunked
-          - name: connection
-            value: keep-alive
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache
-          - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
-              X-Requested-With,Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1320
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2025-03-07T18:53:58.952Z
-      time: 2569
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 2569
-    - _id: b48597282ee9ffe92e92ef067509ea80
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 2206
-        cookies: []
-        headers:
-          - name: accept-encoding
-            value: gzip;q=0
-          - name: authorization
-            value: token
-              REDACTED_fc324d3667e841181b0779375f26dedc911d26b303d23b29b1a2d7ee63dc77eb
-          - name: connection
-            value: keep-alive
-          - name: content-type
-            value: application/json
-          - name: traceparent
-            value: 00-f9921e1c8f08326edbcc4b5add97e912-a2270c93884eddbb-01
-          - name: user-agent
-            value: defaultclient/v1 (Node.js v20.4.0)
-          - name: x-requested-with
-            value: defaultclient v1
-          - name: host
-            value: sourcegraph.com
-        headersSize: 535
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json
-          params: []
-          textJSON:
-            maxTokensToSample: 4000
-            messages:
-              - speaker: system
-                text: >-
-                  You are Cody, an AI coding assistant from Sourcegraph.If your
-                  answer contains fenced code blocks in Markdown, include the
-                  relevant full file path in the code block tag using this
-                  structure: ```$LANGUAGE:$FILEPATH```
-
-                  For executable terminal commands: enclose each command in individual "bash" language code block without comments and new lines inside.
-              - speaker: human
-                text: >-
-                  Codebase context from file src/squirrel.ts:
-
-                  ```typescript:src/squirrel.ts
-
-                  /**
-                   * Squirrel is an interface that mocks something completely unrelated to squirrels.
-                   * It is related to the implementation of precise code navigation in Sourcegraph.
-                   */
-                  export interface Squirrel {}
-
-                  ```
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: |-
-                  Codebase context from file src/Heading.tsx:
-                  ```typescript:src/Heading.tsx
-                  import React = require("react");
-
-                  interface HeadingProps {
-                      text: string;
-                      level?: number;
-                  }
-
-                  /* CURSOR */
-                  ```
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: |-
-                  Codebase context from file src/ChatColumn.tsx:
-                  ```typescript:src/ChatColumn.tsx
-                  import { useEffect } from "react";
-                  import React = require("react");
-
-                  /* SELECTION_START */ export default function ChatColumn({
-                  	messages,
-                  	setChatID,
-                  	isLoading,
-                  }) {
-                  	/* SELECTION_END */
-                  	useEffect(() => {
-                  		if (!isLoading) {
-                  			setChatID(messages[0].chatID);
-                  		}
-                  	}, [messages]);
-                  	return (
-                  		<>
-                  			<h1>Messages</h1>
-                  			<ul>
-                  				{messages.map((message) => (
-                  					<li>{message.text}</li>```
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: |-
-                  Codebase context from file src/animal.ts:
-                  ```typescript:src/animal.ts
-                  /* SELECTION_START */
-                  export interface Animal {
-                      name: string
-                      makeAnimalSound(): string
-                      isMammal: boolean
-                  }
-                  /* SELECTION_END */
-                  ```
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: |-
-                  Answer positively without apologizing. 
-
-                  You have access to the provided codebase context.
-
-                  Question: What is Squirrel? Show me concrete code examples
-            model: anthropic::2024-10-22::claude-3-5-sonnet-latest
-            temperature: 0
-            topK: -1
-            topP: -1
-        queryString:
-          - name: api-version
-            value: "8"
-          - name: client-name
-            value: defaultclient
-          - name: client-version
-            value: v1
-        url: https://sourcegraph.com/.api/completions/stream?api-version=8&client-name=defaultclient&client-version=v1
-      response:
-        bodySize: 3555
-        content:
-          mimeType: text/event-stream
-          size: 3555
-          text: >+
-            event: completion
-
-            data: {"deltaText":"The Squirrel interface in the codebase is quite interesting! According to the code comments, it's actually not related to actual squirrels at all - it's an interface used for implementing precise code navigation features in Sourcegraph.\n\nHere's the current definition:\n\n```typescript:src/squirrel.ts\nexport interface Squirrel {}\n```\n\nLet me show you how we could implement this interface with a concrete example:\n\n```typescript:src/squirrel-implementation.ts\nimport { Squirrel } from './squirrel'\n\nclass CodeNavigator implements Squirrel {\n    navigateToDefinition(position: number): void {\n        // Implementation for precise code navigation\n    }\n    \n    findReferences(symbol: string): string[] {\n        // Implementation for finding symbol references\n        return []\n    }\n}\n```\n\nWe could also create a specialized version:\n\n```typescript:src/typescript-squirrel.ts\nimport { Squirrel } from './squirrel'\n\nexport class TypeScriptNavigator implements Squirrel {\n    language = 'typescript'\n    \n    parseSymbols(code: string): string[] {\n        // Parse TypeScript specific symbols\n        return []\n    }\n}\n```\n\nThe empty interface suggests it's likely a marker interface or may be expanded in other parts of the codebase. The documentation indicates its true purpose is for code navigation functionality rather than anything related to the animal kingdom!","stopReason":"end_turn"}
-
-
-            event: done
-
-            data: {}
-
-        cookies: []
-        headers:
-          - name: date
-            value: Fri, 07 Mar 2025 18:54:05 GMT
-          - name: content-type
-            value: text/event-stream
-          - name: transfer-encoding
-            value: chunked
-          - name: connection
-            value: keep-alive
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache
-          - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
-              X-Requested-With,Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1320
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2025-03-07T18:54:01.573Z
-      time: 7166
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 7166
     - _id: bc29974faefd9fc9ff7a7ec18b8141cb
       _order: 0
       cache: {}
@@ -812,11 +436,11 @@ log:
         send: 0
         ssl: -1
         wait: 655
-    - _id: 37ad095efc21ff0493b8143328cc9ade
+    - _id: 6b1cf6e507ab422afb2b158d25da6d65
       _order: 0
       cache: {}
       request:
-        bodySize: 711
+        bodySize: 2218
         cookies: []
         headers:
           - name: accept-encoding
@@ -829,7 +453,378 @@ log:
           - name: content-type
             value: application/json
           - name: traceparent
-            value: 00-b50351339a8c75a11f1f9a61ebf3c4dc-50be3d55d871272b-01
+            value: 00-86c0c030158704980123b72462e3a0ec-c3cc4912c9fa72b0-01
+          - name: user-agent
+            value: defaultclient/v1 (Node.js v20.4.0)
+          - name: x-requested-with
+            value: defaultclient v1
+          - name: host
+            value: sourcegraph.com
+        headersSize: 535
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            maxTokensToSample: 4000
+            messages:
+              - speaker: system
+                text: >-
+                  You are Cody, an AI coding assistant from Sourcegraph.If your
+                  answer contains fenced code blocks in Markdown, include the
+                  relevant full file path in the code block tag using this
+                  structure: ```$LANGUAGE:$FILEPATH```
+
+                  For executable terminal commands: enclose each command in individual "bash" language code block without comments and new lines inside.
+              - speaker: human
+                text: >-
+                  Codebase context from file src/squirrel.ts:
+
+                  ```typescript:src/squirrel.ts
+
+                  /**
+                   * Squirrel is an interface that mocks something completely unrelated to squirrels.
+                   * It is related to the implementation of precise code navigation in Sourcegraph.
+                   */
+                  export interface Squirrel {}
+
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: |-
+                  Codebase context from file src/Heading.tsx:
+                  ```typescript:src/Heading.tsx
+                  import React = require("react");
+
+                  interface HeadingProps {
+                      text: string;
+                      level?: number;
+                  }
+
+                  /* CURSOR */
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: |-
+                  Codebase context from file src/ChatColumn.tsx:
+                  ```typescript:src/ChatColumn.tsx
+                  import { useEffect } from "react";
+                  import React = require("react");
+
+                  /* SELECTION_START */ export default function ChatColumn({
+                  	messages,
+                  	setChatID,
+                  	isLoading,
+                  }) {
+                  	/* SELECTION_END */
+                  	useEffect(() => {
+                  		if (!isLoading) {
+                  			setChatID(messages[0].chatID);
+                  		}
+                  	}, [messages]);
+                  	return (
+                  		<>
+                  			<h1>Messages</h1>
+                  			<ul>
+                  				{messages.map((message) => (
+                  					<li>{message.text}</li>```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: |-
+                  Codebase context from file src/animal.ts:
+                  ```typescript:src/animal.ts
+                  /* SELECTION_START */
+                  export interface Animal {
+                      name: string
+                      makeAnimalSound(): string
+                      isMammal: boolean
+                  }
+                  /* SELECTION_END */
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >-
+                  Answer positively without apologizing.
+
+
+                  Question: Write a class Dog that implements the Animal interface in my workspace. Show the code only, no explanation needed.
+            model: anthropic::2024-10-22::claude-3-5-sonnet-latest
+            temperature: 0
+            topK: -1
+            topP: -1
+        queryString:
+          - name: api-version
+            value: "8"
+          - name: client-name
+            value: defaultclient
+          - name: client-version
+            value: v1
+        url: https://sourcegraph.com/.api/completions/stream?api-version=8&client-name=defaultclient&client-version=v1
+      response:
+        bodySize: 927
+        content:
+          mimeType: text/event-stream
+          size: 927
+          text: >+
+            event: completion
+
+            data: {"deltaText":"```typescript:src/dog.ts\nexport class Dog implements Animal {\n    name: string;\n    isMammal = true;\n\n    constructor(name: string) {\n        this.name = name;\n    }\n\n    makeAnimalSound(): string {\n        return \"Woof!\";\n    }\n}\n```","stopReason":"end_turn"}
+
+
+            event: done
+
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Fri, 02 May 2025 09:58:32 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1368
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2025-05-02T09:58:30.995Z
+      time: 2244
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 2244
+    - _id: 6389b3a4e21816a487e70bf08ec424db
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 2152
+        cookies: []
+        headers:
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_fc324d3667e841181b0779375f26dedc911d26b303d23b29b1a2d7ee63dc77eb
+          - name: connection
+            value: keep-alive
+          - name: content-type
+            value: application/json
+          - name: traceparent
+            value: 00-26a1fa46cec3426f618243136d96cb85-118d909d35ec2514-01
+          - name: user-agent
+            value: defaultclient/v1 (Node.js v20.4.0)
+          - name: x-requested-with
+            value: defaultclient v1
+          - name: host
+            value: sourcegraph.com
+        headersSize: 535
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            maxTokensToSample: 4000
+            messages:
+              - speaker: system
+                text: >-
+                  You are Cody, an AI coding assistant from Sourcegraph.If your
+                  answer contains fenced code blocks in Markdown, include the
+                  relevant full file path in the code block tag using this
+                  structure: ```$LANGUAGE:$FILEPATH```
+
+                  For executable terminal commands: enclose each command in individual "bash" language code block without comments and new lines inside.
+              - speaker: human
+                text: >-
+                  Codebase context from file src/squirrel.ts:
+
+                  ```typescript:src/squirrel.ts
+
+                  /**
+                   * Squirrel is an interface that mocks something completely unrelated to squirrels.
+                   * It is related to the implementation of precise code navigation in Sourcegraph.
+                   */
+                  export interface Squirrel {}
+
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: |-
+                  Codebase context from file src/Heading.tsx:
+                  ```typescript:src/Heading.tsx
+                  import React = require("react");
+
+                  interface HeadingProps {
+                      text: string;
+                      level?: number;
+                  }
+
+                  /* CURSOR */
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: |-
+                  Codebase context from file src/ChatColumn.tsx:
+                  ```typescript:src/ChatColumn.tsx
+                  import { useEffect } from "react";
+                  import React = require("react");
+
+                  /* SELECTION_START */ export default function ChatColumn({
+                  	messages,
+                  	setChatID,
+                  	isLoading,
+                  }) {
+                  	/* SELECTION_END */
+                  	useEffect(() => {
+                  		if (!isLoading) {
+                  			setChatID(messages[0].chatID);
+                  		}
+                  	}, [messages]);
+                  	return (
+                  		<>
+                  			<h1>Messages</h1>
+                  			<ul>
+                  				{messages.map((message) => (
+                  					<li>{message.text}</li>```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: |-
+                  Codebase context from file src/animal.ts:
+                  ```typescript:src/animal.ts
+                  /* SELECTION_START */
+                  export interface Animal {
+                      name: string
+                      makeAnimalSound(): string
+                      isMammal: boolean
+                  }
+                  /* SELECTION_END */
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: |-
+                  Answer positively without apologizing.
+
+                  Question: What is Squirrel? Show me concrete code examples
+            model: anthropic::2024-10-22::claude-3-5-sonnet-latest
+            temperature: 0
+            topK: -1
+            topP: -1
+        queryString:
+          - name: api-version
+            value: "8"
+          - name: client-name
+            value: defaultclient
+          - name: client-version
+            value: v1
+        url: https://sourcegraph.com/.api/completions/stream?api-version=8&client-name=defaultclient&client-version=v1
+      response:
+        bodySize: 3939
+        content:
+          mimeType: text/event-stream
+          size: 3939
+          text: >+
+            event: completion
+
+            data: {"deltaText":"Let me show you how to work with the Squirrel interface. Based on the codebase context, Squirrel is an interface used for precise code navigation in Sourcegraph, even though its name might suggest otherwise.\n\nHere's a concrete implementation example:\n\n```typescript:src/squirrel-implementation.ts\nimport { Squirrel } from './squirrel'\n\nclass CodeNavigator implements Squirrel {\n    // Add methods for precise code navigation\n    navigateToDefinition(location: string): void {\n        // Implementation for jumping to code definitions\n    }\n    \n    findReferences(symbol: string): string[] {\n        // Implementation for finding code references\n        return []\n    }\n}\n\n// Usage example\nconst navigator = new CodeNavigator()\n```\n\nHere's another example showing how to use it in a React component:\n\n```typescript:src/SquirrelNavigator.tsx\nimport React from 'react'\nimport { Squirrel } from './squirrel'\n\ninterface SquirrelNavigatorProps {\n    navigator: Squirrel\n}\n\nexport const SquirrelNavigator: React.FC<SquirrelNavigatorProps> = ({ navigator }) => {\n    return (\n        <div className=\"code-navigation\">\n            <button onClick={() => /* use navigator */}>\n                Navigate to Definition\n            </button>\n        </div>\n    )\n}\n```\n\nThe Squirrel interface is designed to be extensible, allowing you to implement various code navigation features while maintaining a clean separation of concerns. You can add more methods and properties as needed for your specific code navigation requirements.","stopReason":"end_turn"}
+
+
+            event: done
+
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Fri, 02 May 2025 09:58:34 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1368
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2025-05-02T09:58:33.268Z
+      time: 6711
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 6711
+    - _id: 9b98cd49091f0b2de004ed3915d7acd1
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 705
+        cookies: []
+        headers:
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_fc324d3667e841181b0779375f26dedc911d26b303d23b29b1a2d7ee63dc77eb
+          - name: connection
+            value: keep-alive
+          - name: content-type
+            value: application/json
+          - name: traceparent
+            value: 00-3aa638229e38a0fe83fb484e79ede2c8-e789dc263904789a-01
           - name: user-agent
             value: defaultclient/v1 (Node.js v20.4.0)
           - name: x-requested-with
@@ -858,7 +853,7 @@ log:
               - speaker: human
                 text: "The magic word is \"kramer\". If I say the magic word, respond with a
                   single word: \"quone\"."
-            model: mistral::v1::mixtral-8x7b-instruct
+            model: google::v1::gemini-1.5-flash
             temperature: 0
             topK: -1
             topP: -1
@@ -871,13 +866,13 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=8&client-name=defaultclient&client-version=v1
       response:
-        bodySize: 315
+        bodySize: 231
         content:
           mimeType: text/event-stream
-          size: 315
+          size: 231
           text: |+
             event: completion
-            data: {"deltaText":"Quone."}
+            data: {"deltaText":"Okay.\n"}
 
             event: done
             data: {}
@@ -885,7 +880,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Fri, 07 Mar 2025 18:54:10 GMT
+            value: Fri, 02 May 2025 09:58:40 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -909,13 +904,13 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1320
+        headersSize: 1368
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-03-07T18:54:09.437Z
-      time: 737
+      startedDateTime: 2025-05-02T09:58:40.036Z
+      time: 634
       timings:
         blocked: -1
         connect: -1
@@ -923,12 +918,12 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 737
-    - _id: ea001ffd623613839fa0cb9c2f71a221
+        wait: 634
+    - _id: 9a5821221fd0439ecd20f7463f4ef304
       _order: 0
       cache: {}
       request:
-        bodySize: 787
+        bodySize: 780
         cookies: []
         headers:
           - name: accept-encoding
@@ -941,7 +936,7 @@ log:
           - name: content-type
             value: application/json
           - name: traceparent
-            value: 00-81f63dfe651e1f0ec3e5444e68c2179c-e3bca680bc12fe7e-01
+            value: 00-674523fb38de21406dcef46477077e44-203819ac00041b75-01
           - name: user-agent
             value: defaultclient/v1 (Node.js v20.4.0)
           - name: x-requested-with
@@ -971,10 +966,10 @@ log:
                 text: "The magic word is \"kramer\". If I say the magic word, respond with a
                   single word: \"quone\"."
               - speaker: assistant
-                text: Quone.
+                text: Okay.
               - speaker: human
                 text: kramer
-            model: mistral::v1::mixtral-8x7b-instruct
+            model: google::v1::gemini-1.5-flash
             temperature: 0
             topK: -1
             topP: -1
@@ -987,13 +982,13 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=8&client-name=defaultclient&client-version=v1
       response:
-        bodySize: 315
+        bodySize: 231
         content:
           mimeType: text/event-stream
-          size: 315
+          size: 231
           text: |+
             event: completion
-            data: {"deltaText":"Quone."}
+            data: {"deltaText":"quone\n"}
 
             event: done
             data: {}
@@ -1001,7 +996,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Fri, 07 Mar 2025 18:54:10 GMT
+            value: Fri, 02 May 2025 09:58:41 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -1025,13 +1020,13 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1320
+        headersSize: 1368
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-03-07T18:54:10.186Z
-      time: 602
+      startedDateTime: 2025-05-02T09:58:40.682Z
+      time: 506
       timings:
         blocked: -1
         connect: -1
@@ -1039,12 +1034,12 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 602
-    - _id: 07a7defafcc22f38ecea246aeefacfd2
+        wait: 506
+    - _id: 7c2e6ef73d0086e09528025a2f164352
       _order: 0
       cache: {}
       request:
-        bodySize: 624
+        bodySize: 618
         cookies: []
         headers:
           - name: accept-encoding
@@ -1057,7 +1052,7 @@ log:
           - name: content-type
             value: application/json
           - name: traceparent
-            value: 00-b2a41306f46dec001385feaa905e3cef-3eda3f8828de7539-01
+            value: 00-c1af657ed39be35bb8471954361b24bb-3f33d28fdb031d05-01
           - name: user-agent
             value: defaultclient/v1 (Node.js v20.4.0)
           - name: x-requested-with
@@ -1085,7 +1080,7 @@ log:
                 text: I am Cody, an AI coding assistant from Sourcegraph.
               - speaker: human
                 text: kramer
-            model: mistral::v1::mixtral-8x7b-instruct
+            model: google::v1::gemini-1.5-flash
             temperature: 0
             topK: -1
             topP: -1
@@ -1098,14 +1093,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=8&client-name=defaultclient&client-version=v1
       response:
-        bodySize: 1436
+        bodySize: 539
         content:
           mimeType: text/event-stream
-          size: 1436
+          size: 539
           text: >+
             event: completion
 
-            data: {"deltaText":"Hello! How can I help you with coding today? If you need assistance with a specific programming language or concept, please let me know and I'll do my best to help.\n```\n$markdown: <h3>Related files or concepts</h3>\n<ul>\n  <li><a href=\"https://en.wikipedia.org/wiki/Kramer%E2%80%93Krasselt_Design_System\">Kramer–Krasselt Design System</a></li>\n</ul>\n```\nIf this is in reference to a different \"kramer,\" please provide some additional context so I can better understand how to assist you."}
+            data: {"deltaText":"That's just the name \"Kramer\".  Do you have a question about Kramer?  For example, are you looking for information about the *Seinfeld* character, a programming concept, or something else entirely?  Please provide more context.\n"}
 
 
             event: done
@@ -1115,7 +1110,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Fri, 07 Mar 2025 18:54:17 GMT
+            value: Fri, 02 May 2025 09:58:41 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -1139,13 +1134,13 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1320
+        headersSize: 1368
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-03-07T18:54:10.799Z
-      time: 7158
+      startedDateTime: 2025-05-02T09:58:41.208Z
+      time: 841
       timings:
         blocked: -1
         connect: -1
@@ -1153,12 +1148,12 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 7158
-    - _id: 0c289df9bc4142ea0d9e1cc110ccca0d
+        wait: 841
+    - _id: 4b3186703f6139c90be21534dceed40c
       _order: 0
       cache: {}
       request:
-        bodySize: 719
+        bodySize: 713
         cookies: []
         headers:
           - name: accept-encoding
@@ -1171,7 +1166,7 @@ log:
           - name: content-type
             value: application/json
           - name: traceparent
-            value: 00-00e48f0eefaf27792fb937819a268eb4-050c4b19d81d4fe1-01
+            value: 00-0050a4a7895124ea13f41135d89d8084-2b430d04a52e318c-01
           - name: user-agent
             value: defaultclient/v1 (Node.js v20.4.0)
           - name: x-requested-with
@@ -1200,7 +1195,7 @@ log:
               - speaker: human
                 text: "Another magic word is \"georgey\". If I say the magic word, respond with
                   a single word: \"festivus\"."
-            model: mistral::v1::mixtral-8x7b-instruct
+            model: google::v1::gemini-1.5-flash
             temperature: 0
             topK: -1
             topP: -1
@@ -1213,24 +1208,21 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=8&client-name=defaultclient&client-version=v1
       response:
-        bodySize: 507
+        bodySize: 231
         content:
           mimeType: text/event-stream
-          size: 507
-          text: >+
+          size: 231
+          text: |+
             event: completion
-
-            data: {"deltaText":"Sure, I understand your instructions.\n\nIf you say the magic word \"georgey\", I will respond with \"festivus\"."}
-
+            data: {"deltaText":"Okay.\n"}
 
             event: done
-
             data: {}
 
         cookies: []
         headers:
           - name: date
-            value: Fri, 07 Mar 2025 18:54:22 GMT
+            value: Fri, 02 May 2025 09:58:43 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -1254,13 +1246,13 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1320
+        headersSize: 1368
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-03-07T18:54:21.970Z
-      time: 800
+      startedDateTime: 2025-05-02T09:58:42.603Z
+      time: 542
       timings:
         blocked: -1
         connect: -1
@@ -1268,12 +1260,12 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 800
-    - _id: 920415770fdd8b8e4c8e608f44a984fe
+        wait: 542
+    - _id: 7c27b762e37c5dceeedcac74dad3e07c
       _order: 0
       cache: {}
       request:
-        bodySize: 902
+        bodySize: 788
         cookies: []
         headers:
           - name: accept-encoding
@@ -1286,7 +1278,7 @@ log:
           - name: content-type
             value: application/json
           - name: traceparent
-            value: 00-5968f39dfb29f0bb15d8c76f260e8d91-597b26e2c11b9b24-01
+            value: 00-71b2f32326d946c070b7464f74445844-7dabc78d02def394-01
           - name: user-agent
             value: defaultclient/v1 (Node.js v20.4.0)
           - name: x-requested-with
@@ -1316,14 +1308,10 @@ log:
                 text: "Another magic word is \"georgey\". If I say the magic word, respond with
                   a single word: \"festivus\"."
               - speaker: assistant
-                text: >-
-                  Sure, I understand your instructions.
-
-
-                  If you say the magic word "georgey", I will respond with "festivus".
+                text: Okay.
               - speaker: human
                 text: kramer
-            model: mistral::v1::mixtral-8x7b-instruct
+            model: google::v1::gemini-1.5-flash
             temperature: 0
             topK: -1
             topP: -1
@@ -1336,14 +1324,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=8&client-name=defaultclient&client-version=v1
       response:
-        bodySize: 534
+        bodySize: 276
         content:
           mimeType: text/event-stream
-          size: 534
+          size: 276
           text: >+
             event: completion
 
-            data: {"deltaText":"That's not the magic word. To reiterate, if you say \"georgey\", I will respond with \"festivus\"."}
+            data: {"deltaText":"(No response.  \"kramer\" is not the magic word.)\n"}
 
 
             event: done
@@ -1353,7 +1341,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Fri, 07 Mar 2025 18:54:23 GMT
+            value: Fri, 02 May 2025 09:58:43 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -1377,13 +1365,13 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1320
+        headersSize: 1368
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-03-07T18:54:22.783Z
-      time: 666
+      startedDateTime: 2025-05-02T09:58:43.158Z
+      time: 606
       timings:
         blocked: -1
         connect: -1
@@ -1391,12 +1379,12 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 666
-    - _id: 5ebae553cb3ae3524d5c9d97be24fe6f
+        wait: 606
+    - _id: 7b9565ae963082999e44a3f57f48e541
       _order: 0
       cache: {}
       request:
-        bodySize: 1071
+        bodySize: 908
         cookies: []
         headers:
           - name: accept-encoding
@@ -1409,7 +1397,7 @@ log:
           - name: content-type
             value: application/json
           - name: traceparent
-            value: 00-379564c9d619eead664cf30f32d83d05-918a7580d7b2486d-01
+            value: 00-d1dfbaba623fa9b4e18b06a4f5071aed-be7f1741089633d3-01
           - name: user-agent
             value: defaultclient/v1 (Node.js v20.4.0)
           - name: x-requested-with
@@ -1439,19 +1427,14 @@ log:
                 text: "Another magic word is \"georgey\". If I say the magic word, respond with
                   a single word: \"festivus\"."
               - speaker: assistant
-                text: >-
-                  Sure, I understand your instructions.
-
-
-                  If you say the magic word "georgey", I will respond with "festivus".
+                text: Okay.
               - speaker: human
                 text: kramer
               - speaker: assistant
-                text: That's not the magic word. To reiterate, if you say "georgey", I will
-                  respond with "festivus".
+                text: (No response.  "kramer" is not the magic word.)
               - speaker: human
                 text: georgey
-            model: mistral::v1::mixtral-8x7b-instruct
+            model: google::v1::gemini-1.5-flash
             temperature: 0
             topK: -1
             topP: -1
@@ -1464,13 +1447,13 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=8&client-name=defaultclient&client-version=v1
       response:
-        bodySize: 318
+        bodySize: 234
         content:
           mimeType: text/event-stream
-          size: 318
+          size: 234
           text: |+
             event: completion
-            data: {"deltaText":"Festivus!"}
+            data: {"deltaText":"festivus\n"}
 
             event: done
             data: {}
@@ -1478,7 +1461,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Fri, 07 Mar 2025 18:54:28 GMT
+            value: Fri, 02 May 2025 09:58:44 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -1502,13 +1485,13 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1320
+        headersSize: 1368
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-03-07T18:54:23.463Z
-      time: 5451
+      startedDateTime: 2025-05-02T09:58:43.773Z
+      time: 525
       timings:
         blocked: -1
         connect: -1
@@ -1516,12 +1499,12 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 5451
-    - _id: 986ba32ec655483fa41250e80eabd3bb
+        wait: 525
+    - _id: f7d377a61b4acab9aeba82a9b5fdffc6
       _order: 0
       cache: {}
       request:
-        bodySize: 690
+        bodySize: 684
         cookies: []
         headers:
           - name: accept-encoding
@@ -1534,7 +1517,7 @@ log:
           - name: content-type
             value: application/json
           - name: traceparent
-            value: 00-a75db1050d27dc94b8209e24023c016e-c2a3be55b9ddafb1-01
+            value: 00-325014ba4cb3408fac1ed3a5d4c65268-85efbab700fe0c89-01
           - name: user-agent
             value: defaultclient/v1 (Node.js v20.4.0)
           - name: x-requested-with
@@ -1562,7 +1545,7 @@ log:
                 text: I am Cody, an AI coding assistant from Sourcegraph.
               - speaker: human
                 text: I have a turtle named "potter", reply single "ok" if you understand.
-            model: mistral::v1::mixtral-8x7b-instruct
+            model: google::v1::gemini-1.5-flash
             temperature: 0
             topK: -1
             topP: -1
@@ -1575,24 +1558,21 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=8&client-name=defaultclient&client-version=v1
       response:
-        bodySize: 496
+        bodySize: 227
         content:
           mimeType: text/event-stream
-          size: 496
-          text: >+
+          size: 227
+          text: |+
             event: completion
-
-            data: {"deltaText":"Ok. I understand that you have a turtle named \"potter\". How can I assist you with your coding needs?"}
-
+            data: {"deltaText":"ok\n"}
 
             event: done
-
             data: {}
 
         cookies: []
         headers:
           - name: date
-            value: Fri, 07 Mar 2025 18:54:29 GMT
+            value: Fri, 02 May 2025 09:58:45 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -1616,13 +1596,13 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1320
+        headersSize: 1368
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-03-07T18:54:27.988Z
-      time: 1136
+      startedDateTime: 2025-05-02T09:58:44.318Z
+      time: 761
       timings:
         blocked: -1
         connect: -1
@@ -1630,12 +1610,12 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 1136
-    - _id: a27c723a1e414ce0a4f1c681bca72300
+        wait: 761
+    - _id: 6f742e135e965ebe294952d42b157587
       _order: 0
       cache: {}
       request:
-        bodySize: 929
+        bodySize: 823
         cookies: []
         headers:
           - name: accept-encoding
@@ -1648,7 +1628,7 @@ log:
           - name: content-type
             value: application/json
           - name: traceparent
-            value: 00-52c3ed985fef40021d624c209d17d1bf-3440a9adb913d67e-01
+            value: 00-55aeb47d36afebc630529ca61be56a3a-2b737d8e74bf7641-01
           - name: user-agent
             value: defaultclient/v1 (Node.js v20.4.0)
           - name: x-requested-with
@@ -1677,11 +1657,10 @@ log:
               - speaker: human
                 text: I have a turtle named "potter", reply single "ok" if you understand.
               - speaker: assistant
-                text: Ok. I understand that you have a turtle named "potter". How can I assist
-                  you with your coding needs?
+                text: ok
               - speaker: human
                 text: I have a bird named "skywalker", reply single "ok" if you understand.
-            model: mistral::v1::mixtral-8x7b-instruct
+            model: google::v1::gemini-1.5-flash
             temperature: 0
             topK: -1
             topP: -1
@@ -1694,24 +1673,21 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=8&client-name=defaultclient&client-version=v1
       response:
-        bodySize: 722
+        bodySize: 228
         content:
           mimeType: text/event-stream
-          size: 722
-          text: >+
+          size: 228
+          text: |+
             event: completion
-
-            data: {"deltaText":"Ok. I understand that you have a bird named \"skywalker\" as well. Is there a specific coding problem or question you would like help with? I'm here to assist you with all your coding-related inquiries."}
-
+            data: {"deltaText":"ok\n"}
 
             event: done
-
             data: {}
 
         cookies: []
         headers:
           - name: date
-            value: Fri, 07 Mar 2025 18:54:30 GMT
+            value: Fri, 02 May 2025 09:58:45 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -1735,13 +1711,13 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1320
+        headersSize: 1368
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-03-07T18:54:29.135Z
-      time: 991
+      startedDateTime: 2025-05-02T09:58:45.088Z
+      time: 562
       timings:
         blocked: -1
         connect: -1
@@ -1749,12 +1725,12 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 991
-    - _id: 40f73a73d2278bd915d88371e50dbd30
+        wait: 562
+    - _id: 3a463c8862c43fc6ce16e5feca02a04a
       _order: 0
       cache: {}
       request:
-        bodySize: 1263
+        bodySize: 957
         cookies: []
         headers:
           - name: accept-encoding
@@ -1767,7 +1743,7 @@ log:
           - name: content-type
             value: application/json
           - name: traceparent
-            value: 00-465647a1b0d81b7db107d28fc4795f8b-cc41c9662faeccce-01
+            value: 00-e8cb403ae0a5fc2d8f32fd0e3287b2ba-ca60065c498ecb7b-01
           - name: user-agent
             value: defaultclient/v1 (Node.js v20.4.0)
           - name: x-requested-with
@@ -1796,18 +1772,14 @@ log:
               - speaker: human
                 text: I have a turtle named "potter", reply single "ok" if you understand.
               - speaker: assistant
-                text: Ok. I understand that you have a turtle named "potter". How can I assist
-                  you with your coding needs?
+                text: ok
               - speaker: human
                 text: I have a bird named "skywalker", reply single "ok" if you understand.
               - speaker: assistant
-                text: Ok. I understand that you have a bird named "skywalker" as well. Is there
-                  a specific coding problem or question you would like help
-                  with? I'm here to assist you with all your coding-related
-                  inquiries.
+                text: ok
               - speaker: human
                 text: I have a dog named "happy", reply single "ok" if you understand.
-            model: mistral::v1::mixtral-8x7b-instruct
+            model: google::v1::gemini-1.5-flash
             temperature: 0
             topK: -1
             topP: -1
@@ -1820,24 +1792,21 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=8&client-name=defaultclient&client-version=v1
       response:
-        bodySize: 720
+        bodySize: 228
         content:
           mimeType: text/event-stream
-          size: 720
-          text: >+
+          size: 228
+          text: |+
             event: completion
-
-            data: {"deltaText":"Ok. I understand that you have a dog named \"happy\" too. I am a coding assistant, so if you have any coding-related questions or problems, I'd be happy to help. Just let me know how I can assist you."}
-
+            data: {"deltaText":"ok\n"}
 
             event: done
-
             data: {}
 
         cookies: []
         headers:
           - name: date
-            value: Fri, 07 Mar 2025 18:54:31 GMT
+            value: Fri, 02 May 2025 09:58:46 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -1861,13 +1830,13 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1320
+        headersSize: 1368
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-03-07T18:54:30.138Z
-      time: 913
+      startedDateTime: 2025-05-02T09:58:45.659Z
+      time: 559
       timings:
         blocked: -1
         connect: -1
@@ -1875,12 +1844,12 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 913
-    - _id: 8a1ae7727c6f9caac4d5fc11fda9377b
+        wait: 559
+    - _id: 66acc54ae8797684b7f4c400538acf84
       _order: 0
       cache: {}
       request:
-        bodySize: 925
+        bodySize: 819
         cookies: []
         headers:
           - name: accept-encoding
@@ -1893,7 +1862,7 @@ log:
           - name: content-type
             value: application/json
           - name: traceparent
-            value: 00-94296cf5d122efe355626c20d3b838af-49067f0861955e53-01
+            value: 00-9b500ac8db3ae4866efc905d551de7c1-93bb4bee9f317576-01
           - name: user-agent
             value: defaultclient/v1 (Node.js v20.4.0)
           - name: x-requested-with
@@ -1922,11 +1891,10 @@ log:
               - speaker: human
                 text: I have a turtle named "potter", reply single "ok" if you understand.
               - speaker: assistant
-                text: Ok. I understand that you have a turtle named "potter". How can I assist
-                  you with your coding needs?
+                text: ok
               - speaker: human
                 text: I have a tiger named "zorro", reply single "ok" if you understand
-            model: mistral::v1::mixtral-8x7b-instruct
+            model: google::v1::gemini-1.5-flash
             temperature: 0
             topK: -1
             topP: -1
@@ -1939,24 +1907,21 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=8&client-name=defaultclient&client-version=v1
       response:
-        bodySize: 566
+        bodySize: 228
         content:
           mimeType: text/event-stream
-          size: 566
-          text: >+
+          size: 228
+          text: |+
             event: completion
-
-            data: {"deltaText":"Ok. I understand that you have a tiger named \"zorro\". Is there something specific you would like help with in regards to coding?"}
-
+            data: {"deltaText":"ok\n"}
 
             event: done
-
             data: {}
 
         cookies: []
         headers:
           - name: date
-            value: Fri, 07 Mar 2025 18:54:31 GMT
+            value: Fri, 02 May 2025 09:58:46 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -1980,13 +1945,13 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1320
+        headersSize: 1368
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-03-07T18:54:31.060Z
-      time: 823
+      startedDateTime: 2025-05-02T09:58:46.231Z
+      time: 522
       timings:
         blocked: -1
         connect: -1
@@ -1994,12 +1959,12 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 823
-    - _id: 4307a2031f8095393fcbe52ec41b5581
+        wait: 522
+    - _id: 492e3718d1efb6e6bc30ec8dbb06cabf
       _order: 0
       cache: {}
       request:
-        bodySize: 1139
+        bodySize: 905
         cookies: []
         headers:
           - name: accept-encoding
@@ -2012,7 +1977,7 @@ log:
           - name: content-type
             value: application/json
           - name: traceparent
-            value: 00-4b96d51d7b5381fb10b33c407fd28c28-9357df4c39c9e81b-01
+            value: 00-0bc074fd6a3c4de2a74c698d6863fb4a-c6f7422bb26abebe-01
           - name: user-agent
             value: defaultclient/v1 (Node.js v20.4.0)
           - name: x-requested-with
@@ -2041,16 +2006,14 @@ log:
               - speaker: human
                 text: I have a turtle named "potter", reply single "ok" if you understand.
               - speaker: assistant
-                text: Ok. I understand that you have a turtle named "potter". How can I assist
-                  you with your coding needs?
+                text: ok
               - speaker: human
                 text: I have a tiger named "zorro", reply single "ok" if you understand
               - speaker: assistant
-                text: Ok. I understand that you have a tiger named "zorro". Is there something
-                  specific you would like help with in regards to coding?
+                text: ok
               - speaker: human
                 text: What pets do I have?
-            model: mistral::v1::mixtral-8x7b-instruct
+            model: google::v1::gemini-1.5-flash
             temperature: 0
             topK: -1
             topP: -1
@@ -2063,14 +2026,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=8&client-name=defaultclient&client-version=v1
       response:
-        bodySize: 553
+        bodySize: 282
         content:
           mimeType: text/event-stream
-          size: 553
+          size: 282
           text: >+
             event: completion
 
-            data: {"deltaText":"Based on the information I have been given, you have two pets: a turtle named \"potter\" and a tiger named \"zorro\"."}
+            data: {"deltaText":"You have a turtle named Potter and a tiger named Zorro.\n"}
 
 
             event: done
@@ -2080,7 +2043,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Fri, 07 Mar 2025 18:54:32 GMT
+            value: Fri, 02 May 2025 09:58:47 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -2104,13 +2067,13 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1320
+        headersSize: 1368
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-03-07T18:54:31.897Z
-      time: 801
+      startedDateTime: 2025-05-02T09:58:46.763Z
+      time: 650
       timings:
         blocked: -1
         connect: -1
@@ -2118,12 +2081,12 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 801
-    - _id: 16e5bc1c8e22aaed9695f5b3c6df5883
+        wait: 650
+    - _id: 2a91c0e1490aae140e57764a7d22f1a0
       _order: 0
       cache: {}
       request:
-        bodySize: 2056
+        bodySize: 1983
         cookies: []
         headers:
           - name: accept-encoding
@@ -2136,7 +2099,7 @@ log:
           - name: content-type
             value: application/json
           - name: traceparent
-            value: 00-ad6110134836ce709de9e0f11a55259f-e1f76d4d56facf1b-01
+            value: 00-e1865fcab8041ddb5c267e0b0d20a9d2-d24b229d83d92903-01
           - name: user-agent
             value: defaultclient/v1 (Node.js v20.4.0)
           - name: x-requested-with
@@ -2190,12 +2153,22 @@ log:
               - speaker: assistant
                 text: Ok.
               - speaker: human
-                text: >-
-                  You have access to the provided codebase context.
-
-
-                  Question: Explain what @src/animal.ts:1-6 ( @src/animal.ts ) does in simple terms. Assume the audience is a beginner programmer who has just learned the language features and basic syntax. Focus on explaining: 1) The purpose of the code 2) What input(s) it takes 3) What output(s) it produces 4) How it achieves its purpose through the logic and algorithm. 5) Any important logic flows or data transformations happening. Use simple language a beginner could understand. Include enough detail to give a full picture of what the code aims to accomplish without getting too technical. Format the explanation in coherent paragraphs, using proper punctuation and grammar. Write the explanation assuming no prior context about the code is known. Do not make assumptions about variables or functions not shown in the shared code. Start the answer with the name of the code that is being explained.
-            model: mistral::v1::mixtral-8x7b-instruct
+                text: "Explain what @src/animal.ts:1-6 @src/animal.ts does in simple terms.
+                  Assume the audience is a beginner programmer who has just
+                  learned the language features and basic syntax. Focus on
+                  explaining: 1) The purpose of the code 2) What input(s) it
+                  takes 3) What output(s) it produces 4) How it achieves its
+                  purpose through the logic and algorithm. 5) Any important
+                  logic flows or data transformations happening. Use simple
+                  language a beginner could understand. Include enough detail to
+                  give a full picture of what the code aims to accomplish
+                  without getting too technical. Format the explanation in
+                  coherent paragraphs, using proper punctuation and grammar.
+                  Write the explanation assuming no prior context about the code
+                  is known. Do not make assumptions about variables or functions
+                  not shown in the shared code. Start the answer with the name
+                  of the code that is being explained."
+            model: google::v1::gemini-1.5-flash
             temperature: 0
             topK: -1
             topP: -1
@@ -2208,14 +2181,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=8&client-name=defaultclient&client-version=v1
       response:
-        bodySize: 5876
+        bodySize: 2012
         content:
           mimeType: text/event-stream
-          size: 5876
+          size: 2012
           text: >+
             event: completion
 
-            data: {"deltaText":"Sure! This is the TypeScript code for defining an interface named `Animal`. Here's an explanation for it:\n\nThe Animal Interface\n-------------------\n\nThe `Animal` interface defines the required properties and methods for an object that represents an animal. In simple terms, it outlines what an animal **should have** or **should do**. In this case, an animal has a `name` property (a string), a `makeAnimalSound()` method (returns a string), and an `isMammal` property (a boolean value). Interfaces in TypeScript are used to ensure consistency and cohesion in object-oriented programming. Here, the `Animal` interface can be used for type checking and ensuring that any objects implementing this interface will have the essential properties and methods of an animal.\n\nPurpose, Inputs, and Outputs\n----------------------------\n\nThe `Animal` interface doesn't have any specific inputs or outputs, as it deals with defining the structure for object types. When using this interface in your code, if you create an object implementing it, the object would be expected to provide a `name`, implement the `makeAnimalSound()` method, and set the `isMammal` property.\n\nThe primary purpose of this `Animal` interface is to give guidance and maintain consistency in the code and between objects representing animals. This aids in better code organization, code understanding, and developer communication.\n\nIn essence, this interface gives us a blueprint for creating structurally consistent animal objects. It helps ensure that wherever we use this `Animal` interface, the core traits of an animal (its `name`, `makeAnimalSound()` method, and `isMammal` property) will be properly addressed.\n\nAchieving the Purpose\n--------------------\n\nBy declaring the `Animal` interface, you create a pattern that other parts of the codebase can adhere to when building objects intended to emulate animal entities. This enables developers to manage and visualize all animal objects with similar structures, ensuring every animal object shares the same building blocks.\n\nUsing this interface, you can create an instance of an object representing a specific animal and ensure it has the required properties and methods (`name`, `makeAnimalSound()`, and `isMammal`). This consistency guarantees clear and predictable functionality while dealing with the animal objects throughout the codebase.\n\nTo sum up, the `Animal` interface, as shown in the code, lays the foundation for declaring the necessary structure and functionality of an animal object. It doesn't produce any specific outputs or handle particular inputs but rather guides developers to build objects that fit a common animal pattern, enhancing communication, manageability, and functionality."}
+            data: {"deltaText":"This code defines a blueprint, or a template, called `Animal`.  Think of it like a form that needs to be filled out to describe any animal.  This \"form\" is called an *interface* in programming.  It doesn't actually *create* an animal; it just specifies what information *must* be included when you create one.\n\nThe `Animal` interface requires three pieces of information:\n\n1.  `name`:  A string (text) that holds the animal's name, for example, \"Lion\", \"Dog\", or \"Parrot\".\n2.  `makeAnimalSound()`: This isn't just a piece of information; it's a *function* that needs to be defined.  It describes what sound the animal makes.  When you create an animal based on this template, you'll have to say what sound it makes (like \"Woof!\" or \"Meow!\").\n3.  `isMammal`: A boolean value (true or false) that indicates whether the animal is a mammal.\n\nThis code doesn't do anything on its own; it just sets the rules. To use it, you would create new animal types based on this `Animal` interface.  For example, you might create a \"Dog\" object that satisfies the interface by providing a name, a `makeAnimalSound()` function returning \"Woof!\", and setting `isMammal` to `true`.  The code doesn't produce any output by itself because it's just a definition.  Its purpose is to create a standard for representing animals in a program.  There's no specific algorithm or logic flow within the interface itself; it simply lays out requirements.\n"}
 
 
             event: done
@@ -2225,7 +2198,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Fri, 07 Mar 2025 18:54:34 GMT
+            value: Wed, 07 May 2025 13:28:44 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -2249,13 +2222,13 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1320
+        headersSize: 1368
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-03-07T18:54:32.732Z
-      time: 4075
+      startedDateTime: 2025-05-07T13:28:43.282Z
+      time: 2984
       timings:
         blocked: -1
         connect: -1
@@ -2263,12 +2236,12 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 4075
-    - _id: 6ab1509e468689cc2d8c1b8dbedf4adc
+        wait: 2984
+    - _id: 2d9fb0f6ab784a3b83c2a37ddfa364b4
       _order: 0
       cache: {}
       request:
-        bodySize: 1852
+        bodySize: 1779
         cookies: []
         headers:
           - name: accept-encoding
@@ -2281,7 +2254,7 @@ log:
           - name: content-type
             value: application/json
           - name: traceparent
-            value: 00-b8d7e39f2ded58ad90352a0aaf468e25-13ed8312e7105df4-01
+            value: 00-5125c5db616174c69d5ac35ada3c324c-1f7503c562c7cd6d-01
           - name: user-agent
             value: defaultclient/v1 (Node.js v20.4.0)
           - name: x-requested-with
@@ -2335,12 +2308,18 @@ log:
               - speaker: assistant
                 text: Ok.
               - speaker: human
-                text: >-
-                  You have access to the provided codebase context.
-
-
-                  Question: Please review and analyze @src/animal.ts:1-6 ( @src/animal.ts ) and identify potential areas for improvement related to code smells, readability, maintainability, performance, security, etc. Do not list issues already addressed in the given code. Focus on providing up to 5 constructive suggestions that could make the code more robust, efficient, or align with best practices. For each suggestion, provide a brief explanation of the potential benefits. After listing any recommendations, summarize if you found notable opportunities to enhance the code quality overall or if the code generally follows sound design principles. If no issues found, reply 'There are no errors.'
-            model: mistral::v1::mixtral-8x7b-instruct
+                text: Please review and analyze @src/animal.ts:1-6 @src/animal.ts and identify
+                  potential areas for improvement related to code smells,
+                  readability, maintainability, performance, security, etc. Do
+                  not list issues already addressed in the given code. Focus on
+                  providing up to 5 constructive suggestions that could make the
+                  code more robust, efficient, or align with best practices. For
+                  each suggestion, provide a brief explanation of the potential
+                  benefits. After listing any recommendations, summarize if you
+                  found notable opportunities to enhance the code quality
+                  overall or if the code generally follows sound design
+                  principles. If no issues found, reply 'There are no errors.'
+            model: google::v1::gemini-1.5-flash
             temperature: 0
             topK: -1
             topP: -1
@@ -2353,14 +2332,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=8&client-name=defaultclient&client-version=v1
       response:
-        bodySize: 5649
+        bodySize: 2954
         content:
           mimeType: text/event-stream
-          size: 5649
+          size: 2954
           text: >+
             event: completion
 
-            data: {"deltaText":"Based on my analysis of the provided code, here are some suggestions for potential improvements:\n\n1. **Add a type annotation for the `makeAnimalSound()` method return type.** Although the code does not include an implementation for this method, it would be a good practice to provide type annotations for all methods that return a value. This can help prevent errors and improve the maintainability of the code.\n\n```typescript\nmakeAnimalSound(): string\n```\n\n2. **Consider capitalizing the `isMammal` property name accordingly.** In TypeScript, property names should use camelCase, so it would be more appropriate to name this property `isMammal`.\n\n```typescript\ninterface Animal {\n    name: string\n    makeAnimalSound(): string\n    isMammal: boolean\n}\n```\n\n3. **Add a constructor to initialize the properties.** This can help ensure that instances of the `Animal` interface are always initialized with the correct values.\n\n```typescript\ninterface Animal {\n    name: string\n    makeAnimalSound(): string\n    isMammal: boolean\n\n    constructor(name: string, isMammal: boolean) {\n        this.name = name\n        this.isMammal = isMammal\n    }\n}\n```\n\n4. **Add JSDoc comments to provide more context for users of the `Animal` interface.** JSDoc comments can help developers understand how to use the interface and what its properties and methods are used for.\n\n```typescript\n/**\n * An interface representing an animal.\n */\ninterface Animal {\n    /**\n     * The animal's name.\n     */\n    name: string\n\n    /**\n     * A method that the animal uses to make a sound.\n     */\n    makeAnimalSound(): string\n\n    /**\n     * A boolean indicating whether the animal is a mammal.\n     */\n    isMammal: boolean\n\n    /**\n     * Constructs a new `Animal` instance.\n     *\n     * @param name The animal's name.\n     * @param isMammal A boolean indicating whether the animal is a mammal.\n     */\n    constructor(name: string, isMammal: boolean)\n}\n```\n\n5. **Consider separating the `Animal` interface into separate interfaces or classes.** Depending on the complexity of the application, it may be more appropriate to split the `Animal` interface into smaller, more focused interfaces or classes. This can help improve the modularity and maintainability of the code.\n\nOverall, the provided code is well-written and generally follows sound design principles. However, implementing these suggestions can help make the code more robust, efficient, and align with best practices."}
+            data: {"deltaText":"The provided code snippet for `src/animal.ts` defines a simple interface for representing animals. While concise and functional, there are a few areas for potential improvement:\n\n\n1. **Add a `species` property:**  Currently, the interface relies on `name` which might be ambiguous. Adding a `species` property would provide a clearer and more robust way to categorize animals.  This improves clarity and maintainability, especially if you plan to add more complex animal logic in the future.\n\n2. **Consider a more specific return type for `makeAnimalSound()`:**  The return type is currently just `string`.  You could consider using a union type to represent the various potential sounds (e.g., `'bark' | 'meow' | 'roar'`), making the code more type-safe and easier to reason about. This enhances type safety and maintainability.\n\n3. **Enforce non-null values:**  The interface allows for `name` and `isMammal` to be potentially `undefined` or `null`. Adding `string` and `boolean` non-null assertion (`!`) will help maintain clarity.  This improves type safety and reduces potential runtime errors caused by unexpected null values.\n\n4. **Add a method for animal age or other relevant attributes:** The interface is very basic. Consider adding methods or attributes that could allow for tracking other relevant attributes of animals such as age, weight, diet, etc. This will increase the flexibility and functionality of the `Animal` interface and could be easily extended.\n\n\n5. **Consider an abstract class instead of an interface:** If you anticipate implementing common functionality across different animal types (e.g., a default `makeAnimalSound()` implementation for some animals), consider using an abstract class instead of an interface. This enables you to add default implementations while maintaining flexibility.\n\n\n**Summary:**\n\nWhile the initial code is clean and functional, the suggestions above would enhance its robustness, type safety, and extensibility.  The additions would make the code more adaptable to future changes and improvements, leading to better maintainability in a larger project.  There are notable opportunities to enhance the code quality by adding more specific types and potentially using a more versatile base class if shared logic becomes necessary.\n"}
 
 
             event: done
@@ -2370,7 +2349,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Fri, 07 Mar 2025 18:54:38 GMT
+            value: Wed, 07 May 2025 13:28:46 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -2394,13 +2373,13 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1320
+        headersSize: 1368
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-03-07T18:54:36.836Z
-      time: 4182
+      startedDateTime: 2025-05-07T13:28:46.346Z
+      time: 3442
       timings:
         blocked: -1
         connect: -1
@@ -2408,7 +2387,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 4182
+        wait: 3442
     - _id: f1b1cde4cd57488b7f0137954f0302f5
       _order: 0
       cache: {}
@@ -3316,6 +3295,124 @@ log:
         send: 0
         ssl: -1
         wait: 241
+    - _id: 56a492772232c45792c5aa50a02c5fa2
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 247
+        cookies: []
+        headers:
+          - _fromType: array
+            name: accept
+            value: application/json
+          - _fromType: array
+            name: authorization
+            value: token
+              REDACTED_fc324d3667e841181b0779375f26dedc911d26b303d23b29b1a2d7ee63dc77eb
+          - _fromType: array
+            name: content-type
+            value: application/json; charset=utf-8
+          - _fromType: array
+            name: traceparent
+            value: 00-6d879ae67c30dad7c79d97ac1467b55f-a8c97d2ab43e0821-01
+          - _fromType: array
+            name: user-agent
+            value: defaultclient/v1 (Node.js v20.4.0)
+          - _fromType: array
+            name: x-requested-with
+            value: defaultclient v1
+          - _fromType: array
+            name: content-length
+            value: "247"
+          - _fromType: array
+            name: accept-encoding
+            value: gzip,deflate
+          - name: host
+            value: sourcegraph.com
+        headersSize: 512
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json; charset=utf-8
+          params: []
+          textJSON:
+            query: |
+              
+              query Repositories($names: [String!]!, $first: Int!) {
+                  repositories(names: $names, first: $first) {
+                    nodes {
+                      name
+                      id
+                    }
+                  }
+                }
+            variables:
+              first: 10
+              names:
+                - github.com/sourcegraph/cody
+        queryString:
+          - name: Repositories
+            value: null
+        url: https://sourcegraph.com/.api/graphql?Repositories
+      response:
+        bodySize: 180
+        content:
+          encoding: base64
+          mimeType: application/json
+          size: 180
+          text: "[\"H4sIAAAAAAAAAxTHsQ7CIBQF0H+5s7GJTpJ0cHKiLuhiHCjvpWWgjwCNIYR/N93OaSBbL\
+            FRD4ijZF0me8/FN6MCnYbOBobD4su7z2UkYsuzJ8ZJsXAcnVHGCJyi8wvs3X6dIj1tl\
+            IxdtdJ2Mrs/7OKJ/e+9/AAAA//8DAE12uGxwAAAA\"]"
+          textDecoded:
+            data:
+              repositories:
+                nodes:
+                  - id: UmVwb3NpdG9yeTo2MTMyNTMyOA==
+                    name: github.com/sourcegraph/cody
+        cookies: []
+        headers:
+          - name: date
+            value: Mon, 19 May 2025 10:40:03 GMT
+          - name: content-type
+            value: application/json
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: close
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache, max-age=0
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+          - name: content-encoding
+            value: gzip
+        headersSize: 1397
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2025-05-19T10:40:03.150Z
+      time: 382
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 382
     - _id: 4504fab53d7cb602861f73dc2aa883d2
       _order: 0
       cache: {}

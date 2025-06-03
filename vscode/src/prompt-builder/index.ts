@@ -74,11 +74,15 @@ export class PromptBuilder {
     }
 
     public build(): Message[] {
-        if (this.contextItems.length > 0) {
+        // Make a copy of the context items to avoid modifying the original during build
+        const contextItemsCopy = [...this.contextItems]
+        const reverseMessagesCopy = [...this.reverseMessages]
+
+        if (contextItemsCopy.length > 0) {
             const contextMessages = this.buildContextMessages()
-            this.reverseMessages.push(...contextMessages)
+            reverseMessagesCopy.push(...contextMessages)
         }
-        const chatMessages = [...this.reverseMessages].reverse()
+        const chatMessages = [...reverseMessagesCopy].reverse()
         return this.prefixMessages.concat(sanitizedChatMessages(chatMessages))
     }
 
@@ -90,15 +94,25 @@ export class PromptBuilder {
         const contextMessages: Message[] = []
         // NOTE: Remove tool-state context items from the list of context items,
         // as we are turning them into part of chat messages.
-        const filteredContextItems = this.contextItems.filter(i => i.type !== 'tool-state')
+        const filteredContextItems = [...this.contextItems].filter(i => i.type !== 'tool-state')
+
+        // Separate media and non-media items
+        const mediaItems = filteredContextItems.filter(i => i.type === 'media')
+        const nonMediaItems = filteredContextItems.filter(i => i.type !== 'media')
+
         if (this.isCacheEnabled) {
-            // Filter valid context items (ignoring 'media') and collect their texts.
-            const texts = filteredContextItems.reduce<PromptString[]>((acc, item) => {
+            // Handle media items separately
+            for (const item of mediaItems) {
                 const msg = renderContextItem(item)
                 if (msg) {
-                    if (item.type === 'media') {
-                        contextMessages.push(ASSISTANT_MESSAGE, msg)
-                    }
+                    contextMessages.push(ASSISTANT_MESSAGE, msg)
+                }
+            }
+
+            // Filter valid non-media context items and collect their texts.
+            const texts = nonMediaItems.reduce<PromptString[]>((acc, item) => {
+                const msg = renderContextItem(item)
+                if (msg?.text) {
                     acc.push(msg.text)
                 }
                 return acc
@@ -114,8 +128,16 @@ export class PromptBuilder {
                 contextMessages.push(ASSISTANT_MESSAGE, groupedContextMessage)
             }
         } else {
-            // For each valid context item, include both ASSISTANT_MESSAGE and the message.
-            for (const item of filteredContextItems) {
+            // Handle media items first
+            for (const item of mediaItems) {
+                const msg = renderContextItem(item)
+                if (msg) {
+                    contextMessages.push(ASSISTANT_MESSAGE, msg)
+                }
+            }
+
+            // Handle non-media items
+            for (const item of nonMediaItems) {
                 const msg = renderContextItem(item)
                 if (msg) {
                     contextMessages.push(ASSISTANT_MESSAGE, msg)
@@ -220,8 +242,10 @@ export class PromptBuilder {
             }
 
             if (item.type === 'media') {
+                // Always add media items to the result and context items, regardless of type
                 result.added.push(item)
                 this.contextItems.push(item)
+                // Skip token counting for media items - they're always allowed
                 continue
             }
 

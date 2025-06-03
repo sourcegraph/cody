@@ -7,7 +7,6 @@ import { useLocalStorage } from '../../components/hooks'
 import { useTelemetryRecorder } from '../../utils/telemetry'
 import { useConfig } from '../../utils/useConfig'
 import { useDebounce } from '../../utils/useDebounce'
-import type { PromptsFilterArgs } from '../promptFilter/PromptsFilter'
 import {
     Command,
     CommandInput,
@@ -27,10 +26,16 @@ const BUILT_IN_PROMPTS_CODE: Record<string, number> = {
     'generate-unit-tests': 4,
 }
 
+export interface PromptsFilterArgs {
+    owner?: string
+    tags?: string[]
+    promoted?: boolean
+    core?: boolean
+}
 interface PromptListProps {
     showSearch: boolean
     showFirstNItems?: number
-    telemetryLocation: 'PromptSelectField' | 'PromptsTab' | 'WelcomeAreaPrompts'
+    telemetryLocation: 'PromptSelectField' | 'WelcomeAreaPrompts'
     showOnlyPromptInsertableCommands?: boolean
     showCommandOrigins?: boolean
     showPromptLibraryUnsupportedMessage?: boolean
@@ -48,8 +53,7 @@ interface PromptListProps {
  * A list of prompts from the Prompt Library. For backcompat, it also displays built-in commands and
  * custom commands (which are both deprecated in favor of the Prompt Library).
  *
- * It is used in the {@link PromptSelectField} in a popover and in {@link PromptsTab} as a list (not
- * in a popover).
+ * It is used in the {@link PromptSelectField} in a popover and in the welcome area.
  */
 export const PromptList: FC<PromptListProps> = props => {
     const {
@@ -231,6 +235,7 @@ export const PromptList: FC<PromptListProps> = props => {
                 )}
                 {!recommendedOnly &&
                     result &&
+                    result.arePromptsSupported &&
                     sortedActions.filter(action => action.actionType === 'prompt').length === 0 && (
                         <CommandLoading className={itemPaddingClass}>
                             {result?.query === '' && !anyPromptFilterActive ? (

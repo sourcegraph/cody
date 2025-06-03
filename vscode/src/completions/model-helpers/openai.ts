@@ -15,7 +15,7 @@ import {
     type GetOllamaPromptParams,
 } from './default'
 
-export class OpenAI extends DefaultModel {
+export class OpenAIV1 extends DefaultModel {
     public stopSequences = [CLOSING_CODE_TAG.toString()]
 
     private instructions =

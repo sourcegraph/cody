@@ -1,10 +1,38 @@
-import { decode, encode } from 'gpt-tokenizer/encoding/cl100k_base'
+// import { decode, encode } from 'gpt-tokenizer/encoding/cl100k_base'
 import type { TokenBudget, TokenUsage } from '.'
 import type { ChatContextTokenUsage, TokenUsageType } from '.'
 import { EXTENDED_USER_CONTEXT_TOKEN_BUDGET, type ModelContextWindow } from '..'
 import type { Message, PromptString } from '..'
 import { CORPUS_CONTEXT_ALLOCATION } from './constants'
 
+let _tokenCounterUtilsPromise: Promise<TokenCounterUtils> | null = null
+
+export async function getTokenCounterUtils() {
+    if (_tokenCounterUtilsPromise) {
+        return _tokenCounterUtilsPromise
+    }
+
+    const { detect } = await import('detect-browser')
+    const browser = detect()
+    if (browser && browser.name === 'safari') {
+        _tokenCounterUtilsPromise = import('js-tiktoken/ranks/cl100k_base').then(async tokenizer => {
+            const tiktoken = await import('js-tiktoken/lite')
+            return createTokenCounterUtils(new tiktoken.Tiktoken(tokenizer.default))
+        })
+    } else {
+        _tokenCounterUtilsPromise = import('gpt-tokenizer/encoding/cl100k_base').then(tokenizer =>
+            createTokenCounterUtils(tokenizer)
+        )
+    }
+
+    return _tokenCounterUtilsPromise
+}
+
+type WithPromise<T> = {
+    [K in keyof T]: T[K] extends (...args: any[]) => any
+        ? (...args: Parameters<T[K]>) => Promise<ReturnType<T[K]>>
+        : T[K]
+}
 export interface TokenCounterUtils {
     encode(text: string): number[]
     decode(encoded: number[]): string
@@ -14,32 +42,48 @@ export interface TokenCounterUtils {
     getTokenCountForMessage(message: Message | undefined): number
 }
 
-export const TokenCounterUtils: TokenCounterUtils = {
-    encode(text: string): number[] {
-        return encode(text.normalize('NFKC'))
-    },
-    decode(encoded: number[]): string {
-        return decode(encoded)
-    },
-    countTokens(text: string): number {
-        const wordCount = text.trim().split(/\s+/).length
-        return wordCount > EXTENDED_USER_CONTEXT_TOKEN_BUDGET ? wordCount : this.encode(text).length
-    },
+/**
+ * Calling `await TokenCounterUtils.foo()` is the same as `(await getTokenCounterUtils()).foo()`.
+ */
+export const TokenCounterUtils: WithPromise<TokenCounterUtils> = {
+    encode: async (...args) => (await getTokenCounterUtils()).encode(...args),
+    decode: async (...args) => (await getTokenCounterUtils()).decode(...args),
+    countTokens: async (...args) => (await getTokenCounterUtils()).countTokens(...args),
+    countPromptString: async (...args) => (await getTokenCounterUtils()).countPromptString(...args),
+    getMessagesTokenCount: async (...args) =>
+        (await getTokenCounterUtils()).getMessagesTokenCount(...args),
+    getTokenCountForMessage: async (...args) =>
+        (await getTokenCounterUtils()).getTokenCountForMessage(...args),
+}
 
-    countPromptString(text: PromptString): number {
-        return this.countTokens(text.toString())
-    },
+function createTokenCounterUtils(tokenizer: any) {
+    return {
+        encode(text: string): number[] {
+            return tokenizer.encode(text.normalize('NFKC'))
+        },
+        decode(encoded: number[]): string {
+            return tokenizer.decode(encoded)
+        },
+        countTokens(text: string): number {
+            const wordCount = text.trim().split(/\s+/).length
+            return wordCount > EXTENDED_USER_CONTEXT_TOKEN_BUDGET ? wordCount : this.encode(text).length
+        },
 
-    getMessagesTokenCount(messages: Message[]): number {
-        return messages.reduce((acc, m) => acc + this.getTokenCountForMessage(m), 0)
-    },
+        countPromptString(text: PromptString): number {
+            return this.countTokens(text.toString())
+        },
 
-    getTokenCountForMessage(message: Message): number {
-        if (message?.text && message?.text.length > 0) {
-            return this.countPromptString(message.text)
-        }
-        return 0
-    },
+        getMessagesTokenCount(messages: Message[]): number {
+            return messages.reduce((acc, m) => acc + this.getTokenCountForMessage(m), 0)
+        },
+
+        getTokenCountForMessage(message: Message): number {
+            if (message?.text && message?.text.length > 0) {
+                return this.countPromptString(message.text)
+            }
+            return 0
+        },
+    }
 }
 
 /**
@@ -72,11 +116,14 @@ export class TokenCounter {
      * Convenience constructor to await the lazy-import from {@link getTokenCounterUtils} and then
      * call our constructor.
      */
-    public static create(contextWindow: ModelContextWindow): TokenCounter {
-        return new TokenCounter(contextWindow)
+    public static async create(contextWindow: ModelContextWindow): Promise<TokenCounter> {
+        return new TokenCounter(await getTokenCounterUtils(), contextWindow)
     }
 
-    private constructor(contextWindow: ModelContextWindow) {
+    private constructor(
+        readonly tokenCounter: TokenCounterUtils,
+        contextWindow: ModelContextWindow
+    ) {
         // If there is no context window reserved for context.user,
         // context will share the same token budget with chat.
         this.shareChatAndUserBudget = !contextWindow.context?.user
@@ -98,7 +145,7 @@ export class TokenCounter {
         type: TokenUsageType,
         messages: Message[]
     ): { succeeded: boolean; reason?: string } {
-        const count = TokenCounterUtils.getMessagesTokenCount(messages)
+        const count = this.tokenCounter.getMessagesTokenCount(messages)
         const { isWithinLimit, reason } = this.canAllocateTokens(type, count)
         if (isWithinLimit) {
             this.usedTokens[type] = this.usedTokens[type] + count
