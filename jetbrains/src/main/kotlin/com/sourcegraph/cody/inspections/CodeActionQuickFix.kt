@@ -106,8 +106,7 @@ class CodeActionQuickFix(private val params: CodeActionQuickFixParams) :
         // TODO: handle this with a user notification
         throw Exception("Could not find action")
       }
-      // TODO: Need to refactor agent to not return edit session for every action CODY-3125
-      agent.server.codeActions_trigger(action.id).get()
+      agent.server.codeActions_trigger(action.id)
     }
   }
 
