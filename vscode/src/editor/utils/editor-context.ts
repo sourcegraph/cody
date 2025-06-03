@@ -377,6 +377,10 @@ export async function filterContextItemFiles(
         if (cf.type !== 'file' || fileStat?.type !== vscode.FileType.File || fileStat?.size > 1000000) {
             continue
         }
+
+        // Mark files larger than 1MB as too large but still include them
+        const isTooLarge = fileStat.size > 1000000
+
         // TODO (bee) consider a better way to estimate the token size of a file
         // We cannot get the exact token size without parsing the file, which is expensive.
         // Instead, we divide the file size in bytes by 4.5 for non-markdown as a rough estimate of the token size.
@@ -387,6 +391,13 @@ export async function filterContextItemFiles(
         // via 'right-click on a selection' that only involves reading a single context item, allowing us to read
         // the file content on-demand instead of in bulk. We would then label the file size more accurately with the tokenizer.
         cf.size = Math.floor(fileStat.size / (cf.uri.fsPath.endsWith('.md') ? 3.5 : 4.5))
+
+        // Mark the file as too large if it exceeds the size limit
+        if (isTooLarge) {
+            cf.isTooLarge = true
+            cf.isTooLargeReason = 'File exceeds 1MB size limit'
+        }
+
         filtered.push(cf)
     }
     return filtered
