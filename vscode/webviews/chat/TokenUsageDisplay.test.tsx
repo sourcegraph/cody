@@ -4,7 +4,9 @@ import { describe, expect, it } from 'vitest'
 import { ConfigProvider } from '../utils/useConfig'
 import { TokenUsageDisplay } from './TokenUsageDisplay'
 
-const mockConfig = (internalDebugTokenUsage: boolean): ComponentProps<typeof ConfigProvider>['value'] => ({
+const mockConfig = (
+    internalDebugTokenUsage: boolean
+): ComponentProps<typeof ConfigProvider>['value'] => ({
     authStatus: {
         endpoint: 'https://sourcegraph.example.com',
         authenticated: true,
