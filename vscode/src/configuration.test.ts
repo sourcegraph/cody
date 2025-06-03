@@ -142,6 +142,8 @@ describe('getConfiguration', () => {
                         return []
                     case 'cody.rules.enabled':
                         return false
+                    case 'cody.internal.debug.tokenUsage':
+                        return false
                     default:
                         assert(false, `unexpected key: ${key}`)
                 }
@@ -188,6 +190,7 @@ describe('getConfiguration', () => {
             internalUnstable: false,
             internalDebugContext: false,
             internalDebugState: false,
+            internalDebugTokenUsage: false,
             debugVerbose: true,
             debugFilter: /.*/,
             telemetryLevel: 'all',

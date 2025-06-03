@@ -135,6 +135,7 @@ export function getConfiguration(
         ),
         internalDebugContext: getHiddenSetting('internal.debug.context', false),
         internalDebugState: getHiddenSetting('internal.debug.state', false),
+        internalDebugTokenUsage: getHiddenSetting('internal.debug.tokenUsage', false),
 
         autocompleteAdvancedModel: getHiddenSetting('autocomplete.advanced.model', null),
         autocompleteExperimentalGraphContext: getHiddenSetting<

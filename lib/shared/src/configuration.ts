@@ -160,6 +160,7 @@ interface RawClientConfiguration {
     internalUnstable: boolean
     internalDebugContext?: boolean
     internalDebugState?: boolean
+    internalDebugTokenUsage?: boolean
 
     //#region Hidden Settings
     hasNativeWebview: boolean
