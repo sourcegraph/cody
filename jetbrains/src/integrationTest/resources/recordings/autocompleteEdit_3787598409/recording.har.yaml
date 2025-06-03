@@ -51,7 +51,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Tue, 03 Jun 2025 12:44:46 GMT
+            value: Tue, 03 Jun 2025 13:46:27 GMT
           - name: content-type
             value: text/plain; charset=utf-8
           - name: transfer-encoding
@@ -82,8 +82,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-06-03T12:44:46.127Z
-      time: 236
+      startedDateTime: 2025-06-03T13:46:27.774Z
+      time: 242
       timings:
         blocked: -1
         connect: -1
@@ -91,7 +91,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 236
+        wait: 242
     - _id: 4124207a51acde05480e29de14a9eac5
       _order: 0
       cache: {}
@@ -197,10 +197,10 @@ log:
             value: 9.9-localbuild
         url: https://demo.sourcegraph.com/.api/completions/code?client-name=jetbrains&client-version=9.9-localbuild
       response:
-        bodySize: 709
+        bodySize: 878
         content:
           mimeType: text/event-stream
-          size: 709
+          size: 878
           text: >+
             event: completion
 
@@ -214,7 +214,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Tue, 03 Jun 2025 12:44:46 GMT
+            value: Tue, 03 Jun 2025 13:46:28 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -243,8 +243,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-06-03T12:44:46.442Z
-      time: 521
+      startedDateTime: 2025-06-03T13:46:28.018Z
+      time: 638
       timings:
         blocked: -1
         connect: -1
@@ -252,7 +252,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 521
+        wait: 638
     - _id: 5c2ca7c84bdc67ac3fecd52acfb93b5b
       _order: 0
       cache: {}
@@ -350,14 +350,14 @@ log:
             value: 9.9-localbuild
         url: https://demo.sourcegraph.com/.api/completions/code?client-name=jetbrains&client-version=9.9-localbuild
       response:
-        bodySize: 631
+        bodySize: 532
         content:
           mimeType: text/event-stream
-          size: 631
+          size: 532
           text: >+
             event: completion
 
-            data: {"completion":"    val list = listOf(1, 2, 3, 4, 5)\n    for (i in list) {\n        println(i)\n    }\n}\n","stopReason":"stop"}
+            data: {"completion":"    val list = listOf(1, 2, 3, 4, 5)\n    for (item in list) {\n        println(item)\n    }\n}\n","stopReason":"stop"}
 
 
             event: done
@@ -367,7 +367,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Tue, 03 Jun 2025 12:44:47 GMT
+            value: Tue, 03 Jun 2025 13:46:29 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -396,8 +396,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-06-03T12:44:47.238Z
-      time: 538
+      startedDateTime: 2025-06-03T13:46:28.875Z
+      time: 428
       timings:
         blocked: -1
         connect: -1
@@ -405,7 +405,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 538
+        wait: 428
     - _id: 404a28d2461ea66da470804476c21f26
       _order: 0
       cache: {}
@@ -468,7 +468,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Tue, 03 Jun 2025 12:44:46 GMT
+            value: Tue, 03 Jun 2025 13:46:28 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -499,8 +499,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-06-03T12:44:46.401Z
-      time: 242
+      startedDateTime: 2025-06-03T13:46:28.066Z
+      time: 214
       timings:
         blocked: -1
         connect: -1
@@ -508,7 +508,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 242
+        wait: 214
     - _id: 8f874601be80bbe63d0652f1110280e3
       _order: 0
       cache: {}
@@ -572,7 +572,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Tue, 03 Jun 2025 12:44:46 GMT
+            value: Tue, 03 Jun 2025 13:46:27 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -603,8 +603,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-06-03T12:44:46.106Z
-      time: 318
+      startedDateTime: 2025-06-03T13:46:27.752Z
+      time: 239
       timings:
         blocked: -1
         connect: -1
@@ -612,7 +612,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 318
+        wait: 239
     - _id: c094940ca4210fcb4809cd04c9d916db
       _order: 0
       cache: {}
@@ -683,7 +683,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Tue, 03 Jun 2025 12:44:46 GMT
+            value: Tue, 03 Jun 2025 13:46:27 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -714,8 +714,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-06-03T12:44:45.830Z
-      time: 265
+      startedDateTime: 2025-06-03T13:46:27.453Z
+      time: 276
       timings:
         blocked: -1
         connect: -1
@@ -723,7 +723,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 265
+        wait: 276
     - _id: 6d678ba98ff2e3959de5001c07326f28
       _order: 0
       cache: {}
@@ -788,7 +788,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Tue, 03 Jun 2025 12:44:46 GMT
+            value: Tue, 03 Jun 2025 13:46:27 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -819,8 +819,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-06-03T12:44:45.872Z
-      time: 224
+      startedDateTime: 2025-06-03T13:46:27.498Z
+      time: 228
       timings:
         blocked: -1
         connect: -1
@@ -828,7 +828,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 224
+        wait: 228
     - _id: 6f796c152fe09bf6f9bca1fc88478f87
       _order: 0
       cache: {}
@@ -892,7 +892,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Tue, 03 Jun 2025 12:44:46 GMT
+            value: Tue, 03 Jun 2025 13:46:27 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -923,8 +923,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-06-03T12:44:45.851Z
-      time: 250
+      startedDateTime: 2025-06-03T13:46:27.475Z
+      time: 320
       timings:
         blocked: -1
         connect: -1
@@ -932,7 +932,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 250
+        wait: 320
     - _id: 2717d54335f4500a7f7edd3c1b77c615
       _order: 0
       cache: {}
@@ -1009,7 +1009,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Tue, 03 Jun 2025 12:44:45 GMT
+            value: Tue, 03 Jun 2025 13:46:26 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -1040,8 +1040,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-06-03T12:44:44.825Z
-      time: 442
+      startedDateTime: 2025-06-03T13:46:26.240Z
+      time: 561
       timings:
         blocked: -1
         connect: -1
@@ -1049,7 +1049,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 442
+        wait: 561
     - _id: 7c8561ba03f1b53b0087b29b8c3519cb
       _order: 0
       cache: {}
@@ -1115,7 +1115,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Tue, 03 Jun 2025 12:44:46 GMT
+            value: Tue, 03 Jun 2025 13:46:27 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -1146,8 +1146,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-06-03T12:44:45.809Z
-      time: 293
+      startedDateTime: 2025-06-03T13:46:27.430Z
+      time: 318
       timings:
         blocked: -1
         connect: -1
@@ -1155,7 +1155,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 293
+        wait: 318
     - _id: 18db51344af131baf45ba049965cba0f
       _order: 0
       cache: {}
@@ -1252,7 +1252,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Tue, 03 Jun 2025 12:44:46 GMT
+            value: Tue, 03 Jun 2025 13:46:28 GMT
           - name: content-type
             value: application/json
           - name: content-length
@@ -1283,8 +1283,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-06-03T12:44:46.369Z
-      time: 279
+      startedDateTime: 2025-06-03T13:46:28.045Z
+      time: 273
       timings:
         blocked: -1
         connect: -1
@@ -1292,7 +1292,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 279
+        wait: 273
     - _id: ceee2078500ebaad09c6a34055ed9d99
       _order: 0
       cache: {}
@@ -1399,7 +1399,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Tue, 03 Jun 2025 12:44:46 GMT
+            value: Tue, 03 Jun 2025 13:46:28 GMT
           - name: content-type
             value: text/plain; charset=utf-8
           - name: transfer-encoding
@@ -1430,8 +1430,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-06-03T12:44:46.660Z
-      time: 327
+      startedDateTime: 2025-06-03T13:46:28.336Z
+      time: 286
       timings:
         blocked: -1
         connect: -1
@@ -1439,6 +1439,6 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 327
+        wait: 286
   pages: []
   version: "1.2"
