@@ -114,10 +114,6 @@ export const CodyPanel: FunctionComponent<CodyPanelProps> = ({
         }
     }, [api.clientActionBroadcast])
 
-    const handleTrimChatHistory = () => {
-        vscodeAPI.postMessage({ command: 'trimChatHistory' })
-    }
-
     const handleClearAllChatHistory = () => {
         vscodeAPI.postMessage({ command: 'clearAllChatHistory' })
     }
@@ -158,7 +154,6 @@ export const CodyPanel: FunctionComponent<CodyPanelProps> = ({
                             setView={setView}
                             isWorkspacesUpgradeCtaEnabled={isWorkspacesUpgradeCtaEnabled}
                             showStorageWarning={showStorageWarning}
-                            onTrimChatHistory={handleTrimChatHistory}
                             onClearAllChatHistory={handleClearAllChatHistory}
                         />
                     )}

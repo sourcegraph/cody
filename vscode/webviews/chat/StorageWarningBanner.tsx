@@ -7,15 +7,10 @@ import { downloadChatHistory } from './downloadChatHistory'
 
 interface StorageWarningBannerProps {
     extensionAPI: WebviewToExtensionAPI
-    onTrim: () => void
     onClearAll: () => void
 }
 
-export const StorageWarningBanner = ({
-    extensionAPI,
-    onTrim,
-    onClearAll,
-}: StorageWarningBannerProps) => {
+export const StorageWarningBanner = ({ extensionAPI, onClearAll }: StorageWarningBannerProps) => {
     const onExport = useCallback(() => downloadChatHistory(extensionAPI), [extensionAPI])
     const [isVisible, setIsVisible] = useState(true)
 
@@ -28,36 +23,20 @@ export const StorageWarningBanner = ({
     }
 
     return (
-        <div
-            className={styles.errorItem}
-            style={{
-                background: 'rgba(107, 114, 128, 0.1)',
-                borderLeft: '4px solid #3b82f6',
-                position: 'relative',
-            }}
-        >
+        <div className={`${styles.errorItem} bg-gray-500/10 border-l-4 border-blue-500 relative`}>
             <div className={styles.icon}>
                 <AlertTriangle className="h-6 w-6 text-blue-600" />
             </div>
             <div className={styles.body}>
                 <header>
-                    <h1 style={{ color: '#3b82f6' }}>Storage is Full</h1>
-                    <p style={{ color: '#6b7280' }}>
-                        Please remove some chat history to avoid performance issues and continue using
-                        Cody smoothly.
+                    <h1 className="text-blue-500">Storage is Full</h1>
+                    <p className="text-gray-500">
+                        Low local storage space detected. Chat performance may be slow. To fix this,
+                        export your chat history to save a copy, then clear your chat history to free up
+                        space.
                     </p>
                 </header>
-                <div
-                    className={styles.actions}
-                    style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}
-                >
-                    <Button
-                        size="sm"
-                        className="bg-blue-600 hover:bg-blue-700 text-white text-xs"
-                        onClick={onTrim}
-                    >
-                        Remove 5 Old Chats
-                    </Button>
+                <div className={`${styles.actions} flex gap-3 flex-wrap`}>
                     <Button
                         variant="outline"
                         size="sm"
@@ -78,14 +57,7 @@ export const StorageWarningBanner = ({
             </div>
             <button
                 type="button"
-                className="absolute top-1 right-2 h-4 w-4 flex items-center justify-center hover:bg-gray-100 rounded cursor-pointer"
-                style={{
-                    zIndex: 10,
-                    padding: 0,
-                    border: 'none',
-                    background: 'transparent',
-                    color: 'var(--vscode-foreground)',
-                }}
+                className="absolute top-1 right-2 h-4 w-4 flex items-center justify-center hover:bg-gray-100 rounded cursor-pointer z-10 p-0 border-none bg-transparent text-[var(--vscode-foreground)]"
                 onClick={handleClose}
             >
                 <X className="h-2 w-2" />

@@ -38,9 +38,7 @@ class LocalStorage implements LocalStorageForModelPreferences {
     private readonly CODY_CHAT_MEMORY = 'cody-chat-memory'
     private readonly AUTO_EDITS_BETA_ENROLLED = 'cody-auto-edit-beta-onboard'
     private readonly DEVICE_PIXEL_RATIO = 'device-pixel-ratio'
-    private readonly STORAGE_SIZE_BIG = 50_000 * 1024 // 50,000 KB
-    private readonly NUM_CHATS_TO_TRIM = 5
-
+    private readonly STORAGE_SIZE_BIG = 5000 //50_000 * 1024 // 50,000 KB
     public readonly keys = {
         deepCodyLastUsedDate: 'DEEP_CODY_LAST_USED_DATE',
         deepCodyDailyUsageCount: 'DEEP_CODY_DAILY_CHAT_USAGE',
@@ -365,15 +363,6 @@ class LocalStorage implements LocalStorageForModelPreferences {
         return shouldShow
     }
 
-    public async clearAllChatHistory(): Promise<void> {
-        try {
-            await this.set(this.KEY_LOCAL_HISTORY, null)
-            this.logStorageSize(this.KEY_LOCAL_HISTORY)
-        } catch (error) {
-            console.error('Failed to clear all chat history:', error)
-        }
-    }
-
     public get<T>(key: string): T | null {
         return this.storage.get(key, null)
     }
@@ -412,74 +401,6 @@ class LocalStorage implements LocalStorageForModelPreferences {
         const mb = (bytes / (1024 * 1024)).toFixed(2)
         console.log(`Storage size for key ${key}: (${kb} KB, ${mb} MB)`)
         return bytes
-    }
-
-    /**
-     * Trims chat history by removing the oldest numChatsToTrim(ex: 5) chat conversations
-     * to prevent storage from growing too large
-     *
-     * Uses an optimized single-pass algorithm that maintains only the 5 oldest chats
-     * in memory rather than collecting and sorting all chats
-     */
-    public async trimChatHistory(numChatsToTrim = this.NUM_CHATS_TO_TRIM): Promise<void> {
-        try {
-            const history = this.storage.get<AccountKeyedChatHistory | null>(
-                this.KEY_LOCAL_HISTORY,
-                null
-            )
-            if (!history) {
-                return
-            }
-
-            // Track only the oldest chats in a single pass
-            // Array will be kept sorted with newest chat at index 0
-            const oldestChats: Array<{ accountKey: ChatHistoryKey; chatId: string; timestamp: number }> =
-                []
-
-            for (const accountKey of Object.keys(history) as ChatHistoryKey[]) {
-                const userHistory = history[accountKey]
-                if (!userHistory?.chat) continue
-
-                for (const chatId in userHistory.chat) {
-                    const chat = userHistory.chat[chatId]
-                    // Use the last interaction timestamp or fallback to Date.now()
-                    const timestamp = chat.lastInteractionTimestamp
-                        ? new Date(chat.lastInteractionTimestamp).getTime()
-                        : Date.now()
-
-                    const chatInfo = { accountKey, chatId, timestamp }
-
-                    // If we haven't collected numChatsToTrim chats yet, just add it
-                    if (oldestChats.length < numChatsToTrim) {
-                        oldestChats.push(chatInfo)
-                        // Sort array when it reaches numChatsToTrim items (newest first)
-                        if (oldestChats.length === numChatsToTrim) {
-                            oldestChats.sort((a, b) => b.timestamp - a.timestamp)
-                        }
-                    }
-                    // Otherwise, replace the newest chat if this one is older
-                    else if (timestamp < oldestChats[0].timestamp) {
-                        oldestChats[0] = chatInfo
-                        // Re-sort the array (newest first)
-                        oldestChats.sort((a, b) => b.timestamp - a.timestamp)
-                    }
-                }
-            }
-
-            console.log(`Trimming ${oldestChats.length} old chat conversations to reduce storage size`)
-
-            // Remove the chats from history
-            for (const { accountKey, chatId } of oldestChats) {
-                if (history[accountKey]?.chat?.[chatId]) {
-                    delete history[accountKey].chat[chatId]
-                }
-            }
-
-            await this.set(this.KEY_LOCAL_HISTORY, history)
-            this.logStorageSize(this.KEY_LOCAL_HISTORY)
-        } catch (error) {
-            console.error('Failed to trim chat history:', error)
-        }
     }
 
     public async delete(key: string): Promise<void> {

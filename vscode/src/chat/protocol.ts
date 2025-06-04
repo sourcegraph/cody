@@ -181,8 +181,9 @@ export type WebviewMessage =
           toolName?: string | undefined | null
           toolDisabled?: boolean | undefined | null
       }
-    | { command: 'trimChatHistory' }
-    | { command: 'clearAllChatHistory' }
+    | {
+          command: 'clearAllChatHistory'
+      }
 
 export interface SmartApplyResult {
     taskId: FixupTaskID

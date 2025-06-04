@@ -37,7 +37,6 @@ interface ChatboxProps {
     setView: (view: View) => void
     isWorkspacesUpgradeCtaEnabled?: boolean
     showStorageWarning?: boolean
-    onTrimChatHistory?: () => void
     onClearAllChatHistory?: () => void
 }
 
@@ -54,7 +53,6 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     setView,
     isWorkspacesUpgradeCtaEnabled,
     showStorageWarning,
-    onTrimChatHistory,
     onClearAllChatHistory,
 }) => {
     const extensionAPI = useExtensionAPI()
@@ -218,12 +216,8 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                     Cody chat is disabled by your Sourcegraph site administrator
                 </div>
             )}
-            {showStorageWarning && onTrimChatHistory && onClearAllChatHistory && (
-                <StorageWarningBanner
-                    extensionAPI={extensionAPI}
-                    onTrim={onTrimChatHistory}
-                    onClearAll={onClearAllChatHistory}
-                />
+            {showStorageWarning && onClearAllChatHistory && (
+                <StorageWarningBanner extensionAPI={extensionAPI} onClearAll={onClearAllChatHistory} />
             )}
             <Transcript
                 activeChatContext={activeChatContext}

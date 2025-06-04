@@ -643,16 +643,11 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 })
                 break
             }
-            case 'trimChatHistory': {
-                await localStorage.trimChatHistory()
-                vscode.window.showInformationMessage('Removed oldest 5 chat conversations')
-                await this.sendStorageWarningState()
-                break
-            }
             case 'clearAllChatHistory': {
-                await localStorage.clearAllChatHistory()
-                vscode.window.showInformationMessage('Cleared all chat history')
-                await this.sendStorageWarningState()
+                const authStatus = currentAuthStatus()
+                if (authStatus.authenticated) {
+                    await localStorage.removeChatHistory(authStatus)
+                }
                 break
             }
         }
