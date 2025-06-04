@@ -12,15 +12,36 @@
     position: fixed;
     right: 0;
     width: 12px;
-    background-color: var(--vscode-scrollbarSlider-background);
+    background-color: var(--vscode-scrollbar-shadow);
     opacity: 0.3;
     z-index: 99;
-    pointer-events: none;
+    pointer-events: auto;
     transition: opacity 0.2s ease;
+    cursor: pointer;
 }
 
 .scrollbar-track.visible {
     opacity: 0.6;
+}
+
+.scrollbar-thumb {
+    position: absolute;
+    right: 1px;
+    width: 10px;
+    background-color: var(--vscode-scrollbarSlider-background);
+    border-radius: 5px;
+    opacity: 0.7;
+    transition: opacity 0.2s ease, background-color 0.2s ease;
+    cursor: pointer;
+}
+
+.scrollbar-thumb:hover {
+    background-color: var(--vscode-scrollbarSlider-hoverBackground);
+    opacity: 1;
+}
+
+.scrollbar-thumb:active {
+    background-color: var(--vscode-scrollbarSlider-activeBackground);
 }
 
 .marker {
