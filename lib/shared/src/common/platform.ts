@@ -32,22 +32,6 @@ export function isMacOS(): boolean {
     return false
 }
 
-/** Reports whether the current OS is Linux. */
-export function isLinux(): boolean {
-    // For Node environments (such as VS Code Desktop).
-    if (typeof process !== 'undefined') {
-        if (process.platform) {
-            return process.platform === 'linux'
-        }
-    }
-
-    // For web environments (such as webviews and VS Code Web).
-    if (typeof navigator === 'object') {
-        return navigator.userAgent?.includes('Linux')
-    }
-
-    return false
-}
 export function getPlatform(): string {
     const platform = process.platform
     switch (platform) {
