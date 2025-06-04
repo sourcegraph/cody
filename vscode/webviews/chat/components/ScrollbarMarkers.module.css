@@ -8,6 +8,21 @@
     pointer-events: none;
 }
 
+.scrollbar-track {
+    position: fixed;
+    right: 0;
+    width: 12px;
+    background-color: var(--vscode-scrollbarSlider-background);
+    opacity: 0.3;
+    z-index: 99;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+}
+
+.scrollbar-track.visible {
+    opacity: 0.6;
+}
+
 .marker {
     pointer-events: auto;
     background-color: var(--vscode-input-placeholderForeground);

@@ -417,61 +417,75 @@ export const ScrollbarMarkers: FC<ScrollbarMarkersProps> = () => {
     }
 
     return (
-        <div
-            className={styles.markerContainerWrapper}
-            style={{
-                position: 'fixed',
-                top: containerStyles.top,
-                right: containerStyles.right,
-                width: containerStyles.width,
-                height: containerStyles.height,
-                pointerEvents: 'none',
-                zIndex: 50,
-            }}
-        >
+        <>
+            {/* Scrollbar track - shows when markers are visible */}
+            {shouldShowMarkers && containerRect && (
+                <div
+                    className={`${styles.scrollbarTrack} ${shouldShowMarkers ? styles.visible : ''}`}
+                    style={{
+                        top: containerStyles.top,
+                        height: containerStyles.height,
+                    }}
+                />
+            )}
+            
+            {/* Markers container */}
             <div
-                className={styles.markerContainer}
+                className={styles.markerContainerWrapper}
                 style={{
-                    height: '100%',
-                    width: '100%',
-                    position: 'relative',
-                    paddingTop: `${MARKER_CONFIG.CONTAINER_PADDING_PX}px`,
-                    paddingBottom: `${MARKER_CONFIG.CONTAINER_PADDING_PX}px`,
+                    position: 'fixed',
+                    top: containerStyles.top,
+                    right: containerStyles.right,
+                    width: containerStyles.width,
+                    height: containerStyles.height,
                     pointerEvents: 'none',
+                    zIndex: 50,
                 }}
             >
-                {markers.map((marker, index) => (
-                    <button
-                        key={marker.elementIndex}
-                        type="button"
-                        className={styles.marker}
-                        style={{
-                            position: 'absolute',
-                            left: `${MARKER_CONFIG.MARKER_POSITION_PERCENT}%`,
-                            transform: `translateX(-${MARKER_CONFIG.MARKER_POSITION_PERCENT}%)`,
-                            width: `${MARKER_CONFIG.MARKER_SIZE_PX}px`,
-                            height: `${MARKER_CONFIG.MARKER_SIZE_PX}px`,
-                            borderRadius: '50%',
-                            cursor: 'pointer',
-                            top: `${marker.position}%`,
-                            border: 'none',
-                            padding: 0,
-                            pointerEvents: 'auto',
-                            transition: 'all 0.15s ease-in-out',
-                        }}
-                        onClick={() => scrollToMarker(index)}
-                        onKeyDown={e => e.key === 'Enter' && scrollToMarker(index)}
-                        onMouseEnter={handleMarkerHover}
-                        onMouseLeave={handleMarkerLeave}
-                        title={
-                            marker.textPreview
-                                ? `Scroll to '${marker.textPreview}'`
-                                : 'Scroll to message'
-                        }
-                        aria-label={`User message at position ${index + 1}`}
-                    />
-                ))}
+                <div
+                    className={styles.markerContainer}
+                    style={{
+                        height: '100%',
+                        width: '100%',
+                        position: 'relative',
+                        paddingTop: `${MARKER_CONFIG.CONTAINER_PADDING_PX}px`,
+                        paddingBottom: `${MARKER_CONFIG.CONTAINER_PADDING_PX}px`,
+                        pointerEvents: 'none',
+                    }}
+                >
+                    {markers.map((marker, index) => (
+                        <button
+                            key={marker.elementIndex}
+                            type="button"
+                            className={styles.marker}
+                            style={{
+                                position: 'absolute',
+                                left: `${MARKER_CONFIG.MARKER_POSITION_PERCENT}%`,
+                                transform: `translateX(-${MARKER_CONFIG.MARKER_POSITION_PERCENT}%)`,
+                                width: `${MARKER_CONFIG.MARKER_SIZE_PX}px`,
+                                height: `${MARKER_CONFIG.MARKER_SIZE_PX}px`,
+                                borderRadius: '50%',
+                                cursor: 'pointer',
+                                top: `${marker.position}%`,
+                                border: 'none',
+                                padding: 0,
+                                pointerEvents: 'auto',
+                                transition: 'all 0.15s ease-in-out',
+                            }}
+                            onClick={() => scrollToMarker(index)}
+                            onKeyDown={e => e.key === 'Enter' && scrollToMarker(index)}
+                            onMouseEnter={handleMarkerHover}
+                            onMouseLeave={handleMarkerLeave}
+                            title={
+                                marker.textPreview
+                                    ? `Scroll to '${marker.textPreview}'`
+                                    : 'Scroll to message'
+                            }
+                            aria-label={`User message at position ${index + 1}`}
+                        />
+                    ))}
+                </div>
             </div>
-        </div>
+        </>
     )
 }
