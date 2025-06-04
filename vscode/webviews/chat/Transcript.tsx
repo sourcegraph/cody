@@ -224,7 +224,7 @@ export const Transcript: FC<TranscriptProps> = props => {
                 ))}
             </LastEditorContext.Provider>
             </div>
-            <ScrollbarMarkers scrollContainer={scrollContainerRef.current} />
+            <ScrollbarMarkers />
         </>
     )
 }

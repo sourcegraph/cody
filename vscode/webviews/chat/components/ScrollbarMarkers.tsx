@@ -11,7 +11,7 @@ function debounce<T extends (...args: any[]) => any>(func: T, wait: number): T {
 }
 
 interface ScrollbarMarkersProps {
-    scrollContainer: HTMLElement | null
+    // No props needed - component finds the scroll container automatically
 }
 
 interface Marker {
@@ -37,22 +37,22 @@ const MARKER_CONFIG = {
     MARKER_POSITION_PERCENT: 50,
 } as const
 
-export const ScrollbarMarkers: FC<ScrollbarMarkersProps> = ({ scrollContainer }) => {
+export const ScrollbarMarkers: FC<ScrollbarMarkersProps> = () => {
     const [markers, setMarkers] = useState<Marker[]>([])
     const [containerRect, setContainerRect] = useState<DOMRect | null>(null)
     const [isScrollbarVisible, setIsScrollbarVisible] = useState(false)
     const [shouldShowMarkers, setShouldShowMarkers] = useState(false)
     const [isOverScrollbarArea, setIsOverScrollbarArea] = useState(false)
     const [isScrolling, setIsScrolling] = useState(false)
-    const [scrollbarWidth, setScrollbarWidth] = useState<number>(MARKER_CONFIG.DEFAULT_SCROLLBAR_WIDTH)
+    const [showInitialHint, setShowInitialHint] = useState(false)
 
     const hideTimeoutRef = useRef<number>()
-    const cachedScrollbarWidthRef = useRef<number | null>(null)
+    const initialHintTimeoutRef = useRef<number>()
 
     // Derived state for visibility conditions
     const canShowMarkers = useMemo(
-        () => containerRect && isScrollbarVisible && (shouldShowMarkers || isScrolling),
-        [containerRect, isScrollbarVisible, shouldShowMarkers, isScrolling]
+        () => containerRect && isScrollbarVisible && (shouldShowMarkers || isScrolling || showInitialHint),
+        [containerRect, isScrollbarVisible, shouldShowMarkers, isScrolling, showInitialHint]
     )
 
     // Derived container positioning styles
@@ -77,6 +77,13 @@ export const ScrollbarMarkers: FC<ScrollbarMarkersProps> = ({ scrollContainer })
         }
     }, [])
 
+    const clearInitialHintTimeout = useCallback(() => {
+        if (initialHintTimeoutRef.current !== undefined) {
+            window.clearTimeout(initialHintTimeoutRef.current)
+            initialHintTimeoutRef.current = undefined
+        }
+    }, [])
+
     const setHideTimeout = useCallback(
         (callback: () => void, delay: number) => {
             clearHideTimeout()
@@ -85,45 +92,23 @@ export const ScrollbarMarkers: FC<ScrollbarMarkersProps> = ({ scrollContainer })
         [clearHideTimeout]
     )
 
-    // Detect scrollbar width with caching
-    const detectScrollbarWidth = useCallback((): number => {
-        if (cachedScrollbarWidthRef.current !== null) {
-            return cachedScrollbarWidthRef.current
-        }
-        if (!scrollContainer) return MARKER_CONFIG.DEFAULT_SCROLLBAR_WIDTH
 
-        try {
-            const outer = document.createElement('div')
-            outer.style.visibility = 'hidden'
-            outer.style.overflow = 'scroll'
-            document.body.appendChild(outer)
 
-            const inner = document.createElement('div')
-            outer.appendChild(inner)
-
-            const measuredWidth = outer.offsetWidth - inner.offsetWidth
-            document.body.removeChild(outer)
-
-            cachedScrollbarWidthRef.current =
-                measuredWidth > 0 ? measuredWidth : MARKER_CONFIG.DEFAULT_SCROLLBAR_WIDTH
-            return cachedScrollbarWidthRef.current
-        } catch {
-            cachedScrollbarWidthRef.current = MARKER_CONFIG.DEFAULT_SCROLLBAR_WIDTH
-            return cachedScrollbarWidthRef.current
-        }
-    }, [scrollContainer])
-
-    // Update container dimensions and check scrollbar visibility
+    // Update container dimensions and check if content is scrollable
     const updateContainerDimensions = useCallback(() => {
-        if (!scrollContainer) {
+        // Find the actual scrollable container (TabContainer with data-scrollable)
+        const actualScrollContainer = document.querySelector('[data-scrollable]') as HTMLElement
+        
+        if (!actualScrollContainer) {
             setContainerRect(null)
             setIsScrollbarVisible(false)
             return
         }
 
         try {
-            const newRect = scrollContainer.getBoundingClientRect()
-            const newScrollbarVisible = scrollContainer.scrollHeight > scrollContainer.clientHeight
+            const newRect = actualScrollContainer.getBoundingClientRect()
+            // Check if content is scrollable (scrollbars are hidden with CSS but content can still scroll)
+            const isContentScrollable = actualScrollContainer.scrollHeight > actualScrollContainer.clientHeight
 
             setContainerRect(prevRect => {
                 if (
@@ -139,37 +124,43 @@ export const ScrollbarMarkers: FC<ScrollbarMarkersProps> = ({ scrollContainer })
             })
 
             setIsScrollbarVisible(prevVisible => {
-                if (prevVisible !== newScrollbarVisible) {
-                    if (newScrollbarVisible && (!prevVisible || cachedScrollbarWidthRef.current === null)) {
-                        const newScrollbarWidth = detectScrollbarWidth()
-                        setScrollbarWidth(newScrollbarWidth)
-                    }
-                    return newScrollbarVisible
+                if (!prevVisible && isContentScrollable) {
+                    // Show initial hint when content becomes scrollable
+                    setShowInitialHint(true)
+                    initialHintTimeoutRef.current = window.setTimeout(() => {
+                        setShowInitialHint(false)
+                    }, 2000) // Show for 2 seconds
                 }
-                return prevVisible
+                return isContentScrollable
             })
         } catch {
             setContainerRect(null)
             setIsScrollbarVisible(false)
         }
-    }, [scrollContainer, detectScrollbarWidth])
+    }, [])
 
     // Find human message elements
     const findMessageElements = useCallback((): HTMLElement[] => {
-        if (!scrollContainer) return []
+        // Find the actual scrollable container (TabContainer with data-scrollable)
+        const actualScrollContainer = document.querySelector('[data-scrollable]') as HTMLElement
+        if (!actualScrollContainer) return []
 
         const elements = Array.from(
-            scrollContainer.querySelectorAll('[data-role="human"]')
+            actualScrollContainer.querySelectorAll('[data-role="human"]')
         ) as HTMLElement[]
 
         return elements.filter(element => element.getAttribute('data-role') === 'human')
-    }, [scrollContainer])
+    }, [])
 
     // Calculate marker position
     const calculateMarkerPosition = useCallback((element: HTMLElement, scrollHeight: number): number => {
+        // Find the actual scrollable container (TabContainer with data-scrollable)
+        const actualScrollContainer = document.querySelector('[data-scrollable]') as HTMLElement
+        if (!actualScrollContainer) return 0
+
         const parent = element.offsetParent as HTMLElement | null
         const elementTop =
-            parent === scrollContainer
+            parent === actualScrollContainer
                 ? element.offsetTop
                 : element.offsetTop + (parent?.offsetTop || 0)
 
@@ -181,7 +172,7 @@ export const ScrollbarMarkers: FC<ScrollbarMarkersProps> = ({ scrollContainer })
             100 - MARKER_CONFIG.MARKER_MARGIN_PERCENT,
             Math.max(MARKER_CONFIG.MARKER_MARGIN_PERCENT, position)
         )
-    }, [scrollContainer])
+    }, [])
 
     // Create markers from elements
     const createMarkersFromElements = useCallback(
@@ -218,7 +209,9 @@ export const ScrollbarMarkers: FC<ScrollbarMarkersProps> = ({ scrollContainer })
     const updateMarkers = useMemo(
         () =>
             debounce(() => {
-                if (!scrollContainer) return
+                // Find the actual scrollable container (TabContainer with data-scrollable)
+                const actualScrollContainer = document.querySelector('[data-scrollable]') as HTMLElement
+                if (!actualScrollContainer) return
 
                 try {
                     updateContainerDimensions()
@@ -229,7 +222,7 @@ export const ScrollbarMarkers: FC<ScrollbarMarkersProps> = ({ scrollContainer })
                         const messageElements = findMessageElements()
 
                         if (messageElements.length > 0) {
-                            const scrollHeight = scrollContainer.scrollHeight
+                            const scrollHeight = actualScrollContainer.scrollHeight
 
                             if (scrollHeight > 0) {
                                 newMarkers = createMarkersFromElements(messageElements, scrollHeight)
@@ -242,7 +235,7 @@ export const ScrollbarMarkers: FC<ScrollbarMarkersProps> = ({ scrollContainer })
                     setMarkers([])
                 }
             }, MARKER_CONFIG.DEBOUNCE_UPDATE_MS),
-        [scrollContainer, isScrollbarVisible, updateContainerDimensions, findMessageElements, createMarkersFromElements]
+        [isScrollbarVisible, updateContainerDimensions, findMessageElements, createMarkersFromElements]
     )
 
     // Handle container mouse move
@@ -254,8 +247,10 @@ export const ScrollbarMarkers: FC<ScrollbarMarkersProps> = ({ scrollContainer })
             const relativeY = e.clientY - containerRect.top
 
             const isInVerticalRange = relativeY >= 0 && relativeY <= containerRect.height
+            // Since scrollbars are hidden, detect hover over the right edge area (last 20px)
+            const scrollbarAreaWidth = 20
             const isInScrollbarArea =
-                relativeX >= containerRect.width - scrollbarWidth && relativeX <= containerRect.width
+                relativeX >= containerRect.width - scrollbarAreaWidth && relativeX <= containerRect.width
 
             const wasOverScrollbar = isOverScrollbarArea
             const newIsOverScrollbarArea = isInVerticalRange && isInScrollbarArea
@@ -271,7 +266,7 @@ export const ScrollbarMarkers: FC<ScrollbarMarkersProps> = ({ scrollContainer })
                 }, MARKER_CONFIG.HIDE_DELAY_MS)
             }
         },
-        [containerRect, isScrollbarVisible, scrollbarWidth, isOverScrollbarArea, clearHideTimeout, setHideTimeout, updateMarkers]
+        [containerRect, isScrollbarVisible, isOverScrollbarArea, clearHideTimeout, setHideTimeout, updateMarkers]
     )
 
     // Handle container mouse leave
@@ -302,22 +297,24 @@ export const ScrollbarMarkers: FC<ScrollbarMarkersProps> = ({ scrollContainer })
     // Scroll to marker
     const scrollToMarker = useCallback(
         (index: number) => {
-            if (!scrollContainer || index < 0 || index >= markers.length) return
+            // Find the actual scrollable container (TabContainer with data-scrollable)
+            const actualScrollContainer = document.querySelector('[data-scrollable]') as HTMLElement
+            if (!actualScrollContainer || index < 0 || index >= markers.length) return
 
             try {
                 const marker = markers[index]
-                const messageElements = scrollContainer.querySelectorAll('[data-role="human"]')
+                const messageElements = actualScrollContainer.querySelectorAll('[data-role="human"]')
 
                 if (marker.elementIndex < messageElements.length) {
                     const targetElement = messageElements[marker.elementIndex] as HTMLElement
                     if (targetElement) {
                         const parent = targetElement.offsetParent as HTMLElement | null
                         const elementTop =
-                            parent === scrollContainer
+                            parent === actualScrollContainer
                                 ? targetElement.offsetTop
                                 : targetElement.offsetTop + (parent?.offsetTop || 0)
 
-                        scrollContainer.scrollTo({
+                        actualScrollContainer.scrollTo({
                             top: Math.max(0, elementTop - MARKER_CONFIG.SCROLL_OFFSET_PX),
                             behavior: 'smooth',
                         })
@@ -327,12 +324,14 @@ export const ScrollbarMarkers: FC<ScrollbarMarkersProps> = ({ scrollContainer })
                 // Silently fail
             }
         },
-        [scrollContainer, markers]
+        [markers]
     )
 
     // Set up event listeners and observers
     useEffect(() => {
-        if (!scrollContainer) return
+        // Find the actual scrollable container (TabContainer with data-scrollable)
+        const actualScrollContainer = document.querySelector('[data-scrollable]') as HTMLElement
+        if (!actualScrollContainer) return
 
         updateContainerDimensions()
 
@@ -374,12 +373,12 @@ export const ScrollbarMarkers: FC<ScrollbarMarkersProps> = ({ scrollContainer })
         })
 
         try {
-            resizeObserver.observe(scrollContainer)
+            resizeObserver.observe(actualScrollContainer)
             resizeObserver.observe(document.body)
-            scrollContainer.addEventListener('scroll', handleScroll, { passive: true })
-            scrollContainer.addEventListener('mousemove', handleContainerMouseMove, { passive: true })
-            scrollContainer.addEventListener('mouseleave', handleContainerMouseLeave, { passive: true })
-            mutationObserver.observe(scrollContainer, {
+            actualScrollContainer.addEventListener('scroll', handleScroll, { passive: true })
+            actualScrollContainer.addEventListener('mousemove', handleContainerMouseMove, { passive: true })
+            actualScrollContainer.addEventListener('mouseleave', handleContainerMouseLeave, { passive: true })
+            mutationObserver.observe(actualScrollContainer, {
                 childList: true,
                 subtree: true,
                 attributes: false,
@@ -397,19 +396,19 @@ export const ScrollbarMarkers: FC<ScrollbarMarkersProps> = ({ scrollContainer })
         return () => {
             resizeObserver.disconnect()
             mutationObserver.disconnect()
-            scrollContainer.removeEventListener('scroll', handleScroll)
-            scrollContainer.removeEventListener('mousemove', handleContainerMouseMove)
-            scrollContainer.removeEventListener('mouseleave', handleContainerMouseLeave)
+            actualScrollContainer.removeEventListener('scroll', handleScroll)
+            actualScrollContainer.removeEventListener('mousemove', handleContainerMouseMove)
+            actualScrollContainer.removeEventListener('mouseleave', handleContainerMouseLeave)
             clearHideTimeout()
-            cachedScrollbarWidthRef.current = null
+            clearInitialHintTimeout()
         }
     }, [
-        scrollContainer,
         updateContainerDimensions,
         updateMarkers,
         handleContainerMouseMove,
         handleContainerMouseLeave,
         clearHideTimeout,
+        clearInitialHintTimeout,
         isScrolling,
     ])
 
