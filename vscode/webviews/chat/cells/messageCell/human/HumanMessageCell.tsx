@@ -126,6 +126,7 @@ const HumanMessageCellContent = memo<HumanMessageCellContent>(props => {
                 />
             }
             className={className}
+            speaker="human"
         />
     )
 })

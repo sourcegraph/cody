@@ -47,6 +47,7 @@ import ApprovalCell from './cells/agenticCell/ApprovalCell'
 import { ContextCell } from './cells/contextCell/ContextCell'
 import { ToolStatusCell } from './cells/toolCell/ToolStatusCell'
 import { LoadingDots } from './components/LoadingDots'
+import { ScrollbarMarkers } from './components/ScrollbarMarkers'
 import { LastEditorContext } from './context'
 
 interface TranscriptProps {
@@ -98,6 +99,7 @@ export const Transcript: FC<TranscriptProps> = props => {
     const lastHumanEditorRef = useRef<PromptEditorRefAPI | null>(null)
     const userHasScrolledRef = useRef(false)
     const lastScrollTopRef = useRef(0)
+    const scrollContainerRef = useRef<HTMLDivElement | null>(null)
 
     useEffect(() => {
         const handleCopyEvent = (event: ClipboardEvent) => {
@@ -174,12 +176,14 @@ export const Transcript: FC<TranscriptProps> = props => {
     }, [messageInProgress?.text])
 
     return (
-        <div
-            className={clsx(' tw-px-8 tw-py-4 tw-flex tw-flex-col tw-gap-4', {
-                'tw-flex-grow': transcript.length > 0,
-            })}
-            data-scrollable="true"
-        >
+        <>
+            <div
+                ref={scrollContainerRef}
+                className={clsx(' tw-px-8 tw-py-4 tw-flex tw-flex-col tw-gap-4', {
+                    'tw-flex-grow': transcript.length > 0,
+                })}
+                data-scrollable="true"
+            >
             <LastEditorContext.Provider value={lastHumanEditorRef}>
                 {interactions.map((interaction, i) => (
                     <TranscriptInteraction
@@ -219,7 +223,9 @@ export const Transcript: FC<TranscriptProps> = props => {
                     />
                 ))}
             </LastEditorContext.Provider>
-        </div>
+            </div>
+            <ScrollbarMarkers scrollContainer={scrollContainerRef.current} />
+        </>
     )
 }
 
