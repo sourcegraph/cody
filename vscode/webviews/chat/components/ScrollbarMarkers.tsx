@@ -176,9 +176,12 @@ export const ScrollbarMarkers: FC<ScrollbarMarkersProps> = () => {
     const createMarkersFromElements = useCallback(
         (messageElements: HTMLElement[], scrollHeight: number): Marker[] => {
             const newMarkers: Marker[] = []
+            
+            // Remove the last marker since the last human message is always sticky at the bottom
+            const elementsToProcess = messageElements.slice(0, -1)
 
-            for (let i = 0; i < messageElements.length; i++) {
-                const element = messageElements[i]
+            for (let i = 0; i < elementsToProcess.length; i++) {
+                const element = elementsToProcess[i]
                 if (!element) continue
 
                 try {
