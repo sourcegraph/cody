@@ -1,4 +1,4 @@
-import { type FC, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { type FC, useCallback, useEffect, useMemo, useState } from 'react'
 import styles from './ScrollbarMarkers.module.css'
 
 // Simple debounce utility
@@ -23,8 +23,6 @@ interface Marker {
 
 // Configuration constants
 const MARKER_CONFIG = {
-    HIDE_DELAY_MS: 1000,
-    SCROLL_HIDE_DELAY_MS: 300,
     DEBOUNCE_UPDATE_MS: 50,
     DEBOUNCE_RESIZE_MS: 16,
     MARKER_SIZE_PX: 8,
@@ -39,18 +37,11 @@ export const ScrollbarMarkers: FC<ScrollbarMarkersProps> = () => {
     const [markers, setMarkers] = useState<Marker[]>([])
     const [containerRect, setContainerRect] = useState<DOMRect | null>(null)
     const [isScrollbarVisible, setIsScrollbarVisible] = useState(false)
-    const [shouldShowMarkers, setShouldShowMarkers] = useState(false)
-    const [isOverScrollbarArea, setIsOverScrollbarArea] = useState(false)
-    const [isScrolling, setIsScrolling] = useState(false)
-    const [showInitialHint, setShowInitialHint] = useState(false)
-
-    const hideTimeoutRef = useRef<number>()
-    const initialHintTimeoutRef = useRef<number>()
 
     // Derived state for visibility conditions
     const canShowMarkers = useMemo(
-        () => containerRect && isScrollbarVisible && (shouldShowMarkers || isScrolling || showInitialHint),
-        [containerRect, isScrollbarVisible, shouldShowMarkers, isScrolling, showInitialHint]
+        () => containerRect && isScrollbarVisible,
+        [containerRect, isScrollbarVisible]
     )
 
     // Derived container positioning styles
@@ -67,28 +58,7 @@ export const ScrollbarMarkers: FC<ScrollbarMarkersProps> = () => {
         [containerRect]
     )
 
-    // Safe timeout management
-    const clearHideTimeout = useCallback(() => {
-        if (hideTimeoutRef.current !== undefined) {
-            window.clearTimeout(hideTimeoutRef.current)
-            hideTimeoutRef.current = undefined
-        }
-    }, [])
 
-    const clearInitialHintTimeout = useCallback(() => {
-        if (initialHintTimeoutRef.current !== undefined) {
-            window.clearTimeout(initialHintTimeoutRef.current)
-            initialHintTimeoutRef.current = undefined
-        }
-    }, [])
-
-    const setHideTimeout = useCallback(
-        (callback: () => void, delay: number) => {
-            clearHideTimeout()
-            hideTimeoutRef.current = window.setTimeout(callback, delay)
-        },
-        [clearHideTimeout]
-    )
 
     // Update container dimensions and check if content is scrollable
     const updateContainerDimensions = useCallback(() => {
@@ -119,16 +89,7 @@ export const ScrollbarMarkers: FC<ScrollbarMarkersProps> = () => {
                 return prevRect
             })
 
-            setIsScrollbarVisible(prevVisible => {
-                if (!prevVisible && isContentScrollable) {
-                    // Show initial hint when content becomes scrollable
-                    setShowInitialHint(true)
-                    initialHintTimeoutRef.current = window.setTimeout(() => {
-                        setShowInitialHint(false)
-                    }, 2000) // Show for 2 seconds
-                }
-                return isContentScrollable
-            })
+            setIsScrollbarVisible(isContentScrollable)
         } catch {
             setContainerRect(null)
             setIsScrollbarVisible(false)
@@ -237,61 +198,7 @@ export const ScrollbarMarkers: FC<ScrollbarMarkersProps> = () => {
         [isScrollbarVisible, updateContainerDimensions, findMessageElements, createMarkersFromElements]
     )
 
-    // Handle container mouse move
-    const handleContainerMouseMove = useCallback(
-        (e: MouseEvent) => {
-            if (!containerRect || !isScrollbarVisible) return
 
-            const relativeX = e.clientX - containerRect.left
-            const relativeY = e.clientY - containerRect.top
-
-            const isInVerticalRange = relativeY >= 0 && relativeY <= containerRect.height
-            // Since scrollbars are hidden, detect hover over the right edge area (last 20px)
-            const scrollbarAreaWidth = 20
-            const isInScrollbarArea =
-                relativeX >= containerRect.width - scrollbarAreaWidth && relativeX <= containerRect.width
-
-            const wasOverScrollbar = isOverScrollbarArea
-            const newIsOverScrollbarArea = isInVerticalRange && isInScrollbarArea
-            setIsOverScrollbarArea(newIsOverScrollbarArea)
-
-            if (newIsOverScrollbarArea && !wasOverScrollbar) {
-                setShouldShowMarkers(true)
-                clearHideTimeout()
-                updateMarkers()
-            } else if (!newIsOverScrollbarArea && wasOverScrollbar) {
-                setHideTimeout(() => {
-                    setShouldShowMarkers(false)
-                }, MARKER_CONFIG.HIDE_DELAY_MS)
-            }
-        },
-        [containerRect, isScrollbarVisible, isOverScrollbarArea, clearHideTimeout, setHideTimeout, updateMarkers]
-    )
-
-    // Handle container mouse leave
-    const handleContainerMouseLeave = useCallback(() => {
-        if (isOverScrollbarArea) {
-            setIsOverScrollbarArea(false)
-            setHideTimeout(() => {
-                setShouldShowMarkers(false)
-            }, MARKER_CONFIG.HIDE_DELAY_MS)
-        }
-    }, [isOverScrollbarArea, setHideTimeout])
-
-    // Handle marker hover
-    const handleMarkerHover = useCallback(() => {
-        clearHideTimeout()
-        setShouldShowMarkers(true)
-    }, [clearHideTimeout])
-
-    // Handle marker leave
-    const handleMarkerLeave = useCallback(() => {
-        if (!isOverScrollbarArea) {
-            setHideTimeout(() => {
-                setShouldShowMarkers(false)
-            }, MARKER_CONFIG.HIDE_DELAY_MS)
-        }
-    }, [isOverScrollbarArea, setHideTimeout])
 
     // Scroll to marker
     const scrollToMarker = useCallback(
@@ -352,18 +259,9 @@ export const ScrollbarMarkers: FC<ScrollbarMarkersProps> = () => {
             }
         })
 
-        // Scroll end detection
-        const handleScrollEnd = debounce(() => {
-            setIsScrolling(false)
-        }, MARKER_CONFIG.SCROLL_HIDE_DELAY_MS)
-
         // Scroll handler
         const handleScroll = () => {
-            if (!isScrolling) {
-                setIsScrolling(true)
-            }
             updateMarkers()
-            handleScrollEnd()
         }
 
         // Mutation observer
@@ -375,8 +273,6 @@ export const ScrollbarMarkers: FC<ScrollbarMarkersProps> = () => {
             resizeObserver.observe(actualScrollContainer)
             resizeObserver.observe(document.body)
             actualScrollContainer.addEventListener('scroll', handleScroll, { passive: true })
-            actualScrollContainer.addEventListener('mousemove', handleContainerMouseMove, { passive: true })
-            actualScrollContainer.addEventListener('mouseleave', handleContainerMouseLeave, { passive: true })
             mutationObserver.observe(actualScrollContainer, {
                 childList: true,
                 subtree: true,
@@ -396,20 +292,8 @@ export const ScrollbarMarkers: FC<ScrollbarMarkersProps> = () => {
             resizeObserver.disconnect()
             mutationObserver.disconnect()
             actualScrollContainer.removeEventListener('scroll', handleScroll)
-            actualScrollContainer.removeEventListener('mousemove', handleContainerMouseMove)
-            actualScrollContainer.removeEventListener('mouseleave', handleContainerMouseLeave)
-            clearHideTimeout()
-            clearInitialHintTimeout()
         }
-    }, [
-        updateContainerDimensions,
-        updateMarkers,
-        handleContainerMouseMove,
-        handleContainerMouseLeave,
-        clearHideTimeout,
-        clearInitialHintTimeout,
-        isScrolling,
-    ])
+    }, [updateContainerDimensions, updateMarkers])
 
     if (!canShowMarkers || !containerStyles) {
         return null
@@ -460,8 +344,6 @@ export const ScrollbarMarkers: FC<ScrollbarMarkersProps> = () => {
                             }}
                             onClick={() => scrollToMarker(index)}
                             onKeyDown={e => e.key === 'Enter' && scrollToMarker(index)}
-                            onMouseEnter={handleMarkerHover}
-                            onMouseLeave={handleMarkerLeave}
                             title={
                                 marker.textPreview
                                     ? `Scroll to '${marker.textPreview}'`
