@@ -45,8 +45,6 @@ export const ScrollbarMarkers: FC<ScrollbarMarkersProps> = () => {
     const [isOverScrollbarArea, setIsOverScrollbarArea] = useState(false)
     const [isScrolling, setIsScrolling] = useState(false)
     const [showInitialHint, setShowInitialHint] = useState(false)
-    const [scrollThumbTop, setScrollThumbTop] = useState(0)
-    const [scrollThumbHeight, setScrollThumbHeight] = useState(0)
 
     const hideTimeoutRef = useRef<number>()
     const initialHintTimeoutRef = useRef<number>()
@@ -93,27 +91,6 @@ export const ScrollbarMarkers: FC<ScrollbarMarkersProps> = () => {
         },
         [clearHideTimeout]
     )
-
-    // Calculate scrollbar thumb position and size
-    const updateScrollbarThumb = useCallback(() => {
-        const actualScrollContainer = document.querySelector('[data-scrollable]') as HTMLElement
-        if (!actualScrollContainer || !containerRect) return
-
-        const { scrollTop, scrollHeight, clientHeight } = actualScrollContainer
-        
-        // Calculate thumb height as a percentage of visible area
-        const visibleRatio = clientHeight / scrollHeight
-        const thumbHeight = Math.max(20, containerRect.height * visibleRatio) // Minimum 20px height
-        
-        // Calculate thumb position
-        const scrollableHeight = scrollHeight - clientHeight
-        const scrollRatio = scrollableHeight > 0 ? scrollTop / scrollableHeight : 0
-        const maxThumbTop = containerRect.height - thumbHeight
-        const thumbTop = scrollRatio * maxThumbTop
-        
-        setScrollThumbHeight(thumbHeight)
-        setScrollThumbTop(thumbTop)
-    }, [containerRect])
 
     // Update container dimensions and check if content is scrollable
     const updateContainerDimensions = useCallback(() => {
@@ -236,7 +213,6 @@ export const ScrollbarMarkers: FC<ScrollbarMarkersProps> = () => {
 
                 try {
                     updateContainerDimensions()
-                    updateScrollbarThumb()
 
                     let newMarkers: Marker[] = []
 
@@ -257,7 +233,7 @@ export const ScrollbarMarkers: FC<ScrollbarMarkersProps> = () => {
                     setMarkers([])
                 }
             }, MARKER_CONFIG.DEBOUNCE_UPDATE_MS),
-        [isScrollbarVisible, updateContainerDimensions, updateScrollbarThumb, findMessageElements, createMarkersFromElements]
+        [isScrollbarVisible, updateContainerDimensions, findMessageElements, createMarkersFromElements]
     )
 
     // Handle container mouse move
@@ -349,30 +325,6 @@ export const ScrollbarMarkers: FC<ScrollbarMarkersProps> = () => {
         [markers]
     )
 
-    // Handle scrollbar track click
-    const handleScrollbarTrackClick = useCallback(
-        (e: React.MouseEvent<HTMLDivElement>) => {
-            if (!containerRect) return
-            
-            const actualScrollContainer = document.querySelector('[data-scrollable]') as HTMLElement
-            if (!actualScrollContainer) return
-
-            const rect = e.currentTarget.getBoundingClientRect()
-            const clickY = e.clientY - rect.top
-            const clickRatio = clickY / rect.height
-            
-            const { scrollHeight, clientHeight } = actualScrollContainer
-            const maxScrollTop = scrollHeight - clientHeight
-            const targetScrollTop = clickRatio * maxScrollTop
-            
-            actualScrollContainer.scrollTo({
-                top: Math.max(0, Math.min(maxScrollTop, targetScrollTop)),
-                behavior: 'smooth',
-            })
-        },
-        [containerRect]
-    )
-
     // Set up event listeners and observers
     useEffect(() => {
         // Find the actual scrollable container (TabContainer with data-scrollable)
@@ -380,14 +332,12 @@ export const ScrollbarMarkers: FC<ScrollbarMarkersProps> = () => {
         if (!actualScrollContainer) return
 
         updateContainerDimensions()
-        updateScrollbarThumb()
 
         // Resize observer with debouncing
         const handleResize = debounce(() => {
             requestAnimationFrame(() => {
                 try {
                     updateContainerDimensions()
-                    updateScrollbarThumb()
                     updateMarkers()
                 } catch {
                     // Silently handle errors
@@ -452,7 +402,6 @@ export const ScrollbarMarkers: FC<ScrollbarMarkersProps> = () => {
         }
     }, [
         updateContainerDimensions,
-        updateScrollbarThumb,
         updateMarkers,
         handleContainerMouseMove,
         handleContainerMouseLeave,
@@ -466,30 +415,7 @@ export const ScrollbarMarkers: FC<ScrollbarMarkersProps> = () => {
     }
 
     return (
-        <>
-            {/* Scrollbar track - shows when markers are visible */}
-            {shouldShowMarkers && containerRect && (
-                <div
-                    className={`${styles.scrollbarTrack} ${shouldShowMarkers ? styles.visible : ''}`}
-                    style={{
-                        top: containerStyles.top,
-                        height: containerStyles.height,
-                    }}
-                    onClick={handleScrollbarTrackClick}
-                >
-                    {/* Scrollbar thumb */}
-                    <div
-                        className={styles.scrollbarThumb}
-                        style={{
-                            top: scrollThumbTop,
-                            height: scrollThumbHeight,
-                        }}
-                    />
-                </div>
-            )}
-            
-            {/* Markers container */}
-            <div
+        <div
                 className={styles.markerContainerWrapper}
                 style={{
                     position: 'fixed',
@@ -545,6 +471,5 @@ export const ScrollbarMarkers: FC<ScrollbarMarkersProps> = () => {
                     ))}
                 </div>
             </div>
-        </>
     )
 }
