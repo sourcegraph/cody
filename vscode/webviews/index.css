@@ -1,12 +1,12 @@
-@import '@vscode/codicons/dist/codicon';
-@import url(./utils/highlight.css);
-@import url(./components/shadcn/shadcn.css);
-@import url(./themes/index.css);
+@import url("@vscode/codicons/dist/codicon");
+@import url("./utils/highlight.css");
+@import url("./components/shadcn/shadcn.css");
+@import url("./themes/index.css");
 
 @font-face {
     font-family: cody-icons;
     font-display: block;
-    src: url('../resources/cody-icons.woff') format('woff');
+    src: url("../resources/cody-icons.woff") format("woff");
 }
 
 :root {
@@ -22,6 +22,7 @@
     font-family: var(--vscode-font-family);
     color: var(--vscode-sideBar-foreground);
     background-color: var(--vscode-sideBar-background);
+
     /* Override VS Code Webview Toolkit elements */
     --border-width: none;
 }
@@ -58,3 +59,13 @@ a:hover {
     font-weight: bold;
 }
 
+/* Hide scrollbar for Chrome, Safari and Opera */
+[data-scrollable]::-webkit-scrollbar {
+    display: none;
+}
+
+/* Hide scrollbar for IE, Edge and Firefox */
+[data-scrollable] {
+    -ms-overflow-style: none; /* IE and Edge */
+    scrollbar-width: none; /* Firefox */
+}
