@@ -15,6 +15,7 @@ import { type FunctionComponent, useEffect, useMemo, useRef } from 'react'
 import type { ConfigurationSubsetForWebview, LocalEnv } from '../src/chat/protocol'
 import styles from './App.module.css'
 import { Chat } from './Chat'
+import { StorageWarningBanner } from './chat/StorageWarningBanner'
 import { useClientActionDispatcher } from './client/clientState'
 import { Notices } from './components/Notices'
 import { StateDebugOverlay } from './components/StateDebugOverlay'
@@ -147,7 +148,13 @@ export const CodyPanel: FunctionComponent<CodyPanelProps> = ({
                         showOpenInEditor={!!config?.multipleWebviewsEnabled}
                     />
                 )}
-                {errorMessages && <ErrorBanner errors={errorMessages} setErrors={setErrorMessages} />}
+                {errorMessages && (
+                    <ErrorBanner
+                        errors={errorMessages}
+                        setErrors={setErrorMessages}
+                        vscodeAPI={vscodeAPI}
+                    />
+                )}
                 <TabContainer value={view} ref={tabContainerRef} data-scrollable>
                     {view === View.Chat && (
                         <Chat
@@ -184,8 +191,17 @@ export const CodyPanel: FunctionComponent<CodyPanelProps> = ({
     )
 }
 
-const ErrorBanner: React.FunctionComponent<{ errors: string[]; setErrors: (errors: string[]) => void }> =
-    ({ errors, setErrors }) => (
+const ErrorBanner: React.FunctionComponent<{
+    errors: string[]
+    setErrors: (errors: string[]) => void
+    vscodeAPI: Pick<VSCodeWrapper, 'postMessage' | 'onMessage'>
+}> = ({ errors, setErrors, vscodeAPI }) => {
+    if (errors.some(error => error.startsWith('STORAGE_WARNING'))) {
+        const extensionAPI = useExtensionAPI()
+        return <StorageWarningBanner extensionAPI={extensionAPI} vscodeAPI={vscodeAPI} />
+    }
+
+    return (
         <div className={styles.errorContainer}>
             {errors.map((error, i) => (
                 // biome-ignore lint/suspicious/noArrayIndexKey: error strings might not be unique, so we have no natural id
@@ -202,6 +218,7 @@ const ErrorBanner: React.FunctionComponent<{ errors: string[]; setErrors: (error
             ))}
         </div>
     )
+}
 
 interface ExternalPrompt {
     text: string

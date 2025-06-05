@@ -1700,7 +1700,10 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             // Only try to save if authenticated because otherwise we wouldn't be showing a chat.
             const chat = this.chatBuilder.toSerializedChatTranscript()
             if (chat && authStatus.authenticated) {
-                await chatHistory.saveChat(authStatus, chat)
+                const shouldShowStorageWarning = await chatHistory.saveChat(authStatus, chat)
+                if (shouldShowStorageWarning) {
+                    this.postError(new Error('STORAGE_WARNING'), 'storage')
+                }
             }
         } catch (error) {
             logDebug('ChatController', 'Failed')
