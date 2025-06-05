@@ -57,6 +57,15 @@ export interface ChatMessage extends Message {
      * non-experimental functionality.
      */
     subMessages?: SubMessage[]
+
+    /**
+     * Token usage information for the message.
+     */
+    tokenUsage?: {
+        completionTokens?: number
+        promptTokens?: number
+        totalTokens?: number
+    }
 }
 
 export enum ProcessType {
@@ -68,6 +77,12 @@ export enum ProcessType {
      * A process that prompts the user confirmation.
      */
     Confirmation = 'confirmation',
+    /**
+     * The high-level status of the process.
+     * This is used to show the status of the process in the UI.
+     * For example, "Fetching context..." or "Analyzing code...".
+     */
+    Step = 'step',
 }
 
 /**
@@ -112,6 +127,16 @@ export interface ProcessingStep {
      * Error information if the step failed
      */
     error?: ChatError | undefined | null
+
+    /**
+     * Optional icon name or type for the step, used by the UI to render the appropriate icon.
+     */
+    icon?: string | undefined | null
+
+    /**
+     * Context items returned by the step
+     */
+    items?: ContextItem[] | undefined | null
 }
 
 export type ChatMessageWithSearch = ChatMessage & { search: ChatMessageSearch }

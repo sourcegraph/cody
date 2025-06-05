@@ -43,6 +43,14 @@ interface CodyPanelProps {
     instanceNotices: CodyNotice[]
     messageInProgress: ChatMessage | null
     transcript: ChatMessage[]
+    tokenUsage?:
+        | {
+              completionTokens?: number | null | undefined
+              promptTokens?: number | null | undefined
+              totalTokens?: number | null | undefined
+          }
+        | null
+        | undefined
     vscodeAPI: Pick<VSCodeWrapper, 'postMessage' | 'onMessage'>
     setErrorMessages: (errors: string[]) => void
     guardrails: Guardrails
@@ -65,6 +73,7 @@ export const CodyPanel: FunctionComponent<CodyPanelProps> = ({
     instanceNotices,
     messageInProgress,
     transcript,
+    tokenUsage,
     vscodeAPI,
     showIDESnippetActions,
     showWelcomeMessage,
@@ -78,9 +87,9 @@ export const CodyPanel: FunctionComponent<CodyPanelProps> = ({
     const externalAPI = useExternalAPI()
     const api = useExtensionAPI()
     const { value: chatModels } = useObservable(useMemo(() => api.chatModels(), [api.chatModels]))
-    const { value: mcpServers } = useObservable<ServerType[]>(
+    const { value: mcpServers } = useObservable<ServerType[] | undefined>(
         useMemo(
-            () => api.mcpSettings()?.map(servers => (servers || [])?.map(s => getMcpServerType(s))),
+            () => api.mcpSettings()?.map(servers => servers?.map(s => getMcpServerType(s))),
             [api.mcpSettings]
         )
     )
@@ -92,6 +101,12 @@ export const CodyPanel: FunctionComponent<CodyPanelProps> = ({
     useEffect(() => {
         onExternalApiReady?.(externalAPI)
     }, [onExternalApiReady, externalAPI])
+
+    useEffect(() => {
+        if (view === View.Mcp && mcpServers === undefined) {
+            setView(View.Chat)
+        }
+    }, [view, setView, mcpServers])
 
     useEffect(() => {
         onExtensionApiReady?.(api)
@@ -146,6 +161,7 @@ export const CodyPanel: FunctionComponent<CodyPanelProps> = ({
                             chatEnabled={chatEnabled}
                             messageInProgress={messageInProgress}
                             transcript={transcript}
+                            tokenUsage={tokenUsage}
                             models={chatModels || []}
                             vscodeAPI={vscodeAPI}
                             guardrails={guardrails}
@@ -165,8 +181,8 @@ export const CodyPanel: FunctionComponent<CodyPanelProps> = ({
                             multipleWebviewsEnabled={config.multipleWebviewsEnabled}
                         />
                     )}
-                    {view === View.Mcp && mcpServers?.length !== -1 && (
-                        <ServerHome mcpServers={mcpServers} />
+                    {view === View.Mcp && mcpServers !== undefined && (
+                        <ServerHome mcpServers={mcpServers} IDE={clientCapabilities.agentIDE} />
                     )}
                 </TabContainer>
                 <StateDebugOverlay />

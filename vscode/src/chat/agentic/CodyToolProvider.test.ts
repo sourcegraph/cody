@@ -5,9 +5,9 @@ import { URI } from 'vscode-uri'
 import * as openctxAPI from '../../../../lib/shared/src/context/openctx/api'
 import { mockLocalStorage } from '../../services/LocalStorageProvider'
 import type { ContextRetriever } from '../chat-view/ContextRetriever'
+import { DeepCodyHandler } from '../chat-view/handlers/DeepCodyHandler'
 import { CodyTool } from './CodyTool'
 import { CodyToolProvider, TestToolFactory, type ToolConfiguration } from './CodyToolProvider'
-import { toolboxManager } from './ToolboxManager'
 import type { CodyToolConfig } from './types'
 
 const localStorageData: { [key: string]: unknown } = {}
@@ -73,7 +73,7 @@ describe('CodyToolProvider', () => {
         const tools = CodyToolProvider.getTools()
         expect(tools.length).toBeGreaterThan(0)
         expect(tools.some(tool => tool.config.title.includes('Code Search'))).toBe(true)
-        expect(tools.some(tool => tool.config.title.includes('Cody Memory'))).toBe(true)
+        expect(tools.some(tool => tool.config.title.includes('Cody Memory'))).toBe(false)
     })
 
     it('should set up OpenCtx provider listener and build OpenCtx tools from provider metadata', async () => {
@@ -88,7 +88,7 @@ describe('CodyToolProvider', () => {
     })
 
     it('should not include CLI tool if shell is disabled', () => {
-        vi.spyOn(toolboxManager, 'getSettings').mockReturnValue({
+        vi.spyOn(DeepCodyHandler, 'getSettings').mockReturnValue({
             agent: { name: 'deep-cody' },
             shell: { enabled: false },
         })
@@ -97,7 +97,7 @@ describe('CodyToolProvider', () => {
     })
 
     it('should include CLI tool if shell is enabled', () => {
-        vi.spyOn(toolboxManager, 'getSettings').mockReturnValue({
+        vi.spyOn(DeepCodyHandler, 'getSettings').mockReturnValue({
             agent: { name: 'deep-cody' },
             shell: { enabled: true },
         })
@@ -126,6 +126,68 @@ describe('CodyToolProvider', () => {
         const allTools = CodyToolProvider.getTools()
         expect(allTools.some(tool => tool.config.title === 'testMcpTool1')).toBe(true)
         expect(allTools.some(tool => tool.config.title === 'testMcpTool2')).toBe(true)
+    })
+
+    it('should not register disabled MCP tools', () => {
+        const mockMcpTools = [
+            {
+                name: 'enabledTool',
+                description: 'Enabled Tool',
+                input_schema: { type: 'object' as const, properties: {} },
+            },
+            {
+                name: 'disabledTool',
+                description: 'Disabled Tool',
+                input_schema: { type: 'object' as const, properties: {} },
+                disabled: true,
+            },
+        ]
+
+        const registeredTools = CodyToolProvider.registerMcpTools('test-server', mockMcpTools)
+        // Only the enabled tool should be registered
+        expect(registeredTools.length).toBe(1)
+        expect(registeredTools[0].config.title).toBe('enabledTool')
+
+        // Verify the disabled tool is not included in getTools()
+        const allTools = CodyToolProvider.getTools()
+        expect(allTools.some(tool => tool.config.title === 'enabledTool')).toBe(true)
+        expect(allTools.some(tool => tool.config.title === 'disabledTool')).toBe(false)
+    })
+
+    it('should update tool disabled state and filter out disabled tools', () => {
+        // Register a tool
+        const mockMcpTools = [
+            {
+                name: 'toggleableTool',
+                description: 'Toggleable Tool',
+                input_schema: { type: 'object' as const, properties: {} },
+            },
+        ]
+
+        CodyToolProvider.registerMcpTools('test-server', mockMcpTools)
+
+        // Tool should be enabled by default
+        let allTools = CodyToolProvider.getTools()
+        expect(allTools.some(tool => tool.config.title === 'toggleableTool')).toBe(true)
+
+        // Update to disabled state
+        const updated = CodyToolProvider.updateToolDisabledState('TOOLTEST-SERVER-TOGGLEABLETOOL', true)
+        expect(updated).toBe(true)
+
+        // Tool should now be filtered out
+        allTools = CodyToolProvider.getTools()
+        expect(allTools.some(tool => tool.config.title === 'toggleableTool')).toBe(false)
+
+        // Update back to enabled state
+        const reEnabled = CodyToolProvider.updateToolDisabledState(
+            'TOOLTEST-SERVER-TOGGLEABLETOOL',
+            false
+        )
+        expect(reEnabled).toBe(true)
+
+        // Tool should be back in the list
+        allTools = CodyToolProvider.getTools()
+        expect(allTools.some(tool => tool.config.title === 'toggleableTool')).toBe(true)
     })
 })
 
@@ -236,5 +298,90 @@ describe('ToolFactory', () => {
             expect(result[0].content).toContain('executed successfully')
             expect(result[0].source).toBe(ContextItemSource.Agentic)
         }
+    })
+
+    it('should filter out disabled MCP tools when creating tools', () => {
+        const mockMcpTools = [
+            {
+                name: 'enabledMcpTool',
+                description: 'Enabled MCP Tool',
+                input_schema: { type: 'object' as const, properties: {} },
+            },
+            {
+                name: 'disabledMcpTool',
+                description: 'Disabled MCP Tool',
+                input_schema: { type: 'object' as const, properties: {} },
+                disabled: true,
+            },
+        ]
+        const serverName = 'test-server'
+
+        // Create MCP tools - should only create the enabled one
+        const mcpTools = factory.createMcpTools(mockMcpTools, serverName)
+        expect(mcpTools.length).toBe(1)
+        expect(mcpTools[0].config.title).toBe('enabledMcpTool')
+
+        // Get all instances - should only include the enabled MCP tool
+        const allTools = factory.getInstances()
+        expect(allTools.some(tool => tool.config.title === 'enabledMcpTool')).toBe(true)
+        expect(allTools.some(tool => tool.config.title === 'disabledMcpTool')).toBe(false)
+
+        // Verify the disabled flag was properly passed to the tool config
+        const enabledTool = allTools.find(tool => tool.config.title === 'enabledMcpTool')
+        expect(enabledTool?.config.disabled).toBeUndefined()
+    })
+
+    it('should properly normalize tool names', () => {
+        // Test normalizeToolName with server name
+        expect(TestToolFactory.normalizeToolName('my.complex-tool!', 'test-server')).toBe(
+            'test-server-my-complex-tool'
+        )
+
+        // Test normalizeToolName without server name
+        expect(TestToolFactory.normalizeToolName('my.complex-tool!')).toBe('my-complex-tool')
+
+        // Test getCodyToolName with server name
+        expect(TestToolFactory.getCodyToolName('my.complex-tool!', 'test-server')).toBe(
+            'TOOLTEST-SERVER-MY-COMPLEX-TOOL'
+        )
+
+        // Test getCodyToolName without server name
+        expect(TestToolFactory.getCodyToolName('my.complex-tool!')).toBe('TOOLMY-COMPLEX-TOOL')
+    })
+
+    it('should handle disabled tools correctly', () => {
+        // Register a regular tool with disabled flag
+        const disabledToolConfig = {
+            ...testToolConfig,
+            name: 'DisabledTool',
+            disabled: true,
+        }
+        factory.register(disabledToolConfig)
+
+        // Creating a disabled tool should return undefined
+        const disabledTool = factory.createTool('DisabledTool')
+        expect(disabledTool).toBeUndefined()
+
+        // Disabled tools should be filtered from getInstances
+        const tools = factory.getInstances()
+        expect(tools.some(tool => tool.config.title === 'DisabledTool')).toBe(false)
+
+        // Test updating tool disabled state
+        factory.register({ ...testToolConfig, name: 'ToggleableTool' })
+        expect(factory.createTool('ToggleableTool')).toBeDefined()
+
+        // Update to disabled
+        const updated = factory.updateToolDisabledState('ToggleableTool', true)
+        expect(updated).toBe(true)
+        expect(factory.createTool('ToggleableTool')).toBeUndefined()
+
+        // Update back to enabled
+        const reEnabled = factory.updateToolDisabledState('ToggleableTool', false)
+        expect(reEnabled).toBe(true)
+        expect(factory.createTool('ToggleableTool')).toBeDefined()
+
+        // Attempt to update non-existent tool
+        const nonExistentUpdate = factory.updateToolDisabledState('NonExistentTool', true)
+        expect(nonExistentUpdate).toBe(false)
     })
 })

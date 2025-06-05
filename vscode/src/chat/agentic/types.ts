@@ -18,6 +18,8 @@ export interface CodyToolConfig {
         examples: PromptString[]
     }
 
+    disabled?: boolean
+
     // Optional metadata for tool-specific information
     metadata?: Record<string, unknown>
 }
@@ -27,8 +29,8 @@ export interface CodyToolConfig {
  * Used to track and report tool execution progress.
  */
 export interface ToolStatusCallback {
-    onUpdate(id: string, content: string): void
-    onStream(step: Partial<ProcessingStep>): void
+    onUpdate(id: string, step: Partial<ProcessingStep>): ProcessingStep
+    onStream(step: Partial<ProcessingStep>): ProcessingStep
     onComplete(id?: string, error?: Error): void
     onConfirmationNeeded(
         id: string,

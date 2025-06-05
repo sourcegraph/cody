@@ -4,9 +4,9 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { URI } from 'vscode-uri'
 import { mockLocalStorage } from '../../services/LocalStorageProvider'
 import type { ContextRetriever } from '../chat-view/ContextRetriever'
+import { DeepCodyHandler } from '../chat-view/handlers/DeepCodyHandler'
 import { CodyTool, OpenCtxTool } from './CodyTool'
 import { CodyToolProvider, TestToolFactory } from './CodyToolProvider'
-import { toolboxManager } from './ToolboxManager'
 import type { ToolStatusCallback } from './types'
 
 // Mock all the dependencies properly
@@ -54,7 +54,7 @@ const mockCallback: ToolStatusCallback = {
 }
 
 class TestTool extends CodyTool {
-    public async execute(span: Span, queries: string[]): Promise<ContextItem[]> {
+    public async execute(_span: Span, queries: string[]): Promise<ContextItem[]> {
         if (queries.length) {
             mockCallback?.onStream({
                 id: this.config.tags.tag.toString(),
@@ -266,7 +266,7 @@ describe('CodyTool', () => {
 
         it('should register all default tools based on toolbox settings', () => {
             const mockedToolboxSettings = { agent: { name: 'deep-cody' }, shell: { enabled: true } }
-            vi.spyOn(toolboxManager, 'getSettings').mockReturnValue(mockedToolboxSettings)
+            vi.spyOn(DeepCodyHandler, 'getSettings').mockReturnValue(mockedToolboxSettings)
             const localStorageData: { [key: string]: unknown } = {}
             mockLocalStorage({
                 get: (key: string) => localStorageData[key],
@@ -276,14 +276,14 @@ describe('CodyTool', () => {
             } as any)
 
             const tools = CodyToolProvider.getTools()
-            expect(tools.some(t => t.config.title.includes('Cody Memory'))).toBeTruthy()
+            expect(tools.some(t => t.config.title.includes('Cody Memory'))).toBeFalsy()
             expect(tools.some(t => t.config.title.includes('Code Search'))).toBeTruthy()
             expect(tools.some(t => t.config.title.includes('Codebase File'))).toBeTruthy()
             expect(tools.some(t => t.config.title.includes('Terminal'))).toBeTruthy()
 
             // Disable shell and check if terminal tool is removed.
             mockedToolboxSettings.shell.enabled = false
-            vi.spyOn(toolboxManager, 'getSettings').mockReturnValue(mockedToolboxSettings)
+            vi.spyOn(DeepCodyHandler, 'getSettings').mockReturnValue(mockedToolboxSettings)
             const newTools = CodyToolProvider.getTools()
             expect(newTools.some(t => t.config.title.includes('Terminal'))).toBeFalsy()
             expect(newTools.length).toBe(tools.length - 1)

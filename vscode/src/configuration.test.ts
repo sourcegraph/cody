@@ -136,9 +136,13 @@ describe('getConfiguration', () => {
                         return false
                     case 'cody.agentic.context.experimentalOptions':
                         return { shell: { allow: ['git'] } }
+                    case 'cody.chat.agenticContext':
+                        return false
                     case 'cody.auth.externalProviders':
                         return []
                     case 'cody.rules.enabled':
+                        return false
+                    case 'cody.internal.debug.tokenUsage':
                         return false
                     default:
                         assert(false, `unexpected key: ${key}`)
@@ -169,6 +173,7 @@ describe('getConfiguration', () => {
             },
             commandCodeLenses: true,
             agenticContextExperimentalOptions: { shell: { allow: ['git'] } },
+            chatAgenticContext: false,
             experimentalSupercompletions: false,
             experimentalAutoEditEnabled: false,
             experimentalAutoEditConfigOverride: undefined,
@@ -185,6 +190,7 @@ describe('getConfiguration', () => {
             internalUnstable: false,
             internalDebugContext: false,
             internalDebugState: false,
+            internalDebugTokenUsage: false,
             debugVerbose: true,
             debugFilter: /.*/,
             telemetryLevel: 'all',

@@ -181,6 +181,7 @@ export const DISCARD_REASONS: Record<AutoeditDiscardReasonMetadata, string> = {
     9: 'Not Enough Lines in Editor',
     10: 'Stale Throttled Request',
     11: 'Next Cursor Suggestion Shown Instead',
+    12: 'Big Diff Modification',
 }
 
 /**

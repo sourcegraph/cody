@@ -112,7 +112,7 @@ export const ContextCell: FunctionComponent<{
 
         // Text for top header text
         const headerText: { main: string; sub?: string } = {
-            main: isAgenticChat ? 'Agentic context' : isContextLoading ? 'Fetching context' : 'Context',
+            main: isContextLoading ? 'Fetching context' : 'Context',
             sub: isContextLoading
                 ? isAgenticChat
                     ? 'Thinking…'
@@ -120,9 +120,7 @@ export const ContextCell: FunctionComponent<{
                 : contextItems === undefined
                   ? 'none requested'
                   : contextItems.length === 0
-                    ? isAgenticChat
-                        ? 'none'
-                        : 'none fetched'
+                    ? 'none'
                     : itemCountLabel,
         }
 
@@ -130,6 +128,11 @@ export const ContextCell: FunctionComponent<{
             isContextLoading ||
             (contextItemsToDisplay && contextItemsToDisplay.length > 0) ||
             !isForFirstMessage
+
+        // Skip the context cell if there is no content from agentic chat
+        if (!contextItemsToDisplay?.length && isAgenticChat) {
+            return null
+        }
 
         return (
             <div className="tw-flex tw-flex-col tw-justify-center tw-w-full tw-gap-2 tw-py-1">

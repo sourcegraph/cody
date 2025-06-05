@@ -33,7 +33,7 @@ data class CustomChatCommandResult(
 
 data class CustomEditCommandResult(
   val type: TypeEnum, // Oneof: edit
-  val editResult: EditTask,
+  val editResult: FixupTaskID? = null,
 ) : CustomCommandResult() {
 
   enum class TypeEnum {

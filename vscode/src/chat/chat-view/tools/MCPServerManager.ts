@@ -22,6 +22,7 @@ import type {
 } from '@sourcegraph/cody-shared/src/codebase-context/messages'
 import { URI } from 'vscode-uri'
 import { getImageContent } from '../../../prompt-builder/utils'
+import { ToolFactory } from '../../agentic/CodyToolFactory'
 import type { MCPConnectionManager } from './MCPConnectionManager'
 
 /**
@@ -78,7 +79,14 @@ export class MCPServerManager {
 
             // Register tools with CodyToolProvider
             try {
-                CodyToolProvider.registerMcpTools(serverName, tools)
+                const enabledTools = tools.filter(tool => !tool.disabled)
+                const disabledTools = tools.filter(tool => tool.disabled)
+                CodyToolProvider.registerMcpTools(serverName, enabledTools)
+                // Ensure disabled state is consistent in CodyToolProvider
+                for (const tool of disabledTools) {
+                    const codyToolName = ToolFactory.getCodyToolName(tool.name, serverName)
+                    CodyToolProvider.updateToolDisabledState(codyToolName, true)
+                }
             } catch (error) {
                 logDebug(
                     'MCPServerManager',
@@ -395,6 +403,16 @@ export class MCPServerManager {
             })
         }
 
+        // Update the disabled state in CodyToolProvider
+        try {
+            const codyToolName = ToolFactory.getCodyToolName(toolName, serverName)
+            CodyToolProvider.updateToolDisabledState(codyToolName, disabled)
+        } catch (error) {
+            logDebug('MCPServerManager', `Failed to update tool state in CodyToolProvider: ${error}`, {
+                verbose: { error },
+            })
+        }
+
         // Fire events with specific server and tool information
         this.toolsEmitter.fire({ serverName, toolName, tools: this.tools })
         this.toolStateChangeEmitter.fire({ serverName, toolName, disabled })
@@ -441,6 +459,21 @@ export class MCPServerManager {
                         ...tool,
                         disabled: this.disabledTools.has(fullToolName),
                     }
+                })
+            }
+
+            // Update each tool in CodyToolProvider
+            try {
+                if (connection?.server?.tools) {
+                    for (const tool of connection.server.tools) {
+                        const isDisabled = this.disabledTools.has(`${serverName}_${tool.name}`)
+                        const codyToolName = ToolFactory.getCodyToolName(tool.name, serverName)
+                        CodyToolProvider.updateToolDisabledState(codyToolName, isDisabled)
+                    }
+                }
+            } catch (error) {
+                logDebug('MCPServerManager', 'Failed to update tool states in CodyToolProvider', {
+                    verbose: { error },
                 })
             }
         }

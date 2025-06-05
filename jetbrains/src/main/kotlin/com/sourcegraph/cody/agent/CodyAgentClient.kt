@@ -24,6 +24,7 @@ import com.sourcegraph.cody.auth.SourcegraphServerPath
 import com.sourcegraph.cody.autocomplete.CodyAutocompleteManager
 import com.sourcegraph.cody.autoedit.AutoeditManager
 import com.sourcegraph.cody.config.actions.OpenCodySettingsEditorAction
+import com.sourcegraph.cody.edit.EditCommandPrompt
 import com.sourcegraph.cody.edit.EditService
 import com.sourcegraph.cody.edit.lenses.LensesService
 import com.sourcegraph.cody.error.CodyConsole
@@ -38,6 +39,7 @@ import com.sourcegraph.common.ui.SimpleDumbAwareEDTAction
 import com.sourcegraph.config.ConfigUtil
 import com.sourcegraph.utils.CodyEditorUtil
 import com.sourcegraph.utils.ThreadingUtil.runInBackground
+import com.sourcegraph.utils.ThreadingUtil.runInEdtAndGet
 import com.sourcegraph.utils.ThreadingUtil.runInEdtFuture
 import java.nio.file.Paths
 import java.util.concurrent.CompletableFuture
@@ -62,6 +64,16 @@ class CodyAgentClient(private val project: Project, private val webview: NativeW
       BrowserOpener.openInBrowser(project, params.uri)
       true
     }
+  }
+
+  override fun editTask_getUserInput(
+      params: UserEditPromptRequest
+  ): CompletableFuture<UserEditPromptResult?> {
+    CodyEditorUtil.getSelectedEditors(project).firstOrNull()?.let { editor ->
+      return runInEdtAndGet { EditCommandPrompt(project, editor, "Edit Code with Cody", params) }
+          .getUserEditPromptResult()
+    }
+    return CompletableFuture.completedFuture(null)
   }
 
   override fun workspace_edit(params: WorkspaceEditParams): CompletableFuture<Boolean> {
@@ -97,29 +109,46 @@ class CodyAgentClient(private val project: Project, private val webview: NativeW
     }
   }
 
+  override fun textEditor_selection(params: TextEditor_SelectionParams): CompletableFuture<Null?> {
+    return runInEdtFuture {
+      CodyEditorUtil.selectAndScrollToRange(
+          project, params.uri, params.selection, shouldScroll = false)
+      return@runInEdtFuture null
+    }
+  }
+
+  override fun textEditor_revealRange(
+      params: TextEditor_RevealRangeParams
+  ): CompletableFuture<Null?> {
+    return runInEdtFuture {
+      CodyEditorUtil.selectAndScrollToRange(project, params.uri, params.range, shouldScroll = true)
+      return@runInEdtFuture null
+    }
+  }
+
   override fun textDocument_openUntitledDocument(
       params: UntitledTextDocument
   ): CompletableFuture<ProtocolTextDocument?> {
     return runInEdtFuture {
-      val vf = CodyEditorUtil.createFileOrScratchFromUntitled(project, params.uri, params.content)
+      val vf = CodyEditorUtil.createFileOrUseExisting(project, params.uri, params.content)
       vf?.let { ProtocolTextDocumentExt.fromVirtualFile(it) }
     }
   }
 
   override fun secrets_get(params: Secrets_GetParams): CompletableFuture<String?> {
-    return runInBackground { CodySecureStore.getFromSecureStore(params.key) }
+    return runInBackground { CodySecureStore.getInstance().getFromSecureStore(params.key) }
   }
 
   override fun secrets_store(params: Secrets_StoreParams): CompletableFuture<Null?> {
     return runInBackground {
-      CodySecureStore.writeToSecureStore(params.key, params.value)
+      CodySecureStore.getInstance().writeToSecureStore(params.key, params.value)
       null
     }
   }
 
   override fun secrets_delete(params: Secrets_DeleteParams): CompletableFuture<Null?> {
     return runInBackground {
-      CodySecureStore.writeToSecureStore(params.key, null)
+      CodySecureStore.getInstance().writeToSecureStore(params.key, null)
       null
     }
   }
@@ -268,12 +297,6 @@ class CodyAgentClient(private val project: Project, private val webview: NativeW
       OpenCodySettingsEditorAction().actionPerformed(actionEvent)
     }
   }
-
-  @Deprecated("Use `codeLenses/display` instead")
-  override fun editTask_didUpdate(params: EditTask) {}
-
-  @Deprecated("Use `codeLenses/display` instead")
-  override fun editTask_didDelete(params: EditTask) {}
 
   override fun progress_start(params: ProgressStartParams) {
     // TODO: Implement this.

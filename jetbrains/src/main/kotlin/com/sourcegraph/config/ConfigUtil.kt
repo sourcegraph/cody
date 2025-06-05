@@ -126,7 +126,7 @@ object ConfigUtil {
         }
       }
     } else {
-      val token = CodySecureStore.getFromSecureStore(endpoint.url)
+      val token = CodySecureStore.getInstance().getFromSecureStore(endpoint.url)
       if (token != null) {
         authHeaders.complete(mapOf("Authorization" to "token $token"))
       }
@@ -162,7 +162,17 @@ object ConfigUtil {
   }
 
   @JvmStatic
-  fun getCustomConfiguration(project: Project, customConfigContent: String?): String {
+  fun getConfigurationEntries(project: Project, key: String): List<Pair<String, Any>> {
+    val config = ConfigFactory.parseString(getCustomConfiguration(project)).resolve()
+    return config.entrySet().mapNotNull { configEntry ->
+      val parts = com.typesafe.config.ConfigUtil.splitPath(configEntry.key)
+      if (parts.joinToString(".").startsWith(key)) parts.last() to configEntry.value.unwrapped()
+      else null
+    }
+  }
+
+  @JvmStatic
+  fun getCustomConfiguration(project: Project, customConfigContent: String? = null): String {
     // Needed by Edit commands to trigger smart-selection; without it things break.
     // So it isn't optional in JetBrains clients, which do not offer language-neutral solutions
     // to this problem; instead we hardwire it to use the indentation-based provider.
@@ -200,7 +210,12 @@ object ConfigUtil {
         if (value == null) {
           config.withoutPath(key)
         } else {
-          config.withValue(key, ConfigValueFactory.fromAnyRef(value))
+          try {
+            val subconfig = ConfigFactory.parseString(value)
+            config.withValue(key, subconfig.root())
+          } catch (e: Exception) {
+            config.withValue(key, ConfigValueFactory.fromAnyRef(value))
+          }
         }
     setCustomConfiguration(project, updatedConfig.root().render(renderOptions))
   }
@@ -209,7 +224,7 @@ object ConfigUtil {
   fun setCustomConfiguration(project: Project, customConfigContent: String): VirtualFile? {
     val config = ConfigFactory.parseString(customConfigContent).resolve()
     val content = config.root().render(renderOptions)
-    return CodyEditorUtil.createFileOrScratchFromUntitled(
+    return CodyEditorUtil.createFileOrUseExisting(
         project, getSettingsFile(project).toUri().toString(), content = content, overwrite = true)
         ?: run {
           logger.warn("Could not create settings file")

@@ -6,8 +6,8 @@ import {
 } from '@sourcegraph/cody-shared'
 import type { McpTool } from '@sourcegraph/cody-shared/src/llm-providers/mcp/types'
 import type { ContextRetriever } from '../chat-view/ContextRetriever'
+import { DeepCodyHandler } from '../chat-view/handlers/DeepCodyHandler'
 import { type CodyTool, McpToolImpl, OpenCtxTool, TOOL_CONFIGS } from './CodyTool'
-import { toolboxManager } from './ToolboxManager'
 import { OPENCTX_TOOL_CONFIG } from './config'
 import type { CodyToolConfig } from './types'
 
@@ -60,7 +60,7 @@ export class ToolFactory {
 
     public createTool(name: string, retriever?: Retriever): CodyTool | undefined {
         const config = this.tools.get(name)
-        if (!config) {
+        if (!config || config.disabled) {
             return undefined
         }
         const instance = config.createInstance(config, retriever)
@@ -70,9 +70,13 @@ export class ToolFactory {
     public getInstances(): CodyTool[] {
         // Ensure we include all registered tools including MCP tools
         return Array.from(this.tools.entries())
-            .filter(([name]) => {
+            .filter(([name, config]) => {
                 // Include all tools except CliTool which has special handling
-                return name !== 'CliTool' || toolboxManager.getSettings()?.shell?.enabled
+                // Also filter out disabled tools
+                return (
+                    (name !== 'CliTool' || DeepCodyHandler.getSettings()?.shell?.enabled) &&
+                    !config.disabled
+                )
             })
             .map(([_, config]) => config.createInstance(config, this.contextRetriever))
             .filter(isDefined)
@@ -116,17 +120,19 @@ export class ToolFactory {
             },
             // Add metadata to identify tools from the same MCP server
             metadata: { serverName, isMcpTool: true },
+            // Respect the disabled state from the McpTool
+            disabled: tool.disabled,
         }
     }
 
     public createMcpTools(mcpTools: McpTool[], serverName: string): CodyTool[] {
         return mcpTools
             .map(tool => {
+                // Skip disabled tools
+                if (tool.disabled) return undefined
+
                 const _toolName = tool.name
-                // Format to match topic name requirements in bot-response-multiplexer (only digits, letters, hyphens)
-                const normalizedName = `${serverName}-${_toolName}`.replace(/[^\dA-Za-z-]/g, '-')
-                // Create a version that exactly matches what will be used in the XML responses
-                const toolName = `TOOL${normalizedName.toUpperCase()}`
+                const toolName = ToolFactory.getCodyToolName(_toolName, serverName)
 
                 // Create a proper tool configuration
                 const toolConfig = this.createMcpToolConfig(tool, toolName, serverName)
@@ -141,6 +147,29 @@ export class ToolFactory {
                 return this.createTool(toolName)
             })
             .filter(isDefined)
+    }
+
+    public updateToolDisabledState(toolName: string, disabled: boolean): boolean {
+        const config = this.tools.get(toolName)
+        if (!config) return false
+
+        config.disabled = disabled
+        return true
+    }
+
+    public static normalizeToolName(toolName: string, serverName?: string): string {
+        // Format to match topic name requirements in bot-response-multiplexer (only digits, letters, hyphens)
+        const normalizedName = serverName ? `${serverName}-${toolName}` : toolName
+        return normalizedName
+            .replace(/[^\dA-Za-z-]/g, ' ')
+            .trim()
+            ?.replaceAll(' ', '-')
+    }
+
+    public static getCodyToolName(toolName: string, serverName?: string): string {
+        // Create a version that exactly matches what will be used in the XML responses
+        const normalizedName = ToolFactory.normalizeToolName(toolName, serverName)
+        return `TOOL${normalizedName.toUpperCase()}`
     }
 
     private generateToolName(provider: ContextMentionProviderMetadata): string {

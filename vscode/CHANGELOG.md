@@ -4,6 +4,205 @@ This is a log of all notable changes to Cody for VS Code.
 
 <!--- {/_ CHANGELOG_START _/} -->
 
+## 1.100.0
+
+### Features
+
+#### Chat
+
+- optional data display [#8015](https://github.com/sourcegraph/cody/pull/8015)
+- add `cody.chat.agenticContext` configuration option [#7983](https://github.com/sourcegraph/cody/pull/7983)
+
+#### Cody
+
+- migrate feature flags evaluation to new batch api [#8006](https://github.com/sourcegraph/cody/pull/8006)
+- Do not trigger autocompletion on Delete [#7990](https://github.com/sourcegraph/cody/pull/7990)
+
+### Fix
+
+#### Chat
+
+- chat transcript scrolling [#8020](https://github.com/sourcegraph/cody/pull/8020)
+- show empty chat history message if deleting all messages during filtering [#7995](https://github.com/sourcegraph/cody/pull/7995)
+- Hide MCP settings upon switching to account which does not support MCP [#7993](https://github.com/sourcegraph/cody/pull/7993)
+
+#### Cody
+
+- allow users to add large files [#8016](https://github.com/sourcegraph/cody/pull/8016)
+- Fix History tab styling across IDE themes [#8001](https://github.com/sourcegraph/cody/pull/8001)
+- Fix missing LLM icon in Edit Code's dropdown [#7996](https://github.com/sourcegraph/cody/pull/7996)
+- Refresh Cody window on display configuration change [#7980](https://github.com/sourcegraph/cody/pull/7980)
+
+### Chore
+
+#### Cody
+
+- Unify inline edit architecture in VSC and other clients [#8023](https://github.com/sourcegraph/cody/pull/8023)
+- Update VerifyJavaBootRuntimeVersion.kt [#7986](https://github.com/sourcegraph/cody/pull/7986)
+
+#### Chat
+
+- refactor parse.ts [#8029](https://github.com/sourcegraph/cody/pull/8029)
+- update model options from 3.5 Sonnet to Sonnet 4 [#7999](https://github.com/sourcegraph/cody/pull/7999)
+
+#### Test
+
+- Skip flaky auth test on Ubuntu [#7997](https://github.com/sourcegraph/cody/pull/7997)
+
+### Refactor
+
+#### Chat
+
+- agentic context toolbox settings [#8009](https://github.com/sourcegraph/cody/pull/8009)
+- Improve prompt sanitization [#7981](https://github.com/sourcegraph/cody/pull/7981)
+
+### Uncategorized
+
+#### Others
+
+- Split edit code between flow/model and UI (QuickPick) [#8013](https://github.com/sourcegraph/cody/pull/8013)
+- Remove duplicated parsed text as content [#8011](https://github.com/sourcegraph/cody/pull/8011)
+- Add automatic JCEF runtime selection [#7976](https://github.com/sourcegraph/cody/pull/7976)
+- Cancel completion request on BGT (instead of AWT) [#7969](https://github.com/sourcegraph/cody/pull/7969)
+- Restoration of unit test generation, path normalization [#7765](https://github.com/sourcegraph/cody/pull/7765)
+
+
+## 1.98.1
+
+### Fix
+
+#### Chat
+
+- chat transcript scrolling [#8021](https://github.com/sourcegraph/cody/pull/8021)
+
+### Reverts
+
+There were no reverts for this release
+
+### Uncategorized
+
+#### Others
+
+- Changelog for 1.98.0 [#8005](https://github.com/sourcegraph/cody/pull/8005)
+
+## 1.98.0
+
+### Features
+
+#### Chat
+
+- Agentic chat enabled by default with new `cody.chat.agenticContext` configuration option [#7998](https://github.com/sourcegraph/cody/pull/7998)
+- make last editor sticky [#7961](https://github.com/sourcegraph/cody/pull/7961)
+
+### Fix
+
+- Do not trigger autocompletion on Delete [#7991](https://github.com/sourcegraph/cody/pull/7991)
+- Refresh Cody window on display configuration change [#7987](https://github.com/sourcegraph/cody/pull/7987)
+- Fix missing JCEF panel [#7968](https://github.com/sourcegraph/cody/pull/7968)
+- Add settings for custom node process args and env variables [#7963](https://github.com/sourcegraph/cody/pull/7963)
+- Add config.condebase check to repoNameResolver [#7944](https://github.com/sourcegraph/cody/pull/7944)
+- Do not throw exceptions from unimplemented protocol methods [#7929](https://github.com/sourcegraph/cody/pull/7929)
+
+#### Autoedit
+
+- Disable hot streak experimental model in agent [#7962](https://github.com/sourcegraph/cody/pull/7962)
+- Autoedit: Add filter on the big diff modifications [#7970](https://github.com/sourcegraph/cody/pull/7970)
+
+#### Chat
+
+- center empty history tab [#7965](https://github.com/sourcegraph/cody/pull/7965)
+- only run saveSession after LLM response [#7952](https://github.com/sourcegraph/cody/pull/7952)
+- show toolbar even when only one model is available [#7936](https://github.com/sourcegraph/cody/pull/7936)
+
+#### Cody-Web
+
+- display thinking tags for reasoning models [#7942](https://github.com/sourcegraph/cody/pull/7942)
+
+### Chore
+
+#### Chat
+
+- remove rate limiting and enable agentic chat default with flag [#7971](https://github.com/sourcegraph/cody/pull/7971)
+- Bump min version for new prompt api [#7943](https://github.com/sourcegraph/cody/pull/7943)
+- Replace native file picker with polyfill implementation [#7928](https://github.com/sourcegraph/cody/pull/7928)
+- Properly use generated protocol classes [#7922](https://github.com/sourcegraph/cody/pull/7922)
+
+#### Release
+
+- Bump package version and update changelog for M96 [#7973](https://github.com/sourcegraph/cody/pull/7973)
+- Changelog for 1.94.2 [#7959](https://github.com/sourcegraph/cody/pull/7959)
+- Changelog for 1.94.1 [#7948](https://github.com/sourcegraph/cody/pull/7948)
+
+### Refactor
+
+#### Chat
+
+- add more info to show in history tab [#7966](https://github.com/sourcegraph/cody/pull/7966)
+- clear deprecated storage keys and remove chat memory [#7964](https://github.com/sourcegraph/cody/pull/7964)
+- update agentic context UI [#7908](https://github.com/sourcegraph/cody/pull/7908)
+
+### Reverts
+
+- Revert: fix(web): Fix agent recreation in Cody Web component to properly respond to config changes [#-1](https://github.com/sourcegraph/cody/pull/7787)
+
+### Uncategorized
+
+#### Others
+
+## 1.96.0
+
+### Fix
+
+- [Backport M96] fix(chat): only run saveSession after LLM response [pull/7955](https://github.com/sourcegraph/cody/pull/7955)
+- [Backport M96] Do not throw exceptions from unimplemented protocol methods [pull/7933](https://github.com/sourcegraph/cody/pull/7933)
+- Properly use generated protocol classes [pull/7922](https://github.com/sourcegraph/cody/pull/7922)
+- fix(chat): prompt hydration in the right editor when using the prompt quickPick option [pull/7902](https://github.com/sourcegraph/cody/pull/7902)
+- fix(chat): Hide copy button in non-chat mode [pull/7895](https://github.com/sourcegraph/cody/pull/7895)
+- fix(chat): track code paste event [pull/7918](https://github.com/sourcegraph/cody/pull/7918)
+- fix(rules): avoid duplicate .sourcegraph paths in rule search [pull/7805](https://github.com/sourcegraph/cody/pull/7805)
+- Fix handling of client-side temporary settings in cody_settings.json [pull/7904](https://github.com/sourcegraph/cody/pull/7904)
+- Fix issue with duplicated models in the model selection [pull/7905](https://github.com/sourcegraph/cody/pull/7905)
+- fix(autocomplete): fix stop reason in the default completions client [pull/7872](https://github.com/sourcegraph/cody/pull/7872)
+- fix(analytics): enable characters logger for untitled doc [pull/7873](https://github.com/sourcegraph/cody/pull/7873)
+- rm erroneously included tmp file [pull/7903](https://github.com/sourcegraph/cody/pull/7903)
+- Fix demo app on safari & remove tiktoken dependency [pull/7887](https://github.com/sourcegraph/cody/pull/7887)
+
+### Features
+
+- refactor(chat): MCP server management and tool state [pull/7915](https://github.com/sourcegraph/cody/pull/7915)
+- Enable prompts sort bvy relevance for insider builds [pull/7913](https://github.com/sourcegraph/cody/pull/7913)
+- feat(chat): Remove rate limiting and default flag for Deep Cody [pull/7882](https://github.com/sourcegraph/cody/pull/7882)
+- feat(chat): move mcp setting btn and add storybook [pull/7901](https://github.com/sourcegraph/cody/pull/7901)
+- feat(logging): Add telemetry to code copy events to ensure accuracy of insert rate metric [pull/7897](https://github.com/sourcegraph/cody/pull/7897)
+- Added support for Ctrl+C not working in Rider/Windows [pull/7798](https://github.com/sourcegraph/cody/pull/7798)
+- feat(autocomplete): better autocomplete support for gpt-4.1-mini [pull/7871](https://github.com/sourcegraph/cody/pull/7871)
+- Make TokenCounterUtils implementation environment dependent [pull/7875](https://github.com/sourcegraph/cody/pull/7875)
+- add AGENT.md for use with Amp [pull/7891](https://github.com/sourcegraph/cody/pull/7891)
+
+### Chores
+
+- chore(storybook): fixed stories that rendered with errors due to API changes [pull/7848](https://github.com/sourcegraph/cody/pull/7848)
+- chore(ci and release): Remove bundle size checks [pull/7916](https://github.com/sourcegraph/cody/pull/7916)
+- chore(walkthroughs): remove walkthroughts in favor of linking to quickstart docs [pull/7847](https://github.com/sourcegraph/cody/pull/7847)
+
+### Reverts
+
+- [Backport M96] revert(chat): enable agentic chat based on feature flag and model [pull/7956](https://github.com/sourcegraph/cody/pull/7956)
+
+## 1.94.2
+
+### Fix
+
+#### Chat
+
+- only run saveSession after LLM response [#7954](https://github.com/sourcegraph/cody/pull/7954)
+
+### Revert
+
+#### Chat
+
+- enable agentic chat based on feature flag and model[#7957](https://github.com/sourcegraph/cody/pull/7957)
+
 ## 1.94.1
 
 ### Fix
@@ -11,7 +210,6 @@ This is a log of all notable changes to Cody for VS Code.
 #### Prompts
 
 - Bump min version for new prompt api [#7943](https://github.com/sourcegraph/cody/pull/7943)
-
 
 ## 1.94.0
 
@@ -90,7 +288,6 @@ This is a log of all notable changes to Cody for VS Code.
 - Remove Tool Cody model [#7881](https://github.com/sourcegraph/cody/pull/7881)
 - Remove duplicate mode icon [#7880](https://github.com/sourcegraph/cody/pull/7880)
 - Prompt Picker Improvements [#7861](https://github.com/sourcegraph/cody/pull/7861)
-
 
 ## 1.92.0
 

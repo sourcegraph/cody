@@ -8,9 +8,9 @@ import {
 import type { McpTool } from '@sourcegraph/cody-shared/src/llm-providers/mcp/types'
 import { map } from 'observable-fns'
 import type { ContextRetriever } from '../chat-view/ContextRetriever'
+import { DeepCodyHandler } from '../chat-view/handlers/DeepCodyHandler'
 import type { CodyTool } from './CodyTool'
 import { ToolFactory } from './CodyToolFactory'
-import { toolboxManager } from './ToolboxManager'
 import type { CodyToolConfig } from './types'
 
 type Retriever = Pick<ContextRetriever, 'retrieveContext'>
@@ -83,16 +83,36 @@ export class CodyToolProvider {
             logDebug('CodyToolProvider', 'Cannot register MCP tools - instance not initialized')
             return []
         }
-        logDebug('CodyToolProvider', `Registering ${tools.length} MCP tools from ${serverName}`)
         const createdTools = CodyToolProvider.instance.factory.createMcpTools(tools, serverName)
         logDebug('CodyToolProvider', `Registered ${createdTools.length} MCP tools successfully`)
         return createdTools
     }
 
+    /**
+     * Update the disabled state of a tool
+     * @param toolName The name of the tool to update
+     * @param disabled Whether the tool should be disabled
+     * @returns true if the tool was found and updated, false otherwise
+     */
+    public static updateToolDisabledState(toolName: string, disabled: boolean): boolean {
+        if (!CodyToolProvider.instance) {
+            logDebug('CodyToolProvider', 'Cannot update tool state - instance not initialized')
+            return false
+        }
+
+        const result = CodyToolProvider.instance.factory.updateToolDisabledState(toolName, disabled)
+        if (result) {
+            logDebug('CodyToolProvider', `Updated tool ${toolName} disabled state to ${disabled}`)
+        } else {
+            logDebug('CodyToolProvider', `Failed to update tool ${toolName} - not found`)
+        }
+        return result
+    }
+
     private static setupOpenCtxProviderListener(): void {
         const provider = CodyToolProvider.instance
         if (provider && !CodyToolProvider.configSubscription) {
-            CodyToolProvider.configSubscription = toolboxManager.observable.subscribe({})
+            CodyToolProvider.configSubscription = DeepCodyHandler.observable.subscribe({})
         }
         if (provider && !CodyToolProvider.openCtxSubscription) {
             CodyToolProvider.openCtxSubscription = openctxController

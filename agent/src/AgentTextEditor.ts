@@ -1,12 +1,16 @@
 import { logDebug } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
+import type { MessageHandler } from '../../vscode/src/jsonrpc/jsonrpc'
 import type { AgentTextDocument } from './AgentTextDocument'
 import type { EditFunction } from './AgentWorkspaceDocuments'
 
 export class AgentTextEditor implements vscode.TextEditor {
     constructor(
         private readonly agentDocument: AgentTextDocument,
-        private readonly params?: { edit?: EditFunction }
+        private readonly params?: {
+            agent?: MessageHandler
+            edit?: EditFunction
+        }
     ) {}
     get document(): AgentTextDocument {
         return this.agentDocument
@@ -22,7 +26,25 @@ export class AgentTextEditor implements vscode.TextEditor {
               new vscode.Selection(new vscode.Position(0, 0), new vscode.Position(0, 0))
         return selection
     }
-    set selection(newSelection: vscode.Selection) {}
+
+    // Notice: VSC `selection` method is synchronous,
+    // but we need to asynchronously call agent and cannot wait for operation to finish.
+    // This may lead to potential issues if the following code bases on the `selection` result.
+    set selection(newSelection: vscode.Selection) {
+        this.params?.agent?.request('textEditor/selection', {
+            uri: this.agentDocument.protocolDocument.uri.toString(),
+            selection: {
+                start: {
+                    line: newSelection.start.line,
+                    character: newSelection.start.character,
+                },
+                end: {
+                    line: newSelection.end.line,
+                    character: newSelection.end.character,
+                },
+            },
+        })
+    }
 
     get selections(): readonly vscode.Selection[] {
         return [this.selection]
@@ -82,8 +104,24 @@ export class AgentTextEditor implements vscode.TextEditor {
     ): void {
         // Do nothing, for now
     }
+
+    // Notice: VSC `revealRange` method is synchronous,
+    // but we need to asynchronously call agent and cannot wait for operation to finish.
+    // This may lead to potential issues if the following code bases on the `revealRange` result.
     revealRange(range: vscode.Range, revealType?: vscode.TextEditorRevealType | undefined): void {
-        // Do nothing, for now.
+        this.params?.agent?.request('textEditor/revealRange', {
+            uri: this.agentDocument.protocolDocument.uri.toString(),
+            range: {
+                start: {
+                    line: range.start.line,
+                    character: range.start.character,
+                },
+                end: {
+                    line: range.end.line,
+                    character: range.end.character,
+                },
+            },
+        })
     }
     show(column?: vscode.ViewColumn | undefined): void {
         // Do nothing, for now.

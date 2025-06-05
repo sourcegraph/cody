@@ -7,6 +7,7 @@ import { ProtocolTextDocumentWithUri } from '../../vscode/src/jsonrpc/TextDocume
 import { logError } from '@sourcegraph/cody-shared'
 import { doesFileExist } from '../../vscode/src/commands/utils/workspace-files'
 import { resetActiveEditor } from '../../vscode/src/editor/active-editor'
+import type { MessageHandler } from '../../vscode/src/jsonrpc/jsonrpc'
 import { AgentTextDocument } from './AgentTextDocument'
 import { AgentTextEditor } from './AgentTextEditor'
 import { applyContentChanges } from './applyContentChanges'
@@ -28,6 +29,7 @@ export type EditFunction = (
 export class AgentWorkspaceDocuments implements vscode_shim.WorkspaceDocuments {
     constructor(
         private params?: {
+            agent?: MessageHandler
             edit?: EditFunction
             doPanic?: (message: string) => void
         }

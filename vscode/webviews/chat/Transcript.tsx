@@ -6,7 +6,6 @@ import {
     type SerializedPromptEditorValue,
     deserializeContextItem,
     isAbortErrorOrSocketHangUp,
-    serializedPromptEditorStateFromText,
 } from '@sourcegraph/cody-shared'
 import type { PromptEditorRefAPI } from '@sourcegraph/prompt-editor'
 import { clsx } from 'clsx'
@@ -41,10 +40,11 @@ import * as uuid from 'uuid'
 import { isCodeSearchContextItem } from '../../src/context/openctx/codeSearch'
 import { useClientActionListener } from '../client/clientState'
 import { useLocalStorage } from '../components/hooks'
+
+import { TokenUsageDisplay } from './TokenUsageDisplay'
 import { AgenticContextCell } from './cells/agenticCell/AgenticContextCell'
 import ApprovalCell from './cells/agenticCell/ApprovalCell'
 import { ContextCell } from './cells/contextCell/ContextCell'
-import { DidYouMeanNotice } from './cells/messageCell/assistant/DidYouMean'
 import { ToolStatusCell } from './cells/toolCell/ToolStatusCell'
 import { LoadingDots } from './components/LoadingDots'
 import { LastEditorContext } from './context'
@@ -54,6 +54,14 @@ interface TranscriptProps {
     setActiveChatContext: (context: Context | undefined) => void
     chatEnabled: boolean
     transcript: ChatMessage[]
+    tokenUsage?:
+        | {
+              completionTokens?: number | null | undefined
+              promptTokens?: number | null | undefined
+              totalTokens?: number | null | undefined
+          }
+        | null
+        | undefined
     models: Model[]
     userInfo: UserAccountInfo
     messageInProgress: ChatMessage | null
@@ -71,6 +79,7 @@ export const Transcript: FC<TranscriptProps> = props => {
         setActiveChatContext,
         chatEnabled,
         transcript,
+        tokenUsage,
         models,
         userInfo,
         messageInProgress,
@@ -87,6 +96,8 @@ export const Transcript: FC<TranscriptProps> = props => {
     )
 
     const lastHumanEditorRef = useRef<PromptEditorRefAPI | null>(null)
+    const userHasScrolledRef = useRef(false)
+    const lastScrollTopRef = useRef(0)
 
     useEffect(() => {
         const handleCopyEvent = (event: ClipboardEvent) => {
@@ -104,11 +115,70 @@ export const Transcript: FC<TranscriptProps> = props => {
         }
     }, [])
 
+    useEffect(() => {
+        const scrollableContainer = document.querySelector('[data-scrollable]')
+        if (!scrollableContainer || !(scrollableContainer instanceof HTMLElement)) {
+            return
+        }
+
+        const handleScroll = () => {
+            const currentScrollTop = scrollableContainer.scrollTop
+            const scrollHeight = scrollableContainer.scrollHeight
+            const clientHeight = scrollableContainer.clientHeight
+            const isAtBottom = Math.abs(scrollHeight - clientHeight - currentScrollTop) < 10
+
+            // Reset user scroll flag if they scroll back to bottom
+            if (isAtBottom) {
+                userHasScrolledRef.current = false
+            } else {
+                // Check if user manually scrolled (not from auto-scroll)
+                const expectedAutoScrollTop = lastScrollTopRef.current
+                if (Math.abs(currentScrollTop - expectedAutoScrollTop) > 5) {
+                    userHasScrolledRef.current = true
+                }
+            }
+        }
+
+        scrollableContainer.addEventListener('scroll', handleScroll)
+        return () => {
+            scrollableContainer.removeEventListener('scroll', handleScroll)
+        }
+    }, [])
+
+    useEffect(() => {
+        if (messageInProgress?.text) {
+            // Only auto-scroll if user hasn't manually scrolled away
+            if (!userHasScrolledRef.current) {
+                const scrollableContainer = document.querySelector('[data-scrollable]')
+                if (scrollableContainer && scrollableContainer instanceof HTMLElement) {
+                    // Calculate space needed for the input box
+                    const lastEditor = document.querySelector<HTMLElement>(
+                        '[data-lexical-editor]:last-of-type'
+                    )
+                    const editorHeight = lastEditor
+                        ? lastEditor.getBoundingClientRect().height + 32
+                        : 120
+
+                    // Scroll to the bottom minus the height of the editor
+                    const scrollHeight = scrollableContainer.scrollHeight
+                    const targetScrollTop =
+                        scrollHeight - scrollableContainer.clientHeight + editorHeight
+                    lastScrollTopRef.current = targetScrollTop
+                    scrollableContainer.scrollTop = targetScrollTop
+                }
+            }
+        } else {
+            // Reset user scroll flag when message streaming stops
+            userHasScrolledRef.current = false
+        }
+    }, [messageInProgress?.text])
+
     return (
         <div
             className={clsx(' tw-px-8 tw-py-4 tw-flex tw-flex-col tw-gap-4', {
                 'tw-flex-grow': transcript.length > 0,
             })}
+            data-scrollable="true"
         >
             <LastEditorContext.Provider value={lastHumanEditorRef}>
                 {interactions.map((interaction, i) => (
@@ -116,6 +186,7 @@ export const Transcript: FC<TranscriptProps> = props => {
                         key={interaction.humanMessage.index}
                         activeChatContext={activeChatContext}
                         setActiveChatContext={setActiveChatContext}
+                        tokenUsage={tokenUsage}
                         models={models}
                         chatEnabled={chatEnabled}
                         userInfo={userInfo}
@@ -243,6 +314,7 @@ export type RegeneratingCodeBlockState = {
 const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
     const {
         interaction: { humanMessage, assistantMessage },
+        tokenUsage,
         models,
         isFirstInteraction,
         isLastInteraction,
@@ -517,22 +589,6 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
         [humanMessage.index]
     )
 
-    const editAndSubmitSearch = useCallback(
-        (text: string) => {
-            setSelectedIntent('search')
-            editHumanMessage({
-                messageIndexInTranscript: humanMessage.index,
-                editorValue: {
-                    text,
-                    contextItems: [],
-                    editorState: serializedPromptEditorStateFromText(text),
-                },
-                manuallySelectedIntent: 'search',
-            })
-        },
-        [humanMessage]
-    )
-
     // We track, ephemerally, the code blocks that are being regenerated so
     // we can show an accurate loading indicator or error message on those
     // blocks.
@@ -596,6 +652,12 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
         <>
             {/* Show loading state on the last interaction */}
             {isLastInteraction && priorAssistantMessageIsLoading && <LoadingDots />}
+            {/* Show token usage above and aligned to the right for followup editor */}
+            {humanMessage.isUnsentFollowup && tokenUsage && (
+                <div className="tw-flex tw-justify-end tw-mb-2">
+                    <TokenUsageDisplay tokenUsage={tokenUsage} />
+                </div>
+            )}
             <HumanMessageCell
                 key={humanMessage.index}
                 userInfo={userInfo}
@@ -611,31 +673,25 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                 isLastInteraction={isLastInteraction}
                 isEditorInitiallyFocused={isLastInteraction}
                 editorRef={humanEditorRef}
-                className={!isFirstInteraction && isLastInteraction ? 'tw-mt-auto' : ''}
+                className={
+                    !isFirstInteraction && isLastInteraction
+                        ? 'tw-sticky tw-bottom-0 tw-mt-auto tw-bg-[var(--vscode-input-background)]'
+                        : 'tw-transition'
+                }
                 intent={selectedIntent}
                 manuallySelectIntent={setSelectedIntent}
             />
             {!isAgenticMode && (
                 <>
-                    {omniboxEnabled && assistantMessage?.didYouMeanQuery && (
-                        <DidYouMeanNotice
-                            query={assistantMessage?.didYouMeanQuery}
-                            disabled={!!assistantMessage?.isLoading}
-                            switchToSearch={() => {
-                                editAndSubmitSearch(assistantMessage?.didYouMeanQuery ?? '')
-                            }}
-                        />
-                    )}
                     {!isSearchIntent && humanMessage.agent && (
                         <AgenticContextCell
                             key={`${humanMessage.index}-${humanMessage.intent}-process`}
                             isContextLoading={isContextLoading}
                             processes={humanMessage?.processes ?? undefined}
+                            contextItems={humanMessage.contextFiles}
                         />
                     )}
-                    {humanMessage.agent && assistantMessage?.isLoading && (
-                        <ApprovalCell vscodeAPI={vscodeAPI} />
-                    )}
+                    {humanMessage.agent && isContextLoading && <ApprovalCell vscodeAPI={vscodeAPI} />}
                     {!(humanMessage.agent && isContextLoading) &&
                         (humanMessage.contextFiles || assistantMessage || isContextLoading) &&
                         !isSearchIntent && (
@@ -698,14 +754,6 @@ export function focusLastHumanMessageEditor(): void {
     }
 
     lastEditor.focus()
-
-    // Only scroll the nearest scrollable ancestor container, not all scrollable ancestors, to avoid
-    // a bug in VS Code where the iframe is pushed up by ~5px.
-    const container = lastEditor?.closest('[data-scrollable]')
-    const editorScrollItemInContainer = lastEditor.parentElement
-    if (container && container instanceof HTMLElement && editorScrollItemInContainer) {
-        container.scrollTop = editorScrollItemInContainer.offsetTop - container.offsetTop
-    }
 }
 
 export function regenerateCodeBlock({
@@ -745,7 +793,9 @@ export function editHumanMessage({
         contextItems: editorValue.contextItems.map(deserializeContextItem),
         manuallySelectedIntent,
     })
-    focusLastHumanMessageEditor()
+    setTimeout(() => {
+        focusLastHumanMessageEditor()
+    }, 50)
 }
 
 function submitHumanMessage({
@@ -765,7 +815,9 @@ function submitHumanMessage({
         manuallySelectedIntent,
         traceparent,
     })
-    focusLastHumanMessageEditor()
+    setTimeout(() => {
+        focusLastHumanMessageEditor()
+    }, 50)
 }
 
 function reevaluateSearchWithSelectedFilters({

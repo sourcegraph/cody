@@ -29,8 +29,11 @@ describe.skip('Generate Unit Test', () => {
     it.skip('editCommands/test', async () => {
         const uri = workspace.file('src', 'trickyLogic.ts')
         await client.openFile(uri)
-        const id = await client.request('editCommands/test', null)
-        await client.taskHasReachedAppliedPhase(id)
+        const taskId = await client.request('editTask/start', null)
+        if (!taskId) {
+            throw new Error('Task cannot be null or undefined')
+        }
+        await client.acceptLensWasShown(uri)
         const untitledDocuments = client.workspace
             .allUris()
             .filter(uri => vscode.Uri.parse(uri).scheme === 'untitled')

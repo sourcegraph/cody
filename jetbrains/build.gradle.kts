@@ -31,7 +31,8 @@ val isForceCodeSearchBuild = properties("forceCodeSearchBuild") == "true"
 // Update gradle.properties pluginSinceBuild, pluginUntilBuild
 // to match the min, max versions in this list.
 val versionsOfInterest =
-    listOf("2023.2", "2023.3", "2024.1", "2024.2.4", "251.14649.49-EAP-SNAPSHOT").sorted()
+    listOf("2023.2", "2023.3", "2024.1", "2024.2.4", "2025.1.1.1", "252.18003.27-EAP-SNAPSHOT")
+        .sorted()
 val versionsToValidate =
     when (project.properties["validation"]?.toString()) {
       "lite" -> listOf(versionsOfInterest.first(), versionsOfInterest.last())
@@ -630,13 +631,6 @@ tasks {
     // https://plugins.jetbrains.com/docs/intellij/deployment.html#specifying-a-release-channel
     val channel = properties("pluginVersion")!!.split('-').getOrElse(1) { "default" }
     channels.set(listOf(channel))
-
-    if (channel == "default") {
-      // The published version WILL NOT be available right after the JetBrains approval.
-      // Instead, we control if and when we want to make it available.
-      // (Note: there is ~48h waiting time for JetBrains approval).
-      hidden.set(true)
-    }
   }
 
   test { dependsOn(project.tasks.getByPath("buildCody")) }

@@ -2,10 +2,15 @@
 
 import { CodyIDE, type WebviewToExtensionAPI } from '@sourcegraph/cody-shared'
 import type { LightweightChatTranscript } from '@sourcegraph/cody-shared/src/chat/transcript'
+import clsx from 'clsx'
 import { DownloadIcon, HistoryIcon, MessageSquarePlusIcon, Trash2Icon, TrashIcon } from 'lucide-react'
 import type React from 'react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { WebviewType } from '../../src/chat/protocol'
+import {
+    INTENT_MAPPING,
+    IntentEnum,
+} from '../chat/cells/messageCell/human/editor/toolbar/ModeSelectorButton'
 import { LoadingDots } from '../chat/components/LoadingDots'
 import { downloadChatHistory } from '../chat/downloadChatHistory'
 import { Button } from '../components/shadcn/ui/button'
@@ -38,7 +43,14 @@ export const HistoryTab: React.FC<HistoryTabProps> = ({
     const chats = useMemo(() => (userHistory ? Object.values(userHistory) : userHistory), [userHistory])
 
     return (
-        <div className="tw-flex tw-flex-col tw-justify-center tw-overflow-hidden tw-h-full tw-w-full tw-m-4">
+        <div
+            className={clsx(
+                'tw-flex tw-flex-col tw-justify-center tw-overflow-hidden tw-h-full tw-w-full tw-m-4',
+                {
+                    'tw-items-center': !chats,
+                }
+            )}
+        >
             {!chats ? (
                 <LoadingDots />
             ) : (
@@ -206,7 +218,7 @@ export const HistoryTabWithData: React.FC<HistoryTabProps & { chats: Lightweight
         }
     }, [hasMoreItems, filteredChats.length, isLoading])
 
-    if (!filteredChats.length && !searchText) {
+    if (!nonEmptyChats.length) {
         return (
             <div className="tw-flex tw-flex-col tw-items-center tw-p-6">
                 <HistoryIcon size={20} strokeWidth={1.25} className="tw-mb-5 tw-text-muted-foreground" />
@@ -247,10 +259,9 @@ export const HistoryTabWithData: React.FC<HistoryTabProps & { chats: Lightweight
             disablePointerSelection={true}
         >
             {IDE !== CodyIDE.Web && (
-                <header className="tw-inline-flex tw-mt-4 tw-px-4 tw-gap-4">
+                <header className="tw-inline-flex tw-px-4 tw-gap-4">
                     <Button
-                        variant="secondary"
-                        className="tw-bg-popover tw-border tw-border-border !tw-justify-between"
+                        className="tw-bg-popover tw-border tw-border-border !tw-justify-between tw-text-sidebar-foreground"
                         onClick={onExportClick}
                     >
                         <div className="tw-flex tw-items-center">
@@ -258,8 +269,7 @@ export const HistoryTabWithData: React.FC<HistoryTabProps & { chats: Lightweight
                         </div>
                     </Button>
                     <Button
-                        variant="secondary"
-                        className="tw-bg-popover tw-border tw-border-border !tw-justify-between"
+                        className="tw-bg-popover tw-border tw-border-border !tw-justify-between tw-text-sidebar-foreground"
                         onClick={() => setIsDeleteAllActive(true)}
                     >
                         <div className="tw-flex tw-items-center">
@@ -270,7 +280,7 @@ export const HistoryTabWithData: React.FC<HistoryTabProps & { chats: Lightweight
             )}
             {isDeleteAllActive && (
                 <div
-                    className="tw-my-4 tw-p-4 tw-mx-[0.5rem] tw-border tw-border-red-300 tw-rounded-lg tw-bg-muted-transparent dark:tw-text-red-400 dark:tw-border-red-800"
+                    className="tw-my-4 tw-p-4 tw-mx-[0.5rem] tw-border tw-bg-muted-transparent tw-border-red-800 tw-rounded-lg"
                     role="alert"
                 >
                     <div className="tw-flex tw-items-center">
@@ -281,11 +291,11 @@ export const HistoryTabWithData: React.FC<HistoryTabProps & { chats: Lightweight
                     <div className="tw-mt-2 tw-mb-4 tw-text-sm tw-text-muted-foreground">
                         You will not be able to recover them once deleted.
                     </div>
-                    <div className="tw-flex">
+                    <div className="tw-flex tw-gap-2">
                         <Button
                             size="sm"
                             aria-label="Delete all chats"
-                            className="tw-text-white tw-bg-red-800 hover:tw-bg-red-900 focus:tw-ring-4 focus:tw-outline-none focus:tw-ring-red-200 tw-font-medium tw-rounded-lg tw-text-xs tw-px-3 tw-py-1.5 tw-me-2 tw-text-center tw-inline-flex tw-items-center dark:tw-bg-red-600 dark:hover:tw-bg-red-700 dark:focus:tw-ring-red-800"
+                            className="tw-bg-popover tw-border tw-border-border tw-text-white tw-bg-red-800 hover:tw-bg-red-900 focus:tw-ring-4"
                             onClick={e => {
                                 onDeleteButtonClick(e, 'clear-all-no-confirm')
                                 setIsDeleteAllActive(false)
@@ -295,7 +305,7 @@ export const HistoryTabWithData: React.FC<HistoryTabProps & { chats: Lightweight
                         </Button>
                         <Button
                             size="sm"
-                            className="tw-text-red-800 tw-bg-transparent tw-border tw-border-red-800 hover:tw-bg-red-900 hover:tw-text-white focus:tw-ring-4 focus:tw-outline-none focus:tw-ring-red-200 tw-font-medium tw-rounded-lg tw-text-xs tw-px-3 tw-py-1.5 tw-text-center dark:hover:tw-bg-red-600 dark:tw-border-red-600 dark:tw-text-red-400 dark:hover:tw-text-white dark:focus:tw-ring-red-800"
+                            className="tw-bg-popover tw-border tw-border-border tw-text-sidebar-foreground"
                             onClick={() => setIsDeleteAllActive(false)}
                             aria-label="Cancel"
                         >
@@ -317,13 +327,14 @@ export const HistoryTabWithData: React.FC<HistoryTabProps & { chats: Lightweight
             <CommandList className="tw-flex-1 tw-overflow-y-auto tw-m-2">
                 {displayedChats.map((chat: LightweightChatTranscript) => {
                     const id = chat.lastInteractionTimestamp
-                    const chatTitle = chat.chatTitle
                     const lastMessage = chat.firstHumanMessageText
+                    const chatTitle = chat.chatTitle || lastMessage
                     // Show the last interaction timestamp in a human-readable format
                     const timestamp = new Date(chat.lastInteractionTimestamp)
                         .toLocaleString()
                         .replace('T', ', ')
                         .replace('Z', '')
+                    const mode = INTENT_MAPPING[chat.mode || 'chat']
 
                     return (
                         <CommandItem
@@ -335,9 +346,12 @@ export const HistoryTabWithData: React.FC<HistoryTabProps & { chats: Lightweight
                                     chatID: id,
                                 })
                             }
+                            title={chat.model}
                         >
                             <div className="tw-truncate tw-w-full tw-flex tw-flex-col tw-gap-2">
-                                <div>{chatTitle || lastMessage}</div>
+                                <div>
+                                    {mode !== IntentEnum.Chat ? `[${mode}] ${chatTitle}` : chatTitle}
+                                </div>
                                 <div className="tw-text-left tw-text-muted-foreground">{timestamp}</div>
                             </div>
                             <Button

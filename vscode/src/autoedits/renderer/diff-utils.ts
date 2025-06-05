@@ -593,7 +593,7 @@ function computeLineChanges({
 const WORDS_AND_PUNCTUATION_REGEX = /(\w+|\s+|\W)/g
 
 // Split lines by characters
-const CHARACTER_REGEX = /./g
+export const CHARACTER_REGEX = /./g
 
 /**
  * Splits a line into chunks for fine-grained diffing.

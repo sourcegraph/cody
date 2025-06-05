@@ -1,5 +1,6 @@
 package com.sourcegraph.cody.agent
 
+import com.intellij.execution.configurations.GeneralCommandLine
 import com.intellij.ide.plugins.PluginManagerCore
 import com.intellij.openapi.application.ApplicationInfo
 import com.intellij.openapi.diagnostic.Logger
@@ -16,6 +17,7 @@ import com.sourcegraph.cody.error.SentryService
 import com.sourcegraph.cody.ui.web.WebUIServiceWebviewProvider
 import com.sourcegraph.cody.vscode.CancellationToken
 import com.sourcegraph.config.ConfigUtil
+import com.sourcegraph.config.ConfigUtil.getConfigurationEntries
 import java.io.*
 import java.net.Socket
 import java.net.URI
@@ -118,7 +120,7 @@ private constructor(
         token: String?,
     ): CompletableFuture<CodyAgent> {
       try {
-        val conn = startAgentProcess()
+        val conn = startAgentProcess(project)
         val client = CodyAgentClient(project, WebUIServiceWebviewProvider(project))
         val launcher = startAgentLauncher(conn, client)
         val server = launcher.remoteProxy
@@ -158,7 +160,47 @@ private constructor(
       }
     }
 
-    private fun startAgentProcess(): AgentConnection {
+    // spotless:off
+    /**
+     * Retrieves custom process arguments and environment variables from configuration.
+     *
+     * These settings can be configured in the code_settings.json file under:
+     * - cody.advanced.agent.process.node.args: List of additional command-line arguments for the agent process
+     * - cody.advanced.agent.process.node.env: Map of environment variables to set for the agent process
+     *
+     * Example configuration:
+     * {
+     *   "cody.advanced.agent.process.node": {
+     *      "args": ["--max-old-space-size=4096", "--trace-warnings"],
+     *      "env": {
+     *        "NODE_OPTIONS": "--max-http-header-size=16384"
+     *      }
+     *    }
+     *  }
+     */
+    // spotless:on
+    private fun getProcessNodeConfig(project: Project?): Pair<List<String>, Map<String, String>> {
+      if (project == null) return Pair(emptyList(), emptyMap())
+
+      try {
+        val customArgs =
+            getConfigurationEntries(project, "cody.advanced.agent.process.node.args").flatMap {
+              it.second as? List<String> ?: emptyList()
+            }
+        val customEnv =
+            getConfigurationEntries(project, "cody.advanced.agent.process.node.env").associate {
+                (key, value) ->
+              key to value.toString()
+            }
+
+        return Pair(customArgs, customEnv)
+      } catch (e: Exception) {
+        logger.warn("Failed to parse custom process configuration", e)
+        return Pair(emptyList(), emptyMap())
+      }
+    }
+
+    private fun startAgentProcess(project: Project? = null): AgentConnection {
       if (ConfigUtil.shouldConnectToDebugAgent()) {
         return connectToDebugAgent()
       }
@@ -175,25 +217,42 @@ private constructor(
             Debuggability.Debuggable -> listOf("--enable-source-maps", "--inspect")
             Debuggability.DebuggableWaitForAttach -> listOf("--enable-source-maps", "--inspect-brk")
           }
+
+      val (nodeArgs, nodeEnv) = getProcessNodeConfig(project)
+
+      if (nodeArgs.isNotEmpty()) {
+        logger.info("Using custom agent process args: ${nodeArgs.joinToString(" ")}")
+      }
+      if (nodeEnv.isNotEmpty()) {
+        logger.info(
+            "Using custom agent process environment variables: ${nodeEnv.keys.joinToString(", ")}")
+      }
+
       val command: List<String> =
           listOf(
                   listOf(binaryPath),
+                  nodeArgs,
                   debuggerArgs,
                   listOf(script.toFile().absolutePath),
                   jsonRpcArgs)
               .flatten()
 
-      val processBuilder = ProcessBuilder(command)
+      val environment = mutableMapOf<String, String>()
+
+      if (nodeEnv.isNotEmpty()) {
+        environment.putAll(nodeEnv)
+      }
+
       if (java.lang.Boolean.getBoolean("cody.accept-non-trusted-certificates-automatically") ||
           ConfigUtil.getShouldAcceptNonTrustedCertificatesAutomatically()) {
-        processBuilder.environment()["CODY_NODE_TLS_REJECT_UNAUTHORIZED"] = "0"
+        environment["CODY_NODE_TLS_REJECT_UNAUTHORIZED"] = "0"
       }
 
       if (java.lang.Boolean.getBoolean("cody.log-events-to-connected-instance-only")) {
-        processBuilder.environment()["CODY_LOG_EVENT_MODE"] = "connected-instance-only"
+        environment["CODY_LOG_EVENT_MODE"] = "connected-instance-only"
       }
 
-      configureIntegrationTestingProcess(processBuilder)
+      configureIntegrationTestingProcess(environment)
 
       val proxy = HttpConfigurable.getInstance()
       val proxyUrl = proxy.PROXY_HOST + ":" + proxy.PROXY_PORT
@@ -218,13 +277,15 @@ private constructor(
           }
       if (proxy.USE_HTTP_PROXY) {
         if (!proxy.PROXY_EXCEPTIONS.isNullOrEmpty()) {
-          processBuilder.environment()["CODY_NODE_NO_PROXY"] = proxy.PROXY_EXCEPTIONS
+          environment["CODY_NODE_NO_PROXY"] = proxy.PROXY_EXCEPTIONS
         }
-        processBuilder.environment()["CODY_NODE_DEFAULT_PROXY"] =
-            "${proxyProto}//${proxyAuth}${proxyUrl}"
+        environment["CODY_NODE_DEFAULT_PROXY"] = "${proxyProto}//${proxyAuth}${proxyUrl}"
       }
 
-      logger.info("starting Cody agent ${command.joinToString(" ")}")
+      logger.info("Starting Cody agent ${command.joinToString(" ")}")
+
+      val processBuilder =
+          GeneralCommandLine(command).withEnvironment(environment).toProcessBuilder()
 
       val process =
           processBuilder
@@ -251,15 +312,14 @@ private constructor(
       return AgentConnection.ProcessConnection(process)
     }
 
-    private fun configureIntegrationTestingProcess(processBuilder: ProcessBuilder) {
+    private fun configureIntegrationTestingProcess(environment: MutableMap<String, String>) {
       if (!ConfigUtil.isIntegrationTestModeEnabled()) return
 
-      processBuilder.environment()["CODY_RECORDING_NAME"] =
-          System.getProperty("CODY_RECORDING_NAME")
+      environment["CODY_RECORDING_NAME"] = System.getProperty("CODY_RECORDING_NAME")
 
-      processBuilder.environment()["CODY_TESTING"] = "true"
+      environment["CODY_TESTING"] = "true"
 
-      processBuilder.environment().apply {
+      environment.apply {
         // N.B. If you set CODY_RECORDING_MODE, you must set CODY_RECORDING_DIRECTORY,
         // or the Agent will throw an error and your test will fail.
         when (val mode = System.getenv("CODY_RECORDING_MODE")) {

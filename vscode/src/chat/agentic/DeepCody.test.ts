@@ -181,7 +181,7 @@ describe('DeepCody', () => {
 
         const mockTools = mockCodyToolProvider.getTools()
         expect(mockChatClient.chat).toHaveBeenCalled()
-        expect(mockTools).toHaveLength(3)
+        expect(mockTools).toHaveLength(2)
         expect(mockTools.some(tool => tool.config.tags.tag === ps`TOOLCLI`)).toBeFalsy()
 
         expect(result.some(r => r.content === 'const example = "test";')).toBeTruthy()

@@ -5,7 +5,7 @@ import {
 } from '../../../chat/context/constants'
 import { isGenerateIntent } from '../../utils/edit-intent'
 import { getEditSmartSelection } from '../../utils/edit-selection'
-import type { EditInputInitialValues } from '../get-input'
+import type { EditInput } from '../get-input'
 import type { GetItemsResult } from '../quick-pick'
 import {
     CURSOR_RANGE_ITEM,
@@ -18,13 +18,14 @@ import type { EditRangeItem } from './types'
 
 const getDefaultRangeItems = (
     document: vscode.TextDocument,
-    initialValues: RangeInputInitialValues
+    initialValues: EditInput,
+    cursorPosition: vscode.Position
 ): EditRangeItem[] => {
-    const { initialRange, initialExpandedRange, initialCursorPosition } = initialValues
+    const { range, expandedRange } = initialValues
 
     const cursorItem = {
         ...CURSOR_RANGE_ITEM,
-        range: new vscode.Range(initialCursorPosition, initialCursorPosition),
+        range: new vscode.Range(cursorPosition, cursorPosition),
     }
 
     const fullItem = {
@@ -32,26 +33,26 @@ const getDefaultRangeItems = (
         range: document.validateRange(new vscode.Range(0, 0, document.lineCount + 1, 0)),
     }
 
-    if (initialExpandedRange) {
+    if (expandedRange) {
         // No need to show the selection (it will be the same as the expanded range)
         return [
             cursorItem,
             {
                 ...EXPANDED_RANGE_ITEM,
-                range: initialExpandedRange,
+                range: expandedRange,
             },
             fullItem,
         ]
     }
 
-    if (isGenerateIntent(document, initialRange)) {
+    if (isGenerateIntent(document, range)) {
         // No need to show the selection (it will be the same as the cursor position)
         return [
             cursorItem,
             {
                 ...EXPANDED_RANGE_ITEM,
                 range: async () =>
-                    getEditSmartSelection(document, initialRange, {
+                    getEditSmartSelection(document, range, {
                         forceExpand: true,
                     }),
             },
@@ -63,12 +64,12 @@ const getDefaultRangeItems = (
         cursorItem,
         {
             ...SELECTION_RANGE_ITEM,
-            range: initialRange,
+            range: range,
         },
         {
             ...EXPANDED_RANGE_ITEM,
             range: async () =>
-                getEditSmartSelection(document, initialRange, {
+                getEditSmartSelection(document, range, {
                     forceExpand: true,
                 }),
         },
@@ -76,17 +77,13 @@ const getDefaultRangeItems = (
     ]
 }
 
-interface RangeInputInitialValues extends EditInputInitialValues {
-    initialCursorPosition: vscode.Position
-}
-
 export const getRangeInputItems = async (
     document: vscode.TextDocument,
-    initialValues: RangeInputInitialValues,
+    initialValues: EditInput,
     activeRange: vscode.Range,
     activeModelContextWindow: number
 ): Promise<GetItemsResult> => {
-    const defaultItems = getDefaultRangeItems(document, initialValues).map(item => {
+    const defaultItems = getDefaultRangeItems(document, initialValues, activeRange.start).map(item => {
         const size =
             item.range instanceof vscode.Range
                 ? document.offsetAt(item.range.end) - document.offsetAt(item.range.start)
