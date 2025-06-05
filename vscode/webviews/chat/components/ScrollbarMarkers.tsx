@@ -10,9 +10,7 @@ function debounce<T extends (...args: any[]) => any>(func: T, wait: number): T {
     }) as T
 }
 
-interface ScrollbarMarkersProps {
-    // No props needed - component finds the scroll container automatically
-}
+type ScrollbarMarkersProps = Record<string, never>
 
 interface Marker {
     type: 'user'
@@ -58,13 +56,11 @@ export const ScrollbarMarkers: FC<ScrollbarMarkersProps> = () => {
         [containerRect]
     )
 
-
-
     // Update container dimensions and check if content is scrollable
     const updateContainerDimensions = useCallback(() => {
         // Find the actual scrollable container (TabContainer with data-scrollable)
         const actualScrollContainer = document.querySelector('[data-scrollable]') as HTMLElement
-        
+
         if (!actualScrollContainer) {
             setContainerRect(null)
             setIsScrollbarVisible(false)
@@ -74,7 +70,8 @@ export const ScrollbarMarkers: FC<ScrollbarMarkersProps> = () => {
         try {
             const newRect = actualScrollContainer.getBoundingClientRect()
             // Check if content is scrollable (scrollbars are hidden with CSS but content can still scroll)
-            const isContentScrollable = actualScrollContainer.scrollHeight > actualScrollContainer.clientHeight
+            const isContentScrollable =
+                actualScrollContainer.scrollHeight > actualScrollContainer.clientHeight
 
             setContainerRect(prevRect => {
                 if (
@@ -135,7 +132,7 @@ export const ScrollbarMarkers: FC<ScrollbarMarkersProps> = () => {
     const createMarkersFromElements = useCallback(
         (messageElements: HTMLElement[], scrollHeight: number): Marker[] => {
             const newMarkers: Marker[] = []
-            
+
             // Remove the last marker since the last human message is always sticky at the bottom
             const elementsToProcess = messageElements.slice(0, -1)
 
@@ -156,7 +153,7 @@ export const ScrollbarMarkers: FC<ScrollbarMarkersProps> = () => {
                         textPreview,
                     })
                 } catch {
-                    continue
+                    // Skip this element if position calculation fails
                 }
             }
 
@@ -197,8 +194,6 @@ export const ScrollbarMarkers: FC<ScrollbarMarkersProps> = () => {
             }, MARKER_CONFIG.DEBOUNCE_UPDATE_MS),
         [isScrollbarVisible, updateContainerDimensions, findMessageElements, createMarkersFromElements]
     )
-
-
 
     // Scroll to marker
     const scrollToMarker = useCallback(
@@ -301,58 +296,58 @@ export const ScrollbarMarkers: FC<ScrollbarMarkersProps> = () => {
 
     return (
         <div
-                className={styles.markerContainerWrapper}
+            className={styles.markerContainerWrapper}
+            style={{
+                position: 'fixed',
+                top: containerStyles.top,
+                right: containerStyles.right,
+                width: containerStyles.width,
+                height: containerStyles.height,
+                pointerEvents: 'none',
+                zIndex: 50,
+            }}
+        >
+            <div
+                className={styles.markerContainer}
                 style={{
-                    position: 'fixed',
-                    top: containerStyles.top,
-                    right: containerStyles.right,
-                    width: containerStyles.width,
-                    height: containerStyles.height,
+                    height: '100%',
+                    width: '100%',
+                    position: 'relative',
+                    paddingTop: `${MARKER_CONFIG.CONTAINER_PADDING_PX}px`,
+                    paddingBottom: `${MARKER_CONFIG.CONTAINER_PADDING_PX}px`,
                     pointerEvents: 'none',
-                    zIndex: 50,
                 }}
             >
-                <div
-                    className={styles.markerContainer}
-                    style={{
-                        height: '100%',
-                        width: '100%',
-                        position: 'relative',
-                        paddingTop: `${MARKER_CONFIG.CONTAINER_PADDING_PX}px`,
-                        paddingBottom: `${MARKER_CONFIG.CONTAINER_PADDING_PX}px`,
-                        pointerEvents: 'none',
-                    }}
-                >
-                    {markers.map((marker, index) => (
-                        <button
-                            key={marker.elementIndex}
-                            type="button"
-                            className={styles.marker}
-                            style={{
-                                position: 'absolute',
-                                left: `${MARKER_CONFIG.MARKER_POSITION_PERCENT}%`,
-                                transform: `translateX(-${MARKER_CONFIG.MARKER_POSITION_PERCENT}%)`,
-                                width: `${MARKER_CONFIG.MARKER_SIZE_PX}px`,
-                                height: `${MARKER_CONFIG.MARKER_SIZE_PX}px`,
-                                borderRadius: '50%',
-                                cursor: 'pointer',
-                                top: `${marker.position}%`,
-                                border: 'none',
-                                padding: 0,
-                                pointerEvents: 'auto',
-                                transition: 'all 0.15s ease-in-out',
-                            }}
-                            onClick={() => scrollToMarker(index)}
-                            onKeyDown={e => e.key === 'Enter' && scrollToMarker(index)}
-                            title={
-                                marker.textPreview
-                                    ? `Scroll to '${marker.textPreview}'`
-                                    : 'Scroll to message'
-                            }
-                            aria-label={`User message at position ${index + 1}`}
-                        />
-                    ))}
-                </div>
+                {markers.map((marker, index) => (
+                    <button
+                        key={marker.elementIndex}
+                        type="button"
+                        className={styles.marker}
+                        style={{
+                            position: 'absolute',
+                            left: `${MARKER_CONFIG.MARKER_POSITION_PERCENT}%`,
+                            transform: `translateX(-${MARKER_CONFIG.MARKER_POSITION_PERCENT}%)`,
+                            width: `${MARKER_CONFIG.MARKER_SIZE_PX}px`,
+                            height: `${MARKER_CONFIG.MARKER_SIZE_PX}px`,
+                            borderRadius: '50%',
+                            cursor: 'pointer',
+                            top: `${marker.position}%`,
+                            border: 'none',
+                            padding: 0,
+                            pointerEvents: 'auto',
+                            transition: 'all 0.15s ease-in-out',
+                        }}
+                        onClick={() => scrollToMarker(index)}
+                        onKeyDown={e => e.key === 'Enter' && scrollToMarker(index)}
+                        title={
+                            marker.textPreview
+                                ? `Scroll to '${marker.textPreview}'`
+                                : 'Scroll to message'
+                        }
+                        aria-label={`User message at position ${index + 1}`}
+                    />
+                ))}
             </div>
+        </div>
     )
 }

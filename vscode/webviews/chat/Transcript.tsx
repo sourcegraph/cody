@@ -184,45 +184,45 @@ export const Transcript: FC<TranscriptProps> = props => {
                 })}
                 data-scrollable="true"
             >
-            <LastEditorContext.Provider value={lastHumanEditorRef}>
-                {interactions.map((interaction, i) => (
-                    <TranscriptInteraction
-                        key={interaction.humanMessage.index}
-                        activeChatContext={activeChatContext}
-                        setActiveChatContext={setActiveChatContext}
-                        tokenUsage={tokenUsage}
-                        models={models}
-                        chatEnabled={chatEnabled}
-                        userInfo={userInfo}
-                        interaction={interaction}
-                        guardrails={guardrails}
-                        postMessage={postMessage}
-                        copyButtonOnSubmit={copyButtonOnSubmit}
-                        insertButtonOnSubmit={insertButtonOnSubmit}
-                        isFirstInteraction={i === 0}
-                        isLastInteraction={i === interactions.length - 1}
-                        isLastSentInteraction={
-                            i === interactions.length - 2 && interaction.assistantMessage !== null
-                        }
-                        priorAssistantMessageIsLoading={Boolean(
-                            messageInProgress && interactions.at(i - 1)?.assistantMessage?.isLoading
-                        )}
-                        smartApply={smartApply}
-                        editorRef={
-                            // Only set the editor ref for:
-                            // 1. The first unsent agentic message (index -1), or
-                            // 2. The last interaction in the transcript
-                            // And only when there's no message currently in progress
-                            ((interaction.humanMessage.intent === 'agentic' &&
-                                interaction.humanMessage.index === -1) ||
-                                i === interactions.length - 1) &&
-                            !messageInProgress
-                                ? lastHumanEditorRef
-                                : undefined
-                        }
-                    />
-                ))}
-            </LastEditorContext.Provider>
+                <LastEditorContext.Provider value={lastHumanEditorRef}>
+                    {interactions.map((interaction, i) => (
+                        <TranscriptInteraction
+                            key={interaction.humanMessage.index}
+                            activeChatContext={activeChatContext}
+                            setActiveChatContext={setActiveChatContext}
+                            tokenUsage={tokenUsage}
+                            models={models}
+                            chatEnabled={chatEnabled}
+                            userInfo={userInfo}
+                            interaction={interaction}
+                            guardrails={guardrails}
+                            postMessage={postMessage}
+                            copyButtonOnSubmit={copyButtonOnSubmit}
+                            insertButtonOnSubmit={insertButtonOnSubmit}
+                            isFirstInteraction={i === 0}
+                            isLastInteraction={i === interactions.length - 1}
+                            isLastSentInteraction={
+                                i === interactions.length - 2 && interaction.assistantMessage !== null
+                            }
+                            priorAssistantMessageIsLoading={Boolean(
+                                messageInProgress && interactions.at(i - 1)?.assistantMessage?.isLoading
+                            )}
+                            smartApply={smartApply}
+                            editorRef={
+                                // Only set the editor ref for:
+                                // 1. The first unsent agentic message (index -1), or
+                                // 2. The last interaction in the transcript
+                                // And only when there's no message currently in progress
+                                ((interaction.humanMessage.intent === 'agentic' &&
+                                    interaction.humanMessage.index === -1) ||
+                                    i === interactions.length - 1) &&
+                                !messageInProgress
+                                    ? lastHumanEditorRef
+                                    : undefined
+                            }
+                        />
+                    ))}
+                </LastEditorContext.Provider>
             </div>
             <ScrollbarMarkers />
         </>
