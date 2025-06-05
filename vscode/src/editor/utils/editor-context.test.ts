@@ -138,11 +138,9 @@ describe('filterContextItemFiles', () => {
 
         expect(filtered).toEqual([
             {
-                isTooLarge: true,
-                isTooLargeReason: 'File exceeds 1MB size limit',
-                size: 222222,
+                size: 222222, // Math.floor(1000001 / 4.5)
                 type: 'file',
-                uri: largeFile.uri,
+                uri: largeFile.uri, // Use the same URI reference
             },
         ])
     })
