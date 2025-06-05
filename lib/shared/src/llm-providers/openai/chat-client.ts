@@ -22,7 +22,6 @@ export async function openaiChatClient({
     cb,
     completionsEndpoint,
     logger,
-    signal,
 }: ChatNetworkClientParams): Promise<void> {
     const log = logger?.startCompletion(params, completionsEndpoint)
 
@@ -176,7 +175,6 @@ export function codyToolToOpenAITool(schema: any, name: string, description: str
             name,
             description,
             parameters: schema,
-            strict: true,
         },
     }
 }

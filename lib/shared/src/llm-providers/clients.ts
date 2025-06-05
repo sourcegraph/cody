@@ -20,12 +20,16 @@ export async function useCustomChatClient({
 
     const clientMap: Record<string, ChatNetworkClient> = {
         anthropic: anthropicChatClient,
+        claude: anthropicChatClient,
         ollama: ollamaChatClient,
         google: googleChatClient,
         gemini: googleChatClient,
         groq: groqChatClient,
+        openai: openaiChatClient,
         openaicompatible: openaiChatClient,
-        grok: llmChatClient,
+        x: openaiChatClient,
+        grok: openaiChatClient,
+        llm: llmChatClient,
     }
 
     const client = clientMap[model.provider.toLowerCase()]

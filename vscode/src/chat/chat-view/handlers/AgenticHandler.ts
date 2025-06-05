@@ -24,16 +24,6 @@ import { ChatHandler } from './ChatHandler'
 import type { AgentHandler, AgentHandlerDelegate, AgentRequest } from './interfaces'
 import { buildAgentPrompt } from './prompts'
 
-enum AGENT_MODELS {
-    // ExtendedThinking = 'anthropic::2024-10-22::claude-3-7-sonnet-extended-thinking',
-    // Base = 'anthropic::2024-10-22::claude-3-7-sonnet-latest',
-    // ExtendedThinking = 'gemini/gemini-2.5-pro-preview-03-25',
-    Base = 'gemini/gemini-2.5-flash-preview-04-17',
-    ExtendedThinking = 'gemini/gemini-2.0-flash-thinking-exp-01-21',
-    // ExtendedThinking = 'openaicompatible/Llama-4-Maverick-17B-128E-Instruct-FP8',
-    // Base = 'openaicompatible/Llama-4-Scout-17B-16E-Instruct-FP8',
-}
-
 interface ToolResult {
     output: ContextItemToolState
     tool_result: ToolResultContentPart
@@ -60,7 +50,17 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
     }
 
     public async handle(req: AgentRequest, delegate: AgentHandlerDelegate): Promise<void> {
-        const { requestID, chatBuilder, inputText, editorState, span, recorder, signal, mentions } = req
+        const {
+            model,
+            requestID,
+            chatBuilder,
+            inputText,
+            editorState,
+            span,
+            recorder,
+            signal,
+            mentions,
+        } = req
         const sessionID = chatBuilder.sessionID
 
         // Includes initial context mentioned by user
@@ -84,7 +84,15 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
         recorder.recordChatQuestionExecuted(contextItems, { addMetadata: true, current: span })
         try {
             // Run the main conversation loop
-            await this.runConversationLoop(chatBuilder, delegate, recorder, span, signal, contextItems)
+            await this.runConversationLoop(
+                model,
+                chatBuilder,
+                delegate,
+                recorder,
+                span,
+                signal,
+                contextItems
+            )
         } catch (error) {
             this.handleError(sessionID, error, delegate, signal)
         } finally {
@@ -98,6 +106,7 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
      * Run the main conversation loop, processing LLM responses and executing tools
      */
     protected async runConversationLoop(
+        model: string,
         chatBuilder: ChatBuilder,
         delegate: AgentHandlerDelegate,
         recorder: AgentRequest['recorder'],
@@ -116,8 +125,6 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
 
         // Main conversation loop
         while (turnCount < this.MAX_TURN && !loopController.signal?.aborted) {
-            const model = turnCount === 0 ? AGENT_MODELS.ExtendedThinking : AGENT_MODELS.Base
-
             try {
                 // Get LLM response
                 const { botResponse, toolCalls } = await this.requestLLM(
@@ -182,8 +189,8 @@ export class AgenticHandler extends ChatHandler implements AgentHandler {
     protected async requestLLM(
         chatBuilder: ChatBuilder,
         delegate: AgentHandlerDelegate,
-        recorder: AgentRequest['recorder'],
-        span: Span,
+        _recorder: AgentRequest['recorder'],
+        _span: Span,
         signal: AbortSignal,
         model: string,
         contextItems: ContextItem[]
