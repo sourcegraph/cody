@@ -101,7 +101,7 @@ class ChatHistoryManager implements vscode.Disposable {
             history.chat[chat.id] = chat
             await localStorage.setChatHistory(authStatus, history)
             this.changeNotifications.next()
-            if (JSON.stringify(history).length > localStorage.STORAGE_SIZE_BIG) {
+            if (JSON.stringify(history).length > localStorage.CHAT_STORAGE_SIZE_LARGE) {
                 return true
             }
         }
