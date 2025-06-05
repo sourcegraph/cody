@@ -21,7 +21,7 @@ interface Marker {
 
 // Configuration constants
 const MARKER_CONFIG = {
-    DEBOUNCE_UPDATE_MS: 50,
+    DEBOUNCE_UPDATE_MS: 150,
     DEBOUNCE_RESIZE_MS: 16,
     MARKER_SIZE_PX: 8,
     CONTAINER_PADDING_PX: 20,
@@ -241,7 +241,11 @@ export const ScrollbarMarkers: FC<ScrollbarMarkersProps> = () => {
             requestAnimationFrame(() => {
                 try {
                     updateContainerDimensions()
-                    updateMarkers()
+                    // Skip updates when scrolled to bottom (likely from Skip to end)
+                    const isAtBottom = actualScrollContainer.scrollTop + actualScrollContainer.clientHeight >= actualScrollContainer.scrollHeight - 5
+                    if (!isAtBottom) {
+                        updateMarkers()
+                    }
                 } catch {
                     // Silently handle errors
                 }
@@ -256,12 +260,21 @@ export const ScrollbarMarkers: FC<ScrollbarMarkersProps> = () => {
 
         // Scroll handler
         const handleScroll = () => {
+            // Skip updates when scrolled to bottom (likely from Skip to end)
+            const isAtBottom = actualScrollContainer.scrollTop + actualScrollContainer.clientHeight >= actualScrollContainer.scrollHeight - 5
+            if (isAtBottom) {
+                return
+            }
             updateMarkers()
         }
 
         // Mutation observer
         const mutationObserver = new MutationObserver(() => {
-            updateMarkers()
+            // Skip updates when scrolled to bottom (likely from Skip to end)
+            const isAtBottom = actualScrollContainer.scrollTop + actualScrollContainer.clientHeight >= actualScrollContainer.scrollHeight - 5
+            if (!isAtBottom) {
+                updateMarkers()
+            }
         })
 
         try {
