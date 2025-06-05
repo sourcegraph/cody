@@ -239,6 +239,13 @@ export class ContextFiltersProvider implements vscode.Disposable {
 
         await this.fetchIfNeeded()
 
+        // Check VS Code exclude patterns
+        if (ContextFiltersProvider.excludePatternGetter) {
+            if (await this.isExcludedByPatterns(uri)) {
+                return ContextFiltersProviderError.ExcludePatternMatch
+            }
+        }
+
         if (this.hasAllowEverythingFilters()) {
             return false
         }
@@ -256,13 +263,6 @@ export class ContextFiltersProvider implements vscode.Disposable {
         if (!isFileURI(uri)) {
             logDebug('ContextFiltersProvider', 'isUriIgnored', `non-file URI ${uri.scheme}`)
             return ContextFiltersProviderError.NonFileUri
-        }
-
-        // Check VS Code exclude patterns
-        if (ContextFiltersProvider.excludePatternGetter) {
-            if (await this.isExcludedByPatterns(uri)) {
-                return ContextFiltersProviderError.ExcludePatternMatch
-            }
         }
 
         if (!ContextFiltersProvider.repoNameResolver) {
