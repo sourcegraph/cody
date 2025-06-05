@@ -731,9 +731,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         logDebug('ChatController', 'updateViewConfig', {
             verbose: configForWebview,
         })
-        if (localStorage.shouldShowStorageWarning()) {
-            this.postError(new Error('STORAGE_WARNING'), 'storage')
-        }
     }
 
     private async sendClientConfig(clientConfig: CodyClientConfig) {
@@ -1594,11 +1591,8 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             return
         }
 
-        if (type !== 'storage') {
-            captureException(error)
-        }
-
         void this.postMessage({ type: 'errors', errors: error.message })
+        captureException(error)
     }
 
     /**
@@ -1706,7 +1700,10 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             // Only try to save if authenticated because otherwise we wouldn't be showing a chat.
             const chat = this.chatBuilder.toSerializedChatTranscript()
             if (chat && authStatus.authenticated) {
-                await chatHistory.saveChat(authStatus, chat)
+                const shouldShowStorageWarning = await chatHistory.saveChat(authStatus, chat)
+                if (shouldShowStorageWarning) {
+                    this.postError(new Error('STORAGE_WARNING'), 'storage')
+                }
             }
         } catch (error) {
             logDebug('ChatController', 'Failed')

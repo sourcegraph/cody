@@ -37,7 +37,7 @@ class LocalStorage implements LocalStorageForModelPreferences {
     private readonly MODEL_PREFERENCES_KEY = 'cody-model-preferences'
     private readonly AUTO_EDITS_BETA_ENROLLED = 'cody-auto-edit-beta-onboard'
     private readonly DEVICE_PIXEL_RATIO = 'device-pixel-ratio'
-    private readonly STORAGE_SIZE_BIG = 50_000 * 1024 // 50,000 KB
+    public readonly STORAGE_SIZE_BIG = 50_000 * 1024 // 50,000 KB
 
     public readonly deprecatedKeys = {
         deepCodyLastUsedDate: 'DEEP_CODY_LAST_USED_DATE',
@@ -67,7 +67,6 @@ class LocalStorage implements LocalStorageForModelPreferences {
             this._storage = noopLocalStorage
         } else {
             this._storage = storage
-            this.logStorageSize(this.KEY_LOCAL_HISTORY)
         }
         this.clearDeprecatedKeys()
     }
@@ -339,12 +338,6 @@ class LocalStorage implements LocalStorageForModelPreferences {
         await this.set(this.DEVICE_PIXEL_RATIO, ratio)
     }
 
-    public shouldShowStorageWarning(): boolean {
-        const storageSize = this.getStorageSize(this.KEY_LOCAL_HISTORY)
-        const shouldShow = storageSize > this.STORAGE_SIZE_BIG
-        return shouldShow
-    }
-
     public get<T>(key: string): T | null {
         return this.storage.get(key, null)
     }
@@ -358,31 +351,6 @@ class LocalStorage implements LocalStorageForModelPreferences {
         } catch (error) {
             console.error(error)
         }
-    }
-
-    /**
-     * Gets the approximate size in bytes of the stored data for a specific key
-     */
-    public getStorageSize(key: string): number {
-        try {
-            const value = this.get(key)
-            if (value === null) {
-                return 0
-            }
-            const jsonString = JSON.stringify(value)
-            return jsonString.length
-        } catch (error) {
-            console.error('Failed to calculate storage size:', error)
-            return 0
-        }
-    }
-
-    public logStorageSize(key: string): number {
-        const bytes = this.getStorageSize(key)
-        const kb = (bytes / 1024).toFixed(2)
-        const mb = (bytes / (1024 * 1024)).toFixed(2)
-        console.log(`Storage size for key ${key}: (${kb} KB, ${mb} MB)`)
-        return bytes
     }
 
     public async delete(key: string): Promise<void> {
