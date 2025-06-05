@@ -16,26 +16,34 @@ This is a log of all notable changes to Cody for VS Code.
 #### Cody
 
 - migrate feature flags evaluation to new batch api [#8006](https://github.com/sourcegraph/cody/pull/8006)
+- Do not trigger autocompletion on Delete [#7990](https://github.com/sourcegraph/cody/pull/7990)
 
 ### Fix
 
 #### Chat
 
 - chat transcript scrolling [#8020](https://github.com/sourcegraph/cody/pull/8020)
+- show empty chat history message if deleting all messages during filtering [#7995](https://github.com/sourcegraph/cody/pull/7995)
+- Hide MCP settings upon switching to account which does not support MCP [#7993](https://github.com/sourcegraph/cody/pull/7993)
 
 #### Cody
 
 - allow users to add large files [#8016](https://github.com/sourcegraph/cody/pull/8016)
+- Fix History tab styling across IDE themes [#8001](https://github.com/sourcegraph/cody/pull/8001)
+- Fix missing LLM icon in Edit Code's dropdown [#7996](https://github.com/sourcegraph/cody/pull/7996)
+- Refresh Cody window on display configuration change [#7980](https://github.com/sourcegraph/cody/pull/7980)
 
 ### Chore
+
+#### Cody
+
+- Unify inline edit architecture in VSC and other clients [#8023](https://github.com/sourcegraph/cody/pull/8023)
+- Update VerifyJavaBootRuntimeVersion.kt [#7986](https://github.com/sourcegraph/cody/pull/7986)
 
 #### Chat
 
 - refactor parse.ts [#8029](https://github.com/sourcegraph/cody/pull/8029)
-
-#### Release
-
-- Bump package version and update changelog for M96 [#7973](https://github.com/sourcegraph/cody/pull/7973)
+- update model options from 3.5 Sonnet to Sonnet 4 [#7999](https://github.com/sourcegraph/cody/pull/7999)
 
 #### Test
 
@@ -48,31 +56,14 @@ This is a log of all notable changes to Cody for VS Code.
 - agentic context toolbox settings [#8009](https://github.com/sourcegraph/cody/pull/8009)
 - Improve prompt sanitization [#7981](https://github.com/sourcegraph/cody/pull/7981)
 
-### Reverts
-
-  There were no reverts for this release
-
 ### Uncategorized
 
 #### Others
 
-- Changelog for 1.98.1 [#8025](https://github.com/sourcegraph/cody/pull/8025)
-- Unify inline edit architecture in VSC and other clients [#8023](https://github.com/sourcegraph/cody/pull/8023)
 - Split edit code between flow/model and UI (QuickPick) [#8013](https://github.com/sourcegraph/cody/pull/8013)
 - Remove duplicated parsed text as content [#8011](https://github.com/sourcegraph/cody/pull/8011)
-- Update `untilBuild` to `252.*` [#8010](https://github.com/sourcegraph/cody/pull/8010)
-- Changelog for 1.98.0 [#8004](https://github.com/sourcegraph/cody/pull/8004)
-- Fix History tab styling across IDE themes [#8001](https://github.com/sourcegraph/cody/pull/8001)
-- Chore: update model options from 3.5 Sonnet to Sonnet 4 [#7999](https://github.com/sourcegraph/cody/pull/7999)
-- Fix missing LLM icon in Edit Code's dropdown [#7996](https://github.com/sourcegraph/cody/pull/7996)
-- Show empty chat history message if deleting all messages during filtering [#7995](https://github.com/sourcegraph/cody/pull/7995)
-- Hide MCP settings upon switching to account which does not support MCP [#7993](https://github.com/sourcegraph/cody/pull/7993)
-- Do not trigger autocompletion on Delete [#7990](https://github.com/sourcegraph/cody/pull/7990)
-- Update VerifyJavaBootRuntimeVersion.kt [#7986](https://github.com/sourcegraph/cody/pull/7986)
-- Refresh Cody window on display configuration change [#7980](https://github.com/sourcegraph/cody/pull/7980)
 - Add automatic JCEF runtime selection [#7976](https://github.com/sourcegraph/cody/pull/7976)
 - Cancel completion request on BGT (instead of AWT) [#7969](https://github.com/sourcegraph/cody/pull/7969)
-- Do not hide stable releases by default [#7813](https://github.com/sourcegraph/cody/pull/7813)
 - Restoration of unit test generation, path normalization [#7765](https://github.com/sourcegraph/cody/pull/7765)
 
 
