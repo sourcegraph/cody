@@ -29,6 +29,7 @@ const MARKER_CONFIG = {
     MARKER_SCALE_FACTOR: 0.9,
     SCROLL_OFFSET_PX: 40,
     MARKER_POSITION_PERCENT: 50,
+    BOTTOM_SCROLL_TOLERANCE_PX: 5,
 } as const
 
 export const ScrollbarMarkers: FC<ScrollbarMarkersProps> = () => {
@@ -55,6 +56,14 @@ export const ScrollbarMarkers: FC<ScrollbarMarkersProps> = () => {
                 : null,
         [containerRect]
     )
+
+    // Helper function to check if scrolled to bottom
+    const isScrolledToBottom = useCallback((container: HTMLElement): boolean => {
+        return (
+            container.scrollTop + container.clientHeight >=
+            container.scrollHeight - MARKER_CONFIG.BOTTOM_SCROLL_TOLERANCE_PX
+        )
+    }, [])
 
     // Update container dimensions and check if content is scrollable
     const updateContainerDimensions = useCallback(() => {
@@ -242,8 +251,7 @@ export const ScrollbarMarkers: FC<ScrollbarMarkersProps> = () => {
                 try {
                     updateContainerDimensions()
                     // Skip updates when scrolled to bottom (likely from Skip to end)
-                    const isAtBottom = actualScrollContainer.scrollTop + actualScrollContainer.clientHeight >= actualScrollContainer.scrollHeight - 5
-                    if (!isAtBottom) {
+                    if (!isScrolledToBottom(actualScrollContainer)) {
                         updateMarkers()
                     }
                 } catch {
@@ -261,8 +269,7 @@ export const ScrollbarMarkers: FC<ScrollbarMarkersProps> = () => {
         // Scroll handler
         const handleScroll = () => {
             // Skip updates when scrolled to bottom (likely from Skip to end)
-            const isAtBottom = actualScrollContainer.scrollTop + actualScrollContainer.clientHeight >= actualScrollContainer.scrollHeight - 5
-            if (isAtBottom) {
+            if (isScrolledToBottom(actualScrollContainer)) {
                 return
             }
             updateMarkers()
@@ -271,8 +278,7 @@ export const ScrollbarMarkers: FC<ScrollbarMarkersProps> = () => {
         // Mutation observer
         const mutationObserver = new MutationObserver(() => {
             // Skip updates when scrolled to bottom (likely from Skip to end)
-            const isAtBottom = actualScrollContainer.scrollTop + actualScrollContainer.clientHeight >= actualScrollContainer.scrollHeight - 5
-            if (!isAtBottom) {
+            if (!isScrolledToBottom(actualScrollContainer)) {
                 updateMarkers()
             }
         })
@@ -301,7 +307,7 @@ export const ScrollbarMarkers: FC<ScrollbarMarkersProps> = () => {
             mutationObserver.disconnect()
             actualScrollContainer.removeEventListener('scroll', handleScroll)
         }
-    }, [updateContainerDimensions, updateMarkers])
+    }, [updateContainerDimensions, updateMarkers, isScrolledToBottom])
 
     if (!canShowMarkers || !containerStyles) {
         return null
