@@ -24,7 +24,9 @@ export async function findWorkspaceFiles(
 
 type IgnoreRecord = Record<string, boolean>
 
-async function getExcludePattern(workspaceFolder: vscode.WorkspaceFolder | null): Promise<string> {
+export async function getExcludePattern(
+    workspaceFolder: vscode.WorkspaceFolder | null
+): Promise<string> {
     const config = vscode.workspace.getConfiguration('', workspaceFolder)
     const filesExclude = config.get<IgnoreRecord>('files.exclude', {})
     const searchExclude = config.get<IgnoreRecord>('search.exclude', {})

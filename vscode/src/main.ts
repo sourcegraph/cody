@@ -6,6 +6,7 @@ import {
     type ChatClient,
     ClientConfigSingleton,
     type ConfigurationInput,
+    ContextFiltersProvider,
     DOTCOM_URL,
     type DefaultCodyCommands,
     FeatureFlag,
@@ -84,6 +85,7 @@ import { EditGuardrails } from './edit/edit-guardrails'
 import { EditManager } from './edit/edit-manager'
 import { SmartApplyManager } from './edit/smart-apply-manager'
 import { manageDisplayPathEnvInfoForExtension } from './editor/displayPathEnvInfo'
+import { getExcludePattern } from './editor/utils/findWorkspaceFiles'
 import { VSCodeEditor } from './editor/vscode-editor'
 import type { PlatformContext } from './extension.common'
 import { configureExternalServices } from './external-services'
@@ -341,6 +343,12 @@ const register = async (
             })
         )
     )
+
+    // Import exclude pattern from editor settings to ContextFiltersProvider
+    ContextFiltersProvider.excludePatternGetter = {
+        getExcludePattern,
+        getWorkspaceFolder: (uri: vscode.Uri) => vscode.workspace.getWorkspaceFolder(uri) ?? null,
+    }
 
     return vscode.Disposable.from(...disposables)
 }
@@ -651,7 +659,7 @@ function registerUpgradeHandlers(disposables: vscode.Disposable[]): void {
  * Register commands used in internal tests
  */
 async function registerTestCommands(
-    context: vscode.ExtensionContext,
+    _context: vscode.ExtensionContext,
     disposables: vscode.Disposable[]
 ): Promise<void> {
     await vscode.commands.executeCommand('setContext', 'cody.devOrTest', true)
@@ -813,7 +821,7 @@ function registerAutocomplete(
                         if (res === NEVER && !authStatus.pendingValidation) {
                             finishLoading()
                         }
-                        return res.tap(res => {
+                        return res.tap(_res => {
                             finishLoading()
                         })
                     }),
