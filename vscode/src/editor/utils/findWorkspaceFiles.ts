@@ -41,11 +41,16 @@ export async function getExcludePattern(
             ? await readIgnoreFile(vscode.Uri.joinPath(workspaceFolder.uri, '.ignore'))
             : {}
 
+    const sgIgnoreExclude = workspaceFolder
+        ? await readIgnoreFile(vscode.Uri.joinPath(workspaceFolder.uri, '.sourcegraph', '.ignore'))
+        : {}
+
     const mergedExclude: IgnoreRecord = {
         ...filesExclude,
         ...searchExclude,
         ...gitignoreExclude,
         ...ignoreExclude,
+        ...sgIgnoreExclude,
     }
     const excludePatterns = Object.keys(mergedExclude).filter(key => mergedExclude[key] === true)
     return `{${excludePatterns.join(',')}}`
