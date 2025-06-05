@@ -643,22 +643,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 })
                 break
             }
-            case 'clearAllChatHistory': {
-                const authStatus = currentAuthStatus()
-                if (authStatus.authenticated) {
-                    await localStorage.removeChatHistory(authStatus)
-                }
-                break
-            }
         }
-    }
-
-    private async sendStorageWarningState(): Promise<void> {
-        const shouldShow = localStorage.shouldShowStorageWarning()
-        await this.postMessage({
-            type: 'storageWarning',
-            showWarning: shouldShow,
-        })
     }
 
     private isSmartApplyEnabled(): boolean {
@@ -737,7 +722,9 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         logDebug('ChatController', 'updateViewConfig', {
             verbose: configForWebview,
         })
-        await this.sendStorageWarningState()
+        if (localStorage.shouldShowStorageWarning()) {
+            this.postError(new Error('STORAGE_WARNING'), 'storage')
+        }
     }
 
     private async sendClientConfig(clientConfig: CodyClientConfig) {
@@ -1588,8 +1575,11 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             return
         }
 
+        if (type !== 'storage') {
+            captureException(error)
+        }
+
         void this.postMessage({ type: 'errors', errors: error.message })
-        captureException(error)
     }
 
     /**

@@ -10,10 +10,8 @@ import {
     type Model,
     type PromptString,
 } from '@sourcegraph/cody-shared'
-import { useExtensionAPI } from '@sourcegraph/prompt-editor'
 
 import styles from './Chat.module.css'
-import { StorageWarningBanner } from './chat/StorageWarningBanner'
 import { Transcript, focusLastHumanMessageEditor } from './chat/Transcript'
 import { WelcomeMessage } from './chat/components/WelcomeMessage'
 import { WelcomeNotice } from './chat/components/WelcomeNotice'
@@ -36,8 +34,6 @@ interface ChatboxProps {
     showIDESnippetActions?: boolean
     setView: (view: View) => void
     isWorkspacesUpgradeCtaEnabled?: boolean
-    showStorageWarning?: boolean
-    onClearAllChatHistory?: () => void
 }
 
 export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>> = ({
@@ -52,10 +48,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     showIDESnippetActions = true,
     setView,
     isWorkspacesUpgradeCtaEnabled,
-    showStorageWarning,
-    onClearAllChatHistory,
 }) => {
-    const extensionAPI = useExtensionAPI()
     const transcriptRef = useRef(transcript)
     transcriptRef.current = transcript
 
@@ -215,9 +208,6 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                 <div className={styles.chatDisabled}>
                     Cody chat is disabled by your Sourcegraph site administrator
                 </div>
-            )}
-            {showStorageWarning && onClearAllChatHistory && (
-                <StorageWarningBanner extensionAPI={extensionAPI} onClearAll={onClearAllChatHistory} />
             )}
             <Transcript
                 activeChatContext={activeChatContext}

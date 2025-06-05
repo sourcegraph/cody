@@ -38,7 +38,7 @@ class LocalStorage implements LocalStorageForModelPreferences {
     private readonly CODY_CHAT_MEMORY = 'cody-chat-memory'
     private readonly AUTO_EDITS_BETA_ENROLLED = 'cody-auto-edit-beta-onboard'
     private readonly DEVICE_PIXEL_RATIO = 'device-pixel-ratio'
-    private readonly STORAGE_SIZE_BIG = 5000 //50_000 * 1024 // 50,000 KB
+    private readonly STORAGE_SIZE_BIG = 50_000 * 1024 // 50,000 KB
     public readonly keys = {
         deepCodyLastUsedDate: 'DEEP_CODY_LAST_USED_DATE',
         deepCodyDailyUsageCount: 'DEEP_CODY_DAILY_CHAT_USAGE',

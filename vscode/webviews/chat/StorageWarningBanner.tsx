@@ -2,16 +2,24 @@ import type { WebviewToExtensionAPI } from '@sourcegraph/cody-shared'
 import { AlertTriangle, X } from 'lucide-react'
 import { useCallback, useState } from 'react'
 import { Button } from '../components/shadcn/ui/button'
+import type { VSCodeWrapper } from '../utils/VSCodeApi'
 import styles from './ErrorItem.module.css'
 import { downloadChatHistory } from './downloadChatHistory'
 
 interface StorageWarningBannerProps {
     extensionAPI: WebviewToExtensionAPI
-    onClearAll: () => void
+    vscodeAPI: Pick<VSCodeWrapper, 'postMessage'>
 }
 
-export const StorageWarningBanner = ({ extensionAPI, onClearAll }: StorageWarningBannerProps) => {
+export const StorageWarningBanner = ({ extensionAPI, vscodeAPI }: StorageWarningBannerProps) => {
     const onExport = useCallback(() => downloadChatHistory(extensionAPI), [extensionAPI])
+    const onClearAll = useCallback(() => {
+        vscodeAPI.postMessage({
+            command: 'command',
+            id: 'cody.chat.history.clear',
+            arg: 'clear-all-no-confirm',
+        })
+    }, [vscodeAPI])
     const [isVisible, setIsVisible] = useState(true)
 
     const handleClose = () => {
@@ -23,24 +31,26 @@ export const StorageWarningBanner = ({ extensionAPI, onClearAll }: StorageWarnin
     }
 
     return (
-        <div className={`${styles.errorItem} bg-gray-500/10 border-l-4 border-blue-500 relative`}>
+        <div
+            className={`${styles.errorItem} tw-bg-gray-500/10 tw-border-l-4 tw-border-blue-500 tw-relative`}
+        >
             <div className={styles.icon}>
-                <AlertTriangle className="h-6 w-6 text-blue-600" />
+                <AlertTriangle className="tw-h-6 tw-w-6 tw-text-blue-600" />
             </div>
             <div className={styles.body}>
                 <header>
-                    <h1 className="text-blue-500">Storage is Full</h1>
-                    <p className="text-gray-500">
+                    <h1 className="tw-text-blue-500">Storage is Full</h1>
+                    <p className="tw-text-gray-500">
                         Low local storage space detected. Chat performance may be slow. To fix this,
                         export your chat history to save a copy, then clear your chat history to free up
                         space.
                     </p>
                 </header>
-                <div className={`${styles.actions} flex gap-3 flex-wrap`}>
+                <div className={`${styles.actions} tw-flex tw-gap-3 tw-flex-wrap`}>
                     <Button
                         variant="outline"
                         size="sm"
-                        className="bg-white text-blue-600 border-blue-200 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300 text-xs"
+                        className="tw-bg-white tw-text-blue-600 tw-border-blue-200 hover:tw-bg-blue-50 hover:tw-text-blue-700 hover:tw-border-blue-300 tw-text-xs"
                         onClick={onExport}
                     >
                         Export Old Chats
@@ -48,7 +58,7 @@ export const StorageWarningBanner = ({ extensionAPI, onClearAll }: StorageWarnin
                     <Button
                         variant="outline"
                         size="sm"
-                        className="bg-white text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700 hover:border-red-300 text-xs"
+                        className="tw-bg-white tw-text-red-600 tw-border-red-200 hover:tw-bg-red-50 hover:tw-text-red-700 hover:tw-border-red-300 tw-text-xs"
                         onClick={onClearAll}
                     >
                         Clear All
@@ -57,10 +67,10 @@ export const StorageWarningBanner = ({ extensionAPI, onClearAll }: StorageWarnin
             </div>
             <button
                 type="button"
-                className="absolute top-1 right-2 h-4 w-4 flex items-center justify-center hover:bg-gray-100 rounded cursor-pointer z-10 p-0 border-none bg-transparent text-[var(--vscode-foreground)]"
+                className="tw-absolute tw-top-3 tw-right-2 tw-h-6 tw-w-6 tw-flex tw-items-center tw-justify-center hover:tw-bg-gray-100 tw-rounded tw-cursor-pointer tw-z-10 tw-p-0 tw-border-none tw-bg-transparent tw-text-[var(--vscode-foreground)]"
                 onClick={handleClose}
             >
-                <X className="h-2 w-2" />
+                <X className="tw-h-7 tw-w-7" />
             </button>
         </div>
     )

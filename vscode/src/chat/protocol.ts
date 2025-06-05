@@ -181,9 +181,6 @@ export type WebviewMessage =
           toolName?: string | undefined | null
           toolDisabled?: boolean | undefined | null
       }
-    | {
-          command: 'clearAllChatHistory'
-      }
 
 export interface SmartApplyResult {
     taskId: FixupTaskID
@@ -239,7 +236,6 @@ export type ExtensionMessage =
     | ({ type: 'attribution' } & ExtensionAttributionMessage)
     | { type: 'rpc/response'; message: ResponseMessage }
     | { type: 'action/confirmationRequest'; id: string; step: ProcessingStep }
-    | { type: 'storageWarning'; showWarning: boolean }
 
 interface ExtensionAttributionMessage {
     snippet: string
