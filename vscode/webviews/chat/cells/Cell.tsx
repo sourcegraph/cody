@@ -10,6 +10,7 @@ interface CellProps {
     'aria-current'?: boolean
     'aria-disabled'?: boolean
     'data-testid'?: string
+    'data-role'?: string
 }
 /**
  * A cell is a row in a chat, which can be a human message, assistant message, context, notice, etc.
@@ -22,6 +23,7 @@ export const Cell = forwardRef<HTMLDivElement, PropsWithChildren<CellProps>>((pr
         'aria-current': ariaCurrent,
         'aria-disabled': ariaDisabled,
         'data-testid': dataTestID,
+        'data-role': dataRole,
         children,
     } = props
 
@@ -33,6 +35,7 @@ export const Cell = forwardRef<HTMLDivElement, PropsWithChildren<CellProps>>((pr
             aria-current={ariaCurrent}
             aria-disabled={ariaDisabled}
             data-testid={dataTestID}
+            data-role={dataRole}
         >
             {header ? (
                 <header className="tw-flex tw-gap-4 tw-items-center [&_>_*]:tw-flex-shrink-0">

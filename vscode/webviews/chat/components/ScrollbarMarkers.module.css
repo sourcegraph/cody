@@ -1,0 +1,29 @@
+.marker-container-wrapper {
+    z-index: 100;
+    pointer-events: none;
+}
+
+.marker-container {
+    z-index: 100;
+    pointer-events: none;
+}
+
+
+
+.marker {
+    pointer-events: auto;
+    background-color: var(--vscode-input-placeholderForeground);
+    opacity: 0.5;
+    z-index: 1;
+}
+
+.marker:hover {
+    z-index: 5;
+    opacity: 1;
+    transform: translateX(-50%) scale(1.2);
+}
+
+.marker:focus {
+    outline: 2px solid var(--vscode-focusBorder);
+    outline-offset: 2px;
+}

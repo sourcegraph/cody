@@ -10,12 +10,14 @@ export const BaseMessageCell: FunctionComponent<{
     contentClassName?: string
     footer?: React.ReactNode
     className?: string
-}> = ({ cellAction, content, contentClassName, footer, className }) => (
+    speaker?: 'human' | 'assistant'
+}> = ({ cellAction, content, contentClassName, footer, className, speaker }) => (
     <Cell
         header={cellAction && <div className="tw-ml-auto">{cellAction}</div>}
         containerClassName={className}
         contentClassName={contentClassName}
         data-testid="message"
+        data-role={speaker}
     >
         {content}
         {footer}

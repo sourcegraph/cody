@@ -183,6 +183,7 @@ export const AssistantMessageCell: FunctionComponent<{
                         <TokenUsageDisplay tokenUsage={message.tokenUsage} />
                     </div>
                 }
+                speaker="assistant"
             />
         )
     },
