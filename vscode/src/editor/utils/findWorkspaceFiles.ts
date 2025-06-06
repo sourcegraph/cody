@@ -24,7 +24,9 @@ export async function findWorkspaceFiles(
 
 type IgnoreRecord = Record<string, boolean>
 
-async function getExcludePattern(workspaceFolder: vscode.WorkspaceFolder | null): Promise<string> {
+export async function getExcludePattern(
+    workspaceFolder: vscode.WorkspaceFolder | null
+): Promise<string> {
     const config = vscode.workspace.getConfiguration('', workspaceFolder)
     const filesExclude = config.get<IgnoreRecord>('files.exclude', {})
     const searchExclude = config.get<IgnoreRecord>('search.exclude', {})
@@ -39,11 +41,16 @@ async function getExcludePattern(workspaceFolder: vscode.WorkspaceFolder | null)
             ? await readIgnoreFile(vscode.Uri.joinPath(workspaceFolder.uri, '.ignore'))
             : {}
 
+    const sgIgnoreExclude = workspaceFolder
+        ? await readIgnoreFile(vscode.Uri.joinPath(workspaceFolder.uri, '.sourcegraph', '.ignore'))
+        : {}
+
     const mergedExclude: IgnoreRecord = {
         ...filesExclude,
         ...searchExclude,
         ...gitignoreExclude,
         ...ignoreExclude,
+        ...sgIgnoreExclude,
     }
     const excludePatterns = Object.keys(mergedExclude).filter(key => mergedExclude[key] === true)
     return `{${excludePatterns.join(',')}}`
