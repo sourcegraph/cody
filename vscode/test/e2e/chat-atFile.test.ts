@@ -317,6 +317,7 @@ test.extend<ExpectedV2Events>({
 })('@-mention symbol in chat', async ({ page, nap, sidebar, server }) => {
     mockEnterpriseRepoIdMapping(server)
 
+    server.setFeatureFlag('no-default-repo-chip', true)
     await sidebarSignin(page, sidebar)
 
     // Open the buzz.ts file so that VS Code starts to populate symbols.
@@ -378,7 +379,7 @@ test.extend<ExpectedV2Events>({
 
     // Enable the NoDefaultRepoChip feature flag to prevent workspace context
     // Set this before signin to ensure it's available when the extension starts
-    // server.setFeatureFlag('no-default-repo-chip', true)
+    server.setFeatureFlag('no-default-repo-chip', true)
 
     await sidebarSignin(page, sidebar)
 

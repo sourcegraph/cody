@@ -549,12 +549,14 @@ export class MockServer {
 
                         const defaultFlags: Record<string, boolean> = {
                             'git-mention-provider': true,
-                            'no-default-repo-chip': true  // Default to true for testing to avoid workspace context by default
+                            'no-default-repo-chip': false,  // Default to false to allow remote repository context
                         }
 
                         const evaluateFeatureFlags = []
 
                         // Only return flags that were requested
+                        // useful to control which flags are returned in tests
+                        // ex used in chat-atFile.test.ts
                         for (const flagName of flagNames) {
                             let flagValue = controller.featureFlags.get(flagName)
                             if (flagValue === undefined) {

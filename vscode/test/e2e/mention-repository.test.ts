@@ -24,6 +24,12 @@ testWithGitRemote('@-mention repository', async ({ page, sidebar, server }) => {
                 results: {
                     repositories: [
                         {
+                            id: userRepo,
+                            name: userRepo,
+                            stars: 15,
+                            url: `https://${userRepo}`,
+                        },
+                        {
                             id: 'codehost.example/a/b',
                             name: 'codehost.example/a/b',
                             stars: 10,
@@ -41,10 +47,15 @@ testWithGitRemote('@-mention repository', async ({ page, sidebar, server }) => {
         } satisfies RepoSuggestionsSearchResponse,
     })
 
-    // Wait for the current user repo to be loaded before opening the mention menu.
-    await expect(chatInputMentions(lastChatInput)).toHaveText([userRepo])
+    // Wait for the initial context to be loaded (should contain local workspace folder)
+    await expect(chatInputMentions(lastChatInput)).toHaveCount(1, { timeout: 10000 })
+    await expect(chatInputMentions(lastChatInput)).toHaveText(['myrepo'])
+
+    // Test that remote repositories are available via the mention menu
     await openMentionsForProvider(chatFrame, lastChatInput, 'Repositories', true)
-    await expect(mentionMenuItems(chatFrame)).toHaveText(['a/b', 'c/d'])
-    await selectMentionMenuItem(chatFrame, 'c/d')
-    await expect(chatInputMentions(lastChatInput)).toHaveText([userRepo, 'codehost.example/c/d'])
+    // The mention menu shows shortened repository names for display
+    await expect(mentionMenuItems(chatFrame)).toHaveText(['user/myrepo', 'a/b', 'c/d'])
+
+    await selectMentionMenuItem(chatFrame, 'user/myrepo')
+    await expect(chatInputMentions(lastChatInput)).toHaveText(['myrepo', userRepo])
 })
