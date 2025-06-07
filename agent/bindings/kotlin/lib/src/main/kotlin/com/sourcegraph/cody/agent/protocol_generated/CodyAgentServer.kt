@@ -158,6 +158,8 @@ interface CodyAgentServer {
   fun textDocument_didFocus(params: TextDocument_DidFocusParams)
   @JsonNotification("textDocument/didSave")
   fun textDocument_didSave(params: TextDocument_DidSaveParams)
+  @JsonNotification("textDocument/didRename")
+  fun textDocument_didRename(params: TextDocument_DidRenameParams)
   @JsonNotification("textDocument/didClose")
   fun textDocument_didClose(params: ProtocolTextDocument)
   @JsonNotification("workspace/didDeleteFiles")

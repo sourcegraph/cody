@@ -126,6 +126,8 @@
                 implementation="com.sourcegraph.cody.edit.lenses.providers.EditRetryCodeVisionProvider"/>
 
         <config.codeVisionGroupSettingProvider implementation="com.sourcegraph.cody.edit.lenses.EditCodeVisionGroupSettingProvider"/>
+
+        <refactoring.elementListenerProvider implementation="com.sourcegraph.cody.listeners.CodyElementListenerProvider"/>
     </extensions>
 
     <applicationListeners>
