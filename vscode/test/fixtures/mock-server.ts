@@ -177,6 +177,7 @@ export class MockServer {
     graphQlMocks: Map<string, GraphQlMock> = new Map();
     availableLLMs: ServerModelConfiguration | undefined = getServerSentModelsMock();
     userShouldUseEnterprise: boolean = false;
+    featureFlags: Map<string, boolean> = new Map([]);
 
     constructor(public readonly express: express.Express) {}
 
@@ -195,6 +196,10 @@ export class MockServer {
 
     public setAvailableLLMs(config: ServerModelConfiguration) {
         this.availableLLMs = config;
+    }
+
+    public setFeatureFlag(flagName: string, value: boolean) {
+        this.featureFlags.set(flagName, value);
     }
 
     // Runs a stub Cody service for testing.
@@ -537,6 +542,32 @@ export class MockServer {
                     case 'FeatureFlags':
                         res.send(JSON.stringify({ data: { evaluatedFeatureFlags: [{ name: 'git-mention-provider', value: true}]} }))
                         break
+                    case 'EvaluateFeatureFlags': {
+                        // New batch API - evaluateFeatureFlags (returns only requested flags)
+                        const requestBody = req.body as any
+                        const flagNames = requestBody?.variables?.flagNames || []
+
+                        const defaultFlags: Record<string, boolean> = {
+                            'git-mention-provider': true,
+                            'no-default-repo-chip': true  // Default to true for testing to avoid workspace context by default
+                        }
+
+                        const evaluateFeatureFlags = []
+
+                        // Only return flags that were requested
+                        for (const flagName of flagNames) {
+                            let flagValue = controller.featureFlags.get(flagName)
+                            if (flagValue === undefined) {
+                                flagValue = defaultFlags[flagName] ?? false
+                            }
+                            evaluateFeatureFlags.push({ name: flagName, value: flagValue })
+                        }
+
+                        res.send(JSON.stringify({
+                            data: { evaluateFeatureFlags }
+                        }))
+                        break
+                    }
                     case 'EvaluateFeatureFlag':
                         res.send(JSON.stringify({ data: { evaluatedFeatureFlag: true } }))
                         break
@@ -612,6 +643,14 @@ export class MockServer {
             attribution = req.query.mode?.toString() ?? 'permissive';
             res.sendStatus(200);
         });
+
+        app.post("/.test/featureFlags/refresh", (req, res) => {
+            // This endpoint can be called to signal that feature flags should be refreshed
+            // We'll use this as a signal that tests have finished setting up their flags
+            res.sendStatus(200);
+        });
+
+
 
         app.get("/.api/modelconfig/supported-models.json", (req, res) => {
             res.status(200).send(JSON.stringify(controller.availableLLMs));
