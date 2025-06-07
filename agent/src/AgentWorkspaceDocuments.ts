@@ -186,7 +186,7 @@ export class AgentWorkspaceDocuments implements vscode_shim.WorkspaceDocuments {
         const documentAndEditor = this.agentDocuments.get(oldUri.toString())
         if (documentAndEditor) {
             this.agentDocuments.delete(oldUri.toString())
-            const { document, editor } = documentAndEditor
+            const { document } = documentAndEditor
 
             const newDocument = new AgentTextDocument(
                 ProtocolTextDocumentWithUri.fromDocument({
@@ -198,14 +198,8 @@ export class AgentWorkspaceDocuments implements vscode_shim.WorkspaceDocuments {
                     testing: document.protocolDocument.underlying.testing,
                 })
             )
-            this.agentDocuments.set(newUri.toString(), { document: newDocument, editor })
-
-            // Update activeTextEditor if the renamed document was the active one
-            if (this.activeDocumentFilePath?.toString() === oldUri.toString()) {
-                // Create a new editor with the updated document
-                const updatedEditor = new AgentTextEditor(newDocument, { edit: this.params?.edit })
-                this.setActiveTextEditor(updatedEditor)
-            }
+            const updatedEditor = new AgentTextEditor(newDocument, this.params)
+            this.agentDocuments.set(newUri.toString(), { document: newDocument, editor: updatedEditor })
         }
     }
 
