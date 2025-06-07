@@ -229,7 +229,11 @@ test.extend<ExpectedV2Events>({
         'cody.editChatButton:clicked',
         'cody.chatResponse:noCode',
     ],
-})('editing a chat message with @-mention', async ({ page, sidebar }) => {
+})('editing a chat message with @-mention', async ({ page, sidebar, server }) => {
+    // Enable the NoDefaultRepoChip feature flag to prevent workspace context
+    // Set this before signin to ensure it's available when the extension starts
+    server.setFeatureFlag('no-default-repo-chip', true)
+
     await sidebarSignin(page, sidebar)
 
     const [chatPanelFrame, , firstChatInput] = await createEmptyChatPanel(page)
@@ -371,6 +375,10 @@ test.extend<ExpectedV2Events>({
     expectedV2Events: ['cody.addChatContext:clicked'],
 })('Add Selection to Cody Chat', async ({ page, sidebar, server }) => {
     mockEnterpriseRepoIdMapping(server)
+
+    // Enable the NoDefaultRepoChip feature flag to prevent workspace context
+    // Set this before signin to ensure it's available when the extension starts
+    // server.setFeatureFlag('no-default-repo-chip', true)
 
     await sidebarSignin(page, sidebar)
 

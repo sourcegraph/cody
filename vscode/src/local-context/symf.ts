@@ -18,10 +18,8 @@ import {
     displayPath,
     isAbortError,
     isDefined,
-    isDotCom,
     isFileURI,
     isWindows,
-    isWorkspaceInstance,
     subscriptionDisposable,
     telemetryRecorder,
     uriBasename,
@@ -93,9 +91,9 @@ export class SymfRunner implements vscode.Disposable {
                 authStatus.subscribe(authStatus => {
                     // symf is now available for dotcom and Enterprise Starter users
                     // see https://linear.app/sourcegraph/issue/CODY-5017/enable-symf-for-enterprise-starter-and-make-it-easy-for-users-to
-                    const symfEnabledForLocalContext =
-                        isDotCom(authStatus) || isWorkspaceInstance(authStatus)
-                    if (!isInitialized && authStatus.authenticated && symfEnabledForLocalContext) {
+                    // symf is now available  also for enterprise users
+                    // https://linear.app/sourcegraph/issue/CODY-6021/bring-back-symf-for-enterprise-users
+                    if (!isInitialized && authStatus.authenticated) {
                         // Only initialize symf after the user has authenticated
                         isInitialized = true
                         this.disposables.push(initializeSymfIndexManagement(this))
