@@ -24,6 +24,7 @@ import {
     type EditMode,
     EditModeTelemetryMetadataMapping,
 } from '../edit/types'
+import { isStreamedIntent } from '../edit/utils/edit-intent'
 import { getOverriddenModelForIntent } from '../edit/utils/edit-models'
 import type { ExtensionClient } from '../extension-client'
 import { isRunningInsideAgent } from '../jsonrpc/isRunningInsideAgent'
@@ -31,8 +32,6 @@ import { logDebug } from '../output-channel-logger'
 import { charactersLogger } from '../services/CharactersLogger'
 import { splitSafeMetadata } from '../services/telemetry-v2'
 import { countCode } from '../services/utils/code-count'
-
-import { isStreamedIntent } from '../edit/utils/edit-intent'
 import { FixupDocumentEditObserver } from './FixupDocumentEditObserver'
 import type { FixupFile } from './FixupFile'
 import { FixupFileObserver } from './FixupFileObserver'
@@ -955,6 +954,7 @@ export class FixupController
         // Get the indentation context for the insertion point
         const insertionLine = document.lineAt(task.insertionPoint.line)
         let targetIndentSize = insertionLine.firstNonWhitespaceCharacterIndex
+        const textIndentSize = text.search(/\S/) || 0
 
         // Special case for Python documentation
         if (targetIndentSize === 0 && task.document.languageId === 'python' && task.intent === 'doc') {
@@ -962,7 +962,6 @@ export class FixupController
         }
 
         // Calculate indentation adjustments
-        const textIndentSize = text.search(/\S/) || 0
         const needsIndentAdjustment = targetIndentSize > textIndentSize
         const indentDifference = needsIndentAdjustment ? targetIndentSize - textIndentSize : 0
 
@@ -1011,7 +1010,7 @@ export class FixupController
             // This happens sometimes with python document code action where instead
             // of adding only the docstring, the LLM returns the entire code block
             if (startLine > 0 && startLineText && text.startsWith(startLineText)) {
-                editBuilder.replace(task.originalRange, replacementText)
+                editBuilder.replace(task.originalRange, text)
             } else {
                 editBuilder.insert(task.insertionPoint, replacementText)
             }

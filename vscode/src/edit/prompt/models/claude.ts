@@ -22,7 +22,9 @@ export const claude: EditLLMInteraction = {
     getDoc(options) {
         const docStopSequences = [...SHARED_PARAMETERS.stopSequences]
         const firstLine = options.selectedText.toString().split('\n')[0]
-        if (firstLine.trim().length > 0) {
+        // when claude receives a def function line, it will return an empty response
+        // if we add that first line to the stop sequences
+        if (firstLine.trim().length > 0 && options.document.languageId !== 'python') {
             docStopSequences.push(firstLine)
         }
 
