@@ -57,6 +57,15 @@ export interface ChatMessage extends Message {
      * non-experimental functionality.
      */
     subMessages?: SubMessage[]
+
+    /**
+     * Token usage information for the message.
+     */
+    tokenUsage?: {
+        completionTokens?: number
+        promptTokens?: number
+        totalTokens?: number
+    }
 }
 
 export enum ProcessType {

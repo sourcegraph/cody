@@ -94,14 +94,18 @@ class ChatHistoryManager implements vscode.Disposable {
     public async saveChat(
         authStatus: AuthenticatedAuthStatus,
         chat: SerializedChatTranscript
-    ): Promise<void> {
+    ): Promise<boolean> {
         // Don't save empty chats
         if (chat.interactions.length > 0) {
             const history = localStorage.getChatHistory(authStatus)
             history.chat[chat.id] = chat
             await localStorage.setChatHistory(authStatus, history)
             this.changeNotifications.next()
+            if (JSON.stringify(history).length > localStorage.CHAT_STORAGE_SIZE_LARGE) {
+                return true
+            }
         }
+        return false
     }
 
     public async importChatHistory(

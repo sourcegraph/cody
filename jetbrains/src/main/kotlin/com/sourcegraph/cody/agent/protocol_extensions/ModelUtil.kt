@@ -5,12 +5,12 @@ import com.sourcegraph.cody.agent.protocol_generated.Model
 import javax.swing.Icon
 
 fun Model.getIcon(): Icon? =
-    when (provider) {
-      "Anthropic" -> Icons.LLM.Anthropic
-      "OpenAI" -> Icons.LLM.OpenAI
-      "Mistral" -> Icons.LLM.Mistral
-      "Google" -> Icons.LLM.Google
-      "Ollama" -> Icons.LLM.Ollama
+    when (provider?.lowercase()) {
+      "anthropic" -> Icons.LLM.Anthropic
+      "openai" -> Icons.LLM.OpenAI
+      "mistral" -> Icons.LLM.Mistral
+      "google" -> Icons.LLM.Google
+      "ollama" -> Icons.LLM.Ollama
       else -> null
     }
 

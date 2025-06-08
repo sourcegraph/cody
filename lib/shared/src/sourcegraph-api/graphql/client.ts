@@ -42,6 +42,7 @@ import {
     CURRENT_USER_INFO_QUERY,
     CURRENT_USER_ROLE_QUERY,
     DELETE_ACCESS_TOKEN_MUTATION,
+    EVALUATE_FEATURE_FLAGS_QUERY,
     EVALUATE_FEATURE_FLAG_QUERY,
     FILE_CONTENTS_QUERY,
     FILE_MATCH_SEARCH_QUERY,
@@ -595,6 +596,10 @@ interface EvaluatedFeatureFlagsResponse {
     evaluatedFeatureFlags: EvaluatedFeatureFlag[]
 }
 
+interface EvaluatedFeatureFlagsResponse {
+    evaluateFeatureFlags: EvaluatedFeatureFlag[]
+}
+
 interface EvaluateFeatureFlagResponse {
     evaluateFeatureFlag: boolean
 }
@@ -1005,7 +1010,11 @@ export class SourcegraphGraphQLAPIClient {
         first,
         after,
         query,
-    }: { first: number; after?: string; query?: string }): Promise<RepoListResponse | Error> {
+    }: {
+        first: number
+        after?: string
+        query?: string
+    }): Promise<RepoListResponse | Error> {
         return this.fetchSourcegraphAPI<APIResponse<RepoListResponse>>(REPOSITORY_LIST_QUERY, {
             first,
             after: after || null,
@@ -1521,19 +1530,59 @@ export class SourcegraphGraphQLAPIClient {
         ).then(response => extractDataOrError(response, data => data.snippetAttribution))
     }
 
+    /**
+     *
+     * https://github.com/sourcegraph/sourcegraph/pull/3513 introduced a new GraphQL query evaluateFeatureFlags
+     * @param flagNames allows multiple flags to be evaluated.
+     *
+     * Deprecated API: evaluatedFeatureFlags
+     */
     public async getEvaluatedFeatureFlags(
+        flagNames: string[],
         signal?: AbortSignal
     ): Promise<Record<string, boolean> | Error> {
+        const [hasEvaluateFeatureFlags] = await Promise.all([
+            this.isValidSiteVersion({ minimumVersion: '6.2.1106' }),
+        ])
+        // sg version 6.2 and above
+        if (hasEvaluateFeatureFlags) {
+            const names = flagNames.filter(name => name !== 'test-flag-do-not-use')
+            return this.fetchSourcegraphAPI<APIResponse<EvaluatedFeatureFlagsResponse>>(
+                EVALUATE_FEATURE_FLAGS_QUERY,
+                {
+                    flagNames: names,
+                },
+                signal
+            ).then(response => {
+                return extractDataOrError(
+                    response,
+                    data =>
+                        data.evaluateFeatureFlags?.reduce(
+                            (acc: Record<string, boolean>, { name, value }) => {
+                                acc[name] = value
+                                return acc
+                            },
+                            {}
+                        ) || {}
+                )
+            })
+        }
+        // sg version before 6.2
         return this.fetchSourcegraphAPI<APIResponse<EvaluatedFeatureFlagsResponse>>(
             GET_FEATURE_FLAGS_QUERY,
             {},
             signal
         ).then(response => {
-            return extractDataOrError(response, data =>
-                data.evaluatedFeatureFlags.reduce((acc: Record<string, boolean>, { name, value }) => {
-                    acc[name] = value
-                    return acc
-                }, {})
+            return extractDataOrError(
+                response,
+                data =>
+                    data.evaluatedFeatureFlags?.reduce(
+                        (acc: Record<string, boolean>, { name, value }) => {
+                            acc[name] = value
+                            return acc
+                        },
+                        {}
+                    ) || {}
             )
         })
     }

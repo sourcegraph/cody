@@ -37,13 +37,15 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 19 May 2025 10:41:22 GMT
+            value: Tue, 03 Jun 2025 13:46:24 GMT
           - name: content-type
             value: application/json
           - name: content-length
             value: "21"
           - name: connection
             value: keep-alive
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
           - name: cache-control
             value: no-cache, max-age=0
           - name: vary
@@ -54,15 +56,13 @@ log:
             value: DENY
           - name: x-xss-protection
             value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
         headersSize: 1266
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-05-19T10:41:21.888Z
-      time: 352
+      startedDateTime: 2025-06-03T13:46:24.049Z
+      time: 212
       timings:
         blocked: -1
         connect: -1
@@ -70,7 +70,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 352
+        wait: 212
     - _id: 6e977d3842ddb417bf941a0f568426d9
       _order: 0
       cache: {}
@@ -106,13 +106,15 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 19 May 2025 10:41:22 GMT
+            value: Tue, 03 Jun 2025 13:46:24 GMT
           - name: content-type
             value: application/json
           - name: content-length
             value: "21"
           - name: connection
             value: keep-alive
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
           - name: cache-control
             value: no-cache, max-age=0
           - name: vary
@@ -123,15 +125,13 @@ log:
             value: DENY
           - name: x-xss-protection
             value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
         headersSize: 1266
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-05-19T10:41:21.912Z
-      time: 329
+      startedDateTime: 2025-06-03T13:46:24.088Z
+      time: 196
       timings:
         blocked: -1
         connect: -1
@@ -139,7 +139,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 329
+        wait: 196
     - _id: 897d3731ab8e15a1549f29445eafd1e1
       _order: 0
       cache: {}
@@ -174,31 +174,35 @@ log:
         queryString: []
         url: https://sourcegraph.com/.api/client-config
       response:
-        bodySize: 232
+        bodySize: 239
         content:
           encoding: base64
           mimeType: text/plain; charset=utf-8
-          size: 232
+          size: 239
           text: "[\"H4sIAAAAAAAAA2yPsQrCQBBE+3zFcbU/YLoQLNIFAlpvvBUP7nbD7Rwq4r9bGLC5+s3MY\
             96dc875q4bXSWhNHHzvUCofdnAnNAFV6Kh5SwxuN6tB86g5kwRrbwAlrhVR5c9vlKwR\
             8L3zosJ+R5apYFQBP3GJEvTRVGQNnGyYp7YgEdiw1G3TAg77oahiCwpTHubpzMV+/mP\
-            36b4AAAD//wMAHntDBjABAAA=\"]"
+            36b4AAAD//w==\",\"AwAee0MGMAEAAA==\"]"
         cookies: []
         headers:
           - name: date
-            value: Mon, 19 May 2025 10:41:16 GMT
+            value: Tue, 03 Jun 2025 13:46:19 GMT
           - name: content-type
             value: text/plain; charset=utf-8
           - name: transfer-encoding
             value: chunked
           - name: connection
             value: close
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
             value: ""
           - name: cache-control
             value: no-cache, max-age=0
+          - name: content-encoding
+            value: gzip
           - name: vary
             value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
               X-Requested-With,Cookie
@@ -208,17 +212,13 @@ log:
             value: DENY
           - name: x-xss-protection
             value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-          - name: content-encoding
-            value: gzip
         headersSize: 1406
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-05-19T10:41:16.476Z
-      time: 394
+      startedDateTime: 2025-06-03T13:46:18.780Z
+      time: 261
       timings:
         blocked: -1
         connect: -1
@@ -226,7 +226,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 394
+        wait: 261
     - _id: 561f36f42a3db5b9ba0a8a05fe043393
       _order: 0
       cache: {}
@@ -314,13 +314,15 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 19 May 2025 10:41:20 GMT
+            value: Tue, 03 Jun 2025 13:46:21 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
             value: chunked
           - name: connection
             value: close
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -336,15 +338,13 @@ log:
             value: DENY
           - name: x-xss-protection
             value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
         headersSize: 1363
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-05-19T10:41:19.395Z
-      time: 702
+      startedDateTime: 2025-06-03T13:46:21.191Z
+      time: 638
       timings:
         blocked: -1
         connect: -1
@@ -352,7 +352,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 702
+        wait: 638
     - _id: ac0833d6081d2aba70061cf785f5698c
       _order: 0
       cache: {}
@@ -448,13 +448,15 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 19 May 2025 10:41:21 GMT
+            value: Tue, 03 Jun 2025 13:46:22 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
             value: chunked
           - name: connection
             value: close
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -470,15 +472,13 @@ log:
             value: DENY
           - name: x-xss-protection
             value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
         headersSize: 1363
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-05-19T10:41:20.601Z
-      time: 777
+      startedDateTime: 2025-06-03T13:46:22.307Z
+      time: 528
       timings:
         blocked: -1
         connect: -1
@@ -486,7 +486,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 777
+        wait: 528
     - _id: eb1e31d164ca7b5aa279737bd54aa6ca
       _order: 0
       cache: {}
@@ -581,10 +581,10 @@ log:
             value: 9.9-localbuild
         url: https://sourcegraph.com/.api/completions/code?client-name=jetbrains&client-version=9.9-localbuild
       response:
-        bodySize: 305
+        bodySize: 308
         content:
           mimeType: text/event-stream
-          size: 305
+          size: 308
           text: >+
             event: completion
 
@@ -598,13 +598,15 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 19 May 2025 10:41:22 GMT
+            value: Tue, 03 Jun 2025 13:46:23 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
             value: chunked
           - name: connection
             value: close
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -620,15 +622,13 @@ log:
             value: DENY
           - name: x-xss-protection
             value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
         headersSize: 1363
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-05-19T10:41:21.858Z
-      time: 692
+      startedDateTime: 2025-06-03T13:46:23.199Z
+      time: 702
       timings:
         blocked: -1
         connect: -1
@@ -636,7 +636,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 692
+        wait: 702
     - _id: f1b1cde4cd57488b7f0137954f0302f5
       _order: 0
       cache: {}
@@ -686,21 +686,28 @@ log:
             value: null
         url: https://sourcegraph.com/.api/graphql?CodeSearchEnabled
       response:
-        bodySize: 35
+        bodySize: 84
         content:
+          encoding: base64
           mimeType: application/json
-          size: 35
-          text: "{\"data\":{\"codeSearchEnabled\":true}}"
+          size: 84
+          text: "[\"H4sIAAAAAAAA/wEjANz/eyJkYXRhIjp7ImNvZGVTZWFyY2hFbmFibGVkIjp0cnVlfX1eA\
+            z40IwAAAA==\"]"
+          textDecoded:
+            data:
+              codeSearchEnabled: true
         cookies: []
         headers:
           - name: date
-            value: Mon, 19 May 2025 10:41:18 GMT
+            value: Tue, 03 Jun 2025 13:46:20 GMT
           - name: content-type
             value: application/json
-          - name: content-length
-            value: "35"
+          - name: transfer-encoding
+            value: chunked
           - name: connection
             value: close
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -716,15 +723,15 @@ log:
             value: DENY
           - name: x-xss-protection
             value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1365
+          - name: content-encoding
+            value: gzip
+        headersSize: 1397
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-05-19T10:41:18.484Z
-      time: 414
+      startedDateTime: 2025-06-03T13:46:20.142Z
+      time: 265
       timings:
         blocked: -1
         connect: -1
@@ -732,7 +739,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 414
+        wait: 265
     - _id: a376faab1c8a1993bb48c745757f0a4a
       _order: 0
       cache: {}
@@ -813,19 +820,23 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 19 May 2025 10:41:18 GMT
+            value: Tue, 03 Jun 2025 13:46:19 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
             value: chunked
           - name: connection
             value: close
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
             value: ""
           - name: cache-control
             value: no-cache, max-age=0
+          - name: content-encoding
+            value: gzip
           - name: vary
             value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
               X-Requested-With,Cookie
@@ -835,17 +846,13 @@ log:
             value: DENY
           - name: x-xss-protection
             value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-          - name: content-encoding
-            value: gzip
         headersSize: 1397
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-05-19T10:41:17.701Z
-      time: 390
+      startedDateTime: 2025-06-03T13:46:19.615Z
+      time: 305
       timings:
         blocked: -1
         connect: -1
@@ -853,7 +860,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 390
+        wait: 305
     - _id: 0484c4d780805faf3dd3ddabae814640
       _order: 0
       cache: {}
@@ -907,30 +914,38 @@ log:
             value: null
         url: https://sourcegraph.com/.api/graphql?CurrentSiteCodyLlmConfiguration
       response:
-        bodySize: 139
+        bodySize: 136
         content:
           encoding: base64
           mimeType: application/json
-          size: 139
+          size: 136
           text: "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqzixJBdHJ+SmVPj6+zvl5aZnppUWJJZn5eWD53MSiE\
-            uf8vJLUipLwzLyU/HIlK6WUzOLEpJzUFKXa2tpaAAAAAP//\",\"AwArMNn0TAAAAA==\
-            \"]"
+            uf8vJLUipLwzLyU/HIlK6WUzOLEpJzUFKXa2tpaAAAAAP//AwArMNn0TAAAAA==\"]"
+          textDecoded:
+            data:
+              site:
+                codyLLMConfiguration:
+                  smartContextWindow: disabled
         cookies: []
         headers:
           - name: date
-            value: Mon, 19 May 2025 10:41:18 GMT
+            value: Tue, 03 Jun 2025 13:46:19 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
             value: chunked
           - name: connection
             value: close
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
             value: ""
           - name: cache-control
             value: no-cache, max-age=0
+          - name: content-encoding
+            value: gzip
           - name: vary
             value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
               X-Requested-With,Cookie
@@ -940,17 +955,13 @@ log:
             value: DENY
           - name: x-xss-protection
             value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-          - name: content-encoding
-            value: gzip
         headersSize: 1397
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-05-19T10:41:17.736Z
-      time: 381
+      startedDateTime: 2025-06-03T13:46:19.663Z
+      time: 256
       timings:
         blocked: -1
         connect: -1
@@ -958,7 +969,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 381
+        wait: 256
     - _id: e141c56e63809042300db9bf8551d492
       _order: 0
       cache: {}
@@ -1027,19 +1038,23 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 19 May 2025 10:41:18 GMT
+            value: Tue, 03 Jun 2025 13:46:19 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
             value: chunked
           - name: connection
             value: close
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
             value: ""
           - name: cache-control
             value: no-cache, max-age=0
+          - name: content-encoding
+            value: gzip
           - name: vary
             value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
               X-Requested-With,Cookie
@@ -1049,17 +1064,13 @@ log:
             value: DENY
           - name: x-xss-protection
             value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-          - name: content-encoding
-            value: gzip
         headersSize: 1397
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-05-19T10:41:17.720Z
-      time: 369
+      startedDateTime: 2025-06-03T13:46:19.642Z
+      time: 277
       timings:
         blocked: -1
         connect: -1
@@ -1067,7 +1078,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 369
+        wait: 277
     - _id: 5b9030a4e18d1e000c71d6000a7cef6f
       _order: 0
       cache: {}
@@ -1158,19 +1169,23 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 19 May 2025 10:41:16 GMT
+            value: Tue, 03 Jun 2025 13:46:18 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
             value: chunked
           - name: connection
             value: close
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
             value: ""
           - name: cache-control
             value: no-cache, max-age=0
+          - name: content-encoding
+            value: gzip
           - name: vary
             value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
               X-Requested-With,Cookie
@@ -1180,17 +1195,13 @@ log:
             value: DENY
           - name: x-xss-protection
             value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-          - name: content-encoding
-            value: gzip
         headersSize: 1397
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-05-19T10:41:16.075Z
-      time: 388
+      startedDateTime: 2025-06-03T13:46:17.638Z
+      time: 1124
       timings:
         blocked: -1
         connect: -1
@@ -1198,7 +1209,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 388
+        wait: 1124
     - _id: aef0c9fe7483280d9c05ac8e97e37571
       _order: 0
       cache: {}
@@ -1277,19 +1288,23 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 19 May 2025 10:41:18 GMT
+            value: Tue, 03 Jun 2025 13:46:20 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
             value: chunked
           - name: connection
             value: close
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
             value: ""
           - name: cache-control
             value: no-cache, max-age=0
+          - name: content-encoding
+            value: gzip
           - name: vary
             value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
               X-Requested-With,Cookie
@@ -1299,17 +1314,13 @@ log:
             value: DENY
           - name: x-xss-protection
             value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-          - name: content-encoding
-            value: gzip
         headersSize: 1397
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-05-19T10:41:17.753Z
-      time: 470
+      startedDateTime: 2025-06-03T13:46:19.686Z
+      time: 476
       timings:
         blocked: -1
         connect: -1
@@ -1317,7 +1328,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 470
+        wait: 476
     - _id: 4504fab53d7cb602861f73dc2aa883d2
       _order: 0
       cache: {}
@@ -1369,30 +1380,37 @@ log:
             value: null
         url: https://sourcegraph.com/.api/graphql?SiteProductVersion
       response:
-        bodySize: 139
+        bodySize: 136
         content:
           encoding: base64
           mimeType: application/json
-          size: 139
-          text: "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqzixJBdEFRfkppcklYalFxZn5eUpWSsZGZkbmRvFGB\
-            kamugamuobm8WZ6xromyeaGiUap5slpialKtbW1AAAAAP//\",\"AwCeTAnrSQAAAA==\
-            \"]"
+          size: 136
+          text: "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqzixJBdEFRfkppcklYalFxZn5eUpWSsZGFmbGhvFGB\
+            kamugZmugbG8WZ6JrrGFsYmJiYWxskpqaZKtbW1AAAAAP//AwAuyJ3ASQAAAA==\"]"
+          textDecoded:
+            data:
+              site:
+                productVersion: 328631_2025-06-03_6.4-38344483cde5
         cookies: []
         headers:
           - name: date
-            value: Mon, 19 May 2025 10:41:18 GMT
+            value: Tue, 03 Jun 2025 13:46:19 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
             value: chunked
           - name: connection
             value: close
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
             value: ""
           - name: cache-control
             value: no-cache, max-age=0
+          - name: content-encoding
+            value: gzip
           - name: vary
             value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
               X-Requested-With,Cookie
@@ -1402,17 +1420,13 @@ log:
             value: DENY
           - name: x-xss-protection
             value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-          - name: content-encoding
-            value: gzip
         headersSize: 1397
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-05-19T10:41:17.676Z
-      time: 414
+      startedDateTime: 2025-06-03T13:46:19.574Z
+      time: 317
       timings:
         blocked: -1
         connect: -1
@@ -1420,7 +1434,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 414
+        wait: 317
     - _id: fd0fee4687419870bc82cba9d1023319
       _order: 0
       cache: {}
@@ -1488,19 +1502,23 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 19 May 2025 10:41:18 GMT
+            value: Tue, 03 Jun 2025 13:46:20 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
             value: chunked
           - name: connection
             value: close
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
             value: ""
           - name: cache-control
             value: no-cache, max-age=0
+          - name: content-encoding
+            value: gzip
           - name: vary
             value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
               X-Requested-With,Cookie
@@ -1510,17 +1528,13 @@ log:
             value: DENY
           - name: x-xss-protection
             value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-          - name: content-encoding
-            value: gzip
         headersSize: 1397
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-05-19T10:41:18.466Z
-      time: 434
+      startedDateTime: 2025-06-03T13:46:20.120Z
+      time: 246
       timings:
         blocked: -1
         connect: -1
@@ -1528,7 +1542,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 434
+        wait: 246
     - _id: fbb23499ae0eec5c2e188687b429531b
       _order: 0
       cache: {}
@@ -1560,76 +1574,81 @@ log:
         queryString: []
         url: https://sourcegraph.com/.api/modelconfig/supported-models.json
       response:
-        bodySize: 3682
+        bodySize: 3846
         content:
           encoding: base64
           mimeType: text/plain; charset=utf-8
-          size: 3682
-          text: "[\"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\
-            SPQ=\",\"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\
-            7EGGSj9EaYAzCCWMUrx59qI7QQ==\",\"Cb/Xaw9miDylm43FK6jvl2/+J4xK3rSdvz\
-            teSMbiZeyi8nr2RvbiJJbvU1pPZE/h4KyyS7djWZb1q/Or8/8BADhXVLqvwAAA\"]"
+          size: 3846
+          text: "[\"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\
+            LmA=\",\"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\
+            31udkwAGBgYGBm7AwPmOEiSyZA==\",\"yE2WY1jPKstSGFxRo56RW7Kj70BMrKYEEy\
+            o4aRBsmxOxu9XRjqLLNRUviRi35xmj0O15hjjcWeupkKiZCwYklpDomgOxvxuHnTV66\
+            AZ0RLJQ5Llj+YSixZOUOXMkJgmPmZ+j0kX2bY5KPyRZQHMIpTyK6Prei+6IpOLRrDya\
+            EDbN1gvLr64/LlYiMB4pPikfUBqnlE6Xn5Of4/zkdTQk6bpsWnxPadWRHQcH5ye7dDu\
+            WZVk/Oz87/x8ARw3vfb3PAAA=\"]"
         cookies: []
         headers:
           - name: date
-            value: Mon, 19 May 2025 10:41:19 GMT
+            value: Tue, 03 Jun 2025 13:46:21 GMT
           - name: content-type
             value: text/plain; charset=utf-8
           - name: transfer-encoding
             value: chunked
           - name: connection
             value: close
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -1647,15 +1666,13 @@ log:
             value: DENY
           - name: x-xss-protection
             value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
         headersSize: 1406
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-05-19T10:41:18.911Z
-      time: 440
+      startedDateTime: 2025-06-03T13:46:20.426Z
+      time: 684
       timings:
         blocked: -1
         connect: -1
@@ -1663,6 +1680,6 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 440
+        wait: 684
   pages: []
   version: "1.2"

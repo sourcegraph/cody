@@ -9,14 +9,16 @@ describe('parseEvents', () => {
             {
                 completion: 'Hello',
                 stopReason: undefined,
-                content: [{ text: 'Hello', type: 'text' }],
+                content: [],
                 type: 'completion',
+                usage: undefined,
             },
             {
                 completion: 'Hello, world!',
                 stopReason: undefined,
-                content: [{ text: 'Hello, world!', type: 'text' }],
+                content: [],
                 type: 'completion',
+                usage: undefined,
             },
         ],
         remainingBuffer: dedent`event: done
@@ -61,5 +63,38 @@ describe('parseEvents', () => {
                        `
             )
         ).toStrictEqual(helloWorldEvents)
+    })
+
+    it('parseEvents with usage data', () => {
+        const builder = CompletionsResponseBuilder.fromUrl(
+            'https://sourcegraph.com/.api/completions/stream?api-version=2'
+        )
+        expect(
+            parseEvents(
+                builder,
+                dedent`event: completion
+                       data: {"usage":{"completion_tokens":8,"prompt_tokens":15,"total_tokens":23}}
+
+                       event: done
+                       data: {}
+                       `
+            )
+        ).toStrictEqual({
+            events: [
+                {
+                    completion: '',
+                    stopReason: undefined,
+                    content: [],
+                    type: 'completion',
+                    usage: {
+                        completionTokens: 8,
+                        promptTokens: 15,
+                        totalTokens: 23,
+                    },
+                },
+            ],
+            remainingBuffer: dedent`event: done
+                                    data: {}`,
+        })
     })
 })

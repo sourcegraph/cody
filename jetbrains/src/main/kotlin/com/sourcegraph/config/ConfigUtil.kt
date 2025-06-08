@@ -210,7 +210,12 @@ object ConfigUtil {
         if (value == null) {
           config.withoutPath(key)
         } else {
-          config.withValue(key, ConfigValueFactory.fromAnyRef(value))
+          try {
+            val subconfig = ConfigFactory.parseString(value)
+            config.withValue(key, subconfig.root())
+          } catch (e: Exception) {
+            config.withValue(key, ConfigValueFactory.fromAnyRef(value))
+          }
         }
     setCustomConfiguration(project, updatedConfig.root().render(renderOptions))
   }
@@ -219,7 +224,7 @@ object ConfigUtil {
   fun setCustomConfiguration(project: Project, customConfigContent: String): VirtualFile? {
     val config = ConfigFactory.parseString(customConfigContent).resolve()
     val content = config.root().render(renderOptions)
-    return CodyEditorUtil.createFileOrScratchFromUntitled(
+    return CodyEditorUtil.createFileOrUseExisting(
         project, getSettingsFile(project).toUri().toString(), content = content, overwrite = true)
         ?: run {
           logger.warn("Could not create settings file")

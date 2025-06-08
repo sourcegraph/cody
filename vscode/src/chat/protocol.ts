@@ -284,13 +284,24 @@ export interface ExtensionTranscriptMessage {
     messages: SerializedChatMessage[]
     isMessageInProgress: boolean
     chatID: string
+    tokenUsage?:
+        | {
+              completionTokens?: number | null | undefined
+              promptTokens?: number | null | undefined
+              totalTokens?: number | null | undefined
+          }
+        | null
+        | undefined
 }
 
 /**
  * The subset of configuration that is visible to the webview.
  */
 export interface ConfigurationSubsetForWebview
-    extends Pick<ClientConfiguration, 'experimentalNoodle' | 'internalDebugContext'>,
+    extends Pick<
+            ClientConfiguration,
+            'experimentalNoodle' | 'internalDebugContext' | 'internalDebugTokenUsage'
+        >,
         Pick<AuthCredentials, 'serverEndpoint'> {
     smartApply: boolean
     hasEditCapability: boolean

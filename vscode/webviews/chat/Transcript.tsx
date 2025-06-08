@@ -40,11 +40,14 @@ import * as uuid from 'uuid'
 import { isCodeSearchContextItem } from '../../src/context/openctx/codeSearch'
 import { useClientActionListener } from '../client/clientState'
 import { useLocalStorage } from '../components/hooks'
+
+import { TokenUsageDisplay } from './TokenUsageDisplay'
 import { AgenticContextCell } from './cells/agenticCell/AgenticContextCell'
 import ApprovalCell from './cells/agenticCell/ApprovalCell'
 import { ContextCell } from './cells/contextCell/ContextCell'
 import { ToolStatusCell } from './cells/toolCell/ToolStatusCell'
 import { LoadingDots } from './components/LoadingDots'
+import { ScrollbarMarkers } from './components/ScrollbarMarkers'
 import { LastEditorContext } from './context'
 
 interface TranscriptProps {
@@ -52,6 +55,14 @@ interface TranscriptProps {
     setActiveChatContext: (context: Context | undefined) => void
     chatEnabled: boolean
     transcript: ChatMessage[]
+    tokenUsage?:
+        | {
+              completionTokens?: number | null | undefined
+              promptTokens?: number | null | undefined
+              totalTokens?: number | null | undefined
+          }
+        | null
+        | undefined
     models: Model[]
     userInfo: UserAccountInfo
     messageInProgress: ChatMessage | null
@@ -69,6 +80,7 @@ export const Transcript: FC<TranscriptProps> = props => {
         setActiveChatContext,
         chatEnabled,
         transcript,
+        tokenUsage,
         models,
         userInfo,
         messageInProgress,
@@ -85,6 +97,9 @@ export const Transcript: FC<TranscriptProps> = props => {
     )
 
     const lastHumanEditorRef = useRef<PromptEditorRefAPI | null>(null)
+    const userHasScrolledRef = useRef(false)
+    const lastScrollTopRef = useRef(0)
+    const scrollContainerRef = useRef<HTMLDivElement | null>(null)
 
     useEffect(() => {
         const handleCopyEvent = (event: ClipboardEvent) => {
@@ -103,70 +118,114 @@ export const Transcript: FC<TranscriptProps> = props => {
     }, [])
 
     useEffect(() => {
-        if (messageInProgress?.text) {
-            // Auto-scroll to keep the growing content visible
-            const scrollableContainer = document.querySelector('[data-scrollable]')
-            if (scrollableContainer && scrollableContainer instanceof HTMLElement) {
-                // Calculate space needed for the input box
-                const lastEditor = document.querySelector<HTMLElement>(
-                    '[data-lexical-editor]:last-of-type'
-                )
-                const editorHeight = lastEditor ? lastEditor.getBoundingClientRect().height + 32 : 120 // Add some padding
+        const scrollableContainer = document.querySelector('[data-scrollable]')
+        if (!scrollableContainer || !(scrollableContainer instanceof HTMLElement)) {
+            return
+        }
 
-                // Scroll to the bottom minus the height of the editor
-                const scrollHeight = scrollableContainer.scrollHeight
-                scrollableContainer.scrollTop =
-                    scrollHeight - scrollableContainer.clientHeight + editorHeight
+        const handleScroll = () => {
+            const currentScrollTop = scrollableContainer.scrollTop
+            const scrollHeight = scrollableContainer.scrollHeight
+            const clientHeight = scrollableContainer.clientHeight
+            const isAtBottom = Math.abs(scrollHeight - clientHeight - currentScrollTop) < 10
+
+            // Reset user scroll flag if they scroll back to bottom
+            if (isAtBottom) {
+                userHasScrolledRef.current = false
+            } else {
+                // Check if user manually scrolled (not from auto-scroll)
+                const expectedAutoScrollTop = lastScrollTopRef.current
+                if (Math.abs(currentScrollTop - expectedAutoScrollTop) > 5) {
+                    userHasScrolledRef.current = true
+                }
             }
         }
-    }, [messageInProgress?.text]) // Re-run this effect when the message text changes during streaming
+
+        scrollableContainer.addEventListener('scroll', handleScroll)
+        return () => {
+            scrollableContainer.removeEventListener('scroll', handleScroll)
+        }
+    }, [])
+
+    useEffect(() => {
+        if (messageInProgress?.text) {
+            // Only auto-scroll if user hasn't manually scrolled away
+            if (!userHasScrolledRef.current) {
+                const scrollableContainer = document.querySelector('[data-scrollable]')
+                if (scrollableContainer && scrollableContainer instanceof HTMLElement) {
+                    // Calculate space needed for the input box
+                    const lastEditor = document.querySelector<HTMLElement>(
+                        '[data-lexical-editor]:last-of-type'
+                    )
+                    const editorHeight = lastEditor
+                        ? lastEditor.getBoundingClientRect().height + 32
+                        : 120
+
+                    // Scroll to the bottom minus the height of the editor
+                    const scrollHeight = scrollableContainer.scrollHeight
+                    const targetScrollTop =
+                        scrollHeight - scrollableContainer.clientHeight + editorHeight
+                    lastScrollTopRef.current = targetScrollTop
+                    scrollableContainer.scrollTop = targetScrollTop
+                }
+            }
+        } else {
+            // Reset user scroll flag when message streaming stops
+            userHasScrolledRef.current = false
+        }
+    }, [messageInProgress?.text])
 
     return (
-        <div
-            className={clsx(' tw-px-8 tw-py-4 tw-flex tw-flex-col tw-gap-4', {
-                'tw-flex-grow': transcript.length > 0,
-            })}
-            data-scrollable="true"
-        >
-            <LastEditorContext.Provider value={lastHumanEditorRef}>
-                {interactions.map((interaction, i) => (
-                    <TranscriptInteraction
-                        key={interaction.humanMessage.index}
-                        activeChatContext={activeChatContext}
-                        setActiveChatContext={setActiveChatContext}
-                        models={models}
-                        chatEnabled={chatEnabled}
-                        userInfo={userInfo}
-                        interaction={interaction}
-                        guardrails={guardrails}
-                        postMessage={postMessage}
-                        copyButtonOnSubmit={copyButtonOnSubmit}
-                        insertButtonOnSubmit={insertButtonOnSubmit}
-                        isFirstInteraction={i === 0}
-                        isLastInteraction={i === interactions.length - 1}
-                        isLastSentInteraction={
-                            i === interactions.length - 2 && interaction.assistantMessage !== null
-                        }
-                        priorAssistantMessageIsLoading={Boolean(
-                            messageInProgress && interactions.at(i - 1)?.assistantMessage?.isLoading
-                        )}
-                        smartApply={smartApply}
-                        editorRef={
-                            // Only set the editor ref for:
-                            // 1. The first unsent agentic message (index -1), or
-                            // 2. The last interaction in the transcript
-                            // And only when there's no message currently in progress
-                            ((interaction.humanMessage.intent === 'agentic' &&
-                                interaction.humanMessage.index === -1) ||
-                                i === interactions.length - 1) &&
-                            !messageInProgress
-                                ? lastHumanEditorRef
-                                : undefined
-                        }
-                    />
-                ))}
-            </LastEditorContext.Provider>
-        </div>
+        <>
+            <div
+                ref={scrollContainerRef}
+                className={clsx(' tw-px-8 tw-py-4 tw-flex tw-flex-col tw-gap-4', {
+                    'tw-flex-grow': transcript.length > 0,
+                })}
+                data-scrollable="true"
+            >
+                <LastEditorContext.Provider value={lastHumanEditorRef}>
+                    {interactions.map((interaction, i) => (
+                        <TranscriptInteraction
+                            key={interaction.humanMessage.index}
+                            activeChatContext={activeChatContext}
+                            setActiveChatContext={setActiveChatContext}
+                            tokenUsage={tokenUsage}
+                            models={models}
+                            chatEnabled={chatEnabled}
+                            userInfo={userInfo}
+                            interaction={interaction}
+                            guardrails={guardrails}
+                            postMessage={postMessage}
+                            copyButtonOnSubmit={copyButtonOnSubmit}
+                            insertButtonOnSubmit={insertButtonOnSubmit}
+                            isFirstInteraction={i === 0}
+                            isLastInteraction={i === interactions.length - 1}
+                            isLastSentInteraction={
+                                i === interactions.length - 2 && interaction.assistantMessage !== null
+                            }
+                            priorAssistantMessageIsLoading={Boolean(
+                                messageInProgress && interactions.at(i - 1)?.assistantMessage?.isLoading
+                            )}
+                            smartApply={smartApply}
+                            editorRef={
+                                // Only set the editor ref for:
+                                // 1. The first unsent agentic message (index -1), or
+                                // 2. The last interaction in the transcript
+                                // And only when there's no message currently in progress
+                                ((interaction.humanMessage.intent === 'agentic' &&
+                                    interaction.humanMessage.index === -1) ||
+                                    i === interactions.length - 1) &&
+                                !messageInProgress
+                                    ? lastHumanEditorRef
+                                    : undefined
+                            }
+                        />
+                    ))}
+                </LastEditorContext.Provider>
+            </div>
+            <ScrollbarMarkers />
+        </>
     )
 }
 
@@ -261,6 +320,7 @@ export type RegeneratingCodeBlockState = {
 const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
     const {
         interaction: { humanMessage, assistantMessage },
+        tokenUsage,
         models,
         isFirstInteraction,
         isLastInteraction,
@@ -598,6 +658,12 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
         <>
             {/* Show loading state on the last interaction */}
             {isLastInteraction && priorAssistantMessageIsLoading && <LoadingDots />}
+            {/* Show token usage above and aligned to the right for followup editor */}
+            {humanMessage.isUnsentFollowup && tokenUsage && (
+                <div className="tw-flex tw-justify-end tw-mb-2">
+                    <TokenUsageDisplay tokenUsage={tokenUsage} />
+                </div>
+            )}
             <HumanMessageCell
                 key={humanMessage.index}
                 userInfo={userInfo}

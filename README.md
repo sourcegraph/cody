@@ -26,7 +26,7 @@ _&mdash; or &mdash;_
 
 ## What is Cody?
 
-Cody is an open-source AI coding assistant that helps you understand, write, and fix code faster. It uses advanced search to pull context from both local and remote codebases so that you can use context about APIs, symbols, and usage patterns from across your codebase at any scale, all from within your IDE. Cody works with the newest and best large language models, including Claude 3.5 Sonnet and GPT-4o.
+Cody is an open-source AI coding assistant that helps you understand, write, and fix code faster. It uses advanced search to pull context from both local and remote codebases so that you can use context about APIs, symbols, and usage patterns from across your codebase at any scale, all from within your IDE. Cody works with the newest and best large language models, including the latest Claude Sonnet 4 and GPT-4o.
 
 Cody is available for [VS Code](https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai), [JetBrains](https://plugins.jetbrains.com/plugin/9682-cody-ai-by-sourcegraph), and [on the web](https://sourcegraph.com/cody/chat).
 
@@ -38,8 +38,8 @@ See [cody.dev](https://about.sourcegraph.com/cody?utm_source=github.com&utm_medi
 - **Autocomplete:** Cody makes single-line and multi-line suggestions as you type, speeding up your coding and shortcutting the need for you to hunt down function and variable names as you type.
 - **Inline Edit:** Ask Cody to fix or refactor code from anywhere in a file.
 - **Prompts:** Cody has quick, customizable prompts for common actions. Simply highlight a code snippet and run a prompt, like “Document code,” “Explain code,” or “Generate Unit Tests.”
-- **Swappable LLMs:** Support for Anthropic Claude 3.5 Sonnet, OpenAI GPT-4o, Mixtral, Gemini 1.5, and more.
-  - **Free LLM usage included** Cody Free gives you access to Anthropic Claude 3.5 Sonnet and other models. It's available for individual devs on both personal and work code, subject to reasonable per-user rate limits ([more info](#usage)).
+- **Swappable LLMs:** Support for Anthropic Claude Sonnet 4, OpenAI GPT-4o, Mixtral, Gemini 1.5, and more.
+  - **Free LLM usage included** Cody Free gives you access to Anthropic Claude Sonnet 4 and other models. It's available for individual devs on both personal and work code, subject to reasonable per-user rate limits ([more info](#usage)).
 
 ## Demo
 

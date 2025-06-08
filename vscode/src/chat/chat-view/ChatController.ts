@@ -125,7 +125,6 @@ import { openExternalLinks } from '../../services/utils/workspace-action'
 import { TestSupport } from '../../test-support'
 import type { MessageErrorType } from '../MessageProvider'
 import { DeepCodyAgent } from '../agentic/DeepCody'
-import { toolboxManager } from '../agentic/ToolboxManager'
 import { getMentionMenuData } from '../context/chatContext'
 import { getEmptyOrDefaultContextObservable } from '../initialContext'
 import type {
@@ -143,6 +142,7 @@ import { CodeBlockRegenerator, type RegenerateRequestParams } from './CodeBlockR
 import type { ContextRetriever } from './ContextRetriever'
 import { InitDoer } from './InitDoer'
 import { getChatPanelTitle, isCodyTesting } from './chat-helpers'
+import { DeepCodyHandler } from './handlers/DeepCodyHandler'
 import { OmniboxTelemetry } from './handlers/OmniboxTelemetry'
 import { getAgent } from './handlers/registry'
 import { getPromptsMigrationInfo, startPromptsMigration } from './prompts-migration'
@@ -202,6 +202,14 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
     private readonly guardrails: SourcegraphGuardrailsClient
 
     private readonly startTokenReceiver: typeof startTokenReceiver | undefined
+
+    private lastKnownTokenUsage:
+        | {
+              completionTokens?: number
+              promptTokens?: number
+              totalTokens?: number
+          }
+        | undefined = undefined
 
     private disposables: vscode.Disposable[] = []
 
@@ -656,7 +664,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
 
     private async getConfigForWebview(): Promise<ConfigurationSubsetForWebview & LocalEnv> {
         const { configuration, auth } = await currentResolvedConfig()
-        const [experimentalPromptEditorEnabled, internalAgenticChatEnabled] = await Promise.all([
+        const [experimentalPromptEditorEnabled, internalAgentModeEnabled] = await Promise.all([
             firstValueFrom(
                 featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyExperimentalPromptEditor)
             ),
@@ -664,7 +672,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.NextAgenticChatInternal)
             ),
         ])
-        const experimentalAgenticChatEnabled = internalAgenticChatEnabled && isS2(auth.serverEndpoint)
+        const experimentalAgenticChatEnabled = internalAgentModeEnabled && isS2(auth.serverEndpoint)
         const sidebarViewOnly = this.extensionClient.capabilities?.webviewNativeConfig?.view === 'single'
         const isEditorViewType = this.webviewPanelOrView?.viewType === 'cody.editorPanel'
         const webviewType = isEditorViewType && !sidebarViewOnly ? 'editor' : 'sidebar'
@@ -684,6 +692,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             webviewType,
             multipleWebviewsEnabled: !sidebarViewOnly,
             internalDebugContext: configuration.internalDebugContext,
+            internalDebugTokenUsage: configuration.internalDebugTokenUsage,
             allowEndpointChange: configuration.overrideServerEndpoint === undefined,
             experimentalPromptEditorEnabled,
             experimentalAgenticChatEnabled,
@@ -801,7 +810,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     text: inputText,
                     editorState,
                     intent: manuallySelectedIntent,
-                    agent: toolboxManager.isAgenticChatEnabled(model) ? DeepCodyAgent.id : undefined,
+                    agent: DeepCodyHandler.isAgenticChatEnabled() ? DeepCodyAgent.id : undefined,
                 })
 
                 this.setCustomChatTitle(requestID, inputText, signal)
@@ -1471,6 +1480,15 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             messages.push(messageInProgress)
         }
 
+        const lastTokenUsage = messages
+            .slice()
+            .reverse()
+            .find(msg => msg.tokenUsage)?.tokenUsage
+
+        if (lastTokenUsage !== undefined) {
+            this.lastKnownTokenUsage = lastTokenUsage
+        }
+
         // We never await on postMessage, because it can sometimes hang indefinitely:
         // https://github.com/microsoft/vscode/issues/159431
         void this.postMessage({
@@ -1478,6 +1496,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             messages: messages.map(prepareChatMessage).map(serializeChatMessage),
             isMessageInProgress: !!messageInProgress,
             chatID: this.chatBuilder.sessionID,
+            tokenUsage: this.lastKnownTokenUsage,
         })
 
         this.syncPanelTitle()
@@ -1664,6 +1683,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         this.cancelSubmitOrEditOperation()
         const newModel = newChatModelFromSerializedChatTranscript(oldTranscript, undefined)
         this.chatBuilder = newModel
+        this.lastKnownTokenUsage = undefined
 
         this.postViewTranscript()
     }
@@ -1680,7 +1700,10 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             // Only try to save if authenticated because otherwise we wouldn't be showing a chat.
             const chat = this.chatBuilder.toSerializedChatTranscript()
             if (chat && authStatus.authenticated) {
-                await chatHistory.saveChat(authStatus, chat)
+                const shouldShowStorageWarning = await chatHistory.saveChat(authStatus, chat)
+                if (shouldShowStorageWarning) {
+                    this.postError(new Error('STORAGE_WARNING'), 'storage')
+                }
             }
         } catch (error) {
             logDebug('ChatController', 'Failed')
@@ -1715,6 +1738,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         // Only clear the session if session is not empty.
         if (!this.chatBuilder?.isEmpty()) {
             this.chatBuilder = new ChatBuilder(this.chatBuilder.selectedModel, undefined, chatMessages)
+            this.lastKnownTokenUsage = undefined
             this.postViewTranscript()
         }
     }

@@ -121,6 +121,8 @@ export function getConfiguration(
          */
         agenticContextExperimentalOptions: config.get(CONFIG_KEY.agenticContextExperimentalOptions, {}),
 
+        chatAgenticContext: config.get(CONFIG_KEY.chatAgenticContext, true),
+
         authExternalProviders: config.get(CONFIG_KEY.authExternalProviders, []),
 
         /**
@@ -133,6 +135,7 @@ export function getConfiguration(
         ),
         internalDebugContext: getHiddenSetting('internal.debug.context', false),
         internalDebugState: getHiddenSetting('internal.debug.state', false),
+        internalDebugTokenUsage: getHiddenSetting('internal.debug.tokenUsage', false),
 
         autocompleteAdvancedModel: getHiddenSetting('autocomplete.advanced.model', null),
         autocompleteExperimentalGraphContext: getHiddenSetting<

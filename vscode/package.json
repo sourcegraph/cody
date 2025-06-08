@@ -3,11 +3,11 @@
   "name": "cody-ai",
   "private": true,
   "displayName": "Cody: AI Code Assistant",
-  "version": "1.96.0",
+  "version": "1.100.0",
   "publisher": "sourcegraph",
   "license": "Apache-2.0",
   "icon": "resources/sourcegraph.png",
-  "description": "Sourcegraph’s AI code assistant goes beyond individual dev productivity, helping enterprises achieve consistency and quality at scale with AI. & codebase context to help you write code faster. Cody brings you autocomplete, chat, and commands, so you can generate code, write unit tests, create docs, and explain complex code using AI. Choose from the best LLMs, including GPT-4o and Claude 3.5 Sonnet.",
+  "description": "Sourcegraph’s AI code assistant goes beyond individual dev productivity, helping enterprises achieve consistency and quality at scale with AI. & codebase context to help you write code faster. Cody brings you autocomplete, chat, and commands, so you can generate code, write unit tests, create docs, and explain complex code using AI. Choose from the best LLMs, including GPT-4o and Claude Sonnet 4.",
   "scripts": {
     "build:root": "pnpm -C .. run -s build",
     "postinstall": "pnpm download-wasm && pnpm download-fonts && pnpm copy-win-ca-roots",
@@ -1129,13 +1129,19 @@
         },
         "cody.mcpServers": {
           "type": "object",
-          "markdownDescription": "Configuration for MCP servers to use with agentic chat.",
+          "markdownDescription": "Configuration for MCP servers to use with agentic chat. Enterprise instance with feature flag enabled required.",
           "default": {}
         },
         "cody.internal.unstable": {
           "order": 999,
           "type": "boolean",
           "markdownDescription": "[INTERNAL ONLY] Enable all unstable experimental features.",
+          "default": false
+        },
+        "cody.internal.debug.tokenUsage": {
+          "order": 999,
+          "type": "boolean",
+          "markdownDescription": "[INTERNAL ONLY] Enable debug display of token usage in chat messages.",
           "default": false
         },
         "cody.net.mode": {
@@ -1166,6 +1172,13 @@
           "value": false,
           "markdownDeprecationMessage": "**Deprecated** Enable Agents like Deep Cody to autonomously execute shell commands in your environment for context. Enable with caution as mistakes are possible.",
           "deprecationMessage": "Deprecated. Now configurable via UI."
+        },
+        "cody.chat.agenticContext": {
+          "order": 13,
+          "title": "Agentic context for chat",
+          "type": "boolean",
+          "markdownDescription": "Enable agentic context for chat.",
+          "default": true
         },
         "cody.agentic.context.experimentalOptions": {
           "type": "object",

@@ -30,7 +30,7 @@ test('chat assistant response code buttons', async ({ page, nap, sidebar }, test
     await expect(assistantRow).toContainText('Hello! Here is a code snippet:')
     await expect(assistantRow).toContainText('def fib(n):')
 
-    const copyButton = assistantRow.getByTitle('Copy Code')
+    const copyButton = assistantRow.getByRole('button', { name: 'Copy' })
     const smartApplyButton = assistantRow.getByRole('button', { name: 'Apply' })
     const actionsDropdown = assistantRow.getByRole('button', { name: 'More Actions' })
     expect(await copyButton.count()).toBe(1)
