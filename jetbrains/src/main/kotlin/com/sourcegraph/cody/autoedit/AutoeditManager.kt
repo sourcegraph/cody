@@ -7,7 +7,6 @@ import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.EditorFactory
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vcs.ex.Range
-import com.sourcegraph.cody.agent.protocol_extensions.toOffsetRange
 import com.sourcegraph.cody.agent.protocol_generated.AutocompleteEditItem
 
 @Service(Service.Level.PROJECT)
@@ -21,6 +20,23 @@ class AutoeditManager(private val project: Project) {
   var disposable: Disposable = Disposable {}
     private set
 
+  private fun findOriginalTextInDocument(editor: Editor, item: AutocompleteEditItem): Int? {
+    val document = editor.document
+    val text = document.text
+
+    val searchStartOffset = document.getLineStartOffset(item.range.start.line.toInt())
+    val matchIndex = text.indexOf(item.originalText, searchStartOffset)
+    val acceptableLinesPositionDifference = 3
+
+    if (matchIndex == -1 ||
+        text.substring(searchStartOffset, matchIndex).lines().count() >
+            acceptableLinesPositionDifference) {
+      return null
+    }
+
+    return matchIndex
+  }
+
   fun showAutoedit(editor: Editor, item: AutocompleteEditItem) {
     val virtualFile = editor.virtualFile ?: return
 
@@ -33,33 +49,31 @@ class AutoeditManager(private val project: Project) {
     }
     disposable = myDisposable
 
-    val offsetRange = item.range.toOffsetRange(editor.document) ?: return
-
-    val beforeInsertion = editor.document.text.take(offsetRange.first)
-    val afterInsertion = editor.document.text.drop(offsetRange.second)
+    val startOffset = findOriginalTextInDocument(editor, item) ?: return
+    val replacementRange = IntRange(startOffset, startOffset + item.originalText.length - 1)
 
     val document =
         EditorFactory.getInstance()
-            .createDocument(beforeInsertion + item.insertText + afterInsertion)
-
-    // Calculate the ending line after insertion
-    // by adding the number of newlines in the inserted text
-    val endLineAfterInsert =
-        item.range.start.line.toInt() + item.insertText.count { it == '\n' } - 1
+            .createDocument(editor.document.text.replaceRange(replacementRange, item.insertText))
 
     // Range parameters explanation:
     // - line1, line2: Define the line range in the main editor document [line1, line2)
     // - vcsLine1, vcsLine2: Define the line range in the popup editor document [vcsLine1, vcsLine2)
-    // The +1 adjustments are needed because Range uses exclusive end bounds [,)
-    // while our ranges use inclusive [,].
-    // For single-line edits (no newlines), we ensure vcsLine2 > vcsLine1
-    // to properly display the edit.
+    // vcs.ex.Range uses exclusive end bounds [,) while our ranges use inclusive [,].
+
+    val startLine = document.getLineNumber(startOffset) + 1
+    // Excluding shared suffix from the diff increases diff visibility
+    val sharedSuffixLinesCount = item.originalText.commonSuffixWith(item.insertText).lines().size
+    val originalLinesCount = item.originalText.lines().count()
+    val replacementLinesCount = item.insertText.lines().count()
+
     val range =
         Range(
-            line1 = item.range.start.line.toInt(), // Starting line in main editor
-            line2 = item.range.end.line.toInt() + 1, // Ending line in main editor (exclusive)
-            vcsLine1 = item.range.start.line.toInt(), // Starting line in popup editor
-            vcsLine2 = endLineAfterInsert + 1) // Ending line in popup editor (exclusive)
+            line1 = startLine,
+            line2 = startLine + originalLinesCount - sharedSuffixLinesCount,
+            vcsLine1 = startLine,
+            vcsLine2 = startLine + replacementLinesCount - sharedSuffixLinesCount)
+
     AutoeditLineStatusMarkerPopupRenderer(
             AutoeditTracker(
                 project,
