@@ -125,10 +125,6 @@ describe('AgentWorkspaceConfiguration', () => {
                         model: 'claude-2',
                         provider: 'anthropic',
                     },
-                    enabled: true,
-                },
-                suggestions: {
-                    mode: 'autocomplete',
                 },
                 codebase: 'test-repo',
                 customHeaders: {
