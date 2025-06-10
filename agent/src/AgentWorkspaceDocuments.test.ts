@@ -45,6 +45,21 @@ describe('AgentWorkspaceDocuments', () => {
         expect(document2.protocolDocument.visibleRange).toBeUndefined()
     })
 
+    it('renameDocument', () => {
+        const document = documents.loadAndUpdateDocument(
+            ProtocolTextDocumentWithUri.from(uri, { content: 'hello' })
+        )
+        expect(document.getText()).toBe('hello')
+        expect(documents.getDocument(uri)?.getText()).toBe('hello')
+
+        const newUri = vscode.Uri.parse('file:///bar.txt')
+        documents.renameDocument(uri, newUri)
+
+        expect(documents.getDocument(uri)).toBeUndefined()
+        const renamedDoc = documents.getDocument(newUri)
+        expect(renamedDoc?.getText()).toBe('hello')
+    })
+
     it('incremental sync', () => {
         const document = documents.loadAndUpdateDocument(
             ProtocolTextDocumentWithUri.from(uri, { content: ['abc', 'def', 'ghi'].join('\n') })

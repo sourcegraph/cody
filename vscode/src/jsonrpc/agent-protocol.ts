@@ -342,6 +342,8 @@ export type ClientNotifications = {
     'textDocument/didFocus': [{ uri: string }]
     // The user saved the file to disk.
     'textDocument/didSave': [{ uri: string }]
+    // The user renamed a document.
+    'textDocument/didRename': [{ oldUri: string; newUri: string }]
     // The user closed the editor tab for the given document.
     // Only the 'uri' property is required, other properties are ignored.
     'textDocument/didClose': [ProtocolTextDocument]
