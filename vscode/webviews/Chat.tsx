@@ -14,7 +14,6 @@ import {
 import styles from './Chat.module.css'
 import { Transcript, focusLastHumanMessageEditor } from './chat/Transcript'
 import { WelcomeMessage } from './chat/components/WelcomeMessage'
-import { WelcomeNotice } from './chat/components/WelcomeNotice'
 import { ScrollDown } from './components/ScrollDown'
 import type { View } from './tabs'
 import type { VSCodeWrapper } from './utils/VSCodeApi'
@@ -232,17 +231,18 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                 chatEnabled={chatEnabled}
                 postMessage={postMessage}
                 guardrails={guardrails}
+                welcomeContent={
+                    transcript.length === 0 && showWelcomeMessage ? (
+                        <WelcomeMessage
+                            IDE={userInfo.IDE}
+                            setView={setView}
+                            isWorkspacesUpgradeCtaEnabled={
+                                isWorkspacesUpgradeCtaEnabled && userInfo.IDE !== CodyIDE.Web
+                            }
+                        />
+                    ) : undefined
+                }
             />
-            {transcript.length === 0 && showWelcomeMessage && (
-                <>
-                    <WelcomeMessage IDE={userInfo.IDE} setView={setView} />
-                    {isWorkspacesUpgradeCtaEnabled && userInfo.IDE !== CodyIDE.Web && (
-                        <div className="tw-absolute tw-bottom-0 tw-left-1/2 tw-transform tw--translate-x-1/2 tw-w-[95%] tw-z-1 tw-mb-4 tw-max-h-1/2">
-                            <WelcomeNotice />
-                        </div>
-                    )}
-                </>
-            )}
 
             {scrollableParent && (
                 <ScrollDown scrollableParent={scrollableParent} onClick={handleScrollDownClick} />

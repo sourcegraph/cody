@@ -72,6 +72,7 @@ interface TranscriptProps {
     copyButtonOnSubmit: CodeBlockActionsProps['copyButtonOnSubmit']
     insertButtonOnSubmit?: CodeBlockActionsProps['insertButtonOnSubmit']
     smartApply?: CodeBlockActionsProps['smartApply']
+    welcomeContent?: React.ReactNode
 }
 
 export const Transcript: FC<TranscriptProps> = props => {
@@ -89,11 +90,42 @@ export const Transcript: FC<TranscriptProps> = props => {
         copyButtonOnSubmit,
         insertButtonOnSubmit,
         smartApply,
+        welcomeContent,
     } = props
 
     const interactions = useMemo(
         () => transcriptToInteractionPairs(transcript, messageInProgress),
         [transcript, messageInProgress]
+    )
+
+    // Extract common props to reduce duplication
+    const commonTranscriptProps = useMemo(
+        () => ({
+            activeChatContext,
+            setActiveChatContext,
+            tokenUsage,
+            models,
+            chatEnabled,
+            userInfo,
+            guardrails,
+            postMessage,
+            copyButtonOnSubmit,
+            insertButtonOnSubmit,
+            smartApply,
+        }),
+        [
+            activeChatContext,
+            setActiveChatContext,
+            tokenUsage,
+            models,
+            chatEnabled,
+            userInfo,
+            guardrails,
+            postMessage,
+            copyButtonOnSubmit,
+            insertButtonOnSubmit,
+            smartApply,
+        ]
     )
 
     const lastHumanEditorRef = useRef<PromptEditorRefAPI | null>(null)
@@ -175,57 +207,97 @@ export const Transcript: FC<TranscriptProps> = props => {
         }
     }, [messageInProgress?.text])
 
+    // Separate the last interaction if it's an unsent followup (input box) AND not the first interaction
+    const lastInteraction = interactions[interactions.length - 1]
+    const isLastInteractionUnsent = lastInteraction?.humanMessage.isUnsentFollowup
+    const isFirstInteraction = interactions.length === 1 && isLastInteractionUnsent
+    const shouldRenderInputAtBottom = isLastInteractionUnsent && !isFirstInteraction
+    const chatInteractions = shouldRenderInputAtBottom ? interactions.slice(0, -1) : interactions
+    const inputInteraction = shouldRenderInputAtBottom ? lastInteraction : null
+
+    // Memoize fade styles to prevent unnecessary re-renders
+    const fadeStyles = useMemo(
+        () => ({
+            maskImage: inputInteraction
+                ? 'linear-gradient(to bottom, black 0%, black calc(100% - var(--cody-fade-height, 20px)), transparent 100%)'
+                : undefined,
+            WebkitMaskImage: inputInteraction
+                ? 'linear-gradient(to bottom, black 0%, black calc(100% - var(--cody-fade-height, 20px)), transparent 100%)'
+                : undefined,
+        }),
+        [inputInteraction]
+    )
+
+    // Helper to determine if welcome content should be shown
+    const shouldShowWelcomeContent = transcript.length === 0
+
     return (
-        <>
+        <div className="tw-flex tw-flex-col tw-h-full tw-px-8 tw-py-4 tw-gap-4">
             <div
                 ref={scrollContainerRef}
-                className={clsx(' tw-px-8 tw-py-4 tw-flex tw-flex-col tw-gap-4', {
+                className={clsx('tw-flex tw-flex-col tw-flex-1 tw-overflow-y-auto tw-relative', {
                     'tw-flex-grow': transcript.length > 0,
                 })}
                 data-scrollable="true"
+                style={fadeStyles}
             >
                 <LastEditorContext.Provider value={lastHumanEditorRef}>
-                    {interactions.map((interaction, i) => (
+                    {/* Show welcome content top when starting a new conversation */}
+                    {chatInteractions.map((interaction, i) => (
                         <TranscriptInteraction
                             key={interaction.humanMessage.index}
-                            activeChatContext={activeChatContext}
-                            setActiveChatContext={setActiveChatContext}
-                            tokenUsage={tokenUsage}
-                            models={models}
-                            chatEnabled={chatEnabled}
-                            userInfo={userInfo}
+                            {...commonTranscriptProps}
                             interaction={interaction}
-                            guardrails={guardrails}
-                            postMessage={postMessage}
-                            copyButtonOnSubmit={copyButtonOnSubmit}
-                            insertButtonOnSubmit={insertButtonOnSubmit}
                             isFirstInteraction={i === 0}
-                            isLastInteraction={i === interactions.length - 1}
+                            isLastInteraction={!inputInteraction && i === chatInteractions.length - 1}
                             isLastSentInteraction={
-                                i === interactions.length - 2 && interaction.assistantMessage !== null
+                                i === chatInteractions.length - 1 &&
+                                interaction.assistantMessage !== null
                             }
                             priorAssistantMessageIsLoading={Boolean(
-                                messageInProgress && interactions.at(i - 1)?.assistantMessage?.isLoading
+                                messageInProgress &&
+                                    chatInteractions.at(i - 1)?.assistantMessage?.isLoading
                             )}
-                            smartApply={smartApply}
+                            editorRef={undefined} // Input editor is handled separately
+                        />
+                    ))}
+                    {/* Show loading dots after the last message in scrollable area */}
+                    {messageInProgress && chatInteractions.length > 0 && <LoadingDots />}
+                    {/* Show welcome content bottom when starting a new conversation */}
+                    {shouldShowWelcomeContent && welcomeContent}
+                </LastEditorContext.Provider>
+            </div>
+
+            {/* Fixed input box at the bottom */}
+            {inputInteraction && (
+                <div className="tw-bg-[var(--vscode-input-background)]">
+                    <LastEditorContext.Provider value={lastHumanEditorRef}>
+                        <TranscriptInteraction
+                            key={inputInteraction.humanMessage.index}
+                            {...commonTranscriptProps}
+                            interaction={inputInteraction}
+                            isFirstInteraction={interactions.length === 1}
+                            isLastInteraction={true}
+                            isLastSentInteraction={false}
+                            priorAssistantMessageIsLoading={Boolean(
+                                messageInProgress &&
+                                    chatInteractions.length > 0 &&
+                                    chatInteractions.at(-1)?.assistantMessage?.isLoading
+                            )}
                             editorRef={
-                                // Only set the editor ref for:
-                                // 1. The first unsent agentic message (index -1), or
-                                // 2. The last interaction in the transcript
-                                // And only when there's no message currently in progress
-                                ((interaction.humanMessage.intent === 'agentic' &&
-                                    interaction.humanMessage.index === -1) ||
-                                    i === interactions.length - 1) &&
+                                (inputInteraction.humanMessage.intent === 'agentic' &&
+                                    inputInteraction.humanMessage.index === -1) ||
                                 !messageInProgress
                                     ? lastHumanEditorRef
                                     : undefined
                             }
                         />
-                    ))}
-                </LastEditorContext.Provider>
-            </div>
+                    </LastEditorContext.Provider>
+                </div>
+            )}
+
             <ScrollbarMarkers />
-        </>
+        </div>
     )
 }
 
@@ -656,8 +728,6 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
 
     return (
         <>
-            {/* Show loading state on the last interaction */}
-            {isLastInteraction && priorAssistantMessageIsLoading && <LoadingDots />}
             {/* Show token usage above and aligned to the right for followup editor */}
             {humanMessage.isUnsentFollowup && tokenUsage && (
                 <div className="tw-flex tw-justify-end tw-mb-2">
@@ -679,11 +749,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                 isLastInteraction={isLastInteraction}
                 isEditorInitiallyFocused={isLastInteraction}
                 editorRef={humanEditorRef}
-                className={
-                    !isFirstInteraction && isLastInteraction
-                        ? 'tw-sticky tw-bottom-0 tw-mt-auto tw-bg-[var(--vscode-input-background)]'
-                        : 'tw-transition'
-                }
+                className="tw-transition"
                 intent={selectedIntent}
                 manuallySelectIntent={setSelectedIntent}
             />
