@@ -1,4 +1,4 @@
-import { type IsIgnored, contextFiltersProvider } from '@sourcegraph/cody-shared'
+import { ContextFiltersProvider, type IsIgnored, contextFiltersProvider } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 import { type CodyIgnoreFeature, showCodyIgnoreNotification } from './notification'
 
@@ -148,7 +148,7 @@ async function readIgnoreFile(uri: vscode.Uri): Promise<IgnoreRecord> {
 /**
  * Dispose all file watchers and clear caches. Call this when the extension is deactivated.
  */
-export function disposeFileWatchers(): void {
+function disposeFileWatchers(): void {
     for (const watcher of fileWatchers.values()) {
         watcher.dispose()
     }
@@ -165,4 +165,21 @@ export async function isUriIgnoredByContextFilterWithNotification(
         showCodyIgnoreNotification(feature, isIgnored)
     }
     return isIgnored
+}
+
+/**
+ * Initialize the ContextFiltersProvider with exclude pattern getter.
+ * Returns a disposable that cleans up the configuration when disposed.
+ */
+export function initializeContextFiltersProvider(): vscode.Disposable {
+    // Set up exclude pattern getter for ContextFiltersProvider
+    ContextFiltersProvider.excludePatternGetter = {
+        getExcludePattern,
+        getWorkspaceFolder: (uri: vscode.Uri) => vscode.workspace.getWorkspaceFolder(uri) ?? null,
+    }
+
+    // Return disposable that cleans up the configuration
+    return {
+        dispose: disposeFileWatchers,
+    }
 }

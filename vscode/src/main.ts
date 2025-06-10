@@ -6,7 +6,6 @@ import {
     type ChatClient,
     ClientConfigSingleton,
     type ConfigurationInput,
-    ContextFiltersProvider,
     DOTCOM_URL,
     type DefaultCodyCommands,
     FeatureFlag,
@@ -62,7 +61,7 @@ import { SourcegraphRemoteFileProvider } from './chat/chat-view/sourcegraphRemot
 import { MCPManager } from './chat/chat-view/tools/MCPManager'
 import { ACCOUNT_LIMITS_INFO_URL, ACCOUNT_UPGRADE_URL, CODY_FEEDBACK_URL } from './chat/protocol'
 import { CodeActionProvider } from './code-actions/CodeActionProvider'
-import { getExcludePattern } from './cody-ignore/context-filter'
+import { initializeContextFiltersProvider } from './cody-ignore/context-filter'
 import { commandControllerInit, executeCodyCommand } from './commands/CommandsController'
 import { GhostHintDecorator } from './commands/GhostHintDecorator'
 import {
@@ -344,11 +343,7 @@ const register = async (
         )
     )
 
-    // Import exclude pattern from editor settings to ContextFiltersProvider
-    ContextFiltersProvider.excludePatternGetter = {
-        getExcludePattern,
-        getWorkspaceFolder: (uri: vscode.Uri) => vscode.workspace.getWorkspaceFolder(uri) ?? null,
-    }
+    disposables.push(initializeContextFiltersProvider())
 
     return vscode.Disposable.from(...disposables)
 }
