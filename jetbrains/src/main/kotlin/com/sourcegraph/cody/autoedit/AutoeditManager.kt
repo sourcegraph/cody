@@ -9,8 +9,7 @@ import com.intellij.openapi.editor.EditorFactory
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vcs.ex.Range
 import com.sourcegraph.cody.agent.protocol_generated.AutocompleteEditItem
-import kotlin.math.max
-import kotlin.math.min
+import kotlin.math.abs
 
 @Service(Service.Level.PROJECT)
 class AutoeditManager(private val project: Project) {
@@ -28,16 +27,13 @@ class AutoeditManager(private val project: Project) {
     val text = document.text
     val searchStartOffset = document.getLineStartOffset(item.range.start.line.toInt())
 
-    val matchOffset = text.indexOf(item.originalText, searchStartOffset).takeIf { it != -1 }
-      ?: text.lastIndexOf(item.originalText, searchStartOffset).takeIf { it != -1 }
-      ?: return null
-
-    val distanceInLines = text.substring(
-      min(searchStartOffset, matchOffset),
-      max(searchStartOffset, matchOffset)
-    ).lines().count()
+    val matchOffset =
+        text.indexOf(item.originalText, searchStartOffset).takeIf { it != -1 }
+            ?: text.lastIndexOf(item.originalText, searchStartOffset).takeIf { it != -1 }
+            ?: return null
 
     val acceptableLinesPositionDifference = 3
+    val distanceInLines = abs(document.getLineNumber(matchOffset) - item.range.start.line)
     return if (distanceInLines <= acceptableLinesPositionDifference) matchOffset else null
   }
 
@@ -46,8 +42,8 @@ class AutoeditManager(private val project: Project) {
     val replacementRange = IntRange(startOffset, startOffset + item.originalText.length - 1)
 
     val vcsDocument =
-      EditorFactory.getInstance()
-        .createDocument(editor.document.text.replaceRange(replacementRange, item.insertText))
+        EditorFactory.getInstance()
+            .createDocument(editor.document.text.replaceRange(replacementRange, item.insertText))
 
     // Range parameters explanation:
     // - line1, line2: Define the line range in the main editor document [line1, line2)
@@ -60,11 +56,12 @@ class AutoeditManager(private val project: Project) {
     val originalLinesCount = item.originalText.lines().count()
     val replacementLinesCount = item.insertText.lines().count()
 
-    return vcsDocument to Range(
-        line1 = startLine,
-        line2 = startLine + originalLinesCount - sharedSuffixLinesCount,
-        vcsLine1 = startLine,
-        vcsLine2 = startLine + replacementLinesCount - sharedSuffixLinesCount)
+    return vcsDocument to
+        Range(
+            line1 = startLine,
+            line2 = startLine + originalLinesCount - sharedSuffixLinesCount,
+            vcsLine1 = startLine,
+            vcsLine2 = startLine + replacementLinesCount - sharedSuffixLinesCount)
   }
 
   fun showAutoedit(editor: Editor, item: AutocompleteEditItem) {
