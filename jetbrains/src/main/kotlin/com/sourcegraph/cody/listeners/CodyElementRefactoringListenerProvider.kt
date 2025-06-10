@@ -17,10 +17,9 @@ class CodyElementListenerProvider : RefactoringElementListenerProvider {
 
       private fun notifyAgent(newPsiElement: PsiElement) {
         val uriAfter = vscNormalizedUriFor(newPsiElement.containingFile.virtualFile)
-        if (uriBefore == null || uriAfter == null) {
+        if (uriBefore == null || uriAfter == null || uriBefore == uriAfter) {
           return
         }
-        assert(uriBefore != uriAfter)
         withAgent(element.project) { agent ->
           agent.server.textDocument_didRename(TextDocument_DidRenameParams(uriBefore, uriAfter))
         }
