@@ -4,6 +4,19 @@ This is a log of all notable changes to Cody for VS Code.
 
 <!--- {/_ CHANGELOG_START _/} -->
 
+## 1.102.0
+
+### Reverts
+
+  There were no reverts for this release
+
+### Uncategorized
+
+#### Others
+
+- [Backport M102] Changelog for 1.102 [#8048](https://github.com/sourcegraph/cody/pull/8048)
+
+
 ## 1.102
 
 ### Features
