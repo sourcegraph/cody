@@ -41,6 +41,7 @@ import { isCodeSearchContextItem } from '../../src/context/openctx/codeSearch'
 import { useClientActionListener } from '../client/clientState'
 import { useLocalStorage } from '../components/hooks'
 
+import { ScrollDown } from '../components/ScrollDown'
 import { TokenUsageDisplay } from './TokenUsageDisplay'
 import { AgenticContextCell } from './cells/agenticCell/AgenticContextCell'
 import ApprovalCell from './cells/agenticCell/ApprovalCell'
@@ -131,7 +132,8 @@ export const Transcript: FC<TranscriptProps> = props => {
     const lastHumanEditorRef = useRef<PromptEditorRefAPI | null>(null)
     const userHasScrolledRef = useRef(false)
     const lastScrollTopRef = useRef(0)
-    const scrollContainerRef = useRef<HTMLDivElement | null>(null)
+    const [scrollableContainer, setScrollableContainer] = useState<HTMLDivElement | null>(null)
+    const [isAtBottom, setIsAtBottom] = useState(false)
 
     useEffect(() => {
         const handleCopyEvent = (event: ClipboardEvent) => {
@@ -150,16 +152,22 @@ export const Transcript: FC<TranscriptProps> = props => {
     }, [])
 
     useEffect(() => {
-        const scrollableContainer = document.querySelector('[data-scrollable]')
         if (!scrollableContainer || !(scrollableContainer instanceof HTMLElement)) {
             return
         }
 
-        const handleScroll = () => {
+        const computeIsAtBottom = () => {
             const currentScrollTop = scrollableContainer.scrollTop
             const scrollHeight = scrollableContainer.scrollHeight
             const clientHeight = scrollableContainer.clientHeight
-            const isAtBottom = Math.abs(scrollHeight - clientHeight - currentScrollTop) < 10
+            return Math.abs(scrollHeight - clientHeight - currentScrollTop) < 10
+        }
+
+        setIsAtBottom(computeIsAtBottom())
+
+        const handleScroll = () => {
+            const isAtBottom = computeIsAtBottom()
+            setIsAtBottom(isAtBottom)
 
             // Reset user scroll flag if they scroll back to bottom
             if (isAtBottom) {
@@ -167,7 +175,7 @@ export const Transcript: FC<TranscriptProps> = props => {
             } else {
                 // Check if user manually scrolled (not from auto-scroll)
                 const expectedAutoScrollTop = lastScrollTopRef.current
-                if (Math.abs(currentScrollTop - expectedAutoScrollTop) > 5) {
+                if (Math.abs(scrollableContainer.scrollTop - expectedAutoScrollTop) > 5) {
                     userHasScrolledRef.current = true
                 }
             }
@@ -177,35 +185,29 @@ export const Transcript: FC<TranscriptProps> = props => {
         return () => {
             scrollableContainer.removeEventListener('scroll', handleScroll)
         }
-    }, [])
+    }, [scrollableContainer])
 
     useEffect(() => {
         if (messageInProgress?.text) {
             // Only auto-scroll if user hasn't manually scrolled away
-            if (!userHasScrolledRef.current) {
-                const scrollableContainer = document.querySelector('[data-scrollable]')
-                if (scrollableContainer && scrollableContainer instanceof HTMLElement) {
-                    // Calculate space needed for the input box
-                    const lastEditor = document.querySelector<HTMLElement>(
-                        '[data-lexical-editor]:last-of-type'
-                    )
-                    const editorHeight = lastEditor
-                        ? lastEditor.getBoundingClientRect().height + 32
-                        : 120
+            if (!userHasScrolledRef.current && scrollableContainer) {
+                // Calculate space needed for the input box
+                const lastEditor = document.querySelector<HTMLElement>(
+                    '[data-lexical-editor]:last-of-type'
+                )
+                const editorHeight = lastEditor ? lastEditor.getBoundingClientRect().height + 32 : 120
 
-                    // Scroll to the bottom minus the height of the editor
-                    const scrollHeight = scrollableContainer.scrollHeight
-                    const targetScrollTop =
-                        scrollHeight - scrollableContainer.clientHeight + editorHeight
-                    lastScrollTopRef.current = targetScrollTop
-                    scrollableContainer.scrollTop = targetScrollTop
-                }
+                // Scroll to the bottom minus the height of the editor
+                const scrollHeight = scrollableContainer.scrollHeight
+                const targetScrollTop = scrollHeight - scrollableContainer.clientHeight + editorHeight
+                lastScrollTopRef.current = targetScrollTop
+                scrollableContainer.scrollTop = targetScrollTop
             }
         } else {
             // Reset user scroll flag when message streaming stops
             userHasScrolledRef.current = false
         }
-    }, [messageInProgress?.text])
+    }, [messageInProgress?.text, scrollableContainer])
 
     // Separate the last interaction if it's an unsent followup (input box) AND not the first interaction
     const lastInteraction = interactions[interactions.length - 1]
@@ -228,13 +230,17 @@ export const Transcript: FC<TranscriptProps> = props => {
         [inputInteraction]
     )
 
-    // Helper to determine if welcome content should be shown
-    const shouldShowWelcomeContent = transcript.length === 0
+    const scrollTotheBottom = useCallback(() => {
+        scrollableContainer?.scroll({
+            top: scrollableContainer?.scrollHeight,
+            behavior: 'smooth',
+        })
+    }, [scrollableContainer])
 
     return (
         <div className="tw-flex tw-flex-col tw-h-full tw-px-8 tw-py-4 tw-gap-4">
             <div
-                ref={scrollContainerRef}
+                ref={setScrollableContainer}
                 className={clsx('tw-flex tw-flex-col tw-flex-1 tw-overflow-y-auto tw-relative', {
                     'tw-flex-grow': transcript.length > 0,
                 })}
@@ -264,9 +270,13 @@ export const Transcript: FC<TranscriptProps> = props => {
                     {/* Show loading dots after the last message in scrollable area */}
                     {messageInProgress && chatInteractions.length > 0 && <LoadingDots />}
                     {/* Show welcome content bottom when starting a new conversation */}
-                    {shouldShowWelcomeContent && welcomeContent}
+                    {transcript.length === 0 && welcomeContent}
                 </LastEditorContext.Provider>
             </div>
+
+            {scrollableContainer && <ScrollbarMarkers scrollContainer={scrollableContainer} />}
+
+            {!isFirstInteraction && !isAtBottom && <ScrollDown onClick={scrollTotheBottom} />}
 
             {/* Fixed input box at the bottom */}
             {inputInteraction && (
@@ -295,8 +305,6 @@ export const Transcript: FC<TranscriptProps> = props => {
                     </LastEditorContext.Provider>
                 </div>
             )}
-
-            <ScrollbarMarkers />
         </div>
     )
 }
@@ -819,8 +827,8 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
 
 // TODO(sqs): Do this the React-y way.
 export function focusLastHumanMessageEditor(): void {
-    const elements = document.querySelectorAll<HTMLElement>('[data-lexical-editor]')
-    const lastEditor = elements.item(elements.length - 1)
+    const lastEditor = document.querySelector<HTMLElement>('[data-lexical-editor]:last-of-type')
+    console.log(lastEditor)
     if (!lastEditor) {
         return
     }

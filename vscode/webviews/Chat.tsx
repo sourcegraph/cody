@@ -12,9 +12,9 @@ import {
 } from '@sourcegraph/cody-shared'
 
 import styles from './Chat.module.css'
-import { Transcript, focusLastHumanMessageEditor } from './chat/Transcript'
+import { Transcript } from './chat/Transcript'
 import { WelcomeMessage } from './chat/components/WelcomeMessage'
-import { ScrollDown } from './components/ScrollDown'
+
 import type { View } from './tabs'
 import type { VSCodeWrapper } from './utils/VSCodeApi'
 import { SpanManager } from './utils/spanManager'
@@ -36,7 +36,6 @@ interface ChatboxProps {
     models: Model[]
     vscodeAPI: Pick<VSCodeWrapper, 'postMessage' | 'onMessage'>
     guardrails: Guardrails
-    scrollableParent?: HTMLElement | null
     showWelcomeMessage?: boolean
     showIDESnippetActions?: boolean
     setView: (view: View) => void
@@ -51,7 +50,6 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     vscodeAPI,
     chatEnabled = true,
     guardrails,
-    scrollableParent,
     showWelcomeMessage = true,
     showIDESnippetActions = true,
     setView,
@@ -198,16 +196,6 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
         }
     }, [])
 
-    const handleScrollDownClick = useCallback(() => {
-        // Scroll to the bottom instead of focus input for unsent message
-        // it's possible that we just want to scroll to the bottom in case of
-        // welcome message screen
-        if (transcript.length === 0) {
-            return
-        }
-
-        focusLastHumanMessageEditor()
-    }, [transcript])
     const [activeChatContext, setActiveChatContext] = useState<Context>()
 
     return (
@@ -243,10 +231,6 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                     ) : undefined
                 }
             />
-
-            {scrollableParent && (
-                <ScrollDown scrollableParent={scrollableParent} onClick={handleScrollDownClick} />
-            )}
         </>
     )
 }

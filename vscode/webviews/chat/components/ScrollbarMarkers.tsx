@@ -10,7 +10,9 @@ function debounce<T extends (...args: any[]) => any>(func: T, wait: number): T {
     }) as T
 }
 
-type ScrollbarMarkersProps = Record<string, never>
+type ScrollbarMarkersProps = {
+    scrollContainer: HTMLDivElement
+}
 
 interface Marker {
     type: 'user'
@@ -32,10 +34,11 @@ const MARKER_CONFIG = {
     BOTTOM_SCROLL_TOLERANCE_PX: 5,
 } as const
 
-export const ScrollbarMarkers: FC<ScrollbarMarkersProps> = () => {
+export const ScrollbarMarkers: FC<ScrollbarMarkersProps> = props => {
     const [markers, setMarkers] = useState<Marker[]>([])
     const [containerRect, setContainerRect] = useState<DOMRect | null>(null)
     const [isScrollbarVisible, setIsScrollbarVisible] = useState(false)
+    const { scrollContainer } = props
 
     // Derived state for visibility conditions
     const canShowMarkers = useMemo(
@@ -67,21 +70,11 @@ export const ScrollbarMarkers: FC<ScrollbarMarkersProps> = () => {
 
     // Update container dimensions and check if content is scrollable
     const updateContainerDimensions = useCallback(() => {
-        // Find the actual scrollable container (TabContainer with data-scrollable)
-        const actualScrollContainer = document.querySelector('[data-scrollable]') as HTMLElement
-
-        if (!actualScrollContainer) {
-            setContainerRect(null)
-            setIsScrollbarVisible(false)
-            return
-        }
-
         try {
-            const newRect = actualScrollContainer.getBoundingClientRect()
+            const newRect = scrollContainer.getBoundingClientRect()
             // Check if content is scrollable (scrollbars are hidden with CSS but content can still scroll)
-            const isContentScrollable =
-                actualScrollContainer.scrollHeight > actualScrollContainer.clientHeight
-
+            const isContentScrollable = scrollContainer.scrollHeight > scrollContainer.clientHeight
+            console.log('isContentScrollable', isContentScrollable)
             setContainerRect(prevRect => {
                 if (
                     !prevRect ||
@@ -100,42 +93,38 @@ export const ScrollbarMarkers: FC<ScrollbarMarkersProps> = () => {
             setContainerRect(null)
             setIsScrollbarVisible(false)
         }
-    }, [])
+    }, [scrollContainer])
 
     // Find human message elements
     const findMessageElements = useCallback((): HTMLElement[] => {
         // Find the actual scrollable container (TabContainer with data-scrollable)
-        const actualScrollContainer = document.querySelector('[data-scrollable]') as HTMLElement
-        if (!actualScrollContainer) return []
-
         const elements = Array.from(
-            actualScrollContainer.querySelectorAll('[data-role="human"]')
+            scrollContainer.querySelectorAll('[data-role="human"]')
         ) as HTMLElement[]
 
         return elements.filter(element => element.getAttribute('data-role') === 'human')
-    }, [])
+    }, [scrollContainer])
 
     // Calculate marker position
-    const calculateMarkerPosition = useCallback((element: HTMLElement, scrollHeight: number): number => {
-        // Find the actual scrollable container (TabContainer with data-scrollable)
-        const actualScrollContainer = document.querySelector('[data-scrollable]') as HTMLElement
-        if (!actualScrollContainer) return 0
+    const calculateMarkerPosition = useCallback(
+        (element: HTMLElement, scrollHeight: number): number => {
+            const parent = element.offsetParent as HTMLElement | null
+            const elementTop =
+                parent === scrollContainer
+                    ? element.offsetTop
+                    : element.offsetTop + (parent?.offsetTop || 0)
 
-        const parent = element.offsetParent as HTMLElement | null
-        const elementTop =
-            parent === actualScrollContainer
-                ? element.offsetTop
-                : element.offsetTop + (parent?.offsetTop || 0)
+            const rawPosition = (elementTop / scrollHeight) * 100
+            const position =
+                MARKER_CONFIG.MARKER_MARGIN_PERCENT + rawPosition * MARKER_CONFIG.MARKER_SCALE_FACTOR
 
-        const rawPosition = (elementTop / scrollHeight) * 100
-        const position =
-            MARKER_CONFIG.MARKER_MARGIN_PERCENT + rawPosition * MARKER_CONFIG.MARKER_SCALE_FACTOR
-
-        return Math.min(
-            100 - MARKER_CONFIG.MARKER_MARGIN_PERCENT,
-            Math.max(MARKER_CONFIG.MARKER_MARGIN_PERCENT, position)
-        )
-    }, [])
+            return Math.min(
+                100 - MARKER_CONFIG.MARKER_MARGIN_PERCENT,
+                Math.max(MARKER_CONFIG.MARKER_MARGIN_PERCENT, position)
+            )
+        },
+        [scrollContainer]
+    )
 
     // Create markers from elements
     const createMarkersFromElements = useCallback(
@@ -175,10 +164,6 @@ export const ScrollbarMarkers: FC<ScrollbarMarkersProps> = () => {
     const updateMarkers = useMemo(
         () =>
             debounce(() => {
-                // Find the actual scrollable container (TabContainer with data-scrollable)
-                const actualScrollContainer = document.querySelector('[data-scrollable]') as HTMLElement
-                if (!actualScrollContainer) return
-
                 try {
                     updateContainerDimensions()
 
@@ -186,10 +171,11 @@ export const ScrollbarMarkers: FC<ScrollbarMarkersProps> = () => {
 
                     if (isScrollbarVisible) {
                         const messageElements = findMessageElements()
+                        console.log('messageElements', messageElements)
 
                         if (messageElements.length > 0) {
-                            const scrollHeight = actualScrollContainer.scrollHeight
-
+                            const scrollHeight = scrollContainer.scrollHeight
+                            console.log('scrollHeight', scrollHeight)
                             if (scrollHeight > 0) {
                                 newMarkers = createMarkersFromElements(messageElements, scrollHeight)
                             }
@@ -201,30 +187,34 @@ export const ScrollbarMarkers: FC<ScrollbarMarkersProps> = () => {
                     setMarkers([])
                 }
             }, MARKER_CONFIG.DEBOUNCE_UPDATE_MS),
-        [isScrollbarVisible, updateContainerDimensions, findMessageElements, createMarkersFromElements]
+        [
+            isScrollbarVisible,
+            updateContainerDimensions,
+            findMessageElements,
+            createMarkersFromElements,
+            scrollContainer,
+        ]
     )
 
     // Scroll to marker
     const scrollToMarker = useCallback(
         (index: number) => {
-            // Find the actual scrollable container (TabContainer with data-scrollable)
-            const actualScrollContainer = document.querySelector('[data-scrollable]') as HTMLElement
-            if (!actualScrollContainer || index < 0 || index >= markers.length) return
+            if (index < 0 || index >= markers.length) return
 
             try {
                 const marker = markers[index]
-                const messageElements = actualScrollContainer.querySelectorAll('[data-role="human"]')
+                const messageElements = scrollContainer.querySelectorAll('[data-role="human"]')
 
                 if (marker.elementIndex < messageElements.length) {
                     const targetElement = messageElements[marker.elementIndex] as HTMLElement
                     if (targetElement) {
                         const parent = targetElement.offsetParent as HTMLElement | null
                         const elementTop =
-                            parent === actualScrollContainer
+                            parent === scrollContainer
                                 ? targetElement.offsetTop
                                 : targetElement.offsetTop + (parent?.offsetTop || 0)
 
-                        actualScrollContainer.scrollTo({
+                        scrollContainer.scrollTo({
                             top: Math.max(0, elementTop - MARKER_CONFIG.SCROLL_OFFSET_PX),
                             behavior: 'smooth',
                         })
@@ -234,15 +224,11 @@ export const ScrollbarMarkers: FC<ScrollbarMarkersProps> = () => {
                 // Silently fail
             }
         },
-        [markers]
+        [markers, scrollContainer]
     )
 
     // Set up event listeners and observers
     useEffect(() => {
-        // Find the actual scrollable container (TabContainer with data-scrollable)
-        const actualScrollContainer = document.querySelector('[data-scrollable]') as HTMLElement
-        if (!actualScrollContainer) return
-
         updateContainerDimensions()
 
         // Resize observer with debouncing
@@ -251,7 +237,7 @@ export const ScrollbarMarkers: FC<ScrollbarMarkersProps> = () => {
                 try {
                     updateContainerDimensions()
                     // Skip updates when scrolled to bottom (likely from Skip to end)
-                    if (!isScrolledToBottom(actualScrollContainer)) {
+                    if (!isScrolledToBottom(scrollContainer)) {
                         updateMarkers()
                     }
                 } catch {
@@ -269,7 +255,7 @@ export const ScrollbarMarkers: FC<ScrollbarMarkersProps> = () => {
         // Scroll handler
         const handleScroll = () => {
             // Skip updates when scrolled to bottom (likely from Skip to end)
-            if (isScrolledToBottom(actualScrollContainer)) {
+            if (isScrolledToBottom(scrollContainer)) {
                 return
             }
             updateMarkers()
@@ -278,16 +264,16 @@ export const ScrollbarMarkers: FC<ScrollbarMarkersProps> = () => {
         // Mutation observer
         const mutationObserver = new MutationObserver(() => {
             // Skip updates when scrolled to bottom (likely from Skip to end)
-            if (!isScrolledToBottom(actualScrollContainer)) {
+            if (!isScrolledToBottom(scrollContainer)) {
                 updateMarkers()
             }
         })
 
         try {
-            resizeObserver.observe(actualScrollContainer)
+            resizeObserver.observe(scrollContainer)
             resizeObserver.observe(document.body)
-            actualScrollContainer.addEventListener('scroll', handleScroll, { passive: true })
-            mutationObserver.observe(actualScrollContainer, {
+            scrollContainer.addEventListener('scroll', handleScroll, { passive: true })
+            mutationObserver.observe(scrollContainer, {
                 childList: true,
                 subtree: true,
                 attributes: false,
@@ -301,13 +287,14 @@ export const ScrollbarMarkers: FC<ScrollbarMarkersProps> = () => {
 
         // Initial update
         updateMarkers()
+        console.log('update markers!')
 
         return () => {
             resizeObserver.disconnect()
             mutationObserver.disconnect()
-            actualScrollContainer.removeEventListener('scroll', handleScroll)
+            scrollContainer.removeEventListener('scroll', handleScroll)
         }
-    }, [updateContainerDimensions, updateMarkers, isScrolledToBottom])
+    }, [updateContainerDimensions, updateMarkers, isScrolledToBottom, scrollContainer])
 
     if (!canShowMarkers || !containerStyles) {
         return null
