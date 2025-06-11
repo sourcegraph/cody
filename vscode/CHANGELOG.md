@@ -4,6 +4,63 @@ This is a log of all notable changes to Cody for VS Code.
 
 <!--- {/_ CHANGELOG_START _/} -->
 
+## 1.102
+
+### Features
+
+#### Chat
+
+- optional data display [#8015](https://github.com/sourcegraph/cody/pull/8015)
+
+#### Cody
+
+- migrate feature flags evaluation to new batch api [#8006](https://github.com/sourcegraph/cody/pull/8006)
+
+### Fix
+
+#### Chat
+
+- chat transcript scrolling [#8020](https://github.com/sourcegraph/cody/pull/8020)
+
+#### Cody
+
+- allow users to add large files [#8016](https://github.com/sourcegraph/cody/pull/8016)
+
+### Chore
+
+#### Chat
+
+- clean up code on large file detection [#8032](https://github.com/sourcegraph/cody/pull/8032)
+- refactor parse.ts [#8029](https://github.com/sourcegraph/cody/pull/8029)
+
+#### Test
+
+- Skip flaky auth test on Ubuntu [#7997](https://github.com/sourcegraph/cody/pull/7997)
+
+### Refactor
+
+#### Chat
+
+- agentic context toolbox settings [#8009](https://github.com/sourcegraph/cody/pull/8009)
+
+### Reverts
+
+  There were no reverts for this release
+
+### Uncategorized
+
+#### Others
+
+- Changelog for 1.100.0 [#8033](https://github.com/sourcegraph/cody/pull/8033)
+- Changelog for 1.98.1 [#8025](https://github.com/sourcegraph/cody/pull/8025)
+- Unify inline edit architecture in VSC and other clients [#8023](https://github.com/sourcegraph/cody/pull/8023)
+- Split edit code between flow/model and UI (QuickPick) [#8013](https://github.com/sourcegraph/cody/pull/8013)
+- Remove duplicated parsed text as content [#8011](https://github.com/sourcegraph/cody/pull/8011)
+- Update `untilBuild` to `252.*` [#8010](https://github.com/sourcegraph/cody/pull/8010)
+- Chore: update model options from 3.5 Sonnet to Sonnet 4 [#7999](https://github.com/sourcegraph/cody/pull/7999)
+- Restoration of unit test generation, path normalization [#7765](https://github.com/sourcegraph/cody/pull/7765)
+
+
 ## 1.100.0
 
 ### Features
