@@ -459,7 +459,6 @@ export class ChatsController implements vscode.Disposable {
 
     private async renameHistory(args: { chatID: string; newName: string }): Promise<void> {
         const authStatus = currentAuthStatusAuthed()
-        // For single chat deletion
         await chatHistory.renameChat(authStatus, args.chatID, args.newName)
     }
 
