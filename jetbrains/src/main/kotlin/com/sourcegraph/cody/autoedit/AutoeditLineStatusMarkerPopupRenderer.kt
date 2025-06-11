@@ -64,8 +64,9 @@ class AutoeditLineStatusMarkerPopupRenderer(tracker: LineStatusTrackerI<*>) :
             .lines()
             .drop(range.line1)
             .take(range.line2 - range.line1)
-            .maxBy { it.length }
+            .maxByOrNull { it.length }
             ?.length ?: 0
+
     val logicalPosition = LogicalPosition(range.line1, column + 4)
 
     AutoeditLineStatusMarkerPopupPanel.showPopupAt(
