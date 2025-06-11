@@ -411,7 +411,7 @@ export const HistoryTabWithData: React.FC<HistoryTabProps & { chats: Lightweight
                             {isRenaming ? (
                                 <Button
                                     variant="outline"
-                                    title="Rename chat submit"
+                                    title="Enter to confirm or Escape to cancel"
                                     aria-label="rename-history-submit-button"
                                     className={styles.deleteButton}
                                     onClick={e => handleRenameSubmit(e, id)}
