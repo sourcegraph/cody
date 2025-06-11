@@ -99,36 +99,6 @@ export const Transcript: FC<TranscriptProps> = props => {
         [transcript, messageInProgress]
     )
 
-    // Extract common props to reduce duplication
-    const commonTranscriptProps = useMemo(
-        () => ({
-            activeChatContext,
-            setActiveChatContext,
-            tokenUsage,
-            models,
-            chatEnabled,
-            userInfo,
-            guardrails,
-            postMessage,
-            copyButtonOnSubmit,
-            insertButtonOnSubmit,
-            smartApply,
-        }),
-        [
-            activeChatContext,
-            setActiveChatContext,
-            tokenUsage,
-            models,
-            chatEnabled,
-            userInfo,
-            guardrails,
-            postMessage,
-            copyButtonOnSubmit,
-            insertButtonOnSubmit,
-            smartApply,
-        ]
-    )
-
     const lastHumanEditorRef = useRef<PromptEditorRefAPI | null>(null)
     const userHasScrolledRef = useRef(false)
     const lastScrollTopRef = useRef(0)
@@ -209,25 +179,17 @@ export const Transcript: FC<TranscriptProps> = props => {
         }
     }, [messageInProgress?.text, scrollableContainer])
 
-    // Separate the last interaction if it's an unsent followup (input box) AND not the first interaction
-    const lastInteraction = interactions[interactions.length - 1]
-    const isLastInteractionUnsent = lastInteraction?.humanMessage.isUnsentFollowup
-    const isFirstInteraction = interactions.length === 1 && isLastInteractionUnsent
-    const shouldRenderInputAtBottom = isLastInteractionUnsent && !isFirstInteraction
-    const chatInteractions = shouldRenderInputAtBottom ? interactions.slice(0, -1) : interactions
-    const inputInteraction = shouldRenderInputAtBottom ? lastInteraction : null
+    const inputInteractionAtTheBottom =
+        interactions.length > 1 ? interactions[interactions.length - 1] : null
 
-    // Memoize fade styles to prevent unnecessary re-renders
     const fadeStyles = useMemo(
         () => ({
-            maskImage: inputInteraction
-                ? 'linear-gradient(to bottom, black 0%, black calc(100% - var(--cody-fade-height, 20px)), transparent 100%)'
-                : undefined,
-            WebkitMaskImage: inputInteraction
-                ? 'linear-gradient(to bottom, black 0%, black calc(100% - var(--cody-fade-height, 20px)), transparent 100%)'
-                : undefined,
+            maskImage:
+                'linear-gradient(to bottom, black 0%, black calc(100% - var(--cody-fade-height, 20px)), transparent 100%)',
+            WebkitMaskImage:
+                'linear-gradient(to bottom, black 0%, black calc(100% - var(--cody-fade-height, 20px)), transparent 100%)',
         }),
-        [inputInteraction]
+        []
     )
 
     const scrollTotheBottom = useCallback(() => {
@@ -237,74 +199,93 @@ export const Transcript: FC<TranscriptProps> = props => {
         })
     }, [scrollableContainer])
 
+    // Helper function to render TranscriptInteraction with conditional wrapper
+    const renderTranscriptInteraction = useCallback(
+        (interaction: Interaction, i: number) => {
+            return (
+                <TranscriptInteraction
+                    key={interaction.humanMessage.index}
+                    activeChatContext={activeChatContext}
+                    setActiveChatContext={setActiveChatContext}
+                    tokenUsage={tokenUsage}
+                    models={models}
+                    chatEnabled={chatEnabled}
+                    userInfo={userInfo}
+                    guardrails={guardrails}
+                    postMessage={postMessage}
+                    copyButtonOnSubmit={copyButtonOnSubmit}
+                    insertButtonOnSubmit={insertButtonOnSubmit}
+                    smartApply={smartApply}
+                    interaction={interaction}
+                    isFirstInteraction={i === 0}
+                    isLastInteraction={i === interactions.length - 1}
+                    isLastSentInteraction={
+                        i === interactions.length - 2 && interaction.assistantMessage !== null
+                    }
+                    priorAssistantMessageIsLoading={Boolean(
+                        messageInProgress && interactions.at(i - 1)?.assistantMessage?.isLoading
+                    )}
+                    editorRef={
+                        (interaction.humanMessage.intent === 'agentic' &&
+                            interaction.humanMessage.index === -1) ||
+                        !messageInProgress
+                            ? lastHumanEditorRef
+                            : undefined
+                    }
+                />
+            )
+        },
+        [
+            activeChatContext,
+            setActiveChatContext,
+            tokenUsage,
+            models,
+            chatEnabled,
+            userInfo,
+            guardrails,
+            postMessage,
+            copyButtonOnSubmit,
+            insertButtonOnSubmit,
+            smartApply,
+            interactions,
+            messageInProgress,
+        ]
+    )
+
     return (
         <div className="tw-flex tw-flex-col tw-h-full tw-px-8 tw-py-4 tw-gap-4">
-            <div
-                ref={setScrollableContainer}
-                className={clsx('tw-flex tw-flex-col tw-flex-1 tw-overflow-y-auto tw-relative', {
-                    'tw-flex-grow': transcript.length > 0,
-                })}
-                data-scrollable="true"
-                style={fadeStyles}
-            >
-                <LastEditorContext.Provider value={lastHumanEditorRef}>
-                    {/* Show welcome content top when starting a new conversation */}
-                    {chatInteractions.map((interaction, i) => (
-                        <TranscriptInteraction
-                            key={interaction.humanMessage.index}
-                            {...commonTranscriptProps}
-                            interaction={interaction}
-                            isFirstInteraction={i === 0}
-                            isLastInteraction={!inputInteraction && i === chatInteractions.length - 1}
-                            isLastSentInteraction={
-                                i === chatInteractions.length - 1 &&
-                                interaction.assistantMessage !== null
-                            }
-                            priorAssistantMessageIsLoading={Boolean(
-                                messageInProgress &&
-                                    chatInteractions.at(i - 1)?.assistantMessage?.isLoading
+            <LastEditorContext.Provider value={lastHumanEditorRef}>
+                <>
+                    <div
+                        ref={setScrollableContainer}
+                        className={clsx('tw-flex tw-flex-col tw-flex-1 tw-overflow-y-auto tw-relative', {
+                            'tw-flex-grow': transcript.length > 0,
+                        })}
+                        data-scrollable="true"
+                        style={inputInteractionAtTheBottom ? fadeStyles : undefined}
+                    >
+                        {interactions.map((interaction, i) => {
+                            // Skip rendering input interaction in the main area if it should be at bottom
+                            if (inputInteractionAtTheBottom && i === interactions.length - 1) return null
+                            return renderTranscriptInteraction(interaction, i)
+                        })}
+                        {messageInProgress && interactions.length > 0 && <LoadingDots />}
+                        {transcript.length === 0 && welcomeContent}
+                    </div>
+
+                    {scrollableContainer && <ScrollbarMarkers scrollContainer={scrollableContainer} />}
+
+                    {!isAtBottom && <ScrollDown onClick={scrollTotheBottom} />}
+
+                    <div className="tw-bg-[var(--vscode-input-background)]">
+                        {inputInteractionAtTheBottom &&
+                            renderTranscriptInteraction(
+                                inputInteractionAtTheBottom,
+                                interactions.length - 1
                             )}
-                            editorRef={undefined} // Input editor is handled separately
-                        />
-                    ))}
-                    {/* Show loading dots after the last message in scrollable area */}
-                    {messageInProgress && chatInteractions.length > 0 && <LoadingDots />}
-                    {/* Show welcome content bottom when starting a new conversation */}
-                    {transcript.length === 0 && welcomeContent}
-                </LastEditorContext.Provider>
-            </div>
-
-            {scrollableContainer && <ScrollbarMarkers scrollContainer={scrollableContainer} />}
-
-            {!isFirstInteraction && !isAtBottom && <ScrollDown onClick={scrollTotheBottom} />}
-
-            {/* Fixed input box at the bottom */}
-            {inputInteraction && (
-                <div className="tw-bg-[var(--vscode-input-background)]">
-                    <LastEditorContext.Provider value={lastHumanEditorRef}>
-                        <TranscriptInteraction
-                            key={inputInteraction.humanMessage.index}
-                            {...commonTranscriptProps}
-                            interaction={inputInteraction}
-                            isFirstInteraction={interactions.length === 1}
-                            isLastInteraction={true}
-                            isLastSentInteraction={false}
-                            priorAssistantMessageIsLoading={Boolean(
-                                messageInProgress &&
-                                    chatInteractions.length > 0 &&
-                                    chatInteractions.at(-1)?.assistantMessage?.isLoading
-                            )}
-                            editorRef={
-                                (inputInteraction.humanMessage.intent === 'agentic' &&
-                                    inputInteraction.humanMessage.index === -1) ||
-                                !messageInProgress
-                                    ? lastHumanEditorRef
-                                    : undefined
-                            }
-                        />
-                    </LastEditorContext.Provider>
-                </div>
-            )}
+                    </div>
+                </>
+            </LastEditorContext.Provider>
         </div>
     )
 }
@@ -827,13 +808,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
 
 // TODO(sqs): Do this the React-y way.
 export function focusLastHumanMessageEditor(): void {
-    const lastEditor = document.querySelector<HTMLElement>('[data-lexical-editor]:last-of-type')
-    console.log(lastEditor)
-    if (!lastEditor) {
-        return
-    }
-
-    lastEditor.focus()
+    document.querySelector<HTMLElement>('[data-lexical-editor]:last-of-type')?.focus()
 }
 
 export function regenerateCodeBlock({

@@ -171,11 +171,10 @@ export const ScrollbarMarkers: FC<ScrollbarMarkersProps> = props => {
 
                     if (isScrollbarVisible) {
                         const messageElements = findMessageElements()
-                        console.log('messageElements', messageElements)
 
                         if (messageElements.length > 0) {
                             const scrollHeight = scrollContainer.scrollHeight
-                            console.log('scrollHeight', scrollHeight)
+
                             if (scrollHeight > 0) {
                                 newMarkers = createMarkersFromElements(messageElements, scrollHeight)
                             }
