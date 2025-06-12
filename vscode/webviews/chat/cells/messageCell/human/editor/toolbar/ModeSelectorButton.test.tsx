@@ -86,7 +86,7 @@ describe('ModeSelectorField', () => {
     it('toggles between intents when keyboard shortcut is used', () => {
         render(
             <TestWrapper>
-                <ModeSelectorField {...defaultProps} _intent="chat" omniBoxEnabled={true} />
+                <ModeSelectorField {...defaultProps} _intent="chat" />
             </TestWrapper>
         )
 
@@ -152,7 +152,7 @@ describe('ModeSelectorField', () => {
     it('hides agentic intent even when it was last selected if flag is not on', () => {
         render(
             <TestWrapper>
-                <ModeSelectorField {...defaultProps} _intent="agentic" omniBoxEnabled={true} />
+                <ModeSelectorField {...defaultProps} _intent="agentic" />
             </TestWrapper>
         )
 
@@ -172,7 +172,7 @@ describe('ModeSelectorField', () => {
         vi.spyOn(useConfigModule, 'useConfig').mockReturnValue(props)
         render(
             <TestWrapper>
-                <ModeSelectorField {...defaultProps} _intent="agentic" omniBoxEnabled={true} />
+                <ModeSelectorField {...defaultProps} _intent="agentic" />
             </TestWrapper>
         )
 

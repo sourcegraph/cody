@@ -55,7 +55,7 @@ export class AgentToolGroup {
     }
 
     public static async createWithContextTools(
-        contextRetriever: Pick<ContextRetriever, 'retrieveContext' | 'computeDidYouMean'>,
+        contextRetriever: Pick<ContextRetriever, 'retrieveContext'>,
         span: Span,
         agentId: AgentID
     ): Promise<AgentToolGroup> {
@@ -68,7 +68,7 @@ export class AgentToolGroup {
     }
 
     public static async getToolsByAgentId(
-        contextRetriever: Pick<ContextRetriever, 'retrieveContext' | 'computeDidYouMean'>,
+        contextRetriever: Pick<ContextRetriever, 'retrieveContext'>,
         span: Span,
         agentId: AgentID = 'agentic'
     ): Promise<AgentTool[]> {
