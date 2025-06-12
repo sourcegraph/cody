@@ -2,7 +2,7 @@ import { CodyIDE, type WebviewToExtensionAPI } from '@sourcegraph/cody-shared'
 import type { LightweightChatTranscript } from '@sourcegraph/cody-shared/src/chat/transcript'
 import clsx from 'clsx'
 import {
-    CheckCheckIcon,
+    CheckIcon,
     DownloadIcon,
     HistoryIcon,
     MessageSquarePlusIcon,
