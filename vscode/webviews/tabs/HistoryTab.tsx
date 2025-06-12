@@ -417,11 +417,7 @@ export const HistoryTabWithData: React.FC<HistoryTabProps & { chats: Lightweight
                                     onClick={e => handleRenameSubmit(e, id)}
                                     onKeyDown={e => handleRenameSubmit(e, id)}
                                 >
-                                    <CheckCheckIcon
-                                        className="tw-w-8 tw-h-8"
-                                        size={16}
-                                        strokeWidth="1.25"
-                                    />
+                                    <CheckIcon className="tw-w-8 tw-h-8" size={16} strokeWidth="1.25" />
                                 </Button>
                             ) : (
                                 <div className="tw-flex tw-gap-2">
