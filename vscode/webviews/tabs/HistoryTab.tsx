@@ -1,9 +1,15 @@
-;('use client')
-
 import { CodyIDE, type WebviewToExtensionAPI } from '@sourcegraph/cody-shared'
 import type { LightweightChatTranscript } from '@sourcegraph/cody-shared/src/chat/transcript'
 import clsx from 'clsx'
-import { DownloadIcon, HistoryIcon, MessageSquarePlusIcon, Trash2Icon, TrashIcon } from 'lucide-react'
+import {
+    CheckIcon,
+    DownloadIcon,
+    HistoryIcon,
+    MessageSquarePlusIcon,
+    PencilIcon,
+    Trash2Icon,
+    TrashIcon,
+} from 'lucide-react'
 import type React from 'react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { WebviewType } from '../../src/chat/protocol'
@@ -31,16 +37,32 @@ interface HistoryTabProps {
 
 const HISTORY_ITEMS_PER_PAGE = 20
 
-export const HistoryTab: React.FC<HistoryTabProps> = ({
-    IDE,
-    webviewType,
-    multipleWebviewsEnabled,
-    setView,
-    extensionAPI,
-}) => {
-    const userHistory = useUserHistory()
+interface UIState {
+    searchText: string
+    visibleItems: number
+    isLoading: boolean
+    isDeleteAllActive: boolean
+    deletingChatIds: Set<string>
+    renameInProgress: string | null
+    renameInputValue: string
+}
 
-    const chats = useMemo(() => (userHistory ? Object.values(userHistory) : userHistory), [userHistory])
+const initialUIState: UIState = {
+    searchText: '',
+    visibleItems: HISTORY_ITEMS_PER_PAGE,
+    isLoading: false,
+    isDeleteAllActive: false,
+    deletingChatIds: new Set(),
+    renameInProgress: null,
+    renameInputValue: '',
+}
+
+export const HistoryTab: React.FC<HistoryTabProps> = props => {
+    const userHistory = useUserHistory()
+    const chats = useMemo(
+        () => (userHistory ? Object.values(userHistory).reverse() : null),
+        [userHistory]
+    )
 
     return (
         <div
@@ -51,18 +73,7 @@ export const HistoryTab: React.FC<HistoryTabProps> = ({
                 }
             )}
         >
-            {!chats ? (
-                <LoadingDots />
-            ) : (
-                <HistoryTabWithData
-                    chats={[...chats].reverse()}
-                    extensionAPI={extensionAPI}
-                    IDE={IDE}
-                    setView={setView}
-                    webviewType={webviewType}
-                    multipleWebviewsEnabled={multipleWebviewsEnabled}
-                />
-            )}
+            {!chats ? <LoadingDots /> : <HistoryTabWithData {...props} chats={chats} />}
         </div>
     )
 }
@@ -76,157 +87,180 @@ export const HistoryTabWithData: React.FC<HistoryTabProps & { chats: Lightweight
     extensionAPI,
 }) => {
     const vscodeAPI = getVSCodeAPI()
-    const nonEmptyChats = useMemo(() => chats.filter(c => c?.firstHumanMessageText?.length), [chats])
-
-    const [isDeleteAllActive, setIsDeleteAllActive] = useState<boolean>(false)
-    const [deletingChatIds, setDeletingChatIds] = useState<Set<string>>(new Set())
-
-    //add history search
-    const [searchText, setSearchText] = useState('')
-    const [visibleItems, setVisibleItems] = useState(HISTORY_ITEMS_PER_PAGE)
-    const [isLoading, setIsLoading] = useState(false)
+    const [uiState, setUIState] = useState<UIState>(initialUIState)
     const observerRef = useRef<IntersectionObserver | null>(null)
     const loadingRef = useRef<HTMLDivElement>(null)
+    const renameInputRef = useRef<HTMLInputElement>(null)
+
+    const nonEmptyChats = useMemo(() => chats.filter(c => c?.firstHumanMessageText?.length), [chats])
 
     const filteredChats = useMemo(() => {
-        const searchTerm = searchText.trim().toLowerCase()
-        if (!searchTerm) {
-            return nonEmptyChats
-        }
-        // Search in chat titles or first message text
-        return nonEmptyChats.filter(chat => {
-            // Search in chat title if available
-            if (chat.chatTitle?.toLowerCase().includes(searchTerm)) {
-                return true
-            }
-            // Search in first message text if available
-            return chat.firstHumanMessageText?.toLowerCase().includes(searchTerm) || false
-        })
-    }, [nonEmptyChats, searchText])
+        if (!uiState.searchText.trim()) return nonEmptyChats
 
-    const hasMoreItems = visibleItems < filteredChats.length
-    const displayedChats = filteredChats.slice(0, visibleItems)
+        const searchTerm = uiState.searchText.toLowerCase()
+        return nonEmptyChats.filter(
+            chat =>
+                chat.chatTitle?.toLowerCase().includes(searchTerm) ||
+                chat.firstHumanMessageText?.toLowerCase().includes(searchTerm)
+        )
+    }, [nonEmptyChats, uiState.searchText])
 
-    const onDeleteButtonClick = useCallback(
+    const displayedChats = useMemo(
+        () => filteredChats.slice(0, uiState.visibleItems),
+        [filteredChats, uiState.visibleItems]
+    )
+
+    const hasMoreItems = uiState.visibleItems < filteredChats.length
+
+    const updateUIState = useCallback((updates: Partial<UIState>) => {
+        setUIState(prev => ({ ...prev, ...updates }))
+    }, [])
+
+    const handleDeleteChat = useCallback(
         (e: React.MouseEvent | React.KeyboardEvent, id: string) => {
             e.preventDefault()
             e.stopPropagation()
 
-            // Mark this chat as being deleted to show UI feedback immediately
-            setDeletingChatIds(prev => {
-                const newSet = new Set(prev)
-                newSet.add(id)
-                return newSet
+            updateUIState({
+                deletingChatIds: new Set([...uiState.deletingChatIds, id]),
+                ...(id === 'clear-all-no-confirm' && {
+                    visibleItems: Math.min(
+                        uiState.visibleItems,
+                        filteredChats.length - uiState.deletingChatIds.size
+                    ),
+                }),
             })
 
-            // Send the delete command to the extension
             vscodeAPI.postMessage({
                 command: 'command',
                 id: 'cody.chat.history.clear',
                 arg: id,
             })
-
-            // For "delete all" we want to clear the state immediately
-            if (id === 'clear-all-no-confirm') {
-                // Clear visible items to prevent empty slots
-                setVisibleItems(prev => Math.min(prev, filteredChats.length - deletingChatIds.size))
-            }
         },
-        [vscodeAPI, filteredChats.length, deletingChatIds]
+        [vscodeAPI, uiState.deletingChatIds, uiState.visibleItems, filteredChats.length, updateUIState]
     )
 
-    const handleStartNewChat = () => {
-        getVSCodeAPI().postMessage({
+    const handleRenameSubmit = useCallback(
+        (e: React.MouseEvent | React.KeyboardEvent, id: string, newName?: string) => {
+            e.preventDefault()
+            e.stopPropagation()
+
+            const nameToUse = newName || uiState.renameInputValue
+            if (!nameToUse.trim()) {
+                updateUIState({ renameInProgress: null, renameInputValue: '' })
+                return
+            }
+
+            vscodeAPI.postMessage({
+                command: 'command',
+                id: 'cody.chat.history.rename',
+                args: { chatID: id, newName: nameToUse },
+            })
+            updateUIState({ renameInProgress: null, renameInputValue: '' })
+        },
+        [vscodeAPI, uiState.renameInputValue, updateUIState]
+    )
+
+    const handleStartNewChat = useCallback(() => {
+        vscodeAPI.postMessage({
             command: 'command',
             id: getCreateNewChatCommand({ IDE, webviewType, multipleWebviewsEnabled }),
         })
         setView(View.Chat)
-    }
+    }, [vscodeAPI, IDE, webviewType, multipleWebviewsEnabled, setView])
 
-    const onExportClick = useCallback(() => downloadChatHistory(extensionAPI), [extensionAPI])
+    const handleExport = useCallback(() => downloadChatHistory(extensionAPI), [extensionAPI])
 
-    // Reset visible items when search changes
+    const startRename = useCallback(
+        (id: string, currentTitle: string) => {
+            updateUIState({ renameInProgress: id, renameInputValue: currentTitle })
+        },
+        [updateUIState]
+    )
+
+    const cancelRename = useCallback(() => {
+        updateUIState({ renameInProgress: null, renameInputValue: '' })
+    }, [updateUIState])
+
+    // Handle rename input focus
     useEffect(() => {
-        setVisibleItems(HISTORY_ITEMS_PER_PAGE)
-    }, [])
+        if (uiState.renameInProgress && renameInputRef.current) {
+            renameInputRef.current.focus()
+            renameInputRef.current.select()
+        }
+    }, [uiState.renameInProgress])
 
-    // Listen for deletion confirmations from the extension
+    // Handle messages and intersection observer
     useEffect(() => {
         const handleMessage = (event: MessageEvent) => {
             const message = event.data
             if (message.type === 'deletionComplete' && message.chatID) {
-                // Remove from deletingChatIds once we get confirmation
-                setDeletingChatIds(prev => {
-                    const newSet = new Set(prev)
-                    newSet.delete(message.chatID)
-                    return newSet
-                })
+                const newDeletingIds = new Set(uiState.deletingChatIds)
+                newDeletingIds.delete(message.chatID)
+                updateUIState({ deletingChatIds: newDeletingIds })
             }
         }
 
-        window.addEventListener('message', handleMessage)
-        return () => window.removeEventListener('message', handleMessage)
-    }, [])
-
-    // Update visible items when items are deleted to prevent gaps
-    useEffect(() => {
-        if (deletingChatIds.size > 0) {
-            // Adjust visible items to prevent empty spaces
-            setVisibleItems(prev => {
-                const newVisibleItems = Math.min(
-                    prev,
-                    filteredChats.length + Math.min(HISTORY_ITEMS_PER_PAGE, deletingChatIds.size)
-                )
-                return Math.max(HISTORY_ITEMS_PER_PAGE, newVisibleItems)
-            })
-        }
-    }, [deletingChatIds.size, filteredChats.length])
-
-    useEffect(() => {
         const loadMoreItems = () => {
-            if (hasMoreItems && !isLoading) {
-                setIsLoading(true)
-                // Simulate loading delay for better UX
+            if (hasMoreItems && !uiState.isLoading) {
+                updateUIState({ isLoading: true })
                 setTimeout(() => {
-                    setVisibleItems(prev =>
-                        Math.min(prev + HISTORY_ITEMS_PER_PAGE, filteredChats.length)
-                    )
-                    setIsLoading(false)
+                    updateUIState({
+                        visibleItems: Math.min(
+                            uiState.visibleItems + HISTORY_ITEMS_PER_PAGE,
+                            filteredChats.length
+                        ),
+                        isLoading: false,
+                    })
                 }, 300)
             }
         }
 
-        // Create intersection observer
         observerRef.current = new IntersectionObserver(
-            entries => {
-                if (entries[0].isIntersecting) {
-                    loadMoreItems()
-                }
-            },
+            entries => entries[0].isIntersecting && loadMoreItems(),
             { threshold: 0.1 }
         )
 
-        // Observe the loading element
+        window.addEventListener('message', handleMessage)
+
         if (loadingRef.current && hasMoreItems) {
             observerRef.current.observe(loadingRef.current)
         }
 
         return () => {
-            if (observerRef.current) {
-                observerRef.current.disconnect()
-            }
+            window.removeEventListener('message', handleMessage)
+            observerRef.current?.disconnect()
         }
-    }, [hasMoreItems, filteredChats.length, isLoading])
+    }, [
+        hasMoreItems,
+        uiState.isLoading,
+        uiState.visibleItems,
+        uiState.deletingChatIds,
+        filteredChats.length,
+        updateUIState,
+    ])
+
+    // Adjust visible items when chats are deleted
+    useEffect(() => {
+        if (uiState.deletingChatIds.size > 0) {
+            const newVisibleItems = Math.max(
+                HISTORY_ITEMS_PER_PAGE,
+                Math.min(
+                    uiState.visibleItems,
+                    filteredChats.length + Math.min(HISTORY_ITEMS_PER_PAGE, uiState.deletingChatIds.size)
+                )
+            )
+            updateUIState({ visibleItems: newVisibleItems })
+        }
+    }, [uiState.deletingChatIds.size, filteredChats.length, uiState.visibleItems, updateUIState])
 
     if (!nonEmptyChats.length) {
         return (
             <div className="tw-flex tw-flex-col tw-items-center tw-p-6">
                 <HistoryIcon size={20} strokeWidth={1.25} className="tw-mb-5 tw-text-muted-foreground" />
-
                 <span className="tw-text-lg tw-mb-4 tw-text-muted-foreground">
                     You have no chat history
                 </span>
-
                 <span className="tw-text-sm tw-text-muted-foreground tw-mb-8 tw-text-center">
                     Explore all your previous chats here. Track and <br /> search through what you've
                     been working on.
@@ -262,7 +296,7 @@ export const HistoryTabWithData: React.FC<HistoryTabProps & { chats: Lightweight
                 <header className="tw-inline-flex tw-px-4 tw-gap-4">
                     <Button
                         className="tw-bg-popover tw-border tw-border-border !tw-justify-between tw-text-sidebar-foreground"
-                        onClick={onExportClick}
+                        onClick={handleExport}
                     >
                         <div className="tw-flex tw-items-center">
                             <DownloadIcon size={16} className="tw-mr-3" /> Export
@@ -270,7 +304,7 @@ export const HistoryTabWithData: React.FC<HistoryTabProps & { chats: Lightweight
                     </Button>
                     <Button
                         className="tw-bg-popover tw-border tw-border-border !tw-justify-between tw-text-sidebar-foreground"
-                        onClick={() => setIsDeleteAllActive(true)}
+                        onClick={() => updateUIState({ isDeleteAllActive: true })}
                     >
                         <div className="tw-flex tw-items-center">
                             <Trash2Icon size={16} className="tw-mr-3" /> Delete all
@@ -278,7 +312,8 @@ export const HistoryTabWithData: React.FC<HistoryTabProps & { chats: Lightweight
                     </Button>
                 </header>
             )}
-            {isDeleteAllActive && (
+
+            {uiState.isDeleteAllActive && (
                 <div
                     className="tw-my-4 tw-p-4 tw-mx-[0.5rem] tw-border tw-bg-muted-transparent tw-border-red-800 tw-rounded-lg"
                     role="alert"
@@ -297,8 +332,8 @@ export const HistoryTabWithData: React.FC<HistoryTabProps & { chats: Lightweight
                             aria-label="Delete all chats"
                             className="tw-bg-popover tw-border tw-border-border tw-text-white tw-bg-red-800 hover:tw-bg-red-900 focus:tw-ring-4"
                             onClick={e => {
-                                onDeleteButtonClick(e, 'clear-all-no-confirm')
-                                setIsDeleteAllActive(false)
+                                handleDeleteChat(e, 'clear-all-no-confirm')
+                                updateUIState({ isDeleteAllActive: false })
                             }}
                         >
                             Delete all chats
@@ -306,7 +341,7 @@ export const HistoryTabWithData: React.FC<HistoryTabProps & { chats: Lightweight
                         <Button
                             size="sm"
                             className="tw-bg-popover tw-border tw-border-border tw-text-sidebar-foreground"
-                            onClick={() => setIsDeleteAllActive(false)}
+                            onClick={() => updateUIState({ isDeleteAllActive: false })}
                             aria-label="Cancel"
                         >
                             Cancel
@@ -314,62 +349,118 @@ export const HistoryTabWithData: React.FC<HistoryTabProps & { chats: Lightweight
                     </div>
                 </div>
             )}
+
             <CommandList>
                 <CommandInput
-                    value={searchText}
-                    onValueChange={setSearchText}
+                    value={uiState.searchText}
+                    onValueChange={value => updateUIState({ searchText: value })}
                     placeholder="Search..."
-                    autoFocus={true}
                     className="tw-m-[0.5rem] !tw-p-[0.5rem] tw-rounded tw-bg-input-background tw-text-input-foreground focus:tw-shadow-[0_0_0_0.125rem_var(--vscode-focusBorder)]"
-                    disabled={chats.length === 0}
+                    disabled={chats.length === 0 && !uiState.renameInProgress}
+                    autoFocus={false}
                 />
             </CommandList>
+
             <CommandList className="tw-flex-1 tw-overflow-y-auto tw-m-2">
                 {displayedChats.map((chat: LightweightChatTranscript) => {
                     const id = chat.lastInteractionTimestamp
                     const lastMessage = chat.firstHumanMessageText
                     const chatTitle = chat.chatTitle || lastMessage
-                    // Show the last interaction timestamp in a human-readable format
                     const timestamp = new Date(chat.lastInteractionTimestamp)
                         .toLocaleString()
                         .replace('T', ', ')
                         .replace('Z', '')
                     const mode = INTENT_MAPPING[chat.mode || 'chat']
+                    const isRenaming = uiState.renameInProgress === id
 
                     return (
                         <CommandItem
                             key={id}
                             className={`tw-text-left tw-truncate tw-w-full tw-rounded-md tw-text-sm ${styles.historyItem} tw-overflow-hidden tw-text-sidebar-foreground tw-align-baseline`}
                             onSelect={() =>
-                                vscodeAPI.postMessage({
-                                    command: 'restoreHistory',
-                                    chatID: id,
-                                })
+                                vscodeAPI.postMessage({ command: 'restoreHistory', chatID: id })
                             }
                             title={chat.model}
                         >
                             <div className="tw-truncate tw-w-full tw-flex tw-flex-col tw-gap-2">
                                 <div>
-                                    {mode !== IntentEnum.Chat ? `[${mode}] ${chatTitle}` : chatTitle}
+                                    {isRenaming ? (
+                                        <input
+                                            ref={renameInputRef}
+                                            type="text"
+                                            value={uiState.renameInputValue}
+                                            onChange={e =>
+                                                updateUIState({ renameInputValue: e.target.value })
+                                            }
+                                            onKeyDown={e => {
+                                                if (e.key === 'Enter') handleRenameSubmit(e, id)
+                                                else if (e.key === 'Escape') cancelRename()
+                                            }}
+                                            className="tw-w-full tw-bg-input-background tw-text-input-foreground tw-border tw-border-border tw-rounded tw-px-2 tw-py-1 tw-text-sm"
+                                            onClick={e => e.stopPropagation()}
+                                        />
+                                    ) : mode !== IntentEnum.Chat ? (
+                                        `[${mode}] ${chatTitle}`
+                                    ) : (
+                                        chatTitle
+                                    )}
                                 </div>
                                 <div className="tw-text-left tw-text-muted-foreground">{timestamp}</div>
                             </div>
-                            <Button
-                                variant="outline"
-                                title="Delete chat history"
-                                aria-label="delete-history-button"
-                                className={styles.deleteButton}
-                                onClick={e => onDeleteButtonClick(e, id)}
-                                onKeyDown={e => onDeleteButtonClick(e, id)}
-                            >
-                                <TrashIcon className="tw-w-8 tw-h-8" size={16} strokeWidth="1.25" />
-                            </Button>
+
+                            {isRenaming ? (
+                                <Button
+                                    variant="outline"
+                                    title="Enter to confirm or Escape to cancel"
+                                    aria-label="rename-history-submit-button"
+                                    className={styles.deleteButton}
+                                    onClick={e => handleRenameSubmit(e, id)}
+                                    onKeyDown={e => handleRenameSubmit(e, id)}
+                                >
+                                    <CheckIcon className="tw-w-8 tw-h-8" size={16} strokeWidth="1.25" />
+                                </Button>
+                            ) : (
+                                <div className="tw-flex tw-gap-2">
+                                    <Button
+                                        variant="outline"
+                                        title="Rename chat"
+                                        aria-label="rename-history-button"
+                                        className={styles.deleteButton}
+                                        onClick={e => {
+                                            e.preventDefault()
+                                            e.stopPropagation()
+                                            startRename(id, chatTitle || lastMessage || 'Untitled')
+                                        }}
+                                    >
+                                        <PencilIcon
+                                            className="tw-w-8 tw-h-8"
+                                            size={16}
+                                            strokeWidth="1.25"
+                                        />
+                                    </Button>
+                                    <Button
+                                        variant="outline"
+                                        title="Delete chat history"
+                                        aria-label="delete-history-button"
+                                        className={styles.deleteButton}
+                                        onClick={e => handleDeleteChat(e, id)}
+                                        onKeyDown={e => handleDeleteChat(e, id)}
+                                    >
+                                        <TrashIcon
+                                            className="tw-w-8 tw-h-8"
+                                            size={16}
+                                            strokeWidth="1.25"
+                                        />
+                                    </Button>
+                                </div>
+                            )}
                         </CommandItem>
                     )
                 })}
+
                 {hasMoreItems && (
                     <div ref={loadingRef} className="tw-flex tw-justify-center tw-items-center tw-py-4">
-                        {isLoading ? (
+                        {uiState.isLoading ? (
                             <LoadingDots />
                         ) : (
                             <span className="tw-text-sm tw-text-muted-foreground">Scroll for more</span>
