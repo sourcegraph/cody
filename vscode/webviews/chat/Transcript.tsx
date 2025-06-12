@@ -244,7 +244,7 @@ export const Transcript: FC<TranscriptProps> = props => {
     )
 
     return (
-        <div className="tw-flex tw-flex-col tw-h-full tw-px-8 tw-py-4 tw-gap-4">
+        <div className="tw-flex tw-flex-col tw-h-full tw-px-8 tw-py-8 tw-gap-4">
             <LastEditorContext.Provider value={lastHumanEditorRef}>
                 <>
                     <div

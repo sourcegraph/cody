@@ -12,7 +12,7 @@ interface ScrollDownProps {
  */
 export const ScrollDown: FC<ScrollDownProps> = props => {
     return (
-        <div className="tw-absolute tw-bottom-4 tw-left-1/2 tw--translate-x-1/2 tw-z-10">
+        <div className="tw-relative tw-left-1/2 tw--translate-x-1/2 tw-z-50 tw-w-fit tw-h-0 tw--top-8">
             <Button
                 variant="outline"
                 size="sm"
