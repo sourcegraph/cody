@@ -101,7 +101,7 @@ export const Transcript: FC<TranscriptProps> = props => {
 
     const lastHumanEditorRef = useRef<PromptEditorRefAPI | null>(null)
     const userHasScrolledRef = useRef(false)
-    const lastScrollTopRef = useRef(0)
+    const expectedAutoScrollTopRef = useRef(0)
     const [scrollableContainer, setScrollableContainer] = useState<HTMLDivElement | null>(null)
     const [isAtBottom, setIsAtBottom] = useState(false)
 
@@ -144,8 +144,7 @@ export const Transcript: FC<TranscriptProps> = props => {
                 userHasScrolledRef.current = false
             } else {
                 // Check if user manually scrolled (not from auto-scroll)
-                const expectedAutoScrollTop = lastScrollTopRef.current
-                if (Math.abs(scrollableContainer.scrollTop - expectedAutoScrollTop) > 5) {
+                if (Math.abs(scrollableContainer.scrollTop - expectedAutoScrollTopRef.current) > 5) {
                     userHasScrolledRef.current = true
                 }
             }
@@ -158,26 +157,18 @@ export const Transcript: FC<TranscriptProps> = props => {
     }, [scrollableContainer])
 
     useEffect(() => {
-        if (messageInProgress?.text) {
-            // Only auto-scroll if user hasn't manually scrolled away
-            if (!userHasScrolledRef.current && scrollableContainer) {
-                // Calculate space needed for the input box
-                const lastEditor = document.querySelector<HTMLElement>(
-                    '[data-lexical-editor]:last-of-type'
-                )
-                const editorHeight = lastEditor ? lastEditor.getBoundingClientRect().height + 32 : 120
+        // Only auto-scroll if user hasn't manually scrolled away
+        if (!userHasScrolledRef.current && scrollableContainer && interactions.length > 0) {
+            const targetScrollTop = scrollableContainer.scrollHeight
+            expectedAutoScrollTopRef.current = targetScrollTop
+            scrollableContainer.scrollTop = targetScrollTop
+        }
 
-                // Scroll to the bottom minus the height of the editor
-                const scrollHeight = scrollableContainer.scrollHeight
-                const targetScrollTop = scrollHeight - scrollableContainer.clientHeight + editorHeight
-                lastScrollTopRef.current = targetScrollTop
-                scrollableContainer.scrollTop = targetScrollTop
-            }
-        } else {
+        if (!messageInProgress?.text) {
             // Reset user scroll flag when message streaming stops
             userHasScrolledRef.current = false
         }
-    }, [messageInProgress?.text, scrollableContainer])
+    }, [messageInProgress?.text, interactions.length, scrollableContainer])
 
     const inputInteractionAtTheBottom =
         interactions.length > 1 ? interactions[interactions.length - 1] : null

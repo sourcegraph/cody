@@ -74,7 +74,6 @@ export const ScrollbarMarkers: FC<ScrollbarMarkersProps> = props => {
             const newRect = scrollContainer.getBoundingClientRect()
             // Check if content is scrollable (scrollbars are hidden with CSS but content can still scroll)
             const isContentScrollable = scrollContainer.scrollHeight > scrollContainer.clientHeight
-            console.log('isContentScrollable', isContentScrollable)
             setContainerRect(prevRect => {
                 if (
                     !prevRect ||
@@ -286,7 +285,6 @@ export const ScrollbarMarkers: FC<ScrollbarMarkersProps> = props => {
 
         // Initial update
         updateMarkers()
-        console.log('update markers!')
 
         return () => {
             resizeObserver.disconnect()
