@@ -45,6 +45,8 @@ test('chat assistant response code buttons', async ({ page, nap, sidebar }, test
         predicate: msg => msg.text().includes('Code: Copy to Clipboard'),
         timeout: 5000,
     })
+
+    await copyButton.focus()
     await copyButton.click()
     // Place the cursor on some text in the document
     await page.getByText('appleName').click()
@@ -134,6 +136,7 @@ test('chat assistant smart apply on an empty file without extra newlines', async
     // Find and click the smart apply button
     const smartApplyButton = assistantRow.getByRole('button', { name: 'Apply' })
     await expect(smartApplyButton).toBeVisible()
+    await smartApplyButton.focus()
     await smartApplyButton.click()
 
     const lastLine = await page.locator('.view-lines .view-line').last()
