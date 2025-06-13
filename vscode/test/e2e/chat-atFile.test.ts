@@ -288,7 +288,6 @@ test.extend<ExpectedV2Events>({
     // @-file range with the correct line range shows up in the chat view and it opens on click
     const contextCell = getContextCell(chatPanelFrame)
     await expectContextCellCounts(contextCell, { files: 1 })
-    await contextCell.hover()
     await openContextCell(contextCell)
     const chatContext = getContextCell(chatPanelFrame).last()
     await chatContext.getByRole('button', { name: 'buzz.ts:2-4' }).hover()
@@ -357,7 +356,6 @@ test.extend<ExpectedV2Events>({
     // @-file with the correct line range shows up in the chat view and it opens on click
     const contextCell = getContextCell(chatPanelFrame)
     await expectContextCellCounts(contextCell, { files: 1 })
-    await contextCell.hover()
     await openContextCell(contextCell)
     const chatContext = getContextCell(chatPanelFrame).last()
     await chatContext.getByRole('button', { name: 'buzz.ts:1-15' }).hover()
