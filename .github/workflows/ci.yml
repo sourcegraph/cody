@@ -43,16 +43,17 @@ jobs:
           - runner: ubuntu
             node: 18 # VS Code started using Node 18 in Aug 2023 in v1.82: https://code.visualstudio.com/updates/v1_82#_engineering
     runs-on: ${{ matrix.runner }}-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     permissions:
       id-token: write
       contents: read
     steps:
       - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@fe02b34f77f8bc703788d5817da081398fad5dd2 # SECURITY: pin third-party action hashes
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node }}
-      - uses: pnpm/action-setup@fe02b34f77f8bc703788d5817da081398fad5dd2 # SECURITY: pin third-party action hashes
+          cache: 'pnpm'
       - id: auth
         uses: google-github-actions/auth@v2
         # Skip auth if PR is from a fork
@@ -60,25 +61,7 @@ jobs:
         with:
           workload_identity_provider: ${{ secrets.DATA_TEAM_PROVIDER_NAME }}
           service_account: ${{ secrets.DATA_TEAM_SA_EMAIL }}
-      - run: echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
-        shell: bash
-        id: pnpm-cache
-      - name: Restore cache pnpm store
-        id: restore-pnpm-cache
-        uses: actions/cache/restore@v4
-        with:
-          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: ${{ runner.os }}-pnpm-store-
-
       - run: pnpm install
-
-      - name: Save cache pnpm store
-        if: steps.restore-pnpm-cache.outputs.cache-hit != 'true'
-        uses: actions/cache/save@v4
-        with:
-          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
       - run: pnpm build
       - run: pnpm run test:unit --run
         env:
@@ -97,10 +80,12 @@ jobs:
       contents: read
     steps:
       - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@fe02b34f77f8bc703788d5817da081398fad5dd2 # SECURITY: pin third-party action hashes
       - uses: actions/setup-node@v4
         with:
           node-version-file: .tool-versions
-      - uses: pnpm/action-setup@fe02b34f77f8bc703788d5817da081398fad5dd2 # SECURITY: pin third-party action hashes
+          cache: 'pnpm'
+      - run: pnpm install
       - id: auth
         uses: google-github-actions/auth@v2
         # Skip auth if PR is from a fork
@@ -108,24 +93,6 @@ jobs:
         with:
           workload_identity_provider: ${{ secrets.DATA_TEAM_PROVIDER_NAME }}
           service_account: ${{ secrets.DATA_TEAM_SA_EMAIL }}
-      - run: echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
-        shell: bash
-        id: pnpm-cache
-      - name: Restore cache pnpm store
-        id: restore-pnpm-cache
-        uses: actions/cache@v4
-        with:
-          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: ${{ runner.os }}-pnpm-store-
-      - run: pnpm install
-
-      - name: Save cache pnpm store
-        if: steps.restore-pnpm-cache.outputs.cache-hit != 'true'
-        uses: actions/cache/save@v4
-        with:
-          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
         # commands before `xvfb-run -a pnpm run test` avoid these ERROR messages:
         # - Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
         # - Exiting GPU process due to errors during initialization
@@ -182,10 +149,12 @@ jobs:
       contents: read
     steps:
       - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@fe02b34f77f8bc703788d5817da081398fad5dd2 # SECURITY: pin third-party action hashes
       - uses: actions/setup-node@v4
         with:
           node-version-file: .tool-versions
-      - uses: pnpm/action-setup@fe02b34f77f8bc703788d5817da081398fad5dd2 # SECURITY: pin third-party action hashes
+          cache: 'pnpm'
+      - run: pnpm install
       - id: auth
         uses: google-github-actions/auth@v2
         # Skip auth if PR is from a fork
@@ -193,24 +162,6 @@ jobs:
         with:
           workload_identity_provider: ${{ secrets.DATA_TEAM_PROVIDER_NAME }}
           service_account: ${{ secrets.DATA_TEAM_SA_EMAIL }}
-      - run: echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
-        shell: bash
-        id: pnpm-cache
-      - name: Restore cache pnpm store
-        id: restore-pnpm-cache
-        uses: actions/cache@v4
-        with:
-          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: ${{ runner.os }}-pnpm-store-
-      - run: pnpm install
-
-      - name: Save cache pnpm store
-        if: steps.restore-pnpm-cache.outputs.cache-hit != 'true'
-        uses: actions/cache/save@v4
-        with:
-          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
       - run: GITHUB_REF=$BRANCH_NAME xvfb-run -a pnpm -C vscode run test:e2e --shard=${{ matrix.shard }}
         if: matrix.runner == 'ubuntu'
         env:
@@ -245,28 +196,12 @@ jobs:
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@fe02b34f77f8bc703788d5817da081398fad5dd2 # SECURITY: pin third-party action hashes
       - uses: actions/setup-node@v4
         with:
           node-version-file: .tool-versions
-      - uses: pnpm/action-setup@fe02b34f77f8bc703788d5817da081398fad5dd2 # SECURITY: pin third-party action hashes
-      - run: echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
-        shell: bash
-        id: pnpm-cache
-      - name: Restore cache pnpm store
-        id: restore-pnpm-cache
-        uses: actions/cache@v4
-        with:
-          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: ${{ runner.os }}-pnpm-store-
+          cache: 'pnpm'
       - run: pnpm install
-
-      - name: Save cache pnpm store
-        if: steps.restore-pnpm-cache.outputs.cache-hit != 'true'
-        uses: actions/cache/save@v4
-        with:
-          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
       # Run Biome and capture the output. If biome crashes, it still reports a
       # successful CI run (exit code 0) but that will ripple down to errors in
       # the Biome VS Code extension. This ensures that we don't accidentally
