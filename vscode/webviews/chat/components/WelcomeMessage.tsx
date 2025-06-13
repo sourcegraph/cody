@@ -4,6 +4,7 @@ import { PromptList } from '../../components/promptList/PromptList'
 import { useActionSelect } from '../../prompts/promptUtils'
 import type { View } from '../../tabs'
 import { LastConversation } from './LastConversation'
+import { WelcomeNotice } from './WelcomeNotice'
 
 const localStorageKey = 'chat.welcome-message-dismissed'
 
@@ -13,15 +14,19 @@ interface WelcomeMessageProps {
     isWorkspacesUpgradeCtaEnabled?: boolean
 }
 
-export const WelcomeMessage: FunctionComponent<WelcomeMessageProps> = ({ setView, IDE }) => {
+export const WelcomeMessage: FunctionComponent<WelcomeMessageProps> = ({
+    setView,
+    IDE,
+    isWorkspacesUpgradeCtaEnabled,
+}) => {
     // Remove the old welcome message dismissal key that is no longer used.
     localStorage.removeItem(localStorageKey)
 
     const runAction = useActionSelect()
 
     return (
-        <div className="tw-flex-1 tw-flex tw-flex-col tw-items-start tw-w-full tw-px-8 tw-gap-6 tw-transition-all tw-relative">
-            <div className="tw-flex tw-flex-col tw-gap-4 tw-w-full">
+        <div className="tw-flex tw-flex-col tw-w-full tw-h-full">
+            <div className="tw-flex tw-flex-col tw-gap-4 tw-pt-6">
                 <PromptList
                     showSearch={false}
                     showFirstNItems={4}
@@ -34,9 +39,14 @@ export const WelcomeMessage: FunctionComponent<WelcomeMessageProps> = ({ setView
                     onSelect={item => runAction(item, setView)}
                 />
             </div>
-            <div className="tw-mt-auto tw-w-full tw-mb-4 tw-pb-2">
+            <div className="tw-flex tw-flex-col tw-w-full tw-mt-auto tw-mb-4">
                 <LastConversation setView={setView} IDE={IDE} />
-            </div>{' '}
+                {isWorkspacesUpgradeCtaEnabled && (
+                    <div className="tw-w-full tw-max-w-lg tw-mt-4">
+                        <WelcomeNotice />
+                    </div>
+                )}
+            </div>
         </div>
     )
 }
