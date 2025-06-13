@@ -799,7 +799,13 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
 
 // TODO(sqs): Do this the React-y way.
 export function focusLastHumanMessageEditor(): void {
-    document.querySelector<HTMLElement>('[data-lexical-editor]:last-of-type')?.focus()
+    const elements = document.querySelectorAll<HTMLElement>('[data-lexical-editor]')
+    const lastEditor = elements.item(elements.length - 1)
+    if (!lastEditor) {
+        return
+    }
+
+    lastEditor.focus()
 }
 
 export function regenerateCodeBlock({
