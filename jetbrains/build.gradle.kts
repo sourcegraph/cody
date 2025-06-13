@@ -1,7 +1,6 @@
 import com.jetbrains.plugin.structure.base.utils.isDirectory
 import java.net.HttpURLConnection
 import java.net.URL
-import java.nio.file.FileSystems
 import java.nio.file.FileVisitResult
 import java.nio.file.Files
 import java.nio.file.PathMatcher
@@ -194,15 +193,8 @@ fun download(url: String, output: File) {
   }
   println("Downloading... $url")
 
-  // Optional: Retrieve the GitHub token if needed for authorization
-  // (require sourcegraph/sourcegraph repo access)
-  val githubToken = System.getenv("GITHUB_TOKEN")
   val connection = URL(url).openConnection() as HttpURLConnection
   try {
-    if (!githubToken.isNullOrEmpty()) {
-      connection.setRequestProperty("Authorization", "Bearer $githubToken")
-    }
-
     connection.requestMethod = "GET"
     connection.setRequestProperty("Accept", "application/vnd.github+json")
     connection.setRequestProperty("X-GitHub-Api-Version", "2022-11-28")
@@ -351,48 +343,11 @@ val pnpmPath =
     }
 
 tasks {
-  val codeSearchCommit = "048679a2e7f2a2d94a49c46bc972c954cb2b5bac"
-  fun downloadCodeSearch(): File {
-    val url = "https://api.github.com/repos/sourcegraph/sourcegraph/zipball/$codeSearchCommit"
-    val destination = githubArchiveCache.resolve("$codeSearchCommit.zip")
-    download(url, destination)
-    return destination
-  }
-
-  fun unzipCodeSearch(): File {
-    val zip = downloadCodeSearch()
-    val dir = githubArchiveCache.resolve("code-search")
-    unzip(zip, dir, FileSystems.getDefault().getPathMatcher("glob:**.go"))
-    return dir.resolve("sourcegraph-sourcegraph-$codeSearchCommit")
-  }
-
   fun buildCodeSearch(): File? {
-    if (System.getenv("SKIP_CODE_SEARCH_BUILD") == "true") return null
-    val destinationDir = rootDir.resolve("src").resolve("main").resolve("resources").resolve("dist")
-    if (!isForceCodeSearchBuild && destinationDir.exists()) {
-      println("Cached $destinationDir")
-      return destinationDir
-    }
-
-    val codeSearchDirOverride = System.getenv("CODE_SEARCH_DIR_OVERRIDE")
-    val sourcegraphDir: File =
-        if (codeSearchDirOverride != null) file(codeSearchDirOverride) else unzipCodeSearch()
-    exec {
-      workingDir(sourcegraphDir.toString())
-      commandLine(*pnpmPath, "install", "--frozen-lockfile", "--fix-lockfile")
-    }
-    exec {
-      workingDir(sourcegraphDir.toString())
-      commandLine(*pnpmPath, "generate")
-    }
-    val jetbrainsDir = sourcegraphDir.resolve("client").resolve("jetbrains")
-    exec {
-      commandLine(*pnpmPath, "build")
-      workingDir(jetbrainsDir)
-    }
-    val buildOutput =
-        jetbrainsDir.resolve("src").resolve("main").resolve("resources").resolve("dist")
-    copyRecursively(buildOutput, destinationDir)
+    val resourcesDir = rootDir.resolve("src").resolve("main").resolve("resources")
+    val codeSearchArchive = resourcesDir.resolve("code-search.zip")
+    val destinationDir = resourcesDir.resolve("dist")
+    unzip(codeSearchArchive, destinationDir)
     return destinationDir
   }
 
