@@ -60,7 +60,6 @@ jobs:
         with:
           workload_identity_provider: ${{ secrets.DATA_TEAM_PROVIDER_NAME }}
           service_account: ${{ secrets.DATA_TEAM_SA_EMAIL }}
-      - uses: google-github-actions/setup-gcloud@v2
       - run: echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
         shell: bash
         id: pnpm-cache
@@ -109,7 +108,6 @@ jobs:
         with:
           workload_identity_provider: ${{ secrets.DATA_TEAM_PROVIDER_NAME }}
           service_account: ${{ secrets.DATA_TEAM_SA_EMAIL }}
-      - uses: google-github-actions/setup-gcloud@v2
       - run: echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
         shell: bash
         id: pnpm-cache
@@ -195,7 +193,6 @@ jobs:
         with:
           workload_identity_provider: ${{ secrets.DATA_TEAM_PROVIDER_NAME }}
           service_account: ${{ secrets.DATA_TEAM_SA_EMAIL }}
-      - uses: google-github-actions/setup-gcloud@v2
       - run: echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
         shell: bash
         id: pnpm-cache
