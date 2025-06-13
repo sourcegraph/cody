@@ -41,7 +41,7 @@ export const StorageWarningBanner = ({ extensionAPI, vscodeAPI }: StorageWarning
                 <header>
                     <h1 className="tw-text-blue-500">Chat History Storage is Full</h1>
                     <p className="tw-text-gray-500">
-                        VSCode's internal chat history storage is running low. Chat performance may be slow. To fix this,
+                        Large chat history state is loaded into memory and could cause performance issue in Cody. To fix this,
                         export your chat history to save a copy, then clear your chat history to free up
                         space.
                     </p>
