@@ -41,9 +41,10 @@ export const StorageWarningBanner = ({ extensionAPI, vscodeAPI }: StorageWarning
                 <header>
                     <h1 className="tw-text-blue-500">Large Chat History Detected</h1>
                     <p className="tw-text-gray-500">
-                        Large chat history state is loaded into memory and could cause performance issue in Cody. To fix this,
-                        export your chat history to save a copy, then clear your chat history to free up
-                        space.
+                        Your large chat history is being loaded into memory, which may slow down Cody's
+                        performance. To improve performance, select the options below to export your chat
+                        history to save a backup, then clear it to free up memory. You can also go to the
+                        history page to perform these actions.
                     </p>
                 </header>
                 <div className={`${styles.actions} tw-flex tw-gap-3 tw-flex-wrap`}>
