@@ -4,6 +4,29 @@ import * as constants from '../constants'
 import { getContextItemsForIdentifier, joinPromptsWithNewlineSeparator } from './common'
 import { getContextPromptWithPath } from './common'
 
+export function getRecentSnippetViewPromptWithMaxSnippetAge(
+    contextItems: AutocompleteContextSnippet[],
+    maxAgeContextMs: number
+): PromptString {
+    const recentViewedSnippets = getContextItemsForIdentifier(
+        contextItems,
+        RetrieverIdentifier.RecentViewPortRetriever
+    ).filter(
+        item =>
+            item.metadata?.timeSinceActionMs !== undefined &&
+            item.metadata.timeSinceActionMs < maxAgeContextMs
+    )
+
+    if (recentViewedSnippets.length === 0) {
+        return ps``
+    }
+
+    return joinPromptsWithNewlineSeparator([
+        constants.LONG_TERM_SNIPPET_VIEWS_INSTRUCTION,
+        getRecentlyViewedSnippetsPrompt(recentViewedSnippets),
+    ])
+}
+
 export function getRecentlyViewedSnippetsPrompt(
     contextItems: AutocompleteContextSnippet[]
 ): PromptString {
