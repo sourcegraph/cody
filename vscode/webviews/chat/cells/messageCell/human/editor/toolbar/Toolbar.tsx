@@ -43,7 +43,6 @@ export const Toolbar: FunctionComponent<{
 
     extensionAPI: WebviewToExtensionAPI
 
-    omniBoxEnabled: boolean
     onMediaUpload?: (mediaContextItem: ContextItemMedia) => void
 
     setLastManuallySelectedIntent: (intent: ChatMessage['intent']) => void
@@ -59,7 +58,6 @@ export const Toolbar: FunctionComponent<{
     models,
     intent,
     extensionAPI,
-    omniBoxEnabled,
     onMediaUpload,
     setLastManuallySelectedIntent,
 }) => {
@@ -149,7 +147,6 @@ export const Toolbar: FunctionComponent<{
                 />
                 <ModeSelectorField
                     className={className}
-                    omniBoxEnabled={omniBoxEnabled}
                     _intent={intent}
                     isDotComUser={userInfo?.isDotComUser}
                     isCodyProUser={userInfo?.isCodyProUser}

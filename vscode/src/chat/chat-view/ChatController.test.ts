@@ -33,7 +33,6 @@ describe('ChatController', () => {
 
     const mockContextRetriever = {
         retrieveContext: vi.fn(),
-        computeDidYouMean: vi.fn(),
     } satisfies ChatControllerOptions['contextRetriever']
 
     const mockEditor: VSCodeEditor = {} as any

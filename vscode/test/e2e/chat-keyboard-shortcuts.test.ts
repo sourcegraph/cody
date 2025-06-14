@@ -63,12 +63,9 @@ test.extend<DotcomUrlOverride>({ dotcomUrl: mockServer.SERVER_URL })(
 
         // Get the initial mode (should be "Chat" by default)
         await chatFrame.getByLabel('switch-mode').click()
-        await expect(chatFrame.getByText('ChatSearchEnterpriseEdit')).toBeVisible()
-        await expect(chatFrame.getByRole('option', { name: 'Search Enterprise' })).toBeDisabled()
 
         // Escape to close the mode selector
         await page.keyboard.press('Escape')
-        await expect(chatFrame.getByRole('option', { name: 'Search Enterprise' })).not.toBeVisible()
 
         // Try to cycle through modes using keyboard shortcut
         await page.keyboard.press(process.platform === 'darwin' ? 'Meta+.' : 'Control+.')
