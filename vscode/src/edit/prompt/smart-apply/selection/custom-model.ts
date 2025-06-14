@@ -58,10 +58,6 @@ export class CustomModelSelectionProvider implements SmartApplySelectionProvider
         chatClient,
         contextWindow,
     }: SelectionPromptProviderArgs): Promise<string> {
-        if (this.shouldAlwaysUseEntireFile) {
-            return 'ENTIRE_FILE'
-        }
-
         const documentRange = new vscode.Range(0, 0, document.lineCount - 1, 0)
         const documentText = PromptString.fromDocumentText(document, documentRange)
         const tokenCount = await TokenCounterUtils.countPromptString(documentText)
@@ -69,9 +65,10 @@ export class CustomModelSelectionProvider implements SmartApplySelectionProvider
         if (tokenCount > contextWindow.input) {
             throw new Error("The amount of text in this document exceeds Cody's current capacity.")
         }
-        if (tokenCount < FULL_FILE_REWRITE_TOKEN_TOKEN_LIMIT) {
+        if (tokenCount < FULL_FILE_REWRITE_TOKEN_TOKEN_LIMIT || this.shouldAlwaysUseEntireFile) {
             return 'ENTIRE_FILE'
         }
+
         const { prefix, messages } = await this.getPrompt(
             instruction,
             replacement,
