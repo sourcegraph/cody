@@ -145,7 +145,7 @@ export class FixupTask {
     }
 
     private getDefaultSelectionRange(proposedRange: vscode.Range): vscode.Range {
-        if (this.intent === 'add' || proposedRange.isEmpty) {
+        if (this.intent === 'add') {
             // We are only adding new code, no need to expand the range
             return proposedRange
         }
