@@ -19,7 +19,9 @@ describe('Edit', { timeout: 5000 }, () => {
         vi.spyOn(modelsService, 'models', 'get').mockReturnValue(FIXTURE_MODELS)
         await workspace.beforeAll()
         await client.beforeAll()
-        await client.request('command/execute', { command: 'cody.search.index-update' })
+        await client.request('command/execute', {
+            command: 'cody.search.index-update',
+        })
     })
 
     afterAll(async () => {
@@ -87,7 +89,7 @@ describe('Edit', { timeout: 5000 }, () => {
           	setChatID,
           	isLoading,
           }: ChatColumnProps) {
-          }	useEffect(() => {
+            useEffect(() => {
           		if (!isLoading) {
           			setChatID(messages[0].chatID);
           		}
