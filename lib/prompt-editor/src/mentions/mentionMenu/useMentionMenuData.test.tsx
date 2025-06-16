@@ -100,6 +100,98 @@ describe('useMentionMenuData', () => {
                 items: [file1],
             })
         })
+
+        test('shows both file with range and file without range for the same URI', async () => {
+            // Create two file items with the same URI - one with range, one without
+            const fileWithoutRange: ContextItem = {
+                uri: URI.file('example.ts'),
+                type: 'file',
+                title: 'Current File',
+                isTooLarge: undefined,
+                source: ContextItemSource.Initial,
+            }
+
+            const fileWithRange: ContextItem = {
+                uri: URI.file('example.ts'),
+                type: 'file',
+                title: 'Current Selection',
+                range: {
+                    start: { line: 10, character: 0 },
+                    end: { line: 20, character: 0 },
+                },
+                isTooLarge: undefined,
+                source: ContextItemSource.Initial,
+            }
+
+            // Mock API to return file with range from items
+            const mockProviders: ContextMentionProviderMetadata[] = [
+                { title: 'My Provider', id: 'my-provider', queryLabel: '', emptyLabel: '' },
+            ]
+
+            vi.mocked(useExtensionAPI).mockReturnValue({
+                ...MOCK_API,
+                mentionMenuData: () =>
+                    Observable.of({
+                        providers: mockProviders,
+                        items: [
+                            {
+                                ...fileWithRange,
+                                // Create a new object to ensure we're not just seeing the same object twice
+                                source: ContextItemSource.User,
+                            },
+                            {
+                                ...fileWithoutRange,
+                                // We also return the file without range to verify that deduplication works
+                                // This would normally be filtered out with the old logic since it has same URI and type
+                                source: ContextItemSource.User,
+                            },
+                        ],
+                    }),
+            })
+
+            // Set up initial context with file without range
+            // This test simulates having a file in the initial context (without range)
+            // and then getting items from the API that include both the file with and without range
+            vi.mocked(useDefaultContextForChat).mockReturnValue({
+                initialContext: [fileWithoutRange],
+                corpusContext: [],
+            })
+
+            const { result } = renderHook(() =>
+                useMentionMenuData(
+                    { query: '', parentItem: null },
+                    { remainingTokenBudget: 100, limit: 10 }
+                )
+            )
+
+            await waitForObservableInTest()
+
+            // Both files should appear in the menu items
+            const items = result.current.items || []
+            expect(items).toHaveLength(2)
+
+            // Check if we have an item with Current File title and no range
+            const hasFileWithoutRange = items.some(
+                item =>
+                    item.title === 'Current File' &&
+                    item.type === 'file' &&
+                    !item.range &&
+                    item.uri.path === '/example.ts'
+            )
+            expect(hasFileWithoutRange).toBe(true)
+
+            // Check if we have an item with Current Selection title and with range
+            const hasFileWithRange = items.some(
+                item =>
+                    item.title === 'Current Selection' &&
+                    item.type === 'file' &&
+                    item.range &&
+                    item.range.start.line === 10 &&
+                    item.range.end.line === 20 &&
+                    item.uri.path === '/example.ts'
+            )
+            expect(hasFileWithRange).toBe(true)
+        })
     })
 
     test('passes along errors', async () => {
