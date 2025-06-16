@@ -53,9 +53,51 @@ function findPreviousReleaseTag(ideType: IdeType, currentTag: string): string {
     }
 }
 
+function getCommitChangedFiles(commitHash: string): string[] {
+    try {
+        const output = execSync(`git show --name-only --pretty=format: ${commitHash}`, {
+            encoding: 'utf-8',
+        }).trim()
+        return output.split('\n').filter(file => file?.trim())
+    } catch (error) {
+        console.warn(`Could not get files for commit ${commitHash}: ${error}`)
+        return []
+    }
+}
+
+function shouldExcludeCommit(ideType: IdeType, changedFiles: string[]): boolean {
+    if (changedFiles.length === 0) {
+        // If we can't determine changed files, include the commit to be safe
+        return false
+    }
+
+    const hasWebChanges = changedFiles.some(file => file.startsWith('web/'))
+    const hasJetBrainsChanges = changedFiles.some(file => file.startsWith('jetbrains/'))
+    const hasAgentChanges = changedFiles.some(file => file.startsWith('agent/'))
+    const hasOtherChanges = changedFiles.some(
+        file => !file.startsWith('web/') && !file.startsWith('jetbrains/') && !file.startsWith('agent/')
+    )
+
+    if (ideType === 'jb') {
+        // Exclude commits that only changed web directory
+        return hasWebChanges && !hasJetBrainsChanges && !hasAgentChanges && !hasOtherChanges
+    }
+    if (ideType === 'web') {
+        // Exclude commits that only changed jetbrains directory
+        return hasJetBrainsChanges && !hasWebChanges && !hasAgentChanges && !hasOtherChanges
+    }
+    if (ideType === 'vscode') {
+        // Exclude commits that only changed web, jetbrains, or agent directories
+        return (hasWebChanges || hasJetBrainsChanges || hasAgentChanges) && !hasOtherChanges
+    }
+
+    return false
+}
+
 function extractLatestChangelogFromGit(
     currentTag: string,
-    previousTag: string
+    previousTag: string,
+    ideType: IdeType
 ): { content: string; previousVersion: string } {
     try {
         // Extract version from previous tag (remove prefix like "vscode-v" or "jb-v")
@@ -70,12 +112,23 @@ function extractLatestChangelogFromGit(
             return { content: 'No changes found.', previousVersion }
         }
 
-        // Format the commit messages as changelog content
-        const commits = gitLog.split('\n').map(line => {
-            const [hash, ...messageParts] = line.split(' ')
-            const message = messageParts.join(' ')
-            return `- ${message} (${hash})`
-        })
+        // Filter commits based on IDE type and changed files
+        const commits = gitLog
+            .split('\n')
+            .map(line => {
+                const [hash, ...messageParts] = line.split(' ')
+                const message = messageParts.join(' ')
+                return { hash, message }
+            })
+            .filter(({ hash }) => {
+                const changedFiles = getCommitChangedFiles(hash)
+                const shouldExclude = shouldExcludeCommit(ideType, changedFiles)
+                if (shouldExclude) {
+                    console.log(`Excluding commit ${hash}: only affects filtered directories`)
+                }
+                return !shouldExclude
+            })
+            .map(({ hash, message }) => `- ${message} (${hash})`)
 
         const content = `## Changes from ${previousTag} to ${currentTag}\n\n${commits.join('\n')}`
 
@@ -95,7 +148,7 @@ async function main(): Promise<void> {
 
     const [ideType, version] = args
     if (ideType !== 'vscode' && ideType !== 'jb' && ideType !== 'web') {
-        console.error('Repo type must be either "vscode" or "jb"')
+        console.error('Repo type must be either "vscode", "jb", or "web"')
         process.exit(1)
     }
 
@@ -106,7 +159,11 @@ async function main(): Promise<void> {
 
     console.log(`Extracting changes between ${previousTag} and ${currentTag}...`)
 
-    const { content, previousVersion } = extractLatestChangelogFromGit(currentTag, previousTag)
+    const { content, previousVersion } = extractLatestChangelogFromGit(
+        currentTag,
+        previousTag,
+        ideType as IdeType
+    )
     const summary = await summarizeChangelog(content)
     const minor = version.split('.').slice(1, 2).join('.')
     const previousMinor = extractPreviousMinor(minor)
@@ -127,7 +184,7 @@ async function main(): Promise<void> {
     console.log(output)
     console.log('\n==============================\n')
     // this is saved in the runner's local file system to be used in the release notes
-    await fs.promises.writeFile(path.join(__dirname, '../GITHUB_CHANGELOG.md'), output)
+    await fs.promises.writeFile(path.join(__dirname, '../RELEASE_NOTES.md'), output)
 }
 
 main().catch(console.error)
@@ -180,6 +237,7 @@ async function summarizeChangelog(changelog: string): Promise<string | Error> {
 
     Write your release notes inside <release_notes> tags. Begin with a brief introduction followed by the summarized release notes.
     `
+
     try {
         const response = await anthropic.messages.create({
             model: 'claude-3-5-sonnet-20241022',
@@ -200,7 +258,8 @@ async function summarizeChangelog(changelog: string): Promise<string | Error> {
             return releaseNotesMatch[1].trim()
         }
     } catch (error) {
-        console.log('Error summarizing changelog:', error)
+        console.log(`Error summarizing changelog: ${prompt}`, error)
+
         return new Error(`No release notes found in the response: ${error}`)
     }
 

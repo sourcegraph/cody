@@ -74,7 +74,7 @@ jobs:
           tag_name: ${{ github.ref }}
           release_name: Cody for VS Code ${{ env.EXT_VERSION }}
           draft: false
-          body_path: vscode/GITHUB_CHANGELOG.md
+          body_path: RELEASE_NOTES.md
       - name: upload release asset
         uses: actions/upload-release-asset@v1
         env:
