@@ -1,26 +1,19 @@
 package com.sourcegraph.common
 
 import java.net.URI
-import java.net.URLDecoder
-import java.nio.charset.StandardCharsets
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.util.Objects
 
 class CodyFileUri
 private constructor(
-    val originalScheme: String?,
+    private val originalScheme: String?,
     private val uri: URI,
-    private val basePath: String?
 ) {
-  fun toPath(): Path {
-    return Paths.get(uri)
-  }
-
-  fun toAbsolutePath(): Path {
-    var path = Paths.get(uri)
+  fun toAbsolutePath(basePath: String?): Path {
+    val path = Paths.get(uri)
     if (!path.isAbsolute && basePath != null) {
-      path = Paths.get(basePath).resolve(path)
+      return Paths.get(basePath).resolve(path)
     }
     return path
   }
@@ -29,17 +22,13 @@ private constructor(
     return uri.toString()
   }
 
-  fun toUri(): URI {
-    return uri
-  }
-
   fun isUntitled(): Boolean {
     return Objects.equals(originalScheme, "untitled")
   }
 
   companion object {
     @JvmStatic
-    fun parse(input: String, basePath: String?): CodyFileUri {
+    fun parse(input: String): CodyFileUri {
       val uri: URI
       val scheme: String?
 
@@ -51,29 +40,20 @@ private constructor(
 
         var modifiedUri = uri
         if (!Objects.equals(scheme, "file")) {
-          modifiedUri = replaceScheme(modifiedUri, "file")
+          val uriString = modifiedUri.toString().replace(modifiedUri.scheme + ":", "file:")
+          modifiedUri = URI(uriString)
         }
 
         if (!modifiedUri.schemeSpecificPart.startsWith("///")) {
           modifiedUri = replacePath(modifiedUri, "///" + modifiedUri.schemeSpecificPart)
         }
 
-        return CodyFileUri(scheme, modifiedUri, basePath)
+        return CodyFileUri(scheme, modifiedUri)
       } else {
-        val decodedInput = URLDecoder.decode(input, StandardCharsets.UTF_8)
-        scheme = null
+        val processedInput = input.replace("%5C", "/").replace("\\", "/").trimStart('/')
 
-        var processedInput = decodedInput
-        if (processedInput.length > 1 &&
-            Character.isLetter(processedInput[0]) &&
-            processedInput[1] == ':') {
-          processedInput = processedInput.replace("\\", "/")
-        }
-
-        uri = URI("file:///" + processedInput.trimStart('/'))
+        return CodyFileUri(originalScheme = null, URI("file:///$processedInput"))
       }
-
-      return CodyFileUri(scheme, uri, basePath)
     }
 
     private fun replacePath(originalUri: URI, newPath: String): URI {
@@ -83,17 +63,12 @@ private constructor(
       return URI(scheme + newPath)
     }
 
-    private fun replaceScheme(originalUri: URI, newScheme: String): URI {
-      val uriString = originalUri.toString().replace(originalUri.scheme + ":", "$newScheme:")
-      return URI(uriString)
-    }
-
     private fun addSlashesToWinPath(uri: String?): String {
       if (uri.isNullOrEmpty()) {
         return uri ?: ""
       }
 
-      var processedUri = uri.replace("%3A", ":")
+      val processedUri = uri.replace("%3A", ":")
 
       val schemePos = processedUri.indexOf(":")
       if (schemePos == -1) {

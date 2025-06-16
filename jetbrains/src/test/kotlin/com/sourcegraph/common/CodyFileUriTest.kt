@@ -10,7 +10,7 @@ class CodyFileUriTest(private val uri: String, private val expectedUri: String) 
 
   @Test
   fun `can parse uri from agent`() {
-    val result = CodyFileUri.parse(uri, null)
+    val result = CodyFileUri.parse(uri)
 
     assertEquals(expectedUri, result.toString())
   }
@@ -26,6 +26,9 @@ class CodyFileUriTest(private val uri: String, private val expectedUri: String) 
           arrayOf(
               "C:\\dev\\JetbrainsTestsProjects\\kotlin\\TestProject\\Validate.kt",
               "file:///C:/dev/JetbrainsTestsProjects/kotlin/TestProject/Validate.kt"),
+          arrayOf(
+              "C:\\dev\\Jetbrains%20Tests%20Projects\\kotlin\\TestProject\\Validate.kt",
+              "file:///C:/dev/Jetbrains%20Tests%20Projects/kotlin/TestProject/Validate.kt"),
           arrayOf(
               "file:///c%3A/dev/JetbrainsTestsProjects/kotlin/TestProject/src/Main.kt",
               "file:///c:/dev/JetbrainsTestsProjects/kotlin/TestProject/src/Main.kt"),
