@@ -19,7 +19,9 @@ describe('Edit', { timeout: 5000 }, () => {
         vi.spyOn(modelsService, 'models', 'get').mockReturnValue(FIXTURE_MODELS)
         await workspace.beforeAll()
         await client.beforeAll()
-        await client.request('command/execute', { command: 'cody.search.index-update' })
+        await client.request('command/execute', {
+            command: 'cody.search.index-update',
+        })
     })
 
     afterAll(async () => {
@@ -87,7 +89,8 @@ describe('Edit', { timeout: 5000 }, () => {
           	setChatID,
           	isLoading,
           }: ChatColumnProps) {
-          }	useEffect(() => {
+          }
+          	useEffect(() => {
           		if (!isLoading) {
           			setChatID(messages[0].chatID);
           		}
@@ -154,6 +157,31 @@ describe('Edit', { timeout: 5000 }, () => {
           }"
         `,
             explainPollyError
+        )
+    }, 20_000)
+
+    it('editCommand/code (SQL query completion - no duplication bug)', async () => {
+        const uri = workspace.file('src', 'query.sql')
+        await client.openFile(uri, { removeCursor: true })
+        client.userInput = {
+            instruction: 'add missing code',
+            model: 'anthropic::2024-10-22::claude-3-5-haiku-latest',
+        }
+        const taskId = await client.request('editTask/start', null)
+        if (!taskId) {
+            throw new Error('Task cannot be null or undefined')
+        }
+        await client.acceptEditTask(uri, taskId)
+
+        expect(client.documentText(uri)).toMatchInlineSnapshot(
+            `
+          "-- divide price and gst by 10
+          select audit_open('COM-1351-luke');
+          update products.fee
+          set gst = (price * 0.1)
+          where last_updated_by = 'COM-1351';
+          "
+        `
         )
     }, 20_000)
 })
