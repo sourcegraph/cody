@@ -22,7 +22,6 @@ import java.io.FileOutputStream
 import java.security.KeyStore
 import java.util.UUID
 import javax.crypto.spec.SecretKeySpec
-import org.apache.commons.lang.RandomStringUtils
 import org.jetbrains.annotations.TestOnly
 
 @Service(Service.Level.APP)
@@ -82,7 +81,8 @@ class CodySecureStore {
   private fun getKeystorePassword(): OneTimeString {
     var password = CodyPasswordStore.getFromPasswordStore(passwordKey)
     if (password == null) {
-      password = OneTimeString(RandomStringUtils.randomAlphanumeric(64))
+      val alphabet: List<Char> = ('a'..'z') + ('A'..'Z') + ('0'..'9')
+      password = OneTimeString(List(64) { alphabet.random() }.joinToString(""))
       CodyPasswordStore.writeToPasswordStore(passwordKey, password)
     }
     return password
