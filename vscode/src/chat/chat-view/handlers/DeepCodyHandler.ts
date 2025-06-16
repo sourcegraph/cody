@@ -94,20 +94,22 @@ export class DeepCodyHandler extends ChatHandler implements AgentHandler {
         codyApiVersion: number
     ): Promise<PromptInfo> {
         const result = await super.buildPrompt(prompter, chatBuilder, abortSignal, codyApiVersion)
-        
+
         // Check if terminal context items exist
-        const hasTerminalContext = result.context.used.some(item => item.source === ContextItemSource.Terminal)
-        
+        const hasTerminalContext = result.context.used.some(
+            item => item.source === ContextItemSource.Terminal
+        )
+
         if (hasTerminalContext) {
             // Prepend a system message about tool capabilities
             const toolCapabilityMessage: Message = {
                 speaker: 'system',
                 text: ps`You have access to terminal/shell tools and have executed commands to gather information. The terminal output is included in your context. You can reference and analyze this output in your response.`,
             }
-            
+
             result.prompt = [toolCapabilityMessage, ...result.prompt]
         }
-        
+
         return result
     }
 
