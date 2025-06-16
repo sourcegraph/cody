@@ -37,7 +37,9 @@
     "openctx:unlink": "pnpm unlink --global @openctx/client && pnpm unlink --global @openctx/schema &&  pnpm unlink --global @openctx/protocol && cd vscode && pnpm unlink --global @openctx/vscode-lib"
   },
   "devDependencies": {
+    "@anthropic-ai/sdk": "^0.33.1",
     "@biomejs/biome": "1.7.2",
+    "@types/dedent": "^0.7.0",
     "@sourcegraph/tsconfig": "^4.0.1",
     "@storybook/addon-essentials": "^8.0.5",
     "@storybook/react": "^8.0.5",

@@ -1,3 +1,4 @@
+import { execSync } from 'node:child_process'
 import fs from 'node:fs'
 import path from 'node:path'
 
@@ -20,30 +21,103 @@ import dedent from 'dedent'
  * **Full Comparison**: https://github.com/sourcegraph/cody/compare/M68...M70
  */
 
+type IdeType = 'vscode' | 'jb' | 'web'
+
+function buildGitTag(ideType: IdeType, version: string): string {
+    return `${ideType}-v${version}`
+}
+
+function findPreviousReleaseTag(ideType: IdeType, currentTag: string): string {
+    try {
+        const tagPrefix = `${ideType}-v`
+        const tags = execSync(`git tag --list "${tagPrefix}*" --sort=-version:refname`, {
+            encoding: 'utf-8',
+        })
+            .trim()
+            .split('\n')
+            .filter(tag => tag && !tag.includes('-nightly'))
+
+        const currentIndex = tags.indexOf(currentTag)
+        if (currentIndex === -1) {
+            throw new Error(`Current tag ${currentTag} not found in git tags`)
+        }
+
+        const previousTag = tags[currentIndex + 1]
+        if (!previousTag) {
+            throw new Error(`No previous tag found for ${currentTag}`)
+        }
+
+        return previousTag
+    } catch (error) {
+        throw new Error(`Failed to find previous release tag: ${error}`)
+    }
+}
+
+function extractLatestChangelogFromGit(
+    currentTag: string,
+    previousTag: string
+): { content: string; previousVersion: string } {
+    try {
+        // Extract version from previous tag (remove prefix like "vscode-v" or "jb-v")
+        const previousVersion = previousTag.replace(/^.+-v/, '')
+
+        // Get commit messages between tags
+        const gitLog = execSync(`git log ${previousTag}..${currentTag} --oneline --no-merges`, {
+            encoding: 'utf-8',
+        }).trim()
+
+        if (!gitLog) {
+            return { content: 'No changes found.', previousVersion }
+        }
+
+        // Format the commit messages as changelog content
+        const commits = gitLog.split('\n').map(line => {
+            const [hash, ...messageParts] = line.split(' ')
+            const message = messageParts.join(' ')
+            return `- ${message} (${hash})`
+        })
+
+        const content = `## Changes from ${previousTag} to ${currentTag}\n\n${commits.join('\n')}`
+
+        return { content, previousVersion }
+    } catch (error) {
+        throw new Error(`Failed to extract changelog from git: ${error}`)
+    }
+}
+
 async function main(): Promise<void> {
-    let output = ''
+    const args = process.argv.slice(2)
+    if (args.length !== 2) {
+        console.error('Usage: node release-notes.ts <repo-type> <version>')
+        console.error('Example: node release-notes.ts vscode 1.94.0')
+        process.exit(1)
+    }
 
-    const packageJSONPath = path.join(__dirname, '../package.json')
-    const packageJSONBody = await fs.promises.readFile(packageJSONPath, 'utf-8')
-    const packageJSON = JSON.parse(packageJSONBody)
-    const currentVersion: string = packageJSON.version
-    const changelogPath = path.join(__dirname, '../CHANGELOG.md')
-    const changelogBody = await fs.promises.readFile(changelogPath, 'utf-8')
+    const [ideType, version] = args
+    if (ideType !== 'vscode' && ideType !== 'jb' && ideType !== 'web') {
+        console.error('Repo type must be either "vscode" or "jb"')
+        process.exit(1)
+    }
 
-    console.log(`Writing release notes for ${currentVersion}...`)
+    console.log(`Writing release notes for ${ideType} v${version}...`)
 
-    const { content, previousVersion } = extractLatestChangelog(changelogBody, currentVersion)
+    const currentTag = buildGitTag(ideType as IdeType, version)
+    const previousTag = findPreviousReleaseTag(ideType as IdeType, currentTag)
+
+    console.log(`Extracting changes between ${previousTag} and ${currentTag}...`)
+
+    const { content, previousVersion } = extractLatestChangelogFromGit(currentTag, previousTag)
     const summary = await summarizeChangelog(content)
-    const minor = currentVersion.split('.').slice(1, 2).join('.')
+    const minor = version.split('.').slice(1, 2).join('.')
     const previousMinor = extractPreviousMinor(minor)
 
     const intro = dedent`
-    ✨ For the full technical changelog, see [What’s new in v${currentVersion}](https://github.com/sourcegraph/cody/blob/main/vscode/CHANGELOG.md) since v${previousVersion} ✨
+    ✨ For the full technical changelog, see [What’s new in v${version}](https://github.com/sourcegraph/cody/blob/main/vscode/CHANGELOG.md) since v${previousVersion} ✨
 
     ${summary instanceof Error ? '' : `${summary}`}
     `
 
-    output += `${intro}\n\n`
+    let output = `${intro}\n\n`
 
     const outro = dedent`
       **Full Comparison**: https://github.com/sourcegraph/cody/compare/M${previousMinor}...M${minor}
@@ -57,38 +131,6 @@ async function main(): Promise<void> {
 }
 
 main().catch(console.error)
-
-// Extract a list of changes and the previous version number
-function extractLatestChangelog(
-    changelog: string,
-    currentVersion: string
-): { content: string; previousVersion: string } {
-    const lines = changelog.split('\n')
-    const changes = []
-    let found = false
-    let previousVersion = ''
-    for (const line of lines) {
-        if (found) {
-            // If previous version header found, stop appending changelog content
-            if (line.startsWith('## ')) {
-                const versionMatches = /^## (?<dottedVersion>\d+\.\d+\.\d+)$/.exec(line)
-                if (!versionMatches?.groups) {
-                    throw new Error(`Malformed version line: ${line}`)
-                }
-                previousVersion = versionMatches.groups?.dottedVersion
-                break
-            }
-            changes.push(line)
-        } else if (line.startsWith(`## ${currentVersion}`)) {
-            found = true
-            changes.push(line)
-        }
-    }
-    return {
-        content: changes.join('\n'),
-        previousVersion,
-    }
-}
 
 function extractPreviousMinor(minor: string): string {
     return `${Number.parseInt(minor) - 2}`
