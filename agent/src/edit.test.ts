@@ -89,7 +89,8 @@ describe('Edit', { timeout: 5000 }, () => {
           	setChatID,
           	isLoading,
           }: ChatColumnProps) {
-            useEffect(() => {
+          }
+          	useEffect(() => {
           		if (!isLoading) {
           			setChatID(messages[0].chatID);
           		}
@@ -174,14 +175,13 @@ describe('Edit', { timeout: 5000 }, () => {
 
         expect(client.documentText(uri)).toMatchInlineSnapshot(
             `
-            "-- divide price and gst by 10
-            select audit_open('COM-1351-luke');
-            update products.fee
-            set gst = gst / 10,
-                price = price / 10
-            where last_updated_by = 'COM-1351';
-            "
-            `
+          "-- divide price and gst by 10
+          select audit_open('COM-1351-luke');
+          update products.fee
+          set gst = (price * 0.1)
+          where last_updated_by = 'COM-1351';
+          "
+        `
         )
     }, 20_000)
 })
