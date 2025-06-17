@@ -16,7 +16,6 @@ import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.vfs.VirtualFile
 import com.jetbrains.rd.util.firstOrNull
 import com.sourcegraph.Icons
-import com.sourcegraph.cody.agent.protocol_extensions.ProtocolTextDocumentExt
 import com.sourcegraph.cody.agent.protocol_generated.*
 import com.sourcegraph.cody.auth.CodyAuthService
 import com.sourcegraph.cody.auth.CodySecureStore
@@ -123,15 +122,6 @@ class CodyAgentClient(private val project: Project, private val webview: NativeW
     return runInEdtFuture {
       CodyEditorUtil.selectAndScrollToRange(project, params.uri, params.range, shouldScroll = true)
       return@runInEdtFuture null
-    }
-  }
-
-  override fun textDocument_openUntitledDocument(
-      params: UntitledTextDocument
-  ): CompletableFuture<ProtocolTextDocument?> {
-    return runInEdtFuture {
-      val vf = CodyEditorUtil.createFileOrUseExisting(project, params.uri, params.content)
-      vf?.let { ProtocolTextDocumentExt.fromVirtualFile(it) }
     }
   }
 
