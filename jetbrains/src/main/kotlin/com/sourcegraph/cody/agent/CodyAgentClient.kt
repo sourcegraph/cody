@@ -101,7 +101,7 @@ class CodyAgentClient(private val project: Project, private val webview: NativeW
   override fun textDocument_show(params: TextDocument_ShowParams): CompletableFuture<Boolean> {
     return runInBackground {
       val vf =
-          runInEdtFuture { CodyEditorUtil.findFileOrScratch(project, params.uri) }.get()
+          runInEdtFuture { CodyEditorUtil.findFile(params.uri) }.get()
               ?: return@runInBackground false
       val selection = params.options?.selection
       val preserveFocus = params.options?.preserveFocus

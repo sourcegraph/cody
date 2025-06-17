@@ -1,10 +1,7 @@
 package com.sourcegraph.utils
 
-import com.intellij.ide.scratch.ScratchFileService
-import com.intellij.ide.scratch.ScratchRootType
 import com.intellij.injected.editor.EditorWindow
 import com.intellij.lang.Language
-import com.intellij.lang.LanguageUtil
 import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.editor.Document
@@ -14,8 +11,6 @@ import com.intellij.openapi.editor.ScrollType
 import com.intellij.openapi.editor.ex.EditorEx
 import com.intellij.openapi.editor.impl.ImaginaryEditor
 import com.intellij.openapi.fileEditor.*
-import com.intellij.openapi.fileTypes.FileTypeRegistry
-import com.intellij.openapi.fileTypes.PlainTextLanguage
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Key
 import com.intellij.openapi.util.TextRange
@@ -30,6 +25,7 @@ import com.sourcegraph.cody.agent.protocol_generated.Range
 import com.sourcegraph.common.CodyFileUri
 import com.sourcegraph.config.ConfigUtil
 import com.sourcegraph.utils.ThreadingUtil.runInEdtAndGet
+import java.nio.file.Paths
 import kotlin.io.path.*
 
 object CodyEditorUtil {
@@ -178,15 +174,9 @@ object CodyEditorUtil {
     }
   }
 
-  fun findFileOrScratch(project: Project, uriString: String): VirtualFile? {
-    val uri = CodyFileUri.parse(uriString)
-    if (uri.isUntitled()) {
-      return ScratchRootType.getInstance()
-          .findFile(project, uri.toString(), ScratchFileService.Option.existing_only)
-    } else {
-      val path = uri.toAbsolutePath(project.basePath)
-      return VirtualFileManager.getInstance().refreshAndFindFileByNioPath(path)
-    }
+  fun findFile(uriString: String): VirtualFile? {
+    val path = Paths.get(CodyFileUri.parse(uriString))
+    return VirtualFileManager.getInstance().refreshAndFindFileByNioPath(path)
   }
 
   fun createFileOrUseExisting(
@@ -195,7 +185,8 @@ object CodyEditorUtil {
       content: String? = null,
       overwrite: Boolean = false
   ): VirtualFile? {
-    val path = CodyFileUri.parse(uriString).toAbsolutePath(project.basePath)
+    val path = Paths.get(CodyFileUri.parse(uriString))
+
     if (overwrite || path.notExists()) {
       path.parent.createDirectories()
       path.deleteIfExists()
@@ -210,22 +201,10 @@ object CodyEditorUtil {
     return VirtualFileManager.getInstance().refreshAndFindFileByNioPath(path)
   }
 
-  fun createScratchOrUseExisting(
-      project: Project,
-      fileName: String,
-      content: String? = null,
-  ): VirtualFile? {
-    val fileType = FileTypeRegistry.getInstance().getFileTypeByFileName(fileName)
-    val language = LanguageUtil.getFileTypeLanguage(fileType) ?: PlainTextLanguage.INSTANCE
-    return ScratchRootType.getInstance()
-        .createScratchFile(
-            project, fileName, language, content ?: "", ScratchFileService.Option.create_if_missing)
-  }
-
   @JvmStatic
   @RequiresEdt
   fun selectAndScrollToRange(project: Project, uri: String, range: Range, shouldScroll: Boolean) {
-    val vf = findFileOrScratch(project, uri) ?: return
+    val vf = findFile(uri) ?: return
     val textEditor = getSelectedEditors(project).find { it.virtualFile == vf } ?: return
     textEditor.selectionModel.setSelection(
         range.start.toBoundedOffset(textEditor.document),

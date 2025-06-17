@@ -1,34 +1,13 @@
 package com.sourcegraph.common
 
 import java.net.URI
-import java.nio.file.Path
-import java.nio.file.Paths
 import java.util.Objects
 
-class CodyFileUri
-private constructor(
-    private val originalScheme: String?,
-    private val uri: URI,
-) {
-  fun toAbsolutePath(basePath: String?): Path {
-    val path = Paths.get(uri)
-    if (!path.isAbsolute && basePath != null) {
-      return Paths.get(basePath).resolve(path)
-    }
-    return path
-  }
-
-  override fun toString(): String {
-    return uri.toString()
-  }
-
-  fun isUntitled(): Boolean {
-    return Objects.equals(originalScheme, "untitled")
-  }
+class CodyFileUri {
 
   companion object {
     @JvmStatic
-    fun parse(input: String): CodyFileUri {
+    fun parse(input: String): URI {
       val uri: URI
       val scheme: String?
 
@@ -48,11 +27,10 @@ private constructor(
           modifiedUri = replacePath(modifiedUri, "///" + modifiedUri.schemeSpecificPart)
         }
 
-        return CodyFileUri(scheme, modifiedUri)
+        return modifiedUri
       } else {
         val processedInput = input.replace("%5C", "/").replace("\\", "/").trimStart('/')
-
-        return CodyFileUri(originalScheme = null, URI("file:///$processedInput"))
+        return URI("file:///$processedInput")
       }
     }
 

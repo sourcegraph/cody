@@ -32,7 +32,7 @@ class EditService(val project: Project) {
    */
   fun performTextEdits(uri: String, edits: List<TextEdit>): Boolean {
     val file =
-        CodyEditorUtil.findFileOrScratch(project, uri)
+        CodyEditorUtil.findFile(uri)
             ?: run {
               logger.warn("Failed to find file for URI: $uri")
               return false
