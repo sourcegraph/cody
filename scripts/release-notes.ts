@@ -65,33 +65,27 @@ function getCommitChangedFiles(commitHash: string): string[] {
     }
 }
 
-function shouldExcludeCommit(ideType: IdeType, changedFiles: string[]): boolean {
+function shouldIncludeCommit(ideType: IdeType, changedFiles: string[]): boolean {
     if (changedFiles.length === 0) {
         // If we can't determine changed files, include the commit to be safe
-        return false
+        return true
     }
 
     const hasWebChanges = changedFiles.some(file => file.startsWith('web/'))
     const hasJetBrainsChanges = changedFiles.some(file => file.startsWith('jetbrains/'))
     const hasAgentChanges = changedFiles.some(file => file.startsWith('agent/'))
-    const hasOtherChanges = changedFiles.some(
+    const hasCommonChanges = changedFiles.some(
         file => !file.startsWith('web/') && !file.startsWith('jetbrains/') && !file.startsWith('agent/')
     )
 
     if (ideType === 'jb') {
-        // Exclude commits that only changed web directory
-        return hasWebChanges && !hasJetBrainsChanges && !hasAgentChanges && !hasOtherChanges
+        return hasJetBrainsChanges || hasAgentChanges || hasCommonChanges
     }
     if (ideType === 'web') {
-        // Exclude commits that only changed jetbrains directory
-        return hasJetBrainsChanges && !hasWebChanges && !hasAgentChanges && !hasOtherChanges
-    }
-    if (ideType === 'vscode') {
-        // Exclude commits that only changed web, jetbrains, or agent directories
-        return (hasWebChanges || hasJetBrainsChanges || hasAgentChanges) && !hasOtherChanges
+        return hasWebChanges || hasAgentChanges || hasCommonChanges
     }
 
-    return false
+    return hasCommonChanges
 }
 
 function extractLatestChangelogFromGit(
@@ -122,11 +116,11 @@ function extractLatestChangelogFromGit(
             })
             .filter(({ hash }) => {
                 const changedFiles = getCommitChangedFiles(hash)
-                const shouldExclude = shouldExcludeCommit(ideType, changedFiles)
-                if (shouldExclude) {
+                const shouldIncludede = shouldIncludeCommit(ideType, changedFiles)
+                if (!shouldIncludede) {
                     console.log(`Excluding commit ${hash}: only affects filtered directories`)
                 }
-                return !shouldExclude
+                return shouldIncludede
             })
             .map(({ hash, message }) => `- ${message} (${hash})`)
 
