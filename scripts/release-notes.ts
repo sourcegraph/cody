@@ -21,15 +21,15 @@ import dedent from 'dedent'
  * **Full Comparison**: https://github.com/sourcegraph/cody/compare/M68...M70
  */
 
-type IdeType = 'vscode' | 'jb' | 'web'
+type ClientType = 'vscode' | 'jb' | 'web'
 
-function buildGitTag(ideType: IdeType, version: string): string {
-    return `${ideType}-v${version}`
+function buildGitTag(clientType: ClientType, version: string): string {
+    return `${clientType}-v${version}`
 }
 
-function findPreviousReleaseTag(ideType: IdeType, currentTag: string): string {
+function findPreviousReleaseTag(clientType: ClientType, currentTag: string): string {
     try {
-        const tagPrefix = `${ideType}-v`
+        const tagPrefix = `${clientType}-v`
         const tags = execSync(`git tag --list "${tagPrefix}*" --sort=-version:refname`, {
             encoding: 'utf-8',
         })
@@ -65,7 +65,7 @@ function getCommitChangedFiles(commitHash: string): string[] {
     }
 }
 
-function shouldIncludeCommit(ideType: IdeType, changedFiles: string[]): boolean {
+function shouldIncludeCommit(clientType: ClientType, changedFiles: string[]): boolean {
     if (changedFiles.length === 0) {
         // If we can't determine changed files, include the commit to be safe
         return true
@@ -78,10 +78,10 @@ function shouldIncludeCommit(ideType: IdeType, changedFiles: string[]): boolean 
         file => !file.startsWith('web/') && !file.startsWith('jetbrains/') && !file.startsWith('agent/')
     )
 
-    if (ideType === 'jb') {
+    if (clientType === 'jb') {
         return hasJetBrainsChanges || hasAgentChanges || hasCommonChanges
     }
-    if (ideType === 'web') {
+    if (clientType === 'web') {
         return hasWebChanges || hasAgentChanges || hasCommonChanges
     }
 
@@ -91,7 +91,7 @@ function shouldIncludeCommit(ideType: IdeType, changedFiles: string[]): boolean 
 function extractLatestChangelogFromGit(
     currentTag: string,
     previousTag: string,
-    ideType: IdeType
+    clientType: ClientType
 ): { content: string; previousVersion: string } {
     try {
         // Extract version from previous tag (remove prefix like "vscode-v" or "jb-v")
@@ -114,11 +114,13 @@ function extractLatestChangelogFromGit(
                 const message = messageParts.join(' ')
                 return { hash, message }
             })
-            .filter(({ hash }) => {
+            .filter(({ message, hash }) => {
                 const changedFiles = getCommitChangedFiles(hash)
-                const shouldIncludede = shouldIncludeCommit(ideType, changedFiles)
+                const shouldIncludede = shouldIncludeCommit(clientType, changedFiles)
                 if (!shouldIncludede) {
-                    console.log(`Excluding commit ${hash}: only affects filtered directories`)
+                    console.log(
+                        `Excluding commit ${hash} due to selected client '${clientType}': ${message}`
+                    )
                 }
                 return shouldIncludede
             })
@@ -140,23 +142,23 @@ async function main(): Promise<void> {
         process.exit(1)
     }
 
-    const [ideType, version] = args
-    if (ideType !== 'vscode' && ideType !== 'jb' && ideType !== 'web') {
+    const [clientType, version] = args
+    if (clientType !== 'vscode' && clientType !== 'jb' && clientType !== 'web') {
         console.error('Repo type must be either "vscode", "jb", or "web"')
         process.exit(1)
     }
 
-    console.log(`Writing release notes for ${ideType} v${version}...`)
+    console.log(`Writing release notes for ${clientType} v${version}...`)
 
-    const currentTag = buildGitTag(ideType as IdeType, version)
-    const previousTag = findPreviousReleaseTag(ideType as IdeType, currentTag)
+    const currentTag = buildGitTag(clientType as ClientType, version)
+    const previousTag = findPreviousReleaseTag(clientType as ClientType, currentTag)
 
     console.log(`Extracting changes between ${previousTag} and ${currentTag}...`)
 
     const { content, previousVersion } = extractLatestChangelogFromGit(
         currentTag,
         previousTag,
-        ideType as IdeType
+        clientType as ClientType
     )
     const summary = await summarizeChangelog(content)
     const minor = version.split('.').slice(1, 2).join('.')
