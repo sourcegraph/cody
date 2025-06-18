@@ -71,6 +71,9 @@ class AutoeditManager(private val project: Project) {
     val (vcsDocument, range) = computeAutoedit(editor, item) ?: return
 
     val myDisposable = Disposable {
+      if (activeAutocompleteEditItem != null || activeAutoeditEditor != null) {
+        runInEdt { HintManagerImpl.getInstanceImpl().hideAllHints() }
+      }
       activeAutoeditEditor = null
       activeAutocompleteEditItem = null
     }
@@ -91,10 +94,7 @@ class AutoeditManager(private val project: Project) {
   }
 
   fun hide() {
-    runInEdt {
-      HintManagerImpl.getInstanceImpl().hideAllHints()
-      disposable.dispose()
-    }
+    disposable.dispose()
   }
 
   companion object {
