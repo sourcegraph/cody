@@ -34,7 +34,8 @@
     "update-agent-recordings-windows": "PowerShell -ExecutionPolicy Bypass -Command \"pnpm build; if ($?) { $Env:CODY_KEEP_UNUSED_RECORDINGS='false'; $Env:CODY_RECORD_IF_MISSING='true'; vitest run agent/src; cd jetbrains; ./gradlew :recordingIntegrationTest -PforceAgentBuild=true }\"",
     "update-rewrite-recordings": "rm -rf recordings && CODY_RECORD_IF_MISSING=true CODY_RECORDING_MODE=record vitest run vscode/src/local-context/rewrite-keyword-query.test.ts",
     "openctx:link": "cd ../openctx && pnpm -C lib/client link --global && pnpm -C lib/schema link --global && pnpm -C lib/protocol link --global && pnpm -C client/vscode-lib link --global && cd ../cody && pnpm link --global @openctx/client && pnpm link --global @openctx/schema &&  pnpm link --global @openctx/protocol && cd vscode && pnpm link --global @openctx/vscode-lib",
-    "openctx:unlink": "pnpm unlink --global @openctx/client && pnpm unlink --global @openctx/schema &&  pnpm unlink --global @openctx/protocol && cd vscode && pnpm unlink --global @openctx/vscode-lib"
+    "openctx:unlink": "pnpm unlink --global @openctx/client && pnpm unlink --global @openctx/schema &&  pnpm unlink --global @openctx/protocol && cd vscode && pnpm unlink --global @openctx/vscode-lib",
+    "release-notes": "ts-node-transpile-only ./scripts/release-notes.ts"
   },
   "devDependencies": {
     "@anthropic-ai/sdk": "^0.33.1",
