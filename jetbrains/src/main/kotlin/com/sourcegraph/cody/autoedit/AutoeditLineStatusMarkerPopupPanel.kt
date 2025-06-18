@@ -125,27 +125,26 @@ private constructor(val editor: Editor, private val editorComponent: JComponent)
               /*reviveOnEditorChange = */ false,
               HintHint(editor, point))
 
-      ApplicationManager.getApplication()
-          .messageBus
-          .connect(childDisposable)
-          .subscribe<EditorHintListener>(
-              EditorHintListener.TOPIC,
-              object : EditorHintListener {
-                override fun hintShown(
-                    newEditor: Editor,
-                    newHint: LightweightHint,
-                    flags: Int,
-                    hintInfo: HintHint
-                ) {
-                  // Ex: if popup re-shown by ToggleByWordDiffAction
-                  val newPopupPanel = newHint.component
-                  if (newPopupPanel is AutoeditLineStatusMarkerPopupPanel) {
-                    if (newPopupPanel.editor == newEditor) {
-                      hint.hide()
-                    }
-                  }
+      val connect = ApplicationManager.getApplication().messageBus.connect(childDisposable)
+      connect.subscribe<EditorHintListener>(
+          EditorHintListener.TOPIC,
+          object : EditorHintListener {
+            override fun hintShown(
+                newEditor: Editor,
+                newHint: LightweightHint,
+                flags: Int,
+                hintInfo: HintHint
+            ) {
+              // Ex: if popup re-shown by ToggleByWordDiffAction
+              val newPopupPanel = newHint.component
+              if (newPopupPanel is AutoeditLineStatusMarkerPopupPanel) {
+                if (newPopupPanel.editor == newEditor) {
+                  hint.hide()
                 }
-              })
+              }
+            }
+          })
+      connect.subscribe(AutoeditManager.TOPIC, Runnable { hint.hide() })
 
       if (!hint.isVisible) {
         closeListener.hintHidden(EventObject(hint))
