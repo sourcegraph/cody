@@ -94,7 +94,7 @@ export const AutoeditDetailView: FC<{
                         <div className="tw-mt-8">
                             <SideBySideDiff
                                 sideBySideDiffDecorationInfo={entry.sideBySideDiffDecorationInfo}
-                                languageId={entry.state.payload.languageId}
+                                languageId={entry.state.payload.language}
                                 codeToRewrite={codeToRewrite || ''}
                                 prediction={prediction || ''}
                             />

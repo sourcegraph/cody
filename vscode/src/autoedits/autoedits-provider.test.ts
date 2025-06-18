@@ -171,7 +171,7 @@ describe('AutoeditsProvider', () => {
                 "charCount": 2,
                 "lineCount": 2,
               },
-              "languageId": "typescript",
+              "language": "typescript",
               "model": "autoedits-deepseek-lite-default",
               "otherCompletionProviders": [],
               "prediction": "const x = 1
@@ -234,7 +234,7 @@ describe('AutoeditsProvider', () => {
                 "charCount": 2,
                 "lineCount": 2,
               },
-              "languageId": "typescript",
+              "language": "typescript",
               "model": "autoedits-deepseek-lite-default",
               "otherCompletionProviders": [],
               "prediction": "const x = 1
@@ -304,7 +304,7 @@ describe('AutoeditsProvider', () => {
                 "charCount": 2,
                 "lineCount": 2,
               },
-              "languageId": "typescript",
+              "language": "typescript",
               "model": "autoedits-deepseek-lite-default",
               "otherCompletionProviders": [],
               "prediction": "const x = 1

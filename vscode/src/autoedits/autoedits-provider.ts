@@ -408,7 +408,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                 requestDocContext,
                 document,
                 payload: {
-                    languageId: document.languageId,
+                    language: document.languageId,
                     model: autoeditsProviderConfig.model,
                     codeToRewrite: requestCodeToReplaceData.codeToRewrite,
                     triggerKind,

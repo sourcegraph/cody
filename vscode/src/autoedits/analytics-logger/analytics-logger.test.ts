@@ -84,7 +84,7 @@ describe('AutoeditAnalyticsLogger', () => {
             position,
             codeToReplaceData: codeToReplace,
             payload: {
-                languageId: 'typescript',
+                language: 'typescript',
                 model: 'autoedit-model',
                 triggerKind: autoeditTriggerKind.automatic,
                 codeToRewrite: 'Code to rewrite',
@@ -267,7 +267,7 @@ describe('AutoeditAnalyticsLogger', () => {
               "gatewayLatency": undefined,
               "id": "stable-id-for-tests-2",
               "inlineCompletionStats": undefined,
-              "languageId": "typescript",
+              "language": "typescript",
               "model": "autoedit-model",
               "otherCompletionProviders": [],
               "prediction": "say("Hello from autoedit!")",

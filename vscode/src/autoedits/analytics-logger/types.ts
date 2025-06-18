@@ -208,7 +208,7 @@ export interface StartedState extends AutoeditBaseState {
     /** Partial payload for this phase. Will be augmented with more info as we progress. */
     payload: {
         /** Document language ID (e.g., 'typescript'). */
-        languageId: string
+        language: string
 
         /** Model used by Cody client to request the autosuggestion suggestion. */
         model: string

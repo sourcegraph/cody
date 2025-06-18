@@ -205,8 +205,8 @@ export const getDiscardReason = (entry: AutoeditRequestDebugState): string | nul
  * Gets language ID if available
  */
 export const getLanguageId = (entry: AutoeditRequestDebugState): string | null => {
-    if ('payload' in entry.state && 'languageId' in entry.state.payload) {
-        return entry.state.payload.languageId
+    if ('payload' in entry.state && 'language' in entry.state.payload) {
+        return entry.state.payload.language
     }
     return null
 }

@@ -109,7 +109,7 @@ export class AutoeditAnalyticsLogger {
         position: vscode.Position
         requestDocContext: DocumentContext
         payload: Required<
-            Pick<StartedState['payload'], 'languageId' | 'model' | 'triggerKind' | 'codeToRewrite'>
+            Pick<StartedState['payload'], 'language' | 'model' | 'triggerKind' | 'codeToRewrite'>
         >
     }): AutoeditRequestID {
         const { codeToRewrite, ...restPayload } = payload
