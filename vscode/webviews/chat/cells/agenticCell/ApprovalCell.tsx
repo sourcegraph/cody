@@ -52,7 +52,7 @@ const ApprovalCell: FC<{ vscodeAPI: VSCodeWrapper }> = ({ vscodeAPI }) => {
                             <TriangleAlertIcon size={16} />{' '}
                             {a.title ? CONFIRMATION_TITLES[a.title] ?? a.title : 'Action Required'}
                         </span>
-                        <div className="tw-my-4 tw-text-xs tw-font-normal tw-bg-[var(--code-background)] tw-px-4 tw-py-2 tw-rounded-sm tw-border tw-border-border tw-font-mono">
+                        <div className="tw-my-4 tw-text-xs tw-font-normal tw-bg-[var(--code-background)] tw-px-4 tw-py-2 tw-rounded-sm tw-border tw-border-border tw-font-mono tw-text-foreground">
                             {a.content}
                         </div>
                         <div className="tw-gap-2 tw-w-full tw-inline-flex tw-justify-end">

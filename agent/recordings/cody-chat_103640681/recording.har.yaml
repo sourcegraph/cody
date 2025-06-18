@@ -92,120 +92,7 @@ log:
         send: 0
         ssl: -1
         wait: 209
-    - _id: 4e52072fd4d5cc0c7a19fd3fee1136b6
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 640
-        cookies: []
-        headers:
-          - name: accept-encoding
-            value: gzip;q=0
-          - name: authorization
-            value: token
-              REDACTED_1858aad0e1ff07ae26d4042086acb9da455866ad617afd2cb9ab9419e1be1104
-          - name: connection
-            value: keep-alive
-          - name: content-type
-            value: application/json
-          - name: user-agent
-            value: cody-cli/6.0.0-SNAPSHOT (Node.js v20.4.0)
-          - name: x-requested-with
-            value: cody-cli 6.0.0-SNAPSHOT
-          - name: host
-            value: sourcegraph.sourcegraph.com
-        headersSize: 511
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json
-          params: []
-          textJSON:
-            maxTokensToSample: 4000
-            messages:
-              - speaker: system
-                text: >-
-                  You are Cody, an AI coding assistant from Sourcegraph.If your
-                  answer contains fenced code blocks in Markdown, include the
-                  relevant full file path in the code block tag using this
-                  structure: ```$LANGUAGE:$FILEPATH```
-
-                  For executable terminal commands: enclose each command in individual "bash" language code block without comments and new lines inside.
-              - speaker: human
-                text: |-
-                  Answer positively without apologizing.
-
-                  Question: respond with "hello" and nothing else
-            model: anthropic::2024-10-22::claude-3-5-sonnet-latest
-            temperature: 0.2
-            topK: -1
-            topP: -1
-        queryString:
-          - name: api-version
-            value: "5"
-          - name: client-name
-            value: jetbrains
-          - name: client-version
-            value: 6.0.0-SNAPSHOT
-        url: https://sourcegraph.sourcegraph.com/.api/completions/stream?api-version=5&client-name=jetbrains&client-version=6.0.0-SNAPSHOT
-      response:
-        bodySize: 370
-        content:
-          mimeType: text/event-stream
-          size: 370
-          text: >+
-            event: completion
-
-            data: {"deltaText":"```bash\necho \"hello\"\n```","stopReason":"end_turn"}
-
-
-            event: done
-
-            data: {}
-
-        cookies: []
-        headers:
-          - name: date
-            value: Fri, 07 Mar 2025 16:54:28 GMT
-          - name: content-type
-            value: text/event-stream
-          - name: transfer-encoding
-            value: chunked
-          - name: connection
-            value: keep-alive
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache
-          - name: vary
-            value: Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
-              Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1411
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2025-03-07T16:54:27.857Z
-      time: 883
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 883
-    - _id: b3d23188281333a76d66b0880c0ca96e
+    - _id: a5393422d41b2804d3a7af294df61481
       _order: 0
       cache: {}
       request:
@@ -244,6 +131,122 @@ log:
                   structure: ```$LANGUAGE:$FILEPATH```
 
                   For executable terminal commands: enclose each command in individual "bash" language code block without comments and new lines inside.
+
+
+                  Check if you have access to terminal/shell tools. If so, use it to execute commands to gather information. The terminal output is included in your context. You can reference and analyze this output in your response.
+              - speaker: human
+                text: |-
+                  Answer positively without apologizing.
+
+                  Question: respond with "hello" and nothing else
+            model: anthropic::2024-10-22::claude-3-5-sonnet-latest
+            temperature: 0.2
+            topK: -1
+            topP: -1
+        queryString:
+          - name: api-version
+            value: "5"
+          - name: client-name
+            value: jetbrains
+          - name: client-version
+            value: 6.0.0-SNAPSHOT
+        url: https://sourcegraph.sourcegraph.com/.api/completions/stream?api-version=5&client-name=jetbrains&client-version=6.0.0-SNAPSHOT
+      response:
+        bodySize: 316
+        content:
+          mimeType: text/event-stream
+          size: 316
+          text: |+
+            event: completion
+            data: {"deltaText":"hello","stopReason":"end_turn"}
+
+            event: done
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Wed, 18 Jun 2025 07:10:04 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Accept-Encoding, Authorization, Authorization, Cookie, Authorization,
+              X-Requested-With, Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1274
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2025-06-18T07:10:03.189Z
+      time: 1433
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 1433
+    - _id: 38aa42181c4138a6ab5e340b9d6d95e7
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 1078
+        cookies: []
+        headers:
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_1858aad0e1ff07ae26d4042086acb9da455866ad617afd2cb9ab9419e1be1104
+          - name: connection
+            value: keep-alive
+          - name: content-type
+            value: application/json
+          - name: user-agent
+            value: cody-cli/6.0.0-SNAPSHOT (Node.js v20.4.0)
+          - name: x-requested-with
+            value: cody-cli 6.0.0-SNAPSHOT
+          - name: host
+            value: sourcegraph.sourcegraph.com
+        headersSize: 511
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            maxTokensToSample: 4000
+            messages:
+              - speaker: system
+                text: >-
+                  You are Cody, an AI coding assistant from Sourcegraph.If your
+                  answer contains fenced code blocks in Markdown, include the
+                  relevant full file path in the code block tag using this
+                  structure: ```$LANGUAGE:$FILEPATH```
+
+                  For executable terminal commands: enclose each command in individual "bash" language code block without comments and new lines inside.
+
+
+                  Check if you have access to terminal/shell tools. If so, use it to execute commands to gather information. The terminal output is included in your context. You can reference and analyze this output in your response.
               - speaker: human
                 text: |-
                   Codebase context from file animal.ts:
@@ -290,7 +293,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 08 May 2025 03:07:46 GMT
+            value: Wed, 18 Jun 2025 07:10:08 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -304,8 +307,8 @@ log:
           - name: cache-control
             value: no-cache
           - name: vary
-            value: Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
-              Cookie
+            value: Accept-Encoding, Authorization, Authorization, Cookie, Authorization,
+              X-Requested-With, Cookie
           - name: x-content-type-options
             value: nosniff
           - name: x-frame-options
@@ -314,13 +317,13 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1259
+        headersSize: 1274
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-05-08T03:07:45.288Z
-      time: 2916
+      startedDateTime: 2025-06-18T07:10:07.383Z
+      time: 1958
       timings:
         blocked: -1
         connect: -1
@@ -328,7 +331,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 2916
+        wait: 1958
     - _id: 5d0e29776bf0857beffb22b778ce488b
       _order: 0
       cache: {}
@@ -1364,5 +1367,73 @@ log:
         send: 0
         ssl: -1
         wait: 279
+    - _id: 05b1b3e86e3266d614fa8f1c2769255b
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 0
+        cookies: []
+        headers:
+          - _fromType: array
+            name: authorization
+            value: token
+              REDACTED_1858aad0e1ff07ae26d4042086acb9da455866ad617afd2cb9ab9419e1be1104
+          - _fromType: array
+            name: content-type
+            value: application/json; charset=utf-8
+          - _fromType: array
+            name: user-agent
+            value: cody-cli/6.0.0-SNAPSHOT (Node.js v20.4.0)
+          - _fromType: array
+            name: x-requested-with
+            value: cody-cli 6.0.0-SNAPSHOT
+          - _fromType: array
+            name: accept
+            value: "*/*"
+          - _fromType: array
+            name: accept-encoding
+            value: gzip,deflate
+          - name: host
+            value: sourcegraph.sourcegraph.com
+        headersSize: 368
+        httpVersion: HTTP/1.1
+        method: GET
+        queryString: []
+        url: https://sourcegraph.sourcegraph.com/healthz
+      response:
+        bodySize: 34
+        content:
+          mimeType: text/plain; charset=utf-8
+          size: 34
+          text: 331645_2025-06-18_6.4-31206c043b5e
+        cookies: []
+        headers:
+          - name: date
+            value: Wed, 18 Jun 2025 07:10:13 GMT
+          - name: content-type
+            value: text/plain; charset=utf-8
+          - name: content-length
+            value: "34"
+          - name: connection
+            value: close
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+          - name: x-content-type-options
+            value: nosniff
+        headersSize: 1015
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2025-06-18T07:10:13.133Z
+      time: 194
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 194
   pages: []
   version: "1.2"

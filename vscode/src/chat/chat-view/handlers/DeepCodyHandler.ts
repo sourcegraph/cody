@@ -1,4 +1,3 @@
-import { env } from 'node:process'
 import {
     type AgentToolboxSettings,
     type ContextItem,
@@ -20,6 +19,7 @@ import {
 } from '@sourcegraph/cody-shared'
 import { DeepCodyAgentID } from '@sourcegraph/cody-shared/src/models/client'
 import { type Observable, Subject, map } from 'observable-fns'
+import * as vscode from 'vscode'
 import { DeepCodyAgent } from '../../agentic/DeepCody'
 import type { ChatBuilder } from '../ChatBuilder'
 import { isCodyTesting } from '../chat-helpers'
@@ -169,7 +169,7 @@ export class DeepCodyHandler extends ChatHandler implements AgentHandler {
 
                 Object.assign(DeepCodyHandler.shellConfig, {
                     instance: instanceShellContextFlag,
-                    client: Boolean(env.shell),
+                    client: Boolean(vscode.env.shell),
                 })
 
                 return DeepCodyHandler.getSettings()
