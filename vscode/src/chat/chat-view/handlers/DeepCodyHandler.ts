@@ -1,9 +1,7 @@
 import {
     type AgentToolboxSettings,
     type ContextItem,
-    ContextItemSource,
     FeatureFlag,
-    type Message,
     type Model,
     ModelTag,
     type ProcessingStep,
@@ -15,7 +13,6 @@ import {
     isDotCom,
     modelsService,
     pendingOperation,
-    ps,
     resolvedConfig,
     startWith,
     userProductSubscription,
@@ -27,7 +24,6 @@ import { DeepCodyAgent } from '../../agentic/DeepCody'
 import type { ChatBuilder } from '../ChatBuilder'
 import { isCodyTesting } from '../chat-helpers'
 import type { HumanInput } from '../context'
-import type { DefaultPrompter, PromptInfo } from '../prompt'
 import { ChatHandler } from './ChatHandler'
 import type { AgentHandler, AgentHandlerDelegate } from './interfaces'
 
@@ -85,32 +81,6 @@ export class DeepCodyHandler extends ChatHandler implements AgentHandler {
         )
 
         return { contextItems: await agent.getContext(requestID, signal, baseContext) }
-    }
-
-    override async buildPrompt(
-        prompter: DefaultPrompter,
-        chatBuilder: ChatBuilder,
-        abortSignal: AbortSignal,
-        codyApiVersion: number
-    ): Promise<PromptInfo> {
-        const result = await super.buildPrompt(prompter, chatBuilder, abortSignal, codyApiVersion)
-
-        // Check if terminal context items exist
-        const hasTerminalContext = result.context.used.some(
-            item => item.source === ContextItemSource.Terminal
-        )
-
-        if (hasTerminalContext) {
-            // Prepend a system message about tool capabilities
-            const toolCapabilityMessage: Message = {
-                speaker: 'system',
-                text: ps`You have access to terminal/shell tools and have executed commands to gather information. The terminal output is included in your context. You can reference and analyze this output in your response.`,
-            }
-
-            result.prompt = [toolCapabilityMessage, ...result.prompt]
-        }
-
-        return result
     }
 
     // ========================================================================
