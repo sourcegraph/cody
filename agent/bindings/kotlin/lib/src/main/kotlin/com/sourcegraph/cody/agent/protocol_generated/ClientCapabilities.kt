@@ -123,10 +123,10 @@ data class ClientCapabilities(
     @SerializedName("none") None,
     @SerializedName("enabled") Enabled,
   }
-  
+
   enum class CodeCopyOnlyActionEnum {
-     @SerializedName("none") None,
-     @SerializedName("enabled") Enabled,
+    @SerializedName("none") None,
+    @SerializedName("enabled") Enabled,
   }
 
   enum class ShellEnum {
