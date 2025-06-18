@@ -53,7 +53,7 @@
         <editorActionHandler
             id="cody.disposeAutocompleteSuggestionHandler" action="EditorEscape"
             implementationClass="com.sourcegraph.cody.autocomplete.action.DisposeAutocompleteSuggestionActionHandler"
-            order="first"/>
+            order="after ideavim-esc"/>
 
         <applicationService
                 serviceImplementation="com.sourcegraph.cody.auth.deprecated.DeprecatedCodyPersistentAccounts"/>
