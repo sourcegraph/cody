@@ -4,6 +4,53 @@ This is a log of all notable changes to Cody for VS Code.
 
 <!--- {/_ CHANGELOG_START _/} -->
 
+## 1.104.0
+
+### Features
+
+#### Chat
+
+- Add scrollbar markers for human messages navigation [#8036](https://github.com/sourcegraph/cody/pull/8036)
+- storage size check and chat history cleanup [#7958](https://github.com/sourcegraph/cody/pull/7958)
+
+#### Context
+
+- Enable local context for all users [#8038](https://github.com/sourcegraph/cody/pull/8038)
+
+### Fix
+
+#### Chat
+
+- Update the storage warning banner message [#8056](https://github.com/sourcegraph/cody/pull/8056)
+
+#### Others
+
+- remove OTEL metrics [#8070](https://github.com/sourcegraph/cody/pull/8070)
+
+### Chore
+
+#### Chat
+
+- clean up code on large file detection [#8032](https://github.com/sourcegraph/cody/pull/8032)
+
+### Reverts
+
+  There were no reverts for this release
+
+### Uncategorized
+
+#### Others
+
+- Changelog for 1.102.0 [#8049](https://github.com/sourcegraph/cody/pull/8049)
+- Changelog for 1.102 [#8047](https://github.com/sourcegraph/cody/pull/8047)
+- Improve logic for applying auto-edits [#8043](https://github.com/sourcegraph/cody/pull/8043)
+- Remove unneeded extension settings [#8042](https://github.com/sourcegraph/cody/pull/8042)
+- Remove workflow [#8041](https://github.com/sourcegraph/cody/pull/8041)
+- Add workflow to verify ANTHROPIC_KEY format [#8040](https://github.com/sourcegraph/cody/pull/8040)
+- Feat(context filter): Implement exclude patterns from workspace settings [#8037](https://github.com/sourcegraph/cody/pull/8037)
+- Fix autocomplete and code lenses issues on file renamed/moved operations [#7325](https://github.com/sourcegraph/cody/pull/7325)
+
+
 ## 1.102.0
 
 ### Reverts
