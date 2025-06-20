@@ -25,7 +25,7 @@ export class AutoEditBetaOnboarding implements vscode.Disposable {
     }
 
     private async enrollUserToAutoEditBeta(): Promise<void> {
-        const switchToAutocompleteText = 'Switch to autocomplete'
+        const switchToAutocompleteText = 'Switch back to autocomplete'
 
         await vscode.workspace
             .getConfiguration()
