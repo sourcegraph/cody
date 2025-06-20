@@ -1,6 +1,4 @@
 import type { ClientCapabilities } from '@sourcegraph/cody-shared'
-import type { TextDocument, Uri } from 'vscode'
-import type vscode from 'vscode'
 import { FixupCodeLenses } from './non-stop/codelenses/provider'
 import type { FixupActor, FixupFileCollection } from './non-stop/roles'
 import type { FixupControlApplicator } from './non-stop/strategies'
@@ -21,7 +19,6 @@ export interface ExtensionClient {
      * Opens a new document, creating appropriate file is required by a protocol.
      * This method allows client to change the URI, so the caller should inspect returned TextDocument.
      */
-    openNewDocument(workspace: typeof vscode.workspace, uri: Uri): Thenable<TextDocument | undefined>
 
     get clientName(): string
     get clientVersion(): string
@@ -39,7 +36,6 @@ export interface ExtensionClient {
 export function defaultVSCodeExtensionClient(): ExtensionClient {
     return {
         createFixupControlApplicator: files => new FixupCodeLenses(files),
-        openNewDocument: (workspace, uri) => workspace.openTextDocument(uri),
         clientName: 'vscode',
         clientVersion: version,
         capabilities: undefined,

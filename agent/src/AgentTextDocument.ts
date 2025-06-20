@@ -3,6 +3,7 @@ import type * as vscode from 'vscode'
 import { ProtocolTextDocumentWithUri } from '../../vscode/src/jsonrpc/TextDocumentWithUri'
 import type * as protocol from './protocol-alias'
 
+import { AgentWorkspaceEdit } from '../../vscode/src/testutils/AgentWorkspaceEdit'
 import { getLanguageForFileName } from './language'
 import { DocumentOffsets } from './offsets'
 import * as vscode_shim from './vscode-shim'
@@ -49,7 +50,12 @@ export class AgentTextDocument implements vscode.TextDocument {
     }
 
     public save(): Thenable<boolean> {
-        throw new Error('Method not implemented.')
+        const workspaceEditor = new AgentWorkspaceEdit()
+        workspaceEditor.createFile(this.uri, {
+            ignoreIfExists: false,
+            contents: new TextEncoder().encode(this.content),
+        })
+        return vscode_shim.workspace.applyEdit(workspaceEditor)
     }
 
     // updates the content of an AgentTextDocument so that all references to this instance held throughout

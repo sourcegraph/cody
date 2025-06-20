@@ -1476,27 +1476,6 @@ export class Agent extends MessageHandler implements ExtensionClient {
         return this.fixups
     }
 
-    public openNewDocument = async (
-        _: typeof vscode.workspace,
-        uri: vscode.Uri
-    ): Promise<vscode.TextDocument | undefined> => {
-        if (uri.scheme !== 'untitled') {
-            return vscode_shim.workspace.openTextDocument(uri)
-        }
-
-        if (this.clientInfo?.capabilities?.untitledDocuments !== 'enabled') {
-            const errorMessage =
-                'Client does not support untitled documents. To fix this problem, set `untitledDocuments: "enabled"` in client capabilities'
-            logError('Agent', 'unsupported operation', errorMessage)
-            throw new Error(errorMessage)
-        }
-
-        const result = await this.request('textDocument/openUntitledDocument', {
-            uri: uri.toString(),
-        })
-        return result ? vscode_shim.workspace.openTextDocument(result.uri) : undefined
-    }
-
     get clientName(): string {
         return this.clientInfo?.name.toLowerCase() || 'uninitialized-agent'
     }

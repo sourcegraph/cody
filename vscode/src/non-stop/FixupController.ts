@@ -86,7 +86,7 @@ export class FixupController
 
     private _disposables: vscode.Disposable[] = []
 
-    constructor(private readonly client: ExtensionClient) {
+    constructor(client: ExtensionClient) {
         this.controlApplicator = client.createFixupControlApplicator(this)
         // Observe file renaming and deletion
         this.files = new FixupFileObserver()
@@ -1145,11 +1145,8 @@ export class FixupController
             return this.setTaskState(task, CodyTaskState.Working)
         }
 
-        // append response to new file
-        const doc = await this.client.openNewDocument(vscode.workspace, newFileUri)
-        if (!doc) {
-            throw new Error(`Cannot create file for the fixup: ${newFileUri.toString()}`)
-        }
+        const doc = await vscode.workspace.openTextDocument(newFileUri)
+        await doc.save()
 
         // Lenses from the currently used file need to be disposed as new file will replace it in a second
         this.controlApplicator.removeLensesFor(task)

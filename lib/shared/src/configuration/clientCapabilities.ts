@@ -114,7 +114,6 @@ export interface ClientCapabilities {
 
     edit?: 'none' | 'enabled' | undefined | null
     editWorkspace?: 'none' | 'enabled' | undefined | null
-    untitledDocuments?: 'none' | 'enabled' | undefined | null
     showDocument?: 'none' | 'enabled' | undefined | null
     codeLenses?: 'none' | 'enabled' | undefined | null
     showWindowMessage?: 'notification' | 'request' | undefined | null

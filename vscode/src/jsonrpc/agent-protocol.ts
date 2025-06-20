@@ -278,7 +278,6 @@ export type ServerRequests = {
     'window/showSaveDialog': [SaveDialogOptionsParams, string | undefined | null]
 
     'textDocument/edit': [TextDocumentEditParams, boolean]
-    'textDocument/openUntitledDocument': [UntitledTextDocument, ProtocolTextDocument | undefined | null]
     'textDocument/show': [
         {
             uri: string

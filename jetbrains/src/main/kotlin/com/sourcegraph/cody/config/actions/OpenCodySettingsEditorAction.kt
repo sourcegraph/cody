@@ -23,7 +23,7 @@ class OpenCodySettingsEditorAction : DumbAwareEDTAction("Open Cody Settings Edit
 
     val settingsVf =
         if (getSettingsFile(project).exists()) {
-          CodyEditorUtil.findFileOrScratch(project, getSettingsFile(project).pathString)
+          CodyEditorUtil.findFile(getSettingsFile(project).pathString)
         } else {
           ConfigUtil.setCustomConfiguration(project, customConfigContent = "{\n  \n}")
         } ?: return

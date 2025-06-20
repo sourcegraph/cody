@@ -61,7 +61,7 @@ class LensesService(val project: Project) {
   fun updateLenses(uriString: String, codeLens: List<ProtocolCodeLens>) {
     if (project.isDisposed) return
 
-    val vf = CodyEditorUtil.findFileOrScratch(project, uriString) ?: return
+    val vf = CodyEditorUtil.findFile(uriString) ?: return
     synchronized(this) { lensGroups[vf] = codeLens }
 
     // Find the specific editor matching the file
