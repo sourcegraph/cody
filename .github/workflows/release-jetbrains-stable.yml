@@ -37,6 +37,19 @@ jobs:
         env:
           PUBLISH_TOKEN: ${{ secrets.JETBRAINS_MARKETPLACE_PUBLISH_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.PRIVATE_SG_ACCESS_TOKEN }}
+      - run: pnpm run release-notes jb ${{ env.RELEASE_VERSION }}
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      - name: create release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Cody for JetBrains ${{ env.RELEASE_VERSION }}
+          draft: false
+          body_path: RELEASE_NOTES.md
       - name: Upload the report
         if: ${{ failure() }}
         uses: actions/upload-artifact@v4
