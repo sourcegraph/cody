@@ -24,36 +24,8 @@ export class AutoEditBetaOnboarding implements vscode.Disposable {
         }
     }
 
-    public async suggestToEnrollUserToAutoEditBetaIfEligible(): Promise<void> {
-        const isUserEligibleForAutoeditBeta = await this.isUserEligibleForAutoeditBetaOverride()
-        if (isUserEligibleForAutoeditBeta) {
-            vscode.window
-                .showInformationMessage(
-                    'Auto-edits are now available',
-                    {
-                        detail: '<html>An advanced mode for completions is now available. This is configured via <b>cody_settings.json</b>, give it a try now.</html>',
-                    },
-                    'Configure auto-edits',
-                    'Open cody__settings.json'
-                )
-                .then(answer => {
-                    if (answer === 'Configure auto-edits') {
-                        vscode.workspace
-                            .getConfiguration()
-                            .update(
-                                'cody.suggestions.mode',
-                                CodyAutoSuggestionMode.Autoedit,
-                                vscode.ConfigurationTarget.Global
-                            )
-                    } else if (answer === 'Open cody__settings.json') {
-                        vscode.commands.executeCommand('cody.settings.extension')
-                    }
-                })
-        }
-    }
-
     private async enrollUserToAutoEditBeta(): Promise<void> {
-        const switchToAutocompleteText = 'Switch to autocomplete'
+        const switchToAutocompleteText = 'Switch back to autocomplete'
 
         await vscode.workspace
             .getConfiguration()

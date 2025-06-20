@@ -192,7 +192,6 @@ class CodyAgentService(private val project: Project) : Disposable {
             autoedit = ClientCapabilities.AutoeditEnum.Enabled,
             autoeditInlineDiff = ClientCapabilities.AutoeditInlineDiffEnum.None,
             autoeditAsideDiff = ClientCapabilities.AutoeditAsideDiffEnum.Diff,
-            autoeditSuggestToEnroll = ClientCapabilities.AutoeditSuggestToEnrollEnum.Enabled,
             edit = ClientCapabilities.EditEnum.Enabled,
             editWorkspace = ClientCapabilities.EditWorkspaceEnum.Enabled,
             codeLenses = ClientCapabilities.CodeLensesEnum.Enabled,
