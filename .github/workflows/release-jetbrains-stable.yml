@@ -48,8 +48,6 @@ jobs:
         with:
           tag_name: ${{ github.ref }}
           release_name: Cody for JetBrains ${{ env.RELEASE_VERSION }}
-          owner: sourcegraph
-          repo: jetbrains
           draft: false
           body_path: RELEASE_NOTES.md
       - name: Upload the report
