@@ -37,6 +37,14 @@ export async function resolveRelativeOrAbsoluteUri(
         return fallbackUri
     }
 
+    // no need to smartJoinPath if the file is found even though
+    // we have path duplication, ex cli -> cli -> hello.ts
+    const filepath = path.join(baseDirUri.path, uri)
+    const hasExistingFile = await doesFileExist(vscode.Uri.file(filepath))
+    if (hasExistingFile) {
+        return vscode.Uri.file(filepath)
+    }
+
     return smartJoinPath(baseDirUri, uri)
 }
 
