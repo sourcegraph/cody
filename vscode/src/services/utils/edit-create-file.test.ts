@@ -47,6 +47,13 @@ describe('resolveRelativeOrAbsoluteUri', () => {
         const result = await resolveRelativeOrAbsoluteUri(undefined, uri.path, mockActiveEditorUri)
         expect(result).toEqual(mockActiveEditorUri)
     })
+
+    it('returns file URI when parent directory has same name as base directory', async () => {
+        const uri = toUri('base', 'dir', 'dir', 'file.ts')
+        vi.mocked(doesFileExist).mockResolvedValue(true)
+        const result = await resolveRelativeOrAbsoluteUri(mockBaseDirUri, uri.path)
+        expect(result).toEqual(toUri(path.sep, 'base', 'dir', 'dir', 'file.ts'))
+    })
 })
 
 describe('smartJoinPath', () => {
