@@ -59,13 +59,7 @@ a:hover {
     font-weight: bold;
 }
 
-/* Hide scrollbar for Chrome, Safari and Opera */
-[data-scrollable]::-webkit-scrollbar {
-    display: none;
-}
-
-/* Hide scrollbar for IE, Edge and Firefox */
+/* make scrollbar thin */
 [data-scrollable] {
-    -ms-overflow-style: none; /* IE and Edge */
-    scrollbar-width: none; /* Firefox */
+    scrollbar-width: thin;
 }
