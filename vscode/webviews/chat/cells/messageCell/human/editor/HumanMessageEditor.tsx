@@ -34,7 +34,6 @@ import { promptModeToIntent } from '../../../../../prompts/promptUtils'
 import { useTelemetryRecorder } from '../../../../../utils/telemetry'
 import { useConfig } from '../../../../../utils/useConfig'
 import { useLinkOpener } from '../../../../../utils/useLinkOpener'
-import { useOmniBox } from '../../../../../utils/useOmniBox'
 import styles from './HumanMessageEditor.module.css'
 import type { SubmitButtonState } from './toolbar/SubmitButton'
 import { Toolbar } from './toolbar/Toolbar'
@@ -159,7 +158,6 @@ export const HumanMessageEditor: FunctionComponent<{
         [submitState, parentOnSubmit, onStop, telemetryRecorder.recordEvent, isFirstMessage, isSent]
     )
 
-    const omniBoxEnabled = useOmniBox() && !userInfo.isDotComUser
     const {
         config: { experimentalPromptEditorEnabled },
     } = useConfig()
@@ -439,7 +437,6 @@ export const HumanMessageEditor: FunctionComponent<{
                     models={models}
                     userInfo={userInfo}
                     isEditorFocused={focused}
-                    omniBoxEnabled={omniBoxEnabled}
                     onSubmitClick={onSubmitClick}
                     submitState={submitState}
                     onGapClick={onGapClick}

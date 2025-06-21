@@ -1,11 +1,9 @@
 import {
     type ChatMessage,
-    type ChatMessageWithSearch,
     ContextItemSource,
     type Guardrails,
     type Model,
     ModelTag,
-    type NLSSearchDynamicFilter,
     type PromptString,
     contextItemsFromPromptEditorValue,
     filterContextItemsFromPromptEditorValue,
@@ -29,7 +27,6 @@ import { ErrorItem, RequestErrorItem } from '../../../ErrorItem'
 import { TokenUsageDisplay } from '../../../TokenUsageDisplay'
 import { type Interaction, editHumanMessage } from '../../../Transcript'
 import { BaseMessageCell } from '../BaseMessageCell'
-import { SearchResults } from './SearchResults'
 import { SubMessageCell } from './SubMessageCell'
 
 /**
@@ -57,7 +54,6 @@ export const AssistantMessageCell: FunctionComponent<{
 
     postMessage?: ApiPostMessage
     guardrails: Guardrails
-    onSelectedFiltersUpdate: (filters: NLSSearchDynamicFilter[]) => void
     isLastSentInteraction: boolean
 }> = memo(
     ({
@@ -73,7 +69,6 @@ export const AssistantMessageCell: FunctionComponent<{
         postMessage,
         guardrails,
         smartApply,
-        onSelectedFiltersUpdate,
         isLastSentInteraction: isLastInteraction,
         isThoughtProcessOpened,
         setThoughtProcessOpened,
@@ -105,13 +100,6 @@ export const AssistantMessageCell: FunctionComponent<{
                                     humanMessage={humanMessage}
                                 />
                             )
-                        ) : null}
-                        {!isLoading && message.search ? (
-                            <SearchResults
-                                message={message as ChatMessageWithSearch}
-                                onSelectedFiltersUpdate={onSelectedFiltersUpdate}
-                                enableContextSelection={isLastInteraction}
-                            />
                         ) : null}
                         {!isSearchIntent && displayMarkdown ? (
                             <ChatMessageContent
