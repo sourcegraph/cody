@@ -956,8 +956,11 @@ export class FixupController
         let targetIndentSize = insertionLine.firstNonWhitespaceCharacterIndex
         const textIndentSize = text.search(/\S/) || 0
 
+        const isPythonFile = task.document.languageId === 'python'
+        const isDocIntent = task.intent === 'doc'
+
         // Special case for Python documentation
-        if (targetIndentSize === 0 && task.document.languageId === 'python' && task.intent === 'doc') {
+        if (targetIndentSize === 0 && isPythonFile && isDocIntent) {
             targetIndentSize = 4
         }
 
@@ -989,7 +992,7 @@ export class FixupController
         // Ensure proper line ending and handle insertion at line start
         const proposedText =
             processedLines.join('\n') +
-            (task.document.languageId !== 'python'
+            (!isPythonFile
                 ? task.insertionPoint.character > 0
                     ? ' '.repeat(targetIndentSize)
                     : ''
@@ -1005,6 +1008,15 @@ export class FixupController
             return vscode.workspace.applyEdit(edit)
         }
 
+        // If we have a doc intent with python file and no start line text,
+        // we want to insert the docstring after the insertion point.
+        // This is because we need the docstring to be on the next line
+        // after the function or class definition.
+        const insertionPoint = new vscode.Position(
+            isPythonFile && isDocIntent && !startLineText ? task.insertionPoint.line + 1 : task.insertionPoint.line,
+            task.insertionPoint.character
+        )
+
         return edit(editBuilder => {
             // Replace the code block if the start line matches the start of the text
             // This happens sometimes with python document code action where instead
@@ -1012,7 +1024,7 @@ export class FixupController
             if (startLine > 0 && startLineText && text.startsWith(startLineText)) {
                 editBuilder.replace(task.originalRange, text)
             } else {
-                editBuilder.insert(task.insertionPoint, replacementText)
+                editBuilder.insert(insertionPoint, replacementText)
             }
         }, options)
     }
