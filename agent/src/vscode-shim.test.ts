@@ -434,6 +434,79 @@ describe('vscode.workspace.getConfiguration', () => {
     })
 })
 
+describe('vscode.commands.executeCommand', () => {
+    it('handles null arguments without throwing TypeError', async () => {
+        // This test demonstrates the fix for the issue found in document-code.test.ts
+        // where args[0] could be null, causing a TypeError when checking Symbol.iterator
+
+        let callbackInvoked = false
+        let receivedArg: any
+
+        // Register a test command that accepts null arguments
+        const disposable = vscode.commands.registerCommand('test.command.with.null', (arg) => {
+            callbackInvoked = true
+            receivedArg = arg
+            return 'success'
+        })
+
+        try {
+            // Execute command with null argument - this should not throw
+            const result = await vscode.commands.executeCommand('test.command.with.null', null)
+
+            expect(callbackInvoked).toBe(true)
+            expect(receivedArg).toBe(null)
+            expect(result).toBe('success')
+        } finally {
+            disposable.dispose()
+        }
+    })
+
+    it('handles undefined arguments without throwing TypeError', async () => {
+        let callbackInvoked = false
+        let receivedArg: any
+
+        const disposable = vscode.commands.registerCommand('test.command.with.undefined', (arg) => {
+            callbackInvoked = true
+            receivedArg = arg
+            return 'success'
+        })
+
+        try {
+            // Execute command with undefined argument
+            const result = await vscode.commands.executeCommand('test.command.with.undefined', undefined)
+
+            expect(callbackInvoked).toBe(true)
+            expect(receivedArg).toBe(undefined)
+            expect(result).toBe('success')
+        } finally {
+            disposable.dispose()
+        }
+    })
+
+    it('handles iterable objects correctly', async () => {
+        let callbackInvoked = false
+        let receivedArgs: any[] = []
+
+        const disposable = vscode.commands.registerCommand('test.command.with.iterable', (...args) => {
+            callbackInvoked = true
+            receivedArgs = args
+            return 'success'
+        })
+
+        try {
+            // Execute command with an iterable array - should spread the arguments
+            const iterableArg = ['arg1', 'arg2', 'arg3']
+            const result = await vscode.commands.executeCommand('test.command.with.iterable', iterableArg)
+
+            expect(callbackInvoked).toBe(true)
+            expect(receivedArgs).toEqual(['arg1', 'arg2', 'arg3'])
+            expect(result).toBe('success')
+        } finally {
+            disposable.dispose()
+        }
+    })
+})
+
 describe('workspaces', () => {
     const workspaces = [vscode.Uri.parse('file:///a'), vscode.Uri.parse('file:///b')]
 

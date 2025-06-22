@@ -1043,7 +1043,8 @@ const _commands: Partial<typeof vscode.commands> = {
             try {
                 // Handle the case where a single object is passed
                 if (args.length === 1) {
-                    if (typeof args[0] === 'object' && typeof args[0][Symbol.iterator] === 'function') {
+                    // Check for null before accessing Symbol.iterator to avoid TypeError
+                    if (typeof args[0] === 'object' && args[0] !== null && typeof args[0][Symbol.iterator] === 'function') {
                         return promisify(registered.callback(...args[0]))
                     }
                     return promisify(registered.callback(args[0]))
