@@ -170,7 +170,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
     private readonly disposables: vscode.Disposable[] = []
     /** Keeps track of the last time the text was changed in the editor. */
     private lastTextChangeTimeStamp: number | undefined
-    private lastManualTriggerTimestamp = Number.MIN_SAFE_INTEGER
+    private lastManualTriggerTimestamp: number | null = null
 
     private readonly onSelectionChangeDebounced: DebouncedFunc<typeof this.onSelectionChange>
 
@@ -340,7 +340,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
 
         try {
             const triggerKind =
-                this.lastManualTriggerTimestamp > performance.now() - 50
+                this.lastManualTriggerTimestamp && this.lastManualTriggerTimestamp > Date.now() - 500
                     ? autoeditTriggerKind.manual
                     : autoeditTriggerKind.automatic
 
@@ -378,6 +378,8 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                 'provideInlineCompletionItems',
                 'Calculating getCurrentDocContext...'
             )
+
+            this.lastManualTriggerTimestamp = null
 
             // Determine the document context for this specific request
             // This may differ from `predictionDocContext` if we retrieve it from the cache
@@ -966,11 +968,12 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
     public async manuallyTriggerCompletion(): Promise<void> {
         if (isRunningInsideAgent()) {
             // Client manage their own shortcuts and logic for manually triggering a completion
+            this.lastManualTriggerTimestamp = Date.now()
             return
         }
 
         await vscode.commands.executeCommand('editor.action.inlineSuggest.hide')
-        this.lastManualTriggerTimestamp = performance.now()
+        this.lastManualTriggerTimestamp = Date.now()
         await vscode.commands.executeCommand('editor.action.inlineSuggest.trigger')
     }
 

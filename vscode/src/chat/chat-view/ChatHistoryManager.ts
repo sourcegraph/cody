@@ -117,6 +117,18 @@ class ChatHistoryManager implements vscode.Disposable {
         this.changeNotifications.next()
     }
 
+    public async renameChat(
+        authStatus: AuthenticatedAuthStatus,
+        chatID: string,
+        newName: string
+    ): Promise<void> {
+        const chat = this.getChat(authStatus, chatID)
+        if (!chat) return
+        chat.chatTitle = newName
+        await this.saveChat(authStatus, chat)
+        this.changeNotifications.next()
+    }
+
     public async deleteChat(authStatus: AuthenticatedAuthStatus, chatID: string): Promise<void> {
         await localStorage.deleteChatHistory(authStatus, chatID)
         this.changeNotifications.next()

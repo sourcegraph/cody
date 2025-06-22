@@ -4,6 +4,123 @@ This is a log of all notable changes to Cody for VS Code.
 
 <!--- {/_ CHANGELOG_START _/} -->
 
+## 1.104.0
+
+### Features
+
+#### Chat
+
+- Add scrollbar markers for human messages navigation [#8036](https://github.com/sourcegraph/cody/pull/8036)
+- storage size check and chat history cleanup [#7958](https://github.com/sourcegraph/cody/pull/7958)
+
+#### Context
+
+- Enable local context for all users [#8038](https://github.com/sourcegraph/cody/pull/8038)
+
+### Fix
+
+#### Chat
+
+- Update the storage warning banner message [#8056](https://github.com/sourcegraph/cody/pull/8056)
+
+#### Others
+
+- remove OTEL metrics [#8070](https://github.com/sourcegraph/cody/pull/8070)
+
+### Chore
+
+#### Chat
+
+- clean up code on large file detection [#8032](https://github.com/sourcegraph/cody/pull/8032)
+
+### Reverts
+
+  There were no reverts for this release
+
+### Uncategorized
+
+#### Others
+
+- Changelog for 1.102.0 [#8049](https://github.com/sourcegraph/cody/pull/8049)
+- Changelog for 1.102 [#8047](https://github.com/sourcegraph/cody/pull/8047)
+- Improve logic for applying auto-edits [#8043](https://github.com/sourcegraph/cody/pull/8043)
+- Remove unneeded extension settings [#8042](https://github.com/sourcegraph/cody/pull/8042)
+- Remove workflow [#8041](https://github.com/sourcegraph/cody/pull/8041)
+- Add workflow to verify ANTHROPIC_KEY format [#8040](https://github.com/sourcegraph/cody/pull/8040)
+- Feat(context filter): Implement exclude patterns from workspace settings [#8037](https://github.com/sourcegraph/cody/pull/8037)
+- Fix autocomplete and code lenses issues on file renamed/moved operations [#7325](https://github.com/sourcegraph/cody/pull/7325)
+
+
+## 1.102.0
+
+### Reverts
+
+  There were no reverts for this release
+
+### Uncategorized
+
+#### Others
+
+- [Backport M102] Changelog for 1.102 [#8048](https://github.com/sourcegraph/cody/pull/8048)
+
+
+## 1.102
+
+### Features
+
+#### Chat
+
+- optional data display [#8015](https://github.com/sourcegraph/cody/pull/8015)
+
+#### Cody
+
+- migrate feature flags evaluation to new batch api [#8006](https://github.com/sourcegraph/cody/pull/8006)
+
+### Fix
+
+#### Chat
+
+- chat transcript scrolling [#8020](https://github.com/sourcegraph/cody/pull/8020)
+
+#### Cody
+
+- allow users to add large files [#8016](https://github.com/sourcegraph/cody/pull/8016)
+
+### Chore
+
+#### Chat
+
+- clean up code on large file detection [#8032](https://github.com/sourcegraph/cody/pull/8032)
+- refactor parse.ts [#8029](https://github.com/sourcegraph/cody/pull/8029)
+
+#### Test
+
+- Skip flaky auth test on Ubuntu [#7997](https://github.com/sourcegraph/cody/pull/7997)
+
+### Refactor
+
+#### Chat
+
+- agentic context toolbox settings [#8009](https://github.com/sourcegraph/cody/pull/8009)
+
+### Reverts
+
+  There were no reverts for this release
+
+### Uncategorized
+
+#### Others
+
+- Changelog for 1.100.0 [#8033](https://github.com/sourcegraph/cody/pull/8033)
+- Changelog for 1.98.1 [#8025](https://github.com/sourcegraph/cody/pull/8025)
+- Unify inline edit architecture in VSC and other clients [#8023](https://github.com/sourcegraph/cody/pull/8023)
+- Split edit code between flow/model and UI (QuickPick) [#8013](https://github.com/sourcegraph/cody/pull/8013)
+- Remove duplicated parsed text as content [#8011](https://github.com/sourcegraph/cody/pull/8011)
+- Update `untilBuild` to `252.*` [#8010](https://github.com/sourcegraph/cody/pull/8010)
+- Chore: update model options from 3.5 Sonnet to Sonnet 4 [#7999](https://github.com/sourcegraph/cody/pull/7999)
+- Restoration of unit test generation, path normalization [#7765](https://github.com/sourcegraph/cody/pull/7765)
+
+
 ## 1.100.0
 
 ### Features

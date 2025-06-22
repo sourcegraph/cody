@@ -106,21 +106,22 @@ export function useMentionMenuData(
                     item.description?.toString().toLowerCase().includes(queryLower)
                   : true
           )
-
     const additionalItems =
         value?.items
             ?.filter(
                 // If an item is shown as initial context, don't show it twice.
+                // For file items, we consider them the same only if they have the same range status
                 item =>
                     !filteredInitialContextItems.some(
                         initialItem =>
                             initialItem.uri.toString() === item.uri.toString() &&
-                            initialItem.type === item.type
+                            initialItem.type === item.type &&
+                            // For file types, consider range status to differentiate between file and selection
+                            (initialItem.type !== 'file' || !!initialItem.range === !!item.range)
                     )
             )
             .slice(0, limit)
             .map(item => prepareUserContextItem(item, remainingTokenBudget)) ?? []
-
     return useMemo(
         () =>
             ({

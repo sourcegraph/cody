@@ -1,6 +1,7 @@
 import { isError } from 'lodash'
 import isEqual from 'lodash/isEqual'
 import { LRUCache } from 'lru-cache'
+import { minimatch } from 'minimatch'
 import type { Observable } from 'observable-fns'
 import { RE2JS as RE2 } from 're2js'
 import type * as vscode from 'vscode'
@@ -22,6 +23,8 @@ import {
 import { wrapInActiveSpan } from '../tracing'
 import { createSubscriber } from '../utils'
 
+type GetExcludePattern = (workspaceFolder: vscode.WorkspaceFolder | null) => Promise<string>
+
 interface ParsedContextFilters {
     include: null | ParsedContextFilterItem[]
     exclude: null | ParsedContextFilterItem[]
@@ -32,13 +35,21 @@ interface ParsedContextFilterItem {
     filePathPatterns?: RE2[]
 }
 
+enum ContextFiltersProviderError {
+    NoRepoFound = 'no-repo-found',
+    NonFileUri = 'non-file-uri',
+    HasIgnoreEverythingFilters = 'has-ignore-everything-filters',
+    ExcludePatternMatch = 'exclude-pattern-match',
+}
+
 // Note: This can not be an empty string to make all non `false` values truthy.
 export type IsIgnored =
     | false
     | Error
-    | 'has-ignore-everything-filters'
-    | 'non-file-uri'
-    | 'no-repo-found'
+    | ContextFiltersProviderError.NoRepoFound
+    | ContextFiltersProviderError.NonFileUri
+    | ContextFiltersProviderError.HasIgnoreEverythingFilters
+    | ContextFiltersProviderError.ExcludePatternMatch
     | `repo:${string}`
 
 export type GetRepoNamesContainingUri = (
@@ -91,6 +102,11 @@ export class ContextFiltersProvider implements vscode.Disposable {
 
     private readonly contextFiltersSubscriber = createSubscriber<ContextFilters | Error>()
     public readonly onContextFiltersChanged = this.contextFiltersSubscriber.subscribe
+
+    static excludePatternGetter: {
+        getExcludePattern: GetExcludePattern
+        getWorkspaceFolder: (uri: vscode.Uri) => vscode.WorkspaceFolder | null
+    }
 
     // Fetches context filters and updates the cached filter results
     private async fetchContextFilters(): Promise<RefetchIntervalHint> {
@@ -223,12 +239,19 @@ export class ContextFiltersProvider implements vscode.Disposable {
 
         await this.fetchIfNeeded()
 
+        // Check VS Code exclude patterns
+        if (ContextFiltersProvider.excludePatternGetter) {
+            if (await this.isExcludedByPatterns(uri)) {
+                return ContextFiltersProviderError.ExcludePatternMatch
+            }
+        }
+
         if (this.hasAllowEverythingFilters()) {
             return false
         }
 
         if (this.hasIgnoreEverythingFilters()) {
-            return 'has-ignore-everything-filters'
+            return ContextFiltersProviderError.HasIgnoreEverythingFilters
         }
 
         const maybeError = this.lastContextFiltersResponse
@@ -239,7 +262,7 @@ export class ContextFiltersProvider implements vscode.Disposable {
         // TODO: process non-file URIs https://github.com/sourcegraph/cody/issues/3893
         if (!isFileURI(uri)) {
             logDebug('ContextFiltersProvider', 'isUriIgnored', `non-file URI ${uri.scheme}`)
-            return 'non-file-uri'
+            return ContextFiltersProviderError.NonFileUri
         }
 
         if (!ContextFiltersProvider.repoNameResolver) {
@@ -254,7 +277,7 @@ export class ContextFiltersProvider implements vscode.Disposable {
         )
 
         if (!repoNames?.length) {
-            return 'no-repo-found'
+            return ContextFiltersProviderError.NoRepoFound
         }
 
         const ignoredRepo = repoNames.find(repoName => this.isRepoNameIgnored__noFetch(repoName))
@@ -263,6 +286,34 @@ export class ContextFiltersProvider implements vscode.Disposable {
         }
 
         return false
+    }
+
+    private async isExcludedByPatterns(uri: vscode.Uri): Promise<boolean> {
+        try {
+            const workspaceFolder = ContextFiltersProvider.excludePatternGetter.getWorkspaceFolder(uri)
+            const excludePatternString =
+                await ContextFiltersProvider.excludePatternGetter.getExcludePattern(workspaceFolder)
+
+            // Parse the pattern string {pattern1,pattern2,...} into individual patterns
+            const patterns = this.parseExcludePatternString(excludePatternString)
+
+            // Get the relative path from workspace folder
+            const relativePath = workspaceFolder
+                ? uri.fsPath.substring(workspaceFolder.uri.fsPath.length + 1)
+                : uri.fsPath
+
+            // Check if any pattern matches the file path
+            return patterns.some(pattern => minimatch(relativePath, pattern, { dot: true }))
+        } catch (error) {
+            logDebug('ContextFiltersProvider', 'isExcludedByPatterns error', { error })
+            return false
+        }
+    }
+
+    private parseExcludePatternString(patternString: string): string[] {
+        // Remove the surrounding braces and split by comma
+        const content = patternString.slice(1, -1)
+        return content ? content.split(',') : []
     }
 
     private reset(): void {

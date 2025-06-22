@@ -167,7 +167,6 @@ export const CodyPanel: FunctionComponent<CodyPanelProps> = ({
                             guardrails={guardrails}
                             showIDESnippetActions={showIDESnippetActions}
                             showWelcomeMessage={showWelcomeMessage}
-                            scrollableParent={tabContainerRef.current}
                             setView={setView}
                             isWorkspacesUpgradeCtaEnabled={isWorkspacesUpgradeCtaEnabled}
                         />

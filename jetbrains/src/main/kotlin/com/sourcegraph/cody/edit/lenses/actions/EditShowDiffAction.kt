@@ -9,8 +9,8 @@ import com.sourcegraph.common.ShowDocumentDiffAction
 class EditShowDiffAction :
     LensEditAction({ project, event, editor, taskId ->
       CodyAgentService.withAgent(project) { agent ->
+        val editTask = agent.server.editTask_getTaskDetails(taskId).get()
         WriteCommandAction.runWriteCommandAction<Unit>(project) {
-          val editTask = agent.server.editTask_getTaskDetails(taskId).get()
           if (editTask != null) {
             val documentAfter = editor.document
             val documentBefore = EditorFactory.getInstance().createDocument(documentAfter.text)

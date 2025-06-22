@@ -64,14 +64,6 @@ run `sdk use java 17-zulu`. Confirm that you have Java 17 installed with `java -
 >
 > From this point, YMMV, but you should be able to build agent!
 
-> 🤞 Building Code Search:
->
-> To build Code Search component you need to set env variable GITHUB_TOKEN,
-> so build process can access sourcegraph/sourcegraph.
->
-> You can generate new token at https://github.com/settings/tokens
->
-> If you don't want to set token, you can skip building Code Search component by setting SKIP_CODE_SEARCH_BUILD env variable to true.
 
 ### Running
 
@@ -123,6 +115,24 @@ You should build everything in PowerShell. Git Bash, Ubuntu and MinGW all offer 
 ```
 $env:SKIP_CODE_SEARCH_BUILD="true"
 ```
+
+### Building code search artefacts
+
+
+In case you need to build a new version of the `jetbrains/src/main/resources/code-search.zip` artefact:
+
+1. Checkout `sourcegraph/sourcegraph`, `release/jetbrains` branch
+2. Run:
+
+```
+pnpmPath install --frozen-lockfile --fix-lockfile
+pnpmPath generate
+pnpmPath build
+```
+
+3. Zip files from `sourcegraph/client/jetbrains/src/main/resources/dist` (excluding *.map)
+4. Replace `jetbrains/src/main/resources/code-search.zip` with the new zip file
+
 
 ## Using Nightly/Experimental channel releases
 

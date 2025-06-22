@@ -1567,10 +1567,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     titleLength: title.length,
                     inputLength: inputText.length,
                 },
-                billingMetadata: {
-                    product: 'cody',
-                    category: 'billable',
-                },
             })
         })
     }

@@ -187,7 +187,12 @@ const configuration = new AgentWorkspaceConfiguration(
         if (agent && section.startsWith('cody')) {
             agent.notify('extensionConfiguration/didUpdate', {
                 key: section,
-                value: value === undefined ? undefined : JSON.stringify(value),
+                value:
+                    value === undefined
+                        ? undefined
+                        : typeof value === 'string'
+                          ? value
+                          : JSON.stringify(value),
             })
         }
     }

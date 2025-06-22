@@ -323,8 +323,6 @@ export class InlineCompletionItemProvider
         this.config.tracer = value
     }
 
-    private lastCompletionRequestTimestamp = 0
-
     public async provideInlineCompletionItems(
         document: vscode.TextDocument,
         invokedPosition: vscode.Position,
@@ -371,10 +369,6 @@ export class InlineCompletionItemProvider
                 const error = new Error('AutocompleteConfigTurnedOff')
                 this.onError(error)
                 throw error
-            }
-
-            if (!this.lastCompletionRequestTimestamp) {
-                this.lastCompletionRequestTimestamp = performance.now()
             }
 
             const tracer = this.config.tracer ? createTracerForInvocation(this.config.tracer) : undefined

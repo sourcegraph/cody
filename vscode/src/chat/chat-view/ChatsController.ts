@@ -227,6 +227,7 @@ export class ChatsController implements vscode.Disposable {
             vscode.commands.registerCommand('cody.chat.history.export', () => this.exportHistory()),
             vscode.commands.registerCommand('cody.chat.history.clear', arg => this.clearHistory(arg)),
             vscode.commands.registerCommand('cody.chat.history.delete', item => this.clearHistory(item)),
+            vscode.commands.registerCommand('cody.chat.history.rename', arg => this.renameHistory(arg)),
             vscode.commands.registerCommand('cody.chat.panel.restore', restoreToEditor),
             vscode.commands.registerCommand(CODY_PASSTHROUGH_VSCODE_OPEN_COMMAND_ID, (...args) =>
                 this.passthroughVsCodeOpen(...args)
@@ -454,6 +455,11 @@ export class ChatsController implements vscode.Disposable {
         await chatHistory.deleteChat(authStatus, chatID)
         // Don't save the session when disposing after delete
         this.disposeChat(chatID, true, { skipSave: true })
+    }
+
+    private async renameHistory(args: { chatID: string; newName: string }): Promise<void> {
+        const authStatus = currentAuthStatusAuthed()
+        await chatHistory.renameChat(authStatus, args.chatID, args.newName)
     }
 
     /**

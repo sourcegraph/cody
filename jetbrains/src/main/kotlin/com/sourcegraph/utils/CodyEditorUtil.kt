@@ -44,6 +44,7 @@ object CodyEditorUtil {
   private const val RIGHT_COMMAND = "Right"
   private const val MOVE_CARET_COMMAND = "Move Caret"
   private const val DELETE_COMMAND = "Delete"
+  private const val ESCAPE_COMMAND = "Escape"
 
   @JvmStatic private val KEY_EDITOR_SUPPORTED = Key.create<Boolean>("cody.editorSupported")
 
@@ -147,6 +148,7 @@ object CodyEditorUtil {
         command == LEFT_COMMAND ||
         command == RIGHT_COMMAND ||
         command == DELETE_COMMAND ||
+        command == ESCAPE_COMMAND ||
         command.contains(MOVE_CARET_COMMAND))
   }
 

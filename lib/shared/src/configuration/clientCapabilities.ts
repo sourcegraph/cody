@@ -122,6 +122,7 @@ export interface ClientCapabilities {
     codeActions?: 'none' | 'enabled' | undefined | null
     disabledMentionsProviders?: ContextMentionProviderID[] | undefined | null
     accountSwitchingInWebview?: 'none' | 'enabled' | undefined | null
+    codeCopyOnlyAction?: 'none' | 'enabled' | undefined | null
 
     /**
      * 🚨 SECURITY: Please tag the Security Team for PR review when enabling shell context.

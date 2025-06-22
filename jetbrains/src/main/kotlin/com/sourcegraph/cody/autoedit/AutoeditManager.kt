@@ -1,14 +1,17 @@
 package com.sourcegraph.cody.autoedit
 
 import com.intellij.openapi.Disposable
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
+import com.intellij.openapi.editor.Document
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.EditorFactory
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vcs.ex.Range
-import com.sourcegraph.cody.agent.protocol_extensions.toOffsetRange
+import com.intellij.util.messages.Topic
 import com.sourcegraph.cody.agent.protocol_generated.AutocompleteEditItem
+import kotlin.math.abs
 
 @Service(Service.Level.PROJECT)
 class AutoeditManager(private val project: Project) {
@@ -21,11 +24,51 @@ class AutoeditManager(private val project: Project) {
   var disposable: Disposable = Disposable {}
     private set
 
+  private fun findOriginalTextInDocument(editor: Editor, item: AutocompleteEditItem): Int? {
+    val document = editor.document
+    val text = document.text
+    val searchStartOffset = document.getLineStartOffset(item.range.start.line.toInt())
+
+    val matchOffset =
+        text.indexOf(item.originalText, searchStartOffset).takeIf { it != -1 }
+            ?: text.lastIndexOf(item.originalText, searchStartOffset).takeIf { it != -1 }
+            ?: return null
+
+    val acceptableLinesPositionDifference = 3
+    val distanceInLines = abs(document.getLineNumber(matchOffset) - item.range.start.line)
+    return if (distanceInLines <= acceptableLinesPositionDifference) matchOffset else null
+  }
+
+  fun computeAutoedit(editor: Editor, item: AutocompleteEditItem): Pair<Document, Range>? {
+    val startOffset = findOriginalTextInDocument(editor, item) ?: return null
+    val replacementRange = IntRange(startOffset, startOffset + item.originalText.length - 1)
+
+    val vcsDocument =
+        EditorFactory.getInstance()
+            .createDocument(editor.document.text.replaceRange(replacementRange, item.insertText))
+
+    // Range parameters explanation:
+    // - line1, line2: Define the line range in the main editor document [line1, line2)
+    // - vcsLine1, vcsLine2: Define the line range in the popup editor document [vcsLine1, vcsLine2)
+    // vcs.ex.Range uses exclusive end bounds [,) while our ranges use inclusive [,].
+
+    val startLine = vcsDocument.getLineNumber(startOffset) + 1
+    // Excluding shared suffix from the diff increases diff visibility
+    val sharedSuffixLinesCount = item.originalText.commonSuffixWith(item.insertText).lines().size
+    val originalLinesCount = item.originalText.lines().count()
+    val replacementLinesCount = item.insertText.lines().count()
+
+    return vcsDocument to
+        Range(
+            line1 = startLine,
+            line2 = startLine + originalLinesCount - sharedSuffixLinesCount,
+            vcsLine1 = startLine,
+            vcsLine2 = startLine + replacementLinesCount - sharedSuffixLinesCount)
+  }
+
   fun showAutoedit(editor: Editor, item: AutocompleteEditItem) {
     val virtualFile = editor.virtualFile ?: return
-
-    activeAutoeditEditor = editor
-    activeAutocompleteEditItem = item
+    val (vcsDocument, range) = computeAutoedit(editor, item) ?: return
 
     val myDisposable = Disposable {
       activeAutoeditEditor = null
@@ -33,49 +76,30 @@ class AutoeditManager(private val project: Project) {
     }
     disposable = myDisposable
 
-    val offsetRange = item.range.toOffsetRange(editor.document) ?: return
+    activeAutoeditEditor = editor
+    activeAutocompleteEditItem = item
 
-    val beforeInsertion = editor.document.text.take(offsetRange.first)
-    val afterInsertion = editor.document.text.drop(offsetRange.second)
-
-    val document =
-        EditorFactory.getInstance()
-            .createDocument(beforeInsertion + item.insertText + afterInsertion)
-
-    // Calculate the ending line after insertion
-    // by adding the number of newlines in the inserted text
-    val endLineAfterInsert =
-        item.range.start.line.toInt() + item.insertText.count { it == '\n' } - 1
-
-    // Range parameters explanation:
-    // - line1, line2: Define the line range in the main editor document [line1, line2)
-    // - vcsLine1, vcsLine2: Define the line range in the popup editor document [vcsLine1, vcsLine2)
-    // The +1 adjustments are needed because Range uses exclusive end bounds [,)
-    // while our ranges use inclusive [,].
-    // For single-line edits (no newlines), we ensure vcsLine2 > vcsLine1
-    // to properly display the edit.
-    val range =
-        Range(
-            line1 = item.range.start.line.toInt(), // Starting line in main editor
-            line2 = item.range.end.line.toInt() + 1, // Ending line in main editor (exclusive)
-            vcsLine1 = item.range.start.line.toInt(), // Starting line in popup editor
-            vcsLine2 = endLineAfterInsert + 1) // Ending line in popup editor (exclusive)
     AutoeditLineStatusMarkerPopupRenderer(
             AutoeditTracker(
                 project,
                 disposable = myDisposable,
                 document = editor.document,
-                vcsDocument = document,
+                vcsDocument = vcsDocument,
                 virtualFile = virtualFile,
                 range = range))
         .showHintAt(editor, range, mousePosition = null)
   }
 
   fun hide() {
+    ApplicationManager.getApplication().messageBus.syncPublisher(TOPIC).run()
     disposable.dispose()
   }
 
   companion object {
+
+    val TOPIC: Topic<Runnable> =
+        Topic<Runnable>(Runnable::class.java, Topic.BroadcastDirection.TO_DIRECT_CHILDREN)
+
     @JvmStatic fun getInstance(project: Project): AutoeditManager = project.service()
   }
 }
