@@ -443,7 +443,7 @@ describe('vscode.commands.executeCommand', () => {
         let receivedArg: any
 
         // Register a test command that accepts null arguments
-        const disposable = vscode.commands.registerCommand('test.command.with.null', (arg) => {
+        const disposable = vscode.commands.registerCommand('test.command.with.null', arg => {
             callbackInvoked = true
             receivedArg = arg
             return 'success'
@@ -465,7 +465,7 @@ describe('vscode.commands.executeCommand', () => {
         let callbackInvoked = false
         let receivedArg: any
 
-        const disposable = vscode.commands.registerCommand('test.command.with.undefined', (arg) => {
+        const disposable = vscode.commands.registerCommand('test.command.with.undefined', arg => {
             callbackInvoked = true
             receivedArg = arg
             return 'success'
@@ -496,7 +496,10 @@ describe('vscode.commands.executeCommand', () => {
         try {
             // Execute command with an iterable array - should spread the arguments
             const iterableArg = ['arg1', 'arg2', 'arg3']
-            const result = await vscode.commands.executeCommand('test.command.with.iterable', iterableArg)
+            const result = await vscode.commands.executeCommand(
+                'test.command.with.iterable',
+                iterableArg
+            )
 
             expect(callbackInvoked).toBe(true)
             expect(receivedArgs).toEqual(['arg1', 'arg2', 'arg3'])
