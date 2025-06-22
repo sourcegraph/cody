@@ -229,7 +229,11 @@ test.extend<ExpectedV2Events>({
         'cody.editChatButton:clicked',
         'cody.chatResponse:noCode',
     ],
-})('editing a chat message with @-mention', async ({ page, sidebar }) => {
+})('editing a chat message with @-mention', async ({ page, sidebar, server }) => {
+    // Enable the NoDefaultRepoChip feature flag to prevent workspace context
+    // Set this before signin to ensure it's available when the extension starts
+    server.setFeatureFlag('no-default-repo-chip', true)
+
     await sidebarSignin(page, sidebar)
 
     const [chatPanelFrame, , firstChatInput] = await createEmptyChatPanel(page)
@@ -288,7 +292,6 @@ test.extend<ExpectedV2Events>({
     // @-file range with the correct line range shows up in the chat view and it opens on click
     const contextCell = getContextCell(chatPanelFrame)
     await expectContextCellCounts(contextCell, { files: 1 })
-    await contextCell.hover()
     await openContextCell(contextCell)
     const chatContext = getContextCell(chatPanelFrame).last()
     await chatContext.getByRole('button', { name: 'buzz.ts:2-4' }).hover()
@@ -313,6 +316,7 @@ test.extend<ExpectedV2Events>({
 })('@-mention symbol in chat', async ({ page, nap, sidebar, server }) => {
     mockEnterpriseRepoIdMapping(server)
 
+    server.setFeatureFlag('no-default-repo-chip', true)
     await sidebarSignin(page, sidebar)
 
     // Open the buzz.ts file so that VS Code starts to populate symbols.
@@ -357,7 +361,6 @@ test.extend<ExpectedV2Events>({
     // @-file with the correct line range shows up in the chat view and it opens on click
     const contextCell = getContextCell(chatPanelFrame)
     await expectContextCellCounts(contextCell, { files: 1 })
-    await contextCell.hover()
     await openContextCell(contextCell)
     const chatContext = getContextCell(chatPanelFrame).last()
     await chatContext.getByRole('button', { name: 'buzz.ts:1-15' }).hover()
@@ -371,6 +374,10 @@ test.extend<ExpectedV2Events>({
     expectedV2Events: ['cody.addChatContext:clicked'],
 })('Add Selection to Cody Chat', async ({ page, sidebar, server }) => {
     mockEnterpriseRepoIdMapping(server)
+
+    // Enable the NoDefaultRepoChip feature flag to prevent workspace context
+    // Set this before signin to ensure it's available when the extension starts
+    server.setFeatureFlag('no-default-repo-chip', true)
 
     await sidebarSignin(page, sidebar)
 

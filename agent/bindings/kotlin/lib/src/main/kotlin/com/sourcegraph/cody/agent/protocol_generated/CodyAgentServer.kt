@@ -38,22 +38,18 @@ interface CodyAgentServer {
   fun commands_custom(params: Commands_CustomParams): CompletableFuture<CustomCommandResult>
   @JsonRequest("customCommands/list")
   fun customCommands_list(params: Null?): CompletableFuture<List<CodyCommand>>
-  @JsonRequest("editCommands/code")
-  fun editCommands_code(params: EditCommands_CodeParams): CompletableFuture<EditTask>
-  @JsonRequest("editCommands/test")
-  fun editCommands_test(params: Null?): CompletableFuture<EditTask>
-  @JsonRequest("editCommands/document")
-  fun editCommands_document(params: Null?): CompletableFuture<EditTask>
+  @JsonRequest("editTask/start")
+  fun editTask_start(params: Null?): CompletableFuture<FixupTaskID?>
   @JsonRequest("editTask/accept")
-  fun editTask_accept(params: EditTask_AcceptParams): CompletableFuture<Null?>
+  fun editTask_accept(params: FixupTaskID): CompletableFuture<Null?>
   @JsonRequest("editTask/undo")
-  fun editTask_undo(params: EditTask_UndoParams): CompletableFuture<Null?>
+  fun editTask_undo(params: FixupTaskID): CompletableFuture<Null?>
   @JsonRequest("editTask/cancel")
-  fun editTask_cancel(params: EditTask_CancelParams): CompletableFuture<Null?>
+  fun editTask_cancel(params: FixupTaskID): CompletableFuture<Null?>
   @JsonRequest("editTask/retry")
-  fun editTask_retry(params: EditTask_RetryParams): CompletableFuture<EditTask>
+  fun editTask_retry(params: FixupTaskID): CompletableFuture<FixupTaskID?>
   @JsonRequest("editTask/getTaskDetails")
-  fun editTask_getTaskDetails(params: EditTask_GetTaskDetailsParams): CompletableFuture<EditTask>
+  fun editTask_getTaskDetails(params: FixupTaskID): CompletableFuture<EditTask>
   @JsonRequest("editTask/getFoldingRanges")
   fun editTask_getFoldingRanges(params: GetFoldingRangeParams): CompletableFuture<GetFoldingRangeResult>
   @JsonRequest("command/execute")
@@ -61,7 +57,7 @@ interface CodyAgentServer {
   @JsonRequest("codeActions/provide")
   fun codeActions_provide(params: CodeActions_ProvideParams): CompletableFuture<CodeActions_ProvideResult>
   @JsonRequest("codeActions/trigger")
-  fun codeActions_trigger(params: CodeActions_TriggerParams): CompletableFuture<EditTask>
+  fun codeActions_trigger(params: FixupTaskID): CompletableFuture<FixupTaskID?>
   @JsonRequest("autocomplete/execute")
   fun autocomplete_execute(params: AutocompleteParams): CompletableFuture<AutocompleteResult>
   @JsonRequest("graphql/getRepoIds")
@@ -162,6 +158,8 @@ interface CodyAgentServer {
   fun textDocument_didFocus(params: TextDocument_DidFocusParams)
   @JsonNotification("textDocument/didSave")
   fun textDocument_didSave(params: TextDocument_DidSaveParams)
+  @JsonNotification("textDocument/didRename")
+  fun textDocument_didRename(params: TextDocument_DidRenameParams)
   @JsonNotification("textDocument/didClose")
   fun textDocument_didClose(params: ProtocolTextDocument)
   @JsonNotification("workspace/didDeleteFiles")

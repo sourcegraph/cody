@@ -25,7 +25,6 @@ import {
 import type { ExtensionMessage, ExtensionTranscriptMessage } from '../../vscode/src/chat/protocol'
 import { doesFileExist } from '../../vscode/src/commands/utils/workspace-files'
 import { ProtocolTextDocumentWithUri } from '../../vscode/src/jsonrpc/TextDocumentWithUri'
-import { CodyTaskState } from '../../vscode/src/non-stop/state'
 import { mockLocalStorage } from '../../vscode/src/services/LocalStorageProvider'
 import {
     TESTING_CREDENTIALS,
@@ -43,7 +42,6 @@ import type {
     CreateFileOperation,
     DebugMessage,
     DeleteFileOperation,
-    EditTask,
     ExtensionConfiguration,
     NetworkRequest,
     Position,
@@ -186,6 +184,10 @@ export class TestClient extends MessageHandler {
     public textDocumentEditParams: TextDocumentEditParams[] = []
     public expectedEvents: string[] = []
     public secrets = new AgentStatelessSecretStorage()
+    public userInput: {
+        instruction: string
+        model?: string
+    } = { instruction: '' }
 
     get serverEndpoint(): string {
         return this.params.credentials.serverEndpoint
@@ -355,15 +357,14 @@ export class TestClient extends MessageHandler {
         this.registerRequest('textDocument/show', () => {
             return Promise.resolve(true)
         })
+        this.registerRequest('editTask/getUserInput', async params => {
+            return {
+                instruction: this.userInput.instruction ?? params.instruction,
+                selectedModelId: this.userInput.model ?? params.selectedModelId,
+            }
+        })
         this.registerNotification('debug/message', message => {
             this.logMessage(message)
-        })
-
-        this.registerNotification('editTask/didUpdate', params => {
-            this.taskUpdate.fire(params)
-        })
-        this.registerNotification('editTask/didDelete', params => {
-            this.taskDelete.fire(params)
         })
 
         this.registerNotification('autocomplete/didHide', () => {
@@ -481,7 +482,7 @@ export class TestClient extends MessageHandler {
 
     public async documentCode(uri: vscode.Uri): Promise<string> {
         await this.openFile(uri, { removeCursor: false })
-        const task = await this.request('editCommands/document', null)
+        const task = await this.request('command/execute', { command: 'cody.command.document-code' })
         await this.acceptEditTask(uri, task)
         return this.workspace.getDocument(uri)?.content ?? ''
     }
@@ -495,7 +496,7 @@ export class TestClient extends MessageHandler {
             },
         })
 
-        const task = await this.request('editCommands/test', null)
+        const task = await this.request('command/execute', { command: 'cody.command.unit-tests' })
         await this.acceptEditTask(uri, task)
         return this.getTestEdit()
     }
@@ -594,74 +595,9 @@ export class TestClient extends MessageHandler {
         })
     }
 
-    /**
-     * Promise that resolves when the provided task has reached the 'applied' state.
-     */
-    public taskHasReachedAppliedPhase(params: EditTask): Promise<void> {
-        switch (params.state) {
-            case CodyTaskState.Applied:
-                return Promise.resolve()
-            case CodyTaskState.Finished:
-            case CodyTaskState.Error:
-                return Promise.reject(
-                    new Error(
-                        `Task reached terminal state before being applied ${JSON.stringify(
-                            params,
-                            null,
-                            2
-                        )}`
-                    )
-                )
-        }
-
-        let disposables: vscode.Disposable[]
-        return new Promise<void>((resolve, reject) => {
-            disposables = [
-                this.onDidUpdateTask(({ id, state, error }) => {
-                    if (id === params.id) {
-                        switch (state) {
-                            case CodyTaskState.Applied:
-                                return resolve()
-                            case CodyTaskState.Error:
-                            case CodyTaskState.Finished:
-                                return reject(
-                                    new Error(
-                                        `Task reached terminal state before being applied ${JSON.stringify(
-                                            {
-                                                id,
-                                                state: CodyTaskState[state],
-                                                error,
-                                            }
-                                        )}`
-                                    )
-                                )
-                        }
-                    }
-                }),
-                this.onDidDeleteTask(task => {
-                    if (task.id === params.id) {
-                        // Applied tasks can also be deleted, but in that case
-                        // the Promise is already resolved and this is a no-op.
-                        reject(
-                            new Error(`Task was deleted before being applied ${JSON.stringify(task)}`)
-                        )
-                    }
-                }),
-            ]
-        }).finally(() => {
-            for (const disposable of disposables) {
-                disposable.dispose()
-            }
-        })
-    }
-
     public codeLenses = new Map<string, ProtocolCodeLens[]>()
     public codeLensUpdate = new vscode.EventEmitter<ProtocolCodeLens[]>()
     public onCodeLensUpdate = this.codeLensUpdate.event
-    public taskUpdate = new vscode.EventEmitter<EditTask>()
-    public onDidUpdateTask = this.taskUpdate.event
-    public taskDelete = new vscode.EventEmitter<EditTask>()
-    public onDidDeleteTask = this.taskDelete.event
     public autocompleteHide = new vscode.EventEmitter()
     public onDidHideAutocomplete = this.autocompleteHide.event
     public autocompleteTrigger = new vscode.EventEmitter()
@@ -734,10 +670,9 @@ export class TestClient extends MessageHandler {
         })
     }
 
-    public async acceptEditTask(uri: vscode.Uri, task: EditTask): Promise<void> {
-        await this.taskHasReachedAppliedPhase(task)
+    public async acceptEditTask(uri: vscode.Uri, taskId: string): Promise<void> {
         await this.acceptLensWasShown(uri)
-        await this.request('editTask/accept', { id: task.id })
+        await this.request('editTask/accept', taskId)
     }
 
     public documentText(uri: vscode.Uri): string {

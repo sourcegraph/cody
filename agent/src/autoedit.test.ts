@@ -1,5 +1,4 @@
 import path from 'node:path'
-import { CodyAutoSuggestionMode } from '@sourcegraph/cody-shared'
 import { toMatchImageSnapshot } from 'jest-image-snapshot'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import type * as vscode from 'vscode'
@@ -8,20 +7,12 @@ import { TESTING_CREDENTIALS } from '../../vscode/src/testutils/testing-credenti
 import { TestClient } from './TestClient'
 import { TestWorkspace } from './TestWorkspace'
 import { allClientCapabilitiesEnabled } from './allClientCapabilitiesEnabled'
-import type {
-    AutocompleteEditItem,
-    AutocompleteResult,
-    ExtensionConfiguration,
-    Position,
-} from './protocol-alias'
+import type { AutocompleteEditItem, AutocompleteResult, Position } from './protocol-alias'
 
 expect.extend({ toMatchImageSnapshot })
 
 describe('Autoedit', () => {
     const workspace = new TestWorkspace(path.join(__dirname, '__tests__', 'autoedit'))
-    const clientConfiguration: Partial<ExtensionConfiguration> = {
-        suggestionsMode: CodyAutoSuggestionMode.Autoedit,
-    }
 
     beforeAll(async () => {
         await workspace.beforeAll()
@@ -37,7 +28,7 @@ describe('Autoedit', () => {
             name: 'autoedit-completions',
             credentials: TESTING_CREDENTIALS.enterprise,
             extraConfiguration: {
-                experimentalAutoEditEnabled: true,
+                'cody.suggestions.mode': 'auto-edit',
             },
             capabilities: {
                 ...allClientCapabilitiesEnabled,
@@ -48,7 +39,7 @@ describe('Autoedit', () => {
         })
 
         beforeAll(async () => {
-            await client.beforeAll(clientConfiguration)
+            await client.beforeAll()
         })
 
         afterAll(async () => {
@@ -266,7 +257,7 @@ describe('Autoedit', () => {
                 name: 'autoedit-inline-diffs',
                 credentials: TESTING_CREDENTIALS.enterprise,
                 extraConfiguration: {
-                    experimentalAutoEditEnabled: true,
+                    'cody.suggestions.mode': 'auto-edit',
                 },
                 capabilities: {
                     ...allClientCapabilitiesEnabled,
@@ -277,7 +268,7 @@ describe('Autoedit', () => {
             })
 
             beforeAll(async () => {
-                await client.beforeAll(clientConfiguration)
+                await client.beforeAll()
             })
 
             afterAll(async () => {
@@ -338,7 +329,7 @@ describe('Autoedit', () => {
                 name: 'autoedit-aside-images',
                 credentials: TESTING_CREDENTIALS.enterprise,
                 extraConfiguration: {
-                    experimentalAutoEditEnabled: true,
+                    'cody.suggestions.mode': 'auto-edit',
                 },
                 capabilities: {
                     ...allClientCapabilitiesEnabled,
@@ -349,7 +340,7 @@ describe('Autoedit', () => {
             })
 
             beforeAll(async () => {
-                await client.beforeAll(clientConfiguration)
+                await client.beforeAll()
             })
 
             afterAll(async () => {
@@ -430,7 +421,7 @@ describe('Autoedit', () => {
                 name: 'autoedit-aside-custom',
                 credentials: TESTING_CREDENTIALS.enterprise,
                 extraConfiguration: {
-                    experimentalAutoEditEnabled: true,
+                    'cody.suggestions.mode': 'auto-edit',
                 },
                 capabilities: {
                     ...allClientCapabilitiesEnabled,
@@ -441,7 +432,7 @@ describe('Autoedit', () => {
             })
 
             beforeAll(async () => {
-                await client.beforeAll(clientConfiguration)
+                await client.beforeAll()
             })
 
             afterAll(async () => {
@@ -512,7 +503,7 @@ describe('Autoedit', () => {
                 name: 'autoedit-inline-and-aside',
                 credentials: TESTING_CREDENTIALS.enterprise,
                 extraConfiguration: {
-                    experimentalAutoEditEnabled: true,
+                    'cody.suggestions.mode': 'auto-edit',
                 },
                 capabilities: {
                     ...allClientCapabilitiesEnabled,
@@ -523,7 +514,7 @@ describe('Autoedit', () => {
             })
 
             beforeAll(async () => {
-                await client.beforeAll(clientConfiguration)
+                await client.beforeAll()
             })
 
             afterAll(async () => {

@@ -12,14 +12,8 @@ export const RANGE_SYMBOLS_ITEM: vscode.QuickPickItem = {
     alwaysShow: true,
 }
 
-interface RangeInputInitialValues {
-    initialCursorPosition: vscode.Position
-    initialRange: vscode.Range
-    initialExpandedRange?: vscode.Range
-}
-
 export const getRangeSymbolInputItems = async (
-    initialValues: RangeInputInitialValues,
+    cursorPosition: vscode.Position,
     symbolsPromise: Thenable<vscode.DocumentSymbol[]>
 ): Promise<GetItemsResult> => {
     const symbols = await symbolsPromise
@@ -38,8 +32,8 @@ export const getRangeSymbolInputItems = async (
      */
     const activeItem = symbolItems.reduce(
         (a, b) =>
-            getMinimumDistanceToRangeBoundary(initialValues.initialCursorPosition, a.range) <
-            getMinimumDistanceToRangeBoundary(initialValues.initialCursorPosition, b.range)
+            getMinimumDistanceToRangeBoundary(cursorPosition, a.range) <
+            getMinimumDistanceToRangeBoundary(cursorPosition, b.range)
                 ? a
                 : b,
         symbolItems[0]

@@ -19,7 +19,9 @@ describe('Edit', { timeout: 5000 }, () => {
         vi.spyOn(modelsService, 'models', 'get').mockReturnValue(FIXTURE_MODELS)
         await workspace.beforeAll()
         await client.beforeAll()
-        await client.request('command/execute', { command: 'cody.search.index-update' })
+        await client.request('command/execute', {
+            command: 'cody.search.index-update',
+        })
     })
 
     afterAll(async () => {
@@ -30,14 +32,18 @@ describe('Edit', { timeout: 5000 }, () => {
     it('editCommands/code (basic function)', async () => {
         const uri = workspace.file('src', 'sum.ts')
         await client.openFile(uri, { removeCursor: false })
-        const task = await client.request('editCommands/code', {
+        client.userInput = {
             instruction: 'Rename `a` parameter to `c`',
-        })
-        await client.taskHasReachedAppliedPhase(task)
+        }
+        const taskId = await client.request('editTask/start', null)
+        if (!taskId) {
+            throw new Error('Task cannot be null or undefined')
+        }
+        await client.acceptLensWasShown(uri)
         const lenses = client.codeLenses.get(uri.toString()) ?? []
         expect(lenses).toHaveLength(4)
         expect(lenses[0].command?.command).toBe('cody.fixup.codelens.accept')
-        await client.request('editTask/accept', { id: task.id })
+        await client.request('editTask/accept', taskId)
         const newContent = client.workspace.getDocument(uri)?.content
         expect(trimEndOfLine(newContent)).toMatchInlineSnapshot(
             `
@@ -53,22 +59,26 @@ describe('Edit', { timeout: 5000 }, () => {
     it('editCommand/code (add prop types)', async () => {
         const uri = workspace.file('src', 'ChatColumn.tsx')
         await client.openFile(uri)
-        const task = await client.request('editCommands/code', {
+        client.userInput = {
             instruction: 'Add types to these props. Introduce new interfaces as necessary',
-            model: 'anthropic/claude-3-5-sonnet-20240620',
-        })
-        await client.acceptEditTask(uri, task)
+            model: 'anthropic::2024-10-22::claude-3-5-haiku-latest',
+        }
+        const taskId = await client.request('editTask/start', null)
+        if (!taskId) {
+            throw new Error('Task cannot be null or undefined')
+        }
+        await client.acceptEditTask(uri, taskId)
         expect(client.documentText(uri)).toMatchInlineSnapshot(
             `
           "import { useEffect } from "react";
           import React = require("react");
 
-          interface Message {
-          	chatID: string
+          export interface Message {
           	text: string
+          	chatID: string
           }
 
-          interface ChatColumnProps {
+          export interface ChatColumnProps {
           	messages: Message[]
           	setChatID: (chatID: string) => void
           	isLoading: boolean
@@ -79,6 +89,7 @@ describe('Edit', { timeout: 5000 }, () => {
           	setChatID,
           	isLoading,
           }: ChatColumnProps) {
+          }
           	useEffect(() => {
           		if (!isLoading) {
           			setChatID(messages[0].chatID);
@@ -106,23 +117,32 @@ describe('Edit', { timeout: 5000 }, () => {
     it.skip('editCommand/code (generate new code)', async () => {
         const uri = workspace.file('src', 'Heading.tsx')
         await client.openFile(uri)
-        const task = await client.request('editCommands/code', {
+        client.userInput = {
             instruction:
                 'Create and export a Heading component that uses these props. Do not use default exports',
-            model: 'anthropic/claude-3-5-sonnet-20240620',
-        })
-        await client.acceptEditTask(uri, task)
+            model: 'anthropic::2024-10-22::claude-3-5-haiku-latest',
+        }
+        const taskId = await client.request('editTask/start', null)
+        if (!taskId) {
+            throw new Error('Task cannot be null or undefined')
+        }
+
+        await client.acceptEditTask(uri, taskId)
         expect(client.documentText(uri)).toMatchSnapshot()
     }, 20_000)
 
     it('editCommand/code (adding/deleting code)', async () => {
         const uri = workspace.file('src', 'trickyLogic.ts')
         await client.openFile(uri, { removeCursor: true })
-        const task = await client.request('editCommands/code', {
+        client.userInput = {
             instruction: 'Convert this to use a switch statement',
-            model: 'anthropic/claude-3-5-haiku-latest',
-        })
-        await client.acceptEditTask(uri, task)
+            model: 'anthropic::2024-10-22::claude-3-5-haiku-latest',
+        }
+        const taskId = await client.request('editTask/start', null)
+        if (!taskId) {
+            throw new Error('Task cannot be null or undefined')
+        }
+        await client.acceptEditTask(uri, taskId)
         expect(client.documentText(uri)).toMatchInlineSnapshot(
             `
           "export function trickyLogic(a: number, b: number): number {
@@ -137,6 +157,31 @@ describe('Edit', { timeout: 5000 }, () => {
           }"
         `,
             explainPollyError
+        )
+    }, 20_000)
+
+    it('editCommand/code (SQL query completion - no duplication bug)', async () => {
+        const uri = workspace.file('src', 'query.sql')
+        await client.openFile(uri, { removeCursor: true })
+        client.userInput = {
+            instruction: 'add missing code',
+            model: 'anthropic::2024-10-22::claude-3-5-haiku-latest',
+        }
+        const taskId = await client.request('editTask/start', null)
+        if (!taskId) {
+            throw new Error('Task cannot be null or undefined')
+        }
+        await client.acceptEditTask(uri, taskId)
+
+        expect(client.documentText(uri)).toMatchInlineSnapshot(
+            `
+          "-- divide price and gst by 10
+          select audit_open('COM-1351-luke');
+          update products.fee
+          set gst = (price * 0.1)
+          where last_updated_by = 'COM-1351';
+          "
+        `
         )
     }, 20_000)
 })

@@ -12,10 +12,9 @@ import {
 } from '@sourcegraph/cody-shared'
 
 import styles from './Chat.module.css'
-import { Transcript, focusLastHumanMessageEditor } from './chat/Transcript'
+import { Transcript } from './chat/Transcript'
 import { WelcomeMessage } from './chat/components/WelcomeMessage'
-import { WelcomeNotice } from './chat/components/WelcomeNotice'
-import { ScrollDown } from './components/ScrollDown'
+
 import type { View } from './tabs'
 import type { VSCodeWrapper } from './utils/VSCodeApi'
 import { SpanManager } from './utils/spanManager'
@@ -26,10 +25,17 @@ interface ChatboxProps {
     chatEnabled: boolean
     messageInProgress: ChatMessage | null
     transcript: ChatMessage[]
+    tokenUsage?:
+        | {
+              completionTokens?: number | null | undefined
+              promptTokens?: number | null | undefined
+              totalTokens?: number | null | undefined
+          }
+        | null
+        | undefined
     models: Model[]
     vscodeAPI: Pick<VSCodeWrapper, 'postMessage' | 'onMessage'>
     guardrails: Guardrails
-    scrollableParent?: HTMLElement | null
     showWelcomeMessage?: boolean
     showIDESnippetActions?: boolean
     setView: (view: View) => void
@@ -39,11 +45,11 @@ interface ChatboxProps {
 export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>> = ({
     messageInProgress,
     transcript,
+    tokenUsage,
     models,
     vscodeAPI,
     chatEnabled = true,
     guardrails,
-    scrollableParent,
     showWelcomeMessage = true,
     showIDESnippetActions = true,
     setView,
@@ -190,16 +196,6 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
         }
     }, [])
 
-    const handleScrollDownClick = useCallback(() => {
-        // Scroll to the bottom instead of focus input for unsent message
-        // it's possible that we just want to scroll to the bottom in case of
-        // welcome message screen
-        if (transcript.length === 0) {
-            return
-        }
-
-        focusLastHumanMessageEditor()
-    }, [transcript])
     const [activeChatContext, setActiveChatContext] = useState<Context>()
 
     return (
@@ -213,6 +209,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                 activeChatContext={activeChatContext}
                 setActiveChatContext={setActiveChatContext}
                 transcript={transcript}
+                tokenUsage={tokenUsage}
                 models={models}
                 messageInProgress={messageInProgress}
                 copyButtonOnSubmit={copyButtonOnSubmit}
@@ -222,21 +219,18 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                 chatEnabled={chatEnabled}
                 postMessage={postMessage}
                 guardrails={guardrails}
+                welcomeContent={
+                    transcript.length === 0 && showWelcomeMessage ? (
+                        <WelcomeMessage
+                            IDE={userInfo.IDE}
+                            setView={setView}
+                            isWorkspacesUpgradeCtaEnabled={
+                                isWorkspacesUpgradeCtaEnabled && userInfo.IDE !== CodyIDE.Web
+                            }
+                        />
+                    ) : undefined
+                }
             />
-            {transcript.length === 0 && showWelcomeMessage && (
-                <>
-                    <WelcomeMessage IDE={userInfo.IDE} setView={setView} />
-                    {isWorkspacesUpgradeCtaEnabled && userInfo.IDE !== CodyIDE.Web && (
-                        <div className="tw-absolute tw-bottom-0 tw-left-1/2 tw-transform tw--translate-x-1/2 tw-w-[95%] tw-z-1 tw-mb-4 tw-max-h-1/2">
-                            <WelcomeNotice />
-                        </div>
-                    )}
-                </>
-            )}
-
-            {scrollableParent && (
-                <ScrollDown scrollableParent={scrollableParent} onClick={handleScrollDownClick} />
-            )}
         </>
     )
 }

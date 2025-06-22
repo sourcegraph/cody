@@ -36,6 +36,11 @@ export interface CompletionData {
     delta_thinking?: string
     delta_tool_calls?: CompletionFunctionCallsData[] | undefined | null
     stopReason?: string
+    usage?: {
+        completion_tokens?: number
+        prompt_tokens?: number
+        total_tokens?: number
+    }
 }
 
 export function parseCompletionJSON(jsonData: string): CompletionData | Error {
@@ -58,6 +63,14 @@ function parseEventData(
             if (isError(data)) {
                 return data
             }
+            let usage = undefined
+            if (data.usage) {
+                usage = {
+                    completionTokens: data.usage.completion_tokens,
+                    promptTokens: data.usage.prompt_tokens,
+                    totalTokens: data.usage.total_tokens,
+                }
+            }
             // Process the delta_thinking and deltaText separately.
             // The thinking text will be added to the completion text.
             builder.nextThinking(data.delta_thinking)
@@ -66,15 +79,13 @@ function parseEventData(
             const completion = builder.nextCompletion(data.completion, data.deltaText)
             const toolCalls = builder.nextToolCalls(data?.delta_tool_calls)
             const content: CompletionContentData[] = []
-            if (completion) {
-                content.push({ type: 'text', text: completion })
-            }
             content.push(...toolCalls)
             return {
                 type: eventType,
                 completion,
                 stopReason: data.stopReason,
                 content,
+                usage,
             }
         }
         case 'error': {
@@ -91,7 +102,6 @@ function parseEventData(
             return { type: eventType }
     }
 }
-
 function parseEvent(builder: CompletionsResponseBuilder, eventBuffer: string): Event | Error {
     const [eventLine, dataLine] = eventBuffer.split('\n')
     const eventType = parseEventType(eventLine)

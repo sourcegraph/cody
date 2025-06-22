@@ -583,7 +583,6 @@ html[data-ide='VisualStudio'] {
     /* --vscode-widget-border: var(); */
     --vscode-window-activeBorder: var(--visualstudio-titlebaractiveborder);
     --vscode-window-inactiveBorder: var(--visualstudio-titlebarinactive);
-    --button-icon-background: var(--visualstudio-filetabbackground);
     --foreground: var(--visualstudio-toolwindowtext);
 
     /* Mimic rules injected by VSCode */

@@ -1,5 +1,4 @@
 import type { ChatMessage } from '@sourcegraph/cody-shared'
-import { toolboxManager } from '../../agentic/ToolboxManager'
 import { isCodyTesting } from '../chat-helpers'
 import { AgenticHandler } from './AgenticHandler'
 import { ChatHandler } from './ChatHandler'
@@ -42,7 +41,7 @@ export function getAgent(model: string, intent: ChatMessage['intent'], tools: Ag
     // Use agentic chat (Deep Cody) handler if enabled.
     // Skip in agent testing mode to avoid non-deterministic results causing
     // recordings to fail consistently.
-    if (!isCodyTesting && toolboxManager.isAgenticChatEnabled(model)) {
+    if (!isCodyTesting && DeepCodyHandler.isAgenticChatEnabled()) {
         return new DeepCodyHandler(contextRetriever, editor, chatClient)
     }
 

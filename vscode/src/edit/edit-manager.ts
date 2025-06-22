@@ -212,12 +212,12 @@ export class EditManager implements vscode.Disposable {
             document,
             range,
             expandedRange,
-            mode,
             model,
             configuration.rules ?? null,
             intent,
             canStream,
             source,
+            mode,
             telemetryMetadata
         )
     }

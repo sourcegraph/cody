@@ -82,7 +82,7 @@ describe('Custom Commands', () => {
         expect(result.type).toBe('chat')
         const lastMessage = await client.firstNonEmptyTranscript(result.chatResult as string)
         const reply = trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')
-        expect(reply).toMatchInlineSnapshot(`"7"`, explainPollyError)
+        expect(reply).toMatchInlineSnapshot(`"6"`, explainPollyError)
     }, 30_000)
 
     it('commands/custom, edit command, insert mode', async () => {
@@ -91,7 +91,7 @@ describe('Custom Commands', () => {
             key: '/hello',
         })) as CustomEditCommandResult
         expect(result.type).toBe('edit')
-        await client.taskHasReachedAppliedPhase(result.editResult)
+        await client.acceptLensWasShown(sumUri)
 
         const originalDocument = client.workspace.getDocument(sumUri)!
         expect(trimEndOfLine(originalDocument.getText())).toMatchSnapshot()
@@ -104,7 +104,7 @@ describe('Custom Commands', () => {
             key: '/newField',
         })) as CustomEditCommandResult
         expect(result.type).toBe('edit')
-        await client.taskHasReachedAppliedPhase(result.editResult)
+        await client.acceptLensWasShown(animalUri)
 
         const originalDocument = client.workspace.getDocument(animalUri)!
         expect(trimEndOfLine(originalDocument.getText())).toMatchSnapshot()

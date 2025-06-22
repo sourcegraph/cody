@@ -171,6 +171,14 @@ export function responseTransformer(
                 : decodedText + '\n'
         }
 
+        // For all other intents, we want to ensure the response matches the original text
+        // and includes a new line at the end if the original text ends with a new line.
+        // ex when you ask for an edit task if the response doesn't end with a new line
+        // text from next line will be appended to the response.
+        decodedText =
+            task.original.endsWith('\n') && !decodedText.endsWith('\n')
+                ? decodedText + '\n'
+                : decodedText
         return formatToMatchOriginal(decodedText, task.original, task.fixupFile.uri)
     }
 

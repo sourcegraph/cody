@@ -16,7 +16,7 @@ import { getEditor } from '../../editor/active-editor'
 import type { CodyCommandArgs } from '../types'
 import { type ExecuteChatArguments, executeChat } from './ask'
 
-import type { CommandResult } from '../../CommandResult'
+import type { ChatCommandResult, EditCommandResult } from '../../CommandResult'
 import {
     getEditAdjustedUserSelection,
     getEditDefaultProvidedRange,
@@ -165,7 +165,7 @@ async function docChatCommand(
 
 export async function executeDocChatCommand(
     args?: Partial<CodyCommandArgs>
-): Promise<CommandResult | undefined> {
+): Promise<ChatCommandResult | undefined> {
     return wrapInActiveSpan('command.doc', async span => {
         span.setAttribute('sampled', true)
         logDebug('executeDocCommand', 'executing', { verbose: args })
@@ -203,7 +203,7 @@ export async function executeDocChatCommand(
  */
 export async function executeDocCommand(
     args?: Partial<CodyCommandArgs>
-): Promise<CommandResult | undefined> {
+): Promise<EditCommandResult | undefined> {
     return wrapInActiveSpan('command.doc', async span => {
         span.setAttribute('sampled', true)
         logDebug('executeDocCommand', 'executing', { verbose: args })

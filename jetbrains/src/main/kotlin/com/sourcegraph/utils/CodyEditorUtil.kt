@@ -10,6 +10,7 @@ import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.editor.Document
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.EditorKind
+import com.intellij.openapi.editor.ScrollType
 import com.intellij.openapi.editor.ex.EditorEx
 import com.intellij.openapi.editor.impl.ImaginaryEditor
 import com.intellij.openapi.fileEditor.*
@@ -19,17 +20,16 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Key
 import com.intellij.openapi.util.TextRange
 import com.intellij.openapi.vfs.LocalFileSystem
-import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.VirtualFileManager
 import com.intellij.util.concurrency.annotations.RequiresEdt
 import com.intellij.util.io.createFile
+import com.sourcegraph.cody.agent.protocol_extensions.toBoundedOffset
 import com.sourcegraph.cody.agent.protocol_extensions.toOffsetRange
 import com.sourcegraph.cody.agent.protocol_generated.Range
+import com.sourcegraph.common.CodyFileUri
 import com.sourcegraph.config.ConfigUtil
 import com.sourcegraph.utils.ThreadingUtil.runInEdtAndGet
-import java.net.URISyntaxException
-import java.net.URLDecoder
 import kotlin.io.path.*
 
 object CodyEditorUtil {
@@ -43,6 +43,8 @@ object CodyEditorUtil {
   private const val LEFT_COMMAND = "Left"
   private const val RIGHT_COMMAND = "Right"
   private const val MOVE_CARET_COMMAND = "Move Caret"
+  private const val DELETE_COMMAND = "Delete"
+  private const val ESCAPE_COMMAND = "Escape"
 
   @JvmStatic private val KEY_EDITOR_SUPPORTED = Key.create<Boolean>("cody.editorSupported")
 
@@ -145,6 +147,8 @@ object CodyEditorUtil {
         command == DOWN_COMMAND ||
         command == LEFT_COMMAND ||
         command == RIGHT_COMMAND ||
+        command == DELETE_COMMAND ||
+        command == ESCAPE_COMMAND ||
         command.contains(MOVE_CARET_COMMAND))
   }
 
@@ -176,62 +180,60 @@ object CodyEditorUtil {
     }
   }
 
-  @JvmStatic
-  fun fixUriString(uriString: String): String {
-    if (uriString.startsWith("untitled://")) {
-      // IntelliJ does not support in-memory files so we are using scratch files instead
-      return uriString.substringAfterLast(':').trimStart('/', '\\')
-    } else {
-      // Check `ProtocolTextDocumentExt.normalizeToVscUriFormat` for explanation
-      val patchedUri = uriString.replace("file://wsl.localhost/", "file:////wsl.localhost/")
-      return if (patchedUri.startsWith("file://")) patchedUri else "file://$patchedUri"
-    }
-  }
-
   fun findFileOrScratch(project: Project, uriString: String): VirtualFile? {
-    val fixedUri = fixUriString(uriString)
-    if (uriString.startsWith("untitled://")) {
+    val uri = CodyFileUri.parse(uriString, project.basePath)
+    if (uri.isUntitled()) {
       return ScratchRootType.getInstance()
-          .findFile(project, fixedUri, ScratchFileService.Option.existing_only)
+          .findFile(project, uri.toString(), ScratchFileService.Option.existing_only)
     } else {
-      val uri = VfsUtil.toUri(fixedUri) ?: return null
-      return VirtualFileManager.getInstance().refreshAndFindFileByNioPath(uri.toPath())
+      val path = uri.toAbsolutePath()
+      return VirtualFileManager.getInstance().refreshAndFindFileByNioPath(path)
     }
   }
 
-  fun createFileOrScratchFromUntitled(
+  fun createFileOrUseExisting(
       project: Project,
       uriString: String,
       content: String? = null,
       overwrite: Boolean = false
   ): VirtualFile? {
-    try {
-      val fileUri = VfsUtil.toUri(fixUriString(uriString)) ?: return null
-      if (overwrite || fileUri.toPath().notExists()) {
-        fileUri.toPath().parent?.createDirectories()
-        fileUri.toPath().deleteIfExists()
-        fileUri.toPath().createFile()
-        val vf = LocalFileSystem.getInstance().refreshAndFindFileByNioFile(fileUri.toPath())
+    val path = CodyFileUri.parse(uriString, project.basePath).toAbsolutePath()
+    if (overwrite || path.notExists()) {
+      path.parent.createDirectories()
+      path.deleteIfExists()
+      path.createFile()
+      val vf = LocalFileSystem.getInstance().refreshAndFindFileByNioFile(path)
 
-        content?.let {
-          WriteCommandAction.runWriteCommandAction(project) {
-            vf?.setBinaryContent(it.toByteArray())
-          }
-        }
+      content?.let {
+        WriteCommandAction.runWriteCommandAction(project) { vf?.setBinaryContent(it.toByteArray()) }
       }
+      return vf
+    }
+    return VirtualFileManager.getInstance().refreshAndFindFileByNioPath(path)
+  }
 
-      return LocalFileSystem.getInstance().refreshAndFindFileByNioFile(fileUri.toPath())
-    } catch (e: URISyntaxException) {
-      val fileName = uriString.substringAfterLast(':').trimStart('/', '\\')
-      val fileType = FileTypeRegistry.getInstance().getFileTypeByFileName(fileName)
-      val language = LanguageUtil.getFileTypeLanguage(fileType) ?: PlainTextLanguage.INSTANCE
-      return ScratchRootType.getInstance()
-          .createScratchFile(
-              project,
-              URLDecoder.decode(fileName, "UTF-8"),
-              language,
-              content ?: "",
-              ScratchFileService.Option.create_if_missing)
+  fun createScratchOrUseExisting(
+      project: Project,
+      fileName: String,
+      content: String? = null,
+  ): VirtualFile? {
+    val fileType = FileTypeRegistry.getInstance().getFileTypeByFileName(fileName)
+    val language = LanguageUtil.getFileTypeLanguage(fileType) ?: PlainTextLanguage.INSTANCE
+    return ScratchRootType.getInstance()
+        .createScratchFile(
+            project, fileName, language, content ?: "", ScratchFileService.Option.create_if_missing)
+  }
+
+  @JvmStatic
+  @RequiresEdt
+  fun selectAndScrollToRange(project: Project, uri: String, range: Range, shouldScroll: Boolean) {
+    val vf = findFileOrScratch(project, uri) ?: return
+    val textEditor = getSelectedEditors(project).find { it.virtualFile == vf } ?: return
+    textEditor.selectionModel.setSelection(
+        range.start.toBoundedOffset(textEditor.document),
+        range.end.toBoundedOffset(textEditor.document))
+    if (shouldScroll) {
+      textEditor.scrollingModel.scrollToCaret(ScrollType.MAKE_VISIBLE)
     }
   }
 }

@@ -23,6 +23,7 @@ data class ClientCapabilities(
   val codeActions: CodeActionsEnum? = null, // Oneof: none, enabled
   val disabledMentionsProviders: List<ContextMentionProviderID>? = null,
   val accountSwitchingInWebview: AccountSwitchingInWebviewEnum? = null, // Oneof: none, enabled
+  val codeCopyOnlyAction: CodeCopyOnlyActionEnum? = null, // Oneof: none, enabled
   val shell: ShellEnum? = null, // Oneof: none, enabled
   val webviewMessages: WebviewMessagesEnum? = null, // Oneof: object-encoded, string-encoded
   val globalState: GlobalStateEnum? = null, // Oneof: stateless, server-managed, client-managed
@@ -119,6 +120,11 @@ data class ClientCapabilities(
   }
 
   enum class AccountSwitchingInWebviewEnum {
+    @SerializedName("none") None,
+    @SerializedName("enabled") Enabled,
+  }
+
+  enum class CodeCopyOnlyActionEnum {
     @SerializedName("none") None,
     @SerializedName("enabled") Enabled,
   }

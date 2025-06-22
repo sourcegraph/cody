@@ -20,24 +20,22 @@ class CodyConsole(project: Project) {
   var content: Content? = null
 
   fun addMessage(message: DebugMessage) {
-    runInEdt {
-      if (toolWindow?.isDisposed != false) return@runInEdt
+    if (toolWindow?.isDisposed != false) return
 
-      val messageText = "${message.channel}: ${message.message}\n"
-      if (message.level == "error" || message.level == "warn") {
-        content?.let { toolWindow?.contentManager?.setSelectedContent(it) }
-        consoleView.print(messageText, ConsoleViewContentType.ERROR_OUTPUT)
-        logger.warn(messageText)
-      } else if (ConfigUtil.isCodyDebugEnabled()) {
-        consoleView.print(messageText, ConsoleViewContentType.NORMAL_OUTPUT)
-        logger.info(messageText)
-      }
+    val messageText = "${message.channel}: ${message.message}\n"
+    if (message.level == "error" || message.level == "warn") {
+      content?.let { toolWindow.contentManager.setSelectedContent(it) }
+      consoleView.print(messageText, ConsoleViewContentType.ERROR_OUTPUT)
+      logger.warn(messageText)
+    } else if (ConfigUtil.isCodyDebugEnabled()) {
+      consoleView.print(messageText, ConsoleViewContentType.NORMAL_OUTPUT)
+      logger.info(messageText)
+    }
 
-      if (ConfigUtil.isCodyDebugEnabled() && ConfigUtil.isDevMode()) {
-        toolWindow?.contentManager?.getReady(this)?.doWhenDone {
-          if (!toolWindow.isVisible) {
-            toolWindow.show()
-          }
+    if (ConfigUtil.isCodyDebugEnabled() && ConfigUtil.isDevMode()) {
+      toolWindow.contentManager.getReady(this).doWhenDone {
+        if (!toolWindow.isVisible) {
+          toolWindow.show()
         }
       }
     }

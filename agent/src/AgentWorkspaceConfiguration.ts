@@ -12,7 +12,8 @@ export class AgentWorkspaceConfiguration implements vscode.WorkspaceConfiguratio
         private prefix: string[],
         private clientInfo: () => ClientInfo | undefined,
         private extensionConfig: () => ExtensionConfiguration | undefined,
-        private onUpdate: (section: string, value: any) => Promise<void> = async () => {}
+        private onUpdate: (section: string, value: any) => Promise<void> = async () => {},
+        private dictionary: any = {}
     ) {}
 
     public withPrefix(prefix: string): AgentWorkspaceConfiguration {
@@ -20,11 +21,10 @@ export class AgentWorkspaceConfiguration implements vscode.WorkspaceConfiguratio
             this.prefix.concat(prefix),
             this.clientInfo,
             this.extensionConfig,
-            this.onUpdate
+            this.onUpdate,
+            this.dictionary
         )
     }
-
-    private dictionary: any = {}
 
     private actualSection(section: string): string {
         if (this.prefix.length === 0) {
@@ -94,11 +94,6 @@ export class AgentWorkspaceConfiguration implements vscode.WorkspaceConfiguratio
                         model: config?.autocompleteAdvancedModel ?? null,
                         provider: config?.autocompleteAdvancedProvider ?? null,
                     },
-                    // If suggestionsMode is set, honor that, otherwise default to true
-                    enabled: config?.suggestionsMode ? config.suggestionsMode === 'autocomplete' : true,
-                },
-                suggestions: {
-                    mode: config?.suggestionsMode || 'autocomplete',
                 },
                 codebase: config?.codebase,
                 customHeaders: config?.customHeaders,
@@ -146,8 +141,14 @@ export class AgentWorkspaceConfiguration implements vscode.WorkspaceConfiguratio
             !Array.isArray(fromBaseConfig) &&
             !Array.isArray(fromDict)
         ) {
-            return structuredClone(_.extend(fromBaseConfig, fromDict))
+            try {
+                return structuredClone(_.extend({}, fromBaseConfig, fromDict))
+            } catch (error) {
+                // If structuredClone fails, fall back to a deep copy using lodash
+                return _.cloneDeep(_.extend({}, fromBaseConfig, fromDict))
+            }
         }
+
         if (fromDict !== undefined) {
             return structuredClone(fromDict)
         }
@@ -190,11 +191,13 @@ export class AgentWorkspaceConfiguration implements vscode.WorkspaceConfiguratio
     }
 
     public async update(
-        section: string,
+        userSection: string,
         value: any,
         _configurationTarget?: boolean | vscode.ConfigurationTarget | null | undefined,
         _overrideInLanguage?: boolean | undefined
     ): Promise<void> {
+        const section = this.actualSection(userSection)
+
         if (this.get(section) === value) {
             return Promise.resolve()
         }

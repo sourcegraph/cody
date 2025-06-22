@@ -8,9 +8,9 @@ import {
 import type { McpTool } from '@sourcegraph/cody-shared/src/llm-providers/mcp/types'
 import { map } from 'observable-fns'
 import type { ContextRetriever } from '../chat-view/ContextRetriever'
+import { DeepCodyHandler } from '../chat-view/handlers/DeepCodyHandler'
 import type { CodyTool } from './CodyTool'
 import { ToolFactory } from './CodyToolFactory'
-import { toolboxManager } from './ToolboxManager'
 import type { CodyToolConfig } from './types'
 
 type Retriever = Pick<ContextRetriever, 'retrieveContext'>
@@ -112,7 +112,7 @@ export class CodyToolProvider {
     private static setupOpenCtxProviderListener(): void {
         const provider = CodyToolProvider.instance
         if (provider && !CodyToolProvider.configSubscription) {
-            CodyToolProvider.configSubscription = toolboxManager.observable.subscribe({})
+            CodyToolProvider.configSubscription = DeepCodyHandler.observable.subscribe({})
         }
         if (provider && !CodyToolProvider.openCtxSubscription) {
             CodyToolProvider.openCtxSubscription = openctxController

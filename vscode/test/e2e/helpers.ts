@@ -615,7 +615,7 @@ export const testWithGitRemote = test.extend<WorkspaceDirectory>({
             })
 
             // Add a remote to the git repo.
-            await spawn('git', ['remote', 'add', 'origin', 'git@host.example:user/myrepo.git'], {
+            await spawn('git', ['remote', 'add', 'origin', 'git@codehost.example:user/myrepo.git'], {
                 cwd: dir,
             })
 

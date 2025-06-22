@@ -1,7 +1,8 @@
 @file:Suppress("FunctionName", "ClassName", "unused", "EnumEntryName", "UnusedImport")
 package com.sourcegraph.cody.agent.protocol_generated;
 
-data class EditTask_AcceptParams(
-  val id: FixupTaskID,
+data class TextDocument_DidRenameParams(
+  val oldUri: String,
+  val newUri: String,
 )
 

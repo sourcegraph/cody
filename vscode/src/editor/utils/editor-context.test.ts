@@ -114,7 +114,9 @@ describe('getFileContextFiles', () => {
         setFiles(['large-file.go'])
 
         expect(await runSearch('large', 5)).toMatchInlineSnapshot(`
-          []
+          [
+            "large-file.go",
+          ]
         `)
 
         expect(vscode.workspace.findFiles).toBeCalledTimes(1)
@@ -134,7 +136,13 @@ describe('filterContextItemFiles', () => {
 
         const filtered = await filterContextItemFiles([largeFile])
 
-        expect(filtered).toEqual([])
+        expect(filtered).toEqual([
+            {
+                size: 222222, // Math.floor(1000001 / 4.5)
+                type: 'file',
+                uri: largeFile.uri, // Use the same URI reference
+            },
+        ])
     })
 
     it('filters out non-text files', async () => {

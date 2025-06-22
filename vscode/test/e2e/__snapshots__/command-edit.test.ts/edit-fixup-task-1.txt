@@ -27,11 +27,11 @@
     },
     {
       "key": "lineCount",
-      "value": 4
+      "value": 3
     },
     {
       "key": "charCount",
-      "value": 46
+      "value": 45
     },
     {
       "key": "isSelectionStale",
@@ -63,11 +63,11 @@
     },
     {
       "key": "charsInserted",
-      "value": 46
+      "value": 45
     },
     {
       "key": "charsDeleted",
-      "value": 44
+      "value": 42
     },
     {
       "key": "tier",

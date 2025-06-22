@@ -4,15 +4,13 @@ import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.editor.EditorFactory
 import com.sourcegraph.cody.agent.CodyAgentService
 import com.sourcegraph.cody.agent.protocol_extensions.toOffsetRange
-import com.sourcegraph.cody.agent.protocol_generated.EditTask_GetTaskDetailsParams
 import com.sourcegraph.common.ShowDocumentDiffAction
 
 class EditShowDiffAction :
     LensEditAction({ project, event, editor, taskId ->
       CodyAgentService.withAgent(project) { agent ->
+        val editTask = agent.server.editTask_getTaskDetails(taskId).get()
         WriteCommandAction.runWriteCommandAction<Unit>(project) {
-          val editTask =
-              agent.server.editTask_getTaskDetails(EditTask_GetTaskDetailsParams(taskId)).get()
           if (editTask != null) {
             val documentAfter = editor.document
             val documentBefore = EditorFactory.getInstance().createDocument(documentAfter.text)

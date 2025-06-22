@@ -183,6 +183,7 @@ describe('ChatController', () => {
             Extract<ExtensionMessage, { type: 'transcript' }>
         >({
             type: 'transcript',
+            tokenUsage: undefined,
             isMessageInProgress: true,
             chatID: mockNowDate.toUTCString(),
             messages: [
@@ -241,7 +242,9 @@ describe('ChatController', () => {
             {
               "speaker": "human",
               "text": "You are Cody, an AI coding assistant from Sourcegraph.If your answer contains fenced code blocks in Markdown, include the relevant full file path in the code block tag using this structure: \`\`\`$LANGUAGE:$FILEPATH\`\`\`
-          For executable terminal commands: enclose each command in individual "bash" language code block without comments and new lines inside.",
+          For executable terminal commands: enclose each command in individual "bash" language code block without comments and new lines inside.
+
+          Check if you have access to terminal/shell tools. If so, use it to execute commands to gather information. The terminal output is included in your context. You can reference and analyze this output in your response.",
             },
             {
               "speaker": "assistant",
@@ -299,6 +302,7 @@ describe('ChatController', () => {
                 "text": undefined,
               },
             ],
+            "tokenUsage": undefined,
             "type": "transcript",
           }
         `
@@ -399,6 +403,7 @@ describe('ChatController', () => {
                     subMessages: undefined,
                 },
             ],
+            tokenUsage: undefined,
         })
 
         // Now try editing the message.
@@ -491,6 +496,7 @@ describe('ChatController', () => {
                     subMessages: undefined,
                 },
             ],
+            tokenUsage: undefined,
         })
     })
 

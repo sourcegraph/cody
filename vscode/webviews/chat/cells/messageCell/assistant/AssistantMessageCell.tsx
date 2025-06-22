@@ -26,6 +26,7 @@ import {
 import styles from '../../../ChatMessageContent/ChatMessageContent.module.css'
 import { CopyButton } from '../../../ChatMessageContent/EditButtons'
 import { ErrorItem, RequestErrorItem } from '../../../ErrorItem'
+import { TokenUsageDisplay } from '../../../TokenUsageDisplay'
 import { type Interaction, editHumanMessage } from '../../../Transcript'
 import { BaseMessageCell } from '../BaseMessageCell'
 import { SearchResults } from './SearchResults'
@@ -179,8 +180,10 @@ export const AssistantMessageCell: FunctionComponent<{
                                     />
                                 </div>
                             )}
+                        <TokenUsageDisplay tokenUsage={message.tokenUsage} />
                     </div>
                 }
+                speaker="assistant"
             />
         )
     },
