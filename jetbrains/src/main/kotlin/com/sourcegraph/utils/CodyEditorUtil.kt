@@ -22,10 +22,10 @@ import com.intellij.util.io.createFile
 import com.sourcegraph.cody.agent.protocol_extensions.toBoundedOffset
 import com.sourcegraph.cody.agent.protocol_extensions.toOffsetRange
 import com.sourcegraph.cody.agent.protocol_generated.Range
-import com.sourcegraph.common.CodyFileUri
 import com.sourcegraph.config.ConfigUtil
 import com.sourcegraph.utils.ThreadingUtil.runInEdtAndGet
-import java.nio.file.Paths
+import java.net.URI
+import java.nio.file.Path
 import kotlin.io.path.*
 
 object CodyEditorUtil {
@@ -174,8 +174,17 @@ object CodyEditorUtil {
     }
   }
 
+  private fun fromVSCodeURI(uriString: String): Path? {
+    if (!uriString.startsWith("file:")) {
+      logger.warn("Unsupported file URIs scheme: $uriString")
+      return null
+    }
+
+    return URI(uriString).toPath()
+  }
+
   fun findFile(uriString: String): VirtualFile? {
-    val path = Paths.get(CodyFileUri.parse(uriString))
+    val path = fromVSCodeURI(uriString) ?: return null
     return VirtualFileManager.getInstance().refreshAndFindFileByNioPath(path)
   }
 
@@ -185,7 +194,7 @@ object CodyEditorUtil {
       content: String? = null,
       overwrite: Boolean = false
   ): VirtualFile? {
-    val path = Paths.get(CodyFileUri.parse(uriString))
+    val path = fromVSCodeURI(uriString) ?: return null
 
     if (overwrite || path.notExists()) {
       path.parent.createDirectories()

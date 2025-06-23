@@ -193,8 +193,6 @@ object ProtocolTextDocumentExt {
     if (path.contains(wslPatterns)) {
       // That is not correct from IJ perspective but VSC disallow // in authority part of the URI:
       // https://github.com/microsoft/vscode/blob/1.98.2/src/vs/base/test/common/uri.test.ts#L236.
-      // Because of that in the CodyEditorUtil::findFileOrScratch we need to make sure to convert it
-      // back to the proper format.
       return path.replace(wslPatterns, "file://wsl.localhost/")
     }
 

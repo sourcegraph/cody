@@ -1145,8 +1145,9 @@ export class FixupController
             return this.setTaskState(task, CodyTaskState.Working)
         }
 
-        const doc = await vscode.workspace.openTextDocument(newFileUri)
-        await doc.save()
+        const unsavedDoc = await vscode.workspace.openTextDocument(newFileUri)
+        await unsavedDoc.save()
+        const doc = await vscode.workspace.openTextDocument(newFileUri.with({ scheme: 'file' }))
 
         // Lenses from the currently used file need to be disposed as new file will replace it in a second
         this.controlApplicator.removeLensesFor(task)

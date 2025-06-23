@@ -51,7 +51,7 @@ export class AgentTextDocument implements vscode.TextDocument {
 
     public save(): Thenable<boolean> {
         const workspaceEditor = new AgentWorkspaceEdit()
-        workspaceEditor.createFile(this.uri, {
+        workspaceEditor.createFile(this.uri.with({ scheme: 'file' }), {
             ignoreIfExists: false,
             contents: new TextEncoder().encode(this.content),
         })

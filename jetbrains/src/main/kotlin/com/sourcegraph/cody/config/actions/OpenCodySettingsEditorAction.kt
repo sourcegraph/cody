@@ -3,6 +3,7 @@ package com.sourcegraph.cody.config.actions
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.LocalFileSystem
+import com.intellij.openapi.vfs.VirtualFileManager
 import com.intellij.util.io.write
 import com.jetbrains.jsonSchema.JsonSchemaMappingsProjectConfiguration
 import com.jetbrains.jsonSchema.UserDefinedJsonSchemaConfiguration
@@ -15,7 +16,6 @@ import com.sourcegraph.config.ConfigUtil.getSettingsFile
 import com.sourcegraph.utils.CodyEditorUtil
 import kotlin.io.path.exists
 import kotlin.io.path.name
-import kotlin.io.path.pathString
 
 class OpenCodySettingsEditorAction : DumbAwareEDTAction("Open Cody Settings Editor") {
   override fun actionPerformed(e: AnActionEvent) {
@@ -23,7 +23,7 @@ class OpenCodySettingsEditorAction : DumbAwareEDTAction("Open Cody Settings Edit
 
     val settingsVf =
         if (getSettingsFile(project).exists()) {
-          CodyEditorUtil.findFile(getSettingsFile(project).pathString)
+          VirtualFileManager.getInstance().refreshAndFindFileByNioPath(getSettingsFile(project))
         } else {
           ConfigUtil.setCustomConfiguration(project, customConfigContent = "{\n  \n}")
         } ?: return
