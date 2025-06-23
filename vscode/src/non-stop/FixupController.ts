@@ -1013,7 +1013,9 @@ export class FixupController
         // This is because we need the docstring to be on the next line
         // after the function or class definition.
         const insertionPoint = new vscode.Position(
-            isPythonFile && isDocIntent && !startLineText ? task.insertionPoint.line + 1 : task.insertionPoint.line,
+            isPythonFile && isDocIntent && !startLineText
+                ? task.insertionPoint.line + 1
+                : task.insertionPoint.line,
             task.insertionPoint.character
         )
 
