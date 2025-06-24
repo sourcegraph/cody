@@ -40,10 +40,11 @@ export const ErrorItem: React.FunctionComponent<{
  * Renders a generic error message for chat request failures.
  */
 export const RequestErrorItem: React.FunctionComponent<{
-    error: Error
+    error: Error | string
     humanMessage?: PriorHumanMessageInfo | null
 }> = ({ error, humanMessage }) => {
-    const isApiVersionError = error.message.includes('unable to determine Cody API version')
+    const errorMessage = typeof error === 'string' ? error : error.message || 'Unknown error'
+    const isApiVersionError = errorMessage.includes('unable to determine Cody API version')
 
     const actions =
         isApiVersionError && humanMessage
@@ -66,7 +67,7 @@ export const RequestErrorItem: React.FunctionComponent<{
         <div className={styles.requestError}>
             <div className={styles.errorContent}>
                 <span className={styles.requestErrorTitle}>Request Failed: </span>
-                {error.message}
+                {errorMessage}
             </div>
             {actions.length > 0 && (
                 <menu className="tw-flex tw-gap-2 tw-text-sm tw-text-muted-foreground">
