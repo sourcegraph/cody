@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react'
 
 import { RateLimitError, errorToChatError } from '@sourcegraph/cody-shared'
-import { ErrorItem } from './chat/ErrorItem'
+import { ErrorItem, RequestErrorItem } from './chat/ErrorItem'
 
 import { VSCodeStandaloneComponent } from './storybook/VSCodeStoryDecorator'
 
@@ -125,5 +125,27 @@ export const RateLimitEnterpriseUser: Story = {
             isDotComUser: false,
             isCodyProUser: true,
         },
+    },
+}
+
+// Test cases for RequestErrorItem component
+
+type RequestErrorStory = StoryObj<typeof RequestErrorItem>
+
+export const StringError: RequestErrorStory = {
+    args: {
+        error: 'This is a string error message',
+    },
+}
+
+export const ErrorWithoutMessage: RequestErrorStory = {
+    args: {
+        error: {} as Error, // Error object without message property
+    },
+}
+
+export const ErrorWithUndefinedMessage: RequestErrorStory = {
+    args: {
+        error: { message: undefined } as any, // Error with undefined message
     },
 }
