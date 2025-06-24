@@ -33,7 +33,7 @@ export const ErrorItem: React.FunctionComponent<{
             />
         )
     }
-    return <RequestErrorItem error={error as Error | string} humanMessage={humanMessage} />
+    return <RequestErrorItem error={error} humanMessage={humanMessage} />
 }
 
 /**
