@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react'
 
 import { RateLimitError, errorToChatError } from '@sourcegraph/cody-shared'
-import { ErrorItem, RequestErrorItem } from './chat/ErrorItem'
+import { ErrorItem, type RequestErrorItem } from './chat/ErrorItem'
 
 import { VSCodeStandaloneComponent } from './storybook/VSCodeStoryDecorator'
 

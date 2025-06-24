@@ -43,7 +43,7 @@ export const RequestErrorItem: React.FunctionComponent<{
     error: Error | string
     humanMessage?: PriorHumanMessageInfo | null
 }> = ({ error, humanMessage }) => {
-    const errorMessage = typeof error === 'string' ? error : (error.message || 'Unknown error')
+    const errorMessage = typeof error === 'string' ? error : error.message || 'Unknown error'
     const isApiVersionError = errorMessage.includes('unable to determine Cody API version')
 
     const actions =
