@@ -61,7 +61,6 @@ import { SourcegraphRemoteFileProvider } from './chat/chat-view/sourcegraphRemot
 import { MCPManager } from './chat/chat-view/tools/MCPManager'
 import { ACCOUNT_LIMITS_INFO_URL, ACCOUNT_UPGRADE_URL, CODY_FEEDBACK_URL } from './chat/protocol'
 import { CodeActionProvider } from './code-actions/CodeActionProvider'
-import { initializeContextFiltersProvider } from './cody-ignore/context-filter'
 import { commandControllerInit, executeCodyCommand } from './commands/CommandsController'
 import { GhostHintDecorator } from './commands/GhostHintDecorator'
 import {
@@ -342,8 +341,6 @@ const register = async (
             })
         )
     )
-
-    disposables.push(initializeContextFiltersProvider())
 
     return vscode.Disposable.from(...disposables)
 }
@@ -654,7 +651,7 @@ function registerUpgradeHandlers(disposables: vscode.Disposable[]): void {
  * Register commands used in internal tests
  */
 async function registerTestCommands(
-    _context: vscode.ExtensionContext,
+    context: vscode.ExtensionContext,
     disposables: vscode.Disposable[]
 ): Promise<void> {
     await vscode.commands.executeCommand('setContext', 'cody.devOrTest', true)
@@ -816,7 +813,7 @@ function registerAutocomplete(
                         if (res === NEVER && !authStatus.pendingValidation) {
                             finishLoading()
                         }
-                        return res.tap(_res => {
+                        return res.tap(res => {
                             finishLoading()
                         })
                     }),
