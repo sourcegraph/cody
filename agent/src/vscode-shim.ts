@@ -355,14 +355,31 @@ const _workspace: typeof vscode.workspace = {
             throw new Error('workspaceDocuments is uninitialized')
         }
 
-        const uri = toUri(uriOrString)
-        return uri
-            ? workspaceDocuments.openTextDocument(uri)
-            : Promise.reject(
-                  new Error(
-                      `workspace.openTextDocument: unsupported argument ${JSON.stringify(uriOrString)}`
-                  )
-              )
+        if (typeof uriOrString === 'string') {
+            return workspaceDocuments.openTextDocument(Uri.parse(uriOrString))
+        }
+
+        if (uriOrString instanceof Uri) {
+            return workspaceDocuments.openTextDocument(uriOrString)
+        }
+
+        if (
+            typeof uriOrString === 'object' &&
+            ((uriOrString as any)?.language || (uriOrString as any)?.content)
+        ) {
+            const language = (uriOrString as any)?.language ?? ''
+            const extension = extensionForLanguage(language) ?? language
+            return workspaceDocuments.openTextDocument(
+                Uri.from({
+                    scheme: 'untitled',
+                    path: `${uuid.v4()}.${extension}`,
+                })
+            )
+        }
+
+        throw new Error(
+            `workspace.openTextDocument: unsupported argument ${JSON.stringify(uriOrString)}`
+        )
     },
     get workspaceFolders() {
         // According to the docs, workspaceFolders is `undefined` when no
@@ -540,29 +557,6 @@ const defaultTreeView: vscode.TreeView<any> = {
     description: undefined,
     message: undefined,
     title: undefined,
-}
-
-function toUri(
-    uriOrString: string | UriString | vscode.Uri | { language?: string; content?: string } | undefined
-): Uri | undefined {
-    if (typeof uriOrString === 'string') {
-        return Uri.parse(uriOrString)
-    }
-    if (uriOrString instanceof Uri) {
-        return uriOrString
-    }
-    if (
-        typeof uriOrString === 'object' &&
-        ((uriOrString as any)?.language || (uriOrString as any)?.content)
-    ) {
-        const language = (uriOrString as any)?.language ?? ''
-        const extension = extensionForLanguage(language) ?? language
-        return Uri.from({
-            scheme: 'untitled',
-            path: `${uuid.v4()}.${extension}`,
-        })
-    }
-    return
 }
 
 // This opaque type prevents strings from being mistakenly used as URIs.
@@ -1129,11 +1123,10 @@ _commands?.registerCommand?.('vscode.executeFormatDocumentProvider', uri => {
 _commands?.registerCommand?.(
     'vscode.open',
     async (uri: vscode.Uri, options?: vscode.TextDocumentShowOptions) => {
-        const uriPath = toUri(uri?.path)
-        if (uri.scheme === 'http' || uri.scheme === 'https' || !uriPath) {
+        if (uri.scheme === 'http' || uri.scheme === 'https') {
             return open(uri.toString())
         }
-        return _window.showTextDocument(uriPath, options)
+        return _window.showTextDocument(uri, options)
     }
 )
 _commands?.registerCommand?.('editor.action.inlineSuggest.hide', () => {
