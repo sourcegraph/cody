@@ -1,3 +1,4 @@
+IMPORTANT: There are changes to Cody Free, Pro, and Enterprise Starter plans. [Learn more](https://sourcegraph.com/blog/changes-to-cody-free-pro-and-enterprise-starter-plans)
 # AI that uses your codebase as context
 
 Sourcegraph’s AI code assistant goes beyond individual dev productivity, helping you achieve consistency and quality at scale with AI. Sourcegraph accelerates the entire workflow for developers by providing them a more natural and intuitive way to work. Searching code, chatting with AI, invoking prompts, and using agents can now all be performed in one place with the best models available.

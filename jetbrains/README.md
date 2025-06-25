@@ -1,4 +1,5 @@
 <!-- Plugin description -->
+IMPORTANT: There are changes to Cody Free, Pro, and Enterprise Starter plans. [Learn more](https://sourcegraph.com/blog/changes-to-cody-free-pro-and-enterprise-starter-plans)
 
 # Cody: AI Code Assistant
 
