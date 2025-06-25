@@ -4,6 +4,55 @@ This is a log of all notable changes to Cody for VS Code.
 
 <!--- {/_ CHANGELOG_START _/} -->
 
+## 1.106.0
+
+### Features
+
+#### Chat
+- Allow renaming of chat history items [#8046](https://github.com/sourcegraph/cody/pull/8046)
+- Show both file and selection mentions in Cody Web chat [#7941](https://github.com/sourcegraph/cody/pull/7941)
+- New capability to hide all action buttons except 'Copy Code' [#8072](https://github.com/sourcegraph/cody/pull/8072)
+
+#### Auto-edit
+- Do enroll to auto-edit for all clients [#8080](https://github.com/sourcegraph/cody/pull/8080)
+  
+### Fix
+
+#### Chat
+- Handle string and undefined error messages in RequestErrorItem [#8084](https://github.com/sourcegraph/cody/pull/8084)
+- bring back chat scrollbar [#8083](https://github.com/sourcegraph/cody/pull/8083)
+- resolve DeepCody terminal tool capability awareness issue [#8066](https://github.com/sourcegraph/cody/pull/8066)
+- edit code range selection issue when selection is empty [#8058](https://github.com/sourcegraph/cody/pull/8058)
+- Update the storage warning banner message [#8056](https://github.com/sourcegraph/cody/pull/8056)
+- Do not copy code to clipboard on the EDT thread [#8085](https://github.com/sourcegraph/cody/pull/8085)
+- remove OTEL metrics [#8069](https://github.com/sourcegraph/cody/pull/8069)
+- Redesign chat layout for improved text selection experience [#8044](https://github.com/sourcegraph/cody/pull/8044)
+- Do not add messages to the Cody Console on the EDT [#8063](https://github.com/sourcegraph/cody/pull/8063)
+- Do not use blocking operations in write actions [#8062](https://github.com/sourcegraph/cody/pull/8062)
+
+#### Auto-edit
+- Fix auto-edit's caching issues [#8045](https://github.com/sourcegraph/cody/pull/8045)
+- Fix disposal of autocompletion suggestions on Escape key press [#8071](https://github.com/sourcegraph/cody/pull/8071)
+  
+#### Smart-Apply
+- now applies changes to file that have parents that duplicate workspace name [#8082](https://github.com/sourcegraph/cody/pull/8082)
+
+### Chore
+
+#### Cody
+- update readme [#8096](https://github.com/sourcegraph/cody/pull/8096)
+- Add CLI workflow for Cody release captains [#8078](https://github.com/sourcegraph/cody/pull/8078)
+- Do not stringify strings in configuration update payload [#8079](https://github.com/sourcegraph/cody/pull/8079)
+- Do not hide lookups [#8073](https://github.com/sourcegraph/cody/pull/8073)
+- Remove billing metadata from `customTitle` event [#8050](https://github.com/sourcegraph/cody/pull/8050)
+
+### Reverts
+
+- Revert "feat(context filter): Implement exclude patterns from workspace settings [#-1](https://github.com/sourcegraph/cody/pull/8037)
+
+
+
+
 ## 1.104.0
 
 ### Features
