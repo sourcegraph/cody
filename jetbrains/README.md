@@ -55,7 +55,7 @@ Sourcegraph is built to support the needs of the largest enterprises, with flexi
 
 ## Usage
 
-This extension works for all Cody plans, including Cody Free, Cody Pro, and Cody Enterprise.
+This extension works for the Cody Enterprise plan.
 
 You can find detailed information about Cody's available plans [on our website](https://sourcegraph.com/pricing?utm_source=marketplace.visualstudio.com&utm_medium=referral).
 
