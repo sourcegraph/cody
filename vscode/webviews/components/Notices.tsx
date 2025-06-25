@@ -63,14 +63,6 @@ export const Notices: React.FC<NoticesProps> = ({ user, instanceNotices }) => {
         [telemetryRecorder, setDismissedNotices]
     )
 
-    const ampUrl = useMemo(
-        () =>
-            user.IDE === CodyIDE.JetBrains
-                ? 'https://www.npmjs.com/package/@sourcegraph/amp'
-                : 'https://ampcode.com',
-        [user.IDE]
-    )
-
     const notices: Notice[] = useMemo(
         () => [
             ...instanceNotices.map(notice => ({
@@ -107,7 +99,7 @@ export const Notices: React.FC<NoticesProps> = ({ user, instanceNotices }) => {
                             {
                                 label: 'Try Amp',
                                 variant: 'default',
-                                href: ampUrl,
+                                href: 'https://ampcode.com',
                             },
                             {
                                 label: 'Learn more',
@@ -157,7 +149,7 @@ export const Notices: React.FC<NoticesProps> = ({ user, instanceNotices }) => {
                 ),
             },
         ],
-        [user, dismissNotice, instanceNotices, ampUrl]
+        [user, dismissNotice, instanceNotices]
     )
 
     // First, modify the activeNotice useMemo to add conditional logic for DogfoodS2
