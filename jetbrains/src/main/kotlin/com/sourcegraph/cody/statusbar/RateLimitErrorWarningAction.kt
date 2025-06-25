@@ -12,34 +12,21 @@ class RateLimitErrorWarningAction(
     actionText: String,
     private val dialogContent: String,
     private val dialogTitle: String,
-    private val shouldShowUpgradeOption: Boolean
 ) : DumbAwareEDTAction(actionText) {
   override fun actionPerformed(e: AnActionEvent) {
 
-    val actions =
-        if (shouldShowUpgradeOption) {
-          arrayOf("Close", "Upgrade")
-        } else {
-          arrayOf("Ok")
-        }
+    val actions = arrayOf("Ok")
 
-    val result =
-        Messages.showDialog(
-            e.project,
-            dialogContent,
-            dialogTitle,
-            actions,
-            /* defaultOptionIndex= */ 1,
-            Icons.CodyLogo)
+    Messages.showDialog(
+        e.project,
+        dialogContent,
+        dialogTitle,
+        actions,
+        /* defaultOptionIndex= */ 1,
+        Icons.CodyLogo
+    )
 
-    val feature =
-        if (shouldShowUpgradeOption) "upsellUsageLimitStatusBar" else "abuseUsageLimitStatusBar"
-    e.project?.let { TelemetryV2.sendTelemetryEvent(it, feature, "shown") }
-
-    if (result == 1) {
-      e.project?.let { TelemetryV2.sendTelemetryEvent(it, "upsellUsageLimitStatusBar", "clicked") }
-      BrowserOpener.openInBrowser(e.project, "https://sourcegraph.com/cody/subscription")
-    }
+    e.project?.let { TelemetryV2.sendTelemetryEvent(it, "abuseUsageLimitStatusBar", "shown") }
   }
 
   override fun update(e: AnActionEvent) {

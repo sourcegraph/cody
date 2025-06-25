@@ -17,7 +17,6 @@ private constructor(
     project: Project,
     title: String,
     content: String,
-    shouldShowUpgradeOption: Boolean
 ) :
     Notification(NotificationGroups.SOURCEGRAPH_ERRORS, title, content, NotificationType.WARNING),
     NotificationFullContent {
@@ -25,21 +24,10 @@ private constructor(
     icon = Icons.CodyLogo
     val learnMoreAction =
         SimpleDumbAwareEDTAction("Learn more") { anActionEvent ->
-          val learnMoreLink = if (shouldShowUpgradeOption) UPGRADE_URL else RATE_LIMITS_URL
-          openInBrowser(anActionEvent.project, learnMoreLink)
+          openInBrowser(anActionEvent.project, RATE_LIMITS_URL)
           hideBalloon()
         }
     val dismissAction: AnAction = SimpleDumbAwareEDTAction("Dismiss") { hideBalloon() }
-
-    if (shouldShowUpgradeOption) {
-      val upgradeAction =
-          SimpleDumbAwareEDTAction("Upgrade") { anActionEvent ->
-            TelemetryV2.sendTelemetryEvent(project, "upsellUsageLimitCTA", "clicked")
-            openInBrowser(anActionEvent.project, UPGRADE_URL)
-            hideBalloon()
-          }
-      addAction(upgradeAction)
-    }
 
     addAction(learnMoreAction)
     addAction(dismissAction)
@@ -47,31 +35,17 @@ private constructor(
 
   companion object {
 
-    const val UPGRADE_URL = "https://sourcegraph.com/cody/subscription"
     const val RATE_LIMITS_URL =
         "https://sourcegraph.com/docs/cody/core-concepts/cody-gateway#rate-limits-and-quotas"
 
     fun notify(rateLimitError: RateLimitError, project: Project) {
 
-      val shouldShowUpgradeOption = rateLimitError.upgradeIsAvailable
-      val content =
-          when {
-            shouldShowUpgradeOption ->
-                CodyBundle.getString("UpgradeToCodyProNotification.content.upgrade")
-            else -> CodyBundle.getString("UpgradeToCodyProNotification.content.explain")
-          }
-      val title =
-          when {
-            shouldShowUpgradeOption ->
-                CodyBundle.getString("UpgradeToCodyProNotification.title.upgrade")
-            else -> CodyBundle.getString("UpgradeToCodyProNotification.title.explain")
-          }
+      val content = CodyBundle.getString("UpgradeToCodyProNotification.content.explain")
+      val title = CodyBundle.getString("UpgradeToCodyProNotification.title.explain")
 
-      val feature =
-          if (rateLimitError.upgradeIsAvailable) "upsellUsageLimitCTA" else "abuseUsageLimitCTA"
-      TelemetryV2.sendTelemetryEvent(project, feature, "shown")
+      TelemetryV2.sendTelemetryEvent(project, "abuseUsageLimitCTA", "shown")
 
-      UpgradeToCodyProNotification(project, title, content, shouldShowUpgradeOption).notify(project)
+      UpgradeToCodyProNotification(project, title, content).notify(project)
     }
 
     var isFirstRLEOnAutomaticAutocompletionsShown: Boolean = false

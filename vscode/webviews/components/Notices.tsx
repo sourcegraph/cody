@@ -1,4 +1,4 @@
-import { CodyIDE, type CodyNotice } from '@sourcegraph/cody-shared'
+import { CodyIDE, type CodyNotice, isWorkspaceInstance } from '@sourcegraph/cody-shared'
 import { S2_URL } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
 import {
     ArrowLeftRightIcon,
@@ -25,7 +25,12 @@ interface Notice {
 }
 
 type NoticeVariants = 'default' | 'warning'
-type NoticeIDs = 'DogfoodS2' | 'TeamsUpgrade' | 'DeepCodyDotCom' | 'DeepCodyEnterprise'
+type NoticeIDs =
+    | 'DogfoodS2'
+    | 'TeamsUpgrade'
+    | 'DeepCodyDotCom'
+    | 'DeepCodyEnterprise'
+    | 'CodyDeprecation'
 
 interface NoticesProps {
     user: UserAccountInfo
@@ -58,6 +63,14 @@ export const Notices: React.FC<NoticesProps> = ({ user, instanceNotices }) => {
         [telemetryRecorder, setDismissedNotices]
     )
 
+    const ampUrl = useMemo(
+        () =>
+            user.IDE === CodyIDE.JetBrains
+                ? 'https://www.npmjs.com/package/@sourcegraph/amp'
+                : 'https://ampcode.com',
+        [user.IDE]
+    )
+
     const notices: Notice[] = useMemo(
         () => [
             ...instanceNotices.map(notice => ({
@@ -71,6 +84,40 @@ export const Notices: React.FC<NoticesProps> = ({ user, instanceNotices }) => {
                     />
                 ),
             })),
+            /**
+             * Cody Deprecation Notice
+             */
+            {
+                id: 'CodyDeprecation',
+                isVisible: user.isDotComUser || isWorkspaceInstance(user.user.endpoint),
+                content: (
+                    <NoticeContent
+                        id="CodyDeprecation"
+                        variant="default"
+                        title="Important Notice"
+                        message={
+                            isWorkspaceInstance(user.user.endpoint)
+                                ? "Cody in Enterprise Starter is being sunset. You can continue using Cody until July 23rd. Your code indexing and code search capabilities will not be affected. We encourage you to try Amp, Sourcegraph's new agentic coding tool."
+                                : user.isCodyProUser
+                                  ? "Cody Pro is being sunset. You can continue using Cody until July 23rd, and your subscription will not renew. We encourage you to try Amp, Sourcegraph's new agentic coding tool."
+                                  : "Cody Free will be sunset on July 23rd. We encourage you to try Amp, Sourcegraph's new agentic coding tool."
+                        }
+                        onDismiss={() => dismissNotice('CodyDeprecation', 'sessional')}
+                        actions={[
+                            {
+                                label: 'Try Amp',
+                                variant: 'default',
+                                href: ampUrl,
+                            },
+                            {
+                                label: 'Learn more',
+                                variant: 'link',
+                                href: 'https://sourcegraph.com/blog/changes-to-cody-free-pro-and-enterprise-starter-plans',
+                            },
+                        ]}
+                    />
+                ),
+            },
             /**
              * For Sourcegraph team members who are using Sourcegraph.com to remind them that we want to be dogfooding S2.
              */
@@ -110,14 +157,14 @@ export const Notices: React.FC<NoticesProps> = ({ user, instanceNotices }) => {
                 ),
             },
         ],
-        [user, dismissNotice, instanceNotices]
+        [user, dismissNotice, instanceNotices, ampUrl]
     )
 
     // First, modify the activeNotice useMemo to add conditional logic for DogfoodS2
     const activeNotice = useMemo(
         () =>
             notices.find(notice => {
-                if (notice.id === 'DogfoodS2') {
+                if (notice.id === 'DogfoodS2' || notice.id === 'CodyDeprecation') {
                     return notice.isVisible && !sessionDismissedNotices.includes(notice.id)
                 }
                 return notice.isVisible && !dismissedNotices?.includes(notice.id)
@@ -143,7 +190,7 @@ interface NoticeContentProps {
         label: string
         onClick?: () => void
         href?: string
-        variant: 'default' | 'ghost' | 'secondary'
+        variant: 'default' | 'ghost' | 'secondary' | 'link'
         icon?: ReactNode
         iconPosition?: 'start' | 'end'
     }>
@@ -194,6 +241,7 @@ const NoticeContent: FunctionComponent<NoticeContentProps> = ({
                 <img src={SourcegraphIcon} alt="Sourcegraph Logo" className="tw-h-[16px]" />
             </>
         ),
+        CodyDeprecation: null,
     }[id]
 
     return (
@@ -213,7 +261,10 @@ const NoticeContent: FunctionComponent<NoticeContentProps> = ({
                         onClick={() => {
                             action.onClick?.()
                             telemetryRecorder.recordEvent('cody.notice.cta', 'clicked', {
-                                privateMetadata: { noticeId: id, title: action.label },
+                                privateMetadata: {
+                                    noticeId: id,
+                                    title: action.label,
+                                },
                             })
                         }}
                         className="tw-flex tw-gap-1"
@@ -224,7 +275,7 @@ const NoticeContent: FunctionComponent<NoticeContentProps> = ({
                                 href={action.href}
                                 target="_blank"
                                 rel="noreferrer"
-                                className="tw-text-button-foreground hover:tw-text-button-foreground"
+                                className="tw-text-inherit hover:tw-text-inherit"
                             >
                                 {action.label}
                             </a>
