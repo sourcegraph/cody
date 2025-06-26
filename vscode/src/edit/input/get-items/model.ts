@@ -1,5 +1,3 @@
-import * as vscode from 'vscode'
-
 import { type EditModel, type Model, isCodyProModel, isDefined } from '@sourcegraph/cody-shared'
 import {
     QUICK_PICK_ITEM_CHECKED_PREFIX,
@@ -40,11 +38,7 @@ export const getModelOptionItems = (
         .filter(isDefined)
 
     if (!isCodyPro && !isEnterpriseUser) {
-        return [
-            ...allOptions.filter(option => !option.codyProOnly),
-            { label: 'upgrade to cody pro', kind: vscode.QuickPickItemKind.Separator } as EditModelItem,
-            ...allOptions.filter(option => option.codyProOnly),
-        ]
+        return allOptions.filter(option => !option.codyProOnly)
     }
 
     return allOptions
