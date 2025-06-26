@@ -186,10 +186,14 @@ class CodyAgentService(private val project: Project) : Disposable {
   companion object {
     private val logger = Logger.getInstance(CodyAgent::class.java)
 
+    val autoeditCapability =
+        if (CodyIdeUtil.isRD()) ClientCapabilities.AutoeditEnum.None
+        else ClientCapabilities.AutoeditEnum.Enabled
+
     val clientCapabilities =
         ClientCapabilities(
             authentication = ClientCapabilities.AuthenticationEnum.Enabled,
-            autoedit = ClientCapabilities.AutoeditEnum.Enabled,
+            autoedit = autoeditCapability,
             autoeditInlineDiff = ClientCapabilities.AutoeditInlineDiffEnum.None,
             autoeditAsideDiff = ClientCapabilities.AutoeditAsideDiffEnum.Diff,
             edit = ClientCapabilities.EditEnum.Enabled,
