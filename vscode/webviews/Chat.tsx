@@ -2,18 +2,17 @@ import type { Context } from '@opentelemetry/api'
 import type React from 'react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
-import {
-    type AuthenticatedAuthStatus,
-    type ChatMessage,
+import type {
+    AuthenticatedAuthStatus,
+    ChatMessage,
     CodyIDE,
-    type Guardrails,
-    type Model,
-    type PromptString,
+    Guardrails,
+    Model,
+    PromptString,
 } from '@sourcegraph/cody-shared'
 
 import styles from './Chat.module.css'
 import { Transcript } from './chat/Transcript'
-import { WelcomeMessage } from './chat/components/WelcomeMessage'
 
 import type { View } from './tabs'
 import type { VSCodeWrapper } from './utils/VSCodeApi'
@@ -219,17 +218,6 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                 chatEnabled={chatEnabled}
                 postMessage={postMessage}
                 guardrails={guardrails}
-                welcomeContent={
-                    transcript.length === 0 && showWelcomeMessage ? (
-                        <WelcomeMessage
-                            IDE={userInfo.IDE}
-                            setView={setView}
-                            isWorkspacesUpgradeCtaEnabled={
-                                isWorkspacesUpgradeCtaEnabled && userInfo.IDE !== CodyIDE.Web
-                            }
-                        />
-                    ) : undefined
-                }
             />
         </>
     )

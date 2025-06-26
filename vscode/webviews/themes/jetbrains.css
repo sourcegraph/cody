@@ -20,7 +20,7 @@ html[data-ide='JetBrains'] {
     --vscode-breadcrumbPicker-background: var(--jetbrains-EditorPane-inactiveBackground);
     --vscode-button-border: var(--jetbrains-Button-startBorderColor);
     --vscode-button-background: var(--jetbrains-Button-background);
-    --vscode-button-hoverBackground: var(--jetbrains-List-Button-hoverBackground);
+    --vscode-button-hoverBackground: var(--jetbrains-TextField-background);
     --vscode-button-foreground: var(--jetbrains-Button-foreground);
     --vscode-button-secondaryHoverBackground: var(--jetbrains-List-Button-hoverBackground);
     --vscode-button-secondaryBackground: var(---jetbrains-Button-background);
@@ -287,7 +287,7 @@ html[data-ide='JetBrains'] {
     --vscode-list-highlightForeground: var(--jetbrains-MenuItem-selectionForeground);
     --vscode-list-hoverBackground: var(--jetbrains-List-selectionBackground);
     --vscode-list-invalidItemForeground: var(--jetbrains-MenuItem-disabledForeground);
-    --vscode-list-activeSelectionForeground: var(--jetbrains-List-foreground);
+    --vscode-list-activeSelectionForeground: var(--jetbrains-List-selectionForeground);
     --vscode-list-activeSelectionBackground: var(--jetbrains-List-selectionBackground);
     --vscode-listFilterWidget-background: var(--jetbrains-List-selectionBackground);
     --vscode-listFilterWidget-noMatchesOutline: var(--jetbrains-List-selectionInactiveBackground);
