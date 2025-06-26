@@ -267,7 +267,7 @@ const NoticeContent: FunctionComponent<NoticeContentProps> = ({
                                 href={action.href}
                                 target="_blank"
                                 rel="noreferrer"
-                                className="tw-text-inherit hover:tw-text-inherit"
+                                className="tw-text-inherit hover:!tw-text-inherit"
                             >
                                 {action.label}
                             </a>
