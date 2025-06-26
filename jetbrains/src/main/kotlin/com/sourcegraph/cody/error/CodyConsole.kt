@@ -35,7 +35,7 @@ class CodyConsole(project: Project) {
     if (ConfigUtil.isCodyDebugEnabled() && ConfigUtil.isDevMode()) {
       toolWindow.contentManager.getReady(this).doWhenDone {
         if (!toolWindow.isVisible) {
-          toolWindow.show()
+          runInEdt { toolWindow.show() }
         }
       }
     }
