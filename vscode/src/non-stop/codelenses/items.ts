@@ -117,26 +117,10 @@ function getErrorLens(codeLensRange: vscode.Range, task: FixupTask): vscode.Code
             command: 'cody.chat.signIn',
         }
     } else if (isRateLimitError(task.error)) {
-        if (task.error.upgradeIsAvailable) {
-            lens.command = {
-                title: '⚡️ Upgrade to Cody Pro',
-                command: 'cody.show-rate-limit-modal',
-                arguments: [
-                    task.error.userMessage,
-                    task.error.retryMessage,
-                    task.error.upgradeIsAvailable,
-                ],
-            }
-        } else {
-            lens.command = {
-                title: '$(warning) Rate Limit Exceeded',
-                command: 'cody.show-rate-limit-modal',
-                arguments: [
-                    task.error.userMessage,
-                    task.error.retryMessage,
-                    task.error.upgradeIsAvailable,
-                ],
-            }
+        lens.command = {
+            title: '$(warning) Rate Limit Exceeded',
+            command: 'cody.show-rate-limit-modal',
+            arguments: [task.error.userMessage, task.error.retryMessage],
         }
     } else {
         lens.command = {

@@ -20,12 +20,9 @@ import {
     contextFiltersProvider,
     createDisposables,
     currentAuthStatus,
-    currentUserProductSubscription,
     distinctUntilChanged,
     featureFlagProvider,
     fromVSCodeEvent,
-    graphqlClient,
-    isDotCom,
     modelsService,
     resolvedConfig,
     setClientCapabilities,
@@ -48,7 +45,6 @@ import {
     requestEndpointSettingsDeliveryToSearchPlugin,
     showSignInMenu,
     showSignOutMenu,
-    tokenCallbackHandler,
 } from './auth/auth'
 import { createAutoEditsProvider } from './autoedits/create-autoedits-provider'
 import { autoeditDebugStore } from './autoedits/debug-panel/debug-store'
@@ -59,7 +55,7 @@ import { ChatsController, CodyChatEditorViewType } from './chat/chat-view/ChatsC
 import { ContextRetriever } from './chat/chat-view/ContextRetriever'
 import { SourcegraphRemoteFileProvider } from './chat/chat-view/sourcegraphRemoteFile'
 import { MCPManager } from './chat/chat-view/tools/MCPManager'
-import { ACCOUNT_LIMITS_INFO_URL, ACCOUNT_UPGRADE_URL, CODY_FEEDBACK_URL } from './chat/protocol'
+import { ACCOUNT_LIMITS_INFO_URL, CODY_FEEDBACK_URL } from './chat/protocol'
 import { CodeActionProvider } from './code-actions/CodeActionProvider'
 import { commandControllerInit, executeCodyCommand } from './commands/CommandsController'
 import { GhostHintDecorator } from './commands/GhostHintDecorator'
@@ -89,7 +85,6 @@ import type { PlatformContext } from './extension.common'
 import { configureExternalServices } from './external-services'
 import { isRunningInsideAgent } from './jsonrpc/isRunningInsideAgent'
 import { FixupController } from './non-stop/FixupController'
-import { CodyProExpirationNotifications } from './notifications/cody-pro-expiration'
 import { showSetupNotification } from './notifications/setup-notification'
 import { logDebug, logError } from './output-channel-logger'
 import { PromptsManager } from './prompts/manager'
@@ -303,7 +298,6 @@ const register = async (
         await registerTestCommands(context, disposables)
     }
     registerDebugCommands(context, disposables)
-    registerUpgradeHandlers(disposables)
     disposables.push(charactersLogger)
 
     // INC-267 do NOT await on this promise. This promise triggers
@@ -370,35 +364,17 @@ async function registerOtherCommands(disposables: vscode.Disposable[]) {
         // Account links
         vscode.commands.registerCommand(
             'cody.show-rate-limit-modal',
-            async (userMessage: string, retryMessage: string, upgradeAvailable: boolean) => {
-                if (upgradeAvailable) {
-                    const option = await vscode.window.showInformationMessage(
-                        'Upgrade to Cody Pro',
-                        {
-                            modal: true,
-                            detail: `${userMessage}\n\nUpgrade to Cody Pro for unlimited autocomplete suggestions, and increased limits for chat messages and commands.\n\n${retryMessage}`,
-                        },
-                        'Upgrade',
-                        'See Plans'
-                    )
-                    // Both options go to the same URL
-                    if (option) {
-                        void vscode.env.openExternal(vscode.Uri.parse(ACCOUNT_UPGRADE_URL.toString()))
-                    }
-                } else {
-                    const option = await vscode.window.showInformationMessage(
-                        'Rate Limit Exceeded',
-                        {
-                            modal: true,
-                            detail: `${userMessage}\n\n${retryMessage}`,
-                        },
-                        'Learn More'
-                    )
-                    if (option) {
-                        void vscode.env.openExternal(
-                            vscode.Uri.parse(ACCOUNT_LIMITS_INFO_URL.toString())
-                        )
-                    }
+            async (userMessage: string, retryMessage: string) => {
+                const option = await vscode.window.showInformationMessage(
+                    'Rate Limit Exceeded',
+                    {
+                        modal: true,
+                        detail: `${userMessage}\n\n${retryMessage}`,
+                    },
+                    'Learn More'
+                )
+                if (option) {
+                    void vscode.env.openExternal(vscode.Uri.parse(ACCOUNT_LIMITS_INFO_URL.toString()))
                 }
             }
         ),
@@ -608,45 +584,6 @@ function registerAuthCommands(disposables: vscode.Disposable[]): void {
         )
     )
 }
-
-function registerUpgradeHandlers(disposables: vscode.Disposable[]): void {
-    disposables.push(
-        // Register URI Handler (e.g. vscode://sourcegraph.cody-ai)
-        vscode.window.registerUriHandler({
-            handleUri: async (uri: vscode.Uri) => {
-                if (uri.path === '/app-done') {
-                    // This is an old re-entrypoint from App that is a no-op now.
-                } else {
-                    void tokenCallbackHandler(uri)
-                }
-            },
-        }),
-
-        // Check if user has just moved back from a browser window to upgrade cody pro
-        vscode.window.onDidChangeWindowState(async ws => {
-            const authStatus = currentAuthStatus()
-            const sub = await currentUserProductSubscription()
-            if (ws.focused && isDotCom(authStatus) && authStatus.authenticated) {
-                const res = await graphqlClient.getCurrentUserCodyProEnabled()
-                if (res instanceof Error) {
-                    logError('onDidChangeWindowState', 'getCurrentUserCodyProEnabled', res)
-                    return
-                }
-                // Re-auth if user's cody pro status has changed
-                const isCurrentCodyProUser = sub && !sub.userCanUpgrade
-                if (res && res.codyProEnabled !== isCurrentCodyProUser) {
-                    authProvider.refresh()
-                }
-            }
-        }),
-        new CodyProExpirationNotifications(
-            graphqlClient,
-            vscode.window.showInformationMessage,
-            vscode.env.openExternal
-        )
-    )
-}
-
 /**
  * Register commands used in internal tests
  */

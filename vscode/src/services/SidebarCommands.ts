@@ -3,7 +3,6 @@ import * as vscode from 'vscode'
 import { type BillingCategory, CodyIDE, telemetryRecorder } from '@sourcegraph/cody-shared'
 import {
     ACCOUNT_LIMITS_INFO_URL,
-    ACCOUNT_UPGRADE_URL,
     ACCOUNT_USAGE_URL,
     CODY_DOC_URL,
     CODY_FEEDBACK_URL,
@@ -44,9 +43,6 @@ export function registerSidebarCommands(): vscode.Disposable[] {
             logSidebarClick(page, 'billable')
             let url: URL
             switch (page) {
-                case 'upgrade':
-                    url = ACCOUNT_UPGRADE_URL
-                    break
                 case 'usage':
                     url = ACCOUNT_USAGE_URL
                     break
