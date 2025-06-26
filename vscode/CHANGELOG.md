@@ -4,6 +4,15 @@ This is a log of all notable changes to Cody for VS Code.
 
 <!--- {/_ CHANGELOG_START _/} -->
 
+## 1.106.1
+
+### Feat
+
+#### Chat
+
+- Add Cody PLG Sunset Notice [#8095](https://github.com/sourcegraph/cody/pull/8095)
+
+
 ## 1.106.0
 
 ### Features
