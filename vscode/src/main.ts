@@ -45,6 +45,7 @@ import {
     requestEndpointSettingsDeliveryToSearchPlugin,
     showSignInMenu,
     showSignOutMenu,
+    tokenCallbackHandler,
 } from './auth/auth'
 import { createAutoEditsProvider } from './autoedits/create-autoedits-provider'
 import { autoeditDebugStore } from './autoedits/debug-panel/debug-store'
@@ -298,6 +299,7 @@ const register = async (
         await registerTestCommands(context, disposables)
     }
     registerDebugCommands(context, disposables)
+    registerAuthenticationHandlers(disposables)
     disposables.push(charactersLogger)
 
     // INC-267 do NOT await on this promise. This promise triggers
@@ -817,4 +819,19 @@ function registerChat(
     }
 
     return { chatsController }
+}
+
+function registerAuthenticationHandlers(disposables: vscode.Disposable[]): void {
+    disposables.push(
+        // Register URI Handler (e.g. vscode://sourcegraph.cody-ai)
+        vscode.window.registerUriHandler({
+            handleUri: async (uri: vscode.Uri) => {
+                if (uri.path === '/app-done') {
+                    // This is an old re-entrypoint from App that is a no-op now.
+                } else {
+                    void tokenCallbackHandler(uri)
+                }
+            },
+        })
+    )
 }
