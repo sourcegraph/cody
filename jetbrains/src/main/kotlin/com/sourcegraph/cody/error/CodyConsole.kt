@@ -24,7 +24,7 @@ class CodyConsole(project: Project) {
 
     val messageText = "${message.channel}: ${message.message}\n"
     if (message.level == "error" || message.level == "warn") {
-      content?.let { toolWindow.contentManager.setSelectedContent(it) }
+      runInEdt { content?.let { toolWindow.contentManager.setSelectedContent(it) } }
       consoleView.print(messageText, ConsoleViewContentType.ERROR_OUTPUT)
       logger.warn(messageText)
     } else if (ConfigUtil.isCodyDebugEnabled()) {
