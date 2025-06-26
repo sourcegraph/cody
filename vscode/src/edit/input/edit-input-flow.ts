@@ -15,7 +15,6 @@ import {
 import * as vscode from 'vscode'
 
 import type { QuickPickItem } from 'vscode'
-import { ACCOUNT_UPGRADE_URL } from '../../chat/protocol'
 import { getEditor } from '../../editor/active-editor'
 import { type TextChange, updateRangeMultipleChanges } from '../../non-stop/tracked-range'
 import { ruleService } from '../../rules/service'
@@ -194,18 +193,7 @@ export class EditInputFlow implements vscode.Disposable {
         }
 
         if (item.codyProOnly && !this.isCodyPro && !this.isEnterpriseUser) {
-            const option = await vscode.window.showInformationMessage(
-                'Upgrade to Cody Pro',
-                {
-                    modal: true,
-                    detail: `Upgrade to Cody Pro to use ${item.modelTitle} for Edit`,
-                },
-                'Upgrade',
-                'See Plans'
-            )
-            if (option) {
-                void vscode.env.openExternal(vscode.Uri.parse(ACCOUNT_UPGRADE_URL.toString()))
-            }
+            return { requiresUpgrade: true, modelTitle: item.modelTitle }
         }
 
         try {

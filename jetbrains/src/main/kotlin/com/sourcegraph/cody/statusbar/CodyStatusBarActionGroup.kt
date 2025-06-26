@@ -45,12 +45,7 @@ class CodyStatusBarActionGroup : DefaultActionGroup() {
     val autocompleteRLE = UpgradeToCodyProNotification.autocompleteRateLimitError.get()
     val chatRLE = UpgradeToCodyProNotification.chatRateLimitError.get()
 
-    val shouldShowUpgradeOption =
-        autocompleteRLE?.upgradeIsAvailable ?: chatRLE?.upgradeIsAvailable ?: false
-
-    val suggestionOrExplanation =
-        if (shouldShowUpgradeOption) CodyBundle.getString("status-widget.warning.upgrade")
-        else CodyBundle.getString("status-widget.warning.explain")
+    val suggestionOrExplanation = CodyBundle.getString("status-widget.warning.explain")
 
     var (action, content, title) =
         when {
@@ -79,11 +74,9 @@ class CodyStatusBarActionGroup : DefaultActionGroup() {
           else -> return null
         }
 
-    if (!shouldShowUpgradeOption) {
-      title = CodyBundle.getString("status-widget.warning.pro.dialog-title")
-      content = CodyBundle.getString("status-widget.warning.pro.content")
-    }
+    title = CodyBundle.getString("status-widget.warning.pro.dialog-title")
+    content = CodyBundle.getString("status-widget.warning.pro.content")
 
-    return RateLimitErrorWarningAction(action, content, title, shouldShowUpgradeOption)
+    return RateLimitErrorWarningAction(action, content, title)
   }
 }

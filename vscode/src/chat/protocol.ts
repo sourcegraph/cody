@@ -330,16 +330,10 @@ export const DISCORD_URL = new URL('https://discord.gg/s2qDtYGnAE')
 export const CODY_FEEDBACK_URL = new URL('https://github.com/sourcegraph/cody/issues/new/choose')
 export const CODY_SUPPORT_URL = new URL('https://srcgr.ph/cody-support')
 // Account
-export const ENTERPRISE_STARTER_PRICING_URL = new URL('https://sourcegraph.com/pricing')
-export const CODY_PRO_SUBSCRIPTION_URL = new URL('https://accounts.sourcegraph.com/cody/subscription')
-export const ACCOUNT_UPGRADE_URL = new URL('https://sourcegraph.com/cody/subscription')
 export const ACCOUNT_USAGE_URL = new URL('https://sourcegraph.com/cody/manage')
 export const ACCOUNT_LIMITS_INFO_URL = new URL(
     'https://sourcegraph.com/docs/cody/troubleshooting#autocomplete-rate-limits'
 )
-
-// TODO: Update to live link https://linear.app/sourcegraph/issue/CORE-535/cody-clients-migrate-ctas-to-live-links
-export const ENTERPRISE_STARTER_LEARN_MORE_URL = new URL('https://sourcegraph.com/enterprise-starter')
 
 /** The local environment of the editor. */
 export interface LocalEnv {
