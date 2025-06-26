@@ -287,7 +287,7 @@ html[data-ide='JetBrains'] {
     --vscode-list-highlightForeground: var(--jetbrains-MenuItem-selectionForeground);
     --vscode-list-hoverBackground: var(--jetbrains-List-selectionBackground);
     --vscode-list-invalidItemForeground: var(--jetbrains-MenuItem-disabledForeground);
-    --vscode-list-activeSelectionForeground: var(--jetbrains-List-foreground);
+    --vscode-list-activeSelectionForeground: var(--jetbrains-List-selectionForeground);
     --vscode-list-activeSelectionBackground: var(--jetbrains-List-selectionBackground);
     --vscode-listFilterWidget-background: var(--jetbrains-List-selectionBackground);
     --vscode-listFilterWidget-noMatchesOutline: var(--jetbrains-List-selectionInactiveBackground);

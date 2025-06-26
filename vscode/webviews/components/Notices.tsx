@@ -103,7 +103,7 @@ export const Notices: React.FC<NoticesProps> = ({ user, instanceNotices }) => {
                             },
                             {
                                 label: 'Learn more',
-                                variant: 'link',
+                                variant: 'ghost',
                                 href: 'https://sourcegraph.com/blog/changes-to-cody-free-pro-and-enterprise-starter-plans',
                             },
                         ]}
@@ -182,7 +182,7 @@ interface NoticeContentProps {
         label: string
         onClick?: () => void
         href?: string
-        variant: 'default' | 'ghost' | 'secondary' | 'link'
+        variant: 'default' | 'ghost' | 'secondary'
         icon?: ReactNode
         iconPosition?: 'start' | 'end'
     }>
@@ -204,7 +204,7 @@ const NoticeContent: FunctionComponent<NoticeContentProps> = ({
     const telemetryRecorder = useTelemetryRecorder()
 
     const bgColor = {
-        default: 'tw-bg-accent tw-bg-opacity-50',
+        default: 'tw-bg-accent tw-bg-opacity-50 tw-text-accent-foreground',
         warning: 'tw-bg-red-700 tw-text-white',
     }[variant]
 
