@@ -720,11 +720,11 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         const workspaceFolderUris =
             vscode.workspace.workspaceFolders?.map(folder => folder.uri.toString()) ?? []
 
-        // Fetch additional user data if authenticated
+        // Fetch additional user data if authenticated and not in testing mode
         let siteHasCodyEnabled: boolean | null = null
         let currentUserCodySubscription: CurrentUserCodySubscription | null = null
 
-        if (authStatus.authenticated) {
+        if (authStatus.authenticated && !isCodyTesting) {
             try {
                 const siteResult = await graphqlClient.getSiteHasCodyEnabled()
                 siteHasCodyEnabled = isError(siteResult) ? null : siteResult
