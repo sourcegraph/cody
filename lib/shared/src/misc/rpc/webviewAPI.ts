@@ -112,7 +112,6 @@ export interface WebviewToExtensionAPI {
     userProductSubscription(): Observable<UserProductSubscription | null>
 
     mcpSettings(): Observable<McpServer[] | null>
-
 }
 
 export function createExtensionAPI(

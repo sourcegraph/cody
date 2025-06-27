@@ -77,7 +77,8 @@ export const Notices: React.FC<NoticesProps> = ({ user, instanceNotices }) => {
             return "Cody Pro is being sunset. You can continue using Cody until July 23rd, and your subscription will not renew. We encourage you to try Amp, Sourcegraph's new agentic coding tool."
         }
         // For free users, check if they have a subscription
-        const hasSubscription = user.currentUserCodySubscription && user.currentUserCodySubscription !== null
+        const hasSubscription =
+            user.currentUserCodySubscription && user.currentUserCodySubscription !== null
         if (hasSubscription) {
             return "Cody Free will be sunset on July 23rd. You have an active subscription, so you can continue using Cody. We encourage you to try Amp, Sourcegraph's new agentic coding tool."
         }
