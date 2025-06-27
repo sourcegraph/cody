@@ -4,6 +4,53 @@ This is a log of all notable changes to Cody for VS Code.
 
 <!--- {/_ CHANGELOG_START _/} -->
 
+## 1.106.3
+
+### Fix
+
+#### Auth
+
+- restore accidentally removed URI handler for authentication callbacks [#8114](https://github.com/sourcegraph/cody/pull/8114)
+
+#### Chat
+
+- Handle string and undefined error messages in RequestErrorItem [#8084](https://github.com/sourcegraph/cody/pull/8084)
+- bring back chat scrollbar [#8083](https://github.com/sourcegraph/cody/pull/8083)
+
+#### Smart-Apply
+
+- now applies changes to file that have parents that duplicate workspace name [#8082](https://github.com/sourcegraph/cody/pull/8082)
+
+### Chore
+
+#### Cody
+
+- update readme [#8096](https://github.com/sourcegraph/cody/pull/8096)
+
+### Reverts
+
+- Revert "feat(context filter): Implement exclude patterns from workspace settings [#-1](https://github.com/sourcegraph/cody/pull/8037)
+
+### Uncategorized
+
+#### Others
+
+- Pass client name version headers with completions request [#8105](https://github.com/sourcegraph/cody/pull/8105)
+- Fix threading issues from Cody Console [#8104](https://github.com/sourcegraph/cody/pull/8104)
+- Disable auto-edits for JB Remote IDE [#8103](https://github.com/sourcegraph/cody/pull/8103)
+- Fix threading issue with Cody Console [#8102](https://github.com/sourcegraph/cody/pull/8102)
+- Fix multiple cody.characters:flush events firing at odd intervals [#8100](https://github.com/sourcegraph/cody/pull/8100)
+- Changelog for 1.106.0 [#8098](https://github.com/sourcegraph/cody/pull/8098)
+- Add Cody PLG Sunset Notice [#8095](https://github.com/sourcegraph/cody/pull/8095)
+- Update Cody Web 0.32.9 [#8094](https://github.com/sourcegraph/cody/pull/8094)
+- Do not copy code to clipboard on the EDT thread [#8085](https://github.com/sourcegraph/cody/pull/8085)
+- Do enrol to auto-edit for all clients [#8080](https://github.com/sourcegraph/cody/pull/8080)
+- Do not stringify strings in configuration update payload [#8079](https://github.com/sourcegraph/cody/pull/8079)
+- Chore: Add CLI workflow for Cody release captains [#8078](https://github.com/sourcegraph/cody/pull/8078)
+- Release agent-v5.5.20 [#8076](https://github.com/sourcegraph/cody/pull/8076)
+- Do not hide lookups [#8073](https://github.com/sourcegraph/cody/pull/8073)
+
+
 ## 1.106.0
 
 ### Features
