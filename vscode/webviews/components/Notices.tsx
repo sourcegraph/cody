@@ -72,14 +72,13 @@ export const Notices: React.FC<NoticesProps> = ({ user, instanceNotices }) => {
             const hasCodyEnabled = siteHasCodyEnabled.value === true
             if (hasCodyEnabled) {
                 return "Cody in Enterprise Starter is being sunset. You can continue using Cody until July 23rd. Your code indexing and code search capabilities will not be affected. We encourage you to try Amp, Sourcegraph's new agentic coding tool."
-            } else {
-                return "Cody in Enterprise Starter is being sunset. Since Cody is not enabled on your instance, we encourage you to try Amp, Sourcegraph's new agentic coding tool."
             }
-        } else if (user.isCodyProUser) {
-            return "Cody Pro is being sunset. You can continue using Cody until July 23rd, and your subscription will not renew. We encourage you to try Amp, Sourcegraph's new agentic coding tool."
-        } else {
-            return "Cody Free will be sunset on July 23rd. We encourage you to try Amp, Sourcegraph's new agentic coding tool."
+            return "Cody in Enterprise Starter is being sunset. Since Cody is not enabled on your instance, we encourage you to try Amp, Sourcegraph's new agentic coding tool."
         }
+        if (user.isCodyProUser) {
+            return "Cody Pro is being sunset. You can continue using Cody until July 23rd, and your subscription will not renew. We encourage you to try Amp, Sourcegraph's new agentic coding tool."
+        }
+        return "Cody Free will be sunset on July 23rd. We encourage you to try Amp, Sourcegraph's new agentic coding tool."
     }, [user, siteHasCodyEnabled.value])
 
     const notices: Notice[] = useMemo(

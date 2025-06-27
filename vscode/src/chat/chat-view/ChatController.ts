@@ -1955,7 +1955,9 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                             )
                     },
                     getSiteHasCodyEnabled: () =>
-                        promiseFactoryToObservable(signal => graphqlClient.getSiteHasCodyEnabled(signal)),
+                        promiseFactoryToObservable(signal =>
+                            graphqlClient.getSiteHasCodyEnabled(signal)
+                        ),
                 }
             )
         )

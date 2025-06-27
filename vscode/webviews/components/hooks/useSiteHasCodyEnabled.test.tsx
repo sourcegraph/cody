@@ -1,8 +1,8 @@
+import type { WebviewToExtensionAPI } from '@sourcegraph/cody-shared'
+import { ExtensionAPIProviderForTestsOnly, MOCK_API } from '@sourcegraph/prompt-editor'
 import { render, waitFor } from '@testing-library/react'
 import { Observable } from 'observable-fns'
 import { describe, expect, test } from 'vitest'
-import { ExtensionAPIProviderForTestsOnly, MOCK_API } from '@sourcegraph/prompt-editor'
-import type { WebviewToExtensionAPI } from '@sourcegraph/cody-shared'
 import { useSiteHasCodyEnabled } from './useSiteHasCodyEnabled'
 
 // Test component that uses the hook
