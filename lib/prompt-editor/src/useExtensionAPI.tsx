@@ -45,7 +45,6 @@ export const MOCK_API = new Proxy<Partial<WebviewToExtensionAPI>>(
     {
         chatModels: () => Observable.of<Model[]>([]),
         evaluatedFeatureFlag: () => Observable.of<boolean | undefined>(false),
-        getSiteHasCodyEnabled: () => Observable.of<boolean | Error>(true),
     },
     {
         get: (obj, property) => {

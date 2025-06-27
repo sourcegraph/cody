@@ -113,10 +113,6 @@ export interface WebviewToExtensionAPI {
 
     mcpSettings(): Observable<McpServer[] | null>
 
-    /**
-     * Check if Cody is enabled at the site level.
-     */
-    getSiteHasCodyEnabled(): Observable<boolean | Error>
 }
 
 export function createExtensionAPI(
@@ -168,7 +164,6 @@ export function createExtensionAPI(
         userProductSubscription: proxyExtensionAPI(messageAPI, 'userProductSubscription'),
         repos: proxyExtensionAPI(messageAPI, 'repos'),
         mcpSettings: proxyExtensionAPI(messageAPI, 'mcpSettings'),
-        getSiteHasCodyEnabled: proxyExtensionAPI(messageAPI, 'getSiteHasCodyEnabled'),
     }
 }
 

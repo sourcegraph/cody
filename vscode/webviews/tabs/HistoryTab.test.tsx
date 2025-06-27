@@ -39,7 +39,6 @@ const createMockExtensionAPI = (): WebviewToExtensionAPI => ({
     userProductSubscription: vi.fn().mockReturnValue(null),
     frequentlyUsedContextItems: vi.fn().mockReturnValue([]),
     mcpSettings: () => new Observable(() => {}),
-    getSiteHasCodyEnabled: vi.fn().mockReturnValue(new Observable(subscriber => subscriber.next(true))),
 })
 
 describe('HistoryTabWithData', () => {

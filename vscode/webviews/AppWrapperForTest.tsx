@@ -127,7 +127,6 @@ export const AppWrapperForTest: FunctionComponent<{ children: ReactNode }> = ({ 
                     userHistory: () => Observable.of(null),
                     userProductSubscription: () => Observable.of(null),
                     mcpSettings: () => Observable.of(null),
-                    getSiteHasCodyEnabled: () => Observable.of(true),
                 },
             } satisfies Wrapper<ComponentProps<typeof ExtensionAPIProviderForTestsOnly>['value']>,
             {
@@ -142,6 +141,8 @@ export const AppWrapperForTest: FunctionComponent<{ children: ReactNode }> = ({ 
                         config: {} as any,
                         clientCapabilities: CLIENT_CAPABILITIES_FIXTURE,
                         isDotComUser: true,
+                        siteHasCodyEnabled: true,
+                        currentUserCodySubscription: null,
                     },
                 },
             } satisfies Wrapper<any, ComponentProps<typeof ConfigProvider>>,
