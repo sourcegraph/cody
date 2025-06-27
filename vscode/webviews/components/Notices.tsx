@@ -16,6 +16,7 @@ import { getVSCodeAPI } from '../utils/VSCodeApi'
 import { useTelemetryRecorder } from '../utils/telemetry'
 import { MarkdownFromCody } from './MarkdownFromCody'
 import { useLocalStorage } from './hooks'
+import { useSiteHasCodyEnabled } from './hooks/useSiteHasCodyEnabled'
 import { Button } from './shadcn/ui/button'
 
 interface Notice {
@@ -41,6 +42,7 @@ const storageKey = 'DismissedWelcomeNotices'
 
 export const Notices: React.FC<NoticesProps> = ({ user, instanceNotices }) => {
     const telemetryRecorder = useTelemetryRecorder()
+    const siteHasCodyEnabled = useSiteHasCodyEnabled()
 
     // dismissed notices from local storage
     const [dismissedNotices, setDismissedNotices] = useLocalStorage(storageKey, '')
@@ -62,6 +64,23 @@ export const Notices: React.FC<NoticesProps> = ({ user, instanceNotices }) => {
         },
         [telemetryRecorder, setDismissedNotices]
     )
+
+    // Helper function to get the CodyDeprecation message based on user type and site Cody enablement
+    const getCodyDeprecationMessage = useCallback(() => {
+        if (isWorkspaceInstance(user.user.endpoint)) {
+            // For workspace instances, check if the site has Cody enabled
+            const hasCodyEnabled = siteHasCodyEnabled.value === true
+            if (hasCodyEnabled) {
+                return "Cody in Enterprise Starter is being sunset. You can continue using Cody until July 23rd. Your code indexing and code search capabilities will not be affected. We encourage you to try Amp, Sourcegraph's new agentic coding tool."
+            } else {
+                return "Cody in Enterprise Starter is being sunset. Since Cody is not enabled on your instance, we encourage you to try Amp, Sourcegraph's new agentic coding tool."
+            }
+        } else if (user.isCodyProUser) {
+            return "Cody Pro is being sunset. You can continue using Cody until July 23rd, and your subscription will not renew. We encourage you to try Amp, Sourcegraph's new agentic coding tool."
+        } else {
+            return "Cody Free will be sunset on July 23rd. We encourage you to try Amp, Sourcegraph's new agentic coding tool."
+        }
+    }, [user, siteHasCodyEnabled.value])
 
     const notices: Notice[] = useMemo(
         () => [
@@ -87,13 +106,7 @@ export const Notices: React.FC<NoticesProps> = ({ user, instanceNotices }) => {
                         id="CodyDeprecation"
                         variant="default"
                         title="Important Notice"
-                        message={
-                            isWorkspaceInstance(user.user.endpoint)
-                                ? "Cody in Enterprise Starter is being sunset. You can continue using Cody until July 23rd. Your code indexing and code search capabilities will not be affected. We encourage you to try Amp, Sourcegraph's new agentic coding tool."
-                                : user.isCodyProUser
-                                  ? "Cody Pro is being sunset. You can continue using Cody until July 23rd, and your subscription will not renew. We encourage you to try Amp, Sourcegraph's new agentic coding tool."
-                                  : "Cody Free will be sunset on July 23rd. We encourage you to try Amp, Sourcegraph's new agentic coding tool."
-                        }
+                        message={getCodyDeprecationMessage()}
                         onDismiss={() => dismissNotice('CodyDeprecation', 'sessional')}
                         actions={[
                             {
@@ -149,7 +162,7 @@ export const Notices: React.FC<NoticesProps> = ({ user, instanceNotices }) => {
                 ),
             },
         ],
-        [user, dismissNotice, instanceNotices]
+        [user, dismissNotice, instanceNotices, getCodyDeprecationMessage]
     )
 
     // First, modify the activeNotice useMemo to add conditional logic for DogfoodS2

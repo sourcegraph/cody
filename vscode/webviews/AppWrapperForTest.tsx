@@ -127,6 +127,7 @@ export const AppWrapperForTest: FunctionComponent<{ children: ReactNode }> = ({ 
                     userHistory: () => Observable.of(null),
                     userProductSubscription: () => Observable.of(null),
                     mcpSettings: () => Observable.of(null),
+                    getSiteHasCodyEnabled: () => Observable.of(true),
                 },
             } satisfies Wrapper<ComponentProps<typeof ExtensionAPIProviderForTestsOnly>['value']>,
             {
