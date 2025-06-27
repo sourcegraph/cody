@@ -14,7 +14,6 @@ import {
 export const LOG_INTERVAL = 30 * 60 * 1000 // 30 minutes
 export const RAPID_CHANGE_TIMEOUT = 15
 export const SELECTION_TIMEOUT = 5000
-
 const changeBoundaries = {
     xxxs_change: { min: 0, max: 2 },
     xxs_change: { min: 3, max: 10 },
@@ -45,7 +44,6 @@ const SPECIAL_DOCUMENT_CHANGE_TYPES = [
     'unexpected', // should not be logged because all the change sizes are covered by the keys above
 ] as const
 
-vscode.window.activeTextEditor
 const DOCUMENT_CHANGE_TYPES = [
     ...SPECIAL_DOCUMENT_CHANGE_TYPES,
     ...changeBoundariesKeys,
@@ -100,9 +98,12 @@ export interface CodeGenEventMetadata {
 }
 
 export class CharactersLogger implements vscode.Disposable {
+    private static instance: CharactersLogger | null = null
+
     private disposables: vscode.Disposable[] = []
     private changeCounters: CharacterLoggerCounters = { ...DEFAULT_COUNTERS }
     private nextTimeoutId: NodeJS.Timeout | null = null
+    private isDisposed = false
 
     private windowFocused = true
     private activeTextEditor: vscode.TextEditor | undefined
@@ -152,15 +153,22 @@ export class CharactersLogger implements vscode.Disposable {
 
     public flush(): void {
         try {
-            this.nextTimeoutId = null
-            telemetryRecorder.recordEvent('cody.characters', 'flush', {
-                metadata: { ...this.changeCounters },
-            })
+            if (this.nextTimeoutId) {
+                clearTimeout(this.nextTimeoutId)
+                this.nextTimeoutId = null
+            }
+            if (!this.isDisposed) {
+                telemetryRecorder.recordEvent('cody.characters', 'flush', {
+                    metadata: { ...this.changeCounters },
+                })
+            }
         } catch (error) {
             outputChannelLogger.logError('CharactersLogger', 'Failed to record telemetry event:', error)
         } finally {
             this.changeCounters = { ...DEFAULT_COUNTERS }
-            this.nextTimeoutId = setTimeout(() => this.flush(), LOG_INTERVAL)
+            if (!this.isDisposed) {
+                this.nextTimeoutId = setTimeout(() => this.flush(), LOG_INTERVAL)
+            }
         }
     }
 
@@ -351,15 +359,30 @@ export class CharactersLogger implements vscode.Disposable {
         return splitSafeMetadata(rawMetadata).metadata
     }
 
+    public static getInstance(): CharactersLogger {
+        if (!CharactersLogger.instance || CharactersLogger.instance.isDisposed) {
+            if (CharactersLogger.instance?.isDisposed) {
+                CharactersLogger.instance = null
+            }
+            CharactersLogger.instance = new CharactersLogger()
+        }
+        return CharactersLogger.instance
+    }
+
     public dispose(): void {
-        this.flush()
+        this.isDisposed = true
         if (this.nextTimeoutId) {
             clearTimeout(this.nextTimeoutId)
+            this.nextTimeoutId = null
         }
+        this.flush()
         for (const disposable of this.disposables) {
             disposable.dispose()
+        }
+        if (CharactersLogger.instance === this) {
+            CharactersLogger.instance = null
         }
     }
 }
 
-export const charactersLogger = new CharactersLogger()
+export const charactersLogger = CharactersLogger.getInstance()

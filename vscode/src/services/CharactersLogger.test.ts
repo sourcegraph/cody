@@ -317,4 +317,58 @@ describe('CharactersLogger', () => {
             }),
         })
     })
+
+    it('should not create multiple timers when disposed and recreated', async () => {
+        vi.advanceTimersByTime(LOG_INTERVAL)
+        expect(recordSpy).toHaveBeenCalledTimes(1)
+
+        tracker.dispose()
+
+        const newTracker = new CharactersLogger(
+            {
+                onDidChangeTextDocument(listener) {
+                    onDidChangeTextDocument = listener
+                    return { dispose: () => {} }
+                },
+                onDidCloseTextDocument(listener) {
+                    onDidCloseTextDocument = listener
+                    return { dispose: () => {} }
+                },
+            },
+            {
+                state: mockWindowState,
+                activeTextEditor: mockActiveTextEditor,
+                onDidChangeWindowState(listener) {
+                    onDidChangeWindowState = listener
+                    return { dispose: () => {} }
+                },
+                onDidChangeActiveTextEditor(listener) {
+                    onDidChangeActiveTextEditor = listener
+                    return { dispose: () => {} }
+                },
+                onDidChangeTextEditorSelection(listener) {
+                    onDidChangeTextEditorSelection = listener
+                    return { dispose: () => {} }
+                },
+            }
+        )
+
+        recordSpy.mockClear()
+        vi.advanceTimersByTime(LOG_INTERVAL)
+
+        expect(recordSpy).toHaveBeenCalledTimes(1)
+        expect(recordSpy).toHaveBeenCalledWith('cody.characters', 'flush', {
+            metadata: expectedCharCounters({}),
+        })
+
+        newTracker.dispose()
+    })
+
+    it('should not schedule new timer after disposal', async () => {
+        tracker.dispose()
+        recordSpy.mockClear()
+        vi.advanceTimersByTime(LOG_INTERVAL * 2)
+
+        expect(recordSpy).not.toHaveBeenCalled()
+    })
 })
