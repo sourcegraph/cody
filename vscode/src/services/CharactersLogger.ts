@@ -14,8 +14,6 @@ import {
 export const LOG_INTERVAL = 30 * 60 * 1000 // 30 minutes
 export const RAPID_CHANGE_TIMEOUT = 15
 export const SELECTION_TIMEOUT = 5000
-export let charactersLogger: CharactersLogger
-
 const changeBoundaries = {
     xxxs_change: { min: 0, max: 2 },
     xxs_change: { min: 3, max: 10 },
@@ -46,7 +44,6 @@ const SPECIAL_DOCUMENT_CHANGE_TYPES = [
     'unexpected', // should not be logged because all the change sizes are covered by the keys above
 ] as const
 
-vscode.window.activeTextEditor
 const DOCUMENT_CHANGE_TYPES = [
     ...SPECIAL_DOCUMENT_CHANGE_TYPES,
     ...changeBoundariesKeys,
@@ -388,4 +385,4 @@ export class CharactersLogger implements vscode.Disposable {
     }
 }
 
-charactersLogger = CharactersLogger.getInstance()
+export const charactersLogger = CharactersLogger.getInstance()
