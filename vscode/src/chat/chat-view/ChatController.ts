@@ -726,10 +726,12 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
 
         if (authStatus.authenticated && !isCodyTesting) {
             try {
-                const siteResult = await graphqlClient.getSiteHasCodyEnabled()
+                const [siteResult, subscriptionResult] = await Promise.all([
+                    graphqlClient.getSiteHasCodyEnabled(),
+                    graphqlClient.getCurrentUserCodySubscription()
+                ])
+                
                 siteHasCodyEnabled = isError(siteResult) ? null : siteResult
-
-                const subscriptionResult = await graphqlClient.getCurrentUserCodySubscription()
                 currentUserCodySubscription = isError(subscriptionResult) ? null : subscriptionResult
             } catch (error) {
                 // Log error but don't fail the config send

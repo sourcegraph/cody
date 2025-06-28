@@ -39,6 +39,15 @@ interface NoticesProps {
 
 const storageKey = 'DismissedWelcomeNotices'
 
+// Cody deprecation message constants
+const CODY_DEPRECATION_MESSAGES = {
+    ENTERPRISE_STARTER_WITH_CODY: "Cody in Enterprise Starter is being sunset. You can continue using Cody until July 23rd. Your code indexing and code search capabilities will not be affected. We encourage you to try Amp, Sourcegraph's new agentic coding tool.",
+    ENTERPRISE_STARTER_WITHOUT_CODY: "Cody in Enterprise Starter is being sunset. Because you signed up after 6/25, your account doesn't have Cody, we encourage you to try Amp, Sourcegraph's new agentic coding tool.",
+    PRO_USER: "Cody Pro is being sunset. You can continue using Cody until July 23rd, and your subscription will not renew. We encourage you to try Amp, Sourcegraph's new agentic coding tool.",
+    FREE_USER_WITH_CODY: "Cody Free is being sunset. You can continue using Cody until July 23rd. We encourage you to try Amp, Sourcegraph's new agentic coding tool.",
+    FREE_USER_WITHOUT_CODY: "Cody Free is being sunset. Because you signed up after 6/25, your account doesn't have Cody. We encourage you to try Amp, Sourcegraph's new agentic coding tool."
+} as const
+
 export const Notices: React.FC<NoticesProps> = ({ user, instanceNotices }) => {
     const telemetryRecorder = useTelemetryRecorder()
 
@@ -69,20 +78,20 @@ export const Notices: React.FC<NoticesProps> = ({ user, instanceNotices }) => {
             // For workspace instances, check if the site has Cody enabled
             const hasCodyEnabled = user.siteHasCodyEnabled === true
             if (hasCodyEnabled) {
-                return "Cody in Enterprise Starter is being sunset. You can continue using Cody until July 23rd. Your code indexing and code search capabilities will not be affected. We encourage you to try Amp, Sourcegraph's new agentic coding tool."
+                return CODY_DEPRECATION_MESSAGES.ENTERPRISE_STARTER_WITH_CODY
             }
-            return "Cody in Enterprise Starter is being sunset. Since Cody is not enabled on your instance, we encourage you to try Amp, Sourcegraph's new agentic coding tool."
+            return CODY_DEPRECATION_MESSAGES.ENTERPRISE_STARTER_WITHOUT_CODY
         }
         if (user.isCodyProUser) {
-            return "Cody Pro is being sunset. You can continue using Cody until July 23rd, and your subscription will not renew. We encourage you to try Amp, Sourcegraph's new agentic coding tool."
+            return CODY_DEPRECATION_MESSAGES.PRO_USER
         }
         // For free users, check if they have a subscription
         const hasSubscription =
             user.currentUserCodySubscription && user.currentUserCodySubscription !== null
         if (hasSubscription) {
-            return "Cody Free will be sunset on July 23rd. You have an active subscription, so you can continue using Cody. We encourage you to try Amp, Sourcegraph's new agentic coding tool."
+            return CODY_DEPRECATION_MESSAGES.FREE_USER_WITH_CODY
         }
-        return "Cody Free will be sunset on July 23rd. We encourage you to try Amp, Sourcegraph's new agentic coding tool."
+        return CODY_DEPRECATION_MESSAGES.FREE_USER_WITHOUT_CODY
     }, [user])
 
     const notices: Notice[] = useMemo(
