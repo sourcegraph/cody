@@ -8,6 +8,7 @@ import type {
     CodyIDE,
     ContextItem,
     ContextItemSource,
+    CurrentUserCodySubscription,
     NLSSearchDynamicFilter,
     ProcessingStep,
     PromptMode,
@@ -199,6 +200,8 @@ export type ExtensionMessage =
           userProductSubscription?: UserProductSubscription | null | undefined
           isDotComUser: boolean
           workspaceFolderUris: string[]
+          siteHasCodyEnabled?: boolean | null | undefined
+          currentUserCodySubscription?: CurrentUserCodySubscription | null | undefined
       }
     | {
           type: 'clientConfig'

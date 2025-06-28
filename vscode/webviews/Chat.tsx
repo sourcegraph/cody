@@ -6,6 +6,7 @@ import type {
     AuthenticatedAuthStatus,
     ChatMessage,
     CodyIDE,
+    CurrentUserCodySubscription,
     Guardrails,
     Model,
     PromptString,
@@ -231,6 +232,8 @@ export interface UserAccountInfo {
         'username' | 'displayName' | 'avatarURL' | 'endpoint' | 'primaryEmail' | 'organizations'
     >
     IDE: CodyIDE
+    siteHasCodyEnabled?: boolean | null
+    currentUserCodySubscription?: CurrentUserCodySubscription | null
 }
 
 export type ApiPostMessage = (message: any) => void

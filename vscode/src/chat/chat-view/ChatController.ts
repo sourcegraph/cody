@@ -12,6 +12,7 @@ import {
     type CodyClientConfig,
     type ContextItem,
     ContextItemSource,
+    type CurrentUserCodySubscription,
     DOTCOM_URL,
     type DefaultChatCommands,
     type EventSource,
@@ -719,6 +720,25 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         const workspaceFolderUris =
             vscode.workspace.workspaceFolders?.map(folder => folder.uri.toString()) ?? []
 
+        // Fetch additional user data if authenticated and not in testing mode
+        let siteHasCodyEnabled: boolean | null = null
+        let currentUserCodySubscription: CurrentUserCodySubscription | null = null
+
+        if (authStatus.authenticated && !isCodyTesting) {
+            try {
+                const [siteResult, subscriptionResult] = await Promise.all([
+                    graphqlClient.getSiteHasCodyEnabled(),
+                    graphqlClient.getCurrentUserCodySubscription(),
+                ])
+
+                siteHasCodyEnabled = isError(siteResult) ? null : siteResult
+                currentUserCodySubscription = isError(subscriptionResult) ? null : subscriptionResult
+            } catch (error) {
+                // Log error but don't fail the config send
+                console.error('Failed to fetch additional user data', error)
+            }
+        }
+
         await this.postMessage({
             type: 'config',
             config: configForWebview,
@@ -727,6 +747,8 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             userProductSubscription: await currentUserProductSubscription(),
             workspaceFolderUris,
             isDotComUser: isDotCom(authStatus),
+            siteHasCodyEnabled,
+            currentUserCodySubscription,
         })
         logDebug('ChatController', 'updateViewConfig', {
             verbose: configForWebview,
