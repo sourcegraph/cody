@@ -41,11 +41,16 @@ const storageKey = 'DismissedWelcomeNotices'
 
 // Cody deprecation message constants
 const CODY_DEPRECATION_MESSAGES = {
-    ENTERPRISE_STARTER_WITH_CODY: "Cody in Enterprise Starter is being sunset. You can continue using Cody until July 23rd. Your code indexing and code search capabilities will not be affected. We encourage you to try Amp, Sourcegraph's new agentic coding tool.",
-    ENTERPRISE_STARTER_WITHOUT_CODY: "Cody in Enterprise Starter is being sunset. Because you signed up after 6/25, your account doesn't have Cody, we encourage you to try Amp, Sourcegraph's new agentic coding tool.",
-    PRO_USER: "Cody Pro is being sunset. You can continue using Cody until July 23rd, and your subscription will not renew. We encourage you to try Amp, Sourcegraph's new agentic coding tool.",
-    FREE_USER_WITH_CODY: "Cody Free is being sunset. You can continue using Cody until July 23rd. We encourage you to try Amp, Sourcegraph's new agentic coding tool.",
-    FREE_USER_WITHOUT_CODY: "Cody Free is being sunset. Because you signed up after 6/25, your account doesn't have Cody. We encourage you to try Amp, Sourcegraph's new agentic coding tool."
+    ENTERPRISE_STARTER_WITH_CODY:
+        "Cody in Enterprise Starter is being sunset. You can continue using Cody until July 23rd. Your code indexing and code search capabilities will not be affected. We encourage you to try Amp, Sourcegraph's new agentic coding tool.",
+    ENTERPRISE_STARTER_WITHOUT_CODY:
+        "Cody in Enterprise Starter is being sunset. Because you signed up after 6/25, your account doesn't have Cody, we encourage you to try Amp, Sourcegraph's new agentic coding tool.",
+    PRO_USER:
+        "Cody Pro is being sunset. You can continue using Cody until July 23rd, and your subscription will not renew. We encourage you to try Amp, Sourcegraph's new agentic coding tool.",
+    FREE_USER_WITH_CODY:
+        "Cody Free is being sunset. You can continue using Cody until July 23rd. We encourage you to try Amp, Sourcegraph's new agentic coding tool.",
+    FREE_USER_WITHOUT_CODY:
+        "Cody Free is being sunset. Because you signed up after 6/25, your account doesn't have Cody. We encourage you to try Amp, Sourcegraph's new agentic coding tool.",
 } as const
 
 export const Notices: React.FC<NoticesProps> = ({ user, instanceNotices }) => {

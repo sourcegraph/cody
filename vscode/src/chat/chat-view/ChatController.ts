@@ -728,9 +728,9 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             try {
                 const [siteResult, subscriptionResult] = await Promise.all([
                     graphqlClient.getSiteHasCodyEnabled(),
-                    graphqlClient.getCurrentUserCodySubscription()
+                    graphqlClient.getCurrentUserCodySubscription(),
                 ])
-                
+
                 siteHasCodyEnabled = isError(siteResult) ? null : siteResult
                 currentUserCodySubscription = isError(subscriptionResult) ? null : subscriptionResult
             } catch (error) {
