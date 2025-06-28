@@ -373,6 +373,10 @@ export class TestClient extends MessageHandler {
             this.webviewMessages.push(params)
             this.webviewMessagesEmitter.fire(params)
         })
+
+        this.registerNotification('extensionConfiguration/didUpdate', params => {
+            this.extensionConfigurationUpdates.push(params)
+        })
     }
 
     private async editDocument(params: TextDocumentEditParams): Promise<ProtocolTextDocumentWithUri> {
@@ -600,6 +604,8 @@ export class TestClient extends MessageHandler {
 
     public webviewMessages: WebviewPostMessageParams[] = []
     public webviewMessagesEmitter = new vscode.EventEmitter<WebviewPostMessageParams>()
+
+    public extensionConfigurationUpdates: Record<string, string | undefined | null>[] = []
 
     /**
      * Returns a promise of the first `type: 'transcript'` message where
