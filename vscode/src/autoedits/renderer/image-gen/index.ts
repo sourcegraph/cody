@@ -1,6 +1,10 @@
 import { initCanvas } from './canvas'
 import { drawDecorationsToCanvas } from './canvas/draw-decorations'
-import { type UserProvidedRenderConfig, getRenderConfig } from './canvas/render-config'
+import {
+    type RenderConfig,
+    type UserProvidedRenderConfig,
+    getRenderConfig,
+} from './canvas/render-config'
 import { makeDecoratedDiff } from './decorated-diff'
 import { initSyntaxHighlighter } from './highlight'
 import type { DiffMode, VisualDiff } from './visual-diff/types'
@@ -38,12 +42,20 @@ export function generateSuggestionAsImage(options: ImageSuggestionOptions): Gene
     const renderConfig = getRenderConfig(config)
 
     return {
-        dark: drawDecorationsToCanvas(highlightedDiff.dark, 'dark', mode, renderConfig).toDataURL(
-            'image/png'
-        ),
-        light: drawDecorationsToCanvas(highlightedDiff.light, 'light', mode, renderConfig).toDataURL(
-            'image/png'
-        ),
+        dark: renderSuggestionImage(highlightedDiff.dark, 'dark', mode, renderConfig),
+        light: renderSuggestionImage(highlightedDiff.light, 'light', mode, renderConfig),
         pixelRatio: renderConfig.pixelRatio,
     }
+}
+
+function renderSuggestionImage(
+    diff: VisualDiff,
+    theme: 'dark' | 'light',
+    mode: DiffMode,
+    renderConfig: RenderConfig
+) {
+    const canvas = drawDecorationsToCanvas(diff, theme, mode, renderConfig)
+    const image = canvas.toDataURL('image/png')
+    canvas.dispose()
+    return image
 }
