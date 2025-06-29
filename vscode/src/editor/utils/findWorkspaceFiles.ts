@@ -8,18 +8,28 @@ import * as vscode from 'vscode'
 export async function findWorkspaceFiles(
     cancellationToken?: vscode.CancellationToken
 ): Promise<ReadonlyArray<vscode.Uri>> {
-    return (
-        await Promise.all(
-            (vscode.workspace.workspaceFolders ?? [null]).map(async workspaceFolder =>
-                vscode.workspace.findFiles(
-                    workspaceFolder ? new vscode.RelativePattern(workspaceFolder, '**') : '',
-                    await getExcludePattern(workspaceFolder),
-                    undefined,
-                    cancellationToken
-                )
+    const rawResults = await Promise.all(
+        (vscode.workspace.workspaceFolders ?? [null]).map(async workspaceFolder =>
+            vscode.workspace.findFiles(
+                workspaceFolder ? new vscode.RelativePattern(workspaceFolder, '**') : '',
+                await getExcludePattern(workspaceFolder),
+                undefined,
+                cancellationToken
             )
         )
-    ).flat()
+    )
+    const results = rawResults.flat()
+
+    // Deduplicate files when workspace folders overlap (e.g., parent and child directories)
+    // This is common in monorepos or when adding subdirectories as separate workspace folders
+    // for better Git integration in VSCode's Source Control panel
+    const uriMap = new Map<string, vscode.Uri>()
+    for (const uri of results) {
+        uriMap.set(uri.toString(), uri)
+    }
+
+    const dedupedResults = Array.from(uriMap.values())
+    return dedupedResults
 }
 
 type IgnoreRecord = Record<string, boolean>
