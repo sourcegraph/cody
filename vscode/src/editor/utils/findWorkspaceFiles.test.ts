@@ -68,9 +68,9 @@ describe('readIgnoreFile', () => {
         })
     })
 
-    it('skips lines containing commas', async () => {
+    it('replaces commas with dots to fix common typos', async () => {
         const mockData = new Uint8Array(
-            Buffer.from('node_modules\n*,something\n*.log\n{*.js,*.ts}\nvalid_pattern')
+            Buffer.from('node_modules\n*,something\n*.log\n*,js\nvalid_pattern')
         )
         vi.mocked(vscode.workspace.fs.readFile).mockResolvedValue(mockData)
 
@@ -78,7 +78,9 @@ describe('readIgnoreFile', () => {
 
         expect(result).toEqual({
             '**/node_modules': true,
+            '**/*.something': true,
             '**/*.log': true,
+            '**/*.js': true,
             '**/valid_pattern': true,
         })
     })

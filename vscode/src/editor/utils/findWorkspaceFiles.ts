@@ -65,10 +65,10 @@ export async function readIgnoreFile(uri: vscode.Uri): Promise<IgnoreRecord> {
                 continue
             }
 
-            // Skip patterns that contain commas to avoid typos for entries such as
+            // Replace , with . that contain commas to avoid typos for entries such as
             // *,something
             if (line.includes(',')) {
-                continue
+                line = line.replace(',', '.')
             }
 
             if (line.endsWith('/')) {
