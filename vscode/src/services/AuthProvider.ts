@@ -35,6 +35,7 @@ import { Observable, Subject, interval } from 'observable-fns'
 import * as vscode from 'vscode'
 import { serializeConfigSnapshot } from '../../uninstall/serializeConfig'
 import { type ResolvedConfigurationCredentialsOnly, validateCredentials } from '../auth/auth'
+import { isRunningInsideAgent } from '../jsonrpc/isRunningInsideAgent'
 import { logError } from '../output-channel-logger'
 import { version } from '../version'
 import { localStorage } from './LocalStorageProvider'
@@ -173,7 +174,11 @@ class AuthProvider implements vscode.Disposable {
             authStatus.subscribe(authStatus => {
                 try {
                     this.lastEndpoint = authStatus.endpoint
-                    vscode.commands.executeCommand('authStatus.update', authStatus)
+                    // Only execute authStatus.update command when running inside agent context
+                    // This command is only registered in the agent, not in the VSCode extension
+                    if (isRunningInsideAgent()) {
+                        vscode.commands.executeCommand('authStatus.update', authStatus)
+                    }
                     vscode.commands.executeCommand(
                         'setContext',
                         'cody.activated',
