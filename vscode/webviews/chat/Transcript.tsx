@@ -76,6 +76,22 @@ interface TranscriptProps {
     welcomeContent?: React.ReactNode
 }
 
+function useDebouncedBoolean(value: boolean, delay: number): boolean {
+    const [debouncedValue, setDebouncedValue] = useState(value)
+
+    useEffect(() => {
+        const handler = setTimeout(() => {
+            setDebouncedValue(value)
+        }, delay)
+
+        return () => {
+            clearTimeout(handler)
+        }
+    }, [value, delay])
+
+    return debouncedValue
+}
+
 export const Transcript: FC<TranscriptProps> = props => {
     const {
         activeChatContext,
@@ -104,6 +120,10 @@ export const Transcript: FC<TranscriptProps> = props => {
     const expectedAutoScrollTopRef = useRef(0)
     const [scrollableContainer, setScrollableContainer] = useState<HTMLDivElement | null>(null)
     const [isAtBottom, setIsAtBottom] = useState(false)
+
+    // Debounce the isAtBottom state to prevent flickering of the "Skip to end" button
+    // when the mention menu appears and causes micro-scrolls
+    const isAtBottomDebounced = useDebouncedBoolean(isAtBottom, 150)
 
     useEffect(() => {
         const handleCopyEvent = (event: ClipboardEvent) => {
@@ -266,7 +286,7 @@ export const Transcript: FC<TranscriptProps> = props => {
 
                     {scrollableContainer && <ScrollbarMarkers scrollContainer={scrollableContainer} />}
 
-                    {!isAtBottom && <ScrollDown onClick={scrollTotheBottom} />}
+                    {!isAtBottomDebounced && <ScrollDown onClick={scrollTotheBottom} />}
 
                     <div className="tw-bg-[var(--vscode-input-background)]">
                         {inputInteractionAtTheBottom &&
