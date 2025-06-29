@@ -30,7 +30,9 @@ describe('readIgnoreFile', () => {
     })
 
     it('handles comments and empty lines', async () => {
-        const mockData = new Uint8Array(Buffer.from('# Comment\nnode_modules\n\n*.log # inline comment\n'))
+        const mockData = new Uint8Array(
+            Buffer.from('# Comment\nnode_modules\n\n*.log # inline comment\n')
+        )
         vi.mocked(vscode.workspace.fs.readFile).mockResolvedValue(mockData)
 
         const result = await readIgnoreFile({} as vscode.Uri)
@@ -67,7 +69,9 @@ describe('readIgnoreFile', () => {
     })
 
     it('skips lines containing commas', async () => {
-        const mockData = new Uint8Array(Buffer.from('node_modules\n*,something\n*.log\n{*.js,*.ts}\nvalid_pattern'))
+        const mockData = new Uint8Array(
+            Buffer.from('node_modules\n*,something\n*.log\n{*.js,*.ts}\nvalid_pattern')
+        )
         vi.mocked(vscode.workspace.fs.readFile).mockResolvedValue(mockData)
 
         const result = await readIgnoreFile({} as vscode.Uri)
