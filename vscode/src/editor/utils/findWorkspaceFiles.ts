@@ -49,7 +49,7 @@ async function getExcludePattern(workspaceFolder: vscode.WorkspaceFolder | null)
     return `{${excludePatterns.join(',')}}`
 }
 
-async function readIgnoreFile(uri: vscode.Uri): Promise<IgnoreRecord> {
+export async function readIgnoreFile(uri: vscode.Uri): Promise<IgnoreRecord> {
     const ignore: IgnoreRecord = {}
     try {
         const data = await vscode.workspace.fs.readFile(uri)
@@ -58,11 +58,17 @@ async function readIgnoreFile(uri: vscode.Uri): Promise<IgnoreRecord> {
                 continue
             }
 
-            // Strip comment and trailing whitespace.
-            line = line.replace(/\s*(#.*)?$/, '')
+            // Strip comment and whitespace.
+            line = line.replace(/\s*(#.*)?$/, '').trim()
 
             if (line === '') {
                 continue
+            }
+
+            // Replace , with . that contain commas to avoid typos for entries such as
+            // *,something
+            if (line.includes(',')) {
+                line = line.replace(',', '.')
             }
 
             if (line.endsWith('/')) {
