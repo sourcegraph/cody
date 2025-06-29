@@ -8,18 +8,28 @@ import * as vscode from 'vscode'
 export async function findWorkspaceFiles(
     cancellationToken?: vscode.CancellationToken
 ): Promise<ReadonlyArray<vscode.Uri>> {
-    return (
-        await Promise.all(
-            (vscode.workspace.workspaceFolders ?? [null]).map(async workspaceFolder =>
-                vscode.workspace.findFiles(
-                    workspaceFolder ? new vscode.RelativePattern(workspaceFolder, '**') : '',
-                    await getExcludePattern(workspaceFolder),
-                    undefined,
-                    cancellationToken
-                )
+    const rawResults = await Promise.all(
+        (vscode.workspace.workspaceFolders ?? [null]).map(async workspaceFolder =>
+            vscode.workspace.findFiles(
+                workspaceFolder ? new vscode.RelativePattern(workspaceFolder, '**') : '',
+                await getExcludePattern(workspaceFolder),
+                undefined,
+                cancellationToken
             )
         )
-    ).flat()
+    )
+    const results = rawResults.flat()
+
+    // Deduplicate files when workspace folders overlap (e.g., parent and child directories)
+    // This is common in monorepos or when adding subdirectories as separate workspace folders
+    // for better Git integration in VSCode's Source Control panel
+    const uriMap = new Map<string, vscode.Uri>()
+    for (const uri of results) {
+        uriMap.set(uri.toString(), uri)
+    }
+
+    const dedupedResults = Array.from(uriMap.values())
+    return dedupedResults
 }
 
 type IgnoreRecord = Record<string, boolean>
@@ -49,7 +59,7 @@ async function getExcludePattern(workspaceFolder: vscode.WorkspaceFolder | null)
     return `{${excludePatterns.join(',')}}`
 }
 
-async function readIgnoreFile(uri: vscode.Uri): Promise<IgnoreRecord> {
+export async function readIgnoreFile(uri: vscode.Uri): Promise<IgnoreRecord> {
     const ignore: IgnoreRecord = {}
     try {
         const data = await vscode.workspace.fs.readFile(uri)
@@ -58,11 +68,17 @@ async function readIgnoreFile(uri: vscode.Uri): Promise<IgnoreRecord> {
                 continue
             }
 
-            // Strip comment and trailing whitespace.
-            line = line.replace(/\s*(#.*)?$/, '')
+            // Strip comment and whitespace.
+            line = line.replace(/\s*(#.*)?$/, '').trim()
 
             if (line === '') {
                 continue
+            }
+
+            // Replace , with . that contain commas to avoid typos for entries such as
+            // *,something
+            if (line.includes(',')) {
+                line = line.replace(',', '.')
             }
 
             if (line.endsWith('/')) {
