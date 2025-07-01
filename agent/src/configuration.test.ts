@@ -6,11 +6,14 @@ import { TestWorkspace } from './TestWorkspace'
 import * as vscode from './vscode-shim'
 
 describe('Configuration', () => {
-    const workspace = new TestWorkspace(path.join(__dirname, '__tests__', 'configuration'))
+    const workspace = new TestWorkspace(path.join(__dirname, '__tests__', 'example-ts'))
     const client = TestClient.create({
         workspaceRootUri: workspace.rootUri,
         name: 'configuration',
         credentials: TESTING_CREDENTIALS.dotcom,
+        capabilities: {
+            autoedit: 'none'
+        }
     })
 
     beforeAll(async () => {
@@ -26,6 +29,8 @@ describe('Configuration', () => {
     it('extensionConfiguration/didUpdate', async () => {
         const configuration = vscode.workspace.getConfiguration()
         await configuration.update('cody.dummy.setting', 'random')
+
+        await new Promise(resolve => setTimeout(resolve, 5000));
 
         expect(client.extensionConfigurationUpdates.length).toBe(1)
         expect(client.extensionConfigurationUpdates[0]).toBe({
