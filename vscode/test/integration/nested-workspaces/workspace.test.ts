@@ -9,7 +9,7 @@ suite('Nested Workspaces', () => {
             path.basename(wf.uri.fsPath)
         )
         assert.deepStrictEqual(workspaceFolderNames, ['workspace', 'workspace2', 'subproject'])
-        
+
         const api = vscode.extensions.getExtension<ExtensionApi>('sourcegraph.cody-ai')
         assert.ok(api, 'extension not found')
     })
