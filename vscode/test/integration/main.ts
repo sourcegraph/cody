@@ -29,6 +29,7 @@ async function main(): Promise<void> {
     const testConfigs = [
         { testsFolder: 'single-root', workspace: 'workspace' },
         { testsFolder: 'multi-root', workspace: 'multi-root.code-workspace' },
+        { testsFolder: 'nested-workspaces', workspace: 'nested-workspaces.code-workspace' },
     ]
 
     let exitCode = 0
