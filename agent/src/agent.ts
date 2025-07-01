@@ -594,6 +594,18 @@ export class Agent extends MessageHandler implements ExtensionClient {
             this.handleConfigChanges(config)
         })
 
+        this.registerNotification('testing/runInAgent', scenario => {
+            try {
+                if (scenario === 'configuration-test-configuration-update') {
+                    // Execute the configuration update in the agent process where agent is defined
+                    const configuration = vscode_shim.workspace.getConfiguration()
+                    configuration.update('cody.dummy.setting', 'random')
+                }
+            } catch (error) {
+                console.error('Error in testing/runInAgent:', error)
+            }
+        })
+
         this.registerRequest('extensionConfiguration/change', async config => {
             return this.handleConfigChanges(config).then(toProtocolAuthStatus)
         })

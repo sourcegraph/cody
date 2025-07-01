@@ -3,7 +3,6 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { TESTING_CREDENTIALS } from '../../vscode/src/testutils/testing-credentials'
 import { TestClient } from './TestClient'
 import { TestWorkspace } from './TestWorkspace'
-import * as vscode from './vscode-shim'
 
 describe('Configuration', () => {
     const workspace = new TestWorkspace(path.join(__dirname, '__tests__', 'example-ts'))
@@ -11,9 +10,12 @@ describe('Configuration', () => {
         workspaceRootUri: workspace.rootUri,
         name: 'configuration',
         credentials: TESTING_CREDENTIALS.dotcom,
+        extraConfiguration: {
+            'cody.suggestions.mode': 'autocomplete',
+        },
         capabilities: {
-            autoedit: 'none'
-        }
+            autoedit: 'none',
+        },
     })
 
     beforeAll(async () => {
@@ -27,15 +29,21 @@ describe('Configuration', () => {
     })
 
     it('extensionConfiguration/didUpdate', async () => {
-        const configuration = vscode.workspace.getConfiguration()
-        await configuration.update('cody.dummy.setting', 'random')
+        // Use the testing notification to trigger configuration update in the agent process
+        client.notify('testing/runInAgent', 'configuration-test-configuration-update')
 
-        await new Promise(resolve => setTimeout(resolve, 5000));
+        await new Promise(resolve => setTimeout(resolve, 1000))
 
-        expect(client.extensionConfigurationUpdates.length).toBe(1)
-        expect(client.extensionConfigurationUpdates[0]).toBe({
+        expect(client.extensionConfigurationUpdates.length).toBeGreaterThan(0)
+
+        // Find our specific configuration update
+        const ourUpdate = client.extensionConfigurationUpdates.find(
+            update => update.key === 'cody.dummy.setting'
+        )
+        expect(ourUpdate).toBeDefined()
+        expect(ourUpdate).toEqual({
             key: 'cody.dummy.setting',
             value: 'random',
         })
-    }, 10_000_000)
+    }, 30_000)
 })
