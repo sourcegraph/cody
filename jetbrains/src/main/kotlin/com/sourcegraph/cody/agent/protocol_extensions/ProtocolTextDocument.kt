@@ -75,8 +75,9 @@ object ProtocolTextDocumentExt {
   fun fromEditorWithOffsetSelection(editor: Editor, event: CaretEvent): ProtocolTextDocument? {
     val caret = event.caret ?: return null
     val file = editor.virtualFile ?: return null
-    val start = editor.document.codyPosition(caret.offset)
-    val selection = Range(start, start)
+    val start = editor.document.codyPosition(caret.selectionStart)
+    val end = editor.document.codyPosition(caret.selectionEnd)
+    val selection = Range(start, end)
     val uri = vscNormalizedUriFor(file) ?: return null
     return ProtocolTextDocument(
         uri = uri,
