@@ -25,7 +25,7 @@ describe('Configuration', () => {
 
     it('extensionConfiguration/didUpdate', async () => {
         const configuration = vscode.workspace.getConfiguration()
-        configuration.update('cody.dummy.setting', 'random')
+        await configuration.update('cody.dummy.setting', 'random')
 
         expect(client.extensionConfigurationUpdates.length).toBe(1)
         expect(client.extensionConfigurationUpdates[0]).toBe({
