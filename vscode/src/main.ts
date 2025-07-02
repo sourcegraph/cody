@@ -287,6 +287,7 @@ const register = async (
     )
 
     registerAutocomplete(platform, statusBar, disposables)
+    registerAutoEdits({ chatClient, fixupController, statusBar, disposables, context })
     await registerCodyCommands({ statusBar, chatClient, fixupController, disposables, context })
     registerAuthCommands(disposables)
     registerChatCommands(disposables)
