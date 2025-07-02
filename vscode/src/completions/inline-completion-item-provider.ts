@@ -23,7 +23,7 @@ import { autocompleteStageCounterLogger } from '../services/autocomplete-stage-c
 import { recordExposedExperimentsToSpan } from '../services/open-telemetry/utils'
 
 import { AuthError } from '@sourcegraph/cody-shared/src/sourcegraph-api/errors'
-import { autoeditsOnboarding } from '../autoedits/autoedit-onboarding'
+
 import { ContextRankingStrategy } from '../completions/context/completions-context-ranker'
 import { isRunningInsideAgent } from '../jsonrpc/isRunningInsideAgent'
 import type { CompletionBookkeepingEvent, CompletionItemID, CompletionLogID } from './analytics-logger'
@@ -142,9 +142,7 @@ export class InlineCompletionItemProvider
         tracer = null,
         ...config
     }: CodyCompletionItemProviderConfig) {
-        // Show the autoedit onboarding message if the user hasn't enabled autoedits
-        // but is eligible to use them as an alternative to autocomplete
-        autoeditsOnboarding.enrollUserToAutoEditBetaIfEligible()
+        // Note: Auto edit enrollment is now handled centrally in main.ts to avoid race conditions
 
         // This is a static field to allow for easy access in the static `configuration` getter.
         // There must only be one instance of this class at a time.

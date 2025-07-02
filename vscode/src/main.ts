@@ -35,6 +35,7 @@ import {
     subscriptionDisposable,
     switchMap,
     take,
+    tap,
 } from '@sourcegraph/cody-shared'
 
 import { isReinstalling } from '../uninstall/reinstall'
@@ -286,8 +287,14 @@ const register = async (
         })
     )
 
-    registerAutocomplete(platform, statusBar, disposables)
-    registerAutoEdits({ chatClient, fixupController, statusBar, disposables, context })
+    registerCompletionProviders({
+        platform,
+        chatClient,
+        fixupController,
+        statusBar,
+        disposables,
+        context,
+    })
     await registerCodyCommands({ statusBar, chatClient, fixupController, disposables, context })
     registerAuthCommands(disposables)
     registerChatCommands(disposables)
@@ -442,9 +449,6 @@ async function registerCodyCommands({
             () => new SupercompletionProvider({ statusBar, chat: chatClient })
         )
     )
-
-    // Initialize autoedit provider if experimental feature is enabled
-    registerAutoEdits({ chatClient, fixupController, statusBar, disposables, context })
 
     disposables.push(
         subscriptionDisposable(
@@ -637,29 +641,72 @@ async function registerDebugCommands(
     )
 }
 
-function registerAutoEdits({
+/**
+ * Registers both autocomplete and auto edits functionality with unified provider management.
+ * This ensures proper provider switching without race conditions during enrollment.
+ */
+function registerCompletionProviders({
+    platform,
     chatClient,
     fixupController,
     statusBar,
     disposables,
     context,
 }: {
+    platform: PlatformContext
     chatClient: ChatClient
     fixupController: FixupController
     statusBar: CodyStatusBar
     disposables: vscode.Disposable[]
     context: vscode.ExtensionContext
 }): void {
+    // Auto edits client capability check
     const { autoedit } = clientCapabilities()
     const autoeditDisabledForClient =
         isRunningInsideAgent() && (autoedit === undefined || autoedit === 'none')
+
     if (autoeditDisabledForClient) {
-        // Do not attempt to register autoedits for clients that have not opted in to use autoedit.
+        // Only register autocomplete for clients that have not opted in to use autoedit
+        registerAutocomplete(platform, statusBar, disposables)
         return
     }
 
+    // Initialize status bar loader for both providers
+    let statusBarLoader: undefined | (() => void) = statusBar.addLoader({
+        title: 'Completion Provider is starting',
+        kind: 'startup',
+    })
+    const finishLoading = () => {
+        statusBarLoader?.()
+        statusBarLoader = undefined
+    }
+
+    // Handle auto edit enrollment separately to avoid race conditions
     disposables.push(
-        autoeditDebugStore,
+        subscriptionDisposable(
+            combineLatest(resolvedConfig, authStatus)
+                .pipe(
+                    distinctUntilChanged((a, b) => {
+                        return isEqual(a[0].configuration, b[0].configuration) && isEqual(a[1], b[1])
+                    })
+                )
+                .subscribe(async ([config, authStatus]) => {
+                    // Trigger enrollment for eligible users when using autocomplete mode
+                    if (
+                        authStatus.authenticated &&
+                        config.configuration.autocomplete &&
+                        !config.configuration.experimentalAutoEditEnabled
+                    ) {
+                        // Import dynamically to avoid circular dependencies
+                        const { autoeditsOnboarding } = await import('./autoedits/autoedit-onboarding')
+                        await autoeditsOnboarding.enrollUserToAutoEditBetaIfEligible()
+                    }
+                })
+        )
+    )
+
+    // Register unified provider that handles both autocomplete and auto edits
+    disposables.push(
         subscriptionDisposable(
             combineLatest(
                 resolvedConfig,
@@ -677,7 +724,9 @@ function registerAutoEdits({
                         return (
                             isEqual(a[0].configuration, b[0].configuration) &&
                             isEqual(a[1], b[1]) &&
-                            isEqual(a[2], b[2])
+                            isEqual(a[2], b[2]) &&
+                            isEqual(a[3], b[3]) &&
+                            isEqual(a[4], b[4])
                         )
                     }),
                     switchMap(
@@ -688,30 +737,74 @@ function registerAutoEdits({
                             autoeditHotStreakEnabled,
                             autoeditUseWebSocketEnabled,
                         ]) => {
-                            return createAutoEditsProvider({
-                                config,
-                                authStatus,
-                                chatClient,
-                                autoeditFeatureFlagEnabled,
-                                autoeditHotStreakEnabled,
-                                autoeditUseWebSocketEnabled,
-                                fixupController,
-                                statusBar,
-                                context,
-                            })
+                            if (!authStatus.pendingValidation && !statusBarLoader) {
+                                statusBarLoader = statusBar.addLoader({
+                                    title: 'Completion Provider is starting',
+                                })
+                            }
+
+                            // Decide which provider to use based on config
+                            if (config.configuration.experimentalAutoEditEnabled) {
+                                // Use auto edits provider
+                                const res = createAutoEditsProvider({
+                                    config,
+                                    authStatus,
+                                    chatClient,
+                                    autoeditFeatureFlagEnabled,
+                                    autoeditHotStreakEnabled,
+                                    autoeditUseWebSocketEnabled,
+                                    fixupController,
+                                    statusBar,
+                                    context,
+                                })
+                                if (res === NEVER && !authStatus.pendingValidation) {
+                                    finishLoading()
+                                }
+                                return res.pipe(
+                                    tap(() => finishLoading()),
+                                    catchError(error => {
+                                        autoeditsOutputChannelLogger.logError(
+                                            'registerAutoedits',
+                                            'Error',
+                                            error
+                                        )
+                                        return NEVER
+                                    })
+                                )
+                            }
+                            if (config.configuration.autocomplete) {
+                                // Use inline completion provider
+                                const res = createInlineCompletionItemProvider({
+                                    config,
+                                    authStatus,
+                                    platform,
+                                    statusBar,
+                                })
+                                if (res === NEVER && !authStatus.pendingValidation) {
+                                    finishLoading()
+                                }
+                                return res.pipe(
+                                    tap(() => finishLoading()),
+                                    catchError(error => {
+                                        finishLoading()
+                                        logError('registerAutocomplete', 'Error', error)
+                                        return NEVER
+                                    })
+                                )
+                            }
+                            finishLoading()
+                            return NEVER
                         }
-                    ),
-                    catchError(error => {
-                        autoeditsOutputChannelLogger.logError('registerAutoedits', 'Error', error)
-                        return NEVER
-                    })
+                    )
                 )
                 .subscribe({})
-        )
+        ),
+        autoeditDebugStore
     )
 }
 
 /**
+ * Legacy autocomplete registration for clients that don't support auto edits.
  * Registers autocomplete functionality.
  */
 function registerAutocomplete(
