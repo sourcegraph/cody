@@ -94,7 +94,7 @@ log:
         send: 0
         ssl: -1
         wait: 259
-    - _id: ec0a14a2ee1b4389f8f4ff4f1772841d
+    - _id: d9f2e1332df24cbbf0e12c31ce396e40
       _order: 0
       cache: {}
       request:
@@ -121,6 +121,12 @@ log:
             name: x-requested-with
             value: autoedit-inline-diffs v1
           - _fromType: array
+            name: x-sourcegraph-api-client-name
+            value: autoedit-inline-diffs
+          - _fromType: array
+            name: x-sourcegraph-api-client-version
+            value: v1
+          - _fromType: array
             name: x-timeout-ms
             value: "5000"
           - _fromType: array
@@ -128,7 +134,7 @@ log:
             value: "1383"
           - name: host
             value: demo.sourcegraph.com
-        headersSize: 463
+        headersSize: 569
         httpVersion: HTTP/1.1
         method: POST
         postData:
@@ -196,16 +202,18 @@ log:
             value: autoedit-inline-diffs
           - name: client-version
             value: v1
-        url: https://demo.sourcegraph.com/.api/completions/code?client-name=autoedit-inline-diffs&client-version=v1
+          - name: api-version
+            value: "8"
+        url: https://demo.sourcegraph.com/.api/completions/code?client-name=autoedit-inline-diffs&client-version=v1&api-version=8
       response:
-        bodySize: 565
+        bodySize: 510
         content:
           mimeType: text/event-stream
-          size: 565
+          size: 510
           text: >+
             event: completion
 
-            data: {"completion":"}\n\nexport function sumAge(humanA: Person, humanB: Person): number {\n    return humanA.age + humanB.age\n","stopReason":"stop"}
+            data: {"deltaText":"}\n\nexport function sumAge(humanA: Person, humanB: Person): number {\n    return humanA.age + humanB.age\n"}
 
 
             event: done
@@ -215,7 +223,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Fri, 21 Mar 2025 12:18:31 GMT
+            value: Wed, 02 Jul 2025 21:34:31 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -229,8 +237,8 @@ log:
           - name: cache-control
             value: no-cache
           - name: vary
-            value: Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
-              Cookie
+            value: Accept-Encoding, Authorization, Authorization, Cookie, Authorization,
+              X-Requested-With, Cookie
           - name: x-content-type-options
             value: nosniff
           - name: x-frame-options
@@ -239,13 +247,13 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1230
+        headersSize: 1245
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-03-21T12:18:31.292Z
-      time: 456
+      startedDateTime: 2025-07-02T21:34:31.002Z
+      time: 383
       timings:
         blocked: -1
         connect: -1
@@ -253,8 +261,8 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 456
-    - _id: e6fdcd264eb0f3e4fe400b0a7a2f1f03
+        wait: 383
+    - _id: b1e5e9282549f7befbb627547b486b29
       _order: 0
       cache: {}
       request:
@@ -281,6 +289,12 @@ log:
             name: x-requested-with
             value: autoedit-inline-diffs v1
           - _fromType: array
+            name: x-sourcegraph-api-client-name
+            value: autoedit-inline-diffs
+          - _fromType: array
+            name: x-sourcegraph-api-client-version
+            value: v1
+          - _fromType: array
             name: x-timeout-ms
             value: "5000"
           - _fromType: array
@@ -288,7 +302,7 @@ log:
             value: "1304"
           - name: host
             value: demo.sourcegraph.com
-        headersSize: 463
+        headersSize: 569
         httpVersion: HTTP/1.1
         method: POST
         postData:
@@ -355,16 +369,18 @@ log:
             value: autoedit-inline-diffs
           - name: client-version
             value: v1
-        url: https://demo.sourcegraph.com/.api/completions/code?client-name=autoedit-inline-diffs&client-version=v1
+          - name: api-version
+            value: "8"
+        url: https://demo.sourcegraph.com/.api/completions/code?client-name=autoedit-inline-diffs&client-version=v1&api-version=8
       response:
-        bodySize: 586
+        bodySize: 572
         content:
           mimeType: text/event-stream
-          size: 586
+          size: 572
           text: >+
             event: completion
 
-            data: {"completion":"export function sumAge(a: Person, b: Person): number {\n    return a.age + b.age\n}\n","stopReason":"stop"}
+            data: {"deltaText":"export function sumAge(a: Person, b: Person): number {\n    return a.age + b.age\n}\n"}
 
 
             event: done
@@ -374,7 +390,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Fri, 21 Mar 2025 12:18:32 GMT
+            value: Wed, 02 Jul 2025 21:34:31 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -388,8 +404,8 @@ log:
           - name: cache-control
             value: no-cache
           - name: vary
-            value: Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
-              Cookie
+            value: Accept-Encoding, Authorization, Authorization, Cookie, Authorization,
+              X-Requested-With, Cookie
           - name: x-content-type-options
             value: nosniff
           - name: x-frame-options
@@ -398,13 +414,13 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1230
+        headersSize: 1245
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-03-21T12:18:31.891Z
-      time: 442
+      startedDateTime: 2025-07-02T21:34:31.393Z
+      time: 551
       timings:
         blocked: -1
         connect: -1
@@ -412,7 +428,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 442
+        wait: 551
     - _id: 404a28d2461ea66da470804476c21f26
       _order: 0
       cache: {}

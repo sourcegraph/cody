@@ -94,35 +94,180 @@ log:
         send: 0
         ssl: -1
         wait: 228
-    - _id: 54c13387d9af8adabcdeadd76c3d8376
+    - _id: 3161d1dc3e96124f332bbcb3d4f37bd4
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 419
+        cookies: []
+        headers:
+          - _fromType: array
+            name: accept
+            value: application/json
+          - _fromType: array
+            name: accept-encoding
+            value: gzip;q=0
+          - _fromType: array
+            name: authorization
+            value: token
+              REDACTED_fc324d3667e841181b0779375f26dedc911d26b303d23b29b1a2d7ee63dc77eb
+          - _fromType: array
+            name: content-type
+            value: application/json; charset=utf-8
+          - _fromType: array
+            name: user-agent
+            value: autocomplete/v1 (Node.js v20.4.0)
+          - _fromType: array
+            name: x-requested-with
+            value: autocomplete v1
+          - _fromType: array
+            name: x-sourcegraph-api-client-name
+            value: autocomplete
+          - _fromType: array
+            name: x-sourcegraph-api-client-version
+            value: v1
+          - _fromType: array
+            name: x-timeout-ms
+            value: "7000"
+          - _fromType: array
+            name: content-length
+            value: "419"
+          - name: host
+            value: sourcegraph.com
+        headersSize: 533
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json; charset=utf-8
+          params: []
+          textJSON:
+            maxTokensToSample: 256
+            messages:
+              - speaker: human
+                text: >-
+                  
+
+                  #src/sum.ts
+
+                  <｜fim▁begin｜>export function sum(a: number, b: number): number {
+                      <｜fim▁hole｜>
+                  }
+
+                  <｜fim▁end｜>
+            model: fireworks/deepseek-coder-v2-lite-base
+            stopSequences:
+              - "\n\n"
+              - "\n\r\n"
+              - <｜fim▁begin｜>
+              - <｜fim▁hole｜>
+              - <｜fim▁end｜>, <|eos_token|>
+            stream: true
+            temperature: 0.2
+            timeoutMs: 7000
+            topK: 0
+        queryString:
+          - name: client-name
+            value: autocomplete
+          - name: client-version
+            value: v1
+          - name: api-version
+            value: "8"
+        url: https://sourcegraph.com/.api/completions/code?client-name=autocomplete&client-version=v1&api-version=8
+      response:
+        bodySize: 340
+        content:
+          mimeType: text/event-stream
+          size: 340
+          text: |+
+            event: completion
+            data: {"deltaText":"return a + b;"}
+
+            event: done
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Wed, 02 Jul 2025 21:34:29 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: close
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1377
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2025-07-02T21:34:28.720Z
+      time: 910
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 910
+    - _id: 9b76d28a9c9e2fbe7d197fc4d7d7de4a
       _order: 0
       cache: {}
       request:
         bodySize: 1317
         cookies: []
         headers:
-          - name: accept
-            value: "*/*"
-          - name: accept-encoding
+          - _fromType: array
+            name: accept
+            value: application/json
+          - _fromType: array
+            name: accept-encoding
             value: gzip;q=0
-          - name: authorization
+          - _fromType: array
+            name: authorization
             value: token
               REDACTED_fc324d3667e841181b0779375f26dedc911d26b303d23b29b1a2d7ee63dc77eb
-          - name: connection
-            value: close
-          - name: content-length
-            value: "1317"
-          - name: content-type
+          - _fromType: array
+            name: content-type
             value: application/json; charset=utf-8
-          - name: user-agent
-            value: autocomplete/v1 (Node.js v20.10.0)
-          - name: x-requested-with
+          - _fromType: array
+            name: user-agent
+            value: autocomplete/v1 (Node.js v20.4.0)
+          - _fromType: array
+            name: x-requested-with
             value: autocomplete v1
-          - name: x-timeout-ms
+          - _fromType: array
+            name: x-sourcegraph-api-client-name
+            value: autocomplete
+          - _fromType: array
+            name: x-sourcegraph-api-client-version
+            value: v1
+          - _fromType: array
+            name: x-timeout-ms
             value: "7000"
+          - _fromType: array
+            name: content-length
+            value: "1317"
           - name: host
             value: sourcegraph.com
-        headersSize: 444
+        headersSize: 534
         httpVersion: HTTP/1.1
         method: POST
         postData:
@@ -199,16 +344,18 @@ log:
             value: autocomplete
           - name: client-version
             value: v1
-        url: https://sourcegraph.com/.api/completions/code?client-name=autocomplete&client-version=v1
+          - name: api-version
+            value: "8"
+        url: https://sourcegraph.com/.api/completions/code?client-name=autocomplete&client-version=v1&api-version=8
       response:
-        bodySize: 4180
+        bodySize: 1117
         content:
           mimeType: text/event-stream
-          size: 4180
+          size: 1117
           text: >+
             event: completion
 
-            data: {"completion":"for (let i = 0; i < arr.length; i++) {\n        for (let j = 0; j < arr.length - i - 1; j++) {\n            if (arr[j] > arr[j + 1]) {\n                let temp = arr[j]\n                arr[j] = arr[j + 1]\n                arr[j + 1] = temp\n            }\n        }\n    }\n    return arr","stopReason":"stop"}
+            data: {"deltaText":"let swapped: boolean\n    do {\n        swapped = false\n        for (let i = 0; i < arr.length - 1; i++) {\n            if (arr[i] > arr[i + 1]) {\n                const temp = arr[i]\n                arr[i] = arr[i + 1]\n                arr[i + 1] = temp\n                swapped = true\n            }\n        }\n    } while (swapped)\n    return arr\n}"}
 
 
             event: done
@@ -218,27 +365,21 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 09 Dec 2024 14:47:54 GMT
+            value: Wed, 02 Jul 2025 21:34:30 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
             value: chunked
           - name: connection
             value: close
-          - name: retry-after
-            value: "588"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
             value: ""
           - name: cache-control
             value: no-cache
-          - name: observed-calculated-ip-from-forwarded-for
-            value: 80.82.18.146
-          - name: observed-x-forwarded-for
-            value: 80.82.18.146
           - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+            value: Cookie,Accept-Encoding,Authorization,Authorization,Cookie, Authorization,
               X-Requested-With,Cookie
           - name: x-content-type-options
             value: nosniff
@@ -248,13 +389,13 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1498
+        headersSize: 1377
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-12-09T14:47:52.771Z
-      time: 1748
+      startedDateTime: 2025-07-02T21:34:29.647Z
+      time: 1046
       timings:
         blocked: -1
         connect: -1
@@ -262,134 +403,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 1748
-    - _id: 400657813b3b22c276b690ec67125fb6
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 419
-        cookies: []
-        headers:
-          - _fromType: array
-            name: accept-encoding
-            value: gzip;q=0
-          - _fromType: array
-            name: authorization
-            value: token
-              REDACTED_fc324d3667e841181b0779375f26dedc911d26b303d23b29b1a2d7ee63dc77eb
-          - _fromType: array
-            name: content-type
-            value: application/json; charset=utf-8
-          - _fromType: array
-            name: user-agent
-            value: autocomplete/v1 (Node.js v20.4.0)
-          - _fromType: array
-            name: x-requested-with
-            value: autocomplete v1
-          - _fromType: array
-            name: x-timeout-ms
-            value: "7000"
-          - _fromType: array
-            name: accept
-            value: "*/*"
-          - _fromType: array
-            name: content-length
-            value: "419"
-          - name: host
-            value: sourcegraph.com
-        headersSize: 423
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json; charset=utf-8
-          params: []
-          textJSON:
-            maxTokensToSample: 256
-            messages:
-              - speaker: human
-                text: >-
-                  
-
-                  #src/sum.ts
-
-                  <｜fim▁begin｜>export function sum(a: number, b: number): number {
-                      <｜fim▁hole｜>
-                  }
-
-                  <｜fim▁end｜>
-            model: fireworks/deepseek-coder-v2-lite-base
-            stopSequences:
-              - "\n\n"
-              - "\n\r\n"
-              - <｜fim▁begin｜>
-              - <｜fim▁hole｜>
-              - <｜fim▁end｜>, <|eos_token|>
-            stream: true
-            temperature: 0.2
-            timeoutMs: 7000
-            topK: 0
-        queryString:
-          - name: client-name
-            value: autocomplete
-          - name: client-version
-            value: v1
-        url: https://sourcegraph.com/.api/completions/code?client-name=autocomplete&client-version=v1
-      response:
-        bodySize: 258
-        content:
-          mimeType: text/event-stream
-          size: 258
-          text: |+
-            event: completion
-            data: {"completion":"return a + b;","stopReason":"stop"}
-
-            event: done
-            data: {}
-
-        cookies: []
-        headers:
-          - name: date
-            value: Tue, 11 Feb 2025 18:54:43 GMT
-          - name: content-type
-            value: text/event-stream
-          - name: transfer-encoding
-            value: chunked
-          - name: connection
-            value: close
-          - name: retry-after
-            value: "67"
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache
-          - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
-              X-Requested-With,Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1400
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2025-02-11T18:54:42.570Z
-      time: 683
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 683
+        wait: 1046
     - _id: f1b1cde4cd57488b7f0137954f0302f5
       _order: 0
       cache: {}
