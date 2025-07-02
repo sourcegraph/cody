@@ -64,6 +64,63 @@ describe('filterLocallyModifiedFilesOutOfRemoteContext', () => {
                     },
                 ],
             },
+            {
+                // Test case for when localFilesByRoot has fewer elements than roots
+                // This simulates the scenario when gitLocallyModifiedFiles fails and prevents
+                // the "TypeError: localFilesByRoot[i] is not iterable" error
+                roots: [
+                    {
+                        local: vscode.Uri.file('/tmp/my/repo1'),
+                        remoteRepos: [
+                            {
+                                name: 'github.com/my/repo1',
+                                id: '==myrepoid1',
+                            },
+                        ],
+                    },
+                    {
+                        local: vscode.Uri.file('/tmp/my/repo2'),
+                        remoteRepos: [
+                            {
+                                name: 'github.com/my/repo2',
+                                id: '==myrepoid2',
+                            },
+                        ],
+                    },
+                ],
+                // Empty array simulates the case when gitLocallyModifiedFiles fails
+                // and changedFilesByRoot remains empty
+                localModifiedFilesByRoot: [],
+                remoteContextItems: [
+                    {
+                        type: 'file',
+                        title: 'README.md',
+                        repoName: 'github.com/my/repo1',
+                        uri: vscode.Uri.parse('https://example.com/1'),
+                    },
+                    {
+                        type: 'file',
+                        title: 'main.go',
+                        repoName: 'github.com/my/repo2',
+                        uri: vscode.Uri.parse('https://example.com/2'),
+                    },
+                ],
+                // Should return all items since no local files are marked as modified
+                expectedFilteredRemoteContextItems: [
+                    {
+                        type: 'file',
+                        title: 'README.md',
+                        repoName: 'github.com/my/repo1',
+                        uri: vscode.Uri.parse('https://example.com/1'),
+                    },
+                    {
+                        type: 'file',
+                        title: 'main.go',
+                        repoName: 'github.com/my/repo2',
+                        uri: vscode.Uri.parse('https://example.com/2'),
+                    },
+                ],
+            },
         ]
 
         for (const testCase of testCases) {

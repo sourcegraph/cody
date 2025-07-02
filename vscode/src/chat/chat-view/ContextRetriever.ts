@@ -254,6 +254,8 @@ export class ContextRetriever implements vscode.Disposable {
                 'Failed to get locally modified files, falling back to indexed context only',
                 error
             )
+            // Ensure changedFilesByRoot has the same length as localRoots with empty arrays
+            changedFilesByRoot = localRoots.map(() => [])
         }
         const [liveContext, indexedContext] = await Promise.all([
             this.retrieveLiveContext(query, rewrittenQuery.rewritten, changedFiles, signal),
@@ -476,7 +478,8 @@ export function filterLocallyModifiedFilesOutOfRemoteContext(
         }
 
         const relLocalFiles: Set<string> = new Set()
-        for (const localFile of localFilesByRoot[i]) {
+        const localFiles = localFilesByRoot[i] || []
+        for (const localFile of localFiles) {
             relLocalFiles.add(path.relative(localRoot.fsPath, localFile))
         }
         for (const remoteRepo of remoteRepos) {
