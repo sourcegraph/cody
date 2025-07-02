@@ -39,9 +39,9 @@ export class AutoEditBetaOnboarding implements vscode.Disposable {
         this.markUserAsAutoEditBetaEnrolled()
         this.writeAutoeditNotificationEvent()
 
-        const clientsSuffix = isRunningInsideAgent() ? ' Restart your IDE to apply the changes.' : ''
+        const clientsSuffix = isRunningInsideAgent() ? 'Restart your IDE to apply the changes. ' : ''
         const selection = await vscode.window.showInformationMessage(
-            `You have been enrolled to Cody Auto-edit! Cody will intelligently suggest next edits as you navigate the codebase.${clientsSuffix}`,
+            `You have been enrolled to Cody Auto-edit! ${clientsSuffix}Cody will intelligently suggest next edits as you navigate the codebase.`,
             switchToAutocompleteText
         )
 
