@@ -178,6 +178,8 @@ interface CodyAgentServer {
   fun autocomplete_completionAccepted(params: CompletionItemParams)
   @JsonNotification("progress/cancel")
   fun progress_cancel(params: Progress_CancelParams)
+  @JsonNotification("testing/runInAgent")
+  fun testing_runInAgent(params: String)
   @JsonNotification("webview/didDisposeNative")
   fun webview_didDisposeNative(params: Webview_DidDisposeNativeParams)
   @JsonNotification("secrets/didChange")
