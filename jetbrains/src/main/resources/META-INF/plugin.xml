@@ -200,6 +200,13 @@
                     <override-text place="GoToAction" text="Cody: Export All Chats As JSON"/>
                 </action>
 
+                <action id="cody.resetAutoeditBetaEnrollment"
+                        class="com.sourcegraph.cody.ResetAutoeditBetaEnrollment"
+                        text="Reset Autoedit Beta Enrollment"
+                        description="Reset Autoedit Beta Enrollment">
+                    <override-text place="GoToAction" text="Cody: Reset Autoedit Beta Enrollment"/>
+                </action>
+
                 <action id="cody.openChat"
                         class="com.sourcegraph.cody.chat.OpenChatAction"
                         text="Open Chat"
