@@ -29,10 +29,8 @@ describe('Configuration', () => {
     })
 
     it('extensionConfiguration/didUpdate', async () => {
-        // Use the testing notification to trigger configuration update in the agent process
         client.notify('testing/runInAgent', 'configuration-test-configuration-update')
 
-        // Ideally that should be active waiting so we don't defensively spent time in test on sleeps. You can check if client.extensionConfigurationUpdates.length > 0 in the loop few times, each time sleeping if it is not ready yet. If it still wont be ready after that expect(client.extensionConfigurationUpdates.length).toBeGreaterThan(0) will fail anyway.
         for (let i = 0; i < 10; i++) {
             if (client.extensionConfigurationUpdates.length > 0) {
                 break
