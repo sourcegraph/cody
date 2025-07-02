@@ -22,7 +22,7 @@ class CodySelectionListener(val project: Project) : SelectionListener {
       return
     }
     val editor = event.editor
-    ProtocolTextDocumentExt.fromEditorWithRangeSelection(editor, event)?.let { textDocument ->
+    ProtocolTextDocumentExt.fromEditor(editor, updateContent = false)?.let { textDocument ->
       EditorChangesBus.documentChanged(project, textDocument)
       CodyAgentService.withAgent(project) { agent ->
         agent.server.textDocument_didChange(textDocument)

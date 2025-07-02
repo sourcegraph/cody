@@ -42,7 +42,7 @@ class ProtocolTextDocumentTest : BasePlatformTestCase() {
   }
 
   fun test_emptySelection() {
-    val protocolTextFile = ProtocolTextDocumentExt.fromVirtualEditorFile(myFixture.editor, file)
+    val protocolTextFile = ProtocolTextDocumentExt.fromEditor(myFixture.editor)
     assert(protocolTextFile!!.uri.startsWith("file://"))
     assert(protocolTextFile.uri.contains("/cody-test"))
     assertEquals(defaultContent, protocolTextFile.content)
@@ -88,7 +88,7 @@ class ProtocolTextDocumentTest : BasePlatformTestCase() {
     myFixture.openFileInEditor(emptyFile)
     assertEquals(
         Range(Position(0, 0), Position(0, 0)),
-        ProtocolTextDocumentExt.fromVirtualEditorFile(myFixture.editor, emptyFile)?.selection)
+        ProtocolTextDocumentExt.fromEditor(myFixture.editor)?.selection)
   }
 
   fun test_selectionListener() {
