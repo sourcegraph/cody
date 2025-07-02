@@ -20,12 +20,14 @@ import {
     contextFiltersProvider,
     createSSEIterator,
     currentResolvedConfig,
+    currentSiteVersion,
     featureFlagProvider,
     fetch,
     getActiveTraceAndSpanId,
     getClientInfoParams,
     isAbortError,
     isCustomAuthChallengeResponse,
+    isError,
     isNodeResponse,
     isRateLimitError,
     logResponseHeadersToSpan,
@@ -54,6 +56,13 @@ class DefaultCodeCompletionsClient implements CodeCompletionsClient {
         const { auth, configuration } = await currentResolvedConfig()
 
         const query = new URLSearchParams(getClientInfoParams())
+        const siteVersion = await currentSiteVersion()
+        if (isError(siteVersion)) {
+            throw siteVersion
+        }
+
+        query.append('api-version', String(siteVersion.codyAPIVersion))
+
         const url = new URL(`/.api/completions/code?${query.toString()}`, auth.serverEndpoint)
         const log = autocompleteLifecycleOutputChannelLogger?.startCompletion(params, url.href)
         const { signal } = abortController
