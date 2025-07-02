@@ -9,6 +9,7 @@ import {
     telemetryRecorder,
 } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
+import { isRunningInsideAgent } from '../jsonrpc/isRunningInsideAgent'
 import { localStorage } from '../services/LocalStorageProvider'
 import { isUserEligibleForAutoeditsFeature } from './create-autoedits-provider'
 
@@ -38,8 +39,9 @@ export class AutoEditBetaOnboarding implements vscode.Disposable {
         this.markUserAsAutoEditBetaEnrolled()
         this.writeAutoeditNotificationEvent()
 
+        const clientsSuffix = isRunningInsideAgent() ? ' Restart your IDE to apply the changes.' : ''
         const selection = await vscode.window.showInformationMessage(
-            'You have been enrolled to Cody Auto-edit! Cody will intelligently suggest next edits as you navigate the codebase.',
+            `You have been enrolled to Cody Auto-edit! Cody will intelligently suggest next edits as you navigate the codebase.${clientsSuffix}`,
             switchToAutocompleteText
         )
 
