@@ -211,7 +211,9 @@ class DefaultCodeCompletionsClient implements CodeCompletionsClient {
 
                             if (event === 'completion') {
                                 const parsed = JSON.parse(data) as CompletionResponse
-                                if ('deltaText' in parsed) {
+                                // delta_text is supported for V2 and above
+                                // Doc: https://sourcegraph.sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/internal/openapi/goapi/model_completion_response.go?L6-16
+                                if (siteVersion.codyAPIVersion >= 2) {
                                     completionText += parsed.deltaText
                                 } else {
                                     completionText = parsed.completion || ''
