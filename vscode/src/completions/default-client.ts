@@ -190,6 +190,7 @@ class DefaultCodeCompletionsClient implements CodeCompletionsClient {
                         })
                         let chunkIndex = 0
 
+                        let completionText = ''
                         for await (const { event, data } of iterator) {
                             if (event === 'error') {
                                 throw new TracedError(data, traceId)
@@ -210,8 +211,11 @@ class DefaultCodeCompletionsClient implements CodeCompletionsClient {
 
                             if (event === 'completion') {
                                 const parsed = JSON.parse(data) as CompletionResponse
+                                if ('deltaText' in parsed) {
+                                    completionText+=parsed.deltaText
+                                }
                                 result.completionResponse = {
-                                    completion: parsed.completion || '',
+                                    completion: completionText,
                                     stopReason: parsed.stopReason || CompletionStopReason.StreamingChunk,
                                 }
 

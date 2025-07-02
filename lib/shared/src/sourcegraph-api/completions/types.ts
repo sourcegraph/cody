@@ -112,6 +112,7 @@ export interface CompletionResponse {
     completion: string
     thinking?: string
     stopReason?: string
+    deltaText?: string
     tools?: ToolCallContentPart[]
 }
 
