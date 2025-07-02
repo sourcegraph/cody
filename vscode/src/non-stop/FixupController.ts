@@ -15,7 +15,7 @@ import {
 
 import type { SmartApplyResult } from '../chat/protocol'
 import { PersistenceTracker } from '../common/persistence-tracker'
-import { lines } from '../completions/text-processing'
+import { getEditorTabSize, lines } from '../completions/text-processing'
 import { executeEdit } from '../edit/execute'
 import type { EditInput } from '../edit/input/get-input'
 import {
@@ -961,7 +961,7 @@ export class FixupController
 
         // Special case for Python documentation
         if (targetIndentSize === 0 && isPythonFile && isDocIntent) {
-            targetIndentSize = 4
+            targetIndentSize = getEditorTabSize()
         }
 
         // Calculate indentation adjustments
