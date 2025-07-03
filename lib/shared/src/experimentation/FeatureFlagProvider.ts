@@ -162,6 +162,11 @@ export enum FeatureFlag {
      * When set to true, context will not be added to chat automatically.
      */
     AgenticContextDisabled = 'agentic-context-disabled',
+
+    /**
+     * Disable network request to servers, in case of bad client
+     */
+    DisableNetworkRequests = 'disable-network-requests',
 }
 
 const ONE_HOUR = 60 * 60 * 1000
