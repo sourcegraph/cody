@@ -227,11 +227,11 @@ log:
         send: 0
         ssl: -1
         wait: 910
-    - _id: 9b76d28a9c9e2fbe7d197fc4d7d7de4a
+    - _id: 7e9aa80bb90e17d04253b42fb6e4f835
       _order: 0
       cache: {}
       request:
-        bodySize: 1317
+        bodySize: 421
         cookies: []
         headers:
           - _fromType: array
@@ -249,7 +249,7 @@ log:
             value: application/json; charset=utf-8
           - _fromType: array
             name: user-agent
-            value: autocomplete/v1 (Node.js v20.4.0)
+            value: autocomplete/v1 (Node.js v18.17.1)
           - _fromType: array
             name: x-requested-with
             value: autocomplete v1
@@ -264,7 +264,7 @@ log:
             value: "7000"
           - _fromType: array
             name: content-length
-            value: "1317"
+            value: "421"
           - name: host
             value: sourcegraph.com
         headersSize: 534
@@ -277,56 +277,13 @@ log:
             maxTokensToSample: 256
             messages:
               - speaker: human
-                text: >-
-                  #src/sum.ts
-
-                  export function sum(a: number, b: number): number {
-                      
-                  }
-
-
-
-                  #src/mergeSort.ts
-
-                  function mergeSort(arr: number[]): number[] {
-                      if (arr.length <= 1) {
-                          return arr
-                      }
-
-                      const mid = Math.floor(arr.length / 2)
-                      const left = arr.slice(0, mid)
-                      const right = arr.slice(mid)
-
-                      return merge(mergeSort(left), mergeSort(right))
-                  }
-
-
-                  function merge(left: number[], right: number[]): number[] {
-                      let result: number[] = []
-                      let leftIndex = 0
-                      let rightIndex = 0
-
-                      while (leftIndex < left.length && rightIndex < right.length) {
-                          if (left[leftIndex] < right[rightIndex]) {
-                              result.push(left[leftIndex])
-                              leftIndex++
-                          } else {
-                              result.push(right[rightIndex])
-                              rightIndex++
-                          }
-                      }
-
-                      return result.concat(left.slice(leftIndex)).concat(right.slice(rightIndex))
-                  }
-
-
+                text: |-
+                  
 
                   #src/bubbleSort.ts
-
                   <｜fim▁begin｜>function bubbleSort(arr: number[]): number[] {
                       <｜fim▁hole｜>
                   }
-
                   <｜fim▁end｜>
             model: fireworks/deepseek-coder-v2-lite-base
             stopSequences:
@@ -348,24 +305,21 @@ log:
             value: "8"
         url: https://sourcegraph.com/.api/completions/code?client-name=autocomplete&client-version=v1&api-version=8
       response:
-        bodySize: 1117
+        bodySize: 338
         content:
           mimeType: text/event-stream
-          size: 1117
-          text: >+
+          size: 338
+          text: |+
             event: completion
-
-            data: {"deltaText":"let swapped: boolean\n    do {\n        swapped = false\n        for (let i = 0; i < arr.length - 1; i++) {\n            if (arr[i] > arr[i + 1]) {\n                const temp = arr[i]\n                arr[i] = arr[i + 1]\n                arr[i + 1] = temp\n                swapped = true\n            }\n        }\n    } while (swapped)\n    return arr\n}"}
-
+            data: {"deltaText":"return arr;"}
 
             event: done
-
             data: {}
 
         cookies: []
         headers:
           - name: date
-            value: Wed, 02 Jul 2025 21:34:30 GMT
+            value: Thu, 03 Jul 2025 14:21:02 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -394,8 +348,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-07-02T21:34:29.647Z
-      time: 1046
+      startedDateTime: 2025-07-03T14:21:00.619Z
+      time: 2043
       timings:
         blocked: -1
         connect: -1
@@ -403,7 +357,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 1046
+        wait: 2043
     - _id: f1b1cde4cd57488b7f0137954f0302f5
       _order: 0
       cache: {}
