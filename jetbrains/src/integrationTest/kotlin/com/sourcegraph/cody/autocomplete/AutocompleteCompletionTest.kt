@@ -65,7 +65,7 @@ class AutocompleteCompletionTest : BaseAutocompleteTest() {
     fixture.triggerAction("cody.acceptAutocompleteAction")
     assertThat(
         fixture.editor.document.text,
-        containsString("\n    // todo: calculate the result vector\n"))
+        containsString("\n    // todo: calculate the vector sum of vectorA and vectorB\n"))
   }
 
   @Test
@@ -77,7 +77,7 @@ class AutocompleteCompletionTest : BaseAutocompleteTest() {
     assertTrue(hasInlayAt(VisualPosition(8, 4 + 13))) // +13 due to the common prefix
     fixture.triggerAction("cody.acceptAutocompleteAction")
     assertThat(
-        fixture.editor.document.text, containsString("\n    CommonPrefix.sayHello(\"World\")\n"))
+        fixture.editor.document.text, containsString("\n    CommonPrefix.sayHello(\"world\")\n"))
   }
 
   private fun hasInlayAt(position: VisualPosition) = runInEdtAndGet {

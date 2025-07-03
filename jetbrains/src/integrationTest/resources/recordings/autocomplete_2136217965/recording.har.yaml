@@ -37,7 +37,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 03 Jul 2025 06:43:32 GMT
+            value: Thu, 03 Jul 2025 12:31:12 GMT
           - name: content-type
             value: application/json
           - name: content-length
@@ -61,8 +61,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-07-03T06:43:31.831Z
-      time: 319
+      startedDateTime: 2025-07-03T12:31:12.311Z
+      time: 300
       timings:
         blocked: -1
         connect: -1
@@ -70,7 +70,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 319
+        wait: 300
     - _id: 6e977d3842ddb417bf941a0f568426d9
       _order: 0
       cache: {}
@@ -106,7 +106,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 03 Jul 2025 06:43:32 GMT
+            value: Thu, 03 Jul 2025 12:31:12 GMT
           - name: content-type
             value: application/json
           - name: content-length
@@ -130,8 +130,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-07-03T06:43:31.846Z
-      time: 313
+      startedDateTime: 2025-07-03T12:31:12.336Z
+      time: 346
       timings:
         blocked: -1
         connect: -1
@@ -139,7 +139,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 313
+        wait: 346
     - _id: 897d3731ab8e15a1549f29445eafd1e1
       _order: 0
       cache: {}
@@ -192,7 +192,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 03 Jul 2025 06:43:26 GMT
+            value: Thu, 03 Jul 2025 12:31:07 GMT
           - name: content-type
             value: text/plain; charset=utf-8
           - name: transfer-encoding
@@ -223,8 +223,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-07-03T06:43:26.490Z
-      time: 336
+      startedDateTime: 2025-07-03T12:31:06.993Z
+      time: 311
       timings:
         blocked: -1
         connect: -1
@@ -232,7 +232,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 336
+        wait: 311
     - _id: 561f36f42a3db5b9ba0a8a05fe043393
       _order: 0
       cache: {}
@@ -312,10 +312,10 @@ log:
             value: 9.9-localbuild
         url: https://sourcegraph.com/.api/completions/code?client-name=jetbrains&client-version=9.9-localbuild
       response:
-        bodySize: 248
+        bodySize: 196
         content:
           mimeType: text/event-stream
-          size: 248
+          size: 196
           text: |+
             event: completion
             data: {"completion":"x in list) {","stopReason":"stop"}
@@ -326,7 +326,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 03 Jul 2025 06:43:29 GMT
+            value: Thu, 03 Jul 2025 12:31:10 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -355,8 +355,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-07-03T06:43:29.111Z
-      time: 708
+      startedDateTime: 2025-07-03T12:31:09.599Z
+      time: 732
       timings:
         blocked: -1
         connect: -1
@@ -364,7 +364,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 708
+        wait: 732
     - _id: ac0833d6081d2aba70061cf785f5698c
       _order: 0
       cache: {}
@@ -452,21 +452,24 @@ log:
             value: 9.9-localbuild
         url: https://sourcegraph.com/.api/completions/code?client-name=jetbrains&client-version=9.9-localbuild
       response:
-        bodySize: 208
+        bodySize: 430
         content:
           mimeType: text/event-stream
-          size: 208
-          text: |+
+          size: 430
+          text: >+
             event: completion
-            data: {"completion":"the result vector","stopReason":"stop"}
+
+            data: {"completion":"the result vector\n    // todo: print the result vector","stopReason":"stop"}
+
 
             event: done
+
             data: {}
 
         cookies: []
         headers:
           - name: date
-            value: Thu, 03 Jul 2025 06:43:30 GMT
+            value: Thu, 03 Jul 2025 12:31:11 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -495,8 +498,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-07-03T06:43:30.129Z
-      time: 733
+      startedDateTime: 2025-07-03T12:31:10.646Z
+      time: 851
       timings:
         blocked: -1
         connect: -1
@@ -504,12 +507,12 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 733
-    - _id: eb1e31d164ca7b5aa279737bd54aa6ca
+        wait: 851
+    - _id: 9ef87cd0de80e25410b2a0fd667b24b7
       _order: 0
       cache: {}
       request:
-        bodySize: 960
+        bodySize: 980
         cookies: []
         headers:
           - _fromType: array
@@ -542,7 +545,7 @@ log:
             value: "7000"
           - _fromType: array
             name: content-length
-            value: "960"
+            value: "980"
           - name: host
             value: sourcegraph.com
         headersSize: 556
@@ -569,7 +572,7 @@ log:
                   fun main() {
                       val vectorA = listOf(0, 3, 1)
                       val vectorB = listOf(1, 2, 0)
-                      // todo: calculate the result vector
+                      // todo: calculate the vector sum of vectorA and vectorB
                       val resultVector: List<Int>;
                       println(resultVector)
                   }
@@ -605,14 +608,14 @@ log:
             value: 9.9-localbuild
         url: https://sourcegraph.com/.api/completions/code?client-name=jetbrains&client-version=9.9-localbuild
       response:
-        bodySize: 377
+        bodySize: 313
         content:
           mimeType: text/event-stream
-          size: 377
+          size: 313
           text: >+
             event: completion
 
-            data: {"completion":"CommonPrefix.sayHello(\"World\")","stopReason":"stop"}
+            data: {"completion":"CommonPrefix.sayHello(\"world\")","stopReason":"stop"}
 
 
             event: done
@@ -622,7 +625,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 03 Jul 2025 06:43:32 GMT
+            value: Thu, 03 Jul 2025 12:31:12 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -651,8 +654,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-07-03T06:43:31.414Z
-      time: 776
+      startedDateTime: 2025-07-03T12:31:11.912Z
+      time: 752
       timings:
         blocked: -1
         connect: -1
@@ -660,7 +663,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 776
+        wait: 752
     - _id: f1b1cde4cd57488b7f0137954f0302f5
       _order: 0
       cache: {}
@@ -724,7 +727,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 03 Jul 2025 06:43:28 GMT
+            value: Thu, 03 Jul 2025 12:31:09 GMT
           - name: content-type
             value: application/json
           - name: content-length
@@ -753,8 +756,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-07-03T06:43:28.315Z
-      time: 336
+      startedDateTime: 2025-07-03T12:31:08.845Z
+      time: 348
       timings:
         blocked: -1
         connect: -1
@@ -762,7 +765,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 336
+        wait: 348
     - _id: a376faab1c8a1993bb48c745757f0a4a
       _order: 0
       cache: {}
@@ -827,19 +830,29 @@ log:
             value: null
         url: https://sourcegraph.com/.api/graphql?CurrentSiteCodyLlmConfiguration
       response:
-        bodySize: 263
+        bodySize: 248
         content:
           encoding: base64
           mimeType: application/json
-          size: 263
-          text: "[\"H4sIAAAAAAAAAwAAAP//hM5NDoIwEAXgu8yaaoMQDVu2svMCYztAA3ZIf4yG9O4GNhI1c\
-            fWSyZsvbwaNAaGawZtASyrWz/O5qdm2posOg2G73nsMDWsaoQLP0SnqHE79Xo0YNYnD\
-            rhSeraUA2bvb4OPCA1kPVVFKKTNo0Yf6DyV6NEOEj/LGOq6U4ts00rLvF6aJJk80CMW\
-            anLjnYjSBxBU9wdfvxs5lcUoppRcAAAD//w==\",\"AwAw4f3QGgEAAA==\"]"
+          size: 248
+          text: "[\"H4sIAAAAAAAAA4TOTQ6CMBAF4LvMmmqDEA1btrLzAmM7QAN2SH+MhvTuBjYSNXH1ksmbL\
+            28GjQGhmsGbQEsq1s/zuanZtqaLDoNhu957DA1rGqECz9Ep6hxO/V6NGDWJw64Unq2l\
+            ANm72+DjwgNZD1VRSikzaNGH+g8lejRDhI/yxjqulOLbNNKy7xemiSZPNAjFmpy452I\
+            0gcQVPcHX78bOZXFKKaUXAAAA//8DADDh/dAaAQAA\"]"
+          textDecoded:
+            data:
+              site:
+                codyLLMConfiguration:
+                  chatModel: sourcegraph/claude-3.5-sonnet
+                  chatModelMaxTokens: 45000
+                  completionModel: sourcegraph/deepseek-coder-v2-lite-base
+                  completionModelMaxTokens: 2048
+                  fastChatModel: sourcegraph/claude-3-haiku
+                  fastChatModelMaxTokens: 7000
         cookies: []
         headers:
           - name: date
-            value: Thu, 03 Jul 2025 06:43:28 GMT
+            value: Thu, 03 Jul 2025 12:31:08 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -870,8 +883,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-07-03T06:43:27.532Z
-      time: 400
+      startedDateTime: 2025-07-03T12:31:08.026Z
+      time: 441
       timings:
         blocked: -1
         connect: -1
@@ -879,7 +892,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 400
+        wait: 441
     - _id: 0484c4d780805faf3dd3ddabae814640
       _order: 0
       cache: {}
@@ -954,7 +967,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 03 Jul 2025 06:43:28 GMT
+            value: Thu, 03 Jul 2025 12:31:08 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -985,8 +998,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-07-03T06:43:27.578Z
-      time: 359
+      startedDateTime: 2025-07-03T12:31:08.071Z
+      time: 396
       timings:
         blocked: -1
         connect: -1
@@ -994,7 +1007,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 359
+        wait: 396
     - _id: e141c56e63809042300db9bf8551d492
       _order: 0
       cache: {}
@@ -1069,7 +1082,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 03 Jul 2025 06:43:28 GMT
+            value: Thu, 03 Jul 2025 12:31:08 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -1100,8 +1113,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-07-03T06:43:27.557Z
-      time: 406
+      startedDateTime: 2025-07-03T12:31:08.050Z
+      time: 386
       timings:
         blocked: -1
         connect: -1
@@ -1109,7 +1122,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 406
+        wait: 386
     - _id: 5b9030a4e18d1e000c71d6000a7cef6f
       _order: 0
       cache: {}
@@ -1206,7 +1219,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 03 Jul 2025 06:43:26 GMT
+            value: Thu, 03 Jul 2025 12:31:07 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -1237,8 +1250,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-07-03T06:43:26.123Z
-      time: 357
+      startedDateTime: 2025-07-03T12:31:06.632Z
+      time: 356
       timings:
         blocked: -1
         connect: -1
@@ -1246,7 +1259,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 357
+        wait: 356
     - _id: aef0c9fe7483280d9c05ac8e97e37571
       _order: 0
       cache: {}
@@ -1331,7 +1344,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 03 Jul 2025 06:43:28 GMT
+            value: Thu, 03 Jul 2025 12:31:08 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -1362,8 +1375,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-07-03T06:43:27.601Z
-      time: 461
+      startedDateTime: 2025-07-03T12:31:08.094Z
+      time: 522
       timings:
         blocked: -1
         connect: -1
@@ -1371,7 +1384,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 461
+        wait: 522
     - _id: 4504fab53d7cb602861f73dc2aa883d2
       _order: 0
       cache: {}
@@ -1434,16 +1447,16 @@ log:
           encoding: base64
           mimeType: application/json
           size: 136
-          text: "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqzixJBdEFRfkppcklYalFxZn5eUpWSsbGJoYmJvFGB\
-            kamugbmugbG8WZ6prophhaWxmlGaQaWaaZKtbW1AAAAAP//AwDqcu58SQAAAA==\"]"
+          text: "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqzixJBdEFRfkppcklYalFxZn5eUpWSsbGJoZmxvFGB\
+            kamugbmugbG8WZ6prrJFibmJmkpiZYpBqlKtbW1AAAAAP//AwDsldX1SQAAAA==\"]"
           textDecoded:
             data:
               site:
-                productVersion: 334144_2025-07-03_6.5-d1893f2f09f5
+                productVersion: 334163_2025-07-03_6.5-c8474fda9d0e
         cookies: []
         headers:
           - name: date
-            value: Thu, 03 Jul 2025 06:43:28 GMT
+            value: Thu, 03 Jul 2025 12:31:08 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -1474,8 +1487,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-07-03T06:43:27.499Z
-      time: 438
+      startedDateTime: 2025-07-03T12:31:07.997Z
+      time: 443
       timings:
         blocked: -1
         connect: -1
@@ -1483,7 +1496,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 438
+        wait: 443
     - _id: fd0fee4687419870bc82cba9d1023319
       _order: 0
       cache: {}
@@ -1557,7 +1570,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 03 Jul 2025 06:43:28 GMT
+            value: Thu, 03 Jul 2025 12:31:09 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -1588,8 +1601,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-07-03T06:43:28.279Z
-      time: 352
+      startedDateTime: 2025-07-03T12:31:08.808Z
+      time: 370
       timings:
         blocked: -1
         connect: -1
@@ -1597,7 +1610,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 352
+        wait: 370
     - _id: fbb23499ae0eec5c2e188687b429531b
       _order: 0
       cache: {}
@@ -1701,7 +1714,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 03 Jul 2025 06:43:29 GMT
+            value: Thu, 03 Jul 2025 12:31:09 GMT
           - name: content-type
             value: text/plain; charset=utf-8
           - name: transfer-encoding
@@ -1732,8 +1745,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-07-03T06:43:28.660Z
-      time: 360
+      startedDateTime: 2025-07-03T12:31:09.201Z
+      time: 374
       timings:
         blocked: -1
         connect: -1
@@ -1741,6 +1754,6 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 360
+        wait: 374
   pages: []
   version: "1.2"
