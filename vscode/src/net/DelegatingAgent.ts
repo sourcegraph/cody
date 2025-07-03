@@ -147,7 +147,9 @@ export class DelegatingAgent extends AgentBase implements vscode.Disposable {
         }
 
         if (this._networkDisabled) {
-            throw new Error('Network requests are disabled for this client, please contact support.')
+            throw new Error(
+                'Network requests are disabled for this Cody client, please contact support for more information.'
+            )
         }
 
         const reqOptions = {
