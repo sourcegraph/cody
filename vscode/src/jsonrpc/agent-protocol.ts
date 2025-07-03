@@ -379,7 +379,7 @@ export type ClientNotifications = {
 
     'window/didChangeFocus': [{ focused: boolean }]
 
-    'testing/resetAutoeditBetaEnrollment': [null]
+    'testing/resetStorage': [null]
 }
 
 // ================
