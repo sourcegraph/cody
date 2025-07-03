@@ -180,7 +180,7 @@ const configuration = new AgentWorkspaceConfiguration(
     async (section, value) => {
         if (onDidChangeConfiguration) {
             await onDidChangeConfiguration.cody_fireAsync({
-                affectsConfiguration: key => key.includes(section),
+                affectsConfiguration: prefix => section.includes(prefix),
             })
         }
 
