@@ -94,7 +94,7 @@ log:
         send: 0
         ssl: -1
         wait: 212
-    - _id: f27d060ebc8c4c55a7e5f298bb844ebd
+    - _id: fa05e59f6abf6bf3388aec1f7331bb19
       _order: 0
       cache: {}
       request:
@@ -121,6 +121,12 @@ log:
             name: x-requested-with
             value: autoedit-aside-custom v1
           - _fromType: array
+            name: x-sourcegraph-api-client-name
+            value: autoedit-aside-custom
+          - _fromType: array
+            name: x-sourcegraph-api-client-version
+            value: v1
+          - _fromType: array
             name: x-timeout-ms
             value: "5000"
           - _fromType: array
@@ -128,7 +134,7 @@ log:
             value: "1383"
           - name: host
             value: demo.sourcegraph.com
-        headersSize: 463
+        headersSize: 569
         httpVersion: HTTP/1.1
         method: POST
         postData:
@@ -196,16 +202,18 @@ log:
             value: autoedit-aside-custom
           - name: client-version
             value: v1
-        url: https://demo.sourcegraph.com/.api/completions/code?client-name=autoedit-aside-custom&client-version=v1
+          - name: api-version
+            value: "8"
+        url: https://demo.sourcegraph.com/.api/completions/code?client-name=autoedit-aside-custom&client-version=v1&api-version=8
       response:
-        bodySize: 555
+        bodySize: 510
         content:
           mimeType: text/event-stream
-          size: 555
+          size: 510
           text: >+
             event: completion
 
-            data: {"completion":"}\n\nexport function sumAge(humanA: Person, humanB: Person): number {\n    return humanA.age + humanB.age\n","stopReason":"stop"}
+            data: {"deltaText":"}\n\nexport function sumAge(humanA: Person, humanB: Person): number {\n    return humanA.age + humanB.age\n"}
 
 
             event: done
@@ -215,7 +223,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Fri, 21 Mar 2025 12:18:35 GMT
+            value: Wed, 02 Jul 2025 21:34:33 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -229,8 +237,8 @@ log:
           - name: cache-control
             value: no-cache
           - name: vary
-            value: Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
-              Cookie
+            value: Accept-Encoding, Authorization, Authorization, Cookie, Authorization,
+              X-Requested-With, Cookie
           - name: x-content-type-options
             value: nosniff
           - name: x-frame-options
@@ -239,13 +247,13 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1230
+        headersSize: 1245
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-03-21T12:18:35.354Z
-      time: 415
+      startedDateTime: 2025-07-02T21:34:33.464Z
+      time: 486
       timings:
         blocked: -1
         connect: -1
@@ -253,8 +261,8 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 415
-    - _id: b508280271cb6ce0f6175df58213785a
+        wait: 486
+    - _id: eaf92c8e60416845cc3e0139350ea948
       _order: 0
       cache: {}
       request:
@@ -281,6 +289,12 @@ log:
             name: x-requested-with
             value: autoedit-aside-custom v1
           - _fromType: array
+            name: x-sourcegraph-api-client-name
+            value: autoedit-aside-custom
+          - _fromType: array
+            name: x-sourcegraph-api-client-version
+            value: v1
+          - _fromType: array
             name: x-timeout-ms
             value: "5000"
           - _fromType: array
@@ -288,7 +302,7 @@ log:
             value: "1304"
           - name: host
             value: demo.sourcegraph.com
-        headersSize: 463
+        headersSize: 569
         httpVersion: HTTP/1.1
         method: POST
         postData:
@@ -355,16 +369,18 @@ log:
             value: autoedit-aside-custom
           - name: client-version
             value: v1
-        url: https://demo.sourcegraph.com/.api/completions/code?client-name=autoedit-aside-custom&client-version=v1
+          - name: api-version
+            value: "8"
+        url: https://demo.sourcegraph.com/.api/completions/code?client-name=autoedit-aside-custom&client-version=v1&api-version=8
       response:
-        bodySize: 477
+        bodySize: 488
         content:
           mimeType: text/event-stream
-          size: 477
+          size: 488
           text: >+
             event: completion
 
-            data: {"completion":"export function sumAge(a: Person, b: Person): number {\n    return a.age + b.age\n}\n","stopReason":"stop"}
+            data: {"deltaText":"export function sumAge(a: Person, b: Person): number {\n    return a.age + b.age\n}\n"}
 
 
             event: done
@@ -374,7 +390,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Fri, 21 Mar 2025 12:18:36 GMT
+            value: Wed, 02 Jul 2025 21:34:34 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -388,8 +404,8 @@ log:
           - name: cache-control
             value: no-cache
           - name: vary
-            value: Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
-              Cookie
+            value: Accept-Encoding, Authorization, Authorization, Cookie, Authorization,
+              X-Requested-With, Cookie
           - name: x-content-type-options
             value: nosniff
           - name: x-frame-options
@@ -398,13 +414,13 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1230
+        headersSize: 1245
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-03-21T12:18:35.919Z
-      time: 546
+      startedDateTime: 2025-07-02T21:34:33.966Z
+      time: 399
       timings:
         blocked: -1
         connect: -1
@@ -412,7 +428,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 546
+        wait: 399
     - _id: 404a28d2461ea66da470804476c21f26
       _order: 0
       cache: {}

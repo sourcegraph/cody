@@ -20,12 +20,14 @@ import {
     contextFiltersProvider,
     createSSEIterator,
     currentResolvedConfig,
+    currentSiteVersion,
     featureFlagProvider,
     fetch,
     getActiveTraceAndSpanId,
     getClientInfoParams,
     isAbortError,
     isCustomAuthChallengeResponse,
+    isError,
     isNodeResponse,
     isRateLimitError,
     logResponseHeadersToSpan,
@@ -54,6 +56,13 @@ class DefaultCodeCompletionsClient implements CodeCompletionsClient {
         const { auth, configuration } = await currentResolvedConfig()
 
         const query = new URLSearchParams(getClientInfoParams())
+        const siteVersion = await currentSiteVersion()
+        if (isError(siteVersion)) {
+            throw siteVersion
+        }
+
+        query.append('api-version', String(siteVersion.codyAPIVersion))
+
         const url = new URL(`/.api/completions/code?${query.toString()}`, auth.serverEndpoint)
         const log = autocompleteLifecycleOutputChannelLogger?.startCompletion(params, url.href)
         const { signal } = abortController
@@ -177,10 +186,13 @@ class DefaultCodeCompletionsClient implements CodeCompletionsClient {
 
                     if (isStreamingResponse && isNodeResponse(response)) {
                         const iterator = createSSEIterator(response.body, {
-                            aggregatedCompletionEvent: true,
+                            // Disable aggregatedCompletionEvent for deltaText format (API v2+)
+                            // since we need all completion events to accumulate the text properly
+                            aggregatedCompletionEvent: siteVersion.codyAPIVersion < 2,
                         })
                         let chunkIndex = 0
 
+                        let completionText = ''
                         for await (const { event, data } of iterator) {
                             if (event === 'error') {
                                 throw new TracedError(data, traceId)
@@ -201,8 +213,15 @@ class DefaultCodeCompletionsClient implements CodeCompletionsClient {
 
                             if (event === 'completion') {
                                 const parsed = JSON.parse(data) as CompletionResponse
+                                // delta_text is supported for V2 and above
+                                // Doc: https://sourcegraph.sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/internal/openapi/goapi/model_completion_response.go?L6-16
+                                if (siteVersion.codyAPIVersion >= 2) {
+                                    completionText += parsed.deltaText || ''
+                                } else {
+                                    completionText = parsed.completion || ''
+                                }
                                 result.completionResponse = {
-                                    completion: parsed.completion || '',
+                                    completion: completionText,
                                     stopReason: parsed.stopReason || CompletionStopReason.StreamingChunk,
                                 }
 
