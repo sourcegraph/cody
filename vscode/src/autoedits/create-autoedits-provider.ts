@@ -95,6 +95,8 @@ export function createAutoEditsProvider({
                 return []
             }
 
+            // Hot streak is not supported in Agent right now.
+            // We do not have support for reliably chunking and next cursor suggestions.
             const shouldHotStreak =
                 !isRunningInsideAgent() && (autoeditHotStreakEnabled || isHotStreakEnabledInSettings())
             const provider = new AutoeditsProvider(chatClient, fixupController, statusBar, {
