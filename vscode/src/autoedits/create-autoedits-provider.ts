@@ -17,6 +17,7 @@ import {
 } from '@sourcegraph/cody-shared'
 import type { FixupController } from '../non-stop/FixupController'
 
+import { isRunningInsideAgent } from '../jsonrpc/isRunningInsideAgent'
 import type { CodyStatusBar } from '../services/StatusBar'
 import { AutoeditsProvider } from './autoedits-provider'
 import { AutoeditDebugPanel } from './debug-panel/debug-panel'
@@ -94,8 +95,10 @@ export function createAutoEditsProvider({
                 return []
             }
 
+            const shouldHotStreak =
+                !isRunningInsideAgent() && (autoeditHotStreakEnabled || isHotStreakEnabledInSettings())
             const provider = new AutoeditsProvider(chatClient, fixupController, statusBar, {
-                shouldHotStreak: autoeditHotStreakEnabled || isHotStreakEnabledInSettings(),
+                shouldHotStreak: shouldHotStreak || isHotStreakEnabledInSettings(),
                 allowUsingWebSocket: autoeditUseWebSocketEnabled,
             })
             return [
