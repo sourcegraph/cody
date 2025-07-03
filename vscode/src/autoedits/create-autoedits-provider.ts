@@ -100,7 +100,7 @@ export function createAutoEditsProvider({
             const shouldHotStreak =
                 !isRunningInsideAgent() && (autoeditHotStreakEnabled || isHotStreakEnabledInSettings())
             const provider = new AutoeditsProvider(chatClient, fixupController, statusBar, {
-                shouldHotStreak: shouldHotStreak || isHotStreakEnabledInSettings(),
+                shouldHotStreak,
                 allowUsingWebSocket: autoeditUseWebSocketEnabled,
             })
             return [
