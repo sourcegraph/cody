@@ -112,7 +112,12 @@ describe('Enterprise - S2 (close main branch)', { timeout: 5000 }, () => {
 
         // The site config `cody.contextFilters` value on sourcegraph.sourcegraph.com instance
         // should include `sourcegraph/cody` repo for this test to pass.
-        it('autocomplete/execute (with Cody Ignore filters)', async () => {
+        // Note: This test has been skipped as relying on live site config for tests causes problems
+        // later on when that site config has changed and the tests have not been run for a while.
+        // This issue is exacerbated by the fact that the changes to site config do not trigger a
+        // re-run of the tests, so the issue is not caught until the next time the recordings
+        // are updated.
+        it.skip('autocomplete/execute (with Cody Ignore filters)', async () => {
             // Documents to be used as context sources.
             await s2EnterpriseClient.openFile(animalUri)
             await s2EnterpriseClient.openFile(squirrelUri)
