@@ -4,6 +4,59 @@ This is a log of all notable changes to Cody for VS Code.
 
 <!--- {/_ CHANGELOG_START _/} -->
 
+## 1.108.0
+
+### Fix
+
+#### Auth
+
+- restore accidentally removed URI handler for authentication callbacks [#8115](https://github.com/sourcegraph/cody/pull/8115)
+
+#### Auto-Edit
+
+- Ensure hot streak is disabled in Agent mode [#8145](https://github.com/sourcegraph/cody/pull/8145)
+
+#### Autocomplete
+
+- Fix API version parameter for autocomplete code completion requests [#8146](https://github.com/sourcegraph/cody/pull/8146)
+
+#### Chat
+
+- Handle string and undefined error messages in RequestErrorItem [#8084](https://github.com/sourcegraph/cody/pull/8084)
+- bring back chat scrollbar [#8083](https://github.com/sourcegraph/cody/pull/8083)
+
+#### Smart-Apply
+
+- now applies changes to file that have parents that duplicate workspace name [#8082](https://github.com/sourcegraph/cody/pull/8082)
+
+### Chore
+
+#### Cody
+
+- update readme [#8096](https://github.com/sourcegraph/cody/pull/8096)
+
+### Reverts
+
+- Revert "feat(context filter): Implement exclude patterns from workspace settings [#-1](https://github.com/sourcegraph/cody/pull/8037)
+
+### Uncategorized
+
+#### Others
+
+- [Backport M108] Fix auto-edit enrolment issue caused by config propagation bug [#8147](https://github.com/sourcegraph/cody/pull/8147)
+- [Backport M108] Pass client name version headers with completions request [#8107](https://github.com/sourcegraph/cody/pull/8107)
+- [Backport M108] Add Cody PLG Sunset Notice [#8106](https://github.com/sourcegraph/cody/pull/8106)
+- Fix threading issue with Cody Console [#8102](https://github.com/sourcegraph/cody/pull/8102)
+- Changelog for 1.106.0 [#8098](https://github.com/sourcegraph/cody/pull/8098)
+- Update Cody Web 0.32.9 [#8094](https://github.com/sourcegraph/cody/pull/8094)
+- Do not copy code to clipboard on the EDT thread [#8085](https://github.com/sourcegraph/cody/pull/8085)
+- Do enrol to auto-edit for all clients [#8080](https://github.com/sourcegraph/cody/pull/8080)
+- Do not stringify strings in configuration update payload [#8079](https://github.com/sourcegraph/cody/pull/8079)
+- Chore: Add CLI workflow for Cody release captains [#8078](https://github.com/sourcegraph/cody/pull/8078)
+- Release agent-v5.5.20 [#8076](https://github.com/sourcegraph/cody/pull/8076)
+- Do not hide lookups [#8073](https://github.com/sourcegraph/cody/pull/8073)
+
+
 ## 1.106.2
 
 ### Fix
