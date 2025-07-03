@@ -144,8 +144,8 @@ export class FixupController
 
     // FixupActor
 
-    public async acceptChange(task: FixupTask, range: vscode.Range): Promise<void> {
-        const affectedChanges = task.diff?.filter(edit => range.contains(edit.range))
+    public async acceptChange(fixupTask: FixupTask, range: vscode.Range): Promise<void> {
+        const affectedChanges = fixupTask.diff?.filter(edit => range.contains(edit.range))
         const editor = vscode.window.visibleTextEditors.find(
             editor => editor.document.uri.toString() === task.fixupFile.uri.toString()
         )

@@ -186,7 +186,9 @@ class DefaultCodeCompletionsClient implements CodeCompletionsClient {
 
                     if (isStreamingResponse && isNodeResponse(response)) {
                         const iterator = createSSEIterator(response.body, {
-                            aggregatedCompletionEvent: true,
+                            // Disable aggregatedCompletionEvent for deltaText format (API v2+)
+                            // since we need all completion events to accumulate the text properly
+                            aggregatedCompletionEvent: siteVersion.codyAPIVersion < 2,
                         })
                         let chunkIndex = 0
 
@@ -214,7 +216,7 @@ class DefaultCodeCompletionsClient implements CodeCompletionsClient {
                                 // delta_text is supported for V2 and above
                                 // Doc: https://sourcegraph.sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/internal/openapi/goapi/model_completion_response.go?L6-16
                                 if (siteVersion.codyAPIVersion >= 2) {
-                                    completionText += parsed.deltaText
+                                    completionText += parsed.deltaText || ''
                                 } else {
                                     completionText = parsed.completion || ''
                                 }
