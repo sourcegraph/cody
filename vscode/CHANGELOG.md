@@ -4,21 +4,73 @@ This is a log of all notable changes to Cody for VS Code.
 
 <!--- {/_ CHANGELOG_START _/} -->
 
+## 1.108.0
+
+### Fix
+
+#### Auth
+
+- restore accidentally removed URI handler for authentication callbacks [#8115](https://github.com/sourcegraph/cody/pull/8115)
+
+#### Auto-Edit
+
+- Ensure hot streak is disabled in Agent mode [#8145](https://github.com/sourcegraph/cody/pull/8145)
+
+#### Autocomplete
+
+- Fix API version parameter for autocomplete code completion requests [#8146](https://github.com/sourcegraph/cody/pull/8146)
+- Fix auto-edit enrolment issue caused by config propagation bug [#8147](https://github.com/sourcegraph/cody/pull/8147)
+- Pass client name version headers with completions request [#8107](https://github.com/sourcegraph/cody/pull/8107)
+- Enrol to auto-edit for all clients [#8080](https://github.com/sourcegraph/cody/pull/8080)
+
+#### Chat
+
+- Handle string and undefined error messages in RequestErrorItem [#8084](https://github.com/sourcegraph/cody/pull/8084)
+- bring back chat scrollbar [#8083](https://github.com/sourcegraph/cody/pull/8083)
+- Add Cody PLG Sunset Notice [#8106](https://github.com/sourcegraph/cody/pull/8106)
+
+#### Smart-Apply
+
+- now applies changes to file that have parents that duplicate workspace name [#8082](https://github.com/sourcegraph/cody/pull/8082)
+
+### Reverts
+
+- Revert "feat(context filter): Implement exclude patterns from workspace settings [#-1](https://github.com/sourcegraph/cody/pull/8037)
+
+## 1.106.2
+
+### Fix
+
+#### Auth
+
+- restore accidentally removed URI handler for authentication callbacks [#8114](https://github.com/sourcegraph/cody/pull/8114)
+
+## 1.106.1
+
+### Feat
+
+#### Chat
+
+- Add Cody PLG Sunset Notice [#8095](https://github.com/sourcegraph/cody/pull/8095)
+
 ## 1.106.0
 
 ### Features
 
 #### Chat
+
 - Allow renaming of chat history items [#8046](https://github.com/sourcegraph/cody/pull/8046)
 - Show both file and selection mentions in Cody Web chat [#7941](https://github.com/sourcegraph/cody/pull/7941)
 - New capability to hide all action buttons except 'Copy Code' [#8072](https://github.com/sourcegraph/cody/pull/8072)
 
 #### Auto-edit
+
 - Do enroll to auto-edit for all clients [#8080](https://github.com/sourcegraph/cody/pull/8080)
-  
+
 ### Fix
 
 #### Chat
+
 - Handle string and undefined error messages in RequestErrorItem [#8084](https://github.com/sourcegraph/cody/pull/8084)
 - bring back chat scrollbar [#8083](https://github.com/sourcegraph/cody/pull/8083)
 - resolve DeepCody terminal tool capability awareness issue [#8066](https://github.com/sourcegraph/cody/pull/8066)
@@ -31,15 +83,18 @@ This is a log of all notable changes to Cody for VS Code.
 - Do not use blocking operations in write actions [#8062](https://github.com/sourcegraph/cody/pull/8062)
 
 #### Auto-edit
+
 - Fix auto-edit's caching issues [#8045](https://github.com/sourcegraph/cody/pull/8045)
 - Fix disposal of autocompletion suggestions on Escape key press [#8071](https://github.com/sourcegraph/cody/pull/8071)
-  
+
 #### Smart-Apply
+
 - now applies changes to file that have parents that duplicate workspace name [#8082](https://github.com/sourcegraph/cody/pull/8082)
 
 ### Chore
 
 #### Cody
+
 - update readme [#8096](https://github.com/sourcegraph/cody/pull/8096)
 - Add CLI workflow for Cody release captains [#8078](https://github.com/sourcegraph/cody/pull/8078)
 - Do not stringify strings in configuration update payload [#8079](https://github.com/sourcegraph/cody/pull/8079)
@@ -49,9 +104,6 @@ This is a log of all notable changes to Cody for VS Code.
 ### Reverts
 
 - Revert "feat(context filter): Implement exclude patterns from workspace settings [#-1](https://github.com/sourcegraph/cody/pull/8037)
-
-
-
 
 ## 1.104.0
 
@@ -84,7 +136,7 @@ This is a log of all notable changes to Cody for VS Code.
 
 ### Reverts
 
-  There were no reverts for this release
+There were no reverts for this release
 
 ### Uncategorized
 
@@ -99,19 +151,17 @@ This is a log of all notable changes to Cody for VS Code.
 - Feat(context filter): Implement exclude patterns from workspace settings [#8037](https://github.com/sourcegraph/cody/pull/8037)
 - Fix autocomplete and code lenses issues on file renamed/moved operations [#7325](https://github.com/sourcegraph/cody/pull/7325)
 
-
 ## 1.102.0
 
 ### Reverts
 
-  There were no reverts for this release
+There were no reverts for this release
 
 ### Uncategorized
 
 #### Others
 
 - [Backport M102] Changelog for 1.102 [#8048](https://github.com/sourcegraph/cody/pull/8048)
-
 
 ## 1.102
 
@@ -154,7 +204,7 @@ This is a log of all notable changes to Cody for VS Code.
 
 ### Reverts
 
-  There were no reverts for this release
+There were no reverts for this release
 
 ### Uncategorized
 
@@ -168,7 +218,6 @@ This is a log of all notable changes to Cody for VS Code.
 - Update `untilBuild` to `252.*` [#8010](https://github.com/sourcegraph/cody/pull/8010)
 - Chore: update model options from 3.5 Sonnet to Sonnet 4 [#7999](https://github.com/sourcegraph/cody/pull/7999)
 - Restoration of unit test generation, path normalization [#7765](https://github.com/sourcegraph/cody/pull/7765)
-
 
 ## 1.100.0
 
@@ -231,7 +280,6 @@ This is a log of all notable changes to Cody for VS Code.
 - Add automatic JCEF runtime selection [#7976](https://github.com/sourcegraph/cody/pull/7976)
 - Cancel completion request on BGT (instead of AWT) [#7969](https://github.com/sourcegraph/cody/pull/7969)
 - Restoration of unit test generation, path normalization [#7765](https://github.com/sourcegraph/cody/pull/7765)
-
 
 ## 1.98.1
 
