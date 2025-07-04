@@ -10,9 +10,11 @@ import * as url from 'node:url'
 import type { URL } from 'node:url'
 import type { Noxide } from '@sourcegraph/cody-noxide'
 import {
+    FeatureFlag,
     type NetConfiguration,
     cenv,
     distinctUntilChanged,
+    featureFlagProvider,
     firstValueFrom,
     globalAgentRef,
     logDebug,
@@ -64,6 +66,13 @@ export class DelegatingAgent extends AgentBase implements vscode.Disposable {
                         }, TIMEOUT)
                     }
                 })
+            ),
+            subscriptionDisposable(
+                featureFlagProvider
+                    .evaluatedFeatureFlag(FeatureFlag.DisableNetworkRequests)
+                    .subscribe(networkDisabled => {
+                        this._networkDisabled = networkDisabled
+                    })
             )
         )
     }
@@ -99,6 +108,8 @@ export class DelegatingAgent extends AgentBase implements vscode.Disposable {
         .pipe(map(normalizeSettings), distinctUntilChanged(), map(this.resolveSettings.bind(this)))
         .pipe(distinctUntilChanged(), shareReplay())
 
+    private _networkDisabled = false
+
     private _configVersion = 0
     readonly configVersion = this.config.pipe(
         distinctUntilChanged(),
@@ -133,6 +144,12 @@ export class DelegatingAgent extends AgentBase implements vscode.Disposable {
         if (!config) {
             // This somehow means connect was called before we were initialized
             throw new Error('Connect called before agent was initialized')
+        }
+
+        if (this._networkDisabled) {
+            throw new Error(
+                'Network requests are disabled for this Cody client, please contact support for more information.'
+            )
         }
 
         const reqOptions = {
