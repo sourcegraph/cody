@@ -10,6 +10,12 @@ This is a log of all notable changes to the Cody command-line tool. [Unreleased]
 
 ### Changed
 
+## 5.5.22
+
+### Fixed
+
+- `cody models list` now correctly lists models that are available for the current user.
+
 ## 5.5.15
 
 ### Fixed
@@ -82,6 +88,7 @@ This is a log of all notable changes to the Cody command-line tool. [Unreleased]
 - Running `cody help` should work now. It was previously crashing about a missing keytar dependencies.
 
 ## 0.1.1
+
 ### Fixed
 
 - Running `npm install -g @sourcegraph/cody-agent` should work now. It was previously crashing about a missing keytar dependency.
