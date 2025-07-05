@@ -22,7 +22,7 @@ Streamline your development process by using prompts to understand, improve, fix
 
 <img src="https://storage.googleapis.com/sourcegraph-assets/vscode-marketplace/2025/cody_prompt_library.png" width="700" alt="Prompts">
 
-### Autocomplete
+### Auto-edit
 
 Autocompletes single lines, or whole functions, in any programming language, configuration file, or documentation. It’s powered by the latest instant LLM models, for accuracy and performance.
 
