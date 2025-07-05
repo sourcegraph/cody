@@ -1,8 +1,7 @@
 package com.sourcegraph.utils
 
-import com.intellij.codeWithMe.ClientId
-import com.intellij.openapi.client.ClientSessionsManager
+import com.intellij.idea.AppMode
 
 object CodyIdeUtil {
-  fun isRD() = ClientSessionsManager.getAppSession(ClientId.current)?.isRemote ?: false
+  fun isRD() = AppMode.isRemoteDevHost()
 }
