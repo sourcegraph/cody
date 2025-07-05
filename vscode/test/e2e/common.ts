@@ -199,12 +199,15 @@ export async function openFileInEditorTab(page: Page, filename: string): Promise
     await page.keyboard.press('F1')
     // Without the leading `>`, the input is interpreted as a filename.
     await page.getByPlaceholder('Type the name of a command to run.').fill(filename)
+    // In multi-root workspaces, the accessible name includes workspace folder info
+    // e.g., "buzz.ts workspace, file results" instead of just "buzz.ts,"
+    // So we use a more flexible pattern that matches the filename at the start
     await expect(
         page
             .getByRole('listbox', { name: /^Search files/ })
             .getByRole('option')
             .first()
-    ).toHaveAccessibleName(new RegExp(`${filename},`))
+    ).toHaveAccessibleName(new RegExp(`^${filename}\\b`))
     await page.keyboard.press('Enter')
 
     await clickEditorTab(page, filename)

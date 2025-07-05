@@ -230,25 +230,31 @@ export function getCorpusContextItemsForEditorState(): Observable<
         distinctUntilChanged()
     )
 
-    return combineLatest(relevantAuthStatus, remoteReposForAllWorkspaceFolders).pipe(
-        abortableOperation(async ([authStatus, remoteReposForAllWorkspaceFolders], signal) => {
+    return combineLatest(relevantAuthStatus, remoteReposForAllWorkspaceFolders, activeTextEditor).pipe(
+        abortableOperation(async ([authStatus, remoteReposForAllWorkspaceFolders, activeEditor], signal) => {
             const items: ContextItem[] = []
 
-            // TODO(sqs): Support multi-root. Right now, this only supports the 1st workspace root.
-            const workspaceFolder = vscode.workspace.workspaceFolders?.at(0)
+            // Add workspace folders: current one to initial context, others to corpus context
+            const workspaceFolders = vscode.workspace.workspaceFolders
+            if (workspaceFolders) {
+                const currentWorkspaceFolder = vscode.workspace.getWorkspaceFolder(activeEditor?.document?.uri || workspaceFolders[0].uri)
 
-            if (workspaceFolder) {
-                items.push({
-                    type: 'tree',
-                    uri: workspaceFolder.uri,
-                    title: 'Current Repository',
-                    name: workspaceFolder.name,
-                    description: workspaceFolder.name,
-                    isWorkspaceRoot: true,
-                    content: null,
-                    source: ContextItemSource.Initial,
-                    icon: 'folder',
-                } satisfies ContextItemTree)
+                for (const workspaceFolder of workspaceFolders) {
+                    const isCurrentFolder = currentWorkspaceFolder && workspaceFolder.uri.toString() === currentWorkspaceFolder.uri.toString()
+
+                    items.push({
+                        type: 'tree',
+                        uri: workspaceFolder.uri,
+                        title: isCurrentFolder ? 'Current Repository' : workspaceFolder.name,
+                        name: workspaceFolder.name,
+                        description: workspaceFolder.name,
+                        isWorkspaceRoot: true,
+                        content: null,
+                        // Current folder goes to initial context (pre-filled), others go to corpus context (@ mention menu)
+                        source: isCurrentFolder ? ContextItemSource.Initial : ContextItemSource.User,
+                        icon: 'folder',
+                    } satisfies ContextItemTree)
+                }
             }
 
             // TODO(sqs): Make this consistent between self-serve (no remote search) and enterprise (has
