@@ -241,6 +241,11 @@ class LocalStorage implements LocalStorageForModelPreferences {
         await this.set(this.AUTO_EDITS_BETA_ENROLLED, true)
     }
 
+    public async resetStorage(): Promise<void> {
+        for (const key of this.storage.keys()) {
+            await this.storage.update(key, undefined)
+        }
+    }
     public async setGitHubRepoAccessibility(data: GitHubDotComRepoMetaData[]): Promise<void> {
         await this.set(this.GIT_REPO_ACCESSIBILITY_KEY, data)
     }

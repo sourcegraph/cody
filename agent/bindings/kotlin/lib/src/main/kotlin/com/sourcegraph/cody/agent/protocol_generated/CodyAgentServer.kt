@@ -186,4 +186,6 @@ interface CodyAgentServer {
   fun secrets_didChange(params: Secrets_DidChangeParams)
   @JsonNotification("window/didChangeFocus")
   fun window_didChangeFocus(params: Window_DidChangeFocusParams)
+  @JsonNotification("testing/resetStorage")
+  fun testing_resetStorage(params: Null?)
 }

@@ -1417,6 +1417,10 @@ export class Agent extends MessageHandler implements ExtensionClient {
             this.secretsDidChange.fire({ key })
         })
 
+        this.registerNotification('testing/resetStorage', () => {
+            localStorage.resetStorage()
+        })
+
         this.registerAuthenticatedRequest('featureFlags/getFeatureFlag', async ({ flagName }) => {
             return featureFlagProvider.evaluateFeatureFlagEphemerally(
                 FeatureFlag[flagName as keyof typeof FeatureFlag]
