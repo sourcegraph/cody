@@ -83,7 +83,7 @@ const testWithMultiRoot = test
         },
     })
 
-testWithMultiRoot.only('initial context - switches between multi-root workspace folders', async ({ page, sidebar, server }) => {
+testWithMultiRoot('initial context - switches between multi-root workspace folders', async ({ page, sidebar, server }) => {
     // Mock enterprise repo mapping for both workspace folders
     server.onGraphQl('RepositoryIds').replyJson({
         data: {
