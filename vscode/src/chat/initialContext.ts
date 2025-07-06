@@ -231,86 +231,102 @@ export function getCorpusContextItemsForEditorState(): Observable<
     )
 
     return combineLatest(relevantAuthStatus, remoteReposForAllWorkspaceFolders, activeTextEditor).pipe(
-        abortableOperation(async ([authStatus, remoteReposForAllWorkspaceFolders, activeEditor], signal) => {
-            const items: ContextItem[] = []
+        abortableOperation(
+            async ([authStatus, remoteReposForAllWorkspaceFolders, activeEditor], signal) => {
+                const items: ContextItem[] = []
 
-            // Add workspace folders: current one to initial context, others to corpus context
-            const workspaceFolders = vscode.workspace.workspaceFolders
-            if (workspaceFolders) {
-                const currentWorkspaceFolder = vscode.workspace.getWorkspaceFolder(activeEditor?.document?.uri || workspaceFolders[0].uri)
+                // Add workspace folders: current one to initial context, others to corpus context
+                const workspaceFolders = vscode.workspace.workspaceFolders
+                if (workspaceFolders) {
+                    let currentWorkspaceFolder: vscode.WorkspaceFolder | undefined
 
-                for (const workspaceFolder of workspaceFolders) {
-                    const isCurrentFolder = currentWorkspaceFolder && workspaceFolder.uri.toString() === currentWorkspaceFolder.uri.toString()
+                    // check also for the first visible editor if no active editor is present
+                    // this is happening when we have editor Cody and we receive an undefined activeEditor
+                    const activeVisibleEditor: vscode.TextEditor | undefined =
+                        activeEditor || vscode.window.visibleTextEditors[0]
 
-                    items.push({
-                        type: 'tree',
-                        uri: workspaceFolder.uri,
-                        title: isCurrentFolder ? 'Current Repository' : workspaceFolder.name,
-                        name: workspaceFolder.name,
-                        description: workspaceFolder.name,
-                        isWorkspaceRoot: true,
-                        content: null,
-                        // Current folder goes to initial context (pre-filled), others go to corpus context (@ mention menu)
-                        source: isCurrentFolder ? ContextItemSource.Initial : ContextItemSource.User,
-                        icon: 'folder',
-                    } satisfies ContextItemTree)
-                }
-            }
+                    // If there's an active editor, use its workspace folder (could be undefined if outside workspace)
+                    // otherwise use the first workspace folder
+                    currentWorkspaceFolder = activeVisibleEditor
+                        ? vscode.workspace.getWorkspaceFolder(activeVisibleEditor.document?.uri)
+                        : workspaceFolders[0]
 
-            // TODO(sqs): Make this consistent between self-serve (no remote search) and enterprise (has
-            // remote search). There should be a single internal thing in Cody that lets you monitor the
-            // user's current codebase.
-            if (authStatus.allowRemoteContext) {
-                if (remoteReposForAllWorkspaceFolders === pendingOperation) {
-                    return pendingOperation
-                }
-                if (isError(remoteReposForAllWorkspaceFolders)) {
-                    throw remoteReposForAllWorkspaceFolders
-                }
-                for (const repo of remoteReposForAllWorkspaceFolders) {
-                    if (await contextFiltersProvider.isRepoNameIgnored(repo.name)) {
-                        continue
-                    }
-                    if (repo.id === undefined) {
-                        continue
-                    }
-                    items.push({
-                        ...contextItemMentionFromOpenCtxItem(
-                            await createRepositoryMention(
-                                {
-                                    id: repo.id,
-                                    name: repo.name,
-                                    url: repo.name,
-                                },
-                                REMOTE_REPOSITORY_PROVIDER_URI,
-                                authStatus
-                            )
-                        ),
-                        title: 'Current Codebase',
-                        description: repo.name,
-                        source: items.length > 0 ? ContextItemSource.Unified : ContextItemSource.Initial,
-                        icon: 'search',
-                    })
-                }
-                // CTA to index repositories should only show for Enterprise customers, see CODY-5017 & CODY-4676
-                if (authStatus.isEnterpriseUser && remoteReposForAllWorkspaceFolders.length === 0) {
-                    if (!clientCapabilities().isCodyWeb) {
+                    for (const workspaceFolder of workspaceFolders) {
+                        const isCurrentFolder =
+                            currentWorkspaceFolder &&
+                            workspaceFolder.uri.toString() === currentWorkspaceFolder.uri.toString()
+
                         items.push({
-                            type: 'open-link',
-                            title: 'Current Codebase',
-                            badge: 'Not yet available',
+                            type: 'tree',
+                            uri: workspaceFolder.uri,
+                            title: isCurrentFolder ? 'Current Repository' : workspaceFolder.name,
+                            name: workspaceFolder.name,
+                            description: workspaceFolder.name,
+                            isWorkspaceRoot: true,
                             content: null,
-                            uri: URI.parse(
-                                'https://sourcegraph.com/docs/cody/prompts-guide#indexing-your-repositories-for-context'
+                            // Current folder goes to initial context (pre-filled), others go to corpus context (@ mention menu)
+                            source: isCurrentFolder ? ContextItemSource.Initial : ContextItemSource.User,
+                            icon: 'folder',
+                        } satisfies ContextItemTree)
+                    }
+                }
+
+                // TODO(sqs): Make this consistent between self-serve (no remote search) and enterprise (has
+                // remote search). There should be a single internal thing in Cody that lets you monitor the
+                // user's current codebase.
+                if (authStatus.allowRemoteContext) {
+                    if (remoteReposForAllWorkspaceFolders === pendingOperation) {
+                        return pendingOperation
+                    }
+                    if (isError(remoteReposForAllWorkspaceFolders)) {
+                        throw remoteReposForAllWorkspaceFolders
+                    }
+                    for (const repo of remoteReposForAllWorkspaceFolders) {
+                        if (await contextFiltersProvider.isRepoNameIgnored(repo.name)) {
+                            continue
+                        }
+                        if (repo.id === undefined) {
+                            continue
+                        }
+                        items.push({
+                            ...contextItemMentionFromOpenCtxItem(
+                                await createRepositoryMention(
+                                    {
+                                        id: repo.id,
+                                        name: repo.name,
+                                        url: repo.name,
+                                    },
+                                    REMOTE_REPOSITORY_PROVIDER_URI,
+                                    authStatus
+                                )
                             ),
-                            name: '',
+                            title: 'Current Codebase',
+                            description: repo.name,
+                            source:
+                                items.length > 0 ? ContextItemSource.Unified : ContextItemSource.Initial,
                             icon: 'search',
                         })
                     }
+                    // CTA to index repositories should only show for Enterprise customers, see CODY-5017 & CODY-4676
+                    if (authStatus.isEnterpriseUser && remoteReposForAllWorkspaceFolders.length === 0) {
+                        if (!clientCapabilities().isCodyWeb) {
+                            items.push({
+                                type: 'open-link',
+                                title: 'Current Codebase',
+                                badge: 'Not yet available',
+                                content: null,
+                                uri: URI.parse(
+                                    'https://sourcegraph.com/docs/cody/prompts-guide#indexing-your-repositories-for-context'
+                                ),
+                                name: '',
+                                icon: 'search',
+                            })
+                        }
+                    }
                 }
+                return items
             }
-            return items
-        })
+        )
     )
 }
 

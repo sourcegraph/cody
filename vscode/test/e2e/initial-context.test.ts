@@ -13,7 +13,13 @@ import {
     selectLineRangeInEditorTab,
     sidebarSignin,
 } from './common'
-import { type DotcomUrlOverride, type WorkspaceDirectory, mockEnterpriseRepoMapping, test, testWithGitRemote } from './helpers'
+import {
+    type DotcomUrlOverride,
+    type WorkspaceDirectory,
+    mockEnterpriseRepoMapping,
+    test,
+    testWithGitRemote,
+} from './helpers'
 
 testWithGitRemote.extend<DotcomUrlOverride>({ dotcomUrl: mockServer.SERVER_URL })(
     'initial context - self-serve repo',
@@ -78,43 +84,54 @@ const testWithMultiRoot = test
             const path = require('node:path')
             const vscodeRoot = path.resolve(__dirname, '..', '..')
             // Use the multi-root.code-workspace file to load both workspace and workspace2 folders
-            const multiRootWorkspaceFile = path.join(vscodeRoot, 'test', 'fixtures', 'multi-root.code-workspace')
+            const multiRootWorkspaceFile = path.join(
+                vscodeRoot,
+                'test',
+                'fixtures',
+                'multi-root.code-workspace'
+            )
             await use(multiRootWorkspaceFile)
         },
     })
 
-testWithMultiRoot('initial context - switches between multi-root workspace folders', async ({ page, sidebar, server }) => {
-    // Mock enterprise repo mapping for both workspace folders
-    server.onGraphQl('RepositoryIds').replyJson({
-        data: {
-            repositories: [
-                { name: 'github.com/sourcegraph/workspace', id: 'workspace-id' },
-                { name: 'github.com/sourcegraph/workspace2', id: 'workspace2-id' },
-            ],
-        },
-    })
+testWithMultiRoot(
+    'initial context - switches between multi-root workspace folders',
+    async ({ page, sidebar, server }) => {
+        // Mock enterprise repo mapping for both workspace folders
+        server.onGraphQl('RepositoryIds').replyJson({
+            data: {
+                repositories: [
+                    { name: 'github.com/sourcegraph/workspace', id: 'workspace-id' },
+                    { name: 'github.com/sourcegraph/workspace2', id: 'workspace2-id' },
+                ],
+            },
+        })
 
-    await sidebarSignin(page, sidebar)
-    await openFileInEditorTab(page, 'buzz.ts')
-    const [chatFrame, lastChatInput] = await createEmptyChatPanel(page)
+        await sidebarSignin(page, sidebar)
+        await openFileInEditorTab(page, 'buzz.ts')
+        const [chatFrame, lastChatInput] = await createEmptyChatPanel(page)
 
-    await expect(chatInputMentions(lastChatInput)).toHaveText(['buzz.ts', 'workspace'])
+        await expect(chatInputMentions(lastChatInput)).toHaveText(['buzz.ts', 'workspace'])
 
-    // Switch to README.md from workspace2 and verify initial context changes
-    await selectLineRangeInEditorTab(page, 2, 4)
+        // Switch to README.md from workspace2 and verify initial context changes
+        await selectLineRangeInEditorTab(page, 2, 4)
         await openFileInEditorTab(page, 'README.md')
 
-    await expect(chatInputMentions(lastChatInput)).toHaveText(['README.md', 'workspace2'])
+        await expect(chatInputMentions(lastChatInput)).toHaveText(['README.md', 'workspace2'])
 
-    // Verify the file is open by checking the tab
-    await expect(page.getByRole('tab', { name: /README.md/ })).toBeVisible()
+        // Verify the file is open by checking the tab
+        await expect(page.getByRole('tab', { name: /README.md/ })).toBeVisible()
 
-    await lastChatInput.click()
-    await lastChatInput.fill('@')
+        await lastChatInput.click()
+        await lastChatInput.fill('@')
 
-    // Wait for @ mention menu to appear
-    await expect(mentionMenu(chatFrame)).toBeVisible()
+        // Wait for @ mention menu to appear
+        await expect(mentionMenu(chatFrame)).toBeVisible()
 
-    // Both workspace folders should be available for @ mention
-    await expect(mentionMenuItems(chatFrame)).toContainText(['workspace', 'workspace2'])
-})
+        // Both workspace folders should be available for @ mention
+        // The mention menu now includes more items, so we check that our workspaces are present
+        const mentionItems = mentionMenuItems(chatFrame)
+        await expect(mentionItems).toContainText(['workspace'])
+        await expect(mentionItems).toContainText(['workspace2'])
+    }
+)
