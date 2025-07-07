@@ -429,6 +429,200 @@ log:
         send: 0
         ssl: -1
         wait: 399
+    - _id: d218cd067a5a1f2f505df3c5751a4d72
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 1816
+        cookies: []
+        headers:
+          - _fromType: array
+            name: accept
+            value: application/json
+          - _fromType: array
+            name: accept-encoding
+            value: gzip;q=0
+          - _fromType: array
+            name: authorization
+            value: token
+              REDACTED_69e9f79ce29352d014eeb80b56510341844eb82ad9abac7cab3631c7e873e4ce
+          - _fromType: array
+            name: content-type
+            value: application/json; charset=utf-8
+          - _fromType: array
+            name: user-agent
+            value: autoedit-aside-custom/v1 (Node.js v23.7.0)
+          - _fromType: array
+            name: x-requested-with
+            value: autoedit-aside-custom v1
+          - _fromType: array
+            name: x-sourcegraph-api-client-name
+            value: autoedit-aside-custom
+          - _fromType: array
+            name: x-sourcegraph-api-client-version
+            value: v1
+          - _fromType: array
+            name: x-timeout-ms
+            value: "5000"
+          - _fromType: array
+            name: content-length
+            value: "1816"
+          - name: host
+            value: demo.sourcegraph.com
+        headersSize: 569
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json; charset=utf-8
+          params: []
+          textJSON:
+            maxTokensToSample: 528
+            messages:
+              - speaker: human
+                text: >-
+                  You are an intelligent programmer and an expert at coding.
+                  Your goal is to help a colleague finish a code change.
+
+
+                  User: Help me finish a coding change. You will see snippets from current open files in my editor, files I have recently viewed, the file I am editing, then a history of my recent codebase changes, then current compiler and linter errors, content I copied from my codebase. You will then rewrite the <code_to_rewrite>, to match what you think I would do next in the codebase. Note: I might have stopped in the middle of typing.
+
+                  Code snippets just I viewed:
+
+                  The file currently open:(`src/Point.cs`)
+
+                  <file>
+
+                  <<<AREA_AROUND_CODE_TO_REWRITE_WILL_BE_INSERTED_HERE>>>
+                              this.x = x;
+                              this.y = y;
+                          }
+
+                          public double GetDistance(Point other)
+                          {
+                              return Math.Sqrt((x - other.x) * (x - other.x) + (y - other.y) * (y - other.y));
+                          }
+
+                          public override string ToString()
+                          {
+                              return $"two-dimensional point: ({x},{y})";
+                          }
+                      }
+                  }
+
+
+                  </file>
+
+                  <area_around_code_to_rewrite>
+
+                  using System;
+
+                  using System.Collections.Generic;
+
+                  using System.Linq;
+
+                  using System.Text;
+
+                  using System.Threading.Tasks;
+
+
+                  namespace ConsoleApp1
+
+
+                  <code_to_rewrite>
+
+                  {
+                      public class Point3d
+                      {
+                          private int x;
+
+                  </code_to_rewrite>
+                          private int y;
+
+                          public Point(int x, int y)
+                          {
+
+                  </area_around_code_to_rewrite>
+
+                  Continue where I left off and finish my change by rewriting "code_to_rewrite":
+
+
+                  Assistant:
+            model: fireworks::v1::autoedits-deepseek-lite-default
+            prediction:
+              content: |
+                {
+                    public class Point3d
+                    {
+                        private int x;
+              type: content
+            stream: true
+            temperature: 0.1
+            timeoutMs: 5000
+        queryString:
+          - name: client-name
+            value: autoedit-aside-custom
+          - name: client-version
+            value: v1
+          - name: api-version
+            value: "8"
+        url: https://demo.sourcegraph.com/.api/completions/code?client-name=autoedit-aside-custom&client-version=v1&api-version=8
+      response:
+        bodySize: 1215
+        content:
+          mimeType: text/event-stream
+          size: 1215
+          text: >+
+            event: completion
+
+            data: {"deltaText":"{\n    public class Point3d : Point\n    {\n        private int z;\n\n        public Point3d(int x, int y, int z) : base(x, y)\n        {\n            this.z = z;\n        }\n\n        public double GetDistance(Point3d other)\n        {\n            return Math.Sqrt((x - other.x) * (x - other.x) + (y - other.y) * (y - other.y) + (z - other.z) * (z - other.z));\n        }\n\n        public override string ToString()\n        {\n            return $\"three-dimensional point: ({x},{y},{z})\";\n        }\n    }\n}\n"}
+
+
+            event: done
+
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Mon, 07 Jul 2025 09:05:57 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: close
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Accept-Encoding, Authorization, Authorization, Cookie, Authorization,
+              X-Requested-With, Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1245
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2025-07-07T09:05:56.632Z
+      time: 1480
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 1480
     - _id: 404a28d2461ea66da470804476c21f26
       _order: 0
       cache: {}
