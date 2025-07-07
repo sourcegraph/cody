@@ -200,6 +200,13 @@
                     <override-text place="GoToAction" text="Cody: Export All Chats As JSON"/>
                 </action>
 
+                <action id="cody.resetStorage"
+                        class="com.sourcegraph.cody.ResetStorage"
+                        text="Reset Cody Storage"
+                        description="Reset Cody Storage">
+                    <override-text place="GoToAction" text="Cody: Reset Cody Storage"/>
+                </action>
+
                 <action id="cody.openChat"
                         class="com.sourcegraph.cody.chat.OpenChatAction"
                         text="Open Chat"
