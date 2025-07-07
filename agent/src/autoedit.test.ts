@@ -496,12 +496,32 @@ describe('Autoedit', () => {
                 expect(modifiedLines.length).toBeGreaterThan(0)
                 expect(unchangedLines.length).toBeGreaterThan(0)
             }, 10_000)
+        })
 
+        describe('insertText vs originalText inconsistency repro', () => {
             it('Point.cs 2d -> 3d', async () => {
                 const file = workspace.file('src', 'Point.cs')
 
                 for (let i = 0; i < 100; i++) {
                     console.log(`[my_log] running #${i}`)
+
+                    const client = TestClient.create({
+                        workspaceRootUri: workspace.rootUri,
+                        name: 'autoedit-aside-custom',
+                        credentials: TESTING_CREDENTIALS.enterprise,
+                        extraConfiguration: {
+                            'cody.suggestions.mode': 'auto-edit',
+                        },
+                        capabilities: {
+                            ...allClientCapabilitiesEnabled,
+                            autoedit: 'enabled',
+                            autoeditInlineDiff: 'none',
+                            autoeditAsideDiff: 'diff',
+                        },
+                    })
+
+                    await client.beforeAll()
+
                     const result = await getAutoEditSuggestion(
                         client,
                         file,
@@ -549,6 +569,8 @@ describe('Autoedit', () => {
                     // Check the diff has contents, we don't snapshot this as it is quite a large object
                     expect(modifiedLines.length).toBeGreaterThan(0)
                     expect(unchangedLines.length).toBeGreaterThan(0)
+
+                    await client.afterAll()
                 }
             }, 10_000_000)
         })
