@@ -205,7 +205,8 @@ describe('Autoedit', () => {
         async function getAutoEditSuggestion(
             client: TestClient,
             uri: vscode.Uri,
-            position: Position
+            position: Position,
+            triggerKind: 'Automatic' | 'Invoke' = 'Automatic'
         ): Promise<AutocompleteEditItem> {
             await client.openFile(uri)
 
@@ -219,7 +220,7 @@ describe('Autoedit', () => {
             const result = (await client.request('autocomplete/execute', {
                 uri: uri.toString(),
                 position,
-                triggerKind: 'Automatic',
+                triggerKind: triggerKind,
             })) as AutocompleteResult
             const id = result.decoratedEditItems[0].id
 
@@ -501,7 +502,12 @@ describe('Autoedit', () => {
 
                 for (let i = 0; i < 100; i++) {
                     console.log(`[my_log] running #${i}`)
-                    const result = await getAutoEditSuggestion(client, file, { line: 8, character: 24 })
+                    const result = await getAutoEditSuggestion(
+                        client,
+                        file,
+                        { line: 8, character: 24 },
+                        'Invoke'
+                    )
 
                     // Prediction accurately reflects the edit that should be made.
                     expect(result.insertText).toMatchInlineSnapshot(`
