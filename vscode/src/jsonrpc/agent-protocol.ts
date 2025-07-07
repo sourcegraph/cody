@@ -378,6 +378,8 @@ export type ClientNotifications = {
     'secrets/didChange': [{ key: string }]
 
     'window/didChangeFocus': [{ focused: boolean }]
+
+    'testing/resetStorage': [null]
 }
 
 // ================
