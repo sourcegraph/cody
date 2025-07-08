@@ -42,6 +42,7 @@ import {
     CURRENT_USER_INFO_QUERY,
     CURRENT_USER_ROLE_QUERY,
     DELETE_ACCESS_TOKEN_MUTATION,
+    DIRECTORY_CONTENTS_QUERY,
     EVALUATE_FEATURE_FLAGS_QUERY,
     EVALUATE_FEATURE_FLAG_QUERY,
     FILE_CONTENTS_QUERY,
@@ -365,6 +366,23 @@ interface FileContentsResponse {
                 path: string
                 url: string
                 content: string
+            } | null
+        } | null
+    } | null
+}
+
+interface DirectoryContentsResponse {
+    repository: {
+        commit: {
+            tree: {
+                entries: Array<{
+                    name: string
+                    path: string
+                    byteSize?: number
+                    url: string
+                    content?: string
+                    isDirectory?: boolean
+                }>
             } | null
         } | null
     } | null
@@ -1047,6 +1065,21 @@ export class SourcegraphGraphQLAPIClient {
             filePath,
             rev,
         }).then(response => extractDataOrError(response, data => data))
+    }
+
+    public async getDirectoryContents(
+        repoName: string,
+        path: string,
+        revision = 'HEAD'
+    ): Promise<DirectoryContentsResponse | Error> {
+        return this.fetchSourcegraphAPI<APIResponse<DirectoryContentsResponse>>(
+            DIRECTORY_CONTENTS_QUERY,
+            {
+                repoName,
+                path,
+                revision,
+            }
+        ).then(response => extractDataOrError(response, data => data))
     }
 
     public async getRepoId(repoName: string): Promise<string | null | Error> {

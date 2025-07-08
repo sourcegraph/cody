@@ -754,3 +754,27 @@ export const NLS_SEARCH_QUERY = `
             }
         }
     }`
+
+export const DIRECTORY_CONTENTS_QUERY = `
+query GetDirectoryContents($repoName: String!, $revision: String!, $path: String!) {
+  repository(name: $repoName) {
+    commit(rev: $revision) {
+      tree(path: $path) {
+        entries(first: 50) {
+          ... on GitBlob {
+            name
+            path
+            byteSize
+            url
+            content
+          }
+          ... on GitTree {
+            name
+            path
+            isDirectory
+          }
+        }
+      }
+    }
+  }
+}`

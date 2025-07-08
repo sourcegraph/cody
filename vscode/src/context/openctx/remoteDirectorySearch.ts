@@ -49,6 +49,25 @@ export function createRemoteDirectoryProvider(customTitle?: string): OpenCtxProv
             const [repoName, directoryPath] = query?.split(':') || []
 
             if (!query?.includes(':') || !repoName.trim()) {
+                // Check if the query contains branch specification (@branch)
+                if (query?.includes('@')) {
+                    // Handle both @branch and @branch/directory formats
+                    const trimmedQuery = query?.trim() ?? ''
+                    const slashIndex = trimmedQuery.lastIndexOf('/')
+
+                    if (slashIndex > 0) {
+                        // Format: repo@branch/directory
+                        const repoWithBranch = trimmedQuery.substring(0, slashIndex)
+                        const directoryPathPart = trimmedQuery.substring(slashIndex + 1)
+                        return await getDirectoryMentions(repoWithBranch, directoryPathPart)
+                    }
+
+                    // Format: repo@branch (root directory search)
+                    const [repoNamePart] = extractRepoAndBranch(trimmedQuery)
+                    if (repoNamePart.trim()) {
+                        return await getDirectoryMentions(trimmedQuery, '')
+                    }
+                }
                 return await getRepositoryMentions(query?.trim() ?? '', REMOTE_DIRECTORY_PROVIDER_URI)
             }
 
@@ -56,14 +75,15 @@ export function createRemoteDirectoryProvider(customTitle?: string): OpenCtxProv
         },
 
         async items({ mention, message }) {
-            if (!mention?.data?.repoID || !mention?.data?.directoryPath || !message) {
+            if (!mention?.data?.repoName || !mention?.data?.directoryPath || !message) {
                 return []
             }
 
             return await getDirectoryItem(
                 message,
-                mention.data.repoID as string,
-                mention.data.directoryPath as string
+                mention.data.repoName as string,
+                mention.data.directoryPath as string,
+                mention.data.rev as string
             )
         },
     }
@@ -75,7 +95,10 @@ async function getDirectoryMentions(repoName: string, directoryPath?: string): P
     const repoRe = `^${escapeRegExp(repoNamePart)}$`
     const directoryRe = directoryPath ? escapeRegExp(directoryPath) : ''
     const repoWithBranch = branchPart ? `${repoRe}@${branchPart}` : repoRe
-    const query = `repo:${repoWithBranch} file:${directoryRe}.*\/.* select:file.directory count:10`
+
+    // For root directory search, use a pattern that finds top-level directories
+    const filePattern = directoryPath ? `${directoryRe}.*\\/.*` : '[^/]+\\/.*'
+    const query = `repo:${repoWithBranch} file:${filePattern} select:file.directory count:10`
 
     const {
         auth: { serverEndpoint },
@@ -110,27 +133,32 @@ async function getDirectoryMentions(repoName: string, directoryPath?: string): P
         .filter(isDefined)
 }
 
-async function getDirectoryItem(query: string, repoID: string, directoryPath: string): Promise<Item[]> {
-    const dataOrError = await graphqlClient.contextSearch({
-        repoIDs: [repoID],
-        query,
-        filePatterns: [`^${directoryPath}.*`],
-    })
+async function getDirectoryItem(
+    query: string,
+    repoName: string,
+    directoryPath: string,
+    revision?: string
+): Promise<Item[]> {
+    const dataOrError = await graphqlClient.getDirectoryContents(repoName, directoryPath, revision)
 
     if (isError(dataOrError) || dataOrError === null) {
         return []
     }
 
-    return dataOrError.map(
-        node =>
-            ({
-                url: node.uri.toString(),
-                title: node.path,
-                ai: {
-                    content: node.content,
-                },
-            }) as Item
-    )
+    const entries = dataOrError.repository?.commit?.tree?.entries || []
+    const {
+        auth: { serverEndpoint },
+    } = await currentResolvedConfig()
+
+    return entries
+        .filter(entry => entry.content && !entry.isDirectory) // Only include files with content
+        .map(entry => ({
+            url: `${serverEndpoint.replace(/\/$/, '')}${entry.url}`,
+            title: entry.path,
+            ai: {
+                content: entry.content,
+            },
+        })) as Item[]
 }
 
 export default RemoteDirectoryProvider
