@@ -12,6 +12,7 @@ import com.intellij.diff.util.DiffUtil
 import com.intellij.diff.util.TextDiffType
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.editor.Document
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.LogicalPosition
@@ -144,7 +145,7 @@ private constructor(val editor: Editor, private val editorComponent: JComponent)
               }
             }
           })
-      connect.subscribe(AutoeditManager.TOPIC, Runnable { hint.hide() })
+      connect.subscribe(AutoeditManager.TOPIC, Runnable { runInEdt { hint.hide() } })
 
       if (!hint.isVisible) {
         closeListener.hintHidden(EventObject(hint))
