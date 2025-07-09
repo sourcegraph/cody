@@ -15,7 +15,7 @@ import {
 
 import type { SmartApplyResult } from '../chat/protocol'
 import { PersistenceTracker } from '../common/persistence-tracker'
-import { lines } from '../completions/text-processing'
+import { getEditorTabSize, lines } from '../completions/text-processing'
 import { executeEdit } from '../edit/execute'
 import type { EditInput } from '../edit/input/get-input'
 import {
@@ -24,6 +24,7 @@ import {
     type EditMode,
     EditModeTelemetryMetadataMapping,
 } from '../edit/types'
+import { isStreamedIntent } from '../edit/utils/edit-intent'
 import { getOverriddenModelForIntent } from '../edit/utils/edit-models'
 import type { ExtensionClient } from '../extension-client'
 import { isRunningInsideAgent } from '../jsonrpc/isRunningInsideAgent'
@@ -31,8 +32,6 @@ import { logDebug } from '../output-channel-logger'
 import { charactersLogger } from '../services/CharactersLogger'
 import { splitSafeMetadata } from '../services/telemetry-v2'
 import { countCode } from '../services/utils/code-count'
-
-import { isStreamedIntent } from '../edit/utils/edit-intent'
 import { FixupDocumentEditObserver } from './FixupDocumentEditObserver'
 import type { FixupFile } from './FixupFile'
 import { FixupFileObserver } from './FixupFileObserver'
@@ -952,26 +951,83 @@ export class FixupController
             return false
         }
 
-        // Get the index of the first non-whitespace character on the line where the insertion point is.
-        const nonEmptyStartIndex = document.lineAt(
-            task.insertionPoint.line
-        ).firstNonWhitespaceCharacterIndex
-        // Split the text into lines and prepend each line with spaces to match the indentation level
-        // of the line where the insertion point is.
-        const textLines = text.split('\n').map(line => ' '.repeat(nonEmptyStartIndex) + line)
-        // Join the lines back into a single string with newline characters
-        // Remove any leading whitespace from the first line, as we are inserting at the insertionPoint
-        // Keep any trailing whitespace on the last line to preserve the original indentation.
-        const replacementText = textLines.join('\n').trimStart()
+        // Get the indentation context for the insertion point
+        const insertionLine = document.lineAt(task.insertionPoint.line)
+        let targetIndentSize = insertionLine.firstNonWhitespaceCharacterIndex
+        const textIndentSize = text.search(/\S/) || 0
 
-        // Insert the updated text at the specified insertionPoint.
+        const isPythonFile = task.document.languageId === 'python'
+        const isDocIntent = task.intent === 'doc'
+
+        // Special case for Python documentation
+        if (targetIndentSize === 0 && isPythonFile && isDocIntent) {
+            targetIndentSize = getEditorTabSize()
+        }
+
+        // Calculate indentation adjustments
+        const needsIndentAdjustment = targetIndentSize > textIndentSize
+        const indentDifference = needsIndentAdjustment ? targetIndentSize - textIndentSize : 0
+
+        // Process the text lines
+        const textLines = text.split('\n')
+        const processedLines = textLines.map((line, index) => {
+            // Don't add extra indentation to empty lines
+            if (line.trim() === '') {
+                return line
+            }
+
+            // For the first line, only add indentation if we're at the start of a line
+            if (
+                index === 0 &&
+                task.insertionPoint.character > 0 &&
+                line.startsWith(' '.repeat(textIndentSize))
+            ) {
+                return line.trimStart()
+            }
+
+            // Add the calculated indentation difference
+            return ' '.repeat(indentDifference) + line
+        })
+
+        // Ensure proper line ending and handle insertion at line start
+        const proposedText =
+            processedLines.join('\n') +
+            (!isPythonFile
+                ? task.insertionPoint.character > 0
+                    ? ' '.repeat(targetIndentSize)
+                    : ''
+                : '')
+
+        const replacementText = proposedText
+        const startLine = task.insertionPoint.line > 0 ? task.insertionPoint.line - 1 : 0
+        const startLineText = document.lineAt(startLine).text
+
+        // Insert the updated text at the specified insertionPoint
         if (edit instanceof vscode.WorkspaceEdit) {
             edit.insert(document.uri, task.insertionPoint, replacementText)
             return vscode.workspace.applyEdit(edit)
         }
 
+        // If we have a doc intent with python file and no start line text,
+        // we want to insert the docstring after the insertion point.
+        // This is because we need the docstring to be on the next line
+        // after the function or class definition.
+        const insertionPoint = new vscode.Position(
+            isPythonFile && isDocIntent && !startLineText
+                ? task.insertionPoint.line + 1
+                : task.insertionPoint.line,
+            task.insertionPoint.character
+        )
+
         return edit(editBuilder => {
-            editBuilder.insert(task.insertionPoint, replacementText)
+            // Replace the code block if the start line matches the start of the text
+            // This happens sometimes with python document code action where instead
+            // of adding only the docstring, the LLM returns the entire code block
+            if (startLine > 0 && startLineText && text.startsWith(startLineText)) {
+                editBuilder.replace(task.originalRange, text)
+            } else {
+                editBuilder.insert(insertionPoint, replacementText)
+            }
         }, options)
     }
 

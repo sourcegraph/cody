@@ -51,8 +51,8 @@ export class TestClass {
     constructor(private shouldGreet: boolean) {}
 
     /**
-         * Prints a greeting message if shouldGreet is true.
-         */
+     * Prints a greeting message if shouldGreet is true.
+     */
     public functionName() {
         if (this.shouldGreet) {
             console.log(/* CURSOR */ 'Hello World!')
