@@ -9,66 +9,48 @@ This is a log of all notable changes to Cody for VS Code.
 ### Features
 
 #### Notices
-
 - display Cody deprecation message based on site enablement [#8120](https://github.com/sourcegraph/cody/pull/8120)
+- Add Cody PLG Sunset Notice [#8095](https://github.com/sourcegraph/cody/pull/8095)
 
 ### Fix
+- [Backport M110] Bump up Cody Web version to v0.32.12 [#8162](https://github.com/sourcegraph/cody/pull/8162)
+- [Backport M110] Fix a crash on auto-edit popup disposal [#8159](https://github.com/sourcegraph/cody/pull/8159)
+- Fix auto-edit enrolment issue caused by config propagation bug [#8140](https://github.com/sourcegraph/cody/pull/8140)
+- Fix error when adding multiple repositories with at-mention in chat [#8135](https://github.com/sourcegraph/cody/pull/8135)
+- Remove redundant comments [#8130](https://github.com/sourcegraph/cody/pull/8130)
+- Fix threading issues from Cody Console [#8104](https://github.com/sourcegraph/cody/pull/8104)
+- Fix threading issue with Cody Console [#8102](https://github.com/sourcegraph/cody/pull/8102)
+- Fix multiple cody.characters:flush events firing at odd intervals [#8100](https://github.com/sourcegraph/cody/pull/8100)
+
 
 #### Auth
-
 - only update auth status in agent context [#8124](https://github.com/sourcegraph/cody/pull/8124)
 - restore accidentally removed URI handler for authentication callbacks [#8114](https://github.com/sourcegraph/cody/pull/8114)
 
 #### Auto-Edit
-
 - Ensure hot streak is disabled in Agent mode [#8143](https://github.com/sourcegraph/cody/pull/8143)
+- Disable auto-edits for JB Remote IDE [#8103](https://github.com/sourcegraph/cody/pull/8103)
 
 #### Autocomplete
-
 - Fix API version parameter for autocomplete code completion requests [#8139](https://github.com/sourcegraph/cody/pull/8139)
 
 #### Chat
-
 - phantom scrolling when typing in mention menu [#8127](https://github.com/sourcegraph/cody/pull/8127)
 
 #### Editor
-
 - reading of ignore file entries that contain commas instead of periods [#8125](https://github.com/sourcegraph/cody/pull/8125)
 
 #### Mentions
-
 - deduplicate files from overlapping workspace folders [#8128](https://github.com/sourcegraph/cody/pull/8128)
 
 ### Chore
-
-#### Agent
-
-- bump release version to 5.5.22 [#8161](https://github.com/sourcegraph/cody/pull/8161)
-
-### Reverts
-
-  There were no reverts for this release
-
-### Uncategorized
-
-#### Others
-
-- [Backport M110] Bump up Cody Web version to v0.32.12 [#8162](https://github.com/sourcegraph/cody/pull/8162)
-- [Backport M110] Fix a crash on auto-edit popup disposal [#8159](https://github.com/sourcegraph/cody/pull/8159)
-- Changelog for 1.108.0 [#8148](https://github.com/sourcegraph/cody/pull/8148)
-- Fix auto-edit enrolment issue caused by config propagation bug [#8140](https://github.com/sourcegraph/cody/pull/8140)
 - Improve autoedit onboarding message [#8137](https://github.com/sourcegraph/cody/pull/8137)
-- Fix error when adding multiple repositories with at-mention in chat [#8135](https://github.com/sourcegraph/cody/pull/8135)
-- Remove redundant comments [#8130](https://github.com/sourcegraph/cody/pull/8130)
-- Changelog for 1.106.1 [#8110](https://github.com/sourcegraph/cody/pull/8110)
 - Pass client name version headers with completions request [#8105](https://github.com/sourcegraph/cody/pull/8105)
-- Fix threading issues from Cody Console [#8104](https://github.com/sourcegraph/cody/pull/8104)
-- Disable auto-edits for JB Remote IDE [#8103](https://github.com/sourcegraph/cody/pull/8103)
-- Fix threading issue with Cody Console [#8102](https://github.com/sourcegraph/cody/pull/8102)
-- Fix multiple cody.characters:flush events firing at odd intervals [#8100](https://github.com/sourcegraph/cody/pull/8100)
-- Add Cody PLG Sunset Notice [#8095](https://github.com/sourcegraph/cody/pull/8095)
 - Add a test for `extensionConfiguration/didUpdate` [#8093](https://github.com/sourcegraph/cody/pull/8093)
 - Improve Cody release notes generation [#8068](https://github.com/sourcegraph/cody/pull/8068)
+
+#### Agent
+- bump release version to 5.5.22 [#8161](https://github.com/sourcegraph/cody/pull/8161)
 
 
 ## 1.108.0
