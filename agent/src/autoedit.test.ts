@@ -205,7 +205,8 @@ describe('Autoedit', () => {
         async function getAutoEditSuggestion(
             client: TestClient,
             uri: vscode.Uri,
-            position: Position
+            position: Position,
+            triggerKind: 'Automatic' | 'Invoke' = 'Automatic'
         ): Promise<AutocompleteEditItem> {
             await client.openFile(uri)
 
@@ -219,7 +220,7 @@ describe('Autoedit', () => {
             const result = (await client.request('autocomplete/execute', {
                 uri: uri.toString(),
                 position,
-                triggerKind: 'Automatic',
+                triggerKind: triggerKind,
             })) as AutocompleteResult
             const id = result.decoratedEditItems[0].id
 
@@ -495,6 +496,83 @@ describe('Autoedit', () => {
                 expect(modifiedLines.length).toBeGreaterThan(0)
                 expect(unchangedLines.length).toBeGreaterThan(0)
             }, 10_000)
+        })
+
+        describe('insertText vs originalText inconsistency repro', () => {
+            it('Point.cs 2d -> 3d', async () => {
+                const file = workspace.file('src', 'Point.cs')
+
+                for (let i = 0; i < 100; i++) {
+                    console.log(`[my_log] running #${i}`)
+
+                    const client = TestClient.create({
+                        workspaceRootUri: workspace.rootUri,
+                        name: 'autoedit-aside-custom',
+                        credentials: TESTING_CREDENTIALS.enterprise,
+                        extraConfiguration: {
+                            'cody.suggestions.mode': 'auto-edit',
+                        },
+                        capabilities: {
+                            ...allClientCapabilitiesEnabled,
+                            autoedit: 'enabled',
+                            autoeditInlineDiff: 'none',
+                            autoeditAsideDiff: 'diff',
+                        },
+                    })
+
+                    await client.beforeAll()
+
+                    const result = await getAutoEditSuggestion(
+                        client,
+                        file,
+                        { line: 8, character: 24 },
+                        'Invoke'
+                    )
+
+                    // Prediction accurately reflects the edit that should be made.
+                    expect(result.insertText).toMatchInlineSnapshot(`
+                  "{
+                      public class Point3d : Point
+                      {
+                          private int z;
+
+                          public Point3d(int x, int y, int z) : base(x, y)
+                          {
+                              this.z = z;
+                          }
+
+                          public double GetDistance(Point3d other)
+                          {
+                              return Math.Sqrt((x - other.x) * (x - other.x) + (y - other.y) * (y - other.y) + (z - other.z) * (z - other.z));
+                          }
+
+                          public override string ToString()
+                          {
+                              return $"three-dimensional point: ({x},{y},{z})";
+                          }
+                      }
+                  }
+                  "
+                `)
+
+                    const { aside, inline } = result.render
+
+                    // No inline diff provided (client only supports aside)
+                    expect(inline.changes).toBeNull()
+
+                    // No image provided (client will render the aside diff in their own way)
+                    expect(aside.image).toBeNull()
+
+                    // Diff object is provided
+                    expect(aside.diff).not.toBeNull()
+                    const { modifiedLines, unchangedLines } = aside.diff!
+                    // Check the diff has contents, we don't snapshot this as it is quite a large object
+                    expect(modifiedLines.length).toBeGreaterThan(0)
+                    expect(unchangedLines.length).toBeGreaterThan(0)
+
+                    await client.afterAll()
+                }
+            }, 10_000_000)
         })
 
         describe('client can render both inline and aside diffs', () => {
