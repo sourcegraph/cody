@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace ConsoleApp1
 {
-    public class Point3d/* CURSOR */
+    public class Point/* CURSOR */
     {
         private int x;
         private int y;

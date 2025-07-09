@@ -57,7 +57,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 07 Jul 2025 11:24:42 GMT
+            value: Tue, 08 Jul 2025 12:26:11 GMT
           - name: content-type
             value: text/plain; charset=utf-8
           - name: transfer-encoding
@@ -88,8 +88,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-07-07T11:24:42.418Z
-      time: 394
+      startedDateTime: 2025-07-08T12:26:11.331Z
+      time: 306
       timings:
         blocked: -1
         connect: -1
@@ -97,12 +97,12 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 394
-    - _id: cecbe2ff6c6039e7042b6a75beda7091
+        wait: 306
+    - _id: e226d8a97571c92936e789f63c0b569c
       _order: 0
       cache: {}
       request:
-        bodySize: 1816
+        bodySize: 1304
         cookies: []
         headers:
           - _fromType: array
@@ -135,7 +135,7 @@ log:
             value: "5000"
           - _fromType: array
             name: content-length
-            value: "1816"
+            value: "1304"
           - name: host
             value: demo.sourcegraph.com
         headersSize: 569
@@ -157,58 +157,32 @@ log:
 
                   Code snippets just I viewed:
 
-                  The file currently open:(`src/Point.cs`)
+                  The file currently open:(`src/sum-ages-complex-diff.ts`)
 
                   <file>
 
                   <<<AREA_AROUND_CODE_TO_REWRITE_WILL_BE_INSERTED_HERE>>>
-                              this.x = x;
-                              this.y = y;
-                          }
-
-                          public double GetDistance(Point other)
-                          {
-                              return Math.Sqrt((x - other.x) * (x - other.x) + (y - other.y) * (y - other.y));
-                          }
-
-                          public override string ToString()
-                          {
-                              return $"two-dimensional point: ({x},{y})";
-                          }
-                      }
-                  }
-
 
                   </file>
 
                   <area_around_code_to_rewrite>
 
-                  using System;
+                  interface Person {
+                      name: string
+                      age: number
+                  }
 
-                  using System.Collections.Generic;
-
-                  using System.Linq;
-
-                  using System.Text;
-
-                  using System.Threading.Tasks;
-
-
-                  namespace ConsoleApp1
 
 
                   <code_to_rewrite>
 
-                  {
-                      public class Point3d
-                      {
-                          private int x;
+                  export function sumAge(a: Human, a: Human): number {
+
+
+                  }
+
 
                   </code_to_rewrite>
-                          private int y;
-
-                          public Point(int x, int y)
-                          {
 
                   </area_around_code_to_rewrite>
 
@@ -219,10 +193,9 @@ log:
             model: fireworks::v1::autoedits-deepseek-lite-default
             prediction:
               content: |
-                {
-                    public class Point3d
-                    {
-                        private int x;
+                export function sumAge(a: Human, a: Human): number {
+
+                }
               type: content
             stream: true
             temperature: 0.1
@@ -236,14 +209,14 @@ log:
             value: "9"
         url: https://demo.sourcegraph.com/.api/completions/code?client-name=autoedit-aside-custom&client-version=v1&api-version=9
       response:
-        bodySize: 1015
+        bodySize: 530
         content:
           mimeType: text/event-stream
-          size: 1015
+          size: 530
           text: >+
             event: completion
 
-            data: {"deltaText":"{\n    public class Point3d : Point\n    {\n        private int z;\n\n        public Point3d(int x, int y, int z) : base(x, y)\n        {\n            this.z = z;\n        }\n\n        public double GetDistance(Point3d other)\n        {\n            return Math.Sqrt((x - other.x) * (x - other.x) + (y - other.y) * (y - other.y) + (z - other.z) * (z - other.z));\n        }\n\n        public override string ToString()\n        {\n            return $\"three-dimensional point: ({x},{y},{z})\";\n        }\n    }\n}\n"}
+            data: {"deltaText":"export function sumAge(a: Person, b: Person): number {\n    return a.age + b.age\n}\n"}
 
 
             event: done
@@ -253,7 +226,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 07 Jul 2025 11:24:47 GMT
+            value: Tue, 08 Jul 2025 12:26:12 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -282,8 +255,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-07-07T11:24:46.711Z
-      time: 3790
+      startedDateTime: 2025-07-08T12:26:12.451Z
+      time: 584
       timings:
         blocked: -1
         connect: -1
@@ -291,7 +264,175 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 3790
+        wait: 584
+    - _id: b0b67aa1409ec5502419a33567d73205
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 1383
+        cookies: []
+        headers:
+          - _fromType: array
+            name: accept
+            value: application/json
+          - _fromType: array
+            name: accept-encoding
+            value: gzip;q=0
+          - _fromType: array
+            name: authorization
+            value: token
+              REDACTED_69e9f79ce29352d014eeb80b56510341844eb82ad9abac7cab3631c7e873e4ce
+          - _fromType: array
+            name: content-type
+            value: application/json; charset=utf-8
+          - _fromType: array
+            name: user-agent
+            value: autoedit-aside-custom/v1 (Node.js v23.7.0)
+          - _fromType: array
+            name: x-requested-with
+            value: autoedit-aside-custom v1
+          - _fromType: array
+            name: x-sourcegraph-api-client-name
+            value: autoedit-aside-custom
+          - _fromType: array
+            name: x-sourcegraph-api-client-version
+            value: v1
+          - _fromType: array
+            name: x-timeout-ms
+            value: "5000"
+          - _fromType: array
+            name: content-length
+            value: "1383"
+          - name: host
+            value: demo.sourcegraph.com
+        headersSize: 569
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json; charset=utf-8
+          params: []
+          textJSON:
+            maxTokensToSample: 540
+            messages:
+              - speaker: human
+                text: >-
+                  You are an intelligent programmer and an expert at coding.
+                  Your goal is to help a colleague finish a code change.
+
+
+                  User: Help me finish a coding change. You will see snippets from current open files in my editor, files I have recently viewed, the file I am editing, then a history of my recent codebase changes, then current compiler and linter errors, content I copied from my codebase. You will then rewrite the <code_to_rewrite>, to match what you think I would do next in the codebase. Note: I might have stopped in the middle of typing.
+
+                  Code snippets just I viewed:
+
+                  The file currently open:(`src/sum-ages.ts`)
+
+                  <file>
+
+                  <<<AREA_AROUND_CODE_TO_REWRITE_WILL_BE_INSERTED_HERE>>>
+
+                  </file>
+
+                  <area_around_code_to_rewrite>
+
+                  interface Person {
+                      name: string
+                      age: number
+
+                  <code_to_rewrite>
+
+                  }
+
+
+                  export function sumAge(humanA: Human, humanB: Human): number {
+                      return humanA.age + humanB.age
+
+                  </code_to_rewrite>
+
+                  }
+
+
+                  </area_around_code_to_rewrite>
+
+                  Continue where I left off and finish my change by rewriting "code_to_rewrite":
+
+
+                  Assistant:
+            model: fireworks::v1::autoedits-deepseek-lite-default
+            prediction:
+              content: |
+                }
+
+                export function sumAge(humanA: Human, humanB: Human): number {
+                    return humanA.age + humanB.age
+              type: content
+            stream: true
+            temperature: 0.1
+            timeoutMs: 5000
+        queryString:
+          - name: client-name
+            value: autoedit-aside-custom
+          - name: client-version
+            value: v1
+          - name: api-version
+            value: "9"
+        url: https://demo.sourcegraph.com/.api/completions/code?client-name=autoedit-aside-custom&client-version=v1&api-version=9
+      response:
+        bodySize: 510
+        content:
+          mimeType: text/event-stream
+          size: 510
+          text: >+
+            event: completion
+
+            data: {"deltaText":"}\n\nexport function sumAge(humanA: Person, humanB: Person): number {\n    return humanA.age + humanB.age\n"}
+
+
+            event: done
+
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Tue, 08 Jul 2025 12:28:59 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: close
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Accept-Encoding, Authorization, Authorization, Cookie, Authorization,
+              X-Requested-With, Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1245
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2025-07-08T12:28:59.029Z
+      time: 614
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 614
     - _id: 404a28d2461ea66da470804476c21f26
       _order: 0
       cache: {}
@@ -355,7 +496,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 07 Jul 2025 11:24:43 GMT
+            value: Tue, 08 Jul 2025 12:26:12 GMT
           - name: content-type
             value: application/json
           - name: content-length
@@ -384,8 +525,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-07-07T11:24:42.825Z
-      time: 345
+      startedDateTime: 2025-07-08T12:26:11.651Z
+      time: 348
       timings:
         blocked: -1
         connect: -1
@@ -393,7 +534,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 345
+        wait: 348
     - _id: 8f874601be80bbe63d0652f1110280e3
       _order: 0
       cache: {}
@@ -463,7 +604,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 07 Jul 2025 11:24:42 GMT
+            value: Tue, 08 Jul 2025 12:26:11 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -494,8 +635,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-07-07T11:24:42.409Z
-      time: 348
+      startedDateTime: 2025-07-08T12:26:11.321Z
+      time: 356
       timings:
         blocked: -1
         connect: -1
@@ -503,7 +644,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 348
+        wait: 356
     - _id: c094940ca4210fcb4809cd04c9d916db
       _order: 0
       cache: {}
@@ -580,7 +721,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 07 Jul 2025 11:24:42 GMT
+            value: Tue, 08 Jul 2025 12:26:11 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -611,8 +752,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-07-07T11:24:41.965Z
-      time: 428
+      startedDateTime: 2025-07-08T12:26:10.864Z
+      time: 440
       timings:
         blocked: -1
         connect: -1
@@ -620,7 +761,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 428
+        wait: 440
     - _id: 6d678ba98ff2e3959de5001c07326f28
       _order: 0
       cache: {}
@@ -691,7 +832,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 07 Jul 2025 11:24:42 GMT
+            value: Tue, 08 Jul 2025 12:26:11 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -722,8 +863,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-07-07T11:24:41.983Z
-      time: 422
+      startedDateTime: 2025-07-08T12:26:10.882Z
+      time: 423
       timings:
         blocked: -1
         connect: -1
@@ -731,7 +872,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 422
+        wait: 423
     - _id: 6f796c152fe09bf6f9bca1fc88478f87
       _order: 0
       cache: {}
@@ -801,7 +942,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 07 Jul 2025 11:24:42 GMT
+            value: Tue, 08 Jul 2025 12:26:11 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -832,8 +973,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-07-07T11:24:41.974Z
-      time: 415
+      startedDateTime: 2025-07-08T12:26:10.873Z
+      time: 468
       timings:
         blocked: -1
         connect: -1
@@ -841,7 +982,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 415
+        wait: 468
     - _id: 2717d54335f4500a7f7edd3c1b77c615
       _order: 0
       cache: {}
@@ -924,7 +1065,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 07 Jul 2025 11:24:41 GMT
+            value: Tue, 08 Jul 2025 12:26:10 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -955,8 +1096,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-07-07T11:24:41.298Z
-      time: 526
+      startedDateTime: 2025-07-08T12:26:10.465Z
+      time: 363
       timings:
         blocked: -1
         connect: -1
@@ -964,7 +1105,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 526
+        wait: 363
     - _id: 7c8561ba03f1b53b0087b29b8c3519cb
       _order: 0
       cache: {}
@@ -1030,7 +1171,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 07 Jul 2025 11:24:42 GMT
+            value: Tue, 08 Jul 2025 12:26:11 GMT
           - name: content-type
             value: application/json
           - name: content-length
@@ -1059,8 +1200,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-07-07T11:24:41.955Z
-      time: 448
+      startedDateTime: 2025-07-08T12:26:10.854Z
+      time: 461
       timings:
         blocked: -1
         connect: -1
@@ -1068,7 +1209,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 448
+        wait: 461
     - _id: 18db51344af131baf45ba049965cba0f
       _order: 0
       cache: {}
@@ -1171,7 +1312,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 07 Jul 2025 11:24:43 GMT
+            value: Tue, 08 Jul 2025 12:26:12 GMT
           - name: content-type
             value: application/json
           - name: content-length
@@ -1202,8 +1343,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-07-07T11:24:42.816Z
-      time: 394
+      startedDateTime: 2025-07-08T12:26:11.641Z
+      time: 356
       timings:
         blocked: -1
         connect: -1
@@ -1211,7 +1352,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 394
+        wait: 356
     - _id: ceee2078500ebaad09c6a34055ed9d99
       _order: 0
       cache: {}
@@ -1249,82 +1390,82 @@ log:
         queryString: []
         url: https://demo.sourcegraph.com/.api/modelconfig/supported-models.json
       response:
-        bodySize: 4469
+        bodySize: 4465
         content:
           encoding: base64
           mimeType: text/plain; charset=utf-8
-          size: 4469
+          size: 4465
           text: "[\"H4sIAAAJbogA/+xdXZPaOBZ951e4eJqpbRFbxtDN03R6ZrI=\",\"qc1sstu9SW1t7YPA\
-            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\
-            g==\",\"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\
-            ZdOUZOvJl9NvnXI15JUZFCrnA==\",\"ci2QdGdBwZn0LSNeebLhytK/jqm8FTcoglQ\
-            zsGZgzcANMHDyfB9gcTimKsVxxpPIMieDS3qUM3JLnq9uiInFokxFjJ2UiE11Irb3Jt\
-            oRTLkGBu2eo4xCu+co4vBgr6dCoqQyRyMxh0RbHYj9I3H4jYYLHEb3H9OTUjwPLRGwe\
-            xa4VT6X4qesj58NpfY5mlRqIYdptUNS5MfQlidnd3xuA6AUvwxLSI93g5xdkR4nHsE+\
-            eyQuTjWgGJKce+4/PtBlgBjhVzky/vzRKO1WeiOeqvg97nCAAtDXB1yAnQOBwMrswQp\
-            YV+0iB3fVRhrxGvFHIr6k6kyC8gNWOSAfsGkat/JyMpUDw8/G10Xv/PZ4NT0vHyCfzU\
-            MakMlotIKj0cRDsYuBDRwQUd/HDBTtJBB8SDowuMR9TDowPiGGI2b8tCLI+JB09u4rD\
-            hl++bkUp/szWcFfeLLMMuGVsa4FxZnRUwRiLVQE+8iFJnRMaN3t4Hd4LH6HG/z+9sKw\
-            72LXeJoTf0H8WX0obyb1y2bCGsdXjOMD1NvLqDczAOPvdCHZ4S0n3vtNV8b7f3/+W1X\
-            mvU7arRDeXbRc6Ox4w66Lpyj2WKJr8gWP6W+Zxy0HBrBMALfSYQ2ZPvASv79zGd0pit\
-            iDsBMbmINE52b8TYN49y333QnlsXHyLBqhPu8hO7Y1DQxdjIMI4wXgliFYweR9mmCMc\
-            mDI3pK/mYfg/Q/ZGzm7HcMwjB+dH53/DwBEPdXyZ/IAAA==\"]"
+            AlQYy2vLdKem8t+3ZIPBICzJ0GAa+Skdrj4sH5977tWH/2xZlmW1k9EUz9FXHCeEhu2\
+            B1XY6dvsm/y3GC7L6b7tjd+y/+Hix+jGK6YL4OE7aA+s/mT2//iz+xa828XmVKGTTmE\
+            Zk1L4p/+yTJArQ97+jOeZ294VdUcuPm+qqxyTGzzSeJZKqfy/slKueUDoJsKTeD7mRc\
+            n9phENEJJV+jnB4/1G90jlJWIwCSa1/LK2Uq/1G4xmOk/uPkorXdsqPLR9boAqMfJQt\
+            ET6y2v+7xOSc+jioBGRm8U88LsFyMIA27ALHBhAOBqMApT4GCQ1DzEAXBIjhhEnG4CE\
+            rZD1mhazutnXW7Mp2uwFoQ8/2nJ1CIxShIQkII7h8T6urPZqi7Y7xq718bQW/MEqDZP\
+            2cNgZvdbVHiOEJjb/z20KjURqj0fetqtoJQyzlneL/Gu6+JYzgmP86jvHObyMaMvzCv\
+            pHQp8/twRak+dWeo5ePYZSyJzrDIW+m69m2fSM0/JyykqVt2yW7DQbhVxsnjMwRw/4f\
+            /Jk80ISJ+5CGhP/SnjM627oFfrVJ0cEvOAzzR+QKO0lTtmvqeJJ+ZpB5oOGYTO6D4In\
+            kTCsYrGyMRbegONraoy4Z/ZvWHvvsuf4rwXH52fKRsFsC8+XLXfEw+cUd0evcvuNCIe\
+            oq7r8nLXD8+8chw3EUkwQ3ZhhunTuoDYNbjWFoif/aGJ7y61CH99mUhDMSTmo5AOuZs\
+            Kn1tKyi4e5A8EOMUUJDEk5O5yv4e3zT0oStMmntIatSe8ZVGFdRz1Xcubq379RxFfBA\
+            V/narkJ/GHq1YNAQV0GjNNEMED5HaaIWHiwrf8PBwQYar4f3OYWpEn/fEH/Tid/ECNc\
+            YIyy5uVaEkHsA/fjgbP6gGdGBcRbGWVy6szBRQs0oQcHJNjdKcEF/ldzRySS5nf4ym6\
+            QymSBtpP5kgiH705C9yQi9pYyQCQyuMTDYoGH8wnDoY7+IEtQmENa0rx8ivKITuIwgw\
+            UwhmCkEM4VgphAuZwrBBV694MDTCg4kjciDA+yT7VIH+YuTuQSzAsmsQDIrkMwKpAav\
+            QHKB3QO2s+ETeK5f0RFYnwW2YifAa+XzB10bwrsjuwBliU/ZFMf7ydzHUYx5SOAbjc8\
+            1/mEzAC3BW6sMy+3VDlyqTBGZpZppTM/6Ky+lhtHqJuQ6BaWMjug8CjDblgS1dIzmeu\
+            kkwtg3UkVJqtwqK5XuFi0boWKEihEqTRAqUxGz73EEOm4gqzfXKq7dP7EbUE5XSther\
+            mWOxfh9IeqaFptCT3l+C3otMYiPAtvOKh2iiFyTbCmSLafD9IWomIMSLi1Bj+vDep3l\
+            y4izB1cbeWXMXBff+5q56HSiQXiDEa5F21qgXubHLz49cmVB5Fnp19lUFbDjqAlhgaE\
+            IkgKzA3lVeRq+MSC8DF17q45BuJPKaAnemgMwqOjyBYZiDNoGgwaDWxgszlwZDBbOYJ\
+            AwFI+oj2MJ9B4Zih9EdiXk7a1NTn6loF8ZaI1I2UK7e6sEMuj1Sman9LVQHWKHkdwWw\
+            HyMowTjGchQBhYQBIRhMEQJlrDdrxhHjxjPrK/Q+kQYtt4LypTgh0YjmoYseZfQNB7h\
+            SYyi6bvMInmn0Q8D1qsH68KVuOI1OF01SBYt7QBy4eoDUM8dNyluduBFhCZ3ynR5d1S\
+            6TOYoZgBFUfAd/O8Zh8DHY5QGsqj5kRez7nkx6x/POLR+FRcre2vFtuR8mNWUtX5hrl\
+            sdjZnl2QixMXB04RBw8gELRxeSLnxvfXUqEVnlwPNORFOUYDCi8yEJsb/u08JpBGrxS\
+            w==\",\"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\
+            7toyNeQryHfOuTrSFZkUKeacg==\",\"HZBV50DBmfQNI155suHK0r+erTwV19sGqWF\
+            gw8CGgY/AwNn+PsDSeEhVFsdZTyLLkgyuqFHOyA3ZX30kJhaLMhUxdlIittWJ2N3paE\
+            vQ5RoYdDueMgrdjqeIw721ngqJkpU5BoklJLrqQOweiMP8uFuAQjaNaURGg8ECDgajA\
+            KU+Bi7wQELDEDOwbSdZQfyQVWBxhD5mFVifEMMJs35aEGR9yCp79xXHDL/8XMmiuz1Z\
+            wF+41nVsCPXRrHeWivy02uoc7oZrPgKLOtA+G49qfeJOVc0ettt/F7nQhp4NnbsN/PY\
+            PxW9/hd/fXhgOfexbT1MSzkg4qQ/lVad+WXXY4PiKcbyHejsF9RYGYPidziQJ2mrivV\
+            9VZb3/9+e/6TLvddKu+FOFpxCvDQTrNxrPcJzcf8wPVgsCNEfA7TjgVvkYq5+KOn62l\
+            MqXUKlUQq5qL5k/NQB51yvZbUdTo4DgkD0SH+cpI3EHeKhy//GBziPECH/tBtafP64M\
+            6MvzsMDG+YFgYXegBtZVqyjBXbWQQbxB/IGIr1ikLkH5HqsSkPfYHBu38tXnKt8XORt\
+            fbwfzF8WrrQ032vbxGKUByzpaXvCYP9Gy8OXKEjg2gOvcw1JzdkGQJQ42Hmh7jBL2IK\
+            zEBXYvA24RANIo3fzKfXtEubPL9qIRGvIaimNbc0njYxwlGM8At4zBAmbf0wRDVAJD8\
+            ZX8VT8E338ovsjZblmWZf1o/Wj9fwBdn+YsZ/IAAA==\"]"
         cookies: []
         headers:
           - name: date
-            value: Mon, 07 Jul 2025 11:24:43 GMT
+            value: Tue, 08 Jul 2025 12:26:12 GMT
           - name: content-type
             value: text/plain; charset=utf-8
           - name: transfer-encoding
@@ -1355,8 +1496,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-07-07T11:24:43.216Z
-      time: 358
+      startedDateTime: 2025-07-08T12:26:12.004Z
+      time: 430
       timings:
         blocked: -1
         connect: -1
@@ -1364,6 +1505,6 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 358
+        wait: 430
   pages: []
   version: "1.2"

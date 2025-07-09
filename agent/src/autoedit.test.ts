@@ -205,8 +205,7 @@ describe('Autoedit', () => {
         async function getAutoEditSuggestion(
             client: TestClient,
             uri: vscode.Uri,
-            position: Position,
-            triggerKind: 'Automatic' | 'Invoke' = 'Automatic'
+            position: Position
         ): Promise<AutocompleteEditItem> {
             await client.openFile(uri)
 
@@ -220,7 +219,7 @@ describe('Autoedit', () => {
             const result = (await client.request('autocomplete/execute', {
                 uri: uri.toString(),
                 position,
-                triggerKind: triggerKind,
+                triggerKind: 'Automatic',
             })) as AutocompleteResult
             const id = result.decoratedEditItems[0].id
 
@@ -500,14 +499,12 @@ describe('Autoedit', () => {
 
         describe('insertText vs originalText inconsistency repro', () => {
             it('Point.cs 2d -> 3d', async () => {
-                const file = workspace.file('src', 'Point.cs')
-
                 for (let i = 0; i < 100; i++) {
                     console.log(`[my_log] running #${i}`)
 
                     const client = TestClient.create({
                         workspaceRootUri: workspace.rootUri,
-                        name: 'autoedit-aside-custom',
+                        name: 'autoedit-repro',
                         credentials: TESTING_CREDENTIALS.enterprise,
                         extraConfiguration: {
                             'cody.suggestions.mode': 'auto-edit',
@@ -522,12 +519,39 @@ describe('Autoedit', () => {
 
                     await client.beforeAll()
 
-                    const result = await getAutoEditSuggestion(
-                        client,
-                        file,
-                        { line: 8, character: 24 },
-                        'Invoke'
+                    const file = workspace.file('src', 'Point.cs')
+                    await client.openFile(file)
+
+                    const document = client.workspace.getDocument(file)!
+                    const offset = document.offsetAt({ line: 8, character: 22 })
+                    const contentPrefix = document.getText().substring(0, offset)
+                    const contentSuffix = document.getText().substring(offset)
+                    await client.changeFile(file, {
+                        text: contentPrefix + '3D' + contentSuffix,
+                    })
+
+                    // Set a small visibility delay for testing purposes.
+                    const visibilityDelay = 100
+                    await client.request('testing/autocomplete/setCompletionVisibilityDelay', {
+                        delay: visibilityDelay,
+                    })
+
+                    const position = { line: 8, character: 24 }
+                    await client.changeFile(file, {
+                        selection: { start: position, end: position },
+                    })
+
+                    console.log(
+                        `[my_log] document.getText(): ${client.workspace.getDocument(file)?.getText()}`
                     )
+
+                    const result = (
+                        await client.request('autocomplete/execute', {
+                            uri: file.toString(),
+                            position,
+                            triggerKind: 'Automatic',
+                        })
+                    ).decoratedEditItems[0]
 
                     // Prediction accurately reflects the edit that should be made.
                     expect(result.insertText).toMatchInlineSnapshot(`
