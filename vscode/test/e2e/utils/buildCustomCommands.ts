@@ -8,6 +8,11 @@ import * as codyJson from './commands.json'
  * The file is written to the .vscode directory created in the buildWorkSpaceSettings step
  */
 export async function buildCustomCommandConfigFile(workspaceDirectory: string): Promise<void> {
+    // Skip custom command config creation for .code-workspace files
+    if (workspaceDirectory.endsWith('.code-workspace')) {
+        return
+    }
+
     const codyJsonPath = join(workspaceDirectory, '.vscode', 'cody.json')
     await new Promise<void>((resolve, reject) => {
         writeFile(codyJsonPath, JSON.stringify(codyJson), error => {
