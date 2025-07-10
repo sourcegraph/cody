@@ -286,372 +286,391 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
      * @param message is the message from the view.
      */
     private async onDidReceiveMessage(message: WebviewMessage): Promise<void> {
-        switch (message.command) {
-            case 'ready':
-                await this.handleReady()
-                break
-            case 'initialized':
-                await this.handleInitialized()
-                this.setWebviewToChat()
-                break
-            case 'submit': {
-                await this.handleUserMessage({
-                    requestID: uuid.v4(),
-                    inputText: PromptString.unsafe_fromUserQuery(message.text),
-                    mentions: message.contextItems ?? [],
-                    editorState: message.editorState as SerializedPromptEditorState,
-                    signal: this.startNewSubmitOrEditOperation(),
-                    source: 'chat',
-                    manuallySelectedIntent: message.manuallySelectedIntent,
-                    traceparent: message.traceparent,
-                })
-                break
-            }
-            case 'edit': {
-                this.cancelSubmitOrEditOperation()
+        try {
+            switch (message.command) {
+                case 'ready':
+                    await this.handleReady()
+                    break
+                case 'initialized':
+                    await this.handleInitialized()
+                    this.setWebviewToChat()
+                    break
+                case 'submit': {
+                    await this.handleUserMessage({
+                        requestID: uuid.v4(),
+                        inputText: PromptString.unsafe_fromUserQuery(message.text),
+                        mentions: message.contextItems ?? [],
+                        editorState: message.editorState as SerializedPromptEditorState,
+                        signal: this.startNewSubmitOrEditOperation(),
+                        source: 'chat',
+                        manuallySelectedIntent: message.manuallySelectedIntent,
+                        traceparent: message.traceparent,
+                    })
+                    break
+                }
+                case 'edit': {
+                    this.cancelSubmitOrEditOperation()
 
-                await this.handleEdit({
-                    requestID: uuid.v4(),
-                    text: PromptString.unsafe_fromUserQuery(message.text),
-                    index: message.index ?? undefined,
-                    contextFiles: message.contextItems ?? [],
-                    editorState: message.editorState as SerializedPromptEditorState,
-                    manuallySelectedIntent: message.manuallySelectedIntent,
-                })
-                break
-            }
-            case 'reevaluateSearchWithSelectedFilters': {
-                await this.reevaluateSearchWithSelectedFilters({
-                    index: message.index ?? undefined,
-                    selectedFilters: message.selectedFilters,
-                })
-                break
-            }
-            case 'abort':
-                this.handleAbort()
-                break
-            case 'insert':
-                await handleCodeFromInsertAtCursor(message.text)
-                break
-            case 'copy':
-                await handleCopiedCode(message.text, message.eventType)
-                break
-            case 'smartApplyPrefetch':
-            case 'smartApplySubmit':
-                await handleSmartApply({
-                    id: message.id,
-                    code: message.code,
-                    authStatus: currentAuthStatus(),
-                    instruction: message.instruction || '',
-                    fileUri: message.fileName,
-                    traceparent: message.traceparent || undefined,
-                    isPrefetch: message.command === 'smartApplyPrefetch',
-                })
-                break
-            case 'trace-export':
-                TraceSender.send(message.traceSpanEncodedJson)
-                break
-            case 'smartApplyAccept':
-                await vscode.commands.executeCommand('cody.command.smart-apply.accept', {
-                    taskId: message.id,
-                })
-                break
-            case 'smartApplyReject':
-                await vscode.commands.executeCommand('cody.command.smart-apply.reject', {
-                    taskId: message.id,
-                })
-                break
-            case 'openURI':
-                vscode.commands.executeCommand('vscode.open', message.uri, {
-                    selection: message.range,
-                })
-                break
-            case 'links': {
-                void openExternalLinks(message.value)
-                break
-            }
-            case 'openFileLink':
-                {
-                    if (message?.uri?.scheme?.startsWith('http')) {
-                        this.openRemoteFile(message.uri, true)
-                        return
-                    }
-
-                    // Determine if we're in the sidebar view
-                    const isInSidebar =
-                        this._webviewPanelOrView && !('viewColumn' in this._webviewPanelOrView)
-
+                    await this.handleEdit({
+                        requestID: uuid.v4(),
+                        text: PromptString.unsafe_fromUserQuery(message.text),
+                        index: message.index ?? undefined,
+                        contextFiles: message.contextItems ?? [],
+                        editorState: message.editorState as SerializedPromptEditorState,
+                        manuallySelectedIntent: message.manuallySelectedIntent,
+                    })
+                    break
+                }
+                case 'reevaluateSearchWithSelectedFilters': {
+                    await this.reevaluateSearchWithSelectedFilters({
+                        index: message.index ?? undefined,
+                        selectedFilters: message.selectedFilters,
+                    })
+                    break
+                }
+                case 'abort':
+                    this.handleAbort()
+                    break
+                case 'insert':
+                    await handleCodeFromInsertAtCursor(message.text)
+                    break
+                case 'copy':
+                    await handleCopiedCode(message.text, message.eventType)
+                    break
+                case 'smartApplyPrefetch':
+                case 'smartApplySubmit':
+                    await handleSmartApply({
+                        id: message.id,
+                        code: message.code,
+                        authStatus: currentAuthStatus(),
+                        instruction: message.instruction || '',
+                        fileUri: message.fileName,
+                        traceparent: message.traceparent || undefined,
+                        isPrefetch: message.command === 'smartApplyPrefetch',
+                    })
+                    break
+                case 'trace-export':
+                    TraceSender.send(message.traceSpanEncodedJson)
+                    break
+                case 'smartApplyAccept':
+                    await vscode.commands.executeCommand('cody.command.smart-apply.accept', {
+                        taskId: message.id,
+                    })
+                    break
+                case 'smartApplyReject':
+                    await vscode.commands.executeCommand('cody.command.smart-apply.reject', {
+                        taskId: message.id,
+                    })
+                    break
+                case 'openURI':
                     vscode.commands.executeCommand('vscode.open', message.uri, {
                         selection: message.range,
-                        preserveFocus: true,
-                        background: false,
-                        preview: true,
-                        // Use the active column if in sidebar, otherwise use Beside
-                        viewColumn: isInSidebar ? vscode.ViewColumn.Active : vscode.ViewColumn.Beside,
                     })
-                }
-                break
-            case 'openRemoteFile':
-                this.openRemoteFile(message.uri, message.tryLocal ?? false)
-                break
-            case 'newFile':
-                await handleCodeFromSaveToNewFile(message.text, this.editor)
-                break
-            case 'show-page':
-                await vscode.commands.executeCommand('cody.show-page', message.page)
-                break
-            case 'attribution-search':
-                await this.handleAttributionSearch(message.snippet)
-                break
-            case 'restoreHistory':
-                this.restoreSession(message.chatID)
-                this.setWebviewToChat()
-                break
-            case 'chatSession':
-                switch (message.action) {
-                    case 'new':
-                        this.clearAndRestartSession()
-                        break
-                    case 'duplicate':
-                        await this.duplicateSession(message.sessionID ?? this.chatBuilder.sessionID)
-                        break
-                }
-                break
-            case 'command':
-                vscode.commands.executeCommand(message.id, message.arg ?? message.args)
-                break
-            case 'mcp': {
-                const mcpManager = MCPManager.instance
-                if (!mcpManager) {
-                    logDebug('ChatController', 'MCP Manager is not initialized')
+                    break
+                case 'links': {
+                    void openExternalLinks(message.value)
                     break
                 }
-                const serverName = message.name
-                try {
-                    // Special case for updateServer without name (to refresh server list)
-                    if (message.type === 'updateServer' && !serverName) {
-                        mcpManager.refreshServers()
+                case 'openFileLink':
+                    {
+                        if (message?.uri?.scheme?.startsWith('http')) {
+                            this.openRemoteFile(message.uri, true)
+                            return
+                        }
+
+                        // Determine if we're in the sidebar view
+                        const isInSidebar =
+                            this._webviewPanelOrView && !('viewColumn' in this._webviewPanelOrView)
+
+                        vscode.commands.executeCommand('vscode.open', message.uri, {
+                            selection: message.range,
+                            preserveFocus: true,
+                            background: false,
+                            preview: true,
+                            // Use the active column if in sidebar, otherwise use Beside
+                            viewColumn: isInSidebar
+                                ? vscode.ViewColumn.Active
+                                : vscode.ViewColumn.Beside,
+                        })
+                    }
+                    break
+                case 'openRemoteFile':
+                    this.openRemoteFile(message.uri, message.tryLocal ?? false)
+                    break
+                case 'newFile':
+                    await handleCodeFromSaveToNewFile(message.text, this.editor)
+                    break
+                case 'show-page':
+                    await vscode.commands.executeCommand('cody.show-page', message.page)
+                    break
+                case 'attribution-search':
+                    await this.handleAttributionSearch(message.snippet)
+                    break
+                case 'restoreHistory':
+                    this.restoreSession(message.chatID)
+                    this.setWebviewToChat()
+                    break
+                case 'chatSession':
+                    switch (message.action) {
+                        case 'new':
+                            this.clearAndRestartSession()
+                            break
+                        case 'duplicate':
+                            await this.duplicateSession(message.sessionID ?? this.chatBuilder.sessionID)
+                            break
+                    }
+                    break
+                case 'command':
+                    vscode.commands.executeCommand(message.id, message.arg ?? message.args)
+                    break
+                case 'mcp': {
+                    const mcpManager = MCPManager.instance
+                    if (!mcpManager) {
+                        logDebug('ChatController', 'MCP Manager is not initialized')
                         break
                     }
-                    // All other operations require a server name
-                    if (!serverName) {
-                        break
-                    }
-                    switch (message.type) {
-                        case 'addServer': {
-                            if (!message.config) {
+                    const serverName = message.name
+                    try {
+                        // Special case for updateServer without name (to refresh server list)
+                        if (message.type === 'updateServer' && !serverName) {
+                            mcpManager.refreshServers()
+                            break
+                        }
+                        // All other operations require a server name
+                        if (!serverName) {
+                            break
+                        }
+                        switch (message.type) {
+                            case 'addServer': {
+                                if (!message.config) {
+                                    break
+                                }
+                                await mcpManager.addServer(serverName, message.config)
+                                // Send specific message to the UI about the new server
+                                const newServer = mcpManager
+                                    .getServers()
+                                    .find(s => s.name === serverName)
+                                if (newServer) {
+                                    void this.postMessage({
+                                        type: 'clientAction',
+                                        mcpServerChanged: {
+                                            name: newServer.name,
+                                            server: newServer,
+                                        },
+                                    })
+                                }
                                 break
                             }
-                            await mcpManager.addServer(serverName, message.config)
-                            // Send specific message to the UI about the new server
-                            const newServer = mcpManager.getServers().find(s => s.name === serverName)
-                            if (newServer) {
-                                void this.postMessage({
+                            case 'updateServer':
+                                if (message.config) {
+                                    await mcpManager.updateServer(serverName, message.config)
+                                } else if (message.toolName) {
+                                    const isDisabled = message.toolDisabled === true
+                                    await mcpManager.setToolState(
+                                        serverName,
+                                        message.toolName,
+                                        isDisabled
+                                    )
+                                }
+                                break
+                            case 'removeServer': {
+                                await mcpManager.deleteServer(serverName)
+                                this.postMessage({
                                     type: 'clientAction',
                                     mcpServerChanged: {
-                                        name: newServer.name,
-                                        server: newServer,
+                                        name: serverName,
+                                        server: null,
                                     },
                                 })
+                                break
                             }
-                            break
+                            default:
+                                logDebug('ChatController', `Unknown MCP operation: ${message.type}`)
                         }
-                        case 'updateServer':
-                            if (message.config) {
-                                await mcpManager.updateServer(serverName, message.config)
-                            } else if (message.toolName) {
-                                const isDisabled = message.toolDisabled === true
-                                await mcpManager.setToolState(serverName, message.toolName, isDisabled)
-                            }
-                            break
-                        case 'removeServer': {
-                            await mcpManager.deleteServer(serverName)
-                            this.postMessage({
-                                type: 'clientAction',
-                                mcpServerChanged: {
-                                    name: serverName,
-                                    server: null,
-                                },
-                            })
-                            break
-                        }
-                        default:
-                            logDebug('ChatController', `Unknown MCP operation: ${message.type}`)
-                    }
-                } catch (error) {
-                    const errorMessage = error instanceof Error ? error.message : String(error)
-                    logDebug('ChatController', `Failed to ${message.type} server`, errorMessage)
-
-                    void this.postMessage({
-                        type: 'clientAction',
-                        mcpServerError: {
-                            name: 'name' in message ? serverName : '',
-                            error: errorMessage,
-                        },
-                        mcpServerChanged: null,
-                    })
-                }
-                break
-            }
-
-            case 'recordEvent':
-                telemetryRecorder.recordEvent(
-                    // 👷 HACK: We have no control over what gets sent over JSON RPC,
-                    // so we depend on client implementations to give type guidance
-                    // to ensure that we don't accidentally share arbitrary,
-                    // potentially sensitive string values. In this RPC handler,
-                    // when passing the provided event to the TelemetryRecorder
-                    // implementation, we forcibly cast all the inputs below
-                    // (feature, action, parameters) into known types (strings
-                    // 'feature', 'action', 'key') so that the recorder will accept
-                    // it. DO NOT do this elsewhere!
-                    message.feature as 'feature',
-                    message.action as 'action',
-                    message.parameters as TelemetryEventParameters<
-                        { key: number },
-                        BillingProduct,
-                        BillingCategory
-                    >
-                )
-                break
-            case 'auth': {
-                if (message.authKind === 'refresh') {
-                    authProvider.refresh()
-                    break
-                }
-                if (message.authKind === 'simplified-onboarding') {
-                    const endpoint = DOTCOM_URL.href
-
-                    let tokenReceiverUrl: string | undefined = undefined
-                    closeAuthProgressIndicator()
-                    startAuthProgressIndicator()
-                    tokenReceiverUrl = await this.startTokenReceiver?.(endpoint, async credentials => {
-                        closeAuthProgressIndicator()
-                        const authStatus = await authProvider.validateAndStoreCredentials(
-                            credentials,
-                            'store-if-valid'
-                        )
-                        telemetryRecorder.recordEvent('cody.auth.fromTokenReceiver.web', 'succeeded', {
-                            metadata: {
-                                success: authStatus.authenticated ? 1 : 0,
-                            },
-                            billingMetadata: {
-                                product: 'cody',
-                                category: 'billable',
-                            },
-                        })
-                        if (!authStatus.authenticated) {
-                            void vscode.window.showErrorMessage(
-                                'Authentication failed. Please check your token and try again.'
-                            )
-                        }
-                    })
-
-                    const authProviderSimplified = new AuthProviderSimplified()
-                    const authMethod = message.authMethod || 'dotcom'
-                    const successfullyOpenedUrl = await authProviderSimplified.openExternalAuthUrl(
-                        authMethod,
-                        tokenReceiverUrl
-                    )
-                    if (!successfullyOpenedUrl) {
-                        closeAuthProgressIndicator()
-                    }
-                    break
-                }
-                if (
-                    (message.authKind === 'signin' || message.authKind === 'callback') &&
-                    message.endpoint
-                ) {
-                    try {
-                        const { endpoint, value: token } = message
-                        let auth: AuthCredentials | undefined = undefined
-
-                        if (token) {
-                            auth = {
-                                credentials: { token, source: 'paste' },
-                                serverEndpoint: endpoint,
-                            }
-                        } else {
-                            const { configuration } = await currentResolvedConfig()
-                            auth = await resolveAuth(endpoint, configuration, secretStorage)
-                        }
-
-                        if (!auth || !auth.credentials) {
-                            return redirectToEndpointLogin(endpoint)
-                        }
-
-                        await authProvider.validateAndStoreCredentials(auth, 'always-store')
                     } catch (error) {
-                        void vscode.window.showErrorMessage(`Authentication failed: ${error}`)
-                        this.postError(new Error(`Authentication failed: ${error}`))
-                    }
-                    break
-                }
-                if (message.authKind === 'signout') {
-                    const serverEndpoint = message.endpoint
-                    if (serverEndpoint) {
-                        await signOut(serverEndpoint)
-                    } else {
-                        await showSignOutMenu()
-                    }
-                    // Send config to refresh the endpoint history list.
-                    // TODO: Remove this when the config for webview is observable, see getConfigForWebview.
-                    await this.sendConfig(currentAuthStatus())
-                    break
-                }
-                if (message.authKind === 'switch') {
-                    await showSignInMenu()
-                    break
-                }
-                // cody.auth.signin or cody.auth.signout
-                await vscode.commands.executeCommand(`cody.auth.${message.authKind}`)
-                break
-            }
-            case 'simplified-onboarding': {
-                if (message.onboardingKind === 'web-sign-in-token') {
-                    void vscode.window
-                        .showInputBox({ prompt: 'Enter web sign-in token' })
-                        .then(async token => {
-                            if (!token) {
-                                return
-                            }
-                            const authStatus = await authProvider.validateAndStoreCredentials(
-                                {
-                                    serverEndpoint: DOTCOM_URL.href,
-                                    credentials: { token },
-                                },
-                                'store-if-valid'
-                            )
-                            if (!authStatus.authenticated) {
-                                void vscode.window.showErrorMessage(
-                                    'Authentication failed. Please check your token and try again.'
-                                )
-                            }
+                        const errorMessage = error instanceof Error ? error.message : String(error)
+                        logDebug('ChatController', `Failed to ${message.type} server`, errorMessage)
+
+                        void this.postMessage({
+                            type: 'clientAction',
+                            mcpServerError: {
+                                name: 'name' in message ? serverName : '',
+                                error: errorMessage,
+                            },
+                            mcpServerChanged: null,
                         })
+                    }
                     break
                 }
-                break
+
+                case 'recordEvent':
+                    telemetryRecorder.recordEvent(
+                        // 👷 HACK: We have no control over what gets sent over JSON RPC,
+                        // so we depend on client implementations to give type guidance
+                        // to ensure that we don't accidentally share arbitrary,
+                        // potentially sensitive string values. In this RPC handler,
+                        // when passing the provided event to the TelemetryRecorder
+                        // implementation, we forcibly cast all the inputs below
+                        // (feature, action, parameters) into known types (strings
+                        // 'feature', 'action', 'key') so that the recorder will accept
+                        // it. DO NOT do this elsewhere!
+                        message.feature as 'feature',
+                        message.action as 'action',
+                        message.parameters as TelemetryEventParameters<
+                            { key: number },
+                            BillingProduct,
+                            BillingCategory
+                        >
+                    )
+                    break
+                case 'auth': {
+                    if (message.authKind === 'refresh') {
+                        authProvider.refresh()
+                        break
+                    }
+                    if (message.authKind === 'simplified-onboarding') {
+                        const endpoint = DOTCOM_URL.href
+
+                        let tokenReceiverUrl: string | undefined = undefined
+                        closeAuthProgressIndicator()
+                        startAuthProgressIndicator()
+                        tokenReceiverUrl = await this.startTokenReceiver?.(
+                            endpoint,
+                            async credentials => {
+                                closeAuthProgressIndicator()
+                                const authStatus = await authProvider.validateAndStoreCredentials(
+                                    credentials,
+                                    'store-if-valid'
+                                )
+                                telemetryRecorder.recordEvent(
+                                    'cody.auth.fromTokenReceiver.web',
+                                    'succeeded',
+                                    {
+                                        metadata: {
+                                            success: authStatus.authenticated ? 1 : 0,
+                                        },
+                                        billingMetadata: {
+                                            product: 'cody',
+                                            category: 'billable',
+                                        },
+                                    }
+                                )
+                                if (!authStatus.authenticated) {
+                                    void vscode.window.showErrorMessage(
+                                        'Authentication failed. Please check your token and try again.'
+                                    )
+                                }
+                            }
+                        )
+
+                        const authProviderSimplified = new AuthProviderSimplified()
+                        const authMethod = message.authMethod || 'dotcom'
+                        const successfullyOpenedUrl = await authProviderSimplified.openExternalAuthUrl(
+                            authMethod,
+                            tokenReceiverUrl
+                        )
+                        if (!successfullyOpenedUrl) {
+                            closeAuthProgressIndicator()
+                        }
+                        break
+                    }
+                    if (
+                        (message.authKind === 'signin' || message.authKind === 'callback') &&
+                        message.endpoint
+                    ) {
+                        try {
+                            const { endpoint, value: token } = message
+                            let auth: AuthCredentials | undefined = undefined
+
+                            if (token) {
+                                auth = {
+                                    credentials: { token, source: 'paste' },
+                                    serverEndpoint: endpoint,
+                                }
+                            } else {
+                                const { configuration } = await currentResolvedConfig()
+                                auth = await resolveAuth(endpoint, configuration, secretStorage)
+                            }
+
+                            if (!auth || !auth.credentials) {
+                                return redirectToEndpointLogin(endpoint)
+                            }
+
+                            await authProvider.validateAndStoreCredentials(auth, 'always-store')
+                        } catch (error) {
+                            void vscode.window.showErrorMessage(`Authentication failed: ${error}`)
+                            this.postError(new Error(`Authentication failed: ${error}`))
+                        }
+                        break
+                    }
+                    if (message.authKind === 'signout') {
+                        const serverEndpoint = message.endpoint
+                        if (serverEndpoint) {
+                            await signOut(serverEndpoint)
+                        } else {
+                            await showSignOutMenu()
+                        }
+                        // Send config to refresh the endpoint history list.
+                        // TODO: Remove this when the config for webview is observable, see getConfigForWebview.
+                        await this.sendConfig(currentAuthStatus())
+                        break
+                    }
+                    if (message.authKind === 'switch') {
+                        await showSignInMenu()
+                        break
+                    }
+                    // cody.auth.signin or cody.auth.signout
+                    await vscode.commands.executeCommand(`cody.auth.${message.authKind}`)
+                    break
+                }
+                case 'simplified-onboarding': {
+                    if (message.onboardingKind === 'web-sign-in-token') {
+                        void vscode.window
+                            .showInputBox({ prompt: 'Enter web sign-in token' })
+                            .then(async token => {
+                                if (!token) {
+                                    return
+                                }
+                                const authStatus = await authProvider.validateAndStoreCredentials(
+                                    {
+                                        serverEndpoint: DOTCOM_URL.href,
+                                        credentials: { token },
+                                    },
+                                    'store-if-valid'
+                                )
+                                if (!authStatus.authenticated) {
+                                    void vscode.window.showErrorMessage(
+                                        'Authentication failed. Please check your token and try again.'
+                                    )
+                                }
+                            })
+                        break
+                    }
+                    break
+                }
+                case 'log': {
+                    const logger = message.level === 'debug' ? logDebug : logError
+                    logger(message.filterLabel, message.message)
+                    break
+                }
+                case 'devicePixelRatio': {
+                    localStorage.setDevicePixelRatio(message.devicePixelRatio)
+                    break
+                }
+                case 'regenerateCodeBlock': {
+                    await this.handleRegenerateCodeBlock({
+                        requestID: message.id,
+                        code: PromptString.unsafe_fromLLMResponse(message.code),
+                        language: message.language
+                            ? PromptString.unsafe_fromLLMResponse(message.language)
+                            : undefined,
+                        index: message.index,
+                    })
+                    break
+                }
             }
-            case 'log': {
-                const logger = message.level === 'debug' ? logDebug : logError
-                logger(message.filterLabel, message.message)
-                break
-            }
-            case 'devicePixelRatio': {
-                localStorage.setDevicePixelRatio(message.devicePixelRatio)
-                break
-            }
-            case 'regenerateCodeBlock': {
-                await this.handleRegenerateCodeBlock({
-                    requestID: message.id,
-                    code: PromptString.unsafe_fromLLMResponse(message.code),
-                    language: message.language
-                        ? PromptString.unsafe_fromLLMResponse(message.language)
-                        : undefined,
-                    index: message.index,
-                })
-                break
-            }
+        } catch (error) {
+            this.postError(error as Error)
         }
     }
 
