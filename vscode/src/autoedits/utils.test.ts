@@ -432,12 +432,15 @@ describe('isDuplicatingTextFromRewriteArea', () => {
 })
 
 describe('detectsScopeOverflow', () => {
-    it('should detect scope overflow when LLM returns content that exists in suffixAfterArea', () => {
+    it('should detect scope overflow from actual debug data (the bug that was fixed)', () => {
+        // This test uses the exact data from the debug session that caused the bug
+        // It demonstrates that the LLM returned content that already existed in the file
         const codeToReplaceData = {
             codeToRewrite: '{\n    public class Point3d\n    {\n        private int x;\n',
             suffixAfterArea: '            this.x = x;\n            this.y = y;\n        }\n\n        public double GetDistance(Point other)\n        {\n            return Math.Sqrt((x - other.x) * (x - other.x) + (y - other.y) * (y - other.y));\n        }\n\n        public override string ToString()\n        {\n            return $\"two-dimensional point: ({x},{y})\";\n        }\n    }\n}',
         } as CodeToReplaceData
 
+        // The actual LLM prediction from the debug session
         const prediction = '{\n    public class Point3d : Point\n    {\n        private int z;\n\n        public Point3d(int x, int y, int z) : base(x, y)\n        {\n            this.z = z;\n        }\n\n        public double GetDistance(Point3d other)\n        {\n            return Math.Sqrt((x - other.x) * (x - other.x) + (y - other.y) * (y - other.y) + (z - other.z) * (z - other.z));\n        }\n\n        public override string ToString()\n        {\n            return $\"three-dimensional point: ({x},{y},{z})\";\n        }\n    }\n}'
 
         const result = utils.detectsScopeOverflow({
@@ -445,6 +448,11 @@ describe('detectsScopeOverflow', () => {
             codeToReplaceData,
         })
 
+        // This should detect scope overflow because:
+        // 1. The prediction includes GetDistance method that already exists in suffixAfterArea
+        // 2. The prediction includes ToString method that already exists in suffixAfterArea
+        // 3. originalText (codeToRewrite) is only 56 chars, but insertText is 493 chars
+        // 4. This would cause duplicate methods when applied
         expect(result).toBe(true)
     })
 
@@ -454,6 +462,7 @@ describe('detectsScopeOverflow', () => {
             suffixAfterArea: '            this.x = x;\n            this.y = y;\n        }\n\n        public double GetDistance(Point other)\n        {\n            return Math.Sqrt((x - other.x) * (x - other.x) + (y - other.y) * (y - other.y));\n        }\n\n        public override string ToString()\n        {\n            return $\"two-dimensional point: ({x},{y})\";\n        }\n    }\n}',
         } as CodeToReplaceData
 
+        // A valid prediction that doesn't duplicate existing methods
         const prediction = '{\n    public class Point3d : Point\n    {\n        private int z;\n\n        public Point3d(int x, int y, int z) : base(x, y)\n        {\n            this.z = z;\n        }\n'
 
         const result = utils.detectsScopeOverflow({
