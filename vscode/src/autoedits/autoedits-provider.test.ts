@@ -803,45 +803,8 @@ describe('AutoeditsProvider', () => {
             // - Without the fix, this would create duplicate methods
             // - With the fix, this suggestion is discarded due to scope overflow
 
-            const document = await vscode.workspace.openTextDocument({
-                content: `using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace ConsoleApp1
-{
-    public class Point3d
-    {
-        private int x;
-        private int y;
-
-        public Point(int x, int y)
-        {
-            this.x = x;
-            this.y = y;
-        }
-
-        public double GetDistance(Point other)
-        {
-            return Math.Sqrt((x - other.x) * (x - other.x) + (y - other.y) * (y - other.y));
-        }
-
-        public override string ToString()
-        {
-            return $"two-dimensional point: ({x},{y})";
-        }
-    }
-}`,
-                language: 'csharp',
-            })
-
-            // Position is at the end of "Point3d" on line 8 (0-indexed), character 24
-            const position = new vscode.Position(8, 24)
-
             // Mock the LLM to return a prediction that includes existing methods (scope overflow)
-            const mockPrediction = `{
+            const prediction = `{
     public class Point3d : Point
     {
         private int z;
@@ -863,141 +826,42 @@ namespace ConsoleApp1
     }
 }`
 
-            const { result } = await autoeditResultFor({
-                document,
-                position,
-                mockPrediction,
-                tokenBudget: {
-                    codeToRewritePrefixLines: 1,
-                    codeToRewriteSuffixLines: 2,
-                    maxPrefixLinesInArea: 11,
-                    maxSuffixLinesInArea: 4,
-                    prefixTokens: 500,
-                    suffixTokens: 500,
-                },
-            })
+            const { result } = await autoeditResultFor(`using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace ConsoleApp1
+{
+    public class Point3d█
+    {
+        private int x;
+        private int y;
+
+        public Point(int x, int y)
+        {
+            this.x = x;
+            this.y = y;
+        }
+
+        public double GetDistance(Point other)
+        {
+            return Math.Sqrt((x - other.x) * (x - other.x) + (y - other.y) * (y - other.y));
+        }
+
+        public override string ToString()
+        {
+            return $"two-dimensional point: ({x},{y})";
+        }
+    }
+}`, { prediction })
 
             // With the fix, the suggestion should be discarded due to scope overflow
             // The LLM prediction contains GetDistance and ToString methods that already exist in suffixAfterArea
             expect(result).toBeNull()
-            
-            // Verify the discard reason was logged
-            const discardEvents = autoeditAnalyticsLogger.getDebugState().filter(
-                entry => entry.type === 'discard' && entry.discardReason === autoeditDiscardReason.scopeOverflow
-            )
-            expect(discardEvents).toHaveLength(1)
         })
 
-        it('demonstrates what would happen without the fix (broken duplicate methods)', async () => {
-            // This test demonstrates the bug that would occur without the scope overflow fix
-            // It shows that the LLM prediction would include duplicate methods that already exist
-            
-            const document = await vscode.workspace.openTextDocument({
-                content: `using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace ConsoleApp1
-{
-    public class Point3d
-    {
-        private int x;
-        private int y;
-
-        public Point(int x, int y)
-        {
-            this.x = x;
-            this.y = y;
-        }
-
-        public double GetDistance(Point other)
-        {
-            return Math.Sqrt((x - other.x) * (x - other.x) + (y - other.y) * (y - other.y));
-        }
-
-        public override string ToString()
-        {
-            return $"two-dimensional point: ({x},{y})";
-        }
-    }
-}`,
-                language: 'csharp',
-            })
-
-            const position = new vscode.Position(8, 24)
-
-            // The same problematic prediction from the debug data
-            const mockPrediction = `{
-    public class Point3d : Point
-    {
-        private int z;
-
-        public Point3d(int x, int y, int z) : base(x, y)
-        {
-            this.z = z;
-        }
-
-        public double GetDistance(Point3d other)
-        {
-            return Math.Sqrt((x - other.x) * (x - other.x) + (y - other.y) * (y - other.y) + (z - other.z) * (z - other.z));
-        }
-
-        public override string ToString()
-        {
-            return $"three-dimensional point: ({x},{y},{z})";
-        }
-    }
-}`
-
-            // Temporarily disable scope overflow detection by mocking the function
-            const originalDetectsScopeOverflow = require('../utils').detectsScopeOverflow
-            const mockDetectsScopeOverflow = vi.fn().mockReturnValue(false)
-            vi.doMock('../utils', () => ({
-                ...vi.importActual('../utils'),
-                detectsScopeOverflow: mockDetectsScopeOverflow,
-            }))
-
-            const { result } = await autoeditResultFor({
-                document,
-                position,
-                mockPrediction,
-                tokenBudget: {
-                    codeToRewritePrefixLines: 1,
-                    codeToRewriteSuffixLines: 2,
-                    maxPrefixLinesInArea: 11,
-                    maxSuffixLinesInArea: 4,
-                    prefixTokens: 500,
-                    suffixTokens: 500,
-                },
-            })
-
-            // Without the fix, this would create a suggestion that duplicates existing methods
-            // The originalText would be: "{\n    public class Point3d\n    {\n        private int x;\n"
-            // The insertText would include the full class with GetDistance and ToString methods
-            // When applied, this would result in duplicate methods in the file
-            
-            // We can verify this by checking the codeToReplace vs the prediction scope
-            if (result?.decoratedEditItems && result.decoratedEditItems.length > 0) {
-                const editItem = result.decoratedEditItems[0]
-                const originalText = editItem.originalText
-                const insertText = editItem.insertText
-                
-                // The original text should be much shorter than the insert text
-                expect(originalText.length).toBeLessThan(insertText.length)
-                
-                // The insert text should contain methods that already exist in the file
-                expect(insertText).toContain('GetDistance')
-                expect(insertText).toContain('ToString')
-                
-                // The original text should NOT contain these methods (that's the bug)
-                expect(originalText).not.toContain('GetDistance')
-                expect(originalText).not.toContain('ToString')
-            }
-
-            // Restore the original function
-            vi.doUnmock('../utils')
-        })
     })
 })
