@@ -430,3 +430,53 @@ describe('isDuplicatingTextFromRewriteArea', () => {
         })
     })
 })
+
+describe('detectsScopeOverflow', () => {
+    it('should detect scope overflow when LLM returns content that exists in suffixAfterArea', () => {
+        const codeToReplaceData = {
+            codeToRewrite: '{\n    public class Point3d\n    {\n        private int x;\n',
+            suffixAfterArea: '            this.x = x;\n            this.y = y;\n        }\n\n        public double GetDistance(Point other)\n        {\n            return Math.Sqrt((x - other.x) * (x - other.x) + (y - other.y) * (y - other.y));\n        }\n\n        public override string ToString()\n        {\n            return $\"two-dimensional point: ({x},{y})\";\n        }\n    }\n}',
+        } as CodeToReplaceData
+
+        const prediction = '{\n    public class Point3d : Point\n    {\n        private int z;\n\n        public Point3d(int x, int y, int z) : base(x, y)\n        {\n            this.z = z;\n        }\n\n        public double GetDistance(Point3d other)\n        {\n            return Math.Sqrt((x - other.x) * (x - other.x) + (y - other.y) * (y - other.y) + (z - other.z) * (z - other.z));\n        }\n\n        public override string ToString()\n        {\n            return $\"three-dimensional point: ({x},{y},{z})\";\n        }\n    }\n}'
+
+        const result = utils.detectsScopeOverflow({
+            prediction,
+            codeToReplaceData,
+        })
+
+        expect(result).toBe(true)
+    })
+
+    it('should not detect scope overflow when prediction is within expected scope', () => {
+        const codeToReplaceData = {
+            codeToRewrite: '{\n    public class Point3d\n    {\n        private int x;\n',
+            suffixAfterArea: '            this.x = x;\n            this.y = y;\n        }\n\n        public double GetDistance(Point other)\n        {\n            return Math.Sqrt((x - other.x) * (x - other.x) + (y - other.y) * (y - other.y));\n        }\n\n        public override string ToString()\n        {\n            return $\"two-dimensional point: ({x},{y})\";\n        }\n    }\n}',
+        } as CodeToReplaceData
+
+        const prediction = '{\n    public class Point3d : Point\n    {\n        private int z;\n\n        public Point3d(int x, int y, int z) : base(x, y)\n        {\n            this.z = z;\n        }\n'
+
+        const result = utils.detectsScopeOverflow({
+            prediction,
+            codeToReplaceData,
+        })
+
+        expect(result).toBe(false)
+    })
+
+    it('should not detect scope overflow when suffixAfterArea is empty', () => {
+        const codeToReplaceData = {
+            codeToRewrite: '{\n    public class Point3d\n    {\n        private int x;\n',
+            suffixAfterArea: '',
+        } as CodeToReplaceData
+
+        const prediction = '{\n    public class Point3d : Point\n    {\n        private int z;\n\n        public Point3d(int x, int y, int z) : base(x, y)\n        {\n            this.z = z;\n        }\n\n        public double GetDistance(Point3d other)\n        {\n            return Math.Sqrt((x - other.x) * (x - other.x) + (y - other.y) * (y - other.y) + (z - other.z) * (z - other.z));\n        }\n\n        public override string ToString()\n        {\n            return $\"three-dimensional point: ({x},{y},{z})\";\n        }\n    }\n}'
+
+        const result = utils.detectsScopeOverflow({
+            prediction,
+            codeToReplaceData,
+        })
+
+        expect(result).toBe(false)
+    })
+})

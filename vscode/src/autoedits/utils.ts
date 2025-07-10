@@ -89,3 +89,76 @@ export function clip(line: number, min: number, max: number) {
 export function areSameUriDocs(a?: vscode.TextDocument, b?: vscode.TextDocument): boolean {
     return Boolean(a && b && a.uri.toString() === b.uri.toString())
 }
+
+/**
+ * Detects if the LLM prediction contains content that already exists in the file
+ * beyond the intended replacement scope. This handles cases where the LLM returns
+ * a broader scope than the marked codeToRewrite range.
+ */
+export function detectsScopeOverflow({
+    prediction,
+    codeToReplaceData,
+}: {
+    prediction: string
+    codeToReplaceData: CodeToReplaceData
+}): boolean {
+    // Check if the prediction contains content that already exists in suffixAfterArea
+    const { suffixAfterArea } = codeToReplaceData
+    
+    if (!suffixAfterArea || suffixAfterArea.length === 0) {
+        return false
+    }
+    
+    // Remove the code to rewrite from the prediction to see what's left
+    const { codeToRewrite } = codeToReplaceData
+    let remainingPrediction = prediction
+    
+    // If prediction starts with the codeToRewrite, remove it
+    if (remainingPrediction.startsWith(codeToRewrite)) {
+        remainingPrediction = remainingPrediction.slice(codeToRewrite.length)
+    }
+    
+    // Check if the remaining prediction contains content from suffixAfterArea
+    const suffixLines = lines(suffixAfterArea)
+    const predictionLines = lines(remainingPrediction)
+    
+    // Look for matching lines between prediction and suffixAfterArea
+    for (let i = 0; i < predictionLines.length; i++) {
+        const predLine = predictionLines[i].trim()
+        if (predLine.length === 0) continue
+        
+        for (let j = 0; j < suffixLines.length; j++) {
+            const suffixLine = suffixLines[j].trim()
+            if (suffixLine.length === 0) continue
+            
+            // If we find a matching line, check if it's part of a larger matching block
+            if (predLine === suffixLine) {
+                // Check if there are additional matching lines
+                let matchingLines = 1
+                let k = i + 1
+                let l = j + 1
+                
+                while (k < predictionLines.length && l < suffixLines.length) {
+                    const nextPredLine = predictionLines[k].trim()
+                    const nextSuffixLine = suffixLines[l].trim()
+                    
+                    if (nextPredLine === nextSuffixLine && nextPredLine.length > 0) {
+                        matchingLines++
+                        k++
+                        l++
+                    } else {
+                        break
+                    }
+                }
+                
+                // If we found multiple matching lines, it's likely a scope overflow
+                // We use a threshold of 2 to avoid false positives from single-line matches
+                if (matchingLines >= 2) {
+                    return true
+                }
+            }
+        }
+    }
+    
+    return false
+}

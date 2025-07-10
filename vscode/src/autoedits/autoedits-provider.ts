@@ -70,7 +70,7 @@ import type { AutoEditRenderOutput } from './renderer/render-output'
 import { type AutoeditRequestManagerParams, RequestManager } from './request-manager'
 import { shrinkPredictionUntilSuffix } from './shrink-prediction'
 import { SmartThrottleService } from './smart-throttle'
-import { areSameUriDocs, isDuplicatingTextFromRewriteArea } from './utils'
+import { areSameUriDocs, isDuplicatingTextFromRewriteArea, detectsScopeOverflow } from './utils'
 
 const AUTOEDIT_CONTEXT_STRATEGY = 'auto-edit'
 const RESET_SUGGESTION_ON_CURSOR_CHANGE_AFTER_INTERVAL_MS = 60 * 1000
@@ -271,7 +271,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
             return {
                 autoedit: 'enabled',
                 autoeditAsideDiff: 'image',
-                autoeditInlineDiff: 'insertions-and-deletions',
+                autoeditInlineDiff: 'none',
             }
         }
 
@@ -602,6 +602,21 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                     startedAt,
                     requestId,
                     discardReason: 'rewriteAreaOverlap',
+                    prediction: initialPrediction,
+                })
+                return null
+            }
+
+            if (
+                detectsScopeOverflow({
+                    prediction,
+                    codeToReplaceData: predictionCodeToReplaceData,
+                })
+            ) {
+                this.discardSuggestion({
+                    startedAt,
+                    requestId,
+                    discardReason: 'scopeOverflow',
                     prediction: initialPrediction,
                 })
                 return null

@@ -125,6 +125,7 @@ export const autoeditDiscardReason = {
     staleThrottledRequest: 10,
     nextCursorSuggestionShownInstead: 11,
     bigDiff: 12,
+    scopeOverflow: 13,
 } as const
 
 /** We use numeric keys to send these to the analytics backend */

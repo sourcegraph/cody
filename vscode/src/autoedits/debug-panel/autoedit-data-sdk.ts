@@ -182,6 +182,7 @@ export const DISCARD_REASONS: Record<AutoeditDiscardReasonMetadata, string> = {
     10: 'Stale Throttled Request',
     11: 'Next Cursor Suggestion Shown Instead',
     12: 'Big Diff Modification',
+    13: 'Scope Overflow (LLM returned content beyond intended replacement range)',
 }
 
 /**
