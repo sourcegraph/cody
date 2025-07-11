@@ -3,6 +3,7 @@ import {
     type Guardrails,
     type Model,
     type NLSSearchDynamicFilter,
+    PromptString,
     type SerializedPromptEditorValue,
     deserializeContextItem,
     isAbortErrorOrSocketHangUp,
@@ -14,7 +15,6 @@ import {
     type FC,
     memo,
     useCallback,
-    useContext,
     useEffect,
     useImperativeHandle,
     useMemo,
@@ -25,7 +25,6 @@ import type { UserAccountInfo } from '../Chat'
 import type { ApiPostMessage } from '../Chat'
 import { getVSCodeAPI } from '../utils/VSCodeApi'
 import { SpanManager } from '../utils/spanManager'
-import { getTraceparentFromSpanContext } from '../utils/telemetry'
 import { useOmniBox } from '../utils/useOmniBox'
 import type { CodeBlockActionsProps } from './ChatMessageContent/ChatMessageContent'
 import {
@@ -37,7 +36,7 @@ import { HumanMessageCell } from './cells/messageCell/human/HumanMessageCell'
 import { type Context, type Span, context, trace } from '@opentelemetry/api'
 import { DeepCodyAgentID } from '@sourcegraph/cody-shared/src/models/client'
 import * as uuid from 'uuid'
-import { isCodeSearchContextItem } from '../../src/context/openctx/codeSearch'
+
 import { useClientActionListener } from '../client/clientState'
 import { useLocalStorage } from '../components/hooks'
 
@@ -50,6 +49,7 @@ import { ToolStatusCell } from './cells/toolCell/ToolStatusCell'
 import { LoadingDots } from './components/LoadingDots'
 import { ScrollbarMarkers } from './components/ScrollbarMarkers'
 import { LastEditorContext } from './context'
+import { MOCK_LONG_RESPONSE } from './mockData'
 
 interface TranscriptProps {
     activeChatContext?: Context
@@ -97,11 +97,11 @@ export const Transcript: FC<TranscriptProps> = props => {
         activeChatContext,
         setActiveChatContext,
         chatEnabled,
-        transcript,
+        transcript: originalTranscript,
         tokenUsage,
         models,
         userInfo,
-        messageInProgress,
+        messageInProgress: originalMessageInProgress,
         guardrails,
         postMessage,
         copyButtonOnSubmit,
@@ -109,6 +109,66 @@ export const Transcript: FC<TranscriptProps> = props => {
         smartApply,
         welcomeContent,
     } = props
+
+    // Simulation state
+    const [isSimulating, setIsSimulating] = useState(false)
+    const [simulationTranscript, setSimulationTranscript] = useState<ChatMessage[]>([])
+    const [simulationMessageInProgress, setSimulationMessageInProgress] = useState<ChatMessage | null>(
+        null
+    )
+
+    // Use simulation state when active, otherwise use original props
+    const transcript = isSimulating ? simulationTranscript : originalTranscript
+    const messageInProgress = isSimulating ? simulationMessageInProgress : originalMessageInProgress
+
+    // Simulation function
+    const startSimulation = useCallback(() => {
+        setIsSimulating(true)
+
+        // Create a human message
+        const humanMessage: ChatMessage = {
+            speaker: 'human',
+            text: PromptString.unsafe_fromUserQuery(
+                'Please help me implement a complex feature with multiple code examples.'
+            ),
+            intent: 'chat',
+        }
+
+        // Set initial transcript with human message
+        setSimulationTranscript([humanMessage])
+
+        // Start streaming assistant response
+        const assistantMessage: ChatMessage = {
+            speaker: 'assistant',
+            text: PromptString.unsafe_fromLLMResponse(''),
+            intent: 'chat',
+        }
+
+        setSimulationMessageInProgress(assistantMessage)
+
+        // Long response with multiple code snippets
+        const fullResponse = MOCK_LONG_RESPONSE
+
+        // Simulate streaming by updating text character by character
+        let currentIndex = 0
+        const streamingInterval = setInterval(() => {
+            if (currentIndex < fullResponse.length) {
+                const currentText = fullResponse.substring(0, currentIndex + 1)
+                setSimulationMessageInProgress(prev =>
+                    prev ? { ...prev, text: PromptString.unsafe_fromLLMResponse(currentText) } : null
+                )
+                currentIndex++
+            } else {
+                // Streaming complete
+                clearInterval(streamingInterval)
+                setSimulationTranscript(prev => [
+                    ...prev,
+                    { ...assistantMessage, text: PromptString.unsafe_fromLLMResponse(fullResponse) },
+                ])
+                setSimulationMessageInProgress(null)
+            }
+        }, 0)
+    }, [])
 
     const interactions = useMemo(
         () => transcriptToInteractionPairs(transcript, messageInProgress),
@@ -243,6 +303,7 @@ export const Transcript: FC<TranscriptProps> = props => {
                             ? lastHumanEditorRef
                             : undefined
                     }
+                    startSimulation={startSimulation}
                 />
             )
         },
@@ -260,6 +321,7 @@ export const Transcript: FC<TranscriptProps> = props => {
             smartApply,
             interactions,
             messageInProgress,
+            startSimulation,
         ]
     )
 
@@ -381,6 +443,7 @@ interface TranscriptInteractionProps
     isLastSentInteraction: boolean
     priorAssistantMessageIsLoading: boolean
     editorRef?: React.RefObject<PromptEditorRefAPI | null>
+    startSimulation: () => void
 }
 
 export type RegeneratingCodeBlockState = {
@@ -406,11 +469,11 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
         copyButtonOnSubmit,
         smartApply,
         editorRef: parentEditorRef,
+        startSimulation,
     } = props
 
     const { activeChatContext, setActiveChatContext } = props
     const humanEditorRef = useRef<PromptEditorRefAPI | null>(null)
-    const lastEditorRef = useContext(LastEditorContext)
     useImperativeHandle(parentEditorRef, () => humanEditorRef.current)
 
     const [selectedIntent, setSelectedIntent] = useState<ChatMessage['intent']>(humanMessage?.intent)
@@ -422,65 +485,6 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
             setSelectedIntent('chat')
         }
     }, [humanMessage, isFirstInteraction, isLastInteraction])
-
-    const onUserAction = useCallback(
-        (action: 'edit' | 'submit', manuallySelectedIntent: ChatMessage['intent']) => {
-            // Start the span as soon as the user initiates the action
-            const startMark = performance.mark('startSubmit')
-            const spanManager = new SpanManager('cody-webview')
-            const span = spanManager.startSpan('chat-interaction', {
-                attributes: {
-                    sampled: true,
-                    'render.state': 'started',
-                    'startSubmit.mark': startMark.startTime,
-                },
-            })
-
-            if (!span) {
-                throw new Error('Failed to start span for chat interaction')
-            }
-
-            const spanContext = trace.setSpan(context.active(), span)
-            setActiveChatContext(spanContext)
-            const currentSpanContext = span.spanContext()
-
-            const traceparent = getTraceparentFromSpanContext(currentSpanContext)
-
-            // Serialize the editor value after starting the span
-            const editorValue = humanEditorRef.current?.getSerializedValue()
-            if (!editorValue) {
-                console.error('Failed to serialize editor value')
-                return
-            }
-
-            const commonProps = {
-                editorValue,
-                traceparent,
-                manuallySelectedIntent,
-            }
-
-            if (action === 'edit') {
-                // Remove search context chips from the next input so that the user cannot
-                // reference search results that don't exist anymore.
-                // This is a no-op if the input does not contain any search context chips.
-                // NOTE: Doing this for the penultimate input only seems to suffice because
-                // editing a message earlier in the transcript will clear the conversation
-                // and reset the last input anyway.
-                if (isLastSentInteraction) {
-                    lastEditorRef.current?.filterMentions(item => !isCodeSearchContextItem(item))
-                }
-                editHumanMessage({
-                    messageIndexInTranscript: humanMessage.index,
-                    ...commonProps,
-                })
-            } else {
-                submitHumanMessage({
-                    ...commonProps,
-                })
-            }
-        },
-        [humanMessage, setActiveChatContext, isLastSentInteraction, lastEditorRef]
-    )
 
     // Omnibox is enabled if the user is not a dotcom user and the omnibox is enabled
     const omniboxEnabled = useOmniBox() && !userInfo?.isDotComUser
@@ -639,22 +643,13 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
 
     const onHumanMessageSubmit = useCallback(
         (intentOnSubmit: ChatMessage['intent']) => {
-            // Current intent is the last selected intent if any or the current intent of the human message
-            const currentIntent = selectedIntent || humanMessage?.intent
-            // If no intent on submit provided, use the current intent instead
-            const newIntent = intentOnSubmit === undefined ? currentIntent : intentOnSubmit
-            setSelectedIntent(newIntent)
-            if (humanMessage.isUnsentFollowup) {
-                onUserAction('submit', newIntent)
-            } else {
-                // Use onUserAction directly with the new intent
-                onUserAction('edit', newIntent)
-            }
+            // Start simulation instead of actual submission
+            startSimulation()
             // Set the unsent followup flag to false after submitting
             // to makes sure the last editor for Agent mode gets reset.
             humanMessage.isUnsentFollowup = false
         },
-        [humanMessage, onUserAction, selectedIntent]
+        [humanMessage, startSimulation]
     )
 
     const onSelectedFiltersUpdate = useCallback(
@@ -864,28 +859,6 @@ export function editHumanMessage({
         editorState: editorValue.editorState,
         contextItems: editorValue.contextItems.map(deserializeContextItem),
         manuallySelectedIntent,
-    })
-    setTimeout(() => {
-        focusLastHumanMessageEditor()
-    }, 50)
-}
-
-function submitHumanMessage({
-    editorValue,
-    manuallySelectedIntent,
-    traceparent,
-}: {
-    editorValue: SerializedPromptEditorValue
-    manuallySelectedIntent?: ChatMessage['intent']
-    traceparent: string
-}): void {
-    getVSCodeAPI().postMessage({
-        command: 'submit',
-        text: editorValue.text,
-        editorState: editorValue.editorState,
-        contextItems: editorValue.contextItems.map(deserializeContextItem),
-        manuallySelectedIntent,
-        traceparent,
     })
     setTimeout(() => {
         focusLastHumanMessageEditor()
