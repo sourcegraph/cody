@@ -8,7 +8,6 @@ const meta: Meta<typeof ModeSelectorField> = {
         layout: 'centered',
     },
     args: {
-        omniBoxEnabled: true,
         isDotComUser: false,
         isCodyProUser: true,
         _intent: 'chat',
@@ -38,11 +37,5 @@ export const DotComUser: Story = {
     args: {
         isDotComUser: true,
         isCodyProUser: false,
-    },
-}
-
-export const WithoutOmniBox: Story = {
-    args: {
-        omniBoxEnabled: false,
     },
 }

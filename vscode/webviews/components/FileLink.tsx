@@ -15,7 +15,6 @@ import { useCallback, useMemo } from 'react'
 import type { URI } from 'vscode-uri'
 import { getVSCodeAPI } from '../utils/VSCodeApi'
 import { useTelemetryRecorder } from '../utils/telemetry'
-import { useOmniBox } from '../utils/useOmniBox'
 import styles from './FileLink.module.css'
 import { Button } from './shadcn/ui/button'
 
@@ -118,11 +117,7 @@ export const FileLink: React.FunctionComponent<
         source && hoverSourceLabels[source] ? `Included ${hoverSourceLabels[source]}` : undefined
 
     const telemetryRecorder = useTelemetryRecorder()
-    const oneboxEnabled = useOmniBox()
     const logClick = useCallback(() => {
-        if (!oneboxEnabled) {
-            return
-        }
         const external = uri.scheme === 'http' || uri.scheme === 'https'
         telemetryRecorder.recordEvent('onebox.searchResult', 'clicked', {
             metadata: {
@@ -137,7 +132,7 @@ export const FileLink: React.FunctionComponent<
                 category: 'core',
             },
         })
-    }, [telemetryRecorder, oneboxEnabled, uri])
+    }, [telemetryRecorder, uri])
 
     return (
         <div

@@ -1,6 +1,6 @@
 import type { ChatMessage } from '@sourcegraph/cody-shared'
 import { isMacOS } from '@sourcegraph/cody-shared'
-import { MessageSquare, Pencil, Search, Sparkle } from 'lucide-react'
+import { MessageSquare, Pencil, Sparkle } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Badge } from '../../../../../../components/shadcn/ui/badge'
 import { Command, CommandItem, CommandList } from '../../../../../../components/shadcn/ui/command'
@@ -13,7 +13,7 @@ const isMac = isMacOS()
 export enum IntentEnum {
     Agentic = 'Agent',
     Chat = 'Chat',
-    Search = 'Search',
+    Search = 'Search', // Deprecated, kept for compatibility
     Edit = 'Edit',
     Insert = 'Insert',
 }
@@ -22,7 +22,7 @@ export enum IntentEnum {
 export const INTENT_MAPPING: Record<NonNullable<ChatMessage['intent']>, IntentEnum> = {
     agentic: IntentEnum.Agentic,
     chat: IntentEnum.Chat,
-    search: IntentEnum.Search,
+    search: IntentEnum.Search, // Deprecated, kept for compatibility
     edit: IntentEnum.Edit,
     insert: IntentEnum.Insert,
 }
@@ -39,13 +39,12 @@ interface IntentOption {
 }
 
 export const ModeSelectorField: React.FunctionComponent<{
-    omniBoxEnabled: boolean
     isDotComUser: boolean
     isCodyProUser: boolean
     _intent: ChatMessage['intent']
     className?: string
     manuallySelectIntent: (intent?: ChatMessage['intent']) => void
-}> = ({ isDotComUser, className, _intent = 'chat', omniBoxEnabled, manuallySelectIntent }) => {
+}> = ({ className, _intent = 'chat', manuallySelectIntent }) => {
     const {
         clientCapabilities: { edit },
         config,
@@ -62,14 +61,6 @@ export const ModeSelectorField: React.FunctionComponent<{
                 icon: MessageSquare,
                 intent: 'chat',
                 value: IntentEnum.Chat,
-            },
-            {
-                title: 'Search',
-                badge: isDotComUser ? 'Enterprise' : undefined,
-                icon: Search,
-                intent: 'search',
-                disabled: isDotComUser,
-                value: IntentEnum.Search,
             },
             {
                 title: 'Edit',
@@ -90,7 +81,7 @@ export const ModeSelectorField: React.FunctionComponent<{
                 value: IntentEnum.Agentic,
             },
         ].filter(option => !option.hidden) as IntentOption[]
-    }, [edit, config?.experimentalAgenticChatEnabled, isDotComUser])
+    }, [edit, config?.experimentalAgenticChatEnabled])
 
     // Get available (non-disabled) options
     const availableOptions = useMemo(
