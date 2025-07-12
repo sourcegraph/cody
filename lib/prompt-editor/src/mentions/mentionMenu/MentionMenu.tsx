@@ -305,7 +305,7 @@ export const MentionMenu: FunctionComponent<
                                 'tw-bg-accent'
                             )}
                         >
-                            * Sourced from the remote default branch
+                            {getBranchHelpText(data.items, mentionQuery)}
                         </CommandLoading>
                     )}
 
@@ -339,6 +339,35 @@ function commandRowValue(
 
     row satisfies ContextItem
     return contextItemID(row)
+}
+
+function getBranchHelpText(
+    items: NonNullable<MentionMenuData['items']>,
+    mentionQuery: MentionQuery
+): string {
+    // Check if we have branch information from the current search
+    const firstItem = items[0]
+    if (firstItem?.type === 'openctx') {
+        const openCtxItem = firstItem as ContextItem & {
+            type: 'openctx'
+            mention?: { data?: { branch?: string } }
+        }
+        if (openCtxItem.mention?.data?.branch) {
+            return `* Sourced from the '${openCtxItem.mention.data.branch}' branch`
+        }
+    }
+
+    // Check if user has specified a branch in the query
+    if (mentionQuery.text.includes('@')) {
+        const branchPart = mentionQuery.text.split('@')[1]
+        if (branchPart) {
+            // Remove anything after colon (directory path)
+            const branchName = branchPart.split(':')[0]
+            return `* Sourced from the '${branchName}' branch`
+        }
+    }
+
+    return '* Sourced from the remote default branch'
 }
 
 function getEmptyLabel(
