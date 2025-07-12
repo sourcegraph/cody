@@ -310,65 +310,65 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 case 'edit': {
                     this.cancelSubmitOrEditOperation()
 
-                await this.handleEdit({
-                    requestID: uuid.v4(),
-                    text: PromptString.unsafe_fromUserQuery(message.text),
-                    index: message.index ?? undefined,
-                    contextFiles: message.contextItems ?? [],
-                    editorState: message.editorState as SerializedPromptEditorState,
-                    manuallySelectedIntent: message.manuallySelectedIntent,
-                })
-                break
-            }
-            case 'abort':
-                this.handleAbort()
-                break
-            case 'insert':
-                await handleCodeFromInsertAtCursor(message.text)
-                break
-            case 'copy':
-                await handleCopiedCode(message.text, message.eventType)
-                break
-            case 'smartApplyPrefetch':
-            case 'smartApplySubmit':
-                await handleSmartApply({
-                    id: message.id,
-                    code: message.code,
-                    authStatus: currentAuthStatus(),
-                    instruction: message.instruction || '',
-                    fileUri: message.fileName,
-                    traceparent: message.traceparent || undefined,
-                    isPrefetch: message.command === 'smartApplyPrefetch',
-                })
-                break
-            case 'trace-export':
-                TraceSender.send(message.traceSpanEncodedJson)
-                break
-            case 'smartApplyAccept':
-                await vscode.commands.executeCommand('cody.command.smart-apply.accept', {
-                    taskId: message.id,
-                })
-                break
-            case 'smartApplyReject':
-                await vscode.commands.executeCommand('cody.command.smart-apply.reject', {
-                    taskId: message.id,
-                })
-                break
-            case 'openURI':
-                vscode.commands.executeCommand('vscode.open', message.uri, {
-                    selection: message.range,
-                })
-                break
-            case 'links': {
-                void openExternalLinks(message.value)
-                break
-            }
-            case 'openFileLink':
-                {
-                    if (message?.uri?.scheme?.startsWith('http')) {
-                        this.openRemoteFile(message.uri, true)
-                        return
-                    }
+                    await this.handleEdit({
+                        requestID: uuid.v4(),
+                        text: PromptString.unsafe_fromUserQuery(message.text),
+                        index: message.index ?? undefined,
+                        contextFiles: message.contextItems ?? [],
+                        editorState: message.editorState as SerializedPromptEditorState,
+                        manuallySelectedIntent: message.manuallySelectedIntent,
+                    })
+                    break
+                }
+                case 'abort':
+                    this.handleAbort()
+                    break
+                case 'insert':
+                    await handleCodeFromInsertAtCursor(message.text)
+                    break
+                case 'copy':
+                    await handleCopiedCode(message.text, message.eventType)
+                    break
+                case 'smartApplyPrefetch':
+                case 'smartApplySubmit':
+                    await handleSmartApply({
+                        id: message.id,
+                        code: message.code,
+                        authStatus: currentAuthStatus(),
+                        instruction: message.instruction || '',
+                        fileUri: message.fileName,
+                        traceparent: message.traceparent || undefined,
+                        isPrefetch: message.command === 'smartApplyPrefetch',
+                    })
+                    break
+                case 'trace-export':
+                    TraceSender.send(message.traceSpanEncodedJson)
+                    break
+                case 'smartApplyAccept':
+                    await vscode.commands.executeCommand('cody.command.smart-apply.accept', {
+                        taskId: message.id,
+                    })
+                    break
+                case 'smartApplyReject':
+                    await vscode.commands.executeCommand('cody.command.smart-apply.reject', {
+                        taskId: message.id,
+                    })
+                    break
+                case 'openURI':
+                    vscode.commands.executeCommand('vscode.open', message.uri, {
+                        selection: message.range,
+                    })
+                    break
+                case 'links': {
+                    void openExternalLinks(message.value)
+                    break
+                }
+                case 'openFileLink':
+                    {
+                        if (message?.uri?.scheme?.startsWith('http')) {
+                            this.openRemoteFile(message.uri, true)
+                            return
+                        }
 
                         // Determine if we're in the sidebar view
                         const isInSidebar =
