@@ -5,6 +5,7 @@ import type { ChatClient } from '@sourcegraph/cody-shared'
 
 import { versionedDocumentAndPosition } from '../completions/test-helpers'
 import { defaultVSCodeExtensionClient } from '../extension-client'
+import * as isRunningInsideAgentModule from '../jsonrpc/isRunningInsideAgent'
 import { FixupController } from '../non-stop/FixupController'
 import { WorkspaceEdit, vsCodeMocks } from '../testutils/mocks'
 
@@ -37,6 +38,7 @@ export async function autoeditResultFor(
         provider: existingProvider,
         getModelResponse,
         isAutomaticTimersAdvancementDisabled = false,
+        isAgent = false,
     }: {
         prediction: string
         documentVersion?: number
@@ -49,6 +51,8 @@ export async function autoeditResultFor(
          */
         getModelResponse?: typeof fireworksAdapter.getFireworksModelResponse
         isAutomaticTimersAdvancementDisabled?: boolean
+        /** Mock running in agent mode (e.g., JetBrains) instead of VS Code */
+        isAgent?: boolean
     }
 ): Promise<{
     result: AutoeditsResult | null
@@ -58,6 +62,11 @@ export async function autoeditResultFor(
     provider: AutoeditsProvider
     editBuilder: WorkspaceEdit
 }> {
+    // Mock agent mode if requested
+    if (isAgent) {
+        vi.spyOn(isRunningInsideAgentModule, 'isRunningInsideAgent').mockReturnValue(true)
+    }
+
     const getModelResponseMock: typeof fireworksAdapter.getFireworksModelResponse = async function* () {
         // Simulate response latency.
         vi.advanceTimersByTime(100)

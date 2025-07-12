@@ -862,6 +862,67 @@ namespace ConsoleApp1
             expect(result).toBeNull()
         })
 
+        it('should discard suggestions with scope overflow in agent mode (JetBrains)', async () => {
+            // Test the same scenario but in agent mode (JetBrains)
+            // The behavior might be different in agent vs VS Code mode
+
+            const prediction = `{
+    public class Point3d : Point
+    {
+        private int z;
+
+        public Point3d(int x, int y, int z) : base(x, y)
+        {
+            this.z = z;
+        }
+
+        public double GetDistance(Point3d other)
+        {
+            return Math.Sqrt((x - other.x) * (x - other.x) + (y - other.y) * (y - other.y) + (z - other.z) * (z - other.z));
+        }
+
+        public override string ToString()
+        {
+            return $"three-dimensional point: ({x},{y},{z})";
+        }
+    }
+}`
+
+            const { result } = await autoeditResultFor(`using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace ConsoleApp1
+{
+    public class Point3d█
+    {
+        private int x;
+        private int y;
+
+        public Point(int x, int y)
+        {
+            this.x = x;
+            this.y = y;
+        }
+
+        public double GetDistance(Point other)
+        {
+            return Math.Sqrt((x - other.x) * (x - other.x) + (y - other.y) * (y - other.y));
+        }
+
+        public override string ToString()
+        {
+            return $"two-dimensional point: ({x},{y})";
+        }
+    }
+}`, { prediction, isAgent: true })
+
+            // With the fix, the suggestion should be discarded in agent mode too
+            expect(result).toBeNull()
+        })
+
 
     })
 })
