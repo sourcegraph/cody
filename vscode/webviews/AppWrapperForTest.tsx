@@ -141,6 +141,8 @@ export const AppWrapperForTest: FunctionComponent<{ children: ReactNode }> = ({ 
                         config: {} as any,
                         clientCapabilities: CLIENT_CAPABILITIES_FIXTURE,
                         isDotComUser: true,
+                        siteHasCodyEnabled: true,
+                        currentUserCodySubscription: null,
                     },
                 },
             } satisfies Wrapper<any, ComponentProps<typeof ConfigProvider>>,

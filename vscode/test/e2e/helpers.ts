@@ -454,6 +454,11 @@ async function buildWorkSpaceSettings(
     workspaceDirectory: string,
     extraSettings: WorkspaceSettings
 ): Promise<void> {
+    // // Skip settings creation for .code-workspace files as they already contain settings
+    if (workspaceDirectory.endsWith('.code-workspace')) {
+        return
+    }
+
     const settings = {
         'cody.serverEndpoint': 'http://localhost:49300',
         'cody.commandCodeLenses': true,

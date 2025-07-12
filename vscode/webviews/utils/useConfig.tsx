@@ -13,7 +13,13 @@ import type { UserAccountInfo } from '../Chat'
 export interface Config
     extends Pick<
         Extract<ExtensionMessage, { type: 'config' }>,
-        'config' | 'clientCapabilities' | 'authStatus' | 'isDotComUser' | 'userProductSubscription'
+        | 'config'
+        | 'clientCapabilities'
+        | 'authStatus'
+        | 'isDotComUser'
+        | 'userProductSubscription'
+        | 'siteHasCodyEnabled'
+        | 'currentUserCodySubscription'
     > {}
 
 const ConfigContext = createContext<Config | null>(null)
@@ -39,7 +45,14 @@ export function useConfig(): Config {
 }
 
 export function useUserAccountInfo(): UserAccountInfo {
-    const { authStatus, isDotComUser, clientCapabilities, userProductSubscription } = useConfig()
+    const {
+        authStatus,
+        isDotComUser,
+        clientCapabilities,
+        userProductSubscription,
+        siteHasCodyEnabled,
+        currentUserCodySubscription,
+    } = useConfig()
 
     if (!authStatus.authenticated) {
         throw new Error(
@@ -54,7 +67,16 @@ export function useUserAccountInfo(): UserAccountInfo {
             isDotComUser: isDotComUser,
             user: authStatus,
             IDE: clientCapabilities.agentIDE,
+            siteHasCodyEnabled,
+            currentUserCodySubscription,
         }),
-        [authStatus, isDotComUser, clientCapabilities, userProductSubscription]
+        [
+            authStatus,
+            isDotComUser,
+            clientCapabilities,
+            userProductSubscription,
+            siteHasCodyEnabled,
+            currentUserCodySubscription,
+        ]
     )
 }

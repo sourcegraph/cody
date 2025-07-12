@@ -151,6 +151,7 @@ export const RichCodeBlock: React.FC<RichCodeBlockProps> = ({
             {isCodeComplete &&
                 createEditButtons({
                     isVSCode: config.clientCapabilities.isVSCode,
+                    copyOnly: config.clientCapabilities.codeCopyOnlyAction === 'enabled',
                     preText: plainCode,
                     copyButtonOnSubmit: onCopy,
                     onInsert,

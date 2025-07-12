@@ -12,6 +12,7 @@ import com.intellij.diff.util.DiffUtil
 import com.intellij.diff.util.TextDiffType
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.editor.Document
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.LogicalPosition
@@ -125,27 +126,26 @@ private constructor(val editor: Editor, private val editorComponent: JComponent)
               /*reviveOnEditorChange = */ false,
               HintHint(editor, point))
 
-      ApplicationManager.getApplication()
-          .messageBus
-          .connect(childDisposable)
-          .subscribe<EditorHintListener>(
-              EditorHintListener.TOPIC,
-              object : EditorHintListener {
-                override fun hintShown(
-                    newEditor: Editor,
-                    newHint: LightweightHint,
-                    flags: Int,
-                    hintInfo: HintHint
-                ) {
-                  // Ex: if popup re-shown by ToggleByWordDiffAction
-                  val newPopupPanel = newHint.component
-                  if (newPopupPanel is AutoeditLineStatusMarkerPopupPanel) {
-                    if (newPopupPanel.editor == newEditor) {
-                      hint.hide()
-                    }
-                  }
+      val connect = ApplicationManager.getApplication().messageBus.connect(childDisposable)
+      connect.subscribe<EditorHintListener>(
+          EditorHintListener.TOPIC,
+          object : EditorHintListener {
+            override fun hintShown(
+                newEditor: Editor,
+                newHint: LightweightHint,
+                flags: Int,
+                hintInfo: HintHint
+            ) {
+              // Ex: if popup re-shown by ToggleByWordDiffAction
+              val newPopupPanel = newHint.component
+              if (newPopupPanel is AutoeditLineStatusMarkerPopupPanel) {
+                if (newPopupPanel.editor == newEditor) {
+                  hint.hide()
                 }
-              })
+              }
+            }
+          })
+      connect.subscribe(AutoeditManager.TOPIC, Runnable { runInEdt { hint.hide() } })
 
       if (!hint.isVisible) {
         closeListener.hintHidden(EventObject(hint))

@@ -40,10 +40,11 @@ export const ErrorItem: React.FunctionComponent<{
  * Renders a generic error message for chat request failures.
  */
 export const RequestErrorItem: React.FunctionComponent<{
-    error: Error
+    error: Error | string
     humanMessage?: PriorHumanMessageInfo | null
 }> = ({ error, humanMessage }) => {
-    const isApiVersionError = error.message.includes('unable to determine Cody API version')
+    const errorMessage = typeof error === 'string' ? error : error.message || 'Unknown error'
+    const isApiVersionError = errorMessage.includes('unable to determine Cody API version')
 
     const actions =
         isApiVersionError && humanMessage
@@ -66,7 +67,7 @@ export const RequestErrorItem: React.FunctionComponent<{
         <div className={styles.requestError}>
             <div className={styles.errorContent}>
                 <span className={styles.requestErrorTitle}>Request Failed: </span>
-                {error.message}
+                {errorMessage}
             </div>
             {actions.length > 0 && (
                 <menu className="tw-flex tw-gap-2 tw-text-sm tw-text-muted-foreground">
@@ -139,65 +140,37 @@ const RateLimitErrorItem: React.FunctionComponent<{
         [postMessage, tier, telemetryRecorder]
     )
 
-    let ctaText = canUpgrade ? 'Upgrade to Cody Pro' : 'Unable to Send Message'
+    let ctaText = 'Unable to Send Message'
 
     const fallbackToFlash = useFeatureFlag(FeatureFlag.FallbackToFlash)
 
     if (fallbackToFlash) {
-        if (userInfo?.isCodyProUser) {
-            ctaText = 'Upgrade to Cody Enterprise'
-        } else if (!canUpgrade) {
-            ctaText = 'Usage limit of premium models reached, switching the model to Gemini Flash.'
-        }
+        ctaText = 'Usage limit of premium models reached, switching the model to Gemini Flash.'
     }
 
     return (
         <div className={styles.errorItem}>
-            {canUpgrade && <div className={styles.icon}>⚡️</div>}
             <div className={styles.body}>
                 <header>
                     <h1>{ctaText}</h1>
                     <p>
                         {error.userMessage}
                         {fallbackToFlash &&
-                            !canUpgrade &&
                             ' You can continue using Gemini Flash, or other standard models.'}
-                        {canUpgrade &&
-                            ' Upgrade to Cody Pro for unlimited autocomplete suggestions, and increased limits for chat messages and commands.'}
                     </p>
                 </header>
                 <div className={styles.actions}>
-                    {canUpgrade && (
-                        <Button onClick={() => onButtonClick('upgrade', 'upgrade')}>Upgrade</Button>
-                    )}
                     {error.feature !== 'Agentic Chat' && (
                         <Button
                             type="button"
-                            onClick={() =>
-                                canUpgrade
-                                    ? onButtonClick('upgrade', 'upgrade')
-                                    : onButtonClick('rate-limits', 'learn-more')
-                            }
+                            onClick={() => onButtonClick('rate-limits', 'learn-more')}
                             variant="secondary"
                         >
-                            {canUpgrade ? 'See Plans →' : 'Learn More'}
+                            Learn More
                         </Button>
                     )}
                 </div>
                 {error.retryMessage && <p className={styles.retryMessage}>{error.retryMessage}</p>}
-                {canUpgrade && (
-                    <div className={styles.bannerContainer}>
-                        <div
-                            className={styles.banner}
-                            role="button"
-                            tabIndex={-1}
-                            onClick={() => onButtonClick('upgrade', 'upgrade')}
-                            onKeyDown={() => onButtonClick('upgrade', 'upgrade')}
-                        >
-                            Go Pro
-                        </div>
-                    </div>
-                )}
             </div>
         </div>
     )

@@ -18,7 +18,7 @@ const ScrollDownContainer: FunctionComponent = () => {
                         </p>
                     )
                 })}
-                {ref && <ScrollDown scrollableParent={ref} />}
+                {ref && <ScrollDown />}
             </div>
         </>
     )

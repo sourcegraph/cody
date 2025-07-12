@@ -275,7 +275,9 @@ internal class WebUIProxy(private val host: WebUIHost, private val browser: JBCe
         if (messageObject["command"]?.asString == "copy" &&
             messageObject["text"]?.asString != null) {
           val textToCopy = messageObject["text"].asString
-          CopyPasteManager.getInstance().setContents(StringSelection(textToCopy))
+          ApplicationManager.getApplication().executeOnPooledThread {
+            CopyPasteManager.getInstance().setContents(StringSelection(textToCopy))
+          }
         } else if (messageObject["command"]?.asString == "ready") {
           onReady()
         }

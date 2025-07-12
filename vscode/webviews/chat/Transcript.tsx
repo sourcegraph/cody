@@ -39,6 +39,7 @@ import { isCodeSearchContextItem } from '../../src/context/openctx/codeSearch'
 import { useClientActionListener } from '../client/clientState'
 import { useLocalStorage } from '../components/hooks'
 
+import { ScrollDown } from '../components/ScrollDown'
 import { TokenUsageDisplay } from './TokenUsageDisplay'
 import { AgenticContextCell } from './cells/agenticCell/AgenticContextCell'
 import ApprovalCell from './cells/agenticCell/ApprovalCell'
@@ -70,6 +71,23 @@ interface TranscriptProps {
     copyButtonOnSubmit: CodeBlockActionsProps['copyButtonOnSubmit']
     insertButtonOnSubmit?: CodeBlockActionsProps['insertButtonOnSubmit']
     smartApply?: CodeBlockActionsProps['smartApply']
+    welcomeContent?: React.ReactNode
+}
+
+function useDebouncedBoolean(value: boolean, delay: number): boolean {
+    const [debouncedValue, setDebouncedValue] = useState(value)
+
+    useEffect(() => {
+        const handler = setTimeout(() => {
+            setDebouncedValue(value)
+        }, delay)
+
+        return () => {
+            clearTimeout(handler)
+        }
+    }, [value, delay])
+
+    return debouncedValue
 }
 
 export const Transcript: FC<TranscriptProps> = props => {
@@ -87,6 +105,7 @@ export const Transcript: FC<TranscriptProps> = props => {
         copyButtonOnSubmit,
         insertButtonOnSubmit,
         smartApply,
+        welcomeContent,
     } = props
 
     const interactions = useMemo(
@@ -96,8 +115,13 @@ export const Transcript: FC<TranscriptProps> = props => {
 
     const lastHumanEditorRef = useRef<PromptEditorRefAPI | null>(null)
     const userHasScrolledRef = useRef(false)
-    const lastScrollTopRef = useRef(0)
-    const scrollContainerRef = useRef<HTMLDivElement | null>(null)
+    const expectedAutoScrollTopRef = useRef(0)
+    const [scrollableContainer, setScrollableContainer] = useState<HTMLDivElement | null>(null)
+    const [isAtBottom, setIsAtBottom] = useState(false)
+
+    // Debounce the isAtBottom state to prevent flickering of the "Skip to end" button
+    // when the mention menu appears and causes micro-scrolls
+    const isAtBottomDebounced = useDebouncedBoolean(isAtBottom, 150)
 
     useEffect(() => {
         const handleCopyEvent = (event: ClipboardEvent) => {
@@ -116,24 +140,29 @@ export const Transcript: FC<TranscriptProps> = props => {
     }, [])
 
     useEffect(() => {
-        const scrollableContainer = document.querySelector('[data-scrollable]')
         if (!scrollableContainer || !(scrollableContainer instanceof HTMLElement)) {
             return
         }
 
-        const handleScroll = () => {
+        const computeIsAtBottom = () => {
             const currentScrollTop = scrollableContainer.scrollTop
             const scrollHeight = scrollableContainer.scrollHeight
             const clientHeight = scrollableContainer.clientHeight
-            const isAtBottom = Math.abs(scrollHeight - clientHeight - currentScrollTop) < 10
+            return Math.abs(scrollHeight - clientHeight - currentScrollTop) < 10
+        }
+
+        setIsAtBottom(computeIsAtBottom())
+
+        const handleScroll = () => {
+            const isAtBottom = computeIsAtBottom()
+            setIsAtBottom(isAtBottom)
 
             // Reset user scroll flag if they scroll back to bottom
             if (isAtBottom) {
                 userHasScrolledRef.current = false
             } else {
                 // Check if user manually scrolled (not from auto-scroll)
-                const expectedAutoScrollTop = lastScrollTopRef.current
-                if (Math.abs(currentScrollTop - expectedAutoScrollTop) > 5) {
+                if (Math.abs(scrollableContainer.scrollTop - expectedAutoScrollTopRef.current) > 5) {
                     userHasScrolledRef.current = true
                 }
             }
@@ -143,87 +172,130 @@ export const Transcript: FC<TranscriptProps> = props => {
         return () => {
             scrollableContainer.removeEventListener('scroll', handleScroll)
         }
-    }, [])
+    }, [scrollableContainer])
 
     useEffect(() => {
-        if (messageInProgress?.text) {
-            // Only auto-scroll if user hasn't manually scrolled away
-            if (!userHasScrolledRef.current) {
-                const scrollableContainer = document.querySelector('[data-scrollable]')
-                if (scrollableContainer && scrollableContainer instanceof HTMLElement) {
-                    // Calculate space needed for the input box
-                    const lastEditor = document.querySelector<HTMLElement>(
-                        '[data-lexical-editor]:last-of-type'
-                    )
-                    const editorHeight = lastEditor
-                        ? lastEditor.getBoundingClientRect().height + 32
-                        : 120
+        // Only auto-scroll if user hasn't manually scrolled away
+        if (!userHasScrolledRef.current && scrollableContainer && interactions.length > 0) {
+            const targetScrollTop = scrollableContainer.scrollHeight
+            expectedAutoScrollTopRef.current = targetScrollTop
+            scrollableContainer.scrollTop = targetScrollTop
+        }
 
-                    // Scroll to the bottom minus the height of the editor
-                    const scrollHeight = scrollableContainer.scrollHeight
-                    const targetScrollTop =
-                        scrollHeight - scrollableContainer.clientHeight + editorHeight
-                    lastScrollTopRef.current = targetScrollTop
-                    scrollableContainer.scrollTop = targetScrollTop
-                }
-            }
-        } else {
+        if (!messageInProgress?.text) {
             // Reset user scroll flag when message streaming stops
             userHasScrolledRef.current = false
         }
-    }, [messageInProgress?.text])
+    }, [messageInProgress?.text, interactions.length, scrollableContainer])
+
+    const inputInteractionAtTheBottom =
+        interactions.length > 1 ? interactions[interactions.length - 1] : null
+
+    const fadeStyles = useMemo(
+        () => ({
+            maskImage:
+                'linear-gradient(to bottom, black 0%, black calc(100% - var(--cody-fade-height, 20px)), transparent 100%)',
+            WebkitMaskImage:
+                'linear-gradient(to bottom, black 0%, black calc(100% - var(--cody-fade-height, 20px)), transparent 100%)',
+        }),
+        []
+    )
+
+    const scrollTotheBottom = useCallback(() => {
+        scrollableContainer?.scroll({
+            top: scrollableContainer?.scrollHeight,
+            behavior: 'smooth',
+        })
+    }, [scrollableContainer])
+
+    // Helper function to render TranscriptInteraction with conditional wrapper
+    const renderTranscriptInteraction = useCallback(
+        (interaction: Interaction, i: number) => {
+            return (
+                <TranscriptInteraction
+                    key={interaction.humanMessage.index}
+                    activeChatContext={activeChatContext}
+                    setActiveChatContext={setActiveChatContext}
+                    tokenUsage={tokenUsage}
+                    models={models}
+                    chatEnabled={chatEnabled}
+                    userInfo={userInfo}
+                    guardrails={guardrails}
+                    postMessage={postMessage}
+                    copyButtonOnSubmit={copyButtonOnSubmit}
+                    insertButtonOnSubmit={insertButtonOnSubmit}
+                    smartApply={smartApply}
+                    interaction={interaction}
+                    isFirstInteraction={i === 0}
+                    isLastInteraction={i === interactions.length - 1}
+                    isLastSentInteraction={
+                        i === interactions.length - 2 && interaction.assistantMessage !== null
+                    }
+                    priorAssistantMessageIsLoading={Boolean(
+                        messageInProgress && interactions.at(i - 1)?.assistantMessage?.isLoading
+                    )}
+                    editorRef={
+                        (interaction.humanMessage.intent === 'agentic' &&
+                            interaction.humanMessage.index === -1) ||
+                        !messageInProgress
+                            ? lastHumanEditorRef
+                            : undefined
+                    }
+                />
+            )
+        },
+        [
+            activeChatContext,
+            setActiveChatContext,
+            tokenUsage,
+            models,
+            chatEnabled,
+            userInfo,
+            guardrails,
+            postMessage,
+            copyButtonOnSubmit,
+            insertButtonOnSubmit,
+            smartApply,
+            interactions,
+            messageInProgress,
+        ]
+    )
 
     return (
-        <>
-            <div
-                ref={scrollContainerRef}
-                className={clsx(' tw-px-8 tw-py-4 tw-flex tw-flex-col tw-gap-4', {
-                    'tw-flex-grow': transcript.length > 0,
-                })}
-                data-scrollable="true"
-            >
-                <LastEditorContext.Provider value={lastHumanEditorRef}>
-                    {interactions.map((interaction, i) => (
-                        <TranscriptInteraction
-                            key={interaction.humanMessage.index}
-                            activeChatContext={activeChatContext}
-                            setActiveChatContext={setActiveChatContext}
-                            tokenUsage={tokenUsage}
-                            models={models}
-                            chatEnabled={chatEnabled}
-                            userInfo={userInfo}
-                            interaction={interaction}
-                            guardrails={guardrails}
-                            postMessage={postMessage}
-                            copyButtonOnSubmit={copyButtonOnSubmit}
-                            insertButtonOnSubmit={insertButtonOnSubmit}
-                            isFirstInteraction={i === 0}
-                            isLastInteraction={i === interactions.length - 1}
-                            isLastSentInteraction={
-                                i === interactions.length - 2 && interaction.assistantMessage !== null
-                            }
-                            priorAssistantMessageIsLoading={Boolean(
-                                messageInProgress && interactions.at(i - 1)?.assistantMessage?.isLoading
+        <div className="tw-flex tw-flex-col tw-h-full tw-px-8 tw-py-8 tw-gap-4">
+            <LastEditorContext.Provider value={lastHumanEditorRef}>
+                <>
+                    <div
+                        ref={setScrollableContainer}
+                        className={clsx('tw-flex tw-flex-col tw-flex-1 tw-overflow-y-auto tw-relative', {
+                            'tw-flex-grow': transcript.length > 0,
+                        })}
+                        data-scrollable="true"
+                        style={inputInteractionAtTheBottom ? fadeStyles : undefined}
+                    >
+                        {interactions.map((interaction, i) => {
+                            // Skip rendering input interaction in the main area if it should be at bottom
+                            if (inputInteractionAtTheBottom && i === interactions.length - 1) return null
+                            return renderTranscriptInteraction(interaction, i)
+                        })}
+                        {messageInProgress && interactions.length > 0 && <LoadingDots />}
+                        {transcript.length === 0 && welcomeContent}
+                    </div>
+
+                    {scrollableContainer && <ScrollbarMarkers scrollContainer={scrollableContainer} />}
+
+                    {!isAtBottomDebounced && <ScrollDown onClick={scrollTotheBottom} />}
+
+                    <div className="tw-bg-[var(--vscode-input-background)]">
+                        {inputInteractionAtTheBottom &&
+                            renderTranscriptInteraction(
+                                inputInteractionAtTheBottom,
+                                interactions.length - 1
                             )}
-                            smartApply={smartApply}
-                            editorRef={
-                                // Only set the editor ref for:
-                                // 1. The first unsent agentic message (index -1), or
-                                // 2. The last interaction in the transcript
-                                // And only when there's no message currently in progress
-                                ((interaction.humanMessage.intent === 'agentic' &&
-                                    interaction.humanMessage.index === -1) ||
-                                    i === interactions.length - 1) &&
-                                !messageInProgress
-                                    ? lastHumanEditorRef
-                                    : undefined
-                            }
-                        />
-                    ))}
-                </LastEditorContext.Provider>
-            </div>
-            <ScrollbarMarkers />
-        </>
+                    </div>
+                </>
+            </LastEditorContext.Provider>
+        </div>
     )
 }
 
@@ -638,8 +710,6 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
 
     return (
         <>
-            {/* Show loading state on the last interaction */}
-            {isLastInteraction && priorAssistantMessageIsLoading && <LoadingDots />}
             {/* Show token usage above and aligned to the right for followup editor */}
             {humanMessage.isUnsentFollowup && tokenUsage && (
                 <div className="tw-flex tw-justify-end tw-mb-2">
@@ -661,11 +731,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                 isLastInteraction={isLastInteraction}
                 isEditorInitiallyFocused={isLastInteraction}
                 editorRef={humanEditorRef}
-                className={
-                    !isFirstInteraction && isLastInteraction
-                        ? 'tw-sticky tw-bottom-0 tw-mt-auto tw-bg-[var(--vscode-input-background)]'
-                        : 'tw-transition'
-                }
+                className="tw-transition"
                 intent={selectedIntent}
                 manuallySelectIntent={setSelectedIntent}
             />

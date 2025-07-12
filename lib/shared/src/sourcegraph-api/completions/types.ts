@@ -110,6 +110,7 @@ export interface PromptTokensDetails {
 
 export interface CompletionResponse {
     completion: string
+    deltaText?: string
     thinking?: string
     stopReason?: string
     tools?: ToolCallContentPart[]

@@ -278,7 +278,6 @@ export type ServerRequests = {
     'window/showSaveDialog': [SaveDialogOptionsParams, string | undefined | null]
 
     'textDocument/edit': [TextDocumentEditParams, boolean]
-    'textDocument/openUntitledDocument': [UntitledTextDocument, ProtocolTextDocument | undefined | null]
     'textDocument/show': [
         {
             uri: string
@@ -367,6 +366,9 @@ export type ClientNotifications = {
     // bars with `cancelable: true`.
     'progress/cancel': [{ id: string }]
 
+    // Testing notification to run code in the agent process
+    'testing/runInAgent': [string]
+
     // Native webviews use handles that are an implementation detail of Agent's
     // vscode shim, unrelated to the application-level IDs from chat/new.
     // Consequently they have their own dispose notification. c.f.
@@ -376,6 +378,8 @@ export type ClientNotifications = {
     'secrets/didChange': [{ key: string }]
 
     'window/didChangeFocus': [{ focused: boolean }]
+
+    'testing/resetStorage': [null]
 }
 
 // ================

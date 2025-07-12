@@ -594,6 +594,18 @@ export class Agent extends MessageHandler implements ExtensionClient {
             this.handleConfigChanges(config)
         })
 
+        this.registerNotification('testing/runInAgent', scenario => {
+            try {
+                if (scenario === 'configuration-test-configuration-update') {
+                    // Execute the configuration update in the agent process where agent is defined
+                    const configuration = vscode_shim.workspace.getConfiguration()
+                    configuration.update('cody.dummy.setting', 'random')
+                }
+            } catch (error) {
+                console.error('Error in testing/runInAgent:', error)
+            }
+        })
+
         this.registerRequest('extensionConfiguration/change', async config => {
             return this.handleConfigChanges(config).then(toProtocolAuthStatus)
         })
@@ -1405,6 +1417,10 @@ export class Agent extends MessageHandler implements ExtensionClient {
             this.secretsDidChange.fire({ key })
         })
 
+        this.registerNotification('testing/resetStorage', () => {
+            localStorage.resetStorage()
+        })
+
         this.registerAuthenticatedRequest('featureFlags/getFeatureFlag', async ({ flagName }) => {
             return featureFlagProvider.evaluateFeatureFlagEphemerally(
                 FeatureFlag[flagName as keyof typeof FeatureFlag]
@@ -1474,27 +1490,6 @@ export class Agent extends MessageHandler implements ExtensionClient {
     ): FixupControlApplicator {
         this.fixups = new AgentFixupControls(files, this.notify.bind(this), this.request.bind(this))
         return this.fixups
-    }
-
-    public openNewDocument = async (
-        _: typeof vscode.workspace,
-        uri: vscode.Uri
-    ): Promise<vscode.TextDocument | undefined> => {
-        if (uri.scheme !== 'untitled') {
-            return vscode_shim.workspace.openTextDocument(uri)
-        }
-
-        if (this.clientInfo?.capabilities?.untitledDocuments !== 'enabled') {
-            const errorMessage =
-                'Client does not support untitled documents. To fix this problem, set `untitledDocuments: "enabled"` in client capabilities'
-            logError('Agent', 'unsupported operation', errorMessage)
-            throw new Error(errorMessage)
-        }
-
-        const result = await this.request('textDocument/openUntitledDocument', {
-            uri: uri.toString(),
-        })
-        return result ? vscode_shim.workspace.openTextDocument(result.uri) : undefined
     }
 
     get clientName(): string {

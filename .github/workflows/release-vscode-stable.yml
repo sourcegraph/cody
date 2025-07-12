@@ -62,7 +62,7 @@ jobs:
         env:
           VSCODE_MARKETPLACE_TOKEN: ${{ secrets.VSCODE_MARKETPLACE_TOKEN }}
           VSCODE_OPENVSX_TOKEN: ${{ secrets.VSCODE_OPENVSX_TOKEN }}
-      - run: pnpm -C vscode run release-notes
+      - run: pnpm run release-notes vscode ${{ env.EXT_VERSION }}
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
       - name: create release
@@ -74,7 +74,7 @@ jobs:
           tag_name: ${{ github.ref }}
           release_name: Cody for VS Code ${{ env.EXT_VERSION }}
           draft: false
-          body_path: vscode/GITHUB_CHANGELOG.md
+          body_path: RELEASE_NOTES.md
       - name: upload release asset
         uses: actions/upload-release-asset@v1
         env:

@@ -35,7 +35,7 @@ open class BaseIntegrationTextFixture(
     private val recordingName: String,
     private val credentials: TestingCredentials,
     private val capabilities: ClientCapabilities,
-    codySettingsContent: String = "{\n  \n}"
+    additionalCodySettings: Map<String, String> = emptyMap()
 ) {
   companion object {
     const val ASYNC_WAIT_TIMEOUT_SECONDS = 20L
@@ -60,6 +60,12 @@ open class BaseIntegrationTextFixture(
     myFixture.setUp()
     project = myFixture.project
     Disposer.register(myFixture.testRootDisposable) { shutdown() }
+
+    val allCodySettings =
+        additionalCodySettings + mapOf("cody.experimental.symf.enabled" to "false")
+    val codySettingsContent =
+        """{ ${allCodySettings.map { "${it.key} = ${it.value}"  }.joinToString("\n")} }"""
+            .trimIndent()
 
     CodyEditorUtil.createFileOrUseExisting(
         project, ConfigUtil.getSettingsFile(project).toUri().toString(), codySettingsContent)

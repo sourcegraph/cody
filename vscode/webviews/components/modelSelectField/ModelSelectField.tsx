@@ -129,25 +129,31 @@ export const ModelSelectField: React.FunctionComponent<{
 
     const options = useMemo<SelectListOption[]>(
         () =>
-            models.map(m => {
-                const availability = modelAvailability(userInfo, serverSentModelsEnabled, m, intent)
-                return {
-                    value: m.id,
-                    title: (
-                        <ModelTitleWithIcon
-                            model={m}
-                            showIcon={true}
-                            showProvider={true}
-                            modelAvailability={availability}
-                        />
-                    ),
-                    // needs-cody-pro models should be clickable (not disabled) so the user can
-                    // be taken to the upgrade page.
-                    disabled: !['available', 'needs-cody-pro'].includes(availability),
-                    group: getModelDropDownUIGroup(m),
-                    tooltip: getTooltip(m, availability),
-                } satisfies SelectListOption
-            }),
+            models
+                .map(m => {
+                    const availability = modelAvailability(userInfo, serverSentModelsEnabled, m, intent)
+                    if (availability === 'needs-cody-pro') {
+                        return undefined
+                    }
+
+                    return {
+                        value: m.id,
+                        title: (
+                            <ModelTitleWithIcon
+                                model={m}
+                                showIcon={true}
+                                showProvider={true}
+                                modelAvailability={availability}
+                            />
+                        ),
+                        // needs-cody-pro models should be clickable (not disabled) so the user can
+                        // be taken to the upgrade page.
+                        disabled: !['available', 'needs-cody-pro'].includes(availability),
+                        group: getModelDropDownUIGroup(m),
+                        tooltip: getTooltip(m, availability),
+                    } satisfies SelectListOption
+                })
+                .filter(Boolean) as SelectListOption[],
         [models, userInfo, serverSentModelsEnabled, intent]
     )
     const optionsByGroup: { group: string; options: SelectListOption[] }[] = useMemo(() => {
@@ -364,16 +370,12 @@ function getTooltip(model: Model, availability: string): string {
     switch (availability) {
         case 'not-selectable-on-enterprise':
             return 'Chat model set by your Sourcegraph Enterprise admin'
-        case 'needs-cody-pro':
-            return `Upgrade to Cody Pro to use ${model.title} by ${capitalizedProvider}`
         default:
             return `${model.title} by ${capitalizedProvider}`
     }
 }
 
-const getBadgeText = (model: Model, modelAvailability?: ModelAvailability): string | null => {
-    if (modelAvailability === 'needs-cody-pro') return 'Cody Pro'
-
+const getBadgeText = (model: Model): string | null => {
     const tagToText: Record<string, string> = {
         [ModelTag.Internal]: 'Internal',
         [ModelTag.Experimental]: 'Experimental',
@@ -395,7 +397,7 @@ const ModelTitleWithIcon: React.FC<{
     modelAvailability?: ModelAvailability
     isCurrentlySelected?: boolean
 }> = ({ model, showIcon, modelAvailability }) => {
-    const modelBadge = getBadgeText(model, modelAvailability)
+    const modelBadge = getBadgeText(model)
     const isDisabled = modelAvailability !== 'available'
 
     return (

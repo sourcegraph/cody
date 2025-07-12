@@ -4,9 +4,7 @@ import com.intellij.codeInsight.codeVision.ui.popup.layouter.bottom
 import com.intellij.codeInsight.codeVision.ui.popup.layouter.right
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.editor.Editor
-import com.intellij.openapi.editor.event.CaretEvent
 import com.intellij.openapi.editor.event.DocumentEvent
-import com.intellij.openapi.editor.event.SelectionEvent
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.util.concurrency.annotations.RequiresEdt
@@ -71,35 +69,6 @@ object ProtocolTextDocumentExt {
         Position(startOffsetLine, startOffsetColumn), Position(endOffsetLine, endOffsetColumn))
   }
 
-  @RequiresEdt
-  fun fromEditorWithOffsetSelection(editor: Editor, event: CaretEvent): ProtocolTextDocument? {
-    val caret = event.caret ?: return null
-    val file = editor.virtualFile ?: return null
-    val start = editor.document.codyPosition(caret.offset)
-    val selection = Range(start, start)
-    val uri = vscNormalizedUriFor(file) ?: return null
-    return ProtocolTextDocument(
-        uri = uri,
-        selection = selection,
-        testing = getTestingParams(uri, selection = selection, selectedText = ""))
-  }
-
-  @RequiresEdt
-  fun fromEditorWithRangeSelection(editor: Editor, event: SelectionEvent): ProtocolTextDocument? {
-    val file = editor.virtualFile ?: return null
-    val uri = vscNormalizedUriFor(file) ?: return null
-    val selection = editor.document.codyRange(event.newRange.startOffset, event.newRange.endOffset)
-    return ProtocolTextDocument(
-        uri = uri,
-        selection = selection,
-        testing =
-            getTestingParams(
-                uri = uri,
-                content = editor.document.text,
-                selection = selection,
-                selectedText = editor.selectionModel.selectedText))
-  }
-
   private val isFullDocumentSyncEnabled =
       System.getProperty("cody-agent.fullDocumentSyncEnabled") == "true"
 
@@ -107,7 +76,7 @@ object ProtocolTextDocumentExt {
   fun fromEditorForDocumentEvent(editor: Editor, event: DocumentEvent): ProtocolTextDocument? {
     val file = editor.virtualFile ?: return null
     val uri = vscNormalizedUriFor(file) ?: return null
-    val selection = event.document.codyRange(editor.caretModel.offset, editor.caretModel.offset)
+    val selection = getSelection(editor)
 
     val content =
         if (isFullDocumentSyncEnabled) {
@@ -145,22 +114,14 @@ object ProtocolTextDocumentExt {
   }
 
   @RequiresEdt
-  fun fromEditor(editor: Editor): ProtocolTextDocument? {
+  fun fromEditor(editor: Editor, updateContent: Boolean = true): ProtocolTextDocument? {
     val file = editor.virtualFile ?: return null
-    return fromVirtualEditorFile(editor, file)
-  }
-
-  @RequiresEdt
-  fun fromVirtualEditorFile(
-      editor: Editor,
-      file: VirtualFile,
-  ): ProtocolTextDocument? {
     val content = FileDocumentManager.getInstance().getDocument(file)?.text
     val uri = vscNormalizedUriFor(file) ?: return null
     val selection = getSelection(editor)
     return ProtocolTextDocument(
         uri = uri,
-        content = content,
+        content = if (updateContent) content else null,
         selection = selection,
         visibleRange = getVisibleRange(editor),
         testing = getTestingParams(uri = uri, content = content, selection = selection))
@@ -193,8 +154,6 @@ object ProtocolTextDocumentExt {
     if (path.contains(wslPatterns)) {
       // That is not correct from IJ perspective but VSC disallow // in authority part of the URI:
       // https://github.com/microsoft/vscode/blob/1.98.2/src/vs/base/test/common/uri.test.ts#L236.
-      // Because of that in the CodyEditorUtil::findFileOrScratch we need to make sure to convert it
-      // back to the proper format.
       return path.replace(wslPatterns, "file://wsl.localhost/")
     }
 

@@ -1,4 +1,5 @@
 <!-- Plugin description -->
+IMPORTANT: There are changes to Cody Free, Pro, and Enterprise Starter plans. [Learn more](https://sourcegraph.com/blog/changes-to-cody-free-pro-and-enterprise-starter-plans)
 
 # Cody: AI Code Assistant
 
@@ -21,7 +22,7 @@ Streamline your development process by using prompts to understand, improve, fix
 
 <img src="https://storage.googleapis.com/sourcegraph-assets/vscode-marketplace/2025/cody_prompt_library.png" width="700" alt="Prompts">
 
-### Autocomplete
+### Auto-edit
 
 Autocompletes single lines, or whole functions, in any programming language, configuration file, or documentation. It’s powered by the latest instant LLM models, for accuracy and performance.
 
@@ -55,7 +56,7 @@ Sourcegraph is built to support the needs of the largest enterprises, with flexi
 
 ## Usage
 
-This extension works for all Cody plans, including Cody Free, Cody Pro, and Cody Enterprise.
+This extension works for the Cody Enterprise plan.
 
 You can find detailed information about Cody's available plans [on our website](https://sourcegraph.com/pricing?utm_source=marketplace.visualstudio.com&utm_medium=referral).
 

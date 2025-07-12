@@ -1,3 +1,4 @@
+IMPORTANT: There are changes to Cody Free, Pro, and Enterprise Starter plans. [Learn more](https://sourcegraph.com/blog/changes-to-cody-free-pro-and-enterprise-starter-plans)
 # AI that uses your codebase as context
 
 Sourcegraph’s AI code assistant goes beyond individual dev productivity, helping you achieve consistency and quality at scale with AI. Sourcegraph accelerates the entire workflow for developers by providing them a more natural and intuitive way to work. Searching code, chatting with AI, invoking prompts, and using agents can now all be performed in one place with the best models available.
@@ -67,7 +68,7 @@ Sourcegraph is built to support the needs of the largest enterprises, with flexi
 
 ## Usage
 
-This extension works for all Cody plans, including Cody Free, Cody Pro, and Cody Enterprise.
+This extension works for the Cody Enterprise plan.
 
 You can find detailed information about Cody's available plans [on our website](https://sourcegraph.com/pricing?utm_source=marketplace.visualstudio.com&utm_medium=referral).
 

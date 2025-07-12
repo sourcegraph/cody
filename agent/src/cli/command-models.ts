@@ -1,8 +1,10 @@
-import { getClientIdentificationHeaders } from '@sourcegraph/cody-shared'
+import { getClientIdentificationHeaders, setClientNameVersion } from '@sourcegraph/cody-shared'
 import { Command } from 'commander'
+import packageJson from '../../package.json'
 import { AuthenticatedAccount } from './command-auth/AuthenticatedAccount'
 import { endpointOption } from './command-auth/command-login'
 import { accessTokenOption } from './command-auth/command-login'
+import { legacyCodyClientName } from './legacyCodyClientName'
 
 interface ListModelsOptions {
     accessToken: string
@@ -18,6 +20,14 @@ export const modelsCommand = () =>
             .action(async (options: ListModelsOptions) => {
                 const [account, spinner] =
                     await AuthenticatedAccount.fromUserSettingsOrExitProcess(options)
+
+                // Initialize client identification headers
+                setClientNameVersion({
+                    newClientName: 'cody-cli',
+                    newClientVersion: packageJson.version,
+                    newClientCompletionsStreamQueryParameterName: legacyCodyClientName,
+                })
+
                 const results = await fetch(`${account.serverEndpoint}/.api/llm/models`, {
                     headers: {
                         Authorization: `token ${account.accessToken}`,

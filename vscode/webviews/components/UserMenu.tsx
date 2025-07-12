@@ -20,19 +20,10 @@ import {
     ServerIcon,
     Settings2Icon,
     UserCircleIcon,
-    ZapIcon,
 } from 'lucide-react'
 import { useCallback, useState } from 'react'
 import { URI } from 'vscode-uri'
-import {
-    ACCOUNT_USAGE_URL,
-    CODY_DOC_QUICKSTART_URL,
-    CODY_PRO_SUBSCRIPTION_URL,
-    ENTERPRISE_STARTER_LEARN_MORE_URL,
-    ENTERPRISE_STARTER_PRICING_URL,
-    isSourcegraphToken,
-} from '../../src/chat/protocol'
-import { SourcegraphLogo } from '../icons/SourcegraphLogo'
+import { ACCOUNT_USAGE_URL, CODY_DOC_QUICKSTART_URL, isSourcegraphToken } from '../../src/chat/protocol'
 import { View } from '../tabs'
 import { getVSCodeAPI } from '../utils/VSCodeApi'
 import { useTelemetryRecorder } from '../utils/telemetry'
@@ -430,49 +421,6 @@ export const UserMenu: React.FunctionComponent<UserMenuProps> = ({
                                     <span className="tw-flex-grow">Add another account</span>
                                 </CommandItem>
                             </CommandGroup>
-
-                            {isWorkspacesUpgradeCtaEnabled && (
-                                <CommandGroup>
-                                    <CommandLink
-                                        href={ENTERPRISE_STARTER_LEARN_MORE_URL.toString()}
-                                        target="_blank"
-                                        rel="noreferrer"
-                                        className="tw-flex tw-w-full tw-justify-start tw-gap-8 tw-align-center tw-flex-col tw-font-left !tw-bg-transparent hover:!tw-bg-transparent [&[aria-selected]]:!tw-bg-transparent tw-pt-[15px]"
-                                    >
-                                        <div className="tw-flex tw-w-full tw-justify-start tw-gap-4 tw-align-center">
-                                            {/* TODO: Replace with new logo */}
-                                            <SourcegraphLogo
-                                                width={16}
-                                                height={16}
-                                                className="tw-mr-2"
-                                            />
-                                            <Badge
-                                                variant="secondary"
-                                                className="tw-opacity-85 tw-text-xs tw-h-fit tw-self-center"
-                                            >
-                                                Enterprise Starter
-                                            </Badge>
-                                        </div>
-                                        <div>
-                                            <div className="tw-w-full tw-text-[14px] tw-font-semibold tw-text-left tw-mb-5">
-                                                Enable collaboration with your team
-                                            </div>
-                                            <div className="tw-text-[12px] tw-text-muted-foreground">
-                                                Get your own workspace with AI-powered chat, prompt
-                                                sharing and codebase search. Automate tasks and
-                                                accelerate development.
-                                            </div>
-                                        </div>
-                                        <Button
-                                            key="workspace-create-button"
-                                            variant="secondary"
-                                            className="tw-flex-grow tw-rounded-md tw-text-center tw-w-full tw-text-foreground tw-my-2 tw-text-[12px]"
-                                        >
-                                            Explore Workspaces
-                                        </Button>
-                                    </CommandLink>
-                                </CommandGroup>
-                            )}
                         </CommandList>
                     ) : (
                         <CommandList>
@@ -511,45 +459,6 @@ export const UserMenu: React.FunctionComponent<UserMenuProps> = ({
                             </CommandGroup>
 
                             <CommandGroup>
-                                {isDotComUser && !isProUser && (
-                                    <CommandLink
-                                        href={CODY_PRO_SUBSCRIPTION_URL.toString()}
-                                        target="_blank"
-                                        rel="noreferrer"
-                                        onSelect={() => {
-                                            telemetryRecorder.recordEvent(
-                                                'cody.userMenu.upgradeToProLink',
-                                                'open',
-                                                {}
-                                            )
-                                            close()
-                                        }}
-                                    >
-                                        <svg className="tw-w-8 tw-h-8 tw-mr-2">
-                                            <title>zapIconGradient</title>
-                                            <defs>
-                                                <linearGradient
-                                                    id="zapIconGradient"
-                                                    x1="100%"
-                                                    y1="100%"
-                                                    x2="0%"
-                                                    y2="0%"
-                                                >
-                                                    <stop offset="0%" stopColor="#00cbec" />
-                                                    <stop offset="50%" stopColor="#a112ff" />
-                                                    <stop offset="100%" stopColor="#ff5543" />
-                                                </linearGradient>
-                                            </defs>
-                                            <ZapIcon
-                                                size={16}
-                                                strokeWidth={1.25}
-                                                style={{ stroke: 'url(#zapIconGradient)' }}
-                                            />
-                                        </svg>
-                                        <span className="tw-flex-grow">Upgrade to Pro</span>
-                                        <ExternalLinkIcon size={16} strokeWidth={1.25} />
-                                    </CommandLink>
-                                )}
                                 {isDotComUser && (
                                     <CommandItem
                                         onSelect={() => {
@@ -601,25 +510,6 @@ export const UserMenu: React.FunctionComponent<UserMenuProps> = ({
                                     <Settings2Icon size={16} strokeWidth={1.25} className="tw-mr-2" />
                                     <span className="tw-flex-grow">Extension Settings</span>
                                 </CommandItem>
-                                {isWorkspacesUpgradeCtaEnabled && (
-                                    <CommandLink
-                                        href={ENTERPRISE_STARTER_PRICING_URL.toString()}
-                                        target="_blank"
-                                        rel="noreferrer"
-                                        onSelect={() => {
-                                            telemetryRecorder.recordEvent(
-                                                'cody.userMenu.exploreEnterprisePlanLink',
-                                                'open',
-                                                {}
-                                            )
-                                            close()
-                                        }}
-                                    >
-                                        <SourcegraphLogo width={16} height={16} className="tw-mr-2" />
-                                        <span className="tw-flex-grow">Explore Enterprise Plans</span>
-                                        <ExternalLinkIcon size={16} strokeWidth={1.25} />
-                                    </CommandLink>
-                                )}
                             </CommandGroup>
 
                             <CommandGroup>

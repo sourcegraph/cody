@@ -92,35 +92,47 @@ log:
         send: 0
         ssl: -1
         wait: 303
-    - _id: 5b4a930c5a97ee546cb6b9a4a4a8edce
+    - _id: 50790dc1365dec659119db7225cb3cf3
       _order: 0
       cache: {}
       request:
         bodySize: 811
         cookies: []
         headers:
-          - name: accept
-            value: "*/*"
-          - name: accept-encoding
+          - _fromType: array
+            name: accept
+            value: application/json
+          - _fromType: array
+            name: accept-encoding
             value: gzip;q=0
-          - name: authorization
+          - _fromType: array
+            name: authorization
             value: token
               REDACTED_1858aad0e1ff07ae26d4042086acb9da455866ad617afd2cb9ab9419e1be1104
-          - name: connection
-            value: close
-          - name: content-length
-            value: "811"
-          - name: content-type
+          - _fromType: array
+            name: content-type
             value: application/json; charset=utf-8
-          - name: user-agent
-            value: enterprisemainbranchclient/v1 (Node.js v20.10.0)
-          - name: x-requested-with
+          - _fromType: array
+            name: user-agent
+            value: enterprisemainbranchclient/v1 (Node.js v20.4.0)
+          - _fromType: array
+            name: x-requested-with
             value: enterprisemainbranchclient v1
-          - name: x-timeout-ms
+          - _fromType: array
+            name: x-sourcegraph-api-client-name
+            value: enterprisemainbranchclient
+          - _fromType: array
+            name: x-sourcegraph-api-client-version
+            value: v1
+          - _fromType: array
+            name: x-timeout-ms
             value: "7000"
+          - _fromType: array
+            name: content-length
+            value: "811"
           - name: host
             value: sourcegraph.sourcegraph.com
-        headersSize: 509
+        headersSize: 613
         httpVersion: HTTP/1.1
         method: POST
         postData:
@@ -178,15 +190,17 @@ log:
             value: enterprisemainbranchclient
           - name: client-version
             value: v1
-        url: https://sourcegraph.sourcegraph.com/.api/completions/code?client-name=enterprisemainbranchclient&client-version=v1
+          - name: api-version
+            value: "5"
+        url: https://sourcegraph.sourcegraph.com/.api/completions/code?client-name=enterprisemainbranchclient&client-version=v1&api-version=5
       response:
-        bodySize: 254
+        bodySize: 341
         content:
           mimeType: text/event-stream
-          size: 254
+          size: 341
           text: |+
             event: completion
-            data: {"completion":"return a + b","stopReason":"stop"}
+            data: {"deltaText":"return a + b"}
 
             event: done
             data: {}
@@ -194,7 +208,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 09 Dec 2024 14:47:35 GMT
+            value: Wed, 02 Jul 2025 21:34:28 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -207,13 +221,9 @@ log:
             value: ""
           - name: cache-control
             value: no-cache
-          - name: observed-calculated-ip-from-forwarded-for
-            value: 34.117.155.115
-          - name: observed-x-forwarded-for
-            value: 80.82.18.146, 172.68.159.57, 34.117.155.115
           - name: vary
-            value: Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
-              Cookie
+            value: Accept-Encoding, Authorization, Authorization, Cookie, Authorization,
+              X-Requested-With, Cookie
           - name: x-content-type-options
             value: nosniff
           - name: x-frame-options
@@ -222,13 +232,13 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1340
+        headersSize: 1269
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-12-09T14:47:35.049Z
-      time: 637
+      startedDateTime: 2025-07-02T21:34:28.272Z
+      time: 489
       timings:
         blocked: -1
         connect: -1
@@ -236,7 +246,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 637
+        wait: 489
     - _id: 5d0e29776bf0857beffb22b778ce488b
       _order: 0
       cache: {}
@@ -902,110 +912,6 @@ log:
         send: 0
         ssl: -1
         wait: 347
-    - _id: bd14c6be2d6ffb3774bf1099927931e2
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 185
-        cookies: []
-        headers:
-          - name: accept
-            value: "*/*"
-          - name: accept-encoding
-            value: gzip,deflate
-          - name: authorization
-            value: token
-              REDACTED_1858aad0e1ff07ae26d4042086acb9da455866ad617afd2cb9ab9419e1be1104
-          - name: connection
-            value: close
-          - name: content-length
-            value: "185"
-          - name: content-type
-            value: application/json; charset=utf-8
-          - name: traceparent
-            value: 00-dd92707a7f959e75a076780498abf08e-7834fcb09888978d-01
-          - name: user-agent
-            value: enterprisemainbranchclient/v1 (Node.js v20.10.0)
-          - name: x-requested-with
-            value: enterprisemainbranchclient v1
-          - name: host
-            value: sourcegraph.sourcegraph.com
-        headersSize: 585
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json; charset=utf-8
-          params: []
-          textJSON:
-            query: |
-              
-              query ResolveRepoName($cloneURL: String!) {
-                  repository(cloneURL: $cloneURL) {
-                      name
-                  }
-              }
-            variables:
-              cloneURL: git@github.com:sourcegraph/cody.git
-        queryString:
-          - name: ResolveRepoName
-            value: null
-        url: https://sourcegraph.sourcegraph.com/.api/graphql?ResolveRepoName
-      response:
-        bodySize: 127
-        content:
-          encoding: base64
-          mimeType: application/json
-          size: 127
-          text: "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqSi3IL84syS+qBPHyEnNTlayU0jNLMkqT9JLzc/WL8\
-            0uLklPTixILMvST81MqlWprawEAAAD//w==\",\"AwBsAyb9PgAAAA==\"]"
-        cookies: []
-        headers:
-          - name: date
-            value: Mon, 09 Dec 2024 14:47:35 GMT
-          - name: content-type
-            value: application/json
-          - name: transfer-encoding
-            value: chunked
-          - name: connection
-            value: close
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache, max-age=0
-          - name: observed-calculated-ip-from-forwarded-for
-            value: 34.117.155.115
-          - name: observed-x-forwarded-for
-            value: 80.82.18.146, 172.69.155.102, 34.117.155.115
-          - name: vary
-            value: Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
-              Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-          - name: content-encoding
-            value: gzip
-        headersSize: 1375
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2024-12-09T14:47:34.722Z
-      time: 280
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 280
     - _id: 7a3c4ac24a98ecb58b4610a5ba34a76c
       _order: 0
       cache: {}

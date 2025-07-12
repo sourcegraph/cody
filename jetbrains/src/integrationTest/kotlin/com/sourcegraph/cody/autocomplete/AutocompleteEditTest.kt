@@ -19,19 +19,13 @@ import org.junit.runner.RunWith
 class AutocompleteEditTest : BaseAutocompleteTest() {
 
   companion object {
-    private val codySettingsContent =
-        """{
-          |  "cody.suggestions.mode": "auto-edit"
-          |}
-          |"""
-            .trimMargin()
 
     private val fixture =
         BaseIntegrationTextFixture(
             recordingName = "autocompleteEdit",
             credentials = TestingCredentials.enterprise,
             CodyAgentService.clientCapabilities,
-            codySettingsContent)
+            mapOf("cody.suggestions.mode" to "auto-edit"))
 
     @JvmStatic
     @BeforeClass
@@ -58,8 +52,8 @@ class AutocompleteEditTest : BaseAutocompleteTest() {
         Matchers.equalTo(
             """fun main() {
                       |    val list = listOf(1, 2, 3, 4, 5)
-                      |    for (item in list) {
-                      |        println(item)
+                      |    for (i in list) {
+                      |        println(i)
                       |    }
                       |}
                       |"""

@@ -1,6 +1,7 @@
 package com.sourcegraph.cody.autoedit
 
 import com.intellij.openapi.Disposable
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.editor.Document
@@ -8,6 +9,7 @@ import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.EditorFactory
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vcs.ex.Range
+import com.intellij.util.messages.Topic
 import com.sourcegraph.cody.agent.protocol_generated.AutocompleteEditItem
 import kotlin.math.abs
 
@@ -89,10 +91,15 @@ class AutoeditManager(private val project: Project) {
   }
 
   fun hide() {
+    ApplicationManager.getApplication().messageBus.syncPublisher(TOPIC).run()
     disposable.dispose()
   }
 
   companion object {
+
+    val TOPIC: Topic<Runnable> =
+        Topic<Runnable>(Runnable::class.java, Topic.BroadcastDirection.TO_DIRECT_CHILDREN)
+
     @JvmStatic fun getInstance(project: Project): AutoeditManager = project.service()
   }
 }

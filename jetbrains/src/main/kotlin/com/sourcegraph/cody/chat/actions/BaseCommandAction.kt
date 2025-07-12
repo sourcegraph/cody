@@ -4,7 +4,6 @@ import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.application.ReadAction
-import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.project.Project
 import com.intellij.util.concurrency.AppExecutorUtil
 import com.sourcegraph.cody.agent.CodyAgentService
@@ -38,9 +37,7 @@ abstract class BaseCommandAction : DumbAwareEDTAction() {
   open fun doAction(project: Project) {
     ApplicationManager.getApplication().assertIsDispatchThread()
     CodyEditorUtil.getSelectedEditors(project).firstOrNull()?.let { editor ->
-      val file = FileDocumentManager.getInstance().getFile(editor.document)
-      val protocolFile =
-          file?.let { ProtocolTextDocumentExt.fromVirtualEditorFile(editor, it) } ?: return
+      val protocolFile = ProtocolTextDocumentExt.fromEditor(editor) ?: return
 
       ReadAction.nonBlocking(
               Callable { IgnoreOracle.getInstance(project).policyForUri(protocolFile.uri).get() })

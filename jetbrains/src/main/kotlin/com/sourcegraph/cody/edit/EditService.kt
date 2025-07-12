@@ -32,7 +32,7 @@ class EditService(val project: Project) {
    */
   fun performTextEdits(uri: String, edits: List<TextEdit>): Boolean {
     val file =
-        CodyEditorUtil.findFileOrScratch(project, uri)
+        CodyEditorUtil.findFile(uri)
             ?: run {
               logger.warn("Failed to find file for URI: $uri")
               return false
@@ -73,8 +73,12 @@ class EditService(val project: Project) {
         is CreateFileOperation -> {
           logger.info("Workspace edit operation created a file: ${op.uri}")
           val file =
-              CodyEditorUtil.createFileOrUseExisting(project, op.uri, content = "") ?: return false
-          CodyEditorUtil.showDocument(project, file)
+              CodyEditorUtil.createFileOrUseExisting(
+                  project,
+                  uriString = op.uri,
+                  content = op.textContents,
+                  overwrite = op.options?.overwrite ?: false)
+          return file != null
         }
         is RenameFileOperation -> {
           logger.warn("Workspace edit operation renamed a file: ${op.oldUri} -> ${op.newUri}")

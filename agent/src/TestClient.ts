@@ -343,11 +343,6 @@ export class TestClient extends MessageHandler {
 
             return result
         })
-        this.registerRequest('textDocument/openUntitledDocument', params => {
-            const doc = this.workspace.loadDocument(ProtocolTextDocumentWithUri.fromDocument(params))
-            this.notify('textDocument/didOpen', params)
-            return Promise.resolve(doc.protocolDocument.underlying)
-        })
         this.registerRequest('textDocument/edit', async params => {
             this.textDocumentEditParams.push(params)
             const protocolDocument = await this.editDocument(params)
@@ -377,6 +372,10 @@ export class TestClient extends MessageHandler {
         this.registerNotification('webview/postMessage', params => {
             this.webviewMessages.push(params)
             this.webviewMessagesEmitter.fire(params)
+        })
+
+        this.registerNotification('extensionConfiguration/didUpdate', params => {
+            this.extensionConfigurationUpdates.push(params)
         })
     }
 
@@ -605,6 +604,8 @@ export class TestClient extends MessageHandler {
 
     public webviewMessages: WebviewPostMessageParams[] = []
     public webviewMessagesEmitter = new vscode.EventEmitter<WebviewPostMessageParams>()
+
+    public extensionConfigurationUpdates: Record<string, string | undefined | null>[] = []
 
     /**
      * Returns a promise of the first `type: 'transcript'` message where

@@ -96,11 +96,11 @@ log:
         send: 0
         ssl: -1
         wait: 263
-    - _id: 0a43146219b6258b26a74374de371701
+    - _id: 606dc964907271729e9e62f6b9ecae4a
       _order: 0
       cache: {}
       request:
-        bodySize: 565
+        bodySize: 784
         cookies: []
         headers:
           - name: accept-encoding
@@ -113,7 +113,7 @@ log:
           - name: content-type
             value: application/json
           - name: traceparent
-            value: 00-3e407523853d8c958471d67e369e8c6f-3c9ff6790bbced37-01
+            value: 00-a5e1530da739e3fef9eb6df6af4253e3-2f8a71c9186500a7-01
           - name: user-agent
             value: auth/v1 (Node.js v20.4.0)
           - name: x-requested-with
@@ -137,6 +137,9 @@ log:
                   structure: ```$LANGUAGE:$FILEPATH```
 
                   For executable terminal commands: enclose each command in individual "bash" language code block without comments and new lines inside.
+
+
+                  Check if you have access to terminal/shell tools. If so, use it to execute commands to gather information. The terminal output is included in your context. You can reference and analyze this output in your response.
               - speaker: human
                 text: hello after reauthentication
             model: anthropic::2023-06-01::claude-3-haiku
@@ -152,14 +155,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=8&client-name=auth&client-version=v1
       response:
-        bodySize: 675
+        bodySize: 1569
         content:
           mimeType: text/event-stream
-          size: 675
+          size: 1569
           text: >+
             event: completion
 
-            data: {"deltaText":"Hello! I'm Cody, an AI coding assistant from Sourcegraph. How can I assist you today?","stopReason":"end_turn"}
+            data: {"deltaText":"```bash\n# No terminal access available\n```\n\nGreetings! I'm Cody, an AI coding assistant from Sourcegraph. Unfortunately, I don't have direct access to a terminal or shell tools in this conversation. As an AI, I don't have the ability to execute commands on a physical system.\n\nHowever, I'm happy to provide assistance based on the information you've provided. Could you please tell me more about the context you're working in? What kind of help are you looking for? I'll do my best to provide relevant information and guidance without the ability to run terminal commands directly.","stopReason":"end_turn"}
 
 
             event: done
@@ -169,7 +172,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Fri, 07 Mar 2025 18:53:54 GMT
+            value: Wed, 18 Jun 2025 07:10:04 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -183,7 +186,7 @@ log:
           - name: cache-control
             value: no-cache
           - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+            value: Cookie,Accept-Encoding,Authorization,Authorization,Cookie, Authorization,
               X-Requested-With,Cookie
           - name: x-content-type-options
             value: nosniff
@@ -193,13 +196,13 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1320
+        headersSize: 1382
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-03-07T18:53:53.460Z
-      time: 1015
+      startedDateTime: 2025-06-18T07:10:03.633Z
+      time: 2071
       timings:
         blocked: -1
         connect: -1
@@ -207,7 +210,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 1015
+        wait: 2071
     - _id: f1b1cde4cd57488b7f0137954f0302f5
       _order: 0
       cache: {}
@@ -1564,11 +1567,11 @@ log:
         send: 0
         ssl: -1
         wait: 270
-    - _id: 3dafbb77ca8dc69a025c3163d2c3d3cd
+    - _id: 70115abaa5795a8128b960ea4b7c9599
       _order: 0
       cache: {}
       request:
-        bodySize: 629
+        bodySize: 848
         cookies: []
         headers:
           - name: accept-encoding
@@ -1581,7 +1584,7 @@ log:
           - name: content-type
             value: application/json
           - name: traceparent
-            value: 00-2bcf39ce1caf1ba2b75dc50028e94306-9cc86739d1ea7e96-01
+            value: 00-27abdc65bc9a97afea29f6e23bb570da-92454a7bcbc376d1-01
           - name: user-agent
             value: auth/v1 (Node.js v20.4.0)
           - name: x-requested-with
@@ -1605,6 +1608,9 @@ log:
                   structure: ```$LANGUAGE:$FILEPATH```
 
                   For executable terminal commands: enclose each command in individual "bash" language code block without comments and new lines inside.
+
+
+                  Check if you have access to terminal/shell tools. If so, use it to execute commands to gather information. The terminal output is included in your context. You can reference and analyze this output in your response.
               - speaker: human
                 text: |-
                   Answer positively without apologizing.
@@ -1623,14 +1629,14 @@ log:
             value: v1
         url: https://sourcegraph.sourcegraph.com/.api/completions/stream?api-version=6&client-name=auth&client-version=v1
       response:
-        bodySize: 650
+        bodySize: 1157
         content:
           mimeType: text/event-stream
-          size: 650
+          size: 1157
           text: >+
             event: completion
 
-            data: {"deltaText":"Hi! Welcome back! I'm Cody and I'm ready to help you with any coding or technical questions you have. Let me know what you'd like to work on!","stopReason":"end_turn"}
+            data: {"deltaText":"Welcome to your new account! I'll be happy to help you with any questions or tasks you have. Let me check the terminal environment.\n\n```bash\nwhoami\n```\n\nI can help guide you through tasks, provide code examples, and assist with any technical questions you have. What would you like to explore?","stopReason":"end_turn"}
 
 
             event: done
@@ -1640,7 +1646,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Fri, 07 Mar 2025 16:54:24 GMT
+            value: Wed, 18 Jun 2025 07:10:29 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -1654,8 +1660,8 @@ log:
           - name: cache-control
             value: no-cache
           - name: vary
-            value: Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
-              Cookie
+            value: Accept-Encoding, Authorization, Authorization, Cookie, Authorization,
+              X-Requested-With, Cookie
           - name: x-content-type-options
             value: nosniff
           - name: x-frame-options
@@ -1664,13 +1670,13 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1411
+        headersSize: 1274
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-03-07T16:54:22.842Z
-      time: 1439
+      startedDateTime: 2025-06-18T07:10:28.139Z
+      time: 2672
       timings:
         blocked: -1
         connect: -1
@@ -1678,7 +1684,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 1439
+        wait: 2672
     - _id: 5d0e29776bf0857beffb22b778ce488b
       _order: 0
       cache: {}

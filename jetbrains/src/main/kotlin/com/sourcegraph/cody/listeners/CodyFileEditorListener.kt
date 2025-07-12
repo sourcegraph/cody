@@ -2,7 +2,6 @@ package com.sourcegraph.cody.listeners
 
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.editor.Editor
-import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.fileEditor.FileEditorManagerListener
 import com.intellij.openapi.fileEditor.TextEditor
@@ -23,7 +22,7 @@ class CodyFileEditorListener : FileEditorManagerListener {
     try {
       val textEditor = source.getSelectedEditor(file) as? TextEditor ?: return
       val editor = textEditor.editor
-      val protocolTextFile = ProtocolTextDocumentExt.fromVirtualEditorFile(editor, file) ?: return
+      val protocolTextFile = ProtocolTextDocumentExt.fromEditor(editor) ?: return
       EditorChangesBus.documentChanged(editor.project, protocolTextFile)
 
       withAgent(source.project) { agent: CodyAgent ->
@@ -47,8 +46,6 @@ class CodyFileEditorListener : FileEditorManagerListener {
   }
 
   companion object {
-    private val logger = Logger.getInstance(CodyFileEditorListener::class.java)
-
     private fun processDocuments(
         project: Project,
         getEditors: (Project) -> Set<Editor>,
@@ -58,16 +55,7 @@ class CodyFileEditorListener : FileEditorManagerListener {
           ThreadingUtil.runInEdtAndGet {
             if (project.isDisposed) return@runInEdtAndGet emptySet()
 
-            getEditors(project).mapNotNull { editor ->
-              FileDocumentManager.getInstance().getFile(editor.document)?.let { file ->
-                try {
-                  ProtocolTextDocumentExt.fromVirtualEditorFile(editor, file)
-                } catch (x: Exception) {
-                  logger.warn("Error while obtaining text document for file: ${file.path}", x)
-                  null
-                }
-              }
-            }
+            getEditors(project).mapNotNull { editor -> ProtocolTextDocumentExt.fromEditor(editor) }
           }
 
       documents.forEach(processDocument)

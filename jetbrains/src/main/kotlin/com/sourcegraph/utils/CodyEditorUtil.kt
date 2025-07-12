@@ -1,10 +1,7 @@
 package com.sourcegraph.utils
 
-import com.intellij.ide.scratch.ScratchFileService
-import com.intellij.ide.scratch.ScratchRootType
 import com.intellij.injected.editor.EditorWindow
 import com.intellij.lang.Language
-import com.intellij.lang.LanguageUtil
 import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.editor.Document
@@ -14,8 +11,6 @@ import com.intellij.openapi.editor.ScrollType
 import com.intellij.openapi.editor.ex.EditorEx
 import com.intellij.openapi.editor.impl.ImaginaryEditor
 import com.intellij.openapi.fileEditor.*
-import com.intellij.openapi.fileTypes.FileTypeRegistry
-import com.intellij.openapi.fileTypes.PlainTextLanguage
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Key
 import com.intellij.openapi.util.TextRange
@@ -27,9 +22,10 @@ import com.intellij.util.io.createFile
 import com.sourcegraph.cody.agent.protocol_extensions.toBoundedOffset
 import com.sourcegraph.cody.agent.protocol_extensions.toOffsetRange
 import com.sourcegraph.cody.agent.protocol_generated.Range
-import com.sourcegraph.common.CodyFileUri
 import com.sourcegraph.config.ConfigUtil
 import com.sourcegraph.utils.ThreadingUtil.runInEdtAndGet
+import java.net.URI
+import java.nio.file.Path
 import kotlin.io.path.*
 
 object CodyEditorUtil {
@@ -44,6 +40,7 @@ object CodyEditorUtil {
   private const val RIGHT_COMMAND = "Right"
   private const val MOVE_CARET_COMMAND = "Move Caret"
   private const val DELETE_COMMAND = "Delete"
+  private const val ESCAPE_COMMAND = "Escape"
 
   @JvmStatic private val KEY_EDITOR_SUPPORTED = Key.create<Boolean>("cody.editorSupported")
 
@@ -147,6 +144,7 @@ object CodyEditorUtil {
         command == LEFT_COMMAND ||
         command == RIGHT_COMMAND ||
         command == DELETE_COMMAND ||
+        command == ESCAPE_COMMAND ||
         command.contains(MOVE_CARET_COMMAND))
   }
 
@@ -178,15 +176,18 @@ object CodyEditorUtil {
     }
   }
 
-  fun findFileOrScratch(project: Project, uriString: String): VirtualFile? {
-    val uri = CodyFileUri.parse(uriString, project.basePath)
-    if (uri.isUntitled()) {
-      return ScratchRootType.getInstance()
-          .findFile(project, uri.toString(), ScratchFileService.Option.existing_only)
-    } else {
-      val path = uri.toAbsolutePath()
-      return VirtualFileManager.getInstance().refreshAndFindFileByNioPath(path)
+  private fun fromVSCodeURI(uriString: String): Path? {
+    if (!uriString.startsWith("file:")) {
+      logger.warn("Unsupported file URIs scheme: $uriString")
+      return null
     }
+
+    return URI(uriString).toPath()
+  }
+
+  fun findFile(uriString: String): VirtualFile? {
+    val path = fromVSCodeURI(uriString) ?: return null
+    return VirtualFileManager.getInstance().refreshAndFindFileByNioPath(path)
   }
 
   fun createFileOrUseExisting(
@@ -195,7 +196,8 @@ object CodyEditorUtil {
       content: String? = null,
       overwrite: Boolean = false
   ): VirtualFile? {
-    val path = CodyFileUri.parse(uriString, project.basePath).toAbsolutePath()
+    val path = fromVSCodeURI(uriString) ?: return null
+
     if (overwrite || path.notExists()) {
       path.parent.createDirectories()
       path.deleteIfExists()
@@ -210,22 +212,10 @@ object CodyEditorUtil {
     return VirtualFileManager.getInstance().refreshAndFindFileByNioPath(path)
   }
 
-  fun createScratchOrUseExisting(
-      project: Project,
-      fileName: String,
-      content: String? = null,
-  ): VirtualFile? {
-    val fileType = FileTypeRegistry.getInstance().getFileTypeByFileName(fileName)
-    val language = LanguageUtil.getFileTypeLanguage(fileType) ?: PlainTextLanguage.INSTANCE
-    return ScratchRootType.getInstance()
-        .createScratchFile(
-            project, fileName, language, content ?: "", ScratchFileService.Option.create_if_missing)
-  }
-
   @JvmStatic
   @RequiresEdt
   fun selectAndScrollToRange(project: Project, uri: String, range: Range, shouldScroll: Boolean) {
-    val vf = findFileOrScratch(project, uri) ?: return
+    val vf = findFile(uri) ?: return
     val textEditor = getSelectedEditors(project).find { it.virtualFile == vf } ?: return
     textEditor.selectionModel.setSelection(
         range.start.toBoundedOffset(textEditor.document),

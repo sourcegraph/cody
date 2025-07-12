@@ -70,6 +70,7 @@ export const CopyButton = ({
 export type CreateEditButtonsParams = {
     // TODO: Remove this when there is a portable abstraction for popup menus, instead of special-casing VSCode.
     isVSCode: boolean
+    copyOnly: boolean
     preText: string
     copyButtonOnSubmit?: CodeBlockActionsProps['copyButtonOnSubmit']
     onInsert?: CodeBlockActionsProps['insertButtonOnSubmit']
@@ -83,6 +84,10 @@ export type CreateEditButtonsParams = {
 }
 
 export function createEditButtons(params: CreateEditButtonsParams): React.ReactElement {
+    if (params.copyOnly) {
+        return createCopyOnlyButton(params.preText, params.copyButtonOnSubmit)
+    }
+
     return params.smartApply
         ? createEditButtonsSmartApply(params)
         : createEditButtonsBasic(
@@ -91,6 +96,13 @@ export function createEditButtons(params: CreateEditButtonsParams): React.ReactE
               params.onInsert,
               params.onExecute
           )
+}
+
+function createCopyOnlyButton(
+    preText: string,
+    copyButtonOnSubmit?: CodeBlockActionsProps['copyButtonOnSubmit']
+): React.ReactElement {
+    return <CopyButton text={preText} onCopy={copyButtonOnSubmit} />
 }
 
 function createEditButtonsBasic(

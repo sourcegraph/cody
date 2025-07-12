@@ -1,4 +1,4 @@
-import { CodyIDE, type CodyNotice } from '@sourcegraph/cody-shared'
+import { CodyIDE, type CodyNotice, isWorkspaceInstance } from '@sourcegraph/cody-shared'
 import { S2_URL } from '@sourcegraph/cody-shared/src/sourcegraph-api/environments'
 import {
     ArrowLeftRightIcon,
@@ -25,7 +25,12 @@ interface Notice {
 }
 
 type NoticeVariants = 'default' | 'warning'
-type NoticeIDs = 'DogfoodS2' | 'TeamsUpgrade' | 'DeepCodyDotCom' | 'DeepCodyEnterprise'
+type NoticeIDs =
+    | 'DogfoodS2'
+    | 'TeamsUpgrade'
+    | 'DeepCodyDotCom'
+    | 'DeepCodyEnterprise'
+    | 'CodyDeprecation'
 
 interface NoticesProps {
     user: UserAccountInfo
@@ -33,6 +38,20 @@ interface NoticesProps {
 }
 
 const storageKey = 'DismissedWelcomeNotices'
+
+// Cody deprecation message constants
+const CODY_DEPRECATION_MESSAGES = {
+    ENTERPRISE_STARTER_WITH_CODY:
+        "Cody in Enterprise Starter is being sunset. You can continue using Cody until July 23rd. Your code indexing and code search capabilities will not be affected. We encourage you to try Amp, Sourcegraph's new agentic coding tool.",
+    ENTERPRISE_STARTER_WITHOUT_CODY:
+        "Cody in Enterprise Starter is being sunset. Because you signed up after 6/25, your account doesn't have Cody, we encourage you to try Amp, Sourcegraph's new agentic coding tool.",
+    PRO_USER:
+        "Cody Pro is being sunset. You can continue using Cody until July 23rd, and your subscription will not renew. We encourage you to try Amp, Sourcegraph's new agentic coding tool.",
+    FREE_USER_WITH_CODY:
+        "Cody Free is being sunset. You can continue using Cody until July 23rd. We encourage you to try Amp, Sourcegraph's new agentic coding tool.",
+    FREE_USER_WITHOUT_CODY:
+        "Cody Free is being sunset. Because you signed up after 6/25, your account doesn't have Cody. We encourage you to try Amp, Sourcegraph's new agentic coding tool.",
+} as const
 
 export const Notices: React.FC<NoticesProps> = ({ user, instanceNotices }) => {
     const telemetryRecorder = useTelemetryRecorder()
@@ -58,6 +77,28 @@ export const Notices: React.FC<NoticesProps> = ({ user, instanceNotices }) => {
         [telemetryRecorder, setDismissedNotices]
     )
 
+    // Helper function to get the CodyDeprecation message based on user type and site Cody enablement
+    const getCodyDeprecationMessage = useCallback(() => {
+        if (isWorkspaceInstance(user.user.endpoint)) {
+            // For workspace instances, check if the site has Cody enabled
+            const hasCodyEnabled = user.siteHasCodyEnabled === true
+            if (hasCodyEnabled) {
+                return CODY_DEPRECATION_MESSAGES.ENTERPRISE_STARTER_WITH_CODY
+            }
+            return CODY_DEPRECATION_MESSAGES.ENTERPRISE_STARTER_WITHOUT_CODY
+        }
+        if (user.isCodyProUser) {
+            return CODY_DEPRECATION_MESSAGES.PRO_USER
+        }
+        // For free users, check if they have a subscription
+        const hasSubscription =
+            user.currentUserCodySubscription && user.currentUserCodySubscription !== null
+        if (hasSubscription) {
+            return CODY_DEPRECATION_MESSAGES.FREE_USER_WITH_CODY
+        }
+        return CODY_DEPRECATION_MESSAGES.FREE_USER_WITHOUT_CODY
+    }, [user])
+
     const notices: Notice[] = useMemo(
         () => [
             ...instanceNotices.map(notice => ({
@@ -71,6 +112,34 @@ export const Notices: React.FC<NoticesProps> = ({ user, instanceNotices }) => {
                     />
                 ),
             })),
+            /**
+             * Cody Deprecation Notice
+             */
+            {
+                id: 'CodyDeprecation',
+                isVisible: user.isDotComUser || isWorkspaceInstance(user.user.endpoint),
+                content: (
+                    <NoticeContent
+                        id="CodyDeprecation"
+                        variant="default"
+                        title="Important Notice"
+                        message={getCodyDeprecationMessage()}
+                        onDismiss={() => dismissNotice('CodyDeprecation', 'sessional')}
+                        actions={[
+                            {
+                                label: 'Try Amp',
+                                variant: 'default',
+                                href: 'https://ampcode.com',
+                            },
+                            {
+                                label: 'Learn more',
+                                variant: 'ghost',
+                                href: 'https://sourcegraph.com/blog/changes-to-cody-free-pro-and-enterprise-starter-plans',
+                            },
+                        ]}
+                    />
+                ),
+            },
             /**
              * For Sourcegraph team members who are using Sourcegraph.com to remind them that we want to be dogfooding S2.
              */
@@ -110,14 +179,14 @@ export const Notices: React.FC<NoticesProps> = ({ user, instanceNotices }) => {
                 ),
             },
         ],
-        [user, dismissNotice, instanceNotices]
+        [user, dismissNotice, instanceNotices, getCodyDeprecationMessage]
     )
 
     // First, modify the activeNotice useMemo to add conditional logic for DogfoodS2
     const activeNotice = useMemo(
         () =>
             notices.find(notice => {
-                if (notice.id === 'DogfoodS2') {
+                if (notice.id === 'DogfoodS2' || notice.id === 'CodyDeprecation') {
                     return notice.isVisible && !sessionDismissedNotices.includes(notice.id)
                 }
                 return notice.isVisible && !dismissedNotices?.includes(notice.id)
@@ -165,7 +234,7 @@ const NoticeContent: FunctionComponent<NoticeContentProps> = ({
     const telemetryRecorder = useTelemetryRecorder()
 
     const bgColor = {
-        default: 'tw-bg-accent tw-bg-opacity-50',
+        default: 'tw-bg-accent tw-bg-opacity-50 tw-text-accent-foreground',
         warning: 'tw-bg-red-700 tw-text-white',
     }[variant]
 
@@ -194,6 +263,7 @@ const NoticeContent: FunctionComponent<NoticeContentProps> = ({
                 <img src={SourcegraphIcon} alt="Sourcegraph Logo" className="tw-h-[16px]" />
             </>
         ),
+        CodyDeprecation: null,
     }[id]
 
     return (
@@ -213,7 +283,10 @@ const NoticeContent: FunctionComponent<NoticeContentProps> = ({
                         onClick={() => {
                             action.onClick?.()
                             telemetryRecorder.recordEvent('cody.notice.cta', 'clicked', {
-                                privateMetadata: { noticeId: id, title: action.label },
+                                privateMetadata: {
+                                    noticeId: id,
+                                    title: action.label,
+                                },
                             })
                         }}
                         className="tw-flex tw-gap-1"
@@ -224,7 +297,7 @@ const NoticeContent: FunctionComponent<NoticeContentProps> = ({
                                 href={action.href}
                                 target="_blank"
                                 rel="noreferrer"
-                                className="tw-text-button-foreground hover:tw-text-button-foreground"
+                                className="tw-text-inherit hover:!tw-text-inherit"
                             >
                                 {action.label}
                             </a>

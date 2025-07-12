@@ -91,7 +91,7 @@ export const AssistantMessageCell: FunctionComponent<{
                     <>
                         {message.error && !isAborted ? (
                             typeof message.error === 'string' ? (
-                                <RequestErrorItem error={message.error} />
+                                <RequestErrorItem error={message.error} humanMessage={humanMessage} />
                             ) : (
                                 <ErrorItem
                                     error={message.error}

@@ -92,11 +92,11 @@ log:
         send: 0
         ssl: -1
         wait: 115
-    - _id: 0feaa1b83de350894882bfc4d74e339a
+    - _id: 895d1c36d797357637e52a99ec4e10f3
       _order: 0
       cache: {}
       request:
-        bodySize: 605
+        bodySize: 824
         cookies: []
         headers:
           - name: accept-encoding
@@ -109,7 +109,7 @@ log:
           - name: content-type
             value: application/json
           - name: traceparent
-            value: 00-34e51442edb4bf0a848a64bbdba62965-c117095ffc0c88cd-01
+            value: 00-799a9c0c2d9d95b6864265a402cdc352-9c99d4235c823b9b-01
           - name: user-agent
             value: defaultclient/v1 (Node.js v20.4.0)
           - name: x-requested-with
@@ -133,6 +133,9 @@ log:
                   structure: ```$LANGUAGE:$FILEPATH```
 
                   For executable terminal commands: enclose each command in individual "bash" language code block without comments and new lines inside.
+
+
+                  Check if you have access to terminal/shell tools. If so, use it to execute commands to gather information. The terminal output is included in your context. You can reference and analyze this output in your response.
               - speaker: human
                 text: |-
                   Answer positively without apologizing.
@@ -151,14 +154,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=8&client-name=defaultclient&client-version=v1
       response:
-        bodySize: 493
+        bodySize: 1015
         content:
           mimeType: text/event-stream
-          size: 493
+          size: 1015
           text: >+
             event: completion
 
-            data: {"deltaText":"Hi there! I'm excited to help you today! What can I assist you with?","stopReason":"end_turn"}
+            data: {"deltaText":"Hi there! Great to meet you! I'm Cody, your friendly coding assistant from Sourcegraph. I'm ready to help you with any coding or technical questions you have. What would you like to explore together?","stopReason":"end_turn"}
 
 
             event: done
@@ -168,7 +171,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Fri, 07 Mar 2025 18:53:54 GMT
+            value: Wed, 18 Jun 2025 07:10:05 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -182,7 +185,7 @@ log:
           - name: cache-control
             value: no-cache
           - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+            value: Cookie,Accept-Encoding,Authorization,Authorization,Cookie, Authorization,
               X-Requested-With,Cookie
           - name: x-content-type-options
             value: nosniff
@@ -192,13 +195,13 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1320
+        headersSize: 1382
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-03-07T18:53:52.939Z
-      time: 1612
+      startedDateTime: 2025-06-18T07:10:03.417Z
+      time: 2857
       timings:
         blocked: -1
         connect: -1
@@ -206,12 +209,12 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 1612
-    - _id: 7d2ebd77bf37a417392000c7706f60a0
+        wait: 2857
+    - _id: 788c1edf95c2bf106635a8121cc573f5
       _order: 0
       cache: {}
       request:
-        bodySize: 644
+        bodySize: 863
         cookies: []
         headers:
           - name: accept-encoding
@@ -224,7 +227,7 @@ log:
           - name: content-type
             value: application/json
           - name: traceparent
-            value: 00-0e2d380f0d0e895f4ffcb69926feb4c8-ecca7a567f46c91b-01
+            value: 00-2696753a27ff9f5f081c14125e130ee3-33cb9299b54d0cce-01
           - name: user-agent
             value: defaultclient/v1 (Node.js v20.4.0)
           - name: x-requested-with
@@ -248,6 +251,9 @@ log:
                   structure: ```$LANGUAGE:$FILEPATH```
 
                   For executable terminal commands: enclose each command in individual "bash" language code block without comments and new lines inside.
+
+
+                  Check if you have access to terminal/shell tools. If so, use it to execute commands to gather information. The terminal output is included in your context. You can reference and analyze this output in your response.
               - speaker: human
                 text: |-
                   Answer positively without apologizing.
@@ -266,14 +272,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=8&client-name=defaultclient&client-version=v1
       response:
-        bodySize: 1762
+        bodySize: 3148
         content:
           mimeType: text/event-stream
-          size: 1762
+          size: 3148
           text: >+
             event: completion
 
-            data: {"deltaText":"I'll help you create a simple Hello World function in Java. Here's a clean implementation:\n\n```java:src/HelloWorld.java\npublic class HelloWorld {\n    public static void main(String[] args) {\n        sayHello();\n    }\n    \n    public static void sayHello() {\n        System.out.println(\"Hello, World!\");\n    }\n}\n```\n\nTo compile and run this Java program, use these commands:\n\n```bash\njavac src/HelloWorld.java\n```\n\n```bash\njava -cp src HelloWorld\n```\n\nThis code creates a function called `sayHello()` that prints \"Hello, World!\" to the console. The main method calls this function when the program runs. The code structure is clean, well-organized, and follows Java conventions.","stopReason":"end_turn"}
+            data: {"deltaText":"I'll create a simple Hello World function in Java for you.\nHere's a clean implementation:\n\n```java:HelloWorld.java\npublic class HelloWorld {\n    public static void main(String[] args) {\n        System.out.println(\"Hello, World!\");\n    }\n}\n```\n\nThis is a standard Java Hello World program that:\n1. Defines a class named `HelloWorld`\n2. Contains the main method that serves as the entry point\n3. Uses `System.out.println()` to display the message\n\nTo run this program, you would need to:\n1. Save it in a file named `HelloWorld.java`\n2. Compile it with:\n```bash\njavac HelloWorld.java\n```\n3. Run it with:\n```bash\njava HelloWorld\n```\n\nThe program will output \"Hello, World!\" when executed. This is a great starting point for learning Java programming!","stopReason":"end_turn"}
 
 
             event: done
@@ -283,7 +289,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Fri, 07 Mar 2025 18:53:58 GMT
+            value: Wed, 18 Jun 2025 07:10:07 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -297,7 +303,7 @@ log:
           - name: cache-control
             value: no-cache
           - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+            value: Cookie,Accept-Encoding,Authorization,Authorization,Cookie, Authorization,
               X-Requested-With,Cookie
           - name: x-content-type-options
             value: nosniff
@@ -307,13 +313,13 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1320
+        headersSize: 1382
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-03-07T18:53:54.596Z
-      time: 4251
+      startedDateTime: 2025-06-18T07:10:06.297Z
+      time: 4417
       timings:
         blocked: -1
         connect: -1
@@ -321,12 +327,12 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 4251
-    - _id: bc29974faefd9fc9ff7a7ec18b8141cb
+        wait: 4417
+    - _id: 66328c22237b370bfae60beb1b944285
       _order: 0
       cache: {}
       request:
-        bodySize: 634
+        bodySize: 2437
         cookies: []
         headers:
           - name: accept-encoding
@@ -339,121 +345,7 @@ log:
           - name: content-type
             value: application/json
           - name: traceparent
-            value: 00-aca8e237df8a4ab2cd430f7caf295101-8dd7f458ed93f50c-01
-          - name: user-agent
-            value: defaultclient/v1 (Node.js v20.4.0)
-          - name: x-requested-with
-            value: defaultclient v1
-          - name: host
-            value: sourcegraph.com
-        headersSize: 535
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json
-          params: []
-          textJSON:
-            maxTokensToSample: 4000
-            messages:
-              - speaker: human
-                text: >-
-                  You are Cody, an AI coding assistant from Sourcegraph.If your
-                  answer contains fenced code blocks in Markdown, include the
-                  relevant full file path in the code block tag using this
-                  structure: ```$LANGUAGE:$FILEPATH```
-
-                  For executable terminal commands: enclose each command in individual "bash" language code block without comments and new lines inside.
-              - speaker: assistant
-                text: I am Cody, an AI coding assistant from Sourcegraph.
-              - speaker: human
-                text: what color is the sky?
-            model: google::v1::gemini-1.5-flash
-            temperature: 0
-            topK: -1
-            topP: -1
-        queryString:
-          - name: api-version
-            value: "8"
-          - name: client-name
-            value: defaultclient
-          - name: client-version
-            value: v1
-        url: https://sourcegraph.com/.api/completions/stream?api-version=8&client-name=defaultclient&client-version=v1
-      response:
-        bodySize: 364
-        content:
-          mimeType: text/event-stream
-          size: 364
-          text: >+
-            event: completion
-
-            data: {"deltaText":"The sky is blue, but the exact shade varies depending on the time of day and weather conditions.\n"}
-
-
-            event: done
-
-            data: {}
-
-        cookies: []
-        headers:
-          - name: date
-            value: Fri, 07 Mar 2025 18:54:09 GMT
-          - name: content-type
-            value: text/event-stream
-          - name: transfer-encoding
-            value: chunked
-          - name: connection
-            value: keep-alive
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache
-          - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
-              X-Requested-With,Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1320
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2025-03-07T18:54:08.763Z
-      time: 655
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 655
-    - _id: 6b1cf6e507ab422afb2b158d25da6d65
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 2218
-        cookies: []
-        headers:
-          - name: accept-encoding
-            value: gzip;q=0
-          - name: authorization
-            value: token
-              REDACTED_fc324d3667e841181b0779375f26dedc911d26b303d23b29b1a2d7ee63dc77eb
-          - name: connection
-            value: keep-alive
-          - name: content-type
-            value: application/json
-          - name: traceparent
-            value: 00-86c0c030158704980123b72462e3a0ec-c3cc4912c9fa72b0-01
+            value: 00-51832c07eced8e658d129a608ef981de-08d0f3dc1b8b729b-01
           - name: user-agent
             value: defaultclient/v1 (Node.js v20.4.0)
           - name: x-requested-with
@@ -477,6 +369,9 @@ log:
                   structure: ```$LANGUAGE:$FILEPATH```
 
                   For executable terminal commands: enclose each command in individual "bash" language code block without comments and new lines inside.
+
+
+                  Check if you have access to terminal/shell tools. If so, use it to execute commands to gather information. The terminal output is included in your context. You can reference and analyze this output in your response.
               - speaker: human
                 text: >-
                   Codebase context from file src/squirrel.ts:
@@ -566,14 +461,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=8&client-name=defaultclient&client-version=v1
       response:
-        bodySize: 927
+        bodySize: 1326
         content:
           mimeType: text/event-stream
-          size: 927
+          size: 1326
           text: >+
             event: completion
 
-            data: {"deltaText":"```typescript:src/dog.ts\nexport class Dog implements Animal {\n    name: string;\n    isMammal = true;\n\n    constructor(name: string) {\n        this.name = name;\n    }\n\n    makeAnimalSound(): string {\n        return \"Woof!\";\n    }\n}\n```","stopReason":"end_turn"}
+            data: {"deltaText":"```typescript:src/dog.ts\nexport class Dog implements Animal {\n    name: string;\n    isMammal: boolean = true;\n\n    constructor(name: string) {\n        this.name = name;\n    }\n\n    makeAnimalSound(): string {\n        return \"Woof!\";\n    }\n}\n```","stopReason":"end_turn"}
 
 
             event: done
@@ -583,7 +478,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Fri, 02 May 2025 09:58:32 GMT
+            value: Wed, 18 Jun 2025 07:10:12 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -597,7 +492,7 @@ log:
           - name: cache-control
             value: no-cache
           - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+            value: Cookie,Accept-Encoding,Authorization,Authorization,Cookie, Authorization,
               X-Requested-With,Cookie
           - name: x-content-type-options
             value: nosniff
@@ -607,13 +502,13 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1368
+        headersSize: 1382
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-05-02T09:58:30.995Z
-      time: 2244
+      startedDateTime: 2025-06-18T07:10:10.801Z
+      time: 2242
       timings:
         blocked: -1
         connect: -1
@@ -621,12 +516,12 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 2244
-    - _id: 6389b3a4e21816a487e70bf08ec424db
+        wait: 2242
+    - _id: 824676c77e954bb35add7450fd699eb8
       _order: 0
       cache: {}
       request:
-        bodySize: 2152
+        bodySize: 2371
         cookies: []
         headers:
           - name: accept-encoding
@@ -639,7 +534,7 @@ log:
           - name: content-type
             value: application/json
           - name: traceparent
-            value: 00-26a1fa46cec3426f618243136d96cb85-118d909d35ec2514-01
+            value: 00-0a84a4e16f9ce7a0524bca6ecd741fe1-036d196084ae617a-01
           - name: user-agent
             value: defaultclient/v1 (Node.js v20.4.0)
           - name: x-requested-with
@@ -663,6 +558,9 @@ log:
                   structure: ```$LANGUAGE:$FILEPATH```
 
                   For executable terminal commands: enclose each command in individual "bash" language code block without comments and new lines inside.
+
+
+                  Check if you have access to terminal/shell tools. If so, use it to execute commands to gather information. The terminal output is included in your context. You can reference and analyze this output in your response.
               - speaker: human
                 text: >-
                   Codebase context from file src/squirrel.ts:
@@ -751,14 +649,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=8&client-name=defaultclient&client-version=v1
       response:
-        bodySize: 3939
+        bodySize: 7470
         content:
           mimeType: text/event-stream
-          size: 3939
+          size: 7470
           text: >+
             event: completion
 
-            data: {"deltaText":"Let me show you how to work with the Squirrel interface. Based on the codebase context, Squirrel is an interface used for precise code navigation in Sourcegraph, even though its name might suggest otherwise.\n\nHere's a concrete implementation example:\n\n```typescript:src/squirrel-implementation.ts\nimport { Squirrel } from './squirrel'\n\nclass CodeNavigator implements Squirrel {\n    // Add methods for precise code navigation\n    navigateToDefinition(location: string): void {\n        // Implementation for jumping to code definitions\n    }\n    \n    findReferences(symbol: string): string[] {\n        // Implementation for finding code references\n        return []\n    }\n}\n\n// Usage example\nconst navigator = new CodeNavigator()\n```\n\nHere's another example showing how to use it in a React component:\n\n```typescript:src/SquirrelNavigator.tsx\nimport React from 'react'\nimport { Squirrel } from './squirrel'\n\ninterface SquirrelNavigatorProps {\n    navigator: Squirrel\n}\n\nexport const SquirrelNavigator: React.FC<SquirrelNavigatorProps> = ({ navigator }) => {\n    return (\n        <div className=\"code-navigation\">\n            <button onClick={() => /* use navigator */}>\n                Navigate to Definition\n            </button>\n        </div>\n    )\n}\n```\n\nThe Squirrel interface is designed to be extensible, allowing you to implement various code navigation features while maintaining a clean separation of concerns. You can add more methods and properties as needed for your specific code navigation requirements.","stopReason":"end_turn"}
+            data: {"deltaText":"Based on the codebase context, the Squirrel is an empty interface that, interestingly, has nothing to do with actual squirrels! According to the documentation comment, it's used for precise code navigation functionality in Sourcegraph.\n\nLet me show you how we could implement and use the Squirrel interface, along with making it work with the existing Animal interface from the codebase:\n\n```typescript:src/SquirrelImplementation.ts\nimport { Squirrel } from './squirrel'\nimport { Animal } from './animal'\n\n// Implementation combining both interfaces\nclass TreeSquirrel implements Squirrel, Animal {\n    name: string\n    isMammal: boolean = true\n\n    constructor(name: string) {\n        this.name = name\n    }\n\n    makeAnimalSound(): string {\n        return \"Chitter chitter!\"\n    }\n}\n\n// Usage example\nconst rocky = new TreeSquirrel(\"Rocky\")\nconsole.log(rocky.makeAnimalSound()) // Outputs: \"Chitter chitter!\"\n```\n\nHere's another example showing how we could use it in a React component, integrating with the existing codebase structure:\n\n```typescript:src/SquirrelComponent.tsx\nimport React = require('react')\nimport { Squirrel } from './squirrel'\nimport { Heading } from './Heading'\n\ninterface SquirrelViewProps {\n    squirrel: Squirrel\n}\n\nexport const SquirrelView: React.FC<SquirrelViewProps> = ({ squirrel }) => {\n    return (\n        <div className=\"squirrel-container\">\n            <Heading text=\"Squirrel Navigation\" level={2} />\n            {/* Add your precise code navigation implementation here */}\n        </div>\n    )\n}\n```\n\nThese examples show:\n1. How to implement the Squirrel interface\n2. How to combine it with the existing Animal interface\n3. How to integrate it with React components\n4. How to use it with other existing components like Heading\n\nThe interface being empty allows for flexible implementation based on Sourcegraph's specific code navigation needs.","stopReason":"end_turn"}
 
 
             event: done
@@ -768,7 +666,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Fri, 02 May 2025 09:58:34 GMT
+            value: Wed, 18 Jun 2025 07:10:14 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -782,7 +680,7 @@ log:
           - name: cache-control
             value: no-cache
           - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+            value: Cookie,Accept-Encoding,Authorization,Authorization,Cookie, Authorization,
               X-Requested-With,Cookie
           - name: x-content-type-options
             value: nosniff
@@ -792,13 +690,13 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1368
+        headersSize: 1382
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-05-02T09:58:33.268Z
-      time: 6711
+      startedDateTime: 2025-06-18T07:10:13.079Z
+      time: 9809
       timings:
         blocked: -1
         connect: -1
@@ -806,12 +704,12 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 6711
-    - _id: 9b98cd49091f0b2de004ed3915d7acd1
+        wait: 9809
+    - _id: 4dc5e0db72914bf19826872f673cfc12
       _order: 0
       cache: {}
       request:
-        bodySize: 705
+        bodySize: 853
         cookies: []
         headers:
           - name: accept-encoding
@@ -824,7 +722,7 @@ log:
           - name: content-type
             value: application/json
           - name: traceparent
-            value: 00-3aa638229e38a0fe83fb484e79ede2c8-e789dc263904789a-01
+            value: 00-d67be4d00ef1d48a84bd68b81a70c920-b7bd0c0c683b312e-01
           - name: user-agent
             value: defaultclient/v1 (Node.js v20.4.0)
           - name: x-requested-with
@@ -848,6 +746,126 @@ log:
                   structure: ```$LANGUAGE:$FILEPATH```
 
                   For executable terminal commands: enclose each command in individual "bash" language code block without comments and new lines inside.
+
+
+                  Check if you have access to terminal/shell tools. If so, use it to execute commands to gather information. The terminal output is included in your context. You can reference and analyze this output in your response.
+              - speaker: assistant
+                text: I am Cody, an AI coding assistant from Sourcegraph.
+              - speaker: human
+                text: what color is the sky?
+            model: google::v1::gemini-1.5-flash
+            temperature: 0
+            topK: -1
+            topP: -1
+        queryString:
+          - name: api-version
+            value: "8"
+          - name: client-name
+            value: defaultclient
+          - name: client-version
+            value: v1
+        url: https://sourcegraph.com/.api/completions/stream?api-version=8&client-name=defaultclient&client-version=v1
+      response:
+        bodySize: 566
+        content:
+          mimeType: text/event-stream
+          size: 566
+          text: >+
+            event: completion
+
+            data: {"deltaText":"The color of the sky is typically blue, due to Rayleigh scattering of sunlight in the atmosphere.  However, it can appear other colors at different times of day (e.g., red or orange at sunrise and sunset) or under different weather conditions.\n"}
+
+
+            event: done
+
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Wed, 18 Jun 2025 07:10:23 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1382
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2025-06-18T07:10:22.920Z
+      time: 914
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 914
+    - _id: 465e3fe1190fdbdfea264ce68415a027
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 924
+        cookies: []
+        headers:
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_fc324d3667e841181b0779375f26dedc911d26b303d23b29b1a2d7ee63dc77eb
+          - name: connection
+            value: keep-alive
+          - name: content-type
+            value: application/json
+          - name: traceparent
+            value: 00-9c309baea0ab07ea2a32b62d6c32f3cd-e68f787c1e1908cb-01
+          - name: user-agent
+            value: defaultclient/v1 (Node.js v20.4.0)
+          - name: x-requested-with
+            value: defaultclient v1
+          - name: host
+            value: sourcegraph.com
+        headersSize: 535
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            maxTokensToSample: 4000
+            messages:
+              - speaker: human
+                text: >-
+                  You are Cody, an AI coding assistant from Sourcegraph.If your
+                  answer contains fenced code blocks in Markdown, include the
+                  relevant full file path in the code block tag using this
+                  structure: ```$LANGUAGE:$FILEPATH```
+
+                  For executable terminal commands: enclose each command in individual "bash" language code block without comments and new lines inside.
+
+
+                  Check if you have access to terminal/shell tools. If so, use it to execute commands to gather information. The terminal output is included in your context. You can reference and analyze this output in your response.
               - speaker: assistant
                 text: I am Cody, an AI coding assistant from Sourcegraph.
               - speaker: human
@@ -866,10 +884,10 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=8&client-name=defaultclient&client-version=v1
       response:
-        bodySize: 231
+        bodySize: 243
         content:
           mimeType: text/event-stream
-          size: 231
+          size: 243
           text: |+
             event: completion
             data: {"deltaText":"Okay.\n"}
@@ -880,7 +898,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Fri, 02 May 2025 09:58:40 GMT
+            value: Wed, 18 Jun 2025 07:10:24 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -894,7 +912,7 @@ log:
           - name: cache-control
             value: no-cache
           - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+            value: Cookie,Accept-Encoding,Authorization,Authorization,Cookie, Authorization,
               X-Requested-With,Cookie
           - name: x-content-type-options
             value: nosniff
@@ -904,13 +922,13 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1368
+        headersSize: 1382
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-05-02T09:58:40.036Z
-      time: 634
+      startedDateTime: 2025-06-18T07:10:23.867Z
+      time: 586
       timings:
         blocked: -1
         connect: -1
@@ -918,12 +936,12 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 634
-    - _id: 9a5821221fd0439ecd20f7463f4ef304
+        wait: 586
+    - _id: fde2721efe53b73236a66844191c4e98
       _order: 0
       cache: {}
       request:
-        bodySize: 780
+        bodySize: 999
         cookies: []
         headers:
           - name: accept-encoding
@@ -936,7 +954,7 @@ log:
           - name: content-type
             value: application/json
           - name: traceparent
-            value: 00-674523fb38de21406dcef46477077e44-203819ac00041b75-01
+            value: 00-2aac07edbec949043fb45e2e76359de7-404bf06832f71dc8-01
           - name: user-agent
             value: defaultclient/v1 (Node.js v20.4.0)
           - name: x-requested-with
@@ -960,6 +978,9 @@ log:
                   structure: ```$LANGUAGE:$FILEPATH```
 
                   For executable terminal commands: enclose each command in individual "bash" language code block without comments and new lines inside.
+
+
+                  Check if you have access to terminal/shell tools. If so, use it to execute commands to gather information. The terminal output is included in your context. You can reference and analyze this output in your response.
               - speaker: assistant
                 text: I am Cody, an AI coding assistant from Sourcegraph.
               - speaker: human
@@ -982,10 +1003,10 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=8&client-name=defaultclient&client-version=v1
       response:
-        bodySize: 231
+        bodySize: 243
         content:
           mimeType: text/event-stream
-          size: 231
+          size: 243
           text: |+
             event: completion
             data: {"deltaText":"quone\n"}
@@ -996,7 +1017,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Fri, 02 May 2025 09:58:41 GMT
+            value: Wed, 18 Jun 2025 07:10:25 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -1010,7 +1031,7 @@ log:
           - name: cache-control
             value: no-cache
           - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+            value: Cookie,Accept-Encoding,Authorization,Authorization,Cookie, Authorization,
               X-Requested-With,Cookie
           - name: x-content-type-options
             value: nosniff
@@ -1020,13 +1041,13 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1368
+        headersSize: 1382
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-05-02T09:58:40.682Z
-      time: 506
+      startedDateTime: 2025-06-18T07:10:24.470Z
+      time: 622
       timings:
         blocked: -1
         connect: -1
@@ -1034,12 +1055,12 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 506
-    - _id: 7c2e6ef73d0086e09528025a2f164352
+        wait: 622
+    - _id: 28c6acd681e2f038c8490f55a9acc1ed
       _order: 0
       cache: {}
       request:
-        bodySize: 618
+        bodySize: 837
         cookies: []
         headers:
           - name: accept-encoding
@@ -1052,7 +1073,7 @@ log:
           - name: content-type
             value: application/json
           - name: traceparent
-            value: 00-c1af657ed39be35bb8471954361b24bb-3f33d28fdb031d05-01
+            value: 00-7ae4bef7cfe9982231e2b90966150130-7fce15ea64f46e6c-01
           - name: user-agent
             value: defaultclient/v1 (Node.js v20.4.0)
           - name: x-requested-with
@@ -1076,6 +1097,9 @@ log:
                   structure: ```$LANGUAGE:$FILEPATH```
 
                   For executable terminal commands: enclose each command in individual "bash" language code block without comments and new lines inside.
+
+
+                  Check if you have access to terminal/shell tools. If so, use it to execute commands to gather information. The terminal output is included in your context. You can reference and analyze this output in your response.
               - speaker: assistant
                 text: I am Cody, an AI coding assistant from Sourcegraph.
               - speaker: human
@@ -1093,14 +1117,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=8&client-name=defaultclient&client-version=v1
       response:
-        bodySize: 539
+        bodySize: 943
         content:
           mimeType: text/event-stream
-          size: 539
+          size: 943
           text: >+
             event: completion
 
-            data: {"deltaText":"That's just the name \"Kramer\".  Do you have a question about Kramer?  For example, are you looking for information about the *Seinfeld* character, a programming concept, or something else entirely?  Please provide more context.\n"}
+            data: {"deltaText":"\"Kramer\" doesn't provide enough context for me to understand what you want.  To help me assist you, please provide more information.  Are you referring to:\n\n* **Cosmo Kramer from Seinfeld?**  If so, what about him?  Do you have a question about the character, an episode featuring him, or something else?\n* **A programming concept or library?**  If so, please specify the context (e.g., \"Kramer in Python,\" \"Kramer database\").\n* **Something else entirely?**  Please clarify.\n\nI need more details to understand your request.\n"}
 
 
             event: done
@@ -1110,7 +1134,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Fri, 02 May 2025 09:58:41 GMT
+            value: Wed, 18 Jun 2025 07:10:25 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -1124,7 +1148,7 @@ log:
           - name: cache-control
             value: no-cache
           - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+            value: Cookie,Accept-Encoding,Authorization,Authorization,Cookie, Authorization,
               X-Requested-With,Cookie
           - name: x-content-type-options
             value: nosniff
@@ -1134,13 +1158,13 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1368
+        headersSize: 1382
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-05-02T09:58:41.208Z
-      time: 841
+      startedDateTime: 2025-06-18T07:10:25.112Z
+      time: 1392
       timings:
         blocked: -1
         connect: -1
@@ -1148,12 +1172,12 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 841
-    - _id: 4b3186703f6139c90be21534dceed40c
+        wait: 1392
+    - _id: 19a135f63d40c40347af3f3bb49b0a34
       _order: 0
       cache: {}
       request:
-        bodySize: 713
+        bodySize: 932
         cookies: []
         headers:
           - name: accept-encoding
@@ -1166,7 +1190,7 @@ log:
           - name: content-type
             value: application/json
           - name: traceparent
-            value: 00-0050a4a7895124ea13f41135d89d8084-2b430d04a52e318c-01
+            value: 00-33fc4c614759bc4657a9684619c42012-a5efd1c93d331723-01
           - name: user-agent
             value: defaultclient/v1 (Node.js v20.4.0)
           - name: x-requested-with
@@ -1190,6 +1214,9 @@ log:
                   structure: ```$LANGUAGE:$FILEPATH```
 
                   For executable terminal commands: enclose each command in individual "bash" language code block without comments and new lines inside.
+
+
+                  Check if you have access to terminal/shell tools. If so, use it to execute commands to gather information. The terminal output is included in your context. You can reference and analyze this output in your response.
               - speaker: assistant
                 text: I am Cody, an AI coding assistant from Sourcegraph.
               - speaker: human
@@ -1208,10 +1235,10 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=8&client-name=defaultclient&client-version=v1
       response:
-        bodySize: 231
+        bodySize: 243
         content:
           mimeType: text/event-stream
-          size: 231
+          size: 243
           text: |+
             event: completion
             data: {"deltaText":"Okay.\n"}
@@ -1222,7 +1249,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Fri, 02 May 2025 09:58:43 GMT
+            value: Wed, 18 Jun 2025 07:10:27 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -1236,7 +1263,7 @@ log:
           - name: cache-control
             value: no-cache
           - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+            value: Cookie,Accept-Encoding,Authorization,Authorization,Cookie, Authorization,
               X-Requested-With,Cookie
           - name: x-content-type-options
             value: nosniff
@@ -1246,13 +1273,13 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1368
+        headersSize: 1382
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-05-02T09:58:42.603Z
-      time: 542
+      startedDateTime: 2025-06-18T07:10:27.425Z
+      time: 630
       timings:
         blocked: -1
         connect: -1
@@ -1260,12 +1287,12 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 542
-    - _id: 7c27b762e37c5dceeedcac74dad3e07c
+        wait: 630
+    - _id: b7f06ebf8a1e18e330b6d57e08293175
       _order: 0
       cache: {}
       request:
-        bodySize: 788
+        bodySize: 1007
         cookies: []
         headers:
           - name: accept-encoding
@@ -1278,7 +1305,7 @@ log:
           - name: content-type
             value: application/json
           - name: traceparent
-            value: 00-71b2f32326d946c070b7464f74445844-7dabc78d02def394-01
+            value: 00-3e783ad0ea124f760ca5f3b10f7857d3-813d500292fdef48-01
           - name: user-agent
             value: defaultclient/v1 (Node.js v20.4.0)
           - name: x-requested-with
@@ -1302,6 +1329,9 @@ log:
                   structure: ```$LANGUAGE:$FILEPATH```
 
                   For executable terminal commands: enclose each command in individual "bash" language code block without comments and new lines inside.
+
+
+                  Check if you have access to terminal/shell tools. If so, use it to execute commands to gather information. The terminal output is included in your context. You can reference and analyze this output in your response.
               - speaker: assistant
                 text: I am Cody, an AI coding assistant from Sourcegraph.
               - speaker: human
@@ -1324,14 +1354,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=8&client-name=defaultclient&client-version=v1
       response:
-        bodySize: 276
+        bodySize: 371
         content:
           mimeType: text/event-stream
-          size: 276
+          size: 371
           text: >+
             event: completion
 
-            data: {"deltaText":"(No response.  \"kramer\" is not the magic word.)\n"}
+            data: {"deltaText":"(No response needed.  The prompt didn't include any instructions for the word \"kramer\".)\n"}
 
 
             event: done
@@ -1341,7 +1371,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Fri, 02 May 2025 09:58:43 GMT
+            value: Wed, 18 Jun 2025 07:10:28 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -1355,7 +1385,7 @@ log:
           - name: cache-control
             value: no-cache
           - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+            value: Cookie,Accept-Encoding,Authorization,Authorization,Cookie, Authorization,
               X-Requested-With,Cookie
           - name: x-content-type-options
             value: nosniff
@@ -1365,13 +1395,13 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1368
+        headersSize: 1382
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-05-02T09:58:43.158Z
-      time: 606
+      startedDateTime: 2025-06-18T07:10:28.075Z
+      time: 693
       timings:
         blocked: -1
         connect: -1
@@ -1379,12 +1409,12 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 606
-    - _id: 7b9565ae963082999e44a3f57f48e541
+        wait: 693
+    - _id: c79f8c36857ddf3532b37327615f6a86
       _order: 0
       cache: {}
       request:
-        bodySize: 908
+        bodySize: 1168
         cookies: []
         headers:
           - name: accept-encoding
@@ -1397,7 +1427,7 @@ log:
           - name: content-type
             value: application/json
           - name: traceparent
-            value: 00-d1dfbaba623fa9b4e18b06a4f5071aed-be7f1741089633d3-01
+            value: 00-701b8593da9e72c6262c5f19a7d94cb6-3d16644983920153-01
           - name: user-agent
             value: defaultclient/v1 (Node.js v20.4.0)
           - name: x-requested-with
@@ -1421,6 +1451,9 @@ log:
                   structure: ```$LANGUAGE:$FILEPATH```
 
                   For executable terminal commands: enclose each command in individual "bash" language code block without comments and new lines inside.
+
+
+                  Check if you have access to terminal/shell tools. If so, use it to execute commands to gather information. The terminal output is included in your context. You can reference and analyze this output in your response.
               - speaker: assistant
                 text: I am Cody, an AI coding assistant from Sourcegraph.
               - speaker: human
@@ -1431,7 +1464,8 @@ log:
               - speaker: human
                 text: kramer
               - speaker: assistant
-                text: (No response.  "kramer" is not the magic word.)
+                text: (No response needed.  The prompt didn't include any instructions for the
+                  word "kramer".)
               - speaker: human
                 text: georgey
             model: google::v1::gemini-1.5-flash
@@ -1447,10 +1481,10 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=8&client-name=defaultclient&client-version=v1
       response:
-        bodySize: 234
+        bodySize: 246
         content:
           mimeType: text/event-stream
-          size: 234
+          size: 246
           text: |+
             event: completion
             data: {"deltaText":"festivus\n"}
@@ -1461,7 +1495,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Fri, 02 May 2025 09:58:44 GMT
+            value: Wed, 18 Jun 2025 07:10:29 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -1475,7 +1509,7 @@ log:
           - name: cache-control
             value: no-cache
           - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+            value: Cookie,Accept-Encoding,Authorization,Authorization,Cookie, Authorization,
               X-Requested-With,Cookie
           - name: x-content-type-options
             value: nosniff
@@ -1485,13 +1519,13 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1368
+        headersSize: 1382
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-05-02T09:58:43.773Z
-      time: 525
+      startedDateTime: 2025-06-18T07:10:28.787Z
+      time: 619
       timings:
         blocked: -1
         connect: -1
@@ -1499,12 +1533,12 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 525
-    - _id: f7d377a61b4acab9aeba82a9b5fdffc6
+        wait: 619
+    - _id: c712de5ec8d005fa8342f001fd8fd3e9
       _order: 0
       cache: {}
       request:
-        bodySize: 684
+        bodySize: 903
         cookies: []
         headers:
           - name: accept-encoding
@@ -1517,7 +1551,7 @@ log:
           - name: content-type
             value: application/json
           - name: traceparent
-            value: 00-325014ba4cb3408fac1ed3a5d4c65268-85efbab700fe0c89-01
+            value: 00-ecd48646151ea1e241efcd7063809a6e-449683f1dcd674e5-01
           - name: user-agent
             value: defaultclient/v1 (Node.js v20.4.0)
           - name: x-requested-with
@@ -1541,6 +1575,9 @@ log:
                   structure: ```$LANGUAGE:$FILEPATH```
 
                   For executable terminal commands: enclose each command in individual "bash" language code block without comments and new lines inside.
+
+
+                  Check if you have access to terminal/shell tools. If so, use it to execute commands to gather information. The terminal output is included in your context. You can reference and analyze this output in your response.
               - speaker: assistant
                 text: I am Cody, an AI coding assistant from Sourcegraph.
               - speaker: human
@@ -1558,10 +1595,10 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=8&client-name=defaultclient&client-version=v1
       response:
-        bodySize: 227
+        bodySize: 240
         content:
           mimeType: text/event-stream
-          size: 227
+          size: 240
           text: |+
             event: completion
             data: {"deltaText":"ok\n"}
@@ -1572,7 +1609,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Fri, 02 May 2025 09:58:45 GMT
+            value: Wed, 18 Jun 2025 07:10:29 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -1586,7 +1623,7 @@ log:
           - name: cache-control
             value: no-cache
           - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+            value: Cookie,Accept-Encoding,Authorization,Authorization,Cookie, Authorization,
               X-Requested-With,Cookie
           - name: x-content-type-options
             value: nosniff
@@ -1596,13 +1633,13 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1368
+        headersSize: 1382
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-05-02T09:58:44.318Z
-      time: 761
+      startedDateTime: 2025-06-18T07:10:29.433Z
+      time: 607
       timings:
         blocked: -1
         connect: -1
@@ -1610,12 +1647,12 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 761
-    - _id: 6f742e135e965ebe294952d42b157587
+        wait: 607
+    - _id: d29b4c6aa564441fae9afb2285b85fed
       _order: 0
       cache: {}
       request:
-        bodySize: 823
+        bodySize: 1042
         cookies: []
         headers:
           - name: accept-encoding
@@ -1628,7 +1665,7 @@ log:
           - name: content-type
             value: application/json
           - name: traceparent
-            value: 00-55aeb47d36afebc630529ca61be56a3a-2b737d8e74bf7641-01
+            value: 00-7e352b4e69ce675bd1dda98c27eca13f-ca1a8549538aa8a0-01
           - name: user-agent
             value: defaultclient/v1 (Node.js v20.4.0)
           - name: x-requested-with
@@ -1652,6 +1689,9 @@ log:
                   structure: ```$LANGUAGE:$FILEPATH```
 
                   For executable terminal commands: enclose each command in individual "bash" language code block without comments and new lines inside.
+
+
+                  Check if you have access to terminal/shell tools. If so, use it to execute commands to gather information. The terminal output is included in your context. You can reference and analyze this output in your response.
               - speaker: assistant
                 text: I am Cody, an AI coding assistant from Sourcegraph.
               - speaker: human
@@ -1673,10 +1713,10 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=8&client-name=defaultclient&client-version=v1
       response:
-        bodySize: 228
+        bodySize: 240
         content:
           mimeType: text/event-stream
-          size: 228
+          size: 240
           text: |+
             event: completion
             data: {"deltaText":"ok\n"}
@@ -1687,7 +1727,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Fri, 02 May 2025 09:58:45 GMT
+            value: Wed, 18 Jun 2025 07:10:30 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -1701,7 +1741,7 @@ log:
           - name: cache-control
             value: no-cache
           - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+            value: Cookie,Accept-Encoding,Authorization,Authorization,Cookie, Authorization,
               X-Requested-With,Cookie
           - name: x-content-type-options
             value: nosniff
@@ -1711,13 +1751,13 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1368
+        headersSize: 1382
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-05-02T09:58:45.088Z
-      time: 562
+      startedDateTime: 2025-06-18T07:10:30.054Z
+      time: 654
       timings:
         blocked: -1
         connect: -1
@@ -1725,12 +1765,12 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 562
-    - _id: 3a463c8862c43fc6ce16e5feca02a04a
+        wait: 654
+    - _id: d45516316dcf3096abdeb10846cafe8d
       _order: 0
       cache: {}
       request:
-        bodySize: 957
+        bodySize: 1176
         cookies: []
         headers:
           - name: accept-encoding
@@ -1743,7 +1783,7 @@ log:
           - name: content-type
             value: application/json
           - name: traceparent
-            value: 00-e8cb403ae0a5fc2d8f32fd0e3287b2ba-ca60065c498ecb7b-01
+            value: 00-2365a14888655ec372822bb30b30b1e3-27d6d88416ba5261-01
           - name: user-agent
             value: defaultclient/v1 (Node.js v20.4.0)
           - name: x-requested-with
@@ -1767,6 +1807,9 @@ log:
                   structure: ```$LANGUAGE:$FILEPATH```
 
                   For executable terminal commands: enclose each command in individual "bash" language code block without comments and new lines inside.
+
+
+                  Check if you have access to terminal/shell tools. If so, use it to execute commands to gather information. The terminal output is included in your context. You can reference and analyze this output in your response.
               - speaker: assistant
                 text: I am Cody, an AI coding assistant from Sourcegraph.
               - speaker: human
@@ -1792,10 +1835,10 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=8&client-name=defaultclient&client-version=v1
       response:
-        bodySize: 228
+        bodySize: 240
         content:
           mimeType: text/event-stream
-          size: 228
+          size: 240
           text: |+
             event: completion
             data: {"deltaText":"ok\n"}
@@ -1806,7 +1849,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Fri, 02 May 2025 09:58:46 GMT
+            value: Wed, 18 Jun 2025 07:10:31 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -1820,7 +1863,7 @@ log:
           - name: cache-control
             value: no-cache
           - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+            value: Cookie,Accept-Encoding,Authorization,Authorization,Cookie, Authorization,
               X-Requested-With,Cookie
           - name: x-content-type-options
             value: nosniff
@@ -1830,13 +1873,13 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1368
+        headersSize: 1382
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-05-02T09:58:45.659Z
-      time: 559
+      startedDateTime: 2025-06-18T07:10:30.727Z
+      time: 614
       timings:
         blocked: -1
         connect: -1
@@ -1844,12 +1887,12 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 559
-    - _id: 66acc54ae8797684b7f4c400538acf84
+        wait: 614
+    - _id: 95c2a1adc574a438745f45c8dc79cdd7
       _order: 0
       cache: {}
       request:
-        bodySize: 819
+        bodySize: 1038
         cookies: []
         headers:
           - name: accept-encoding
@@ -1862,7 +1905,7 @@ log:
           - name: content-type
             value: application/json
           - name: traceparent
-            value: 00-9b500ac8db3ae4866efc905d551de7c1-93bb4bee9f317576-01
+            value: 00-eee8d94090e2369bd86af94c90d827b0-617ab8eb1fac0563-01
           - name: user-agent
             value: defaultclient/v1 (Node.js v20.4.0)
           - name: x-requested-with
@@ -1886,6 +1929,9 @@ log:
                   structure: ```$LANGUAGE:$FILEPATH```
 
                   For executable terminal commands: enclose each command in individual "bash" language code block without comments and new lines inside.
+
+
+                  Check if you have access to terminal/shell tools. If so, use it to execute commands to gather information. The terminal output is included in your context. You can reference and analyze this output in your response.
               - speaker: assistant
                 text: I am Cody, an AI coding assistant from Sourcegraph.
               - speaker: human
@@ -1907,10 +1953,10 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=8&client-name=defaultclient&client-version=v1
       response:
-        bodySize: 228
+        bodySize: 240
         content:
           mimeType: text/event-stream
-          size: 228
+          size: 240
           text: |+
             event: completion
             data: {"deltaText":"ok\n"}
@@ -1921,7 +1967,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Fri, 02 May 2025 09:58:46 GMT
+            value: Wed, 18 Jun 2025 07:10:31 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -1935,7 +1981,7 @@ log:
           - name: cache-control
             value: no-cache
           - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+            value: Cookie,Accept-Encoding,Authorization,Authorization,Cookie, Authorization,
               X-Requested-With,Cookie
           - name: x-content-type-options
             value: nosniff
@@ -1945,13 +1991,13 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1368
+        headersSize: 1382
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-05-02T09:58:46.231Z
-      time: 522
+      startedDateTime: 2025-06-18T07:10:31.361Z
+      time: 598
       timings:
         blocked: -1
         connect: -1
@@ -1959,12 +2005,12 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 522
-    - _id: 492e3718d1efb6e6bc30ec8dbb06cabf
+        wait: 598
+    - _id: 42d004af04a11739a6f83524c6d735ae
       _order: 0
       cache: {}
       request:
-        bodySize: 905
+        bodySize: 1124
         cookies: []
         headers:
           - name: accept-encoding
@@ -1977,7 +2023,7 @@ log:
           - name: content-type
             value: application/json
           - name: traceparent
-            value: 00-0bc074fd6a3c4de2a74c698d6863fb4a-c6f7422bb26abebe-01
+            value: 00-dd9b372e3ca87cdedafc6c778dba5ad7-8fd9c68ffe92b923-01
           - name: user-agent
             value: defaultclient/v1 (Node.js v20.4.0)
           - name: x-requested-with
@@ -2001,6 +2047,9 @@ log:
                   structure: ```$LANGUAGE:$FILEPATH```
 
                   For executable terminal commands: enclose each command in individual "bash" language code block without comments and new lines inside.
+
+
+                  Check if you have access to terminal/shell tools. If so, use it to execute commands to gather information. The terminal output is included in your context. You can reference and analyze this output in your response.
               - speaker: assistant
                 text: I am Cody, an AI coding assistant from Sourcegraph.
               - speaker: human
@@ -2026,10 +2075,10 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=8&client-name=defaultclient&client-version=v1
       response:
-        bodySize: 282
+        bodySize: 294
         content:
           mimeType: text/event-stream
-          size: 282
+          size: 294
           text: >+
             event: completion
 
@@ -2043,7 +2092,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Fri, 02 May 2025 09:58:47 GMT
+            value: Wed, 18 Jun 2025 07:10:32 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -2057,7 +2106,7 @@ log:
           - name: cache-control
             value: no-cache
           - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+            value: Cookie,Accept-Encoding,Authorization,Authorization,Cookie, Authorization,
               X-Requested-With,Cookie
           - name: x-content-type-options
             value: nosniff
@@ -2067,13 +2116,13 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1368
+        headersSize: 1382
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-05-02T09:58:46.763Z
-      time: 650
+      startedDateTime: 2025-06-18T07:10:31.977Z
+      time: 766
       timings:
         blocked: -1
         connect: -1
@@ -2081,12 +2130,12 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 650
-    - _id: 2a91c0e1490aae140e57764a7d22f1a0
+        wait: 766
+    - _id: 69808e0614b9ea037efcfbe7ebdb519a
       _order: 0
       cache: {}
       request:
-        bodySize: 1983
+        bodySize: 2202
         cookies: []
         headers:
           - name: accept-encoding
@@ -2099,7 +2148,7 @@ log:
           - name: content-type
             value: application/json
           - name: traceparent
-            value: 00-e1865fcab8041ddb5c267e0b0d20a9d2-d24b229d83d92903-01
+            value: 00-c785e8cd2ceb02087cda672fe30d3b66-a6d61106e41fdabe-01
           - name: user-agent
             value: defaultclient/v1 (Node.js v20.4.0)
           - name: x-requested-with
@@ -2123,6 +2172,9 @@ log:
                   structure: ```$LANGUAGE:$FILEPATH```
 
                   For executable terminal commands: enclose each command in individual "bash" language code block without comments and new lines inside.
+
+
+                  Check if you have access to terminal/shell tools. If so, use it to execute commands to gather information. The terminal output is included in your context. You can reference and analyze this output in your response.
               - speaker: assistant
                 text: I am Cody, an AI coding assistant from Sourcegraph.
               - speaker: human
@@ -2181,14 +2233,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=8&client-name=defaultclient&client-version=v1
       response:
-        bodySize: 2012
+        bodySize: 2398
         content:
           mimeType: text/event-stream
-          size: 2012
+          size: 2398
           text: >+
             event: completion
 
-            data: {"deltaText":"This code defines a blueprint, or a template, called `Animal`.  Think of it like a form that needs to be filled out to describe any animal.  This \"form\" is called an *interface* in programming.  It doesn't actually *create* an animal; it just specifies what information *must* be included when you create one.\n\nThe `Animal` interface requires three pieces of information:\n\n1.  `name`:  A string (text) that holds the animal's name, for example, \"Lion\", \"Dog\", or \"Parrot\".\n2.  `makeAnimalSound()`: This isn't just a piece of information; it's a *function* that needs to be defined.  It describes what sound the animal makes.  When you create an animal based on this template, you'll have to say what sound it makes (like \"Woof!\" or \"Meow!\").\n3.  `isMammal`: A boolean value (true or false) that indicates whether the animal is a mammal.\n\nThis code doesn't do anything on its own; it just sets the rules. To use it, you would create new animal types based on this `Animal` interface.  For example, you might create a \"Dog\" object that satisfies the interface by providing a name, a `makeAnimalSound()` function returning \"Woof!\", and setting `isMammal` to `true`.  The code doesn't produce any output by itself because it's just a definition.  Its purpose is to create a standard for representing animals in a program.  There's no specific algorithm or logic flow within the interface itself; it simply lays out requirements.\n"}
+            data: {"deltaText":"The code snippet `src/animal.ts:1-6` defines a blueprint, or template, called an \"interface\" named `Animal`.  Think of it like a form or a checklist that describes what any `Animal` object should look like in a program.  It doesn't actually *create* an animal; it just specifies what properties and behaviors an animal *must* have.\n\nThis blueprint requires every `Animal` to have:\n\n1.  A `name`: This is a piece of text (a `string`) that represents the animal's name, like \"Lion\" or \"Dog\".\n2.  A `makeAnimalSound()` function: This is a function that should produce a string representing the sound the animal makes.  For example, a lion's `makeAnimalSound()` might return \"Roar!\", while a dog's might return \"Woof!\".  The code itself doesn't define *how* `makeAnimalSound()` works, only that it *must exist*.\n3.  An `isMammal`: This is a simple true/false value (a `boolean`) indicating whether the animal is a mammal or not.\n\nThis code doesn't take any input directly. Its purpose is to *describe* the structure of `Animal` objects.  It doesn't produce any direct output either. Instead, it serves as a guide for other parts of the program that will actually create and use `Animal` objects. These other parts of the program will need to create objects that adhere to this `Animal` interface; they will need to provide a `name`, a `makeAnimalSound` function, and an `isMammal` value for each animal object.\n\nIn essence, this code acts as a contract, defining a structure.  It doesn't perform calculations or transformations; it simply lays out the requirements for any object that wants to be considered an `Animal` within the program.  The actual behavior and specifics of each animal would be defined elsewhere in the code using this interface as a template.\n"}
 
 
             event: done
@@ -2198,7 +2250,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Wed, 07 May 2025 13:28:44 GMT
+            value: Wed, 18 Jun 2025 07:10:33 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -2212,7 +2264,7 @@ log:
           - name: cache-control
             value: no-cache
           - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+            value: Cookie,Accept-Encoding,Authorization,Authorization,Cookie, Authorization,
               X-Requested-With,Cookie
           - name: x-content-type-options
             value: nosniff
@@ -2222,13 +2274,13 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1368
+        headersSize: 1382
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-05-07T13:28:43.282Z
-      time: 2984
+      startedDateTime: 2025-06-18T07:10:32.772Z
+      time: 3463
       timings:
         blocked: -1
         connect: -1
@@ -2236,12 +2288,12 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 2984
-    - _id: 2d9fb0f6ab784a3b83c2a37ddfa364b4
+        wait: 3463
+    - _id: 9f8e216bc4f2fa5d7a2acc384c0e1522
       _order: 0
       cache: {}
       request:
-        bodySize: 1779
+        bodySize: 1998
         cookies: []
         headers:
           - name: accept-encoding
@@ -2254,7 +2306,7 @@ log:
           - name: content-type
             value: application/json
           - name: traceparent
-            value: 00-5125c5db616174c69d5ac35ada3c324c-1f7503c562c7cd6d-01
+            value: 00-d818d5b2e010ed80d6c289dd064bee61-4a5b9680be0fd440-01
           - name: user-agent
             value: defaultclient/v1 (Node.js v20.4.0)
           - name: x-requested-with
@@ -2278,6 +2330,9 @@ log:
                   structure: ```$LANGUAGE:$FILEPATH```
 
                   For executable terminal commands: enclose each command in individual "bash" language code block without comments and new lines inside.
+
+
+                  Check if you have access to terminal/shell tools. If so, use it to execute commands to gather information. The terminal output is included in your context. You can reference and analyze this output in your response.
               - speaker: assistant
                 text: I am Cody, an AI coding assistant from Sourcegraph.
               - speaker: human
@@ -2332,14 +2387,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=8&client-name=defaultclient&client-version=v1
       response:
-        bodySize: 2954
+        bodySize: 3274
         content:
           mimeType: text/event-stream
-          size: 2954
+          size: 3274
           text: >+
             event: completion
 
-            data: {"deltaText":"The provided code snippet for `src/animal.ts` defines a simple interface for representing animals. While concise and functional, there are a few areas for potential improvement:\n\n\n1. **Add a `species` property:**  Currently, the interface relies on `name` which might be ambiguous. Adding a `species` property would provide a clearer and more robust way to categorize animals.  This improves clarity and maintainability, especially if you plan to add more complex animal logic in the future.\n\n2. **Consider a more specific return type for `makeAnimalSound()`:**  The return type is currently just `string`.  You could consider using a union type to represent the various potential sounds (e.g., `'bark' | 'meow' | 'roar'`), making the code more type-safe and easier to reason about. This enhances type safety and maintainability.\n\n3. **Enforce non-null values:**  The interface allows for `name` and `isMammal` to be potentially `undefined` or `null`. Adding `string` and `boolean` non-null assertion (`!`) will help maintain clarity.  This improves type safety and reduces potential runtime errors caused by unexpected null values.\n\n4. **Add a method for animal age or other relevant attributes:** The interface is very basic. Consider adding methods or attributes that could allow for tracking other relevant attributes of animals such as age, weight, diet, etc. This will increase the flexibility and functionality of the `Animal` interface and could be easily extended.\n\n\n5. **Consider an abstract class instead of an interface:** If you anticipate implementing common functionality across different animal types (e.g., a default `makeAnimalSound()` implementation for some animals), consider using an abstract class instead of an interface. This enables you to add default implementations while maintaining flexibility.\n\n\n**Summary:**\n\nWhile the initial code is clean and functional, the suggestions above would enhance its robustness, type safety, and extensibility.  The additions would make the code more adaptable to future changes and improvements, leading to better maintainability in a larger project.  There are notable opportunities to enhance the code quality by adding more specific types and potentially using a more versatile base class if shared logic becomes necessary.\n"}
+            data: {"deltaText":"The provided code snippet defines a TypeScript interface `Animal`. While concise and seemingly correct, there are several areas for potential improvement:\n\n\n1. **Adding a constructor or factory function:**  Currently, the interface only defines the shape of an `Animal` object.  To create instances, you'd need to create a class or use a factory function.  A factory function could enforce creation constraints or handle default values more cleanly.\n\n   *Benefit:* Improved type safety and code organization.  It allows for more controlled object creation and prevents accidental instantiation with missing or incorrect data.\n\n2. **`makeAnimalSound()` return type:** The return type of `makeAnimalSound()` is implicitly `string`. Explicitly specifying the return type (`string`) enhances readability and helps catch potential type errors early during development.\n\n   *Benefit:* Improved type safety and clarity.  It makes the code easier to understand and maintain, reducing the risk of runtime errors.\n\n3. **Consider adding more properties:** The interface is quite simple.  Depending on the application,  consider adding properties like `age`, `species`, `weight`, etc. to represent more complete animal characteristics.\n\n   *Benefit:* More comprehensive data representation. This allows for richer functionality and analysis of animal data in your application.\n\n4. **Enhancing `isMammal`:** While a boolean `isMammal` is useful, consider using a more flexible approach such as an `animalType` enum or string. This would allow representing a wider range of animal classifications (reptiles, birds, amphibians, etc.)\n\n   *Benefit:* Improved extensibility and accuracy in representing different types of animals.  The current boolean is a limitation if more classifications are needed.\n\n5. **Interface vs. Type Alias (Optional):** While an interface is suitable, consider whether a type alias (`type Animal = { ... }`) might be a better fit depending on future needs and how the `Animal` type is used.  Interfaces can be extended, whereas type aliases can't.\n\n   *Benefit:* Choosing between an interface and type alias depends on specific design choices, but considering the best fit enhances code clarity and flexibility.\n\n\n**Overall Summary:**\n\nThe code is generally well-written and follows basic good practices.  However, the suggestions above aim to make it more robust, versatile, and maintainable in a larger application context.  The lack of concrete implementation details limits the extent of analysis, but the suggested improvements would address common design considerations.\n"}
 
 
             event: done
@@ -2349,7 +2404,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Wed, 07 May 2025 13:28:46 GMT
+            value: Wed, 18 Jun 2025 07:10:36 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -2363,7 +2418,7 @@ log:
           - name: cache-control
             value: no-cache
           - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+            value: Cookie,Accept-Encoding,Authorization,Authorization,Cookie, Authorization,
               X-Requested-With,Cookie
           - name: x-content-type-options
             value: nosniff
@@ -2373,13 +2428,13 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1368
+        headersSize: 1382
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-05-07T13:28:46.346Z
-      time: 3442
+      startedDateTime: 2025-06-18T07:10:36.292Z
+      time: 3990
       timings:
         blocked: -1
         connect: -1
@@ -2387,7 +2442,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 3442
+        wait: 3990
     - _id: f1b1cde4cd57488b7f0137954f0302f5
       _order: 0
       cache: {}

@@ -183,7 +183,12 @@ class CodyAutocompleteManager(val project: Project) {
         originalText,
         logger) { autocompleteResult ->
           processAutocompleteResult(
-              editor, offset, triggerKind, autocompleteResult, cancellationToken)
+              editor,
+              offset,
+              triggerKind,
+              autocompleteResult,
+              cancellationToken,
+              noLookup = lookupString == null)
         }
   }
 
@@ -193,6 +198,7 @@ class CodyAutocompleteManager(val project: Project) {
       triggerKind: InlineCompletionTriggerKind,
       result: AutocompleteResult,
       cancellationToken: CancellationToken,
+      noLookup: Boolean,
   ) {
     if (Thread.interrupted() || cancellationToken.isCancelled) {
       if (triggerKind == InlineCompletionTriggerKind.INVOKE) logger.warn("autocomplete canceled")
@@ -214,7 +220,7 @@ class CodyAutocompleteManager(val project: Project) {
       cancellationToken.dispose()
       clearAutocompleteSuggestions(editor)
 
-      if (result.decoratedEditItems.isNotEmpty()) {
+      if (noLookup && result.decoratedEditItems.isNotEmpty()) {
         runInEdt {
           editor.project
               ?.getService(AutoeditManager::class.java)
