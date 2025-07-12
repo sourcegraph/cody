@@ -21,7 +21,6 @@ interface RichCodeBlockProps {
     fileName?: string
     isMessageLoading: boolean // Whether the whole message is done loading
     isCodeComplete: boolean // Whether this code block has been completed
-    isShellCommand: boolean
     guardrails: Guardrails
     onCopy?: (code: string) => void
     onInsert?: (code: string, newFile?: boolean) => void
@@ -51,7 +50,6 @@ export const RichCodeBlock: React.FC<RichCodeBlockProps> = ({
     fileName,
     isMessageLoading,
     isCodeComplete,
-    isShellCommand,
     guardrails,
     onCopy,
     onInsert,
@@ -68,8 +66,8 @@ export const RichCodeBlock: React.FC<RichCodeBlockProps> = ({
     // Smart apply is only applicable if the code is complete. These properties
     // will be stable (undefined) until the code is complete, skipping any
     // updates caused by incomplete code as it is streamed.
-    const smartApplyCode = smartApply && isCodeComplete && !isShellCommand ? plainCode : undefined
-    const smartApplyFilename = smartApply && isCodeComplete && !isShellCommand ? fileName : undefined
+    const smartApplyCode = smartApply && isCodeComplete ? plainCode : undefined
+    const smartApplyFilename = smartApply && isCodeComplete ? fileName : undefined
     const thisTaskId = useMemo(() => {
         if (!smartApplyCode) {
             return undefined

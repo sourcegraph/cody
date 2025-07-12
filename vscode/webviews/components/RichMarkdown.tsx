@@ -139,7 +139,6 @@ export const RichMarkdown: React.FC<RichMarkdownProps> = ({
                     fileName={filePath}
                     isMessageLoading={isMessageLoading}
                     isCodeComplete={!regenerating && (isThisBlockComplete || !isMessageLoading)}
-                    isShellCommand={isShellCommand}
                     guardrails={guardrails}
                     onCopy={onCopy}
                     onInsert={onInsert}
