@@ -973,13 +973,16 @@ export class Agent extends MessageHandler implements ExtensionClient {
             }
 
             try {
-                await provider?.manuallyTriggerCompletion?.()
+                if (params.triggerKind === 'Invoke') {
+                    await provider?.manuallyTriggerCompletion?.()
+                }
 
                 const result = await provider.provideInlineCompletionItems(
                     document,
                     new vscode.Position(params.position.line, params.position.character),
                     {
-                        triggerKind: vscode.InlineCompletionTriggerKind['Invoke'],
+                        triggerKind:
+                            vscode.InlineCompletionTriggerKind[params.triggerKind ?? 'Automatic'],
                         selectedCompletionInfo:
                             params.selectedCompletionInfo?.text === undefined ||
                             params.selectedCompletionInfo?.text === null
