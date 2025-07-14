@@ -350,6 +350,14 @@ describe('Transcript', () => {
         expect(submitButtons).toHaveLength(3) // One button per editor per message.
         expect(submitButtons[0]).toBeEnabled()
     })
+
+    test('does not show ScrollDown button when transcript is empty', () => {
+        render(<Transcript {...PROPS} transcript={[]} />)
+
+        // ScrollDown should not be present in empty transcript
+        const scrollDownButton = screen.queryByText(/skip to end/i)
+        expect(scrollDownButton).not.toBeInTheDocument()
+    })
 })
 
 type EditorHTMLElement = HTMLDivElement & { dataset: { lexicalEditor: 'true' } }
