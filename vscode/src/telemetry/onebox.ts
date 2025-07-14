@@ -1,4 +1,3 @@
-
 export const TELEMETRY_SEARCH_FILTER = {
     UNKNOWN: 1,
     REPO: 2,
