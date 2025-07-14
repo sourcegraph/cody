@@ -1,7 +1,3 @@
-export const TELEMETRY_INTENT = {
-    CHAT: 1,
-    SEARCH: 2,
-}
 
 export const TELEMETRY_SEARCH_FILTER = {
     UNKNOWN: 1,
