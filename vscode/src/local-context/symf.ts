@@ -74,7 +74,7 @@ export class SymfRunner implements vscode.Disposable {
         const indexRoot = vscode.Uri.joinPath(context.globalStorageUri, 'symf', 'indexroot').with(
             // On VS Code Desktop, this is a `vscode-userdata:` URI that actually just refers to
             // file system paths.
-            //TODO: This probaly shouldn't go of UI Kind but extension kind
+            //TODO: This probably shouldn't go of UI Kind but extension kind
             (cenv.CODY_OVERRIDE_UI_KIND ?? vscode.env.uiKind) === vscode.UIKind.Desktop
                 ? { scheme: 'file' }
                 : {}
@@ -643,8 +643,8 @@ function parseSymfStdout(stdout: string): Result[] {
  *
  * Note: it is possible for an overlapping succession of readers to starve out
  * any writers that are waiting for the mutex to be released. In practice, this
- * is not an issue, because we don't expect the user to issue neverending
- * while trying to update the index.
+ * is not an issue, because we don't expect the user to issue never-ending
+ * requests while trying to update the index.
  */
 class RWLock {
     /**

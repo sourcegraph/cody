@@ -8,6 +8,8 @@ import { type Arch, Platform, getOSArch } from '../os'
 import { logDebug, logError } from '../output-channel-logger'
 import { captureException } from '../services/sentry/sentry'
 import { downloadFile, fileExists, unzip } from './utils'
+import { FeatureFlag, featureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
+import { firstValueFrom } from '@sourcegraph/cody-shared/src/misc/observable'
 
 type SymfVersionString = SemverString<'v'>
 const symfVersion: SymfVersionString = 'v0.0.16'
@@ -21,6 +23,13 @@ export const _config = {
  * Get the path to `symf` binary. If possible it will be downloaded.
  */
 export async function getSymfPath(context: vscode.ExtensionContext): Promise<string | null> {
+    // Check if symf is disabled via feature flag (for enterprise organizations with firewall restrictions)
+    const isSymfDisabled = await firstValueFrom(featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.SymfRetrievalDisabled))
+    if (isSymfDisabled) {
+        logDebug('symf', 'Symf is disabled via feature flag, skipping download and retrieval')
+        return null
+    }
+
     // If user-specified symf path is set, use that
     // TODO: maybe we do want an option to download symf if it's not found?
     const config = vscode.workspace.getConfiguration()

@@ -164,6 +164,14 @@ export enum FeatureFlag {
     AgenticContextDisabled = 'agentic-context-disabled',
 
     /**
+     * Disable symf retrieval and download
+     * When set to true, symf binary download and retrieval will be completely disabled.
+     * This is useful for enterprise organizations with firewall restrictions that prevent
+     * external downloads.
+     */
+    SymfRetrievalDisabled = 'symf-retrieval-disabled',
+
+    /**
      * Disable network request to servers, in case of bad client
      */
     DisableNetworkRequests = 'disable-network-requests',
