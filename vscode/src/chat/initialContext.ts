@@ -230,14 +230,22 @@ export function getCorpusContextItemsForEditorState(): Observable<
         distinctUntilChanged()
     )
 
-    return combineLatest(relevantAuthStatus, remoteReposForAllWorkspaceFolders, activeTextEditor).pipe(
+    return combineLatest(
+        relevantAuthStatus,
+        remoteReposForAllWorkspaceFolders,
+        activeTextEditor,
+        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.SymfRetrievalDisabled)
+    ).pipe(
         abortableOperation(
-            async ([authStatus, remoteReposForAllWorkspaceFolders, activeEditor], signal) => {
+            async (
+                [authStatus, remoteReposForAllWorkspaceFolders, activeEditor, symfRetrievalDisabled],
+                signal
+            ) => {
                 const items: ContextItem[] = []
 
                 // Add workspace folders: current one to initial context, others to corpus context
                 const workspaceFolders = vscode.workspace.workspaceFolders
-                if (workspaceFolders) {
+                if (workspaceFolders && !symfRetrievalDisabled) {
                     let currentWorkspaceFolder: vscode.WorkspaceFolder | undefined
 
                     // check also for the first visible editor if no active editor is present
