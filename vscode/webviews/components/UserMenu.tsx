@@ -24,6 +24,7 @@ import {
 import { useCallback, useState } from 'react'
 import { URI } from 'vscode-uri'
 import { ACCOUNT_USAGE_URL, CODY_DOC_QUICKSTART_URL, isSourcegraphToken } from '../../src/chat/protocol'
+import { isPlgEsAccessDisabled } from '../../src/utils/plg-es-access'
 import { View } from '../tabs'
 import { getVSCodeAPI } from '../utils/VSCodeApi'
 import { useTelemetryRecorder } from '../utils/telemetry'
@@ -88,15 +89,44 @@ export const UserMenu: React.FunctionComponent<UserMenuProps> = ({
         accessToken: '',
     })
 
-    const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-        const { name, value } = e.target
-        setAddFormData(prev => ({ ...prev, [name]: value }))
-    }, [])
+    const [validationError, setValidationError] = useState('')
+
+    const plgEsAccessDisabled = isPlgEsAccessDisabled()
+
+    const handleInputChange = useCallback(
+        (e: React.ChangeEvent<HTMLInputElement>) => {
+            const { name, value } = e.target
+
+            if (name === 'endpoint' && plgEsAccessDisabled) {
+                try {
+                    const urlObj = new URL(value)
+                    if (
+                        isDotCom({ endpoint: urlObj.href }) ||
+                        isWorkspaceInstance({ endpoint: urlObj.href })
+                    ) {
+                        setValidationError('This instance does not have access to Cody')
+                    } else {
+                        setValidationError('')
+                    }
+                } catch {
+                    setValidationError('')
+                }
+            }
+
+            setAddFormData(prev => ({ ...prev, [name]: value }))
+        },
+        [plgEsAccessDisabled]
+    )
 
     const onAddAndSwitchAccountSubmit = useCallback(
         (e?: React.FormEvent) => {
             e?.preventDefault()
             e?.stopPropagation()
+
+            if (validationError) {
+                return
+            }
+
             getVSCodeAPI().postMessage({
                 command: 'auth',
                 authKind: 'signin',
@@ -107,8 +137,9 @@ export const UserMenu: React.FunctionComponent<UserMenuProps> = ({
             setUserMenuView('main')
             setEndpointToRemove(null)
             setAddFormData({ endpoint: '', accessToken: '' })
+            setValidationError('')
         },
-        [addFormData]
+        [addFormData, validationError]
     )
 
     const onOpenChange = useCallback(
@@ -133,6 +164,7 @@ export const UserMenu: React.FunctionComponent<UserMenuProps> = ({
         setUserMenuView(view)
         setEndpointToRemove(null)
         setAddFormData({ endpoint: '', accessToken: '' })
+        setValidationError('')
     }, [])
 
     const onSignOutClick = useCallback(
@@ -153,6 +185,7 @@ export const UserMenu: React.FunctionComponent<UserMenuProps> = ({
             setEndpointToRemove(null)
             setUserMenuView('main')
             setAddFormData({ endpoint: '', accessToken: '' })
+            setValidationError('')
         },
         [telemetryRecorder, endpointHistory]
     )
@@ -196,6 +229,11 @@ export const UserMenu: React.FunctionComponent<UserMenuProps> = ({
                                             <FormMessage match="valueMissing">
                                                 URL is required.
                                             </FormMessage>
+                                            {validationError && (
+                                                <div className="tw-text-red-600 tw-text-sm tw-mt-1">
+                                                    {validationError}
+                                                </div>
+                                            )}
                                         </FormField>
                                     </CommandItem>
                                     <CommandItem className="tw-cursor-default">
@@ -238,6 +276,7 @@ export const UserMenu: React.FunctionComponent<UserMenuProps> = ({
                                                 key="add-account-confirmation-button"
                                                 type="submit"
                                                 className="tw-flex-grow tw-rounded-md tw-text-center"
+                                                disabled={!!validationError}
                                             >
                                                 Add and Switch
                                             </Button>
