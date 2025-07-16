@@ -41,12 +41,6 @@ const themeClassnames = {
 export const VSCodeWebview: Decorator = VSCodeDecorator(styles.containerWebview)
 
 /**
- * A decorator that displays a story as though it's in the VS Code sidebar, with VS Code theme
- * colors applied.
- */
-export const VSCodeSidebar: Decorator = VSCodeDecorator(styles.containerSidebar)
-
-/**
  * A decorator that displays a story with VS Code theme colors applied.
  */
 export const VSCodeStandaloneComponent: Decorator = VSCodeDecorator(undefined)
@@ -56,12 +50,6 @@ export const VSCodeStandaloneComponent: Decorator = VSCodeDecorator(undefined)
  * panel, with VS Code theme colors applied.
  */
 export const VSCodeCell: Decorator = VSCodeDecorator(styles.containerCell)
-
-/**
- * A decorator that displays a story with VS Code theme colors applied and maximizes the viewport.
- */
-export const VSCodeViewport: (style?: CSSProperties | undefined) => Decorator = style =>
-    VSCodeDecorator(styles.containerViewport, style)
 
 /**
  * A customizable decorator for components with VS Code theme colors applied.
