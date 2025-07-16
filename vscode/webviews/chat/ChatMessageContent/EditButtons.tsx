@@ -186,10 +186,7 @@ function createEditButtonsSmartApply({
             {smartApplyState !== CodyTaskState.Applied && (
                 <>
                     {onExecute && isVSCode && createExecuteButton(onExecute)}
-                    {!onExecute &&
-                        smartApply &&
-                        onSmartApply &&
-                        createApplyButton(onSmartApply, smartApplyState)}
+                    {smartApply && onSmartApply && createApplyButton(onSmartApply, smartApplyState)}
                 </>
             )}
             {isVSCode && createActionsDropdown(preText)}

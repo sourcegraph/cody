@@ -149,7 +149,6 @@ export const ShellCommand: StoryObj<typeof meta> = {
         plainCode: 'echo "Hello, World!"',
         markdownCode: '```bash\necho "Hello, World!"\n```',
         language: 'bash',
-        isShellCommand: true,
         onExecute: cmd => console.log('Execute command:', cmd),
     },
 }
