@@ -1,6 +1,11 @@
 import fs from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
+import {
+    FeatureFlag,
+    featureFlagProvider,
+} from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
+import { firstValueFrom } from '@sourcegraph/cody-shared/src/misc/observable'
 import type { SemverString } from '@sourcegraph/cody-shared/src/utils'
 import * as vscode from 'vscode'
 import { waitForLock } from '../lockfile'
@@ -8,8 +13,6 @@ import { type Arch, Platform, getOSArch } from '../os'
 import { logDebug, logError } from '../output-channel-logger'
 import { captureException } from '../services/sentry/sentry'
 import { downloadFile, fileExists, unzip } from './utils'
-import { FeatureFlag, featureFlagProvider } from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
-import { firstValueFrom } from '@sourcegraph/cody-shared/src/misc/observable'
 
 type SymfVersionString = SemverString<'v'>
 const symfVersion: SymfVersionString = 'v0.0.16'
@@ -24,7 +27,9 @@ export const _config = {
  */
 export async function getSymfPath(context: vscode.ExtensionContext): Promise<string | null> {
     // Check if symf is disabled via feature flag (for enterprise organizations with firewall restrictions)
-    const isSymfDisabled = await firstValueFrom(featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.SymfRetrievalDisabled))
+    const isSymfDisabled = await firstValueFrom(
+        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.SymfRetrievalDisabled)
+    )
     if (isSymfDisabled) {
         logDebug('symf', 'Symf is disabled via feature flag, skipping download and retrieval')
         return null
