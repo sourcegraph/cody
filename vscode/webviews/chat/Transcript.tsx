@@ -286,7 +286,9 @@ export const Transcript: FC<TranscriptProps> = props => {
 
                     {scrollableContainer && <ScrollbarMarkers scrollContainer={scrollableContainer} />}
 
-                    {!isAtBottomDebounced && <ScrollDown onClick={scrollTotheBottom} />}
+                    {!isAtBottomDebounced && interactions.length > 1 && (
+                        <ScrollDown onClick={scrollTotheBottom} />
+                    )}
 
                     <div className="tw-bg-[var(--vscode-input-background)]">
                         {inputInteractionAtTheBottom &&
