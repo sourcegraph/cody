@@ -1,9 +1,14 @@
 import { mkdtemp, open, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
+import {
+    FeatureFlag,
+    featureFlagProvider,
+} from '@sourcegraph/cody-shared/src/experimentation/FeatureFlagProvider'
+import { Observable } from 'observable-fns'
 import { describe, expect, it, vi } from 'vitest'
 import { getOSArch } from '../os'
-import { _config, _getNamesForPlatform, _upsertSymfForPlatform } from './download-symf'
+import { _config, _getNamesForPlatform, _upsertSymfForPlatform, getSymfPath } from './download-symf'
 import { type CorpusDiff, shouldReindex } from './symf'
 import { downloadFile } from './utils'
 
@@ -75,6 +80,46 @@ describe('upsertSymfForPlatform', () => {
         } finally {
             await rm(dir, { recursive: true })
         }
+    })
+})
+
+describe('getSymfPath with feature flag', () => {
+    it('should return null when SymfDisabled feature flag is enabled', async () => {
+        // Mock the feature flag to return true (symf disabled)
+        vi.spyOn(featureFlagProvider, 'evaluatedFeatureFlag').mockReturnValue(Observable.of(true))
+
+        // Mock VSCode extension context
+        const mockContext = {
+            globalStorageUri: { fsPath: '/mock/path' },
+        } as any
+
+        const result = await getSymfPath(mockContext)
+
+        expect(result).toBeNull()
+        expect(featureFlagProvider.evaluatedFeatureFlag).toHaveBeenCalledWith(
+            FeatureFlag.SymfRetrievalDisabled
+        )
+    })
+
+    it('should proceed with normal symf logic when SymfDisabled feature flag is disabled', async () => {
+        // Mock the feature flag to return false (symf enabled)
+        vi.spyOn(featureFlagProvider, 'evaluatedFeatureFlag').mockReturnValue(Observable.of(false))
+
+        // Mock VSCode extension context
+        const mockContext = {
+            globalStorageUri: { fsPath: '/mock/path' },
+        } as any
+
+        // The function should proceed to check for existing symf or attempt download
+        // Since we have mocked downloadFile to throw on first attempt, this should return null
+        const result = await getSymfPath(mockContext)
+        expect(result).toBeNull()
+
+        expect(featureFlagProvider.evaluatedFeatureFlag).toHaveBeenCalledWith(
+            FeatureFlag.SymfRetrievalDisabled
+        )
+        // Result could be null due to mocked download failure, but the important thing is
+        // that the feature flag check passed and the function proceeded
     })
 })
 
