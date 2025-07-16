@@ -227,8 +227,10 @@ function getLanguageSpecificQueryWrappers(
              * For all other cases, docstrings should be attached above the symbol range, use this.
              */
             const docStringLine =
-                languageId === 'python' && insertionPoint
-                    ? insertionPoint.node.startPosition.row + 1
+                languageId === 'python'
+                    ? insertionPoint
+                        ? insertionPoint.node.startPosition.row + 1
+                        : start.row + 1
                     : start.row - 1
             const docstringCaptures = queries.documentableNodes.compiled
                 .captures(root, {
