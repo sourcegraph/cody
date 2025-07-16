@@ -5,6 +5,7 @@ import {
     isAuthError,
     isAvailabilityError,
     isDotCom,
+    isWorkspaceInstance,
 } from '@sourcegraph/cody-shared'
 
 import signInLogoSourcegraph from '../resources/sourcegraph-mark.svg'
@@ -16,6 +17,7 @@ import type { VSCodeWrapper } from './utils/VSCodeApi'
 
 import { ArrowLeftIcon, ArrowRightIcon, ChevronsUpDownIcon, LogInIcon, UsersIcon } from 'lucide-react'
 import { memo, useCallback, useMemo, useState } from 'react'
+import { isPlgEsAccessDisabled } from '../src/utils/plg-es-access'
 import { Button } from './components/shadcn/ui/button'
 import { Form, FormControl, FormField, FormLabel, FormMessage } from './components/shadcn/ui/form'
 import { useTelemetryRecorder } from './utils/telemetry'
@@ -49,7 +51,10 @@ export const AuthPage: React.FunctionComponent<React.PropsWithoutRef<LoginProps>
     allowEndpointChange,
 }) => {
     const telemetryRecorder = useTelemetryRecorder()
-    const [isEnterpriseSignin, setIsEnterpriseSignin] = useState(!allowEndpointChange)
+    const plgEsAccessDisabled = isPlgEsAccessDisabled()
+    const [isEnterpriseSignin, setIsEnterpriseSignin] = useState(
+        !allowEndpointChange || plgEsAccessDisabled
+    )
 
     // Extracted common button props and styles
     const commonButtonProps = {
@@ -136,7 +141,7 @@ export const AuthPage: React.FunctionComponent<React.PropsWithoutRef<LoginProps>
         () => (
             <section className="tw-bg-sidebar-background tw-text-sidebar-foreground tw-w-full tw-max-w-md">
                 <div className="tw-font-semibold tw-text-md tw-my-4 tw-text-muted-foreground">
-                    {allowEndpointChange && (
+                    {allowEndpointChange && !plgEsAccessDisabled && (
                         <Button
                             onClick={() => setIsEnterpriseSignin(false)}
                             className="tw-flex tw-justify-between"
@@ -153,11 +158,12 @@ export const AuthPage: React.FunctionComponent<React.PropsWithoutRef<LoginProps>
                         className="tw-mt-8"
                         telemetryRecorder={telemetryRecorder}
                         allowEndpointChange={allowEndpointChange}
+                        isPlgEsAccessDisabled={plgEsAccessDisabled}
                     />
                 </div>
             </section>
         ),
-        [authStatus, vscodeAPI, telemetryRecorder, allowEndpointChange]
+        [authStatus, vscodeAPI, telemetryRecorder, allowEndpointChange, plgEsAccessDisabled]
     )
 
     return (
@@ -280,32 +286,68 @@ interface ClientSignInFormProps {
     allowEndpointChange: boolean
     authStatus?: AuthStatus
     className?: string
+    isPlgEsAccessDisabled?: boolean
 }
 
 /**
  * The form allows users to input their Sourcegraph instance URL and access token manually.
  */
 const ClientSignInForm: React.FC<ClientSignInFormProps> = memo(
-    ({ className, authStatus, vscodeAPI, telemetryRecorder, allowEndpointChange }) => {
+    ({
+        className,
+        authStatus,
+        vscodeAPI,
+        telemetryRecorder,
+        allowEndpointChange,
+        isPlgEsAccessDisabled,
+    }) => {
         // Combine related state into a single object to reduce re-renders
         const [formState, setFormState] = useState({
             showAccessTokenField: false,
             isSubmitting: false,
             showAuthError: false,
+            validationError: '',
             formData: {
                 endpoint: authStatus && !isDotCom(authStatus) ? authStatus.endpoint : '',
                 accessToken: '',
             },
         })
 
+        // Validation function for URL based on feature flag
+        const validateEndpointUrl = useCallback(
+            (url: string): string | null => {
+                if (!url) return null
+
+                try {
+                    const urlObj = new URL(url)
+                    if (
+                        isPlgEsAccessDisabled &&
+                        (isDotCom({ endpoint: urlObj.href }) ||
+                            isWorkspaceInstance({ endpoint: urlObj.href }))
+                    ) {
+                        return 'This instance does not have access to Cody'
+                    }
+                    return null
+                } catch {
+                    return 'Invalid URL format'
+                }
+            },
+            [isPlgEsAccessDisabled]
+        )
+
         // Memoize handlers to prevent unnecessary re-creations
-        const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-            const { name, value } = e.target
-            setFormState(prev => ({
-                ...prev,
-                formData: { ...prev.formData, [name]: value },
-            }))
-        }, [])
+        const handleInputChange = useCallback(
+            (e: React.ChangeEvent<HTMLInputElement>) => {
+                const { name, value } = e.target
+                const validationError = name === 'endpoint' ? validateEndpointUrl(value) : ''
+                setFormState(prev => ({
+                    ...prev,
+                    validationError: validationError || '',
+                    formData: { ...prev.formData, [name]: value },
+                }))
+            },
+            [validateEndpointUrl]
+        )
 
         const toggleAccessTokenField = useCallback(() => {
             setFormState(prev => ({
@@ -319,7 +361,11 @@ const ClientSignInForm: React.FC<ClientSignInFormProps> = memo(
             (e?: React.FormEvent) => {
                 e?.preventDefault()
 
-                if (formState.isSubmitting || !formState.formData.endpoint) {
+                if (
+                    formState.isSubmitting ||
+                    !formState.formData.endpoint ||
+                    formState.validationError
+                ) {
                     return
                 }
 
@@ -369,6 +415,11 @@ const ClientSignInForm: React.FC<ClientSignInFormProps> = memo(
                         />
                         <FormMessage match="typeMismatch">Invalid URL.</FormMessage>
                         <FormMessage match="valueMissing">URL is required.</FormMessage>
+                        {formState.validationError && (
+                            <div className="tw-text-red-600 tw-text-sm tw-mt-1">
+                                {formState.validationError}
+                            </div>
+                        )}
                     </FormField>
                     <FormField
                         name="accessToken"
@@ -412,6 +463,7 @@ const ClientSignInForm: React.FC<ClientSignInFormProps> = memo(
                         className="tw-m-4 tw-w-full !tw-p-4"
                         disabled={
                             formState.isSubmitting ||
+                            !!formState.validationError ||
                             (formState.showAccessTokenField && !formState.formData.accessToken)
                         }
                         title={formState.showAccessTokenField ? 'Continue in your browser' : 'Sign in'}

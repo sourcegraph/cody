@@ -8,6 +8,9 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.startup.ProjectActivity
 import com.intellij.util.concurrency.AppExecutorUtil
 import com.sourcegraph.cody.agent.CodyAgentService
+import com.sourcegraph.cody.auth.PlgEsAccess
+import com.sourcegraph.cody.auth.SourcegraphServerPath
+import com.sourcegraph.cody.auth.deprecated.DeprecatedCodyAccountManager
 import com.sourcegraph.cody.config.CodySettingsFileChangeListener
 import com.sourcegraph.cody.config.CodyWindowAdapter
 import com.sourcegraph.cody.config.migration.ClientConfigCleanupMigration
@@ -35,6 +38,19 @@ class PostStartupActivity : ProjectActivity {
     VerifyJavaBootRuntimeVersion().runActivity(project)
     SettingsMigration().runActivity(project)
     ClientConfigCleanupMigration().runActivity(project)
+    
+    // Handle PLG ES access disable logic  
+    if (PlgEsAccess.isDisabled()) {
+      val accountManager = DeprecatedCodyAccountManager.getInstance()
+      val savedAccounts = accountManager.getAccounts()
+      savedAccounts.forEach { account ->
+        if (account.server.isDotcom() || PlgEsAccess.isWorkspaceInstance(account.server.url)) {
+          // Clear the account credentials
+          com.intellij.ide.passwordSafe.PasswordSafe.instance.set(account.credentialAttributes(), null)
+        }
+      }
+    }
+    
     CodyWindowAdapter.addWindowFocusListener(project)
 
     AppExecutorUtil.getAppScheduledExecutorService()
