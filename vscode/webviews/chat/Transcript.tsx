@@ -2,7 +2,6 @@ import {
     type ChatMessage,
     type Guardrails,
     type Model,
-    type NLSSearchDynamicFilter,
     type SerializedPromptEditorValue,
     deserializeContextItem,
     isAbortErrorOrSocketHangUp,
@@ -26,7 +25,6 @@ import type { ApiPostMessage } from '../Chat'
 import { getVSCodeAPI } from '../utils/VSCodeApi'
 import { SpanManager } from '../utils/spanManager'
 import { getTraceparentFromSpanContext } from '../utils/telemetry'
-import { useOmniBox } from '../utils/useOmniBox'
 import type { CodeBlockActionsProps } from './ChatMessageContent/ChatMessageContent'
 import {
     AssistantMessageCell,
@@ -484,9 +482,6 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
         [humanMessage, setActiveChatContext, isLastSentInteraction, lastEditorRef]
     )
 
-    // Omnibox is enabled if the user is not a dotcom user and the omnibox is enabled
-    const omniboxEnabled = useOmniBox() && !userInfo?.isDotComUser
-
     const vscodeAPI = getVSCodeAPI()
     const onStop = useCallback(() => {
         vscodeAPI.postMessage({
@@ -494,11 +489,8 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
         })
     }, [vscodeAPI])
 
-    const isSearchIntent = omniboxEnabled && humanMessage.intent === 'search'
-
     const isContextLoading = Boolean(
-        !isSearchIntent &&
-            humanMessage.contextFiles === undefined &&
+        humanMessage.contextFiles === undefined &&
             isLastSentInteraction &&
             assistantMessage?.text === undefined &&
             assistantMessage?.subMessages === undefined
@@ -659,16 +651,6 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
         [humanMessage, onUserAction, selectedIntent]
     )
 
-    const onSelectedFiltersUpdate = useCallback(
-        (selectedFilters: NLSSearchDynamicFilter[]) => {
-            reevaluateSearchWithSelectedFilters({
-                messageIndexInTranscript: humanMessage.index,
-                selectedFilters,
-            })
-        },
-        [humanMessage.index]
-    )
-
     // We track, ephemerally, the code blocks that are being regenerated so
     // we can show an accurate loading indicator or error message on those
     // blocks.
@@ -757,7 +739,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
             />
             {!isAgenticMode && (
                 <>
-                    {!isSearchIntent && humanMessage.agent && (
+                    {humanMessage.agent && (
                         <AgenticContextCell
                             key={`${humanMessage.index}-${humanMessage.intent}-process`}
                             isContextLoading={isContextLoading}
@@ -767,8 +749,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                     )}
                     {humanMessage.agent && isContextLoading && <ApprovalCell vscodeAPI={vscodeAPI} />}
                     {!(humanMessage.agent && isContextLoading) &&
-                        (humanMessage.contextFiles || assistantMessage || isContextLoading) &&
-                        !isSearchIntent && (
+                        (humanMessage.contextFiles || assistantMessage || isContextLoading) && (
                             <ContextCell
                                 key={`${humanMessage.index}-${humanMessage.intent}-context`}
                                 contextItems={humanMessage.contextFiles}
@@ -800,7 +781,6 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                         humanMessage={humanMessageInfo}
                         isLoading={isLastSentInteraction && assistantMessage.isLoading}
                         smartApply={isAgenticMode ? undefined : smartApplyWithInstruction}
-                        onSelectedFiltersUpdate={onSelectedFiltersUpdate}
                         isLastSentInteraction={isLastSentInteraction}
                         setThoughtProcessOpened={setThoughtProcessOpened}
                         isThoughtProcessOpened={isThoughtProcessOpened}
@@ -892,18 +872,4 @@ function submitHumanMessage({
     setTimeout(() => {
         focusLastHumanMessageEditor()
     }, 50)
-}
-
-function reevaluateSearchWithSelectedFilters({
-    messageIndexInTranscript,
-    selectedFilters,
-}: {
-    messageIndexInTranscript: number
-    selectedFilters: NLSSearchDynamicFilter[]
-}): void {
-    getVSCodeAPI().postMessage({
-        command: 'reevaluateSearchWithSelectedFilters',
-        index: messageIndexInTranscript,
-        selectedFilters,
-    })
 }

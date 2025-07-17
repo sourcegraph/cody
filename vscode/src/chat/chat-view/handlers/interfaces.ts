@@ -15,7 +15,7 @@ import type { ContextRetriever } from '../ContextRetriever'
 import type { OmniboxTelemetry } from './OmniboxTelemetry'
 
 export interface AgentTools {
-    contextRetriever: Pick<ContextRetriever, 'retrieveContext' | 'computeDidYouMean'>
+    contextRetriever: Pick<ContextRetriever, 'retrieveContext'>
     editor: ChatControllerOptions['editor']
     chatClient: ChatControllerOptions['chatClient']
 }

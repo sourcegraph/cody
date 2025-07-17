@@ -20,7 +20,6 @@ import {
     GuardrailsMode,
     ModelTag,
     ModelUsage,
-    type NLSSearchDynamicFilter,
     type ProcessingStep,
     PromptString,
     type RateLimitError,
@@ -152,7 +151,7 @@ import { MCPManager } from './tools/MCPManager'
 export interface ChatControllerOptions {
     extensionUri: vscode.Uri
     chatClient: Pick<ChatClient, 'chat'>
-    contextRetriever: Pick<ContextRetriever, 'retrieveContext' | 'computeDidYouMean'>
+    contextRetriever: Pick<ContextRetriever, 'retrieveContext'>
     extensionClient: Pick<ExtensionClient, 'capabilities'>
     editor: VSCodeEditor
     guardrails: SourcegraphGuardrailsClient
@@ -318,13 +317,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                         contextFiles: message.contextItems ?? [],
                         editorState: message.editorState as SerializedPromptEditorState,
                         manuallySelectedIntent: message.manuallySelectedIntent,
-                    })
-                    break
-                }
-                case 'reevaluateSearchWithSelectedFilters': {
-                    await this.reevaluateSearchWithSelectedFilters({
-                        index: message.index ?? undefined,
-                        selectedFilters: message.selectedFilters,
                     })
                     break
                 }
@@ -1177,100 +1169,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
     private cancelSubmitOrEditOperation(): void {
         this.submitOrEditOperation?.abort()
         this.submitOrEditOperation = undefined
-    }
-
-    private async reevaluateSearchWithSelectedFilters({
-        index,
-        selectedFilters,
-    }: {
-        index?: number
-        selectedFilters?: NLSSearchDynamicFilter[]
-    }) {
-        if (index === undefined || !Array.isArray(selectedFilters)) {
-            return
-        }
-
-        this.handleAbort()
-
-        const humanMessage = this.chatBuilder.getMessages().at(index)
-        const assistantMessage = this.chatBuilder.getMessages().at(index + 1)
-        if (
-            humanMessage?.speaker !== 'human' ||
-            humanMessage.intent !== 'search' ||
-            assistantMessage?.speaker !== 'assistant' ||
-            !assistantMessage?.search?.query
-        ) {
-            return
-        }
-
-        this.chatBuilder.updateAssistantMessageAtIndex(index + 1, {
-            ...assistantMessage,
-            search: {
-                ...assistantMessage.search,
-                selectedFilters,
-            },
-            text: undefined,
-        })
-        this.postViewTranscript()
-
-        try {
-            const query = this.appendSelectedFiltersToSearchQuery({
-                query: assistantMessage.search.query,
-                filters: selectedFilters,
-            })
-
-            const response = await graphqlClient.nlsSearchQuery({ query })
-
-            this.chatBuilder.updateAssistantMessageAtIndex(index + 1, {
-                ...assistantMessage,
-                error: undefined,
-                search: {
-                    ...assistantMessage.search,
-                    queryWithSelectedFilters: query,
-                    response,
-                    selectedFilters,
-                },
-                text: ps`search found ${response?.results.results.length || 0} results`,
-            })
-        } catch (err) {
-            this.chatBuilder.addErrorAsBotMessage(err as Error, ChatBuilder.NO_MODEL)
-        } finally {
-            void this.saveSession()
-            this.postViewTranscript()
-        }
-    }
-
-    private appendSelectedFiltersToSearchQuery({
-        query,
-        filters,
-    }: {
-        query: string
-        filters: NLSSearchDynamicFilter[]
-    }) {
-        if (!filters.length) {
-            return query
-        }
-
-        /* Join all repo filters into a single repo filter */
-        const repoFilters = filters.filter(filter => filter.kind === 'repo')
-        const repoFilter = repoFilters.length
-            ? `repo:^(${repoFilters
-                  .map(filter => filter.value.replace('repo:^', '').replace(/\$$/, ''))
-                  .join('|')})$`
-            : ''
-
-        let count = 50
-        switch (filters.find(filter => filter.kind === 'type')?.value) {
-            case 'type:path':
-            case 'type:repo':
-                count = 20
-                break
-        }
-
-        return `${query} ${filters
-            .filter(f => f.kind !== 'repo')
-            .map(f => f.value)
-            .join(' ')} ${repoFilter} count:${count}`
     }
 
     /**

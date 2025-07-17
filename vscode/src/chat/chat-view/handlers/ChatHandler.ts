@@ -1,6 +1,5 @@
 import type { Span } from '@opentelemetry/api'
 import {
-    type ChatMessage,
     type ChatModel,
     type CompletionParameters,
     type ContextItem,
@@ -31,7 +30,7 @@ import type { AgentHandler, AgentHandlerDelegate, AgentRequest } from './interfa
 
 export class ChatHandler implements AgentHandler {
     constructor(
-        protected contextRetriever: Pick<ContextRetriever, 'retrieveContext' | 'computeDidYouMean'>,
+        protected contextRetriever: Pick<ContextRetriever, 'retrieveContext'>,
         protected readonly editor: ChatControllerOptions['editor'],
         protected chatClient: ChatControllerOptions['chatClient']
     ) {}
@@ -53,8 +52,6 @@ export class ChatHandler implements AgentHandler {
         // All mentions we receive are either source=initial or source=user. If the caller
         // forgot to set the source, assume it's from the user.
         mentions = mentions.map(m => (m.source ? m : { ...m, source: ContextItemSource.User }))
-
-        const didYouMeanPromise = this.contextRetriever.computeDidYouMean(inputText, signal)
 
         const contextResult = await this.computeContext(
             requestID,
@@ -89,31 +86,13 @@ export class ChatHandler implements AgentHandler {
 
         signal.throwIfAborted()
 
-        // HACK(camdencheek): the assistant responses don't know anything about "did you mean",
-        // so will clobber any information on the chat message other than the message text.
-        // This creates a wrapper around the delegate that adds didYouMeanQuery to each in-progress
-        // message. Ideally, we'd be smarter about merging messages
-        const didYouMeanQuery = await didYouMeanPromise
-        const delegateWithDidYouMean = {
-            ...delegate,
-            postMessageInProgress: (message: ChatMessage): void => {
-                delegate.postMessageInProgress({ ...message, didYouMeanQuery })
-            },
-        }
-
         // Send context to webview for display before sending the request.
-        delegateWithDidYouMean.postMessageInProgress({
+        delegate.postMessageInProgress({
             speaker: 'assistant',
             model,
         })
-        this.streamAssistantResponse(
-            requestID,
-            prompt,
-            model,
-            signal,
-            chatBuilder,
-            delegateWithDidYouMean
-        )
+
+        this.streamAssistantResponse(requestID, prompt, model, signal, chatBuilder, delegate)
     }
 
     /**

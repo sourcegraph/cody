@@ -9,7 +9,6 @@ import type {
     ContextItem,
     ContextItemSource,
     CurrentUserCodySubscription,
-    NLSSearchDynamicFilter,
     ProcessingStep,
     PromptMode,
     RangeData,
@@ -165,11 +164,6 @@ export type WebviewMessage =
           level: 'debug' | 'error'
           filterLabel: string
           message: string
-      }
-    | {
-          command: 'reevaluateSearchWithSelectedFilters'
-          index: number
-          selectedFilters: NLSSearchDynamicFilter[]
       }
     | { command: 'action/confirmation'; id: string; response: boolean }
     | { command: 'devicePixelRatio'; devicePixelRatio: number }
