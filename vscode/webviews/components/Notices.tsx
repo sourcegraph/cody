@@ -92,8 +92,8 @@ export const Notices: React.FC<NoticesProps> = ({ user, instanceNotices }) => {
         }
         // For free users, check if they have a subscription
         const hasSubscription =
-            user.currentUserCodySubscription && user.currentUserCodySubscription !== null
-        if (hasSubscription) {
+            user.currentUserCodySubscription !== null && user.currentUserCodySubscription !== undefined
+        if (hasSubscription && user.currentUserCodySubscription?.status !== 'CANCELED') {
             return CODY_DEPRECATION_MESSAGES.FREE_USER_WITH_CODY
         }
         return CODY_DEPRECATION_MESSAGES.FREE_USER_WITHOUT_CODY
