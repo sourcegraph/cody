@@ -230,7 +230,7 @@ export const UserMenu: React.FunctionComponent<UserMenuProps> = ({
                                                 URL is required.
                                             </FormMessage>
                                             {validationError && (
-                                                <div className="tw-text-red-600 tw-text-sm tw-mt-1">
+                                                <div className="tw-text-red-500 tw-text-sm tw-mt-1 tw-font-medium">
                                                     {validationError}
                                                 </div>
                                             )}

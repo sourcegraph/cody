@@ -339,10 +339,10 @@ const ClientSignInForm: React.FC<ClientSignInFormProps> = memo(
         const handleInputChange = useCallback(
             (e: React.ChangeEvent<HTMLInputElement>) => {
                 const { name, value } = e.target
-                const validationError = name === 'endpoint' ? validateEndpointUrl(value) : ''
                 setFormState(prev => ({
                     ...prev,
-                    validationError: validationError || '',
+                    validationError:
+                        name === 'endpoint' ? validateEndpointUrl(value) || '' : prev.validationError,
                     formData: { ...prev.formData, [name]: value },
                 }))
             },
@@ -416,7 +416,7 @@ const ClientSignInForm: React.FC<ClientSignInFormProps> = memo(
                         <FormMessage match="typeMismatch">Invalid URL.</FormMessage>
                         <FormMessage match="valueMissing">URL is required.</FormMessage>
                         {formState.validationError && (
-                            <div className="tw-text-red-600 tw-text-sm tw-mt-1">
+                            <div className="tw-text-red-500 tw-text-sm tw-mt-1 tw-font-medium">
                                 {formState.validationError}
                             </div>
                         )}
