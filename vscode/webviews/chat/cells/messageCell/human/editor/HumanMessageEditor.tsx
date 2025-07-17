@@ -1,5 +1,6 @@
 import {
     type ChatMessage,
+    type ContextItem,
     type ContextItemMedia,
     FAST_CHAT_INPUT_TOKEN_BUDGET,
     type Model,
@@ -361,9 +362,18 @@ export const HumanMessageEditor: FunctionComponent<{
             ...(currentChatModel?.tags?.includes(ModelTag.StreamDisabled) ? ['tree'] : []),
         ])
 
-        const filteredItems = defaultContext?.initialContext.filter(
-            item => !excludedTypes.has(item.type)
-        )
+        const filteredItems = defaultContext?.initialContext
+            .filter(item => !excludedTypes.has(item.type))
+            .map((item): ContextItem => {
+                if (item.type === 'current-selection') {
+                    return {
+                        ...item,
+                        type: 'file',
+                    }
+                }
+                return item
+            })
+
         void editor.setInitialContextMentions(filteredItems)
     }, [defaultContext?.initialContext, isSent, isFirstMessage, currentChatModel, selectedIntent])
 
