@@ -4,6 +4,29 @@ This is a log of all notable changes to Cody for VS Code.
 
 <!--- {/_ CHANGELOG_START _/} -->
 
+## 1.112.0
+
+### Features
+
+#### Chat-Mention
+
+- Support multi-root workspaces in initial context [#8154](https://github.com/sourcegraph/cody/pull/8154)
+
+### Fix
+
+- Limit access for PG & ES [#8174](https://github.com/sourcegraph/cody/pull/8174)
+
+#### Chat
+
+- issue where the "Skip to end" button remains when switching to a new chat window [#8172](https://github.com/sourcegraph/cody/pull/8172)
+- Change(smart-apply): allow apply for shell languages not just execute action [#8168](https://github.com/sourcegraph/cody/pull/8168)
+
+### Chore
+
+- Chore: remove some unused exports [#8171](https://github.com/sourcegraph/cody/pull/8171)
+- Chore: add an option to block network requests to server [#8151](https://github.com/sourcegraph/cody/pull/8151)
+- Change(symf): introduced SymfRetrievalDisabled flag to disable symf retrieval [#8173](https://github.com/sourcegraph/cody/pull/8173)
+
 ## 1.110.0
 
 ### Features
