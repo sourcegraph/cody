@@ -14,31 +14,18 @@ This is a log of all notable changes to Cody for VS Code.
 
 ### Fix
 
+- Limit access for PG & ES [#8174](https://github.com/sourcegraph/cody/pull/8174)
+
 #### Chat
 
 - issue where the "Skip to end" button remains when switching to a new chat window [#8172](https://github.com/sourcegraph/cody/pull/8172)
+- Change(smart-apply): allow apply for shell languages not just execute action [#8168](https://github.com/sourcegraph/cody/pull/8168)
 
 ### Chore
 
-#### Agent
-
-- bump release version to 5.5.22 [#8161](https://github.com/sourcegraph/cody/pull/8161)
-
-### Reverts
-
-  There were no reverts for this release
-
-### Uncategorized
-
-#### Others
-
-- Limit access for PG & ES [#8174](https://github.com/sourcegraph/cody/pull/8174)
-- Change(symf): introduced SymfRetrievalDisabled flag to disable symf retrieval [#8173](https://github.com/sourcegraph/cody/pull/8173)
 - Chore: remove some unused exports [#8171](https://github.com/sourcegraph/cody/pull/8171)
-- Change(smart-apply): allow apply for shell languages not just execute action [#8168](https://github.com/sourcegraph/cody/pull/8168)
-- Changelog for 1.110.0 [#8164](https://github.com/sourcegraph/cody/pull/8164)
 - Chore: add an option to block network requests to server [#8151](https://github.com/sourcegraph/cody/pull/8151)
-
+- Change(symf): introduced SymfRetrievalDisabled flag to disable symf retrieval [#8173](https://github.com/sourcegraph/cody/pull/8173)
 
 ## 1.110.0
 
