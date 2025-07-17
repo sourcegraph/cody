@@ -15,6 +15,7 @@ import * as vscode from 'vscode'
 
 import {
     CLIENT_CAPABILITIES_FIXTURE,
+    CodyIDE,
     DOTCOM_URL,
     mockAuthStatus,
     mockClientCapabilities,
@@ -793,5 +794,84 @@ describe('AutoeditsProvider', () => {
                 discardReason: autoeditDiscardReason.clientAborted,
             })
         })
+    })
+
+    describe('scope overflow detection', () => {
+        it('should discard suggestions with scope overflow (LLM returns content beyond intended replacement range)', async () => {
+            const prediction = `{
+    public class Point3d : Point
+    {
+        private int z;
+
+        public Point3d(int x, int y, int z) : base(x, y)
+        {
+            this.z = z;
+        }
+
+        public double GetDistance(Point3d other)
+        {
+            return Math.Sqrt((x - other.x) * (x - other.x) + (y - other.y) * (y - other.y) + (z - other.z) * (z - other.z));
+        }
+
+        public override string ToString()
+        {
+            return $"three-dimensional point: ({x},{y},{z})";
+        }
+    }
+}`
+
+            mockClientCapabilities({
+                agentIDE: CodyIDE.JetBrains,
+                isVSCode: false,
+                isCodyWeb: false,
+                autoedit: 'enabled',
+                autoeditInlineDiff: 'none',
+                autoeditAsideDiff: 'diff',
+            })
+            const { result } = await autoeditResultFor(
+                `using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace ConsoleApp1
+{
+    public class Point3d█
+    {
+        private int x;
+        private int y;
+
+        public Point(int x, int y)
+        {
+            this.x = x;
+            this.y = y;
+        }
+
+        public double GetDistance(Point other)
+        {
+            return Math.Sqrt((x - other.x) * (x - other.x) + (y - other.y) * (y - other.y));
+        }
+
+        public override string ToString()
+        {
+            return $"two-dimensional point: ({x},{y})";
+        }
+    }
+}`,
+                {
+                    prediction,
+                    providerFeatures: {
+                        shouldHotStreak: false,
+                        allowUsingWebSocket: false,
+                    },
+                    isAgent: true,
+                }
+            )
+
+            // With the fix, the suggestion should be discarded due to scope overflow
+            // The LLM prediction contains GetDistance and ToString methods that already exist in suffixAfterArea
+            expect(result).toBeNull()
+        }, 10_000)
     })
 })

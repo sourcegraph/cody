@@ -23,6 +23,7 @@ export class CodyGatewayAdapter implements AutoeditsModelAdapter {
             'X-Sourcegraph-Feature': 'code_completions',
         }
         const body = this.getMessageBody(options)
+        console.log(`[my_log] CodyGatewayAdapter.getModelResponse: body: ${JSON.stringify(body)}`)
         try {
             const apiKey = await this.getApiKey()
             const abortController = forkSignal(options.abortSignal)

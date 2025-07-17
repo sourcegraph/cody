@@ -8,12 +8,14 @@ import { defaultVSCodeExtensionClient } from '../extension-client'
 import { FixupController } from '../non-stop/FixupController'
 import { WorkspaceEdit, vsCodeMocks } from '../testutils/mocks'
 
+import * as isRunningInsideAgentModule from '../jsonrpc/isRunningInsideAgent'
 import type { CodyStatusBar } from '../services/StatusBar'
 import { AutoeditStopReason } from './adapters/base'
 import * as fireworksAdapter from './adapters/model-response/fireworks'
 import { autoeditTriggerKind } from './analytics-logger'
 import {
     AUTOEDIT_INITIAL_DEBOUNCE_INTERVAL_MS,
+    type AutoeditsFeatures,
     AutoeditsProvider,
     type AutoeditsResult,
 } from './autoedits-provider'
@@ -35,13 +37,19 @@ export async function autoeditResultFor(
         prediction,
         documentVersion = 1,
         provider: existingProvider,
+        providerFeatures = {
+            shouldHotStreak: true,
+            allowUsingWebSocket: false,
+        },
         getModelResponse,
         isAutomaticTimersAdvancementDisabled = false,
+        isAgent = false,
     }: {
         prediction: string
         documentVersion?: number
         /** provide to reuse an existing provider instance */
         provider?: AutoeditsProvider
+        providerFeatures?: AutoeditsFeatures
         inlineCompletionContext?: vscode.InlineCompletionContext
         /**
          * In the test environment, the autoedit provider uses cody-gateway adapter,
@@ -49,6 +57,8 @@ export async function autoeditResultFor(
          */
         getModelResponse?: typeof fireworksAdapter.getFireworksModelResponse
         isAutomaticTimersAdvancementDisabled?: boolean
+        /** Mock running in agent mode (e.g., JetBrains) instead of VS Code */
+        isAgent?: boolean
     }
 ): Promise<{
     result: AutoeditsResult | null
@@ -58,6 +68,11 @@ export async function autoeditResultFor(
     provider: AutoeditsProvider
     editBuilder: WorkspaceEdit
 }> {
+    // Mock agent mode if requested
+    if (isAgent) {
+        vi.spyOn(isRunningInsideAgentModule, 'isRunningInsideAgent').mockReturnValue(true)
+    }
+
     const getModelResponseMock: typeof fireworksAdapter.getFireworksModelResponse = async function* () {
         // Simulate response latency.
         vi.advanceTimersByTime(100)
@@ -107,10 +122,7 @@ export async function autoeditResultFor(
     } as any as CodyStatusBar
     const provider =
         existingProvider ??
-        new AutoeditsProvider(chatClient, fixupController, mockStatusBar, {
-            shouldHotStreak: true,
-            allowUsingWebSocket: false,
-        })
+        new AutoeditsProvider(chatClient, fixupController, mockStatusBar, providerFeatures)
 
     let result: AutoeditsResult | null = null
 

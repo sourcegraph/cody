@@ -146,7 +146,7 @@ export type AutoeditClientCapabilities = Pick<
     'autoedit' | 'autoeditInlineDiff' | 'autoeditAsideDiff'
 >
 
-interface AutoeditsFeatures {
+export interface AutoeditsFeatures {
     shouldHotStreak: boolean
     allowUsingWebSocket: boolean
 }

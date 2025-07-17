@@ -497,6 +497,108 @@ describe('Autoedit', () => {
             }, 10_000)
         })
 
+        describe('insertText vs originalText inconsistency repro', () => {
+            it('Point.cs 2d -> 3d', async () => {
+                for (let i = 0; i < 100; i++) {
+                    console.log(`[my_log] running #${i}`)
+
+                    const client = TestClient.create({
+                        workspaceRootUri: workspace.rootUri,
+                        name: 'autoedit-repro',
+                        credentials: TESTING_CREDENTIALS.enterprise,
+                        extraConfiguration: {
+                            'cody.suggestions.mode': 'auto-edit',
+                        },
+                        capabilities: {
+                            ...allClientCapabilitiesEnabled,
+                            autoedit: 'enabled',
+                            autoeditInlineDiff: 'none',
+                            autoeditAsideDiff: 'diff',
+                        },
+                    })
+
+                    await client.beforeAll()
+
+                    const file = workspace.file('src', 'Point.cs')
+                    await client.openFile(file)
+
+                    const document = client.workspace.getDocument(file)!
+                    const offset = document.offsetAt({ line: 8, character: 22 })
+                    const contentPrefix = document.getText().substring(0, offset)
+                    const contentSuffix = document.getText().substring(offset)
+                    await client.changeFile(file, {
+                        text: contentPrefix + '3D' + contentSuffix,
+                    })
+
+                    // Set a small visibility delay for testing purposes.
+                    const visibilityDelay = 100
+                    await client.request('testing/autocomplete/setCompletionVisibilityDelay', {
+                        delay: visibilityDelay,
+                    })
+
+                    const position = { line: 8, character: 24 }
+                    await client.changeFile(file, {
+                        selection: { start: position, end: position },
+                    })
+
+                    console.log(
+                        `[my_log] document.getText(): ${client.workspace.getDocument(file)?.getText()}`
+                    )
+
+                    const result = (
+                        await client.request('autocomplete/execute', {
+                            uri: file.toString(),
+                            position,
+                            triggerKind: 'Automatic',
+                        })
+                    ).decoratedEditItems[0]
+
+                    // Prediction accurately reflects the edit that should be made.
+                    expect(result.insertText).toMatchInlineSnapshot(`
+                  "{
+                      public class Point3d : Point
+                      {
+                          private int z;
+
+                          public Point3d(int x, int y, int z) : base(x, y)
+                          {
+                              this.z = z;
+                          }
+
+                          public double GetDistance(Point3d other)
+                          {
+                              return Math.Sqrt((x - other.x) * (x - other.x) + (y - other.y) * (y - other.y) + (z - other.z) * (z - other.z));
+                          }
+
+                          public override string ToString()
+                          {
+                              return $"three-dimensional point: ({x},{y},{z})";
+                          }
+                      }
+                  }
+                  "
+                `)
+
+                    const { aside, inline } = result.render
+
+                    // No inline diff provided (client only supports aside)
+                    expect(inline.changes).toBeNull()
+
+                    // No image provided (client will render the aside diff in their own way)
+                    expect(aside.image).toBeNull()
+
+                    // Diff object is provided
+                    expect(aside.diff).not.toBeNull()
+                    const { modifiedLines, unchangedLines } = aside.diff!
+                    // Check the diff has contents, we don't snapshot this as it is quite a large object
+                    expect(modifiedLines.length).toBeGreaterThan(0)
+                    expect(unchangedLines.length).toBeGreaterThan(0)
+
+                    await client.afterAll()
+                }
+            }, 10_000_000)
+        })
+
         describe('client can render both inline and aside diffs', () => {
             const client = TestClient.create({
                 workspaceRootUri: workspace.rootUri,
