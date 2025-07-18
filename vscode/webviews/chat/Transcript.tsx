@@ -7,6 +7,7 @@ import {
     isAbortErrorOrSocketHangUp,
 } from '@sourcegraph/cody-shared'
 import type { PromptEditorRefAPI } from '@sourcegraph/prompt-editor'
+import { useVirtualizer } from '@tanstack/react-virtual'
 import { clsx } from 'clsx'
 import { isEqual } from 'lodash'
 import {
@@ -118,6 +119,16 @@ export const Transcript: FC<TranscriptProps> = props => {
     const expectedAutoScrollTopRef = useRef(0)
     const [scrollableContainer, setScrollableContainer] = useState<HTMLDivElement | null>(null)
     const [isAtBottom, setIsAtBottom] = useState(false)
+
+    const virtualizer = useVirtualizer({
+        count: interactions.length,
+        getScrollElement: () => scrollableContainer,
+        estimateSize: () => 100,
+        enabled: true
+    })
+
+    const items = virtualizer.getVirtualItems()
+
 
     // Debounce the isAtBottom state to prevent flickering of the "Skip to end" button
     // when the mention menu appears and causes micro-scrolls
@@ -264,38 +275,68 @@ export const Transcript: FC<TranscriptProps> = props => {
     return (
         <div className="tw-flex tw-flex-col tw-h-full tw-px-8 tw-py-8 tw-gap-4">
             <LastEditorContext.Provider value={lastHumanEditorRef}>
-                <>
-                    <div
-                        ref={setScrollableContainer}
-                        className={clsx('tw-flex tw-flex-col tw-flex-1 tw-overflow-y-auto tw-relative', {
-                            'tw-flex-grow': transcript.length > 0,
-                        })}
-                        data-scrollable="true"
-                        style={inputInteractionAtTheBottom ? fadeStyles : undefined}
-                    >
-                        {interactions.map((interaction, i) => {
-                            // Skip rendering input interaction in the main area if it should be at bottom
-                            if (inputInteractionAtTheBottom && i === interactions.length - 1) return null
-                            return renderTranscriptInteraction(interaction, i)
-                        })}
-                        {messageInProgress && interactions.length > 0 && <LoadingDots />}
-                        {transcript.length === 0 && welcomeContent}
+                <div
+                    data-scrollable="true"
+                    ref={setScrollableContainer}
+                    // className={clsx('tw-flex tw-flex-col tw-flex-1 tw-overflow-y-auto tw-relative', {
+                    //     'tw-flex-grow': transcript.length > 0,
+                    // })}
+                    // style={inputInteractionAtTheBottom ? fadeStyles : undefined}
+                    style={{
+                        width: '100%',
+                        overflowY: 'auto',
+                        contain: 'strict',
+                        display: 'flex',
+                        flexGrow: 1
+                    }}
+                >
+                    <div style={{
+                        width: '100%',
+                        position:'relative',
+                        height: virtualizer.getTotalSize(),
+                    }}>
+                        <div style={{
+                            position: 'absolute',
+                            top: 0,
+                            left: 0,
+                            width: '100%',
+                            transform: `translateY(${items[0]?.start ?? 0}px)`,
+                        }}>
+
+                            {items.map(virtualRow => (
+                                <div
+                                    key={virtualRow.key}
+                                    data-index={virtualRow.index}
+                                    ref={virtualizer.measureElement}
+                                >
+                                    {renderTranscriptInteraction(interactions[virtualRow.index], virtualRow.index)}
+                                </div>
+                            ))}
+
+                            {/*{interactions.map((interaction, i) => {*/}
+                            {/*    // Skip rendering input interaction in the main area if it should be at bottom*/}
+                            {/*    if (inputInteractionAtTheBottom && i === interactions.length - 1) return null*/}
+                            {/*    return renderTranscriptInteraction(interaction, i)*/}
+                            {/*})}*/}
+                        </div>
                     </div>
 
-                    {scrollableContainer && <ScrollbarMarkers scrollContainer={scrollableContainer} />}
+                    {messageInProgress && interactions.length > 0 && <LoadingDots/>}
+                    {transcript.length === 0 && welcomeContent}
+                </div>
 
-                    {!isAtBottomDebounced && interactions.length > 1 && (
-                        <ScrollDown onClick={scrollTotheBottom} />
-                    )}
+                {/*{scrollableContainer && <ScrollbarMarkers scrollContainer={scrollableContainer}/>}*/}
 
-                    <div className="tw-bg-[var(--vscode-input-background)]">
-                        {inputInteractionAtTheBottom &&
-                            renderTranscriptInteraction(
-                                inputInteractionAtTheBottom,
-                                interactions.length - 1
-                            )}
-                    </div>
-                </>
+                {/*{!isAtBottomDebounced && interactions.length > 1 && (*/}
+                {/*    <ScrollDown onClick={scrollTotheBottom}/>*/}
+                {/*)}*/}
+
+                <div className="tw-bg-[var(--vscode-input-background)]">
+                    {renderTranscriptInteraction(
+                            interactions[interactions.length - 1],
+                            interactions.length - 1
+                        )}
+                </div>
             </LastEditorContext.Provider>
         </div>
     )
@@ -711,7 +752,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
     }, [assistantMessage?.contextFiles])
 
     return (
-        <>
+        <section>
             {/* Show token usage above and aligned to the right for followup editor */}
             {humanMessage.isUnsentFollowup && tokenUsage && (
                 <div className="tw-flex tw-justify-end tw-mb-2">
@@ -795,7 +836,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                     className="w-full"
                 />
             ))}
-        </>
+        </section>
     )
 }, isEqual)
 
