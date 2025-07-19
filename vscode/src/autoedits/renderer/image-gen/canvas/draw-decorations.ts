@@ -123,17 +123,7 @@ export function drawDecorationsToCanvas(
 
     // In order for us to draw to the canvas, we must first determine the correct
     // dimensions for the canvas. We can do this with a temporary Canvas that uses the same font
-    const { ctx: tempCtx } = createCanvas({ height: 10, width: 10, fontSize: config.fontSize }, context)
-
-    // Iterate through each token line, and determine the required width of the canvas (maximum line length)
-    // and the required height of the canvas (number of lines determined by their line height)
-    let tempYPos = config.padding.y
-    let requiredWidth = 0
-    for (const line of diff.lines) {
-        const measure = tempCtx.measureText(line.text)
-        requiredWidth = Math.max(requiredWidth, config.padding.x + measure.width)
-        tempYPos += config.lineHeight
-    }
+    const { requiredWidth, tempYPos } = calculateRequiredDimensions(config, context, diff)
 
     // Note: We limit the canvas width to avoid the image getting excessively large.
     // We should consider possible strategies here, such as tweaking this value or refusing
@@ -175,4 +165,19 @@ export function drawDecorationsToCanvas(
     }
 
     return canvas
+}
+function calculateRequiredDimensions(config: RenderConfig, context: RenderContext, diff: VisualDiff) {
+    const { canvas, ctx } = createCanvas({ height: 10, width: 10, fontSize: config.fontSize }, context)
+
+    // Iterate through each token line, and determine the required width of the canvas (maximum line length)
+    // and the required height of the canvas (number of lines determined by their line height)
+    let tempYPos = config.padding.y
+    let requiredWidth = 0
+    for (const line of diff.lines) {
+        const measure = ctx.measureText(line.text)
+        requiredWidth = Math.max(requiredWidth, config.padding.x + measure.width)
+        tempYPos += config.lineHeight
+    }
+    canvas.dispose()
+    return { requiredWidth, tempYPos }
 }
