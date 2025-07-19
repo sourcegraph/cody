@@ -78,7 +78,7 @@ class EditService(val project: Project) {
                   uriString = op.uri,
                   content = op.textContents,
                   overwrite = op.options?.overwrite ?: false)
-          return file != null
+          file != null
         }
         is RenameFileOperation -> {
           logger.warn("Workspace edit operation renamed a file: ${op.oldUri} -> ${op.newUri}")
