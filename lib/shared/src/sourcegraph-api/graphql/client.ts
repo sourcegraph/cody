@@ -281,7 +281,17 @@ export interface SuggestionsRepo {
     name: string
     stars: number
     url: string
+    defaultBranch?: {
+        abbrevName: string
+    } | null
+    branches?: {
+        nodes: Array<{
+            abbrevName: string
+        }>
+    } | null
 }
+
+
 
 export interface RepoSuggestionsSearchResponse {
     search: {
@@ -1041,13 +1051,15 @@ export class SourcegraphGraphQLAPIClient {
     }
 
     public async searchRepoSuggestions(query: string): Promise<RepoSuggestionsSearchResponse | Error> {
+        const searchQuery = `context:global type:repo count:10 repo:${query}`
+
         return this.fetchSourcegraphAPI<APIResponse<RepoSuggestionsSearchResponse>>(
             REPOS_SUGGESTIONS_QUERY,
-            {
-                query: `context:global type:repo count:10 repo:${query}`,
-            }
+            { query: searchQuery }
         ).then(response => extractDataOrError(response, data => data))
     }
+
+
 
     public async searchFileMatches(query?: string): Promise<FileMatchSearchResponse | Error> {
         return this.fetchSourcegraphAPI<APIResponse<FileMatchSearchResponse>>(FILE_MATCH_SEARCH_QUERY, {

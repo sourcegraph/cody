@@ -9,10 +9,20 @@ function getBranchHelpText(
     items: NonNullable<MentionMenuData['items']>,
     mentionQuery: { text: string }
 ): string {
-    // Check if we have branch information from the current search
+    // Check if we're in branch selection mode (showing branch options)
     const firstItem = items[0]
     if (firstItem?.type === 'openctx') {
         const openCtxItem = firstItem as any // Simplified for testing
+
+        // If we're showing branch options (no directoryPath), show branch selection help
+        if (openCtxItem.mention?.data?.repoName && !openCtxItem.mention?.data?.directoryPath) {
+            // Check if this is a branch mention (title starts with @)
+            if (firstItem.title?.startsWith('@')) {
+                return '* @type to filter searches for a specific branch'
+            }
+        }
+
+        // If we're browsing directories and have branch info, show current branch
         if (openCtxItem.mention?.data?.branch) {
             return `* Sourced from the '${openCtxItem.mention.data.branch}' branch`
         }
@@ -157,5 +167,31 @@ describe('MentionMenu branch selection', () => {
 
         const result = getBranchHelpText(items!, mentionQuery)
         expect(result).toBe("* Sourced from the 'feature' branch")
+    })
+
+    test('should show branch selection help when showing branch options', () => {
+        const items: MentionMenuData['items'] = [
+            {
+                type: 'openctx',
+                provider: 'openctx',
+                title: '@main',
+                uri: URI.parse('https://example.com/repo@main'),
+                providerUri: REMOTE_DIRECTORY_PROVIDER_URI,
+                source: ContextItemSource.User,
+                mention: {
+                    uri: 'https://example.com/repo@main',
+                    data: {
+                        repoName: 'test-repo',
+                        branch: 'main',
+                        // No directoryPath - this indicates we're in branch selection mode
+                    },
+                },
+            },
+        ]
+
+        const mentionQuery = { text: 'test-repo:' }
+
+        const result = getBranchHelpText(items!, mentionQuery)
+        expect(result).toBe('* Select or @ search for a specific branch')
     })
 })

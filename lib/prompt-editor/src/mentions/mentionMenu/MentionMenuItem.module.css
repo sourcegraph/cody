@@ -6,7 +6,6 @@
     white-space: nowrap;
     text-overflow: ellipsis;
     overflow: hidden;
-    direction: rtl;
     text-align: left;
 }
 
@@ -29,6 +28,4 @@
     flex: 1;
 }
 
-.title:hover {
-    direction: rtl;
-}
+

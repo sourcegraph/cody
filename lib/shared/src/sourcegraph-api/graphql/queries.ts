@@ -151,11 +151,21 @@ export const REPOS_SUGGESTIONS_QUERY = `
                     name
                     stars
                     url
+                    defaultBranch {
+                        abbrevName
+                    }
+                    branches(first: 10) {
+                        nodes {
+                            abbrevName
+                        }
+                    }
                 }
             }
         }
     }
 `
+
+
 
 export const FILE_CONTENTS_QUERY = `
 query FileContentsQuery($repoName: String!, $filePath: String!, $rev: String!) {
