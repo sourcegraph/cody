@@ -53,7 +53,8 @@ export function createRemoteDirectoryProvider(customTitle?: string): OpenCtxProv
                 if (query?.includes('@')) {
                     // Handle both @branch and @branch/directory formats
                     const trimmedQuery = query?.trim() ?? ''
-                    const slashIndex = trimmedQuery.lastIndexOf('/')
+                    const atIndex = trimmedQuery.indexOf('@')
+                    const slashIndex = atIndex >= 0 ? trimmedQuery.indexOf('/', atIndex) : -1
 
                     if (slashIndex > 0) {
                         // Format: repo@branch/directory
@@ -70,20 +71,21 @@ export function createRemoteDirectoryProvider(customTitle?: string): OpenCtxProv
                 }
                 return await getRepositoryMentions(query?.trim() ?? '', REMOTE_DIRECTORY_PROVIDER_URI)
             }
-
             return await getDirectoryMentions(repoName, directoryPath.trim())
         },
 
         async items({ mention, message }) {
-            if (!mention?.data?.repoName || !mention?.data?.directoryPath || !message) {
+            if (!mention?.data?.repoID || !mention?.data?.directoryPath || !message) {
                 return []
             }
 
+            const revision = mention.data.branch ?? mention.data.rev
             return await getDirectoryItem(
                 message,
+                mention.data.repoID as string,
                 mention.data.repoName as string,
                 mention.data.directoryPath as string,
-                mention.data.rev as string
+                revision as string
             )
         },
     }
@@ -97,7 +99,7 @@ async function getDirectoryMentions(repoName: string, directoryPath?: string): P
     const repoWithBranch = branchPart ? `${repoRe}@${branchPart}` : repoRe
 
     // For root directory search, use a pattern that finds top-level directories
-    const filePattern = directoryPath ? `${directoryRe}.*\\/.*` : '[^/]+\\/.*'
+    const filePattern = directoryPath ? `^${directoryRe}.*\\/.*` : '[^/]+\\/.*'
     const query = `repo:${repoWithBranch} file:${filePattern} select:file.directory count:10`
 
     const {
@@ -115,7 +117,10 @@ async function getDirectoryMentions(repoName: string, directoryPath?: string): P
                 return null
             }
 
-            const url = `${serverEndpoint.replace(/\/$/, '')}${result.file.url}`
+            // Construct URL with branch information if available
+            const baseUrl = `${serverEndpoint.replace(/\/$/, '')}/${result.repository.name}`
+            const branchUrl = branchPart ? `${baseUrl}@${branchPart}` : baseUrl
+            const url = `${branchUrl}/-/blob/${result.file.path}`
 
             return {
                 uri: url,
@@ -134,31 +139,70 @@ async function getDirectoryMentions(repoName: string, directoryPath?: string): P
 }
 
 async function getDirectoryItem(
-    query: string,
+    _userMessage: string, // ignore content - we want all files in directory
+    repoID: string,
     repoName: string,
     directoryPath: string,
     revision?: string
 ): Promise<Item[]> {
-    const dataOrError = await graphqlClient.getDirectoryContents(repoName, directoryPath, revision)
+    const filePatterns = [`^${escapeRegExp(directoryPath)}.*`]
+    // Use directory basename as search query since contextSearch requires non-empty query
+    const searchQuery = directoryPath.split('/').pop() || '.'
+    const dataOrError = await graphqlClient.contextSearch({
+        repoIDs: [repoID],
+        query: searchQuery,
+        filePatterns,
+        revision,
+    })
 
     if (isError(dataOrError) || dataOrError === null) {
         return []
     }
 
-    const entries = dataOrError.repository?.commit?.tree?.entries || []
+    // If contextSearch returns no results, try fallback to getDirectoryContents
+    if (dataOrError.length === 0) {
+        const fallbackData = await graphqlClient.getDirectoryContents(repoName, directoryPath, revision)
+        if (!isError(fallbackData) && fallbackData !== null) {
+            const entries = fallbackData.repository?.commit?.tree?.entries || []
+            const {
+                auth: { serverEndpoint },
+            } = await currentResolvedConfig()
+
+            return entries
+                .filter(entry => entry.content && !entry.isDirectory) // Only include files with content
+                .map(entry => ({
+                    url: revision
+                        ? `${serverEndpoint.replace(/\/$/, '')}/${repoName}@${revision}/-/blob/${
+                              entry.path
+                          }`
+                        : `${serverEndpoint.replace(/\/$/, '')}${entry.url}`,
+                    title: entry.path,
+                    ai: {
+                        content: entry.content,
+                    },
+                })) as Item[]
+        }
+        return []
+    }
+
     const {
         auth: { serverEndpoint },
     } = await currentResolvedConfig()
 
-    return entries
-        .filter(entry => entry.content && !entry.isDirectory) // Only include files with content
-        .map(entry => ({
-            url: `${serverEndpoint.replace(/\/$/, '')}${entry.url}`,
-            title: entry.path,
-            ai: {
-                content: entry.content,
-            },
-        })) as Item[]
+    return dataOrError.map(
+        node =>
+            ({
+                url: revision
+                    ? `${serverEndpoint.replace(/\/$/, '')}/${node.repoName}@${revision}/-/blob/${
+                          node.path
+                      }`
+                    : node.uri.toString(),
+                title: node.path,
+                ai: {
+                    content: node.content,
+                },
+            }) as Item
+    )
 }
 
 export default RemoteDirectoryProvider

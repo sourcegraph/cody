@@ -1150,11 +1150,13 @@ export class SourcegraphGraphQLAPIClient {
         query,
         signal,
         filePatterns,
+        revision,
     }: {
         repoIDs: string[]
         query: string
         signal?: AbortSignal
         filePatterns?: string[]
+        revision?: string
     }): Promise<ContextSearchResult[] | null | Error> {
         const hasContextMatchingSupport = await this.isValidSiteVersion({
             minimumVersion: '5.8.0',
@@ -1176,6 +1178,7 @@ export class SourcegraphGraphQLAPIClient {
                 codeResultsCount: 15,
                 textResultsCount: 5,
                 ...(hasFilePathSupport ? { filePatterns } : {}),
+                ...(revision ? { revision } : {}),
             },
             signal
         ).then(response =>

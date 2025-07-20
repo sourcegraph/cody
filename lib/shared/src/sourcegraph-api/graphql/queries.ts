@@ -760,7 +760,7 @@ query GetDirectoryContents($repoName: String!, $revision: String!, $path: String
   repository(name: $repoName) {
     commit(rev: $revision) {
       tree(path: $path) {
-        entries(first: 50) {
+        entries(first: 15) {
           ... on GitBlob {
             name
             path
