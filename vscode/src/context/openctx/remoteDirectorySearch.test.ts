@@ -1,6 +1,16 @@
-import { graphqlClient, mockResolvedConfig } from '@sourcegraph/cody-shared'
+import {
+    CLIENT_CAPABILITIES_FIXTURE,
+    graphqlClient,
+    mockClientCapabilities,
+    mockResolvedConfig
+} from '@sourcegraph/cody-shared'
 import { describe, expect, test, vi } from 'vitest'
 import { createRemoteDirectoryProvider } from './remoteDirectorySearch'
+
+// Mock client capabilities to avoid "clientCapabilities called before configuration was set" error
+mockClientCapabilities(CLIENT_CAPABILITIES_FIXTURE)
+
+const auth = { serverEndpoint: 'https://sourcegraph.com' }
 
 // Test the extractRepoAndBranch function logic
 function extractRepoAndBranch(input: string): [string, string | undefined] {
@@ -81,7 +91,7 @@ describe('RemoteDirectoryProvider mentions', () => {
         // Mock the resolved config
         mockResolvedConfig({
             auth: {
-                serverEndpoint: 'https://demo.sourcegraph.com',
+                serverEndpoint: auth.serverEndpoint,
             },
         })
 
@@ -117,15 +127,15 @@ describe('RemoteDirectoryProvider mentions', () => {
         expect(mentions).toHaveLength(1)
 
         expect(mentions?.[0]).toEqual({
-            uri: 'https://demo.sourcegraph.com/github.com/mrdoob/three.js@dev/-/tree/docs',
+            uri: `${auth.serverEndpoint}/github.com/mrdoob/three.js@dev/-/tree/docs`,
             title: 'docs',
             description: ' ',
             data: {
+                branch: "dev",
                 repoName: 'github.com/mrdoob/three.js',
                 repoID: 'repo-id',
                 rev: 'abc123',
                 directoryPath: 'docs',
-                // branch: 'dev', // TODO: Fix branch extraction
             },
         })
     })
@@ -134,7 +144,7 @@ describe('RemoteDirectoryProvider mentions', () => {
         // Mock the resolved config
         mockResolvedConfig({
             auth: {
-                serverEndpoint: 'https://demo.sourcegraph.com',
+                serverEndpoint: auth.serverEndpoint,
             },
         })
 
@@ -172,7 +182,7 @@ describe('RemoteDirectoryProvider mentions', () => {
 
         expect(mentions).toHaveLength(1)
         expect(mentions?.[0]).toEqual({
-            uri: 'https://demo.sourcegraph.com/github.com/mrdoob/three.js@e2e/-/tree/manual/en',
+            uri: `${auth.serverEndpoint}/github.com/mrdoob/three.js@e2e/-/tree/manual/en`,
             title: 'manual/en',
             description: ' ',
             data: {
@@ -186,7 +196,7 @@ describe('RemoteDirectoryProvider mentions', () => {
 
         // Verify the correct parameters were passed to searchFileMatches
         expect(graphqlClient.searchFileMatches).toHaveBeenCalledWith(
-            'repo:^github\\.com/mrdoob/three\\.js$@e2e file:manual.*\\/.* select:file.directory count:10'
+            'repo:^github\\.com/mrdoob/three\\.js$@e2e file:^manual.*\\/.* select:file.directory count:10'
         )
     })
 })
@@ -196,9 +206,13 @@ describe('RemoteDirectoryProvider directory contents', () => {
         // Mock the resolved config
         mockResolvedConfig({
             auth: {
-                serverEndpoint: 'https://demo.sourcegraph.com',
+                serverEndpoint: auth.serverEndpoint,
             },
         })
+
+
+        // Mock contextSearch to return empty array to trigger fallback
+        vi.spyOn(graphqlClient, 'contextSearch').mockResolvedValue([])
 
         // Mock the graphqlClient.getDirectoryContents method
         const mockDirectoryContents = {
@@ -243,6 +257,7 @@ describe('RemoteDirectoryProvider directory contents', () => {
                     description: 'test-description',
                     data: {
                         repoName: 'test-repo',
+                        repoID: 'repo-id',
                         directoryPath: 'src',
                         rev: 'HEAD',
                     },
@@ -254,14 +269,14 @@ describe('RemoteDirectoryProvider directory contents', () => {
 
         expect(items).toHaveLength(2) // Only files, not directories
         expect(items?.[0]).toEqual({
-            url: 'https://demo.sourcegraph.com/repo/-/blob/src/file1.ts',
+            url: `${auth.serverEndpoint}/test-repo@HEAD/-/blob/src/file1.ts`,
             title: 'src/file1.ts',
             ai: {
                 content: 'const foo = "bar";',
             },
         })
         expect(items?.[1]).toEqual({
-            url: 'https://demo.sourcegraph.com/repo/-/blob/src/file2.js',
+            url: `${auth.serverEndpoint}/test-repo@HEAD/-/blob/src/file2.js`,
             title: 'src/file2.js',
             ai: {
                 content: 'console.log("hello");',

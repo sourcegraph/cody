@@ -120,7 +120,7 @@ async function getDirectoryMentions(repoName: string, directoryPath?: string): P
             // Construct URL with branch information if available
             const baseUrl = `${serverEndpoint.replace(/\/$/, '')}/${result.repository.name}`
             const branchUrl = branchPart ? `${baseUrl}@${branchPart}` : baseUrl
-            const url = `${branchUrl}/-/blob/${result.file.path}`
+            const url = `${branchUrl}/-/tree/${result.file.path}`
 
             return {
                 uri: url,
