@@ -37,7 +37,7 @@ export async function getBranchMentions(options: BranchMentionOptions): Promise<
 
     // Filter branches if we have a search query
     let filteredBranches = branches
-    if (branchQuery && branchQuery.trim()) {
+    if (branchQuery?.trim()) {
         const query = branchQuery.toLowerCase()
         filteredBranches = branches.filter(branch => branch.toLowerCase().includes(query))
     }
