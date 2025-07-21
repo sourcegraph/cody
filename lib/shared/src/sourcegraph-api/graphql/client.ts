@@ -291,8 +291,6 @@ export interface SuggestionsRepo {
     } | null
 }
 
-
-
 export interface RepoSuggestionsSearchResponse {
     search: {
         results: {
@@ -1058,8 +1056,6 @@ export class SourcegraphGraphQLAPIClient {
             { query: searchQuery }
         ).then(response => extractDataOrError(response, data => data))
     }
-
-
 
     public async searchFileMatches(query?: string): Promise<FileMatchSearchResponse | Error> {
         return this.fetchSourcegraphAPI<APIResponse<FileMatchSearchResponse>>(FILE_MATCH_SEARCH_QUERY, {

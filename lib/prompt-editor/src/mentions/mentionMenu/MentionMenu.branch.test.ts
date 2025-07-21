@@ -1,45 +1,12 @@
-import { ContextItemSource, REMOTE_DIRECTORY_PROVIDER_URI } from '@sourcegraph/cody-shared'
+import {
+    ContextItemSource,
+    type MentionQuery,
+    REMOTE_DIRECTORY_PROVIDER_URI,
+} from '@sourcegraph/cody-shared'
 import type { MentionMenuData } from '@sourcegraph/cody-shared'
 import { describe, expect, test } from 'vitest'
 import { URI } from 'vscode-uri'
-
-// This would be imported from the MentionMenu component if it were exported
-// For now, we'll create a test version of the function
-function getBranchHelpText(
-    items: NonNullable<MentionMenuData['items']>,
-    mentionQuery: { text: string }
-): string {
-    // Check if we're in branch selection mode (showing branch options)
-    const firstItem = items[0]
-    if (firstItem?.type === 'openctx') {
-        const openCtxItem = firstItem as any // Simplified for testing
-
-        // If we're showing branch options (no directoryPath), show branch selection help
-        if (openCtxItem.mention?.data?.repoName && !openCtxItem.mention?.data?.directoryPath) {
-            // Check if this is a branch mention (title starts with @)
-            if (firstItem.title?.startsWith('@')) {
-                return '* @type to filter searches for a specific branch'
-            }
-        }
-
-        // If we're browsing directories and have branch info, show current branch
-        if (openCtxItem.mention?.data?.branch) {
-            return `* Sourced from the '${openCtxItem.mention.data.branch}' branch`
-        }
-    }
-
-    // Check if user has specified a branch in the query
-    if (mentionQuery.text.includes('@')) {
-        const branchPart = mentionQuery.text.split('@')[1]
-        if (branchPart) {
-            // Remove anything after colon (directory path)
-            const branchName = branchPart.split(':')[0]
-            return `* Sourced from the '${branchName}' branch`
-        }
-    }
-
-    return '* Sourced from the remote default branch'
-}
+import { getBranchHelpText } from './MentionMenu'
 
 describe('MentionMenu branch selection', () => {
     test('should show default branch text when no branch is specified', () => {
@@ -61,7 +28,10 @@ describe('MentionMenu branch selection', () => {
             },
         ]
 
-        const mentionQuery = { text: 'test-repo:src' }
+        const mentionQuery: MentionQuery = {
+            text: 'test-repo:src',
+            provider: REMOTE_DIRECTORY_PROVIDER_URI,
+        }
 
         const result = getBranchHelpText(items!, mentionQuery)
         expect(result).toBe('* Sourced from the remote default branch')
@@ -86,7 +56,10 @@ describe('MentionMenu branch selection', () => {
             },
         ]
 
-        const mentionQuery = { text: 'test-repo@feature-branch:src' }
+        const mentionQuery = {
+            text: 'test-repo@feature-branch:src',
+            provider: REMOTE_DIRECTORY_PROVIDER_URI,
+        }
 
         const result = getBranchHelpText(items!, mentionQuery)
         expect(result).toBe("* Sourced from the 'feature-branch' branch")
@@ -112,7 +85,7 @@ describe('MentionMenu branch selection', () => {
             },
         ]
 
-        const mentionQuery = { text: 'test-repo:src' }
+        const mentionQuery = { text: 'test-repo:src', provider: REMOTE_DIRECTORY_PROVIDER_URI }
 
         const result = getBranchHelpText(items!, mentionQuery)
         expect(result).toBe("* Sourced from the 'main' branch")
@@ -138,7 +111,10 @@ describe('MentionMenu branch selection', () => {
             },
         ]
 
-        const mentionQuery = { text: 'test-repo@query-branch:src' }
+        const mentionQuery = {
+            text: 'test-repo@query-branch:src',
+            provider: REMOTE_DIRECTORY_PROVIDER_URI,
+        }
 
         const result = getBranchHelpText(items!, mentionQuery)
         expect(result).toBe("* Sourced from the 'actual-branch' branch")
@@ -146,7 +122,7 @@ describe('MentionMenu branch selection', () => {
 
     test('should handle empty items array', () => {
         const items: MentionMenuData['items'] = []
-        const mentionQuery = { text: 'test-repo@main:src' }
+        const mentionQuery = { text: 'test-repo@main:src', provider: REMOTE_DIRECTORY_PROVIDER_URI }
 
         const result = getBranchHelpText(items!, mentionQuery)
         expect(result).toBe("* Sourced from the 'main' branch")
@@ -163,7 +139,7 @@ describe('MentionMenu branch selection', () => {
             },
         ]
 
-        const mentionQuery = { text: 'test-repo@feature:src' }
+        const mentionQuery = { text: 'test-repo@feature:src', provider: REMOTE_DIRECTORY_PROVIDER_URI }
 
         const result = getBranchHelpText(items!, mentionQuery)
         expect(result).toBe("* Sourced from the 'feature' branch")
@@ -189,7 +165,7 @@ describe('MentionMenu branch selection', () => {
             },
         ]
 
-        const mentionQuery = { text: 'test-repo:' }
+        const mentionQuery = { text: 'test-repo:', provider: REMOTE_DIRECTORY_PROVIDER_URI }
 
         const result = getBranchHelpText(items!, mentionQuery)
         expect(result).toBe('* Select or @ search for a specific branch')

@@ -2,8 +2,8 @@ import { REMOTE_DIRECTORY_PROVIDER_URI, currentResolvedConfig } from '@sourcegra
 
 import type { Item, Mention } from '@openctx/client'
 import { graphqlClient, isDefined, isError } from '@sourcegraph/cody-shared'
-import { getRepositoryMentions } from './common/get-repository-mentions'
 import { getBranchMentions } from './common/branch-mentions'
+import { getRepositoryMentions } from './common/get-repository-mentions'
 import { escapeRegExp } from './remoteFileSearch'
 
 import type { OpenCtxProvider } from './types'
@@ -12,7 +12,7 @@ import type { OpenCtxProvider } from './types'
  * Extracts repo name and optional branch from a string.
  * Supports formats: "repo@branch", "repo", or "repo:directory@branch"
  */
-function extractRepoAndBranch(input: string): [string, string | undefined] {
+export function extractRepoAndBranch(input: string): [string, string | undefined] {
     // Handle case where input contains a colon (repo:directory@branch)
     const colonIndex = input.indexOf(':')
     if (colonIndex !== -1) {
@@ -101,10 +101,13 @@ export function createRemoteDirectoryProvider(customTitle?: string): OpenCtxProv
 
                 // Use fuzzy search for empty queries (just @) or short queries that look like partial searches
                 // Longer queries or queries with common branch patterns are treated as exact branch names
-                const looksLikeSearch = branchQuery.length === 0 ||
-                                      (branchQuery.length > 0 && branchQuery.length <= 6 &&
-                                      !branchQuery.includes('-') && !branchQuery.includes('/') &&
-                                      !branchQuery.includes('_'))
+                const looksLikeSearch =
+                    branchQuery.length === 0 ||
+                    (branchQuery.length > 0 &&
+                        branchQuery.length <= 6 &&
+                        !branchQuery.includes('-') &&
+                        !branchQuery.includes('/') &&
+                        !branchQuery.includes('_'))
                 if (looksLikeSearch) {
                     return await getDirectoryBranchMentions(repoName, branchQuery)
                 }
@@ -213,7 +216,6 @@ async function getDirectoryBranchMentions(repoName: string, branchQuery?: string
 
     return branchMentions
 }
-
 
 async function getDirectoryItem(
     _userMessage: string, // ignore content - we want all files in directory

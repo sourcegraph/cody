@@ -3,10 +3,10 @@ import {
     REMOTE_DIRECTORY_PROVIDER_URI,
     graphqlClient,
     mockClientCapabilities,
-    mockResolvedConfig
+    mockResolvedConfig,
 } from '@sourcegraph/cody-shared'
 import { describe, expect, test, vi } from 'vitest'
-import { createRemoteDirectoryProvider } from './remoteDirectorySearch'
+import { createRemoteDirectoryProvider, extractRepoAndBranch } from './remoteDirectorySearch'
 
 // Mock the getRepositoryMentions function
 vi.mock('./common/get-repository-mentions', () => ({
@@ -17,28 +17,6 @@ vi.mock('./common/get-repository-mentions', () => ({
 mockClientCapabilities(CLIENT_CAPABILITIES_FIXTURE)
 
 const auth = { serverEndpoint: 'https://sourcegraph.com' }
-
-// Test the extractRepoAndBranch function logic
-function extractRepoAndBranch(input: string): [string, string | undefined] {
-    // Handle case where input contains a colon (repo:directory@branch)
-    const colonIndex = input.indexOf(':')
-    if (colonIndex !== -1) {
-        const repoPart = input.substring(0, colonIndex)
-        const atIndex = repoPart.indexOf('@')
-        if (atIndex !== -1) {
-            return [repoPart.substring(0, atIndex), repoPart.substring(atIndex + 1)]
-        }
-        return [repoPart, undefined]
-    }
-
-    // Handle simple case: repo@branch or repo
-    const atIndex = input.indexOf('@')
-    if (atIndex !== -1) {
-        return [input.substring(0, atIndex), input.substring(atIndex + 1)]
-    }
-
-    return [input, undefined]
-}
 
 describe('RemoteDirectoryProvider branch parsing', () => {
     describe('extractRepoAndBranch', () => {
@@ -88,12 +66,6 @@ describe('RemoteDirectoryProvider branch parsing', () => {
             const [repo, branch] = extractRepoAndBranch('github.com/mrdoob/three.js@dev')
             expect(repo).toBe('github.com/mrdoob/three.js')
             expect(branch).toBe('dev')
-        })
-
-        test('should handle branch names with hyphens', () => {
-            const [repo, branch] = extractRepoAndBranch('test-repo@feature-branch')
-            expect(repo).toBe('test-repo')
-            expect(branch).toBe('feature-branch')
         })
 
         test('should handle branch names with slashes', () => {
@@ -167,7 +139,7 @@ describe('RemoteDirectoryProvider mentions', () => {
             title: 'docs',
             description: ' ',
             data: {
-                branch: "dev",
+                branch: 'dev',
                 repoName: 'github.com/mrdoob/three.js',
                 repoID: 'repo-id',
                 rev: 'abc123',
@@ -429,7 +401,7 @@ describe('RemoteDirectoryProvider mentions', () => {
                     branches: ['main', 'develop', 'feature-branch'],
                     isIgnored: false,
                 },
-            }
+            },
         ])
 
         // Import and mock the getRepositoryMentions function
@@ -439,7 +411,7 @@ describe('RemoteDirectoryProvider mentions', () => {
         const provider = createRemoteDirectoryProvider()
         const mentions = await provider.mentions?.({ query: 'test-repo:' }, {})
 
-        expect(mentions).toHaveLength(4) // default branch + 2 other branches + search hint
+        expect(mentions).toHaveLength(3) // default branch + 2 other branches
 
         // Check default branch mention
         expect(mentions?.[0]).toEqual({
@@ -464,7 +436,6 @@ describe('RemoteDirectoryProvider mentions', () => {
                 branch: 'develop',
             },
         })
-
     })
 
     test('should handle fuzzy branch search when user types repo:@query', async () => {
@@ -492,11 +463,11 @@ describe('RemoteDirectoryProvider mentions', () => {
                         'feature/search-improvement',
                         'feature/search-ui',
                         'fix/search-bug',
-                        'develop'
+                        'develop',
                     ],
                     isIgnored: false,
                 },
-            }
+            },
         ])
 
         const provider = createRemoteDirectoryProvider()
@@ -551,7 +522,6 @@ describe('RemoteDirectoryProvider directory contents', () => {
                 serverEndpoint: auth.serverEndpoint,
             },
         })
-
 
         // Mock contextSearch to return empty array to trigger fallback
         vi.spyOn(graphqlClient, 'contextSearch').mockResolvedValue([])

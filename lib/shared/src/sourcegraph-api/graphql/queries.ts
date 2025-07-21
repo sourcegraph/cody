@@ -165,8 +165,6 @@ export const REPOS_SUGGESTIONS_QUERY = `
     }
 `
 
-
-
 export const FILE_CONTENTS_QUERY = `
 query FileContentsQuery($repoName: String!, $filePath: String!, $rev: String!) {
     repository(name: $repoName){

@@ -39,9 +39,7 @@ export async function getBranchMentions(options: BranchMentionOptions): Promise<
     let filteredBranches = branches
     if (branchQuery && branchQuery.trim()) {
         const query = branchQuery.toLowerCase()
-        filteredBranches = branches.filter(branch =>
-            branch.toLowerCase().includes(query)
-        )
+        filteredBranches = branches.filter(branch => branch.toLowerCase().includes(query))
     }
 
     return createBranchMentionsFromData({
@@ -64,13 +62,10 @@ export interface CreateBranchMentionsOptions {
 /**
  * Creates mention objects for branches with optional browse and search hint options.
  */
-export async function createBranchMentionsFromData(options: CreateBranchMentionsOptions): Promise<Mention[]> {
-    const {
-        repoName,
-        repoId,
-        defaultBranch,
-        branches = [],
-    } = options
+export async function createBranchMentionsFromData(
+    options: CreateBranchMentionsOptions
+): Promise<Mention[]> {
+    const { repoName, repoId, defaultBranch, branches = [] } = options
 
     const {
         auth: { serverEndpoint },
@@ -151,7 +146,7 @@ export function parseRemoteQuery(query: string): ParsedQuery | null {
     // Handle branch selection: "repo:@" or "repo:@branch"
     if (secondPart.startsWith('@')) {
         const branchQuery = secondPart.substring(1) // Remove @
-        
+
         // If just "repo:@", show branch search
         if (!branchQuery) {
             return { repoName, branchSearch: true }

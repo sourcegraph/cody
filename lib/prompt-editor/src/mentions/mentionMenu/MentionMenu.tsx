@@ -349,17 +349,22 @@ function commandRowValue(
     return contextItemID(row)
 }
 
-function getBranchHelpText(
+export function getBranchHelpText(
     items: NonNullable<MentionMenuData['items']>,
     mentionQuery: MentionQuery
 ): string {
-    // Check if we're in branch selection mode (showing branch options)
     const firstItem = items[0]
-    if (firstItem?.type === 'openctx') {
-        const openCtxItem = firstItem as ContextItem & {
-            type: 'openctx'
-            mention?: { data?: { branch?: string; repoName?: string; directoryPath?: string } }
-        }
+
+    // Type guard for openctx items
+    const isOpenCtxItem = (
+        item: ContextItem
+    ): item is ContextItem & {
+        type: 'openctx'
+        mention?: { data?: { branch?: string; repoName?: string; directoryPath?: string } }
+    } => item.type === 'openctx'
+
+    if (firstItem && isOpenCtxItem(firstItem)) {
+        const openCtxItem = firstItem
         const repoName = openCtxItem.mention?.data?.repoName
         const branch = openCtxItem.mention?.data?.branch
         const directoryPath = openCtxItem.mention?.data?.directoryPath
@@ -368,7 +373,7 @@ function getBranchHelpText(
         if (repoName && !directoryPath) {
             // Check if this is a branch mention (title starts with @)
             if (firstItem.title?.startsWith('@')) {
-                return '* @type to filter searches for a specific branch'
+                return '* Select or @ search for a specific branch'
             }
         }
 
@@ -379,11 +384,13 @@ function getBranchHelpText(
     }
 
     // Check if user has specified a branch in the query
-    if (mentionQuery.text.includes('@')) {
-        const branchPart = mentionQuery.text.split('@')[1]
-        if (branchPart) {
-            // Remove anything after colon (directory path)
-            const branchName = branchPart.split(':')[0]
+    const atIndex = mentionQuery.text.indexOf('@')
+    if (atIndex !== -1 && atIndex < mentionQuery.text.length - 1) {
+        const afterAt = mentionQuery.text.slice(atIndex + 1)
+        const colonIndex = afterAt.indexOf(':')
+        const branchName = colonIndex !== -1 ? afterAt.slice(0, colonIndex) : afterAt
+
+        if (branchName.trim()) {
             return `* Sourced from the '${branchName}' branch`
         }
     }

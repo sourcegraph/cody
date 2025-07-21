@@ -64,7 +64,9 @@ export async function getRepositoryMentions(
     )
 }
 
-type MinimalRepoMention = Pick<SuggestionsRepo, 'id' | 'url' | 'name' | 'defaultBranch' | 'branches'> & { current?: boolean }
+type MinimalRepoMention = Pick<SuggestionsRepo, 'id' | 'url' | 'name' | 'defaultBranch' | 'branches'> & {
+    current?: boolean
+}
 
 export async function createRepositoryMention(
     repo: MinimalRepoMention,

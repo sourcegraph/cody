@@ -9,8 +9,8 @@ import {
 } from '@sourcegraph/cody-shared'
 import { URI } from 'vscode-uri'
 
-import { getRepositoryMentions } from './common/get-repository-mentions'
 import { getBranchMentions } from './common/branch-mentions'
+import { getRepositoryMentions } from './common/get-repository-mentions'
 import type { OpenCtxProvider } from './types'
 
 const RemoteFileProvider = createRemoteFileProvider()
@@ -62,7 +62,11 @@ export function createRemoteFileProvider(customTitle?: string): OpenCtxProvider 
     }
 }
 
-async function getFileMentions(repoName: string, filePath?: string, branch?: string): Promise<Mention[]> {
+async function getFileMentions(
+    repoName: string,
+    filePath?: string,
+    branch?: string
+): Promise<Mention[]> {
     const repoRe = `^${escapeRegExp(repoName)}$`
     const fileRe = filePath ? escapeRegExp(filePath) : '^.*$'
     const branchPart = branch ? `@${escapeRegExp(branch)}` : ''
@@ -114,8 +118,6 @@ async function getFileBranchMentions(repoName: string, branchQuery?: string): Pr
 
     return branchMentions
 }
-
-
 
 async function getFileItem(repoName: string, filePath: string, rev = 'HEAD'): Promise<Item[]> {
     const { auth } = await currentResolvedConfig()
