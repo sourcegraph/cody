@@ -1,7 +1,10 @@
+import { memo, useMemo } from 'react'
+import type React from 'react'
+import { isEqual } from 'lodash';
+
 import type { Guardrails } from '@sourcegraph/cody-shared'
 import { clsx } from 'clsx'
 import type { Code, Root } from 'mdast'
-import type React from 'react'
 import type { Plugin } from 'unified'
 import { visit } from 'unist-util-visit'
 import type { CodeBlockActionsProps } from '../chat/ChatMessageContent/ChatMessageContent'
@@ -70,97 +73,102 @@ export const remarkAttachCompletedCodeBlocks: Plugin<[], Root> = () => {
  * which provides syntax highlighting, action buttons, and optional guardrails
  * protection.
  */
-export const RichMarkdown: React.FC<RichMarkdownProps> = ({
-    markdown,
-    isMessageLoading,
-    regeneratingCodeBlocks,
-    guardrails,
-    onCopy,
-    onInsert,
-    onExecute,
-    onRegenerate,
-    smartApply,
-    className,
-    hasEditIntent,
-}) => {
-    // Handle rendering of code blocks with our custom RichCodeBlock component
-    const components = {
-        pre({ node, inline, className, children, ...props }: any) {
-            // Don't process inline code blocks
-            if (inline) {
-                return (
-                    <code className={className} {...props}>
-                        {children}
-                    </code>
-                )
+export const RichMarkdown: React.FC<RichMarkdownProps> = memo(
+    ({
+         markdown,
+         isMessageLoading,
+         regeneratingCodeBlocks,
+         guardrails,
+         onCopy,
+         onInsert,
+         onExecute,
+         onRegenerate,
+         smartApply,
+         className,
+         hasEditIntent,
+     }) => {
+        // Handle rendering of code blocks with our custom RichCodeBlock component
+        const components = useMemo(() => (
+            {
+                pre({ node, inline, className, children, ...props }: any) {
+                    // Don't process inline code blocks
+                    if (inline) {
+                        return (
+                            <code className={className} {...props}>
+                                {children}
+                            </code>
+                        )
+                    }
+
+                    // Get the code node (if it exists)
+                    const codeNode =
+                        node.children.length === 1 && node.children[0].type === 'element'
+                            ? node.children[0]
+                            : null
+
+                    // Get the cached highlighting result (if there is a key, and if the result is cached)
+                    const {
+                        'data-source-text': sourceText,
+                        'data-is-code-complete': isThisBlockComplete,
+                        'data-file-path': filePath,
+                        'data-language': language,
+                    } = (codeNode?.properties as TerminatedCodeData['hProperties'] | undefined) || {
+                        'data-is-code-complete': false,
+                    }
+
+                    const extractText = (node: any): string => {
+                        if (typeof node === 'string') return node
+                        if (!node) return ''
+                        if (node.type === 'text' && node.value) return node.value
+                        if (node.children) {
+                            return node.children.map(extractText).join('')
+                        }
+                        return ''
+                    }
+                    const plainText = extractText(node)
+
+                    // Determine if this is a shell command
+                    const isShellCommand = language === 'bash' || language === 'sh'
+
+                    const regenerating = regeneratingCodeBlocks.find(
+                        block => block.code === plainText && !block.error
+                    )
+
+                    // Render with our RichCodeBlock component
+                    return (
+                        <RichCodeBlock
+                            hasEditIntent={hasEditIntent}
+                            plainCode={plainText}
+                            markdownCode={sourceText ?? ''}
+                            language={language}
+                            fileName={filePath}
+                            isMessageLoading={isMessageLoading}
+                            isCodeComplete={!regenerating && (isThisBlockComplete || !isMessageLoading)}
+                            isShellCommand={isShellCommand}
+                            guardrails={guardrails}
+                            onCopy={onCopy}
+                            onInsert={onInsert}
+                            onExecute={isShellCommand ? onExecute : undefined}
+                            onRegenerate={onRegenerate}
+                            smartApply={smartApply}
+                        >
+                            {children}
+                        </RichCodeBlock>
+                    )
+                },
             }
+        ), [])
 
-            // Get the code node (if it exists)
-            const codeNode =
-                node.children.length === 1 && node.children[0].type === 'element'
-                    ? node.children[0]
-                    : null
-
-            // Get the cached highlighting result (if there is a key, and if the result is cached)
-            const {
-                'data-source-text': sourceText,
-                'data-is-code-complete': isThisBlockComplete,
-                'data-file-path': filePath,
-                'data-language': language,
-            } = (codeNode?.properties as TerminatedCodeData['hProperties'] | undefined) || {
-                'data-is-code-complete': false,
-            }
-
-            const extractText = (node: any): string => {
-                if (typeof node === 'string') return node
-                if (!node) return ''
-                if (node.type === 'text' && node.value) return node.value
-                if (node.children) {
-                    return node.children.map(extractText).join('')
-                }
-                return ''
-            }
-            const plainText = extractText(node)
-
-            // Determine if this is a shell command
-            const isShellCommand = language === 'bash' || language === 'sh'
-
-            const regenerating = regeneratingCodeBlocks.find(
-                block => block.code === plainText && !block.error
-            )
-
-            // Render with our RichCodeBlock component
-            return (
-                <RichCodeBlock
-                    hasEditIntent={hasEditIntent}
-                    plainCode={plainText}
-                    markdownCode={sourceText ?? ''}
-                    language={language}
-                    fileName={filePath}
-                    isMessageLoading={isMessageLoading}
-                    isCodeComplete={!regenerating && (isThisBlockComplete || !isMessageLoading)}
-                    isShellCommand={isShellCommand}
-                    guardrails={guardrails}
-                    onCopy={onCopy}
-                    onInsert={onInsert}
-                    onExecute={isShellCommand ? onExecute : undefined}
-                    onRegenerate={onRegenerate}
-                    smartApply={smartApply}
+        return (
+            <div className={clsx('markdown-content', className)}>
+                <MarkdownFromCody
+                    components={components}
+                    prefixRemarkPlugins={[remarkAttachCompletedCodeBlocks]}
                 >
-                    {children}
-                </RichCodeBlock>
-            )
-        },
-    }
-
-    return (
-        <div className={clsx('markdown-content', className)}>
-            <MarkdownFromCody
-                components={components}
-                prefixRemarkPlugins={[remarkAttachCompletedCodeBlocks]}
-            >
-                {markdown}
-            </MarkdownFromCody>
-        </div>
-    )
-}
+                    {markdown}
+                </MarkdownFromCody>
+            </div>
+        )
+    },
+    isEqual,
+)
