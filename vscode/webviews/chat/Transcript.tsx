@@ -40,7 +40,6 @@ import { useClientActionListener } from '../client/clientState'
 import { useLocalStorage } from '../components/hooks'
 
 import { ScrollDown } from '../components/ScrollDown'
-import { useRefState } from '../utils/use-ref-state'
 import { TokenUsageDisplay } from './TokenUsageDisplay'
 import { AgenticContextCell } from './cells/agenticCell/AgenticContextCell'
 import ApprovalCell from './cells/agenticCell/ApprovalCell'
@@ -413,8 +412,6 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
 
     const humanEditorRef = useRef<PromptEditorRefAPI | null>(null)
     const lastEditorRef = useContext(LastEditorContext)
-
-    const [_, getAssistantMessage] = useRefState(assistantMessage)
     const [selectedIntent, setSelectedIntent] = useState<ChatMessage['intent']>(humanMessage?.intent)
     // We track, ephemerally, the code blocks that are being regenerated so
     // we can show an accurate loading indicator or error message on those
@@ -686,8 +683,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
 
     const onRegenerate = useCallback(
         (code: string, language?: string) => {
-            const assistantMessage = getAssistantMessage()
-            if (assistantMessage) {
+            if (assistantMessage?.index !== undefined) {
                 const id = uuid.v4()
                 regenerateCodeBlock({ id, code, language, index: assistantMessage.index })
                 setRegeneratingCodeBlocks(blocks => [
@@ -698,7 +694,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                 console.warn('tried to regenerate a code block, but there is no assistant message')
             }
         },
-        [getAssistantMessage]
+        [assistantMessage?.index]
     )
 
     const isAgenticMode = useMemo(
