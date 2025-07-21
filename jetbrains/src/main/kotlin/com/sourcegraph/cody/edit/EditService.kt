@@ -82,11 +82,11 @@ class EditService(val project: Project) {
         }
         is RenameFileOperation -> {
           logger.warn("Workspace edit operation renamed a file: ${op.oldUri} -> ${op.newUri}")
-          return false
+          false
         }
         is DeleteFileOperation -> {
           logger.warn("Workspace edit operation deleted a file: ${op.uri}")
-          return false
+          false
         }
         is EditFileOperation -> {
           logger.info("Applying workspace edit to a file: ${op.uri}")
